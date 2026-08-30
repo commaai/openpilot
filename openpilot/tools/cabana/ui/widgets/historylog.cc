@@ -127,8 +127,9 @@ void HistoryLogModel::fetchData(std::deque<Message>::iterator insert_pos, uint64
         m.colors = hex_colors.colors;
       }
     }
+    const int pos = std::distance(messages.begin(), insert_pos);
     messages.insert(insert_pos, std::move_iterator(msgs.begin()), std::move_iterator(msgs.end()));
-    rowsInserted();
+    rowsInserted(pos, msgs.size());
   }
 }
 
@@ -185,7 +186,11 @@ void HeaderView::paintSection(ImDrawList *painter, const ImRect &rect, int logic
 
 LogsWidget::LogsWidget() : header(&model) {
   connections_.push_back(model.modelReset.connect([this]() { modelReset(); }));
-  connections_.push_back(model.rowsInserted.connect([this]() { export_btn_enabled = true; }));
+  connections_.push_back(model.rowsInserted.connect([this](int pos, int count) {
+    export_btn_enabled = true;
+    // the selection follows the message it was made on, like QItemSelectionModel does
+    if (selected_row >= pos) selected_row += count;
+  }));
 }
 
 void LogsWidget::modelReset() {

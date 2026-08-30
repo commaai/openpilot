@@ -62,7 +62,7 @@ public:
   void fetchData(std::deque<Message>::iterator insert_pos, uint64_t from_time, uint64_t min_time);
 
   Observable<> modelReset;
-  Observable<> rowsInserted;
+  Observable<int, int> rowsInserted;  // position, count
 
   MessageId msg_id;
   CanData hex_colors;
