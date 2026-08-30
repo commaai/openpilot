@@ -90,14 +90,7 @@ void RoutesDialog::finish(bool accepted) {
 
 void RoutesDialog::draw() {
   if (!open_) return;
-  if (!show_) {
-    ImGui::OpenPopup("Remote routes");
-    show_ = true;
-  }
-  ImGui::SetNextWindowSize(ImVec2(480.0f, 420.0f), ImGuiCond_Appearing);
-  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();
-  if (!ImGui::BeginPopupModal("Remote routes", nullptr, ImGuiWindowFlags_NoResize)) return;
+  if (!beginDialog("Remote routes", &show_, ImVec2(480.0f, 420.0f))) return;
 
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Device");

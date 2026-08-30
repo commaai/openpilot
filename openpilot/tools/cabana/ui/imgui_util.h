@@ -220,6 +220,21 @@ inline void setNextWindowFloatsOut() {
   ImGui::SetNextWindowClass(&window_class);
 }
 
+// centered modal dialog; `show` latches the OpenPopup. false when the popup is not submitted this frame.
+inline bool beginDialog(const char *id, bool *show, const ImVec2 &size) {
+  if (!*show) {
+    ImGui::OpenPopup(id);
+    *show = true;
+  } else if (!ImGui::IsPopupOpen(id)) {
+    // reopen if imgui closed the popup underneath us (host window change)
+    ImGui::OpenPopup(id);
+  }
+  ImGui::SetNextWindowSize(size, ImGuiCond_Appearing);
+  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  setNextWindowFloatsOut();
+  return ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoResize);
+}
+
 const float SLIDER_LENGTH = 13.0f;
 const float SLIDER_THICKNESS = 13.0f;
 

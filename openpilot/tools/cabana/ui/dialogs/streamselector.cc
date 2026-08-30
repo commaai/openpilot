@@ -300,14 +300,7 @@ void StreamSelector::open(Callback on_done) {
 
 void StreamSelector::draw() {
   if (!open_) return;
-  if (!show_) {
-    ImGui::OpenPopup("Open stream");
-    show_ = true;
-  }
-  ImGui::SetNextWindowSize(ImVec2(640.0f, 0.0f), ImGuiCond_Appearing);
-  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();
-  if (!ImGui::BeginPopupModal("Open stream", nullptr, ImGuiWindowFlags_NoResize)) return;
+  if (!beginDialog("Open stream", &show_, ImVec2(640.0f, 0.0f))) return;
 
   AbstractOpenStreamWidget *current = nullptr;
   if (ImGui::BeginTabBar("streams")) {

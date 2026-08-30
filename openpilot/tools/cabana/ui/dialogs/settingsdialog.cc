@@ -46,14 +46,7 @@ void SettingsDialog::open() {
 
 void SettingsDialog::draw() {
   if (!open_) return;
-  if (!show_) {
-    ImGui::OpenPopup("Settings");
-    show_ = true;
-  }
-  ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f), ImGuiCond_Appearing);
-  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();
-  if (!ImGui::BeginPopupModal("Settings", nullptr, ImGuiWindowFlags_NoResize)) return;
+  if (!beginDialog("Settings", &show_, ImVec2(400.0f, 0.0f))) return;
   const ImGuiInputTextFlags spin_flags = 0;  // InputInt forbids EnterReturnsTrue; it applies the text on every edit
   // InputInt takes no character filter, so out of range text is clamped after the edit
 
