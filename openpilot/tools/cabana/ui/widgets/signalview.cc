@@ -26,6 +26,7 @@ constexpr float V_MARGIN = 2.0f;
 // signal rows are taller than a frame so the sparklines have room to read
 constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it 27 px tall at the 16 px font
 constexpr float TOOLBAR_ITEM_SPACING = 4.0f;
+constexpr float SIGNAL_ROW_SCALE = 1.25f;
 
 std::string trimmed(const std::string &s) {
   size_t b = s.find_first_not_of(" \t\n\r\f\v");
@@ -361,7 +362,7 @@ float SignalItemDelegate::rowHeight() const {
 
 // only the top level signal rows are taller; the expanded sub-rows keep the default row height
 float SignalItemDelegate::signalRowHeight() const {
-  return ImGui::GetFrameHeight() + SIGNAL_ROW_EXTRA;
+  return std::floor((ImGui::GetFrameHeight() + SIGNAL_ROW_EXTRA) * SIGNAL_ROW_SCALE);
 }
 
 float SignalItemDelegate::sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const {
