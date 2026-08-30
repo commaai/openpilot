@@ -92,39 +92,30 @@ public:
   // showEvent/hideEvent (vipc thread start/stop)
   void setVisible(bool visible);
   void showThumbnail(double seconds);
-  std::string whatsThis() const { return whats_this_; }
+  std::string whatsThis() const;
 
 protected:
   void eventFilter();  // mouse move / leave on the slider
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
-  void updateState();
-  void updatePlayBtnState();
   void createCameraWidget();
   void drawCameraWidget();
-  void createPlaybackController();
   void drawPlaybackController();
   void skipToEnd();
   void toggleTimeDisplay();
   void createSpeedDropdown();
-  void drawSpeedDropdown();
+  void drawSpeedDropdown(float width);
   void drawSpeedMenuItems();
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
   void showRouteInfo();
 
   std::unique_ptr<StreamCameraView> cam_widget;
-  std::string time_text_;
-  std::string time_tooltip_;
-  const char *play_icon_ = icon::PLAY;
-  std::string play_tooltip_;
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
-  const char *loop_icon_ = icon::REPEAT;
   std::unique_ptr<Slider> slider;
   std::unique_ptr<TabBar> camera_tab;
   std::vector<std::unique_ptr<RouteInfoDlg>> route_info_dlgs_;
-  std::string whats_this_;
   Connections connections_;  // last: disconnected before the widgets its handlers dereference are destroyed
 };

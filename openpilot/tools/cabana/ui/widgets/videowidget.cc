@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <iterator>
 #include <mutex>
 #include <thread>
@@ -140,37 +141,23 @@ VideoWidget::VideoWidget() {
   if (!can->liveStreaming())
     createCameraWidget();
 
-  createPlaybackController();
+  createSpeedDropdown();
 
-  connections_.push_back(can->paused.connect([this]() { updatePlayBtnState(); }));
-  connections_.push_back(can->resume.connect([this]() { updatePlayBtnState(); }));
-  connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
-  connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { timeRangeChanged(); }));
-
-  updatePlayBtnState();
-  // one <br /> separated line per legend row, with the same entries and colors
-  whats_this_ = "<b>Video</b><br />\n"
-                "<span style=\"color:gray\">Timeline color</span><br />\n" +
-                colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged&nbsp;&nbsp;&nbsp;" +
-                colorName(timeline_colors[(int)TimelineType::Engaged]) + " Engaged<br />\n" +
-                colorName(timeline_colors[(int)TimelineType::UserBookmark]) + " User Flag&nbsp;&nbsp;&nbsp;" +
-                colorName(timeline_colors[(int)TimelineType::AlertInfo]) + " Info<br />\n" +
-                colorName(timeline_colors[(int)TimelineType::AlertWarning]) + " Warning&nbsp;&nbsp;&nbsp;" +
-                colorName(timeline_colors[(int)TimelineType::AlertCritical]) + " Critical<br />\n"
-                "<span style=\"color:gray\">Shortcuts</span><br />\n"
-                "Pause/Resume: <span style=\"background-color:lightGray;color:gray\">&nbsp;space&nbsp;</span>";
 }
 
-void VideoWidget::createPlaybackController() {
-  // the toolbar items are drawn by drawPlaybackController(); only their state is created here
-  if (can->liveStreaming()) {
-    skip_to_end_enabled_ = true;
-  }
-  time_text_ = "";
-  time_tooltip_ = "";
-
-  createSpeedDropdown();
+std::string VideoWidget::whatsThis() const {
+  // one <br /> separated line per legend row, with the same entries and colors
+  return "<b>Video</b><br />\n"
+         "<span style=\"color:gray\">Timeline color</span><br />\n" +
+         colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged&nbsp;&nbsp;&nbsp;" +
+         colorName(timeline_colors[(int)TimelineType::Engaged]) + " Engaged<br />\n" +
+         colorName(timeline_colors[(int)TimelineType::UserBookmark]) + " User Flag&nbsp;&nbsp;&nbsp;" +
+         colorName(timeline_colors[(int)TimelineType::AlertInfo]) + " Info<br />\n" +
+         colorName(timeline_colors[(int)TimelineType::AlertWarning]) + " Warning&nbsp;&nbsp;&nbsp;" +
+         colorName(timeline_colors[(int)TimelineType::AlertCritical]) + " Critical<br />\n"
+         "<span style=\"color:gray\">Shortcuts</span><br />\n"
+         "Pause/Resume: <span style=\"background-color:lightGray;color:gray\">&nbsp;space&nbsp;</span>";
 }
 
 static float toolbarHeight() { return ImGui::GetFontSize() + TOOLBAR_BUTTON_PADDING_Y * 2; }
@@ -187,72 +174,65 @@ void VideoWidget::drawPlaybackController() {
   const float speed_width = button_width("0.05x  ") + MENU_BUTTON_INDICATOR;
   popBoldFont();
 
-  enum ToolItem { REWIND, PLAY, FORWARD, SKIP_END, TIME_DISPLAY, LOOP, SPEED, SEPARATOR, ROUTE_INFO };
-  std::vector<int> items = {REWIND, PLAY, FORWARD};
-  if (can->liveStreaming()) items.push_back(SKIP_END);
-  items.push_back(TIME_DISPLAY);
+  const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
+  const char *play_tooltip = can->isPaused() ? "Play" : "Pause";
+  const char *loop_icon = getReplay() && getReplay()->loop() ? icon::REPEAT : icon::REPEAT_1;
+  const std::string time_text = slider ? formatTime(can->currentSec(), true) + " / " + formatTime(slider->maximum() / slider->factor)
+                                       : formatTime(can->currentSec(), true);
+  const char *time_tooltip = settings.absolute_time ? "Elapsed time" : "Absolute time";
+
+  struct Item {
+    float width;
+    std::function<void()> draw;
+    std::string menu_label;  // empty: dropped from the extension menu, which only carries actions
+    std::function<void()> trigger;
+    bool enabled = true;
+  };
+  auto seek_backward = []() { can->seekTo(can->currentSec() - 1); };
+  auto toggle_play = []() { can->pause(!can->isPaused()); };
+  auto seek_forward = []() { can->seekTo(can->currentSec() + 1); };
+
+  std::vector<Item> items = {
+    {button_width(icon::REWIND), [&]() { if (toolButton("rewind", icon::REWIND, "Seek backward")) seek_backward(); },
+     "Seek backward", seek_backward},
+    {button_width(play_icon), [&]() { if (toolButton("play", play_icon, play_tooltip)) toggle_play(); },
+     play_tooltip, toggle_play},
+    {button_width(icon::FAST_FORWARD), [&]() { if (toolButton("fast-forward", icon::FAST_FORWARD, "Seek forward")) seek_forward(); },
+     "Seek forward", seek_forward},
+  };
+  if (can->liveStreaming()) {
+    items.push_back({button_width(icon::SKIP_END), [&]() {
+      ImGui::BeginDisabled(!skip_to_end_enabled_);
+      if (toolButton("skip-end", icon::SKIP_END, "Skip to the end")) skipToEnd();
+      ImGui::EndDisabled();
+    }, "Skip to the end", [this]() { skipToEnd(); }, skip_to_end_enabled_});
+  }
+  items.push_back({button_width(time_text.c_str()),
+                   [&]() { if (toolButton("time_display", time_text.c_str(), time_tooltip)) toggleTimeDisplay(); },
+                   time_text, [this]() { toggleTimeDisplay(); }});
   // the expanding spacer: the items after it are right aligned as long as everything fits
   const size_t spacer_index = items.size();
   if (!can->liveStreaming()) {
-    items.insert(items.end(), {LOOP, SPEED, SEPARATOR, ROUTE_INFO});
-  } else {
-    items.push_back(SPEED);
+    items.push_back({button_width(loop_icon), [&]() { if (toolButton("loop", loop_icon, "Loop playback")) loopPlaybackClicked(); },
+                     "Loop playback", [this]() { loopPlaybackClicked(); }});
   }
-
-  auto item_width = [&](int item) -> float {
-    switch (item) {
-      case REWIND: return button_width(icon::REWIND);
-      case PLAY: return button_width(play_icon_);
-      case FORWARD: return button_width(icon::FAST_FORWARD);
-      case SKIP_END: return button_width(icon::SKIP_END);
-      case TIME_DISPLAY: return button_width(time_text_.c_str());
-      case LOOP: return button_width(loop_icon_);
-      case SPEED: return speed_width;
-      case SEPARATOR: return TOOLBAR_SEPARATOR_EXTENT;
-      default: return button_width(icon::INFO_CIRCLE);
-    }
-  };
-  auto draw_item = [&](int item) {
-    switch (item) {
-      case REWIND:
-        if (toolButton("rewind", icon::REWIND, "Seek backward")) can->seekTo(can->currentSec() - 1);
-        break;
-      case PLAY:
-        if (toolButton("play", play_icon_, play_tooltip_.c_str())) can->pause(!can->isPaused());
-        break;
-      case FORWARD:
-        if (toolButton("fast-forward", icon::FAST_FORWARD, "Seek forward")) can->seekTo(can->currentSec() + 1);
-        break;
-      case SKIP_END:
-        ImGui::BeginDisabled(!skip_to_end_enabled_);
-        if (toolButton("skip-end", icon::SKIP_END, "Skip to the end")) skipToEnd();
-        ImGui::EndDisabled();
-        break;
-      case TIME_DISPLAY:
-        if (toolButton("time_display", time_text_.c_str(), time_tooltip_.c_str()))
-          toggleTimeDisplay();
-        break;
-      case LOOP:
-        if (toolButton("loop", loop_icon_, "Loop playback")) loopPlaybackClicked();
-        break;
-      case SPEED: drawSpeedDropdown(); break;
-      case SEPARATOR: {
-        // a 1 px separator line centered in TOOLBAR_SEPARATOR_EXTENT, inset from the top and bottom
-        const ImVec2 min = ImGui::GetCursorScreenPos();
-        ImGui::Dummy(ImVec2(TOOLBAR_SEPARATOR_EXTENT, ImGui::GetFrameHeight()));
-        const float x = std::floor(min.x + TOOLBAR_SEPARATOR_EXTENT * 0.5f);
-        ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + 4.0f), ImVec2(x, min.y + ImGui::GetFrameHeight() - 4.0f), ImGui::GetColorU32(ImGuiCol_Separator));
-        break;
-      }
-      default:
-        if (toolButton("route_info", icon::INFO_CIRCLE, "View route details")) showRouteInfo();
-        break;
-    }
-  };
+  items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }, "", nullptr});
+  if (!can->liveStreaming()) {
+    items.push_back({TOOLBAR_SEPARATOR_EXTENT, []() {
+      // a 1 px separator line centered in TOOLBAR_SEPARATOR_EXTENT, inset from the top and bottom
+      const ImVec2 min = ImGui::GetCursorScreenPos();
+      ImGui::Dummy(ImVec2(TOOLBAR_SEPARATOR_EXTENT, ImGui::GetFrameHeight()));
+      const float x = std::floor(min.x + TOOLBAR_SEPARATOR_EXTENT * 0.5f);
+      ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + 4.0f), ImVec2(x, min.y + ImGui::GetFrameHeight() - 4.0f), ImGui::GetColorU32(ImGuiCol_Separator));
+    }, "", nullptr});
+    items.push_back({button_width(icon::INFO_CIRCLE),
+                     [&]() { if (toolButton("route_info", icon::INFO_CIRCLE, "View route details")) showRouteInfo(); },
+                     "View route details", [this]() { showRouteInfo(); }});
+  }
 
   auto group_width = [&](size_t begin, size_t end) {
     float w = 0;
-    for (size_t i = begin; i < end; ++i) w += item_width(items[i]) + (i > begin ? style.ItemSpacing.x : 0);
+    for (size_t i = begin; i < end; ++i) w += items[i].width + (i > begin ? style.ItemSpacing.x : 0);
     return w;
   };
   const float left_width = group_width(0, spacer_index);
@@ -271,7 +251,7 @@ void VideoWidget::drawPlaybackController() {
     const float usable = avail - (extension_width + style.ItemSpacing.x);
     float used = 0;
     for (visible = 0; visible < items.size(); ++visible) {
-      const float w = item_width(items[visible]) + (visible ? style.ItemSpacing.x : 0);
+      const float w = items[visible].width + (visible ? style.ItemSpacing.x : 0);
       if (used + w > usable) break;
       used += w;
     }
@@ -281,7 +261,7 @@ void VideoWidget::drawPlaybackController() {
     if (i == 0) ImGui::SetCursorPosX(start_x);
     else if (fits && i == spacer_index) ImGui::SameLine(right_edge - right_width);
     else ImGui::SameLine();
-    draw_item(items[i]);
+    items[i].draw();
   }
 
   if (visible < items.size()) {
@@ -294,33 +274,8 @@ void VideoWidget::drawPlaybackController() {
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_extension_menu")) {
       for (size_t i = visible; i < items.size(); ++i) {
-        switch (items[i]) {
-          case REWIND:
-            if (ImGui::MenuItem("Seek backward")) can->seekTo(can->currentSec() - 1);
-            break;
-          case PLAY:
-            if (ImGui::MenuItem(play_tooltip_.c_str())) can->pause(!can->isPaused());
-            break;
-          case FORWARD:
-            if (ImGui::MenuItem("Seek forward")) can->seekTo(can->currentSec() + 1);
-            break;
-          case SKIP_END:
-            if (ImGui::MenuItem("Skip to the end", nullptr, false, skip_to_end_enabled_)) skipToEnd();
-            break;
-          case TIME_DISPLAY:
-            if (ImGui::MenuItem(time_text_.c_str())) toggleTimeDisplay();
-            break;
-          case LOOP:
-            if (ImGui::MenuItem("Loop playback")) loopPlaybackClicked();
-            break;
-          // the extension popup only carries actions: the speed button widget and the separator are dropped
-          case SPEED:
-          case SEPARATOR:
-            break;
-          default:
-            if (ImGui::MenuItem("View route details")) showRouteInfo();
-            break;
-        }
+        if (!items[i].menu_label.empty() && ImGui::MenuItem(items[i].menu_label.c_str(), nullptr, false, items[i].enabled))
+          items[i].trigger();
       }
       ImGui::EndPopup();
     }
@@ -337,8 +292,6 @@ void VideoWidget::skipToEnd() {
 
 void VideoWidget::toggleTimeDisplay() {
   settings.absolute_time = !settings.absolute_time;
-  time_tooltip_ = settings.absolute_time ? "Elapsed time" : "Absolute time";
-  updateState();
 }
 
 static const float speeds[] = {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5.};
@@ -350,25 +303,19 @@ static std::string speedText(float speed, const char *suffix) {
 }
 
 void VideoWidget::createSpeedDropdown() {
-  for (int i = 0; i < (int)std::size(speeds); ++i) {
-    const float speed = speeds[i];
-    if (speed == 1.0) {
-      speed_index_ = i;
-      can->setSpeed(speed);
-      speed_text_ = speedText(speed, "  ");
-    }
-  }
+  speed_index_ = 7;  // 1.0x
+  can->setSpeed(speeds[speed_index_]);
+  speed_text_ = speedText(speeds[speed_index_], "  ");
 }
 
-void VideoWidget::drawSpeedDropdown() {
+void VideoWidget::drawSpeedDropdown(float width) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  pushBoldFont();
-  const float min_width = ImGui::CalcTextSize("0.05x  ").x + style.FramePadding.x * 2 + MENU_BUTTON_INDICATOR;
   // the menu opens on press; a press while it is open toggles it closed (imgui closes the popup at the end
   // of the frame of a click outside it, so only open when it is not already open). Flat until hovered.
+  pushBoldFont();
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  const bool open = ImGui::ButtonEx((speed_text_ + "###speed_btn").c_str(), ImVec2(min_width, 0), ImGuiButtonFlags_PressedOnClick);
+  const bool open = ImGui::ButtonEx((speed_text_ + "###speed_btn").c_str(), ImVec2(width, 0), ImGuiButtonFlags_PressedOnClick);
   ImGui::PopStyleVar();
   ImGui::PopStyleColor();
   popBoldFont();
@@ -448,6 +395,7 @@ void VideoWidget::drawCameraWidget() {
   const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - SLIDER_HEIGHT - toolbarHeight());
   cam_widget->draw(ImVec2(avail.x, cam_height));
 
+  if (!slider->isSliderDown()) slider->setCurrentSecond(can->currentSec());
   slider->draw();
   eventFilter();
 }
@@ -468,9 +416,7 @@ void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams
 }
 
 void VideoWidget::loopPlaybackClicked() {
-  bool is_looping = getReplay()->loop();
-  getReplay()->setLoop(!is_looping);
-  loop_icon_ = !is_looping ? icon::REPEAT : icon::REPEAT_1;
+  getReplay()->setLoop(!getReplay()->loop());
 }
 
 void VideoWidget::timeRangeChanged() {
@@ -481,29 +427,12 @@ void VideoWidget::timeRangeChanged() {
   }
   time_range ? slider->setTimeRange(time_range->first, time_range->second)
              : slider->setTimeRange(can->minSeconds(), can->maxSeconds());
-  updateState();
 }
 
 std::string VideoWidget::formatTime(double sec, bool include_milliseconds) {
   if (settings.absolute_time)
     sec += std::chrono::duration<double>(can->beginDateTime().time_since_epoch()).count();
   return utils::formatSeconds(sec, include_milliseconds, settings.absolute_time);
-}
-
-void VideoWidget::updateState() {
-  if (slider) {
-    if (!slider->isSliderDown()) {
-      slider->setCurrentSecond(can->currentSec());
-    }
-    time_text_ = formatTime(can->currentSec(), true) + " / " + formatTime(slider->maximum() / slider->factor);
-  } else {
-    time_text_ = formatTime(can->currentSec(), true);
-  }
-}
-
-void VideoWidget::updatePlayBtnState() {
-  play_icon_ = can->isPaused() ? icon::PLAY : icon::PAUSE;
-  play_tooltip_ = can->isPaused() ? "Play" : "Pause";
 }
 
 void VideoWidget::setVisible(bool visible) {
