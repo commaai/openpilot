@@ -278,8 +278,21 @@ void DetailWidget::drawTabWidget() {
   }
   ImGui::EndChild();
 
+  const std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Msg", std::string(icon::STOPWATCH) + " Logs"};
+  // the tabs are centered in the bar: the bar itself starts at the first tab, so its separator only spans the
+  // tabs and the full width one is drawn underneath it
+  const ImGuiStyle &style = ImGui::GetStyle();
+  float tabs_width = 0.0f;
+  for (int i = 0; i < 2; ++i) {
+    tabs_width += ImGui::TabItemCalcSize(labels[i].c_str(), false).x + (i ? style.ItemInnerSpacing.x : 0.0f);
+  }
+  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  const float separator_y = ImGui::GetCursorScreenPos().y + ImGui::GetFrameHeight() - 1.0f;
+  window->DrawList->AddLine(ImVec2(window->WorkRect.Min.x, separator_y), ImVec2(window->WorkRect.Max.x, separator_y),
+                            ImGui::GetColorU32(ImGuiCol_TabSelected), style.TabBarBorderSize);
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (ImGui::GetContentRegionAvail().x - tabs_width) * 0.5f));
+
   if (ImGui::BeginTabBar("tab_widget_tabs")) {
-    const std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Msg", std::string(icon::STOPWATCH) + " Logs"};
     for (int i = 0; i < 2; ++i) {
       if (ImGui::BeginTabItem(labels[i].c_str())) {
         if (tab_widget_index != i) {

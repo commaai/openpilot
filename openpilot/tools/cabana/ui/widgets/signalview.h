@@ -160,6 +160,7 @@ public:
   SignalView(ChartsWidget *charts);
   void setMessage(const MessageId &id);
   void draw();
+  static float minimumWidth();
   void signalHovered(const cabana::Signal *sig);  // handler for BinaryView::signalHovered
   void updateChartState();
   void selectSignal(const cabana::Signal *sig, bool expand = false);
@@ -172,6 +173,7 @@ public:
 
 private:
   void rowsChanged();
+  static float toolBarRightWidth(const std::string &range_label);
   void updateToolBar();
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);

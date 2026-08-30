@@ -18,7 +18,6 @@ const int MAX_COLUMN_COUNT = 4;
 const int CHART_SPACING = 4;
 const int START_DRAG_DISTANCE = 10;
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
-const float TOOLBAR_MARGIN = 4.0f;          // the toolbar items are inset from the frame
 const float MENU_ARROW_SIZE = 6.0f;         // dropdown arrow on a menu button
 const float MENU_ARROW_SPACING = 5.0f;      // gap between the label and the dropdown arrow
 const float LAYOUT_HORIZONTAL_SPACING = 6.0f;
@@ -310,7 +309,7 @@ void ChartsWidget::drawToolBar() {
     return w;
   };
 
-  float avail = ImGui::GetContentRegionAvail().x - TOOLBAR_MARGIN * 2;
+  float avail = ImGui::GetContentRegionAvail().x;
   if (!is_zoomed && total_width() > avail) {
     // the slider shrinks first (never below 40px), the buttons stay pinned to the right edge
     const float shrink = std::min(slider_width - 40.0f, total_width() - avail);
@@ -330,13 +329,12 @@ void ChartsWidget::drawToolBar() {
   float right_width = group_width(left_count, n_right);
   if (overflow) right_width += (n_right > 0 ? style.ItemSpacing.x : 0) + chevron_w;
 
-  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TOOLBAR_MARGIN);
   for (size_t i = 0; i < n_left; ++i) {
     if (i > 0) ImGui::SameLine();
     items[i].draw();
   }
   ImGui::SameLine();
-  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width - TOOLBAR_MARGIN));
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - right_width));
   for (size_t i = 0; i < n_right; ++i) {
     if (i > 0) ImGui::SameLine();
     items[left_count + i].draw();

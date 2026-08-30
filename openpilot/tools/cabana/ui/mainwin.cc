@@ -41,7 +41,6 @@ namespace {
 constexpr const char *MESSAGES_PANEL = "###MessagesPanel";
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
 constexpr const char *CENTER_PANEL = "###CenterWidget";
-constexpr float MIN_PANEL_WIDTH = 440.0f;
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
@@ -704,14 +703,10 @@ void MainWindow::drawStatusBar() {
     status_message_.clear();
     ImGui::TextUnformatted("For Help, Press F1");
   }
-  const std::string status_label = "Cached Minutes:" + std::to_string(settings.max_cached_minutes);
-  float right = width - pad - ImGui::CalcTextSize(status_label.c_str()).x;
   if (progress_visible_) {
-    ImGui::SameLine(right - 300.0f - ImGui::GetStyle().ItemSpacing.x);
+    ImGui::SameLine(width - pad - 300.0f);
     ImGui::ProgressBar(progress_value_, ImVec2(300.0f, 16.0f), progress_text_.c_str());
   }
-  ImGui::SameLine(right);
-  ImGui::TextUnformatted(status_label.c_str());
   ImGui::EndChild();
   ImGui::PopStyleColor();
 }
@@ -956,7 +951,9 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(MIN_PANEL_WIDTH, ImGui::GetStyle().WindowMinSize.y));
+  // a panel never shrinks past the width where the signal view's tool bar squishes
+  const float min_panel_width = SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2;
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();
   if (!full_screen_) drawStatusBar();
@@ -1000,9 +997,6 @@ void MainWindow::draw() {
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
     setNextWindowFloatsOut();
-    // zero horizontal padding: the camera, slider and chart cards run edge to edge and the toolbars carry
-    // their own margin
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, ImGui::GetStyle().WindowPadding.y));
     if (!ImGui::Begin(name.c_str(), &video_visible_)) {
       video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
     } else {
@@ -1039,7 +1033,6 @@ void MainWindow::draw() {
       }
     }
     ImGui::End();
-    ImGui::PopStyleVar();
   }
   if (charts_widget_ && charts_floating_) {
     bool open = true;

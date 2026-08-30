@@ -28,7 +28,6 @@ const float POINT_10_FONT_SIZE = 13.0f;  // 10 pt at 96 dpi
 const float POINT_16_FONT_SIZE = 21.0f;  // 16 pt at 96 dpi
 const float MENU_BUTTON_INDICATOR = 12.0f;
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
-const float TOOLBAR_MARGIN = 4.0f;          // the toolbar items are inset from the frame
 const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // the toolbar is 36 px tall at the 16 px font, the items are centered in it
 const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;
 const float MENU_ARROW_SIZE = 6.0f;            // dropdown arrow on a menu button
@@ -216,8 +215,8 @@ void VideoWidget::drawPlaybackController() {
   const float left_width = group_width(0, spacer_index);
   const float right_width = group_width(spacer_index, items.size());
 
-  const float start_x = ImGui::GetCursorPosX() + TOOLBAR_MARGIN;
-  const float avail = ImGui::GetContentRegionAvail().x - TOOLBAR_MARGIN * 2;
+  const float start_x = ImGui::GetCursorPosX();
+  const float avail = ImGui::GetContentRegionAvail().x;
   const float right_edge = start_x + avail;
   const float extension_width = button_width(icon::RAQUO);
 

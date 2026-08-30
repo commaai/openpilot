@@ -23,6 +23,9 @@ constexpr float V_MARGIN = 2.0f;
 // signal rows are taller than a frame so the sparklines have room to read
 constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it 27 px tall at the 16 px font
 constexpr float SIGNAL_ROW_SCALE = 1.25f;
+constexpr float FILTER_WIDTH = 160.0f;
+constexpr float SPARKLINE_SLIDER_WIDTH = 120.0f;
+constexpr float COLLAPSE_ICON_SIZE = 12.0f;
 
 void drawElidedText(ImDrawList *painter, const ImRect &rect, const std::string &text, ImU32 color, bool align_right) {
   const ImVec2 size = ImGui::CalcTextSize(text.c_str());
@@ -692,6 +695,22 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
   }
 }
 
+// the sparkline label, the range slider and the collapse button
+float SignalView::toolBarRightWidth(const std::string &range_label) {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::CalcTextSize(range_label.c_str()).x + style.ItemSpacing.x + SPARKLINE_SLIDER_WIDTH + style.ItemSpacing.x +
+         ImGui::GetFont()->CalcTextSizeA(COLLAPSE_ICON_SIZE, FLT_MAX, 0.0f, icon::DASH_SQUARE).x + style.FramePadding.x * 2;
+}
+
+// the width at which the tool bar stops squishing: the signal count and the filter box on the left, the
+// sparkline controls on the right, plus the borders and padding of the view's own child window
+float SignalView::minimumWidth() {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float left_width = ImGui::CalcTextSize("Signals: 000").x + style.ItemSpacing.x + FILTER_WIDTH;
+  // formatSeconds is mm:ss for every value the range slider allows
+  return left_width + style.ItemSpacing.x + toolBarRightWidth("00:00") + (style.WindowPadding.x + style.ChildBorderSize) * 2;
+}
+
 void SignalView::draw() {
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
     ImGui::EndChild();
@@ -701,7 +720,7 @@ void SignalView::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(signal_count_lb.c_str());
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(160.0f);
+  ImGui::SetNextItemWidth(FILTER_WIDTH);
   if (validatedInput("##filter_edit", &filter_edit, nonWhitespaceValidator, "Filter Signal")) {
     model->setFilter(filter_edit);
   }
@@ -714,10 +733,7 @@ void SignalView::draw() {
   }
 
   // stretch: the sparkline controls sit at the right edge
-  const float slider_width = 120.0f;
-  const ImGuiStyle &style = ImGui::GetStyle();
-  const float right_width = ImGui::CalcTextSize(sparkline_label.c_str()).x + style.ItemSpacing.x + slider_width + style.ItemSpacing.x +
-                            ImGui::GetFont()->CalcTextSizeA(12.0f, FLT_MAX, 0.0f, icon::DASH_SQUARE).x + style.FramePadding.x * 2;
+  const float right_width = toolBarRightWidth(sparkline_label);
   ImGui::SameLine();
   const float right_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - right_width;
   if (right_x > ImGui::GetCursorPosX()) ImGui::SetCursorPosX(right_x);
@@ -725,13 +741,13 @@ void SignalView::draw() {
   ImGui::TextUnformatted(sparkline_label.c_str());
   ImGui::SameLine();
   int range = settings.sparkline_range;
-  if (fusionSliderInt("##sparkline_range_slider", &range, 1, sparkline_range_max, slider_width)) {
+  if (fusionSliderInt("##sparkline_range_slider", &range, 1, sparkline_range_max, SPARKLINE_SLIDER_WIDTH)) {
     setSparklineRange(range);
   }
   ImGui::SetItemTooltip("Sparkline time range");
   ImGui::SameLine();
   // auto-raise tool button with a 12x12 icon
-  ImGui::PushFont(ImGui::GetFont(), 12.0f);
+  ImGui::PushFont(ImGui::GetFont(), COLLAPSE_ICON_SIZE);
   const bool collapse = toolButton("collapse_all", icon::DASH_SQUARE, "Collapse All");
   ImGui::PopFont();
   if (collapse) collapseAll();
