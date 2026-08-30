@@ -50,9 +50,10 @@ void SettingsDialog::draw() {
   const float label_width = formLabelWidth();
 
   ImGui::SeparatorText("General");
-  static const char *themes[] = {"Automatic", "Light", "Dark"};
+  static const char *themes[] = {"Light", "Dark"};
   formRow("Color Theme", label_width);
-  ImGui::Combo("##Color Theme", &theme_, themes, 3);
+  int theme_index = theme_ - LIGHT_THEME;
+  if (ImGui::Combo("##Color Theme", &theme_index, themes, 2)) theme_ = theme_index + LIGHT_THEME;
   ImGui::SetItemTooltip("You may need to restart cabana after changes theme");
   formRow("Max Cached Minutes", label_width);
   // InputInt takes no character filter, so out of range text is clamped after the edit

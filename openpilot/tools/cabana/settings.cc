@@ -508,6 +508,8 @@ Settings::Settings() {
       settingsOp(legacy_settings, [](const auto &s, const char *key, auto &value) { readLegacySetting(s, key, value); });
     }
   }
+  // settings written before the "Automatic" theme was dropped hold a 0 for it
+  if (theme != LIGHT_THEME && theme != DARK_THEME) theme = LIGHT_THEME;
 }
 
 // Must be called before main() returns: json11's internal statistics are constructed on first

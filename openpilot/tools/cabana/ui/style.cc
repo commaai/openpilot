@@ -10,28 +10,9 @@
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/util.h"
 
-#ifdef __APPLE__
-#include <CoreFoundation/CoreFoundation.h>
-#endif
-
 namespace fs = std::filesystem;
 
 namespace {
-// the "Automatic" theme follows the system appearance on macOS and stays light everywhere else
-bool systemPrefersDark() {
-#ifdef __APPLE__
-  bool dark = false;
-  if (CFPropertyListRef v = CFPreferencesCopyAppValue(CFSTR("AppleInterfaceStyle"), kCFPreferencesAnyApplication)) {
-    dark = CFGetTypeID(v) == CFStringGetTypeID() &&
-           CFStringCompare((CFStringRef)v, CFSTR("Dark"), kCFCompareCaseInsensitive) == kCFCompareEqualTo;
-    CFRelease(v);
-  }
-  return dark;
-#else
-  return false;
-#endif
-}
-
 bool g_dark = false;
 ImFont *g_ui_font = nullptr;
 ImFont *g_bold_font = nullptr;
@@ -75,7 +56,7 @@ void loadFonts() {
 }
 
 void applyTheme(int theme) {
-  const bool dark = theme == DARK_THEME || (theme == AUTO_THEME && systemPrefersDark());
+  const bool dark = theme == DARK_THEME;
   g_dark = dark;
   if (dark) {
     ImGui::StyleColorsDark();
