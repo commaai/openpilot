@@ -68,6 +68,10 @@ ChartsWidget::ChartsWidget() {
   range_slider.setRange(1, settings.max_cached_minutes * 60);
 
   charts_container = new ChartsContainer(this);
+  tabbar.setAutoHide(true);
+  tabbar.setExpanding(false);
+  tabbar.setUsesScrollButtons(true);
+  tabbar.setTabsClosable(true);
 
   current_theme = settings.theme;
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
@@ -82,6 +86,10 @@ ChartsWidget::ChartsWidget() {
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &range) { timeRangeChanged(range); }));
   connections_.push_back(settings.changed.connect([this]() { settingChanged(); }));
   connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); }));
+  connections_.push_back(tabbar.tabCloseRequested.connect([this](int index) { removeTab(index); }));
+  connections_.push_back(tabbar.currentChanged.connect([this](int index) {
+    if (index != -1) updateLayout(true);
+  }));
 
   setIsDocked(true);
   newTab();
@@ -104,59 +112,27 @@ std::string ChartsWidget::whatsThis() const {
 
 void ChartsWidget::newTab() {
   static int tab_unique_id = 0;
-  tabs_.push_back({tab_unique_id++, ""});
-  int idx = tabs_.size() - 1;
-  current_tab_index_ = idx;
-  pending_tab_index_ = idx;
+  int idx = tabbar.addTab("");
+  tabbar.setTabData(idx, tab_unique_id++);
+  tabbar.setCurrentIndex(idx);
   updateTabBar();
 }
 
 void ChartsWidget::removeTab(int index) {
-  int id = tabs_[index].id;
+  int id = tabbar.tabData(index);
   for (auto &c : std::vector<ChartView *>(tab_charts[id])) {
     removeChart(c);
   }
   tab_charts.erase(id);
-  tabs_.erase(tabs_.begin() + index);
-  if (current_tab_index_ >= (int)tabs_.size()) current_tab_index_ = std::max<int>(tabs_.size() - 1, 0);
+  tabbar.removeTab(index);
   updateTabBar();
 }
 
 void ChartsWidget::updateTabBar() {
-  for (int i = 0; i < tabs_.size(); ++i) {
-    const auto &charts_in_tab = tab_charts[tabs_[i].id];
-    tabs_[i].text = "Tab " + std::to_string(i + 1) + " (" + std::to_string((int)charts_in_tab.size()) + ")";
+  for (int i = 0; i < tabbar.count(); ++i) {
+    const auto &charts_in_tab = tab_charts[tabbar.tabData(i)];
+    tabbar.setTabText(i, "Tab " + std::to_string(i + 1) + " (" + std::to_string((int)charts_in_tab.size()) + ")");
   }
-}
-
-void ChartsWidget::drawTabBar() {
-  // the tab bar is only shown with more than one tab
-  if (tabs_.size() <= 1) {
-    current_tab_index_ = 0;
-    pending_tab_index_ = -1;
-    return;
-  }
-  int close_index = -1;
-  if (ImGui::BeginTabBar("tabbar", ImGuiTabBarFlags_FittingPolicyScroll)) {
-    for (int i = 0; i < tabs_.size(); ++i) {
-      bool open = true;
-      const std::string label = tabs_[i].text + "###tab" + std::to_string(tabs_[i].id);
-      ImGuiTabItemFlags flags = i == pending_tab_index_ ? ImGuiTabItemFlags_SetSelected : 0;
-      bool selected = ImGui::BeginTabItem(label.c_str(), &open, flags);
-      tabs_[i].rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-      if (selected) {
-        if (current_tab_index_ != i) {
-          current_tab_index_ = i;
-          updateLayout(true);
-        }
-        ImGui::EndTabItem();
-      }
-      if (!open) close_index = i;
-    }
-    ImGui::EndTabBar();
-  }
-  pending_tab_index_ = -1;
-  if (close_index >= 0) removeTab(close_index);
 }
 
 void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
@@ -519,12 +495,9 @@ void ChartsWidget::dragChartMove(const ImVec2 &global_pos) {
   drag_preview_pos = global_pos + ImVec2(5, 5);
 
   // hovering a tab switches to it so the chart can be dropped into another tab
-  int tab = -1;
-  for (int i = 0; i < tabs_.size(); ++i) {
-    if (tabs_.size() > 1 && tabs_[i].rect.Contains(global_pos)) tab = i;
-  }
-  if (tab >= 0 && tab != current_tab_index_) {
-    pending_tab_index_ = tab;
+  int tab = tabbar.tabAt(global_pos);
+  if (tab >= 0 && tab != tabbar.currentIndex()) {
+    tabbar.setCurrentIndex(tab);
   }
 
   const ImVec2 container_pos = global_pos;
@@ -681,10 +654,9 @@ void ChartsWidget::removeChart(ChartView *chart) {
 }
 
 void ChartsWidget::removeAll() {
-  while (tabs_.size() > 1) {
-    tabs_.erase(tabs_.begin() + 1);
+  while (tabbar.count() > 1) {
+    tabbar.removeTab(1);
   }
-  current_tab_index_ = 0;
   tab_charts.clear();
 
   if (!charts.empty()) {
@@ -763,7 +735,7 @@ void ChartsWidget::draw() {
   eventFilter();
 
   drawToolBar();
-  drawTabBar();
+  tabbar.draw();
 
   any_plot_hovered_ = false;
   if (ImGui::BeginChild("charts_scroll", ImVec2(0, 0), ImGuiChildFlags_None, 0)) {

@@ -12,6 +12,7 @@
 #include "imgui_internal.h"
 
 #include "tools/cabana/ui/chart/signalselector.h"
+#include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -102,7 +103,6 @@ private:
   void doAutoScroll();
   void drawToolBar();
   void updateTabBar();
-  void drawTabBar();
   void setMaxChartRange(int value);
   void updateLayout(bool force = false);
   void settingChanged();
@@ -110,7 +110,7 @@ private:
   void eventFilter();
   void newTab();
   void removeTab(int index);
-  inline std::vector<ChartView *> &currentCharts() { return tab_charts[tabs_[current_tab_index_].id]; }
+  inline std::vector<ChartView *> &currentCharts() { return tab_charts[tabbar.tabData(tabbar.currentIndex())]; }
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
   // draws the selector until closed, then runs `accepted` (unless `owner` was removed)
   void execSignalSelector(std::unique_ptr<SignalSelector> dlg, ChartView *owner, std::function<void(SignalSelector &)> accepted);
@@ -124,14 +124,7 @@ private:
 
   std::vector<ChartView *> charts;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts;
-  struct Tab {
-    int id;
-    std::string text;
-    ImRect rect;  // last drawn tab item, for tabAt()
-  };
-  std::vector<Tab> tabs_;  // tabbar
-  int current_tab_index_ = 0;
-  int pending_tab_index_ = -1;
+  TabBar tabbar;
   ChartsContainer *charts_container;
   ImGuiWindow *charts_scroll = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport;
