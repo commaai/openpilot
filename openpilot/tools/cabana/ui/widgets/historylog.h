@@ -16,19 +16,6 @@
 #include "tools/cabana/ui/widgets/messagebytes.h"
 
 
-class HistoryLogModel;
-
-class HeaderView {
-public:
-  HeaderView(const HistoryLogModel *model) : model(model) {}
-  ImVec2 sectionSizeFromContents(int logicalIndex) const;
-  void paintSection(ImDrawList *painter, const ImRect &rect, int logicalIndex) const;
-  float width = 0;  // header viewport width, set by LogsWidget::draw
-
-private:
-  const HistoryLogModel *model;
-};
-
 class HistoryLogModel {
 public:
   HistoryLogModel();
@@ -95,7 +82,6 @@ private:
   bool export_btn_enabled = false;
   int selected_row = -1, selected_col = -1;
   bool vscrollbar_visible_ = false;
-  HeaderView header;
   MessageBytesDelegate delegate;
   Connections connections_;
 };

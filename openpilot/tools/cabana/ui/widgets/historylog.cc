@@ -140,24 +140,25 @@ static std::string headerText(std::string text) {
   return text;
 }
 
-ImVec2 HeaderView::sectionSizeFromContents(int logicalIndex) const {
+// `width`: the header viewport width
+static ImVec2 sectionSizeFromContents(const HistoryLogModel &model, int logicalIndex, float width) {
   const ImVec2 time_col_size = ImGui::CalcTextSize("000000.000") + ImVec2(10, 6);
   if (logicalIndex == 0) {
     return time_col_size;
   } else {
-    int default_size = std::max(100, (int)((width - time_col_size.x) / (model->columnCount() - 1)));
-    std::string text = headerText(model->headerData(logicalIndex));
+    int default_size = std::max(100, (int)((width - time_col_size.x) / (model.columnCount() - 1)));
+    std::string text = headerText(model.headerData(logicalIndex));
     const ImVec2 rect = ImGui::CalcTextSize(text.c_str(), nullptr, false, default_size);
     ImVec2 size = rect + ImVec2{10, 6};
     return ImVec2{std::max(size.x, (float)default_size), size.y};
   }
 }
 
-void HeaderView::paintSection(ImDrawList *painter, const ImRect &rect, int logicalIndex) const {
-  if (auto bg = model->headerBackground(logicalIndex)) {
+static void paintSection(const HistoryLogModel &model, ImDrawList *painter, const ImRect &rect, int logicalIndex) {
+  if (auto bg = model.headerBackground(logicalIndex)) {
     painter->AddRectFilled(rect.Min, rect.Max, IM_COL32(bg->r, bg->g, bg->b, bg->a));
   }
-  std::string text = headerText(model->headerData(logicalIndex));
+  std::string text = headerText(model.headerData(logicalIndex));
   const ImU32 color = isDarkTheme()
                           ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
                           : ImGui::GetColorU32(ImGuiCol_Text);
@@ -184,7 +185,7 @@ void HeaderView::paintSection(ImDrawList *painter, const ImRect &rect, int logic
 }
 
 
-LogsWidget::LogsWidget() : header(&model) {
+LogsWidget::LogsWidget() {
   connections_.push_back(model.modelReset.connect([this]() { modelReset(); }));
   connections_.push_back(model.rowsInserted.connect([this](int pos, int count) {
     export_btn_enabled = true;
@@ -284,13 +285,13 @@ void LogsWidget::drawTable() {
   const int cols = model.columnCount();
   // the header viewport excludes the table's cell padding and the vertical scrollbar (the latter is one
   // frame behind, it is only known once shown)
-  header.width = ImGui::GetContentRegionAvail().x - style.CellPadding.x * 2 * cols -
-                 (vscrollbar_visible_ ? style.ScrollbarSize : 0.0f);
+  const float header_width = ImGui::GetContentRegionAvail().x - style.CellPadding.x * 2 * cols -
+                             (vscrollbar_visible_ ? style.ScrollbarSize : 0.0f);
 
   std::vector<ImVec2> sizes(cols);
   float header_height = 0;
   for (int i = 0; i < cols; ++i) {
-    sizes[i] = header.sectionSizeFromContents(i);
+    sizes[i] = sectionSizeFromContents(model, i, header_width);
     header_height = std::max(header_height, sizes[i].y);
   }
   if (model.isHexMode() && !model.messages.empty()) {
@@ -320,7 +321,7 @@ void LogsWidget::drawTable() {
     ImGui::TableNextRow(ImGuiTableRowFlags_Headers, header_height);
     for (int i = 0; i < cols; ++i) {
       if (!ImGui::TableSetColumnIndex(i)) continue;
-      header.paintSection(painter, ImGui::TableGetCellBgRect(table, i), i);
+      paintSection(model, painter, ImGui::TableGetCellBgRect(table, i), i);
       ImGui::Dummy(ImVec2(0, header_height - style.CellPadding.y * 2));
     }
 
