@@ -380,6 +380,10 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     int v = item->sig->size;
     if (take_focus) ImGui::SetKeyboardFocusHere();
     bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
+    if (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+      open_item_ = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
+      return;
+    }
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
       setModelData(item, model, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
     }
@@ -431,6 +435,15 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
   } else {
     // plain text input, no validator
     lineEditor(item, model, nullptr, take_focus);
+  }
+}
+
+void SignalItemDelegate::commitEditor(SignalModel *model) {
+  SignalModel::Item *item = editing_item_;
+  std::string text = edit_text_;
+  closeEditor();
+  if (item && validateEditor(item, text) == ValidState::Acceptable) {
+    setModelData(item, model, text);
   }
 }
 
@@ -735,6 +748,7 @@ void SignalView::draw() {
 }
 
 void SignalView::collapseAll() {
+  delegate->commitEditor(model.get());  // the editor loses the focus, which commits it
   for (auto item : model->root->children) {
     item->expanded = false;
     for (auto child : item->children) child->expanded = false;
@@ -841,8 +855,10 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   const ImRect rect1(ImVec2(row_min.x + name_column_width, row_min.y), row_max);
   ctx.value_column_width = rect1.GetWidth();
 
-  // a row outside the viewport is not painted and has no index widget, like a QTreeView row
-  if (row_visible) {
+  // a row outside the viewport is not painted and has no index widget, like a QTreeView row. The row that
+  // holds the open editor is always submitted, so scrolling it out does not drop the edit.
+  const bool editor_open = selected && delegate->open_item_ == item;
+  if (row_visible || editor_open) {
     const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
     delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
     if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
@@ -861,7 +877,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
       if (checkBox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
     } else if (flags1 & SignalModel::ItemIsEditable) {
       // only the current item gets an editor; the others paint through the delegate
-      if (selected && delegate->open_item_ == item) {
+      if (editor_open) {
         ImGui::SetCursorScreenPos(rect1.Min);
         ImGui::SetNextItemWidth(rect1.GetWidth());
         delegate->createEditor(item, model.get());

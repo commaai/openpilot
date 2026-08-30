@@ -22,6 +22,7 @@ public:
   ItemValue(int v) : str_(std::to_string(v)) {}
   ItemValue(bool v) : str_(v ? "1" : "0") {}
   ItemValue(const ValueDescription &v) : val_desc_(v) {}
+  ItemValue(const char *) = delete;  // a literal would bind to ItemValue(bool)
   std::string toString() const { return str_; }
   int toInt() const { return std::atoi(str_.c_str()); }
   bool toBool() const { return str_ == "1" || str_ == "true"; }
@@ -136,6 +137,7 @@ public:
   SignalModel::Item *open_item_ = nullptr;
   mutable std::function<void()> pending_commit;
   void closeEditor();
+  void commitEditor(SignalModel *model);  // Qt commits an open editor on focus out
 
 private:
   // only an Acceptable value is committed
