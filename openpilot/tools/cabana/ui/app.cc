@@ -1,6 +1,5 @@
 #include "tools/cabana/ui/app.h"
 
-#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <stdexcept>
@@ -26,11 +25,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
 }
-void cursorPosCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_CursorPosCallback(w, x, y); }
-void cursorEnterCallback(GLFWwindow *w, int entered) { ImGui_ImplGlfw_CursorEnterCallback(w, entered); }
-void mouseButtonCallback(GLFWwindow *w, int b, int a, int m) { ImGui_ImplGlfw_MouseButtonCallback(w, b, a, m); }
-void scrollCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_ScrollCallback(w, x, y); }
-void charCallback(GLFWwindow *w, unsigned int c) { ImGui_ImplGlfw_CharCallback(w, c); }
 // imgui releases every mouse button when the window loses focus, which aborts a panel tear-off drag and
 // docks the panel back. X11 keeps delivering the drag through the implicit grab, so hold a focus loss back
 // while a button is down and deliver it after the release (see deliverPendingFocusLoss).
@@ -138,13 +132,7 @@ ImGuiRuntime::ImGuiRuntime(GLFWwindow *window) {
     ImGui::DestroyContext();
     throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
   }
-  // chain the imgui backend callbacks so input marks the next frames dirty
   glfwSetKeyCallback(window, keyCallback);
-  glfwSetCursorPosCallback(window, cursorPosCallback);
-  glfwSetCursorEnterCallback(window, cursorEnterCallback);
-  glfwSetMouseButtonCallback(window, mouseButtonCallback);
-  glfwSetScrollCallback(window, scrollCallback);
-  glfwSetCharCallback(window, charCallback);
   glfwSetWindowFocusCallback(window, windowFocusCallback);
   if (!ImGui_ImplOpenGL3_Init("#version 330")) {
     ImGui_ImplGlfw_Shutdown();
