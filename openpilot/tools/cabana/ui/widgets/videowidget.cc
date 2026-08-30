@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <functional>
-#include <future>
 #include <iterator>
 #include <mutex>
 #include <thread>
@@ -20,7 +19,6 @@ extern "C" {
 
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/imgui_util.h"
-#include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
@@ -148,9 +146,8 @@ void VideoWidget::drawPlaybackController() {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(TOOLBAR_ITEM_SPACING, ImGui::GetStyle().ItemSpacing.y));
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, TOOLBAR_BUTTON_PADDING_Y));
   const ImGuiStyle &style = ImGui::GetStyle();
-  // a button is its text plus 2 * FramePadding.x; the time display is a plain label, so it is just its text
-  auto text_width = [](const char *label) { return ImGui::CalcTextSize(label).x; };
-  auto button_width = [&](const char *label) { return text_width(label) + style.FramePadding.x * 2; };
+  // a button is its text plus 2 * FramePadding.x
+  auto button_width = [&](const char *label) { return ImGui::CalcTextSize(label).x + style.FramePadding.x * 2; };
   pushBoldFont();
   const float speed_width = button_width("0.05x  ") + MENU_BUTTON_INDICATOR;
   popBoldFont();
@@ -160,7 +157,8 @@ void VideoWidget::drawPlaybackController() {
   const char *loop_icon = getReplay() && getReplay()->loop() ? icon::REPEAT : icon::REPEAT_1;
   const std::string time_text = slider ? formatTime(can->currentSec(), true) + " / " + formatTime(slider->maximum() / slider->factor)
                                        : formatTime(can->currentSec(), true);
-  const char *time_tooltip = settings.absolute_time ? "Elapsed time" : "Absolute time";
+  // Qt sets the tooltip in the click handler, so there is none until the display is toggled once
+  const char *time_tooltip = time_tooltip_shown_ ? (settings.absolute_time ? "Elapsed time" : "Absolute time") : nullptr;
 
   struct Item {
     float width;
@@ -273,6 +271,7 @@ void VideoWidget::skipToEnd() {
 
 void VideoWidget::toggleTimeDisplay() {
   settings.absolute_time = !settings.absolute_time;
+  time_tooltip_shown_ = true;
 }
 
 static const float speeds[] = {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5.};
@@ -559,18 +558,19 @@ void Slider::mousePressEvent() {
 
 StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type)
     : CameraWidget(stream_name, stream_type) {
+  big_thumbnail_texture.mipmap = true;  // the hover thumbnail is drawn at a quarter of the stored size
 }
 
 void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
   std::mutex mutex;
   const auto &events = qlog->events;
-  unsigned int num_chunks = std::max(1u, std::thread::hardware_concurrency());
-  size_t chunk = (events.size() + num_chunks - 1) / num_chunks;
-  std::vector<std::future<void>> futures;
-  for (unsigned int t = 0; t < num_chunks && t * chunk < events.size(); ++t) {
+  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  size_t chunk = (events.size() + num_threads - 1) / num_threads;
+  std::vector<std::thread> threads;
+  for (unsigned int t = 0; t < num_threads && t * chunk < events.size(); ++t) {
     size_t start = t * chunk;
     size_t end = std::min(start + chunk, events.size());
-    futures.push_back(ThreadPool::instance().run([this, &mutex, &events, start, end]() {
+    threads.emplace_back([this, &mutex, &events, start, end]() {
       for (size_t i = start; i < end; ++i) {
         const Event &e = events[i];
         if (e.which == cereal::Event::Which::THUMBNAIL) {
@@ -583,9 +583,9 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
           }
         }
       }
-    }));
+    });
   }
-  for (auto &f : futures) f.get();
+  for (auto &th : threads) th.join();
 }
 
 void StreamCameraView::draw(const ImVec2 &size) {

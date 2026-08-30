@@ -5,16 +5,26 @@
 #include <cmath>
 #include <cstdio>
 
+#include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3_loader.h"
 
 #include "common/yuv.h"
 #include "tools/cabana/utils/util.h"
 
+namespace {
+constexpr GLenum GL_LINEAR_MIPMAP_LINEAR_ = 0x2703;
+// glGenerateMipmap is not part of the imgui GL loader
+void generateMipmap() {
+  static auto fn = (void (*)(GLenum))glfwGetProcAddress("glGenerateMipmap");
+  if (fn) fn(GL_TEXTURE_2D);
+}
+}  // namespace
+
 void GlTexture::upload(const RgbImage &image) {
   if (id == 0) {
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR_ : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -30,6 +40,7 @@ void GlTexture::upload(const RgbImage &image) {
   } else {
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.data.data());
   }
+  if (mipmap) generateMipmap();
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 

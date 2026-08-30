@@ -106,6 +106,7 @@ protected:
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
+  bool time_tooltip_shown_ = false;
   std::unique_ptr<Slider> slider;
   std::unique_ptr<TabBar> camera_tab;
   std::vector<std::unique_ptr<RouteInfoDlg>> route_info_dlgs_;

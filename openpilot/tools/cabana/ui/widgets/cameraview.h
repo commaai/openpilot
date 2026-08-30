@@ -42,6 +42,7 @@ struct GlTexture {
   int width = 0;
   int height = 0;
   uint64_t key = 0;  // caller-defined identity of the uploaded image
+  bool mipmap = false;  // set before the first upload: a mip chain for images drawn downscaled
 };
 
 class CameraWidget {
