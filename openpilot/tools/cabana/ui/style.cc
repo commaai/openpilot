@@ -236,11 +236,7 @@ ImU32 paletteBrightText() {
                 : IM_COL32(255, 255, 255, 255);
 }
 
-const float SLIDER_LENGTH = 13.0f;
-const float SLIDER_THICKNESS = 13.0f;
-
-// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
-static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
+void drawSliderHandle(ImDrawList *p, const ImRect &r) {
   const bool dark = isDarkTheme();
   const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
   const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);

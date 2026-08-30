@@ -136,6 +136,12 @@ inline void setNextWindowFloatsOut() {
   ImGui::SetNextWindowClass(&window_class);
 }
 
+const float SLIDER_LENGTH = 13.0f;
+const float SLIDER_THICKNESS = 13.0f;
+
+// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
+void drawSliderHandle(ImDrawList *p, const ImRect &r);
+
 // full width groove, filled left of the handle, 13x13 handle (style.cc)
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width);
 

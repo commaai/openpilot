@@ -33,8 +33,6 @@ const float TOOLBAR_MARGIN = 4.0f;          // the toolbar items are inset from 
 const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // the toolbar is 36 px tall at the 16 px font, the items are centered in it
 const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;
 const float MENU_ARROW_SIZE = 6.0f;            // dropdown arrow on a menu button
-const float SLIDER_LENGTH = 13.0f;
-const float SLIDER_THICKNESS = 13.0f;
 const float SLIDER_HEIGHT = 15.0f;     // the handle plus a 1 px margin
 
 // Indexed by TimelineType: None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserBookmark
@@ -60,25 +58,6 @@ static std::string colorName(ImU32 c) {
 
 static ImU32 withAlpha(ImU32 c, int alpha) {
   return (c & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT);
-}
-
-// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
-static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
-  const bool dark = isDarkTheme();
-  const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
-  const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
-  // the top/left edge is one step lighter than the bottom/right edge
-  const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
-  const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
-  p->AddRectFilled(r.Min, r.Max, top, 2.0f);
-  p->AddRectFilled(ImVec2(r.Min.x, r.GetCenter().y), r.Max, bottom, 2.0f, ImDrawFlags_RoundCornersBottom);
-  p->AddRect(r.Min, r.Max, outline_bottom, 2.0f, 0, 1.0f);
-  // the straight edges are drawn as crisp 1 px rects: an antialiased outline washes out to a much lighter grey
-  const float c = 2.0f;  // corner radius
-  p->AddRectFilled(ImVec2(r.Min.x + c, r.Min.y), ImVec2(r.Max.x - c, r.Min.y + 1.0f), outline_top);
-  p->AddRectFilled(ImVec2(r.Min.x, r.Min.y + c), ImVec2(r.Min.x + 1.0f, r.Max.y - c), outline_top);
-  p->AddRectFilled(ImVec2(r.Min.x + c, r.Max.y - 1.0f), ImVec2(r.Max.x - c, r.Max.y), outline_bottom);
-  p->AddRectFilled(ImVec2(r.Max.x - 1.0f, r.Min.y + c), ImVec2(r.Max.x, r.Max.y - c), outline_bottom);
 }
 
 // decode with libavcodec, already linked for the replay video decoder
