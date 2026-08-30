@@ -682,10 +682,9 @@ void ChartsWidget::eventFilter() {
 
   // the tip is drawn on the foreground draw list, so the mouse is never "on the tip"
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
-  if ((delta.x != 0 || delta.y != 0) && !any_plot_hovered_) {
-    showValueTip(-1);
-  } else if (!any_plot_hovered_ && !ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) {
-    showValueTip(-1);  // the mouse is not over the (floating) charts window anymore
+  if (!any_plot_hovered_ &&
+      (delta.x != 0 || delta.y != 0 || !ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))) {
+    showValueTip(-1);  // QEvent::Leave: the mouse moved off the plot or out of the charts window
   }
 }
 
