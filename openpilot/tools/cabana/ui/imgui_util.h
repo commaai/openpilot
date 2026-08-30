@@ -86,6 +86,35 @@ inline bool toolButton(const char *id, const char *icon, const char *tooltip = n
   return clicked;
 }
 
+// A queued modal popup submitted from whichever call site is nested in the top-most modal. draw() is called
+// both nested in a modal dialog and at the root level; only the level that opened the popup may submit it
+// (opening at level 0 would make imgui close the parent modal).
+struct PopupOwner {
+  ImGuiID popup_id = 0, owner_id = 0;
+
+  // false: this call site must skip the popup this frame
+  bool begin(const char *id) {
+    ImGuiWindow *window = ImGui::GetCurrentWindowRead();  // GetCurrentWindow() would mark the fallback window as used
+    if (popup_id == 0) {
+      // a pending popup may only be opened from the call nested in the top-most modal, or from any call
+      // when there is no modal at all
+      ImGuiWindow *modal = ImGui::GetTopMostPopupModal();
+      if (modal != nullptr && modal != window) return false;
+      ImGui::OpenPopup(id);
+      popup_id = window->GetID(id);
+      owner_id = window->ID;
+    } else if (owner_id != window->ID) {
+      return false;
+    } else if (!ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_AnyPopupLevel)) {
+      // reopen if imgui closed the popup underneath us (host window change)
+      ImGui::OpenPopup(id);
+    }
+    return true;
+  }
+
+  void reset() { popup_id = owner_id = 0; }
+};
+
 // Escape closes a dialog only when nothing is open above it: a combo drops its list first.
 inline bool dialogEscapePressed() {
   if (!ImGui::IsKeyPressed(ImGuiKey_Escape, false)) return false;

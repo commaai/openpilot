@@ -63,10 +63,7 @@ struct State {
 };
 
 State g_state;
-// draw() is called both nested in a modal dialog and at the root level; only the level that opened the
-// popup may submit it (opening at level 0 would make imgui close the parent modal).
-ImGuiID g_popup_id = 0;
-ImGuiID g_owner_id = 0;
+PopupOwner g_owner;
 
 
 void listDir() {
@@ -106,14 +103,14 @@ void start(Mode mode, const std::string &title, const fs::path &dir, const std::
   s.extension = extension;
   s.filename = filename;
   s.callback = std::move(cb);
+  g_owner.reset();
   setDir(dir);
 }
 
 void finish(const std::string &path) {
   Callback cb = std::move(g_state.callback);
   g_state = State{};
-  g_popup_id = 0;
-  g_owner_id = 0;
+  g_owner.reset();
   if (cb) cb(path);
 }
 
@@ -152,21 +149,7 @@ void draw() {
   State &s = g_state;
   if (!s.active) return;
   const std::string popup_id = s.title + "###FileDialog";
-  ImGuiWindow *window = ImGui::GetCurrentWindowRead();  // GetCurrentWindow() would mark the fallback window as used
-  if (g_popup_id == 0) {
-    // a pending dialog may only be opened from the call nested in the top-most modal, or from any call
-    // when there is no modal at all
-    ImGuiWindow *modal = ImGui::GetTopMostPopupModal();
-    if (modal != nullptr && modal != window) return;
-    ImGui::OpenPopup(popup_id.c_str());
-    g_popup_id = window->GetID(popup_id.c_str());
-    g_owner_id = window->ID;
-  } else if (g_owner_id != window->ID) {
-    return;
-  } else if (!ImGui::IsPopupOpen(g_popup_id, ImGuiPopupFlags_AnyPopupLevel)) {
-    // reopen if imgui closed the popup underneath us (host window change)
-    ImGui::OpenPopup(popup_id.c_str());
-  }
+  if (!g_owner.begin(popup_id.c_str())) return;
   ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   setNextWindowFloatsOut();
