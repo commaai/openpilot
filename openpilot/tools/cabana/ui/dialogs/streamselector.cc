@@ -190,7 +190,7 @@ void OpenDeviceWidget::draw() {
   ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
-  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device Ip Address");
+  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device Ip Address", ipValidator);
   ImGui::EndDisabled();
 }
 

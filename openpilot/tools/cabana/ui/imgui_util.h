@@ -20,12 +20,21 @@ inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g /
 struct InputContext {
   std::string *str;
   ImGuiInputTextCallback validator;
+  ValidState (*validate)(const std::string &) = nullptr;
+  const std::string *last_valid = nullptr;
 };
 
 inline int inputCallback(ImGuiInputTextCallbackData *data) {
   auto *ctx = static_cast<InputContext *>(data->UserData);
   if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
     return ctx->validator ? ctx->validator(data) : 0;
+  }
+  if (data->EventFlag == ImGuiInputTextFlags_CallbackEdit) {
+    if (ctx->validate(std::string(data->Buf, data->BufTextLen)) == ValidState::Invalid) {
+      data->DeleteChars(0, data->BufTextLen);
+      data->InsertChars(0, ctx->last_valid->c_str());
+    }
+    return 0;
   }
   if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
     ctx->str->resize(data->BufTextLen);
@@ -83,16 +92,15 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
   return changed;
 }
 
-// Qt validator: revert the edit when the new text is Invalid
+// Qt validator: an edit that makes the text Invalid is refused inside the imgui buffer, like QLineEdit
 inline bool validatedText(const char *label, std::string *s, ValidState (*validate)(const std::string &),
-                          const char *hint = "") {
-  std::string prev = *s;
-  bool changed = inputText(label, s, hint);
-  if (changed && validate(*s) == ValidState::Invalid) {
-    *s = prev;
-    changed = false;
-  }
-  return changed;
+                          const char *hint = "", ImGuiInputTextCallback filter = nullptr) {
+  const std::string last_valid = *s;  // a refused edit never reaches *s
+  InputContext ctx{s, filter, validate, &last_valid};
+  ImGuiInputTextFlags flags = ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackEdit;
+  if (filter) flags |= ImGuiInputTextFlags_CallbackCharFilter;
+  ImGui::InputTextWithHint(label, hint, s->data(), s->capacity() + 1, flags, inputCallback, &ctx);
+  return *s != last_valid;
 }
 
 // InputText char filters; the std::string validators in utils/util.h are run again when the edit is committed
@@ -115,6 +123,12 @@ inline int doubleValidator(ImGuiInputTextCallbackData *data) {
   // C-locale floating-point
   const ImWchar c = data->EventChar;
   return (c < 128 && (std::isdigit((int)c) || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E')) ? 0 : 1;
+}
+
+inline int ipValidator(ImGuiInputTextCallbackData *data) {
+  // [0-9.]
+  const ImWchar c = data->EventChar;
+  return ((c >= '0' && c <= '9') || c == '.') ? 0 : 1;
 }
 
 inline int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
