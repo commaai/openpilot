@@ -257,7 +257,7 @@ void ChartsWidget::drawToolBar() {
 
   // the spacer right aligns the rest
   const size_t left_count = items.size();
-  size_t slider_index = 0;
+  size_t slider_index = (size_t)-1;
   const std::string range_lb = is_zoomed ? std::string() : utils::formatSeconds(max_chart_range);
   std::string reset_zoom_text;
   if (!is_zoomed) {
