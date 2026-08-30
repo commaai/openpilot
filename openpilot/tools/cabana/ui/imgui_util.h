@@ -5,9 +5,14 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "tools/cabana/core/color.h"
+
 inline ImVec4 colorRgb(int r, int g, int b, float alpha = 1.0f) {
   return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
 }
+
+inline ImU32 toImU32(const CabanaColor &c) { return IM_COL32(c.r, c.g, c.b, c.a); }
+inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f); }
 
 inline int imguiResizeCallback(ImGuiInputTextCallbackData *data) {
   if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
@@ -122,6 +127,7 @@ inline bool comboBox(const char *label, int *index, const char *const items[], i
 }
 
 ImU32 highlightedTextColor();
+ImU32 paletteBrightText();
 
 // the next window is a real OS window instead of being drawn inside the main one
 inline void setNextWindowFloatsOut() {

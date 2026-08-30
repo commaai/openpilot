@@ -62,11 +62,6 @@ static ImU32 withAlpha(ImU32 c, int alpha) {
   return (c & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT);
 }
 
-static ImU32 brightText() {
-  return isDarkTheme() ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
-                       : IM_COL32(255, 255, 255, 255);
-}
-
 // a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
 static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
   const bool dark = isDarkTheme();
@@ -834,7 +829,7 @@ void StreamCameraView::drawThumbnail(ImDrawList *p) {
 
     ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + thumb.image.width, rect().Min.y + y + thumb.image.height));
     p->AddImage(thumbnail_texture.ref(), thumb_rect.Min, thumb_rect.Max);
-    p->AddRect(thumb_rect.Min, thumb_rect.Max, brightText(), 0.0f, 0, 2.0f);
+    p->AddRect(thumb_rect.Min, thumb_rect.Max, paletteBrightText(), 0.0f, 0, 2.0f);
     if (thumb.alert) {
       drawAlert(p, thumb_rect, *thumb.alert, POINT_10_FONT_SIZE);
     }
@@ -849,11 +844,11 @@ void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double second
   const ImVec2 text_size = font->CalcTextSizeA(POINT_10_FONT_SIZE, FLT_MAX, 0.0f, text);
   // centered horizontally, above the bottom margin
   p->AddText(font, POINT_10_FONT_SIZE, ImVec2(rect.GetCenter().x - text_size.x / 2, rect.Max.y - THUMBNAIL_MARGIN - text_size.y),
-             brightText(), text);
+             paletteBrightText(), text);
 }
 
 void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size) {
-  const ImU32 pen = brightText();
+  const ImU32 pen = paletteBrightText();
   ImU32 color = withAlpha(timeline_colors[int(alert.type)], 128);
   std::string text = alert.text1;
   if (!alert.text2.empty()) text += "\n" + alert.text2;

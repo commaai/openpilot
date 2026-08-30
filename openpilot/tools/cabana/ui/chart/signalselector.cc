@@ -126,7 +126,7 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
     ImDrawList *dl = ImGui::GetWindowDrawList();
     float x = pos.x + 5;
     const auto &c = item.sig->color;
-    dl->AddRectFilled(ImVec2(x, pos.y + 2), ImVec2(x + marker, pos.y + 2 + marker), IM_COL32(c.r, c.g, c.b, c.a));
+    dl->AddRectFilled(ImVec2(x, pos.y + 2), ImVec2(x + marker, pos.y + 2 + marker), toImU32(c));
     x += marker + 4;
     dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(ImGuiCol_Text), item.sig->name.c_str());
     if (show_msg_name) {

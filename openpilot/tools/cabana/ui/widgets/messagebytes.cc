@@ -69,7 +69,7 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
         pen = ImGui::GetColorU32(ImGuiCol_Text);
         painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));
       }
-      painter->AddRectFilled(r.Min, r.Max, toImColor((*colors)[i]));
+      painter->AddRectFilled(r.Min, r.Max, toImU32((*colors)[i]));
     }
     // centered in r
     const ImVec2 text_size = ImGui::CalcTextSize(hex_text_table[(*bytes)[i]]);

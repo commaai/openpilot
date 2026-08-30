@@ -19,9 +19,6 @@
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/imgui_util.h"
 
-inline ImU32 toImU32(const CabanaColor &c) { return IM_COL32(c.r, c.g, c.b, c.a); }
-inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f); }
-
 enum class SeriesType {
   Line = 0,
   StepLine,

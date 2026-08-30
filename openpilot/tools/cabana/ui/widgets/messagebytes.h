@@ -10,10 +10,6 @@
 #include "tools/cabana/core/color.h"
 #include "tools/cabana/ui/icons.h"
 
-inline ImU32 toImColor(const CabanaColor &color) {
-  return IM_COL32(color.r, color.g, color.b, color.a);
-}
-
 class MessageBytesDelegate {
 public:
   MessageBytesDelegate(bool multiple_lines = false);

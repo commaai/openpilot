@@ -231,6 +231,11 @@ ImU32 highlightedTextColor() {
                 : IM_COL32(255, 255, 255, 255);
 }
 
+ImU32 paletteBrightText() {
+  return g_dark ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
+                : IM_COL32(255, 255, 255, 255);
+}
+
 const float SLIDER_LENGTH = 13.0f;
 const float SLIDER_THICKNESS = 13.0f;
 

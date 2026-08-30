@@ -33,15 +33,8 @@ inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row *
 
 namespace {
 
-inline ImU32 toImColor(const CabanaColor &color) {
-  return IM_COL32(color.r, color.g, color.b, color.a);
-}
-
 inline ImU32 paletteHighlight() { return ImGui::GetColorU32(ImGuiCol_Header); }
 inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
-inline ImU32 paletteBrightText() {
-  return isDarkTheme() ? toImColor(DarkTheme::bright_text) : IM_COL32(255, 255, 255, 255);
-}
 inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
 const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);
 
@@ -506,25 +499,25 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
-      painter->AddRectFilled(rect.Min, rect.Max, toImColor(item->bg_color));
+      painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
     // same color as the bit columns, so the two halves of the row read as one
     pen = paletteText(bin_view->is_message_active);
   } else if (bin_view->isSelected(index)) {
-    auto color = bin_view->resize_sig ? toImColor(bin_view->resize_sig->color) : paletteHighlight();
+    auto color = bin_view->resize_sig ? toImU32(bin_view->resize_sig->color) : paletteHighlight();
     painter->AddRectFilled(rect.Min, rect.Max, color);
     pen = paletteBrightText();
   } else if (!bin_view->hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), bin_view->resize_sig) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == bin_view->hovered_sig) {
-          painter->AddRectFilled(rect.Min, rect.Max, toImColor(s->color.darker(125)));  // 4/5x brightness
+          painter->AddRectFilled(rect.Min, rect.Max, toImU32(s->color.darker(125)));  // 4/5x brightness
         } else {
           drawSignalCell(painter, rect, index, s);
         }
       }
     } else if (item->valid && item->bg_color.alpha() > 0) {
-      painter->AddRectFilled(rect.Min, rect.Max, toImColor(item->bg_color));
+      painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
     bool bright = std::find(item->sigs.begin(), item->sigs.end(), bin_view->hovered_sig) != item->sigs.end();
     pen = bright ? paletteBrightText() : paletteText(bin_view->is_message_active);
@@ -597,13 +590,13 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
   auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
   CabanaColor color = sig->color;
   color.a = item->bg_color.alpha();
-  const ImU32 edge = toImColor(sig->color.darker(125));
+  const ImU32 edge = toImU32(sig->color.darker(125));
 
   for (const ImRect &clip : region) {
     painter->PushClipRect(clip.Min, clip.Max, true);
     // mix the signal color with the background to fade it
     painter->AddRectFilled(rc.Min, rc.Max, paletteBase());
-    painter->AddRectFilled(rc.Min, rc.Max, toImColor(color));
+    painter->AddRectFilled(rc.Min, rc.Max, toImU32(color));
 
     if (draw_left) painter->AddLine(ImVec2(rc.Min.x + 0.5f, rc.Min.y), ImVec2(rc.Min.x + 0.5f, rc.Max.y), edge, 1.0f);
     if (draw_right) painter->AddLine(ImVec2(rc.Max.x - 0.5f, rc.Min.y), ImVec2(rc.Max.x - 0.5f, rc.Max.y), edge, 1.0f);
