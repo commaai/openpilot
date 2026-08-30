@@ -61,11 +61,9 @@ public:
   void draw();  // tab bar of message ids, toolbar, warning, Msg/Logs tabs
   std::pair<std::string, std::vector<std::string>> serializeMessageIds() const;
   void restoreTabs(const std::string &active_msg_id, const std::vector<std::string> &msg_ids);
-  std::string whatsThis() const;
   std::vector<std::pair<std::string, ImRect>> helpRects() const;  // HelpOverlay: (whatsThis, rect) of the binary and signal views
 
 private:
-  void createToolBar();
   void drawToolBar();
   void drawTabBar();
   void drawTabWidget();
@@ -115,6 +113,5 @@ public:
 private:
   void drawWelcomeWidget();
   std::unique_ptr<DetailWidget> detail_widget;
-  bool welcome_widget = true;
   ChartsWidget *charts_ = nullptr;
 };

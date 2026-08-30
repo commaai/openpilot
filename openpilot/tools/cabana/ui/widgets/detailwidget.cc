@@ -45,7 +45,6 @@ void ElidedLabel::draw(float width) {
 }
 
 DetailWidget::DetailWidget(ChartsWidget *charts) : charts(charts) {
-  createToolBar();
   binary_view = std::make_unique<BinaryView>();
   signal_view = std::make_unique<SignalView>(charts);
 
@@ -61,10 +60,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts(charts) {
   connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
   connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
   connections_.push_back(charts->seriesChanged.connect([this]() { signal_view->updateChartState(); }));
-}
-
-void DetailWidget::createToolBar() {
-  // the toolbar widgets are drawn by drawToolBar(); heatmap_live starts checked
   connections_.push_back(can->timeRangeChanged.connect([=](const std::optional<std::pair<double, double>> &range) {
     char text[64];
     if (range) snprintf(text, sizeof(text), "%.3f - %.3f", range->first, range->second);
@@ -326,10 +321,6 @@ void DetailWidget::draw() {
   }
 }
 
-std::string DetailWidget::whatsThis() const {
-  return binary_view->whatsThis();
-}
-
 // HelpOverlay: the whatsThis text and last drawn rect of the binary view and the signal view
 std::vector<std::pair<std::string, ImRect>> DetailWidget::helpRects() const {
   std::vector<std::pair<std::string, ImRect>> rects;
@@ -430,7 +421,6 @@ CenterWidget::CenterWidget() {}
 
 DetailWidget* CenterWidget::ensureDetailWidget() {
   if (!detail_widget) {
-    welcome_widget = false;
     detail_widget = std::make_unique<DetailWidget>(charts_);
   }
   return detail_widget.get();
@@ -439,15 +429,12 @@ DetailWidget* CenterWidget::ensureDetailWidget() {
 void CenterWidget::clear() {
   detail_widget.reset();
   charts_ = nullptr;  // MainWindow recreates the ChartsWidget after startStream
-  if (!welcome_widget) {
-    welcome_widget = true;
-  }
 }
 
 void CenterWidget::draw() {
   if (detail_widget) {
     detail_widget->draw();
-  } else if (welcome_widget) {
+  } else {
     drawWelcomeWidget();
   }
 }
