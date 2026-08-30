@@ -409,15 +409,10 @@ void MessageView::drawRow(int row) {
       // the row selection spans all columns; submit it in the first visible column so that it is not
       // clipped away when the table is scrolled horizontally
       row_item_submitted = true;
-      // rows select on press and have no hover highlight, only the selection background. Selectable()
-      // prefers HeaderHovered over Header whenever the row is hovered, even when it is selected, so the
-      // selected row has to keep the selection color as its hover color or it looks unselected.
-      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
-      ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
-      if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
+      // rows select on press
+      if (viewSelectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
         setCurrentIndex(row);
       }
-      ImGui::PopStyleColor(2);
       if (selected && scroll_to_current_) {
         // only scroll when the row is outside the viewport, and only far enough
         const ImGuiTable *table = ImGui::GetCurrentTable();

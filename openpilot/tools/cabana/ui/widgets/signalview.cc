@@ -826,11 +826,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 
   ImGui::PushID(item);
   ImGui::BeginDisabled(!(flags & SignalModel::ItemIsEnabled));
-  // no hover highlight, only the selection background
-  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
-  ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
-  const bool row_clicked = ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
-  ImGui::PopStyleColor(2);
+  const bool row_clicked = viewSelectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
   // a press on the branch indicator only toggles the expansion; the current index does not change and
   // rowClicked() does not run
   const float branch_x = row_min.x + depth * INDENTATION;

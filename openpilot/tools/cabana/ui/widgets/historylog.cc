@@ -334,16 +334,13 @@ void LogsWidget::drawTable() {
           if (!ImGui::TableSetColumnIndex(col)) continue;
           // cells are selected, not rows; there is no hover highlight, only the selection background
           const bool cell_selected = selected_row == row && selected_col == col;
-          ImGui::PushStyleColor(ImGuiCol_HeaderHovered, cell_selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
-          ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
           ImGui::PushID(col);
-          if (ImGui::Selectable("##cell", cell_selected, ImGuiSelectableFlags_AllowOverlap,
-                                ImVec2(0, row_height - style.CellPadding.y * 2))) {
+          if (viewSelectable("##cell", cell_selected, ImGuiSelectableFlags_AllowOverlap,
+                             ImVec2(0, row_height - style.CellPadding.y * 2))) {
             selected_row = row;
             selected_col = col;
           }
           ImGui::PopID();
-          ImGui::PopStyleColor(2);
           const bool hex_cell = model.isHexMode() && col == 1;
           delegate.paint(painter, ImGui::TableGetCellBgRect(table, col), cell_selected, false,
                          hex_cell ? std::string() : model.data(row, col), hex_cell ? &m.data : nullptr, hex_cell ? &m.colors : nullptr);

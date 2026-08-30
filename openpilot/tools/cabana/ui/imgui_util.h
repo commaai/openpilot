@@ -133,6 +133,17 @@ inline void tableHeadersRow() {
   }
 }
 
+// no hover highlight, only the selection background. Selectable() prefers HeaderHovered over Header
+// whenever the row is hovered, even when it is selected, so a selected row has to keep the selection color
+// as its hover color or it looks unselected.
+inline bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlags flags, const ImVec2 &size) {
+  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
+  const bool clicked = ImGui::Selectable(label, selected, flags, size);
+  ImGui::PopStyleColor(2);
+  return clicked;
+}
+
 // a 16px box vertically centered in the frame height so rows keep their layout; ImGui::Checkbox draws a
 // frame height (22 px) square.
 const float CHECKBOX_SIZE = 16.0f;
