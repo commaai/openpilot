@@ -13,13 +13,13 @@
 #include "tools/cabana/ui/icons.h"
 
 
-// utils/elidedlabel: a label that elides its text to the available width
+// a label that elides its text to the available width
 class ElidedLabel {
 public:
   explicit ElidedLabel(const std::string &text = {});
   void setText(const std::string &text) { text_ = text; }
   void setToolTip(const std::string &tip) { tooltip_ = tip; }
-  void draw(float width);  // paintEvent; a width change is the resizeEvent
+  void draw(float width);
 
   Observable<> clicked;
 
@@ -79,8 +79,8 @@ private:
   void updateState(const std::set<MessageId> *msgs = nullptr);
 
   struct Tab {
-    MessageId id;         // tabData
-    std::string tooltip;  // setTabToolTip
+    MessageId id;
+    std::string tooltip;
   };
 
   MessageId msg_id;
@@ -89,12 +89,12 @@ private:
   ElidedLabel name_label;
   bool warning_widget_visible = false;
   std::vector<Tab> tabbar;
-  bool tabbar_select_current = false;  // tabbar->setCurrentIndex, applied on the next draw
-  int tab_widget_index = 0;            // tab_widget->currentIndex()
+  bool tabbar_select_current = false;  // a current-tab change applied on the next draw
+  int tab_widget_index = 0;
   bool action_remove_msg_enabled = false;
   bool heatmap_live = true;
   std::string heatmap_all_text = "All";
-  float splitter_pos = 192.0f;  // binary_view height; QAbstractScrollArea::sizeHint().height()
+  float splitter_pos = 192.0f;  // binary_view height
   ImRect binary_view_rect_, signal_view_rect_;  // child window rects of the last drawTabWidget
   std::unique_ptr<LogsWidget> history_log;
   std::unique_ptr<BinaryView> binary_view;
@@ -107,7 +107,7 @@ private:
 class CenterWidget {
 public:
   CenterWidget();
-  void setChartsWidget(ChartsWidget *charts) { charts_ = charts; }  // Qt's DetailWidget got it from its MainWindow parent
+  void setChartsWidget(ChartsWidget *charts) { charts_ = charts; }
   void setMessage(const MessageId &message_id) { ensureDetailWidget()->setMessage(message_id); }
   DetailWidget* getDetailWidget() { return detail_widget.get(); }
   DetailWidget* ensureDetailWidget();

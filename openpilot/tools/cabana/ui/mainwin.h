@@ -22,14 +22,13 @@
 
 struct GLFWwindow;
 
-// Mirrors the Qt MainWindow. Qt's blocking dialogs (exec()) become continuations (`then`).
 class MainWindow {
 public:
   MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
   ~MainWindow();
   void draw();
   void toggleChartsDocking();
-  void close();  // closeEvent: remind unsaved changes, save state, exit
+  void close();  // remind unsaved changes, save state, exit
   bool exited() const { return exited_; }
   void showStatusMessage(const std::string &msg, int timeout_ms = 0);
   void loadFile(const std::string &fn, SourceSet s = SOURCE_ALL, std::function<void()> then = {});
@@ -103,7 +102,7 @@ private:
   bool full_screen_ = false;
   int windowed_rect_[4] = {0, 0, 1600, 900};
   bool charts_floating_ = false;
-  float video_splitter_ratio_ = -1.0f;  // < 0: the video widget is at its size hint, like the Qt splitter
+  float video_splitter_ratio_ = -1.0f;  // < 0: the video widget is at its size hint
   std::vector<std::pair<std::string, ImRect>> help_texts_;
   std::vector<std::unique_ptr<ToolDialog>> tool_dialogs_;
   bool help_overlay_ = false;

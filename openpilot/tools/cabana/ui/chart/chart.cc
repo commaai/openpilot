@@ -17,12 +17,10 @@
 const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
 const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
-// Define a small value of epsilon to compare double values
 const float EPSILON = 0.000001;
 static inline bool xLessThan(const ImPlotPoint &p, float x) { return p.x < (x - EPSILON); }
 static inline bool isNull(const ImPlotPoint &p) { return p.x == 0 && p.y == 0; }
 
-// QStyle layout margins (PM_LayoutLeftMargin etc.)
 static ImVec4 layoutMargins() {
   return {8, 6, 8, 6};  // left, top, right, bottom
 }
@@ -33,7 +31,6 @@ static std::string formatNumber(double value, int precision) {
   return buf;
 }
 
-// QString::number(double) default format ('g', 6)
 static std::string formatNumberG(double value) {
   char buf[64];
   snprintf(buf, sizeof(buf), "%g", value);
@@ -67,7 +64,6 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
     : x_min(x_range.first), x_max(x_range.second), charts_widget(parent) {
   series_type = (SeriesType)settings.chart_series_type;
   tip_label = new TipLabel();
-  // createToolButtons: the buttons are immediate mode, drawn from paintEvent
 
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { signalRemoved(sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { signalUpdated(sig); }));
@@ -80,7 +76,7 @@ ChartView::~ChartView() {
 }
 
 void ChartView::drawMenuActions() {
-  // series types: an exclusive QActionGroup, the current one is marked with a radio bullet on the left
+  // the current series type is marked with a radio bullet on the left
   static const char *types[] = {"Line", "Step Line", "Scatter"};
   const float indent = ImGui::GetFontSize();
   ImGui::Indent(indent);
@@ -100,7 +96,7 @@ void ChartView::drawMenuActions() {
   ImGui::Unindent(indent);
 }
 
-// immediate mode: the buttons (and their menus) are drawn every frame from paintEvent, after resizeEvent placed them
+// the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
 void ChartView::createToolButtons() {
   ImGui::SetCursorScreenPos(ImVec2(close_btn_rect.Min.x, close_btn_rect.Min.y));
   bool close_clicked = toolButton("close_btn", icon::X, "Remove Chart");
@@ -112,7 +108,7 @@ void ChartView::createToolButtons() {
     ImGui::EndPopup();
   }
 
-  if (close_clicked) charts_widget->removeChart(this);  // close_act
+  if (close_clicked) charts_widget->removeChart(this);
 }
 
 ImVec2 ChartView::sizeHint() const {
@@ -166,7 +162,7 @@ void ChartView::manageSignals() {
   for (auto &s : sigs) {
     dlg->addSelected(s.msg_id, s.sig);
   }
-  // exec() is non-blocking: the widget runs this once the dialog is accepted (dropped if the chart is removed first)
+  // runs once the dialog is accepted, dropped if the chart is removed first
   charts_widget->execSignalSelector(std::move(dlg), this, [this](SignalSelector &selector) {
     auto items = selector.seletedItems();
     for (auto s : items) {
@@ -199,7 +195,7 @@ void ChartView::updatePlotArea() {
   const FontInfo bfm = boldFont();
   const float fm_height = ImGui::GetTextLineHeight();
   const int marker_size = fm_height - 4;
-  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + signal_value_font height
+  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
   const int legend_left = move_icon_rect.Max.x + margins.x;
   const int legend_right = std::max<int>(manage_btn_rect.Min.x - margins.z, legend_left + 10);
 
@@ -222,7 +218,6 @@ void ChartView::updatePlotArea() {
   int adjust_top = (y + row_height) - rect.Min.y - margins.y;
   adjust_top = std::max<int>(adjust_top, manage_btn_rect.Max.y - rect.Min.y + margins.y);
   header_bottom = rect.Min.y + adjust_top + margins.y;
-  // the x-axis label space and the y axis alignment across charts are handled by implot (BeginAlignedPlots)
 }
 
 void ChartView::updateTitle() {
@@ -236,7 +231,6 @@ void ChartView::updatePlot(double cur, double min, double max) {
     x_min = min;
     x_max = max;
     updateAxisY();
-    // update tooltip
     if (tooltip_x >= 0) {
       showTip(secondsAtPoint({(float)tooltip_x, 0}));
     }
@@ -288,10 +282,8 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
     }
   }
   updateAxisY();
-  // no static layer cache in imgui; nothing to invalidate on the ui thread
 }
 
-// auto zoom on yaxis
 void ChartView::updateAxisY() {
   if (sigs.empty()) return;
 
@@ -352,8 +344,8 @@ int ChartView::xAxisPrecision() const {
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 double ChartView::niceNumber(double x, bool ceiling) {
-  double z = std::pow(10, std::floor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
-  double q = x / z; //q<10 && q>=1;
+  double z = std::pow(10, std::floor(std::log10(x)));  // the largest 10^n smaller than x
+  double q = x / z;  // 1 <= q < 10
   if (ceiling) {
     if (q <= 1.0) q = 1;
     else if (q <= 2.0) q = 2;
@@ -370,7 +362,7 @@ double ChartView::niceNumber(double x, bool ceiling) {
 
 void ChartView::contextMenuEvent() {
   if (drawing_ghost) return;
-  // like Qt, the menu opens on right press; a right release with no menu open reaches mouseReleaseEvent
+  // the menu opens on right press; a right release with no menu open reaches mouseReleaseEvent
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
       !ImGui::IsAnyItemActive()) {
     ImGui::OpenPopup("context_menu");
@@ -378,12 +370,11 @@ void ChartView::contextMenuEvent() {
   context_menu_id = ImGui::GetID("context_menu");
   if (ImGui::BeginPopup("context_menu")) {
     drawMenuActions();
-    // the menu holds checkable actions, so every entry keeps the same left margin
+    // the menu holds checkable entries, so every entry keeps the same left margin
     const float indent = ImGui::GetFontSize();
     ImGui::Indent(indent);
     ImGui::Separator();
-    // the zoom actions come from the toolbar, where they are only visible while zoomed
-    // (QMenu draws a single separator when they are hidden)
+    // the zoom entries come from the toolbar, where they are only visible while zoomed
     if (can->timeRange().has_value()) {
       const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
       const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
@@ -400,7 +391,7 @@ void ChartView::contextMenuEvent() {
 void ChartView::mousePressEvent() {
   if (drawing_ghost) return;
   const ImVec2 pos = ImGui::GetMousePos();
-  // a press on the child buttons (close/manage) does not reach the widget in Qt
+  // a press on the close/manage buttons does not reach the widget
   const bool widget_pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left) && rect.Contains(pos) &&
                               ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
                               !close_btn_rect.Contains(pos) && !manage_btn_rect.Contains(pos);
@@ -425,12 +416,11 @@ void ChartView::mouseMoveEvent() {
   if (drawing_ghost) return;
   const ImVec2 pos = ImGui::GetMousePos();
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
-  // Qt only sends a move event when the mouse actually moves; a click alone must not hide the tip
+  // a click alone must not hide the tip
   if (delta.x == 0 && delta.y == 0) return;
-  // Qt only delivers move events to the widget under the mouse (or the one holding the implicit grab)
+  // only the widget under the mouse, or the one dragging, reacts to a move
   if (mouse_mode == MouseMode::None && !rect.Contains(pos)) return;
 
-  // Scrubbing
   if (mouse_mode == MouseMode::Scrub && ImGui::GetIO().KeyShift) {
     if (plot_area.Contains(pos)) {
       can->seekTo(std::clamp(secondsAtPoint(pos), can->minSeconds(), can->maxSeconds()));
@@ -446,7 +436,7 @@ void ChartView::mouseMoveEvent() {
 
   clearTrackPoints();
   if (mouse_mode != MouseMode::Rubber && plot_area.Contains(pos) && (plot_hovered || mouse_mode != MouseMode::None) &&
-      ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {  // isActiveWindow
+      ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
     charts_widget->showValueTip(secondsAtPoint(pos));
   } else if (tip_label->isVisible()) {
     charts_widget->showValueTip(-1);
@@ -476,7 +466,6 @@ void ChartView::mouseReleaseEvent() {
     charts_widget->zoom_undo_stack.undo();
   }
 
-  // Resume playback if we were scrubbing
   if (mouse_mode == MouseMode::Scrub) {
     mouse_mode = MouseMode::None;
     if (resume_after_scrub) {
@@ -553,7 +542,7 @@ void ChartView::draw(float width) {
     contextMenuEvent();
   }
   ImGui::EndChild();
-  // Qt only paints visible charts: a chart scrolled out of the viewport draws no tip
+  // a chart scrolled out of the viewport draws no tip
   const ImRect visible_rect = charts_widget->chartVisibleRect(this);
   if (!drawing_ghost && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label->paintEvent();
   ImGui::PopID();
@@ -587,13 +576,11 @@ void ChartView::paintEvent() {
   if (can_drop) {
     ImGui::GetWindowDrawList()->AddRect(rect.Min, rect.Max, ImGui::GetColorU32(ImGuiCol_Header), 0.0f, 0, 4.0f);
   }
-  // drawForeground is called from drawSeries while the plot is open
 }
 
 void ChartView::drawStaticLayer() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
   painter->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(ImGuiCol_ChildBg));
-  // move icon: the drag handle
   ImGui::SetCursorScreenPos(move_icon_rect.Min);
   ImGui::InvisibleButton("grip", move_icon_rect.GetSize());
   if (ImGui::IsItemActivated()) charts_widget->startChartDrag(this, ImGui::GetMousePos());
@@ -601,19 +588,18 @@ void ChartView::drawStaticLayer() {
   painter->AddText(move_icon_rect.Min, ImGui::GetColorU32(ImGuiCol_Text), icon::GRIP_HORIZONTAL);
   createToolButtons();
   drawLegend();
-  drawSignalValue();  // foreground in Qt; drawn here because implot clips the plot frame
+  drawSignalValue();  // drawn here because implot clips the plot frame
   drawAxes();
 }
 
 void ChartView::drawAxes() {
-  // the plot: axes, grid, tick labels and the y axis title (unit) are drawn by implot
   const auto margins = layoutMargins();
   ImGui::SetCursorScreenPos(ImVec2(rect.Min.x, header_bottom));
   const float plot_h = std::max(rect.Max.y - header_bottom - margins.w, 10.0f);
   ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(margins.x, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
-  // Qt: every tick is a 1 px line in the text color at alpha 50, the edge ticks close the box, no tick marks.
+  // every tick is a 1 px line in the text color at alpha 50, the edge ticks close the box, no tick marks.
   // that alpha washes out on the dark base, so the dark theme draws opaque guides in a mid gray instead.
   const bool dark = isDarkTheme();
   ImVec4 grid_color;
@@ -633,17 +619,16 @@ void ChartView::drawAxes() {
   const ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText |
                             ImPlotFlags_NoBoxSelect | ImPlotFlags_NoInputs | ImPlotFlags_NoFrame;
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
-  // reserve room for the right half of the last x tick label (QFontMetrics size + {5, 5} in Qt)
+  // reserve room for the right half of the last x tick label
   const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max, xAxisPrecision()).c_str()).x + 5;
   if (ImPlot::BeginPlot("##plot", ImVec2(rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit.empty() ? nullptr : y_unit.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min, x_max, ImPlotCond_Always);
     ImPlot::SetupAxisLimits(ImAxis_Y1, y_min, y_max, ImPlotCond_Always);
-    // y grid lines and tick labels (the format must be set before the ticks are generated)
+    // the format must be set before the ticks are generated
     ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision) + "f").c_str());
     ImPlot::SetupAxisTicks(ImAxis_Y1, y_min, y_max, y_tick_count);
-    // x grid lines and tick labels
     ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
     ImPlot::SetupAxisTicks(ImAxis_X1, x_min, x_max, X_TICK_COUNT);
     ImPlot::SetupFinish();
@@ -674,7 +659,7 @@ void ChartView::drawLegend() {
   for (int i = 0; i < sigs.size() && i < legend_rects.size(); ++i) {
     const auto &s = sigs[i];
     const ImRect &r = legend_rects[i];
-    // toggle series visibility by clicking its legend entry (mouseReleaseEvent)
+    // toggle series visibility by clicking its legend entry
     ImGui::PushID(i);
     ImGui::SetCursorScreenPos(r.Min);
     if (ImGui::InvisibleButton("legend", ImVec2(std::max(r.GetWidth(), 1.0f), std::max(r.GetHeight(), 1.0f))) &&
@@ -754,8 +739,6 @@ void ChartView::drawSeries() {
 
 void ChartView::drawForeground() {
   drawTimeline();
-  // drawSignalValue: see drawStaticLayer
-  // draw track points
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   ImPlot::PushPlotClipRect();
   float track_line_x = -1;
@@ -767,7 +750,6 @@ void ChartView::drawForeground() {
     }
   }
   if (track_line_x > 0) {
-    // dashed line
     const ImU32 dark_gray = IM_COL32(0x80, 0x80, 0x80, 0xff);
     for (float y = plot_area.Min.y; y < plot_area.Max.y; y += 8) {
       painter->AddLine(ImVec2(track_line_x, y), ImVec2(track_line_x, std::min(y + 4, plot_area.Max.y)), dark_gray, 1.0f);
@@ -782,8 +764,7 @@ void ChartView::drawRubberBandTimeRange() {
   if (rubber_rect.GetWidth() <= 1) return;
 
   ImDrawList *painter = ImPlot::GetPlotDrawList();
-  // selection rect
-  // QPalette::Highlight is opaque; ImGuiCol_Header is not, so the 1px outline is drawn at full alpha
+  // ImGuiCol_Header is translucent, so the 1px selection outline is drawn at full alpha
   ImU32 highlight = ImGui::GetColorU32(ImGuiCol_Header) | IM_COL32_A_MASK;
   ImU32 fill = (highlight & ~IM_COL32_A_MASK) | (50 << IM_COL32_A_SHIFT);
   painter->AddRectFilled(rubber_rect.Min, rubber_rect.Max, fill);
@@ -806,22 +787,20 @@ void ChartView::drawRubberBandTimeRange() {
 
 void ChartView::drawTimeline() {
   ImDrawList *painter = ImPlot::GetPlotDrawList();
-  // draw vertical time line
   float x = std::clamp(xPos(cur_sec), plot_area.Min.x, plot_area.Max.x);
   painter->AddLine(ImVec2(x, plot_area.Min.y - 1.0f), ImVec2(x, plot_area.Max.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
 
-  // draw current time under the axis-x
   std::string time_str = formatNumber(cur_sec, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
   ImVec2 time_str_pos(x - time_str_size.x / 2.0f, plot_area.Max.y + AXIS_X_TOP_MARGIN);
   const bool dark = isDarkTheme();
   painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, dark ? IM_COL32(0x80, 0x80, 0x80, 0xff) : IM_COL32(0xa0, 0xa0, 0xa4, 0xff), 3.0f);
-  painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());  // BrightText
+  painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());
 }
 
 void ChartView::drawSignalValue() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
-  const FontInfo font{ImGui::GetFont(), ImGui::GetFontSize()};  // signal_value_font (9pt in Qt; no small font here)
+  const FontInfo font{ImGui::GetFont(), ImGui::GetFontSize()};
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
   for (int i = 0; i < sigs.size() && i < legend_rects.size(); ++i) {
     const auto &s = sigs[i];

@@ -16,13 +16,13 @@ const int MAX_CACHE_MINIUTES = 120;
 
 namespace {
 
-// QFormLayout: the label sits in the left column, the field in the right one, all fields aligned
+// the label sits in the left column, the field in the right one, all fields aligned
 const char *kFormLabels[] = {"Color Theme", "FPS", "Max Cached Minutes", "Drag Direction", "Chart Height"};
 
 float formLabelWidth() {
   float w = 0.0f;
   for (const char *label : kFormLabels) w = std::max(w, ImGui::CalcTextSize(label).x);
-  return w + ImGui::GetStyle().ItemSpacing.x * 2;  // QFormLayout keeps a horizontal spacing between label and field
+  return w + ImGui::GetStyle().ItemSpacing.x * 2;  // horizontal spacing between label and field
 }
 
 void formRow(const char *label, float label_width) {
@@ -53,11 +53,10 @@ void SettingsDialog::draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal("Settings", nullptr, ImGuiWindowFlags_NoResize)) return;
   const ImGuiInputTextFlags spin_flags = 0;  // InputInt forbids EnterReturnsTrue; it applies the text on every edit
-  // QSpinBox refuses a keystroke that would leave the range (typing 999 into FPS keeps 99); InputInt takes
-  // no character filter, so out of range text is clamped after the edit instead
+  // InputInt takes no character filter, so out of range text is clamped after the edit
 
   const float label_width = formLabelWidth();
 
@@ -110,7 +109,7 @@ void SettingsDialog::draw() {
 
 void SettingsDialog::save() {
   if (std::exchange(settings.theme, theme_) != settings.theme) {
-    // set theme before emit changed
+    // set the theme before notifying
     applyTheme(settings.theme);
   }
   settings.max_cached_minutes = cached_minutes_;

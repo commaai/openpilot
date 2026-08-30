@@ -28,8 +28,8 @@ public:
   MessageListModel();
   std::string headerData(int section) const;
   int columnCount() const { return Column::DATA + 1; }
-  std::string data(int row, int column) const;  // Qt::DisplayRole
-  std::string toolTip(int row, int column) const;  // Qt::ToolTipRole; name and comment separated by '\n'
+  std::string data(int row, int column) const;
+  std::string toolTip(int row, int column) const;  // name and comment separated by '\n'
   int rowCount() const { return items_.size(); }
   void sort(int column, ImGuiSortDirection order = ImGuiSortDirection_Ascending);
   void setFilterStrings(const std::map<int, std::string> &filters);
@@ -49,7 +49,7 @@ public:
   };
   std::vector<Item> items_;
   bool show_inactive_messages = true;
-  Observable<> modelReset;  // beginResetModel/endResetModel
+  Observable<> modelReset;
 
 private:
   void sortItems(std::vector<MessageListModel::Item> &items);
@@ -75,16 +75,15 @@ public:
   MessageBytesDelegate *itemDelegate() const { return delegate_; }
   MessageListModel *model() const { return model_; }
   MessageViewHeader *header() const { return header_; }
-  void setCurrentIndex(int row);  // QAbstractItemView::setCurrentIndex, scrolls to the row
+  void setCurrentIndex(int row);  // scrolls to the row
   int currentIndex() const { return current_row_; }
   void draw();  // the table: header, filter row, rows
 
-  Observable<int, int> currentChanged;  // QItemSelectionModel::currentChanged(current, previous)
+  Observable<int, int> currentChanged;  // (current, previous)
 
 protected:
   void drawRow(int row);
   void keyPressEvent();  // up/down move the current row
-  // wheelEvent: shift+wheel scrolls horizontally, imgui does this by default
 
   MessageListModel *model_ = nullptr;
   MessageViewHeader *header_ = nullptr;
@@ -109,7 +108,6 @@ public:
   void updateFilters();
   void draw();  // the header row and the filter editors row, inside the table
 
-  // QHeaderView
   int count() const { return (int)editors.size(); }
   int logicalIndex(int visual_index) const { return display_order_[visual_index]; }
   bool isSectionHidden(int logical_index) const { return hidden_[logical_index]; }
@@ -131,11 +129,11 @@ public:
   void draw();  // content only; MainWindow does ImGui::Begin/End with the dock title
   void selectMessage(const MessageId &message_id);
   std::vector<uint8_t> saveHeaderState() const {
-    // TODO: Qt byte-array header state is out of scope for the port
+    // TODO: the persisted header state is not ported yet
     return {};
   }
   bool restoreHeaderState(const std::vector<uint8_t> &state) const {
-    // TODO: Qt byte-array header state is out of scope for the port
+    // TODO: the persisted header state is not ported yet
     return false;
   }
   void suppressHighlighted();
@@ -151,7 +149,7 @@ protected:
   void menuAboutToShow();
   void setMultiLineBytes(bool multi);
   void updateTitle();
-  void suppressHighlighted(bool from_suppress_add);  // sender() == suppress_add
+  void suppressHighlighted(bool from_suppress_add);
 
   MessageView *view;
   MessageViewHeader *header;

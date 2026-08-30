@@ -24,27 +24,27 @@ extern "C" {
 
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
-const float POINT_10_FONT_SIZE = 13.0f;  // QFont(family, 10) at 96 dpi
-const float POINT_16_FONT_SIZE = 21.0f;  // QFont(family, 16) at 96 dpi
-const float MENU_BUTTON_INDICATOR = 12.0f;  // QStyle::PM_MenuButtonIndicator
-const float TOOLBAR_ITEM_SPACING = 1.0f;    // QStyle::PM_ToolBarItemSpacing
-const float TOOLBAR_BUTTON_PADDING = 4.0f;  // QToolButton (auto raise) horizontal margin
-const float TOOLBAR_MARGIN = 4.0f;          // QToolBar layout margin: the items are inset from the frame
-const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // QToolBar is 36 px tall at the 16 px font, the items are centered in it
-const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;   // QStyle::PM_ToolBarSeparatorExtent
-const float MENU_ARROW_SIZE = 6.0f;            // QStyle::PE_IndicatorArrowDown on a toolbutton menu
-const float SLIDER_LENGTH = 13.0f;     // QStyle::PM_SliderLength (Fusion)
-const float SLIDER_THICKNESS = 13.0f;  // QStyle::PM_SliderThickness (Fusion)
-const float SLIDER_HEIGHT = 15.0f;     // QSlider::sizeHint height (Fusion): the handle plus a 1 px margin
+const float POINT_10_FONT_SIZE = 13.0f;  // 10 pt at 96 dpi
+const float POINT_16_FONT_SIZE = 21.0f;  // 16 pt at 96 dpi
+const float MENU_BUTTON_INDICATOR = 12.0f;
+const float TOOLBAR_ITEM_SPACING = 1.0f;
+const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
+const float TOOLBAR_MARGIN = 4.0f;          // the toolbar items are inset from the frame
+const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // the toolbar is 36 px tall at the 16 px font, the items are centered in it
+const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;
+const float MENU_ARROW_SIZE = 6.0f;            // dropdown arrow on a menu button
+const float SLIDER_LENGTH = 13.0f;
+const float SLIDER_THICKNESS = 13.0f;
+const float SLIDER_HEIGHT = 15.0f;     // the handle plus a 1 px margin
 
 // Indexed by TimelineType: None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserBookmark
 static const ImU32 timeline_colors[] = {
   IM_COL32(111, 143, 175, 255),
   IM_COL32(0, 163, 108, 255),
-  IM_COL32(0, 255, 0, 255),    // Qt::green
+  IM_COL32(0, 255, 0, 255),
   IM_COL32(255, 195, 0, 255),
   IM_COL32(199, 0, 57, 255),
-  IM_COL32(255, 0, 255, 255),  // Qt::magenta
+  IM_COL32(255, 0, 255, 255),
 };
 
 static Replay *getReplay() {
@@ -52,7 +52,6 @@ static Replay *getReplay() {
   return stream ? stream->getReplay() : nullptr;
 }
 
-// QColor::name()
 static std::string colorName(ImU32 c) {
   char buf[16];
   snprintf(buf, sizeof(buf), "#%02x%02x%02x", (c >> IM_COL32_R_SHIFT) & 0xff, (c >> IM_COL32_G_SHIFT) & 0xff, (c >> IM_COL32_B_SHIFT) & 0xff);
@@ -63,19 +62,17 @@ static ImU32 withAlpha(ImU32 c, int alpha) {
   return (c & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT);
 }
 
-// palette().color(QPalette::BrightText)
 static ImU32 brightText() {
   return isDarkTheme() ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
                        : IM_COL32(255, 255, 255, 255);
 }
 
-// QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
+// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
 static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
   const bool dark = isDarkTheme();
-  // buttonColor.lighter(104) / buttonColor.darker(104)
   const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
   const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
-  // QFusionStylePrivate::outline: the top/left edge is one step lighter than the bottom/right edge
+  // the top/left edge is one step lighter than the bottom/right edge
   const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
   const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
   p->AddRectFilled(r.Min, r.Max, top, 2.0f);
@@ -89,7 +86,7 @@ static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
   p->AddRectFilled(ImVec2(r.Max.x - 1.0f, r.Min.y + c), ImVec2(r.Max.x, r.Max.y - c), outline_bottom);
 }
 
-// QPixmap::loadFromData(..., "jpeg") via libavcodec (already linked for the replay video decoder)
+// decode with libavcodec, already linked for the replay video decoder
 static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
   const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
   AVCodecContext *context = codec ? avcodec_alloc_context3(codec) : nullptr;
@@ -139,7 +136,7 @@ static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
   return ok;
 }
 
-// QPixmap::scaledToHeight(h, Qt::SmoothTransformation): bilinear resample
+// bilinear resample to height h
 static RgbImage scaledToHeight(const RgbImage &src, int h) {
   RgbImage dst;
   if (src.isNull() || h <= 0) return dst;
@@ -179,7 +176,7 @@ VideoWidget::VideoWidget() {
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { timeRangeChanged(); }));
 
   updatePlayBtnState();
-  // setWhatsThis: the HTML table becomes one <br /> separated row per table row, with the same entries and colors
+  // one <br /> separated line per legend row, with the same entries and colors
   whats_this_ = "<b>Video</b><br />\n"
                 "<span style=\"color:gray\">Timeline color</span><br />\n" +
                 colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged&nbsp;&nbsp;&nbsp;" +
@@ -193,7 +190,7 @@ VideoWidget::VideoWidget() {
 }
 
 void VideoWidget::createPlaybackController() {
-  // the toolbar actions are drawn by drawPlaybackController(); only their state is created here
+  // the toolbar items are drawn by drawPlaybackController(); only their state is created here
   if (can->liveStreaming()) {
     skip_to_end_enabled_ = true;
   }
@@ -206,7 +203,7 @@ void VideoWidget::createPlaybackController() {
 static float toolbarHeight() { return ImGui::GetFontSize() + TOOLBAR_BUTTON_PADDING_Y * 2; }
 
 void VideoWidget::drawPlaybackController() {
-  // QToolBar metrics: PM_ToolBarItemSpacing between the items, the buttons only carry the auto raise margin
+  // the toolbar items sit next to each other, the buttons only carry the auto raise margin
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(TOOLBAR_ITEM_SPACING, ImGui::GetStyle().ItemSpacing.y));
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, TOOLBAR_BUTTON_PADDING_Y));
   const ImGuiStyle &style = ImGui::GetStyle();
@@ -267,7 +264,7 @@ void VideoWidget::drawPlaybackController() {
         break;
       case SPEED: drawSpeedDropdown(); break;
       case SEPARATOR: {
-        // QToolBar separator: a 1 px line centered in PM_ToolBarSeparatorExtent, inset from the top and bottom
+        // a 1 px separator line centered in TOOLBAR_SEPARATOR_EXTENT, inset from the top and bottom
         const ImVec2 min = ImGui::GetCursorScreenPos();
         ImGui::Dummy(ImVec2(TOOLBAR_SEPARATOR_EXTENT, ImGui::GetFrameHeight()));
         const float x = std::floor(min.x + TOOLBAR_SEPARATOR_EXTENT * 0.5f);
@@ -293,8 +290,8 @@ void VideoWidget::drawPlaybackController() {
   const float right_edge = start_x + avail;
   const float extension_width = button_width(icon::RAQUO);
 
-  // QToolBarLayout: when everything fits the spacer takes the slack, otherwise the extension button is
-  // reserved at the right edge and the items are packed from the left until the next one does not fit
+  // when everything fits the spacer takes the slack, otherwise the extension button is reserved at the
+  // right edge and the items are packed from the left until the next one does not fit
   const bool fits = left_width + style.ItemSpacing.x + right_width <= avail;
   size_t visible = items.size();
   if (!fits) {
@@ -343,7 +340,7 @@ void VideoWidget::drawPlaybackController() {
           case LOOP:
             if (ImGui::MenuItem("Loop playback")) loopPlaybackClicked();
             break;
-          // the QToolBar extension popup only carries actions: the speed button widget and the separator are dropped
+          // the extension popup only carries actions: the speed button widget and the separator are dropped
           case SPEED:
           case SEPARATOR:
             break;
@@ -359,8 +356,8 @@ void VideoWidget::drawPlaybackController() {
 }
 
 void VideoWidget::skipToEnd() {
-  // set speed to 1.0
-  speed_index_ = 7;  // like the Qt code this only checks the menu entry; the speed and the button text are unchanged
+  // set speed to 1.0; this only checks the menu entry, the speed and the button text are unchanged
+  speed_index_ = 7;
   can->pause(false);
   can->seekTo(can->maxSeconds() + 1);
 }
@@ -384,7 +381,6 @@ void VideoWidget::createSpeedDropdown() {
     const float speed = speeds[i];
     if (speed == 1.0) {
       speed_index_ = i;
-      // act->trigger()
       can->setSpeed(speed);
       speed_text_ = speedText(speed, "  ");
     }
@@ -395,18 +391,17 @@ void VideoWidget::drawSpeedDropdown() {
   const ImGuiStyle &style = ImGui::GetStyle();
   pushBoldFont();
   const float min_width = ImGui::CalcTextSize("0.05x  ").x + style.FramePadding.x * 2 + MENU_BUTTON_INDICATOR;
-  // QToolButton::InstantPopup opens on press; a press while the menu is open toggles it closed (imgui closes the
-  // popup at the end of the frame of a click outside it, so only open when it is not already open)
-  // setAutoRaise(true): flat until hovered
+  // the menu opens on press; a press while it is open toggles it closed (imgui closes the popup at the end
+  // of the frame of a click outside it, so only open when it is not already open). Flat until hovered.
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   const bool open = ImGui::ButtonEx((speed_text_ + "###speed_btn").c_str(), ImVec2(min_width, 0), ImGuiButtonFlags_PressedOnClick);
   ImGui::PopStyleVar();
   ImGui::PopStyleColor();
   popBoldFont();
-  // QStyle::PM_MenuButtonIndicator: the menu arrow at the right edge of the button
+  // the menu arrow at the right edge of the button
   const ImVec2 btn_min = ImGui::GetItemRectMin(), btn_max = ImGui::GetItemRectMax();
-  // a small arrow centered in the indicator area, sitting on the text baseline (Fusion draws it bottom right)
+  // a small arrow centered in the indicator area, sitting on the text baseline
   const float ax = btn_max.x - MENU_BUTTON_INDICATOR * 0.5f;
   const float ay = btn_min.y + style.FramePadding.y + ImGui::GetFontSize() - 2.0f;
   ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(ax - MENU_ARROW_SIZE * 0.5f, ay - MENU_ARROW_SIZE * 0.5f),
@@ -421,16 +416,16 @@ void VideoWidget::drawSpeedDropdown() {
 }
 
 void VideoWidget::drawSpeedMenuItems() {
-  // exclusive QActionGroup: the current speed is marked with a radio bullet on the left. QMenu highlights the
-  // whole item, so each row is one full width Selectable with the bullet and the label drawn inside it. An
-  // indented MenuItem would start after the bullet and leave that column outside the highlight.
+  // the current speed is marked with a radio bullet on the left. The whole item highlights, so each row is
+  // one full width Selectable with the bullet and the label drawn inside it; an indented MenuItem would
+  // start after the bullet and leave that column outside the highlight.
   const float indent = ImGui::GetFontSize();
   float label_width = 0;
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i], "").c_str()).x);
   }
   // every row declares the same width, so the popup is exactly as wide as the widest one and all the
-  // highlights reach both edges; QMenu pads the label on the right as much as the check column on the left
+  // highlights reach both edges; the label is padded on the right as much as the check column on the left
   const ImVec2 item_size(indent + label_width + indent, 0.0f);
   ImDrawList *painter = ImGui::GetWindowDrawList();
   for (int i = 0; i < (int)std::size(speeds); ++i) {
@@ -463,14 +458,13 @@ void VideoWidget::createCameraWidget() {
   slider->setTimeRange(can->minSeconds(), can->maxSeconds());
 
   connections_.push_back(slider->sliderReleased.connect([this]() { can->seekTo(slider->currentSecond()); }));
-  // can->paused -> cam_widget->update() and can->eventsMerged -> slider->update(): imgui redraws every frame
   connections_.push_back(cam_widget->clicked.connect([]() { can->pause(!can->isPaused()); }));
   connections_.push_back(cam_widget->availableStreamsUpdated.connect([this](std::set<VisionStreamType> streams) { vipcAvailableStreamsUpdated(streams); }));
   connections_.push_back(camera_tab->currentChanged.connect([this](int index) {
     if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index));
   }));
   connections_.push_back(static_cast<ReplayStream *>(can)->qLogLoaded.connect([this](std::shared_ptr<LogReader> qlog) { cam_widget->parseQLog(qlog); }));
-  // slider->installEventFilter(this): eventFilter() runs right after the slider is drawn
+  // eventFilter() runs right after the slider is drawn
 }
 
 void VideoWidget::drawCameraWidget() {
@@ -528,9 +522,6 @@ void VideoWidget::updateState() {
     if (!slider->isSliderDown()) {
       slider->setCurrentSecond(can->currentSec());
     }
-    if (camera_tab->count() == 0) {  //  No streams available
-      // cam_widget->update(): imgui redraws every frame, the alert events are drawn regardless
-    }
     time_text_ = formatTime(can->currentSec(), true) + " / " + formatTime(slider->maximum() / slider->factor);
   } else {
     time_text_ = formatTime(can->currentSec(), true);
@@ -551,25 +542,24 @@ void VideoWidget::showThumbnail(double seconds) {
 
   cam_widget->thumbnail_dispaly_time = seconds;
   slider->thumbnail_dispaly_time = seconds;
-  // cam_widget->update(), slider->update(): imgui redraws every frame
 }
 
 void VideoWidget::showRouteInfo() {
-  // WA_DeleteOnClose: dropped from route_info_dlgs_ once draw() returns false
+  // dropped from route_info_dlgs_ once draw() returns false
   route_info_dlgs_.push_back(std::make_unique<RouteInfoDlg>());
 }
 
 void VideoWidget::eventFilter() {
-  if (slider->underMouse()) {  // QEvent::MouseMove (setMouseTracking(true))
+  if (slider->underMouse()) {
     auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
     showThumbnail(min_sec + (ImGui::GetMousePos().x - slider->rect().Min.x) * (max_sec - min_sec) / slider->width());
-  } else if (slider->mouseLeft()) {  // QEvent::Leave
+  } else if (slider->mouseLeft()) {
     showThumbnail(-1);
   }
 }
 
 float VideoWidget::sizeHintHeight() const {
-  // QSizePolicy::Maximum: the camera minimum height plus the slider and the toolbar
+  // the camera minimum height plus the slider and the toolbar
   return MIN_VIDEO_HEIGHT + SLIDER_HEIGHT + toolbarHeight();
 }
 
@@ -582,7 +572,6 @@ float VideoWidget::defaultHeight(float width) const {
 }
 
 void VideoWidget::draw() {
-  // main_layout->setSpacing(0)
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   if (!can->liveStreaming())
     drawCameraWidget();
@@ -595,11 +584,9 @@ void VideoWidget::draw() {
   }
 }
 
-// ToolButton
-
 bool toolButton(const char *icon, const char *tooltip, const char *id, float width) {
   const std::string label = std::string(icon) + "###" + id;
-  // setAutoRaise(true)
+  // no frame, transparent until hovered
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   const bool pressed = ImGui::Button(label.c_str(), ImVec2(width, 0));
@@ -609,13 +596,11 @@ bool toolButton(const char *icon, const char *tooltip, const char *id, float wid
   return pressed;
 }
 
-// TabBar
-
 int TabBar::addTab(const std::string &text) {
   tabs_.push_back({text, 0, next_id_++});
   int index = count() - 1;
   // the "x" close button is drawn by BeginTabItem(p_open) and reports through closeTabClicked()
-  if (current_index_ == -1) {  // QTabBar makes the first tab current
+  if (current_index_ == -1) {  // the first tab is current
     current_index_ = index;
     select_current_ = true;
     currentChanged(index);
@@ -626,7 +611,7 @@ int TabBar::addTab(const std::string &text) {
 void TabBar::removeTab(int index) {
   tabs_.erase(tabs_.begin() + index);
   if (index == current_index_) {
-    // QTabBar::SelectRightTab: the tab that moved into this index, else the one to the left
+    // select the tab that moved into this index, else the one to the left
     current_index_ = count() ? std::min(index, count() - 1) : -1;
     select_current_ = true;
     currentChanged(current_index_);
@@ -636,7 +621,7 @@ void TabBar::removeTab(int index) {
 }
 
 void TabBar::draw() {
-  if (auto_hide_ && count() < 2) return;  // setAutoHide(true)
+  if (auto_hide_ && count() < 2) return;  // auto hidden with fewer than two tabs
   if (!ImGui::BeginTabBar("##tabbar")) return;
   for (int i = 0; i < count(); ++i) {
     bool open = true;
@@ -655,9 +640,7 @@ void TabBar::draw() {
   ImGui::EndTabBar();
 }
 
-// Slider
 Slider::Slider() {
-  // setMouseTracking(true): imgui always reports hover
 }
 
 void Slider::draw() {
@@ -670,7 +653,7 @@ void Slider::draw() {
   if (ImGui::IsItemActivated()) mousePressEvent();
   if (slider_down_) {
     if (ImGui::IsItemActive()) {
-      // QSlider::mouseMoveEvent: pixelPosToRangeValue(pos - clickOffset), the handle keeps its grab offset
+      // the handle keeps its grab offset while dragging
       setValue(pixelPosToRangeValue(ImGui::GetMousePos().x - click_offset_));
     } else {
       slider_down_ = false;
@@ -689,7 +672,7 @@ ImRect Slider::handleRect() const {
   return ImRect(ImVec2(x, y), ImVec2(x + handle_width, y + handle_height));
 }
 
-// QSliderPrivate::pixelPosToRangeValue: handle left edge (window x) -> value over the groove minus the handle width
+// handle left edge (window x) -> value over the groove minus the handle width
 int Slider::pixelPosToRangeValue(float x) const {
   const float handle_width = SLIDER_LENGTH;
   const float span = std::max(1.0f, width() - handle_width);
@@ -702,7 +685,7 @@ void Slider::paintEvent() {
   ImRect handle_rect = handleRect();
   ImRect groove_rect = rect_;
 
-  // Adjust groove height to match handle height (QRect::setHeight rounds up to a whole 7 px, on whole pixels)
+  // adjust the groove height to match the handle height, rounded up to whole pixels
   float handle_height = handle_rect.GetHeight();
   const float groove_height = std::ceil(handle_height * 0.5f);
   const float center_y = rect_.GetCenter().y;
@@ -718,8 +701,8 @@ void Slider::paintEvent() {
   auto fillRange = [&](double begin, double end, ImU32 color) {
     if (begin > max || end < min) return;
 
-    // QRect::setLeft/setRight truncate to whole pixels and the right edge is inclusive, so even an event
-    // shorter than a pixel paints one full pixel in its color instead of an anti-aliased smear
+    // the edges truncate to whole pixels and the right edge is inclusive, so even an event shorter than a
+    // pixel paints one full pixel in its color instead of an anti-aliased smear
     ImRect r = groove_rect;
     r.Min.x = rect_.Min.x + std::floor(((std::max(min, begin) - min) / span) * width());
     r.Max.x = rect_.Min.x + std::floor(((std::min(max, end) - min) / span) * width()) + 1.0f;
@@ -731,7 +714,7 @@ void Slider::paintEvent() {
       fillRange(entry.start_time, entry.end_time, timeline_colors[(int)entry.type]);
     }
 
-    ImU32 empty_color = ImGui::GetColorU32(ImGuiCol_WindowBg, 160 / 255.0f);  // palette().color(QPalette::Window) with alpha 160
+    ImU32 empty_color = ImGui::GetColorU32(ImGuiCol_WindowBg, 160 / 255.0f);
     const auto event_data = replay->getEventData();
     for (const auto &[n, _] : replay->route().segments()) {
       if (!event_data->isSegmentLoaded(n))
@@ -744,12 +727,12 @@ void Slider::paintEvent() {
   if (thumbnail_dispaly_time >= 0) {
     float left = rect_.Min.x + (float)((thumbnail_dispaly_time - min) * width() / span) - 1;
     ImRect rc(ImVec2(left, rect_.Min.y + 1), ImVec2(left + 2, rect_.Max.y - 1));
-    p->AddRectFilled(rc.Min, rc.Max, ImGui::GetColorU32(ImGuiCol_Header), 1.5f);  // palette().highlight(): ImGuiCol_Header is the theme highlight (style.cc), as in chart.cc
+    p->AddRectFilled(rc.Min, rc.Max, ImGui::GetColorU32(ImGuiCol_Header), 1.5f);  // ImGuiCol_Header is the theme highlight
   }
 }
 
 void Slider::mousePressEvent() {
-  // QSlider::mousePressEvent: a press on the handle starts a drag (isSliderDown) and remembers the grab offset
+  // a press on the handle starts a drag and remembers the grab offset
   const ImRect handle_rect = handleRect();
   if (handle_rect.Contains(ImGui::GetMousePos())) {
     slider_down_ = true;
@@ -762,7 +745,6 @@ void Slider::mousePressEvent() {
   }
 }
 
-// StreamCameraView
 StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type)
     : CameraWidget(stream_name, stream_type) {
 }
@@ -794,7 +776,6 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
     });
   }
   for (auto &th : threads) th.join();
-  // update(): imgui redraws every frame
 }
 
 void StreamCameraView::draw(const ImVec2 &size) {
@@ -825,7 +806,7 @@ void StreamCameraView::draw(const ImVec2 &size) {
 StreamCameraView::Thumbnail StreamCameraView::generateThumbnail(const RgbImage &thumb, double seconds) {
   Thumbnail scaled;
   scaled.image = scaledToHeight(thumb, MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2);
-  // the 2px BrightText border and the alert are painted over the image in drawThumbnail()
+  // the border and the alert are painted over the image in drawThumbnail()
   scaled.alert = getReplay()->findAlertAtTime(seconds);
   return scaled;
 }
@@ -838,7 +819,7 @@ void StreamCameraView::drawScrubThumbnail(ImDrawList *p) {
       big_thumbnail_texture.upload(it->second);
       big_thumbnail_texture.key = it->first;
     }
-    // scaled(rect().size(), Qt::KeepAspectRatio)
+    // scale to the widget size, keeping the aspect ratio
     const float scale = std::min(width() / it->second.width, height() / it->second.height);
     const ImVec2 scaled_size(std::floor(it->second.width * scale), std::floor(it->second.height * scale));
     const ImVec2 center = rect().GetCenter();
@@ -865,7 +846,6 @@ void StreamCameraView::drawThumbnail(ImDrawList *p) {
 
     ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + thumb.image.width, rect().Min.y + y + thumb.image.height));
     p->AddImage(thumbnail_texture.ref(), thumb_rect.Min, thumb_rect.Max);
-    // generateThumbnail: QPen(BrightText, 2) rect and the alert at that time
     p->AddRect(thumb_rect.Min, thumb_rect.Max, brightText(), 0.0f, 0, 2.0f);
     if (thumb.alert) {
       drawAlert(p, thumb_rect, *thumb.alert, POINT_10_FONT_SIZE);
@@ -879,14 +859,14 @@ void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double second
   snprintf(text, sizeof(text), "%.3f", seconds);
   ImFont *font = ImGui::GetFont();
   const ImVec2 text_size = font->CalcTextSizeA(POINT_10_FONT_SIZE, FLT_MAX, 0.0f, text);
-  // rect.adjusted(0, 0, 0, -THUMBNAIL_MARGIN), Qt::AlignHCenter | Qt::AlignBottom
+  // centered horizontally, above the bottom margin
   p->AddText(font, POINT_10_FONT_SIZE, ImVec2(rect.GetCenter().x - text_size.x / 2, rect.Max.y - THUMBNAIL_MARGIN - text_size.y),
              brightText(), text);
 }
 
 void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size) {
   const ImU32 pen = brightText();
-  ImU32 color = withAlpha(timeline_colors[int(alert.type)], 128);  // setAlphaF(0.5)
+  ImU32 color = withAlpha(timeline_colors[int(alert.type)], 128);
   std::string text = alert.text1;
   if (!alert.text2.empty()) text += "\n" + alert.text2;
 
@@ -895,7 +875,7 @@ void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeli
   const float wrap_width = std::max(1.0f, text_rect.GetWidth());
   const ImVec2 r = font->CalcTextSizeA(font_size, FLT_MAX, wrap_width, text.c_str());
   p->AddRectFilled(ImVec2(text_rect.Min.x, text_rect.Min.y), ImVec2(text_rect.Max.x, text_rect.Min.y + r.y), color);
-  // Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap: each line is centered, wrapped continuations stay left aligned
+  // each line is centered, wrapped continuations stay left aligned
   float y = text_rect.Min.y;
   for (size_t pos = 0; pos <= text.size();) {
     size_t nl = text.find('\n', pos);

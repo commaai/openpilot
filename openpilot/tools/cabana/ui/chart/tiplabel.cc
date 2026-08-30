@@ -10,8 +10,7 @@
 #include "tools/cabana/ui/imgui_util.h"
 
 TipLabel::TipLabel() {
-  // Qt: tool tip window, 8.34pt font, ToolTipBase/ToolTipText palette (Base/0x404044 in the light theme)
-  margin_ = 1 + 1;  // 1 + PM_ToolTipLabelFrameWidth
+  margin_ = 2;
 }
 
 ImVec2 TipLabel::sizeHint() const {
@@ -57,8 +56,8 @@ void TipLabel::paintEvent() {
   ImDrawList *p = ImGui::GetForegroundDrawList();
   const bool dark = isDarkTheme();
   const ImU32 bg = dark ? ImGui::GetColorU32(ImGuiCol_PopupBg) : ImGui::GetColorU32(ImGuiCol_ChildBg);
-  const ImU32 fg = dark ? ImGui::GetColorU32(ImGuiCol_Text) : IM_COL32(0x40, 0x40, 0x44, 0xff);  // same color as chart label brush
-  // PE_PanelTipLabel: filled panel with a 1px frame
+  const ImU32 fg = dark ? ImGui::GetColorU32(ImGuiCol_Text) : IM_COL32(0x40, 0x40, 0x44, 0xff);
+  // filled panel with a 1px frame
   p->AddRectFilled(pos_, pos_ + size_, bg);
   p->AddRect(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_Border));
 

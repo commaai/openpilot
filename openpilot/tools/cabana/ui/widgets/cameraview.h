@@ -16,7 +16,7 @@
 #include "tools/cabana/core/observable.h"
 #include "msgq/visionipc/visionipc_client.h"
 
-// QImage (Format_RGBA8888) replacement: tightly packed RGBA pixels
+// tightly packed RGBA pixels
 struct RgbImage {
   int width = 0;
   int height = 0;
@@ -51,11 +51,11 @@ public:
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
   void stopVipcThread();
-  // QWidget::setVisible: runs showEvent()/hideEvent() when the visibility flips. draw() implies visible;
-  // the owner calls setVisible(false) when the widget is no longer drawn so the vipc thread stops like it did in Qt.
+  // runs showEvent()/hideEvent() when the visibility flips. draw() implies visible; the owner calls
+  // setVisible(false) when the widget is no longer drawn, which stops the vipc thread.
   void setVisible(bool visible);
   bool isVisible() const { return visible_; }
-  // paintEvent + mouseReleaseEvent: draws an item of `size` into the current window
+  // draws an item of `size` into the current window
   void draw(const ImVec2 &size);
   const ImRect &rect() const { return rect_; }
   float frameAspectRatio() const;

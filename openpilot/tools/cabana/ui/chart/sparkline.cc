@@ -37,19 +37,17 @@ void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIt
 }
 
 void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
-  // Adjust for flat lines
   bool is_flat_line = min_val == max_val;
   if (is_flat_line) {
     min_val -= 1.0;
     max_val += 1.0;
   }
 
-  // Calculate scaling
   const double xscale = (sz.x - 1) / (double)range;
   const double yscale = (sz.y - 3) / (max_val - min_val);
   bool draw_individual_points = (points_.back().x * xscale / points_.size()) > 8.0;
 
-  // Transform or downsample points
+  // transform or downsample the points
   render_points_.reserve(points_.size());
   render_points_.clear();
   if (draw_individual_points) {
@@ -80,7 +78,6 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
     if (in_flat) render_points_.emplace_back(points_.back().x * xscale, 1.0 + (max_val - prev_y) * yscale);
   }
 
-  // Render to pixmap: imgui redraws every frame, so only the polyline and its style are kept (see draw())
   this->size = sz;
   color_ = IM_COL32(color.r, color.g, color.b, color.a);
   draw_individual_points_ = draw_individual_points;
@@ -93,12 +90,12 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   pts.reserve(render_points_.size());
   for (const auto &p : render_points_) pts.emplace_back(pos.x + p.x, pos.y + p.y);
 
-  // painter.setRenderHint(QPainter::Antialiasing, render_points_.size() <= 500)
+  // antialiasing is off above 500 points
   const ImDrawListFlags backup_flags = draw_list->Flags;
   if (render_points_.size() > 500) draw_list->Flags &= ~ImDrawListFlags_AntiAliasedLines;
   draw_list->AddPolyline(pts.data(), (int)pts.size(), color_, ImDrawFlags_None, 1.0f);
 
-  // QPen(color, 3) points: a 3px SquareCap pen draws a 3x3 square
+  // a point is a 3x3 square
   auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color_); };
   if (draw_individual_points_) {
     for (const auto &p : pts) draw_point(p);

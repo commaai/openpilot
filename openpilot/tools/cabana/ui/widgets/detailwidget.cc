@@ -14,7 +14,6 @@
 
 namespace {
 
-// QString::trimmed
 std::string trimmed(const std::string &s) {
   const char *ws = " \t\n\r\f\v";
   auto b = s.find_first_not_of(ws);
@@ -23,19 +22,18 @@ std::string trimmed(const std::string &s) {
   return s.substr(b, e - b + 1);
 }
 
-// QString::compare(..., Qt::CaseInsensitive) == 0
 bool iequals(const std::string &a, const std::string &b) {
   return a.size() == b.size() &&
          std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) { return std::tolower((unsigned char)x) == std::tolower((unsigned char)y); });
 }
 
-// NameValidator: reject the edit when the new text is invalid, otherwise keep the fixed up text
+// reject the edit when the new text is invalid, otherwise keep the fixed up text
 void applyNameValidator(std::string &input, const std::string &before) {
   std::string fixed = input;
   input = ::validateName(fixed) == ValidState::Invalid ? before : fixed;
 }
 
-// QFontMetrics::elidedText(text, Qt::ElideRight, width)
+// elide `text` on the right to fit `width`
 std::string elidedText(const std::string &text, float width) {
   if (ImGui::CalcTextSize(text.c_str()).x <= width) return text;
   const float dots = ImGui::CalcTextSize("...").x;
@@ -50,12 +48,10 @@ std::string elidedText(const std::string &text, float width) {
 
 }  // namespace
 
-// ElidedLabel
-
 ElidedLabel::ElidedLabel(const std::string &text) : text_(trimmed(text)) {}
 
 void ElidedLabel::draw(float width) {
-  if (width != lastWidth_) {  // resizeEvent
+  if (width != lastWidth_) {
     lastWidth_ = width;
     lastText_ = elidedText_ = "";
   }
@@ -73,16 +69,8 @@ void ElidedLabel::draw(float width) {
   }
 }
 
-// DetailWidget
-
 DetailWidget::DetailWidget(ChartsWidget *charts) : charts(charts) {
-  // tabbar: drawn by drawTabBar(), auto hidden with fewer than two tabs
-
   createToolBar();
-
-  // warning: drawn by draw() when warning_widget_visible
-
-  // msg widget
   binary_view = std::make_unique<BinaryView>();
   signal_view = std::make_unique<SignalView>(charts);
 
@@ -106,7 +94,6 @@ void DetailWidget::createToolBar() {
     char text[64];
     if (range) snprintf(text, sizeof(text), "%.3f - %.3f", range->first, range->second);
     heatmap_all_text = range ? text : "All";
-    // (range ? heatmap_all : heatmap_live)->setChecked(true), toggled -> setHeatmapLiveMode
     const bool live = !range;
     if (std::exchange(heatmap_live, live) != live) binary_view->setHeatmapLiveMode(live);
   }));
@@ -123,14 +110,12 @@ void DetailWidget::drawToolBar() {
   const float start_x = ImGui::GetCursorPosX();
 
   ImGui::AlignTextToFramePadding();
-  pushBoldFont();  // QLabel{font-weight:bold;}
+  pushBoldFont();
   name_label.draw(std::max(1.0f, avail - right_width - style.ItemSpacing.x));
   popBoldFont();
 
-  // spacer
   ImGui::SameLine(start_x + std::max(avail - right_width, 0.0f));
 
-  // Heatmap label and radio buttons
   ImGui::TextUnformatted("Heatmap:");
   ImGui::SameLine();
   if (ImGui::RadioButton("Live##heatmap_live", heatmap_live) && !heatmap_live) {
@@ -143,7 +128,6 @@ void DetailWidget::drawToolBar() {
     binary_view->setHeatmapLiveMode(false);
   }
 
-  // Edit and remove buttons
   ImGui::SameLine();
   ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
   ImGui::SameLine();
@@ -160,8 +144,8 @@ void DetailWidget::showTabBarContextMenu(int index) {
   if (index >= 0) {
     if (ImGui::BeginPopupContextItem()) {
       if (ImGui::MenuItem("Close Other Tabs")) {
-        std::rotate(tabbar.begin(), tabbar.begin() + index, tabbar.begin() + index + 1);  // moveTab(index, 0)
-        setMessage(tabbar[0].id);                                                         // setCurrentIndex(0)
+        std::rotate(tabbar.begin(), tabbar.begin() + index, tabbar.begin() + index + 1);
+        setMessage(tabbar[0].id);
         while (tabbar.size() > 1) {
           tabbar.erase(tabbar.begin() + 1);
         }
@@ -172,9 +156,9 @@ void DetailWidget::showTabBarContextMenu(int index) {
 }
 
 void DetailWidget::drawTabBar() {
-  if (tabbar.size() < 2) return;  // setAutoHide(true)
+  if (tabbar.size() < 2) return;  // auto hidden with fewer than two tabs
   if (!ImGui::BeginTabBar("tabbar", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoTooltip)) return;
-  // TabBar::addTab puts a close button on every tab, not only on the hovered/selected one
+  // every tab gets a close button, not only the hovered/selected one
   ImGuiStyle &style = ImGui::GetStyle();
   const float close_button_min_width = std::exchange(style.TabCloseButtonMinWidthUnselected, -1.0f);
   // setCurrentIndex requests made during this loop are applied on the next frame
@@ -188,9 +172,9 @@ void DetailWidget::drawTabBar() {
     if (current) ImGui::EndTabItem();
     ImGui::SetItemTooltip("%s", tabbar[i].tooltip.c_str());
     showTabBarContextMenu(i);
-    // currentChanged; a programmatic selection takes effect on the next frame, ignore the old tab until then
+    // a programmatic selection takes effect on the next frame, ignore the old tab until then
     if (current && !select_current && id != msg_id) setMessage(id);
-    if (!open) {  // tabCloseRequested
+    if (!open) {
       removeTab(i);
       break;
     }
@@ -199,7 +183,7 @@ void DetailWidget::drawTabBar() {
   ImGui::EndTabBar();
 }
 
-// QTabBar::removeTab: closing the current tab selects the one to its right
+// closing the current tab selects the one to its right
 void DetailWidget::removeTab(int index) {
   const bool was_current = tabbar[index].id == msg_id;
   tabbar.erase(tabbar.begin() + index);
@@ -303,13 +287,13 @@ void DetailWidget::removeMsg() {
 }
 
 void DetailWidget::drawTabWidget() {
-  // QTabWidget::South: the pages first, the tab bar below them
+  // the pages first, the tab bar below them
   const float tab_height = ImGui::GetFrameHeight();
   const float content_height = ImGui::GetContentRegionAvail().y - tab_height - ImGui::GetStyle().ItemSpacing.y;
   ImGui::BeginChild("tab_widget", ImVec2(0, std::max(content_height, 1.0f)), ImGuiChildFlags_None,
                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   if (tab_widget_index == 0) {
-    // splitter: binary_view keeps its size hint, signal_view takes the rest
+    // binary_view keeps its size hint, signal_view takes the rest
     const float min_height = binary_view->minimumSizeHint().y;
     const float avail = ImGui::GetContentRegionAvail().y;
     const float max_height = std::max(avail - 6.0f - ImGui::GetStyle().ItemSpacing.y * 2 - 1.0f, 1.0f);
@@ -331,11 +315,10 @@ void DetailWidget::drawTabWidget() {
   ImGui::EndChild();
 
   if (ImGui::BeginTabBar("tab_widget_tabs")) {
-    // the Qt tabs were "&Msg" and "&Logs"; the Alt+M/Alt+L mnemonics are not ported
     const std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Msg", std::string(icon::STOPWATCH) + " Logs"};
     for (int i = 0; i < 2; ++i) {
       if (ImGui::BeginTabItem(labels[i].c_str())) {
-        if (tab_widget_index != i) {  // currentChanged
+        if (tab_widget_index != i) {
           tab_widget_index = i;
           if (i == 1) history_log->showEvent();
           updateState();
@@ -351,7 +334,6 @@ void DetailWidget::draw() {
   drawTabBar();
   drawToolBar();
 
-  // warning
   if (warning_widget_visible) {
     ImGui::TextUnformatted(warning_icon);
     ImGui::SameLine();
@@ -383,8 +365,6 @@ std::vector<std::pair<std::string, ImRect>> DetailWidget::helpRects() const {
   return rects;
 }
 
-// EditMessageDialog
-
 EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const std::string &title, int size, float parent_width)
     : msg_id(msg_id), original_name(title), name_edit(title), size_spin(size), width_(parent_width * 0.9f) {
   window_title_ = "Edit message: " + msg_id.toString();
@@ -402,10 +382,10 @@ bool EditMessageDialog::draw() {
     ImGui::OpenPopup(window_title_.c_str());
     opened_ = true;
   }
-  ImGui::SetNextWindowSize(ImVec2(width_, 0.0f), ImGuiCond_Always);  // setFixedWidth, height fits the form
+  ImGui::SetNextWindowSize(ImVec2(width_, 0.0f), ImGuiCond_Always);  // fixed width, the height fits the form
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   bool open = true;
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (ImGui::BeginPopupModal(window_title_.c_str(), &open)) {
     const float label_width = ImGui::CalcTextSize("Comment").x + ImGui::GetStyle().ItemSpacing.x * 2;
     auto row = [&](const char *label) {
@@ -423,7 +403,7 @@ bool EditMessageDialog::draw() {
     const std::string name_before = name_edit;
     if (inputText("##name", &name_edit)) {
       applyNameValidator(name_edit, name_before);
-      validateName(name_edit);  // textEdited
+      validateName(name_edit);
     }
 
     row("Size");
@@ -433,17 +413,16 @@ bool EditMessageDialog::draw() {
     const std::string node_before = node;
     if (inputText("##node", &node)) applyNameValidator(node, node_before);
     row("Comment");
-    ImGui::InputTextMultiline("##comment", comment_edit.data(), comment_edit.capacity() + 1, ImVec2(-FLT_MIN, 192.0f),  // QAbstractScrollArea sizeHint height
+    ImGui::InputTextMultiline("##comment", comment_edit.data(), comment_edit.capacity() + 1, ImVec2(-FLT_MIN, 192.0f),
                               ImGuiInputTextFlags_CallbackResize, imguiResizeCallback, &comment_edit);
     const bool comment_active = ImGui::IsItemActive();
 
-    // btn_box
     bool accept = false, reject = false;
     if (dialogButtons("OK", &accept, &reject, btn_box_ok_enabled)) {
       accepted_ = accept;
       closed_ = true;
     }
-    // QDialog: Enter triggers the default (OK) button, Escape rejects
+    // Enter triggers the default (OK) button, Escape rejects
     if (!closed_ && btn_box_ok_enabled && !comment_active && ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
       accepted_ = true;
       closed_ = true;
@@ -470,8 +449,6 @@ void EditMessageDialog::validateName(const std::string &text) {
   }
   btn_box_ok_enabled = valid;
 }
-
-// CenterWidget
 
 CenterWidget::CenterWidget() {}
 
@@ -500,7 +477,6 @@ void CenterWidget::draw() {
 }
 
 void CenterWidget::drawWelcomeWidget() {
-  // setBackgroundRole(QPalette::Base)
   const ImVec2 win_pos = ImGui::GetWindowPos(), win_size = ImGui::GetWindowSize();
   ImGui::GetWindowDrawList()->AddRectFilled(win_pos, ImVec2(win_pos.x + win_size.x, win_pos.y + win_size.y), ImGui::GetColorU32(ImGuiCol_ChildBg));
 
@@ -511,9 +487,9 @@ void CenterWidget::drawWelcomeWidget() {
     ImGui::SetCursorPos(ImVec2(origin.x + (avail.x - size.x) * 0.5f, y));
     ImGui::TextUnformatted(text);
   };
-  ImGui::PushStyleColor(ImGuiCol_Text, colorRgb(169, 169, 169));  // QLabel{color:darkGray;}
+  ImGui::PushStyleColor(ImGuiCol_Text, colorRgb(169, 169, 169));
   float y = origin.y + avail.y * 0.5f - 90.0f;
-  pushLargeFont();  // font-size:50px;font-weight:bold;
+  pushLargeFont();
   centered("CABANA", y);
   y += ImGui::GetTextLineHeightWithSpacing();
   popLargeFont();

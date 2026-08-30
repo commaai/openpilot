@@ -29,7 +29,7 @@ public:
   int columnCount() const { return 3; }
   int rowCount() const { return std::min((int)filtered_signals.size(), 300); }
   void search(std::function<bool(double)> cmp, const std::atomic<bool> &cancel);
-  void applySearch();  // commit the results computed by search() (GUI thread)
+  void applySearch();  // commit the results computed by search(), on the GUI thread
   void reset();
   void undo();
 

@@ -17,8 +17,7 @@
 namespace fs = std::filesystem;
 
 namespace {
-// Qt's "Automatic" theme is QStyle::standardPalette(), which follows the system appearance on macOS
-// and stays light elsewhere. Match that so both frontends pick the same theme.
+// the "Automatic" theme follows the system appearance on macOS and stays light everywhere else
 bool systemPrefersDark() {
 #ifdef __APPLE__
   bool dark = false;
@@ -106,8 +105,8 @@ void applyTheme(int theme) {
   auto c = [](const CabanaColor &col, float a = 1.0f) { return colorRgb(col.r, col.g, col.b, a); };
   ImVec4 *colors = style.Colors;
   if (dark) {
-    // QPalette roles of utils::setTheme (DarkTheme), with the low contrast Darcula grays opened up:
-    // text/outlines sit further from the window and base grays than the Qt palette put them
+    // the low contrast Darcula grays are opened up: text and outlines sit further from the window and
+    // base grays
     const ImVec4 highlight = c(DarkTheme::highlight);
     const ImVec4 outline = colorRgb(0x5a, 0x5d, 0x60);
     colors[ImGuiCol_WindowBg] = c(DarkTheme::window);
@@ -163,7 +162,6 @@ void applyTheme(int theme) {
     colors[ImGuiCol_PlotHistogram] = highlight;
     colors[ImGuiCol_DragDropTarget] = highlight;
   } else {
-    // QFusionStyle::standardPalette: window #efefef, base white, highlight #308cc6, outline window.darker(140)
     const ImVec4 window = colorRgb(0xef, 0xef, 0xef);
     const ImVec4 base = colorRgb(0xff, 0xff, 0xff);
     const ImVec4 outline = colorRgb(0xb9, 0xb9, 0xb9);
@@ -221,8 +219,7 @@ void applyTheme(int theme) {
     colors[ImGuiCol_PlotHistogram] = highlight;
     colors[ImGuiCol_DragDropTarget] = highlight;
   }
-  // QDialog::exec neither dims the window behind a modal dialog nor animates it in; imgui fades the dim
-  // in over several frames, which reads as the dialog lagging
+  // imgui fades the modal dim in over several frames, which reads as the dialog lagging
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0, 0, 0, 0);
   colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0, 0, 0, 0);
 }
@@ -234,17 +231,15 @@ ImU32 highlightedTextColor() {
                 : IM_COL32(255, 255, 255, 255);
 }
 
-// QSlider (Fusion), see fusionSliderInt
-const float SLIDER_LENGTH = 13.0f;     // QStyle::PM_SliderLength
-const float SLIDER_THICKNESS = 13.0f;  // QStyle::PM_SliderThickness
+const float SLIDER_LENGTH = 13.0f;
+const float SLIDER_THICKNESS = 13.0f;
 
-// QStyle::SC_SliderHandle (Fusion): a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
+// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
 static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
   const bool dark = isDarkTheme();
-  // buttonColor.lighter(104) / buttonColor.darker(104)
   const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
   const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
-  // QFusionStylePrivate::outline: the top/left edge is one step lighter than the bottom/right edge
+  // the top/left edge is one step lighter than the bottom/right edge
   const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
   const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
   p->AddRectFilled(r.Min, r.Max, top, 2.0f);
@@ -259,16 +254,15 @@ static void drawSliderHandle(ImDrawList *p, const ImRect &r) {
 }
 
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
-  // Fusion QSlider: a full width groove with the part left of the handle filled, and a 13x13 handle on top
-  // the groove is a grey track over the full width (QFusionStyle draws it with the outline color)
+  // a grey groove over the full width with the part left of the handle filled, and a 13x13 handle on top
   const ImU32 groove_col = isDarkTheme() ? IM_COL32(0x2a, 0x2c, 0x2e, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
-  const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_Header);  // QPalette::Highlight
+  const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_Header);
   ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_FrameBgActive, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_SliderGrab, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);  // a QSlider has no frame
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);  // the slider has no frame
   ImGui::SetNextItemWidth(width);
   bool changed = ImGui::SliderInt(label, v, min, max, "", ImGuiSliderFlags_NoInput);
   ImGui::PopStyleVar();

@@ -18,12 +18,10 @@
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/ui/icons.h"
 
-// bootstrap glyphs (utils::icon("name") in the Qt frontend)
-
-// ToolButton (utils/qtutil.h): auto-raise icon button with a tooltip
+// auto-raise icon button with a tooltip
 bool toolButton(const char *icon, const char *tooltip, const char *id, float width = 0.0f);
 
-// TabBar (utils/qtutil.h): QTabBar whose tabs get an "x" close button
+// a tab bar whose tabs get an "x" close button
 class TabBar {
 public:
   TabBar() = default;
@@ -31,12 +29,12 @@ public:
   int count() const { return (int)tabs_.size(); }
   void setTabText(int index, const std::string &text) { tabs_[index].text = text; }
   void setTabData(int index, int data) { tabs_[index].data = data; }
-  int tabData(int index) const { return index >= 0 && index < count() ? tabs_[index].data : 0; }  // QVariant().toInt() == 0
+  int tabData(int index) const { return index >= 0 && index < count() ? tabs_[index].data : 0; }
   int currentIndex() const { return current_index_; }
   void removeTab(int index);
   void setAutoHide(bool hide) { auto_hide_ = hide; }
   void setExpanding(bool) {}  // imgui tabs never expand
-  void setTabsClosable(bool closable) { tabs_closable_ = closable; }  // QTabBar::setTabsClosable, off by default
+  void setTabsClosable(bool closable) { tabs_closable_ = closable; }  // off by default
   void draw();
 
   Observable<int> currentChanged;
@@ -59,7 +57,6 @@ public:
   double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
   void setTimeRange(double min, double max) { setRange(min * factor, max * factor); }
-  // QSlider
   int value() const { return value_; }
   void setValue(int v) { value_ = std::clamp(v, minimum_, maximum_); }
   void setRange(int min, int max) { minimum_ = min; maximum_ = std::max(min, max); setValue(value_); }
@@ -70,8 +67,8 @@ public:
   float width() const { return rect_.GetWidth(); }
   const ImRect &rect() const { return rect_; }
   bool underMouse() const { return hovered_; }
-  bool mouseLeft() const { return left_; }  // QEvent::Leave happened in the last draw()
-  void draw();  // paintEvent + mousePressEvent
+  bool mouseLeft() const { return left_; }  // the mouse left the slider in the last draw()
+  void draw();
   const double factor = 1000.0;
   double thumbnail_dispaly_time = -1;
 
@@ -80,13 +77,13 @@ public:
 private:
   void mousePressEvent();
   void paintEvent();
-  ImRect handleRect() const;  // QStyle::SC_SliderHandle
-  int pixelPosToRangeValue(float x) const;  // QSliderPrivate::pixelPosToRangeValue
+  ImRect handleRect() const;
+  int pixelPosToRangeValue(float x) const;
   int minimum_ = 0;
   int maximum_ = 99;
   int value_ = 0;
   bool slider_down_ = false;
-  float click_offset_ = 0;  // QSliderPrivate::clickOffset: where inside the handle the drag started
+  float click_offset_ = 0;  // where inside the handle the drag started
   bool hovered_ = false;
   bool left_ = false;
   ImRect rect_;
@@ -95,7 +92,7 @@ private:
 class StreamCameraView : public CameraWidget {
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type);
-  void draw(const ImVec2 &size);  // paintEvent
+  void draw(const ImVec2 &size);
   void parseQLog(std::shared_ptr<LogReader> qlog);
 
 private:
@@ -123,14 +120,14 @@ public:
   void draw();  // content only; MainWindow puts it in a child region above the charts
   float sizeHintHeight() const;
   float defaultHeight(float width) const;
-  // QWidget::setVisible of the video dock: MainWindow calls this every frame with the dock visibility so the
-  // camera widget gets its showEvent/hideEvent (vipc thread start/stop) like it did in Qt
+  // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
+  // showEvent/hideEvent (vipc thread start/stop)
   void setVisible(bool visible);
   void showThumbnail(double seconds);
   std::string whatsThis() const { return whats_this_; }
 
 protected:
-  void eventFilter();  // MouseMove / Leave on the slider
+  void eventFilter();  // mouse move / leave on the slider
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
   void updateState();
@@ -149,18 +146,13 @@ protected:
   void showRouteInfo();
 
   std::unique_ptr<StreamCameraView> cam_widget;
-  // time_display_action
   std::string time_text_;
   std::string time_tooltip_;
-  // play_toggle_action
   const char *play_icon_ = icon::PLAY;
   std::string play_tooltip_;
-  // speed_btn
   std::string speed_text_;
-  int speed_index_ = -1;  // checked action of the speed menu
-  // skip_to_end_action
+  int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
-  // loop playback action
   const char *loop_icon_ = icon::REPEAT;
   std::unique_ptr<Slider> slider;
   std::unique_ptr<TabBar> camera_tab;

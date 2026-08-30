@@ -133,9 +133,8 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
 
 int main(int argc, char *argv[]) {
 #ifdef __GLIBC__
-  // Worker threads (sparklines, chart series, replay) would each get their own glibc malloc arena and the arenas
-  // fragment without bound (RSS grew ~3 MB/min with charts open); Qt's build stays flat on one arena as well.
-  // macOS has a single allocator zone, so there is nothing to cap there.
+  // Worker threads (sparklines, chart series, replay) would each get their own glibc malloc arena and the
+  // arenas fragment without bound (RSS grew ~3 MB/min with charts open). macOS has a single allocator zone.
   mallopt(M_ARENA_MAX, 1);
 #endif
   // ensure the current dir matches the executable's directory

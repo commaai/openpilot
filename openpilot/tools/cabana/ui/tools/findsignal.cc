@@ -10,7 +10,7 @@
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/util.h"
 
-// DoubleValidator (utils/qtutil.h): revert the edit when the new text is invalid
+// revert the edit when the new text is not a valid double
 static bool doubleEdit(const char *label, std::string *text) {
   std::string prev = *text;
   bool changed = inputText(label, text);
@@ -21,14 +21,14 @@ static bool doubleEdit(const char *label, std::string *text) {
   return changed;
 }
 
-// QString::toDouble: 0 when the text is not a valid number
+// 0 when the text is not a valid number
 static double toDouble(const std::string &s) {
   char *end = nullptr;
   double v = std::strtod(s.c_str(), &end);
   return (end != s.c_str() && *end == '\0') ? v : 0.0;
 }
 
-// QString::toUShort / toULong(base): 0 when the text is not fully consumed
+// 0 when the text is not fully consumed
 static unsigned long toULong(const std::string &s, int base = 10) {
   char *end = nullptr;
   unsigned long v = std::strtoul(s.c_str(), &end, base);
@@ -53,8 +53,6 @@ static std::vector<std::string> split(const std::string &s, char sep) {
   }
   return parts;
 }
-
-// FindSignalModel
 
 std::string FindSignalModel::headerData(int section, bool horizontal) const {
   static std::string titles[] = {"Id", "Start Bit, size", "(time, value)"};
@@ -135,7 +133,6 @@ void FindSignalModel::reset() {
   initial_signals.clear();
 }
 
-// FindSignalDlg
 FindSignalDlg::FindSignalDlg() {
   char buf[64];
   snprintf(buf, sizeof(buf), "Find Signal###findsignal%p", (void *)this);
@@ -152,25 +149,21 @@ FindSignalDlg::~FindSignalDlg() {
 bool FindSignalDlg::draw() {
   if (!open_) return false;
   ImGui::SetNextWindowSize(ImVec2(900, 650), ImGuiCond_Appearing);
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (ImGui::Begin(title_.c_str(), &open_)) {
-    // Messages group
     float group_w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
     ImGui::BeginChild("Messages", ImVec2(group_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     drawMessageGroup();
     ImGui::EndChild();
     ImGui::SameLine();
-    // Signal group
     ImGui::BeginChild("Signal", ImVec2(group_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     drawPropertiesGroup();
     ImGui::EndChild();
-    // find group
     float footer = stats_label_visible ? ImGui::GetTextLineHeightWithSpacing() : 0;
     ImGui::BeginChild("Find signal", ImVec2(0, -footer), ImGuiChildFlags_Borders);
     drawFindGroup();
     ImGui::EndChild();
     if (stats_label_visible) ImGui::TextUnformatted(stats_label.c_str());
-    // QDialog closes on Escape
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false) &&
         !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
       open_ = false;
@@ -251,7 +244,7 @@ void FindSignalDlg::drawFindGroup() {
   }
   ImGui::SameLine();
   ImGui::SetNextItemWidth(80);
-  if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();  // value1->setFocus
+  if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
   doubleEdit("##value1", &value1);
   if (to_label_visible) {
     ImGui::SameLine();
@@ -286,7 +279,7 @@ void FindSignalDlg::drawTable() {
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
   if (!ImGui::BeginTable("view", model->columnCount() + 1, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
-  // vertical header: row number. QHeaderView has no width while the model is empty
+  // vertical header: row number, no width while the model is empty
   ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed | (model->rowCount() ? 0 : ImGuiTableColumnFlags_Disabled), 40.0f);
   for (int c = 0; c < model->columnCount(); ++c) {
     auto column_flags = c == model->columnCount() - 1 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed;
@@ -331,8 +324,7 @@ void FindSignalDlg::search() {
   search_btn_enabled = false;
   stats_label_visible = false;
   search_btn_text = "Finding ....";
-  // Qt runs model->search() from QTimer::singleShot(0) on the GUI thread (it joins its worker threads);
-  // here it runs off the render thread into model->search_results and applies them with modelReset
+  // the search runs off the render thread into model->search_results and is applied with modelReset
   searching_ = true;
   if (search_thread_.joinable()) search_thread_.join();
   cancel_search_ = false;

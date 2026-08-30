@@ -18,12 +18,10 @@
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/ui/icons.h"
 
-// bootstrap glyphs merged into the fonts (utils::icon("name") in the Qt widgets)
-
-// qtutil.h ToolButton: auto-raise icon button with a tooltip
+// auto-raise icon button with a tooltip
 inline bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr) {
   std::string label = text && *text ? std::string(icon) + " " + text + "###" + id : std::string(icon) + "###" + id;
-  // setAutoRaise(true): no frame, transparent until hovered
+  // no frame, transparent until hovered
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   bool clicked = ImGui::Button(label.c_str());
@@ -55,8 +53,8 @@ public:
   void updatePlotArea();
   void showTip(double sec);
   void hideTip();
-  void draw(float width);  // paintEvent + mouse events, one chart of settings.chart_height
-  void drawGhost(float width);  // QWidget::grab(): the same tile rendered again, without handling any input
+  void draw(float width);  // one chart of settings.chart_height
+  void drawGhost(float width);  // the same tile rendered again, without handling any input
   double secondsAtPoint(const ImVec2 &pt) const {
     return x_min + (pt.x - plot_area.Min.x) * (x_max - x_min) / std::max(plot_area.GetWidth(), 1.0f);
   }
@@ -83,7 +81,7 @@ private:
 
   void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
                        std::vector<ImPlotPoint> &vals, std::vector<ImPlotPoint> &step_vals);
-  void createToolButtons();  // draws manage_btn/close_btn and their menus each frame
+  void createToolButtons();
   void contextMenuEvent();
   void mousePressEvent();
   void mouseMoveEvent();
@@ -101,7 +99,7 @@ private:
   void drawSignalValue();
   void drawTimeline();
   void drawRubberBandTimeRange();
-  void drawMenuActions();  // the series type / manage / split actions shared by the menu button and the context menu
+  void drawMenuActions();  // the series type / manage / split entries shared by the menu button and the context menu
   int xAxisPrecision() const;
   std::tuple<double, double, int> getNiceAxisNumbers(double min, double max, int tick_count);
   double niceNumber(double x, bool ceiling);
@@ -136,7 +134,7 @@ private:
   ImRect rubber_rect;
   bool resume_after_scrub = false;
   bool plot_hovered = false;
-  bool drawing_ghost = false;  // drawing the drag pixmap: no mouse handling, no tip
+  bool drawing_ghost = false;  // drawing the drag preview: no mouse handling, no tip
   ImGuiID context_menu_id = 0;
 
   bool split_chart_enabled = false;

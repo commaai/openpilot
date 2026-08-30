@@ -26,10 +26,10 @@ private:
   void drawTable();
 
   std::vector<mismatched_struct> table;  // rows, cleared by find()
-  bool table_has_columns = false;        // table->setColumnCount(6) happened
-  std::vector<int> bus_items;            // src_bus_combo / find_bus_combo items (can->sources)
+  bool table_has_columns = false;
+  std::vector<int> bus_items;            // src_bus_combo / find_bus_combo items
   int src_bus_combo = 0, find_bus_combo = 0;
-  std::vector<std::pair<std::string, uint32_t>> msg_items;  // msg_cb items: (name, address)
+  std::vector<std::pair<std::string, uint32_t>> msg_items;  // (name, address)
   int msg_cb = 0;
   int equal_combo = 0;
   int byte_idx_sb = 0, bit_idx_sb = 0;

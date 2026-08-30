@@ -7,8 +7,6 @@
 
 #include "tools/cabana/ui/imgui_util.h"
 
-// MessageBytesDelegate
-
 MessageBytesDelegate::MessageBytesDelegate(bool multiple_lines) : multiple_lines(multiple_lines) {
   for (int i = 0; i < 256; ++i) {
     snprintf(hex_text_table[i], sizeof(hex_text_table[i]), "%02X", i);
@@ -17,17 +15,17 @@ MessageBytesDelegate::MessageBytesDelegate(bool multiple_lines) : multiple_lines
 
 void MessageBytesDelegate::updateFontMetrics() {
   pushMonoFont();
-  // QFontMetrics::size: the width of "00 " by QFontMetrics::height (Qt 5: ascent + descent + 1), not the font size
+  // the width of "00 " by the line height (ascent + descent + 1), not the font size
   const ImFontBaked *baked = ImGui::GetFontBaked();
   byte_size = ImVec2(ImGui::CalcTextSize("00 ").x, std::ceil(baked->Ascent) - std::floor(baked->Descent) + 1 + 2);
   popMonoFont();
-  // PM_FocusFrameHMargin/VMargin + 1: one more than the table's cell padding
+  // one more than the table's cell padding
   h_margin = ImGui::GetStyle().CellPadding.x + 1;
   v_margin = ImGui::GetStyle().CellPadding.y + 1;
 }
 
 ImVec2 MessageBytesDelegate::sizeForBytes(int n) const {
-  int rows = multiple_lines ? std::max(1, n / 8) : 1;  // Qt quirk: n / 8 rounds down, e.g. 12 bytes get 1 row
+  int rows = multiple_lines ? std::max(1, n / 8) : 1;  // quirk: n / 8 rounds down, e.g. 12 bytes get 1 row
   return {(n / rows) * byte_size.x + h_margin * 2, rows * byte_size.y + v_margin * 2};
 }
 
@@ -37,13 +35,10 @@ ImVec2 MessageBytesDelegate::sizeHint(const std::vector<uint8_t> *bytes) const {
 
 void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool selected, bool inactive, const std::string &text,
                                  const std::vector<uint8_t> *bytes, const std::vector<CabanaColor> *colors) const {
-  // the selection background is painted by the row's Selectable
-
-  // the table already applies the cell padding: rect is the item rect
+  // the selection background is painted by the row's Selectable, and the table already applies the cell
+  // padding, so rect is the item rect
   const ImRect item_rect = rect;
-  // the Qt model never returns Qt::ForegroundRole, so the delegate's "inactive" is always false there:
-  // inactive rows keep their byte colors and only the text is grayed by the view's palette
-  // inactive rows fade the highlighted text (alpha 100)
+  // inactive rows keep their byte colors, gray the text and fade the highlighted text to alpha 100
   ImU32 highlighted_color = highlightedTextColor();
   if (inactive) highlighted_color = (highlighted_color & ~IM_COL32_A_MASK) | ((ImU32)100 << IM_COL32_A_SHIFT);
   const ImU32 text_color = ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
@@ -57,7 +52,6 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
     return;
   }
 
-  // Paint hex column
   pushMonoFont();
   ImFont *fixed_font = ImGui::GetFont();
   const float font_size = ImGui::GetFontSize();
@@ -77,7 +71,7 @@ void MessageBytesDelegate::paint(ImDrawList *painter, const ImRect &rect, bool s
       }
       painter->AddRectFilled(r.Min, r.Max, toImColor((*colors)[i]));
     }
-    // drawStaticText: centered in r
+    // centered in r
     const ImVec2 text_size = ImGui::CalcTextSize(hex_text_table[(*bytes)[i]]);
     const ImVec2 pos(r.Min.x + (byte_size.x - text_size.x) * 0.5f, r.Min.y + (byte_size.y - text_size.y) * 0.5f);
     painter->AddText(fixed_font, font_size, pos, pen, hex_text_table[(*bytes)[i]]);

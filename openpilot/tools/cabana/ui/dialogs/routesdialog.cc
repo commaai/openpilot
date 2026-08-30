@@ -41,7 +41,7 @@ void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices,
     device_index_ = 0;
     fetchRoutes();
   } else {
-    // Qt shows the box on top of the dialog and rejects it once the box is dismissed
+    // the box shows on top of the dialog, which is rejected once the box is dismissed
     MessageBox::warning("Error", error_code == 401 ? "Unauthorized. Authenticate with openpilot/tools/lib/auth.py" : "Network error", "",
                         [this, alive = std::weak_ptr<bool>(alive_)]() {
                           if (!alive.expired()) finish(false);
@@ -96,7 +96,7 @@ void RoutesDialog::draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(480.0f, 420.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal("Remote routes", nullptr, ImGuiWindowFlags_NoResize)) return;
 
   ImGui::AlignTextToFramePadding();

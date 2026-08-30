@@ -16,10 +16,10 @@ namespace FileDialog {
 
 namespace {
 
-// QFileDialog sorts with a case insensitive, numeric aware collation ("mazda_3_2019" before "mazda_2017")
+// case insensitive, numeric aware collation ("mazda_3_2019" before "mazda_2017"): punctuation is ignored at
+// the first level ("FORD_CADS_64" before "FORD_CADS.dbc"), digit runs compare numerically, case is ignored;
+// ties fall back to a plain comparison
 bool naturalLess(const std::string &a, const std::string &b) {
-  // like the locale collation QFileDialog uses: punctuation is ignored at the first level ("FORD_CADS_64" before
-  // "FORD_CADS.dbc"), digit runs compare numerically, case is ignored; ties fall back to a plain comparison
   auto skip = [](const std::string &s, size_t &i) {
     while (i < s.size() && !isalnum(static_cast<unsigned char>(s[i]))) ++i;
   };
@@ -169,7 +169,7 @@ void draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
 
   if (ImGui::Button("Up")) setDir(s.dir.parent_path());

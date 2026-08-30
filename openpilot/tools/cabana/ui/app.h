@@ -8,7 +8,7 @@
 
 struct GLFWwindow;
 
-// takes ownership of stream (nullptr opens the stream selector), mirrors `MainWindow w(stream, dbc); app.exec()`
+// takes ownership of stream; nullptr opens the stream selector
 int run(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
 
 class GlfwRuntime {
@@ -31,8 +31,8 @@ public:
   ImGuiRuntime &operator=(const ImGuiRuntime &) = delete;
 };
 
-// key presses with the modifier state at event time (imgui may apply a modifier release in the same frame as
-// the key press it belongs to, which loses fast shortcut sequences); consumed once per frame by MainWindow
+// key presses with the modifier state at event time: imgui may apply a modifier release in the same frame as
+// the key press it belongs to, which loses fast shortcut sequences. Consumed once per frame by MainWindow.
 struct KeyEvent {
   int key;   // GLFW_KEY_*
   int mods;  // GLFW_MOD_*
@@ -41,5 +41,5 @@ std::vector<KeyEvent> takeKeyEvents();
 
 // style.cc
 void loadFonts();
-void applyTheme(int theme);  // utils::setTheme equivalent, safe to call at runtime
+void applyTheme(int theme);  // safe to call at runtime
 bool isDarkTheme();  // the theme applyTheme() resolved, so AUTO_THEME reports what is on screen

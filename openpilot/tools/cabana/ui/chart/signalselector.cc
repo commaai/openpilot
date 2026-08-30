@@ -28,7 +28,7 @@ bool SignalSelector::draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(700.0f, 450.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) {
     open_ = false;
     return false;
@@ -40,15 +40,14 @@ bool SignalSelector::draw() {
   const float lists_h = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 3;
   bool done = false;
 
-  // left column
   ImGui::BeginGroup();
   ImGui::TextUnformatted("Available Signals");
-  // the editable QComboBox (NoInsert) with its completer became a combo popup with a filter box
+  // a combo popup with a filter box
   const char *preview = msgs_combo_index_ >= 0 ? msgs_combo[msgs_combo_index_].text.c_str() : "Select a msg...";
   ImGui::SetNextItemWidth(column_w);
   if (ImGui::BeginCombo("##msgs_combo", preview)) {
     if (ImGui::IsWindowAppearing()) {
-      msgs_combo_filter_.clear();  // QComboBox reopens showing the full list
+      msgs_combo_filter_.clear();  // reopen showing the full list
       ImGui::SetKeyboardFocusHere();
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
@@ -71,7 +70,6 @@ bool SignalSelector::draw() {
   drawList("##available_list", available_list, &available_row_, false, &add_dbl, ImVec2(column_w, lists_h));
   ImGui::EndGroup();
 
-  // buttons
   ImGui::SameLine();
   ImGui::BeginGroup();
   ImGui::Dummy(ImVec2(btn_w, (lists_h + ImGui::GetFrameHeightWithSpacing() * 2) / 2 - ImGui::GetFrameHeight()));
@@ -83,13 +81,11 @@ bool SignalSelector::draw() {
   ImGui::EndDisabled();
   ImGui::EndGroup();
 
-  // right column
   ImGui::SameLine();
   ImGui::BeginGroup();
   ImGui::TextUnformatted("Selected Signals");
   bool remove_dbl = false;
   drawList("##selected_list", selected_list, &selected_row_, true, &remove_dbl, ImVec2(column_w, lists_h + ImGui::GetFrameHeightWithSpacing()));
-  // QDialogButtonBox: [Cancel] [Ok], right aligned
   const float buttons_w = 80.0f * 2 + ImGui::GetStyle().ItemSpacing.x;
   ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, column_w - buttons_w));
   if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;

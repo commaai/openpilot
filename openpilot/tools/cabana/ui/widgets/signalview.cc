@@ -17,15 +17,14 @@
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/widgets/videowidget.h"
 
-// bootstrap glyphs merged into the fonts (utils::icon("name") in Qt); file local, other widgets define their own
+// bootstrap glyphs merged into the fonts; file local, other widgets define their own
 
 namespace {
-// QStyle pixel metrics (Fusion): PM_TreeViewIndentation, PM_FocusFrameHMargin + 1, PM_FocusFrameVMargin, PM_ToolBarItemSpacing
 constexpr float INDENTATION = 20.0f;
 constexpr float H_MARGIN = 3.0f;
 constexpr float V_MARGIN = 2.0f;
 // signal rows are taller than a frame so the sparklines have room to read
-constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the QToolButton in the row makes it 27 px tall at the 16 px font
+constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it 27 px tall at the 16 px font
 constexpr float TOOLBAR_ITEM_SPACING = 4.0f;
 
 std::string trimmed(const std::string &s) {
@@ -41,13 +40,13 @@ bool containsCaseInsensitive(const std::string &text, const std::string &sub) {
   return it != text.end();
 }
 
-std::string toString(double v) {  // QString::number(double)
+std::string toString(double v) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%g", v);
   return buf;
 }
 
-// Qt rendered the tooltip as rich text; drop the tags for the plain text imgui tooltip
+// drop the tags of a rich text tooltip for the plain text imgui tooltip
 std::string stripHtml(const std::string &s) {
   std::string out;
   bool in_tag = false;
@@ -59,7 +58,6 @@ std::string stripHtml(const std::string &s) {
   return trimmed(out);
 }
 
-// QFontMetrics::elidedText + drawText
 void drawElidedText(ImDrawList *painter, const ImRect &rect, const std::string &text, ImU32 color, bool align_right) {
   const ImVec2 size = ImGui::CalcTextSize(text.c_str());
   const float y = rect.Min.y + (rect.GetHeight() - size.y) * 0.5f;
@@ -72,7 +70,7 @@ void drawElidedText(ImDrawList *painter, const ImRect &rect, const std::string &
   }
 }
 
-// drawText with a specific font size, vertically centered, optionally aligned to the top/bottom (Qt::AlignTop/AlignBottom)
+// text at a specific font size, vertically centered, optionally aligned to the top or bottom
 void drawSmallText(ImDrawList *painter, const ImRect &rect, float font_size, const std::string &text, ImU32 color, int valign = 0) {
   ImFont *font = ImGui::GetFont();
   const ImVec2 size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, text.c_str());
@@ -103,7 +101,7 @@ int inputCallback(ImGuiInputTextCallbackData *data) {
 // validators
 
 int nameValidator(ImGuiInputTextCallbackData *data) {
-  // NameValidator: [A-Za-z0-9_], spaces rewritten to '_'
+  // [A-Za-z0-9_], spaces rewritten to '_'
   if (data->EventChar == ' ') {
     data->EventChar = '_';
     return 0;
@@ -112,18 +110,18 @@ int nameValidator(ImGuiInputTextCallbackData *data) {
 }
 
 int nodeValidator(ImGuiInputTextCallbackData *data) {
-  // NodeValidator: \w+(,\w+)*
+  // \w+(,\w+)*
   return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_' || data->EventChar == ',')) ? 0 : 1;
 }
 
 int doubleValidator(ImGuiInputTextCallbackData *data) {
-  // DoubleValidator: C-locale floating-point
+  // C-locale floating-point
   const ImWchar c = data->EventChar;
   return (c < 128 && (std::isdigit((int)c) || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E')) ? 0 : 1;
 }
 
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
-  // NonWhitespaceValidator: \S+
+  // \S+
   return (data->EventChar < 128 && std::isspace((int)data->EventChar)) ? 1 : 0;
 }
 
@@ -133,8 +131,6 @@ bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback va
   if (validator) flags |= ImGuiInputTextFlags_CallbackCharFilter;
   return ImGui::InputTextWithHint(label, hint, s->data(), s->capacity() + 1, flags, inputCallback, &ctx);
 }
-
-// SignalModel
 
 static std::string signalTypeToString(cabana::Signal::Type type) {
   if (type == cabana::Signal::Type::Multiplexor) return "Multiplexor Signal";
@@ -186,7 +182,7 @@ void SignalModel::refresh() {
     }
   }
   modelReset();
-  rowsChanged();  // modelReset
+  rowsChanged();
 }
 
 int SignalModel::flags(const Item *item, int column) const {
@@ -304,7 +300,7 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
     if (filter_str.empty()) {
       int i = dbc()->msg(msg_id)->indexOf(sig);
       insertItem(root.get(), i, sig);
-      rowsChanged();  // rowsInserted
+      rowsChanged();
     } else if (containsCaseInsensitive(sig->name, filter_str)) {
       refresh();
     }
@@ -329,18 +325,16 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
     delete root->children[row];
     root->children.erase(root->children.begin() + row);
-    rowsChanged();  // rowsRemoved
+    rowsChanged();
   }
 }
-
-// SignalItemDelegate
 
 SignalItemDelegate::SignalItemDelegate() {
   name_validator = nameValidator;
   node_validator = nodeValidator;
   double_validator = doubleValidator;
-  // updateEditorGeometry runs on the first paint; seed the size of the [plot][remove] widget (two 22px
-  // ToolButtons + PM_ToolBarItemSpacing) so the first updateState() calls already leave room for the sparklines
+  // seed the size of the [plot][remove] widget (two 22px tool buttons plus the spacing) so the first
+  // updateState() calls already leave room for the sparklines
   button_size = ImVec2(22 * 2 + TOOLBAR_ITEM_SPACING, 22);
 
   // the sig pointers die with the signal
@@ -365,7 +359,7 @@ float SignalItemDelegate::rowHeight() const {
   return ImGui::GetFrameHeight();
 }
 
-// only the top level signal rows are taller; the expanded sub-rows keep the Qt row height
+// only the top level signal rows are taller; the expanded sub-rows keep the default row height
 float SignalItemDelegate::signalRowHeight() const {
   return ImGui::GetFrameHeight() + SIGNAL_ROW_EXTRA;
 }
@@ -410,7 +404,7 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
       if (item->sig->type != cabana::Signal::Type::Normal) {
         std::string indicator = item->sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(item->sig->multiplex_value) + " ";
         ImRect indicator_rect(rect.Min.x, rect.Min.y, rect.Min.x + ImGui::CalcTextSize(indicator.c_str()).x, rect.Max.y);
-        painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, IM_COL32(160, 160, 164, 255), 3.0f);  // Qt::gray
+        painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, IM_COL32(160, 160, 164, 255), 3.0f);
         drawElidedText(painter, indicator_rect, indicator, IM_COL32_WHITE, false);
         rect.Min.x = indicator_rect.Max.x + h_margin * 2;
       }
@@ -450,7 +444,6 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
       rect.Max.x -= button_size.x;
       if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
     } else {
-      // QStyledItemDelegate::paint
       if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, false);
     }
   }
@@ -476,13 +469,13 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
       setModelData(item, model, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
     }
-    // Enter, Escape and a click outside close the editor; the step buttons keep it open like QSpinBox
+    // Enter, Escape and a click outside close the editor; the step buttons keep it open
     if (ImGui::IsItemDeactivated() && (!ImGui::IsItemHovered() || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
                                        ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false))) {
       open_item_ = nullptr;
     }
   } else if (item->type == SignalModel::Item::SignalType) {
-    // the QComboBox editor is closed by Enter and Escape; the cell is painted as text again next frame
+    // the combo editor is closed by Enter and Escape; the cell is painted as text again next frame
     if (combo_focused_ && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
                            ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false))) {
       open_item_ = nullptr;
@@ -497,7 +490,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
       items.emplace_back(signalTypeToString(cabana::Signal::Type::Multiplexed), (int)cabana::Signal::Type::Multiplexed);
     }
     std::vector<const char *> names;
-    int current = -1;  // QComboBox::currentIndex() is -1 when the current type is not an item (Multiplexor)
+    int current = -1;  // -1 when the current type is not an item (Multiplexor)
     for (int i = 0; i < items.size(); ++i) {
       names.push_back(items[i].first.c_str());
       if (items[i].second == (int)item->sig->type) current = i;
@@ -506,7 +499,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     if (take_focus) ImGui::SetKeyboardFocusHere();
     if (ImGui::Combo("##editor", &current, names.data(), names.size())) {
       setModelData(item, model, items[current].second);
-      open_item_ = nullptr;  // activated: commitData + closeEditor
+      open_item_ = nullptr;  // commit and close the editor
     }
     combo_focused_ = ImGui::IsItemFocused() || ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
     if (!take_focus && !combo_focused_) open_item_ = nullptr;  // the editor is closed when it loses the focus
@@ -522,7 +515,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
       desc_sig_ = item->sig;
     }
   } else {
-    // QStyledItemDelegate::createEditor: plain QLineEdit, no validator
+    // plain text input, no validator
     take_focus_ = take_focus;
     lineEditor(item, model, nullptr);
   }
@@ -533,7 +526,7 @@ void SignalItemDelegate::closeEditor() {
   editor_active_ = refocus_editor_ = enter_pressed_ = combo_focused_ = false;
 }
 
-// QValidator::validate for the editor of `item`; mutates `text` like NameValidator does (spaces -> '_')
+// validate the editor of `item`; mutates `text` like the name validator does (spaces -> '_')
 ValidState SignalItemDelegate::validateEditor(const SignalModel::Item *item, std::string &text) {
   if (item->type == SignalModel::Item::Name) return validateName(text);
   if (item->type == SignalModel::Item::Node) return validateNodes(text);
@@ -545,9 +538,9 @@ ValidState SignalItemDelegate::validateEditor(const SignalModel::Item *item, std
   return ValidState::Acceptable;  // no validator
 }
 
-// QLineEdit editor: Enter and focus out only commit when the validator reports Acceptable (an Intermediate
-// or Invalid value keeps the editor open with the typed text and commits nothing), Escape reverts to the
-// value the editor was opened with.
+// Enter and focus out only commit when the validator reports Acceptable (an Intermediate or Invalid value
+// keeps the editor open with the typed text and commits nothing), Escape reverts to the value the editor
+// was opened with.
 void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator) {
   const bool editing = editing_item_ == item;
   const bool was_active = editing && editor_active_;  // the editor had the focus at the end of the last frame
@@ -555,7 +548,7 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
   std::string text = editing ? edit_text_ : model->data(item, 1);
   if (std::exchange(take_focus_, false)) ImGui::SetKeyboardFocusHere();
   if (editing && refocus_editor_) {
-    ImGui::SetKeyboardFocusHere();  // QLineEdit keeps the focus when the input is not acceptable
+    ImGui::SetKeyboardFocusHere();  // keep the focus when the input is not acceptable
     refocus_editor_ = false;
   }
   validatedInput("##editor", &text, validator, "", ImGuiInputTextFlags_AutoSelectAll);
@@ -569,7 +562,7 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
   editor_active_ = ImGui::IsItemActive();
   if (was_active) {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
-      // closeEditor(RevertModelCache): no commit, the editor is closed and the original value comes back
+      // no commit, the editor is closed and the original value comes back
       edit_text_ = edit_original_;
       editing_item_ = open_item_ = nullptr;
       enter_pressed_ = false;
@@ -603,7 +596,7 @@ void SignalItemDelegate::drawValueDescriptionDlg(SignalModel *model) {
   if (desc_dlg_->draw()) return;
 
   if (desc_dlg_->accepted) {
-    // dlg.exec() returned: apply to the Desc item of the edited signal
+    // the dialog closed: apply to the Desc item of the edited signal
     for (auto sig_item : model->root->children) {
       if (sig_item->sig != desc_sig_) continue;
       for (auto child : sig_item->children) {
@@ -618,28 +611,22 @@ void SignalItemDelegate::drawValueDescriptionDlg(SignalModel *model) {
   desc_sig_ = nullptr;
 }
 
-// SignalView
-
 SignalView::SignalView(ChartsWidget *charts) : charts(charts) {
-  // title bar: signal_count_lb, filter_edit (NonWhitespaceValidator, clear button, "Filter Signal") drawn in draw()
-
   // WARNING: increasing the maximum range can result in severe performance degradation.
   // 30s is a reasonable value at present.
-  const int max_range = sparkline_range_max; // 30s
+  const int max_range = sparkline_range_max;
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
-  // sparkline_label, sparkline_range_slider (1..max_range, "Sparkline time range") and the collapse button are drawn in draw()
 
-  // tree view
   model = std::make_unique<SignalModel>();
   delegate = std::make_unique<SignalItemDelegate>();
   updateToolBar();
 
   connections_.push_back(model->rowsChanged.connect([this]() { rowsChanged(); }));
-  // QAbstractItemView::reset() closes the open editors; the items they point at are deleted by refresh()
+  // a reset closes the open editors; the items they point at are deleted by refresh()
   connections_.push_back(model->modelReset.connect([this]() {
     delegate->closeEditor();
-    // QTreeView lays the new rows out before rowsChanged() runs, so its visible range is current. Ours is
-    // computed while drawing; reset it to the top so the sparklines are ready in the frame that paints them.
+    // the visible range is computed while drawing; reset it to the top so the sparklines are ready in the
+    // frame that paints them
     if (first_visible_row_ != -1) {
       last_visible_row_ = std::min(model->rowCount() - 1, last_visible_row_ - first_visible_row_);
       first_visible_row_ = 0;
@@ -666,7 +653,6 @@ void SignalView::setMessage(const MessageId &id) {
 }
 
 void SignalView::rowsChanged() {
-  // the [plot][remove] index widgets are drawn per row in drawIndexWidget()
   updateToolBar();
   updateChartState();
   updateState();
@@ -684,7 +670,7 @@ void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
     if (expand) {
       item->expanded = !item->expanded;
     }
-    scroll_to_sig_ = sig;  // scrollTo(idx, PositionAtTop)
+    scroll_to_sig_ = sig;  // scroll the signal to the top
     current_sig_ = sig;
     current_type_ = SignalModel::Item::Sig;
   }
@@ -727,7 +713,7 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
 
 void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
   if (!sig || current_sig_ == sig) {
-    // QItemSelectionModel moves the current index to the row that took the removed one, or to the last row
+    // the current index moves to the row that took the removed one, or to the last row
     current_sig_ = nullptr;
     auto &children = model->root->children;
     if (sig && !children.empty() && current_row_ >= 0) {
@@ -741,8 +727,8 @@ void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
 
 std::pair<int, int> SignalView::visibleSignalRange() {
   // computed while drawing the tree: the first top-level row whose own row is visible (a signal whose
-  // header is scrolled out but whose children are visible is skipped, like Qt), and the last top-level
-  // row with any visible row
+  // header is scrolled out but whose children are visible is skipped), and the last top-level row with
+  // any visible row
   return {first_visible_row_, last_visible_row_};
 }
 
@@ -781,22 +767,19 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
 }
 
 void SignalView::draw() {
-  // QFrame::StyledPanel
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
     ImGui::EndChild();
     return;
   }
 
-  // title bar
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(signal_count_lb.c_str());
   ImGui::SameLine();
   ImGui::SetNextItemWidth(160.0f);
   if (validatedInput("##filter_edit", &filter_edit, nonWhitespaceValidator, "Filter Signal")) {
-    model->setFilter(filter_edit);  // textEdited
+    model->setFilter(filter_edit);
   }
   if (!filter_edit.empty()) {
-    // clear button
     ImGui::SameLine(0.0f, 0.0f);
     if (ImGui::SmallButton((std::string(icon::X) + "##clear").c_str())) {
       filter_edit.clear();
@@ -821,19 +804,18 @@ void SignalView::draw() {
   }
   ImGui::SetItemTooltip("Sparkline time range");
   ImGui::SameLine();
-  // auto-raise ToolButton with setIconSize({12, 12})
+  // auto-raise tool button with a 12x12 icon
   ImGui::PushFont(ImGui::GetFont(), 12.0f);
   const bool collapse = toolButton(icon::DASH_SQUARE, "Collapse All", "collapse_all");
   ImGui::PopFont();
   if (collapse) collapseAll();
 
-  // tree view
   drawTree();
   delegate->drawValueDescriptionDlg(model.get());
   // model changes run after the tree is drawn: dbc()->signalUpdated/signalRemoved reorder or delete the rows
   if (delegate->pending_commit) std::exchange(delegate->pending_commit, nullptr)();
   if (pending_action_) std::exchange(pending_action_, nullptr)();
-  current_row_ = model->signalRow(current_sig_);  // currentIndex row, used when the row is removed
+  current_row_ = model->signalRow(current_sig_);  // used when the row is removed
 
   ImGui::EndChild();
 }
@@ -847,8 +829,8 @@ void SignalView::collapseAll() {
 
 void SignalView::drawTree() {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));  // QFrame::NoFrame
-  const float min_height = std::max(ImGui::GetContentRegionAvail().y, 300.0f);  // setMinimumHeight(300)
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  const float min_height = std::max(ImGui::GetContentRegionAvail().y, 300.0f);
   const bool visible = ImGui::BeginChild("tree", ImVec2(0, min_height), ImGuiChildFlags_None);
   ImGui::PopStyleVar();
   if (visible) {
@@ -871,7 +853,6 @@ void SignalView::drawTree() {
     last_visible_row_ = last_visible;
     scroll_to_sig_ = nullptr;
 
-    // header()->sectionResized / resizeEvent / scrollbar valueChanged, rangeChanged
     bool changed = false;
     if (ctx.name_width > 0) name_column_width = ctx.name_width;
     if (ctx.value_column_width > 0 && ctx.value_column_width != value_column_width) {
@@ -885,14 +866,13 @@ void SignalView::drawTree() {
     }
     if (changed) updateState();
 
-    // QAbstractItemView::mousePressEvent: a press on the viewport that hits no row clears the
-    // selection and the current index. clicked() is not emitted, so rowClicked() does not run.
+    // a press on the viewport that hits no row clears the selection and the current index; rowClicked()
+    // does not run
     if (!ctx.mouse_on_row && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       current_sig_ = nullptr;
       current_type_ = SignalModel::Item::Root;
     }
 
-    // entered / viewportEntered / leaveEvent
     if (ctx.hovered_sig != hovered_sig_) {
       hovered_sig_ = ctx.hovered_sig;
       highlight(hovered_sig_);
@@ -913,24 +893,23 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 
   ImGui::PushID(item);
   ImGui::BeginDisabled(!(flags & SignalModel::ItemIsEnabled));
-  // QTreeView has no hover highlight, only the selection background
+  // no hover highlight, only the selection background
   ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
   ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
   const bool row_clicked = ImGui::Selectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
   ImGui::PopStyleColor(2);
-  // QTreeView::mousePressEvent: a press on the branch indicator only toggles the expansion, the current
-  // index does not change and clicked() is not emitted
+  // a press on the branch indicator only toggles the expansion; the current index does not change and
+  // rowClicked() does not run
   const float branch_x = row_min.x + depth * INDENTATION;
   const bool on_branch = !item->children.empty() && ImGui::GetMousePos().x >= branch_x &&
                          ImGui::GetMousePos().x < branch_x + INDENTATION;
   if (row_clicked && on_branch) {
     item->expanded = !item->expanded;
   } else if (row_clicked) {
-    // setCurrentIndex + clicked
     current_sig_ = item->sig;
     current_type_ = item->type;
-    // AllEditTriggers: currentChanged opens the editor of the new current item. The name column and the
-    // non-editable cells (signal rows, check boxes) have no editor, so a click there only makes the cell current.
+    // the new current item opens its editor. The name column and the non-editable cells (signal rows,
+    // check boxes) have no editor, so a click there only makes the cell current.
     delegate->closeEditor();
     if ((model->flags(item, 1) & SignalModel::ItemIsEditable) && ImGui::GetMousePos().x >= row_min.x + name_column_width) {
       delegate->focus_item_ = delegate->open_item_ = item;
@@ -942,18 +921,16 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     scroll_to_sig_ = nullptr;
   }
   if (ImGui::IsMouseHoveringRect(row_min, row_max)) {
-    ctx.mouse_on_row = true;  // indexAt(pos) is valid
+    ctx.mouse_on_row = true;
     if (ImGui::IsWindowHovered()) ctx.hovered_sig = item->sig;
   }
 
-  // drawBranches
   if (!item->children.empty()) {
     const float arrow_size = ImGui::GetFontSize() * 0.7f;
     ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (row_height - arrow_size) * 0.5f),
                        ImGui::GetColorU32(ImGuiCol_Text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
   }
 
-  // column 0
   const std::string text0 = model->data(item, 0);
   ctx.name_width = std::max(ctx.name_width, delegate->sizeHint(item, 0, ctx.width, text0));
   const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
@@ -964,7 +941,6 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     ImGui::EndTooltip();
   }
 
-  // column 1
   const ImRect rect1(ImVec2(row_min.x + name_column_width, row_min.y), row_max);
   ctx.value_column_width = rect1.GetWidth();
   const int flags1 = model->flags(item, 1);
@@ -976,7 +952,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
     if (checkBox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
   } else if (flags1 & SignalModel::ItemIsEditable) {
-    // QAbstractItemView only creates the editor for the current item; the others paint through the delegate
+    // only the current item gets an editor; the others paint through the delegate
     if (selected && delegate->open_item_ == item) {
       ImGui::SetCursorScreenPos(rect1.Min);
       ImGui::SetNextItemWidth(rect1.GetWidth());
@@ -998,7 +974,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  // rowsChanged(): plot_btn + remove_btn, right aligned in the value column
+  // plot_btn + remove_btn, right aligned in the value column
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3.0f, 2.0f));
   const ImVec2 btn_size(ImGui::CalcTextSize(icon::GRAPH_UP).x + 6.0f, ImGui::GetFrameHeight());
   const ImVec2 size(btn_size.x * 2 + TOOLBAR_ITEM_SPACING, btn_size.y);
@@ -1019,10 +995,8 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   }
   ImGui::SetItemTooltip("Remove signal");
   ImGui::PopStyleVar();
-  delegate->button_size = size;  // updateEditorGeometry
+  delegate->button_size = size;
 }
-
-// ValueDescriptionDlg
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions) {
   for (auto &[val, desc] : descriptions) {
@@ -1036,15 +1010,14 @@ bool ValueDescriptionDlg::draw() {
     ImGui::OpenPopup(popup_id.c_str());
     opened_ = true;
   }
-  ImGui::SetNextWindowSize(ImVec2(500.0f, 0.0f), ImGuiCond_Appearing);  // setMinimumWidth(500)
+  ImGui::SetNextWindowSize(ImVec2(500.0f, 0.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   bool open = true;
   // not drawn while the dock is collapsed or another modal is on top; only closed once the popup is gone
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
-  // toolbar
   if (ImGui::Button(icon::PLUS)) {
     table.emplace_back("", "");
   }
@@ -1083,7 +1056,6 @@ bool ValueDescriptionDlg::draw() {
     ImGui::EndTable();
   }
 
-  // btn_box
   bool accept = false, reject = false;
   if (dialogButtons("OK", &accept, &reject)) {
     if (accept) save();
@@ -1103,12 +1075,12 @@ void ValueDescriptionDlg::save() {
       val_desc.push_back({std::atof(val.c_str()), desc});
     }
   }
-  accepted = true;  // QDialog::accept()
+  accepted = true;
 }
 
 bool ValueDescriptionDlg::Delegate::createEditor(int column, std::string *text) {
-  // QLineEdit editor; column 0 has a DoubleValidator. Returns true when the cell was clicked (row selection).
-  // the two cells of a row share the row's id scope, so each editor needs its own column id
+  // column 0 has a double validator. Returns true when the cell was clicked (row selection); the two cells
+  // of a row share the row's id scope, so each editor needs its own column id
   ImGui::PushID(column);
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   validatedInput("##edit", text, column == 0 ? doubleValidator : nullptr);

@@ -17,7 +17,7 @@
 class BinaryView;
 class BinaryViewModel;
 
-// QModelIndex of the Qt table view: a (row, column) into BinaryViewModel::items
+// a (row, column) into BinaryViewModel::items
 struct BinaryIndex {
   int row = -1;
   int column = -1;
@@ -34,7 +34,7 @@ public:
   bool hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const;
   void drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
 
-  const float small_font_size = 10.0f;  // small_font.setPixelSize(8): Qt hints that up to a 7 px cap height, Inter needs 10 px for it
+  const float small_font_size = 10.0f;  // Inter needs 10 px for a 7 px cap height
   std::array<std::string, 256> hex_text_table;
   std::array<std::string, 2> bin_text_table;
 
@@ -48,12 +48,11 @@ public:
   void refresh();
   void updateState();
   void updateItem(int row, int col, uint8_t val, const CabanaColor &color);
-  std::string headerData(int section) const;      // vertical header, Qt::DisplayRole
-  std::string data(const BinaryIndex &index) const;  // Qt::ToolTipRole
+  std::string headerData(int section) const;      // vertical header
+  std::string data(const BinaryIndex &index) const;  // tooltip
   int rowCount() const { return row_count; }
   int columnCount() const { return column_count; }
   BinaryIndex index(int row, int column) const { return {row, column}; }
-  // Qt::ItemIsSelectable
   bool isSelectable(const BinaryIndex &index) const { return index.column != column_count - 1; }
   const std::vector<std::array<uint32_t, 8>> &getBitFlipChanges(size_t msg_size);
 
@@ -84,7 +83,7 @@ public:
   void highlight(const cabana::Signal *sig);
   std::set<const cabana::Signal*> getOverlappingSignals() const;
   void updateState() { model->updateState(); }
-  // paintEvent + the mouse/keyboard events; draws inline into the current (scrollable) window
+  // draws inline into the current (scrollable) window and handles the mouse/keyboard
   void draw();
   ImVec2 minimumSizeHint() const;
   void setHeatmapLiveMode(bool live) { model->heatmap_live_mode = live; updateState(); }
@@ -105,7 +104,6 @@ private:
   void mouseReleaseEvent(const ImVec2 &pos);
   void leaveEvent();
   void highlightPosition(const ImVec2 &pt);
-  // QTableView geometry/selection
   BinaryIndex indexAt(const ImVec2 &pos) const;
   ImRect visualRect(const BinaryIndex &index) const;
   bool hasSelection() const { return !selection_.empty(); }
@@ -120,10 +118,10 @@ private:
   const cabana::Signal *resize_sig = nullptr;
   const cabana::Signal *hovered_sig = nullptr;
   Connections connections_;
-  std::set<BinaryIndex> selection_;  // selectionModel()
-  ImVec2 grid_pos_;                  // viewport origin of the current frame
-  float column_width_ = 0;           // horizontalHeader() Stretch section size
-  bool under_mouse_ = false;         // underMouse()
-  bool scroll_to_top_ = false;       // verticalScrollBar()->setValue(0)
+  std::set<BinaryIndex> selection_;
+  ImVec2 grid_pos_;         // viewport origin of the current frame
+  float column_width_ = 0;  // stretched section size
+  bool under_mouse_ = false;
+  bool scroll_to_top_ = false;
   friend class BinaryItemDelegate;
 };

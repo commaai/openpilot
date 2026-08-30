@@ -16,8 +16,8 @@
 #include "tools/cabana/ui/widgets/messagebytes.h"
 
 
-// utils/qtutil.h: MessageBytesDelegate. Paints one row of bytes with per-byte colors.
-// utils/qtutil.h: DoubleValidator. Returns the previous text if the new text is not a C-locale double.
+// MessageBytesDelegate paints one row of bytes with per-byte colors.
+// applyDoubleValidator returns the previous text if the new text is not a C-locale double.
 inline std::string applyDoubleValidator(const std::string &prev, const std::string &input) {
   return validateDouble(input) == ValidState::Invalid ? prev : input;
 }
@@ -29,7 +29,7 @@ public:
   HeaderView(const HistoryLogModel *model) : model(model) {}
   ImVec2 sectionSizeFromContents(int logicalIndex) const;
   void paintSection(ImDrawList *painter, const ImRect &rect, int logicalIndex) const;
-  float width = 0;  // rect().width() of the Qt header, set by LogsWidget::draw
+  float width = 0;  // header viewport width, set by LogsWidget::draw
 
 private:
   const HistoryLogModel *model;
@@ -42,8 +42,8 @@ public:
   void updateState(bool clear = false);
   void setFilter(int sig_idx, const std::string &value, std::function<bool(double, double)> cmp);
   std::string headerData(int section) const;
-  std::optional<CabanaColor> headerBackground(int section) const;  // Qt::BackgroundRole of headerData
-  std::string data(int row, int col) const;  // Qt::DisplayRole; ColorsRole/BytesRole read messages[row] directly
+  std::optional<CabanaColor> headerBackground(int section) const;
+  std::string data(int row, int col) const;  // the byte colors and bytes are read from messages[row] directly
   void fetchMore();
   bool canFetchMore() const;
   int rowCount() const { return messages.size(); }
@@ -94,9 +94,9 @@ private:
   void drawTable();
 
   HistoryLogModel model;
-  int signals_cb = 0, comp_box = 0, display_type_cb = 0;  // current index of the Qt combo boxes
+  int signals_cb = 0, comp_box = 0, display_type_cb = 0;  // current combo box indices
   std::string value_edit;
-  bool value_edit_modified = false;  // QLineEdit::isModified
+  bool value_edit_modified = false;
   bool filters_widget_visible = true;
   bool export_btn_enabled = false;
   int selected_row = -1, selected_col = -1;

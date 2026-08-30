@@ -1,6 +1,6 @@
 #pragma once
 
-// non-modal Qt dialogs (show()) drawn by MainWindow every frame until closed
+// non-modal dialogs drawn by MainWindow every frame until closed
 class ToolDialog {
 public:
   virtual ~ToolDialog() = default;

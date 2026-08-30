@@ -14,8 +14,6 @@
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/util.h"
 
-// OpenReplayWidget
-
 OpenReplayWidget::OpenReplayWidget() {}
 
 void OpenReplayWidget::draw() {
@@ -74,8 +72,6 @@ std::unique_ptr<AbstractStream> OpenReplayWidget::open() {
   }
   return nullptr;
 }
-
-// OpenPandaWidget
 
 static const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
 static const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};
@@ -190,8 +186,6 @@ std::unique_ptr<AbstractStream> OpenPandaWidget::open() {
   }
 }
 
-// OpenDeviceWidget
-
 namespace {
 
 struct IpInputContext {
@@ -199,7 +193,7 @@ struct IpInputContext {
   const std::string *last_valid;
 };
 
-// QRegExpValidator equivalent: only digits and dots get in, and an edit that makes the address Invalid is refused
+// only digits and dots get in, and an edit that makes the address invalid is refused
 int ipInputCallback(ImGuiInputTextCallbackData *data) {
   auto *ctx = static_cast<IpInputContext *>(data->UserData);
   if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
@@ -223,7 +217,7 @@ int ipInputCallback(ImGuiInputTextCallbackData *data) {
 void OpenDeviceWidget::draw() {
   ImGui::RadioButton("MSGQ", &mode_, 0);
   ImGui::RadioButton("ZMQ", &mode_, 1);
-  // QFormLayout: the radio buttons are the label column, the ip address is the field column
+  // the radio buttons are the label column, the ip address is the field column
   const float label_width = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
                             std::max(ImGui::CalcTextSize("MSGQ").x, ImGui::CalcTextSize("ZMQ").x) +
                             ImGui::GetStyle().ItemInnerSpacing.x;
@@ -245,7 +239,6 @@ std::unique_ptr<AbstractStream> OpenDeviceWidget::open() {
 }
 
 #ifdef __linux__
-// OpenSocketCanWidget
 
 OpenSocketCanWidget::OpenSocketCanWidget() {
   refreshDevices();
@@ -288,8 +281,6 @@ std::unique_ptr<AbstractStream> OpenSocketCanWidget::open() {
 }
 #endif
 
-// StreamSelector
-
 void StreamSelector::open(Callback on_done) {
   on_done_ = std::move(on_done);
   open_ = true;
@@ -315,13 +306,13 @@ void StreamSelector::draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(640.0f, 0.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal("Open stream", nullptr, ImGuiWindowFlags_NoResize)) return;
 
   AbstractOpenStreamWidget *current = nullptr;
   if (ImGui::BeginTabBar("streams")) {
     for (auto &w : widgets_) {
-      // Qt builds a fresh dialog every time, so the first tab is always the current one
+      // a fresh dialog every time, so the first tab is always the current one
       ImGuiTabItemFlags tab_flags = (first_frame_ && w == widgets_.front()) ? ImGuiTabItemFlags_SetSelected : 0;
       if (ImGui::BeginTabItem(w->title(), nullptr, tab_flags)) {
         current = w.get();

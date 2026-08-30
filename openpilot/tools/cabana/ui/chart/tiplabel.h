@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-// one line of the tip: Qt built these as rich text ("<span color>square</span>name<b>value</b>(min, max)")
+// one line of the tip: [square] name <b>value</b> (min, max)
 struct TipLine {
   bool has_marker = false;
   ImU32 marker = 0;

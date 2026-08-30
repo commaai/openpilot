@@ -10,7 +10,7 @@
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/ui/imgui_util.h"
 
-// QIntValidator: optional sign followed by digits
+// optional sign followed by digits
 static bool validInt(const std::string &s) {
   size_t i = (!s.empty() && (s[0] == '-' || s[0] == '+')) ? 1 : 0;
   for (; i < s.size(); ++i) {
@@ -19,7 +19,7 @@ static bool validInt(const std::string &s) {
   return true;
 }
 
-// QString::toInt: 0 when the text is not a valid number
+// 0 when the text is not a valid number
 static int toInt(const std::string &s) {
   char *end = nullptr;
   long v = std::strtol(s.c_str(), &end, 10);
@@ -39,19 +39,18 @@ FindSimilarBitsDlg::FindSimilarBitsDlg() {
   for (auto &[address, msg] : dbc()->getMessages(-1)) {
     msg_items.push_back({msg.name, address});
   }
-  std::sort(msg_items.begin(), msg_items.end(), [](auto &l, auto &r) { return l.first < r.first; });  // msg_cb->model()->sort(0)
+  std::sort(msg_items.begin(), msg_items.end(), [](auto &l, auto &r) { return l.first < r.first; });
   msg_cb = 0;
 }
 
 bool FindSimilarBitsDlg::draw() {
   if (!open_) return false;
   ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_Appearing);
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (ImGui::Begin(title_.c_str(), &open_)) {
     std::string bus_labels;
     for (int bus : bus_items) bus_labels += std::to_string(bus) + '\0';
 
-    // src_layout
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Find From:");
     ImGui::SameLine(90);
@@ -73,14 +72,13 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::TextUnformatted("Byte Index");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##byte_idx", &byte_idx_sb, 1, 10)) byte_idx_sb = std::clamp(byte_idx_sb, 0, 63);  // byte_idx_sb->setRange(0, 63)
+    if (ImGui::InputInt("##byte_idx", &byte_idx_sb, 1, 10)) byte_idx_sb = std::clamp(byte_idx_sb, 0, 63);
     ImGui::SameLine();
     ImGui::TextUnformatted("Bit Index");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##bit_idx", &bit_idx_sb, 1, 10)) bit_idx_sb = std::clamp(bit_idx_sb, 0, 7);  // bit_idx_sb->setRange(0, 7)
+    if (ImGui::InputInt("##bit_idx", &bit_idx_sb, 1, 10)) bit_idx_sb = std::clamp(bit_idx_sb, 0, 7);
 
-    // find_layout
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Find In:");
     ImGui::SameLine(90);
@@ -113,7 +111,7 @@ bool FindSimilarBitsDlg::draw() {
 }
 
 void FindSimilarBitsDlg::drawTable() {
-  // columns are set by find(); until then the QTableWidget is an empty frame
+  // columns are set by find(); until then the table is an empty frame
   if (!table_has_columns) {
     ImGui::BeginChild("table", ImVec2(0, 0), ImGuiChildFlags_Borders);
     ImGui::EndChild();

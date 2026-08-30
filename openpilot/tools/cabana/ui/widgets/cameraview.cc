@@ -10,8 +10,6 @@
 #include "common/yuv.h"
 #include "tools/cabana/utils/util.h"
 
-// GlTexture
-
 void GlTexture::upload(const RgbImage &image) {
   if (id == 0) {
     glGenTextures(1, &id);
@@ -44,11 +42,9 @@ void GlTexture::destroy() {
   key = 0;
 }
 
-// CameraWidget
-
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type) :
                           stream_name(stream_name), active_stream_type(type), requested_stream_type(type) {
-  // aboutToQuit -> stopVipcThread: the destructor runs before the GL/GLFW runtime is torn down
+  // the destructor runs before the GL/GLFW runtime is torn down
 }
 
 CameraWidget::~CameraWidget() {
@@ -82,7 +78,6 @@ void CameraWidget::draw(const ImVec2 &size) {
                          ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
   rect_ = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
   paintEvent();
-  // mouseReleaseEvent
   if (ImGui::IsItemDeactivated()) clicked();
 }
 
@@ -167,7 +162,6 @@ void CameraWidget::vipcThread() {
         rgb_frame.swap(rgb_back);
         frame_updated = true;
       }
-      // update(): imgui redraws every frame, the texture is uploaded in paintEvent
     }
   }
 }

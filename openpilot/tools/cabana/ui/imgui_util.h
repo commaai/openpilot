@@ -23,15 +23,14 @@ inline bool inputText(const char *label, std::string *s, const char *hint = "", 
                                   flags | ImGuiInputTextFlags_CallbackResize, imguiResizeCallback, s);
 }
 
-// Escape closes a dialog only when nothing is open above it. Qt gives Escape to the top-most popup
-// (a combo drops its list without closing the dialog); imgui does not, so check the popup stack.
+// Escape closes a dialog only when nothing is open above it: a combo drops its list first.
 inline bool dialogEscapePressed() {
   if (!ImGui::IsKeyPressed(ImGuiKey_Escape, false)) return false;
   ImGuiContext &g = *GImGui;
   return g.OpenPopupStack.Size > 0 && g.OpenPopupStack.back().Window == ImGui::GetCurrentWindow();
 }
 
-// QDialogButtonBox: [Cancel] [Accept], right aligned. reject_label = nullptr for an accept-only box.
+// [Cancel] [Accept], right aligned. reject_label = nullptr for an accept-only box.
 inline bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, bool accept_enabled = true,
                           const char *reject_label = "Cancel") {
   const float button_width = 80.0f;
@@ -56,7 +55,7 @@ inline bool dialogButtons(const char *accept_label, bool *accepted, bool *reject
   return pressed;
 }
 
-// QHeaderView::defaultAlignment: horizontal header labels are centered
+// horizontal header labels are centered
 inline void tableHeadersRow() {
   ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
   for (int c = 0, count = ImGui::TableGetColumnCount(); c < count; ++c) {
@@ -71,8 +70,8 @@ inline void tableHeadersRow() {
   }
 }
 
-// QCheckBox (Fusion): a PM_IndicatorWidth sized box, vertically centered in the frame height so rows keep
-// their layout. ImGui::Checkbox draws a frame height (22 px) square.
+// a 16px box vertically centered in the frame height so rows keep their layout; ImGui::Checkbox draws a
+// frame height (22 px) square.
 const float CHECKBOX_SIZE = 16.0f;
 inline bool checkBox(const char *label, bool *v) {
   ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -108,16 +107,16 @@ inline bool comboBox(const char *label, int *index, const char *const items[], i
   return ImGui::Combo(label, index, items, count);
 }
 
-ImU32 highlightedTextColor();  // QPalette::HighlightedText
+ImU32 highlightedTextColor();
 
-// QDialog / floating QDockWidget: the next window is a real OS window instead of being drawn inside the main one
+// the next window is a real OS window instead of being drawn inside the main one
 inline void setNextWindowFloatsOut() {
   ImGuiWindowClass window_class;
   window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
   ImGui::SetNextWindowClass(&window_class);
 }
 
-// QSlider drawn in the Fusion style: full width groove, filled left of the handle, 13x13 handle (style.cc)
+// full width groove, filled left of the handle, 13x13 handle (style.cc)
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width);
 
 void pushMonoFont();

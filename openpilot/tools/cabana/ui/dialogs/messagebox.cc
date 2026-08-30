@@ -75,7 +75,7 @@ void draw() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const float min_width = ImGui::CalcTextSize(box.title.c_str()).x + style.FramePadding.x * 2 + style.WindowPadding.x * 2;
   ImGui::SetNextWindowSizeConstraints(ImVec2(min_width, 0.0f), ImVec2(FLT_MAX, FLT_MAX));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 480.0f);
     ImGui::TextUnformatted(box.text.c_str());
@@ -86,7 +86,7 @@ void draw() {
     }
     ImGui::Separator();
     if (!box.detailed_text.empty()) {
-      // QMessageBox puts the details button at the left of the button box
+      // the details button sits at the left of the button box
       if (ImGui::Button(g_show_details ? "Hide Details..." : "Show Details...")) g_show_details = !g_show_details;
       ImGui::SameLine();
     }

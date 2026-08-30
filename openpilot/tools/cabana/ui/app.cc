@@ -30,11 +30,9 @@ void cursorEnterCallback(GLFWwindow *w, int entered) { ImGui_ImplGlfw_CursorEnte
 void mouseButtonCallback(GLFWwindow *w, int b, int a, int m) { ImGui_ImplGlfw_MouseButtonCallback(w, b, a, m); }
 void scrollCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_ScrollCallback(w, x, y); }
 void charCallback(GLFWwindow *w, unsigned int c) { ImGui_ImplGlfw_CharCallback(w, c); }
-// imgui releases every mouse button when the window loses focus. The window manager moves the focus to a
-// panel that was just torn off into its own OS window (GNOME also briefly takes it away on a click), which
-// ends the drag, docks the panel back and creates its window a second time on the drop. X11 keeps delivering
-// the drag to this window through the implicit grab, so a focus loss is held back while a button is down
-// and delivered after the release (see deliverPendingFocusLoss).
+// imgui releases every mouse button when the window loses focus, which aborts a panel tear-off drag and
+// docks the panel back. X11 keeps delivering the drag through the implicit grab, so hold a focus loss back
+// while a button is down and deliver it after the release (see deliverPendingFocusLoss).
 GLFWwindow *g_focus_lost_window = nullptr;
 void windowFocusCallback(GLFWwindow *w, int f) {
   if (f) {
@@ -67,9 +65,8 @@ void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-// vsync (glfwSwapInterval(1)) paces the loop: glfwSwapBuffers blocks until the next refresh, so every
-// frame is presented on a display refresh. Throttling on top of that beats against the refresh rate and
-// makes the camera view stutter.
+// vsync paces the loop: glfwSwapBuffers blocks until the next refresh. Throttling on top of that beats
+// against the refresh rate and makes the camera view stutter.
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
   deliverPendingFocusLoss();
@@ -169,7 +166,7 @@ std::vector<KeyEvent> takeKeyEvents() {
 
 int run(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
   try {
-    // SIGINT/SIGTERM close all windows (the close flow may ask about unsaved changes), then exit
+    // SIGINT/SIGTERM close all windows (which may ask about unsaved changes), then exit
     UnixSignalHandler signal_handler([]() { g_signal_exit = true; });
 
     GlfwRuntime glfw;

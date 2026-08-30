@@ -39,7 +39,7 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) : window_(window) {
   can = &dummy_;
   loadFingerprints();
-  // createActions: the opendbc list is read once, like the Qt menu
+  // the opendbc list is read once
   std::error_code ec;
   for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH, ec)) {
     if (entry.is_regular_file() && entry.path().extension() == ".dbc") {
@@ -47,7 +47,6 @@ MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> strea
     }
   }
   std::sort(opendbc_names_.begin(), opendbc_names_.end());
-  // createStatusBar
   updateStatus();
 
   // download handlers are called from download threads
@@ -85,8 +84,6 @@ void MainWindow::loadFingerprints() {
     }
   }
 }
-
-// createActions
 
 void MainWindow::drawFileMenu() {
   const bool has_stream = dynamic_cast<DummyStream *>(can) == nullptr;
@@ -138,7 +135,6 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
-  // Edit Menu
   if (ImGui::BeginMenu("Edit")) {
     auto stack = UndoStack::instance();
     const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
@@ -148,11 +144,9 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
-  // View Menu
   if (ImGui::BeginMenu("View")) {
     if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
     ImGui::Separator();
-    // QMenu draws the check indicator of a checkable action on the left of the text
     if (checkBox(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", &messages_visible_)) ImGui::CloseCurrentPopup();
     if (checkBox(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), &video_visible_)) ImGui::CloseCurrentPopup();
     ImGui::Separator();
@@ -163,7 +157,6 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
-  // Tools Menu
   const bool has_stream = dynamic_cast<DummyStream *>(can) == nullptr;
   if (ImGui::BeginMenu("Tools", has_stream)) {
     if (ImGui::MenuItem("Find Similar Bits")) findSimilarBits();
@@ -171,7 +164,6 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
-  // Help Menu
   if (ImGui::BeginMenu("Help")) {
     if (ImGui::MenuItem("Help", "F1")) onlineHelp();
     ImGui::EndMenu();
@@ -184,9 +176,8 @@ void MainWindow::createDockWidgets() {
   messages_widget_ = std::make_unique<MessagesWidget>();
   widget_connections_.push_back(messages_widget_->msgSelectionChanged.connect([this](const MessageId &id) { center_widget_.setMessage(id); }));
 
-  // right panel
   charts_widget_ = std::make_unique<ChartsWidget>();
-  center_widget_.setChartsWidget(charts_widget_.get());  // Qt's DetailWidget reaches the charts through its MainWindow parent
+  center_widget_.setChartsWidget(charts_widget_.get());
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
   widget_connections_.push_back(charts_widget_->showTip.connect([this](double sec) { video_widget_->showThumbnail(sec); }));
@@ -202,23 +193,21 @@ void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
 }
 
 void MainWindow::updateWindowTitle() {
-  // setWindowFilePath + setWindowModified
   std::string title;
   for (auto f : dbc()->allDBCFiles()) {
     if (!title.empty()) title += " | ";
     title += "(" + toString(dbc()->sources(f)) + ") " + f->name();
   }
   if (window_modified_) title += "*";
-  if (!title.empty()) title += " \xe2\x80\x94 ";  // em dash, QWidget's windowTitle separator
+  if (!title.empty()) title += " \xe2\x80\x94 ";  // em dash separator
   title += "Cabana";
   glfwSetWindowTitle(window_, title.c_str());
 }
 
 void MainWindow::DBCFileChanged() {
   UndoStack::instance()->clear();
-  // Qt only updates this here, so it stays stale until the next DBC change (e.g. after Close stream, Open Stream)
+  // only updated here, so it stays stale until the next DBC change (e.g. after Close stream, Open Stream)
   manage_dbcs_enabled_ = dynamic_cast<DummyStream *>(can) == nullptr;
-  // the file menu state (save texts, enabled flags) is derived from dbc() when the menu is drawn
   updateWindowTitle();
   nextFrame([this]() { restoreSessionState(); });
 }
@@ -273,7 +262,6 @@ void MainWindow::loadFile(const std::string &fn, SourceSet s, std::function<void
         showStatusMessage("DBC File " + fn + " loaded", 2000);
         if (then) then();
       } else {
-        // QMessageBox::exec() blocks the caller until the box is dismissed
         MessageBox::warning("Failed to load DBC file", "Failed to parse DBC file " + fn, error, then);
       }
     });
@@ -366,7 +354,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
       wait_dlg_text_ = can->liveStreaming() ? "Waiting for the live stream to start..." : "Loading segment data...";
       wait_dlg_value_ = 0;
       wait_dlg_open_ = true;
-      wait_dlg_show_at_ = ImGui::GetTime() + 4.0;  // QProgressDialog::minimumDuration
+      wait_dlg_show_at_ = ImGui::GetTime() + 4.0;  // minimum duration before the dialog shows
       wait_dlg_connection_ = can->eventsMerged.connect([this](const MessageEventsMap &) {
         wait_dlg_open_ = false;
         wait_dlg_connection_.disconnect();
@@ -586,9 +574,7 @@ void MainWindow::finishClose() {
   installDownloadProgressHandler(nullptr);
   installMessageHandler(nullptr);
 
-  // save states
-  // TODO: saveHeaderState() is a stub, keep the Qt frontend's state untouched until it is ported
-
+  // TODO: saveHeaderState() is a stub; the persisted header state is not written yet
   saveSessionState();
   settings.save();
   exited_ = true;
@@ -665,14 +651,12 @@ void MainWindow::restoreSessionState() {
   }
 }
 
-// createShortcuts + QKeySequence menu shortcuts
-
 void MainWindow::handleShortcuts() {
   const ImGuiIO &io = ImGui::GetIO();
   for (const KeyEvent &e : takeKeyEvents()) {
     const bool ctrl = e.mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     const bool shift = e.mods & GLFW_MOD_SHIFT;
-    // a focused line edit consumes Space (ShortcutOverride) but not the Ctrl/F-key sequences
+    // a focused text input consumes Space but not the Ctrl/F-key sequences
     if (e.key == GLFW_KEY_SPACE && !ctrl && can && !io.WantTextInput) can->pause(!can->isPaused());
     if (e.key == GLFW_KEY_F1) onlineHelp();
     if (e.key == GLFW_KEY_F11 && ctrl) toggleFullScreen();
@@ -686,7 +670,7 @@ void MainWindow::handleShortcuts() {
         save();
       }
     }
-    // a focused line edit swallows Ctrl+Z / Ctrl+Shift+Z
+    // a focused text input swallows Ctrl+Z / Ctrl+Shift+Z
     if (e.key == GLFW_KEY_Z && !io.WantTextInput) shift ? UndoStack::instance()->redo() : UndoStack::instance()->undo();
     if (e.key == GLFW_KEY_Q) close();
   }
@@ -725,12 +709,11 @@ void MainWindow::drawWaitDialog() {
   if (!ImGui::IsPopupOpen(id)) return;  // keep submitting until CloseCurrentPopup ran, a stale modal blocks all input
   ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f));
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::TextUnformatted(wait_dlg_text_.c_str());
-    // QProgressBar shows no text until the progress is set
+    // no text until the progress is set
     ImGui::ProgressBar(wait_dlg_value_ / 100.0f, ImVec2(-1.0f, 0.0f), wait_dlg_value_ == 0 ? "" : (const char *)nullptr);
-    // QProgressDialog right aligns the cancel button
     const float button_width = ImGui::CalcTextSize("Abort").x + ImGui::GetStyle().FramePadding.x * 2;
     ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - button_width));
     if (ImGui::Button("Abort") || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
@@ -743,8 +726,8 @@ void MainWindow::drawWaitDialog() {
 }
 
 // HelpOverlay: dims the window and shows each widget's whatsThis text at its center; any click closes it.
-// The texts are the Qt rich text snippets: <b>, <br />, <span style="color:..;background-color:..">, &entities;
-// and #rrggbb tokens (the video legend) are rendered, everything else is ignored like QTextDocument would.
+// The texts are rich text: <b>, <br />, <span style="color:..;background-color:..">, &entities; and #rrggbb
+// tokens (the video legend) are rendered, everything else is ignored.
 namespace {
 struct HelpRun {
   std::string text;
@@ -903,7 +886,7 @@ void MainWindow::drawHelpOverlay() {
     const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
     const ImVec2 max(center.x + size.x * 0.5f + 8.0f, center.y + size.y * 0.5f + 8.0f);
-    // QPalette::ToolTipBase: pale yellow in the light theme
+    // pale yellow in the light theme
     const ImU32 tooltip_base = isDarkTheme() ? ImGui::GetColorU32(ImGuiCol_PopupBg) : IM_COL32(255, 255, 220, 255);
     dl->AddRectFilled(min, max, tooltip_base);
     float y = min.y + 8.0f;
@@ -944,12 +927,12 @@ void MainWindow::drawDockspace() {
   ImGui::PopStyleVar(3);
 
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
-  // otherwise the host window is a few pixels taller than the viewport and scrolls (QMainWindow never scrolls)
+  // otherwise the host window is a few pixels taller than the viewport and scrolls
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_) {
-    // createDockWindows: messages left, video (with charts) right, center widget in the middle
+    // messages left, video (with charts) right, center widget in the middle
     ImGui::DockBuilderRemoveNode(dock_id);
     ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dock_id, dock_size);
@@ -998,21 +981,20 @@ void MainWindow::draw() {
     }
     ImGui::End();
   }
-  if (video_widget_) video_widget_->setVisible(video_visible_);  // showEvent/hideEvent of the video dock
+  if (video_widget_) video_widget_->setVisible(video_visible_);
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
     setNextWindowFloatsOut();
-    // the video and charts widgets are QFrames with zero layout margins: the camera, slider and chart cards
-    // run edge to edge and the toolbars carry their own QToolBar margin
+    // zero horizontal padding: the camera, slider and chart cards run edge to edge and the toolbars carry
+    // their own margin
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, ImGui::GetStyle().WindowPadding.y));
     if (ImGui::Begin(name.c_str(), &video_visible_)) {
-      // splitter between video and charts
       const ImVec2 avail = ImGui::GetContentRegionAvail();
       const bool live = can->liveStreaming();
       const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->defaultHeight(avail.x);
       float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
       if (live) video_h = video_widget_->defaultHeight(avail.x);  // display video at minimum size.
-      // QSplitter collapses a child dragged below half of its minimum size and never shrinks it below it
+      // dragging below half of the minimum size collapses the video, it never shrinks below it otherwise
       if (!charts_floating_ && !live) {
         const float min_h = std::min(video_widget_->sizeHintHeight(), avail.y - 1.0f);
         video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
@@ -1026,7 +1008,7 @@ void MainWindow::draw() {
       if (!charts_floating_) {
         ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, 6.0f));
         if (ImGui::IsItemActive() && !live) {
-          // moveSplitter: the size of the video is the position of the handle inside the splitter
+          // the size of the video is the position of the handle inside the splitter
           const float top = ImGui::GetWindowPos().y + ImGui::GetCursorStartPos().y;
           video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - top) / avail.y, 0.0f, 1.0f);
         }
@@ -1059,7 +1041,7 @@ void MainWindow::draw() {
   MessageBox::draw();
   drawHelpOverlay();
 
-  // Escape closes the top-most non-modal popup (a QMenu or a QComboBox popup) on its own; the modal dialogs
+  // Escape closes the top-most non-modal popup (a menu or a combo list) on its own; the modal dialogs
   // handled Escape themselves above when they were on top
   if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
     ImGuiContext &g = *GImGui;

@@ -15,17 +15,16 @@
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/chart/sparkline.h"
 
-// QValidator ports (utils/qtutil.h): InputText char filters, rejecting the characters the Qt validators reject.
-// The std::string validators in utils/util.h are run again when the edit is committed.
+// InputText char filters; the std::string validators in utils/util.h are run again when the edit is committed
 int nameValidator(ImGuiInputTextCallbackData *data);
 int nodeValidator(ImGuiInputTextCallbackData *data);
 int doubleValidator(ImGuiInputTextCallbackData *data);
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
-// QLineEdit with an optional validator; `s` grows through the resize callback like inputText() in imgui_util.h
+// text input with an optional validator; `s` grows through the resize callback like inputText() in imgui_util.h
 bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback validator, const char *hint = "",
                     ImGuiInputTextFlags flags = 0);
 
-// QVariant stand-in for SignalModel::setData: the editors hand over text, numbers, check states or a value table
+// the value SignalModel::setData takes: text, a number, a check state or a value table
 class ItemValue {
 public:
   ItemValue(const std::string &s) : str_(s) {}
@@ -64,18 +63,17 @@ public:
     bool highlight = false;
     std::string sig_val = "-";
     Sparkline sparkline;
-    bool expanded = false;      // QTreeView::isExpanded
+    bool expanded = false;
     bool chart_opened = false;  // plot_btn checked state
   };
-  // Qt::ItemFlags
   enum ItemFlag { NoItemFlags = 0, ItemIsSelectable = 1, ItemIsEnabled = 2, ItemIsEditable = 4, ItemIsUserCheckable = 8 };
 
   SignalModel();
   int rowCount() const { return root->children.size(); }
   int columnCount() const { return 2; }
-  std::string data(const Item *item, int column) const;  // Qt::DisplayRole / Qt::EditRole
-  bool checkState(const Item *item) const;                // Qt::CheckStateRole, column 1
-  std::string toolTip(const Item *item, int column) const;  // Qt::ToolTipRole
+  std::string data(const Item *item, int column) const;
+  bool checkState(const Item *item) const;  // column 1
+  std::string toolTip(const Item *item, int column) const;
   int flags(const Item *item, int column) const;
   bool setData(Item *item, const ItemValue &value);
   void setMessage(const MessageId &id);
@@ -83,7 +81,7 @@ public:
   bool saveSignal(const cabana::Signal *origin_s, cabana::Signal &s);
   int signalRow(const cabana::Signal *sig) const;
 
-  Observable<> rowsChanged;  // modelReset, rowsInserted and rowsRemoved
+  Observable<> rowsChanged;  // rows were added, removed or reset
   Observable<> modelReset;   // the items are gone: the view closes its editors
 
 private:
@@ -102,13 +100,13 @@ private:
   friend class SignalItemDelegate;
 };
 
-// exec() is non-blocking: draw() returns false once closed, `accepted` tells whether Ok was pressed
+// non-blocking: draw() returns false once closed, `accepted` tells whether Ok was pressed
 class ValueDescriptionDlg {
 public:
   ValueDescriptionDlg(const ValueDescription &descriptions);
   bool draw();
   ValueDescription val_desc;
-  std::string title;  // setWindowTitle
+  std::string title;
   bool accepted = false;
 
 private:
@@ -117,7 +115,7 @@ private:
   };
 
   void save();
-  std::vector<std::pair<std::string, std::string>> table;  // QTableWidget rows: {Value, Description}
+  std::vector<std::pair<std::string, std::string>> table;  // rows of {Value, Description}
   int current_row = -1;
   bool opened_ = false;
 };
@@ -125,26 +123,26 @@ private:
 class SignalItemDelegate {
 public:
   SignalItemDelegate();
-  // viewport_x: left edge of the tree viewport (Qt paints child rows at absolute viewport coordinates)
+  // viewport_x: left edge of the tree viewport
   void paint(ImDrawList *painter, const ImRect &rect, const SignalModel::Item *item, int column, bool selected,
              const std::string &text, float viewport_x) const;
   float sizeHint(const SignalModel::Item *item, int column, float widget_width, const std::string &text) const;  // column width
   float rowHeight() const;
   float signalRowHeight() const;
-  // draws the editor for `item` at the cursor; commits through setModelData (QStyledItemDelegate commit on focus out)
+  // draws the editor for `item` at the cursor; commits through setModelData on focus out
   void createEditor(SignalModel::Item *item, SignalModel *model);
   // queues the commit in pending_commit: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
   // the rows, so the model is only changed after the tree is drawn (see SignalView::draw)
   void setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value) const;
-  void drawValueDescriptionDlg(SignalModel *model);  // continuation of the ValueDescriptionDlg exec() in createEditor
+  void drawValueDescriptionDlg(SignalModel *model);  // continuation of the ValueDescriptionDlg opened in createEditor
   static float textWidth(const std::string &text, float font_size = 0);
 
   ImGuiInputTextCallback name_validator, double_validator, node_validator;
-  const float label_font = 12.0f;   // QFont pointSize 8: 8 px tall digits, Inter needs 12 px for that
-  const float minmax_font = 10.0f;  // QFont pixelSize 10
+  const float label_font = 12.0f;   // Inter needs 12 px for 8 px tall digits
+  const float minmax_font = 10.0f;
   const int color_label_width = 18;
   mutable ImVec2 button_size = {};
-  // AllEditTriggers/CurrentChanged: the editor is created for the item that just became current and takes the focus
+  // the editor is created for the item that just became current and takes the focus
   SignalModel::Item *focus_item_ = nullptr;
   // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
   SignalModel::Item *open_item_ = nullptr;
@@ -152,11 +150,11 @@ public:
   void closeEditor();
 
 private:
-  // QLineEdit + QValidator editor; only an Acceptable value is committed
+  // only an Acceptable value is committed
   void lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator);
   static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
 
-  SignalModel::Item *editing_item_ = nullptr;  // the open QLineEdit editor
+  SignalModel::Item *editing_item_ = nullptr;  // the open text editor
   std::string edit_text_;
   std::string edit_original_;    // value the editor was opened with, restored by Escape
   bool editor_active_ = false;   // editor had the keyboard focus last frame
@@ -174,14 +172,13 @@ public:
   SignalView(ChartsWidget *charts);
   void setMessage(const MessageId &id);
   void draw();
-  void signalHovered(const cabana::Signal *sig);  // slot for BinaryView::signalHovered
+  void signalHovered(const cabana::Signal *sig);  // handler for BinaryView::signalHovered
   void updateChartState();
   void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(SignalModel::Item *item);
   std::string whatsThis() const;
   std::unique_ptr<SignalModel> model;
 
-  // signals
   Observable<const cabana::Signal *> highlight;
   Observable<const MessageId &, const cabana::Signal *, bool, bool> showChart;
 
@@ -195,7 +192,6 @@ private:
   void updateState(const std::set<MessageId> *msgs = nullptr);
   std::pair<int, int> visibleSignalRange();  // top-level rows, -1 when invalid
 
-  // TreeView
   struct DrawContext {
     ImDrawList *draw_list;
     float viewport_x;
@@ -209,7 +205,7 @@ private:
   };
   void drawTree();
   bool drawItem(SignalModel::Item *item, int depth, DrawContext &ctx);  // returns whether the row is visible
-  void drawIndexWidget(SignalModel::Item *item, const ImRect &rect);    // the [plot][remove] widget from rowsChanged
+  void drawIndexWidget(SignalModel::Item *item, const ImRect &rect);    // the [plot][remove] widget
   void collapseAll();
   float max_value_width = 0;
   float value_column_width = 0;
@@ -218,7 +214,7 @@ private:
   int first_visible_row_ = -1;
   int last_visible_row_ = -1;
   float scroll_value_ = 0, scroll_range_ = 0;
-  const cabana::Signal *current_sig_ = nullptr;  // currentIndex
+  const cabana::Signal *current_sig_ = nullptr;
   int current_row_ = -1;                         // row of current_sig_ at the end of the last draw()
   SignalModel::Item::Type current_type_ = SignalModel::Item::Root;
   const cabana::Signal *scroll_to_sig_ = nullptr;

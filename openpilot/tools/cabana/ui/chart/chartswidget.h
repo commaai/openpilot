@@ -19,7 +19,7 @@
 
 const int CHART_MIN_WIDTH = 300;
 
-// qtutil.h LogSlider: a QSlider whose value is mapped onto a log10 scale
+// a slider whose value is mapped onto a log10 scale
 class LogSlider {
 public:
   LogSlider(double factor) : scale(factor) {}
@@ -28,13 +28,13 @@ public:
     scale.setRange(min, max);
     min_ = min;
     max_ = max;
-    setValue(pos_);  // Qt: setValue(QSlider::value()), the raw position is re-mapped as a value
+    setValue(pos_);  // the raw position is re-mapped as a value
   }
   int value() const { return scale.value(pos_, minimum(), maximum()); }
   void setValue(int v) { pos_ = scale.position(v, minimum(), maximum()); }
   int minimum() const { return min_; }
   int maximum() const { return max_; }
-  bool draw(const char *label, float width);  // valueChanged
+  bool draw(const char *label, float width);
 
 private:
   LogScale scale;
@@ -113,7 +113,7 @@ private:
   void removeTab(int index);
   inline std::vector<ChartView *> &currentCharts() { return tab_charts[tabs_[current_tab_index_].id]; }
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
-  // QDialog::exec() replacement: draws the selector until closed, then runs `accepted` (unless `owner` was removed)
+  // draws the selector until closed, then runs `accepted` (unless `owner` was removed)
   void execSignalSelector(std::unique_ptr<SignalSelector> dlg, ChartView *owner, std::function<void(SignalSelector &)> accepted);
   void drawDragPreview();
 
@@ -160,7 +160,7 @@ private:
     ImVec2 press_pos;  // global
     bool active = false;
   } drag;
-  // Qt drags a 50% alpha snapshot of the whole chart tile: the tile is re-rendered into a window with no input
+  // the drag preview is a 50% alpha copy of the whole chart tile, drawn in a window that takes no input
   ImVec2 drag_preview_pos;
   ImVec2 drag_preview_size;
   bool drag_preview_visible = false;
@@ -172,7 +172,7 @@ private:
   int current_theme = 0;
   bool value_tip_visible_ = false;
   bool any_plot_hovered_ = false;
-  std::vector<std::unique_ptr<ChartView>> deleted_charts_;  // deleteLater: freed at the start of the next draw()
+  std::vector<std::unique_ptr<ChartView>> deleted_charts_;  // freed at the start of the next draw()
   std::unique_ptr<SignalSelector> signal_selector_;
   ChartView *signal_selector_owner_ = nullptr;
   std::function<void(SignalSelector &)> signal_selector_accepted_;

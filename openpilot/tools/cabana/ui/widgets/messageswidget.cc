@@ -17,22 +17,16 @@
 #include "tools/cabana/utils/strings.h"
 
 MessagesWidget::MessagesWidget() : view(&view_), header(&header_), delegate(&delegate_), model(&model_), delegate_(settings.multiple_lines_hex) {
-  // toolbar: createToolBar() is drawn every frame by draw()
-  // message table
   view->setItemDelegate(delegate);
   view->setModel(model);
   view->setHeader(header);
   header->setModel(model);
-  // setSortingEnabled: ImGuiTableFlags_Sortable
-  model->sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);  // view->sortByColumn
-  // setAllColumnsShowFocus: the row Selectable spans all columns
+  model->sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);
 
-  // Must be called before setting any header parameters to avoid overriding
+  // must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
-  // setSectionsMovable: ImGuiTableFlags_Reorderable; DATA is QHeaderView::Fixed: ImGuiTableColumnFlags_NoResize
   header->updateGeometries();
 
-  // signals/slots
   connections_.push_back(model->modelReset.connect([this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -50,7 +44,7 @@ MessagesWidget::MessagesWidget() : view(&view_), header(&header_), delegate(&del
     }
   }));
 
-  suppressHighlighted();  // Qt: called from createToolBar() with no sender
+  suppressHighlighted();
 }
 
 std::string MessagesWidget::whatsThis() const {
@@ -67,7 +61,6 @@ std::string MessagesWidget::whatsThis() const {
 }
 
 void MessagesWidget::createToolBar() {
-  // layout->setContentsMargins(0, 9, 0, 0)
   ImGui::Dummy(ImVec2(0, std::max(0.0f, 9 - ImGui::GetStyle().ItemSpacing.y)));
   if (ImGui::Button("Suppress Highlighted")) suppressHighlighted(true);
   ImGui::SameLine();
@@ -77,7 +70,7 @@ void MessagesWidget::createToolBar() {
   ImGui::EndDisabled();
   if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Clear suppressed");
 
-  // layout->addStretch(1): right-align the rest
+  // right-align the rest
   const ImGuiStyle &style = ImGui::GetStyle();
   const float checkbox_width = ImGui::CalcTextSize("Suppress Signals").x + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x;
   const float view_button_width = ImGui::CalcTextSize(icon::THREE_DOTS).x + style.FramePadding.x * 2;
@@ -90,7 +83,6 @@ void MessagesWidget::createToolBar() {
   ImGui::SetItemTooltip("Suppress defined signals");
   ImGui::SameLine();
 
-  // ToolButton("three-dots", "View...") with an instant popup menu
   if (toolButton(icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
 }
 
@@ -133,7 +125,7 @@ void MessagesWidget::menuAboutToShow() {
   if (!ImGui::BeginPopup("menu")) return;
   for (int i = 0; i < header->count(); ++i) {
     int logical_index = header->logicalIndex(i);
-    // Can't hide the name column
+    // can't hide the name column
     if (ImGui::MenuItem(model->headerData(logical_index).c_str(), nullptr, !header->isSectionHidden(logical_index), logical_index > 0)) {
       header->setSectionHidden(logical_index, !header->isSectionHidden(logical_index));
     }
@@ -152,7 +144,6 @@ void MessagesWidget::setMultiLineBytes(bool multi) {
   settings.multiple_lines_hex = multi;
   delegate->setMultipleLines(multi);
   view->updateBytesSectionSize();
-  // view->doItemsLayout(): imgui lays out every frame
 }
 
 void MessagesWidget::draw() {
@@ -161,8 +152,6 @@ void MessagesWidget::draw() {
   if (std::exchange(header->customContextMenuRequested, false)) headerContextMenuEvent();
   menuAboutToShow();
 }
-
-// MessageListModel
 
 MessageListModel::MessageListModel() {
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *msgs, bool has_new_ids) { msgsReceived(msgs, has_new_ids); }));
@@ -211,7 +200,7 @@ std::string MessageListModel::data(int row, int column) const {
     case Column::COUNT: return item.id.source != INVALID_SOURCE ? std::to_string(can->lastMessage(item.id).count) : NA;
     case Column::DATA: return item.id.source != INVALID_SOURCE ? "" : NA;
   }
-  // ColorsRole/BytesRole: the view reads can->lastMessage(item.id).colors/dat directly
+  // the view reads the byte colors and bytes from can->lastMessage(item.id) directly
   return {};
 }
 
@@ -254,7 +243,7 @@ void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
       case Column::NODE: return std::tie(l.node, l.id) < std::tie(r.node, r.id);
       case Column::FREQ: return std::tie(can->lastMessage(l.id).freq, l.id) < std::tie(can->lastMessage(r.id).freq, r.id);
       case Column::COUNT: return std::tie(can->lastMessage(l.id).count, l.id) < std::tie(can->lastMessage(r.id).count, r.id);
-      default: return false; // Default case to suppress compiler warning
+      default: return false;
     }
   };
 
@@ -264,14 +253,12 @@ void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
     std::stable_sort(items.begin(), items.end(), compare);
 }
 
-// QString::contains(txt, Qt::CaseInsensitive)
 static bool containsCI(const std::string &s, const std::string &txt) {
   auto it = std::search(s.begin(), s.end(), txt.begin(), txt.end(),
                         [](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); });
   return it != s.end();
 }
 
-// QString::split('-')
 static std::vector<std::string> split(const std::string &s, char sep) {
   std::vector<std::string> parts;
   size_t start = 0;
@@ -282,7 +269,7 @@ static std::vector<std::string> split(const std::string &s, char sep) {
   return parts;
 }
 
-// QString::toUInt(&ok, base): surrounding whitespace is ignored; no sign, no 0x prefix
+// surrounding whitespace is ignored; no sign, no 0x prefix
 static unsigned int toUInt(const std::string &s, bool *ok, int base) {
   size_t begin = 0, end = s.size();
   while (begin < end && std::isspace((unsigned char)s[begin])) ++begin;
@@ -302,7 +289,7 @@ static unsigned int toUInt(const std::string &s, bool *ok, int base) {
 }
 
 static bool parseRange(const std::string &filter, uint32_t value, int base = 10) {
-  // Parse out filter string into a range (e.g. "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf})
+  // parse the filter string into a range: "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf}
   unsigned int min = std::numeric_limits<unsigned int>::min();
   unsigned int max = std::numeric_limits<unsigned int>::max();
   auto s = split(filter, '-');
@@ -385,7 +372,6 @@ bool MessageListModel::filterAndSort() {
   sortItems(items);
 
   if (items_ != items) {
-    // beginResetModel/endResetModel
     items_ = std::move(items);
     modelReset();
     return true;
@@ -399,8 +385,6 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
     sort_threshold_ = 0;
     if (filterAndSort()) return;
   }
-
-  // Update viewport: imgui redraws every frame
 }
 
 void MessageListModel::sort(int column, ImGuiSortDirection order) {
@@ -411,14 +395,10 @@ void MessageListModel::sort(int column, ImGuiSortDirection order) {
   }
 }
 
-// MessageView
-
-// QHeaderView::defaultSectionSize
 static constexpr float DEFAULT_SECTION_SIZE = 100.0f;
 
-// The Fusion style draws a down pointing arrow for AscendingOrder, imgui draws an up arrow for
-// ImGuiSortDirection_Ascending. Feed imgui the opposite direction so the glyph matches Qt and flip it
-// back before it reaches the model.
+// imgui draws an up arrow for ImGuiSortDirection_Ascending, cabana wants a down pointing one. Feed imgui
+// the opposite direction and flip it back before it reaches the model.
 static inline ImGuiSortDirection flipSortDirection(ImGuiSortDirection dir) {
   return dir == ImGuiSortDirection_Ascending ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending;
 }
@@ -431,7 +411,6 @@ void MessageView::drawRow(int row) {
   const std::vector<uint8_t> *bytes = item.id.source != INVALID_SOURCE ? &m.dat : nullptr;
   const float row_height = delegate_->sizeHint(bytes).y - ImGui::GetStyle().CellPadding.y * 2;
   ImGui::TableNextRow();
-  // inactive: palette Disabled Text, HighlightedText alpha 100 (applied by the delegate)
   ImGui::PushID(row);
 
   bool row_item_submitted = false;
@@ -446,9 +425,9 @@ void MessageView::drawRow(int row) {
       // the row selection spans all columns; submit it in the first visible column so that it is not
       // clipped away when the table is scrolled horizontally
       row_item_submitted = true;
-      // QAbstractItemView selects on press. QTreeView has no hover highlight, only the selection background.
-      // Selectable() prefers HeaderHovered over Header whenever the row is hovered, even when it is selected,
-      // so the selected row has to keep the selection color as its hover color or it looks unselected.
+      // rows select on press and have no hover highlight, only the selection background. Selectable()
+      // prefers HeaderHovered over Header whenever the row is hovered, even when it is selected, so the
+      // selected row has to keep the selection color as its hover color or it looks unselected.
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
       ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
       if (ImGui::Selectable("##row", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick, ImVec2(0, row_height))) {
@@ -456,7 +435,7 @@ void MessageView::drawRow(int row) {
       }
       ImGui::PopStyleColor(2);
       if (selected && scroll_to_current_) {
-        // scrollTo(EnsureVisible): only scroll when the row is outside the viewport, and only far enough
+        // only scroll when the row is outside the viewport, and only far enough
         const ImGuiTable *table = ImGui::GetCurrentTable();
         const ImGuiWindow *inner = table->InnerWindow;
         const float view_top = inner->InnerClipRect.Min.y + inner->DecoInnerSizeY1;
@@ -470,7 +449,7 @@ void MessageView::drawRow(int row) {
         }
         scroll_to_current_ = false;
       }
-      // the tooltip is on the Name item in Qt, so only show it while the mouse is over the Name column
+      // the tooltip belongs to the Name item, so only show it while the mouse is over the Name column
       const ImGuiTableColumn &name_col = ImGui::GetCurrentTable()->Columns[MessageListModel::Column::NAME];
       const float mouse_x = ImGui::GetIO().MousePos.x;
       if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && mouse_x >= name_col.MinX && mouse_x < name_col.MaxX) {
@@ -495,20 +474,18 @@ void MessageView::drawRow(int row) {
   }
 
   ImGui::PopID();
-  // the grid lines (row bottom border, column borders) are ImGuiTableFlags_Borders
 }
 
 void MessageView::setModel(MessageListModel *model) {
   model_ = model;
-  // Bypass the slow call to QTreeView::dataChanged: imgui has no height cache, nothing to invalidate.
-  // A model reset invalidates the current index like QAbstractItemView does.
+  // a model reset invalidates the current index
   connections_.push_back(model_->modelReset.connect([this]() { current_row_ = -1; }));
 }
 
 void MessageView::setCurrentIndex(int row) {
   if (row < 0 || row >= model_->rowCount()) return;
   const int previous = std::exchange(current_row_, row);
-  scroll_to_current_ = true;  // scrollTo(EnsureVisible)
+  scroll_to_current_ = true;
   if (previous != row) currentChanged(row, previous);
 }
 
@@ -520,8 +497,6 @@ void MessageView::updateBytesSectionSize() {
       max_bytes = std::max<int>(max_bytes, m.dat.size());
     }
   }
-  // setUniformRowHeights(!multipleLines()): draw() only uses the clipper with uniform row heights
-  // header()->resizeSection(DATA, ...): the minimum width of the stretched last section
   bytes_section_bytes_ = max_bytes;
 }
 
@@ -550,13 +525,13 @@ void MessageView::draw() {
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
                                 ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders;
-  // setStretchLastSection: with ScrollX a stretch column needs an explicit inner width
+  // with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = delegate_->sizeForBytes(bytes_section_bytes_).x;
   const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);
   const float inner_width = std::max(avail_width, fixed_columns_width_ + bytes_width);
   if (!ImGui::BeginTable("messages", model_->columnCount(), flags, ImVec2(0, 0), inner_width)) return;
 
-  // QTreeView has no frozen column: only the header and the filter row stay put
+  // no frozen column: only the header and the filter row stay put
   ImGui::TableSetupScrollFreeze(0, 2);
   // MessagesWidget shows its own header menu; imgui's default one is never drawn, so clear the flag
   // TableHeader() leaves behind (it would keep the column header highlighted forever)
@@ -564,7 +539,7 @@ void MessageView::draw() {
   table->DisableDefaultContextMenu = true;
   table->IsContextPopupOpen = false;
   for (int i = 0; i < model_->columnCount(); ++i) {
-    // PreferSortDescending: with the flipped direction the first click on a section sorts ascending, like QHeaderView
+    // with the flipped direction the first click on a section sorts ascending
     ImGuiTableColumnFlags column_flags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
     float width = DEFAULT_SECTION_SIZE;
     if (i == MessageListModel::Column::NAME) {
@@ -580,7 +555,7 @@ void MessageView::draw() {
   if (ImGuiTableSortSpecs *specs = ImGui::TableGetSortSpecs(); specs && specs->SpecsDirty) {
     if (specs->SpecsCount > 0) model_->sort(specs->Specs[0].ColumnIndex, flipSortDirection(specs->Specs[0].SortDirection));
     specs->SpecsDirty = false;
-    if (current_row_ >= 0) scroll_to_current_ = true;  // QTreeView::sortByColumn: scrollTo(currentIndex)
+    if (current_row_ >= 0) scroll_to_current_ = true;  // keep the current row visible
   }
 
   header_->draw();
@@ -609,10 +584,7 @@ void MessageView::draw() {
   ImGui::EndTable();
 }
 
-// MessageViewHeader
-
 MessageViewHeader::MessageViewHeader() {
-  // sectionResized/sectionMoved -> updateHeaderPositions: done every frame in draw()
 }
 
 void MessageViewHeader::updateFilters() {
@@ -641,13 +613,13 @@ void MessageViewHeader::updateGeometries() {
     hidden_.push_back(false);
     display_order_.push_back(i);
   }
-  // setViewportMargins: the filter row is a frozen table row
+  // the filter row is a frozen table row
 }
 
 void MessageViewHeader::draw() {
   updateGeometries();
 
-  // TableHeadersRow, submitted manually to catch the right click
+  // the headers row, submitted manually to catch the right click
   ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
   for (int i = 0; i < count(); i++) {
     if (!ImGui::TableSetColumnIndex(i)) continue;
@@ -669,7 +641,7 @@ void MessageViewHeader::draw() {
     ImGui::PushID(i);
     ImGui::SetNextItemWidth(editors[i].empty() ? -FLT_MIN : std::max(1.0f, ImGui::GetContentRegionAvail().x - clear_width));
     if (inputText("##filter", &editors[i], placeholders_[i].c_str())) updateFilters();
-    // setClearButtonEnabled: the button only shows when the field is non-empty
+    // the clear button only shows when the field is non-empty
     if (!editors[i].empty()) {
       ImGui::SameLine(0, 0);
       if (ImGui::Button(icon::X)) {

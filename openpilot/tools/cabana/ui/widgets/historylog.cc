@@ -58,7 +58,7 @@ std::string HistoryLogModel::headerData(int section) const {
 
 std::optional<CabanaColor> HistoryLogModel::headerBackground(int section) const {
   if (section > 0 && !isHexMode()) {
-    // Alpha-blend the signal color with the background to ensure contrast
+    // alpha-blend the signal color with the background to ensure contrast
     CabanaColor sigColor = sigs[section - 1]->color;
     sigColor.a = 128;
     return sigColor;
@@ -73,7 +73,7 @@ void HistoryLogModel::setHexMode(bool hex) {
 
 void HistoryLogModel::setFilter(int sig_idx, const std::string &value, std::function<bool(double, double)> cmp) {
   filter_sig_idx = sig_idx;
-  // QString::toDouble: 0 unless the whole string is a number
+  // 0 unless the whole string is a number
   char *end = nullptr;
   double v = std::strtod(value.c_str(), &end);
   filter_value = (!value.empty() && end && *end == '\0') ? v : 0;
@@ -137,8 +137,6 @@ void HistoryLogModel::fetchData(std::deque<Message>::iterator insert_pos, uint64
 
 
 
-// HeaderView
-
 static std::string headerText(std::string text) {
   std::replace(text.begin(), text.end(), '_', ' ');
   return text;
@@ -165,7 +163,7 @@ void HeaderView::paintSection(ImDrawList *painter, const ImRect &rect, int logic
   const ImU32 color = isDarkTheme()
                           ? IM_COL32(DarkTheme::bright_text.r, DarkTheme::bright_text.g, DarkTheme::bright_text.b, 255)
                           : ImGui::GetColorU32(ImGuiCol_Text);
-  // defaultAlignment: AlignRight | TextWordWrap, one line at a time
+  // right aligned and word wrapped, one line at a time
   const ImRect r(rect.Min.x + 5, rect.Min.y + 3, rect.Max.x - 5, rect.Max.y - 3);
   ImFont *font = ImGui::GetFont();
   const float font_size = ImGui::GetFontSize();
@@ -187,7 +185,6 @@ void HeaderView::paintSection(ImDrawList *painter, const ImRect &rect, int logic
   painter->PopClipRect();
 }
 
-// LogsWidget
 
 LogsWidget::LogsWidget() : header(&model) {
   connections_.push_back(model.modelReset.connect([this]() { modelReset(); }));
@@ -200,7 +197,7 @@ void LogsWidget::modelReset() {
   value_edit.clear();
   value_edit_modified = false;
   comp_box = 0;
-  selected_row = selected_col = -1;  // QAbstractItemView clears the selection on a model reset
+  selected_row = selected_col = -1;  // a model reset clears the selection
   filters_widget_visible = !model.sigs.empty();
 }
 
@@ -211,7 +208,7 @@ void LogsWidget::filterChanged() {
   switch (comp_box) {
     case 0: cmp = std::greater<double>{}; break;
     case 1: cmp = std::equal_to<double>{}; break;
-    case 2: cmp = [](double l, double r) { return l != r; }; break; // not equal
+    case 2: cmp = [](double l, double r) { return l != r; }; break;
     case 3: cmp = std::less<double>{}; break;
   }
   model.setFilter(signals_cb, value_edit, cmp);
@@ -257,18 +254,18 @@ void LogsWidget::draw() {
     ImGui::SetNextItemWidth(value_w);
     std::string prev = value_edit;
     if (inputText("##value", &value_edit)) {
-      value_edit = applyDoubleValidator(prev, value_edit);  // DoubleValidator
+      value_edit = applyDoubleValidator(prev, value_edit);
       if (value_edit != prev) {
         value_edit_modified = true;
         filterChanged();
       }
     }
-    // setClearButtonEnabled: the button only shows when the field is non-empty
+    // the clear button only shows when the field is non-empty
     if (!value_edit.empty()) {
       ImGui::SameLine(0, 0);
       if (ImGui::Button(icon::X)) {
         value_edit.clear();
-        value_edit_modified = true;  // QLineEdit::clear() pushes an undo state, isModified stays true
+        value_edit_modified = true;  // clearing the field still counts as modified
         filterChanged();
       }
     }
@@ -287,12 +284,11 @@ void LogsWidget::draw() {
 void LogsWidget::drawTable() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const int cols = model.columnCount();
-  // rect().width() is the header viewport: the table's cell padding and the vertical scrollbar (only when
-  // shown, one frame behind) are not part of it
+  // the header viewport excludes the table's cell padding and the vertical scrollbar (the latter is one
+  // frame behind, it is only known once shown)
   header.width = ImGui::GetContentRegionAvail().x - style.CellPadding.x * 2 * cols -
                  (vscrollbar_visible_ ? style.ScrollbarSize : 0.0f);
 
-  // HeaderView::ResizeToContents
   std::vector<ImVec2> sizes(cols);
   float header_height = 0;
   for (int i = 0; i < cols; ++i) {
@@ -302,16 +298,15 @@ void LogsWidget::drawTable() {
   if (model.isHexMode() && !model.messages.empty()) {
     sizes[1].x = std::max(sizes[1].x, delegate.sizeHint(&model.messages.front().data).x);
   }
-  // verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height())
   const float row_height = delegate.sizeForBytes(8).y;
 
-  // fixed section sizes and a horizontal scrollbar, no alternating row colors.
-  // QTableView::showGrid defaults to true with Qt::SolidLine: the grid is drawn between rows and columns
+  // fixed section sizes and a horizontal scrollbar, no alternating row colors; the grid is drawn between
+  // rows and columns
   ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_BordersInner |
                           ImGuiTableFlags_SizingFixedFit;
   // an empty viewport draws no grid
   if (model.rowCount() == 0) flags &= ~ImGuiTableFlags_BordersInnerV;
-  // inner_width: the sum of the fixed section sizes, so the columns keep their size and the table scrolls
+  // the sum of the fixed section sizes, so the columns keep their size and the table scrolls
   float inner_width = 0;
   for (int i = 0; i < cols; ++i) inner_width += sizes[i].x + style.CellPadding.x * 2;
 
@@ -340,9 +335,8 @@ void LogsWidget::drawTable() {
         ImGui::PushID(row);
         for (int col = 0; col < cols; ++col) {
           if (!ImGui::TableSetColumnIndex(col)) continue;
-          // QTableView selects items, not rows (SelectionBehavior::SelectItems)
+          // cells are selected, not rows; there is no hover highlight, only the selection background
           const bool cell_selected = selected_row == row && selected_col == col;
-          // QTableView has no hover highlight, only the selection background
           ImGui::PushStyleColor(ImGuiCol_HeaderHovered, cell_selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
           ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
           ImGui::PushID(col);
@@ -359,7 +353,7 @@ void LogsWidget::drawTable() {
         }
         ImGui::PopID();
       }
-      // QAbstractItemView fetches more when the last row is visible or the scrollbar is at its maximum
+      // fetch more when the last row is visible or the scrollbar is at its maximum
       if (clipper.DisplayEnd >= model.rowCount()) fetch_more = true;
     }
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) fetch_more = true;

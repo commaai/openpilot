@@ -10,12 +10,11 @@
 #include <thread>
 #include <vector>
 
-// QtConcurrent::run equivalent. Reusing the same threads matters: a std::async thread per update lands each
-// allocation in a different glibc malloc arena and the process RSS grows without bound.
+// Reusing the same threads matters: a std::async thread per update lands each allocation in a different
+// glibc malloc arena and the process RSS grows without bound.
 class ThreadPool {
 public:
   static ThreadPool &instance() {
-    // a few reused threads: every worker thread owns a glibc malloc arena and each arena fragments on its own
     static ThreadPool pool(std::clamp(std::thread::hardware_concurrency(), 2u, 4u));
     return pool;
   }

@@ -31,7 +31,7 @@ bool RouteInfoDlg::draw() {
   float row_h = ImGui::GetTextLineHeightWithSpacing();
   float min_h = row_h * (std::min((int)rows_.size(), 13) + 1) + ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().WindowPadding.y * 2;
   ImGui::SetNextWindowSize(ImVec2(520, min_h), ImGuiCond_Appearing);
-  setNextWindowFloatsOut();  // QDialog
+  setNextWindowFloatsOut();
   if (ImGui::Begin(title_.c_str(), &open_)) {
     const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit;
     if (ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) {

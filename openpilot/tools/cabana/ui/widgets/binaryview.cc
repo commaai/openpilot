@@ -14,7 +14,7 @@
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
-// Qt rendered the tooltip as rich text; drop the tags for the plain text imgui tooltip
+// drop the tags of a rich text tooltip for the plain text imgui tooltip
 static std::string stripHtml(const std::string &s) {
   std::string out;
   bool in_tag = false;
@@ -27,8 +27,6 @@ static std::string stripHtml(const std::string &s) {
   return b == std::string::npos ? std::string() : out.substr(b, e - b + 1);
 }
 
-// BinaryView
-
 const int CELL_HEIGHT = 36;
 const int VERTICAL_HEADER_WIDTH = 30;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
@@ -39,16 +37,15 @@ inline ImU32 toImColor(const CabanaColor &color) {
   return IM_COL32(color.r, color.g, color.b, color.a);
 }
 
-// QPalette roles (see DarkTheme in utils/util.h and the light style in ui/style.cc)
 inline ImU32 paletteHighlight() { return ImGui::GetColorU32(ImGuiCol_Header); }
 inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
 inline ImU32 paletteBrightText() {
   return isDarkTheme() ? toImColor(DarkTheme::bright_text) : IM_COL32(255, 255, 255, 255);
 }
 inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
-const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);  // Qt::darkGray
+const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);
 
-// utils::drawStaticText: text centered in r
+// text centered in r
 void drawStaticText(ImDrawList *p, const ImRect &r, ImFont *font, float font_size, ImU32 col, const std::string &text,
                     bool bold = false) {
   const ImVec2 size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, text.c_str());
@@ -59,7 +56,7 @@ void drawStaticText(ImDrawList *p, const ImRect &r, ImFont *font, float font_siz
   if (bold) p->AddText(font, font_size, ImVec2(pos.x + 0.6f, pos.y), col, text.c_str());
 }
 
-// QBrush(color, Qt::Dense7Pattern): sparse dots
+// sparse dots
 void fillDense7Pattern(ImDrawList *p, const ImRect &r, ImU32 col) {
   p->PushClipRect(r.Min, r.Max, true);
   for (float y = r.Min.y; y < r.Max.y; y += 4.0f) {
@@ -70,7 +67,7 @@ void fillDense7Pattern(ImDrawList *p, const ImRect &r, ImU32 col) {
   p->PopClipRect();
 }
 
-// QBrush(color, Qt::BDiagPattern): backward diagonal lines
+// backward diagonal lines
 void fillBDiagPattern(ImDrawList *p, const ImRect &r, ImU32 col) {
   p->PushClipRect(r.Min, r.Max, true);
   const float h = r.GetHeight();
@@ -111,7 +108,7 @@ std::string BinaryView::whatsThis() const {
 void BinaryView::addShortcuts() {
   const ImGuiIO &io = ImGui::GetIO();
   if (io.WantTextInput || io.KeyCtrl || io.KeySuper) return;
-  if (ImGui::GetTopMostPopupModal() != nullptr) return;  // Qt::WindowShortcut is blocked by a modal dialog
+  if (ImGui::GetTopMostPopupModal() != nullptr) return;  // a modal dialog blocks the shortcuts
 
   // Delete (x, backspace, delete)
   if (ImGui::IsKeyPressed(ImGuiKey_X, false) || ImGui::IsKeyPressed(ImGuiKey_Backspace, false) || ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
@@ -148,7 +145,7 @@ void BinaryView::addShortcuts() {
 }
 
 ImVec2 BinaryView::minimumSizeHint() const {
-  // horizontalHeader()->minimumSectionSize(): widest fixed-font glyph plus the header margins
+  // widest fixed-font glyph plus the header margins
   pushMonoFont();
   const float min_section_size = ImGui::CalcTextSize("W").x + 8.0f;
   popMonoFont();
@@ -158,7 +155,6 @@ ImVec2 BinaryView::minimumSizeHint() const {
 
 void BinaryView::highlight(const cabana::Signal *sig) {
   if (sig != hovered_sig) {
-    // dataChanged for the affected cells is dropped, the view is redrawn every frame
     hovered_sig = sig;
     signalHovered(hovered_sig);
   }
@@ -169,7 +165,7 @@ void BinaryView::setSelection() {
   if (!anchor_index.isValid() || !index.isValid())
     return;
 
-  std::set<BinaryIndex> selection;  // QItemSelectionModel::ClearAndSelect
+  std::set<BinaryIndex> selection;
   auto [start, size, is_lb] = getSelection(index);
   for (int i = 0; i < size; ++i) {
     int pos = is_lb ? flipBitPos(start + i) : flipBitPos(start) + i;
@@ -205,7 +201,7 @@ void BinaryView::highlightPosition(const ImVec2 &pos) {
 
 void BinaryView::mouseMoveEvent(const ImVec2 &pos) {
   highlightPosition(last_mouse_pos = pos);
-  // QAbstractItemView::mouseMoveEvent: drag selecting while the left button is down; flags() makes the hex column unselectable
+  // drag selecting while the left button is down; the hex column is not selectable
   if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && model->isSelectable(indexAt(pos))) setSelection();
 }
 
@@ -292,8 +288,8 @@ BinaryIndex BinaryView::indexAt(const ImVec2 &pos) const {
 }
 
 ImRect BinaryView::visualRect(const BinaryIndex &index) const {
-  // QHeaderView sections are integral; round the edges so neighboring cells share them exactly.
-  // setShowGrid(false): no grid line between the cells, they are painted edge to edge
+  // sections are integral: round the edges so neighboring cells share them exactly and the cells are
+  // painted edge to edge with no grid line between them
   const float x0 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND(index.column * column_width_);
   const float x1 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND((index.column + 1) * column_width_);
   const float y = grid_pos_.y + index.row * CELL_HEIGHT;
@@ -301,7 +297,6 @@ ImRect BinaryView::visualRect(const BinaryIndex &index) const {
 }
 
 void BinaryView::draw() {
-  // paintEvent
   is_message_active = can->isMessageActive(model->msg_id);
   if (scroll_to_top_) {
     ImGui::SetScrollY(0.0f);
@@ -315,7 +310,6 @@ void BinaryView::draw() {
   ImGui::InvisibleButton("##binary_view", ImVec2(std::max(width, 1.0f), std::max(static_cast<float>(rows * CELL_HEIGHT), 1.0f)));
   ImDrawList *painter = ImGui::GetWindowDrawList();
 
-  // verticalHeader()
   for (int row = 0; row < rows; ++row) {
     const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + VERTICAL_HEADER_WIDTH, grid_pos_.y + (row + 1) * CELL_HEIGHT);
     painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));  // plain header background
@@ -328,7 +322,6 @@ void BinaryView::draw() {
     }
   }
 
-  // mouse events
   const ImVec2 mouse = ImGui::GetMousePos();
   const bool hovered = ImGui::IsItemHovered();
   const bool active = ImGui::IsItemActive();
@@ -339,17 +332,15 @@ void BinaryView::draw() {
     if (delta.x != 0.0f || delta.y != 0.0f) {
       mouseMoveEvent(mouse);
     } else {
-      // Qt keeps the hovered signal from the last mouse move event; imgui only reports a delta on the
-      // frames the mouse actually moves, so recompute it every frame the mouse is inside the widget.
-      // Without this the shortcuts stay inert after a click until the mouse is moved again.
+      // imgui only reports a delta on the frames the mouse actually moves, so recompute the hovered
+      // signal every frame the mouse is inside the widget, or the shortcuts stay inert after a click
       highlightPosition(last_mouse_pos = mouse);
     }
   }
-  // leaveEvent: the mouse left the widget rect, also while dragging
+  // the mouse left the widget rect, also while dragging
   if (std::exchange(under_mouse_, under_mouse) && !under_mouse) leaveEvent();
   if (ImGui::IsItemDeactivated()) mouseReleaseEvent(mouse);
 
-  // Qt::ToolTipRole
   if (hovered && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
     const std::string tip = model->data(indexAt(mouse));
     if (!tip.empty()) ImGui::SetTooltip("%s", stripHtml(tip).c_str());
@@ -357,8 +348,6 @@ void BinaryView::draw() {
 
   addShortcuts();
 }
-
-// BinaryViewModel
 
 void BinaryViewModel::refresh() {
   bit_flip_tracker = {};
@@ -404,15 +393,13 @@ void BinaryViewModel::updateItem(int row, int col, uint8_t val, const CabanaColo
 void BinaryViewModel::updateState() {
   const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
-  // Handle size changes in binary data
   if (binary.size() > row_count) {
     row_count = binary.size();
     items.resize(row_count * column_count);
   }
 
   auto &bit_flips = heatmap_live_mode ? last_msg.bit_flip_counts : getBitFlipChanges(binary.size());
-  // Find the maximum bit flip count across the message
-  uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
+  uint32_t max_bit_flip_count = 1;  // 1 to avoid division by zero
   for (const auto &row : bit_flips) {
     for (uint32_t count : row) {
       max_bit_flip_count = std::max(max_bit_flip_count, count);
@@ -439,7 +426,7 @@ void BinaryViewModel::updateState() {
       }
 
       auto color = item.bg_color;
-      color.a = static_cast<uint8_t>(alpha);  // QColor::setAlpha(int)
+      color.a = static_cast<uint8_t>(alpha);
       updateItem(i, j, bit_val, color);
     }
     updateItem(i, 8, binary[i], last_msg.colors[i]);
@@ -447,7 +434,6 @@ void BinaryViewModel::updateState() {
 }
 
 const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::getBitFlipChanges(size_t msg_size) {
-  // Return cached results if time range and data are unchanged
   auto time_range = can->timeRange();
   if (bit_flip_tracker.time_range == time_range && !bit_flip_tracker.flip_counts.empty())
     return bit_flip_tracker.flip_counts;
@@ -455,7 +441,6 @@ const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::getBitFlipChanges(s
   bit_flip_tracker.time_range = time_range;
   bit_flip_tracker.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
 
-  // Iterate over events within the specified time range and calculate bit flips
   auto [first, last] = can->eventsInRange(msg_id, time_range);
   if (std::distance(first, last) <= 1) return bit_flip_tracker.flip_counts;
 
@@ -487,8 +472,6 @@ std::string BinaryViewModel::data(const BinaryIndex &index) const {
   return item && !item->sigs.empty() ? utils::signalToolTip(item->sigs.back()) : std::string();
 }
 
-// BinaryItemDelegate
-
 BinaryItemDelegate::BinaryItemDelegate(BinaryView *parent) : bin_view(parent) {
   bin_text_table[0] = "0";
   bin_text_table[1] = "1";
@@ -512,18 +495,17 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
   auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
   ImFont *font = ImGui::GetFont();
   float font_size = ImGui::GetFontSize();
-  ImU32 pen = IM_COL32(0, 0, 0, 255);  // QPainter default pen
+  ImU32 pen = IM_COL32(0, 0, 0, 255);
 
   if (index.column == 8) {
     if (item->valid) {
-      pushMonoFont();  // hex_font
+      pushMonoFont();
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
       painter->AddRectFilled(rect.Min, rect.Max, toImColor(item->bg_color));
     }
-    // the Qt delegate never sets the pen for the hex column, leaving it black. Use the same color as the
-    // bit columns instead, so the two halves of the row read as one.
+    // same color as the bit columns, so the two halves of the row read as one
     pen = paletteText(bin_view->is_message_active);
   } else if (bin_view->isSelected(index)) {
     auto color = bin_view->resize_sig ? toImColor(bin_view->resize_sig->color) : paletteHighlight();
@@ -586,7 +568,7 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
       subtract.emplace_back(rc.Max.x - 3, rc.Max.y - spacing, rc.Max.x, rc.Max.y);
     }
   }
-  // QRegion(rc).subtracted(subtract): rc split into horizontal bands with the notch corners removed
+  // rc split into horizontal bands with the notch corners removed
   std::vector<ImRect> region;
   {
     std::vector<float> ys{rc.Min.y, rc.Max.y};
@@ -616,17 +598,16 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
 
   for (const ImRect &clip : region) {
     painter->PushClipRect(clip.Min, clip.Max, true);
-    // Mixing the signal color with the Base background color to fade it
+    // mix the signal color with the background to fade it
     painter->AddRectFilled(rc.Min, rc.Max, paletteBase());
     painter->AddRectFilled(rc.Min, rc.Max, toImColor(color));
 
-    // Draw edges
     if (draw_left) painter->AddLine(ImVec2(rc.Min.x + 0.5f, rc.Min.y), ImVec2(rc.Min.x + 0.5f, rc.Max.y), edge, 1.0f);
     if (draw_right) painter->AddLine(ImVec2(rc.Max.x - 0.5f, rc.Min.y), ImVec2(rc.Max.x - 0.5f, rc.Max.y), edge, 1.0f);
     if (draw_bottom) painter->AddLine(ImVec2(rc.Min.x, rc.Max.y - 0.5f), ImVec2(rc.Max.x, rc.Max.y - 0.5f), edge, 1.0f);
     if (draw_top) painter->AddLine(ImVec2(rc.Min.x, rc.Min.y + 0.5f), ImVec2(rc.Max.x, rc.Min.y + 0.5f), edge, 1.0f);
 
-    // fill gaps inside corners: the 2px pen is clipped to the region, only the half outside the notch is painted
+    // fill gaps inside corners: the 2px stroke is clipped to the region, only the half outside the notch is painted
     for (auto &r : subtract) {
       painter->AddRect(r.Min, r.Max, edge, 0.0f, 0, 2.0f);
     }

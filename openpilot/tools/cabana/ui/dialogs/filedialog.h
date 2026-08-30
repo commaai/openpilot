@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-// QFileDialog equivalent (imgui file browser). One dialog at a time; the callback gets an empty path on cancel.
+// file browser. One dialog at a time; the callback gets an empty path on cancel.
 namespace FileDialog {
 
 using Callback = std::function<void(const std::string &path)>;

@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 
-// QDialog::exec() is non-blocking here: open(), draw() every frame until it returns false, then check accepted()
+// non-blocking: open(), draw() every frame until it returns false, then check accepted()
 class SignalSelector {
 public:
   struct ListItem {
