@@ -40,10 +40,6 @@ void warning(const std::string &title, const std::string &text, const std::strin
   push({.title = title, .text = text, .detailed_text = detailed_text, .on_result = wrap(std::move(on_close))});
 }
 
-void warning(const std::string &title, const std::string &text, std::function<void()> on_close) {
-  push({.title = title, .text = text, .on_result = wrap(std::move(on_close))});
-}
-
 void question(const std::string &title, const std::string &text, std::function<void(bool)> on_result) {
   push({.title = title, .text = text, .has_cancel = true, .on_result = std::move(on_result)});
 }
