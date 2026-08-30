@@ -15,6 +15,15 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <GLFW/glfw3.h>
+#ifdef __APPLE__
+extern "C" {
+struct objc_object;
+struct objc_selector;
+objc_object *glfwGetCocoaWindow(GLFWwindow *window);
+objc_selector *sel_registerName(const char *name);
+void objc_msgSend(void);
+}
+#endif
 
 #include "json11/json11.hpp"
 #include "tools/cabana/commands.h"
@@ -601,7 +610,24 @@ void MainWindow::onlineHelp() {
   help_overlay_frame_ = ImGui::GetFrameCount();
 }
 
+#ifdef __APPLE__
+namespace {
+constexpr unsigned long NS_WINDOW_STYLE_MASK_FULL_SCREEN = 1ul << 14;
+
+bool nativeFullScreen(GLFWwindow *window) {
+  objc_object *ns_window = glfwGetCocoaWindow(window);
+  if (ns_window == nullptr) return false;
+  auto styleMask = (unsigned long (*)(objc_object *, objc_selector *))objc_msgSend;
+  return (styleMask(ns_window, sel_registerName("styleMask")) & NS_WINDOW_STYLE_MASK_FULL_SCREEN) != 0;
+}
+}  // namespace
+#endif
+
 void MainWindow::toggleFullScreen() {
+#ifdef __APPLE__
+  auto toggle = (void (*)(objc_object *, objc_selector *, objc_object *))objc_msgSend;
+  toggle(glfwGetCocoaWindow(window_), sel_registerName("toggleFullScreen:"), nullptr);
+#else
   full_screen_ = !full_screen_;
   if (full_screen_) {
     glfwGetWindowPos(window_, &windowed_rect_[0], &windowed_rect_[1]);
@@ -613,6 +639,7 @@ void MainWindow::toggleFullScreen() {
     glfwSetWindowMonitor(window_, nullptr, windowed_rect_[0], windowed_rect_[1], windowed_rect_[2], windowed_rect_[3], 0);
     glfwMaximizeWindow(window_);
   }
+#endif
 }
 
 void MainWindow::saveSessionState() {
@@ -952,6 +979,9 @@ void MainWindow::drawDockspace() {
 }
 
 void MainWindow::draw() {
+#ifdef __APPLE__
+  full_screen_ = nativeFullScreen(window_);
+#endif
   auto pending = std::move(next_frame_);
   next_frame_.clear();
   for (auto &fn : pending) fn();
