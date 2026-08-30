@@ -405,6 +405,7 @@ bool EditMessageDialog::draw() {
   ImGui::SetNextWindowSize(ImVec2(width_, 0.0f), ImGuiCond_Always);  // setFixedWidth, height fits the form
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   bool open = true;
+  setNextWindowFloatsOut();  // QDialog
   if (ImGui::BeginPopupModal(window_title_.c_str(), &open)) {
     const float label_width = ImGui::CalcTextSize("Comment").x + ImGui::GetStyle().ItemSpacing.x * 2;
     auto row = [&](const char *label) {

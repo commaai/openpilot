@@ -725,6 +725,7 @@ void MainWindow::drawWaitDialog() {
   if (!ImGui::IsPopupOpen(id)) return;  // keep submitting until CloseCurrentPopup ran, a stale modal blocks all input
   ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f));
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  setNextWindowFloatsOut();  // QDialog
   if (ImGui::BeginPopupModal(id, nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::TextUnformatted(wait_dlg_text_.c_str());
     // QProgressBar shows no text until the progress is set
@@ -965,12 +966,6 @@ void MainWindow::drawDockspace() {
   ImGui::DockSpace(dock_id, dock_size);
   if (!full_screen_) drawStatusBar();
   ImGui::End();
-}
-
-static void setNextWindowFloatsOut() {
-  ImGuiWindowClass window_class;
-  window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
-  ImGui::SetNextWindowClass(&window_class);
 }
 
 void MainWindow::draw() {

@@ -28,6 +28,7 @@ bool SignalSelector::draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(700.0f, 450.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  setNextWindowFloatsOut();  // QDialog
   if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) {
     open_ = false;
     return false;

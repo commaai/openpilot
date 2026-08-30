@@ -110,6 +110,13 @@ inline bool comboBox(const char *label, int *index, const char *const items[], i
 
 ImU32 highlightedTextColor();  // QPalette::HighlightedText
 
+// QDialog / floating QDockWidget: the next window is a real OS window instead of being drawn inside the main one
+inline void setNextWindowFloatsOut() {
+  ImGuiWindowClass window_class;
+  window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
+  ImGui::SetNextWindowClass(&window_class);
+}
+
 // QSlider drawn in the Fusion style: full width groove, filled left of the handle, 13x13 handle (style.cc)
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width);
 

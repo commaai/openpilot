@@ -96,6 +96,7 @@ void RoutesDialog::draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(480.0f, 420.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  setNextWindowFloatsOut();  // QDialog
   if (!ImGui::BeginPopupModal("Remote routes", nullptr, ImGuiWindowFlags_NoResize)) return;
 
   ImGui::AlignTextToFramePadding();

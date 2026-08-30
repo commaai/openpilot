@@ -46,6 +46,7 @@ FindSimilarBitsDlg::FindSimilarBitsDlg() {
 bool FindSimilarBitsDlg::draw() {
   if (!open_) return false;
   ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_Appearing);
+  setNextWindowFloatsOut();  // QDialog
   if (ImGui::Begin(title_.c_str(), &open_)) {
     std::string bus_labels;
     for (int bus : bus_items) bus_labels += std::to_string(bus) + '\0';

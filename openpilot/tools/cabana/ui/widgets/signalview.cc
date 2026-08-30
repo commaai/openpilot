@@ -1040,6 +1040,7 @@ bool ValueDescriptionDlg::draw() {
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   bool open = true;
   // not drawn while the dock is collapsed or another modal is on top; only closed once the popup is gone
+  setNextWindowFloatsOut();  // QDialog
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;

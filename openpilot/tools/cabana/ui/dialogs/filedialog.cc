@@ -169,6 +169,7 @@ void draw() {
   }
   ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f), ImGuiCond_Appearing);
   ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  setNextWindowFloatsOut();  // QDialog
   if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
 
   if (ImGui::Button("Up")) setDir(s.dir.parent_path());

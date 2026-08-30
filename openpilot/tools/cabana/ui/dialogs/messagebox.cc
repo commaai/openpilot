@@ -75,6 +75,7 @@ void draw() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const float min_width = ImGui::CalcTextSize(box.title.c_str()).x + style.FramePadding.x * 2 + style.WindowPadding.x * 2;
   ImGui::SetNextWindowSizeConstraints(ImVec2(min_width, 0.0f), ImVec2(FLT_MAX, FLT_MAX));
+  setNextWindowFloatsOut();  // QDialog
   if (ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 480.0f);
     ImGui::TextUnformatted(box.text.c_str());
