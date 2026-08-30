@@ -37,10 +37,10 @@ void Sparkline::update(const cabana::Signal *sig, CanEventIter first, CanEventIt
   }
 
   freq_ = points_.size() / std::max(points_.back().x - points_.front().x, 1.0);
-  render(sig->color, range, sz);
+  render(sig->color, range, sz, window_end);
 }
 
-void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
+void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double window_end) {
   bool is_flat_line = min_val == max_val;
   if (is_flat_line) {
     min_val -= 1.0;
@@ -86,14 +86,23 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz) {
   this->size = sz;
   color_ = IM_COL32(color.r, color.g, color.b, color.a);
   draw_individual_points_ = draw_individual_points;
+  window_end_ = window_end;
+  xscale_ = xscale;
 }
 
 void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   if (render_points_.empty()) return;
 
+  // update() only runs when a message of this id arrives, so a slow message would hold the sparkline
+  // still for many frames and then move it in one step. scroll the rendered polyline by the time that
+  // has passed since it was built, which keeps the motion at the frame rate whatever the message rate is
+  const float shift = std::clamp((float)((can->currentSec() - window_end_) * xscale_), 0.0f, size.x);
+
   std::vector<ImVec2> pts;
   pts.reserve(render_points_.size());
-  for (const auto &p : render_points_) pts.emplace_back(pos.x + p.x, pos.y + p.y);
+  for (const auto &p : render_points_) pts.emplace_back(pos.x + p.x - shift, pos.y + p.y);
+
+  draw_list->PushClipRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), true);
 
   // an aliased 1 px segment between two columns rounds into one of them and the rounding flips as the
   // window slides, so the thin peaks sparkle; antialiasing spreads it over both and the motion is smooth
@@ -106,4 +115,5 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   } else {
     draw_point(pts.back());
   }
+  draw_list->PopClipRect();
 }

@@ -752,13 +752,16 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     ImVec2 size(std::floor(available_width - value_width),
                 std::floor(delegate->signalRowHeight() - V_MARGIN * 2));
 
+    // the window ends at the playback clock, not at the last message: its timestamp only moves when a
+    // message of this id arrives, so a slow message held the sparkline still for several updates and
+    // then jumped it, which reads as a hitch at the message rate
+    const double window_end = can->currentSec();
     // plain locals: capturing structured bindings in a lambda is C++20
-    const auto range = can->eventsInRange(model->msg_id, std::make_pair(last_msg.ts -settings.sparkline_range, last_msg.ts));
+    const auto range = can->eventsInRange(model->msg_id, std::make_pair(window_end - settings.sparkline_range, window_end));
     const CanEventIter first = range.first, last = range.second;
     std::vector<std::future<void>> futures;
     for (int i = first_visible; i <= last_visible; ++i) {
       auto item = model->root->children[i];
-      const double window_end = last_msg.ts;
       futures.push_back(ThreadPool::instance().run([item, first, last, size, window_end]() {
         item->sparkline.update(item->sig, first, last, settings.sparkline_range, size, window_end);
       }));
