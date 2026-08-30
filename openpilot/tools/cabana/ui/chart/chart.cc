@@ -91,7 +91,7 @@ void ChartView::drawMenuActions() {
   ImGui::Unindent(indent);
 }
 
-// the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
+// the buttons and their menus are drawn every frame, at the rects resizeEvent() placed them at
 void ChartView::createToolButtons() {
   ImGui::SetCursorScreenPos(ImVec2(close_btn_rect.Min.x, close_btn_rect.Min.y));
   bool close_clicked = toolButton("close_btn", icon::X, "Remove Chart");

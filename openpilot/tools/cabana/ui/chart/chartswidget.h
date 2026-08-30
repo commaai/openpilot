@@ -104,7 +104,7 @@ private:
   void drawToolBar();
   void updateTabBar();
   void setMaxChartRange(int value);
-  void updateLayout(bool force = false);
+  void updateLayout();
   void settingChanged();
   void showValueTip(double sec);
   void eventFilter();

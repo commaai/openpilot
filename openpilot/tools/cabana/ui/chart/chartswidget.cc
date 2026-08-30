@@ -88,7 +88,7 @@ ChartsWidget::ChartsWidget() {
   connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); }));
   connections_.push_back(tabbar.tabCloseRequested.connect([this](int index) { removeTab(index); }));
   connections_.push_back(tabbar.currentChanged.connect([this](int index) {
-    if (index != -1) updateLayout(true);
+    if (index != -1) updateLayout();
   }));
 
   setIsDocked(true);
@@ -384,7 +384,7 @@ ChartView *ChartsWidget::createChart(int pos) {
   pos = std::clamp(pos, 0, (int)charts.size());
   charts.insert(charts.begin() + pos, chart);
   currentCharts().insert(currentCharts().begin() + pos, chart);
-  updateLayout(true);
+  updateLayout();
   return chart;
 }
 
@@ -456,7 +456,7 @@ void ChartsWidget::setColumnCount(int n) {
   }
 }
 
-void ChartsWidget::updateLayout(bool force) {
+void ChartsWidget::updateLayout() {
   // the container has not been drawn yet (docked/floated this frame): keep the last known layout
   const float container_width = charts_container->geometry.GetWidth();
   if (container_width <= 0) return;
@@ -466,13 +466,8 @@ void ChartsWidget::updateLayout(bool force) {
     if ((n * CHART_MIN_WIDTH + (n - 1) * charts_container->horizontalSpacing()) < container_width) break;
   }
 
-  bool show_column_cb = n > 1;
-  columns_action_visible = show_column_cb;
-
-  n = std::min(column_count, n);
-  if (n != current_column_count || force) {
-    current_column_count = n;
-  }
+  columns_action_visible = n > 1;
+  current_column_count = std::min(column_count, n);
 }
 
 void ChartsWidget::startChartDrag(ChartView *chart, const ImVec2 &global_pos) {
@@ -548,7 +543,7 @@ void ChartsWidget::dragChartRelease(const ImVec2 &global_pos) {
       auto &cur = currentCharts();
       int to = w ? std::find(cur.begin(), cur.end(), w) - cur.begin() + 1 : 0;
       cur.insert(cur.begin() + to, source);
-      updateLayout(true);
+      updateLayout();
       updateTabBar();
     }
   }
@@ -647,7 +642,7 @@ void ChartsWidget::removeChart(ChartView *chart) {
   for (auto &[_, list] : tab_charts) {
     list.erase(std::remove(list.begin(), list.end(), chart), list.end());
   }
-  updateLayout(true);
+  updateLayout();
   seriesChanged();
 }
 
