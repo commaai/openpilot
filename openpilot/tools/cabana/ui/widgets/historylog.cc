@@ -254,13 +254,9 @@ void LogsWidget::draw() {
     if (ImGui::Combo("##comp", &comp_box, ">\0=\0!=\0<\0")) filterChanged();
     ImGui::SameLine();
     ImGui::SetNextItemWidth(value_w);
-    std::string prev = value_edit;
-    if (inputText("##value", &value_edit)) {
-      value_edit = applyDoubleValidator(prev, value_edit);
-      if (value_edit != prev) {
-        value_edit_modified = true;
-        filterChanged();
-      }
+    if (validatedText("##value", &value_edit, validateDouble)) {
+      value_edit_modified = true;
+      filterChanged();
     }
     // the clear button only shows when the field is non-empty
     if (!value_edit.empty()) {

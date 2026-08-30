@@ -16,12 +16,6 @@
 #include "tools/cabana/ui/widgets/messagebytes.h"
 
 
-// MessageBytesDelegate paints one row of bytes with per-byte colors.
-// applyDoubleValidator returns the previous text if the new text is not a C-locale double.
-inline std::string applyDoubleValidator(const std::string &prev, const std::string &input) {
-  return validateDouble(input) == ValidState::Invalid ? prev : input;
-}
-
 class HistoryLogModel;
 
 class HeaderView {

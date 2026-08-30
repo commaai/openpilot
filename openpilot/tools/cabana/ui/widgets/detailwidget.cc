@@ -20,12 +20,6 @@ bool iequals(const std::string &a, const std::string &b) {
          std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) { return std::tolower((unsigned char)x) == std::tolower((unsigned char)y); });
 }
 
-// reject the edit when the new text is invalid, otherwise keep the fixed up text
-void applyNameValidator(std::string &input, const std::string &before) {
-  std::string fixed = input;
-  input = ::validateName(fixed) == ValidState::Invalid ? before : fixed;
-}
-
 }  // namespace
 
 ElidedLabel::ElidedLabel(const std::string &text) : text_(utils::trimmed(text)) {}
@@ -366,9 +360,7 @@ bool EditMessageDialog::draw() {
       ImGui::TextUnformatted(error_label.c_str());
     }
     row("Name");
-    const std::string name_before = name_edit;
-    if (inputText("##name", &name_edit)) {
-      applyNameValidator(name_edit, name_before);
+    if (validatedInput("##name", &name_edit, nameValidator)) {
       validateName(name_edit);
     }
 
@@ -376,8 +368,7 @@ bool EditMessageDialog::draw() {
     if (ImGui::InputInt("##size", &size_spin)) size_spin = std::clamp(size_spin, 1, CAN_MAX_DATA_BYTES);
 
     row("Node");
-    const std::string node_before = node;
-    if (inputText("##node", &node)) applyNameValidator(node, node_before);
+    validatedInput("##node", &node, nameValidator);
     row("Comment");
     InputContext comment_ctx{&comment_edit, nullptr};
     ImGui::InputTextMultiline("##comment", comment_edit.data(), comment_edit.capacity() + 1, ImVec2(-FLT_MIN, 192.0f),
