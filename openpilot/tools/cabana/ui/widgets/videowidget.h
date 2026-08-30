@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -64,20 +63,13 @@ public:
   void parseQLog(std::shared_ptr<LogReader> qlog);
 
 private:
-  struct Thumbnail {
-    RgbImage image;  // scaled; the border and alert are drawn at paint time
-    std::optional<Timeline::Entry> alert;
-  };
-  Thumbnail generateThumbnail(const RgbImage &thumbnail, double seconds);
   void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size);
   void drawThumbnail(ImDrawList *p);
   void drawScrubThumbnail(ImDrawList *p);
   void drawTime(ImDrawList *p, const ImRect &rect, double seconds);
 
   std::map<uint64_t, RgbImage> big_thumbnails;
-  std::map<uint64_t, Thumbnail> thumbnails;
-  GlTexture big_thumbnail_texture;  // the currently shown big thumbnail
-  GlTexture thumbnail_texture;      // the currently shown thumbnail
+  GlTexture big_thumbnail_texture;  // the currently shown thumbnail
   double thumbnail_dispaly_time = -1;
   friend class VideoWidget;
 };

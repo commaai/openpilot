@@ -110,33 +110,6 @@ static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
   return ok;
 }
 
-// bilinear resample to height h
-static RgbImage scaledToHeight(const RgbImage &src, int h) {
-  RgbImage dst;
-  if (src.isNull() || h <= 0) return dst;
-  const int w = std::max(1, (int)std::lround((double)src.width * h / src.height));
-  dst.resize(w, h);
-  for (int y = 0; y < h; ++y) {
-    const float sy = std::clamp((y + 0.5f) * src.height / h - 0.5f, 0.0f, (float)src.height - 1);
-    const int y0 = (int)sy, y1 = std::min(y0 + 1, src.height - 1);
-    const float fy = sy - y0;
-    for (int x = 0; x < w; ++x) {
-      const float sx = std::clamp((x + 0.5f) * src.width / w - 0.5f, 0.0f, (float)src.width - 1);
-      const int x0 = (int)sx, x1 = std::min(x0 + 1, src.width - 1);
-      const float fx = sx - x0;
-      const uint8_t *p00 = &src.data[((size_t)y0 * src.width + x0) * 4], *p01 = &src.data[((size_t)y0 * src.width + x1) * 4];
-      const uint8_t *p10 = &src.data[((size_t)y1 * src.width + x0) * 4], *p11 = &src.data[((size_t)y1 * src.width + x1) * 4];
-      uint8_t *d = &dst.data[((size_t)y * w + x) * 4];
-      for (int c = 0; c < 4; ++c) {
-        const float top = p00[c] + (p01[c] - p00[c]) * fx;
-        const float bottom = p10[c] + (p11[c] - p10[c]) * fx;
-        d[c] = (uint8_t)std::lround(top + (bottom - top) * fy);
-      }
-    }
-  }
-  return dst;
-}
-
 VideoWidget::VideoWidget() {
   if (!can->liveStreaming())
     createCameraWidget();
@@ -612,9 +585,7 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
           auto thumb_data = reader.getRoot<cereal::Event>().getThumbnail();
           auto image_data = thumb_data.getThumbnail();
           if (RgbImage thumb; decodeJpeg(image_data.begin(), image_data.size(), &thumb)) {
-            Thumbnail generated_thumb = generateThumbnail(thumb, can->toSeconds(thumb_data.getTimestampEof()));
             std::lock_guard lock(mutex);
-            thumbnails[thumb_data.getTimestampEof()] = std::move(generated_thumb);
             big_thumbnails[thumb_data.getTimestampEof()] = std::move(thumb);
           }
         }
@@ -649,14 +620,6 @@ void StreamCameraView::draw(const ImVec2 &size) {
   }
 }
 
-StreamCameraView::Thumbnail StreamCameraView::generateThumbnail(const RgbImage &thumb, double seconds) {
-  Thumbnail scaled;
-  scaled.image = scaledToHeight(thumb, MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2);
-  // the border and the alert are painted over the image in drawThumbnail()
-  scaled.alert = getReplay()->findAlertAtTime(seconds);
-  return scaled;
-}
-
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255));
   auto it = big_thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
@@ -677,24 +640,27 @@ void StreamCameraView::drawScrubThumbnail(ImDrawList *p) {
 }
 
 void StreamCameraView::drawThumbnail(ImDrawList *p) {
-  auto it = thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
-  if (it != thumbnails.end()) {
-    const Thumbnail &thumb = it->second;
-    if (thumbnail_texture.id == 0 || thumbnail_texture.key != it->first) {
-      thumbnail_texture.upload(thumb.image);
-      thumbnail_texture.key = it->first;
+  auto it = big_thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
+  if (it != big_thumbnails.end()) {
+    const RgbImage &image = it->second;
+    if (big_thumbnail_texture.id == 0 || big_thumbnail_texture.key != it->first) {
+      big_thumbnail_texture.upload(image);
+      big_thumbnail_texture.key = it->first;
     }
+    // AddImage scales the stored image to the thumbnail height, keeping the aspect ratio
+    const int h = MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2;
+    const int w = std::max(1, (int)std::lround((double)image.width * h / image.height));
     auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
     int pos = (thumbnail_dispaly_time - min_sec) * width() / (max_sec - min_sec);
-    const int max_x = (int)width() - thumb.image.width - THUMBNAIL_MARGIN + 1;
-    int x = std::clamp(pos - thumb.image.width / 2, THUMBNAIL_MARGIN, std::max(THUMBNAIL_MARGIN, max_x));
-    int y = height() - thumb.image.height - THUMBNAIL_MARGIN;
+    const int max_x = (int)width() - w - THUMBNAIL_MARGIN + 1;
+    int x = std::clamp(pos - w / 2, THUMBNAIL_MARGIN, std::max(THUMBNAIL_MARGIN, max_x));
+    int y = height() - h - THUMBNAIL_MARGIN;
 
-    ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + thumb.image.width, rect().Min.y + y + thumb.image.height));
-    p->AddImage(thumbnail_texture.ref(), thumb_rect.Min, thumb_rect.Max);
+    ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + w, rect().Min.y + y + h));
+    p->AddImage(big_thumbnail_texture.ref(), thumb_rect.Min, thumb_rect.Max);
     p->AddRect(thumb_rect.Min, thumb_rect.Max, paletteBrightText(), 0.0f, 0, 2.0f);
-    if (thumb.alert) {
-      drawAlert(p, thumb_rect, *thumb.alert, POINT_10_FONT_SIZE);
+    if (auto alert = getReplay()->findAlertAtTime(can->toSeconds(it->first))) {
+      drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE);
     }
     drawTime(p, thumb_rect, thumbnail_dispaly_time);
   }
