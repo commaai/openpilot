@@ -261,14 +261,17 @@ void DetailWidget::drawTabWidget() {
     const float min_height = binary_view->minimumSizeHint().y;
     const float avail = ImGui::GetContentRegionAvail().y;
     const float max_height = std::max(avail - 6.0f - ImGui::GetStyle().ItemSpacing.y * 2 - 1.0f, 1.0f);
-    const float height = std::clamp(std::max(splitter_pos, min_height), 1.0f, max_height);
+    const float height = std::clamp(min_height, 1.0f, max_height);
     ImGui::BeginChild("binary_view", ImVec2(0, height));
     binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     binary_view->draw();
     ImGui::EndChild();
-    ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, 6.0f));
-    if (ImGui::IsItemActive()) splitter_pos = std::clamp(height + ImGui::GetIO().MouseDelta.y, min_height, max_height);
-    if (ImGui::IsItemHovered()) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    const float spacing = ImGui::GetStyle().ItemSpacing.y;
+    const ImRect child_rect = ImGui::GetCurrentWindow()->Rect();
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(child_rect.Min.x, ImGui::GetItemRectMin().y - spacing),
+                                              ImVec2(child_rect.Max.x, ImGui::GetItemRectMax().y + spacing),
+                                              ImGui::GetColorU32(ImGuiCol_WindowBg));
     ImGui::BeginChild("signal_view", ImVec2(0, 0));
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view->draw();

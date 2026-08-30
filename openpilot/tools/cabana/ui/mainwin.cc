@@ -1033,7 +1033,7 @@ void MainWindow::draw() {
         video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
       }
       if (video_h > 0.0f) {
-        ImGui::BeginChild("video", ImVec2(0, video_h));
+        ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
         if (help_overlay_) help_texts_.emplace_back(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         video_widget_->draw();
         ImGui::EndChild();
@@ -1048,7 +1048,7 @@ void MainWindow::draw() {
           video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - top) / avail.y, 0.0f, 1.0f);
         }
         if (ImGui::IsItemHovered() && !live) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-        ImGui::BeginChild("charts", ImVec2(0, 0));
+        ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders);
         if (help_overlay_) help_texts_.emplace_back(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         charts_widget_->draw();
         ImGui::EndChild();

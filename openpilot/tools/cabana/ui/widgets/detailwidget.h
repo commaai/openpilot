@@ -90,7 +90,6 @@ private:
   bool action_remove_msg_enabled = false;
   bool heatmap_live = true;
   std::string heatmap_all_text = "All";
-  float splitter_pos = 192.0f;  // binary_view height
   ImRect binary_view_rect_, signal_view_rect_;  // child window rects of the last drawTabWidget
   std::unique_ptr<LogsWidget> history_log;
   std::unique_ptr<BinaryView> binary_view;
