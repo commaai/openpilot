@@ -35,7 +35,6 @@ public:
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
-  void updatePlotArea();
   void showTip(double sec);
   void hideTip();
   void draw(float width);  // one chart of settings.chart_height
@@ -60,7 +59,6 @@ public:
 private:
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
-  void msgUpdated(MessageId id);
   void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
@@ -74,7 +72,6 @@ private:
   void resizeEvent();
   ImVec2 sizeHint() const;
   void updateAxisY();
-  void updateTitle();
   void paintEvent();
   void drawStaticLayer();
   void drawAxes();
@@ -122,7 +119,6 @@ private:
   bool drawing_ghost = false;  // drawing the drag preview: no mouse handling, no tip
   ImGuiID context_menu_id = 0;
 
-  bool split_chart_enabled = false;
   TipLabel *tip_label;
   std::vector<SigItem> sigs;
   double cur_sec = 0;

@@ -67,7 +67,6 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { signalRemoved(sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { signalUpdated(sig); }));
   connections_.push_back(dbc()->msgRemoved.connect([this](MessageId id) { msgRemoved(id); }));
-  connections_.push_back(dbc()->msgUpdated.connect([this](MessageId id) { msgUpdated(id); }));
 }
 
 ChartView::~ChartView() {
@@ -88,7 +87,7 @@ void ChartView::drawMenuActions() {
   ImGui::Separator();
   ImGui::Indent(indent);
   if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::MenuItem("Split Chart", nullptr, false, split_chart_enabled)) charts_widget->splitChart(this);
+  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs.size() > 1)) charts_widget->splitChart(this);
   ImGui::Unindent(indent);
 }
 
@@ -116,7 +115,6 @@ void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
 
   sigs.push_back({.msg_id = msg_id, .sig = sig, .color = uniqueColor(sig->color)});
   updateSeries(sig);
-  updateTitle();
   charts_widget->seriesChanged();
 }
 
@@ -132,7 +130,6 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   } else if (sigs.size() != prev_size) {
     charts_widget->seriesChanged();
     updateAxisY();
-    updateTitle();
   }
 }
 
@@ -142,14 +139,7 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
     if (!(it->color == sig->color)) {
       it->color = uniqueColor(sig->color, sig);
     }
-    updateTitle();
     updateSeries(sig);
-  }
-}
-
-void ChartView::msgUpdated(MessageId id) {
-  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id.address == id.address; })) {
-    updateTitle();
   }
 }
 
@@ -181,13 +171,7 @@ void ChartView::resizeEvent() {
   close_btn_rect.Max = close_btn_rect.Min + close_size;
   manage_btn_rect = ImRect(ImVec2(close_btn_rect.Min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, rect.Min.y + margins.y), ImVec2(0, 0));
   manage_btn_rect.Max = manage_btn_rect.Min + manage_size;
-  updatePlotArea();
-}
 
-void ChartView::updatePlotArea() {
-  if (!ImGui::GetCurrentContext() || !ImGui::GetCurrentWindowRead()) return;  // layout is recomputed from draw()
-
-  const auto margins = layoutMargins();
   const FontInfo bfm = boldFont();
   const float fm_height = ImGui::GetTextLineHeight();
   const int marker_size = fm_height - 4;
@@ -214,11 +198,6 @@ void ChartView::updatePlotArea() {
   int adjust_top = (y + row_height) - rect.Min.y - margins.y;
   adjust_top = std::max<int>(adjust_top, manage_btn_rect.Max.y - rect.Min.y + margins.y);
   header_bottom = rect.Min.y + adjust_top + margins.y;
-}
-
-void ChartView::updateTitle() {
-  split_chart_enabled = sigs.size() > 1;
-  updatePlotArea();
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -478,7 +457,6 @@ void ChartView::takeSignalsFrom(ChartView *source) {
   }
   source->sigs.clear();
   updateAxisY();
-  updateTitle();
   charts_widget->removeChart(source);
 }
 
@@ -662,7 +640,6 @@ void ChartView::drawLegend() {
         mouse_mode == MouseMode::None && sigs.size() > 1) {
       sigs[i].visible = !sigs[i].visible;
       updateAxisY();
-      updateTitle();
     }
     ImGui::PopID();
 
@@ -834,6 +811,5 @@ CabanaColor ChartView::uniqueColor(CabanaColor color, const cabana::Signal *excl
 void ChartView::setSeriesType(SeriesType type) {
   if (type != series_type) {
     series_type = type;
-    updateTitle();
   }
 }

@@ -408,11 +408,9 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
       it->color = it->sig->color;
       c->sigs.emplace_back(std::move(*it));
       c->updateAxisY();
-      c->updateTitle();
       it = src_chart->sigs.erase(it);
     }
     src_chart->updateAxisY();
-    src_chart->updateTitle();
     updateState();
   }
 }
