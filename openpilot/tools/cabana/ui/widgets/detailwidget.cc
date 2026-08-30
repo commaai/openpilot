@@ -20,6 +20,40 @@ bool iequals(const std::string &a, const std::string &b) {
          std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) { return std::tolower((unsigned char)x) == std::tolower((unsigned char)y); });
 }
 
+float scrollButtonsWidth() {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::GetFrameHeight() * 2.0f + style.ItemInnerSpacing.x + style.ItemSpacing.x * 2.0f;
+}
+
+void drawScrollButtons(ImGuiTabBar *tab_bar) {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float size = ImGui::GetFrameHeight();
+  const float max_scroll = std::max(0.0f, tab_bar->WidthAllTabs - tab_bar->BarRect.GetWidth());
+  const float start_x = tab_bar->BarRect.Max.x + style.ItemSpacing.x;
+  const ImVec2 backup_pos = ImGui::GetCursorScreenPos();
+
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
+  for (int i = 0; i < 2; ++i) {
+    const bool left = i == 0;
+    const std::string label = std::string(left ? icon::CHEVRON_LEFT : icon::CHEVRON_RIGHT) +
+                              (left ? "###scroll_left" : "###scroll_right");
+    ImGui::SetCursorScreenPos(ImVec2(start_x + i * (size + style.ItemInnerSpacing.x), tab_bar->BarRect.Min.y));
+    ImGui::BeginDisabled(left ? tab_bar->ScrollingTarget <= 0.0f : tab_bar->ScrollingTarget >= max_scroll);
+    if (ImGui::Button(label.c_str(), ImVec2(size, size))) {
+      const float step = (left ? -4.0f : 4.0f) * ImGui::GetFontSize();
+      tab_bar->ScrollingTarget = std::clamp(tab_bar->ScrollingTarget + step, 0.0f, max_scroll);
+      tab_bar->ScrollingAnim = tab_bar->ScrollingTarget;
+    }
+    ImGui::EndDisabled();
+  }
+  ImGui::PopItemFlag();
+  ImGui::PopStyleVar();
+  ImGui::PopStyleColor();
+  ImGui::SetCursorScreenPos(backup_pos);
+}
+
 }  // namespace
 
 ElidedLabel::ElidedLabel(const std::string &text) : text_(utils::trimmed(text)) {}
@@ -121,7 +155,16 @@ void DetailWidget::showTabBarContextMenu(int index) {
 
 void DetailWidget::drawTabBar() {
   if (tabbar.size() < 2) return;  // auto hidden with fewer than two tabs
-  if (!ImGui::BeginTabBar("tabbar", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoTooltip)) return;
+  ImGuiWindow *window = ImGui::GetCurrentWindow();
+  ImGuiTabBar *prev_tab_bar = ImGui::TabBarFindByID(window->GetID("tabbar"));
+  const bool overflowing = prev_tab_bar && prev_tab_bar->WidthAllTabsIdeal > prev_tab_bar->BarRect.GetWidth() + 1.0f;
+  const float backup_work_max_x = window->WorkRect.Max.x;
+  if (overflowing) window->WorkRect.Max.x -= scrollButtonsWidth();
+  const bool tab_bar_open = ImGui::BeginTabBar("tabbar", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoTooltip |
+                                                            ImGuiTabBarFlags_NoTabListScrollingButtons);
+  window->WorkRect.Max.x = backup_work_max_x;
+  if (!tab_bar_open) return;
+  ImGuiTabBar *tab_bar = ImGui::GetCurrentTabBar();
   // every tab gets a close button, not only the hovered/selected one
   ImGuiStyle &style = ImGui::GetStyle();
   const float close_button_min_width = std::exchange(style.TabCloseButtonMinWidthUnselected, -1.0f);
@@ -145,6 +188,7 @@ void DetailWidget::drawTabBar() {
   }
   style.TabCloseButtonMinWidthUnselected = close_button_min_width;
   ImGui::EndTabBar();
+  if (overflowing) drawScrollButtons(tab_bar);
 }
 
 // closing the current tab selects the one to its right
