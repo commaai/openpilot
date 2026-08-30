@@ -106,41 +106,43 @@ void applyTheme(int theme) {
   auto c = [](const CabanaColor &col, float a = 1.0f) { return colorRgb(col.r, col.g, col.b, a); };
   ImVec4 *colors = style.Colors;
   if (dark) {
-    // QPalette roles of utils::setTheme (DarkTheme)
+    // QPalette roles of utils::setTheme (DarkTheme), with the low contrast Darcula grays opened up:
+    // text/outlines sit further from the window and base grays than the Qt palette put them
     const ImVec4 highlight = c(DarkTheme::highlight);
+    const ImVec4 outline = colorRgb(0x5a, 0x5d, 0x60);
     colors[ImGuiCol_WindowBg] = c(DarkTheme::window);
     colors[ImGuiCol_ChildBg] = c(DarkTheme::base);
     colors[ImGuiCol_PopupBg] = c(DarkTheme::base);
     colors[ImGuiCol_MenuBarBg] = c(DarkTheme::window);
     colors[ImGuiCol_DockingEmptyBg] = c(DarkTheme::window);
-    colors[ImGuiCol_Text] = c(DarkTheme::text);
-    colors[ImGuiCol_TextDisabled] = c(DarkTheme::disabled_text);
-    colors[ImGuiCol_Border] = colorRgb(0x2b, 0x2b, 0x2b);
+    colors[ImGuiCol_Text] = colorRgb(0xdc, 0xdc, 0xdc);
+    colors[ImGuiCol_TextDisabled] = colorRgb(0x8c, 0x8c, 0x8c);
+    colors[ImGuiCol_Border] = outline;
     colors[ImGuiCol_BorderShadow] = colorRgb(0, 0, 0, 0.0f);
-    colors[ImGuiCol_FrameBg] = c(DarkTheme::base);
-    colors[ImGuiCol_FrameBgHovered] = colorRgb(0x45, 0x48, 0x4b);
-    colors[ImGuiCol_FrameBgActive] = colorRgb(0x4b, 0x4e, 0x52);
+    colors[ImGuiCol_FrameBg] = colorRgb(0x2e, 0x30, 0x32);  // darker than the base so fields read as sunken
+    colors[ImGuiCol_FrameBgHovered] = colorRgb(0x3a, 0x3d, 0x40);
+    colors[ImGuiCol_FrameBgActive] = colorRgb(0x45, 0x48, 0x4b);
     colors[ImGuiCol_Button] = c(DarkTheme::button);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0x4b, 0x4f, 0x52);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0x52, 0x56, 0x59);
     colors[ImGuiCol_ButtonActive] = colorRgb(0x2b, 0x2d, 0x30);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = c(DarkTheme::highlight, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;
     colors[ImGuiCol_CheckMark] = c(DarkTheme::bright_text);
-    colors[ImGuiCol_SliderGrab] = colorRgb(0x75, 0x78, 0x7b);
-    colors[ImGuiCol_SliderGrabActive] = colorRgb(0x8a, 0x8d, 0x90);
+    colors[ImGuiCol_SliderGrab] = colorRgb(0x8f, 0x92, 0x95);
+    colors[ImGuiCol_SliderGrabActive] = colorRgb(0xa8, 0xab, 0xae);
     colors[ImGuiCol_ScrollbarBg] = c(DarkTheme::window);
-    colors[ImGuiCol_ScrollbarGrab] = colorRgb(0x5a, 0x5d, 0x60);
-    colors[ImGuiCol_ScrollbarGrabHovered] = colorRgb(0x6a, 0x6d, 0x70);
+    colors[ImGuiCol_ScrollbarGrab] = colorRgb(0x70, 0x73, 0x76);
+    colors[ImGuiCol_ScrollbarGrabHovered] = colorRgb(0x85, 0x88, 0x8b);
     colors[ImGuiCol_ScrollbarGrabActive] = c(DarkTheme::light);
-    colors[ImGuiCol_Separator] = colorRgb(0x2b, 0x2b, 0x2b);
+    colors[ImGuiCol_Separator] = outline;
     colors[ImGuiCol_SeparatorHovered] = c(DarkTheme::highlight, 0.6f);
     colors[ImGuiCol_SeparatorActive] = highlight;
     colors[ImGuiCol_ResizeGrip] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_ResizeGripHovered] = c(DarkTheme::highlight, 0.6f);
     colors[ImGuiCol_ResizeGripActive] = highlight;
     colors[ImGuiCol_Tab] = c(DarkTheme::window);
-    colors[ImGuiCol_TabHovered] = colorRgb(0x45, 0x48, 0x4b);
+    colors[ImGuiCol_TabHovered] = colorRgb(0x4b, 0x4e, 0x52);
     colors[ImGuiCol_TabSelected] = c(DarkTheme::base);
     colors[ImGuiCol_TabSelectedOverline] = highlight;
     colors[ImGuiCol_TabDimmed] = c(DarkTheme::window);
@@ -150,10 +152,10 @@ void applyTheme(int theme) {
     colors[ImGuiCol_TitleBgActive] = c(DarkTheme::window);
     colors[ImGuiCol_TitleBgCollapsed] = c(DarkTheme::window);
     colors[ImGuiCol_TableHeaderBg] = c(DarkTheme::window);
-    colors[ImGuiCol_TableBorderStrong] = colorRgb(0x2b, 0x2b, 0x2b);
-    colors[ImGuiCol_TableBorderLight] = colorRgb(0x32, 0x35, 0x37);
+    colors[ImGuiCol_TableBorderStrong] = outline;
+    colors[ImGuiCol_TableBorderLight] = colorRgb(0x4c, 0x4f, 0x52);
     colors[ImGuiCol_TableRowBg] = colorRgb(0, 0, 0, 0.0f);
-    colors[ImGuiCol_TableRowBgAlt] = colorRgb(0xff, 0xff, 0xff, 0.03f);
+    colors[ImGuiCol_TableRowBgAlt] = colorRgb(0xff, 0xff, 0xff, 0.06f);
     colors[ImGuiCol_TextSelectedBg] = c(DarkTheme::highlight, 0.6f);
     colors[ImGuiCol_DockingPreview] = c(DarkTheme::highlight, 0.5f);
     colors[ImGuiCol_NavCursor] = highlight;
