@@ -35,6 +35,4 @@ private:
   int byte_idx_sb = 0, bit_idx_sb = 0;
   bool search_btn_enabled = true;
   std::string min_msgs = "100";
-  std::string title_;
-  bool open_ = true;
 };

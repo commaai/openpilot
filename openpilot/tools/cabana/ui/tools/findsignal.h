@@ -60,7 +60,5 @@ private:
   bool to_label_visible = false;
   bool searched_ = false;  // a search/undo/reset ran, so the stats line is shown
   std::unique_ptr<FindSignalModel> model;
-  std::string title_;
-  bool open_ = true;
   std::function<bool(double)> pending_cmp_;  // deferred to the next frame so "Finding ...." paints first
 };

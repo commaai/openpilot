@@ -596,13 +596,13 @@ void MainWindow::setOption() {
 
 void MainWindow::findSimilarBits() {
   auto dlg = std::make_unique<FindSimilarBitsDlg>();
-  widget_connections_.push_back(dlg->openMessage.connect([this](const MessageId &id) { messages_widget_->selectMessage(id); }));
+  dlg->connections_.push_back(dlg->openMessage.connect([this](const MessageId &id) { messages_widget_->selectMessage(id); }));
   tool_dialogs_.push_back(std::move(dlg));
 }
 
 void MainWindow::findSignal() {
   auto dlg = std::make_unique<FindSignalDlg>();
-  widget_connections_.push_back(dlg->openMessage.connect([this](const MessageId &id) { messages_widget_->selectMessage(id); }));
+  dlg->connections_.push_back(dlg->openMessage.connect([this](const MessageId &id) { messages_widget_->selectMessage(id); }));
   tool_dialogs_.push_back(std::move(dlg));
 }
 

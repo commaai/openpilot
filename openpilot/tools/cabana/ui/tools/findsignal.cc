@@ -98,9 +98,7 @@ void FindSignalModel::reset() {
 }
 
 FindSignalDlg::FindSignalDlg() {
-  char buf[64];
-  snprintf(buf, sizeof(buf), "Find Signal###findsignal%p", (void *)this);
-  title_ = buf;
+  setTitle("Find Signal");
   model = std::make_unique<FindSignalModel>();
 }
 
@@ -111,10 +109,7 @@ bool FindSignalDlg::draw() {
     model->search(cmp);
     searched_ = true;
   }
-  if (!open_) return false;
-  ImGui::SetNextWindowSize(ImVec2(900, 650), ImGuiCond_Appearing);
-  setNextWindowFloatsOut();
-  if (ImGui::Begin(title_.c_str(), &open_)) {
+  if (begin(ImVec2(900, 650))) {
     float group_w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
     ImGui::BeginChild("Messages", ImVec2(group_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     drawMessageGroup();
@@ -131,13 +126,8 @@ bool FindSignalDlg::draw() {
       ImGui::Text("%zu matches. right click on an item to create signal. double click to open message",
                   model->filtered_signals.size());
     }
-    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false) &&
-        !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
-      open_ = false;
-    }
   }
-  ImGui::End();
-  return open_;
+  return end();
 }
 
 void FindSignalDlg::drawMessageGroup() {

@@ -21,9 +21,7 @@ static bool validInt(const std::string &s) {
 }
 
 FindSimilarBitsDlg::FindSimilarBitsDlg() {
-  char buf[64];
-  snprintf(buf, sizeof(buf), "Find similar bits###findsimilarbits%p", (void *)this);
-  title_ = buf;
+  setTitle("Find similar bits");
 
   for (int bus : can->sources) {
     bus_items.push_back(bus);
@@ -38,10 +36,7 @@ FindSimilarBitsDlg::FindSimilarBitsDlg() {
 }
 
 bool FindSimilarBitsDlg::draw() {
-  if (!open_) return false;
-  ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_Appearing);
-  setNextWindowFloatsOut();
-  if (ImGui::Begin(title_.c_str(), &open_)) {
+  if (begin(ImVec2(700, 500))) {
     std::string bus_labels;
     for (int bus : bus_items) bus_labels += std::to_string(bus) + '\0';
 
@@ -100,8 +95,7 @@ bool FindSimilarBitsDlg::draw() {
 
     drawTable();
   }
-  ImGui::End();
-  return open_;
+  return end();
 }
 
 void FindSimilarBitsDlg::drawTable() {
