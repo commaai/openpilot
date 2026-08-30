@@ -181,7 +181,6 @@ private:
   void handleSignalUpdated(const cabana::Signal *sig);
   void handleSignalRemoved(const cabana::Signal *sig);  // drops the row pointers to a removed signal (nullptr: all)
   void updateState(const std::set<MessageId> *msgs = nullptr);
-  std::pair<int, int> visibleSignalRange();  // top-level rows, -1 when invalid
 
   struct DrawContext {
     ImDrawList *draw_list;
@@ -202,9 +201,10 @@ private:
   float value_column_width = 0;
   float name_column_width = 150;
   bool editor_open_on_press_ = false;
+  // computed while drawing the tree: the first top-level row whose own row is visible (a signal whose header
+  // is scrolled out but whose children are visible is skipped), and the last top-level row with any visible row
   int first_visible_row_ = -1;
   int last_visible_row_ = -1;
-  float scroll_value_ = 0, scroll_range_ = 0;
   const cabana::Signal *current_sig_ = nullptr;
   int current_row_ = -1;                         // row of current_sig_ at the end of the last draw()
   SignalModel::Item::Type current_type_ = SignalModel::Item::Root;

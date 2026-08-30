@@ -647,13 +647,6 @@ void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
   if (!sig || hovered_sig_ == sig) hovered_sig_ = nullptr;
 }
 
-std::pair<int, int> SignalView::visibleSignalRange() {
-  // computed while drawing the tree: the first top-level row whose own row is visible (a signal whose
-  // header is scrolled out but whose children are visible is skipped), and the last top-level row with
-  // any visible row
-  return {first_visible_row_, last_visible_row_};
-}
-
 void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
   if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
@@ -671,8 +664,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     max_value_width = widest_value;
   }
 
-  auto [first_visible, last_visible] = visibleSignalRange();
-  if (first_visible != -1 && last_visible != -1 && last_visible < model->rowCount()) {
+  if (first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model->rowCount()) {
     const float min_max_width = SignalItemDelegate::textWidth("-000.00", delegate->minmax_font) + 5;
     float available_width = value_column_width - delegate->button_size.x;
     float value_width = std::min<float>(max_value_width + min_max_width, available_width / 2);
@@ -690,7 +682,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     const auto range = can->eventsInRange(model->msg_id, std::make_pair(window_end - settings.sparkline_range - lead_in, window_end));
     const CanEventIter first = range.first, last = range.second;
     std::vector<std::future<void>> futures;
-    for (int i = first_visible; i <= last_visible; ++i) {
+    for (int i = first_visible_row_; i <= last_visible_row_; ++i) {
       auto item = model->root->children[i];
       futures.push_back(ThreadPool::instance().run([item, first, last, size, window_end]() {
         item->sparkline.update(item->sig, first, last, settings.sparkline_range, size, window_end);
@@ -769,8 +761,6 @@ void SignalView::drawTree() {
   ImGui::PopStyleVar();
   if (visible) {
     DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, delegate->rowHeight()};
-    const float scroll_value = ImGui::GetScrollY();
-    const float scroll_range = ImGui::GetScrollMaxY();
     // the press that closes an open editor is consumed by the focus change, the index widgets never see it
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = delegate->open_item_ != nullptr;
 
@@ -783,19 +773,15 @@ void SignalView::drawTree() {
       if (ctx.any_visible) last_visible = i;
     }
     if (first_visible == -1 && last_visible != -1) last_visible = -1;
+    // the rows that just became visible have no sparkline yet
+    bool changed = first_visible != first_visible_row_ || last_visible != last_visible_row_;
     first_visible_row_ = first_visible;
     last_visible_row_ = last_visible;
     scroll_to_sig_ = nullptr;
 
-    bool changed = false;
     if (ctx.name_width > 0) name_column_width = ctx.name_width;
     if (ctx.value_column_width > 0 && ctx.value_column_width != value_column_width) {
       value_column_width = ctx.value_column_width;
-      changed = true;
-    }
-    if (scroll_value != scroll_value_ || scroll_range != scroll_range_) {
-      scroll_value_ = scroll_value;
-      scroll_range_ = scroll_range;
       changed = true;
     }
     if (changed) updateState();
