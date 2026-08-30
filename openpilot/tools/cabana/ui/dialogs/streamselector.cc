@@ -131,10 +131,8 @@ void OpenPandaWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Serial");
   ImGui::SameLine();
-  std::string items;
-  for (const auto &s : serials_) items += s + '\0';
   ImGui::SetNextItemWidth(-100.0f);
-  if (ImGui::Combo("##serial", &serial_index_, items.c_str())) buildConfigForm();
+  if (comboBox("##serial", &serial_index_, serials_)) buildConfigForm();
   ImGui::SameLine();
   if (ImGui::Button("Refresh")) {
     refreshSerials();
@@ -153,9 +151,7 @@ void OpenPandaWidget::draw() {
     ImGui::TextUnformatted("CAN Speed (kbps):");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(90.0f);
-    std::string speed_items;
-    for (uint32_t s : speeds) speed_items += std::to_string(s) + '\0';
-    if (ImGui::Combo("##can_speed", &can_speed_index_[i], speed_items.c_str())) {
+    if (comboBox("##can_speed", &can_speed_index_[i], speeds, (int)std::size(speeds))) {
       config.bus_config[i].can_speed_kbps = speeds[can_speed_index_[i]];
     }
     if (has_fd_) {
@@ -166,9 +162,7 @@ void OpenPandaWidget::draw() {
       ImGui::SameLine();
       ImGui::BeginDisabled(!config.bus_config[i].can_fd);
       ImGui::SetNextItemWidth(90.0f);
-      std::string data_items;
-      for (uint32_t s : data_speeds) data_items += std::to_string(s) + '\0';
-      if (ImGui::Combo("##data_speed", &data_speed_index_[i], data_items.c_str())) {
+      if (comboBox("##data_speed", &data_speed_index_[i], data_speeds, (int)std::size(data_speeds))) {
         config.bus_config[i].data_speed_kbps = data_speeds[data_speed_index_[i]];
       }
       ImGui::EndDisabled();
@@ -263,10 +257,8 @@ void OpenSocketCanWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Device");
   ImGui::SameLine();
-  std::string items;
-  for (const auto &d : devices_) items += d + '\0';
   ImGui::SetNextItemWidth(300.0f);
-  if (ImGui::Combo("##device", &device_index_, items.c_str())) config.device = devices_[device_index_];
+  if (comboBox("##device", &device_index_, devices_)) config.device = devices_[device_index_];
   ImGui::SameLine();
   if (ImGui::Button("Refresh", ImVec2(100.0f, 0.0f))) refreshDevices();
 }

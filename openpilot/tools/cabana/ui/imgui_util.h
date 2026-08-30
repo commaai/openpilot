@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <string>
+#include <vector>
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -43,6 +44,42 @@ inline bool validatedInput(const char *label, std::string *s, ImGuiInputTextCall
 
 inline bool inputText(const char *label, std::string *s, const char *hint = "", ImGuiInputTextFlags flags = 0) {
   return validatedInput(label, s, nullptr, hint, flags);
+}
+
+inline bool comboBox(const char *label, int *index, const std::vector<std::string> &items) {
+  bool changed = false;
+  const int count = (int)items.size();
+  if (ImGui::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
+    for (int i = 0; i < count; ++i) {
+      ImGui::PushID(i);
+      if (ImGui::Selectable(items[i].c_str(), i == *index)) {
+        *index = i;
+        changed = true;
+      }
+      ImGui::PopID();
+    }
+    ImGui::EndCombo();
+  }
+  return changed;
+}
+
+// numeric items (bus ids, bus speeds) are formatted as they are drawn
+template <typename T>
+inline bool comboBox(const char *label, int *index, const T *values, int count) {
+  bool changed = false;
+  const std::string preview = *index >= 0 && *index < count ? std::to_string(values[*index]) : "";
+  if (ImGui::BeginCombo(label, preview.c_str())) {
+    for (int i = 0; i < count; ++i) {
+      ImGui::PushID(i);
+      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index)) {
+        *index = i;
+        changed = true;
+      }
+      ImGui::PopID();
+    }
+    ImGui::EndCombo();
+  }
+  return changed;
 }
 
 // InputText char filters; the std::string validators in utils/util.h are run again when the edit is committed

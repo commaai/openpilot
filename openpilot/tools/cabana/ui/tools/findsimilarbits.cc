@@ -37,16 +37,13 @@ FindSimilarBitsDlg::FindSimilarBitsDlg() {
 
 bool FindSimilarBitsDlg::draw() {
   if (begin(ImVec2(700, 500))) {
-    std::string bus_labels;
-    for (int bus : bus_items) bus_labels += std::to_string(bus) + '\0';
-
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Find From:");
     ImGui::SameLine(90);
     ImGui::TextUnformatted("Bus");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
-    ImGui::Combo("##src_bus", &src_bus_combo, bus_labels.c_str());
+    comboBox("##src_bus", &src_bus_combo, bus_items.data(), (int)bus_items.size());
     ImGui::SameLine();
     ImGui::SetNextItemWidth(200);
     if (ImGui::BeginCombo("##msg", msg_cb < (int)msg_items.size() ? msg_items[msg_cb].first.c_str() : "")) {
@@ -74,7 +71,7 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::TextUnformatted("Bus");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
-    ImGui::Combo("##find_bus", &find_bus_combo, bus_labels.c_str());
+    comboBox("##find_bus", &find_bus_combo, bus_items.data(), (int)bus_items.size());
     ImGui::SameLine();
     ImGui::TextUnformatted("Equal");
     ImGui::SameLine();

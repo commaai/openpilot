@@ -100,9 +100,7 @@ void RoutesDialog::draw() {
     int idx = 0;
     ImGui::Combo("##device", &idx, "Loading...\0", 1);
   } else {
-    std::string items;
-    for (const auto &d : devices_) items += d + '\0';
-    if (ImGui::Combo("##device", &device_index_, items.c_str())) fetchRoutes();
+    if (comboBox("##device", &device_index_, devices_)) fetchRoutes();
   }
   ImGui::SetNextItemWidth(-1.0f);
   if (ImGui::Combo("##period", &period_index_, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
