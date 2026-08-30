@@ -44,6 +44,7 @@ public:
 
   Observable<> modelReset;
   Observable<int, int> rowsInserted;  // position, count
+  Observable<> rowsRemoved;
 
   MessageId msg_id;
   CanData hex_colors;

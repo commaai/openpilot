@@ -81,6 +81,7 @@ void HistoryLogModel::setFilter(int sig_idx, const std::string &value, std::func
 void HistoryLogModel::updateState(bool clear) {
   if (clear && !messages.empty()) {
     messages.clear();
+    rowsRemoved();
   }
   uint64_t current_time = can->toMonoTime(can->lastMessage(msg_id).ts) + 1;
   fetchData(messages.begin(), current_time, messages.empty() ? 0 : messages.front().mono_time);
@@ -187,6 +188,7 @@ static void paintSection(const HistoryLogModel &model, ImDrawList *painter, cons
 
 LogsWidget::LogsWidget() {
   connections_.push_back(model.modelReset.connect([this]() { modelReset(); }));
+  connections_.push_back(model.rowsRemoved.connect([this]() { selected_row = selected_col = -1; }));
   connections_.push_back(model.rowsInserted.connect([this](int pos, int count) {
     export_btn_enabled = true;
     // the selection follows the message it was made on, like QItemSelectionModel does
@@ -331,7 +333,8 @@ void LogsWidget::drawTable() {
       for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
         const auto &m = model.messages[row];
         ImGui::TableNextRow(0, row_height);
-        ImGui::PushID(row);
+        // rows are prepended while the stream plays, so the id is the message, not the row index
+        ImGui::PushID((void *)(uintptr_t)m.mono_time);
         for (int col = 0; col < cols; ++col) {
           if (!ImGui::TableSetColumnIndex(col)) continue;
           // cells are selected, not rows; there is no hover highlight, only the selection background
