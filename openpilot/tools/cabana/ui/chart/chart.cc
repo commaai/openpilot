@@ -62,15 +62,10 @@ static void addTextEllipsis(ImDrawList *dl, const FontInfo &f, ImU32 col, const 
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
     : x_min(x_range.first), x_max(x_range.second), charts_widget(parent) {
   series_type = (SeriesType)settings.chart_series_type;
-  tip_label = new TipLabel();
 
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { signalRemoved(sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { signalUpdated(sig); }));
   connections_.push_back(dbc()->msgRemoved.connect([this](MessageId id) { msgRemoved(id); }));
-}
-
-ChartView::~ChartView() {
-  delete tip_label;
 }
 
 void ChartView::drawMenuActions() {
@@ -413,7 +408,7 @@ void ChartView::mouseMoveEvent() {
   if (mouse_mode != MouseMode::Rubber && layout_.plot_area.Contains(pos) && (layout_.plot_hovered || mouse_mode != MouseMode::None) &&
       ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
     charts_widget->showValueTip(secondsAtPoint(pos));
-  } else if (tip_label->isVisible()) {
+  } else if (tip_label.isVisible()) {
     charts_widget->showValueTip(-1);
   }
 }
@@ -465,7 +460,7 @@ void ChartView::showTip(double sec) {
   ImRect visible_rect = charts_widget->chartVisibleRect(this);
   visible_rect.ClipWith(tip_area);
   if (visible_rect.GetWidth() <= 0 || visible_rect.GetHeight() <= 0) {
-    tip_label->hide();
+    tip_label.hide();
     return;
   }
 
@@ -493,13 +488,13 @@ void ChartView::showTip(double sec) {
   }
   ImVec2 pt(x, layout_.plot_area.Min.y);
   text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 3)});
-  tip_label->showText(pt, text_list, visible_rect);
+  tip_label.showText(pt, text_list, visible_rect);
 }
 
 void ChartView::hideTip() {
   clearTrackPoints();
   tooltip_x = -1;
-  tip_label->hide();
+  tip_label.hide();
 }
 
 void ChartView::draw(float width) {
@@ -518,7 +513,7 @@ void ChartView::draw(float width) {
   ImGui::EndChild();
   // a chart scrolled out of the viewport draws no tip
   const ImRect visible_rect = charts_widget->chartVisibleRect(this);
-  if (!drawing_ghost && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label->paintEvent();
+  if (!drawing_ghost && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label.paintEvent();
   ImGui::PopID();
 }
 

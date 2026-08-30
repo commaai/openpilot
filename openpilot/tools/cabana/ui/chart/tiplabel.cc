@@ -8,10 +8,6 @@
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/imgui_util.h"
 
-TipLabel::TipLabel() {
-  margin_ = 2;
-}
-
 ImVec2 TipLabel::sizeHint() const {
   ImVec2 size(0, 0);
   const float marker = ImGui::GetTextLineHeight() - 4;

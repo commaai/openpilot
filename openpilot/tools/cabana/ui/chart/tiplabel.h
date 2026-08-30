@@ -17,7 +17,6 @@ struct TipLine {
 
 class TipLabel {
 public:
-  TipLabel();
   void showText(const ImVec2 &pt, const std::vector<TipLine> &text, const ImRect &rect);
   void hide() { visible_ = false; }
   bool isVisible() const { return visible_; }
@@ -28,6 +27,6 @@ private:
   std::vector<TipLine> text_;
   ImVec2 pos_;
   ImVec2 size_;
-  int margin_ = 0;
+  int margin_ = 2;  // 1 + PM_ToolTipLabelFrameWidth
   bool visible_ = false;
 };
