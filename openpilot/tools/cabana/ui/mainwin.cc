@@ -1003,7 +1003,9 @@ void MainWindow::draw() {
     // zero horizontal padding: the camera, slider and chart cards run edge to edge and the toolbars carry
     // their own margin
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, ImGui::GetStyle().WindowPadding.y));
-    if (ImGui::Begin(name.c_str(), &video_visible_)) {
+    if (!ImGui::Begin(name.c_str(), &video_visible_)) {
+      video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
+    } else {
       const ImVec2 avail = ImGui::GetContentRegionAvail();
       const bool live = can->liveStreaming();
       const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->defaultHeight(avail.x);
