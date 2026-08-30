@@ -93,10 +93,10 @@ void ChartView::drawMenuActions() {
 
 // the buttons and their menus are drawn every frame, at the rects resizeEvent() placed them at
 void ChartView::createToolButtons() {
-  ImGui::SetCursorScreenPos(ImVec2(close_btn_rect.Min.x, close_btn_rect.Min.y));
+  ImGui::SetCursorScreenPos(ImVec2(layout_.close_btn_rect.Min.x, layout_.close_btn_rect.Min.y));
   bool close_clicked = toolButton("close_btn", icon::X, "Remove Chart");
 
-  ImGui::SetCursorScreenPos(ImVec2(manage_btn_rect.Min.x, manage_btn_rect.Min.y));
+  ImGui::SetCursorScreenPos(ImVec2(layout_.manage_btn_rect.Min.x, layout_.manage_btn_rect.Min.y));
   if (toolButton("manage_btn", icon::LIST, "")) ImGui::OpenPopup("manage_menu");
   if (ImGui::BeginPopup("manage_menu")) {
     drawMenuActions();
@@ -163,25 +163,25 @@ void ChartView::manageSignals() {
 void ChartView::resizeEvent() {
   const auto margins = layoutMargins();
   const ImVec2 grip = ImGui::CalcTextSize(icon::GRIP_HORIZONTAL);
-  move_icon_rect = ImRect(rect.Min + ImVec2(margins.x, margins.y), rect.Min + ImVec2(margins.x, margins.y) + grip);
+  layout_.move_icon_rect = ImRect(layout_.rect.Min + ImVec2(margins.x, margins.y), layout_.rect.Min + ImVec2(margins.x, margins.y) + grip);
   const ImVec2 pad = ImGui::GetStyle().FramePadding * 2;
   const ImVec2 close_size = ImGui::CalcTextSize(icon::X) + pad;
   const ImVec2 manage_size = ImGui::CalcTextSize(icon::LIST) + pad;
-  close_btn_rect = ImRect(ImVec2(rect.Max.x - margins.z - close_size.x, rect.Min.y + margins.y), ImVec2(0, 0));
-  close_btn_rect.Max = close_btn_rect.Min + close_size;
-  manage_btn_rect = ImRect(ImVec2(close_btn_rect.Min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, rect.Min.y + margins.y), ImVec2(0, 0));
-  manage_btn_rect.Max = manage_btn_rect.Min + manage_size;
+  layout_.close_btn_rect = ImRect(ImVec2(layout_.rect.Max.x - margins.z - close_size.x, layout_.rect.Min.y + margins.y), ImVec2(0, 0));
+  layout_.close_btn_rect.Max = layout_.close_btn_rect.Min + close_size;
+  layout_.manage_btn_rect = ImRect(ImVec2(layout_.close_btn_rect.Min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, layout_.rect.Min.y + margins.y), ImVec2(0, 0));
+  layout_.manage_btn_rect.Max = layout_.manage_btn_rect.Min + manage_size;
 
   const FontInfo bfm = boldFont();
   const float fm_height = ImGui::GetTextLineHeight();
   const int marker_size = fm_height - 4;
   const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
-  const int legend_left = move_icon_rect.Max.x + margins.x;
-  const int legend_right = std::max<int>(manage_btn_rect.Min.x - margins.z, legend_left + 10);
+  const int legend_left = layout_.move_icon_rect.Max.x + margins.x;
+  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - margins.z, legend_left + 10);
 
   // layout legend entries left-to-right, wrapping between the move icon and the buttons
-  legend_rects.clear();
-  int x = legend_left, y = rect.Min.y + margins.y;
+  layout_.legend_rects.clear();
+  int x = legend_left, y = layout_.rect.Min.y + margins.y;
   for (auto &s : sigs) {
     int w = marker_size + 5 + bfm.font->CalcTextSizeA(bfm.size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
             ImGui::CalcTextSize((" " + msgName(s.msg_id) + " " + s.msg_id.toString()).c_str()).x;
@@ -190,14 +190,14 @@ void ChartView::resizeEvent() {
       x = legend_left;
       y += row_height;
     }
-    legend_rects.emplace_back(ImVec2(x, y), ImVec2(x + w, y + std::max<int>(marker_size, fm_height)));
+    layout_.legend_rects.emplace_back(ImVec2(x, y), ImVec2(x + w, y + std::max<int>(marker_size, fm_height)));
     x += w + 12;
   }
 
   // add top space for the legend and signal values
-  int adjust_top = (y + row_height) - rect.Min.y - margins.y;
-  adjust_top = std::max<int>(adjust_top, manage_btn_rect.Max.y - rect.Min.y + margins.y);
-  header_bottom = rect.Min.y + adjust_top + margins.y;
+  int adjust_top = (y + row_height) - layout_.rect.Min.y - margins.y;
+  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y + margins.y);
+  layout_.header_bottom = layout_.rect.Min.y + adjust_top + margins.y;
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -367,12 +367,12 @@ void ChartView::mousePressEvent() {
   if (drawing_ghost) return;
   const ImVec2 pos = ImGui::GetMousePos();
   // a press on the close/manage buttons does not reach the widget
-  const bool widget_pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left) && rect.Contains(pos) &&
+  const bool widget_pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left) && layout_.rect.Contains(pos) &&
                               ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
-                              !close_btn_rect.Contains(pos) && !manage_btn_rect.Contains(pos);
+                              !layout_.close_btn_rect.Contains(pos) && !layout_.manage_btn_rect.Contains(pos);
   if (!widget_pressed) return;
   press_pos = pos;
-  if (move_icon_rect.Contains(pos)) return;  // the move icon press is handled by the grip item (startChartDrag)
+  if (layout_.move_icon_rect.Contains(pos)) return;  // the move icon press is handled by the grip item (startChartDrag)
 
   if (ImGui::GetIO().KeyShift) {
     // Save current playback state when scrubbing
@@ -381,7 +381,7 @@ void ChartView::mousePressEvent() {
       can->pause(true);
     }
     mouse_mode = MouseMode::Scrub;
-  } else if (plot_area.Contains(pos)) {
+  } else if (layout_.plot_area.Contains(pos)) {
     mouse_mode = MouseMode::Rubber;
     rubber_rect = ImRect();
   }
@@ -394,23 +394,23 @@ void ChartView::mouseMoveEvent() {
   // a click alone must not hide the tip
   if (delta.x == 0 && delta.y == 0) return;
   // only the widget under the mouse, or the one dragging, reacts to a move
-  if (mouse_mode == MouseMode::None && !rect.Contains(pos)) return;
+  if (mouse_mode == MouseMode::None && !layout_.rect.Contains(pos)) return;
 
   if (mouse_mode == MouseMode::Scrub && ImGui::GetIO().KeyShift) {
-    if (plot_area.Contains(pos)) {
+    if (layout_.plot_area.Contains(pos)) {
       can->seekTo(std::clamp(secondsAtPoint(pos), can->minSeconds(), can->maxSeconds()));
     }
   }
 
   if (mouse_mode == MouseMode::Rubber) {
     // horizontal selection, clamped to the plot area
-    float left = std::clamp(std::min(press_pos.x, pos.x), plot_area.Min.x, plot_area.Max.x);
-    float right = std::clamp(std::max(press_pos.x, pos.x), plot_area.Min.x, plot_area.Max.x);
-    rubber_rect = ImRect(ImVec2(left, plot_area.Min.y), ImVec2(right, plot_area.Max.y));
+    float left = std::clamp(std::min(press_pos.x, pos.x), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
+    float right = std::clamp(std::max(press_pos.x, pos.x), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
+    rubber_rect = ImRect(ImVec2(left, layout_.plot_area.Min.y), ImVec2(right, layout_.plot_area.Max.y));
   }
 
   clearTrackPoints();
-  if (mouse_mode != MouseMode::Rubber && plot_area.Contains(pos) && (plot_hovered || mouse_mode != MouseMode::None) &&
+  if (mouse_mode != MouseMode::Rubber && layout_.plot_area.Contains(pos) && (layout_.plot_hovered || mouse_mode != MouseMode::None) &&
       ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
     charts_widget->showValueTip(secondsAtPoint(pos));
   } else if (tip_label->isVisible()) {
@@ -421,7 +421,7 @@ void ChartView::mouseMoveEvent() {
 void ChartView::mouseReleaseEvent() {
   if (drawing_ghost) return;
   const bool left_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-  const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && rect.Contains(ImGui::GetMousePos());
+  const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && layout_.rect.Contains(ImGui::GetMousePos());
   if (!left_released && !right_released) return;
   if (left_released && mouse_mode == MouseMode::Rubber) {
     mouse_mode = MouseMode::None;
@@ -461,7 +461,7 @@ void ChartView::takeSignalsFrom(ChartView *source) {
 }
 
 void ChartView::showTip(double sec) {
-  ImRect tip_area(ImVec2(rect.Min.x, plot_area.Min.y), ImVec2(rect.Max.x, plot_area.Max.y));
+  ImRect tip_area(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y), ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y));
   ImRect visible_rect = charts_widget->chartVisibleRect(this);
   visible_rect.ClipWith(tip_area);
   if (visible_rect.GetWidth() <= 0 || visible_rect.GetHeight() <= 0) {
@@ -491,7 +491,7 @@ void ChartView::showTip(double sec) {
   if (x < 0) {
     x = tooltip_x;
   }
-  ImVec2 pt(x, plot_area.Min.y);
+  ImVec2 pt(x, layout_.plot_area.Min.y);
   text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 3)});
   tip_label->showText(pt, text_list, visible_rect);
 }
@@ -505,10 +505,10 @@ void ChartView::hideTip() {
 void ChartView::draw(float width) {
   ImGui::PushID(this);
   width = std::max(width, (float)CHART_MIN_WIDTH);
-  plot_hovered = false;
+  layout_.plot_hovered = false;
   // the tile geometry is known before the child is entered, so it stays valid when imgui culls a scrolled out chart
   const ImVec2 tile_pos = ImGui::GetCursorScreenPos();
-  rect = ImRect(tile_pos, tile_pos + ImVec2(width, sizeHint().y));
+  layout_.rect = ImRect(tile_pos, tile_pos + ImVec2(width, sizeHint().y));
   if (ImGui::BeginChild("chart", ImVec2(width, sizeHint().y), ImGuiChildFlags_None,
                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     resizeEvent();
@@ -525,22 +525,9 @@ void ChartView::draw(float width) {
 void ChartView::drawGhost(float width) {
   // the ghost is drawn in its own window: keep the geometry of the live tile so hit testing stays correct
   drawing_ghost = true;
-  const ImRect saved_rect = rect, saved_plot_area = plot_area, saved_move = move_icon_rect;
-  const ImRect saved_close = close_btn_rect, saved_manage = manage_btn_rect;
-  const std::vector<ImRect> saved_legend = legend_rects;
-  const float saved_header_bottom = header_bottom;
-  const bool saved_plot_hovered = plot_hovered;
-
+  const Layout saved = layout_;
   draw(width);
-
-  rect = saved_rect;
-  plot_area = saved_plot_area;
-  move_icon_rect = saved_move;
-  close_btn_rect = saved_close;
-  manage_btn_rect = saved_manage;
-  legend_rects = saved_legend;
-  header_bottom = saved_header_bottom;
-  plot_hovered = saved_plot_hovered;
+  layout_ = saved;
   drawing_ghost = false;
 }
 
@@ -548,18 +535,18 @@ void ChartView::paintEvent() {
   drawStaticLayer();
 
   if (can_drop) {
-    ImGui::GetWindowDrawList()->AddRect(rect.Min, rect.Max, ImGui::GetColorU32(ImGuiCol_Header), 0.0f, 0, 4.0f);
+    ImGui::GetWindowDrawList()->AddRect(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_Header), 0.0f, 0, 4.0f);
   }
 }
 
 void ChartView::drawStaticLayer() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
-  painter->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(ImGuiCol_ChildBg));
-  ImGui::SetCursorScreenPos(move_icon_rect.Min);
-  ImGui::InvisibleButton("grip", move_icon_rect.GetSize());
+  painter->AddRectFilled(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_ChildBg));
+  ImGui::SetCursorScreenPos(layout_.move_icon_rect.Min);
+  ImGui::InvisibleButton("grip", layout_.move_icon_rect.GetSize());
   if (ImGui::IsItemActivated()) charts_widget->startChartDrag(this, ImGui::GetMousePos());
   if (ImGui::IsItemHovered()) ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-  painter->AddText(move_icon_rect.Min, ImGui::GetColorU32(ImGuiCol_Text), icon::GRIP_HORIZONTAL);
+  painter->AddText(layout_.move_icon_rect.Min, ImGui::GetColorU32(ImGuiCol_Text), icon::GRIP_HORIZONTAL);
   createToolButtons();
   drawLegend();
   drawSignalValue();  // drawn here because implot clips the plot frame
@@ -568,8 +555,8 @@ void ChartView::drawStaticLayer() {
 
 void ChartView::drawAxes() {
   const auto margins = layoutMargins();
-  ImGui::SetCursorScreenPos(ImVec2(rect.Min.x, header_bottom));
-  const float plot_h = std::max(rect.Max.y - header_bottom - margins.w, 10.0f);
+  ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x, layout_.header_bottom));
+  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - margins.w, 10.0f);
   ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(margins.x, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
@@ -595,7 +582,7 @@ void ChartView::drawAxes() {
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
   // reserve room for the right half of the last x tick label
   const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max, xAxisPrecision()).c_str()).x + 5;
-  if (ImPlot::BeginPlot("##plot", ImVec2(rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
+  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit.empty() ? nullptr : y_unit.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min, x_max, ImPlotCond_Always);
@@ -607,9 +594,9 @@ void ChartView::drawAxes() {
     ImPlot::SetupAxisTicks(ImAxis_X1, x_min, x_max, X_TICK_COUNT);
     ImPlot::SetupFinish();
 
-    plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
+    layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
     // ImPlotFlags_NoInputs disables implot's own hover tracking
-    plot_hovered = plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
     mousePressEvent();
     mouseMoveEvent();
@@ -630,9 +617,9 @@ void ChartView::drawLegend() {
   const FontInfo normal_font{ImGui::GetFont(), ImGui::GetFontSize()};
   const int marker_size = ImGui::GetTextLineHeight() - 4;
 
-  for (int i = 0; i < sigs.size() && i < legend_rects.size(); ++i) {
+  for (int i = 0; i < sigs.size() && i < layout_.legend_rects.size(); ++i) {
     const auto &s = sigs[i];
-    const ImRect &r = legend_rects[i];
+    const ImRect &r = layout_.legend_rects[i];
     // toggle series visibility by clicking its legend entry
     ImGui::PushID(i);
     ImGui::SetCursorScreenPos(r.Min);
@@ -724,8 +711,8 @@ void ChartView::drawForeground() {
   }
   if (track_line_x > 0) {
     const ImU32 dark_gray = IM_COL32(0x80, 0x80, 0x80, 0xff);
-    for (float y = plot_area.Min.y; y < plot_area.Max.y; y += 8) {
-      painter->AddLine(ImVec2(track_line_x, y), ImVec2(track_line_x, std::min(y + 4, plot_area.Max.y)), dark_gray, 1.0f);
+    for (float y = layout_.plot_area.Min.y; y < layout_.plot_area.Max.y; y += 8) {
+      painter->AddLine(ImVec2(track_line_x, y), ImVec2(track_line_x, std::min(y + 4, layout_.plot_area.Max.y)), dark_gray, 1.0f);
     }
   }
   ImPlot::PopPlotClipRect();
@@ -747,7 +734,7 @@ void ChartView::drawRubberBandTimeRange() {
   const ImU32 white = IM_COL32_WHITE;
   const ImU32 gray = IM_COL32(0xa0, 0xa0, 0xa4, 0xff);
   painter = ImGui::GetWindowDrawList();
-  painter->PushClipRect(rect.Min, rect.Max);
+  painter->PushClipRect(layout_.rect.Min, layout_.rect.Max);
   for (const auto &pt : {rubber_rect.GetBL(), rubber_rect.GetBR()}) {
     std::string sec = formatNumber(secondsAtPoint(pt), 2);
     ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, AXIS_X_TOP_MARGIN * 2);
@@ -760,12 +747,12 @@ void ChartView::drawRubberBandTimeRange() {
 
 void ChartView::drawTimeline() {
   ImDrawList *painter = ImPlot::GetPlotDrawList();
-  float x = std::clamp(xPos(cur_sec), plot_area.Min.x, plot_area.Max.x);
-  painter->AddLine(ImVec2(x, plot_area.Min.y - 1.0f), ImVec2(x, plot_area.Max.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
+  float x = std::clamp(xPos(cur_sec), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
+  painter->AddLine(ImVec2(x, layout_.plot_area.Min.y - 1.0f), ImVec2(x, layout_.plot_area.Max.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
 
   std::string time_str = formatNumber(cur_sec, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
-  ImVec2 time_str_pos(x - time_str_size.x / 2.0f, plot_area.Max.y + AXIS_X_TOP_MARGIN);
+  ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + AXIS_X_TOP_MARGIN);
   const bool dark = isDarkTheme();
   painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, dark ? IM_COL32(0x80, 0x80, 0x80, 0xff) : IM_COL32(0xa0, 0xa0, 0xa4, 0xff), 3.0f);
   painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());
@@ -775,12 +762,12 @@ void ChartView::drawSignalValue() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
   const FontInfo font{ImGui::GetFont(), ImGui::GetFontSize()};
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
-  for (int i = 0; i < sigs.size() && i < legend_rects.size(); ++i) {
+  for (int i = 0; i < sigs.size() && i < layout_.legend_rects.size(); ++i) {
     const auto &s = sigs[i];
     auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec,
                                [](auto &p, double x) { return p.x > x + EPSILON; });
     std::string value = (it != s.vals.crend() && it->x >= x_min) ? s.sig->formatValue(it->y) : "--";
-    ImRect value_rect(legend_rects[i].GetBL() - ImVec2(0, 1), legend_rects[i].GetBL() - ImVec2(0, 1) + legend_rects[i].GetSize());
+    ImRect value_rect(layout_.legend_rects[i].GetBL() - ImVec2(0, 1), layout_.legend_rects[i].GetBL() - ImVec2(0, 1) + layout_.legend_rects[i].GetSize());
     float w = ImGui::CalcTextSize(value.c_str()).x;
     if (w <= value_rect.GetWidth()) {
       painter->AddText(ImVec2(value_rect.GetCenter().x - w / 2, value_rect.Min.y), color, value.c_str());

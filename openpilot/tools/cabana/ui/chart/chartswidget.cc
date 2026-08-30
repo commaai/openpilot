@@ -153,7 +153,7 @@ void ChartsWidget::zoomReset() {
 }
 
 ImRect ChartsWidget::chartVisibleRect(ChartView *chart) {
-  ImRect r = chart->rect;
+  ImRect r = chart->layout_.rect;
   r.ClipWith(charts_scroll_viewport);
   return r;
 }
@@ -496,7 +496,7 @@ void ChartsWidget::dragChartMove(const ImVec2 &global_pos) {
   const ImVec2 container_pos = global_pos;
   ChartView *target = nullptr;
   for (auto c : currentCharts()) {
-    if (c != drag.source && c->rect.Contains(container_pos)) {
+    if (c != drag.source && c->layout_.rect.Contains(container_pos)) {
       target = c;
       break;
     }
@@ -772,7 +772,7 @@ void ChartsContainer::draw() {
     ImGui::SetCursorScreenPos(pos);
     current_charts[i]->draw(width);
     bottom = std::max(bottom, pos.y + settings.chart_height);
-    if (current_charts[i]->plot_hovered) charts_widget->any_plot_hovered_ = true;  // the window must be hovered too
+    if (current_charts[i]->layout_.plot_hovered) charts_widget->any_plot_hovered_ = true;  // the window must be hovered too
   }
   if (aligned) ImPlot::EndAlignedPlots();
   ImGui::SetCursorScreenPos(ImVec2(origin.x, bottom));
@@ -787,7 +787,7 @@ void ChartsContainer::paintEvent() {
     r.Max.y = r.Min.y + CHART_SPACING;
     if (auto insert_after = getDropAfter(drop_indictor_pos)) {
       float h = r.GetHeight();
-      r.Min.y = insert_after->rect.Max.y;
+      r.Min.y = insert_after->layout_.rect.Max.y;
       r.Max.y = r.Min.y + h;
     }
 
@@ -797,7 +797,7 @@ void ChartsContainer::paintEvent() {
 
 ChartView *ChartsContainer::getDropAfter(const ImVec2 &pos) const {
   auto it = std::find_if(charts_widget->currentCharts().crbegin(), charts_widget->currentCharts().crend(), [&pos](auto c) {
-    auto area = c->rect;
+    auto area = c->layout_.rect;
     return pos.x >= area.Min.x && pos.x <= area.Max.x && pos.y >= area.Max.y;
   });
   return it == charts_widget->currentCharts().crend() ? nullptr : *it;
@@ -805,7 +805,7 @@ ChartView *ChartsContainer::getDropAfter(const ImVec2 &pos) const {
 
 ChartView *ChartsContainer::childAt(const ImVec2 &pos) const {
   for (auto c : charts_widget->currentCharts()) {
-    if (c->rect.Contains(pos)) return c;
+    if (c->layout_.rect.Contains(pos)) return c;
   }
   return nullptr;
 }

@@ -40,7 +40,7 @@ public:
   void draw(float width);  // one chart of settings.chart_height
   void drawGhost(float width);  // the same tile rendered again, without handling any input
   double secondsAtPoint(const ImVec2 &pt) const {
-    return x_min + (pt.x - plot_area.Min.x) * (x_max - x_min) / std::max(plot_area.GetWidth(), 1.0f);
+    return x_min + (pt.x - layout_.plot_area.Min.x) * (x_max - x_min) / std::max(layout_.plot_area.GetWidth(), 1.0f);
   }
 
   struct SigItem {
@@ -90,17 +90,20 @@ private:
   void takeSignalsFrom(ChartView *source);
   void setDropHighlight(bool highlight) { can_drop = highlight; }
   inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }
-  inline float xPos(double sec) const { return plot_area.Min.x + (sec - x_min) / (x_max - x_min) * plot_area.GetWidth(); }
-  inline float yPos(double val) const { return plot_area.Max.y - (val - y_min) / (y_max - y_min) * plot_area.GetHeight(); }
+  inline float xPos(double sec) const { return layout_.plot_area.Min.x + (sec - x_min) / (x_max - x_min) * layout_.plot_area.GetWidth(); }
+  inline float yPos(double val) const { return layout_.plot_area.Max.y - (val - y_min) / (y_max - y_min) * layout_.plot_area.GetHeight(); }
 
   // layout
-  ImRect rect;  // the whole chart widget, screen coordinates
-  ImRect plot_area;
-  ImRect move_icon_rect;
-  ImRect close_btn_rect;
-  ImRect manage_btn_rect;
-  std::vector<ImRect> legend_rects;
-  float header_bottom = 0;
+  struct Layout {
+    ImRect rect;  // the whole chart widget, screen coordinates
+    ImRect plot_area;
+    ImRect move_icon_rect;
+    ImRect close_btn_rect;
+    ImRect manage_btn_rect;
+    std::vector<ImRect> legend_rects;
+    float header_bottom = 0;
+    bool plot_hovered = false;
+  } layout_;
   // axes
   double x_min;
   double x_max;
@@ -115,7 +118,6 @@ private:
   ImVec2 press_pos;
   ImRect rubber_rect;
   bool resume_after_scrub = false;
-  bool plot_hovered = false;
   bool drawing_ghost = false;  // drawing the drag preview: no mouse handling, no tip
   ImGuiID context_menu_id = 0;
 
