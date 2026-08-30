@@ -30,7 +30,31 @@ void cursorEnterCallback(GLFWwindow *w, int entered) { ImGui_ImplGlfw_CursorEnte
 void mouseButtonCallback(GLFWwindow *w, int b, int a, int m) { ImGui_ImplGlfw_MouseButtonCallback(w, b, a, m); }
 void scrollCallback(GLFWwindow *w, double x, double y) { ImGui_ImplGlfw_ScrollCallback(w, x, y); }
 void charCallback(GLFWwindow *w, unsigned int c) { ImGui_ImplGlfw_CharCallback(w, c); }
-void windowFocusCallback(GLFWwindow *w, int f) { ImGui_ImplGlfw_WindowFocusCallback(w, f); }
+// imgui releases every mouse button when the window loses focus. The window manager moves the focus to a
+// panel that was just torn off into its own OS window (GNOME also briefly takes it away on a click), which
+// ends the drag, docks the panel back and creates its window a second time on the drop. X11 keeps delivering
+// the drag to this window through the implicit grab, so a focus loss is held back while a button is down
+// and delivered after the release (see deliverPendingFocusLoss).
+GLFWwindow *g_focus_lost_window = nullptr;
+void windowFocusCallback(GLFWwindow *w, int f) {
+  if (f) {
+    g_focus_lost_window = nullptr;
+    ImGui_ImplGlfw_WindowFocusCallback(w, f);
+  } else {
+    g_focus_lost_window = w;
+  }
+}
+bool anyMouseButtonDown(GLFWwindow *w) {
+  for (int b = GLFW_MOUSE_BUTTON_1; b <= GLFW_MOUSE_BUTTON_LAST; ++b) {
+    if (glfwGetMouseButton(w, b) == GLFW_PRESS) return true;
+  }
+  return false;
+}
+void deliverPendingFocusLoss() {
+  if (g_focus_lost_window == nullptr || anyMouseButtonDown(g_focus_lost_window)) return;
+  ImGui_ImplGlfw_WindowFocusCallback(g_focus_lost_window, GLFW_FALSE);
+  g_focus_lost_window = nullptr;
+}
 
 void hookViewportCallbacks() {
   for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
@@ -48,6 +72,7 @@ void glfwErrorCallback(int error, const char *description) {
 // makes the camera view stutter.
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
+  deliverPendingFocusLoss();
   utils::drainMainThreadQueue();
 
   int fb_w = 0, fb_h = 0;
