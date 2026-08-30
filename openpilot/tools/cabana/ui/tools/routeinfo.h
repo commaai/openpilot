@@ -1,10 +1,8 @@
 #pragma once
 
-#include <array>
-#include <string>
-#include <vector>
-
 #include "tools/cabana/ui/tools/tooldialog.h"
+
+class Replay;
 
 class RouteInfoDlg : public ToolDialog {
 public:
@@ -12,5 +10,5 @@ public:
   bool draw() override;
 
 private:
-  std::vector<std::array<std::string, 7>> rows_;  // one row per segment: seg num, rlog, narrow road, wide road, driver, qlog, qcam
+  Replay *replay_ = nullptr;  // destroyed with the stream, which destroys this dialog first
 };
