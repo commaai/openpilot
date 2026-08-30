@@ -86,20 +86,13 @@ bool SignalSelector::draw() {
   ImGui::TextUnformatted("Selected Signals");
   bool remove_dbl = false;
   drawList("##selected_list", selected_list, &selected_row_, true, &remove_dbl, ImVec2(column_w, lists_h + ImGui::GetFrameHeightWithSpacing()));
-  const float buttons_w = 80.0f * 2 + ImGui::GetStyle().ItemSpacing.x;
-  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, column_w - buttons_w));
-  if (ImGui::Button("Cancel", ImVec2(80.0f, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) done = true;
-  ImGui::SameLine();
-  if (ImGui::Button("OK", ImVec2(80.0f, 0.0f))) {
-    done = true;
-    accepted_ = true;
-  }
+  if (dialogButtons("OK", &accepted_, nullptr) || dialogEscapePressed()) done = true;
   ImGui::EndGroup();
 
   if ((add_dbl || add_clicked) && available_row_ >= 0 && available_row_ < (int)available_list.size()) {
-    add(&available_list[available_row_]);
+    add(available_row_);
   } else if ((remove_dbl || remove_clicked) && selected_row_ >= 0 && selected_row_ < (int)selected_list.size()) {
-    remove(&selected_list[selected_row_]);
+    remove(selected_row_);
   }
 
   if (done) {
@@ -139,19 +132,19 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
   ImGui::EndListBox();
 }
 
-void SignalSelector::add(ListItem *item) {
-  auto it = item;
-  addItemToList(selected_list, it->msg_id, it->sig, true);
-  available_list.erase(available_list.begin() + (it - available_list.data()));
+void SignalSelector::add(int row) {
+  const auto &item = available_list[row];
+  addItemToList(selected_list, item.msg_id, item.sig);
+  available_list.erase(available_list.begin() + row);
   available_row_ = -1;
 }
 
-void SignalSelector::remove(ListItem *item) {
-  auto it = item;
-  if (msgs_combo_index_ >= 0 && it->msg_id == msgs_combo[msgs_combo_index_].id) {
-    addItemToList(available_list, it->msg_id, it->sig);
+void SignalSelector::remove(int row) {
+  const auto &item = selected_list[row];
+  if (msgs_combo_index_ >= 0 && item.msg_id == msgs_combo[msgs_combo_index_].id) {
+    addItemToList(available_list, item.msg_id, item.sig);
   }
-  selected_list.erase(selected_list.begin() + (it - selected_list.data()));
+  selected_list.erase(selected_list.begin() + row);
   selected_row_ = -1;
 }
 
@@ -170,8 +163,7 @@ void SignalSelector::updateAvailableList(int index) {
   }
 }
 
-void SignalSelector::addItemToList(std::vector<ListItem> &parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name) {
-  // the label (color square, name, gray msg name) is drawn in drawList; show_msg_name is implied by the list
+void SignalSelector::addItemToList(std::vector<ListItem> &parent, const MessageId id, const cabana::Signal *sig) {
   parent.emplace_back(id, sig);
 }
 

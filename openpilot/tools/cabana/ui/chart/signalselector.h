@@ -17,16 +17,16 @@ public:
 
   SignalSelector(std::string title);
   std::vector<ListItem *> seletedItems();
-  inline void addSelected(const MessageId &id, const cabana::Signal *sig) { addItemToList(selected_list, id, sig, true); }
+  inline void addSelected(const MessageId &id, const cabana::Signal *sig) { addItemToList(selected_list, id, sig); }
   void open() { open_ = true; show_ = false; accepted_ = false; }
   bool draw();  // false once the dialog is closed
   bool accepted() const { return accepted_; }
 
 private:
   void updateAvailableList(int index);
-  void addItemToList(std::vector<ListItem> &parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name = false);
-  void add(ListItem *item);
-  void remove(ListItem *item);
+  void addItemToList(std::vector<ListItem> &parent, const MessageId id, const cabana::Signal *sig);
+  void add(int row);
+  void remove(int row);
   void drawList(const char *id, std::vector<ListItem> &list, int *current_row, bool show_msg_name, bool *double_clicked, const ImVec2 &size);
 
   struct ComboItem {
