@@ -406,8 +406,9 @@ bool EditMessageDialog::draw() {
     const std::string node_before = node;
     if (inputText("##node", &node)) applyNameValidator(node, node_before);
     row("Comment");
+    InputContext comment_ctx{&comment_edit, nullptr};
     ImGui::InputTextMultiline("##comment", comment_edit.data(), comment_edit.capacity() + 1, ImVec2(-FLT_MIN, 192.0f),
-                              ImGuiInputTextFlags_CallbackResize, imguiResizeCallback, &comment_edit);
+                              ImGuiInputTextFlags_CallbackResize, inputCallback, &comment_ctx);
     const bool comment_active = ImGui::IsItemActive();
 
     bool accept = false, reject = false;

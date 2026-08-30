@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cctype>
 #include <string>
 
 #include "imgui.h"
@@ -14,18 +15,61 @@ inline ImVec4 colorRgb(int r, int g, int b, float alpha = 1.0f) {
 inline ImU32 toImU32(const CabanaColor &c) { return IM_COL32(c.r, c.g, c.b, c.a); }
 inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f); }
 
-inline int imguiResizeCallback(ImGuiInputTextCallbackData *data) {
+struct InputContext {
+  std::string *str;
+  ImGuiInputTextCallback validator;
+};
+
+inline int inputCallback(ImGuiInputTextCallbackData *data) {
+  auto *ctx = static_cast<InputContext *>(data->UserData);
+  if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
+    return ctx->validator ? ctx->validator(data) : 0;
+  }
   if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-    auto *s = static_cast<std::string *>(data->UserData);
-    s->resize(data->BufTextLen);
-    data->Buf = s->data();
+    ctx->str->resize(data->BufTextLen);
+    data->Buf = ctx->str->data();
   }
   return 0;
 }
 
+// text input with an optional validator; `s` grows through the resize callback
+inline bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback validator, const char *hint = "",
+                           ImGuiInputTextFlags flags = 0) {
+  InputContext ctx{s, validator};
+  flags |= ImGuiInputTextFlags_CallbackResize;
+  if (validator) flags |= ImGuiInputTextFlags_CallbackCharFilter;
+  return ImGui::InputTextWithHint(label, hint, s->data(), s->capacity() + 1, flags, inputCallback, &ctx);
+}
+
 inline bool inputText(const char *label, std::string *s, const char *hint = "", ImGuiInputTextFlags flags = 0) {
-  return ImGui::InputTextWithHint(label, hint, s->data(), s->capacity() + 1,
-                                  flags | ImGuiInputTextFlags_CallbackResize, imguiResizeCallback, s);
+  return validatedInput(label, s, nullptr, hint, flags);
+}
+
+// InputText char filters; the std::string validators in utils/util.h are run again when the edit is committed
+
+inline int nameValidator(ImGuiInputTextCallbackData *data) {
+  // [A-Za-z0-9_], spaces rewritten to '_'
+  if (data->EventChar == ' ') {
+    data->EventChar = '_';
+    return 0;
+  }
+  return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_')) ? 0 : 1;
+}
+
+inline int nodeValidator(ImGuiInputTextCallbackData *data) {
+  // \w+(,\w+)*
+  return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_' || data->EventChar == ',')) ? 0 : 1;
+}
+
+inline int doubleValidator(ImGuiInputTextCallbackData *data) {
+  // C-locale floating-point
+  const ImWchar c = data->EventChar;
+  return (c < 128 && (std::isdigit((int)c) || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E')) ? 0 : 1;
+}
+
+inline int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
+  // \S+
+  return (data->EventChar < 128 && std::isspace((int)data->EventChar)) ? 1 : 0;
 }
 
 // auto-raise icon button with a tooltip

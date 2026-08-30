@@ -15,15 +15,6 @@
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/chart/sparkline.h"
 
-// InputText char filters; the std::string validators in utils/util.h are run again when the edit is committed
-int nameValidator(ImGuiInputTextCallbackData *data);
-int nodeValidator(ImGuiInputTextCallbackData *data);
-int doubleValidator(ImGuiInputTextCallbackData *data);
-int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
-// text input with an optional validator; `s` grows through the resize callback like inputText() in imgui_util.h
-bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback validator, const char *hint = "",
-                    ImGuiInputTextFlags flags = 0);
-
 // the value SignalModel::setData takes: text, a number, a check state or a value table
 class ItemValue {
 public:

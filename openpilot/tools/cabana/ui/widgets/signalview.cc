@@ -49,57 +49,7 @@ void drawSmallText(ImDrawList *painter, const ImRect &rect, float font_size, con
   painter->AddText(font, font_size, ImVec2(rect.Min.x, y), color, text.c_str());
 }
 
-struct InputContext {
-  std::string *str;
-  ImGuiInputTextCallback validator;
-};
-
-int inputCallback(ImGuiInputTextCallbackData *data) {
-  auto *ctx = static_cast<InputContext *>(data->UserData);
-  if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
-    return ctx->validator ? ctx->validator(data) : 0;
-  }
-  if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-    ctx->str->resize(data->BufTextLen);
-    data->Buf = ctx->str->data();
-  }
-  return 0;
-}
 }  // namespace
-
-// validators
-
-int nameValidator(ImGuiInputTextCallbackData *data) {
-  // [A-Za-z0-9_], spaces rewritten to '_'
-  if (data->EventChar == ' ') {
-    data->EventChar = '_';
-    return 0;
-  }
-  return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_')) ? 0 : 1;
-}
-
-int nodeValidator(ImGuiInputTextCallbackData *data) {
-  // \w+(,\w+)*
-  return (data->EventChar < 128 && (std::isalnum((int)data->EventChar) || data->EventChar == '_' || data->EventChar == ',')) ? 0 : 1;
-}
-
-int doubleValidator(ImGuiInputTextCallbackData *data) {
-  // C-locale floating-point
-  const ImWchar c = data->EventChar;
-  return (c < 128 && (std::isdigit((int)c) || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E')) ? 0 : 1;
-}
-
-int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
-  // \S+
-  return (data->EventChar < 128 && std::isspace((int)data->EventChar)) ? 1 : 0;
-}
-
-bool validatedInput(const char *label, std::string *s, ImGuiInputTextCallback validator, const char *hint, ImGuiInputTextFlags flags) {
-  InputContext ctx{s, validator};
-  flags |= ImGuiInputTextFlags_CallbackResize;
-  if (validator) flags |= ImGuiInputTextFlags_CallbackCharFilter;
-  return ImGui::InputTextWithHint(label, hint, s->data(), s->capacity() + 1, flags, inputCallback, &ctx);
-}
 
 static std::string signalTypeToString(cabana::Signal::Type type) {
   if (type == cabana::Signal::Type::Multiplexor) return "Multiplexor Signal";
