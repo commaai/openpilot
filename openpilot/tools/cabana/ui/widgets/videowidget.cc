@@ -430,8 +430,8 @@ void VideoWidget::drawSpeedMenuItems() {
     label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i], "").c_str()).x);
   }
   // every row declares the same width, so the popup is exactly as wide as the widest one and all the
-  // highlights reach both edges
-  const ImVec2 item_size(indent + label_width, 0.0f);
+  // highlights reach both edges; QMenu pads the label on the right as much as the check column on the left
+  const ImVec2 item_size(indent + label_width + indent, 0.0f);
   ImDrawList *painter = ImGui::GetWindowDrawList();
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
