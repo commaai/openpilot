@@ -44,11 +44,11 @@ std::string FindSignalModel::data(int row, int column) const {
   return {};
 }
 
-void FindSignalModel::search(std::function<bool(double)> cmp, const std::atomic<bool> &cancel) {
+void FindSignalModel::search(std::function<bool(double)> cmp) {
   std::mutex lock;
   const auto prev_sigs = !histories.empty() ? histories.back() : initial_signals;
-  search_results.clear();
-  search_results.reserve(prev_sigs.size());
+  filtered_signals.clear();
+  filtered_signals.reserve(prev_sigs.size());
 
   unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
   size_t chunk = (prev_sigs.size() + num_threads - 1) / num_threads;
@@ -57,7 +57,7 @@ void FindSignalModel::search(std::function<bool(double)> cmp, const std::atomic<
     size_t start = t * chunk;
     size_t end = std::min(start + chunk, (size_t)prev_sigs.size());
     threads.emplace_back([&, start, end]() {
-      for (size_t i = start; i < end && !cancel; ++i) {
+      for (size_t i = start; i < end; ++i) {
         const auto &s = prev_sigs[i];
         const auto &events = can->events(s.id);
         auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
@@ -73,17 +73,13 @@ void FindSignalModel::search(std::function<bool(double)> cmp, const std::atomic<
           snprintf(buf, sizeof(buf), "(%.3f, %g)", can->toSeconds((*it)->mono_time), get_raw_value((*it)->dat, (*it)->size, s.sig));
           values.push_back(buf);
           std::lock_guard lk(lock);
-          search_results.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
+          filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
         }
       }
     });
   }
   for (auto &th : threads) th.join();
-}
 
-void FindSignalModel::applySearch() {
-  filtered_signals = std::move(search_results);
-  search_results.clear();
   histories.push_back(filtered_signals);
 }
 
@@ -108,13 +104,13 @@ FindSignalDlg::FindSignalDlg() {
   model = std::make_unique<FindSignalModel>();
 }
 
-FindSignalDlg::~FindSignalDlg() {
-  *alive_ = false;
-  cancel_search_ = true;
-  if (search_thread_.joinable()) search_thread_.join();
-}
-
 bool FindSignalDlg::draw() {
+  if (pending_cmp_) {
+    auto cmp = std::move(pending_cmp_);
+    pending_cmp_ = nullptr;
+    model->search(cmp);
+    modelReset();
+  }
   if (!open_) return false;
   ImGui::SetNextWindowSize(ImVec2(900, 650), ImGuiCond_Appearing);
   setNextWindowFloatsOut();
@@ -222,7 +218,7 @@ void FindSignalDlg::drawFindGroup() {
     doubleEdit("##value2", &value2);
   }
   ImGui::SameLine();
-  ImGui::BeginDisabled(!undo_btn_enabled || searching_);
+  ImGui::BeginDisabled(!undo_btn_enabled);
   if (ImGui::Button("Undo prev find")) {
     model->undo();
     modelReset();
@@ -233,7 +229,7 @@ void FindSignalDlg::drawFindGroup() {
   if (ImGui::Button(search_btn_text.c_str())) search();
   ImGui::EndDisabled();
   ImGui::SameLine();
-  ImGui::BeginDisabled(!reset_btn_enabled || searching_);
+  ImGui::BeginDisabled(!reset_btn_enabled);
   if (ImGui::Button("Reset")) {
     model->reset();
     modelReset();
@@ -292,20 +288,7 @@ void FindSignalDlg::search() {
   search_btn_enabled = false;
   stats_label_visible = false;
   search_btn_text = "Finding ....";
-  // the search runs off the render thread into model->search_results and is applied with modelReset
-  searching_ = true;
-  if (search_thread_.joinable()) search_thread_.join();
-  cancel_search_ = false;
-  search_thread_ = std::thread([this, cmp, alive = std::weak_ptr<bool>(alive_)]() {
-    model->search(cmp, cancel_search_);
-    utils::runOnMainThread([this, alive]() {
-      if (auto a = alive.lock(); a && *a) {
-        searching_ = false;
-        model->applySearch();
-        modelReset();
-      }
-    });
-  });
+  pending_cmp_ = cmp;
 }
 
 void FindSignalDlg::setInitialSignals() {

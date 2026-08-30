@@ -1,12 +1,10 @@
 #pragma once
 
 #include <algorithm>
-#include <atomic>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "tools/cabana/commands.h"
@@ -28,13 +26,11 @@ public:
   std::string data(int row, int column) const;
   int columnCount() const { return 3; }
   int rowCount() const { return std::min((int)filtered_signals.size(), 300); }
-  void search(std::function<bool(double)> cmp, const std::atomic<bool> &cancel);
-  void applySearch();  // commit the results computed by search(), on the GUI thread
+  void search(std::function<bool(double)> cmp);
   void reset();
   void undo();
 
   std::vector<SearchSignal> filtered_signals;
-  std::vector<SearchSignal> search_results;  // written by search(), read by applySearch()
   std::vector<SearchSignal> initial_signals;
   std::vector<std::vector<SearchSignal>> histories;
   uint64_t last_time = std::numeric_limits<uint64_t>::max();
@@ -43,7 +39,6 @@ public:
 class FindSignalDlg : public ToolDialog {
 public:
   FindSignalDlg();
-  ~FindSignalDlg() override;
   bool draw() override;
 
   Observable<const MessageId &> openMessage;
@@ -71,8 +66,5 @@ private:
   std::unique_ptr<FindSignalModel> model;
   std::string title_;
   bool open_ = true;
-  bool searching_ = false;  // search_thread_ is running; results are applied by modelReset
-  std::thread search_thread_;
-  std::atomic<bool> cancel_search_ = false;
-  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
+  std::function<bool(double)> pending_cmp_;  // deferred to the next frame so "Finding ...." paints first
 };
