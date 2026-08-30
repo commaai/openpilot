@@ -14,7 +14,6 @@ void getOpenFileName(const std::string &title, const std::string &dir, const std
 void getSaveFileName(const std::string &title, const std::string &default_path, const std::string &extension, Callback cb);
 void getExistingDirectory(const std::string &title, const std::string &dir, Callback cb);
 
-bool isOpen();
 void draw();  // once per frame, at the top popup level
 
 }  // namespace FileDialog

@@ -143,8 +143,6 @@ void getExistingDirectory(const std::string &title, const std::string &dir, Call
   start(Mode::Directory, title, dir, "", "", std::move(cb));
 }
 
-bool isOpen() { return g_state.active; }
-
 void draw() {
   State &s = g_state;
   if (!s.active) return;

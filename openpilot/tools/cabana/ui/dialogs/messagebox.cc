@@ -44,8 +44,6 @@ void question(const std::string &title, const std::string &text, std::function<v
   push({.title = title, .text = text, .has_cancel = true, .on_result = std::move(on_result)});
 }
 
-bool isOpen() { return !g_queue.empty(); }
-
 void draw() {
   if (g_queue.empty()) return;
   Box &box = g_queue.front();

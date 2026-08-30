@@ -13,7 +13,6 @@ class RoutesDialog {
 public:
   void open(std::function<void(bool accepted, const std::string &route)> on_done);
   void draw();
-  bool isOpen() const { return open_; }
 
 private:
   void setDeviceList(const std::vector<routes::DeviceInfo> &devices, bool success, int error_code);

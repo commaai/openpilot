@@ -91,7 +91,6 @@ public:
   // on_done gets a null stream on cancel
   void open(Callback on_done);
   void draw();
-  bool isOpen() const { return open_; }
 
 private:
   bool open_ = false;

@@ -14,7 +14,6 @@ void warning(const std::string &title, const std::string &text, const std::strin
 // Ok | Cancel; on_result(true) for Ok
 void question(const std::string &title, const std::string &text, std::function<void(bool ok)> on_result);
 
-bool isOpen();
 void draw();  // once per frame, at the top popup level
 
 }  // namespace MessageBox
