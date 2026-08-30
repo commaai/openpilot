@@ -42,6 +42,7 @@ namespace {
 constexpr const char *MESSAGES_PANEL = "###MessagesPanel";
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
 constexpr const char *CENTER_PANEL = "###CenterWidget";
+constexpr float MIN_PANEL_WIDTH = 440.0f;
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
@@ -973,7 +974,9 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(MIN_PANEL_WIDTH, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
+  ImGui::PopStyleVar();
   if (!full_screen_) drawStatusBar();
   ImGui::End();
 }
