@@ -16,7 +16,7 @@ const int MAX_CACHE_MINIUTES = 120;
 namespace {
 
 // the label sits in the left column, the field in the right one, all fields aligned
-const char *kFormLabels[] = {"Color Theme", "FPS", "Max Cached Minutes", "Drag Direction", "Chart Height"};
+const char *kFormLabels[] = {"Color Theme", "Max Cached Minutes", "Drag Direction", "Chart Height"};
 
 float formLabelWidth() {
   float w = 0.0f;
@@ -47,9 +47,6 @@ void SettingsDialog::open() {
 void SettingsDialog::draw() {
   if (!open_) return;
   if (!beginDialog("Settings", &show_, ImVec2(400.0f, 0.0f))) return;
-  const ImGuiInputTextFlags spin_flags = 0;  // InputInt forbids EnterReturnsTrue; it applies the text on every edit
-  // InputInt takes no character filter, so out of range text is clamped after the edit
-
   const float label_width = formLabelWidth();
 
   ImGui::SeparatorText("General");
@@ -58,7 +55,8 @@ void SettingsDialog::draw() {
   ImGui::Combo("##Color Theme", &theme_, themes, 3);
   ImGui::SetItemTooltip("You may need to restart cabana after changes theme");
   formRow("Max Cached Minutes", label_width);
-  if (ImGui::InputInt("##Max Cached Minutes", &cached_minutes_, 1, 10, spin_flags)) {
+  // InputInt takes no character filter, so out of range text is clamped after the edit
+  if (ImGui::InputInt("##Max Cached Minutes", &cached_minutes_, 1, 10)) {
     cached_minutes_ = std::clamp(cached_minutes_, MIN_CACHE_MINIUTES, MAX_CACHE_MINIUTES);
   }
 
@@ -69,12 +67,12 @@ void SettingsDialog::draw() {
 
   ImGui::SeparatorText("Chart");
   formRow("Chart Height", label_width);
-  if (ImGui::InputInt("##Chart Height", &chart_height_, 10, 10, spin_flags)) chart_height_ = std::clamp(chart_height_, 100, 500);
+  if (ImGui::InputInt("##Chart Height", &chart_height_, 10, 10)) chart_height_ = std::clamp(chart_height_, 100, 500);
 
   checkBox("Enable live stream logging", &log_livestream_);
   ImGui::BeginDisabled(!log_livestream_);
   ImGui::SetNextItemWidth(-90.0f);
-  ImGui::InputText("##log_path", log_path_.data(), log_path_.size() + 1, ImGuiInputTextFlags_ReadOnly);
+  inputText("##log_path", &log_path_, "", ImGuiInputTextFlags_ReadOnly);
   ImGui::SameLine();
   if (ImGui::Button("Browse...")) {
     FileDialog::getExistingDirectory("Log File Location", utils::homePath(), [this](const std::string &fn) {
