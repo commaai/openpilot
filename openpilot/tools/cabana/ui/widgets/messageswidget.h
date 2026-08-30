@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -66,14 +67,10 @@ class MessageViewHeader;
 
 class MessageView {
 public:
-  MessageView() {}
+  explicit MessageView(MessageViewHeader *header) : header_(header) {}
   void updateBytesSectionSize();
   void setModel(MessageListModel *model);
-  void setHeader(MessageViewHeader *header) { header_ = header; }
   void setItemDelegate(MessageBytesDelegate *delegate) { delegate_ = delegate; }
-  MessageBytesDelegate *itemDelegate() const { return delegate_; }
-  MessageListModel *model() const { return model_; }
-  MessageViewHeader *header() const { return header_; }
   void setCurrentIndex(int row);  // scrolls to the row
   int currentIndex() const { return current_row_; }
   void draw();  // the table: header, filter row, rows
@@ -103,7 +100,6 @@ public:
   void setModel(MessageListModel *model) { model_ = model; }
   MessageListModel *model() const { return model_; }
   void updateHeaderPositions();
-  void updateGeometries();
   void updateFilters();
   void draw();  // the header row and the filter editors row, inside the table
 
@@ -113,13 +109,12 @@ public:
   void setSectionHidden(int logical_index, bool hide) { hidden_[logical_index] = hide; }
   bool customContextMenuRequested = false;  // set for one frame by a right click on the header
 
-  std::vector<std::string> editors;
+  std::array<std::string, MessageListModel::Column::DATA + 1> editors;
 
 private:
   MessageListModel *model_ = nullptr;
-  std::vector<std::string> placeholders_;
-  std::vector<bool> hidden_;
-  std::vector<int> display_order_;
+  std::array<bool, MessageListModel::Column::DATA + 1> hidden_ = {};
+  std::array<int, MessageListModel::Column::DATA + 1> display_order_ = {0, 1, 2, 3, 4, 5, 6};
 };
 
 class MessagesWidget {
@@ -135,7 +130,7 @@ public:
     // TODO: the persisted header state is not ported yet
     return false;
   }
-  void suppressHighlighted();
+  void suppressHighlighted(bool from_suppress_add = false);
   const std::string &title() const { return title_; }
   std::string whatsThis() const;
 
@@ -148,21 +143,16 @@ protected:
   void menuAboutToShow();
   void setMultiLineBytes(bool multi);
   void updateTitle();
-  void suppressHighlighted(bool from_suppress_add);
 
-  MessageView *view;
-  MessageViewHeader *header;
-  MessageBytesDelegate *delegate;
+  MessageView view;
+  MessageViewHeader header;
+  MessageBytesDelegate delegate;
   std::optional<MessageId> current_msg_id;
-  MessageListModel *model;
+  MessageListModel model;
   std::string suppress_clear_text;
   bool suppress_clear_enabled = false;
   std::string title_ = "MESSAGES";
 
 private:
-  MessageView view_;
-  MessageViewHeader header_;
-  MessageBytesDelegate delegate_;
-  MessageListModel model_;
   Connections connections_;
 };

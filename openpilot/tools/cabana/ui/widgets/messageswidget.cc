@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cerrno>
+#include <charconv>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -16,27 +17,25 @@
 #include "tools/cabana/ui/imgui_util.h"
 #include "tools/cabana/utils/strings.h"
 
-MessagesWidget::MessagesWidget() : view(&view_), header(&header_), delegate(&delegate_), model(&model_), delegate_(settings.multiple_lines_hex) {
-  view->setItemDelegate(delegate);
-  view->setModel(model);
-  view->setHeader(header);
-  header->setModel(model);
-  model->sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);
+MessagesWidget::MessagesWidget() : view(&header), delegate(settings.multiple_lines_hex) {
+  view.setItemDelegate(&delegate);
+  view.setModel(&model);
+  header.setModel(&model);
+  model.sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);
 
   // must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
-  header->updateGeometries();
 
-  connections_.push_back(model->modelReset.connect([this]() {
+  connections_.push_back(model.modelReset.connect([this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
     }
-    view->updateBytesSectionSize();
+    view.updateBytesSectionSize();
     updateTitle();
   }));
-  connections_.push_back(view->currentChanged.connect([this](int current, int previous) {
-    if (current >= 0 && current < (int)model->items_.size()) {
-      const auto &id = model->items_[current].id;
+  connections_.push_back(view.currentChanged.connect([this](int current, int previous) {
+    if (current >= 0 && current < (int)model.items_.size()) {
+      const auto &id = model.items_[current].id;
       if (!current_msg_id || id != *current_msg_id) {
         current_msg_id = id;
         msgSelectionChanged(*current_msg_id);
@@ -88,27 +87,23 @@ void MessagesWidget::createToolBar() {
 
 void MessagesWidget::updateTitle() {
   auto stats = std::accumulate(
-      model->items_.begin(), model->items_.end(), std::pair<size_t, size_t>(),
+      model.items_.begin(), model.items_.end(), std::pair<size_t, size_t>(),
       [](const auto &pair, const auto &item) {
         auto m = dbc()->msg(item.id);
         return m ? std::make_pair(pair.first + 1, pair.second + m->sigs.size()) : pair;
       });
   char buf[128];
-  snprintf(buf, sizeof(buf), "%zu Messages (%zu DBC Messages, %zu Signals)", model->items_.size(), stats.first, stats.second);
+  snprintf(buf, sizeof(buf), "%zu Messages (%zu DBC Messages, %zu Signals)", model.items_.size(), stats.first, stats.second);
   title_ = buf;
   titleChanged(title_);
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
-  auto it = std::find_if(model->items_.cbegin(), model->items_.cend(),
+  auto it = std::find_if(model.items_.cbegin(), model.items_.cend(),
                          [&msg_id](auto &item) { return item.id == msg_id; });
-  if (it != model->items_.cend()) {
-    view->setCurrentIndex(std::distance(model->items_.cbegin(), it));
+  if (it != model.items_.cend()) {
+    view.setCurrentIndex(std::distance(model.items_.cbegin(), it));
   }
-}
-
-void MessagesWidget::suppressHighlighted() {
-  suppressHighlighted(false);
 }
 
 void MessagesWidget::suppressHighlighted(bool from_suppress_add) {
@@ -123,33 +118,33 @@ void MessagesWidget::headerContextMenuEvent() {
 
 void MessagesWidget::menuAboutToShow() {
   if (!ImGui::BeginPopup("menu")) return;
-  for (int i = 0; i < header->count(); ++i) {
-    int logical_index = header->logicalIndex(i);
+  for (int i = 0; i < header.count(); ++i) {
+    int logical_index = header.logicalIndex(i);
     // can't hide the name column
-    if (ImGui::MenuItem(model->headerData(logical_index).c_str(), nullptr, !header->isSectionHidden(logical_index), logical_index > 0)) {
-      header->setSectionHidden(logical_index, !header->isSectionHidden(logical_index));
+    if (ImGui::MenuItem(model.headerData(logical_index).c_str(), nullptr, !header.isSectionHidden(logical_index), logical_index > 0)) {
+      header.setSectionHidden(logical_index, !header.isSectionHidden(logical_index));
     }
   }
   ImGui::Separator();
   if (ImGui::MenuItem("Multi-Line bytes", nullptr, settings.multiple_lines_hex)) {
     setMultiLineBytes(!settings.multiple_lines_hex);
   }
-  if (ImGui::MenuItem("Show inactive messages", nullptr, model->show_inactive_messages)) {
-    model->showInactiveMessages(!model->show_inactive_messages);
+  if (ImGui::MenuItem("Show inactive messages", nullptr, model.show_inactive_messages)) {
+    model.showInactiveMessages(!model.show_inactive_messages);
   }
   ImGui::EndPopup();
 }
 
 void MessagesWidget::setMultiLineBytes(bool multi) {
   settings.multiple_lines_hex = multi;
-  delegate->setMultipleLines(multi);
-  view->updateBytesSectionSize();
+  delegate.setMultipleLines(multi);
+  view.updateBytesSectionSize();
 }
 
 void MessagesWidget::draw() {
   createToolBar();
-  view->draw();
-  if (std::exchange(header->customContextMenuRequested, false)) headerContextMenuEvent();
+  view.draw();
+  if (std::exchange(header.customContextMenuRequested, false)) headerContextMenuEvent();
   menuAboutToShow();
 }
 
@@ -255,21 +250,13 @@ void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
 
 // surrounding whitespace is ignored; no sign, no 0x prefix
 static unsigned int toUInt(const std::string &s, bool *ok, int base) {
-  size_t begin = 0, end = s.size();
-  while (begin < end && std::isspace((unsigned char)s[begin])) ++begin;
-  while (end > begin && std::isspace((unsigned char)s[end - 1])) --end;
-  unsigned long long v = 0;
-  *ok = begin < end;
-  for (size_t i = begin; i < end && *ok; ++i) {
-    const unsigned char c = std::tolower((unsigned char)s[i]);
-    int digit = -1;
-    if (c >= '0' && c <= '9') digit = c - '0';
-    else if (c >= 'a' && c <= 'z') digit = c - 'a' + 10;
-    *ok = digit >= 0 && digit < base;
-    v = v * base + std::max(digit, 0);
-    *ok = *ok && v <= std::numeric_limits<unsigned int>::max();
-  }
-  return *ok ? (unsigned int)v : 0;
+  const char *b = s.data(), *e = b + s.size();
+  while (b < e && std::isspace((unsigned char)*b)) ++b;
+  while (e > b && std::isspace((unsigned char)e[-1])) --e;
+  unsigned int v = 0;
+  auto [p, ec] = std::from_chars(b, e, v, base);
+  *ok = b < e && p == e && ec == std::errc();
+  return *ok ? v : 0;
 }
 
 static bool parseRange(const std::string &filter, uint32_t value, int base = 10) {
@@ -469,9 +456,8 @@ void MessageView::setCurrentIndex(int row) {
 }
 
 void MessageView::updateBytesSectionSize() {
-  auto delegate = itemDelegate();
   int max_bytes = 8;
-  if (!delegate->multipleLines()) {
+  if (!delegate_->multipleLines()) {
     for (const auto &[_, m] : can->lastMessages()) {
       max_bytes = std::max<int>(max_bytes, m.dat.size());
     }
@@ -584,20 +570,7 @@ void MessageViewHeader::updateHeaderPositions() {
   }
 }
 
-void MessageViewHeader::updateGeometries() {
-  for (int i = (int)editors.size(); i < model()->columnCount(); i++) {
-    std::string column_name = model()->headerData(i);
-    editors.emplace_back();
-    placeholders_.push_back("Filter " + column_name);
-    hidden_.push_back(false);
-    display_order_.push_back(i);
-  }
-  // the filter row is a frozen table row
-}
-
 void MessageViewHeader::draw() {
-  updateGeometries();
-
   // the headers row, submitted manually to catch the right click
   ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
   for (int i = 0; i < count(); i++) {
@@ -619,7 +592,8 @@ void MessageViewHeader::draw() {
     if (!ImGui::TableSetColumnIndex(i)) continue;
     ImGui::PushID(i);
     ImGui::SetNextItemWidth(editors[i].empty() ? -FLT_MIN : std::max(1.0f, ImGui::GetContentRegionAvail().x - clear_width));
-    if (inputText("##filter", &editors[i], placeholders_[i].c_str())) updateFilters();
+    const std::string placeholder = "Filter " + model_->headerData(i);
+    if (inputText("##filter", &editors[i], placeholder.c_str())) updateFilters();
     // the clear button only shows when the field is non-empty
     if (!editors[i].empty()) {
       ImGui::SameLine(0, 0);
