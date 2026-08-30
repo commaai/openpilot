@@ -207,7 +207,7 @@ void FindSignalDlg::drawFindGroup() {
   ImGui::TextUnformatted("Value");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(90);
-  if (comboBox("##compare", &compare_cb, compare_items, compare_count)) {
+  if (ImGui::Combo("##compare", &compare_cb, compare_items, compare_count)) {
     to_label_visible = compare_cb == compare_count - 1;
   }
   ImGui::SameLine();

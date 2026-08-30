@@ -177,10 +177,6 @@ inline bool checkBox(const char *label, bool *v) {
   return pressed;
 }
 
-inline bool comboBox(const char *label, int *index, const char *const items[], int count) {
-  return ImGui::Combo(label, index, items, count);
-}
-
 void loadFonts();
 void applyTheme(int theme);  // safe to call at runtime
 bool isDarkTheme();  // the theme applyTheme() resolved, so AUTO_THEME reports what is on screen
