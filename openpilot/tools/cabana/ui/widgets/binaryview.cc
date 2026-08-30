@@ -148,7 +148,7 @@ void BinaryView::setSelection() {
   auto [start, size, is_lb] = getSelection(index);
   for (int i = 0; i < size; ++i) {
     int pos = is_lb ? flipBitPos(start + i) : flipBitPos(start) + i;
-    selection.insert(model->index(pos / 8, pos % 8));
+    selection.insert({pos / 8, pos % 8});
   }
   selection_ = std::move(selection);
 }
@@ -157,12 +157,12 @@ void BinaryView::mousePressEvent(const ImVec2 &pos) {
   resize_sig = nullptr;
   if (auto index = indexAt(last_mouse_pos = pos); index.isValid() && index.column != 8) {
     anchor_index = index;
-    auto item = &model->items[anchor_index.row * model->columnCount() + anchor_index.column];
+    auto item = &model->itemAt(anchor_index);
     int bit_pos = get_bit_pos(anchor_index);
     for (auto s : item->sigs) {
       if (bit_pos == s->lsb || bit_pos == s->msb) {
         int idx = flipBitPos(bit_pos == s->lsb ? s->msb : s->lsb);
-        anchor_index = model->index(idx / 8, idx % 8);
+        anchor_index = {idx / 8, idx % 8};
         resize_sig = s;
         break;
       }
@@ -172,7 +172,7 @@ void BinaryView::mousePressEvent(const ImVec2 &pos) {
 
 void BinaryView::highlightPosition(const ImVec2 &pos) {
   if (auto index = indexAt(pos); index.isValid()) {
-    auto item = &model->items[index.row * model->columnCount() + index.column];
+    auto item = &model->itemAt(index);
     const cabana::Signal *sig = item->sigs.empty() ? nullptr : item->sigs.back();
     highlight(sig);
   }
@@ -193,7 +193,7 @@ void BinaryView::mouseReleaseEvent(const ImVec2 &pos) {
       resize_sig ? editSignal(resize_sig, sig)
                  : UndoStack::instance()->push(new AddSigCommand(model->msg_id, sig));
     } else {
-      auto item = &model->items[anchor_index.row * model->columnCount() + anchor_index.column];
+      auto item = &model->itemAt(anchor_index);
       if (item && item->sigs.size() > 0)
         signalClicked(item->sigs.back());
     }
@@ -236,7 +236,7 @@ std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
 
 std::tuple<int, int, bool> BinaryView::getSelection(BinaryIndex index) {
   if (index.column == 8) {
-    index = model->index(index.row, 7);
+    index = {index.row, 7};
   }
   bool is_lb = true;
   if (resize_sig) {
@@ -296,7 +296,7 @@ void BinaryView::draw() {
   }
   for (int row = 0; row < rows; ++row) {
     for (int column = 0; column < model->columnCount(); ++column) {
-      const BinaryIndex index = model->index(row, column);
+      const BinaryIndex index = {row, column};
       delegate->paint(painter, visualRect(index), index);
     }
   }
@@ -363,10 +363,8 @@ void BinaryViewModel::refresh() {
 void BinaryViewModel::updateItem(int row, int col, uint8_t val, const CabanaColor &color) {
   auto &item = items[row * column_count + col];
   item.valid = true;
-  if (item.val != val || !(item.bg_color == color)) {
-    item.val = val;
-    item.bg_color = color;
-  }
+  item.val = val;
+  item.bg_color = color;
 }
 
 void BinaryViewModel::updateState() {
@@ -450,7 +448,7 @@ std::string BinaryViewModel::headerData(int section) const {
 }
 
 std::string BinaryViewModel::data(const BinaryIndex &index) const {
-  auto item = index.isValid() ? &items[index.row * column_count + index.column] : nullptr;
+  auto item = index.isValid() ? &itemAt(index) : nullptr;
   return item && !item->sigs.empty() ? utils::signalToolTip(item->sigs.back()) : std::string();
 }
 
@@ -474,7 +472,7 @@ bool BinaryItemDelegate::hasSignal(const BinaryIndex &index, int dx, int dy, con
 }
 
 void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const {
-  auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
+  auto item = &bin_view->model->itemAt(index);
   ImFont *font = ImGui::GetFont();
   float font_size = ImGui::GetFontSize();
   ImU32 pen = IM_COL32(0, 0, 0, 255);
@@ -564,7 +562,7 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
   band(nullptr, rc.Min.y + (top_notch ? spacing : 0), rc.Max.y - (bottom_notch ? spacing : 0));
   if (bottom_notch) band(bottom_notch, rc.Max.y - spacing, rc.Max.y);
 
-  auto item = &bin_view->model->items[index.row * bin_view->model->columnCount() + index.column];
+  auto item = &bin_view->model->itemAt(index);
   CabanaColor color = sig->color;
   color.a = item->bg_color.alpha();
   const ImU32 edge = toImU32(sig->color.darker(125));

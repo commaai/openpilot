@@ -45,7 +45,6 @@ public:
     bool operator==(const Item &other) const {
       return id == other.id && name == other.name && node == other.node;
     }
-    bool operator!=(const Item &other) const { return !(*this == other); }
   };
   std::vector<Item> items_;
   bool show_inactive_messages = true;

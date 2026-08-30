@@ -23,7 +23,6 @@ struct BinaryIndex {
   int column = -1;
   bool isValid() const { return row >= 0 && column >= 0; }
   bool operator==(const BinaryIndex &o) const { return row == o.row && column == o.column; }
-  bool operator!=(const BinaryIndex &o) const { return !(*this == o); }
   bool operator<(const BinaryIndex &o) const { return std::tie(row, column) < std::tie(o.row, o.column); }
 };
 
@@ -52,7 +51,6 @@ public:
   std::string data(const BinaryIndex &index) const;  // tooltip
   int rowCount() const { return row_count; }
   int columnCount() const { return column_count; }
-  BinaryIndex index(int row, int column) const { return {row, column}; }
   bool isSelectable(const BinaryIndex &index) const { return index.column != column_count - 1; }
   const std::vector<std::array<uint32_t, 8>> &getBitFlipChanges(size_t msg_size);
 
@@ -70,6 +68,8 @@ public:
     bool valid = false;
   };
   std::vector<Item> items;
+  Item &itemAt(const BinaryIndex &index) { return items[index.row * column_count + index.column]; }
+  const Item &itemAt(const BinaryIndex &index) const { return items[index.row * column_count + index.column]; }
   bool heatmap_live_mode = true;
   MessageId msg_id;
   int row_count = 0;
