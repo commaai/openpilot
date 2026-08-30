@@ -1,7 +1,9 @@
 #include "tools/replay/py_downloader.h"
 
+#include <algorithm>
 #include <csignal>
 #include <fcntl.h>
+#include <cstdio>
 #include <mutex>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -14,8 +16,15 @@ namespace {
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
-// Run a Python command and capture stdout. Stderr is left attached to the parent.
-// Returns stdout content. If abort is signaled, kills the child process.
+void reportProgress(const std::string &line) {
+  uint64_t cur = 0, total = 0;
+  if (sscanf(line.c_str(), "PROGRESS:%llu:%llu", (unsigned long long *)&cur, (unsigned long long *)&total) != 2) return;
+  std::lock_guard<std::mutex> lk(handler_mutex);
+  if (progress_handler && total > 0) progress_handler(cur, total, true);
+}
+
+// Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
+// through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
 std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
   // Build argv for execvp
   std::vector<const char *> argv;
@@ -27,9 +36,14 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   }
   argv.push_back(nullptr);
 
-  int stdout_pipe[2];
+  int stdout_pipe[2], stderr_pipe[2];
   if (pipe(stdout_pipe) != 0) {
     rWarning("py_downloader: pipe() failed");
+    return {};
+  }
+  if (pipe(stderr_pipe) != 0) {
+    rWarning("py_downloader: pipe() failed");
+    close(stdout_pipe[0]); close(stdout_pipe[1]);
     return {};
   }
 
@@ -37,6 +51,7 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   if (pid < 0) {
     rWarning("py_downloader: fork() failed");
     close(stdout_pipe[0]); close(stdout_pipe[1]);
+    close(stderr_pipe[0]); close(stderr_pipe[1]);
     return {};
   }
 
@@ -57,6 +72,9 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     close(stdout_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
     close(stdout_pipe[1]);
+    close(stderr_pipe[0]);
+    dup2(stderr_pipe[1], STDERR_FILENO);
+    close(stderr_pipe[1]);
 
     execvp("python3", const_cast<char *const *>(argv.data()));
     _exit(127);
@@ -64,33 +82,59 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
 
   // Parent process
   close(stdout_pipe[1]);
+  close(stderr_pipe[1]);
 
-  std::string stdout_data;
+  std::string stdout_data, stderr_line;
   char buf[4096];
+
+  // stderr carries the progress lines, so it is consumed here rather than left attached to the parent
+  auto consume_stderr = [&stderr_line](const char *data, ssize_t len) {
+    for (ssize_t i = 0; i < len; ++i) {
+      if (data[i] != '\n') {
+        stderr_line.push_back(data[i]);
+        continue;
+      }
+      if (stderr_line.rfind("PROGRESS:", 0) == 0) {
+        reportProgress(stderr_line);
+      } else if (!stderr_line.empty()) {
+        fprintf(stderr, "%s\n", stderr_line.c_str());
+      }
+      stderr_line.clear();
+    }
+  };
 
   // Use select() so abort can interrupt while waiting for Python output.
   fd_set rfds;
-  bool stdout_open = true;
+  bool stdout_open = true, stderr_open = true;
 
-  while (stdout_open) {
+  while (stdout_open || stderr_open) {
     if (abort && *abort) {
       kill(pid, SIGTERM);
       break;
     }
 
     FD_ZERO(&rfds);
-    FD_SET(stdout_pipe[0], &rfds);
+    if (stdout_open) FD_SET(stdout_pipe[0], &rfds);
+    if (stderr_open) FD_SET(stderr_pipe[0], &rfds);
 
     struct timeval tv = {0, 100000};  // 100ms timeout
-    int ret = select(stdout_pipe[0] + 1, &rfds, nullptr, nullptr, &tv);
+    int ret = select(std::max(stdout_pipe[0], stderr_pipe[0]) + 1, &rfds, nullptr, nullptr, &tv);
     if (ret < 0) break;
 
-    if (FD_ISSET(stdout_pipe[0], &rfds)) {
+    if (stdout_open && FD_ISSET(stdout_pipe[0], &rfds)) {
       ssize_t n = read(stdout_pipe[0], buf, sizeof(buf));
       if (n <= 0) {
         stdout_open = false;
       } else {
         stdout_data.append(buf, n);
+      }
+    }
+    if (stderr_open && FD_ISSET(stderr_pipe[0], &rfds)) {
+      ssize_t n = read(stderr_pipe[0], buf, sizeof(buf));
+      if (n <= 0) {
+        stderr_open = false;
+      } else {
+        consume_stderr(buf, n);
       }
     }
   }
@@ -101,7 +145,14 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     if (n <= 0) break;
     stdout_data.append(buf, n);
   }
+  while (true) {
+    ssize_t n = read(stderr_pipe[0], buf, sizeof(buf));
+    if (n <= 0) break;
+    consume_stderr(buf, n);
+  }
+  if (!stderr_line.empty()) consume_stderr("\n", 1);
   close(stdout_pipe[0]);
+  close(stderr_pipe[0]);
 
   int status;
   waitpid(pid, &status, 0);
