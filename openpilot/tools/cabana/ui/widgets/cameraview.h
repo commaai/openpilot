@@ -49,12 +49,10 @@ public:
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type);
   ~CameraWidget();
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
-  VisionStreamType getStreamType() { return active_stream_type; }
   void stopVipcThread();
   // runs showEvent()/hideEvent() when the visibility flips. draw() implies visible; the owner calls
   // setVisible(false) when the widget is no longer drawn, which stops the vipc thread.
   void setVisible(bool visible);
-  bool isVisible() const { return visible_; }
   // draws an item of `size` into the current window
   void draw(const ImVec2 &size);
   const ImRect &rect() const { return rect_; }
@@ -83,7 +81,6 @@ protected:
   std::string stream_name;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
-  std::set<VisionStreamType> available_streams;
   std::thread vipc_thread;
   std::atomic<bool> vipc_exit = false;
   std::mutex frame_lock;

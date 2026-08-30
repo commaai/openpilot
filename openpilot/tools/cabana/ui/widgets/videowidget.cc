@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <mutex>
 #include <thread>
@@ -19,6 +20,7 @@ extern "C" {
 
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/imgui_util.h"
+#include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
@@ -85,18 +87,24 @@ static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
     out->resize(frame->width, frame->height);
     const bool full_range = frame->color_range == AVCOL_RANGE_JPEG || frame->format == AV_PIX_FMT_YUVJ420P ||
                             frame->format == AV_PIX_FMT_YUVJ422P || frame->format == AV_PIX_FMT_YUVJ444P;
+    const float y_scale = full_range ? 1.0f : 1.164383f;
+    const float y_offset = full_range ? 0.0f : 16.0f;
+    const float kr = full_range ? 1.402f : 1.596027f;
+    const float kgu = full_range ? 0.344136f : 0.391762f;
+    const float kgv = full_range ? 0.714136f : 0.812968f;
+    const float kb = full_range ? 1.772f : 2.017232f;
     for (int y = 0; y < frame->height; ++y) {
       const uint8_t *y_row = frame->data[0] + y * frame->linesize[0];
       const uint8_t *u_row = frame->data[1] + (y >> chroma_y_shift) * frame->linesize[1];
       const uint8_t *v_row = frame->data[2] + (y >> chroma_y_shift) * frame->linesize[2];
       uint8_t *dst = out->data.data() + (size_t)y * out->bytesPerLine();
       for (int x = 0; x < frame->width; ++x) {
-        const double luma = full_range ? (double)y_row[x] : 1.164383 * ((double)y_row[x] - 16.0);
-        const double u = (double)u_row[x >> chroma_x_shift] - 128.0;
-        const double v = (double)v_row[x >> chroma_x_shift] - 128.0;
-        const double r = luma + (full_range ? 1.402 : 1.596027) * v;
-        const double g = luma - (full_range ? 0.344136 : 0.391762) * u - (full_range ? 0.714136 : 0.812968) * v;
-        const double b = luma + (full_range ? 1.772 : 2.017232) * u;
+        const float luma = y_scale * ((float)y_row[x] - y_offset);
+        const float u = (float)u_row[x >> chroma_x_shift] - 128.0f;
+        const float v = (float)v_row[x >> chroma_x_shift] - 128.0f;
+        const float r = luma + kr * v;
+        const float g = luma - kgu * u - kgv * v;
+        const float b = luma + kb * u;
         dst[x * 4 + 0] = (uint8_t)std::clamp(std::lround(r), 0L, 255L);
         dst[x * 4 + 1] = (uint8_t)std::clamp(std::lround(g), 0L, 255L);
         dst[x * 4 + 2] = (uint8_t)std::clamp(std::lround(b), 0L, 255L);
@@ -545,10 +553,8 @@ void Slider::mousePressEvent() {
     click_offset_ = ImGui::GetMousePos().x - handle_rect.Min.x;
     return;
   }
-  if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !isSliderDown()) {
-    setValue(minimum() + (int)(((maximum() - minimum()) * (ImGui::GetMousePos().x - rect_.Min.x)) / width()));
-    sliderReleased();
-  }
+  setValue(minimum() + (int)(((maximum() - minimum()) * (ImGui::GetMousePos().x - rect_.Min.x)) / width()));
+  sliderReleased();
 }
 
 StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type)
@@ -558,13 +564,13 @@ StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType str
 void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
   std::mutex mutex;
   const auto &events = qlog->events;
-  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
-  size_t chunk = (events.size() + num_threads - 1) / num_threads;
-  std::vector<std::thread> threads;
-  for (unsigned int t = 0; t < num_threads && t * chunk < events.size(); ++t) {
+  unsigned int num_chunks = std::max(1u, std::thread::hardware_concurrency());
+  size_t chunk = (events.size() + num_chunks - 1) / num_chunks;
+  std::vector<std::future<void>> futures;
+  for (unsigned int t = 0; t < num_chunks && t * chunk < events.size(); ++t) {
     size_t start = t * chunk;
     size_t end = std::min(start + chunk, events.size());
-    threads.emplace_back([this, &mutex, &events, start, end]() {
+    futures.push_back(ThreadPool::instance().run([this, &mutex, &events, start, end]() {
       for (size_t i = start; i < end; ++i) {
         const Event &e = events[i];
         if (e.which == cereal::Event::Which::THUMBNAIL) {
@@ -577,9 +583,9 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
           }
         }
       }
-    });
+    }));
   }
-  for (auto &th : threads) th.join();
+  for (auto &f : futures) f.get();
 }
 
 void StreamCameraView::draw(const ImVec2 &size) {

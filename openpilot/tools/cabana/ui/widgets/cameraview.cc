@@ -140,7 +140,6 @@ void CameraWidget::vipcThread() {
       }
       utils::runOnMainThread([this, alive = std::weak_ptr<bool>(alive_), streams]() {
         if (alive.expired()) return;
-        available_streams = streams;
         availableStreamsUpdated(streams);
       });
 
@@ -171,5 +170,4 @@ void CameraWidget::clearFrames() {
   rgb_frame.reset();
   rgb_back.reset();
   frame_updated = false;
-  available_streams.clear();
 }
