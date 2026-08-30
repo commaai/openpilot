@@ -116,22 +116,22 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   // has passed since it was built, which keeps the motion at the frame rate whatever the message rate is
   const float shift = std::clamp((float)((can->currentSec() - window_end_) * xscale_), 0.0f, size.x);
 
-  std::vector<ImVec2> pts;
-  pts.reserve(render_points_.size());
-  for (const auto &p : render_points_) pts.emplace_back(pos.x + p.x - shift, pos.y + p.y);
+  const ImVec2 offset(pos.x - shift, pos.y);
+  auto point_at = [&](const ImVec2 &p) { return ImVec2(offset.x + p.x, offset.y + p.y); };
 
   draw_list->PushClipRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), true);
 
   // an aliased 1 px segment between two columns rounds into one of them and the rounding flips as the
   // window slides, so the thin peaks sparkle; antialiasing spreads it over both and the motion is smooth
-  draw_list->AddPolyline(pts.data(), (int)pts.size(), color_, ImDrawFlags_None, 1.0f);
+  for (const auto &p : render_points_) draw_list->PathLineTo(point_at(p));
+  draw_list->PathStroke(color_, ImDrawFlags_None, 1.0f);
 
   // a point is a 3x3 square
   auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color_); };
   if (draw_individual_points_) {
-    for (const auto &p : pts) draw_point(p);
+    for (const auto &p : render_points_) draw_point(point_at(p));
   } else {
-    draw_point(pts.back());
+    draw_point(point_at(render_points_.back()));
   }
   draw_list->PopClipRect();
 }
