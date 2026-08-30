@@ -26,6 +26,5 @@ private:
   std::array<char[3], 256> hex_text_table;
   ImVec2 byte_size = {};
   bool multiple_lines = false;
-  float h_margin = 0, v_margin = 0;
 };
 
