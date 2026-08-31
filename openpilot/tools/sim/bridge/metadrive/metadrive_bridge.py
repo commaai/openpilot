@@ -28,15 +28,11 @@ def curve_block(length, angle=45, direction=0):
     "dir": direction
   }
 
-def create_map(track_size=60):
+def create_map(track_size=60, straight_only=False):
   curve_len = track_size * 2
-  return {
-    "type": MapGenerateMethod.PG_MAP_FILE,
-    "lane_num": 2,
-    "lane_width": 4.5,
-    "config": [
-      None,
-      straight_block(track_size),
+  blocks = [None, straight_block(track_size)]
+  if not straight_only:
+    blocks += [
       curve_block(curve_len, 90),
       straight_block(track_size),
       curve_block(curve_len, 90),
@@ -45,6 +41,11 @@ def create_map(track_size=60):
       straight_block(track_size),
       curve_block(curve_len, 90),
     ]
+  return {
+    "type": MapGenerateMethod.PG_MAP_FILE,
+    "lane_num": 2,
+    "lane_width": 4.5,
+    "config": blocks,
   }
 
 
@@ -85,7 +86,8 @@ class MetaDriveBridge(SimulatorBridge):
       "crash_object_done": False,
       "arrive_dest_done": False,
       "traffic_density": 0.0, # traffic is incredibly expensive
-      "map_config": create_map(float(os.environ.get("METADRIVE_TRACK_SIZE", "60"))),
+      "map_config": create_map(float(os.environ.get("METADRIVE_TRACK_SIZE", "60")),
+                               bool(os.environ.get("METADRIVE_STRAIGHT_ONLY"))),
       "decision_repeat": 1,
       "physics_world_step_size": self.TICKS_PER_FRAME/100,
       "preload_models": False,
