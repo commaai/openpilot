@@ -1,11 +1,14 @@
 import math
 import multiprocessing
+import os
+
 import numpy as np
 
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
-W, H = 1928, 1208
+W, H = (int(value) for value in os.environ.get("SIM_CAMERA_RESOLUTION", "1928x1208").split("x"))
+assert (W, H) in ((1928, 1208), (1344, 760)), f"unsupported simulator camera resolution: {(W, H)}"
 
 
 vec3 = namedtuple("vec3", ["x", "y", "z"])

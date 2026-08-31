@@ -63,7 +63,8 @@ jobs:
           MIN_MODEL_RATE: "18"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
-          METADRIVE_RENDER_SCALE: "0.25"
+          SIM_CAMERA_RESOLUTION: 1344x760
+          METADRIVE_RENDER_SCALE: "0.5"
           METADRIVE_NO_MSAA: "1"
           METADRIVE_NO_SHADOWS: "1"
           METADRIVE_SIMPLE_RENDER: "1"
