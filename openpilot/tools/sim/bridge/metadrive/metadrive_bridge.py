@@ -85,7 +85,7 @@ class MetaDriveBridge(SimulatorBridge):
       "crash_object_done": False,
       "arrive_dest_done": False,
       "traffic_density": 0.0, # traffic is incredibly expensive
-      "map_config": create_map(),
+      "map_config": create_map(float(os.environ.get("METADRIVE_TRACK_SIZE", "60"))),
       "decision_repeat": 1,
       "physics_world_step_size": self.TICKS_PER_FRAME/100,
       "preload_models": False,

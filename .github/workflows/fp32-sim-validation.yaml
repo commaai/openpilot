@@ -61,6 +61,9 @@ jobs:
           RUN_METADRIVE_TEST: "1"
           METADRIVE_TEST_DURATION: "60"
           MIN_MODEL_RATE: "18"
+          # Keep the performance validation on a long straight. Curved-track
+          # behavior is a separate model/control validation from CPU throughput.
+          METADRIVE_TRACK_SIZE: "2000"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
           SIM_CAMERA_RESOLUTION: 1928x1208
