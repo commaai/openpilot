@@ -197,7 +197,7 @@ def test_pcie_failure_transition():
   update(status, alerts, offroad=False, state=link_down)
   update(status, alerts, offroad=False, state=link_down)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
-  assert "PCIe link is not up" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+  assert "PCIe link unavailable" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
   update(status, alerts, offroad=False)
   assert not alerts.active
 

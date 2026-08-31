@@ -83,10 +83,10 @@ class ChestnutStatus:
     software_failed = model_error and compiled
 
     if self.power_lost:
-      pcie_alert = ("Chestnut power disconnected. Check 12V connection, then cycle ignition." if self.power_unavailable else
-                    "Chestnut power lost. Possibly caused by an engine-crank voltage drop. Check 12V connection, then cycle ignition.")
+      pcie_alert = ("Chestnut power disconnected. Check 12V connection and restart the car." if self.power_unavailable else
+                    "Chestnut power lost. Possibly caused by an engine-crank voltage drop. Check 12V connection and restart the car.")
     else:
-      pcie_alert = "Chestnut GPU unavailable. PCIe link is not up. Check the GPU is securely seated."
+      pcie_alert = "Chestnut PCIe link unavailable. Check the GPU is securely seated and restart the car."
     missing_alert = "Chestnut not detected. Check USB and 12V connections."
 
     # Only report one model failure cause, ordered from direct setup/hardware failures to software failures.
@@ -102,10 +102,10 @@ class ChestnutStatus:
     if current_cause is not None:
       name, text = current_cause
       if name == "Offroad_ChestnutNotDetected":
-        text = "Chestnut USB reconnected. Cycle ignition to retry."
+        text = "Chestnut USB reconnected. Restart the car to retry."
       elif name == "Offroad_ChestnutPcieUnavailable":
-        text = ("Chestnut power restored. 12V is stable again, cycle ignition." if self.power_lost else
-                "Chestnut PCIe link restored. Cycle ignition to retry.")
+        text = ("Chestnut power restored. Restart the car to retry." if self.power_lost else
+                "Chestnut PCIe link restored. Restart the car to retry.")
       if name in ("Offroad_ChestnutNotDetected", "Offroad_ChestnutPcieUnavailable"):
         self.model_failure_cause = (name, text)
     elif model_recovered:

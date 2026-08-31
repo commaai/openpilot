@@ -22,7 +22,7 @@
     "severity": -1
   },
   "Offroad_ChestnutModelError": {
-    "text": "Chestnut model failed. Cycle ignition to retry.",
+    "text": "Chestnut model failed. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutNotDetected": {
