@@ -64,6 +64,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     wide_road_image = np.frombuffer(wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
   env = MetaDriveEnv(config)
+  physics_step = config.get("physics_world_step_size", 0.05)
+  out_of_lane_debounce = max(1, round(1.0 / physics_step))
 
   def get_current_lane_info(vehicle):
     _, lane_info, on_lane = vehicle.navigation._get_current_lane(vehicle)
@@ -86,6 +88,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   lane_idx_prev = reset()
   start_time = None
+  out_of_lane_streak = 0
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
@@ -136,6 +139,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       if should_reset:
         lane_idx_prev = reset()
         start_time = None
+        out_of_lane_streak = 0
 
     is_engaged = op_engaged.is_set()
     if is_engaged and start_time is None:
@@ -146,7 +150,14 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       timeout = True if start_time is not None and time.monotonic() - start_time >= test_duration else False
       lane_idx_curr, on_lane = get_current_lane_info(env.vehicle)
       lane_changed = lane_idx_curr != lane_idx_prev
-      out_of_lane = lane_changed or not on_lane
+      if is_engaged and start_time is not None and not on_lane:
+        out_of_lane_streak += 1
+      else:
+        out_of_lane_streak = 0
+      # A lane-index transition is a valid lane change when MetaDrive still
+      # considers the vehicle on a lane. Only sustained off-road detection is
+      # a driving failure; this also filters one-frame lane-detector flicker.
+      out_of_lane = out_of_lane_streak >= out_of_lane_debounce
       lane_idx_before = lane_idx_prev
       lane_idx_prev = lane_idx_curr
 

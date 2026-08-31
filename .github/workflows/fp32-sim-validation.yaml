@@ -71,6 +71,7 @@ jobs:
           METADRIVE_SIMPLE_RENDER: "1"
           METADRIVE_FLAT_TERRAIN_CARD: "1"
           METADRIVE_REPORT_FPS: "1"
+          METADRIVE_MAX_SPEED_KMH: "20"
         run: |
           python -m metadrive.pull_asset
           mkdir -p sim-artifacts/logs
