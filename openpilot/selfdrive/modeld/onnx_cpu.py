@@ -23,10 +23,15 @@ class OpenCvCpuWarp:
     self.model_h = 256
 
   def prepare(self, frame, transform: np.ndarray) -> np.ndarray:
-    flat = np.frombuffer(frame.data, dtype=np.uint8, count=self.buffer_size)
-    y = flat[:self.stride * self.y_height].reshape(self.y_height, self.stride)[:self.cam_h, :self.cam_w]
-    uv = flat[self.stride * self.y_height:self.stride * (self.y_height + self.uv_height)]
-    uv = uv.reshape(self.uv_height, self.stride)[:self.cam_h // 2, :self.cam_w]
+    flat = np.frombuffer(frame.data, dtype=np.uint8)
+    stride = int(getattr(frame, 'stride', self.stride))
+    uv_offset = int(getattr(frame, 'uv_offset', self.stride * self.y_height))
+    uv_rows = self.cam_h // 2
+    required_size = uv_offset + stride * uv_rows
+    if flat.size < required_size:
+      raise ValueError(f"NV12 buffer is too small: got {flat.size}, need {required_size}")
+    y = flat[:uv_offset].reshape(-1, stride)[:self.cam_h, :self.cam_w]
+    uv = flat[uv_offset:required_size].reshape(uv_rows, stride)[:, :self.cam_w]
     u, v = uv[:, 0::2], uv[:, 1::2]
 
     flags = self.cv2.INTER_NEAREST | self.cv2.WARP_INVERSE_MAP

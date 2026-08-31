@@ -73,6 +73,28 @@ class TestOnnxCpuPolicy(unittest.TestCase):
     self.assertTrue(np.all(result[:, 4] == 80))
     self.assertTrue(np.all(result[:, 5] == 160))
 
+  def test_opencv_warp_contiguous_sim_buffer(self):
+    warp = OpenCvCpuWarp(512, 256)
+    data = np.zeros(512 * 256 * 3 // 2, dtype=np.uint8)
+    y = data[:512 * 256].reshape(256, 512)
+    uv = data[512 * 256:].reshape(128, 512)
+    y[:] = np.arange(512, dtype=np.uint8)
+    uv[:, 0::2] = 80
+    uv[:, 1::2] = 160
+
+    class SimVisionBuf:
+      stride = 512
+      uv_offset = 512 * 256
+
+      def __init__(self, buf):
+        self.data = buf.data
+
+    result = warp.prepare(SimVisionBuf(data), np.eye(3, dtype=np.float32))
+    np.testing.assert_array_equal(result[0], y[0::2, 0::2])
+    np.testing.assert_array_equal(result[3], y[1::2, 1::2])
+    self.assertTrue(np.all(result[4] == 80))
+    self.assertTrue(np.all(result[5] == 160))
+
   def test_opencv_warp_matches_reference(self):
     warp = OpenCvCpuWarp(512, 256)
     rng = np.random.default_rng(1)
