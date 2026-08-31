@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 from openpilot.cereal.visionipc import VisionStreamType
@@ -42,6 +44,7 @@ class Camerad:
 
     self.frame_road_id = 0
     self.frame_wide_id = 0
+    self.start_time = time.monotonic_ns()
     self.vipc_server = VisionIpcServer("camerad")
 
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H)
@@ -65,7 +68,7 @@ class Camerad:
     return rgb_to_nv12(rgb)
 
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
-    eof = int(frame_id * 0.05 * 1e9)
+    eof = self.start_time + int(frame_id * 0.05 * 1e9)
     self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
 
     dat = messaging.new_message(pub_type, valid=True)
@@ -77,3 +80,4 @@ class Camerad:
     }
     setattr(dat, pub_type, msg)
     self.pm.send(pub_type, dat)
+
