@@ -68,7 +68,7 @@ jobs:
         run: scons
 
       - name: Run one-minute real-time driving test
-        timeout-minutes: 30
+        timeout-minutes: 35
         env:
           BLOCK: soundd
           CI_SIM_LOGS: "1"
@@ -85,13 +85,14 @@ jobs:
           METADRIVE_NO_MSAA: "1"
           METADRIVE_NO_SHADOWS: "1"
           METADRIVE_SIMPLE_RENDER: "1"
+          METADRIVE_FLAT_TERRAIN_CARD: "1"
           METADRIVE_REPORT_FPS: "1"
           METADRIVE_MAX_SPEED_KMH: "20"
           METADRIVE_TRACK_SIZE: "100"
         run: |
           python -m metadrive.pull_asset
           mkdir -p sim-artifacts/logs
-          reliability_runs="${{ inputs.reliability_runs || '1' }}"
+          reliability_runs="${{ inputs.reliability_runs || '20' }}"
           for run_index in $(seq 1 "$reliability_runs"); do
             echo "Starting reliability run $run_index/$reliability_runs"
             SIM_MANAGER_LOG="${{ github.workspace }}/sim-artifacts/manager-${run_index}.log" \
