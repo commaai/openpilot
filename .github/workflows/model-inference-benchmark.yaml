@@ -16,9 +16,12 @@ jobs:
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v7
-      with:
-        lfs: true
-        submodules: true
+
+    - name: Fetch Tinygrad and the small driving model
+      run: |
+        git submodule update --init --depth 1 tinygrad_repo
+        git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
+        git lfs pull --include="openpilot/selfdrive/modeld/models/driving_supercombo.onnx" --exclude=""
 
     - name: Install benchmark dependencies
       run: |
