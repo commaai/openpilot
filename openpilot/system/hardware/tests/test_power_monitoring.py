@@ -56,6 +56,16 @@ class TestPowerMonitoring(OpenpilotTestCase):
     expected_power_usage = ((TEST_DURATION_S/3600) * POWER_DRAW * 1e6)
     assert abs(pm.get_power_used() - expected_power_usage) < 10
 
+  def test_offroad_integration_with_supplied_power(self, mocker):
+    POWER_DRAW = 4
+    get_current_power_draw = mocker.patch("openpilot.system.hardware.power_monitoring.HARDWARE.get_current_power_draw")
+    pm = PowerMonitoring()
+    for _ in range(TEST_DURATION_S + 1):
+      pm.calculate(GOOD_VOLTAGE, False, POWER_DRAW)
+    expected_power_usage = ((TEST_DURATION_S/3600) * POWER_DRAW * 1e6)
+    assert abs(pm.get_power_used() - expected_power_usage) < 10
+    get_current_power_draw.assert_not_called()
+
   # Test to check positive integration of car_battery_capacity
   def test_car_battery_integration_onroad(self, mocker):
     POWER_DRAW = 4

@@ -421,10 +421,15 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage
-    power_monitor.calculate(voltage, onroad_conditions["ignition"])
+    if peripheralState.pandaType == log.PandaState.PandaType.cuatro:
+      # Cuatro reports its input voltage in mV and current in mA.
+      current_power_draw = peripheralState.voltage * peripheralState.current / 1e6
+    else:
+      current_power_draw = HARDWARE.get_current_power_draw()
+
+    power_monitor.calculate(voltage, onroad_conditions["ignition"], current_power_draw)
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
-    current_power_draw = HARDWARE.get_current_power_draw()
     msg.deviceState.powerDrawW = current_power_draw
 
     som_power_draw = HARDWARE.get_som_power_draw()
