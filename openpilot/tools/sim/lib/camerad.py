@@ -22,14 +22,17 @@ def rgb_to_nv12(rgb):
     # conversion single-threaded and on the CPU.
     cv2.setNumThreads(1)
     cv2.ocl.setUseOpenCL(False)
-    i420 = cv2.cvtColor(rgb, cv2.COLOR_RGB2YUV_I420).reshape(-1)
-    y_size = h * w
-    chroma_size = y_size // 4
-    nv12 = np.empty(y_size + 2 * chroma_size, dtype=np.uint8)
-    nv12[:y_size] = i420[:y_size]
-    nv12[y_size::2] = i420[y_size:y_size + chroma_size]
-    nv12[y_size + 1::2] = i420[y_size + chroma_size:]
-    return nv12.tobytes()
+    # Match the historical integer coefficients and 2x2 box subsampling. A
+    # direct COLOR_RGB2YUV_I420 conversion uses different chroma coefficients
+    # and sampling, which materially changes model behavior in simulation.
+    y_matrix = np.array([[33 / 128, 65 / 128, 13 / 128]], dtype=np.float32)
+    y = np.clip(cv2.transform(rgb, y_matrix).astype(np.int16) + 16, 0, 255).astype(np.uint8)
+
+    rgb_sub = cv2.resize(rgb, (w // 2, h // 2), interpolation=cv2.INTER_AREA).astype(np.float32)
+    uv_matrix = np.array([[-19 / 256, -37 / 256, 56 / 256],
+                          [56 / 256, -47 / 256, -9 / 256]], dtype=np.float32)
+    uv = np.clip(np.floor(cv2.transform(rgb_sub, uv_matrix) + 128.5), 0, 255).astype(np.uint8)
+    return np.concatenate([y.ravel(), uv.ravel()]).tobytes()
 
   r = rgb[:, :, 0].astype(np.int32)
   g = rgb[:, :, 1].astype(np.int32)
