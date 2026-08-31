@@ -69,7 +69,7 @@ jobs:
           RUN_METADRIVE_TEST: "1"
           METADRIVE_TEST_DURATION: "60"
           MIN_MODEL_RATE: "18"
-          ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32_rounded.onnx
+          ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
           SIM_CAMERA_RESOLUTION: 1928x1208
           SIM_USE_OPENCV_YUV: "1"

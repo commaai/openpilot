@@ -19,6 +19,7 @@ from openpilot.tools.sim.lib.camerad import W, H
 
 C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)
+METADRIVE_STEER_RATIO = 8
 
 
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
@@ -107,7 +108,6 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   rk = Ratekeeper(100, None)
 
-  steer_ratio = 8
   vc = [0,0]
   rendered_frames = 0
   render_start = time.monotonic()
@@ -125,7 +125,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       while controls_recv.poll(0):
         steer_angle, gas, should_reset = controls_recv.recv()
 
-      steer_metadrive = steer_angle * 1 / (env.vehicle.MAX_STEERING * steer_ratio)
+      steer_metadrive = steer_angle * 1 / (env.vehicle.MAX_STEERING * METADRIVE_STEER_RATIO)
       steer_metadrive = np.clip(steer_metadrive, -1, 1)
 
       # CPU inference benchmarks validate sustained model execution separately
