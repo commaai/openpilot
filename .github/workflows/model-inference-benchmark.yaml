@@ -48,6 +48,7 @@ jobs:
           --tinygrad-device CPU:LLVM \
           --profile-runs 3 \
           --compare-model driving_supercombo_fp32.onnx \
+          --temporal-steps 80 \
           --json model-inference-fp16-benchmark.json
 
     - name: Benchmark the FP32 model in ONNX Runtime

@@ -145,10 +145,20 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       _, _, terminated, _, _ = env.step(vc)
       timeout = True if start_time is not None and time.monotonic() - start_time >= test_duration else False
       lane_idx_curr, on_lane = get_current_lane_info(env.vehicle)
-      out_of_lane = lane_idx_curr != lane_idx_prev or not on_lane
+      lane_changed = lane_idx_curr != lane_idx_prev
+      out_of_lane = lane_changed or not on_lane
+      lane_idx_before = lane_idx_prev
       lane_idx_prev = lane_idx_curr
 
       if terminated or ((out_of_lane or timeout) and test_run):
+        if terminated or out_of_lane:
+          print("metadrive termination diagnostic: "
+                f"terminated={terminated} lane_changed={lane_changed} on_lane={on_lane} "
+                f"lane_before={lane_idx_before} lane_now={lane_idx_curr} "
+                f"position={tuple(float(x) for x in env.vehicle.position)} "
+                f"speed_km_h={float(env.vehicle.speed_km_h):.2f} "
+                f"heading_deg={math.degrees(env.vehicle.heading_theta):.2f} "
+                f"steering={float(env.vehicle.steering):.4f} controls={vc}", flush=True)
         if terminated:
           done_result = env.done_function("default_agent")
         elif out_of_lane:

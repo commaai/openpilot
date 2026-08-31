@@ -7,10 +7,12 @@ camera-to-model pipeline.
 """
 
 import argparse
+import base64
 import json
 import math
 import os
 import pathlib
+import pickle
 import platform
 import statistics
 import tempfile
@@ -356,6 +358,109 @@ def compare_onnxruntime_models(reference_model: pathlib.Path, candidate_model: p
   return compare_outputs(outputs[0], outputs[1])
 
 
+def load_output_slices(model_path: pathlib.Path) -> dict[str, slice]:
+  try:
+    import onnx
+  except ImportError as exc:
+    raise RuntimeError("onnx is required for temporal output-head comparison") from exc
+  model = onnx.load(model_path, load_external_data=False)
+  encoded = next((prop.value for prop in model.metadata_props if prop.key == "output_slices"), None)
+  if encoded is None:
+    raise RuntimeError(f"output_slices metadata is missing from {model_path}")
+  return pickle.loads(base64.b64decode(encoded))
+
+
+def compare_onnxruntime_temporal_rollout(reference_model: pathlib.Path, candidate_model: pathlib.Path,
+                                         threads: int, steps: int, seed: int,
+                                         frame_skip: int = 4) -> dict[str, Any]:
+  """Compare immediate FP32 error with error accumulated through recurrent state."""
+  try:
+    import onnxruntime as ort
+  except ImportError as exc:
+    raise RuntimeError("ONNX Runtime is required for temporal comparison") from exc
+
+  sessions = [
+    ort.InferenceSession(str(model), sess_options=make_ort_options(ort, threads), providers=["CPUExecutionProvider"])
+    for model in (reference_model, candidate_model)
+  ]
+  output_slices = load_output_slices(reference_model)
+  hidden_slice = output_slices["hidden_state"]
+  rng = np.random.default_rng(seed)
+
+  img_shape = INPUT_SPECS["img"][0]
+  n_frames = img_shape[1] // 6
+  image_queue_shape = (frame_skip * (n_frames - 1) + 1, 6, *img_shape[2:])
+  img_q = np.zeros(image_queue_shape, dtype=np.uint8)
+  big_img_q = np.zeros_like(img_q)
+  desire_q = np.zeros((frame_skip * INPUT_SPECS["desire_pulse"][0][1], 1, 8), dtype=np.float32)
+  feature_queues = [np.zeros((frame_skip * 24, 1, 512), dtype=np.float32) for _ in sessions]
+  previous_features = [np.zeros((1, 512), dtype=np.float32) for _ in sessions]
+
+  road_frame = rng.integers(0, 256, size=(1, 6, *img_shape[2:]), dtype=np.uint8)
+  wide_frame = rng.integers(0, 256, size=(1, 6, *img_shape[2:]), dtype=np.uint8)
+  head_metrics: dict[str, dict[str, list[dict[str, float]]]] = {
+    name: {"teacher_forced": [], "free_rollout": []} for name in output_slices
+  }
+
+  def shift(queue: np.ndarray, value: np.ndarray) -> None:
+    queue[:-1] = queue[1:]
+    queue[-1:] = value
+
+  for step in range(steps):
+    # Slowly changing frames exercise temporal queues without injecting unrelated
+    # full-frame white noise at every model invocation.
+    for frame in (road_frame, wide_frame):
+      noise = rng.integers(-2, 3, size=frame.shape, dtype=np.int16)
+      frame[:] = np.clip(frame.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+    shift(img_q, road_frame)
+    shift(big_img_q, wide_frame)
+    desire = np.zeros(8, dtype=np.float32)
+    if step in (steps // 3, 2 * steps // 3):
+      desire[(step // max(1, steps // 3)) % 7 + 1] = 1
+    shift(desire_q, desire.reshape(1, 1, -1))
+
+    common_inputs = {
+      "img": img_q[::frame_skip].reshape(img_shape),
+      "big_img": big_img_q[::frame_skip].reshape(img_shape),
+      "desire_pulse": desire_q.reshape(-1, frame_skip, 1, 8).max(axis=1).reshape(INPUT_SPECS["desire_pulse"][0]),
+      "traffic_convention": np.array([[1.0, 0.0]], dtype=np.float32),
+      "action_t": np.array([[0.15, 0.25]], dtype=np.float32),
+    }
+
+    for queue, previous_feature in zip(feature_queues, previous_features, strict=True):
+      shift(queue, previous_feature.reshape(1, 1, -1))
+
+    reference_inputs = {**common_inputs,
+                        "features_buffer": feature_queues[0][::frame_skip].reshape(INPUT_SPECS["features_buffer"][0])}
+    reference_output = sessions[0].run(None, prepare_ort_inputs(sessions[0], reference_inputs))[0].astype(np.float32)
+
+    teacher_inputs = {**common_inputs, "features_buffer": reference_inputs["features_buffer"]}
+    teacher_output = sessions[1].run(None, prepare_ort_inputs(sessions[1], teacher_inputs))[0].astype(np.float32)
+    rollout_inputs = {**common_inputs,
+                      "features_buffer": feature_queues[1][::frame_skip].reshape(INPUT_SPECS["features_buffer"][0])}
+    rollout_output = sessions[1].run(None, prepare_ort_inputs(sessions[1], rollout_inputs))[0].astype(np.float32)
+
+    for name, output_slice in output_slices.items():
+      head_metrics[name]["teacher_forced"].append(compare_outputs(reference_output[:, output_slice],
+                                                                    teacher_output[:, output_slice]))
+      head_metrics[name]["free_rollout"].append(compare_outputs(reference_output[:, output_slice],
+                                                                  rollout_output[:, output_slice]))
+    previous_features[0][:] = reference_output[:, hidden_slice]
+    previous_features[1][:] = rollout_output[:, hidden_slice]
+
+  summary: dict[str, Any] = {}
+  for name, modes in head_metrics.items():
+    summary[name] = {}
+    for mode, values in modes.items():
+      summary[name][mode] = {
+        "worst_cosine": min(value["cosine_similarity"] for value in values),
+        "max_mean_abs": max(value["mean_abs"] for value in values),
+        "max_abs": max(value["max_abs"] for value in values),
+        "final": values[-1],
+      }
+  return {"steps": steps, "frame_skip": frame_skip, "heads": summary}
+
+
 def print_result(result: dict[str, Any]) -> None:
   print(
     f"{result['backend']:24} "
@@ -375,6 +480,8 @@ def main() -> None:
                       help="minimum cosine similarity required with --compare-model")
   parser.add_argument("--maximum-mean-abs", type=float, default=0.25,
                       help="maximum mean absolute error permitted with --compare-model")
+  parser.add_argument("--temporal-steps", type=int, default=0,
+                      help="with --compare-model, compare this many recurrent model steps per output head")
   parser.add_argument("--backend", action="append", choices=("onnxruntime", "tinygrad"),
                       help="backend to run; may be repeated (default: both)")
   parser.add_argument("--onnxruntime-threads", type=int, nargs="+", default=[1, 2, 4])
@@ -439,6 +546,7 @@ def main() -> None:
       print(f"  {name}: {metrics}")
 
   model_parity = {}
+  temporal_parity = {}
   if args.compare_model:
     threads = args.onnxruntime_threads[0]
     model_parity = compare_onnxruntime_models(args.model, args.compare_model, inputs, threads)
@@ -449,6 +557,15 @@ def main() -> None:
     if model_parity["mean_abs"] > args.maximum_mean_abs:
       raise RuntimeError(f"model mean absolute error {model_parity['mean_abs']:.8f} exceeds "
                          f"{args.maximum_mean_abs:.8f}")
+    if args.temporal_steps:
+      temporal_parity = compare_onnxruntime_temporal_rollout(
+        args.model, args.compare_model, threads, args.temporal_steps, args.seed,
+      )
+      print(f"temporal parity ({args.temporal_steps} steps; teacher-forced vs free rollout):")
+      for name, modes in temporal_parity["heads"].items():
+        teacher, rollout = modes["teacher_forced"], modes["free_rollout"]
+        print(f"  {name:24} teacher mean={teacher['max_mean_abs']:.6f} cos={teacher['worst_cosine']:.8f}  "
+              f"rollout mean={rollout['max_mean_abs']:.6f} cos={rollout['worst_cosine']:.8f}")
 
   report = {
     "model": str(args.model),
@@ -458,6 +575,7 @@ def main() -> None:
     "results": results,
     "parity": parity,
     "model_parity": model_parity,
+    "temporal_parity": temporal_parity,
   }
   if args.json:
     args.json.parent.mkdir(parents=True, exist_ok=True)
