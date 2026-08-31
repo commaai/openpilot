@@ -67,7 +67,6 @@ jobs:
           METADRIVE_FLAT_TERRAIN_CARD: "1"
           METADRIVE_REPORT_FPS: "1"
         run: |
-          source openpilot/selfdrive/test/setup_xvfb.sh
           python -m metadrive.pull_asset
           mkdir -p /tmp/sim-artifacts/logs
           python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
@@ -85,3 +84,4 @@ jobs:
         with:
           name: fp32-simulator-${{ github.run_number }}
           path: /tmp/sim-artifacts
+
