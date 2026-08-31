@@ -343,7 +343,8 @@ def hardware_thread(end_event, hw_queue) -> None:
       model_error = False
       params.remove("ChestnutModelError")
     chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed, model_compiled,
-                           model_error, chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
+                           model_error, model_running,
+                           chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
                            chestnut_monitoring.usb_failed,
                            set_offroad_alert_if_changed)
     # this subset is only used for offroad
