@@ -2,8 +2,11 @@
 
 #include <csignal>
 #include <fcntl.h>
+#include <cstdio>
+#include <cstring>
 #include <mutex>
 #include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -14,8 +17,15 @@ namespace {
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
-// Run a Python command and capture stdout. Stderr is left attached to the parent.
-// Returns stdout content. If abort is signaled, kills the child process.
+void reportProgress(const char *line) {
+  uint64_t cur = 0, total = 0;
+  if (sscanf(line, "PROGRESS:%llu:%llu", (unsigned long long *)&cur, (unsigned long long *)&total) != 2) return;
+  std::lock_guard<std::mutex> lk(handler_mutex);
+  if (progress_handler && total > 0) progress_handler(cur, total, true);
+}
+
+// Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
+// through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
 std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
   // Build argv for execvp
   std::vector<const char *> argv;
@@ -27,9 +37,14 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   }
   argv.push_back(nullptr);
 
-  int stdout_pipe[2];
+  int stdout_pipe[2], stderr_pipe[2];
   if (pipe(stdout_pipe) != 0) {
     rWarning("py_downloader: pipe() failed");
+    return {};
+  }
+  if (pipe(stderr_pipe) != 0) {
+    rWarning("py_downloader: pipe() failed");
+    close(stdout_pipe[0]); close(stdout_pipe[1]);
     return {};
   }
 
@@ -37,6 +52,7 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   if (pid < 0) {
     rWarning("py_downloader: fork() failed");
     close(stdout_pipe[0]); close(stdout_pipe[1]);
+    close(stderr_pipe[0]); close(stderr_pipe[1]);
     return {};
   }
 
@@ -57,6 +73,9 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     close(stdout_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
     close(stdout_pipe[1]);
+    close(stderr_pipe[0]);
+    dup2(stderr_pipe[1], STDERR_FILENO);
+    close(stderr_pipe[1]);
 
     execvp("python3", const_cast<char *const *>(argv.data()));
     _exit(127);
@@ -64,6 +83,27 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
 
   // Parent process
   close(stdout_pipe[1]);
+  close(stderr_pipe[1]);
+
+  // stderr carries the progress lines, so a thread reads it while the loop below waits on stdout
+  std::thread stderr_thread([fd = stderr_pipe[0]]() {
+    FILE *f = fdopen(fd, "r");
+    if (!f) {
+      close(fd);
+      return;
+    }
+    char *line = nullptr;
+    size_t cap = 0;
+    while (getline(&line, &cap, f) > 0) {
+      if (strncmp(line, "PROGRESS:", 9) == 0) {
+        reportProgress(line);
+      } else {
+        fputs(line, stderr);
+      }
+    }
+    free(line);
+    fclose(f);
+  });
 
   std::string stdout_data;
   char buf[4096];
@@ -102,6 +142,7 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     stdout_data.append(buf, n);
   }
   close(stdout_pipe[0]);
+  stderr_thread.join();
 
   int status;
   waitpid(pid, &status, 0);

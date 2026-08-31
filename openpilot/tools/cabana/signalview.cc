@@ -1,5 +1,4 @@
 #include "tools/cabana/signalview.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <future>
@@ -12,10 +11,11 @@
 #include <QPainterPath>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/utils/util.h"
+#include "tools/cabana/utils/qtutil.h"
 
 // SignalModel
 
@@ -26,12 +26,12 @@ static QString signalTypeToString(cabana::Signal::Type type) {
 }
 
 SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(parent) {
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &SignalModel::refresh);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgUpdated, this, &SignalModel::handleMsgChanged);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgRemoved, this, &SignalModel::handleMsgChanged);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalAdded, this, &SignalModel::handleSignalAdded);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &SignalModel::handleSignalUpdated);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &SignalModel::handleSignalRemoved);
+  connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
+  connections_.push_back(dbc()->msgUpdated.connect([this](MessageId id) { handleMsgChanged(id); }));
+  connections_.push_back(dbc()->msgRemoved.connect([this](MessageId id) { handleMsgChanged(id); }));
+  connections_.push_back(dbc()->signalAdded.connect([this](MessageId id, const cabana::Signal *sig) { handleSignalAdded(id, sig); }));
+  connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { handleSignalUpdated(sig); }));
+  connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { handleSignalRemoved(sig); }));
 }
 
 void SignalModel::insertItem(SignalModel::Item *root_item, int pos, const cabana::Signal *sig) {
@@ -154,7 +154,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
       if (item->type == Item::Endian) return item->sig->is_little_endian ? Qt::Checked : Qt::Unchecked;
       if (item->type == Item::Signed) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
     } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
-      return (index.column() == 0) ? signalToolTip(item->sig) : QString();
+      return (index.column() == 0) ? QString::fromStdString(utils::signalToolTip(item->sig)) : QString();
     }
   }
   return {};
@@ -472,11 +472,11 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalAdded, this, &SignalView::handleSignalAdded);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &SignalView::handleSignalUpdated);
+  connections_.push_back(dbc()->signalAdded.connect([this](MessageId id, const cabana::Signal *sig) { handleSignalAdded(id, sig); }));
+  connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { handleSignalUpdated(sig); }));
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
+  connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *msgs, bool) { updateState(msgs); }));
   QObject::connect(tree->header(), &QHeaderView::sectionResized, [this](int logicalIndex, int oldSize, int newSize) {
     if (logicalIndex == 1) {
       value_column_width = newSize;
@@ -571,7 +571,7 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
 
 void SignalView::updateToolBar() {
   signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
-  sparkline_label->setText(utils::formatSeconds(settings.sparkline_range));
+  sparkline_label->setText(QString::fromStdString(utils::formatSeconds(settings.sparkline_range)));
 }
 
 void SignalView::setSparklineRange(int value) {

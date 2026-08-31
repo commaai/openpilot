@@ -111,22 +111,22 @@ void fill_panda_state(cereal::PandaState::Builder &ps, cereal::PandaState::Panda
   ps.setUptime(health.uptime_pkt);
   ps.setSafetyTxBlocked(health.safety_tx_blocked_pkt);
   ps.setSafetyRxInvalid(health.safety_rx_invalid_pkt);
-  ps.setIgnitionLine(health.ignition_line_pkt);
-  ps.setIgnitionCan(health.ignition_can_pkt);
-  ps.setControlsAllowed(health.controls_allowed_pkt);
+  ps.setIgnitionLine((health.flags_pkt & HEALTH_FLAG_IGNITION_LINE) != 0U);
+  ps.setIgnitionCan((health.flags_pkt & HEALTH_FLAG_IGNITION_CAN) != 0U);
+  ps.setControlsAllowed((health.flags_pkt & HEALTH_FLAG_CONTROLS_ALLOWED) != 0U);
   ps.setTxBufferOverflow(health.tx_buffer_overflow_pkt);
   ps.setRxBufferOverflow(health.rx_buffer_overflow_pkt);
   ps.setPandaType(hw_type);
   ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
   ps.setSafetyParam(health.safety_param_pkt);
   ps.setFaultStatus(cereal::PandaState::FaultStatus(health.fault_status_pkt));
-  ps.setPowerSaveEnabled((bool)(health.power_save_enabled_pkt));
-  ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
+  ps.setPowerSaveEnabled((health.flags_pkt & HEALTH_FLAG_POWER_SAVE_ENABLED) != 0U);
+  ps.setHeartbeatLost((health.flags_pkt & HEALTH_FLAG_HEARTBEAT_LOST) != 0U);
   ps.setAlternativeExperience(health.alternative_experience_pkt);
   ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
-  ps.setInterruptLoad(health.interrupt_load_pkt);
+  ps.setInterruptLoad(health.interrupt_load_pkt / 255.0f);
   ps.setFanPower(health.fan_power);
-  ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid_pkt));
+  ps.setSafetyRxChecksInvalid((health.flags_pkt & HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID) != 0U);
   ps.setSpiErrorCount(health.spi_error_count_pkt);
   ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
   ps.setSbu2Voltage(health.sbu2_voltage_mV / 1000.0f);
@@ -184,10 +184,10 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
   }
 
   if (spoofing_started) {
-    health.ignition_line_pkt = 1;
+    health.flags_pkt |= HEALTH_FLAG_IGNITION_LINE;
   }
 
-  bool ignition_local = ((health.ignition_line_pkt != 0) || (health.ignition_can_pkt != 0));
+  bool ignition_local = (health.flags_pkt & (HEALTH_FLAG_IGNITION_LINE | HEALTH_FLAG_IGNITION_CAN)) != 0U;
 
   // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
   if (health.safety_mode_pkt == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
@@ -195,7 +195,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
   }
 
   bool power_save_desired = !ignition_local;
-  if (health.power_save_enabled_pkt != power_save_desired) {
+  if (((health.flags_pkt & HEALTH_FLAG_POWER_SAVE_ENABLED) != 0U) != power_save_desired) {
     panda->set_power_saving(power_save_desired);
   }
 

@@ -1,5 +1,4 @@
 #include "tools/cabana/chart/chart.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <limits>
@@ -37,10 +36,10 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   createToolButtons();
   signal_value_font.setPointSize(9);
 
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalRemoved, this, &ChartView::signalRemoved);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::signalUpdated, this, &ChartView::signalUpdated);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgRemoved, this, &ChartView::msgRemoved);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::msgUpdated, this, &ChartView::msgUpdated);
+  connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { signalRemoved(sig); }));
+  connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { signalUpdated(sig); }));
+  connections_.push_back(dbc()->msgRemoved.connect([this](MessageId id) { msgRemoved(id); }));
+  connections_.push_back(dbc()->msgUpdated.connect([this](MessageId id) { msgUpdated(id); }));
 }
 
 void ChartView::createToolButtons() {
@@ -249,7 +248,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
       }
 
       if (!can->liveStreaming()) {
-        s.segment_tree.build(s.vals);
+        s.segment_tree.build(s.vals.size(), [&vals = s.vals](int i) { return vals[i].y(); });
       }
     }
   }

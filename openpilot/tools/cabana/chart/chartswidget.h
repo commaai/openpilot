@@ -13,6 +13,7 @@
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/qtutil.h"
 
 const int CHART_MIN_WIDTH = 300;
 
@@ -123,6 +124,7 @@ private:
   QTimer *align_timer;
   int current_theme = 0;
   bool value_tip_visible_ = false;
+  Connections connections_;
   friend class ChartView;
   friend class ChartsContainer;
 };

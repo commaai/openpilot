@@ -1,5 +1,4 @@
 #include "tools/cabana/chart/chartswidget.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <algorithm>
 #include <future>
@@ -76,10 +75,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   redo_zoom_action = toolbar->addAction(utils::icon("arrow-clockwise"), tr("Redo Zoom"), [this]() { zoom_undo_stack.redo(); });
   undo_zoom_action->setEnabled(false);
   redo_zoom_action->setEnabled(false);
-  zoom_undo_stack.setCallbacks({.index_changed = [this]() {
+  connections_.push_back(zoom_undo_stack.indexChanged.connect([this]() {
     undo_zoom_action->setEnabled(zoom_undo_stack.canUndo());
     redo_zoom_action->setEnabled(zoom_undo_stack.canRedo());
-  }});
+  }));
   reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new ToolButton("zoom-out", tr("Reset Zoom")));
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
@@ -122,16 +121,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   align_timer->setSingleShot(true);
   QObject::connect(align_timer, &QTimer::timeout, this, &ChartsWidget::alignCharts);
   QObject::connect(auto_scroll_timer, &QTimer::timeout, this, &ChartsWidget::doAutoScroll);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &ChartsWidget::updateState);
-  QObject::connect(can, &AbstractStream::seeking, this, &ChartsWidget::updateState);
-  QObject::connect(can, &AbstractStream::timeRangeChanged, this, &ChartsWidget::timeRangeChanged);
+  connections_.push_back(dbc()->fileChanged.connect([this]() { removeAll(); }));
+  connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
+  connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
+  connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
+  connections_.push_back(can->timeRangeChanged.connect([this](const auto &range) { timeRangeChanged(range); }));
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QToolButton::clicked, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QToolButton::clicked, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
-  QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
+  connections_.push_back(settings.changed.connect([this]() { settingChanged(); }));
   QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
   QObject::connect(this, &ChartsWidget::seriesChanged, this, &ChartsWidget::updateTabBar);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
@@ -246,7 +245,7 @@ void ChartsWidget::setIsDocked(bool docked) {
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Columns: %1").arg(column_count));
-  range_lb->setText(utils::formatSeconds(max_chart_range));
+  range_lb->setText(QString::fromStdString(utils::formatSeconds(max_chart_range)));
 
   bool is_zoomed = can->timeRange().has_value();
   range_lb_action->setVisible(!is_zoomed);

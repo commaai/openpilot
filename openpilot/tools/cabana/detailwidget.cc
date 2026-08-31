@@ -1,5 +1,4 @@
 #include "tools/cabana/detailwidget.h"
-#include "tools/cabana/dbc/dbcqt.h"
 
 #include <QFormLayout>
 #include <QMenu>
@@ -56,9 +55,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
-  QObject::connect(dbcNotifier(), &QtDBCNotifier::DBCFileChanged, this, &DetailWidget::refresh);
-  QObject::connect(undoNotifier(), &QtUndoNotifier::indexChanged, this, &DetailWidget::refresh);
+  connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *msgs, bool) { updateState(msgs); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
+  connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) {
@@ -97,11 +96,11 @@ void DetailWidget::createToolBar() {
   layout()->addWidget(toolbar);
 
   connect(heatmap_live, &QAbstractButton::toggled, this, [this](bool on) { binary_view->setHeatmapLiveMode(on); });
-  connect(can, &AbstractStream::timeRangeChanged, this, [=](const std::optional<std::pair<double, double>> &range) {
+  connections_.push_back(can->timeRangeChanged.connect([=](const std::optional<std::pair<double, double>> &range) {
     auto text = range ? QString("%1 - %2").arg(range->first, 0, 'f', 3).arg(range->second, 0, 'f', 3) : "All";
     heatmap_all->setText(text);
     (range ? heatmap_all : heatmap_live)->setChecked(true);
-  });
+  }));
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {

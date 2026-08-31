@@ -7,8 +7,13 @@
 
 #include <QAbstractTableModel>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDialog>
+#include <QGroupBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QTableView>
 
 #include "tools/cabana/commands.h"

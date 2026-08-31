@@ -12,6 +12,7 @@
 #ifdef __linux__
 #include "tools/cabana/streams/socketcanstream.h"
 #endif
+#include "tools/cabana/utils/qtutil.h"
 
 namespace {
 
@@ -134,7 +135,14 @@ int main(int argc, char *argv[]) {
   app.setApplicationDisplayName("Cabana");
   //app.setWindowIcon(QIcon(":cabana-icon.png"));  // TODO: do this in imgui
 
-  UnixSignalHandler signalHandler;
+  // Marshal exit onto the GUI thread (qApp methods are not thread-safe).
+  UnixSignalHandler signalHandler([]() {
+    QMetaObject::invokeMethod(qApp, []() {
+      printf("\nexiting...\n");
+      qApp->closeAllWindows();
+      qApp->exit();
+    }, Qt::QueuedConnection);
+  });
   utils::setTheme(settings.theme);
 
   CabanaArgs args;
@@ -146,19 +154,19 @@ int main(int argc, char *argv[]) {
   AbstractStream *stream = nullptr;
 
   if (args.msgq) {
-    stream = new DeviceStream(&app);
+    stream = new DeviceStream();
   } else if (!args.zmq.empty()) {
-    stream = new DeviceStream(&app, QString::fromStdString(args.zmq));
+    stream = new DeviceStream(args.zmq);
   } else if (args.panda || !args.panda_serial.empty()) {
     try {
-      stream = new PandaStream(&app, {.serial = args.panda_serial});
+      stream = new PandaStream({.serial = args.panda_serial});
     } catch (std::exception &e) {
       fprintf(stderr, "%s\n", e.what());
       return 0;
     }
 #ifdef __linux__
   } else if (SocketCanStream::available() && !args.socketcan.empty()) {
-    stream = new SocketCanStream(&app, {.device = args.socketcan});
+    stream = new SocketCanStream({.device = args.socketcan});
 #endif
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
@@ -174,7 +182,8 @@ int main(int argc, char *argv[]) {
       route = DEMO_ROUTE;
     }
     if (!route.isEmpty()) {
-      auto replay_stream = std::make_unique<ReplayStream>(&app);
+      auto replay_stream = std::make_unique<ReplayStream>();
+      Connection err = replay_stream->error.connect([](const std::string &msg) { fprintf(stderr, "%s\n", msg.c_str()); });
       if (!replay_stream->loadRoute(route.toStdString(), args.data_dir, replay_flags, args.auto_source)) {
         return 0;
       }
