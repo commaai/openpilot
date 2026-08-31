@@ -72,7 +72,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   def reset():
     env.reset()
-    env.vehicle.config["max_speed_km_h"] = 1000
+    env.vehicle.config["max_speed_km_h"] = float(os.environ.get("METADRIVE_MAX_SPEED_KMH", "1000"))
     lane_idx_prev, _ = get_current_lane_info(env.vehicle)
 
     simulation_state = metadrive_simulation_state(
