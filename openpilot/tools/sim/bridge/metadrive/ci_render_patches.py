@@ -56,6 +56,9 @@ def apply_ci_render_patches():
       self._terrain_shader_set = False
       self._set_terrain_shader(engine, attribute_tex)
       self._mesh_terrain.set_scale(size, size, 1)
-      self._mesh_terrain.set_pos(-size / 2, -size / 2, 0)
+      # MetaDrive's roads sit almost on the terrain plane. Keep the simplified
+      # two-triangle terrain slightly below them to avoid depth fighting that
+      # can hide the road for several seconds and feed blank frames to modeld.
+      self._mesh_terrain.set_pos(-size / 2, -size / 2, -0.2)
 
     Terrain._generate_mesh_vis_terrain = generate_card
