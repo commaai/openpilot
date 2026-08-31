@@ -21,6 +21,10 @@
     "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
     "severity": -1
   },
+  "Offroad_ChestnutModelError": {
+    "text": "Chestnut model failed. Cycle ignition to retry.",
+    "severity": 0
+  },
   "Offroad_ChestnutNotDetected": {
     "text": "Chestnut not detected. Check USB and 12V connections.",
     "severity": 0
