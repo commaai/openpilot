@@ -42,6 +42,13 @@ MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
 
 
+def retry_model_load(params: Params, error: Exception | None) -> None:
+  if error is not None and not params.get_bool("ChestnutModelError"):
+    # Keep the error set so manager's restarted modeld falls back if loading fails again.
+    params.put_bool("ChestnutModelError", True)
+    raise error
+
+
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                           lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
   if 'action' not in model_output:
@@ -253,23 +260,24 @@ def main(demo=False):
   model = None
   if CHESTNUT:
     big_model = None
+    load_error = None
     def load_big():
-      nonlocal big_model
+      nonlocal big_model, load_error
       try:
         m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
         m.warmup()
         big_model = m
-      except Exception:
+      except Exception as e:
+        load_error = e
         cloudlog.exception("big model load failed")
     loader = threading.Thread(target=load_big, daemon=True)
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
     model = big_model
     if model is None:
+      retry_model_load(params, load_error)
       params.put_bool("ChestnutModelError", True)
     params.put_bool("ChestnutActive", model is not None)
-    if model is not None:
-      params.remove("ChestnutModelError")
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
   if model is None:
