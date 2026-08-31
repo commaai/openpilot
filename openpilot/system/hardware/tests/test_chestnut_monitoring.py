@@ -129,7 +129,7 @@ def test_supply_loss_and_recovery():
 
 
 @pytest.mark.parametrize("failure", ["ina", "pcie"])
-def test_usb_failure_stays_invalid_until_retry_and_preserves_gpu(failure):
+def test_usb_failure_stays_invalid_until_next_ignition_and_preserves_gpu(failure):
   usb = FakeUsb()
   monitoring = ChestnutMonitoring(usb)
   monitoring.set_enabled(True)
@@ -150,8 +150,7 @@ def test_usb_failure_stays_invalid_until_retry_and_preserves_gpu(failure):
   assert usb.connect_count == connect_count
 
   setattr(usb, f"{failure}_error", None)
-  monitoring.retry()
-  assert monitoring.build_message().valid
+  assert not monitoring.build_message().valid
 
 
 def test_offroad_transition_recovers_after_failure():
@@ -168,25 +167,12 @@ def test_offroad_transition_recovers_after_failure():
   assert monitoring.build_message().valid
 
 
-def test_usb_timeout_is_invalid_without_latching():
+def test_usb_timeout_latches_during_loading():
   usb = FakeUsb()
   monitoring = ChestnutMonitoring(usb)
   monitoring.set_enabled(True)
   assert monitoring.build_message().valid
   usb.closed = False
-  usb.ina_error = usb1.USBErrorTimeout()
-  assert not monitoring.build_message(model_loading=True).valid
-  assert not monitoring.usb_failed
-  assert not usb.closed
-  usb.ina_error = None
-  assert monitoring.build_message().valid
-
-
-def test_usb_timeout_latches_after_loading():
-  usb = FakeUsb()
-  monitoring = ChestnutMonitoring(usb)
-  monitoring.set_enabled(True)
-  assert monitoring.build_message().valid
   usb.ina_error = usb1.USBErrorTimeout()
   assert not monitoring.build_message().valid
   assert monitoring.usb_failed

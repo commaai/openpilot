@@ -282,7 +282,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # Run at 2Hz, plus either edge of ignition
     ign_edge = (started_ts is not None) != all(onroad_conditions.values())
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
-      if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic(), model_loading)) is not None:
+      if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic())) is not None:
         pm.send('chestnutState', chestnut_msg)
       continue
 
@@ -444,9 +444,7 @@ def hardware_thread(end_event, hw_queue) -> None:
                              for d in last_hw_state.usb_state)
     flash_active = chestnut.thread is not None and chestnut.thread.is_alive()
     chestnut_monitoring.set_enabled(started_ts is not None and (chestnut_usb_ready or chestnut_monitoring.seen) and not flash_active)
-    if chestnut_usb_ready and chestnut_monitoring.usb_failed:
-      chestnut_monitoring.retry()
-    if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic(), model_loading)) is not None:
+    if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic())) is not None:
       pm.send('chestnutState', chestnut_msg)
 
     # Offroad power monitoring

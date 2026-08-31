@@ -74,9 +74,6 @@ class ChestnutMonitoring:
     self.usb.close()
     self.usb_failed = False
 
-  def retry(self) -> None:
-    self.usb_failed = False
-
   def model_alive(self, sm: messaging.SubMaster, now: float) -> bool:
     modeld = next((p for p in sm['managerState'].processes if p.name == 'modeld'), None)
     if modeld is not None and modeld.shouldBeRunning and not modeld.running:
@@ -90,11 +87,11 @@ class ChestnutMonitoring:
     elif not self.model_alive(sm, now):
       self.gpu_state = None
 
-  def update(self, sm: messaging.SubMaster, now: float, model_loading: bool = False):
+  def update(self, sm: messaging.SubMaster, now: float):
     self.update_gpu_state(sm, now)
-    return self.build_message(model_loading)
+    return self.build_message()
 
-  def build_message(self, model_loading: bool = False):
+  def build_message(self):
     if not self.enabled:
       return None
 
@@ -120,8 +117,7 @@ class ChestnutMonitoring:
       state.supplyFault = fault
       state.pcieLtssm = pcie_ltssm
       msg.valid = True
-    except Exception as e:
-      if not model_loading or not isinstance(e, usb1.USBErrorTimeout):
-        self.usb.close()
-        self.usb_failed = True
+    except Exception:
+      self.usb.close()
+      self.usb_failed = True
     return msg
