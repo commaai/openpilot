@@ -213,8 +213,6 @@ def main(demo=False):
     sock = messaging.sub_sock("chestnutState", timeout=round(2000 / SERVICE_LIST['deviceState'].frequency))
     msg = messaging.recv_one(sock)
     CHESTNUT = msg is not None and msg.valid and chestnut_hardware_ready(msg.chestnutState)
-    if not CHESTNUT:
-      params.put_bool("ChestnutModelError", True)
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params.put_bool("ChestnutLoading", CHESTNUT)
