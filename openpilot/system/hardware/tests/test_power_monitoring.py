@@ -2,7 +2,8 @@
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
+                                                CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S, \
+                                                MAX_TIME_OFFROAD_S
 
 # Create fake time
 ssb = 0.
@@ -112,18 +113,16 @@ class TestPowerMonitoring(OpenpilotTestCase):
 
   # Test to check policy of stopping charging after MAX_TIME_OFFROAD_S
   def test_max_time_offroad(self, mocker):
-    MOCKED_MAX_OFFROAD_TIME = 3600
     POWER_DRAW = 0 # To stop shutting down for other reasons
-    pm_patch(mocker, "MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True)
     pm_patch(mocker, "HARDWARE.get_current_power_draw", POWER_DRAW)
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
     start_time = ssb
     ignition = False
-    set_mock_time(start_time + MOCKED_MAX_OFFROAD_TIME - 1)
-    assert not pm.should_shutdown(ignition, True, start_time, False)
-    set_mock_time(start_time + MOCKED_MAX_OFFROAD_TIME)
-    assert pm.should_shutdown(ignition, True, start_time, False)
+    set_mock_time(start_time + MAX_TIME_OFFROAD_S - 1)
+    assert not pm.should_shutdown(ignition, True, start_time, True)
+    set_mock_time(start_time + MAX_TIME_OFFROAD_S)
+    assert pm.should_shutdown(ignition, True, start_time, True)
 
   def test_car_voltage(self, mocker):
     POWER_DRAW = 0 # To stop shutting down for other reasons
