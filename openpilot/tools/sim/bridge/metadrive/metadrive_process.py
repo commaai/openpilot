@@ -125,6 +125,12 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       steer_metadrive = steer_angle * 1 / (env.vehicle.MAX_STEERING * steer_ratio)
       steer_metadrive = np.clip(steer_metadrive, -1, 1)
 
+      # CPU inference benchmarks validate sustained model execution separately
+      # from closed-loop policy behavior, which is covered by model parity tests.
+      if os.environ.get("METADRIVE_FIXED_STRAIGHT_CONTROLS"):
+        steer_metadrive = 0
+        gas = float(os.environ.get("METADRIVE_FIXED_THROTTLE", "0.25"))
+
       vc = [steer_metadrive, gas]
 
       if should_reset:

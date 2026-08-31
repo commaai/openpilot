@@ -65,6 +65,8 @@ jobs:
           # behavior is a separate model/control validation from CPU throughput.
           METADRIVE_TRACK_SIZE: "2000"
           METADRIVE_STRAIGHT_ONLY: "1"
+          METADRIVE_FIXED_STRAIGHT_CONTROLS: "1"
+          METADRIVE_FIXED_THROTTLE: "0.25"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
           SIM_CAMERA_RESOLUTION: 1928x1208
