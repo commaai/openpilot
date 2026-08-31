@@ -199,7 +199,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   system_stats = LinuxSystemStats()
   pm = messaging.PubMaster(['deviceState', 'chestnutState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "managerState",
-                            "chestnutState", "chestnutGpuState"], poll="pandaStates")
+                            "chestnutGpuState"], poll="pandaStates")
 
   count = 0
 
@@ -315,23 +315,36 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     set_usb_state(msg.deviceState, last_hw_state.usb_state)
     chestnut.update(started_ts is None, last_hw_state.usb_state)
-    chestnut_state = sm["chestnutState"]
-    chestnut_valid = sm.alive["chestnutState"] and sm.valid["chestnutState"]
+    chestnut_usb_ready = any(is_chestnut_usb_id(d["vendorId"], d["productId"]) and d["product"] == CHESTNUT_USB_PRODUCT
+                             for d in last_hw_state.usb_state)
+    flash_active = chestnut.thread is not None and chestnut.thread.is_alive()
+    chestnut_monitoring.set_enabled((chestnut_usb_ready or chestnut_monitoring.seen) and not flash_active)
+    if chestnut_usb_ready and chestnut_monitoring.usb_failed:
+      chestnut_monitoring.retry()
+    chestnut_msg = chestnut_monitoring.update(sm, time.monotonic())
+    if chestnut_msg is not None:
+      pm.send('chestnutState', chestnut_msg)
+
     model_error = params.get_bool("ChestnutModelError")
     model_loading = params.get_bool("ChestnutLoading")
     model_active = params.get("ChestnutActive")
-    chestnut_model_ready = any(is_chestnut_usb_id(d["vendorId"], d["productId"]) and d["product"] == CHESTNUT_USB_PRODUCT
-                               for d in last_hw_state.usb_state) and chestnut_compiled()
+    model_compiled = chestnut_usb_ready and chestnut_compiled()
     if started_ts is None:
       modeld_was_running = False
     modeld_was_running, modeld_failed = update_modeld_state(sm["managerState"].processes, modeld_was_running,
-                                                           chestnut_model_ready or model_loading or model_active is not None)
-    if not model_error and modeld_failed:
+                                                           model_compiled or model_loading or model_active is not None)
+    now = time.monotonic()
+    model_running = chestnut_monitoring.model_alive(sm, now)
+    model_failed = modeld_failed or (params.get_bool("ChestnutActive") and chestnut_monitoring.model_stalled(sm, now))
+    if not model_error and model_failed:
       model_error = True
       params.put_bool("ChestnutModelError", True)
-    chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed,
-                           model_active, model_error,
-                           chestnut_state if chestnut_valid else None, chestnut_monitoring.usb_failed,
+    elif model_error and params.get_bool("ChestnutActive") and model_running:
+      model_error = False
+      params.remove("ChestnutModelError")
+    chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed, model_compiled,
+                           model_error, chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
+                           chestnut_monitoring.usb_failed,
                            set_offroad_alert_if_changed)
     # this subset is only used for offroad
     temp_sources = [
@@ -439,13 +452,6 @@ def hardware_thread(end_event, hw_queue) -> None:
       started_ts = None
       if off_ts is None:
         off_ts = time.monotonic()
-
-    chestnut_usb_ready = any(is_chestnut_usb_id(d["vendorId"], d["productId"]) and d["product"] == CHESTNUT_USB_PRODUCT
-                             for d in last_hw_state.usb_state)
-    flash_active = chestnut.thread is not None and chestnut.thread.is_alive()
-    chestnut_monitoring.set_enabled(started_ts is not None and (chestnut_usb_ready or chestnut_monitoring.seen) and not flash_active)
-    if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic())) is not None:
-      pm.send('chestnutState', chestnut_msg)
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage

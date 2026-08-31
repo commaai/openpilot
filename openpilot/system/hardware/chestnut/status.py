@@ -1,7 +1,7 @@
 import time
 
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, is_chestnut_usb_id
-from openpilot.selfdrive.modeld.helpers import CHESTNUT_PCIE_READY, CHESTNUT_POWERED_VOLTAGE, chestnut_compiled
+from openpilot.selfdrive.modeld.helpers import CHESTNUT_PCIE_READY, CHESTNUT_POWERED_VOLTAGE
 
 
 CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging")
@@ -25,18 +25,15 @@ class ChestnutStatus:
     self.offroad = True
     self.pcie_failed = False
     self.power_seen = False
-    self.power_failure_seen = False
     self.power_unavailable = False
     self.power_lost = False
-    self.power_restored = False
     self.link_failures = 0
-    self.model_attempted = False
     self.overheated = False
     self.usb_seen = False
     self.usb_failed = False
 
-  def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool,
-             model_active: bool | None, model_error: bool, state, usb_failed: bool, set_alert) -> None:
+  def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool, model_compiled: bool,
+             model_error: bool, state, usb_failed: bool, set_alert) -> None:
     detected = [d for d in usb_state if is_chestnut_usb_id(d["vendorId"], d["productId"], include_bootloader=True)]
     devices = [d for d in detected if is_chestnut_usb_id(d["vendorId"], d["productId"])]
     firmware_ok = len(devices) == 1 and devices[0]["product"] == CHESTNUT_USB_PRODUCT
@@ -44,41 +41,31 @@ class ChestnutStatus:
     if self.offroad and not offroad:
       self.pcie_failed = False
       self.power_seen = False
-      self.power_failure_seen = False
       self.power_unavailable = False
       self.power_lost = False
-      self.power_restored = False
       self.link_failures = 0
-      self.model_attempted = False
       self.usb_seen = firmware_ok
       self.usb_failed = False
 
-    self.model_attempted |= model_active is not None
+    self.usb_seen |= firmware_ok
+    self.usb_failed = self.usb_seen and (not firmware_ok or usb_failed)
 
-    if not offroad:
-      self.usb_seen |= firmware_ok
-    self.usb_failed = not offroad and self.usb_seen and (not firmware_ok or usb_failed)
-
-    if not offroad and state is not None:
+    if state is not None:
       powered = state.supplyVoltage >= CHESTNUT_POWERED_VOLTAGE
       power_lost = state.supplyFault or not powered
-      if (self.model_attempted or model_error) and power_lost and not self.power_lost:
+      if power_lost and not self.power_lost:
         self.power_unavailable = not self.power_seen
       self.power_seen |= powered
 
-    if not offroad and (self.model_attempted or model_error) and state is not None:
+    if state is not None:
       self.link_failures = self.link_failures + 1 if state.pcieLtssm != CHESTNUT_PCIE_READY else 0
-      self.pcie_failed |= self.link_failures >= 2 or power_lost or (model_error and state.pcieLtssm != CHESTNUT_PCIE_READY)
-      self.power_failure_seen |= power_lost
+      self.pcie_failed = self.link_failures >= 2 or power_lost
       self.power_lost = power_lost
-      self.power_restored = self.pcie_failed and self.power_failure_seen and self.power_seen and not power_lost
     if self.usb_failed:
       self.pcie_failed = False
       self.power_seen = False
-      self.power_failure_seen = False
       self.power_unavailable = False
       self.power_lost = False
-      self.power_restored = False
 
     if state is not None:
       gpu_limit = GPU_TEMP_LIMIT - (TEMP_HYSTERESIS if self.overheated else 0.)
@@ -86,16 +73,15 @@ class ChestnutStatus:
       self.overheated = state.tempC >= gpu_limit or state.memoryTempC >= memory_limit
 
     release = branch in CHESTNUT_RELEASE_BRANCHES
-    missing = self.usb_failed or (offroad and release and time.monotonic() - self.started > 10. and len(detected) != 1)
-    slow_usb = offroad and len(devices) == 1 and devices[0]["speedMbps"] < 5000
-    update_failed = offroad and firmware_failed
-    compiled = firmware_ok and chestnut_compiled()
-    uncompiled = offroad and firmware_ok and not compiled
+    missing = self.usb_failed or (release and time.monotonic() - self.started > 10. and len(detected) != 1)
+    slow_usb = len(devices) == 1 and devices[0]["speedMbps"] < 5000
+    update_failed = firmware_failed
+    compiled = firmware_ok and model_compiled
+    uncompiled = firmware_ok and not compiled
     software_failed = model_error and compiled
 
-    if self.power_lost or self.power_restored:
-      pcie_alert = ("Chestnut power restored. 12V is stable again, cycle ignition." if self.power_restored else
-                    "Chestnut power disconnected. Check 12V connection, then cycle ignition." if self.power_unavailable else
+    if self.power_lost:
+      pcie_alert = ("Chestnut power disconnected. Check 12V connection, then cycle ignition." if self.power_unavailable else
                     "Chestnut power lost. Possibly caused by an engine-crank voltage drop. Check 12V connection, then cycle ignition.")
     else:
       pcie_alert = "Chestnut GPU unavailable. PCIe link is not up. Check the GPU is securely seated."
@@ -112,7 +98,7 @@ class ChestnutStatus:
     )
     active_alert = next((name for name, active, _ in alerts if active), None)
 
-    set_alert("Offroad_ChestnutBranch", not release and len(devices) == 1 and not missing)
+    set_alert("Offroad_ChestnutBranch", not release and len(devices) == 1 and active_alert is None)
     for name, _, extra_text in alerts:
       set_alert(name, name == active_alert, extra_text)
     self.offroad = offroad

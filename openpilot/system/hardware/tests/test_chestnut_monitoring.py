@@ -115,6 +115,20 @@ def test_poll_resumes_immediately_when_modeld_exits():
   assert monitoring.update(FakeSubMaster(gpu_state(), updated=False, recv_time=10., modeld_running=False), 10.1) is not None
 
 
+def test_model_stall_requires_a_previous_gpu_message():
+  monitoring = ChestnutMonitoring(FakeUsb())
+  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=0.), 10.)
+  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.), 10.5)
+  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.), 11.1)
+
+
+def test_fresh_gpu_state_takes_precedence_over_stale_manager_state():
+  monitoring = ChestnutMonitoring(FakeUsb())
+  sm = FakeSubMaster(gpu_state(), recv_time=10., modeld_running=False)
+  assert monitoring.model_alive(sm, 10.5)
+  assert not monitoring.model_stalled(sm, 10.5)
+
+
 def test_supply_loss_and_recovery():
   usb = FakeUsb()
   monitoring = ChestnutMonitoring(usb)
@@ -129,7 +143,7 @@ def test_supply_loss_and_recovery():
 
 
 @pytest.mark.parametrize("failure", ["ina", "pcie"])
-def test_usb_failure_stays_invalid_until_next_ignition_and_preserves_gpu(failure):
+def test_usb_failure_stays_invalid_until_bounded_retry_and_preserves_gpu(failure):
   usb = FakeUsb()
   monitoring = ChestnutMonitoring(usb)
   monitoring.set_enabled(True)
@@ -151,6 +165,8 @@ def test_usb_failure_stays_invalid_until_next_ignition_and_preserves_gpu(failure
 
   setattr(usb, f"{failure}_error", None)
   assert not monitoring.build_message().valid
+  monitoring.retry()
+  assert monitoring.build_message().valid
 
 
 def test_offroad_transition_recovers_after_failure():

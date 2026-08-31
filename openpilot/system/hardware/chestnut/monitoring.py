@@ -74,12 +74,20 @@ class ChestnutMonitoring:
     self.usb.close()
     self.usb_failed = False
 
+  def retry(self) -> None:
+    self.usb_failed = False
+
   def model_alive(self, sm: messaging.SubMaster, now: float) -> bool:
+    recv_time = sm.recv_time['chestnutGpuState']
+    if recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['chestnutGpuState'].frequency:
+      return True
     modeld = next((p for p in sm['managerState'].processes if p.name == 'modeld'), None)
     if modeld is not None and modeld.shouldBeRunning and not modeld.running:
       return False
-    recv_time = sm.recv_time['chestnutGpuState']
-    return recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['chestnutGpuState'].frequency
+    return False
+
+  def model_stalled(self, sm: messaging.SubMaster, now: float) -> bool:
+    return sm.recv_time['chestnutGpuState'] > 0. and not self.model_alive(sm, now)
 
   def update_gpu_state(self, sm: messaging.SubMaster, now: float) -> None:
     if sm.updated['chestnutGpuState']:
