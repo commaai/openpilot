@@ -177,32 +177,46 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
-    input_devices = get_tg_input_devices(PROCESS_NAME, chestnut)
-    self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
-    jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
-    metadata = jits['metadata']
-    self.input_shapes = metadata['input_shapes']
-    self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
-    self.output_slices = metadata['output_slices']
-
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
-
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
     self.full_frames: dict[str, Tensor] = {}
     self._blob_cache: dict[tuple[str, int], Tensor] = {}
     self.parser = Parser()
-    self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
-    self.run_policy = jits['run_policy']
-    self.warp = jits[(cam_w,cam_h)]
+    self.warp = None
     self.onnx_policy = None
+    self.onnx_warp = None
     if (onnx_cpu_model := os.getenv('ONNX_CPU_MODEL')) is not None:
       if chestnut:
         raise RuntimeError("ONNX_CPU_MODEL is only supported by the small model")
-      from openpilot.selfdrive.modeld.onnx_cpu import OnnxCpuPolicy
-      self.onnx_policy = OnnxCpuPolicy(onnx_cpu_model, self.input_shapes, self.frame_skip)
+      from openpilot.selfdrive.modeld.onnx_cpu import OnnxCpuPolicy, OpenCvCpuWarp
+      self.onnx_policy = OnnxCpuPolicy(onnx_cpu_model, self.frame_skip)
+      self.onnx_warp = OpenCvCpuWarp(cam_w, cam_h)
+      self.input_shapes = self.onnx_policy.input_shapes
+      self.output_slices = self.onnx_policy.output_slices
+      self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
+      self.input_queues = {}
+      self.npy = {
+        'desire': np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32),
+        'traffic_convention': np.zeros((1, 2), dtype=np.float32),
+        'action_t': np.zeros((1, 2), dtype=np.float32),
+        'prev_feat': np.zeros((1, ModelConstants.FEATURE_LEN), dtype=np.float32),
+        'tfm': np.zeros((3, 3), dtype=np.float32),
+        'big_tfm': np.zeros((3, 3), dtype=np.float32),
+      }
       cloudlog.warning(f"using ONNX Runtime CPU policy: {onnx_cpu_model}")
+    else:
+      input_devices = get_tg_input_devices(PROCESS_NAME, chestnut)
+      self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
+      jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
+      metadata = jits['metadata']
+      self.input_shapes = metadata['input_shapes']
+      self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
+      self.output_slices = metadata['output_slices']
+      self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+      self.run_policy = jits['run_policy']
+      self.warp = jits[(cam_w,cam_h)]
+    self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -210,15 +224,6 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
-    for key in bufs.keys():
-      ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
-      yuv_size = self.frame_buf_params[key][3]
-      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-      cache_key = (key, ptr)
-      if cache_key not in self._blob_cache:
-        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
-      self.full_frames[key] = self._blob_cache[cache_key]
-
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
     self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
@@ -228,9 +233,17 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    warped = self.warp(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
-
     if self.onnx_policy is None:
+      for key in bufs.keys():
+        ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
+        yuv_size = self.frame_buf_params[key][3]
+        # There is a ringbuffer of imgs, just cache tensors pointing to all of them
+        cache_key = (key, ptr)
+        if cache_key not in self._blob_cache:
+          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
+        self.full_frames[key] = self._blob_cache[cache_key]
+      warped = self.warp(**{k: self.input_queues[k] for k in WARP_INPUTS},
+                         frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
       outs, = self.run_policy(
         **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
       )
@@ -238,7 +251,9 @@ class ModelState:
         after_enqueue()
       model_output = outs.numpy()[0]
     else:
-      model_output = self.onnx_policy.run(warped.numpy(), self.npy['desire'], self.npy['traffic_convention'],
+      assert self.onnx_warp is not None
+      warped = self.onnx_warp.run(bufs, transforms)
+      model_output = self.onnx_policy.run(warped, self.npy['desire'], self.npy['traffic_convention'],
                                           self.npy['action_t'], self.npy['prev_feat'])[0]
       if after_enqueue is not None:
         after_enqueue()
@@ -256,9 +271,12 @@ class ModelState:
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
     if self.onnx_policy is not None:
       self.onnx_policy.reset()
+      for value in self.npy.values():
+        value.fill(0)
+    else:
+      self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
     self.prev_desire[:] = 0
     self.full_frames.clear()
     self._blob_cache.clear()
