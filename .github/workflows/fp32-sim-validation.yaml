@@ -85,7 +85,6 @@ jobs:
           METADRIVE_NO_MSAA: "1"
           METADRIVE_NO_SHADOWS: "1"
           METADRIVE_SIMPLE_RENDER: "1"
-          METADRIVE_NO_TERRAIN: "1"
           METADRIVE_REPORT_FPS: "1"
           METADRIVE_MAX_SPEED_KMH: "20"
           METADRIVE_TRACK_SIZE: "100"

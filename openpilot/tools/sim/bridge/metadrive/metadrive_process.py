@@ -113,6 +113,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   render_start = time.monotonic()
   invalid_camera_streak = 0
   max_invalid_camera_streak = 0
+  invalid_camera_frames = 0
 
   while not exit_event.is_set():
     vehicle_state = metadrive_vehicle_state(
@@ -164,6 +165,10 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       lane_idx_prev = lane_idx_curr
 
       if terminated or ((out_of_lane or timeout) and test_run):
+        camera_invalid = invalid_camera_frames > 0
+        print("metadrive camera health: "
+              f"invalid_frames={invalid_camera_frames} max_invalid_streak={max_invalid_camera_streak} "
+              f"invalid={camera_invalid}", flush=True)
         if terminated or out_of_lane:
           print("metadrive termination diagnostic: "
                 f"terminated={terminated} lane_changed={lane_changed} on_lane={on_lane} "
@@ -175,11 +180,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         if terminated:
           done_result = env.done_function("default_agent")
         elif out_of_lane:
-          done_result = (True, {"out_of_lane" : True})
+          done_result = (True, {"out_of_lane" : True, "camera_invalid": camera_invalid})
         elif timeout:
-          camera_invalid = max_invalid_camera_streak >= 3
-          print("metadrive camera health: "
-                f"max_invalid_streak={max_invalid_camera_streak} invalid={camera_invalid}", flush=True)
           done_result = (True, {"timeout" : True, "camera_invalid": camera_invalid})
 
         simulation_state = metadrive_simulation_state(
@@ -196,7 +198,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       # white for multiple frames. That makes the model steer on corrupt input,
       # so make it an explicit test failure instead of a flaky road departure.
       camera_sample = road_image[H // 2::16, ::16]
-      invalid_camera_frame = np.mean(np.all(camera_sample > 245, axis=2)) > 0.9
+      invalid_camera_frame = np.mean(np.all(camera_sample > 220, axis=2)) > 0.7
+      invalid_camera_frames += int(invalid_camera_frame)
       invalid_camera_streak = invalid_camera_streak + 1 if invalid_camera_frame else 0
       max_invalid_camera_streak = max(max_invalid_camera_streak, invalid_camera_streak)
       image_lock.release()
