@@ -104,6 +104,15 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       if (img.shape[0] * y_scale, img.shape[1] * x_scale) != (H, W):
         raise ValueError(f"METADRIVE_RENDER_SCALE must produce a resolution that evenly divides {(W, H)}")
       img = img.repeat(y_scale, axis=0).repeat(x_scale, axis=1)
+    # llvmpipe can occasionally return the clear color while the tagged
+    # terrain card is being repositioned. Keep one valid frame per camera so a
+    # transient render miss cannot become a white model input.
+    camera_sample = img[H // 2::16, ::16]
+    invalid_frame = np.mean(np.all(camera_sample > 220, axis=2)) > 0.7
+    if invalid_frame and cam in last_valid_camera:
+      return last_valid_camera[cam]
+    if not invalid_frame:
+      last_valid_camera[cam] = img.copy()
     return img
 
   rk = Ratekeeper(100, None)
@@ -114,6 +123,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   invalid_camera_streak = 0
   max_invalid_camera_streak = 0
   invalid_camera_frames = 0
+  last_valid_camera = {}
 
   while not exit_event.is_set():
     vehicle_state = metadrive_vehicle_state(
@@ -198,7 +208,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       # white for multiple frames. That makes the model steer on corrupt input,
       # so make it an explicit test failure instead of a flaky road departure.
       camera_sample = road_image[H // 2::16, ::16]
-      invalid_camera_frame = np.mean(np.all(camera_sample > 220, axis=2)) > 0.7
+      invalid_camera_frame = op_engaged.is_set() and np.mean(np.all(camera_sample > 220, axis=2)) > 0.7
       invalid_camera_frames += int(invalid_camera_frame)
       invalid_camera_streak = invalid_camera_streak + 1 if invalid_camera_frame else 0
       max_invalid_camera_streak = max(max_invalid_camera_streak, invalid_camera_streak)
