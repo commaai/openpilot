@@ -66,7 +66,7 @@ jobs:
           METADRIVE_TRACK_SIZE: "2000"
           METADRIVE_STRAIGHT_ONLY: "1"
           METADRIVE_FIXED_STRAIGHT_CONTROLS: "1"
-          METADRIVE_FIXED_THROTTLE: "0"
+          METADRIVE_FIXED_THROTTLE: "0.01"
           METADRIVE_MAX_SPEED_KMH: "60"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
