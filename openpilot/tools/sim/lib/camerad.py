@@ -1,3 +1,4 @@
+import os
 import time
 
 import numpy as np
@@ -12,6 +13,18 @@ from openpilot.tools.sim.lib.common import W, H
 def rgb_to_nv12(rgb):
   """Convert RGB image to NV12 (YUV420) format using BT.601 coefficients."""
   h, w = rgb.shape[:2]
+  if os.environ.get("SIM_USE_OPENCV_YUV"):
+    import cv2
+
+    i420 = cv2.cvtColor(rgb, cv2.COLOR_RGB2YUV_I420).reshape(-1)
+    y_size = h * w
+    chroma_size = y_size // 4
+    nv12 = np.empty(y_size + 2 * chroma_size, dtype=np.uint8)
+    nv12[:y_size] = i420[:y_size]
+    nv12[y_size::2] = i420[y_size:y_size + chroma_size]
+    nv12[y_size + 1::2] = i420[y_size + chroma_size:]
+    return nv12.tobytes()
+
   r = rgb[:, :, 0].astype(np.int32)
   g = rgb[:, :, 1].astype(np.int32)
   b = rgb[:, :, 2].astype(np.int32)
@@ -80,4 +93,3 @@ class Camerad:
     }
     setattr(dat, pub_type, msg)
     self.pm.send(pub_type, dat)
-

@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
-          uv pip install onnx onnxruntime
+          uv pip install onnx onnxruntime opencv-python-headless
           uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@2716f55a9c7b928ce957a497a15c2c19840c08bc"
 
       - name: Convert and validate FP32 model
@@ -63,8 +63,9 @@ jobs:
           MIN_MODEL_RATE: "18"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
-          SIM_CAMERA_RESOLUTION: 1344x760
-          METADRIVE_RENDER_SCALE: "0.5"
+          SIM_CAMERA_RESOLUTION: 1928x1208
+          SIM_USE_OPENCV_YUV: "1"
+          METADRIVE_RENDER_SCALE: "0.25"
           METADRIVE_NO_MSAA: "1"
           METADRIVE_NO_SHADOWS: "1"
           METADRIVE_SIMPLE_RENDER: "1"
