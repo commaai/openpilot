@@ -209,10 +209,16 @@ def main(demo=False):
   chestnut_available = chestnut_present() and chestnut_compiled()
   CHESTNUT = False
   if chestnut_available:
-    # hardwared enables monitoring onroad; allow two of its state cycles for the first sample.
-    sock = messaging.sub_sock("chestnutState", timeout=round(2000 / SERVICE_LIST['deviceState'].frequency))
-    msg = messaging.recv_one(sock)
-    CHESTNUT = msg is not None and msg.valid and chestnut_hardware_ready(msg.chestnutState)
+    # hardwared enables monitoring onroad; allow two of its state cycles for crank voltage to recover.
+    timeout = 2. / SERVICE_LIST['deviceState'].frequency
+    poller = messaging.Poller()
+    sock = messaging.sub_sock("chestnutState", poller=poller, conflate=True)
+    deadline = time.monotonic() + timeout
+    while not CHESTNUT and (remaining := deadline - time.monotonic()) > 0.:
+      if not poller.poll(round(remaining * 1000)):
+        break
+      msg = messaging.recv_one_or_none(sock)
+      CHESTNUT = msg is not None and msg.valid and chestnut_hardware_ready(msg.chestnutState)
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params.put_bool("ChestnutLoading", CHESTNUT)
