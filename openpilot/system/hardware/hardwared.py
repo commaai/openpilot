@@ -344,11 +344,14 @@ def hardware_thread(end_event, hw_queue) -> None:
     elif model_error and params.get_bool("ChestnutActive") and model_running:
       model_error = False
       params.remove("ChestnutModelError")
-    chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed, model_compiled,
-                           model_error, model_recovered,
-                           chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
-                           chestnut_monitoring.usb_failed,
-                           set_offroad_alert_if_changed)
+    chestnut_alert = chestnut_status.update(
+      started_ts is None, branch, last_hw_state.usb_state, chestnut.failed, model_compiled, model_error, model_recovered,
+      chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
+      chestnut_monitoring.usb_failed, set_offroad_alert_if_changed,
+    )
+    if model_loading and chestnut_alert in ("Offroad_ChestnutNotDetected", "Offroad_ChestnutPcieUnavailable"):
+      params.remove("ChestnutLoading")
+      params.put_bool("ChestnutActive", False)
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
