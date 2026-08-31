@@ -283,3 +283,19 @@ def test_branch_alert_is_suppressed_by_failure():
   update(status, alerts, branch="master", error=True)
   assert alerts.active == {"Offroad_ChestnutModelError"}
   assert not alerts.values["Offroad_ChestnutBranch"][0]
+
+
+def test_alert_transition_clears_previous_cause_first():
+  status = ChestnutStatus()
+  active = set()
+
+  def set_alert(name, enabled, extra=None):
+    active.discard(name)
+    if enabled:
+      active.add(name)
+    assert len(active) <= 1
+
+  status.update(True, "master", [DEVICE], False, True, True, STATE, False, set_alert)
+  assert active == {"Offroad_ChestnutModelError"}
+  status.update(True, "master", [DEVICE], False, True, False, STATE, False, set_alert)
+  assert active == {"Offroad_ChestnutBranch"}

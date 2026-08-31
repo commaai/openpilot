@@ -97,8 +97,14 @@ class ChestnutStatus:
       ("Offroad_ChestnutModelError", software_failed, None),
     )
     active_alert = next((name for name, active, _ in alerts if active), None)
+    branch_alert = "Offroad_ChestnutBranch" if not release and len(devices) == 1 and active_alert is None else None
+    selected_alert = active_alert or branch_alert
 
-    set_alert("Offroad_ChestnutBranch", not release and len(devices) == 1 and active_alert is None)
-    for name, _, extra_text in alerts:
-      set_alert(name, name == active_alert, extra_text)
+    # Clear the previous cause before setting the current one so readers never observe both.
+    for name in ("Offroad_ChestnutBranch", *(name for name, _, _ in alerts)):
+      if name != selected_alert:
+        set_alert(name, False)
+    if selected_alert is not None:
+      extra_text = next((text for name, _, text in alerts if name == selected_alert), None)
+      set_alert(selected_alert, True, extra_text)
     self.offroad = offroad
