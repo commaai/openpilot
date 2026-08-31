@@ -55,6 +55,7 @@ jobs:
         env:
           BLOCK: soundd
           CI_SIM_LOGS: "1"
+          ENCODERD_QCAM_ONLY: "1"
           SIM_LOG_SAVE_DIR: ${{ github.workspace }}/sim-artifacts/logs
           SIM_MANAGER_LOG: ${{ github.workspace }}/sim-artifacts/manager.log
           RUN_METADRIVE_TEST: "1"
@@ -62,7 +63,7 @@ jobs:
           MIN_MODEL_RATE: "18"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
-          METADRIVE_RENDER_SCALE: "0.5"
+          METADRIVE_RENDER_SCALE: "0.25"
           METADRIVE_NO_MSAA: "1"
           METADRIVE_NO_SHADOWS: "1"
           METADRIVE_SIMPLE_RENDER: "1"
@@ -77,6 +78,7 @@ jobs:
       - name: Validate log artifacts
         if: always()
         run: |
+          grep -E "locationd|modeld|commIssue|Observation" sim-artifacts/manager.log | tail -100 || true
           find sim-artifacts -type f -printf '%p %k KiB\n' | sort
           find sim-artifacts/logs -type f | grep -Eq '/(qlog|rlog)(\.zst)?$'
           find sim-artifacts/logs -type f | grep -Eq '/qcamera\.ts$'
