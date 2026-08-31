@@ -16,6 +16,12 @@ def rgb_to_nv12(rgb):
   if os.environ.get("SIM_USE_OPENCV_YUV"):
     import cv2
 
+    # MetaDrive, tinygrad's image warp, and ONNX Runtime are already using the
+    # runner's CPU cores. OpenCV's native worker pool can oversubscribe those
+    # libraries (and has caused SIGSEGVs in the full simulator), so keep this
+    # conversion single-threaded and on the CPU.
+    cv2.setNumThreads(1)
+    cv2.ocl.setUseOpenCL(False)
     i420 = cv2.cvtColor(rgb, cv2.COLOR_RGB2YUV_I420).reshape(-1)
     y_size = h * w
     chroma_size = y_size // 4
