@@ -62,6 +62,17 @@ jobs:
           --profile-runs 3 \
           --json model-inference-fp32-benchmark.json
 
+    - name: Direct FP16 vs FP32 comparison
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --backend onnxruntime \
+          --onnxruntime-threads 2 \
+          --warmup 3 \
+          --runs 50 \
+          --compare-model driving_supercombo_fp32.onnx \
+          --temporal-steps 80 \
+          --json model-inference-fp16-vs-fp32.json
+
     - name: Measure isolated backend memory
       env:
         BEAM: "0"
@@ -92,3 +103,4 @@ jobs:
         name: model-inference-cpu-benchmark-${{ github.run_id }}
         path: model-inference-*-benchmark.json
         if-no-files-found: warn
+
