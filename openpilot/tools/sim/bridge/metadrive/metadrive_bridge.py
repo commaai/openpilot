@@ -75,7 +75,6 @@ class MetaDriveBridge(SimulatorBridge):
         "enable_reverse": False,
         "render_vehicle": False,
         "image_source": "rgb_road",
-        "max_speed_km_h": float(os.environ.get("METADRIVE_MAX_SPEED_KMH", "1000")),
       },
       "sensors": sensors,
       "image_on_cuda": _cuda_enable,
