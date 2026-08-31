@@ -1,0 +1,87 @@
+name: FP32 CPU simulator validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - benchmark/model-cpu-backends
+
+env:
+  CI: "1"
+  PYTHONPATH: ${{ github.workspace }}
+
+jobs:
+  fp32_simulator:
+    name: FP32 ONNX Runtime MetaDrive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: false
+          submodules: false
+
+      - name: Fetch model and tinygrad
+        run: |
+          git submodule update --init --depth 1 tinygrad_repo
+          git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
+          git lfs pull --include="openpilot/selfdrive/modeld/models/driving_supercombo.onnx" --exclude=""
+
+      - run: ./tools/op.sh setup
+
+      - name: Install CPU runtime and MetaDrive
+        run: |
+          uv pip install onnx onnxruntime
+          uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@2716f55a9c7b928ce957a497a15c2c19840c08bc"
+
+      - name: Convert and validate FP32 model
+        run: |
+          python openpilot/selfdrive/modeld/convert_onnx_fp16_to_fp32.py \
+            openpilot/selfdrive/modeld/models/driving_supercombo.onnx \
+            /tmp/driving_supercombo_fp32.onnx
+          python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+            --model openpilot/selfdrive/modeld/models/driving_supercombo.onnx \
+            --compare-model /tmp/driving_supercombo_fp32.onnx \
+            --backend onnxruntime --onnxruntime-threads 2 --warmup 3 --runs 20
+          python tools/test_runner.py openpilot/selfdrive/modeld/tests/test_onnx_cpu.py -j 1 -v
+
+      - name: Build openpilot
+        run: scons
+
+      - name: Run one-minute real-time driving test
+        timeout-minutes: 15
+        env:
+          BLOCK: soundd
+          CI_SIM_LOGS: "1"
+          SIM_LOG_SAVE_DIR: /tmp/sim-artifacts/logs
+          RUN_METADRIVE_TEST: "1"
+          METADRIVE_TEST_DURATION: "60"
+          MIN_MODEL_RATE: "18"
+          ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
+          ONNX_CPU_THREADS: "2"
+          EGL_PLATFORM: surfaceless
+          METADRIVE_RENDER_SCALE: "0.5"
+          METADRIVE_NO_MSAA: "1"
+          METADRIVE_NO_SHADOWS: "1"
+          METADRIVE_SIMPLE_RENDER: "1"
+          METADRIVE_FLAT_TERRAIN_CARD: "1"
+          METADRIVE_REPORT_FPS: "1"
+        run: |
+          source openpilot/selfdrive/test/setup_xvfb.sh
+          python -m metadrive.pull_asset
+          mkdir -p /tmp/sim-artifacts/logs
+          python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
+
+      - name: Validate log artifacts
+        if: always()
+        run: |
+          find /tmp/sim-artifacts -type f -printf '%p %k KiB\n' | sort
+          find /tmp/sim-artifacts/logs -type f | grep -Eq '/(qlog|rlog)(\.zst)?$'
+          find /tmp/sim-artifacts/logs -type f | grep -Eq '/qcamera\.ts$'
+
+      - name: Upload simulator artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fp32-simulator-${{ github.run_number }}
+          path: /tmp/sim-artifacts

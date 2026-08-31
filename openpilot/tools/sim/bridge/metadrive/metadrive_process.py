@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import numpy as np
 
@@ -51,6 +52,9 @@ def apply_metadrive_patches(arrive_dest_done=True):
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
+  from openpilot.tools.sim.bridge.metadrive.ci_render_patches import apply_ci_render_patches
+  apply_ci_render_patches()
+
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -91,12 +95,19 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     img = cam.perceive(to_float=False)
     if not isinstance(img, np.ndarray):
       img = img.get() # convert cupy array to numpy
+    if img.shape[:2] != (H, W):
+      y_scale, x_scale = H // img.shape[0], W // img.shape[1]
+      if (img.shape[0] * y_scale, img.shape[1] * x_scale) != (H, W):
+        raise ValueError(f"METADRIVE_RENDER_SCALE must produce a resolution that evenly divides {(W, H)}")
+      img = img.repeat(y_scale, axis=0).repeat(x_scale, axis=1)
     return img
 
   rk = Ratekeeper(100, None)
 
   steer_ratio = 8
   vc = [0,0]
+  rendered_frames = 0
+  render_start = time.monotonic()
 
   while not exit_event.is_set():
     vehicle_state = metadrive_vehicle_state(
@@ -150,5 +161,11 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         wide_road_image[...] = get_cam_as_rgb("rgb_wide")
       road_image[...] = get_cam_as_rgb("rgb_road")
       image_lock.release()
+
+      rendered_frames += 1
+      if os.environ.get("METADRIVE_REPORT_FPS") and rendered_frames % 100 == 0:
+        now = time.monotonic()
+        print(f"metadrive render fps: {100 / (now - render_start):.1f} (target 20)", flush=True)
+        render_start = now
 
     rk.keep_time()

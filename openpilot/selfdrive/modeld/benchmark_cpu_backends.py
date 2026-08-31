@@ -371,6 +371,10 @@ def main() -> None:
   parser.add_argument("--model", type=pathlib.Path, default=DEFAULT_MODEL)
   parser.add_argument("--compare-model", type=pathlib.Path,
                       help="optional second model for same-input ONNX Runtime output comparison")
+  parser.add_argument("--minimum-cosine", type=float, default=0.9999,
+                      help="minimum cosine similarity required with --compare-model")
+  parser.add_argument("--maximum-mean-abs", type=float, default=0.25,
+                      help="maximum mean absolute error permitted with --compare-model")
   parser.add_argument("--backend", action="append", choices=("onnxruntime", "tinygrad"),
                       help="backend to run; may be repeated (default: both)")
   parser.add_argument("--onnxruntime-threads", type=int, nargs="+", default=[1, 2, 4])
@@ -439,6 +443,12 @@ def main() -> None:
     threads = args.onnxruntime_threads[0]
     model_parity = compare_onnxruntime_models(args.model, args.compare_model, inputs, threads)
     print(f"model parity ({args.model.name} vs {args.compare_model.name}, {threads} threads): {model_parity}")
+    if model_parity["cosine_similarity"] < args.minimum_cosine:
+      raise RuntimeError(f"model cosine similarity {model_parity['cosine_similarity']:.8f} is below "
+                         f"{args.minimum_cosine:.8f}")
+    if model_parity["mean_abs"] > args.maximum_mean_abs:
+      raise RuntimeError(f"model mean absolute error {model_parity['mean_abs']:.8f} exceeds "
+                         f"{args.maximum_mean_abs:.8f}")
 
   report = {
     "model": str(args.model),

@@ -196,6 +196,13 @@ class ModelState:
     self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
     self.run_policy = jits['run_policy']
     self.warp = jits[(cam_w,cam_h)]
+    self.onnx_policy = None
+    if (onnx_cpu_model := os.getenv('ONNX_CPU_MODEL')) is not None:
+      if chestnut:
+        raise RuntimeError("ONNX_CPU_MODEL is only supported by the small model")
+      from openpilot.selfdrive.modeld.onnx_cpu import OnnxCpuPolicy
+      self.onnx_policy = OnnxCpuPolicy(onnx_cpu_model, self.input_shapes, self.frame_skip)
+      cloudlog.warning(f"using ONNX Runtime CPU policy: {onnx_cpu_model}")
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -223,12 +230,18 @@ class ModelState:
 
     warped = self.warp(**{k: self.input_queues[k] for k in WARP_INPUTS}, frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
 
-    outs, = self.run_policy(
-      **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
-    )
-    if after_enqueue is not None:
-      after_enqueue()
-    model_output = outs.numpy()[0]
+    if self.onnx_policy is None:
+      outs, = self.run_policy(
+        **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
+      )
+      if after_enqueue is not None:
+        after_enqueue()
+      model_output = outs.numpy()[0]
+    else:
+      model_output = self.onnx_policy.run(warped.numpy(), self.npy['desire'], self.npy['traffic_convention'],
+                                          self.npy['action_t'], self.npy['prev_feat'])[0]
+      if after_enqueue is not None:
+        after_enqueue()
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
@@ -244,6 +257,8 @@ class ModelState:
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
     self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+    if self.onnx_policy is not None:
+      self.onnx_policy.reset()
     self.prev_desire[:] = 0
     self.full_frames.clear()
     self._blob_cache.clear()

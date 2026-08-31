@@ -1,6 +1,7 @@
 import warnings
 import unittest
 import importlib
+import os
 
 # Since metadrive depends on pkg_resources, and pkg_resources is deprecated as an API
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -15,7 +16,7 @@ from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 class TestMetaDriveBridge(TestSimBridgeBase):
   def setup_method(self):
     super().openpilot_setup_method()
-    self.test_duration = 30
+    self.test_duration = int(os.environ.get("METADRIVE_TEST_DURATION", "30"))
 
   def create_bridge(self):
     assert MetaDriveBridge is not None
