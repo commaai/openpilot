@@ -74,6 +74,10 @@ class SoftwareInfoLayoutMici(Widget):
 
 
 class CheckUpdateButton(BigButton):
+  UPDATER_PROC = "openpilot.system.updated.updated"
+  CHECK_FOR_UPDATE = "SIGUSR1"
+  DOWNLOAD_UPDATE = "SIGHUP"
+
   def __init__(self):
     self._txt_update_icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 75)
     self._txt_up_to_date_icon = gui_app.texture("icons_mici/settings/device/up_to_date.png", 64, 64)
@@ -97,10 +101,10 @@ class CheckUpdateButton(BigButton):
       gui_app.push_widget(dlg)
       return
 
-    self._signal_updater("SIGHUP" if self.get_value() == "download update" else "SIGUSR1")
+    self._signal_updater(self.DOWNLOAD_UPDATE if self.get_value() == "download update" else self.CHECK_FOR_UPDATE)
 
   def check_for_update(self):
-    self._signal_updater("SIGUSR1")
+    self._signal_updater(self.CHECK_FOR_UPDATE)
 
   def _signal_updater(self, sig: str):
     self.set_enabled(False)
@@ -110,7 +114,7 @@ class CheckUpdateButton(BigButton):
     self.set_icon(self._txt_update_icon)
 
     def run():
-      subprocess.run(f"pkill -{sig} -f openpilot.system.updated.updated", shell=True)
+      subprocess.run(f"pkill -{sig} -f {self.UPDATER_PROC}", shell=True)
 
     threading.Thread(target=run, daemon=True).start()
 
