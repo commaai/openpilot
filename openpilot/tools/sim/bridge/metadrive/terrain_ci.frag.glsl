@@ -23,7 +23,10 @@ void main() {
   if (abs(elevation_texture_ratio - 1.0) < 0.001) {
     attri = texture(attribute_tex, terrain_uv);
   } else {
-    attri = texture(attribute_tex, terrain_uv * elevation_texture_ratio + 0.5);
+    // The semantic texture describes the smaller map region centered inside
+    // the full terrain card. Remap that centered UV interval to [0, 1].
+    attri = texture(attribute_tex, terrain_uv * elevation_texture_ratio
+                                      - (elevation_texture_ratio - 1.0) / 2.0);
   }
 
   vec3 diffuse;
@@ -48,3 +51,4 @@ void main() {
   }
   color = vec4(diffuse * 0.85, 1.0);
 }
+
