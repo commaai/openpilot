@@ -55,7 +55,8 @@ jobs:
         env:
           BLOCK: soundd
           CI_SIM_LOGS: "1"
-          SIM_LOG_SAVE_DIR: /tmp/sim-artifacts/logs
+          SIM_LOG_SAVE_DIR: ${{ github.workspace }}/sim-artifacts/logs
+          SIM_MANAGER_LOG: ${{ github.workspace }}/sim-artifacts/manager.log
           RUN_METADRIVE_TEST: "1"
           METADRIVE_TEST_DURATION: "60"
           MIN_MODEL_RATE: "18"
@@ -69,20 +70,20 @@ jobs:
           METADRIVE_REPORT_FPS: "1"
         run: |
           python -m metadrive.pull_asset
-          mkdir -p /tmp/sim-artifacts/logs
+          mkdir -p sim-artifacts/logs
           xvfb-run -a -s "-screen 0 1920x1080x24" \
             python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
 
       - name: Validate log artifacts
         if: always()
         run: |
-          find /tmp/sim-artifacts -type f -printf '%p %k KiB\n' | sort
-          find /tmp/sim-artifacts/logs -type f | grep -Eq '/(qlog|rlog)(\.zst)?$'
-          find /tmp/sim-artifacts/logs -type f | grep -Eq '/qcamera\.ts$'
+          find sim-artifacts -type f -printf '%p %k KiB\n' | sort
+          find sim-artifacts/logs -type f | grep -Eq '/(qlog|rlog)(\.zst)?$'
+          find sim-artifacts/logs -type f | grep -Eq '/qcamera\.ts$'
 
       - name: Upload simulator artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: fp32-simulator-${{ github.run_number }}
-          path: /tmp/sim-artifacts
+          path: sim-artifacts

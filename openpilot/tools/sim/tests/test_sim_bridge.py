@@ -24,11 +24,15 @@ class TestSimBridgeBase(OpenpilotTestCase):
 
   def setup_method(self):
     self.processes = []
+    self.manager_log = None
 
   @unittest.skipUnless(os.environ.get("RUN_METADRIVE_TEST"), "set RUN_METADRIVE_TEST=1 to run the integration test")
   def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR, start_new_session=True)
+    manager_log_path = os.environ.get("SIM_MANAGER_LOG")
+    self.manager_log = open(manager_log_path, "w") if manager_log_path else None
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR, start_new_session=True,
+                                 stdout=self.manager_log, stderr=subprocess.STDOUT if self.manager_log else None)
     self.manager_process = p_manager
     self.processes.append(p_manager)
 
@@ -54,6 +58,8 @@ class TestSimBridgeBase(OpenpilotTestCase):
     car_event_issues = []
     not_running = []
     while time.monotonic() < start_time + max_time_per_step:
+      if p_manager.poll() is not None:
+        raise RuntimeError(f"manager exited during startup with code {p_manager.returncode}")
       sm.update()
 
       not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
@@ -63,8 +69,9 @@ class TestSimBridgeBase(OpenpilotTestCase):
         no_car_events_issues_once = True
         break
 
-    assert no_car_events_issues_once, \
-                    f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'"
+    assert no_car_events_issues_once, (f"Failed because no messages received, or CarEvents '{car_event_issues}' or "
+                                       f"processes not running '{not_running}'; seen={sm.seen}, alive={sm.alive}, "
+                                       f"valid={sm.valid}")
 
     start_time = time.monotonic()
     min_counts_control_active = 100
@@ -111,6 +118,9 @@ class TestSimBridgeBase(OpenpilotTestCase):
         manager_process.wait(timeout=15)
       except subprocess.TimeoutExpired:
         pass
+
+    if self.manager_log is not None:
+      self.manager_log.close()
 
     if (save_dir := os.environ.get("SIM_LOG_SAVE_DIR")) and Path(Paths.log_root()).is_dir():
       shutil.copytree(Paths.log_root(), save_dir, dirs_exist_ok=True)
