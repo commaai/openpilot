@@ -81,6 +81,9 @@ class ChestnutMonitoring:
     recv_time = sm.recv_time['chestnutGpuState']
     if recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['chestnutGpuState'].frequency:
       return True
+    recv_time = sm.recv_time['modelV2']
+    if recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['modelV2'].frequency and sm['modelV2'].big:
+      return True
     modeld = next((p for p in sm['managerState'].processes if p.name == 'modeld'), None)
     if modeld is not None and modeld.shouldBeRunning and not modeld.running:
       return False

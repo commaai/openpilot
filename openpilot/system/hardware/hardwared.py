@@ -199,7 +199,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   system_stats = LinuxSystemStats()
   pm = messaging.PubMaster(['deviceState', 'chestnutState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "managerState",
-                            "chestnutGpuState"], poll="pandaStates")
+                            "chestnutGpuState", "modelV2"], poll="pandaStates")
 
   count = 0
 

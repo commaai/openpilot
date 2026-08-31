@@ -41,16 +41,19 @@ def gpu_state(**kwargs):
 
 
 class FakeSubMaster:
-  def __init__(self, state, *, updated=True, valid=True, recv_time=1., modeld_running=True):
+  def __init__(self, state, *, updated=True, valid=True, recv_time=1., model_time=0., model_big=False, modeld_running=True):
     self.state = state
+    self.model_big = model_big
     self.modeld_running = modeld_running
     self.updated = {'chestnutGpuState': updated}
     self.valid = {'chestnutGpuState': valid}
-    self.recv_time = {'chestnutGpuState': recv_time}
+    self.recv_time = {'chestnutGpuState': recv_time, 'modelV2': model_time}
 
   def __getitem__(self, key):
     if key == 'managerState':
       return SimpleNamespace(processes=[SimpleNamespace(name='modeld', shouldBeRunning=True, running=self.modeld_running)])
+    if key == 'modelV2':
+      return SimpleNamespace(big=self.model_big)
     assert key == 'chestnutGpuState'
     return self.state
 
@@ -127,6 +130,14 @@ def test_fresh_gpu_state_takes_precedence_over_stale_manager_state():
   sm = FakeSubMaster(gpu_state(), recv_time=10., modeld_running=False)
   assert monitoring.model_alive(sm, 10.5)
   assert not monitoring.model_stalled(sm, 10.5)
+
+
+def test_big_model_output_takes_precedence_over_stale_gpu_state():
+  monitoring = ChestnutMonitoring(FakeUsb())
+  sm = FakeSubMaster(gpu_state(), recv_time=1., model_time=10., model_big=True)
+  assert monitoring.model_alive(sm, 10.4)
+  assert not monitoring.model_stalled(sm, 10.4)
+  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=1., model_time=10.), 10.4)
 
 
 def test_supply_loss_and_recovery():
