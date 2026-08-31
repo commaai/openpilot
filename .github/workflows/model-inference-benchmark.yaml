@@ -26,9 +26,15 @@ jobs:
     - name: Install benchmark dependencies
       run: |
         python3 -m venv .venv
-        .venv/bin/python -m pip install --upgrade pip numpy onnxruntime
+        .venv/bin/python -m pip install --upgrade pip numpy onnx onnxruntime
 
-    - name: Compare CPU backends
+    - name: Convert the driving model to FP32
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/convert_onnx_fp16_to_fp32.py \
+          openpilot/selfdrive/modeld/models/driving_supercombo.onnx \
+          driving_supercombo_fp32.onnx
+
+    - name: Benchmark the original FP16 model and Tinygrad
       env:
         BEAM: "0"
         CACHEDB: ${{ runner.temp }}/tinygrad-cache.db
@@ -40,12 +46,25 @@ jobs:
           --runs 20 \
           --onnxruntime-threads 1 2 4 \
           --tinygrad-device CPU:LLVM \
-          --json model-inference-benchmark.json
+          --profile-runs 3 \
+          --compare-model driving_supercombo_fp32.onnx \
+          --json model-inference-fp16-benchmark.json
+
+    - name: Benchmark the FP32 model in ONNX Runtime
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --model driving_supercombo_fp32.onnx \
+          --backend onnxruntime \
+          --warmup 3 \
+          --runs 20 \
+          --onnxruntime-threads 1 2 4 \
+          --profile-runs 3 \
+          --json model-inference-fp32-benchmark.json
 
     - name: Upload benchmark report
       if: always()
       uses: actions/upload-artifact@v6
       with:
         name: model-inference-cpu-benchmark-${{ github.run_id }}
-        path: model-inference-benchmark.json
+        path: model-inference-*-benchmark.json
         if-no-files-found: warn

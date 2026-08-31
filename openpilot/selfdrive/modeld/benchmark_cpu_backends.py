@@ -13,7 +13,9 @@ import os
 import pathlib
 import platform
 import statistics
+import tempfile
 import time
+from collections import defaultdict
 from typing import Any, Callable
 
 import numpy as np
@@ -79,31 +81,109 @@ def time_runner(run: Callable[[], np.ndarray], warmup: int, runs: int) -> tuple[
   return timings, output
 
 
-def benchmark_onnxruntime(model: pathlib.Path, inputs: dict[str, np.ndarray], threads: int,
-                          warmup: int, runs: int) -> tuple[dict[str, Any], np.ndarray]:
-  try:
-    import onnxruntime as ort
-  except ImportError as exc:
-    raise RuntimeError("ONNX Runtime is not installed; install the onnxruntime package") from exc
-
+def make_ort_options(ort, threads: int, profile_prefix: pathlib.Path | None = None):
   options = ort.SessionOptions()
   options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
   options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
   options.intra_op_num_threads = threads
   options.inter_op_num_threads = 1
+  if profile_prefix is not None:
+    options.enable_profiling = True
+    options.profile_file_prefix = str(profile_prefix)
+  return options
+
+
+def prepare_ort_inputs(session, inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+  type_map = {
+    "tensor(uint8)": np.uint8,
+    "tensor(float16)": np.float16,
+    "tensor(float)": np.float32,
+  }
+  session_inputs = {}
+  for item in session.get_inputs():
+    if item.name not in inputs:
+      raise RuntimeError(f"benchmark input {item.name!r} is missing")
+    if item.type not in type_map:
+      raise RuntimeError(f"unsupported ONNX Runtime input type {item.type!r} for {item.name!r}")
+    value = inputs[item.name].astype(type_map[item.type], copy=False)
+    if tuple(item.shape) != value.shape:
+      raise RuntimeError(f"shape mismatch for {item.name}: model has {item.shape}, benchmark has {value.shape}")
+    session_inputs[item.name] = value
+  return session_inputs
+
+
+def summarize_ort_profile(profile_path: pathlib.Path) -> dict[str, Any]:
+  events = json.loads(profile_path.read_text())
+  operator_totals: dict[str, dict[str, float | int]] = defaultdict(lambda: {"duration_us": 0.0, "calls": 0})
+  node_totals: dict[str, dict[str, Any]] = defaultdict(lambda: {"duration_us": 0.0, "calls": 0, "operator": "unknown"})
+  for event in events:
+    if event.get("cat") != "Node" or "dur" not in event:
+      continue
+    args = event.get("args", {})
+    operator = args.get("op_name", "unknown")
+    node = event.get("name", "unknown")
+    duration = float(event["dur"])
+    operator_totals[operator]["duration_us"] += duration
+    operator_totals[operator]["calls"] += 1
+    node_totals[node]["duration_us"] += duration
+    node_totals[node]["calls"] += 1
+    node_totals[node]["operator"] = operator
+
+  total_us = sum(float(value["duration_us"]) for value in operator_totals.values())
+  def ranked(values: dict[str, dict[str, Any]], include_operator: bool) -> list[dict[str, Any]]:
+    rows = []
+    for name, value in values.items():
+      duration_us = float(value["duration_us"])
+      row = {
+        "name": name,
+        "calls": int(value["calls"]),
+        "total_ms": duration_us / 1000.0,
+        "share_pct": 100.0 * duration_us / total_us if total_us else 0.0,
+      }
+      if include_operator:
+        row["operator"] = value["operator"]
+      rows.append(row)
+    return sorted(rows, key=lambda row: row["total_ms"], reverse=True)[:15]
+
+  return {
+    "total_node_ms": total_us / 1000.0,
+    "top_operator_types": ranked(operator_totals, False),
+    "top_nodes": ranked(node_totals, True),
+  }
+
+
+def profile_onnxruntime(ort, model: pathlib.Path, inputs: dict[str, np.ndarray], threads: int,
+                        profile_runs: int) -> dict[str, Any]:
+  with tempfile.TemporaryDirectory() as tmp:
+    options = make_ort_options(ort, threads, pathlib.Path(tmp) / "ort-profile")
+    session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
+    session_inputs = prepare_ort_inputs(session, inputs)
+    for _ in range(profile_runs):
+      session.run(None, session_inputs)
+    profile_path = pathlib.Path(session.end_profiling())
+    return summarize_ort_profile(profile_path)
+
+
+def benchmark_onnxruntime(model: pathlib.Path, inputs: dict[str, np.ndarray], threads: int,
+                          warmup: int, runs: int, profile_runs: int) -> tuple[dict[str, Any], np.ndarray]:
+  try:
+    import onnxruntime as ort
+  except ImportError as exc:
+    raise RuntimeError("ONNX Runtime is not installed; install the onnxruntime package") from exc
+
+  options = make_ort_options(ort, threads)
 
   load_start = time.perf_counter()
   session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
   load_seconds = time.perf_counter() - load_start
 
-  expected = {item.name: (tuple(item.shape), item.type) for item in session.get_inputs()}
-  actual = {name: (value.shape, str(value.dtype)) for name, value in inputs.items()}
-  if set(expected) != set(actual):
-    raise RuntimeError(f"model inputs changed: expected {expected}, benchmark has {actual}")
+  session_inputs = prepare_ort_inputs(session, inputs)
 
-  timings, output = time_runner(lambda: session.run(None, inputs)[0], warmup, runs)
+  timings, output = time_runner(lambda: session.run(None, session_inputs)[0], warmup, runs)
   result = summarize(f"onnxruntime-{threads}t", timings)
   result.update({"load_seconds": load_seconds, "version": ort.__version__})
+  if profile_runs:
+    result["operator_profile"] = profile_onnxruntime(ort, model, inputs, threads, profile_runs)
   return result, output.astype(np.float32)
 
 
@@ -181,6 +261,20 @@ def compare_outputs(reference: np.ndarray, candidate: np.ndarray) -> dict[str, f
   }
 
 
+def compare_onnxruntime_models(reference_model: pathlib.Path, candidate_model: pathlib.Path,
+                               inputs: dict[str, np.ndarray], threads: int) -> dict[str, float]:
+  try:
+    import onnxruntime as ort
+  except ImportError as exc:
+    raise RuntimeError("ONNX Runtime is required for model comparison") from exc
+  sessions = [
+    ort.InferenceSession(str(model), sess_options=make_ort_options(ort, threads), providers=["CPUExecutionProvider"])
+    for model in (reference_model, candidate_model)
+  ]
+  outputs = [session.run(None, prepare_ort_inputs(session, inputs))[0] for session in sessions]
+  return compare_outputs(outputs[0], outputs[1])
+
+
 def print_result(result: dict[str, Any]) -> None:
   print(
     f"{result['backend']:24} "
@@ -194,12 +288,16 @@ def print_result(result: dict[str, Any]) -> None:
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--model", type=pathlib.Path, default=DEFAULT_MODEL)
+  parser.add_argument("--compare-model", type=pathlib.Path,
+                      help="optional second model for same-input ONNX Runtime output comparison")
   parser.add_argument("--backend", action="append", choices=("onnxruntime", "tinygrad"),
                       help="backend to run; may be repeated (default: both)")
   parser.add_argument("--onnxruntime-threads", type=int, nargs="+", default=[1, 2, 4])
   parser.add_argument("--tinygrad-device", default="CPU:LLVM")
   parser.add_argument("--warmup", type=int, default=3)
   parser.add_argument("--runs", type=int, default=20)
+  parser.add_argument("--profile-runs", type=int, default=0,
+                      help="run a separate profiled ONNX Runtime session this many times")
   parser.add_argument("--seed", type=int, default=20260830)
   parser.add_argument("--json", type=pathlib.Path, help="optional path for machine-readable results")
   args = parser.parse_args()
@@ -215,10 +313,14 @@ def main() -> None:
 
   if "onnxruntime" in backends:
     for threads in args.onnxruntime_threads:
-      result, output = benchmark_onnxruntime(args.model, inputs, threads, args.warmup, args.runs)
+      result, output = benchmark_onnxruntime(args.model, inputs, threads, args.warmup, args.runs, args.profile_runs)
       results.append(result)
       outputs[result["backend"]] = output
       print_result(result)
+      if profile := result.get("operator_profile"):
+        print("  top operators: " + ", ".join(
+          f"{item['name']}={item['share_pct']:.1f}%" for item in profile["top_operator_types"][:5]
+        ))
 
   if "tinygrad" in backends:
     result, output = benchmark_tinygrad(args.model, inputs, args.tinygrad_device, args.warmup, args.runs)
@@ -236,6 +338,12 @@ def main() -> None:
     for name, metrics in parity.items():
       print(f"  {name}: {metrics}")
 
+  model_parity = {}
+  if args.compare_model:
+    threads = args.onnxruntime_threads[0]
+    model_parity = compare_onnxruntime_models(args.model, args.compare_model, inputs, threads)
+    print(f"model parity ({args.model.name} vs {args.compare_model.name}, {threads} threads): {model_parity}")
+
   report = {
     "model": str(args.model),
     "host": platform.platform(),
@@ -243,6 +351,7 @@ def main() -> None:
     "seed": args.seed,
     "results": results,
     "parity": parity,
+    "model_parity": model_parity,
   }
   if args.json:
     args.json.parent.mkdir(parents=True, exist_ok=True)
