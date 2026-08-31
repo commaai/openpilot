@@ -34,7 +34,7 @@ class ChestnutStatus:
     self.model_failure_cause: tuple[str, str | None] | None = None
 
   def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool, model_compiled: bool,
-             model_error: bool, model_running: bool, state, usb_failed: bool, set_alert) -> None:
+             model_error: bool, model_recovered: bool, state, usb_failed: bool, set_alert) -> None:
     detected = [d for d in usb_state if is_chestnut_usb_id(d["vendorId"], d["productId"], include_bootloader=True)]
     devices = [d for d in detected if is_chestnut_usb_id(d["vendorId"], d["productId"])]
     firmware_ok = len(devices) == 1 and devices[0]["product"] == CHESTNUT_USB_PRODUCT
@@ -108,7 +108,7 @@ class ChestnutStatus:
                 "Chestnut PCIe link restored. Cycle ignition to retry.")
       if name in ("Offroad_ChestnutNotDetected", "Offroad_ChestnutPcieUnavailable"):
         self.model_failure_cause = (name, text)
-    elif model_running:
+    elif model_recovered:
       self.model_failure_cause = None
 
     retained_cause = self.model_failure_cause if model_error and current_cause is None else None

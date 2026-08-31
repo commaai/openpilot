@@ -53,10 +53,10 @@ def test_modeld_process_transitions(states, expected):
 
 
 def update(status, alerts=None, *, offroad=True, branch="release-chestnut", devices=None, firmware_failed=False,
-           error=False, model_running=False, state=STATE, usb_failed=False, compiled=True):
+           error=False, model_recovered=False, state=STATE, usb_failed=False, compiled=True):
   alerts = alerts or Alerts()
   status.update(offroad, branch, [DEVICE] if devices is None else devices, firmware_failed, compiled,
-                error, model_running, state, usb_failed, alerts.set)
+                error, model_recovered, state, usb_failed, alerts.set)
   assert len(alerts.active) <= 1
   return alerts
 
@@ -116,10 +116,12 @@ def test_peripheral_failure_remains_model_failure_cause():
   update(status, alerts, offroad=False)
   update(status, alerts, offroad=False, state=None, usb_failed=True)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
+  update(status, alerts, offroad=False)
+  assert not alerts.active
   update(status, alerts, offroad=False, error=True)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
   assert "USB reconnected" in alerts.values["Offroad_ChestnutNotDetected"][1]
-  update(status, alerts, offroad=False, model_running=True)
+  update(status, alerts, offroad=False, model_recovered=True)
   assert not alerts.active
 
 
@@ -250,7 +252,7 @@ def test_crank_power_loss_and_recovery_transitions():
   update(status, alerts, offroad=False, error=True, state=STATE)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   assert "power restored" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
-  update(status, alerts, offroad=False, model_running=True, state=STATE)
+  update(status, alerts, offroad=False, model_recovered=True, state=STATE)
   assert not alerts.active
   update(status, alerts, offroad=False, state=low)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
@@ -265,10 +267,12 @@ def test_hardware_cause_precedes_resulting_model_error():
   low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
   update(status, alerts, offroad=False, error=True, state=low)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  update(status, alerts, offroad=False, state=STATE)
+  assert not alerts.active
   update(status, alerts, offroad=False, error=True, state=STATE)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   assert "power restored" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
-  update(status, alerts, offroad=False, model_running=True)
+  update(status, alerts, offroad=False, model_recovered=True)
   assert not alerts.active
 
 

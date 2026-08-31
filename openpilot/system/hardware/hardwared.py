@@ -335,6 +335,8 @@ def hardware_thread(end_event, hw_queue) -> None:
                                                            model_compiled or model_loading or model_active is not None)
     now = time.monotonic()
     model_running = chestnut_monitoring.model_alive(sm, now)
+    model_recovered = ((sm.updated['chestnutGpuState'] and sm.valid['chestnutGpuState']) or
+                       (sm.updated['modelV2'] and sm.valid['modelV2'] and sm['modelV2'].big))
     model_failed = modeld_failed or (params.get_bool("ChestnutActive") and chestnut_monitoring.model_stalled(sm, now))
     if not model_error and model_failed:
       model_error = True
@@ -343,7 +345,7 @@ def hardware_thread(end_event, hw_queue) -> None:
       model_error = False
       params.remove("ChestnutModelError")
     chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed, model_compiled,
-                           model_error, model_running,
+                           model_error, model_recovered,
                            chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
                            chestnut_monitoring.usb_failed,
                            set_offroad_alert_if_changed)
