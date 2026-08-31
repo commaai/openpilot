@@ -111,6 +111,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   vc = [0,0]
   rendered_frames = 0
   render_start = time.monotonic()
+  invalid_camera_streak = 0
+  max_invalid_camera_streak = 0
 
   while not exit_event.is_set():
     vehicle_state = metadrive_vehicle_state(
@@ -175,7 +177,10 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         elif out_of_lane:
           done_result = (True, {"out_of_lane" : True})
         elif timeout:
-          done_result = (True, {"timeout" : True})
+          camera_invalid = max_invalid_camera_streak >= 3
+          print("metadrive camera health: "
+                f"max_invalid_streak={max_invalid_camera_streak} invalid={camera_invalid}", flush=True)
+          done_result = (True, {"timeout" : True, "camera_invalid": camera_invalid})
 
         simulation_state = metadrive_simulation_state(
           running=False,
@@ -187,6 +192,13 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       if dual_camera:
         wide_road_image[...] = get_cam_as_rgb("rgb_wide")
       road_image[...] = get_cam_as_rgb("rgb_road")
+      # A broken terrain render can cover the lower camera view with solid
+      # white for multiple frames. That makes the model steer on corrupt input,
+      # so make it an explicit test failure instead of a flaky road departure.
+      camera_sample = road_image[H // 2::16, ::16]
+      invalid_camera_frame = np.mean(np.all(camera_sample > 245, axis=2)) > 0.9
+      invalid_camera_streak = invalid_camera_streak + 1 if invalid_camera_frame else 0
+      max_invalid_camera_streak = max(max_invalid_camera_streak, invalid_camera_streak)
       image_lock.release()
 
       rendered_frames += 1
@@ -196,3 +208,4 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         render_start = now
 
     rk.keep_time()
+
