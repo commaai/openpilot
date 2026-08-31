@@ -2,6 +2,15 @@ name: FP32 CPU simulator validation
 
 on:
   workflow_dispatch:
+    inputs:
+      reliability_runs:
+        description: Number of consecutive one-minute driving tests
+        required: true
+        default: "1"
+        type: choice
+        options:
+          - "1"
+          - "20"
   push:
     branches:
       - benchmark/model-cpu-backends
@@ -59,13 +68,12 @@ jobs:
         run: scons
 
       - name: Run one-minute real-time driving test
-        timeout-minutes: 15
+        timeout-minutes: 30
         env:
           BLOCK: soundd
           CI_SIM_LOGS: "1"
           ENCODERD_QCAM_ONLY: "1"
           SIM_LOG_SAVE_DIR: ${{ github.workspace }}/sim-artifacts/logs
-          SIM_MANAGER_LOG: ${{ github.workspace }}/sim-artifacts/manager.log
           RUN_METADRIVE_TEST: "1"
           METADRIVE_TEST_DURATION: "60"
           MIN_MODEL_RATE: "18"
@@ -84,13 +92,18 @@ jobs:
         run: |
           python -m metadrive.pull_asset
           mkdir -p sim-artifacts/logs
-          xvfb-run -a -s "-screen 0 1920x1080x24" \
-            python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
+          reliability_runs="${{ inputs.reliability_runs || '1' }}"
+          for run_index in $(seq 1 "$reliability_runs"); do
+            echo "Starting reliability run $run_index/$reliability_runs"
+            SIM_MANAGER_LOG="${{ github.workspace }}/sim-artifacts/manager-${run_index}.log" \
+              xvfb-run -a -s "-screen 0 1920x1080x24" \
+              python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
+          done
 
       - name: Validate log artifacts
         if: always()
         run: |
-          grep -E "locationd|modeld|commIssue|Observation" sim-artifacts/manager.log | tail -100 || true
+          grep -E "locationd|modeld|commIssue|Observation" sim-artifacts/manager-*.log | tail -100 || true
           find sim-artifacts -type f -printf '%p %k KiB\n' | sort
           find sim-artifacts/logs -type f | grep -Eq '/(qlog|rlog)(\.zst)?$'
           find sim-artifacts/logs -type f | grep -Eq '/qcamera\.ts$'
