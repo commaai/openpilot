@@ -92,6 +92,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"ObdMultiplexingEnabled", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, BOOL}},
     {"Offroad_CarUnrecognized", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, JSON}},
     {"Offroad_ChestnutBranch", {CLEAR_ON_MANAGER_START, JSON}},
+    {"Offroad_ChestnutModelError", {CLEAR_ON_MANAGER_START, JSON}},
     {"Offroad_ChestnutNotDetected", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, JSON}},
     {"Offroad_ChestnutOverheated", {CLEAR_ON_MANAGER_START, JSON}},
     {"Offroad_ChestnutPcieUnavailable", {CLEAR_ON_MANAGER_START, JSON}},
@@ -135,5 +136,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"UptimeOnroad", {PERSISTENT, FLOAT, "0.0"}},
     {"ChestnutActive", {CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | CLEAR_ON_IGNITION_ON, BOOL}},
     {"ChestnutLoading", {CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | CLEAR_ON_IGNITION_ON, BOOL}},
+    {"ChestnutModelError", {CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON, BOOL}},
     {"Version", {PERSISTENT, STRING}},
 };

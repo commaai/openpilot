@@ -1,14 +1,15 @@
+from itertools import product
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT
-from openpilot.system.hardware.chestnut.status import ChestnutStatus
+from openpilot.system.hardware.chestnut.status import ChestnutStatus, update_modeld_state
 
 
 FAILURE_ALERTS = {
-  "Offroad_ChestnutNotDetected", "Offroad_ChestnutOverheated",
+  "Offroad_ChestnutModelError", "Offroad_ChestnutNotDetected", "Offroad_ChestnutOverheated",
   "Offroad_ChestnutPcieUnavailable", "Offroad_ChestnutUncompiled", "Offroad_ChestnutUpdateFailed", "Offroad_ChestnutUsbSlow",
 }
 DEVICE = {"vendorId": 0xADD1, "productId": 1, "product": CHESTNUT_USB_PRODUCT, "speedMbps": 10000}
@@ -32,14 +33,43 @@ class Alerts:
     return {name for name in FAILURE_ALERTS if self.values[name][0]}
 
 
+def process_state(*, running=False, should_run=True):
+  return SimpleNamespace(name="modeld", running=running, shouldBeRunning=should_run)
+
+
+@pytest.mark.parametrize(("states", "expected"), [
+  ([(False, True, True), (True, True, True)], [False, False]),
+  ([(True, True, True), (False, True, True)], [False, True]),
+  ([(True, True, True), (False, False, True)], [False, False]),
+  ([(True, True, False), (False, True, False)], [False, False]),
+])
+def test_modeld_process_transitions(states, expected):
+  was_running = False
+  failed = []
+  for running, should_run, chestnut_started in states:
+    was_running, process_failed = update_modeld_state([process_state(running=running, should_run=should_run)],
+                                                      was_running, chestnut_started)
+    failed.append(process_failed)
+  assert failed == expected
+
+
 def update(status, alerts=None, *, offroad=True, branch="release-chestnut", devices=None, firmware_failed=False,
-           active=False, state=STATE, usb_failed=False, compiled=True):
+           active=False, error=False, state=STATE, usb_failed=False, compiled=True):
   alerts = alerts or Alerts()
   with patch("openpilot.system.hardware.chestnut.status.chestnut_compiled", return_value=compiled):
     status.update(offroad, branch, [DEVICE] if devices is None else devices, firmware_failed,
-                  active, state, usb_failed, alerts.set)
+                  active, error, state, usb_failed, alerts.set)
   assert len(alerts.active) <= 1
   return alerts
+
+
+def test_software_failure():
+  alerts = update(ChestnutStatus(), error=True)
+  assert alerts.active == {"Offroad_ChestnutModelError"}
+
+
+def test_non_chestnut_ignores_model_error():
+  assert not update(ChestnutStatus(), devices=[], error=True).active
 
 
 def test_usb_cold_boot_and_pull_transitions():
@@ -83,6 +113,21 @@ def test_detected_and_not_detected_are_mutually_exclusive():
   update(status, alerts, offroad=False, branch="master", state=None, usb_failed=True)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
   assert not alerts.values["Offroad_ChestnutBranch"][0]
+
+
+@pytest.mark.parametrize("present", list(product((False, True), repeat=4)))
+def test_usb_transition_histories_report_current_state(present):
+  status, alerts = ChestnutStatus(), Alerts()
+  seen = False
+  for connected in present:
+    seen |= connected
+    update(status, alerts, offroad=False, branch="master", devices=[DEVICE] if connected else [])
+    missing = "Offroad_ChestnutNotDetected" in alerts.active
+    assert missing == (seen and not connected)
+    assert not (missing and alerts.values["Offroad_ChestnutBranch"][0])
+
+  update(status, alerts, offroad=True, branch="master", devices=[DEVICE] if present[-1] else [])
+  assert "Offroad_ChestnutNotDetected" not in alerts.active
 
 
 def test_delayed_usb_detection_then_removal():
@@ -148,6 +193,14 @@ def test_initial_power_absence_transition():
   assert "power disconnected" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
 
 
+def test_power_absence_before_model_load():
+  status, alerts = ChestnutStatus(), Alerts()
+  low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
+  update(status, alerts, offroad=False, active=None, error=True, state=low)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  assert "power disconnected" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+
+
 def test_crank_power_loss_and_recovery_transitions():
   status, alerts = ChestnutStatus(), Alerts()
   start_model(status, alerts)
@@ -157,7 +210,27 @@ def test_crank_power_loss_and_recovery_transitions():
   update(status, alerts, offroad=False, state=STATE)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   assert "power restored" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+  update(status, alerts, offroad=False, state=low)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  assert "power lost" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+  assert "power restored" not in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
   assert alerts.triggers["Offroad_ChestnutPcieUnavailable"] == 1
+
+
+@pytest.mark.parametrize("powered", list(product((False, True), repeat=4)))
+def test_power_transition_histories_report_current_state(powered):
+  status, alerts = ChestnutStatus(), Alerts()
+  start_model(status, alerts)
+  failure_seen = False
+  low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
+  for available in powered:
+    failure_seen |= not available
+    update(status, alerts, offroad=False, state=STATE if available else low)
+    text = alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+    if not available:
+      assert "power restored" not in text
+    elif failure_seen:
+      assert "power restored" in text
 
 
 def test_overheat_hysteresis_transitions():

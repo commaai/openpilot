@@ -1,14 +1,22 @@
 import time
 
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, is_chestnut_usb_id
-from openpilot.selfdrive.modeld.helpers import chestnut_compiled
+from openpilot.selfdrive.modeld.helpers import CHESTNUT_PCIE_READY, CHESTNUT_POWERED_VOLTAGE, chestnut_compiled
 
 
 CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging")
-CHESTNUT_POWERED_VOLTAGE = 5000
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.
 TEMP_HYSTERESIS = 5.
+
+
+def update_modeld_state(processes, was_running: bool, chestnut_started: bool) -> tuple[bool, bool]:
+  modeld = next((p for p in processes if p.name == "modeld"), None)
+  if modeld is not None and not modeld.shouldBeRunning:
+    return False, False
+  was_running |= modeld is not None and modeld.running
+  failed = modeld is not None and chestnut_started and was_running and not modeld.running
+  return was_running, failed
 
 
 class ChestnutStatus:
@@ -17,6 +25,7 @@ class ChestnutStatus:
     self.offroad = True
     self.pcie_failed = False
     self.power_seen = False
+    self.power_failure_seen = False
     self.power_unavailable = False
     self.power_lost = False
     self.power_restored = False
@@ -27,7 +36,7 @@ class ChestnutStatus:
     self.usb_failed = False
 
   def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool,
-             model_active: bool | None, state, usb_failed: bool, set_alert) -> None:
+             model_active: bool | None, model_error: bool, state, usb_failed: bool, set_alert) -> None:
     detected = [d for d in usb_state if is_chestnut_usb_id(d["vendorId"], d["productId"], include_bootloader=True)]
     devices = [d for d in detected if is_chestnut_usb_id(d["vendorId"], d["productId"])]
     firmware_ok = len(devices) == 1 and devices[0]["product"] == CHESTNUT_USB_PRODUCT
@@ -35,6 +44,7 @@ class ChestnutStatus:
     if self.offroad and not offroad:
       self.pcie_failed = False
       self.power_seen = False
+      self.power_failure_seen = False
       self.power_unavailable = False
       self.power_lost = False
       self.power_restored = False
@@ -52,20 +62,20 @@ class ChestnutStatus:
     if not offroad and state is not None:
       powered = state.supplyVoltage >= CHESTNUT_POWERED_VOLTAGE
       power_lost = state.supplyFault or not powered
-      if self.model_attempted and power_lost and not self.power_lost:
+      if (self.model_attempted or model_error) and power_lost and not self.power_lost:
         self.power_unavailable = not self.power_seen
       self.power_seen |= powered
 
-    if not offroad and self.model_attempted and state is not None:
-      self.link_failures = self.link_failures + 1 if state.pcieLtssm != 0x78 else 0
-      self.pcie_failed |= self.link_failures >= 2 or power_lost
-      self.power_lost |= power_lost
-
-    if self.pcie_failed and self.power_lost and state is not None:
-      self.power_restored |= not state.supplyFault and state.supplyVoltage >= CHESTNUT_POWERED_VOLTAGE
+    if not offroad and (self.model_attempted or model_error) and state is not None:
+      self.link_failures = self.link_failures + 1 if state.pcieLtssm != CHESTNUT_PCIE_READY else 0
+      self.pcie_failed |= self.link_failures >= 2 or power_lost or (model_error and state.pcieLtssm != CHESTNUT_PCIE_READY)
+      self.power_failure_seen |= power_lost
+      self.power_lost = power_lost
+      self.power_restored = self.pcie_failed and self.power_failure_seen and self.power_seen and not power_lost
     if self.usb_failed:
       self.pcie_failed = False
       self.power_seen = False
+      self.power_failure_seen = False
       self.power_unavailable = False
       self.power_lost = False
       self.power_restored = False
@@ -81,8 +91,9 @@ class ChestnutStatus:
     update_failed = offroad and firmware_failed
     compiled = firmware_ok and chestnut_compiled()
     uncompiled = offroad and firmware_ok and not compiled
+    software_failed = model_error and compiled
 
-    if self.power_lost:
+    if self.power_lost or self.power_restored:
       pcie_alert = ("Chestnut power restored. 12V is stable again, cycle ignition." if self.power_restored else
                     "Chestnut power disconnected. Check 12V connection, then cycle ignition." if self.power_unavailable else
                     "Chestnut power lost. Possibly caused by an engine-crank voltage drop. Check 12V connection, then cycle ignition.")
@@ -97,6 +108,7 @@ class ChestnutStatus:
       ("Offroad_ChestnutPcieUnavailable", self.pcie_failed, pcie_alert),
       ("Offroad_ChestnutOverheated", self.overheated, f"{state.tempC:.0f} °C" if state is not None else None),
       ("Offroad_ChestnutUsbSlow", slow_usb, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None),
+      ("Offroad_ChestnutModelError", software_failed, None),
     )
     active_alert = next((name for name, active, _ in alerts if active), None)
 

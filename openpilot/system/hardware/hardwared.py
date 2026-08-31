@@ -26,8 +26,9 @@ from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
-from openpilot.system.hardware.chestnut.status import ChestnutStatus
+from openpilot.system.hardware.chestnut.status import ChestnutStatus, update_modeld_state
 from openpilot.system.hardware.chestnut.monitoring import ChestnutMonitoring
+from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 from openpilot.common.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -197,7 +198,7 @@ def hw_state_thread(end_event, hw_queue):
 def hardware_thread(end_event, hw_queue) -> None:
   system_stats = LinuxSystemStats()
   pm = messaging.PubMaster(['deviceState', 'chestnutState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates",
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "managerState",
                             "chestnutState", "chestnutGpuState"], poll="pandaStates")
 
   count = 0
@@ -249,6 +250,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   chestnut_monitoring = ChestnutMonitoring()
   chestnut_status = ChestnutStatus()
   model_loading = params.get_bool("ChestnutLoading")
+  modeld_was_running = False
   branch = get_short_branch()
 
   while not end_event.is_set():
@@ -315,10 +317,21 @@ def hardware_thread(end_event, hw_queue) -> None:
     chestnut.update(started_ts is None, last_hw_state.usb_state)
     chestnut_state = sm["chestnutState"]
     chestnut_valid = sm.alive["chestnutState"] and sm.valid["chestnutState"]
+    model_error = params.get_bool("ChestnutModelError")
     model_loading = params.get_bool("ChestnutLoading")
     model_active = params.get("ChestnutActive")
+    chestnut_model_ready = any(is_chestnut_usb_id(d["vendorId"], d["productId"]) and d["product"] == CHESTNUT_USB_PRODUCT
+                               for d in last_hw_state.usb_state) and chestnut_compiled()
+    if started_ts is None:
+      modeld_was_running = False
+    modeld_was_running, modeld_failed = update_modeld_state(sm["managerState"].processes, modeld_was_running,
+                                                           chestnut_model_ready or model_loading or model_active is not None)
+    if not model_error and modeld_failed:
+      model_error = True
+      params.put_bool("ChestnutModelError", True)
     chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed,
-                           model_active, chestnut_state if chestnut_valid else None, chestnut_monitoring.usb_failed,
+                           model_active, model_error,
+                           chestnut_state if chestnut_valid else None, chestnut_monitoring.usb_failed,
                            set_offroad_alert_if_changed)
     # this subset is only used for offroad
     temp_sources = [
