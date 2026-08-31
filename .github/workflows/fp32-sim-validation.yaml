@@ -31,6 +31,8 @@ jobs:
 
       - name: Install CPU runtime and MetaDrive
         run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
           uv pip install onnx onnxruntime
           uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@2716f55a9c7b928ce957a497a15c2c19840c08bc"
 
@@ -59,7 +61,6 @@ jobs:
           MIN_MODEL_RATE: "18"
           ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
           ONNX_CPU_THREADS: "2"
-          EGL_PLATFORM: surfaceless
           METADRIVE_RENDER_SCALE: "0.5"
           METADRIVE_NO_MSAA: "1"
           METADRIVE_NO_SHADOWS: "1"
@@ -69,7 +70,8 @@ jobs:
         run: |
           python -m metadrive.pull_asset
           mkdir -p /tmp/sim-artifacts/logs
-          python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
+          xvfb-run -a -s "-screen 0 1920x1080x24" \
+            python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
 
       - name: Validate log artifacts
         if: always()
@@ -84,4 +86,3 @@ jobs:
         with:
           name: fp32-simulator-${{ github.run_number }}
           path: /tmp/sim-artifacts
-
