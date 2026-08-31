@@ -239,20 +239,30 @@ def test_power_absence_before_model_load():
   assert "power disconnected" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
 
 
-def test_offroad_power_and_pcie_follow_current_state():
+def test_offroad_power_and_pcie_do_not_report_normal_power_down():
   status, alerts = ChestnutStatus(), Alerts()
   low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
   update(status, alerts, state=low)
-  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  assert not alerts.active
   update(status, alerts)
   assert not alerts.active
 
   link_down = SimpleNamespace(**(vars(STATE) | {"pcieLtssm": 0}))
   update(status, alerts, state=link_down)
   update(status, alerts, state=link_down)
-  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  assert not alerts.active
   update(status, alerts)
   assert not alerts.active
+
+
+def test_onroad_power_failure_is_retained_offroad():
+  status, alerts = ChestnutStatus(), Alerts()
+  start_model(status, alerts)
+  low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
+  update(status, alerts, offroad=False, error=True, state=low)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  update(status, alerts, error=True, state=low)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
 
 
 def test_crank_power_loss_and_recovery_transitions():

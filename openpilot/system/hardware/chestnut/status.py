@@ -93,7 +93,7 @@ class ChestnutStatus:
       ("Offroad_ChestnutNotDetected", missing, missing_alert),
       ("Offroad_ChestnutUpdateFailed", update_failed, None),
       ("Offroad_ChestnutUncompiled", uncompiled, None),
-      ("Offroad_ChestnutPcieUnavailable", self.pcie_failed, pcie_alert),
+      ("Offroad_ChestnutPcieUnavailable", self.pcie_failed and not offroad, pcie_alert),
       ("Offroad_ChestnutOverheated", self.overheated, f"{state.tempC:.0f} °C" if state is not None else None),
       ("Offroad_ChestnutUsbSlow", slow_usb, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None),
     )
