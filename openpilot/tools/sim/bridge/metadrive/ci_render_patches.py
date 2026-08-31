@@ -27,6 +27,18 @@ def apply_ci_render_patches():
     from panda3d.core import (Geom, GeomNode, GeomTriangles, GeomVertexData, GeomVertexFormat,
                               GeomVertexWriter, Shader)
 
+    original_set_position = Terrain.set_position
+
+    def set_position_below_road(self, position, height=None):
+      original_set_position(self, position, height)
+      if getattr(self, "_ci_flat_terrain", False):
+        # Terrain.reset() repositions the generated mesh after creation and
+        # normally forces its local Z back to zero. Preserve the separation
+        # from the road geometry or the two surfaces depth-fight and flicker.
+        self._mesh_terrain.set_z(-0.2)
+
+    Terrain.set_position = set_position_below_road
+
     def generate_card(self, size, heightfield, attribute_tex, target_triangle_width=10, engine=None):
       engine = engine or self.engine
       vdata = GeomVertexData("terrain_card", GeomVertexFormat.getV3t2(), Geom.UHStatic)
@@ -60,5 +72,7 @@ def apply_ci_render_patches():
       # two-triangle terrain slightly below them to avoid depth fighting that
       # can hide the road for several seconds and feed blank frames to modeld.
       self._mesh_terrain.set_pos(-size / 2, -size / 2, -0.2)
+      self._ci_flat_terrain = True
 
     Terrain._generate_mesh_vis_terrain = generate_card
+
