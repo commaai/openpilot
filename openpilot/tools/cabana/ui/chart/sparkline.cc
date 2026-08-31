@@ -124,7 +124,7 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   // an aliased 1 px segment between two columns rounds into one of them and the rounding flips as the
   // window slides, so the thin peaks sparkle; antialiasing spreads it over both and the motion is smooth
   for (const auto &p : render_points_) draw_list->PathLineTo(point_at(p));
-  draw_list->PathStroke(color_, ImDrawFlags_None, 2.0f);
+  draw_list->PathStroke(color_, ImDrawFlags_None, 1.5f);
 
   // a point is a 3x3 square
   auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color_); };
