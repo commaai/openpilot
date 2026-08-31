@@ -22,3 +22,4 @@ OPENPILOT_DIR=$SCRIPT_DIR/../../
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $OPENPILOT_DIR/system/manager && exec ./manager.py
+
