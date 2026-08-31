@@ -14,6 +14,7 @@ import pathlib
 import platform
 import statistics
 import tempfile
+import threading
 import time
 from collections import defaultdict
 from typing import Any, Callable
@@ -33,6 +34,53 @@ INPUT_SPECS = {
   "traffic_convention": ((1, 2), np.float16),
   "action_t": ((1, 2), np.float16),
 }
+
+
+class PeakMemorySampler:
+  def __init__(self, enabled: bool):
+    self.enabled = enabled
+    self.baseline = 0
+    self.peak = 0
+    self.final = 0
+    self._stop = threading.Event()
+    self._thread = None
+    self._process = None
+
+  def __enter__(self):
+    if not self.enabled:
+      return self
+    try:
+      import psutil
+    except ImportError as exc:
+      raise RuntimeError("psutil is required for --measure-memory") from exc
+    self._process = psutil.Process()
+    self.baseline = self.peak = self._process.memory_info().rss
+
+    def sample() -> None:
+      while not self._stop.wait(0.001):
+        self.peak = max(self.peak, self._process.memory_info().rss)
+
+    self._thread = threading.Thread(target=sample, name="peak-memory-sampler", daemon=True)
+    self._thread.start()
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    if not self.enabled:
+      return
+    self._stop.set()
+    assert self._thread is not None and self._process is not None
+    self._thread.join()
+    self.final = self._process.memory_info().rss
+    self.peak = max(self.peak, self.final)
+
+  def report(self) -> dict[str, float]:
+    mib = 1024 * 1024
+    return {
+      "baseline_rss_mib": self.baseline / mib,
+      "peak_rss_mib": self.peak / mib,
+      "peak_delta_mib": (self.peak - self.baseline) / mib,
+      "final_rss_mib": self.final / mib,
+    }
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -164,24 +212,53 @@ def profile_onnxruntime(ort, model: pathlib.Path, inputs: dict[str, np.ndarray],
     return summarize_ort_profile(profile_path)
 
 
+def make_ort_runner(ort, session, session_inputs: dict[str, np.ndarray], io_binding: bool) -> Callable[[], np.ndarray]:
+  if not io_binding:
+    return lambda: session.run(None, session_inputs)[0]
+
+  outputs = session.get_outputs()
+  if len(outputs) != 1 or not all(isinstance(dim, int) for dim in outputs[0].shape):
+    raise RuntimeError("I/O binding benchmark requires exactly one statically shaped output")
+  dtype_map = {"tensor(float16)": np.float16, "tensor(float)": np.float32}
+  if outputs[0].type not in dtype_map:
+    raise RuntimeError(f"unsupported I/O binding output type {outputs[0].type!r}")
+
+  output = np.empty(tuple(outputs[0].shape), dtype=dtype_map[outputs[0].type])
+  binding = session.io_binding()
+  for name, value in session_inputs.items():
+    binding.bind_cpu_input(name, value)
+  binding.bind_ortvalue_output(outputs[0].name, ort.OrtValue.ortvalue_from_numpy(output))
+
+  def run() -> np.ndarray:
+    session.run_with_iobinding(binding)
+    binding.synchronize_outputs()
+    return output
+  return run
+
+
 def benchmark_onnxruntime(model: pathlib.Path, inputs: dict[str, np.ndarray], threads: int,
-                          warmup: int, runs: int, profile_runs: int) -> tuple[dict[str, Any], np.ndarray]:
+                          warmup: int, runs: int, profile_runs: int, measure_memory: bool,
+                          io_binding: bool) -> tuple[dict[str, Any], np.ndarray]:
   try:
     import onnxruntime as ort
   except ImportError as exc:
     raise RuntimeError("ONNX Runtime is not installed; install the onnxruntime package") from exc
 
-  options = make_ort_options(ort, threads)
+  memory = PeakMemorySampler(measure_memory)
+  with memory:
+    options = make_ort_options(ort, threads)
+    load_start = time.perf_counter()
+    session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
+    load_seconds = time.perf_counter() - load_start
+    session_inputs = prepare_ort_inputs(session, inputs)
+    run = make_ort_runner(ort, session, session_inputs, io_binding)
+    timings, output = time_runner(run, warmup, runs)
 
-  load_start = time.perf_counter()
-  session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
-  load_seconds = time.perf_counter() - load_start
-
-  session_inputs = prepare_ort_inputs(session, inputs)
-
-  timings, output = time_runner(lambda: session.run(None, session_inputs)[0], warmup, runs)
-  result = summarize(f"onnxruntime-{threads}t", timings)
+  suffix = "-iobinding" if io_binding else ""
+  result = summarize(f"onnxruntime-{threads}t{suffix}", timings)
   result.update({"load_seconds": load_seconds, "version": ort.__version__})
+  if measure_memory:
+    result["memory"] = memory.report()
   if profile_runs:
     result["operator_profile"] = profile_onnxruntime(ort, model, inputs, threads, profile_runs)
   return result, output.astype(np.float32)
@@ -203,7 +280,7 @@ def sanitize_tinygrad_environment(device: str) -> None:
 
 
 def benchmark_tinygrad(model: pathlib.Path, inputs: dict[str, np.ndarray], device: str,
-                       warmup: int, runs: int) -> tuple[dict[str, Any], np.ndarray]:
+                       warmup: int, runs: int, measure_memory: bool) -> tuple[dict[str, Any], np.ndarray]:
   sanitize_tinygrad_environment(device)
   try:
     from tinygrad import Device, Tensor, TinyJit
@@ -211,28 +288,30 @@ def benchmark_tinygrad(model: pathlib.Path, inputs: dict[str, np.ndarray], devic
   except ImportError as exc:
     raise RuntimeError("tinygrad is not importable; add the pinned tinygrad_repo to PYTHONPATH") from exc
 
-  load_start = time.perf_counter()
-  runner = OnnxRunner(str(model))
-  load_seconds = time.perf_counter() - load_start
+  memory = PeakMemorySampler(measure_memory)
+  with memory:
+    load_start = time.perf_counter()
+    runner = OnnxRunner(str(model))
+    load_seconds = time.perf_counter() - load_start
 
-  # Match openpilot's compile_modeld path: float16 ONNX inputs use float32 JIT
-  # interfaces, while image tensors retain uint8 storage.
-  tg_inputs = {
-    name: Tensor(value.astype(np.float32) if value.dtype == np.float16 else value, device="NPY").realize()
-    for name, value in inputs.items()
-  }
+    # Match openpilot's compile_modeld path: float16 ONNX inputs use float32 JIT
+    # interfaces, while image tensors retain uint8 storage.
+    tg_inputs = {
+      name: Tensor(value.astype(np.float32) if value.dtype == np.float16 else value, device="NPY").realize()
+      for name, value in inputs.items()
+    }
 
-  @TinyJit(prune=True)
-  def run_model(**kwargs):
-    values = {name: value.to(Device.DEFAULT) for name, value in kwargs.items()}
-    return next(iter(runner(values).values())).cast("float32")
+    @TinyJit(prune=True)
+    def run_model(**kwargs):
+      values = {name: value.to(Device.DEFAULT) for name, value in kwargs.items()}
+      return next(iter(runner(values).values())).cast("float32")
 
-  def run() -> np.ndarray:
-    return run_model(**tg_inputs).numpy()
+    def run() -> np.ndarray:
+      return run_model(**tg_inputs).numpy()
 
-  # TinyJit captures on the second call and executes the captured graph from the
-  # third call onward, so ensure timing only covers the steady-state graph.
-  timings, output = time_runner(run, max(warmup, 3), runs)
+    # TinyJit captures on the second call and executes the captured graph from the
+    # third call onward, so ensure timing only covers the steady-state graph.
+    timings, output = time_runner(run, max(warmup, 3), runs)
   result = summarize(f"tinygrad-{device.lower()}", timings)
   try:
     import tinygrad
@@ -240,6 +319,8 @@ def benchmark_tinygrad(model: pathlib.Path, inputs: dict[str, np.ndarray], devic
   except Exception:
     version = "pinned-submodule"
   result.update({"load_seconds": load_seconds, "version": version})
+  if measure_memory:
+    result["memory"] = memory.report()
   return result, output
 
 
@@ -298,6 +379,10 @@ def main() -> None:
   parser.add_argument("--runs", type=int, default=20)
   parser.add_argument("--profile-runs", type=int, default=0,
                       help="run a separate profiled ONNX Runtime session this many times")
+  parser.add_argument("--measure-memory", action="store_true",
+                      help="sample process RSS during model load, warmup, and measured runs")
+  parser.add_argument("--onnxruntime-io-binding", action="store_true",
+                      help="reuse pre-bound ONNX Runtime input and output buffers")
   parser.add_argument("--seed", type=int, default=20260830)
   parser.add_argument("--json", type=pathlib.Path, help="optional path for machine-readable results")
   args = parser.parse_args()
@@ -313,20 +398,31 @@ def main() -> None:
 
   if "onnxruntime" in backends:
     for threads in args.onnxruntime_threads:
-      result, output = benchmark_onnxruntime(args.model, inputs, threads, args.warmup, args.runs, args.profile_runs)
+      result, output = benchmark_onnxruntime(
+        args.model, inputs, threads, args.warmup, args.runs, args.profile_runs,
+        args.measure_memory, args.onnxruntime_io_binding,
+      )
       results.append(result)
       outputs[result["backend"]] = output
       print_result(result)
+      if memory := result.get("memory"):
+        print(f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, "
+              f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB")
       if profile := result.get("operator_profile"):
         print("  top operators: " + ", ".join(
           f"{item['name']}={item['share_pct']:.1f}%" for item in profile["top_operator_types"][:5]
         ))
 
   if "tinygrad" in backends:
-    result, output = benchmark_tinygrad(args.model, inputs, args.tinygrad_device, args.warmup, args.runs)
+    result, output = benchmark_tinygrad(
+      args.model, inputs, args.tinygrad_device, args.warmup, args.runs, args.measure_memory,
+    )
     results.append(result)
     outputs[result["backend"]] = output
     print_result(result)
+    if memory := result.get("memory"):
+      print(f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, "
+            f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB")
 
   parity = {}
   if len(outputs) > 1:
