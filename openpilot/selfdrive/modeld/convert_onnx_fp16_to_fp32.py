@@ -6,7 +6,7 @@ import pathlib
 
 import numpy as np
 import onnx
-from onnx import AttributeProto, TensorProto, numpy_helper
+from onnx import AttributeProto, NodeProto, TensorProto, helper, numpy_helper
 
 
 def convert_tensor(tensor: TensorProto) -> bool:
@@ -75,13 +75,50 @@ def convert_graph(graph) -> dict[str, int]:
   return counts
 
 
+def fp16_node_outputs(graph) -> set[str]:
+  """Return node outputs declared as float16 before graph type conversion."""
+  value_types = {
+    value.name: value.type.tensor_type.elem_type
+    for value in (*graph.input, *graph.output, *graph.value_info)
+    if value.type.HasField("tensor_type")
+  }
+  return {output for node in graph.node for output in node.output
+          if output and value_types.get(output) == TensorProto.FLOAT16}
+
+
+def add_fp16_rounding(graph, outputs: set[str]) -> int:
+  """Round selected FP32 node outputs through FP16 without moving compute to FP16."""
+  original_nodes = [NodeProto.FromString(node.SerializeToString()) for node in graph.node]
+  graph.ClearField("node")
+  converted = 0
+  for node in original_nodes:
+    rounding_nodes = []
+    for index, output in enumerate(node.output):
+      if output not in outputs:
+        continue
+      fp32_raw = f"{output}__fp32_raw"
+      fp16_rounded = f"{output}__fp16_rounded"
+      node.output[index] = fp32_raw
+      rounding_nodes += [
+        helper.make_node("Cast", [fp32_raw], [fp16_rounded], to=TensorProto.FLOAT16),
+        helper.make_node("Cast", [fp16_rounded], [output], to=TensorProto.FLOAT),
+      ]
+      converted += 1
+    graph.node.append(node)
+    graph.node.extend(rounding_nodes)
+  return converted
+
+
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("input", type=pathlib.Path)
   parser.add_argument("output", type=pathlib.Path)
+  parser.add_argument("--preserve-fp16-rounding", action="store_true",
+                      help="round FP16 intermediates after FP32 compute for closer numerical parity")
   args = parser.parse_args()
 
   model = onnx.load(args.input, load_external_data=True)
+  rounding_outputs = fp16_node_outputs(model.graph) if args.preserve_fp16_rounding else set()
   counts = convert_graph(model.graph)
   for function in model.functions:
     for node in function.node:
@@ -93,10 +130,14 @@ def main() -> None:
           attribute.i = TensorProto.FLOAT
           counts["casts"] += 1
 
+  rounded = add_fp16_rounding(model.graph, rounding_outputs)
+
   onnx.checker.check_model(model, full_check=True)
   args.output.parent.mkdir(parents=True, exist_ok=True)
   onnx.save(model, args.output)
   print(f"converted {counts['tensors']} tensors, {counts['types']} type declarations, and {counts['casts']} Cast nodes")
+  if args.preserve_fp16_rounding:
+    print(f"preserved FP16 rounding at {rounded} node outputs")
   print(f"saved {args.output} ({args.output.stat().st_size / 1e6:.1f} MB)")
 
 

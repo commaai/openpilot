@@ -36,7 +36,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
     self.manager_process = p_manager
     self.processes.append(p_manager)
 
-    sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState', 'modelV2'])
+    sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState', 'modelV2', 'carState', 'carControl'])
     q = Queue()
     bridge = self.create_bridge()
     p_bridge = bridge.run(q, retries=10)
@@ -91,9 +91,19 @@ class TestSimBridgeBase(OpenpilotTestCase):
     failure_states = []
     model_messages = 0
     model_rate_start = time.monotonic()
+    next_diagnostic = model_rate_start
     while bridge.started.value:
       sm.update(100)
       model_messages += int(sm.updated['modelV2'])
+      now = time.monotonic()
+      if sm.seen['modelV2'] and now >= next_diagnostic:
+        path_y = sm['modelV2'].position.y
+        samples = [float(path_y[min(index, len(path_y) - 1)]) for index in (5, 10, 20)] if len(path_y) else []
+        print(f"closed-loop diagnostic: elapsed={now - model_rate_start:.1f}s "
+              f"steer_actual={float(sm['carState'].steeringAngleDeg):.3f} "
+              f"steer_command={float(sm['carControl'].actuators.steeringAngleDeg):.3f} "
+              f"path_y={samples}", flush=True)
+        next_diagnostic = now + 1.0
 
     model_elapsed = time.monotonic() - model_rate_start
     model_rate = model_messages / model_elapsed
