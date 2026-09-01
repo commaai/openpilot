@@ -31,7 +31,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_IN
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, chestnut_ready, modeld_pkl_path, get_tg_input_devices, load_oob
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -205,12 +205,25 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  CHESTNUT = chestnut_present() and chestnut_compiled()
+  chestnut_available = chestnut_present() and chestnut_compiled()
+  CHESTNUT = False
+  if chestnut_available:
+    poller = messaging.Poller()
+    sock = messaging.sub_sock("chestnutState", poller=poller, conflate=True)
+    deadline = time.monotonic() + 4. / SERVICE_LIST['deviceState'].frequency
+    while not CHESTNUT and (remaining := deadline - time.monotonic()) > 0.:
+      if not poller.poll(round(remaining * 1000)):
+        break
+      msg = messaging.recv_one_or_none(sock)
+      CHESTNUT = msg is not None and msg.valid and chestnut_ready(msg.chestnutState)
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
   params.put_bool("ChestnutLoading", CHESTNUT)
-  params.remove("ChestnutActive")
+  if chestnut_available and not CHESTNUT:
+    params.put_bool("ChestnutActive", False)
+  else:
+    params.remove("ChestnutActive")
 
   config_realtime_process(7, 54)
 
@@ -254,7 +267,11 @@ def main(demo=False):
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
     model = big_model
+    if model is None:
+      params.put_bool("ChestnutModelError", True)
     params.put_bool("ChestnutActive", model is not None)
+    if model is not None:
+      params.remove("ChestnutModelError")
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
   if model is None:
@@ -385,6 +402,7 @@ def main(demo=False):
         raise
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
+      params.put_bool("ChestnutModelError", True)
       params.put_bool("ChestnutActive", False)
       model = small_model
       if chestnut_state is not None:
