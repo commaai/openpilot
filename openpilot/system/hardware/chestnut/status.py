@@ -8,6 +8,7 @@ CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging")
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.
 TEMP_HYSTERESIS = 5.
+STARTUP_STABILIZATION_TIME = 5.
 USB_RECONNECTED_ALERT = ("Offroad_ChestnutNotDetected", "Chestnut USB reconnected. Restart the car to retry.")
 
 
@@ -23,6 +24,7 @@ def update_modeld_state(processes, modeld_seen: bool, chestnut_started: bool) ->
 class ChestnutStatus:
   def __init__(self):
     self.started = time.monotonic()
+    self.onroad_since = self.started
     self.offroad = True
     self.offroad_after_drive = False
     self.power_failures = 0
@@ -32,6 +34,7 @@ class ChestnutStatus:
     self.usb_seen = False
     self.usb_failed = False
     self.hardware_failure: str | None = None
+    self.startup_hardware_unready = False
     self.usb_failure = False
 
   def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool, model_compiled: bool,
@@ -41,12 +44,14 @@ class ChestnutStatus:
     firmware_ok = len(devices) == 1 and devices[0]["product"] == CHESTNUT_USB_PRODUCT
 
     if self.offroad and not offroad:
+      self.onroad_since = time.monotonic()
       self.offroad_after_drive = False
       self.power_failures = 0
       self.power_seen = False
       self.link_failures = 0
       self.usb_failed = False
       self.hardware_failure = None
+      self.startup_hardware_unready = False
       self.usb_failure = False
     elif not self.offroad and offroad:
       self.offroad_after_drive = True
@@ -81,8 +86,10 @@ class ChestnutStatus:
     software_failed = model_error and compiled
     show_setup_alerts = not offroad or not self.offroad_after_drive
 
-    power_failed = self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and not offroad
-    pcie_failed = self.link_failures >= 2 and not power_failed and not offroad
+    stabilizing = not offroad and time.monotonic() - self.onroad_since < STARTUP_STABILIZATION_TIME
+    self.startup_hardware_unready |= stabilizing and (self.power_failures > 0 or self.link_failures > 0)
+    power_failed = self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and not offroad and not stabilizing
+    pcie_failed = self.link_failures >= 2 and not power_failed and not offroad and not stabilizing
     if power_failed:
       self.hardware_failure = "power"
     elif pcie_failed and self.hardware_failure is None:
@@ -114,7 +121,8 @@ class ChestnutStatus:
       if retained_cause is not None and name == retained_cause[0]:
         active, text = True, retained_cause[1]
       alerts.append((name, active, text))
-    alerts.append(("Offroad_ChestnutModelError", software_failed and not self.usb_failure and not hardware_failed and show_setup_alerts, None))
+    alerts.append(("Offroad_ChestnutModelError", software_failed and not (stabilizing and self.startup_hardware_unready) and
+                   not self.usb_failure and not hardware_failed and show_setup_alerts, None))
     active_alert = next((name for name, active, _ in alerts if active), None)
     branch_alert = "Offroad_ChestnutBranch" if show_setup_alerts and not release and len(devices) == 1 and active_alert is None else None
     selected_alert = active_alert or branch_alert
