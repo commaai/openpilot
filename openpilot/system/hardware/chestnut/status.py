@@ -92,11 +92,13 @@ class ChestnutStatus:
         self.startup_failure = "power"
       elif self.link_failures > 0 and self.startup_failure is None:
         self.startup_failure = "pcie"
-    power_failed = self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and not offroad and not stabilizing
-    pcie_failed = self.link_failures >= 2 and not power_failed and not offroad and not stabilizing
+    usb_model_failure = self.usb_failure and model_error
+    power_failed = (self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and
+                    not offroad and not stabilizing and not usb_model_failure)
+    pcie_failed = self.link_failures >= 2 and not power_failed and not offroad and not stabilizing and not usb_model_failure
     if power_failed:
       self.hardware_failure = "power"
-    elif model_error and self.startup_failure is not None:
+    elif model_error and self.startup_failure is not None and not usb_model_failure:
       self.hardware_failure = self.startup_failure
     elif pcie_failed and self.hardware_failure is None:
       self.hardware_failure = "pcie"

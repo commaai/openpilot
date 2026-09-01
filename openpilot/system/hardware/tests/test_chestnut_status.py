@@ -410,6 +410,19 @@ def test_usb_recovery_does_not_report_power_recovery():
   assert not alerts.active
 
 
+def test_usb_reconnection_does_not_become_power_failure():
+  status, alerts = ChestnutStatus(), Alerts()
+  start_model(status, alerts)
+  update(status, alerts, offroad=False, devices=[], state=None, error=True)
+  assert alerts.active == {"Offroad_ChestnutNotDetected"}
+  low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 0, "supplyFault": True, "pcieLtssm": 0}))
+  update(status, alerts, offroad=False, error=True, state=low)
+  update(status, alerts, offroad=False, error=True, state=low)
+  assert alerts.active == {"Offroad_ChestnutNotDetected"}
+  assert "USB reconnected" in alerts.values["Offroad_ChestnutNotDetected"][1]
+  assert status.hardware_failure is None
+
+
 @pytest.mark.parametrize(("usb", "powered", "pcie", "expected"), [
   (False, False, False, "Offroad_ChestnutNotDetected"),
   (False, False, True, "Offroad_ChestnutNotDetected"),
