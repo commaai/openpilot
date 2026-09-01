@@ -62,5 +62,5 @@ def chestnut_compiled() -> bool:
   return Path(get_manifest_path(modeld_pkl_path(chestnut=True))).is_file()
 
 
-def chestnut_hardware_ready(state) -> bool:
+def chestnut_ready(state) -> bool:
   return state.supplyVoltage >= CHESTNUT_POWERED_VOLTAGE and not state.supplyFault and state.pcieLtssm == CHESTNUT_PCIE_READY

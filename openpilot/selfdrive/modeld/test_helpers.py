@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from openpilot.selfdrive.modeld.helpers import chestnut_hardware_ready
+from openpilot.selfdrive.modeld.helpers import chestnut_ready
 
 
 @pytest.mark.parametrize(("voltage", "fault", "ltssm", "expected"), [
@@ -13,4 +13,4 @@ from openpilot.selfdrive.modeld.helpers import chestnut_hardware_ready
 ])
 def test_chestnut_hardware_ready(voltage, fault, ltssm, expected):
   state = SimpleNamespace(supplyVoltage=voltage, supplyFault=fault, pcieLtssm=ltssm)
-  assert chestnut_hardware_ready(state) == expected
+  assert chestnut_ready(state) == expected

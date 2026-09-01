@@ -31,7 +31,7 @@ from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_IN
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, chestnut_hardware_ready, modeld_pkl_path, get_tg_input_devices, load_oob
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, chestnut_ready, modeld_pkl_path, get_tg_input_devices, load_oob
 
 PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -218,7 +218,7 @@ def main(demo=False):
       if not poller.poll(round(remaining * 1000)):
         break
       msg = messaging.recv_one_or_none(sock)
-      CHESTNUT = msg is not None and msg.valid and chestnut_hardware_ready(msg.chestnutState)
+      CHESTNUT = msg is not None and msg.valid and chestnut_ready(msg.chestnutState)
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params.put_bool("ChestnutLoading", CHESTNUT)
