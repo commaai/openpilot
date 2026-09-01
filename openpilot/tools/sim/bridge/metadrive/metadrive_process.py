@@ -27,7 +27,7 @@ CAMERA_WHITE_FRACTION = 0.7
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
 metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
 
-def apply_metadrive_patches(arrive_dest_done=True):
+def apply_metadrive_patches(arrive_dest_done=True, out_of_road_done=True):
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
     if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
@@ -52,6 +52,15 @@ def apply_metadrive_patches(arrive_dest_done=True):
   if not arrive_dest_done:
     MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
+  # MetaDrive 0.4.2.3 has no out_of_road_done configuration option. Disable
+  # its instantaneous check here and let the bridge's debounced lane check
+  # decide whether the vehicle has actually left the road.
+  if not out_of_road_done:
+    def out_of_road_patch(self, vehicle):
+      return False
+
+    MetaDriveEnv._is_out_of_road = out_of_road_patch
+
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
@@ -59,7 +68,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   apply_ci_render_patches()
 
   arrive_dest_done = config.pop("arrive_dest_done", True)
-  apply_metadrive_patches(arrive_dest_done)
+  out_of_road_done = config.pop("out_of_road_done", True)
+  apply_metadrive_patches(arrive_dest_done, out_of_road_done)
 
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
   if dual_camera:
