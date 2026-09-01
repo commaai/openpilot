@@ -229,14 +229,14 @@ def make_run_model(warp, run_policy, model_metadata, frame_copy_size):
   return run_model
 
 
-def compile_jit(jit, input_keys, make_queues):
+def compile_jit(jit, input_keys, make_queues, benchmark_runs):
+  if benchmark_runs < 1:
+    raise ValueError("benchmark_runs must be at least 1")
+
   SEED = 42
-  def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
+  def random_inputs_run(fn, seed, n_runs, test_val=None, test_buffers=None, expect_match=True):
     input_queues, npy, frame_views = make_queues(Device.DEFAULT)
     rng = np.random.default_rng(seed)
-
-    testing = test_val is not None or test_buffers is not None
-    n_runs = 1 if testing else 3
 
     for i in range(n_runs):
       for v in npy.values():
@@ -264,14 +264,14 @@ def compile_jit(jit, input_keys, make_queues):
     return val, buffers
 
   print('capture + replay')
-  test_val, test_buffers = random_inputs_run(jit, SEED)
-  print('pickle round trip')
+  test_val, test_buffers = random_inputs_run(jit, SEED, 3)
+  print(f'pickle round trip ({benchmark_runs} runs per seed)')
   with tempfile.TemporaryFile(dir=".") as f:
     dump_oob(jit, f)
     f.seek(0)
     loaded_jit = load_oob(f)
-  random_inputs_run(loaded_jit, SEED, test_val, test_buffers, expect_match=True)
-  random_inputs_run(loaded_jit, SEED+1, test_val, test_buffers, expect_match=False)
+  random_inputs_run(loaded_jit, SEED, benchmark_runs, test_val, test_buffers, expect_match=True)
+  random_inputs_run(loaded_jit, SEED+1, benchmark_runs, test_val, test_buffers, expect_match=False)
   # Keep the original so per-resolution JITs share model weight buffers in the final pickle.
   return jit
 
@@ -301,6 +301,8 @@ if __name__ == "__main__":
   p.add_argument('--onnx', required=True)
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
+  p.add_argument('--benchmark-runs', type=int, default=1,
+                 help='timed loaded-JIT runs for each correctness seed')
   args = p.parse_args()
 
   model_path = read_file_chunked_to_disk(args.onnx)
@@ -322,7 +324,8 @@ if __name__ == "__main__":
                                 frame_copy_size=frame_copy_size)
     warp = make_warp(nv12, model_w, model_h)
     run_model_jit = TinyJit(make_run_model(warp, run_policy, out['metadata'], frame_copy_size), prune=True)
-    out['run_model'][(cam_w,cam_h)] = compile_jit(run_model_jit, MODELD_INPUTS, make_model_queues)
+    out['run_model'][(cam_w,cam_h)] = compile_jit(run_model_jit, MODELD_INPUTS, make_model_queues,
+                                                  args.benchmark_runs)
 
   with open(args.output, "wb") as f:
     dump_oob(out, f)
