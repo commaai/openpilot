@@ -209,7 +209,6 @@ def main(demo=False):
   chestnut_available = chestnut_present() and chestnut_compiled()
   CHESTNUT = False
   if chestnut_available:
-    # hardwared enables monitoring onroad; allow two of its state cycles for crank voltage to recover.
     timeout = 2. / SERVICE_LIST['deviceState'].frequency
     poller = messaging.Poller()
     sock = messaging.sub_sock("chestnutState", poller=poller, conflate=True)
