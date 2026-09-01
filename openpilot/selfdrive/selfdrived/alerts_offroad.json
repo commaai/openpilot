@@ -38,7 +38,7 @@
     "severity": 0
   },
   "Offroad_ChestnutUncompiled": {
-    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma. Restart the car to retry.",
+    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma.",
     "severity": 0
   },
   "Offroad_ChestnutUpdateFailed": {
