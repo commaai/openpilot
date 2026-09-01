@@ -25,7 +25,6 @@ def ui_state():
   ui.chestnut_compiled = True
   ui.chestnut_active = False
   ui.chestnut_loading = False
-  ui.chestnut_loading_seen = False
   ui.chestnut_model_error = False
   ui.chestnut_state = ChestnutState.READY
   return ui
@@ -44,13 +43,14 @@ def test_model_failure_is_sticky():
   assert ui.chestnut_state == ChestnutState.FAILED
 
 
-def test_inactive_state_after_loading_is_sticky():
+def test_inactive_state_is_sticky_after_model_output():
   ui = ui_state()
-  ui.chestnut_loading = True
   ui._update_chestnut_state()
   assert ui.chestnut_state == ChestnutState.LOADING
 
-  ui.chestnut_loading = False
+  ui.sm.recv_frame["modelV2"] = 1
+  ui.sm.alive["modelV2"] = True
+  ui.sm.data["modelV2"].big = True
   ui._update_chestnut_state()
   assert ui.chestnut_state == ChestnutState.FAILED
 
