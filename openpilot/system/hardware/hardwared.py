@@ -28,6 +28,7 @@ from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
 from openpilot.system.hardware.chestnut.status import ChestnutStatus
 from openpilot.system.hardware.chestnut.monitoring import ChestnutMonitoring
+from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 from openpilot.common.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -198,7 +199,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   system_stats = LinuxSystemStats()
   pm = messaging.PubMaster(['deviceState', 'chestnutState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates",
-                            "chestnutState", "chestnutGpuState", "managerState"], poll="pandaStates")
+                            "chestnutGpuState"], poll="pandaStates")
 
   count = 0
 
@@ -212,6 +213,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   off_ts: float | None = None
   started_ts: float | None = None
+  started_prev = False
   started_seen = False
   startup_blocked_ts: float | None = None
   thermal_status = ThermalStatus.ok
@@ -248,7 +250,6 @@ def hardware_thread(end_event, hw_queue) -> None:
   chestnut = Chestnut()
   chestnut_monitoring = ChestnutMonitoring()
   chestnut_status = ChestnutStatus()
-  model_loading = params.get_bool("ChestnutLoading")
   branch = get_short_branch()
 
   while not end_event.is_set():
@@ -277,10 +278,11 @@ def hardware_thread(end_event, hw_queue) -> None:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
 
-    # Run at 2Hz, plus either edge of ignition
-    ign_edge = (started_ts is not None) != all(onroad_conditions.values())
-    if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
-      if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic(), model_loading)) is not None:
+    started = started_ts is not None
+    started_edge = started != started_prev
+    model_loading = params.get_bool("ChestnutLoading")
+    if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not started_edge:
+      if (chestnut_msg := chestnut_monitoring.update(sm, model_loading)) is not None:
         pm.send('chestnutState', chestnut_msg)
       continue
 
@@ -313,13 +315,40 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     set_usb_state(msg.deviceState, last_hw_state.usb_state)
     chestnut.update(started_ts is None, last_hw_state.usb_state)
-    chestnut_state = sm["chestnutState"]
-    chestnut_valid = sm.alive["chestnutState"] and sm.valid["chestnutState"]
-    model_loading = params.get_bool("ChestnutLoading")
+    chestnut_usb_ready = any(is_chestnut_usb_id(d["vendorId"], d["productId"]) and d["product"] == CHESTNUT_USB_PRODUCT
+                             for d in last_hw_state.usb_state)
+    flash_active = chestnut.thread is not None and chestnut.thread.is_alive()
+    chestnut_monitoring.set_enabled(onroad_conditions["ignition"] and
+                                    (chestnut_usb_ready or chestnut_monitoring.seen) and not flash_active)
+    if chestnut_usb_ready and chestnut_monitoring.usb_failed:
+      chestnut_monitoring.retry()
+    chestnut_msg = chestnut_monitoring.update(sm, model_loading)
+    if chestnut_msg is not None:
+      pm.send('chestnutState', chestnut_msg)
+
+    model_error = params.get_bool("ChestnutModelError")
     model_active = params.get("ChestnutActive")
-    chestnut_status.update(started_ts is None, branch, last_hw_state.usb_state, chestnut.failed,
-                           model_active, chestnut_state if chestnut_valid else None, chestnut_monitoring.usb_failed,
-                           set_offroad_alert_if_changed)
+    model_compiled = chestnut_compiled()
+    if started_edge:
+      if started:
+        chestnut_status.start_drive()
+      else:
+        chestnut_status.end_drive()
+    started_prev = started
+    hardware_failed = chestnut_status.update(
+      offroad=not started,
+      show_setup_alerts=started or not started_seen,
+      branch=branch,
+      usb_state=last_hw_state.usb_state,
+      firmware_failed=chestnut.failed,
+      model_compiled=model_compiled,
+      model_active=model_active,
+      model_error=model_error,
+      state=chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
+      set_alert=set_offroad_alert_if_changed,
+    )
+    if hardware_failed and not params.get_bool("ChestnutHardwareFailed"):
+      params.put_bool("ChestnutHardwareFailed", True)
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
@@ -426,15 +455,6 @@ def hardware_thread(end_event, hw_queue) -> None:
       started_ts = None
       if off_ts is None:
         off_ts = time.monotonic()
-
-    chestnut_usb_ready = any(is_chestnut_usb_id(d["vendorId"], d["productId"]) and d["product"] == CHESTNUT_USB_PRODUCT
-                             for d in last_hw_state.usb_state)
-    flash_active = chestnut.thread is not None and chestnut.thread.is_alive()
-    chestnut_monitoring.set_enabled(started_ts is not None and (chestnut_usb_ready or chestnut_monitoring.seen) and not flash_active)
-    if chestnut_usb_ready and chestnut_monitoring.usb_failed:
-      chestnut_monitoring.retry()
-    if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic(), model_loading)) is not None:
-      pm.send('chestnutState', chestnut_msg)
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage

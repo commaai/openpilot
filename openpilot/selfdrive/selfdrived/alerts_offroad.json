@@ -21,16 +21,24 @@
     "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
     "severity": -1
   },
-  "Offroad_ChestnutNotDetected": {
-    "text": "Chestnut not detected. Check USB and 12V connections.",
+  "Offroad_ChestnutModelError": {
+    "text": "Chestnut model failed. Restart the car to retry.",
+    "severity": 0
+  },
+  "Offroad_ChestnutAbsent": {
+    "text": "Chestnut USB disconnected. Check USB connection. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {
-    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
+    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutPcieUnavailable": {
-    "text": "%1",
+    "text": "Chestnut PCIe link unavailable. Check the GPU is securely seated. Restart the car to retry.",
+    "severity": 0
+  },
+  "Offroad_ChestnutPowerLost": {
+    "text": "Chestnut lost power. Check 12 V connection. This may be caused by an engine-crank voltage drop. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutUncompiled": {
@@ -38,11 +46,15 @@
     "severity": 0
   },
   "Offroad_ChestnutUpdateFailed": {
-    "text": "Chestnut update failed. Check the USB cable.",
+    "text": "Chestnut update failed. Check the USB cable. Restart the car to retry.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUsbReconnected": {
+    "text": "Chestnut USB reconnected. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutUsbSlow": {
-    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
+    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {
