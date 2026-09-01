@@ -90,6 +90,7 @@ class UIState:
     self.chestnut_compiled: bool = chestnut_compiled()
     self.chestnut_active: bool | None = None
     self.chestnut_loading: bool = False
+    self.chestnut_model_error: bool = False
     self.chestnut_state = ChestnutState.DISCONNECTED
     self.started: bool = False
     self.ignition: bool = False
@@ -217,7 +218,7 @@ class UIState:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
       self.chestnut_state = ChestnutState.UNCOMPILED
-    elif (self.chestnut_state == ChestnutState.FAILED or self.chestnut_active is False or not detected or
+    elif (self.chestnut_state == ChestnutState.FAILED or self.chestnut_model_error or not detected or
           (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big))):
       self.chestnut_state = ChestnutState.FAILED
     elif self.chestnut_loading or not model_seen:
@@ -246,6 +247,7 @@ class UIState:
     chestnut_active = self.params.get("ChestnutActive")
     self.chestnut_active = None if chestnut_active is None else chestnut_active == b"1"
     self.chestnut_loading = self.params.get_bool("ChestnutLoading")
+    self.chestnut_model_error = self.params.get_bool("ChestnutModelError")
 
 
 class Device:
