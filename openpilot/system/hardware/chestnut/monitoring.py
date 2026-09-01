@@ -4,7 +4,6 @@ from contextlib import suppress
 import usb1
 
 import openpilot.cereal.messaging as messaging
-from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
 
 
@@ -77,29 +76,23 @@ class ChestnutMonitoring:
   def retry(self) -> None:
     self.usb_failed = False
 
-  def model_alive(self, sm: messaging.SubMaster, now: float) -> bool:
-    recv_time = sm.recv_time['chestnutGpuState']
-    if recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['chestnutGpuState'].frequency:
-      return True
-    recv_time = sm.recv_time['modelV2']
-    if recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['modelV2'].frequency and sm['modelV2'].big:
-      return True
-    modeld = next((p for p in sm['managerState'].processes if p.name == 'modeld'), None)
-    if modeld is not None and modeld.shouldBeRunning and not modeld.running:
-      return False
-    return False
+  def gpu_state_alive(self, sm: messaging.SubMaster) -> bool:
+    return sm.alive['chestnutGpuState']
 
-  def model_stalled(self, sm: messaging.SubMaster, now: float) -> bool:
-    return sm.recv_time['chestnutGpuState'] > 0. and not self.model_alive(sm, now)
+  def model_alive(self, sm: messaging.SubMaster) -> bool:
+    return self.gpu_state_alive(sm) or (sm.alive['modelV2'] and sm['modelV2'].big)
 
-  def update_gpu_state(self, sm: messaging.SubMaster, now: float) -> None:
+  def model_stalled(self, sm: messaging.SubMaster) -> bool:
+    return sm.recv_time['chestnutGpuState'] > 0. and not self.model_alive(sm)
+
+  def update_gpu_state(self, sm: messaging.SubMaster) -> None:
     if sm.updated['chestnutGpuState']:
       self.gpu_state = sm['chestnutGpuState'] if sm.valid['chestnutGpuState'] else None
-    elif not self.model_alive(sm, now):
+    elif not self.gpu_state_alive(sm):
       self.gpu_state = None
 
-  def update(self, sm: messaging.SubMaster, now: float):
-    self.update_gpu_state(sm, now)
+  def update(self, sm: messaging.SubMaster):
+    self.update_gpu_state(sm)
     return self.build_message()
 
   def build_message(self):

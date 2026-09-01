@@ -41,17 +41,17 @@ def gpu_state(**kwargs):
 
 
 class FakeSubMaster:
-  def __init__(self, state, *, updated=True, valid=True, recv_time=1., model_time=0., model_big=False, modeld_running=True):
+  def __init__(self, state, *, updated=True, valid=True, recv_time=1., model_time=0., model_big=False,
+               gpu_alive=None, model_alive=None):
     self.state = state
     self.model_big = model_big
-    self.modeld_running = modeld_running
     self.updated = {'chestnutGpuState': updated}
     self.valid = {'chestnutGpuState': valid}
     self.recv_time = {'chestnutGpuState': recv_time, 'modelV2': model_time}
+    self.alive = {'chestnutGpuState': recv_time > 0. if gpu_alive is None else gpu_alive,
+                  'modelV2': model_time > 0. if model_alive is None else model_alive}
 
   def __getitem__(self, key):
-    if key == 'managerState':
-      return SimpleNamespace(processes=[SimpleNamespace(name='modeld', shouldBeRunning=True, running=self.modeld_running)])
     if key == 'modelV2':
       return SimpleNamespace(big=self.model_big)
     assert key == 'chestnutGpuState'
@@ -83,7 +83,7 @@ def test_ina_pcie_and_gpu_metrics():
   monitoring.set_enabled(True)
   gpu = gpu_state(tempC=72., memoryTempC=80., powerDrawW=45., powerLimitW=55.,
                   gpuUsagePercent=91, gpuClockMhz=2200, fanSpeedRpm=3100)
-  monitoring.update_gpu_state(FakeSubMaster(gpu, recv_time=10.), 10.)
+  monitoring.update_gpu_state(FakeSubMaster(gpu, recv_time=10.))
   msg = monitoring.build_message()
   assert msg.valid
   assert (msg.chestnutState.supplyVoltage, msg.chestnutState.supplyCurrent,
@@ -95,49 +95,46 @@ def test_ina_pcie_and_gpu_metrics():
 def test_stale_and_invalid_model_metrics_are_cleared():
   monitoring = ChestnutMonitoring(FakeUsb())
   monitoring.set_enabled(True)
-  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=72.), recv_time=10.), 10.)
-  monitoring.update_gpu_state(FakeSubMaster(gpu_state(), updated=False, recv_time=10.), 11.1)
+  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=72.), recv_time=10.))
+  monitoring.update_gpu_state(FakeSubMaster(gpu_state(), updated=False, recv_time=10., gpu_alive=False))
   assert monitoring.build_message().chestnutState.tempC == 0.
-  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=75.), valid=False), 11.)
+  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=75.), valid=False))
   assert monitoring.build_message().chestnutState.tempC == 0.
-  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=76.)), 12.)
+  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=76.)))
   assert monitoring.build_message().chestnutState.tempC == 76.
+
+
+def test_stale_gpu_metrics_are_cleared_while_big_model_output_is_alive():
+  monitoring = ChestnutMonitoring(FakeUsb())
+  monitoring.set_enabled(True)
+  monitoring.update_gpu_state(FakeSubMaster(gpu_state(tempC=72.), recv_time=10.))
+  sm = FakeSubMaster(gpu_state(), updated=False, recv_time=10., model_time=11., model_big=True, gpu_alive=False)
+  monitoring.update_gpu_state(sm)
+  assert monitoring.model_alive(sm)
+  assert monitoring.build_message().chestnutState.tempC == 0.
 
 
 def test_poll_does_not_wait_for_model_updates():
   monitoring = ChestnutMonitoring(FakeUsb())
   monitoring.set_enabled(True)
-  assert monitoring.update(FakeSubMaster(gpu_state(), recv_time=10.), 10.) is not None
-  assert monitoring.update(FakeSubMaster(gpu_state(), updated=False, recv_time=10.), 10.1) is not None
-  assert monitoring.update(FakeSubMaster(gpu_state(), updated=False, recv_time=10.), 11.1) is not None
-
-
-def test_poll_resumes_immediately_when_modeld_exits():
-  monitoring = ChestnutMonitoring(FakeUsb())
-  monitoring.set_enabled(True)
-  assert monitoring.update(FakeSubMaster(gpu_state(), updated=False, recv_time=10., modeld_running=False), 10.1) is not None
+  assert monitoring.update(FakeSubMaster(gpu_state(), recv_time=10.)) is not None
+  assert monitoring.update(FakeSubMaster(gpu_state(), updated=False, recv_time=10.)) is not None
+  assert monitoring.update(FakeSubMaster(gpu_state(), updated=False, recv_time=10., gpu_alive=False)) is not None
 
 
 def test_model_stall_requires_a_previous_gpu_message():
   monitoring = ChestnutMonitoring(FakeUsb())
-  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=0.), 10.)
-  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.), 10.5)
-  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.), 11.1)
-
-
-def test_fresh_gpu_state_takes_precedence_over_stale_manager_state():
-  monitoring = ChestnutMonitoring(FakeUsb())
-  sm = FakeSubMaster(gpu_state(), recv_time=10., modeld_running=False)
-  assert monitoring.model_alive(sm, 10.5)
-  assert not monitoring.model_stalled(sm, 10.5)
+  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=0.))
+  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.))
+  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10., gpu_alive=False))
 
 
 def test_big_model_output_takes_precedence_over_stale_gpu_state():
   monitoring = ChestnutMonitoring(FakeUsb())
-  sm = FakeSubMaster(gpu_state(), recv_time=1., model_time=10., model_big=True)
-  assert monitoring.model_alive(sm, 10.4)
-  assert not monitoring.model_stalled(sm, 10.4)
-  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=1., model_time=10.), 10.4)
+  sm = FakeSubMaster(gpu_state(), recv_time=1., model_time=10., model_big=True, gpu_alive=False)
+  assert monitoring.model_alive(sm)
+  assert not monitoring.model_stalled(sm)
+  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=1., model_time=10., gpu_alive=False))
 
 
 def test_supply_loss_and_recovery():
@@ -159,7 +156,7 @@ def test_usb_failure_stays_invalid_until_bounded_retry_and_preserves_gpu(failure
   monitoring = ChestnutMonitoring(usb)
   monitoring.set_enabled(True)
   gpu = gpu_state(tempC=72., gpuUsagePercent=91)
-  monitoring.update_gpu_state(FakeSubMaster(gpu), 1.)
+  monitoring.update_gpu_state(FakeSubMaster(gpu))
   assert monitoring.build_message().valid
   setattr(usb, f"{failure}_error", OSError("removed"))
   msg = monitoring.build_message()

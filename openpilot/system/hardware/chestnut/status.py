@@ -56,17 +56,19 @@ class ChestnutStatus:
     self.usb_seen |= firmware_ok
     self.usb_failed = self.usb_seen and (not firmware_ok or usb_failed)
 
-    if self.usb_failed:
+    if self.usb_failed or state is None:
       self.power_failures = 0
       self.power_seen = False
       self.link_failures = 0
-    elif state is not None:
+    else:
       power_lost = state.supplyFault or state.supplyVoltage < CHESTNUT_POWERED_VOLTAGE
       self.power_failures = self.power_failures + 1 if power_lost else 0
       self.power_seen |= not power_lost
       self.link_failures = self.link_failures + 1 if state.pcieLtssm != CHESTNUT_PCIE_READY else 0
 
-    if state is not None:
+    if state is None:
+      self.overheated = False
+    else:
       gpu_limit = GPU_TEMP_LIMIT - (TEMP_HYSTERESIS if self.overheated else 0.)
       memory_limit = MEMORY_TEMP_LIMIT - (TEMP_HYSTERESIS if self.overheated else 0.)
       self.overheated = state.tempC >= gpu_limit or state.memoryTempC >= memory_limit

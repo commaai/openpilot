@@ -416,6 +416,15 @@ def test_overheat_hysteresis_transitions():
   assert (alerts.triggers["Offroad_ChestnutOverheated"], alerts.clears["Offroad_ChestnutOverheated"]) == (1, 1)
 
 
+def test_overheat_clears_without_current_telemetry():
+  status, alerts = ChestnutStatus(), Alerts()
+  update(status, alerts, state=SimpleNamespace(**(vars(STATE) | {"tempC": 100.})))
+  assert alerts.active == {"Offroad_ChestnutOverheated"}
+  update(status, alerts, devices=[], state=None, usb_failed=True)
+  assert alerts.active == {"Offroad_ChestnutNotDetected"}
+  assert not status.overheated
+
+
 @pytest.mark.parametrize(("kwargs", "expected"), [
   ({"devices": []}, None),
   ({"firmware_failed": True, "compiled": False}, "Offroad_ChestnutUpdateFailed"),

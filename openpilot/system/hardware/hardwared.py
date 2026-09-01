@@ -249,7 +249,6 @@ def hardware_thread(end_event, hw_queue) -> None:
   chestnut = Chestnut()
   chestnut_monitoring = ChestnutMonitoring()
   chestnut_status = ChestnutStatus()
-  model_loading = params.get_bool("ChestnutLoading")
   modeld_seen = False
   branch = get_short_branch()
 
@@ -282,7 +281,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # Run at 2Hz, plus either edge of ignition
     ign_edge = (started_ts is not None) != all(onroad_conditions.values())
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
-      if (chestnut_msg := chestnut_monitoring.update(sm, time.monotonic())) is not None:
+      if (chestnut_msg := chestnut_monitoring.update(sm)) is not None:
         pm.send('chestnutState', chestnut_msg)
       continue
 
@@ -321,27 +320,26 @@ def hardware_thread(end_event, hw_queue) -> None:
     chestnut_monitoring.set_enabled((chestnut_usb_ready or chestnut_monitoring.seen) and not flash_active)
     if chestnut_usb_ready and chestnut_monitoring.usb_failed:
       chestnut_monitoring.retry()
-    chestnut_msg = chestnut_monitoring.update(sm, time.monotonic())
+    chestnut_msg = chestnut_monitoring.update(sm)
     if chestnut_msg is not None:
       pm.send('chestnutState', chestnut_msg)
 
     model_error = params.get_bool("ChestnutModelError")
     model_loading = params.get_bool("ChestnutLoading")
-    model_active = params.get("ChestnutActive")
+    model_active = params.get_bool("ChestnutActive")
     model_compiled = chestnut_usb_ready and chestnut_compiled()
     if started_ts is None:
       modeld_seen = False
     modeld_seen, modeld_failed = update_modeld_state(sm["managerState"].processes, modeld_seen,
-                                                     model_compiled or model_loading or model_active is not None)
-    now = time.monotonic()
-    model_running = chestnut_monitoring.model_alive(sm, now)
+                                                     model_compiled or model_loading or model_active)
+    model_running = chestnut_monitoring.model_alive(sm)
     model_recovered = ((sm.updated['chestnutGpuState'] and sm.valid['chestnutGpuState']) or
                        (sm.updated['modelV2'] and sm.valid['modelV2'] and sm['modelV2'].big))
-    model_failed = modeld_failed or (params.get_bool("ChestnutActive") and chestnut_monitoring.model_stalled(sm, now))
+    model_failed = modeld_failed or (model_active and chestnut_monitoring.model_stalled(sm))
     if not model_error and model_failed:
       model_error = True
       params.put_bool("ChestnutModelError", True)
-    elif model_error and params.get_bool("ChestnutActive") and model_running:
+    elif model_error and model_active and model_running:
       model_error = False
       params.remove("ChestnutModelError")
     chestnut_alert = chestnut_status.update(
