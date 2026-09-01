@@ -43,11 +43,11 @@ def process_state(*, running=False, should_run=True):
   ([(True, True, False), (False, True, False)], [False, False]),
 ])
 def test_modeld_process_transitions(states, expected):
-  was_running = False
+  modeld_seen = False
   failed = []
   for running, should_run, chestnut_started in states:
-    was_running, process_failed = update_modeld_state([process_state(running=running, should_run=should_run)],
-                                                      was_running, chestnut_started)
+    modeld_seen, process_failed = update_modeld_state([process_state(running=running, should_run=should_run)],
+                                                      modeld_seen, chestnut_started)
     failed.append(process_failed)
   assert failed == expected
 

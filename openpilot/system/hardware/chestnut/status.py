@@ -15,13 +15,13 @@ RESTORED_ALERTS = {
 }
 
 
-def update_modeld_state(processes, was_running: bool, chestnut_started: bool) -> tuple[bool, bool]:
+def update_modeld_state(processes, modeld_seen: bool, chestnut_started: bool) -> tuple[bool, bool]:
   modeld = next((p for p in processes if p.name == "modeld"), None)
   if modeld is not None and not modeld.shouldBeRunning:
     return False, False
-  was_running |= modeld is not None and modeld.running
-  failed = modeld is not None and chestnut_started and was_running and not modeld.running
-  return was_running, failed
+  modeld_seen |= modeld is not None and modeld.running
+  failed = modeld is not None and chestnut_started and modeld_seen and not modeld.running
+  return modeld_seen, failed
 
 
 class ChestnutStatus:
