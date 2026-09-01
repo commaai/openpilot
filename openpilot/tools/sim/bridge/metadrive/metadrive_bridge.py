@@ -76,6 +76,9 @@ class MetaDriveBridge(SimulatorBridge):
 
     config = {
       "use_render": self.should_render,
+      "start_seed": 0,
+      "num_scenarios": 1,
+      "random_spawn_lane_index": False,
       "vehicle_config": {
         "enable_reverse": False,
         "render_vehicle": False,
@@ -86,6 +89,9 @@ class MetaDriveBridge(SimulatorBridge):
       "image_observation": True,
       "interface_panel": [],
       "out_of_route_done": False,
+      # MetaDrive's instantaneous check can fire at connected-block seams.
+      # metadrive_process applies a time-based road-departure debounce instead.
+      "out_of_road_done": False,
       "on_continuous_line_done": False,
       "crash_vehicle_done": False,
       "crash_object_done": False,
