@@ -28,6 +28,7 @@ class ChestnutStatus:
   def __init__(self):
     self.started = time.monotonic()
     self.offroad = True
+    self.offroad_after_drive = False
     self.power_failures = 0
     self.power_seen = False
     self.link_failures = 0
@@ -43,11 +44,14 @@ class ChestnutStatus:
     firmware_ok = len(devices) == 1 and devices[0]["product"] == CHESTNUT_USB_PRODUCT
 
     if self.offroad and not offroad:
+      self.offroad_after_drive = False
       self.power_failures = 0
       self.power_seen = False
       self.link_failures = 0
       self.usb_failed = False
       self.model_failure_cause = None
+    elif not self.offroad and offroad:
+      self.offroad_after_drive = True
 
     self.usb_seen |= firmware_ok
     self.usb_failed = self.usb_seen and (not firmware_ok or usb_failed)
@@ -74,6 +78,7 @@ class ChestnutStatus:
     compiled = firmware_ok and model_compiled
     uncompiled = firmware_ok and not compiled
     software_failed = model_error and compiled
+    show_setup_alerts = not offroad or not self.offroad_after_drive
 
     power_failed = self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and not offroad
     pcie_failed = self.link_failures >= 2 and not power_failed and not offroad
@@ -85,11 +90,11 @@ class ChestnutStatus:
     # Only report one model failure cause, ordered from direct setup/hardware failures to software failures.
     causes = (
       ("Offroad_ChestnutNotDetected", missing, missing_alert),
-      ("Offroad_ChestnutUpdateFailed", update_failed, None),
-      ("Offroad_ChestnutUncompiled", uncompiled, None),
+      ("Offroad_ChestnutUpdateFailed", update_failed and show_setup_alerts, None),
+      ("Offroad_ChestnutUncompiled", uncompiled and show_setup_alerts, None),
       ("Offroad_ChestnutPcieUnavailable", power_failed or pcie_failed, pcie_alert),
       ("Offroad_ChestnutOverheated", self.overheated, f"{state.tempC:.0f} °C" if state is not None else None),
-      ("Offroad_ChestnutUsbSlow", slow_usb, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None),
+      ("Offroad_ChestnutUsbSlow", slow_usb and show_setup_alerts, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None),
     )
     current_cause = next(((name, text) for name, active, text in causes if active), None)
     if current_cause is not None:
@@ -109,9 +114,9 @@ class ChestnutStatus:
       if retained_cause is not None and name == retained_cause[0]:
         active, text = True, retained_cause[1]
       alerts.append((name, active, text))
-    alerts.append(("Offroad_ChestnutModelError", software_failed and self.model_failure_cause is None, None))
+    alerts.append(("Offroad_ChestnutModelError", software_failed and self.model_failure_cause is None and show_setup_alerts, None))
     active_alert = next((name for name, active, _ in alerts if active), None)
-    branch_alert = "Offroad_ChestnutBranch" if not release and len(devices) == 1 and active_alert is None else None
+    branch_alert = "Offroad_ChestnutBranch" if show_setup_alerts and not release and len(devices) == 1 and active_alert is None else None
     selected_alert = active_alert or branch_alert
 
     # Clear the previous cause before setting the current one so readers never observe both.
