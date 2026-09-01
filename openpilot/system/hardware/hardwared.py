@@ -348,7 +348,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     chestnut_alert = chestnut_status.update(
       started_ts is None, branch, last_hw_state.usb_state, chestnut.failed, model_compiled, model_error, model_recovered,
       chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
-      chestnut_monitoring.usb_failed, set_offroad_alert_if_changed,
+      set_offroad_alert_if_changed,
     )
     if chestnut_alert in ("Offroad_ChestnutNotDetected", "Offroad_ChestnutPcieUnavailable") and (model_loading or model_active):
       if model_loading:

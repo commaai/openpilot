@@ -53,10 +53,10 @@ def test_modeld_process_transitions(states, expected):
 
 
 def update(status, alerts=None, *, offroad=True, branch="release-chestnut", devices=None, firmware_failed=False,
-           error=False, model_recovered=False, state=STATE, usb_failed=False, compiled=True):
+           error=False, model_recovered=False, state=STATE, compiled=True):
   alerts = alerts or Alerts()
   status.update(offroad, branch, [DEVICE] if devices is None else devices, firmware_failed, compiled,
-                error, model_recovered, state, usb_failed, alerts.set)
+                error, model_recovered, state, alerts.set)
   assert len(alerts.active) <= 1
   return alerts
 
@@ -98,25 +98,34 @@ def test_usb_cold_boot_and_pull_transitions():
   assert alerts.clears["Offroad_ChestnutNotDetected"] == 1
 
 
-def test_peripheral_failure_clears_after_recovery_and_offroad():
+def test_usb_disconnection_clears_after_recovery_and_offroad():
   status, alerts = ChestnutStatus(), Alerts()
   update(status, alerts, offroad=False)
-  update(status, alerts, offroad=False, state=None, usb_failed=True)
+  update(status, alerts, offroad=False, devices=[], state=None)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
 
   update(status, alerts, offroad=False)
   assert not alerts.active
-  update(status, alerts, offroad=False, state=None, usb_failed=True)
+  update(status, alerts, offroad=False, devices=[], state=None)
   update(status, alerts, offroad=True)
   assert not alerts.active
   update(status, alerts, offroad=False)
   assert not alerts.active
 
 
-def test_peripheral_failure_remains_usb_failure_cause():
+def test_usb_io_failure_does_not_report_disconnection():
   status, alerts = ChestnutStatus(), Alerts()
   update(status, alerts, offroad=False)
-  update(status, alerts, offroad=False, state=None, usb_failed=True)
+  update(status, alerts, offroad=False, state=None)
+  assert not alerts.active
+  update(status, alerts, offroad=False, error=True, state=None)
+  assert alerts.active == {"Offroad_ChestnutModelError"}
+
+
+def test_usb_disconnection_remains_model_failure_cause():
+  status, alerts = ChestnutStatus(), Alerts()
+  update(status, alerts, offroad=False)
+  update(status, alerts, offroad=False, devices=[], state=None)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
   update(status, alerts, offroad=False)
   assert not alerts.active
@@ -131,7 +140,7 @@ def test_detected_and_not_detected_are_mutually_exclusive():
   status, alerts = ChestnutStatus(), Alerts()
   update(status, alerts, offroad=False, branch="master")
   assert alerts.values["Offroad_ChestnutBranch"][0]
-  update(status, alerts, offroad=False, branch="master", state=None, usb_failed=True)
+  update(status, alerts, offroad=False, branch="master", devices=[], state=None)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
   assert not alerts.values["Offroad_ChestnutBranch"][0]
 
@@ -392,7 +401,7 @@ def test_hardware_alerts_remain_until_offroad():
 def test_usb_recovery_does_not_report_power_recovery():
   status, alerts = ChestnutStatus(), Alerts()
   start_model(status, alerts)
-  update(status, alerts, offroad=False, devices=[], state=None, usb_failed=True)
+  update(status, alerts, offroad=False, devices=[], state=None)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
   update(status, alerts, offroad=False, error=True, state=STATE)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
@@ -420,8 +429,8 @@ def test_hardware_state_precedence(usb, powered, pcie, expected):
     "pcieLtssm": 0x78 if pcie else 0,
   }))
   devices = [DEVICE] if usb else []
-  update(status, alerts, offroad=False, devices=devices, state=state if usb else None, usb_failed=not usb)
-  update(status, alerts, offroad=False, devices=devices, state=state if usb else None, usb_failed=not usb)
+  update(status, alerts, offroad=False, devices=devices, state=state if usb else None)
+  update(status, alerts, offroad=False, devices=devices, state=state if usb else None)
   assert alerts.active == ({expected} if expected is not None else set())
 
 
@@ -467,7 +476,7 @@ def test_overheat_clears_without_current_telemetry():
   status, alerts = ChestnutStatus(), Alerts()
   update(status, alerts, state=SimpleNamespace(**(vars(STATE) | {"tempC": 100.})))
   assert alerts.active == {"Offroad_ChestnutOverheated"}
-  update(status, alerts, devices=[], state=None, usb_failed=True)
+  update(status, alerts, devices=[], state=None)
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
   assert not status.overheated
 
@@ -502,7 +511,7 @@ def test_alert_transition_clears_previous_cause_first():
       active.add(name)
     assert len(active) <= 1
 
-  status.update(True, "master", [DEVICE], False, True, True, False, STATE, False, set_alert)
+  status.update(True, "master", [DEVICE], False, True, True, False, STATE, set_alert)
   assert active == {"Offroad_ChestnutModelError"}
-  status.update(True, "master", [DEVICE], False, True, False, False, STATE, False, set_alert)
+  status.update(True, "master", [DEVICE], False, True, False, False, STATE, set_alert)
   assert active == {"Offroad_ChestnutBranch"}

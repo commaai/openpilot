@@ -38,7 +38,7 @@ class ChestnutStatus:
     self.usb_failure = False
 
   def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool, model_compiled: bool,
-             model_error: bool, model_recovered: bool, state, usb_failed: bool, set_alert) -> str | None:
+             model_error: bool, model_recovered: bool, state, set_alert) -> str | None:
     detected = [d for d in usb_state if is_chestnut_usb_id(d["vendorId"], d["productId"], include_bootloader=True)]
     devices = [d for d in detected if is_chestnut_usb_id(d["vendorId"], d["productId"])]
     firmware_ok = len(devices) == 1 and devices[0]["product"] == CHESTNUT_USB_PRODUCT
@@ -58,7 +58,7 @@ class ChestnutStatus:
       self.hardware_failure = None
 
     self.usb_seen |= firmware_ok
-    self.usb_failed = self.usb_seen and (not firmware_ok or usb_failed)
+    self.usb_failed = self.usb_seen and not firmware_ok
 
     if self.usb_failed or state is None:
       self.power_failures = 0
