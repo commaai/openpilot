@@ -170,7 +170,8 @@ class SelfdriveD:
     model_error = self.params.get_bool("ChestnutModelError")
     chestnut_present = self.sm['deviceState'].chestnutPresent
     model_unavailable = big_active is True and self.sm.seen['modelV2'] and not self.sm.alive['modelV2']
-    big_failed = model_error or big_active is False or model_unavailable or (self.big_model_active and not chestnut_present)
+    big_failed = not loading and (model_error or big_active is False or model_unavailable or
+                                  (self.big_model_active and not chestnut_present))
     if big_failed and not self.big_model_failed:
       self.events.add(EventName.bigModelFailed)
     self.big_model_failed = big_failed
