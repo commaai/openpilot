@@ -334,7 +334,6 @@ def hardware_thread(end_event, hw_queue) -> None:
       model_seen = False
     modeld_seen, modeld_failed = update_modeld_state(sm["managerState"].processes, modeld_seen,
                                                      model_compiled or model_loading or model_active)
-    model_running = chestnut_monitoring.model_alive(sm)
     model_recovered = ((sm.updated['chestnutGpuState'] and sm.valid['chestnutGpuState']) or
                        (sm.updated['modelV2'] and sm.valid['modelV2'] and sm['modelV2'].big))
     if started_ts is not None:
@@ -343,7 +342,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     if not model_error and model_failed:
       model_error = True
       params.put_bool("ChestnutModelError", True)
-    elif model_error and model_active and model_running:
+    elif model_error and model_active and model_recovered:
       model_error = False
       params.remove("ChestnutModelError")
     chestnut_alert = chestnut_status.update(
