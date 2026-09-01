@@ -55,6 +55,7 @@ class ChestnutStatus:
       self.usb_failure = False
     elif not self.offroad and offroad:
       self.offroad_after_drive = True
+      self.hardware_failure = None
 
     self.usb_seen |= firmware_ok
     self.usb_failed = self.usb_seen and not firmware_ok
@@ -130,7 +131,7 @@ class ChestnutStatus:
         active, text = True, retained_cause[1]
       alerts.append((name, active, text))
     alerts.append(("Offroad_ChestnutModelError", software_failed and not (stabilizing and self.startup_failure is not None) and
-                   not self.usb_failure and self.hardware_failure is None, None))
+                   not self.usb_failure and not hardware_failed and show_setup_alerts, None))
     active_alert = next((name for name, active, _ in alerts if active), None)
     branch_alert = "Offroad_ChestnutBranch" if not release and len(devices) == 1 and active_alert is None else None
     selected_alert = active_alert or branch_alert

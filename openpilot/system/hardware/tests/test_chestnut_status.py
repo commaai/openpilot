@@ -291,11 +291,11 @@ def test_setup_alerts_clear_offroad(kwargs):
   assert not alerts.values["Offroad_ChestnutBranch"][0]
 
 
-def test_model_error_remains_offroad_after_drive():
+def test_model_error_clears_offroad_after_drive():
   status, alerts = ChestnutStatus(), Alerts()
   update(status, alerts, offroad=False, error=True)
   update(status, alerts, offroad=True, error=True)
-  assert alerts.active == {"Offroad_ChestnutModelError"}
+  assert not alerts.active
 
 
 def test_branch_alert_remains_offroad_after_drive():
