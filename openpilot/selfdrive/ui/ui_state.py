@@ -12,6 +12,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
+from openpilot.common.hardware.usb import TYPEC_CC_ORIENTATION_PATH, get_usb_state, is_chestnut_usb_id, read_int
 from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
@@ -90,6 +91,9 @@ class UIState:
     self.chestnut_compiled: bool = chestnut_compiled()
     self.chestnut_active: bool | None = None
     self.chestnut_loading: bool = False
+    self.usb_connected: bool = False
+    self.usb_connected_ts: float | None = None
+    self.usb_unknown: bool = False
     self.chestnut_state = ChestnutState.DISCONNECTED
     self.started: bool = False
     self.ignition: bool = False
@@ -246,6 +250,14 @@ class UIState:
       self.chestnut_compiled = chestnut_compiled()
     self.chestnut_active = self.params.get("ChestnutActive")
     self.chestnut_loading = self.params.get_bool("ChestnutLoading")
+    usb_connected = read_int(TYPEC_CC_ORIENTATION_PATH) != 0
+    if usb_connected and not self.usb_connected:
+      self.usb_connected_ts = time.monotonic()
+    elif not usb_connected:
+      self.usb_connected_ts = None
+    self.usb_connected = usb_connected
+    chestnut_connected = any(is_chestnut_usb_id(d["vendorId"], d["productId"], True) for d in get_usb_state())
+    self.usb_unknown = usb_connected and not chestnut_connected and self.usb_connected_ts is not None and time.monotonic() - self.usb_connected_ts > 10.
 
 
 class Device:

@@ -140,6 +140,7 @@ class MiciHomeLayout(Widget):
     self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
+    self._usb_icon = IconWidget("icons_mici/usb.png", (65, 42))
     self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (68, 40))
     self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40))
     self._chestnut_failed_icon = IconWidget("icons_mici/chestnut_orange.png", (68, 40))
@@ -152,6 +153,7 @@ class MiciHomeLayout(Widget):
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
+      self._usb_icon,
       self._chestnut_icon,
       self._chestnut_loading_icon,
       self._chestnut_failed_icon,
@@ -251,7 +253,9 @@ class MiciHomeLayout(Widget):
 
     # ***** Center-aligned bottom section icons *****
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._chestnut_icon.set_visible(ui_state.chestnut_state in (ChestnutState.READY, ChestnutState.ACTIVE))
+    self._usb_icon.set_visible(ui_state.usb_connected and ui_state.usb_unknown)
+    self._chestnut_icon.set_visible(not ui_state.usb_unknown and (ui_state.usb_connected or
+                                    ui_state.chestnut_state in (ChestnutState.READY, ChestnutState.ACTIVE)))
     self._chestnut_loading_icon.set_visible(ui_state.chestnut_state == ChestnutState.LOADING)
     self._chestnut_loading_icon.set_opacity(0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)))
     self._chestnut_failed_icon.set_visible(ui_state.chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED))
