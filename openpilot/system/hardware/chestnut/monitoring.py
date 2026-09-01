@@ -4,7 +4,6 @@ from contextlib import suppress
 import usb1
 
 import openpilot.cereal.messaging as messaging
-from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
 
 
@@ -75,24 +74,26 @@ class ChestnutMonitoring:
   def retry(self) -> None:
     self.usb_failed = False
 
-  def model_alive(self, sm: messaging.SubMaster, now: float) -> bool:
-    modeld = next((p for p in sm['managerState'].processes if p.name == 'modeld'), None)
-    if modeld is not None and modeld.shouldBeRunning and not modeld.running:
-      return False
-    recv_time = sm.recv_time['chestnutGpuState']
-    return recv_time > 0. and now - recv_time < 10. / SERVICE_LIST['chestnutGpuState'].frequency
+  def gpu_state_alive(self, sm: messaging.SubMaster) -> bool:
+    return sm.alive['chestnutGpuState']
 
-  def update_gpu_state(self, sm: messaging.SubMaster, now: float) -> None:
+  def model_alive(self, sm: messaging.SubMaster) -> bool:
+    return self.gpu_state_alive(sm) or (sm.alive['modelV2'] and sm['modelV2'].big)
+
+  def model_stalled(self, sm: messaging.SubMaster, model_seen: bool) -> bool:
+    return model_seen and not self.model_alive(sm)
+
+  def update_gpu_state(self, sm: messaging.SubMaster) -> None:
     if sm.updated['chestnutGpuState']:
       self.gpu_state = sm['chestnutGpuState'] if sm.valid['chestnutGpuState'] else None
-    elif not self.model_alive(sm, now):
+    elif not self.gpu_state_alive(sm):
       self.gpu_state = None
 
-  def update(self, sm: messaging.SubMaster, now: float, model_loading: bool = False):
-    self.update_gpu_state(sm, now)
-    return self.build_message(model_loading)
+  def update(self, sm: messaging.SubMaster):
+    self.update_gpu_state(sm)
+    return self.build_message()
 
-  def build_message(self, model_loading: bool = False):
+  def build_message(self):
     if not self.enabled:
       return None
 
@@ -117,8 +118,7 @@ class ChestnutMonitoring:
       state.supplyFault = fault
       state.pcieLtssm = pcie_ltssm
       msg.valid = True
-    except Exception as e:
-      if not model_loading or not isinstance(e, usb1.USBErrorTimeout):
-        self.usb.close()
-        self.usb_failed = True
+    except Exception:
+      self.usb.close()
+      self.usb_failed = True
     return msg
