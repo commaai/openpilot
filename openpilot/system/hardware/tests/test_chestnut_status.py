@@ -282,8 +282,6 @@ def test_onroad_power_failure_clears_offroad():
   {"firmware_failed": True},
   {"compiled": False},
   {"devices": [DEVICE | {"speedMbps": 480}]},
-  {"error": True},
-  {"branch": "master"},
 ])
 def test_setup_alerts_clear_offroad(kwargs):
   status, alerts = ChestnutStatus(), Alerts()
@@ -291,6 +289,20 @@ def test_setup_alerts_clear_offroad(kwargs):
   update(status, alerts, offroad=True, **kwargs)
   assert not alerts.active
   assert not alerts.values["Offroad_ChestnutBranch"][0]
+
+
+def test_model_error_remains_offroad_after_drive():
+  status, alerts = ChestnutStatus(), Alerts()
+  update(status, alerts, offroad=False, error=True)
+  update(status, alerts, offroad=True, error=True)
+  assert alerts.active == {"Offroad_ChestnutModelError"}
+
+
+def test_branch_alert_remains_offroad_after_drive():
+  status, alerts = ChestnutStatus(), Alerts()
+  update(status, alerts, offroad=False, branch="master")
+  update(status, alerts, offroad=True, branch="master")
+  assert alerts.values["Offroad_ChestnutBranch"][0]
 
 
 def test_overheat_and_disconnected_remain_offroad():
