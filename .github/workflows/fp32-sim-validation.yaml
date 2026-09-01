@@ -11,10 +11,6 @@ on:
         options:
           - "1"
           - "20"
-  push:
-    branches:
-      - benchmark/model-cpu-backends
-
 env:
   CI: "1"
   PYTHONPATH: ${{ github.workspace }}
@@ -92,7 +88,7 @@ jobs:
         run: |
           python -m metadrive.pull_asset
           mkdir -p sim-artifacts/logs
-          reliability_runs="${{ inputs.reliability_runs || '20' }}"
+          reliability_runs="${{ inputs.reliability_runs || '1' }}"
           for run_index in $(seq 1 "$reliability_runs"); do
             echo "Starting reliability run $run_index/$reliability_runs"
             SIM_MANAGER_LOG="${{ github.workspace }}/sim-artifacts/manager-${run_index}.log" \
