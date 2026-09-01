@@ -113,7 +113,7 @@ def test_peripheral_failure_clears_after_recovery_and_offroad():
   assert not alerts.active
 
 
-def test_peripheral_failure_remains_model_failure_cause():
+def test_peripheral_failure_remains_usb_failure_cause():
   status, alerts = ChestnutStatus(), Alerts()
   update(status, alerts, offroad=False)
   update(status, alerts, offroad=False, state=None, usb_failed=True)
@@ -211,6 +211,8 @@ def test_pcie_failure_transition():
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   assert "PCIe link unavailable" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
   update(status, alerts, offroad=False)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  update(status, alerts, offroad=True)
   assert not alerts.active
 
 
@@ -302,14 +304,13 @@ def test_crank_power_loss_and_recovery_transitions():
   assert "engine-crank voltage drop" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
   update(status, alerts, offroad=False, error=True, state=STATE)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
-  assert "power restored" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+  assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
   update(status, alerts, offroad=False, model_recovered=True, state=STATE)
-  assert not alerts.active
-  update(status, alerts, offroad=False, state=low)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
-  assert "power restored" not in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
-  assert alerts.triggers["Offroad_ChestnutPcieUnavailable"] == 2
+  update(status, alerts, offroad=True, state=STATE)
+  assert not alerts.active
+  assert alerts.triggers["Offroad_ChestnutPcieUnavailable"] == 1
 
 
 def test_single_startup_power_sample_is_ignored():
@@ -330,17 +331,19 @@ def test_sustained_startup_power_loss_is_reported():
   assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
 
 
-def test_restored_alerts_clear_offroad():
+def test_hardware_alerts_remain_until_offroad():
   low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
   link_down = SimpleNamespace(**(vars(STATE) | {"pcieLtssm": 0}))
-  for failed_state, restored_text in ((low, "power restored"), (link_down, "PCIe link restored")):
+  for failed_state, failure_text in ((low, "lost power"), (link_down, "PCIe link unavailable")):
     status, alerts = ChestnutStatus(), Alerts()
     start_model(status, alerts)
     update(status, alerts, offroad=False, state=failed_state)
     update(status, alerts, offroad=False, state=failed_state)
     update(status, alerts, offroad=False, error=True, state=STATE)
-    assert restored_text in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
-    update(status, alerts, error=True, state=STATE)
+    assert failure_text in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+    update(status, alerts, offroad=False, model_recovered=True, state=STATE)
+    assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+    update(status, alerts, offroad=True, error=True, state=STATE)
     assert not alerts.active
 
 
@@ -387,22 +390,24 @@ def test_hardware_cause_precedes_resulting_model_error():
   update(status, alerts, offroad=False, error=True, state=low)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   update(status, alerts, offroad=False, state=STATE)
-  assert not alerts.active
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   update(status, alerts, offroad=False, error=True, state=STATE)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
-  assert "power restored" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+  assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
   update(status, alerts, offroad=False, model_recovered=True)
-  assert not alerts.active
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
 
 
 @pytest.mark.parametrize("powered", list(product((False, True), repeat=4)))
-def test_power_transition_histories_report_current_state(powered):
+def test_power_transition_histories_latch_failures(powered):
   status, alerts = ChestnutStatus(), Alerts()
   start_model(status, alerts)
   low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
+  failed = False
   for available in powered:
     update(status, alerts, offroad=False, state=STATE if available else low)
-    assert ("Offroad_ChestnutPcieUnavailable" in alerts.active) == (not available)
+    failed |= not available
+    assert ("Offroad_ChestnutPcieUnavailable" in alerts.active) == failed
 
 
 def test_overheat_hysteresis_transitions():

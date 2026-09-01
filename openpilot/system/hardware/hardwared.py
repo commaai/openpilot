@@ -350,8 +350,9 @@ def hardware_thread(end_event, hw_queue) -> None:
       chestnut_msg.chestnutState if chestnut_msg is not None and chestnut_msg.valid else None,
       chestnut_monitoring.usb_failed, set_offroad_alert_if_changed,
     )
-    if model_loading and chestnut_alert in ("Offroad_ChestnutNotDetected", "Offroad_ChestnutPcieUnavailable"):
-      params.remove("ChestnutLoading")
+    if chestnut_alert in ("Offroad_ChestnutNotDetected", "Offroad_ChestnutPcieUnavailable") and (model_loading or model_active):
+      if model_loading:
+        params.remove("ChestnutLoading")
       params.put_bool("ChestnutActive", False)
     # this subset is only used for offroad
     temp_sources = [
