@@ -202,3 +202,4 @@ const LogCameraInfo qcam_only_cameras_logged[] = {{
   .encoder_infos = {qcam_encoder_info},
 }};
 const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_cabin_camera_info};
+

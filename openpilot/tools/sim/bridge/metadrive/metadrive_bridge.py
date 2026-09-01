@@ -28,6 +28,11 @@ def curve_block(length, angle=45, direction=0):
     "dir": direction
   }
 
+
+def env_flag(name: str) -> bool:
+  return os.environ.get(name, "").strip().lower() not in ("", "0", "false", "no", "off")
+
+
 def create_map(track_size=60, straight_only=False):
   curve_len = track_size * 2
   blocks = [None, straight_block(track_size)]
@@ -87,13 +92,14 @@ class MetaDriveBridge(SimulatorBridge):
       "arrive_dest_done": False,
       "traffic_density": 0.0, # traffic is incredibly expensive
       "map_config": create_map(float(os.environ.get("METADRIVE_TRACK_SIZE", "60")),
-                               bool(os.environ.get("METADRIVE_STRAIGHT_ONLY"))),
+                               env_flag("METADRIVE_STRAIGHT_ONLY")),
       "decision_repeat": 1,
       "physics_world_step_size": self.TICKS_PER_FRAME/100,
       "preload_models": False,
       "show_logo": False,
       "anisotropic_filtering": False,
-      "show_terrain": not bool(os.environ.get("METADRIVE_NO_TERRAIN")),
+      "show_terrain": not env_flag("METADRIVE_NO_TERRAIN"),
     }
 
     return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)
+

@@ -20,6 +20,8 @@ from openpilot.tools.sim.lib.camerad import W, H
 C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)
 METADRIVE_STEER_RATIO = 8
+CAMERA_WHITE_VALUE = 220
+CAMERA_WHITE_FRACTION = 0.7
 
 
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
@@ -108,7 +110,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     # terrain card is being repositioned. Keep one valid frame per camera so a
     # transient render miss cannot become a white model input.
     camera_sample = img[H // 2::16, ::16]
-    invalid_frame = np.mean(np.all(camera_sample > 220, axis=2)) > 0.7
+    invalid_frame = np.mean(np.all(camera_sample > CAMERA_WHITE_VALUE, axis=2)) > CAMERA_WHITE_FRACTION
     if invalid_frame and cam in last_valid_camera:
       return last_valid_camera[cam]
     if not invalid_frame:
@@ -138,7 +140,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       while controls_recv.poll(0):
         steer_angle, gas, should_reset = controls_recv.recv()
 
-      steer_metadrive = steer_angle * 1 / (env.vehicle.MAX_STEERING * METADRIVE_STEER_RATIO)
+      steer_metadrive = steer_angle / (env.vehicle.MAX_STEERING * METADRIVE_STEER_RATIO)
       steer_metadrive = np.clip(steer_metadrive, -1, 1)
 
       vc = [steer_metadrive, gas]
@@ -202,7 +204,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       # white for multiple frames. That makes the model steer on corrupt input,
       # so make it an explicit test failure instead of a flaky road departure.
       camera_sample = road_image[H // 2::16, ::16]
-      invalid_camera_frame = op_engaged.is_set() and np.mean(np.all(camera_sample > 220, axis=2)) > 0.7
+      invalid_camera_frame = (op_engaged.is_set() and
+                              np.mean(np.all(camera_sample > CAMERA_WHITE_VALUE, axis=2)) > CAMERA_WHITE_FRACTION)
       invalid_camera_frames += int(invalid_camera_frame)
       invalid_camera_streak = invalid_camera_streak + 1 if invalid_camera_frame else 0
       max_invalid_camera_streak = max(max_invalid_camera_streak, invalid_camera_streak)

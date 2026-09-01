@@ -125,3 +125,4 @@ class TestOnnxCpuPolicy(unittest.TestCase):
     # nearest-neighbor boundary can differ from the float32 reference.
     actual = warp.prepare(frame, transform)
     self.assertLess(np.count_nonzero(actual != expected) / expected.size, 1e-4)
+

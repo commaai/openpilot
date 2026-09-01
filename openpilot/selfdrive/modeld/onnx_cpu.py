@@ -111,3 +111,4 @@ class OnnxCpuPolicy:
       'action_t': action_t.astype(np.float32, copy=False),
     }
     return self.session.run(None, inputs)[0].astype(np.float32, copy=False)
+

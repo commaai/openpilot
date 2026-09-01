@@ -132,3 +132,4 @@ class MetaDriveWorld(World):
     self.status_q.put(QueueMessage(QueueMessageType.CLOSE_STATUS, reason))
     self.exit_event.set()
     self.metadrive_process.join()
+

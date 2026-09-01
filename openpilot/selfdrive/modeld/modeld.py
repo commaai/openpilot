@@ -510,3 +510,4 @@ if __name__ == "__main__":
     main(demo=args.demo)
   except KeyboardInterrupt:
     cloudlog.warning("got SIGINT")
+

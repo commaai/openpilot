@@ -1,17 +1,17 @@
 import os
-from pathlib import Path
 import shutil
 import signal
 import subprocess
 import time
 import unittest
+from pathlib import Path
 
 from multiprocessing import Queue
 
-from openpilot.common.test import OpenpilotTestCase
-from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.test import OpenpilotTestCase
+from openpilot.cereal import messaging
 from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
@@ -25,6 +25,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
   def setup_method(self):
     self.processes = []
     self.manager_log = None
+    self.manager_process = None
 
   @unittest.skipUnless(os.environ.get("RUN_METADRIVE_TEST"), "set RUN_METADRIVE_TEST=1 to run the integration test")
   def test_driving(self):
@@ -152,3 +153,4 @@ class TestSimBridgeBase(OpenpilotTestCase):
         p.join(timeout=5)
         if p.is_alive():
           p.kill()
+

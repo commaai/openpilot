@@ -99,3 +99,4 @@ class Camerad:
     }
     setattr(dat, pub_type, msg)
     self.pm.send(pub_type, dat)
+

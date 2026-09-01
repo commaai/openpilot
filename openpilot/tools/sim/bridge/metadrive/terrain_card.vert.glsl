@@ -16,3 +16,4 @@ void main() {
   projecteds[0] = vec4(0.0);
   gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;
 }
+

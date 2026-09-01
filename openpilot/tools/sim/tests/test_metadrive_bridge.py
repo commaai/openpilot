@@ -1,7 +1,7 @@
-import warnings
-import unittest
 import importlib
 import os
+import unittest
+import warnings
 
 # Since metadrive depends on pkg_resources, and pkg_resources is deprecated as an API
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -21,3 +21,4 @@ class TestMetaDriveBridge(TestSimBridgeBase):
   def create_bridge(self):
     assert MetaDriveBridge is not None
     return MetaDriveBridge(False, False, self.test_duration, True)
+
