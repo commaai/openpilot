@@ -124,17 +124,23 @@ def test_poll_does_not_wait_for_model_updates():
 
 def test_model_stall_requires_a_previous_gpu_message():
   monitoring = ChestnutMonitoring(FakeUsb())
-  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=0.))
-  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.))
-  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10., gpu_alive=False))
+  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=0.), False)
+  assert not monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10.), True)
+  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=10., gpu_alive=False), True)
+
+
+def test_stale_previous_drive_message_does_not_report_stall():
+  monitoring = ChestnutMonitoring(FakeUsb())
+  stale = FakeSubMaster(gpu_state(), recv_time=10., gpu_alive=False)
+  assert not monitoring.model_stalled(stale, False)
 
 
 def test_big_model_output_takes_precedence_over_stale_gpu_state():
   monitoring = ChestnutMonitoring(FakeUsb())
   sm = FakeSubMaster(gpu_state(), recv_time=1., model_time=10., model_big=True, gpu_alive=False)
   assert monitoring.model_alive(sm)
-  assert not monitoring.model_stalled(sm)
-  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=1., model_time=10., gpu_alive=False))
+  assert not monitoring.model_stalled(sm, True)
+  assert monitoring.model_stalled(FakeSubMaster(gpu_state(), recv_time=1., model_time=10., gpu_alive=False), True)
 
 
 def test_supply_loss_and_recovery():

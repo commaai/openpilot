@@ -250,6 +250,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   chestnut_monitoring = ChestnutMonitoring()
   chestnut_status = ChestnutStatus()
   modeld_seen = False
+  model_seen = False
   branch = get_short_branch()
 
   while not end_event.is_set():
@@ -330,12 +331,15 @@ def hardware_thread(end_event, hw_queue) -> None:
     model_compiled = chestnut_usb_ready and chestnut_compiled()
     if started_ts is None:
       modeld_seen = False
+      model_seen = False
     modeld_seen, modeld_failed = update_modeld_state(sm["managerState"].processes, modeld_seen,
                                                      model_compiled or model_loading or model_active)
     model_running = chestnut_monitoring.model_alive(sm)
     model_recovered = ((sm.updated['chestnutGpuState'] and sm.valid['chestnutGpuState']) or
                        (sm.updated['modelV2'] and sm.valid['modelV2'] and sm['modelV2'].big))
-    model_failed = modeld_failed or (model_active and chestnut_monitoring.model_stalled(sm))
+    if started_ts is not None:
+      model_seen |= model_recovered
+    model_failed = modeld_failed or (model_active and chestnut_monitoring.model_stalled(sm, model_seen))
     if not model_error and model_failed:
       model_error = True
       params.put_bool("ChestnutModelError", True)

@@ -82,8 +82,8 @@ class ChestnutMonitoring:
   def model_alive(self, sm: messaging.SubMaster) -> bool:
     return self.gpu_state_alive(sm) or (sm.alive['modelV2'] and sm['modelV2'].big)
 
-  def model_stalled(self, sm: messaging.SubMaster) -> bool:
-    return sm.recv_time['chestnutGpuState'] > 0. and not self.model_alive(sm)
+  def model_stalled(self, sm: messaging.SubMaster, model_seen: bool) -> bool:
+    return model_seen and not self.model_alive(sm)
 
   def update_gpu_state(self, sm: messaging.SubMaster) -> None:
     if sm.updated['chestnutGpuState']:
