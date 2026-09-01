@@ -184,6 +184,7 @@ class ModelState:
     self._blob_cache: dict[tuple[str, int], Tensor] = {}
     self.parser = Parser()
     self.warp = None
+    self.run_policy = None
     self.onnx_policy = None
     self.onnx_warp = None
     if (onnx_cpu_model := os.getenv('ONNX_CPU_MODEL')) is not None:
@@ -234,6 +235,7 @@ class ModelState:
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     if self.onnx_policy is None:
+      assert self.warp is not None and self.run_policy is not None
       for key in bufs.keys():
         ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
         yuv_size = self.frame_buf_params[key][3]

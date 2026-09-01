@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Convert all float16 storage and type declarations in an ONNX graph to float32."""
 
 import argparse

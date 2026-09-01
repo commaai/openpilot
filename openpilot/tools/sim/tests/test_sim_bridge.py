@@ -70,9 +70,12 @@ class TestSimBridgeBase(OpenpilotTestCase):
         no_car_events_issues_once = True
         break
 
-    assert no_car_events_issues_once, (f"Failed because no messages received, or CarEvents '{car_event_issues}' or "
-                                       f"processes not running '{not_running}'; seen={sm.seen}, alive={sm.alive}, "
-                                       f"valid={sm.valid}")
+    startup_failure = "".join((
+      f"Failed because no messages received, or CarEvents '{car_event_issues}' or ",
+      f"processes not running '{not_running}'; seen={sm.seen}, alive={sm.alive}, ",
+      f"valid={sm.valid}",
+    ))
+    assert no_car_events_issues_once, startup_failure
 
     start_time = time.monotonic()
     min_counts_control_active = 100
@@ -100,10 +103,13 @@ class TestSimBridgeBase(OpenpilotTestCase):
       if sm.seen['modelV2'] and now >= next_diagnostic:
         path_y = sm['modelV2'].position.y
         samples = [float(path_y[min(index, len(path_y) - 1)]) for index in (5, 10, 20)] if len(path_y) else []
-        print(f"closed-loop diagnostic: elapsed={now - model_rate_start:.1f}s "
-              f"steer_actual={float(sm['carState'].steeringAngleDeg):.3f} "
-              f"steer_command={float(sm['carControl'].actuators.steeringAngleDeg):.3f} "
-              f"path_y={samples}", flush=True)
+        diagnostic = "".join((
+          f"closed-loop diagnostic: elapsed={now - model_rate_start:.1f}s ",
+          f"steer_actual={float(sm['carState'].steeringAngleDeg):.3f} ",
+          f"steer_command={float(sm['carControl'].actuators.steeringAngleDeg):.3f} ",
+          f"path_y={samples}",
+        ))
+        print(diagnostic, flush=True)
         next_diagnostic = now + 1.0
 
     model_elapsed = time.monotonic() - model_rate_start

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Compare steady-state CPU inference for openpilot's model in tinygrad and ONNX Runtime.
 
 This intentionally benchmarks the policy ONNX graph only. Camera warping is a separate
@@ -19,7 +18,8 @@ import tempfile
 import threading
 import time
 from collections import defaultdict
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -166,13 +166,14 @@ def summarize_ort_profile(profile_path: pathlib.Path) -> dict[str, Any]:
   events = json.loads(profile_path.read_text())
   operator_totals: dict[str, dict[str, float | int]] = defaultdict(lambda: {"duration_us": 0.0, "calls": 0})
   node_totals: dict[str, dict[str, Any]] = defaultdict(lambda: {"duration_us": 0.0, "calls": 0, "operator": "unknown"})
+  # Chrome trace events use a fixed abbreviated duration field name.
   for event in events:
-    if event.get("cat") != "Node" or "dur" not in event:
+    if event.get("cat") != "Node" or "dur" not in event:  # codespell:ignore dur
       continue
     args = event.get("args", {})
     operator = args.get("op_name", "unknown")
     node = event.get("name", "unknown")
-    duration = float(event["dur"])
+    duration = float(event["dur"])  # codespell:ignore dur
     operator_totals[operator]["duration_us"] += duration
     operator_totals[operator]["calls"] += 1
     node_totals[node]["duration_us"] += duration
@@ -462,13 +463,14 @@ def compare_onnxruntime_temporal_rollout(reference_model: pathlib.Path, candidat
 
 
 def print_result(result: dict[str, Any]) -> None:
-  print(
-    f"{result['backend']:24} "
-    f"p50={result['p50_ms']:8.2f} ms  "
-    f"p95={result['p95_ms']:8.2f} ms  "
-    f"mean={result['mean_ms']:8.2f} ms  "
-    f"rate={result['fps_from_p50']:6.2f} Hz"
-  )
+  message = "".join((
+    f"{result['backend']:24} ",
+    f"p50={result['p50_ms']:8.2f} ms  ",
+    f"p95={result['p95_ms']:8.2f} ms  ",
+    f"mean={result['mean_ms']:8.2f} ms  ",
+    f"rate={result['fps_from_p50']:6.2f} Hz",
+  ))
+  print(message)
 
 
 def main() -> None:
@@ -517,8 +519,10 @@ def main() -> None:
       outputs[result["backend"]] = output
       print_result(result)
       if memory := result.get("memory"):
-        print(f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, "
-              f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB")
+        print("".join((
+          f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, ",
+          f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB",
+        )))
       if profile := result.get("operator_profile"):
         print("  top operators: " + ", ".join(
           f"{item['name']}={item['share_pct']:.1f}%" for item in profile["top_operator_types"][:5]
@@ -532,8 +536,10 @@ def main() -> None:
     outputs[result["backend"]] = output
     print_result(result)
     if memory := result.get("memory"):
-      print(f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, "
-            f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB")
+      print("".join((
+        f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, ",
+        f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB",
+      )))
 
   parity = {}
   if len(outputs) > 1:
@@ -552,11 +558,15 @@ def main() -> None:
     model_parity = compare_onnxruntime_models(args.model, args.compare_model, inputs, threads)
     print(f"model parity ({args.model.name} vs {args.compare_model.name}, {threads} threads): {model_parity}")
     if model_parity["cosine_similarity"] < args.minimum_cosine:
-      raise RuntimeError(f"model cosine similarity {model_parity['cosine_similarity']:.8f} is below "
-                         f"{args.minimum_cosine:.8f}")
+      raise RuntimeError("".join((
+        f"model cosine similarity {model_parity['cosine_similarity']:.8f} is below ",
+        f"{args.minimum_cosine:.8f}",
+      )))
     if model_parity["mean_abs"] > args.maximum_mean_abs:
-      raise RuntimeError(f"model mean absolute error {model_parity['mean_abs']:.8f} exceeds "
-                         f"{args.maximum_mean_abs:.8f}")
+      raise RuntimeError("".join((
+        f"model mean absolute error {model_parity['mean_abs']:.8f} exceeds ",
+        f"{args.maximum_mean_abs:.8f}",
+      )))
     if args.temporal_steps:
       temporal_parity = compare_onnxruntime_temporal_rollout(
         args.model, args.compare_model, threads, args.temporal_steps, args.seed,
@@ -564,8 +574,10 @@ def main() -> None:
       print(f"temporal parity ({args.temporal_steps} steps; teacher-forced vs free rollout):")
       for name, modes in temporal_parity["heads"].items():
         teacher, rollout = modes["teacher_forced"], modes["free_rollout"]
-        print(f"  {name:24} teacher mean={teacher['max_mean_abs']:.6f} cos={teacher['worst_cosine']:.8f}  "
-              f"rollout mean={rollout['max_mean_abs']:.6f} cos={rollout['worst_cosine']:.8f}")
+        print("".join((
+          f"  {name:24} teacher mean={teacher['max_mean_abs']:.6f} cos={teacher['worst_cosine']:.8f}  ",
+          f"rollout mean={rollout['max_mean_abs']:.6f} cos={rollout['worst_cosine']:.8f}",
+        )))
 
   report = {
     "model": str(args.model),

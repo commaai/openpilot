@@ -1,8 +1,12 @@
+import importlib.util
 import unittest
 
 import numpy as np
 
 from openpilot.selfdrive.modeld.onnx_cpu import OnnxCpuPolicy, OpenCvCpuWarp
+
+
+CV2_AVAILABLE = importlib.util.find_spec("cv2") is not None
 
 
 class FakeSession:
@@ -53,6 +57,7 @@ class TestOnnxCpuPolicy(unittest.TestCase):
     self.assertFalse(policy.img_q.any())
     self.assertFalse(policy.feature_q.any())
 
+  @unittest.skipUnless(CV2_AVAILABLE, "OpenCV is not installed")
   def test_opencv_warp_identity(self):
     warp = OpenCvCpuWarp(512, 256)
     frame = np.zeros(warp.buffer_size, dtype=np.uint8)
@@ -73,6 +78,7 @@ class TestOnnxCpuPolicy(unittest.TestCase):
     self.assertTrue(np.all(result[:, 4] == 80))
     self.assertTrue(np.all(result[:, 5] == 160))
 
+  @unittest.skipUnless(CV2_AVAILABLE, "OpenCV is not installed")
   def test_opencv_warp_contiguous_sim_buffer(self):
     warp = OpenCvCpuWarp(512, 256)
     data = np.zeros(512 * 256 * 3 // 2, dtype=np.uint8)
@@ -95,6 +101,7 @@ class TestOnnxCpuPolicy(unittest.TestCase):
     self.assertTrue(np.all(result[4] == 80))
     self.assertTrue(np.all(result[5] == 160))
 
+  @unittest.skipUnless(CV2_AVAILABLE, "OpenCV is not installed")
   def test_opencv_warp_matches_reference(self):
     warp = OpenCvCpuWarp(512, 256)
     rng = np.random.default_rng(1)
