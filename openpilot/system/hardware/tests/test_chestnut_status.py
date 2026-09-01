@@ -81,7 +81,7 @@ def test_usb_cold_boot_and_pull_transitions():
   with patch("openpilot.system.hardware.chestnut.status.time.monotonic", return_value=status.started + 11):
     update(status, alerts, devices=[])
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
-  assert alerts.values["Offroad_ChestnutNotDetected"][1] == "Chestnut USB disconnected. Check USB connection."
+  assert alerts.values["Offroad_ChestnutNotDetected"][1] == "Chestnut USB disconnected. Check USB connection. Restart the car to retry."
 
   with patch("openpilot.system.hardware.chestnut.status.time.monotonic", return_value=status.started + 11):
     update(status, alerts, offroad=False, devices=[])
@@ -91,7 +91,7 @@ def test_usb_cold_boot_and_pull_transitions():
   update(status, alerts, offroad=False)
   update(status, alerts, offroad=False, devices=[])
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
-  assert alerts.values["Offroad_ChestnutNotDetected"][1] == "Chestnut USB disconnected. Check USB connection."
+  assert alerts.values["Offroad_ChestnutNotDetected"][1] == "Chestnut USB disconnected. Check USB connection. Restart the car to retry."
   update(status, alerts, offroad=False)
   assert not alerts.active
   assert alerts.triggers["Offroad_ChestnutNotDetected"] == 1
@@ -168,7 +168,7 @@ def test_seen_chestnut_remains_expected_across_ignition_cycles():
   update(status, alerts, branch="master")
   update(status, alerts, offroad=False, branch="master", devices=[])
   assert alerts.active == {"Offroad_ChestnutNotDetected"}
-  assert alerts.values["Offroad_ChestnutNotDetected"][1] == "Chestnut USB disconnected. Check USB connection."
+  assert alerts.values["Offroad_ChestnutNotDetected"][1] == "Chestnut USB disconnected. Check USB connection. Restart the car to retry."
 
 
 def test_slow_usb_transition():

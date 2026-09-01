@@ -77,10 +77,10 @@ class ChestnutStatus:
 
     power_failed = self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and not offroad
     pcie_failed = self.link_failures >= 2 and not power_failed and not offroad
-    pcie_alert = ("Chestnut power lost. Possibly caused by an engine-crank voltage drop. Check 12V connection and restart the car."
+    pcie_alert = ("Chestnut power lost. Check 12 V connection. This may be caused by an engine-crank voltage drop. Restart the car to retry."
                   if power_failed else
-                  "Chestnut PCIe link unavailable. Check the GPU is securely seated and restart the car.")
-    missing_alert = "Chestnut USB disconnected. Check USB connection."
+                  "Chestnut PCIe link unavailable. Check the GPU is securely seated. Restart the car to retry.")
+    missing_alert = "Chestnut USB disconnected. Check USB connection. Restart the car to retry."
 
     # Only report one model failure cause, ordered from direct setup/hardware failures to software failures.
     causes = (

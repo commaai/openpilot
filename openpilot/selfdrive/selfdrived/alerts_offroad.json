@@ -30,7 +30,7 @@
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {
-    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
+    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutPcieUnavailable": {
@@ -38,15 +38,15 @@
     "severity": 0
   },
   "Offroad_ChestnutUncompiled": {
-    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma.",
+    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutUpdateFailed": {
-    "text": "Chestnut update failed. Check the USB cable.",
+    "text": "Chestnut update failed. Check the USB cable. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_ChestnutUsbSlow": {
-    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
+    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1. Restart the car to retry.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {
