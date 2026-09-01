@@ -4,7 +4,6 @@ import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
-from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 import usb1
 import struct
@@ -29,14 +28,13 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, WARP_INPUTS, POLICY_INPUTS
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, modeld_pkl_path, get_tg_input_devices, load_oob
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, chestnut_ready, modeld_pkl_path, load_oob
 
-PROCESS_NAME = "openpilot.selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 LAT_SMOOTH_SECONDS = 0.0
@@ -180,13 +178,16 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.full_frames: dict[str, Tensor] = {}
-    self._blob_cache: dict[tuple[str, int], Tensor] = {}
+    self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
     self.parser = Parser()
-    self.warp = None
-    self.run_policy = None
+
     self.onnx_policy = None
     self.onnx_warp = None
+    self.run_model = None
+    self.model_device = None
+    self.input_queues = {}
+    self.frame_views = {}
+
     if (onnx_cpu_model := os.getenv('ONNX_CPU_MODEL')) is not None:
       if chestnut:
         raise RuntimeError("ONNX_CPU_MODEL is only supported by the small model")
@@ -196,7 +197,6 @@ class ModelState:
       self.input_shapes = self.onnx_policy.input_shapes
       self.output_slices = self.onnx_policy.output_slices
       self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
-      self.input_queues = {}
       self.npy = {
         'desire': np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32),
         'traffic_convention': np.zeros((1, 2), dtype=np.float32),
@@ -207,17 +207,15 @@ class ModelState:
       }
       cloudlog.warning(f"using ONNX Runtime CPU policy: {onnx_cpu_model}")
     else:
-      input_devices = get_tg_input_devices(PROCESS_NAME, chestnut)
-      self.WARP_DEV, self.QUEUE_DEV = input_devices['WARP_DEV'], input_devices['QUEUE_DEV']
       jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
+      self.model_device = jits['input_devices']['model']
       metadata = jits['metadata']
       self.input_shapes = metadata['input_shapes']
       self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
       self.output_slices = metadata['output_slices']
-      self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
-      self.run_policy = jits['run_policy']
-      self.warp = jits[(cam_w,cam_h)]
-    self.frame_buf_params = {k: get_nv12_info(cam_w, cam_h) for k in ('img', 'big_img')}
+      self.input_queues, self.npy, self.frame_views = make_input_queues(
+        self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+      self.run_model = jits['run_model'][(cam_w,cam_h)]
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -235,20 +233,10 @@ class ModelState:
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     if self.onnx_policy is None:
-      assert self.warp is not None and self.run_policy is not None
-      for key in bufs.keys():
-        ptr = np.frombuffer(bufs[key].data, dtype=np.uint8).ctypes.data
-        yuv_size = self.frame_buf_params[key][3]
-        # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-        cache_key = (key, ptr)
-        if cache_key not in self._blob_cache:
-          self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=self.WARP_DEV)
-        self.full_frames[key] = self._blob_cache[cache_key]
-      warped = self.warp(**{k: self.input_queues[k] for k in WARP_INPUTS},
-                         frame=self.full_frames['img'], big_frame=self.full_frames['big_img'])
-      outs, = self.run_policy(
-        **{k: self.input_queues[k] for k in POLICY_INPUTS if k in self.input_queues}, warped=warped
-      )
+      assert self.run_model is not None
+      for key, buf in bufs.items():
+        np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
       if after_enqueue is not None:
         after_enqueue()
       model_output = outs.numpy()[0]
@@ -257,8 +245,10 @@ class ModelState:
       warped = self.onnx_warp.run(bufs, transforms)
       model_output = self.onnx_policy.run(warped, self.npy['desire'], self.npy['traffic_convention'],
                                           self.npy['action_t'], self.npy['prev_feat'])[0]
+      # ONNX Runtime is synchronous, so inference has completed before this callback.
       if after_enqueue is not None:
         after_enqueue()
+
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
@@ -269,7 +259,7 @@ class ModelState:
     return outputs_dict
 
   def warmup(self) -> None:
-    dummy_frames = {k: np.zeros(self.frame_buf_params[k][3], dtype=np.uint8) for k in self.vision_input_names}
+    dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
@@ -278,21 +268,34 @@ class ModelState:
       for value in self.npy.values():
         value.fill(0)
     else:
-      self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.QUEUE_DEV)
+      assert self.model_device is not None
+      self.input_queues, self.npy, self.frame_views = make_input_queues(
+        self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
     self.prev_desire[:] = 0
-    self.full_frames.clear()
-    self._blob_cache.clear()
 
 
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  CHESTNUT = chestnut_present() and chestnut_compiled()
+  chestnut_available = chestnut_present() and chestnut_compiled()
+  CHESTNUT = False
+  if chestnut_available:
+    poller = messaging.Poller()
+    sock = messaging.sub_sock("chestnutState", poller=poller, conflate=True)
+    deadline = time.monotonic() + 4. / SERVICE_LIST['deviceState'].frequency
+    while not CHESTNUT and (remaining := deadline - time.monotonic()) > 0.:
+      if not poller.poll(round(remaining * 1000)):
+        break
+      msg = messaging.recv_one_or_none(sock)
+      CHESTNUT = msg is not None and msg.valid and chestnut_ready(msg.chestnutState)
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
   params.put_bool("ChestnutLoading", CHESTNUT)
-  params.remove("ChestnutActive")
+  if chestnut_available and not CHESTNUT:
+    params.put_bool("ChestnutActive", False)
+  else:
+    params.remove("ChestnutActive")
 
   config_realtime_process(7, 54)
 
@@ -336,7 +339,11 @@ def main(demo=False):
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
     model = big_model
+    if model is None:
+      params.put_bool("ChestnutModelError", True)
     params.put_bool("ChestnutActive", model is not None)
+    if model is not None:
+      params.remove("ChestnutModelError")
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
   if model is None:
@@ -467,6 +474,7 @@ def main(demo=False):
         raise
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
+      params.put_bool("ChestnutModelError", True)
       params.put_bool("ChestnutActive", False)
       model = small_model
       if chestnut_state is not None:
