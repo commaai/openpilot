@@ -25,6 +25,7 @@ def ui_state():
   ui.chestnut_compiled = True
   ui.chestnut_active = False
   ui.chestnut_loading = False
+  ui.chestnut_loading_seen = False
   ui.chestnut_model_error = False
   ui.chestnut_state = ChestnutState.READY
   return ui
@@ -39,6 +40,17 @@ def test_stale_inactive_state_does_not_fail_new_attempt():
 def test_model_failure_is_sticky():
   ui = ui_state()
   ui.chestnut_model_error = True
+  ui._update_chestnut_state()
+  assert ui.chestnut_state == ChestnutState.FAILED
+
+
+def test_inactive_state_after_loading_is_sticky():
+  ui = ui_state()
+  ui.chestnut_loading = True
+  ui._update_chestnut_state()
+  assert ui.chestnut_state == ChestnutState.LOADING
+
+  ui.chestnut_loading = False
   ui._update_chestnut_state()
   assert ui.chestnut_state == ChestnutState.FAILED
 

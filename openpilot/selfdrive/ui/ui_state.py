@@ -90,6 +90,7 @@ class UIState:
     self.chestnut_compiled: bool = chestnut_compiled()
     self.chestnut_active: bool | None = None
     self.chestnut_loading: bool = False
+    self.chestnut_loading_seen: bool = False
     self.chestnut_model_error: bool = False
     self.chestnut_state = ChestnutState.DISCONNECTED
     self.started: bool = False
@@ -209,16 +210,19 @@ class UIState:
     detected = self.sm["deviceState"].chestnutPresent
     if not self.started:
       self.chestnut_present = detected
+      self.chestnut_loading_seen = False
       self.chestnut_state = (ChestnutState.READY if detected and self.chestnut_compiled else
                              ChestnutState.UNCOMPILED if detected else ChestnutState.DISCONNECTED)
       return
 
     model_seen = self.sm.recv_frame["modelV2"] > self.started_frame
+    self.chestnut_loading_seen |= self.chestnut_loading
     if not self.chestnut_present:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
       self.chestnut_state = ChestnutState.UNCOMPILED
-    elif (self.chestnut_state == ChestnutState.FAILED or self.chestnut_model_error or not detected or
+    elif (self.chestnut_state == ChestnutState.FAILED or self.chestnut_model_error or
+          (self.chestnut_loading_seen and (not detected or (self.chestnut_active is False and not self.chestnut_loading))) or
           (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big))):
       self.chestnut_state = ChestnutState.FAILED
     elif self.chestnut_loading or not model_seen:
