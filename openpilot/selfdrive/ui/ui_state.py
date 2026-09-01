@@ -253,11 +253,14 @@ class UIState:
     usb_connected = read_int(TYPEC_CC_ORIENTATION_PATH) != 0
     if usb_connected and not self.usb_connected:
       self.usb_connected_ts = time.monotonic()
+      self.usb_unknown = False
     elif not usb_connected:
       self.usb_connected_ts = None
+      self.usb_unknown = False
+    elif self.usb_connected_ts is not None and time.monotonic() - self.usb_connected_ts > 10.:
+      self.usb_unknown = not any(is_chestnut_usb_id(d["vendorId"], d["productId"], True) for d in get_usb_state())
+      self.usb_connected_ts = None
     self.usb_connected = usb_connected
-    chestnut_connected = any(is_chestnut_usb_id(d["vendorId"], d["productId"], True) for d in get_usb_state())
-    self.usb_unknown = usb_connected and not chestnut_connected and self.usb_connected_ts is not None and time.monotonic() - self.usb_connected_ts > 10.
 
 
 class Device:
