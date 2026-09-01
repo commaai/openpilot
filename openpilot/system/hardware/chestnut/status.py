@@ -34,7 +34,7 @@ class ChestnutStatus:
     self.usb_seen = False
     self.usb_failed = False
     self.hardware_failure: str | None = None
-    self.startup_hardware_unready = False
+    self.startup_failure: str | None = None
     self.usb_failure = False
 
   def update(self, offroad: bool, branch: str, usb_state: list[dict], firmware_failed: bool, model_compiled: bool,
@@ -51,7 +51,7 @@ class ChestnutStatus:
       self.link_failures = 0
       self.usb_failed = False
       self.hardware_failure = None
-      self.startup_hardware_unready = False
+      self.startup_failure = None
       self.usb_failure = False
     elif not self.offroad and offroad:
       self.offroad_after_drive = True
@@ -87,11 +87,17 @@ class ChestnutStatus:
     show_setup_alerts = not offroad or not self.offroad_after_drive
 
     stabilizing = not offroad and time.monotonic() - self.onroad_since < STARTUP_STABILIZATION_TIME
-    self.startup_hardware_unready |= stabilizing and (self.power_failures > 0 or self.link_failures > 0)
+    if stabilizing:
+      if self.power_failures > 0:
+        self.startup_failure = "power"
+      elif self.link_failures > 0 and self.startup_failure is None:
+        self.startup_failure = "pcie"
     power_failed = self.power_failures > 0 and (self.power_seen or self.power_failures >= 2 or model_error) and not offroad and not stabilizing
     pcie_failed = self.link_failures >= 2 and not power_failed and not offroad and not stabilizing
     if power_failed:
       self.hardware_failure = "power"
+    elif model_error and self.startup_failure is not None:
+      self.hardware_failure = self.startup_failure
     elif pcie_failed and self.hardware_failure is None:
       self.hardware_failure = "pcie"
     hardware_failed = self.hardware_failure is not None and not offroad
@@ -113,6 +119,7 @@ class ChestnutStatus:
     if current_cause is not None and current_cause[0] == "Offroad_ChestnutNotDetected":
       self.usb_failure = True
     elif model_recovered:
+      self.startup_failure = None
       self.usb_failure = False
 
     retained_cause = USB_RECONNECTED_ALERT if model_error and self.usb_failure and current_cause is None and not offroad else None
@@ -121,7 +128,7 @@ class ChestnutStatus:
       if retained_cause is not None and name == retained_cause[0]:
         active, text = True, retained_cause[1]
       alerts.append((name, active, text))
-    alerts.append(("Offroad_ChestnutModelError", software_failed and not (stabilizing and self.startup_hardware_unready) and
+    alerts.append(("Offroad_ChestnutModelError", software_failed and not (stabilizing and self.startup_failure is not None) and
                    not self.usb_failure and not hardware_failed and show_setup_alerts, None))
     active_alert = next((name for name, active, _ in alerts if active), None)
     branch_alert = "Offroad_ChestnutBranch" if show_setup_alerts and not release and len(devices) == 1 and active_alert is None else None

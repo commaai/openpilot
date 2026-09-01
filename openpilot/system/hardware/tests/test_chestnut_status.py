@@ -239,9 +239,6 @@ def test_power_absence_before_model_load():
   status, alerts = ChestnutStatus(), Alerts()
   low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
   update(status, alerts, offroad=False, error=True, state=low)
-  assert not alerts.active
-  status.onroad_since -= STARTUP_STABILIZATION_TIME
-  update(status, alerts, offroad=False, error=True, state=low)
   assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
   assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
 
@@ -330,14 +327,38 @@ def test_single_startup_power_sample_is_ignored():
 def test_crank_power_loss_recovers_during_stabilization():
   status, alerts = ChestnutStatus(), Alerts()
   low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
-  update(status, alerts, offroad=False, error=True, state=low)
-  update(status, alerts, offroad=False, error=True, state=low)
-  update(status, alerts, offroad=False, error=True, state=STATE)
+  update(status, alerts, offroad=False, state=low)
+  update(status, alerts, offroad=False, state=low)
+  update(status, alerts, offroad=False, state=STATE)
   assert not alerts.active
   status.onroad_since -= STARTUP_STABILIZATION_TIME
   update(status, alerts, offroad=False, model_recovered=True, state=STATE)
   assert not alerts.active
   assert status.hardware_failure is None
+  assert status.startup_failure is None
+
+
+def test_startup_power_loss_causing_model_failure_is_reported():
+  status, alerts = ChestnutStatus(), Alerts()
+  low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
+  update(status, alerts, offroad=False, state=low)
+  assert not alerts.active
+  update(status, alerts, offroad=False, error=True, state=STATE)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
+
+
+def test_startup_power_cause_remains_until_model_load_finishes():
+  status, alerts = ChestnutStatus(), Alerts()
+  low = SimpleNamespace(**(vars(STATE) | {"supplyVoltage": 3000, "supplyFault": True, "pcieLtssm": 0}))
+  update(status, alerts, offroad=False, state=low)
+  update(status, alerts, offroad=False, state=STATE)
+  status.onroad_since -= STARTUP_STABILIZATION_TIME
+  update(status, alerts, offroad=False, state=STATE)
+  assert not alerts.active
+  update(status, alerts, offroad=False, error=True, state=STATE)
+  assert alerts.active == {"Offroad_ChestnutPcieUnavailable"}
+  assert "lost power" in alerts.values["Offroad_ChestnutPcieUnavailable"][1]
 
 
 def test_sustained_startup_power_loss_is_reported():
