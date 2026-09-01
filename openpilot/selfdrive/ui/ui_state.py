@@ -93,6 +93,7 @@ class UIState:
     self.chestnut_loading: bool = False
     self.usb_connected: bool = False
     self.usb_connected_ts: float | None = None
+    self.usb_disconnected_ts: float | None = None
     self.usb_unknown: bool = False
     self.chestnut_state = ChestnutState.DISCONNECTED
     self.started: bool = False
@@ -250,17 +251,23 @@ class UIState:
       self.chestnut_compiled = chestnut_compiled()
     self.chestnut_active = self.params.get("ChestnutActive")
     self.chestnut_loading = self.params.get_bool("ChestnutLoading")
-    usb_connected = read_int(TYPEC_CC_ORIENTATION_PATH) != 0
-    if usb_connected and not self.usb_connected:
-      self.usb_connected_ts = time.monotonic()
-      self.usb_unknown = False
-    elif not usb_connected:
-      self.usb_connected_ts = None
-      self.usb_unknown = False
-    elif self.usb_connected_ts is not None and time.monotonic() - self.usb_connected_ts > 10.:
-      self.usb_unknown = not any(is_chestnut_usb_id(d["vendorId"], d["productId"], True) for d in get_usb_state())
-      self.usb_connected_ts = None
-    self.usb_connected = usb_connected
+    now = time.monotonic()
+    if read_int(TYPEC_CC_ORIENTATION_PATH) != 0:
+      self.usb_disconnected_ts = None
+      if not self.usb_connected:
+        self.usb_connected = True
+        self.usb_connected_ts = now
+        self.usb_unknown = False
+      elif self.usb_connected_ts is not None and now - self.usb_connected_ts > 10.:
+        self.usb_unknown = not any(is_chestnut_usb_id(d["vendorId"], d["productId"], True) for d in get_usb_state())
+        self.usb_connected_ts = None
+    elif self.usb_connected:
+      if self.usb_disconnected_ts is None:
+        self.usb_disconnected_ts = now
+      elif now - self.usb_disconnected_ts > PARAM_UPDATE_TIME:
+        self.usb_connected = False
+        self.usb_connected_ts = None
+        self.usb_unknown = False
 
 
 class Device:
