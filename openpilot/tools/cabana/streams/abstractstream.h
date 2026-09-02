@@ -74,6 +74,7 @@ protected:
   void cancelWaits();  // call before joining threads, the main thread isn't pumping events during destruction
   void requestUpdateLastMessages() { postToMainThread([this]() { updateLastMessages(); }); }
   void mergeEvents(const std::vector<const CanEvent *> &events);
+  void insertEvents(const std::vector<const CanEvent *> &events, const MessageEventsMap &msg_events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void waitForSeekFinshed();

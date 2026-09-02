@@ -445,7 +445,7 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
-  echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}cabana${NC}       Run Cabana (--legacy for the old Qt version)"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"

@@ -37,7 +37,6 @@ private:
   std::mutex lock;
   std::thread stream_thread, update_thread;
   std::atomic<bool> update_pending_ = false;
-  std::atomic<int> fps_ = 10;
   std::vector<const CanEvent *> received_events_;
 
   std::chrono::system_clock::time_point begin_date_time;

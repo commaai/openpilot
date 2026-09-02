@@ -21,6 +21,8 @@ ReplayStream::~ReplayStream() {
   cancelWaits();
 }
 
+// runs on replay's merge thread: a segment of CAN data takes ~30 ms to parse and group, which dropped
+// frames when it ran on the main thread. Only the sorted insert and the merged signal need the main thread.
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
   for (const auto &[n, seg] : event_data->segments) {
@@ -29,16 +31,19 @@ void ReplayStream::mergeSegments() {
 
       std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
+      MessageEventsMap msg_events;
       for (const Event &e : seg->log->events) {
         if (e.which == cereal::Event::Which::CAN) {
           capnp::FlatArrayMessageReader reader(e.data);
           auto event = reader.getRoot<cereal::Event>();
           for (const auto &c : event.getCan()) {
-            new_events.push_back(newEvent(e.mono_time, c));
+            const CanEvent *ce = newEvent(e.mono_time, c);
+            new_events.push_back(ce);
+            msg_events[{.source = ce->src, .address = ce->address}].push_back(ce);
           }
         }
       }
-      mergeEvents(new_events);
+      postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
     }
   }
 }
@@ -56,7 +61,7 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
     waitForSeekFinshed();
   };
   replay->onQLogLoaded = [this](std::shared_ptr<LogReader> qlog) { postToMainThread([this, qlog]() { qLogLoaded(qlog); }); };
-  replay->onSegmentsMerged = [this]() { postToMainThreadAndWait([this]() { mergeSegments(); }); };
+  replay->onSegmentsMerged = [this]() { mergeSegments(); };
 
   bool success = replay->load();
   if (!success) {
@@ -97,7 +102,7 @@ bool ReplayStream::eventFilter(const Event *event) {
   }
 
   double ts = millis_since_boot();
-  if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+  if ((ts - prev_update_ts) > (1000.0 / STREAM_UPDATE_FPS)) {
     requestUpdateLastMessages();
     prev_update_ts = ts;
   }

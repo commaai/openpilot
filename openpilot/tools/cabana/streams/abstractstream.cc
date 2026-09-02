@@ -164,7 +164,7 @@ bool AbstractStream::isMessageActive(const MessageId &id) const {
     return delta < 1.5;
   }
 
-  return delta < (5.0 / m.freq) + (1.0 / settings.fps);
+  return delta < (5.0 / m.freq) + (1.0 / STREAM_UPDATE_FPS);
 }
 
 void AbstractStream::updateLastMsgsTo(double sec) {
@@ -232,6 +232,10 @@ void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
     msg_events[{.source = e->src, .address = e->address}].push_back(e);
   }
 
+  insertEvents(events, msg_events);
+}
+
+void AbstractStream::insertEvents(const std::vector<const CanEvent *> &events, const MessageEventsMap &msg_events) {
   if (!events.empty()) {
     for (const auto &[id, new_e] : msg_events) {
       if (!new_e.empty()) {

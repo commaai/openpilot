@@ -1,4 +1,5 @@
 
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
@@ -8,6 +9,7 @@
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
+#include "tools/cabana/ui/qtstate.h"
 #include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
@@ -299,6 +301,58 @@ void test_route_json() {
   REQUIRE(routes::parseRoutes("not json", false).empty());
 }
 
+static std::vector<uint8_t> fromHex(const std::string &hex) {
+  std::vector<uint8_t> out;
+  for (size_t i = 0; i + 1 < hex.size(); i += 2) {
+    out.push_back((uint8_t)std::stoul(hex.substr(i, 2), nullptr, 16));
+  }
+  return out;
+}
+
+void test_qt_state_blobs() {
+  // blobs written by the Qt frontend
+  auto geometry = qtstate::parseQtGeometry(fromHex(
+      "01d9d0cb000300000000000000000014000004ff000003330000000000000014000004ff"
+      "00000333000000000000000006400000000000000014000004ff00000333"));
+  REQUIRE(geometry.has_value());
+  REQUIRE(geometry->x == 0);
+  REQUIRE(geometry->y == 20);
+  REQUIRE(geometry->w == 1280);
+  REQUIRE(geometry->h == 800);
+  REQUIRE(geometry->maximized == false);
+
+  auto splitter = qtstate::parseQtSplitter(fromHex("000000ff0000000100000002000000960000006801ffffffff010000000200"));
+  REQUIRE(splitter.has_value());
+  REQUIRE(std::fabs(splitter->ratio - 150.0f / 254.0f) < 1e-6f);
+
+  auto header = qtstate::parseQtHeaderState(fromHex(
+      "000000ff000000000000000100000000000000000100000000000000000000000000000000000003360000000701"
+      "01000100000000000000000000000068ffffffff0000008400000000000000070000006800000001000000000000"
+      "00680000000100000000000000680000000100000000000000680000000100000000000000680000000100000000"
+      "000000680000000100000000000000c60000000100000002000003e800000000c6"));
+  REQUIRE(header.has_value());
+  REQUIRE(header->sort_section == 0);
+  REQUIRE(header->sort_order == 0);
+  REQUIRE(header->sort_shown == true);
+  const int expected_width[] = {104, 104, 104, 104, 104, 104, 198};
+  for (int i = 0; i < qtstate::kMessageColumnCount; ++i) {
+    REQUIRE(header->visual[i] == i);
+    REQUIRE(header->width[i] == expected_width[i]);
+    REQUIRE(header->hidden[i] == false);
+  }
+
+  // empty, truncated and wrong magic blobs are rejected
+  REQUIRE(!qtstate::parseQtGeometry({}).has_value());
+  REQUIRE(!qtstate::parseQtSplitter({}).has_value());
+  REQUIRE(!qtstate::parseQtHeaderState({}).has_value());
+  REQUIRE(!qtstate::parseQtGeometry(fromHex("01d9d0cb00030000000000000000")).has_value());
+  REQUIRE(!qtstate::parseQtSplitter(fromHex("000000ff000000010000000200000096")).has_value());
+  REQUIRE(!qtstate::parseQtHeaderState(fromHex("000000ff0000000000000001000000000000000001")).has_value());
+  REQUIRE(!qtstate::parseQtGeometry(fromHex("deadbeef000300000000000000000014000004ff00000333")).has_value());
+  REQUIRE(!qtstate::parseQtSplitter(fromHex("000000fe0000000100000002000000960000006801ffffffff010000000200")).has_value());
+  REQUIRE(!qtstate::parseQtHeaderState(fromHex("000000fe00000000000000010000000000000000010000000000000000")).has_value());
+}
+
 void test_cabana_core() {
   test_format_seconds();
   test_to_hex();
@@ -313,6 +367,7 @@ void test_cabana_core() {
   test_route_timestamps();
   test_route_api_response();
   test_route_json();
+  test_qt_state_blobs();
 }
 
 int main() {

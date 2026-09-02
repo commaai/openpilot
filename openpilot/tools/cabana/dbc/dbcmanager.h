@@ -39,6 +39,7 @@ public:
   std::vector<std::string> signalNames();
   inline int dbcCount() { return allDBCFiles().size(); }
   int nonEmptyDBCCount();
+  std::vector<DBCFile *> nonEmptyDBCFiles();
 
   const SourceSet sources(const DBCFile *dbc_file) const;
   DBCFile *findDBCFile(const uint8_t source);

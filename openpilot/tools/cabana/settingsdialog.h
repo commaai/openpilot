@@ -10,7 +10,6 @@ class SettingsDialog : public QDialog {
 public:
   SettingsDialog(QWidget *parent);
   void save();
-  QSpinBox *fps;
   QSpinBox *cached_minutes;
   QSpinBox *chart_height;
   QComboBox *chart_series_type;
