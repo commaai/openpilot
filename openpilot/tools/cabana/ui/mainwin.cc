@@ -693,6 +693,11 @@ void MainWindow::handleShortcuts() {
     if (e.key == GLFW_KEY_SPACE && !ctrl && can && !io.WantTextInput) can->pause(!can->isPaused());
     if (e.key == GLFW_KEY_F1) onlineHelp();
     if (e.key == GLFW_KEY_F11 && ctrl) toggleFullScreen();
+    // an open popup or a focused text input takes Esc first
+    if (e.key == GLFW_KEY_ESCAPE && full_screen_ && !io.WantTextInput &&
+        !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
+      toggleFullScreen();
+    }
     if (!ctrl) continue;
     if (e.key == GLFW_KEY_N) newFile();
     if (e.key == GLFW_KEY_O) openFile();
