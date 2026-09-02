@@ -122,7 +122,8 @@ void MainWindow::drawFileMenu() {
   const std::string save_text = cnt > 1 ? "Save " + std::to_string(cnt) + " DBCs..." : "Save DBC...";
   if (ImGui::MenuItem(save_text.c_str(), "Ctrl+S", false, cnt > 0)) save();
   if (ImGui::MenuItem("Save DBC As...", "Ctrl+Shift+S", false, cnt == 1)) saveAs();
-  if (ImGui::MenuItem("Copy DBC To Clipboard", nullptr, false, cnt > 0)) saveToClipboard();
+  // TODO: Support clipboard for multiple files
+  if (ImGui::MenuItem("Copy DBC To Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
 
   ImGui::Separator();
   if (ImGui::MenuItem("Settings...")) openSettings();
@@ -455,12 +456,10 @@ void MainWindow::saveFileAs(DBCFile *dbc_file, std::function<void()> then) {
 }
 
 void MainWindow::saveToClipboard() {
-  std::string text;
+  // Should not be called with more than 1 file open
   for (auto dbc_file : dbc()->nonEmptyDBCFiles()) {
-    if (!text.empty()) text += "\n";
-    text += dbc_file->generateDBC();
+    saveFileToClipboard(dbc_file);
   }
-  copyToClipboard(text);
 }
 
 void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
