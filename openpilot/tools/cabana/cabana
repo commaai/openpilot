@@ -25,14 +25,29 @@ install_qt() {
   fi
 }
 
-# Install Qt if not found
-if ! command -v qmake &> /dev/null; then
-  echo "Qt not found, installing dependencies..."
-  install_qt
+# --legacy runs the old Qt cabana until it is deprecated
+LEGACY=0
+ARGS=()
+for arg in "$@"; do
+  if [[ "$arg" == "--legacy" ]]; then
+    LEGACY=1
+  else
+    ARGS+=("$arg")
+  fi
+done
+
+if [[ $LEGACY -eq 1 ]]; then
+  # Install Qt if not found
+  if ! command -v qmake &> /dev/null; then
+    echo "Qt not found, installing dependencies..."
+    install_qt
+  fi
+  TARGET="_cabana"
+else
+  TARGET="_cabana_ui"
 fi
 
-# Build _cabana
 cd "$ROOT"
-scons -u openpilot/tools/cabana/_cabana openpilot/cereal/messaging/bridge
+scons -u "openpilot/tools/cabana/$TARGET" openpilot/cereal/messaging/bridge
 
-exec "$DIR/_cabana" "$@"
+exec "$DIR/$TARGET" "${ARGS[@]}"
