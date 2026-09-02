@@ -6,6 +6,9 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 int inputCallback(ImGuiInputTextCallbackData *data) {
   auto *ctx = static_cast<InputContext *>(data->UserData);
@@ -217,6 +220,16 @@ bool checkBox(const char *label, bool *v) {
   if (label_size.x > 0.0f) ImGui::RenderText(ImVec2(check_bb.Max.x + style.ItemInnerSpacing.x, pos.y + style.FramePadding.y), label);
   return pressed;
 }
+
+#ifdef __APPLE__
+void setMacAppName(const char *name) {
+  auto info = (CFMutableDictionaryRef)CFBundleGetInfoDictionary(CFBundleGetMainBundle());
+  if (info == nullptr) return;
+  CFStringRef value = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingUTF8);
+  CFDictionarySetValue(info, CFSTR("CFBundleName"), value);
+  CFRelease(value);
+}
+#endif
 
 void setNextWindowFloatsOut() {
   ImGuiWindowClass window_class;

@@ -116,6 +116,11 @@ ImU32 paletteBrightText();
 
 // the next window is a real OS window instead of being drawn inside the main one
 void setNextWindowFloatsOut();
+#ifdef __APPLE__
+// the app menu takes its name from the main bundle, and a bare binary gets an info dictionary with its
+// file name in it. That dictionary is mutable, so the name is set before glfw brings up cocoa
+void setMacAppName(const char *name);
+#endif
 
 // centered modal dialog. false when the popup is not submitted this frame.
 bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size);

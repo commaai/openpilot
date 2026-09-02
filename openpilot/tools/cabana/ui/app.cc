@@ -18,10 +18,6 @@
 #include "tools/cabana/ui/mainwin.h"
 #include "tools/cabana/utils/util.h"
 
-#ifdef __APPLE__
-void setMacAppName(const char *name);  // util/macapp.cc
-#endif
-
 namespace {
 
 std::atomic<bool> g_signal_exit{false};
