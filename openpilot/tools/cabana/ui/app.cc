@@ -30,13 +30,20 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 // docks the panel back. X11 keeps delivering the drag through the implicit grab, so hold a focus loss back
 // while a button is down and deliver it after the release (see deliverPendingFocusLoss).
 GLFWwindow *g_focus_lost_window = nullptr;
+// macOS drops the button on its own when the focus moves, and holding the loss back there swallowed the
+// first click in a popup: the click makes the popup's window key, the main window's loss lands on the
+// release and imgui clears its mouse state before it sees that release
 void windowFocusCallback(GLFWwindow *w, int f) {
+#ifdef __APPLE__
+  ImGui_ImplGlfw_WindowFocusCallback(w, f);
+#else
   if (f) {
     g_focus_lost_window = nullptr;
     ImGui_ImplGlfw_WindowFocusCallback(w, f);
   } else {
     g_focus_lost_window = w;
   }
+#endif
 }
 bool anyMouseButtonDown(GLFWwindow *w) {
   for (int b = GLFW_MOUSE_BUTTON_1; b <= GLFW_MOUSE_BUTTON_LAST; ++b) {
