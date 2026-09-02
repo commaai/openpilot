@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cfloat>
+#include <cmath>
 #include <cstdio>
 #include <utility>
 
@@ -32,25 +33,29 @@ void drawScrollButtons(ImGuiTabBar *tab_bar) {
   const float start_x = tab_bar->BarRect.Max.x + style.ItemSpacing.x;
   const ImVec2 backup_pos = ImGui::GetCursorScreenPos();
 
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
   for (int i = 0; i < 2; ++i) {
     const bool left = i == 0;
-    const std::string label = std::string(left ? icon::CHEVRON_LEFT : icon::CHEVRON_RIGHT) +
-                              (left ? "###scroll_left" : "###scroll_right");
     ImGui::SetCursorScreenPos(ImVec2(start_x + i * (size + style.ItemInnerSpacing.x), tab_bar->BarRect.Min.y));
     ImGui::BeginDisabled(left ? tab_bar->ScrollingTarget <= 0.0f : tab_bar->ScrollingTarget >= max_scroll);
-    if (ImGui::Button(label.c_str(), ImVec2(size, size))) {
+    if (ImGui::Button(left ? "###scroll_left" : "###scroll_right", ImVec2(size, size))) {
       const float step = (left ? -4.0f : 4.0f) * ImGui::GetFontSize();
       tab_bar->ScrollingTarget = std::clamp(tab_bar->ScrollingTarget + step, 0.0f, max_scroll);
       tab_bar->ScrollingAnim = tab_bar->ScrollingTarget;
     }
+    // the icon font glyph sits off center in its padded advance, so the chevron is drawn in the rect
+    const ImVec2 c((ImGui::GetItemRectMin().x + ImGui::GetItemRectMax().x) * 0.5f,
+                   (ImGui::GetItemRectMin().y + ImGui::GetItemRectMax().y) * 0.5f);
+    const float h = std::round(ImGui::GetFontSize() * 0.25f);
+    const float dx = left ? h * 0.5f : -h * 0.5f;
+    ImDrawList *painter = ImGui::GetWindowDrawList();
+    painter->PathLineTo(ImVec2(c.x + dx, c.y - h));
+    painter->PathLineTo(ImVec2(c.x - dx, c.y));
+    painter->PathLineTo(ImVec2(c.x + dx, c.y + h));
+    painter->PathStroke(ImGui::GetColorU32(ImGuiCol_Text), ImDrawFlags_None, 1.5f);
     ImGui::EndDisabled();
   }
   ImGui::PopItemFlag();
-  ImGui::PopStyleVar();
-  ImGui::PopStyleColor();
   ImGui::SetCursorScreenPos(backup_pos);
 }
 
