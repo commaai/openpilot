@@ -1034,7 +1034,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "tinygrad"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "tinygrad_repo" }
 
 [package.metadata]
@@ -1048,6 +1048,7 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'testing-minimal'", specifier = ">=6.148.9" },
     { name = "influxdb3-python", marker = "extra == 'testing'" },
     { name = "librosa", marker = "extra == 'testing'" },
+    { name = "mako", marker = "extra == 'autogen'" },
     { name = "markdown-callouts", marker = "extra == 'docs'" },
     { name = "markdown-exec", extras = ["ansi"], marker = "extra == 'docs'" },
     { name = "mkdocs", marker = "extra == 'docs'" },
@@ -1062,7 +1063,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'testing-minimal'" },
     { name = "onnx", marker = "extra == 'testing'", specifier = "==1.19.0" },
     { name = "onnx2torch", marker = "extra == 'testing'" },
-    { name = "onnxruntime", marker = "extra == 'testing'" },
+    { name = "onnxruntime", marker = "extra == 'testing'", specifier = "==1.24.1" },
     { name = "openai", marker = "extra == 'testing-unit'" },
     { name = "opencv-python", marker = "extra == 'testing'" },
     { name = "pandas", marker = "extra == 'testing'" },
@@ -1073,6 +1074,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'testing-minimal'" },
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
+    { name = "pyyaml", marker = "extra == 'autogen'" },
     { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
@@ -1088,7 +1090,7 @@ requires-dist = [
     { name = "typing-extensions", marker = "extra == 'linting'" },
     { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
 ]
-provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa"]
+provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 
 [[package]]
 name = "tqdm"
