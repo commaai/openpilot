@@ -47,7 +47,7 @@ ui_env['CXXFLAGS'] += [
 ]
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
-ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
+ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc') + ui_env.Glob('ui/util/*.cc')
 ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
           ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
 if arch == "Darwin":

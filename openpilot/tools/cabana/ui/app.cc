@@ -19,7 +19,7 @@
 #include "tools/cabana/utils/util.h"
 
 #ifdef __APPLE__
-void setMacAppName(const char *name);  // macapp.cc
+void setMacAppName(const char *name);  // util/macapp.cc
 #endif
 
 namespace {
