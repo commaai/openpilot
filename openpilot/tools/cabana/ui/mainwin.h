@@ -23,7 +23,7 @@ struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &layout = "");
   ~MainWindow();
   void draw();
   void toggleChartsDocking();
@@ -31,6 +31,7 @@ public:
   bool exited() const { return exited_; }
   void showStatusMessage(const std::string &msg, int timeout_ms = 0);
   void loadFile(const std::string &fn, SourceSet s = SOURCE_ALL, std::function<void()> then = {});
+  void loadLayout(const std::string &layout_name);
 
   void selectAndOpenStream();
   void openStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file = {});
@@ -89,6 +90,7 @@ private:
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
   StreamLoader startup_loader_;  // run on a worker after the first frame
+  std::string startup_layout_;
   std::unique_ptr<AbstractStream> stream_;  // `can` points here, or at dummy_ when no stream is open
   DummyStream dummy_;
   std::unique_ptr<MessagesWidget> messages_widget_;

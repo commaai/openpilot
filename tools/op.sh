@@ -318,6 +318,11 @@ function op_juggle() {
   op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
 }
 
+function op_jotpluggler() {
+  op_before_cmd
+  op_run_command openpilot/tools/jotpluggler/jotpluggler "$@"
+}
+
 function op_lint() {
   op_before_cmd
   op_run_command scripts/lint/lint.sh "$@"
@@ -443,6 +448,7 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
+  echo -e "  ${BOLD}jotpluggler${NC}  Run JotPluggler"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana (--legacy for the old Qt version)"
@@ -496,6 +502,7 @@ function _op() {
     esim )          shift 1; op_esim "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
     build )         shift 1; op_build "$@" ;;
+    jotpluggler | jot ) shift 1; op_jotpluggler "$@" ;;
     juggle )        shift 1; op_juggle "$@" ;;
     cabana )        shift 1; op_cabana "$@" ;;
     lint )          shift 1; op_lint "$@" ;;

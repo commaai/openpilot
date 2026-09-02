@@ -180,7 +180,7 @@ std::vector<KeyEvent> takeKeyEvents() {
   return std::exchange(g_key_events, {});
 }
 
-int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file) {
+int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &layout) {
   try {
     // SIGINT/SIGTERM close all windows (which may ask about unsaved changes), then exit
     UnixSignalHandler signal_handler([]() { g_signal_exit = true; });
@@ -193,7 +193,7 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     inistate::load();
     inistate::applyWindowGeometry(glfw.window());
 
-    MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
+    MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file, layout);
     while (!win.exited()) {
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");

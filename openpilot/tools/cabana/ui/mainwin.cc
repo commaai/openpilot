@@ -36,7 +36,7 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &layout) : window_(window), startup_layout_(layout) {
   can = &dummy_;
   video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
   messages_visible_ = inistate::main_window.messages_visible;
@@ -206,7 +206,12 @@ void MainWindow::updateWindowTitle() {
 void MainWindow::dbcFileChanged() {
   UndoStack::instance()->clear();
   updateWindowTitle();
-  nextFrame([this]() { restoreSessionState(); });
+  nextFrame([this]() {
+    restoreSessionState();
+    if (!startup_layout_.empty()) {
+      loadLayout(startup_layout_);
+    }
+  });
 }
 
 void MainWindow::selectAndOpenStream() {
@@ -366,6 +371,9 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
     if (!dbc()->nonEmptyDBCCount()) {
       newFile();
     }
+    if (!startup_layout_.empty()) {
+      loadLayout(startup_layout_);
+    }
 
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
@@ -389,7 +397,12 @@ void MainWindow::eventsMerged() {
     // Don't overwrite already loaded DBC
     auto it = fingerprint_to_dbc_.find(car_fingerprint_);
     if (!dbc()->nonEmptyDBCCount() && it != fingerprint_to_dbc_.end()) {
-      nextFrame([this, dbc_name = it->second]() { loadDBCFromOpendbc(dbc_name + ".dbc"); });
+      nextFrame([this, dbc_name = it->second]() {
+        loadDBCFromOpendbc(dbc_name + ".dbc");
+        if (!startup_layout_.empty()) {
+          loadLayout(startup_layout_);
+        }
+      });
     }
   }
 }
@@ -673,6 +686,77 @@ void MainWindow::restoreSessionState() {
 
   if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
     charts_widget_->restoreChartsFromIds(settings.active_charts);
+  }
+}
+
+void MainWindow::loadLayout(const std::string &layout_name) {
+  if (layout_name.empty() || !charts_widget_) return;
+
+  std::filesystem::path path(layout_name);
+  if (!std::filesystem::exists(path)) {
+    const std::filesystem::path candidate_paths[] = {
+      executableDir() / "layouts" / (layout_name + ".json"),
+      executableDir() / "layouts" / layout_name,
+      executableDir() / "../jotpluggler/layouts" / (layout_name + ".json"),
+      executableDir() / "../jotpluggler/layouts" / layout_name,
+      executableDir() / "../plotjuggler/layouts" / layout_name,
+      executableDir() / "../../jotpluggler/layouts" / (layout_name + ".json"),
+      executableDir() / "../../jotpluggler/layouts" / layout_name,
+    };
+    for (const auto &p : candidate_paths) {
+      if (std::filesystem::exists(p)) {
+        path = p;
+        break;
+      }
+    }
+  }
+
+  if (!std::filesystem::exists(path)) {
+    showStatusMessage("Layout file not found: " + layout_name, 3000);
+    return;
+  }
+
+  std::ifstream f(path);
+  if (!f) return;
+  const std::string contents{std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>()};
+  std::string err;
+  auto doc = json11::Json::parse(contents, err);
+  if (!err.empty()) return;
+
+  std::vector<std::string> chart_ids;
+  if (doc.is_array()) {
+    for (const auto &item : doc.array_items()) {
+      if (item.is_string()) chart_ids.push_back(item.string_value());
+    }
+  } else if (doc.is_object()) {
+    std::function<void(const json11::Json &)> extract_curves = [&](const json11::Json &node) {
+      if (node.is_object()) {
+        if (node["curves"].is_array()) {
+          std::string combined;
+          for (const auto &c : node["curves"].array_items()) {
+            if (c["name"].is_string()) {
+              std::string name = c["name"].string_value();
+              if (!combined.empty()) combined += ",";
+              combined += name;
+            }
+          }
+          if (!combined.empty()) chart_ids.push_back(combined);
+        }
+        if (node["children"].is_array()) {
+          for (const auto &child : node["children"].array_items()) extract_curves(child);
+        }
+        if (node["root"].is_object()) extract_curves(node["root"]);
+        if (node["tabs"].is_array()) {
+          for (const auto &tab : node["tabs"].array_items()) extract_curves(tab);
+        }
+      }
+    };
+    extract_curves(doc);
+  }
+
+  if (!chart_ids.empty()) {
+    charts_widget_->restoreChartsFromIds(chart_ids);
+    showStatusMessage("Loaded layout: " + path.filename().string(), 2000);
   }
 }
 

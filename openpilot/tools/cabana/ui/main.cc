@@ -36,6 +36,7 @@ struct CabanaArgs {
   std::string zmq;
   std::string data_dir;
   std::string dbc;
+  std::string layout;
   std::string route;
 };
 
@@ -63,7 +64,8 @@ void printUsage(const char *argv0) {
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
           "  --no-cache                turn off the local route file cache\n"
-          "  --dbc <file>              dbc file to open\n",
+          "  --dbc <file>              dbc file to open\n"
+          "  --layout <layout>         load a predefined or custom layout\n",
           argv0);
 }
 
@@ -116,6 +118,8 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.no_cache = true;
     } else if (std::strcmp(a, "--dbc") == 0) {
       if (!takeValue(argc, argv, i, args.dbc)) return 1;
+    } else if (std::strcmp(a, "--layout") == 0) {
+      if (!takeValue(argc, argv, i, args.layout)) return 1;
     } else if (a[0] == '-') {
       fprintf(stderr, "error: unknown option %s\n", a);
       printUsage(argv[0]);
@@ -198,5 +202,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, args.layout);
 }

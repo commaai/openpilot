@@ -330,11 +330,32 @@ void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_id
     int index = 0;
     for (const auto &part : utils::split(chart_id, ',')) {
       const size_t sep = part.find('|');
-      if (sep == std::string::npos) continue;
-      MessageId msg_id = MessageId::fromString(part.substr(0, sep));
-      if (auto *msg = dbc()->msg(msg_id))
-        if (auto *sig = msg->sig(part.substr(sep + 1)))
-          showChart(msg_id, sig, true, index++ > 0);
+      if (sep != std::string::npos) {
+        MessageId msg_id = MessageId::fromString(part.substr(0, sep));
+        if (auto *msg = dbc()->msg(msg_id))
+          if (auto *sig = msg->sig(part.substr(sep + 1)))
+            showChart(msg_id, sig, true, index++ > 0);
+      } else {
+        std::string sig_name = part;
+        const size_t slash = sig_name.find_last_of('/');
+        if (slash != std::string::npos) sig_name = sig_name.substr(slash + 1);
+        bool found = false;
+        for (auto *file : dbc()->allDBCFiles()) {
+          for (const auto &[addr, msg] : file->getMessages()) {
+            if (auto *sig = const_cast<cabana::Msg &>(msg).sig(sig_name)) {
+              for (int src : dbc()->sources(file)) {
+                uint8_t source = (src < 0) ? 0 : (uint8_t)src;
+                MessageId msg_id{.source = source, .address = addr};
+                showChart(msg_id, sig, true, index++ > 0);
+                found = true;
+                break;
+              }
+            }
+            if (found) break;
+          }
+          if (found) break;
+        }
+      }
     }
   }
 }
