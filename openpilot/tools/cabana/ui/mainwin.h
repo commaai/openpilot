@@ -9,6 +9,7 @@
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/ui/app.h"
 #include "tools/cabana/ui/dialogs/settingsdialog.h"
 #include "tools/cabana/ui/dialogs/streamselector.h"
 #include "tools/cabana/ui/helpoverlay.h"
@@ -22,7 +23,7 @@ struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
   ~MainWindow();
   void draw();
   void toggleChartsDocking();
@@ -47,6 +48,7 @@ private:
   bool hasStream() const { return dynamic_cast<const DummyStream *>(can) == nullptr; }
   void releaseStream();
   void startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
+  void loadStartupStream(const std::string &dbc_file);
   void remindSaveChanges(std::function<void()> then);
   void closeFile(SourceSet s, std::function<void()> then);
   void closeFile(DBCFile *dbc_file);
@@ -86,6 +88,7 @@ private:
 
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
+  StreamLoader startup_loader_;  // run on a worker after the first frame
   std::unique_ptr<AbstractStream> stream_;  // `can` points here, or at dummy_ when no stream is open
   DummyStream dummy_;
   std::unique_ptr<MessagesWidget> messages_widget_;

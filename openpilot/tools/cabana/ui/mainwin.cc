@@ -19,6 +19,7 @@
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/ui/inistate.h"
+#include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/ui/tools/findsignal.h"
 #include "tools/cabana/ui/tools/findsimilarbits.h"
 #include "tools/cabana/ui/util.h"
@@ -34,7 +35,8 @@ constexpr const char *CENTER_PANEL = "###CenterWidget";
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
-MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) : window_(window) {
+MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
+                       const std::string &dbc_file) : window_(window) {
   can = &dummy_;
   video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
   messages_visible_ = inistate::main_window.messages_visible;
@@ -63,8 +65,13 @@ MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> strea
   }));
 
   startup_stream_ = std::move(stream);
+  startup_loader_ = std::move(stream_loader);
   nextFrame([this, dbc_file]() {
-    startup_stream_ ? openStream(std::move(startup_stream_), dbc_file) : selectAndOpenStream();
+    if (startup_loader_) {
+      loadStartupStream(dbc_file);
+    } else {
+      startup_stream_ ? openStream(std::move(startup_stream_), dbc_file) : selectAndOpenStream();
+    }
   });
 }
 
@@ -208,6 +215,22 @@ void MainWindow::selectAndOpenStream() {
     } else if (!stream_) {
       openStream(std::make_unique<DummyStream>());
     }
+  });
+}
+
+// the route file listing hits the comma API, so the loader runs on a worker behind the window
+void MainWindow::loadStartupStream(const std::string &dbc_file) {
+  wait_dlg_.text = "Loading route...";
+  wait_dlg_.value = 0;
+  wait_dlg_.open = true;
+  wait_dlg_.show_at = ImGui::GetTime() + 4.0;  // minimum duration before the dialog shows
+  ThreadPool::instance().run([this, dbc_file, loader = std::move(startup_loader_)]() {
+    AbstractStream *loaded = loader().release();
+    utils::runOnMainThread([this, dbc_file, loaded]() {
+      wait_dlg_.open = false;
+      std::unique_ptr<AbstractStream> stream(loaded);
+      stream ? openStream(std::move(stream), dbc_file) : openStream(std::make_unique<DummyStream>());
+    });
   });
 }
 

@@ -12,6 +12,7 @@
 #include "tools/cabana/streams/socketcanstream.h"
 #endif
 #include "tools/cabana/ui/app.h"
+#include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/utils/util.h"
 
 #ifdef __GLIBC__
@@ -146,6 +147,7 @@ int main(int argc, char *argv[]) {
   if (auto code = parseArgs(argc, argv, args)) return *code;
 
   std::unique_ptr<AbstractStream> stream;
+  StreamLoader stream_loader;
 
   if (args.msgq) {
     stream = std::make_unique<DeviceStream>();
@@ -181,14 +183,20 @@ int main(int argc, char *argv[]) {
       route = DEMO_ROUTE;
     }
     if (!route.empty()) {
-      auto replay_stream = std::make_unique<ReplayStream>();
-      Connection err = replay_stream->error.connect([](const std::string &msg) { fprintf(stderr, "%s\n", msg.c_str()); });
-      if (!replay_stream->loadRoute(route, args.data_dir, replay_flags, args.auto_source)) {
-        return 1;
-      }
-      stream = std::move(replay_stream);
+      // the route file listing hits the comma API; load behind the window instead of before it
+      stream_loader = [route, data_dir = args.data_dir, replay_flags, auto_source = args.auto_source]() -> std::unique_ptr<AbstractStream> {
+        auto replay_stream = std::make_unique<ReplayStream>();
+        Connection err = replay_stream->error.connect([](const std::string &msg) {
+          fprintf(stderr, "%s\n", msg.c_str());
+          utils::runOnMainThread([msg]() { MessageBox::warning("Error", msg); });
+        });
+        if (!replay_stream->loadRoute(route, data_dir, replay_flags, auto_source)) {
+          return nullptr;
+        }
+        return replay_stream;
+      };
     }
   }
 
-  return run(std::move(stream), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc);
 }
