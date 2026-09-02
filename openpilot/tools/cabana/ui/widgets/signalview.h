@@ -196,6 +196,7 @@ private:
   bool drawItem(SignalModel::Item *item, int depth, DrawContext &ctx);  // returns whether the row is visible
   void drawIndexWidget(SignalModel::Item *item, const ImRect &rect);    // the [plot][remove] widget
   void collapseAll();
+  static float widestValueWidth(const cabana::Signal *sig);
   float max_value_width = 0;
   float value_column_width = 0;
   float name_column_width = 150;

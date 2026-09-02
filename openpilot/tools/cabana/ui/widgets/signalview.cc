@@ -650,21 +650,32 @@ void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
   if (!sig || hovered_sig_ == sig) hovered_sig_ = nullptr;
 }
 
+float SignalView::widestValueWidth(const cabana::Signal *sig) {
+  const double raw_max = sig->is_signed ? std::ldexp(1.0, sig->size - 1) - 1 : std::ldexp(1.0, sig->size) - 1;
+  const double raw_min = sig->is_signed ? -std::ldexp(1.0, sig->size - 1) : 0.0;
+  float width = 0;
+  for (double raw : {raw_min, raw_max}) {
+    width = std::max(width, SignalItemDelegate::textWidth(sig->formatValue(raw * sig->factor + sig->offset)));
+  }
+  for (const auto &[_, desc] : sig->val_desc) {
+    width = std::max(width, SignalItemDelegate::textWidth(desc));
+  }
+  return width;
+}
+
 void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
   if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
 
-  float widest_value = 0;
+  // sized for the widest value the signals can produce, not the widest one in the last message: sizing
+  // to the current values moved the sparklines every time a value changed length
+  max_value_width = 0;
   for (auto item : model->root->children) {
     double value = 0;
     if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
-      widest_value = std::max(widest_value, SignalItemDelegate::textWidth(item->sig_val));
     }
-  }
-  const float value_slack = SignalItemDelegate::textWidth("00");
-  if (widest_value > max_value_width || widest_value + value_slack < max_value_width) {
-    max_value_width = widest_value;
+    max_value_width = std::max(max_value_width, widestValueWidth(item->sig));
   }
 
   if (first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model->rowCount()) {
