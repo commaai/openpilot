@@ -252,13 +252,17 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.render()
 
     # ***** Center-aligned bottom section icons *****
+    usb_connected = ui_state.usb_connected
+    usb_unknown = ui_state.usb_unknown
+    chestnut_state = ui_state.chestnut_state
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._usb_icon.set_visible(ui_state.usb_connected and ui_state.usb_unknown)
-    self._chestnut_icon.set_visible(not ui_state.usb_unknown and (ui_state.usb_connected or
-                                    ui_state.chestnut_state in (ChestnutState.READY, ChestnutState.ACTIVE)))
-    self._chestnut_loading_icon.set_visible(ui_state.chestnut_state == ChestnutState.LOADING)
+    self._usb_icon.set_visible(usb_connected and usb_unknown)
+    self._chestnut_icon.set_visible(not usb_unknown and chestnut_state not in
+                                    (ChestnutState.LOADING, ChestnutState.UNCOMPILED, ChestnutState.FAILED) and
+                                    (usb_connected or chestnut_state in (ChestnutState.READY, ChestnutState.ACTIVE)))
+    self._chestnut_loading_icon.set_visible(not usb_unknown and chestnut_state == ChestnutState.LOADING)
     self._chestnut_loading_icon.set_opacity(0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)))
-    self._chestnut_failed_icon.set_visible(ui_state.chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED))
+    self._chestnut_failed_icon.set_visible(not usb_unknown and chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED))
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(bool(ui_state.is_body))
 
