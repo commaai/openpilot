@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "tools/cabana/ui/widgets/scrollabletabbar.h"
+
 int TabBar::addTab(const std::string &text) {
   tabs_.push_back({text, 0, next_id_++});
   int index = count() - 1;
@@ -40,10 +42,23 @@ void TabBar::removeTab(int index) {
   }
 }
 
+void TabBar::moveTab(int from, int to) {
+  if (from == to || from < 0 || from >= count() || to < 0 || to >= count()) return;
+  const int current_id = current_index_ >= 0 ? tabs_[current_index_].id : -1;
+  Tab tab = std::move(tabs_[from]);
+  tabs_.erase(tabs_.begin() + from);
+  tabs_.insert(tabs_.begin() + to, std::move(tab));
+  for (int i = 0; i < count(); ++i) {
+    if (tabs_[i].id == current_id) current_index_ = i;
+  }
+  select_current_ = true;  // imgui orders the tabs as submitted only when a tab is (re)selected
+}
+
 void TabBar::draw() {
   if (auto_hide_ && count() < 2) return;  // auto hidden with fewer than two tabs
   ImGui::PushID(this);
-  if (!ImGui::BeginTabBar("##tabbar", scroll_buttons_ ? ImGuiTabBarFlags_FittingPolicyScroll : 0)) {
+  // no default tooltip, the tabs carry their own
+  if (!(scroll_buttons_ ? beginScrollableTabBar("##tabbar", ImGuiTabBarFlags_NoTooltip) : ImGui::BeginTabBar("##tabbar", ImGuiTabBarFlags_NoTooltip))) {
     ImGui::PopID();
     return;
   }
@@ -66,10 +81,12 @@ void TabBar::draw() {
       ImGui::EndTabItem();
     }
     tabs_[i].rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+    if (!tabs_[i].tooltip.empty()) ImGui::SetItemTooltip("%s", tabs_[i].tooltip.c_str());
+    tabContextMenu(i);
     if (!open) close_index = i;
   }
   if (tabs_closable_) style.TabCloseButtonMinWidthUnselected = close_button_min_width;
-  ImGui::EndTabBar();
+  scroll_buttons_ ? endScrollableTabBar() : ImGui::EndTabBar();
   ImGui::PopID();
   if (close_index >= 0) tabCloseRequested(close_index);
 }

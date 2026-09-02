@@ -21,44 +21,6 @@ bool iequals(const std::string &a, const std::string &b) {
          std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) { return std::tolower((unsigned char)x) == std::tolower((unsigned char)y); });
 }
 
-float scrollButtonsWidth() {
-  const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::GetFrameHeight() * 2.0f + style.ItemInnerSpacing.x + style.ItemSpacing.x * 2.0f;
-}
-
-void drawScrollButtons(ImGuiTabBar *tab_bar) {
-  const ImGuiStyle &style = ImGui::GetStyle();
-  const float size = ImGui::GetFrameHeight();
-  const float max_scroll = std::max(0.0f, tab_bar->WidthAllTabs - tab_bar->BarRect.GetWidth());
-  const float start_x = tab_bar->BarRect.Max.x + style.ItemSpacing.x;
-  const ImVec2 backup_pos = ImGui::GetCursorScreenPos();
-
-  ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
-  for (int i = 0; i < 2; ++i) {
-    const bool left = i == 0;
-    ImGui::SetCursorScreenPos(ImVec2(start_x + i * (size + style.ItemInnerSpacing.x), tab_bar->BarRect.Min.y));
-    ImGui::BeginDisabled(left ? tab_bar->ScrollingTarget <= 0.0f : tab_bar->ScrollingTarget >= max_scroll);
-    if (ImGui::Button(left ? "###scroll_left" : "###scroll_right", ImVec2(size, size))) {
-      const float step = (left ? -4.0f : 4.0f) * ImGui::GetFontSize();
-      tab_bar->ScrollingTarget = std::clamp(tab_bar->ScrollingTarget + step, 0.0f, max_scroll);
-      tab_bar->ScrollingAnim = tab_bar->ScrollingTarget;
-    }
-    // the icon font glyph sits off center in its padded advance, so the chevron is drawn in the rect
-    const ImVec2 c((ImGui::GetItemRectMin().x + ImGui::GetItemRectMax().x) * 0.5f,
-                   (ImGui::GetItemRectMin().y + ImGui::GetItemRectMax().y) * 0.5f);
-    const float h = std::round(ImGui::GetFontSize() * 0.25f);
-    const float dx = left ? h * 0.5f : -h * 0.5f;
-    ImDrawList *painter = ImGui::GetWindowDrawList();
-    painter->PathLineTo(ImVec2(c.x + dx, c.y - h));
-    painter->PathLineTo(ImVec2(c.x - dx, c.y));
-    painter->PathLineTo(ImVec2(c.x + dx, c.y + h));
-    painter->PathStroke(ImGui::GetColorU32(ImGuiCol_Text), ImDrawFlags_None, 1.5f);
-    ImGui::EndDisabled();
-  }
-  ImGui::PopItemFlag();
-  ImGui::SetCursorScreenPos(backup_pos);
-}
-
 }  // namespace
 
 ElidedLabel::ElidedLabel(const std::string &text) : text_(utils::trimmed(text)) {}
@@ -78,6 +40,14 @@ void ElidedLabel::draw(float width) {
 }
 
 DetailWidget::DetailWidget(ChartsWidget *charts) : charts(charts) {
+  tabbar.setUsesScrollButtons(true);
+  tabbar.setAutoHide(true);
+  tabbar.setTabsClosable(true);
+  connections_.push_back(tabbar.currentChanged.connect([this](int index) {
+    if (index >= 0) setMessage(MessageId::fromString(tabbar.tabText(index)));
+  }));
+  connections_.push_back(tabbar.tabCloseRequested.connect([this](int index) { tabbar.removeTab(index); }));
+  connections_.push_back(tabbar.tabContextMenu.connect([this](int index) { showTabBarContextMenu(index); }));
   binary_view = std::make_unique<BinaryView>();
   signal_view = std::make_unique<SignalView>(charts);
 
@@ -144,75 +114,27 @@ void DetailWidget::drawToolBar() {
 }
 
 void DetailWidget::showTabBarContextMenu(int index) {
-  if (index >= 0) {
-    if (ImGui::BeginPopupContextItem()) {
-      if (ImGui::MenuItem("Close Other Tabs")) {
-        std::rotate(tabbar.begin(), tabbar.begin() + index, tabbar.begin() + index + 1);
-        setMessage(tabbar[0].id);
-        while (tabbar.size() > 1) {
-          tabbar.erase(tabbar.begin() + 1);
-        }
-      }
-      ImGui::EndPopup();
+  if (ImGui::BeginPopupContextItem()) {
+    if (ImGui::MenuItem("Close Other Tabs")) {
+      tabbar.moveTab(index, 0);
+      tabbar.setCurrentIndex(0);
+      while (tabbar.count() > 1) tabbar.removeTab(1);
     }
+    ImGui::EndPopup();
   }
 }
 
-void DetailWidget::drawTabBar() {
-  if (tabbar.size() < 2) return;  // auto hidden with fewer than two tabs
-  ImGuiWindow *window = ImGui::GetCurrentWindow();
-  ImGuiTabBar *prev_tab_bar = ImGui::TabBarFindByID(window->GetID("tabbar"));
-  const bool overflowing = prev_tab_bar && prev_tab_bar->WidthAllTabsIdeal > prev_tab_bar->BarRect.GetWidth() + 1.0f;
-  const float backup_work_max_x = window->WorkRect.Max.x;
-  if (overflowing) window->WorkRect.Max.x -= scrollButtonsWidth();
-  const bool tab_bar_open = ImGui::BeginTabBar("tabbar", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoTooltip |
-                                                            ImGuiTabBarFlags_NoTabListScrollingButtons);
-  window->WorkRect.Max.x = backup_work_max_x;
-  if (!tab_bar_open) return;
-  ImGuiTabBar *tab_bar = ImGui::GetCurrentTabBar();
-  // every tab gets a close button, not only the hovered/selected one
-  ImGuiStyle &style = ImGui::GetStyle();
-  const float close_button_min_width = std::exchange(style.TabCloseButtonMinWidthUnselected, -1.0f);
-  // setCurrentIndex requests made during this loop are applied on the next frame
-  const bool select_current = std::exchange(tabbar_select_current, false);
-  for (int i = 0; i < (int)tabbar.size(); ++i) {
-    const MessageId id = tabbar[i].id;
-    const std::string label = id.toString();
-    bool open = true;
-    const ImGuiTabItemFlags flags = (select_current && id == msg_id) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
-    const bool current = ImGui::BeginTabItem(label.c_str(), &open, flags);
-    if (current) ImGui::EndTabItem();
-    ImGui::SetItemTooltip("%s", tabbar[i].tooltip.c_str());
-    showTabBarContextMenu(i);
-    // a programmatic selection takes effect on the next frame, ignore the old tab until then
-    if (current && !select_current && id != msg_id) setMessage(id);
-    if (!open) {
-      removeTab(i);
-      break;
-    }
-  }
-  style.TabCloseButtonMinWidthUnselected = close_button_min_width;
-  ImGui::EndTabBar();
-  if (overflowing) drawScrollButtons(tab_bar);
-}
+void DetailWidget::drawTabBar() { tabbar.draw(); }
 
-// closing the current tab selects the one to its right
-void DetailWidget::removeTab(int index) {
-  const bool was_current = tabbar[index].id == msg_id;
-  tabbar.erase(tabbar.begin() + index);
-  if (was_current && !tabbar.empty()) {
-    setMessage(tabbar[std::clamp<int>(index, 0, tabbar.size() - 1)].id);
-  }
-}
-
-int DetailWidget::findOrAddTab(const MessageId& message_id) {
-  int index = tabbar.size() - 1;
+int DetailWidget::findOrAddTab(const MessageId &message_id) {
+  const std::string text = message_id.toString();
+  int index = tabbar.count() - 1;
   for (/**/; index >= 0; --index) {
-    if (tabbar[index].id == message_id) break;
+    if (tabbar.tabText(index) == text) break;
   }
   if (index == -1) {
-    tabbar.push_back({message_id, msgName(message_id)});
-    index = tabbar.size() - 1;
+    index = tabbar.addTab(text);
+    tabbar.setTabToolTip(index, msgName(message_id));
   }
   return index;
 }
@@ -220,8 +142,7 @@ int DetailWidget::findOrAddTab(const MessageId& message_id) {
 void DetailWidget::setMessage(const MessageId &message_id) {
   if (std::exchange(msg_id, message_id) == message_id) return;
 
-  findOrAddTab(message_id);
-  tabbar_select_current = true;
+  tabbar.setCurrentIndex(findOrAddTab(message_id));
 
   signal_view->setMessage(msg_id);
   binary_view->setMessage(msg_id);
@@ -231,10 +152,7 @@ void DetailWidget::setMessage(const MessageId &message_id) {
 
 std::pair<std::string, std::vector<std::string>> DetailWidget::serializeMessageIds() const {
   std::vector<std::string> msgs;
-  for (int i = 0; i < (int)tabbar.size(); ++i) {
-    MessageId id = tabbar[i].id;
-    msgs.push_back(id.toString());
-  }
+  for (int i = 0; i < tabbar.count(); ++i) msgs.push_back(tabbar.tabText(i));
   return std::make_pair(msg_id.toString(), msgs);
 }
 
@@ -330,7 +248,7 @@ void DetailWidget::drawTabWidget() {
   }
   ImGui::EndChild();
 
-  const std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Msg", std::string(icon::STOPWATCH) + " Logs"};
+  const std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Messages", std::string(icon::STOPWATCH) + " Logs"};
   // the tabs are centered in the bar: the bar itself starts at the first tab, so its separator only spans the
   // tabs and the full width one is drawn underneath it
   const ImGuiStyle &style = ImGui::GetStyle();

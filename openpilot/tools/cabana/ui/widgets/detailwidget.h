@@ -11,6 +11,7 @@
 #include "tools/cabana/ui/widgets/historylog.h"
 #include "tools/cabana/ui/widgets/signalview.h"
 #include "tools/cabana/ui/icons.h"
+#include "tools/cabana/ui/widgets/tabbar.h"
 
 
 // a label that elides its text to the available width
@@ -58,7 +59,7 @@ public:
   DetailWidget(ChartsWidget *charts);
   void setMessage(const MessageId &message_id);
   void refresh();
-  void draw();  // tab bar of message ids, toolbar, warning, Msg/Logs tabs
+  void draw();  // tab bar of message ids, toolbar, warning, Messages/Logs tabs
   std::pair<std::string, std::vector<std::string>> serializeMessageIds() const;
   void restoreTabs(const std::string &active_msg_id, const std::vector<std::string> &msg_ids);
   std::vector<std::pair<std::string, ImRect>> helpRects() const;  // HelpOverlay: (whatsThis, rect) of the binary and signal views
@@ -69,23 +70,16 @@ private:
   void drawTabWidget();
   int findOrAddTab(const MessageId& message_id);
   void showTabBarContextMenu(int index);
-  void removeTab(int index);
   void editMsg();
   void removeMsg();
   void updateState(const std::set<MessageId> *msgs = nullptr);
-
-  struct Tab {
-    MessageId id;
-    std::string tooltip;
-  };
 
   MessageId msg_id;
   const char *warning_icon = nullptr;
   std::string warning_label;
   ElidedLabel name_label;
   bool warning_widget_visible = false;
-  std::vector<Tab> tabbar;
-  bool tabbar_select_current = false;  // a current-tab change applied on the next draw
+  TabBar tabbar;
   int tab_widget_index = 0;
   bool action_remove_msg_enabled = false;
   bool heatmap_live = true;

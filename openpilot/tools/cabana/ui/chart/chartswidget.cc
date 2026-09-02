@@ -83,6 +83,16 @@ ChartsWidget::ChartsWidget() {
   connections_.push_back(settings.changed.connect([this]() { settingChanged(); }));
   connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); }));
   connections_.push_back(tabbar.tabCloseRequested.connect([this](int index) { removeTab(index); }));
+  connections_.push_back(tabbar.tabContextMenu.connect([this](int index) {
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::MenuItem("Close Other Tabs")) {
+        tabbar.moveTab(index, 0);
+        tabbar.setCurrentIndex(0);
+        while (tabbar.count() > 1) removeTab(1);
+      }
+      ImGui::EndPopup();
+    }
+  }));
   connections_.push_back(tabbar.currentChanged.connect([this](int index) {
     if (index != -1) updateLayout();
   }));
