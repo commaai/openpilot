@@ -226,10 +226,21 @@ void MainWindow::loadStartupStream(const std::string &dbc_file) {
   wait_dlg_.open = true;
   wait_dlg_.show_at = ImGui::GetTime() + 4.0;  // minimum duration before the dialog shows
   ThreadPool::instance().run([this, dbc_file, loader = std::move(startup_loader_)]() {
-    AbstractStream *loaded = loader().release();
-    utils::runOnMainThread([this, dbc_file, loaded]() {
+    AbstractStream *loaded = nullptr;
+    std::string error;
+    try {
+      loaded = loader().release();
+    } catch (const std::exception &e) {
+      // the pool swallows exceptions, so the wait dialog would spin forever
+      error = e.what();
+    }
+    utils::runOnMainThread([this, dbc_file, loaded, error]() {
       wait_dlg_.open = false;
       std::unique_ptr<AbstractStream> stream(loaded);
+      if (!error.empty()) {
+        fprintf(stderr, "%s\n", error.c_str());
+        MessageBox::warning("Failed to load route", error);
+      }
       stream ? openStream(std::move(stream), dbc_file) : openStream(std::make_unique<DummyStream>());
     });
   });
