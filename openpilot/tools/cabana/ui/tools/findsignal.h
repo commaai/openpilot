@@ -11,8 +11,7 @@
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/tools/tooldialog.h"
 
-class FindSignalModel {
-public:
+struct SignalSearch {
   struct SearchSignal {
     MessageId id = {};
     uint64_t mono_time = 0;
@@ -21,8 +20,6 @@ public:
     std::vector<std::string> values;
   };
 
-  std::string data(int row, int column) const;
-  int rowCount() const { return std::min((int)filtered_signals.size(), 300); }
   void search(const std::function<bool(double)> &cmp);
   void reset();
   void undo();
@@ -56,7 +53,7 @@ private:
   int min_size_ = 8, max_size_ = 8;
   bool little_endian_ = true, is_signed_ = false;
   bool searched_ = false;  // a search/undo/reset ran, so the stats line is shown
-  FindSignalModel model_;
-  std::future<void> search_future_;  // the model is off limits while it is valid
+  SignalSearch search_;
+  std::future<void> search_future_;  // search_ is off limits while it is valid
   bool searching_ = false;
 };

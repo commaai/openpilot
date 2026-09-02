@@ -56,14 +56,15 @@ public:
     bool expanded = false;
     bool chart_opened = false;  // plot_btn checked state
   };
-  enum ItemFlag { NoItemFlags = 0, ItemIsSelectable = 1, ItemIsEnabled = 2, ItemIsEditable = 4, ItemIsUserCheckable = 8 };
 
   SignalModel();
+  Item *root() const { return root_.get(); }
+  const MessageId &msgId() const { return msg_id_; }
   int rowCount() const { return root_->children.size(); }
-  std::string data(const Item *item, int column) const;
-  bool checkState(const Item *item) const;  // column 1
-  std::string toolTip(const Item *item) const;
-  int flags(const Item *item, int column) const;
+  static bool isEnabled(const Item *item);
+  static bool isEditable(const Item *item);   // a leaf cell in the value column with an editor
+  static bool isCheckable(const Item *item);  // Endian and Signed
+  std::string valueText(const Item *item) const;
   bool setData(Item *item, const ItemValue &value);
   void setMessage(const MessageId &id);
   void setFilter(const std::string &txt);
@@ -85,8 +86,6 @@ private:
   std::string filter_str_;
   std::unique_ptr<Item> root_;
   Connections connections_;
-  friend class SignalView;
-  friend class SignalItemDelegate;
 };
 
 // non-blocking: draw() returns false once closed, `accepted` tells whether Ok was pressed
@@ -105,51 +104,6 @@ private:
   bool opened_ = false;
 };
 
-class SignalItemDelegate {
-public:
-  SignalItemDelegate();
-  // viewport_x: left edge of the tree viewport
-  void paint(ImDrawList *painter, const ImRect &rect, const SignalModel::Item *item, int column, bool selected,
-             const std::string &text, float viewport_x) const;
-  float sizeHint(const SignalModel::Item *item, float widget_width, const std::string &text) const;  // column 0 width
-  float rowHeight() const;
-  float signalRowHeight() const;
-  // draws the editor for `item` at the cursor; commits through setModelData on focus out
-  void createEditor(SignalModel::Item *item, SignalModel *model);
-  // queues the commit in pending_commit: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
-  // the rows, so the model is only changed after the tree is drawn (see SignalView::draw)
-  void setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value);
-  void drawValueDescriptionDlg(SignalModel *model);  // continuation of the ValueDescriptionDlg opened in createEditor
-  static float textWidth(const std::string &text, float font_size = 0);
-  void closeEditor();
-  void commitEditor(SignalModel *model);  // Qt commits an open editor on focus out
-
-  const float label_font = 12.0f;   // Inter needs 12 px for 8 px tall digits
-  const float minmax_font = 10.0f;
-  const int color_label_width = 18;
-  ImVec2 button_size = {};
-  // the editor is created for the item that just became current and takes the focus
-  SignalModel::Item *focus_item = nullptr;
-  // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
-  SignalModel::Item *open_item = nullptr;
-  std::function<void()> pending_commit;
-
-private:
-  // only an Acceptable value is committed
-  void lineEditor(SignalModel::Item *item, SignalModel *model, ImGuiInputTextCallback validator, bool take_focus);
-  static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
-
-  SignalModel::Item *editing_item_ = nullptr;  // the open text editor
-  std::string edit_text_;
-  bool editor_active_ = false;   // editor had the keyboard focus last frame
-  bool refocus_editor_ = false;  // reopen the editor rejected by the validator
-  bool enter_pressed_ = false;
-  bool combo_focused_ = false;  // the SignalType combo had the focus last frame
-  std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
-  const cabana::Signal *desc_sig_ = nullptr;
-  Connections connections_;
-};
-
 class SignalView {
 public:
   SignalView(ChartsWidget *charts);
@@ -159,8 +113,8 @@ public:
   void signalHovered(const cabana::Signal *sig);  // handler for BinaryView::signalHovered
   void updateChartState();
   void selectSignal(const cabana::Signal *sig, bool expand = false);
+  bool saveSignal(const cabana::Signal *origin, cabana::Signal &s) { return model_.saveSignal(origin, s); }
   std::string whatsThis() const;
-  std::unique_ptr<SignalModel> model;
 
   Observable<const cabana::Signal *> highlight;
   Observable<const MessageId &, const cabana::Signal *, bool, bool> showChart;
@@ -193,6 +147,23 @@ private:
   void collapseAll();
   static float widestValueWidth(const cabana::Signal *sig);
 
+  // viewport_x: left edge of the tree viewport
+  void paintCell(ImDrawList *painter, const ImRect &rect, const SignalModel::Item *item, int column, bool selected,
+                 const std::string &text, float viewport_x) const;
+  float nameColumnWidth(const SignalModel::Item *item, float widget_width, const std::string &text) const;
+  // draws the editor for `item` at the cursor; commits through queueCommit on focus out
+  void drawEditor(SignalModel::Item *item);
+  // queues the commit in pending_commit_: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
+  // the rows, so the model is only changed after the tree is drawn (see draw)
+  void queueCommit(SignalModel::Item *item, const ItemValue &value);
+  void drawValueDescriptionDlg();  // continuation of the ValueDescriptionDlg opened in drawEditor
+  static float textWidth(const std::string &text, float font_size = 0);
+  void closeEditor();
+  void commitEditor();  // Qt commits an open editor on focus out
+  // only an Acceptable value is committed
+  void drawLineEditor(SignalModel::Item *item, ImGuiInputTextCallback validator, bool take_focus);
+  static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
+
   float value_column_width_ = 0;
   float name_column_width_ = 150;
   bool editor_open_on_press_ = false;
@@ -210,6 +181,21 @@ private:
   std::string filter_edit_;
   ChartsWidget *charts_;
   std::string signal_count_lb_;
-  std::unique_ptr<SignalItemDelegate> delegate_;
+
+  ImVec2 button_size_ = {};
+  // the editor is created for the item that just became current and takes the focus
+  SignalModel::Item *focus_item_ = nullptr;
+  // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
+  SignalModel::Item *open_item_ = nullptr;
+  std::function<void()> pending_commit_;
+  SignalModel::Item *editing_item_ = nullptr;  // the open text editor
+  std::string edit_text_;
+  bool editor_active_ = false;   // editor had the keyboard focus last frame
+  bool refocus_editor_ = false;  // reopen the editor rejected by the validator
+  bool enter_pressed_ = false;
+  bool combo_focused_ = false;  // the SignalType combo had the focus last frame
+  std::unique_ptr<ValueDescriptionDlg> desc_dlg_;
+  const cabana::Signal *desc_sig_ = nullptr;
+  SignalModel model_;
   Connections connections_;
 };

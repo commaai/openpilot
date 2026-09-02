@@ -12,24 +12,11 @@
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
-std::string FindSignalModel::data(int row, int column) const {
-  const auto &s = filtered_signals[row];
-  switch (column) {
-    case 0: return s.id.toString();
-    case 1: return std::to_string(s.sig.start_bit) + ", " + std::to_string(s.sig.size);
-    case 2: {
-      std::string joined;
-      for (size_t i = 0; i < s.values.size(); ++i) {
-        if (i) joined += " ";
-        joined += s.values[i];
-      }
-      return joined;
-    }
-  }
-  return {};
-}
+namespace {
+constexpr int MAX_ROWS = 300;
+}  // namespace
 
-void FindSignalModel::search(const std::function<bool(double)> &cmp) {
+void SignalSearch::search(const std::function<bool(double)> &cmp) {
   const auto prev_sigs = !histories.empty() ? histories.back() : initial_signals;
   filtered_signals.clear();
   filtered_signals.reserve(prev_sigs.size());
@@ -60,7 +47,7 @@ void FindSignalModel::search(const std::function<bool(double)> &cmp) {
   histories.push_back(filtered_signals);
 }
 
-void FindSignalModel::undo() {
+void SignalSearch::undo() {
   if (!histories.empty()) {
     histories.pop_back();
     filtered_signals.clear();
@@ -68,7 +55,7 @@ void FindSignalModel::undo() {
   }
 }
 
-void FindSignalModel::reset() {
+void SignalSearch::reset() {
   histories.clear();
   filtered_signals.clear();
   initial_signals.clear();
@@ -103,14 +90,14 @@ bool FindSignalDlg::draw() {
     ImGui::EndChild();
     if (searched_) {
       ImGui::Text("%zu matches. right click on an item to create signal. double click to open message",
-                  model_.filtered_signals.size());
+                  search_.filtered_signals.size());
     }
   }
   return end();
 }
 
 void FindSignalDlg::drawMessageGroup() {
-  ImGui::BeginDisabled(searching_ || !model_.histories.empty());
+  ImGui::BeginDisabled(searching_ || !search_.histories.empty());
   ImGui::TextUnformatted("Messages");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Bus");
@@ -138,7 +125,7 @@ void FindSignalDlg::drawMessageGroup() {
 }
 
 void FindSignalDlg::drawPropertiesGroup() {
-  ImGui::BeginDisabled(searching_ || !model_.histories.empty());
+  ImGui::BeginDisabled(searching_ || !search_.histories.empty());
   ImGui::TextUnformatted("Signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Size");
@@ -188,21 +175,21 @@ void FindSignalDlg::drawFindGroup() {
     validatedText("##value2", &value2_, validateDouble);
   }
   ImGui::SameLine();
-  const bool first = !searching_ && model_.histories.empty();
-  ImGui::BeginDisabled(searching_ || model_.histories.size() <= 1);
+  const bool first = !searching_ && search_.histories.empty();
+  ImGui::BeginDisabled(searching_ || search_.histories.size() <= 1);
   if (ImGui::Button("Undo prev find")) {
-    model_.undo();
+    search_.undo();
     searched_ = true;
   }
   ImGui::EndDisabled();
   ImGui::SameLine();
-  ImGui::BeginDisabled(searching_ || (model_.rowCount() == 0 && !first));
+  ImGui::BeginDisabled(searching_ || (search_.filtered_signals.empty() && !first));
   if (ImGui::Button(searching_ ? "Finding ...." : (first ? "Find" : "Find Next"))) search();
   ImGui::EndDisabled();
   ImGui::SameLine();
   ImGui::BeginDisabled(searching_ || first);
   if (ImGui::Button("Reset")) {
-    model_.reset();
+    search_.reset();
     searched_ = true;
   }
   ImGui::EndDisabled();
@@ -221,32 +208,41 @@ void FindSignalDlg::drawTable() {
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
   if (!ImGui::BeginTable("view", columns + 1, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
-  // vertical header: row number, no width while the model is empty
-  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed | (model_.rowCount() ? 0 : ImGuiTableColumnFlags_Disabled), 40.0f);
+  const int rows = std::min<int>(search_.filtered_signals.size(), MAX_ROWS);
+  // vertical header: row number, no width while there are no results
+  ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed | (rows ? 0 : ImGuiTableColumnFlags_Disabled), 40.0f);
   for (int c = 0; c < columns; ++c) {
     auto column_flags = c == columns - 1 ? ImGuiTableColumnFlags_WidthStretch : ImGuiTableColumnFlags_WidthFixed;
     ImGui::TableSetupColumn(titles[c], column_flags, c == 0 ? 80.0f : 120.0f);
   }
   tableHeadersRow();
-  for (int row = 0; row < model_.rowCount(); ++row) {
+  for (int row = 0; row < rows; ++row) {
+    const auto &s = search_.filtered_signals[row];
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::PushID(row);
     if (ImGui::Selectable(std::to_string(row + 1).c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
-      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) openMessage(model_.filtered_signals[row].id);
+      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) openMessage(s.id);
     }
     drawContextMenu(row);
     ImGui::PopID();
-    for (int c = 0; c < columns; ++c) {
-      ImGui::TableSetColumnIndex(c + 1);
-      ImGui::TextUnformatted(model_.data(row, c).c_str());
+    ImGui::TableSetColumnIndex(1);
+    ImGui::TextUnformatted(s.id.toString().c_str());
+    ImGui::TableSetColumnIndex(2);
+    ImGui::Text("%d, %d", s.sig.start_bit, s.sig.size);
+    ImGui::TableSetColumnIndex(3);
+    std::string values;
+    for (size_t i = 0; i < s.values.size(); ++i) {
+      if (i) values += " ";
+      values += s.values[i];
     }
+    ImGui::TextUnformatted(values.c_str());
   }
   ImGui::EndTable();
 }
 
 void FindSignalDlg::search() {
-  if (model_.histories.empty()) {
+  if (search_.histories.empty()) {
     setInitialSignals();
   }
   auto v1 = utils::toDouble(value1_);
@@ -263,7 +259,7 @@ void FindSignalDlg::search() {
   }
   searched_ = false;
   // a thread of its own: the search fans out over the pool, which a pool thread must not wait on
-  search_future_ = std::async(std::launch::async, [this, cmp = std::move(cmp)]() { model_.search(cmp); });
+  search_future_ = std::async(std::launch::async, [this, cmp = std::move(cmp)]() { search_.search(cmp); });
   searching_ = true;
 }
 
@@ -290,11 +286,11 @@ void FindSignalDlg::setInitialSignals() {
   double last_time_val = utils::toDouble(last_time_);
   auto [first_sec, last_sec] = std::minmax(first_time_val, last_time_val);
   uint64_t first_time = can->toMonoTime(first_sec);
-  model_.last_time = std::numeric_limits<uint64_t>::max();
+  search_.last_time = std::numeric_limits<uint64_t>::max();
   if (last_sec > 0) {
-    model_.last_time = can->toMonoTime(last_sec);
+    search_.last_time = can->toMonoTime(last_sec);
   }
-  model_.initial_signals.clear();
+  search_.initial_signals.clear();
 
   for (const auto &[id, m] : can->lastMessages()) {
     if ((buses.empty() || buses.count(id.source)) && (addresses.empty() || addresses.count(id.address))) {
@@ -304,12 +300,12 @@ void FindSignalDlg::setInitialSignals() {
         const int total_size = m.dat.size() * 8;
         for (int size = min_size_; size <= max_size_; ++size) {
           for (int start = 0; start <= total_size - size; ++start) {
-            FindSignalModel::SearchSignal s{.id = id, .mono_time = first_time, .sig = sig};
+            SignalSearch::SearchSignal s{.id = id, .mono_time = first_time, .sig = sig};
             s.sig.start_bit = start;
             s.sig.size = size;
             updateMsbLsb(s.sig);
             s.value = get_raw_value((*e)->dat, (*e)->size, s.sig);
-            model_.initial_signals.push_back(s);
+            search_.initial_signals.push_back(s);
           }
         }
       }
@@ -320,7 +316,7 @@ void FindSignalDlg::setInitialSignals() {
 void FindSignalDlg::drawContextMenu(int row) {
   if (ImGui::BeginPopupContextItem("menu")) {
     if (ImGui::MenuItem("Create Signal")) {
-      auto &s = model_.filtered_signals[row];
+      auto &s = search_.filtered_signals[row];
       UndoStack::instance()->push(new AddSigCommand(s.id, s.sig));
       openMessage(s.id);
     }

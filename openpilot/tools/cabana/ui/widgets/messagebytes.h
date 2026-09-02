@@ -8,19 +8,13 @@
 #include "imgui_internal.h"
 #include "tools/cabana/core/color.h"
 
-class MessageBytesDelegate {
-public:
-  MessageBytesDelegate(bool multiple_lines = false) : multiple_lines_(multiple_lines) {}
-  // text cells elide, the bytes cell paints colored hex
-  void paint(ImDrawList *painter, const ImRect &rect, bool selected, bool inactive, const std::string &text,
-             const std::vector<uint8_t> *bytes = nullptr, const std::vector<CabanaColor> *colors = nullptr) const;
-  ImVec2 sizeHint(const std::vector<uint8_t> *bytes) const;
-  bool multipleLines() const { return multiple_lines_; }
-  void setMultipleLines(bool v) { multiple_lines_ = v; }
-  ImVec2 sizeForBytes(int n) const;
-  void updateFontMetrics();  // the fonts are only valid inside a frame
+// the cells of the messages and history log tables. Only valid inside a frame: the sizes come from the
+// mono font.
 
-private:
-  ImVec2 byte_size_ = {};
-  bool multiple_lines_ = false;
-};
+ImVec2 byteCellSize();                              // one "00 " cell
+ImVec2 bytesCellSize(int n, bool multiple_lines);   // a cell of n bytes, the table's cell padding included
+ImU32 cellTextColor(bool selected, bool inactive);  // inactive rows gray the text and fade the highlighted text
+
+void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive);
+void drawBytesCell(ImDrawList *dl, const ImRect &rect, const std::vector<uint8_t> &bytes, const std::vector<CabanaColor> *colors,
+                   bool selected, bool inactive, bool multiple_lines);

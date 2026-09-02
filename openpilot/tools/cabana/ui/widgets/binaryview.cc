@@ -16,6 +16,7 @@
 namespace {
 
 const int CELL_HEIGHT = 36;
+const float SMALL_FONT_SIZE = 10.0f;  // Inter needs 10 px for a 7 px cap height
 const int VERTICAL_HEADER_WIDTH = 30;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
 
@@ -55,9 +56,6 @@ void fillBDiagPattern(ImDrawList *p, const ImRect &r, ImU32 col) {
 }  // namespace
 
 BinaryView::BinaryView() {
-  model_ = std::make_unique<BinaryViewModel>();
-  delegate_ = std::make_unique<BinaryItemDelegate>(this);
-
   connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
   connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
 }
@@ -86,7 +84,7 @@ void BinaryView::addShortcuts() {
 
   if (ImGui::IsKeyPressed(ImGuiKey_X, false) || ImGui::IsKeyPressed(ImGuiKey_Backspace, false) || ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
     if (hovered_sig_ != nullptr) {
-      UndoStack::instance()->push(new RemoveSigCommand(model_->msg_id, hovered_sig_));
+      UndoStack::instance()->push(new RemoveSigCommand(msg_id_, hovered_sig_));
       hovered_sig_ = nullptr;
     }
   }
@@ -109,7 +107,7 @@ void BinaryView::addShortcuts() {
 
   if (ImGui::IsKeyPressed(ImGuiKey_P, false) || ImGui::IsKeyPressed(ImGuiKey_G, false) || ImGui::IsKeyPressed(ImGuiKey_C, false)) {
     if (hovered_sig_ != nullptr) {
-      showChart(model_->msg_id, hovered_sig_, true, false);
+      showChart(msg_id_, hovered_sig_, true, false);
     }
   }
 }
@@ -120,7 +118,7 @@ ImVec2 BinaryView::minimumSizeHint() const {
   const float min_section_size = ImGui::CalcTextSize("W").x + 8.0f;
   popMonoFont();
   return {(min_section_size + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
-          static_cast<float>(CELL_HEIGHT * std::min(model_->rowCount(), 10) + 2)};
+          static_cast<float>(CELL_HEIGHT * std::min(row_count_, 10) + 2)};
 }
 
 void BinaryView::highlight(const cabana::Signal *sig) {
@@ -146,9 +144,9 @@ void BinaryView::setSelection() {
 
 void BinaryView::handleMousePress(const ImVec2 &pos) {
   resize_sig_ = nullptr;
-  if (auto index = indexAt(last_mouse_pos_ = pos); index.isValid() && index.column != 8) {
+  if (auto index = indexAt(last_mouse_pos_ = pos); index.isValid() && index.column != HEX_COLUMN) {
     anchor_index_ = index;
-    auto item = &model_->itemAt(anchor_index_);
+    auto item = &cellAt(anchor_index_);
     int bit_pos = get_bit_pos(anchor_index_);
     for (auto s : item->sigs) {
       if (bit_pos == s->lsb || bit_pos == s->msb) {
@@ -163,7 +161,7 @@ void BinaryView::handleMousePress(const ImVec2 &pos) {
 
 void BinaryView::highlightPosition(const ImVec2 &pos) {
   if (auto index = indexAt(pos); index.isValid()) {
-    auto item = &model_->itemAt(index);
+    auto item = &cellAt(index);
     const cabana::Signal *sig = item->sigs.empty() ? nullptr : item->sigs.back();
     highlight(sig);
   }
@@ -172,7 +170,7 @@ void BinaryView::highlightPosition(const ImVec2 &pos) {
 void BinaryView::handleMouseMove(const ImVec2 &pos) {
   highlightPosition(last_mouse_pos_ = pos);
   // drag selecting while the left button is down; the hex column is not selectable
-  if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && model_->isSelectable(indexAt(pos))) setSelection();
+  if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && indexAt(pos).column != HEX_COLUMN) setSelection();
 }
 
 void BinaryView::handleMouseRelease(const ImVec2 &pos) {
@@ -182,36 +180,64 @@ void BinaryView::handleMouseRelease(const ImVec2 &pos) {
       auto sig = resize_sig_ ? *resize_sig_ : cabana::Signal{};
       std::tie(sig.start_bit, sig.size, sig.is_little_endian) = getSelection(release_index);
       resize_sig_ ? editSignal(resize_sig_, sig)
-                 : UndoStack::instance()->push(new AddSigCommand(model_->msg_id, sig));
+                 : UndoStack::instance()->push(new AddSigCommand(msg_id_, sig));
     } else {
-      auto item = &model_->itemAt(anchor_index_);
+      auto item = &cellAt(anchor_index_);
       if (item->sigs.size() > 0)
         signalClicked(item->sigs.back());
     }
   }
-  clearSelection();
+  selection_.clear();
   anchor_index_ = BinaryIndex();
   resize_sig_ = nullptr;
 }
 
 void BinaryView::setMessage(const MessageId &message_id) {
-  model_->msg_id = message_id;
+  msg_id_ = message_id;
   scroll_to_top_ = true;
   refresh();
 }
 
 void BinaryView::refresh() {
-  clearSelection();
+  selection_.clear();
   anchor_index_ = BinaryIndex();
   resize_sig_ = nullptr;
   hovered_sig_ = nullptr;
-  model_->refresh();
+  bit_flip_tracker_ = {};
+  cells_.clear();
+  if (auto dbc_msg = dbc()->msg(msg_id_)) {
+    row_count_ = dbc_msg->size;
+    cells_.resize(row_count_ * COLUMN_COUNT);
+    for (auto sig : dbc_msg->getSignals()) {
+      for (int j = 0; j < sig->size; ++j) {
+        int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
+        int idx = COLUMN_COUNT * (pos / 8) + pos % 8;
+        if (idx >= cells_.size()) {
+          fprintf(stderr, "signal %s out of bounds.start_bit: %d size: %d\n", sig->name.c_str(), sig->start_bit, sig->size);
+          break;
+        }
+        if (j == 0) sig->is_little_endian ? cells_[idx].is_lsb = true : cells_[idx].is_msb = true;
+        if (j == sig->size - 1) sig->is_little_endian ? cells_[idx].is_msb = true : cells_[idx].is_lsb = true;
+
+        auto &sigs = cells_[idx].sigs;
+        sigs.push_back(sig);
+        if (sigs.size() > 1) {
+          std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) { return l->size > r->size; });
+        }
+      }
+    }
+  } else {
+    row_count_ = can->lastMessage(msg_id_).dat.size();
+    cells_.resize(row_count_ * COLUMN_COUNT);
+  }
+  updateState();
   if (under_mouse_) highlightPosition(last_mouse_pos_);
 }
 
+
 std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
   std::set<const cabana::Signal *> overlapping;
-  for (const auto &item : model_->items) {
+  for (const auto &item : cells_) {
     if (item.sigs.size() > 1) {
       for (auto s : item.sigs) {
         if (s->type == cabana::Signal::Type::Normal) overlapping.insert(s);
@@ -222,7 +248,7 @@ std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
 }
 
 std::tuple<int, int, bool> BinaryView::getSelection(BinaryIndex index) {
-  if (index.column == 8) {
+  if (index.column == HEX_COLUMN) {
     index = {index.row, 7};
   }
   bool is_lb = true;
@@ -249,7 +275,7 @@ BinaryIndex BinaryView::indexAt(const ImVec2 &pos) const {
   if (column_width_ <= 0 || pos.x < grid_pos_.x + VERTICAL_HEADER_WIDTH || pos.y < grid_pos_.y) return {};
   int column = static_cast<int>((pos.x - grid_pos_.x - VERTICAL_HEADER_WIDTH) / column_width_);
   int row = static_cast<int>((pos.y - grid_pos_.y) / CELL_HEIGHT);
-  if (column >= model_->columnCount() || row >= model_->rowCount()) return {};
+  if (column >= COLUMN_COUNT || row >= row_count_) return {};
   return {row, column};
 }
 
@@ -263,15 +289,15 @@ ImRect BinaryView::visualRect(const BinaryIndex &index) const {
 }
 
 void BinaryView::draw() {
-  is_message_active_ = can->isMessageActive(model_->msg_id);
+  is_message_active_ = can->isMessageActive(msg_id_);
   if (scroll_to_top_) {
     ImGui::SetScrollY(0.0f);
     scroll_to_top_ = false;
   }
 
-  const int rows = model_->rowCount();
+  const int rows = row_count_;
   const float width = ImGui::GetContentRegionAvail().x;
-  column_width_ = std::max(1.0f, (width - VERTICAL_HEADER_WIDTH) / model_->columnCount());
+  column_width_ = std::max(1.0f, (width - VERTICAL_HEADER_WIDTH) / COLUMN_COUNT);
   grid_pos_ = ImGui::GetCursorScreenPos();
   ImGui::InvisibleButton("##binary_view", ImVec2(std::max(width, 1.0f), std::max(static_cast<float>(rows * CELL_HEIGHT), 1.0f)));
   ImDrawList *painter = ImGui::GetWindowDrawList();
@@ -279,12 +305,12 @@ void BinaryView::draw() {
   for (int row = 0; row < rows; ++row) {
     const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + VERTICAL_HEADER_WIDTH, grid_pos_.y + (row + 1) * CELL_HEIGHT);
     painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));  // plain header background
-    drawText(painter, r, model_->headerData(row).c_str(), ImGui::GetColorU32(ImGuiCol_Text));
+    drawText(painter, r, std::to_string(row).c_str(), ImGui::GetColorU32(ImGuiCol_Text));
   }
   for (int row = 0; row < rows; ++row) {
-    for (int column = 0; column < model_->columnCount(); ++column) {
+    for (int column = 0; column < COLUMN_COUNT; ++column) {
       const BinaryIndex index = {row, column};
-      delegate_->paint(painter, visualRect(index), index);
+      paintCell(painter, visualRect(index), index);
     }
   }
 
@@ -308,61 +334,30 @@ void BinaryView::draw() {
   if (ImGui::IsItemDeactivated()) handleMouseRelease(mouse);
 
   if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
-    const std::string tip = model_->data(indexAt(mouse));
-    if (!tip.empty()) ImGui::SetTooltip("%s", utils::stripHtml(tip).c_str());
+    if (auto index = indexAt(mouse); index.isValid() && !cellAt(index).sigs.empty()) {
+      ImGui::SetTooltip("%s", utils::stripHtml(utils::signalToolTip(cellAt(index).sigs.back())).c_str());
+    }
   }
 
   addShortcuts();
 }
 
-void BinaryViewModel::refresh() {
-  bit_flip_tracker = {};
-  items.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id)) {
-    row_count = dbc_msg->size;
-    items.resize(row_count * column_count);
-    for (auto sig : dbc_msg->getSignals()) {
-      for (int j = 0; j < sig->size; ++j) {
-        int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
-        int idx = column_count * (pos / 8) + pos % 8;
-        if (idx >= items.size()) {
-          fprintf(stderr, "signal %s out of bounds.start_bit: %d size: %d\n",
-                  sig->name.c_str(), sig->start_bit, sig->size);
-          break;
-        }
-        if (j == 0) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        if (j == sig->size - 1) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-
-        auto &sigs = items[idx].sigs;
-        sigs.push_back(sig);
-        if (sigs.size() > 1) {
-          std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) { return l->size > r->size; });
-        }
-      }
-    }
-  } else {
-    row_count = can->lastMessage(msg_id).dat.size();
-    items.resize(row_count * column_count);
-  }
-  updateState();
-}
-
-void BinaryViewModel::updateItem(int row, int col, uint8_t val, const CabanaColor &color) {
-  auto &item = items[row * column_count + col];
+void BinaryView::setCell(int row, int col, uint8_t val, const CabanaColor &color) {
+  auto &item = cells_[row * COLUMN_COUNT + col];
   item.valid = true;
   item.val = val;
   item.bg_color = color;
 }
 
-void BinaryViewModel::updateState() {
-  const auto &last_msg = can->lastMessage(msg_id);
+void BinaryView::updateState() {
+  const auto &last_msg = can->lastMessage(msg_id_);
   const auto &binary = last_msg.dat;
-  if (binary.size() > row_count) {
-    row_count = binary.size();
-    items.resize(row_count * column_count);
+  if (binary.size() > row_count_) {
+    row_count_ = binary.size();
+    cells_.resize(row_count_ * COLUMN_COUNT);
   }
 
-  auto &bit_flips = heatmap_live_mode ? last_msg.bit_flip_counts : getBitFlipChanges(binary.size());
+  auto &bit_flips = heatmap_live_mode_ ? last_msg.bit_flip_counts : bitFlipChanges(binary.size());
   uint32_t max_bit_flip_count = 1;  // 1 to avoid division by zero
   for (const auto &row : bit_flips) {
     for (uint32_t count : row) {
@@ -380,7 +375,7 @@ void BinaryViewModel::updateState() {
 
   for (size_t i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
-      auto &item = items[i * column_count + j];
+      auto &item = cells_[i * COLUMN_COUNT + j];
       int bit_val = (binary[i] >> (7 - j)) & 1;
 
       double alpha = item.sigs.empty() ? 0 : min_alpha_with_signal;
@@ -394,22 +389,22 @@ void BinaryViewModel::updateState() {
 
       auto color = item.bg_color;
       color.a = static_cast<uint8_t>(alpha);
-      updateItem(i, j, bit_val, color);
+      setCell(i, j, bit_val, color);
     }
-    updateItem(i, 8, binary[i], last_msg.colors[i]);
+    setCell(i, HEX_COLUMN, binary[i], last_msg.colors[i]);
   }
 }
 
-const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::getBitFlipChanges(size_t msg_size) {
+const std::vector<std::array<uint32_t, 8>> &BinaryView::bitFlipChanges(size_t msg_size) {
   auto time_range = can->timeRange();
-  if (bit_flip_tracker.time_range == time_range && !bit_flip_tracker.flip_counts.empty())
-    return bit_flip_tracker.flip_counts;
+  if (bit_flip_tracker_.time_range == time_range && !bit_flip_tracker_.flip_counts.empty())
+    return bit_flip_tracker_.flip_counts;
 
-  bit_flip_tracker.time_range = time_range;
-  bit_flip_tracker.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
+  bit_flip_tracker_.time_range = time_range;
+  bit_flip_tracker_.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
 
-  auto [first, last] = can->eventsInRange(msg_id, time_range);
-  if (std::distance(first, last) <= 1) return bit_flip_tracker.flip_counts;
+  auto [first, last] = can->eventsInRange(msg_id_, time_range);
+  if (std::distance(first, last) <= 1) return bit_flip_tracker_.flip_counts;
 
   std::vector<uint8_t> prev_values((*first)->dat, (*first)->dat + (*first)->size);
   for (auto it = std::next(first); it != last; ++it) {
@@ -419,7 +414,7 @@ const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::getBitFlipChanges(s
       const uint8_t diff = event->dat[i] ^ prev_values[i];
       if (!diff) continue;
 
-      auto &bit_flips = bit_flip_tracker.flip_counts[i];
+      auto &bit_flips = bit_flip_tracker_.flip_counts[i];
       for (int bit = 0; bit < 8; ++bit) {
         if (diff & (1u << bit)) ++bit_flips[7 - bit];
       }
@@ -427,34 +422,24 @@ const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::getBitFlipChanges(s
     }
   }
 
-  return bit_flip_tracker.flip_counts;
+  return bit_flip_tracker_.flip_counts;
 }
 
-std::string BinaryViewModel::headerData(int section) const {
-  return std::to_string(section);
-}
-
-std::string BinaryViewModel::data(const BinaryIndex &index) const {
-  auto item = index.isValid() ? &itemAt(index) : nullptr;
-  return item && !item->sigs.empty() ? utils::signalToolTip(item->sigs.back()) : std::string();
-}
-
-bool BinaryItemDelegate::hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const {
+bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const {
   if (!index.isValid()) return false;
-  auto model = bin_view_->model_.get();
-  int idx = (index.row + dy) * model->columnCount() + index.column + dx;
-  if (idx < 0 || idx >= (int)model->items.size()) return false;
-  auto &s = model->items[idx].sigs;
+  int idx = (index.row + dy) * COLUMN_COUNT + index.column + dx;
+  if (idx < 0 || idx >= (int)cells_.size()) return false;
+  auto &s = cells_[idx].sigs;
   return std::find(s.begin(), s.end(), sig) != s.end();
 }
 
-void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const {
-  auto item = &bin_view_->model_->itemAt(index);
+void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const {
+  auto item = &cellAt(index);
   ImFont *font = ImGui::GetFont();
   float font_size = ImGui::GetFontSize();
-  ImU32 pen = paletteText(bin_view_->is_message_active_);
+  ImU32 pen = paletteText(is_message_active_);
 
-  if (index.column == 8) {
+  if (index.column == HEX_COLUMN) {
     if (item->valid) {
       pushMonoFont();
       font = ImGui::GetFont();
@@ -462,14 +447,14 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
       popMonoFont();
       painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
-  } else if (bin_view_->isSelected(index)) {
-    auto color = bin_view_->resize_sig_ ? toImU32(bin_view_->resize_sig_->color) : paletteHighlight();
+  } else if (isSelected(index)) {
+    auto color = resize_sig_ ? toImU32(resize_sig_->color) : paletteHighlight();
     painter->AddRectFilled(rect.Min, rect.Max, color);
     pen = paletteBrightText();
-  } else if (!bin_view_->hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), bin_view_->resize_sig_) == item->sigs.end()) {  // not resizing
+  } else if (!hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), resize_sig_) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
-        if (s == bin_view_->hovered_sig_) {
+        if (s == hovered_sig_) {
           painter->AddRectFilled(rect.Min, rect.Max, toImU32(s->color.darker(125)));  // 4/5x brightness
         } else {
           drawSignalCell(painter, rect, index, s);
@@ -478,8 +463,8 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
     } else if (item->valid && item->bg_color.alpha() > 0) {
       painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
-    bool bright = std::find(item->sigs.begin(), item->sigs.end(), bin_view_->hovered_sig_) != item->sigs.end();
-    pen = bright ? paletteBrightText() : paletteText(bin_view_->is_message_active_);
+    bool bright = std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
+    pen = bright ? paletteBrightText() : paletteText(is_message_active_);
   }
 
   if (item->sigs.size() > 1) {
@@ -488,7 +473,7 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
     fillBDiagPattern(painter, rect, DARK_GRAY);
   }
   if (item->valid) {
-    if (index.column == 8) {
+    if (index.column == HEX_COLUMN) {
       drawBoldText(painter, rect, utils::hexByte(item->val), pen, font, font_size);
     } else {
       drawText(painter, rect, item->val ? "1" : "0", pen, font, font_size);
@@ -496,13 +481,12 @@ void BinaryItemDelegate::paint(ImDrawList *painter, const ImRect &rect, const Bi
   }
   if (item->is_msb || item->is_lsb) {
     const ImRect marker_rect(rect.Min, ImVec2(rect.Max.x - 8, rect.Max.y - 3));
-    drawText(painter, marker_rect, item->is_msb ? "M" : "L", pen, nullptr, small_font_size, ImVec2(1.0f, 1.0f));
+    drawText(painter, marker_rect, item->is_msb ? "M" : "L", pen, nullptr, SMALL_FONT_SIZE, ImVec2(1.0f, 1.0f));
   }
 }
 
 // Draw border on edge of signal
-void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
-                                        const BinaryIndex &index, const cabana::Signal *sig) const {
+void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const {
   bool draw_left = !hasSignal(index, -1, 0, sig);
   bool draw_top = !hasSignal(index, 0, -1, sig);
   bool draw_right = !hasSignal(index, 1, 0, sig);
@@ -539,7 +523,7 @@ void BinaryItemDelegate::drawSignalCell(ImDrawList *painter, const ImRect &rect,
   band(nullptr, rc.Min.y + (top_notch ? spacing : 0), rc.Max.y - (bottom_notch ? spacing : 0));
   if (bottom_notch) band(bottom_notch, rc.Max.y - spacing, rc.Max.y);
 
-  auto item = &bin_view_->model_->itemAt(index);
+  auto item = &cellAt(index);
   CabanaColor color = sig->color;
   color.a = item->bg_color.alpha();
   const ImU32 edge = toImU32(sig->color.darker(125));
