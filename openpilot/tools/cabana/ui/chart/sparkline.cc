@@ -116,21 +116,61 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   // has passed since it was built, which keeps the motion at the frame rate whatever the message rate is
   const float shift = std::clamp((float)((can->currentSec() - window_end_) * xscale_), 0.0f, size.x);
 
-  const ImVec2 offset(pos.x - shift, pos.y);
+  // physical pixels: the framebuffer is 2x the logical size on hidpi displays
+  const float px = 1.0f / std::max(1.0f, ImGui::GetIO().DisplayFramebufferScale.x);
+  auto snap = [&](float x) { return std::floor(x / px) * px; };
+
+  // a sample sits at t * xscale + k on screen, where k moves with the clock. snapping k to whole pixels
+  // keeps every sample's subpixel phase fixed to its timestamp, so the line looks identical from frame
+  // to frame and from update to update and only ever moves by whole pixels; moving it by fractions
+  // shifted the antialiasing coverage every frame and the thin peaks sparkled
+  ImVec2 offset(pos.x - shift, pos.y);
+  const double k = offset.x - (window_end_ * xscale_ - (size.x - 1));
+  offset.x += snap(k) - k;
   auto point_at = [&](const ImVec2 &p) { return ImVec2(offset.x + p.x, offset.y + p.y); };
 
   draw_list->PushClipRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), true);
 
-  // an aliased 1 px segment between two columns rounds into one of them and the rounding flips as the
-  // window slides, so the thin peaks sparkle; antialiasing spreads it over both and the motion is smooth
-  for (const auto &p : render_points_) draw_list->PathLineTo(point_at(p));
-  draw_list->PathStroke(color_, ImDrawFlags_None, 1.5f);
-
   // a point is a 3x3 square
   auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color_); };
+
   if (draw_individual_points_) {
-    for (const auto &p : render_points_) draw_point(point_at(p));
+    for (const auto &p : render_points_) {
+      draw_list->PathLineTo(point_at(p));
+      draw_point(point_at(p));
+    }
+    draw_list->PathStroke(color_, ImDrawFlags_None, 1.5f);
   } else {
+    // one sample per pixel column: several strokes in a column overlap into a blur, and a dense
+    // high-contrast texture scrolling by is hard on the eyes
+    std::vector<ImVec2> pts;
+    pts.reserve(render_points_.size());
+    float col = -1e9f;
+    for (const auto &p : render_points_) {
+      ImVec2 sp = point_at(p);
+      float c = snap(sp.x);
+      if (c != col) {
+        pts.push_back(sp);
+        col = c;
+      }
+    }
+
+    // antialiasing smooths the gentle slopes but smears the near-vertical segments of a spiky signal
+    // over neighbouring columns, so those are drawn aliased. runs of one kind are stroked together and
+    // share their end points with the next run
+    auto steep = [&](size_t i) { return std::abs(pts[i + 1].y - pts[i].y) > 2.0f * std::abs(pts[i + 1].x - pts[i].x) + px; };
+    const ImDrawListFlags saved = draw_list->Flags;
+    size_t i = 0;
+    while (i + 1 < pts.size()) {
+      const bool is_steep = steep(i);
+      size_t j = i + 1;
+      while (j + 1 < pts.size() && steep(j) == is_steep) ++j;
+      draw_list->Flags = is_steep ? (saved & ~ImDrawListFlags_AntiAliasedLines) : saved;
+      for (size_t n = i; n <= j; ++n) draw_list->PathLineTo(pts[n]);
+      draw_list->PathStroke(color_, ImDrawFlags_None, 1.0f);
+      i = j;
+    }
+    draw_list->Flags = saved;
     draw_point(point_at(render_points_.back()));
   }
   draw_list->PopClipRect();
