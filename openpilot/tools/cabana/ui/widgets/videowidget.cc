@@ -1,6 +1,7 @@
 #include "tools/cabana/ui/widgets/videowidget.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cfloat>
 #include <chrono>
 #include <cmath>
@@ -185,8 +186,16 @@ void VideoWidget::drawPlaybackController() {
       ImGui::EndDisabled();
     }, "Skip to the end", [this]() { skipToEnd(); }, skip_to_end_enabled_});
   }
-  items.push_back({button_width(time_text.c_str()),
-                   [&]() { if (toolButton("time_display", time_text.c_str(), time_tooltip)) toggleTimeDisplay(); },
+  // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
+  pushMonoFont(ImGui::GetFontSize());
+  const float time_width = button_width(time_text.c_str());
+  popMonoFont();
+  items.push_back({time_width,
+                   [&]() {
+                     pushMonoFont(ImGui::GetFontSize());
+                     if (toolButton("time_display", time_text.c_str(), time_tooltip)) toggleTimeDisplay();
+                     popMonoFont();
+                   },
                    time_text, [this]() { toggleTimeDisplay(); }});
   // the expanding spacer: the items after it are right aligned as long as everything fits
   const size_t spacer_index = items.size();

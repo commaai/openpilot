@@ -266,7 +266,10 @@ bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
   return changed;
 }
 
-void pushMonoFont() { if (g_mono_font) ImGui::PushFont(g_mono_font); }
+void pushMonoFont(float size) {
+  if (!g_mono_font) return;
+  size > 0.0f ? ImGui::PushFont(g_mono_font, size) : ImGui::PushFont(g_mono_font);
+}
 void popMonoFont() { if (g_mono_font) ImGui::PopFont(); }
 void pushBoldFont() { if (g_bold_font) ImGui::PushFont(g_bold_font); }
 void popBoldFont() { if (g_bold_font) ImGui::PopFont(); }

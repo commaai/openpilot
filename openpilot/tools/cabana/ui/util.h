@@ -130,7 +130,7 @@ void drawSliderHandle(ImDrawList *p, const ImRect &r);
 // full width groove, filled left of the handle, 13x13 handle (style.cc)
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width);
 
-void pushMonoFont();
+void pushMonoFont(float size = 0.0f);  // 0: the size the font was loaded at
 void popMonoFont();
 void pushBoldFont();
 void popBoldFont();
