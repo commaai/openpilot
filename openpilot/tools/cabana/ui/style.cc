@@ -133,7 +133,7 @@ void applyTheme(int theme) {
     colors[ImGuiCol_TitleBgCollapsed] = c(DarkTheme::window);
     colors[ImGuiCol_TableHeaderBg] = c(DarkTheme::window);
     colors[ImGuiCol_TableBorderStrong] = outline;
-    colors[ImGuiCol_TableBorderLight] = colorRgb(0x4c, 0x4f, 0x52);
+    colors[ImGuiCol_TableBorderLight] = colorRgb(0x23, 0x26, 0x28);  // darker than the cells, like the qt grid
     colors[ImGuiCol_TableRowBg] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_TableRowBgAlt] = colorRgb(0xff, 0xff, 0xff, 0.06f);
     colors[ImGuiCol_TextSelectedBg] = c(DarkTheme::highlight, 0.6f);
