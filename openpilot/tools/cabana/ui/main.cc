@@ -28,6 +28,7 @@ struct CabanaArgs {
   bool msgq = false;
   bool panda = false;
   bool no_vipc = false;
+  bool no_cache = false;
   std::string panda_serial;
   std::string socketcan;
   std::string zmq;
@@ -59,6 +60,7 @@ void printUsage(const char *argv0) {
           "  --zmq <ip-address>        read can messages from zmq at the specified ip-address\n"
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
+          "  --no-cache                turn off the local route file cache\n"
           "  --dbc <file>              dbc file to open\n",
           argv0);
 }
@@ -111,6 +113,8 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
       if (!takeValue(argc, argv, i, args.data_dir)) return 1;
     } else if (std::strcmp(a, "--no-vipc") == 0) {
       args.no_vipc = true;
+    } else if (std::strcmp(a, "--no-cache") == 0) {
+      args.no_cache = true;
     } else if (std::strcmp(a, "--dbc") == 0) {
       if (!takeValue(argc, argv, i, args.dbc)) return 1;
     } else if (a[0] == '-') {
@@ -170,6 +174,7 @@ int main(int argc, char *argv[]) {
     if (args.qcam) replay_flags |= REPLAY_FLAG_QCAMERA;
     if (args.cabin) replay_flags |= REPLAY_FLAG_CABIN_CAMERA;
     if (args.no_vipc) replay_flags |= REPLAY_FLAG_NO_VIPC;
+    if (args.no_cache) replay_flags |= REPLAY_FLAG_NO_FILE_CACHE;
 
     std::string route;
     if (!args.route.empty()) {
