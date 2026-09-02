@@ -18,6 +18,9 @@ public:
   virtual ~AbstractOpenStreamWidget() = default;
   virtual const char *title() const = 0;
   virtual void draw() = 0;
+  // nested dialogs, drawn at the modal's level: a popup opened from inside the tab's child window is
+  // never the top-most modal's own call site, so PopupOwner would skip it
+  virtual void drawPopups() {}
   virtual std::unique_ptr<AbstractStream> open() = 0;
   virtual bool openEnabled() const { return true; }
 };
@@ -27,6 +30,7 @@ public:
   OpenReplayWidget();
   const char *title() const override { return "Replay"; }
   void draw() override;
+  void drawPopups() override;
   std::unique_ptr<AbstractStream> open() override;
 
 private:

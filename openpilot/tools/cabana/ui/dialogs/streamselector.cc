@@ -42,6 +42,9 @@ void OpenReplayWidget::draw() {
   checkBox("Driver camera", &cameras_[1]);
   ImGui::SameLine();
   checkBox("Wide road camera", &cameras_[2]);
+}
+
+void OpenReplayWidget::drawPopups() {
   routes_dialog_.draw();
 }
 
@@ -305,6 +308,7 @@ void StreamSelector::draw() {
   if (dialogEscapePressed()) rejected = true;
 
   // nested so they stack on this modal
+  if (current) current->drawPopups();
   FileDialog::draw();
   MessageBox::draw();
 
