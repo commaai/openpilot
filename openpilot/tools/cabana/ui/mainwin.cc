@@ -823,12 +823,15 @@ void MainWindow::drawVideoPanel() {
   } else {
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const bool live = can->liveStreaming();
-    const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : video_widget_->defaultHeight(avail.x);
+    // the bordered child pads its content, so the heights the widget asks for grow by the padding
+    const float video_padding = ImGui::GetStyle().WindowPadding.y * 2.0f;
+    const float default_h = video_widget_->defaultHeight(avail.x) + video_padding;
+    const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : default_h;
     float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
-    if (live) video_h = video_widget_->defaultHeight(avail.x);  // display video at minimum size.
+    if (live) video_h = default_h;  // display video at minimum size.
     // dragging below half of the minimum size collapses the video, it never shrinks below it otherwise
     if (!charts_floating_ && !live) {
-      const float min_h = std::min(video_widget_->sizeHintHeight(), avail.y - 1.0f);
+      const float min_h = std::min(video_widget_->sizeHintHeight() + video_padding, avail.y - 1.0f);
       video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
     }
     if (video_h > 0.0f) {

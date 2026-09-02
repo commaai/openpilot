@@ -121,6 +121,7 @@ VideoWidget::VideoWidget() {
   createSpeedDropdown();
 
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { timeRangeChanged(); }));
+  connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { msgs_received_ = true; }));
 }
 
 std::string VideoWidget::whatsThis() const {
@@ -170,17 +171,19 @@ void VideoWidget::drawPlaybackController() {
       ImGui::EndDisabled();
     }, "Skip to the end", [this]() { skipToEnd(); }, skip_to_end_enabled_});
   }
-  // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
-  pushMonoFont(ImGui::GetFontSize());
-  const float time_width = toolbarButtonWidth(time_text);
-  popMonoFont();
-  items.push_back({time_width,
-                   [&]() {
-                     pushMonoFont(ImGui::GetFontSize());
-                     if (toolButton("time_display", time_text.c_str(), time_tooltip)) toggleTimeDisplay();
-                     popMonoFont();
-                   },
-                   time_text, [this]() { toggleTimeDisplay(); }});
+  if (slider_ || msgs_received_) {
+    // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
+    pushMonoFont(ImGui::GetFontSize());
+    const float time_width = toolbarButtonWidth(time_text);
+    popMonoFont();
+    items.push_back({time_width,
+                     [&]() {
+                       pushMonoFont(ImGui::GetFontSize());
+                       if (toolButton("time_display", time_text.c_str(), time_tooltip)) toggleTimeDisplay();
+                       popMonoFont();
+                     },
+                     time_text, [this]() { toggleTimeDisplay(); }});
+  }
   // the expanding spacer: the items after it are right aligned as long as everything fits
   const size_t spacer_index = items.size();
   if (!can->liveStreaming()) {

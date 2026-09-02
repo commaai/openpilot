@@ -112,6 +112,7 @@ private:
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
+  bool msgs_received_ = false;  // the time is blank until the live stream delivers its first messages
   double thumbnail_display_time_ = -1;
   std::unique_ptr<Slider> slider_;
   std::unique_ptr<TabBar> camera_tab_;
