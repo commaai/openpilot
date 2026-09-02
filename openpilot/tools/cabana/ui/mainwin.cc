@@ -1041,7 +1041,9 @@ void MainWindow::draw() {
         video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
       }
       if (!charts_floating_) {
-        ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, 6.0f));
+        // the gap between the video and the charts is the same as the padding at the sides
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+        ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, ImGui::GetStyle().WindowPadding.x));
         if (ImGui::IsItemActive() && !live) {
           // the size of the video is the position of the handle inside the splitter
           const float top = ImGui::GetWindowPos().y + ImGui::GetCursorStartPos().y;
@@ -1049,6 +1051,7 @@ void MainWindow::draw() {
         }
         if (ImGui::IsItemHovered() && !live) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
         ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders);
+        ImGui::PopStyleVar();
         if (help_overlay_) help_texts_.emplace_back(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         charts_widget_->draw();
         ImGui::EndChild();
