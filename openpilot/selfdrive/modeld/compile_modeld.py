@@ -37,17 +37,12 @@ from tinygrad.engine.jit import TinyJit
 
 
 NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
-WARP_INPUTS = ['tfm', 'big_tfm']
-POLICY_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs']
-
-UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
-UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
-
-WARP_DEV = os.getenv('WARP_DEV')
+MODELD_INPUTS = ['img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs']
 
 
-def make_random_images(keys, shape, device=None):
-  return {k: Tensor.randint(shape, low=0, high=256, dtype='uint8', device=device).realize() for k in keys}
+def nv12_copy_size(stride: int, y_height: int, uv_height: int) -> int:
+  # Retain the padded Y and UV plane storage, but skip the trailing kernel/guard allocation.
+  return stride * (y_height + uv_height)
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
@@ -99,7 +94,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
 
   def frame_prepare_tinygrad(input_frame, M_inv):
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
-    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=WARP_DEV)
+    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=Device.DEFAULT)
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
     uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
@@ -118,49 +113,43 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def make_warp_input_queues(vision_input_shapes, frame_skip, device):
-  img = vision_input_shapes['img']  # (1, 12, 128, 256)
-  n_frames = img[1] // 6
-  img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
-
-  npy = {
-    'tfm': np.zeros((3, 3), dtype=np.float32),
-    'big_tfm': np.zeros((3, 3), dtype=np.float32),
-  }
-  input_queues = {
-    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
-    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
-    **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
-  }
-  return input_queues, npy
-
-
 def get_policy_npy_shapes(input_shapes):
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
   tc = input_shapes['traffic_convention']  # (1, 2)
   at = input_shapes['action_t']  # (1, 2)
-  fb = input_shapes['features_buffer']  # (1, 24, 512)
+  fb = input_shapes['features_buffer']  # (1, T-1, ...) e.g. (1, 24, 32, 512) with spatial features
+  feat_dim = math.prod(fb[2:])
   # TODO prev_feat shouldn't exist and be handled inside the JIT, but corrupt on QCOM for now
-  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], fb[2])}
+  shapes = {'desire': (dp[2],), 'traffic_convention': tuple(tc), 'action_t': tuple(at), 'prev_feat': (fb[0], feat_dim)}
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
-def make_input_queues(input_shapes, frame_skip, device):
-  input_queues, npy = make_warp_input_queues(input_shapes, frame_skip, device)
-
-  fb = input_shapes['features_buffer']  # (1, 24, 512), past features only; the model appends the current frame's feature
+def make_input_queues(input_shapes, frame_skip, device, frame_copy_size):
+  img = input_shapes['img']  # (1, 12, 128, 256)
+  fb = input_shapes['features_buffer']  # (1, T-1, ...), past features only; the model appends the current frame's feature
+  feat_dim = math.prod(fb[2:])
   dp = input_shapes['desire_pulse']  # (1, 25, 8)
+  n_frames = img[1] // 6
+  img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
 
-  shapes, sizes = get_policy_npy_shapes(input_shapes)
-  packed_npy_inputs = np.zeros(sum(sizes), dtype=np.float32)
+  policy_shapes, _ = get_policy_npy_shapes(input_shapes)
+  shapes = {'tfm': (3, 3), 'big_tfm': (3, 3)} | policy_shapes
+  sizes = [math.prod(s) for s in shapes.values()]
+  packed_npy_size = sum(sizes) * np.dtype(np.float32).itemsize
+  packed_input = np.zeros(packed_npy_size + 2 * frame_copy_size, dtype=np.uint8)
+  packed_npy_inputs = packed_input[:packed_npy_size].view(np.float32)
+  frames = packed_input[packed_npy_size:]
+  frame_views = {'img': frames[:frame_copy_size], 'big_img': frames[frame_copy_size:]}
   # views into the packed inputs, to be refilled at runtime
-  npy.update({k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)})
-  input_queues.update({
-    'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], fb[2]), dtype=np.float32), device=device).contiguous().realize(),
+  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)}
+  input_queues = {
+    'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
+    'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], feat_dim), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    'packed_npy_inputs': Tensor(packed_npy_inputs, device='NPY').realize(),
-  })
-  return input_queues, npy
+    'packed_npy_inputs': Tensor(packed_input, device='NPY').realize(),
+  }
+  return input_queues, npy, frame_views
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -176,13 +165,15 @@ def sample_desire(buf, frame_skip):
   return buf.reshape(-1, frame_skip, *buf.shape[1:]).max(1).flatten(0, 1).unsqueeze(0)
 
 
-def make_warp(nv12, model_w, model_h, frame_skip):
+def make_warp(nv12, model_w, model_h):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h)
 
   def warp(tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(WARP_DEV)
-    big_tfm = big_tfm.to(WARP_DEV)
-    Tensor.realize(tfm, big_tfm)
+    tfm = tfm.to(Device.DEFAULT)
+    big_tfm = big_tfm.to(Device.DEFAULT)
+    frame = frame.to(Device.DEFAULT)
+    big_frame = big_frame.to(Device.DEFAULT)
+    Tensor.realize(tfm, big_tfm, frame, big_frame)
 
     warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
     warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
@@ -195,10 +186,10 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
   sample_desire_fn = partial(sample_desire, frame_skip=frame_skip)
   sample_skip_fn = partial(sample_skip, frame_skip=frame_skip)
   npy_shapes, npy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
+  model_input_dtypes = {name: spec.dtype for name, spec in model_runner.graph_inputs.items()}
 
   def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
     packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
-    warped = warped.to(Device.DEFAULT)
     Tensor.realize(packed_npy_inputs, warped)
 
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
@@ -211,33 +202,50 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
     inputs = {
       'img': img,
       'big_img': big_img,
-      'features_buffer': feat_buf,
+      'features_buffer': feat_buf.reshape(model_metadata['input_shapes']['features_buffer']),
       'desire_pulse': desire_buf,
       'traffic_convention': traffic_convention,
       'action_t': action_t,
     }
+    inputs = {name: value.cast(model_input_dtypes[name]) for name, value in inputs.items()}
     out = next(iter(model_runner(inputs).values())).cast('float32')
     return out,
   return run_policy
 
 
-def compile_jit(jit, make_random_inputs, input_keys, make_queues):
-  SEED = 42
-  def random_inputs_run(fn, seed, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_queues(Device.DEFAULT)
-    rng = np.random.default_rng(seed)
-    Tensor.manual_seed(seed)
+def make_run_model(warp, run_policy, model_metadata, frame_copy_size):
+  _, policy_sizes = get_policy_npy_shapes(model_metadata['input_shapes'])
+  packed_npy_size = (18 + sum(policy_sizes)) * np.dtype(np.float32).itemsize
 
-    testing = test_val is not None or test_buffers is not None
-    n_runs = 1 if testing else 3
+  def run_model(img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
+    packed_input = packed_npy_inputs.to(Device.DEFAULT)
+    Tensor.realize(packed_input)
+    packed_npy_inputs = packed_input[:packed_npy_size].bitcast('float32')
+    frame = packed_input[packed_npy_size:packed_npy_size + frame_copy_size]
+    big_frame = packed_input[packed_npy_size + frame_copy_size:]
+    tfm, big_tfm, policy_inputs = packed_npy_inputs.split([9, 9, sum(policy_sizes)])
+    warped = warp(tfm.reshape(3, 3), big_tfm.reshape(3, 3), frame, big_frame)
+    return run_policy(warped, img_q, big_img_q, feat_q, desire_q, policy_inputs)
+  return run_model
+
+
+def compile_jit(jit, input_keys, make_queues, benchmark_runs):
+  if benchmark_runs < 1:
+    raise ValueError("benchmark_runs must be at least 1")
+
+  SEED = 42
+  def random_inputs_run(fn, seed, n_runs, test_val=None, test_buffers=None, expect_match=True):
+    input_queues, npy, frame_views = make_queues(Device.DEFAULT)
+    rng = np.random.default_rng(seed)
 
     for i in range(n_runs):
       for v in npy.values():
         v[:] = rng.standard_normal(v.shape).astype(v.dtype)
+      for v in frame_views.values():
+        v[:] = rng.integers(0, 256, size=v.shape, dtype=np.uint8)
       Device.default.synchronize()
-      random_inputs = make_random_inputs()
       st = time.perf_counter()
-      outs = fn(**{k: input_queues[k] for k in input_keys}, **random_inputs)
+      outs = fn(**{k: input_queues[k] for k in input_keys})
       mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
@@ -256,14 +264,15 @@ def compile_jit(jit, make_random_inputs, input_keys, make_queues):
     return val, buffers
 
   print('capture + replay')
-  test_val, test_buffers = random_inputs_run(jit, SEED)
-  print('pickle round trip')
+  test_val, test_buffers = random_inputs_run(jit, SEED, 3)
+  print(f'pickle round trip ({benchmark_runs} runs per seed)')
   with tempfile.TemporaryFile(dir=".") as f:
     dump_oob(jit, f)
     f.seek(0)
-    jit = load_oob(f)
-  random_inputs_run(jit, SEED, test_val, test_buffers, expect_match=True)
-  random_inputs_run(jit, SEED+1, test_val, test_buffers, expect_match=False)
+    loaded_jit = load_oob(f)
+  random_inputs_run(loaded_jit, SEED, benchmark_runs, test_val, test_buffers, expect_match=True)
+  random_inputs_run(loaded_jit, SEED+1, benchmark_runs, test_val, test_buffers, expect_match=False)
+  # Keep the original so per-resolution JITs share model weight buffers in the final pickle.
   return jit
 
 
@@ -292,27 +301,31 @@ if __name__ == "__main__":
   p.add_argument('--onnx', required=True)
   p.add_argument('--output', required=True)
   p.add_argument('--frame-skip', type=int, required=True)
+  p.add_argument('--benchmark-runs', type=int, default=1,
+                 help='timed loaded-JIT runs for each correctness seed')
   args = p.parse_args()
 
   model_path = read_file_chunked_to_disk(args.onnx)
   model_w, model_h = args.model_size
 
   model_runner = OnnxRunner(model_path)
-  out = {'metadata': make_metadata_dict(model_path)}
+  out = {
+    'metadata': make_metadata_dict(model_path),
+    'input_devices': {'model': Device.DEFAULT},
+    'run_model': {},
+  }
 
-  run_policy_jit = TinyJit(make_run_policy(model_runner, out['metadata'], args.frame_skip), prune=True)
-
-  make_policy_queues = partial(make_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-  make_random_model_inputs = partial(make_random_images, keys=['warped'], shape=(2, 6, *out['metadata']['input_shapes']['img'][2:]), device=WARP_DEV)
-  out['run_policy'] = compile_jit(run_policy_jit, make_random_model_inputs, POLICY_INPUTS,
-                                  make_policy_queues)
+  run_policy = make_run_policy(model_runner, out['metadata'], args.frame_skip)
 
   for cam_w, cam_h in args.camera_resolutions:
     nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    make_random_warp_inputs = partial(make_random_images, keys=['frame', 'big_frame'], shape=nv12.size, device=WARP_DEV)
-    warp = TinyJit(make_warp(nv12, model_w, model_h, args.frame_skip), prune=True)
-    make_warp_queues = partial(make_warp_input_queues, out['metadata']['input_shapes'], args.frame_skip)
-    out[(cam_w,cam_h)] = compile_jit(warp, make_random_warp_inputs, WARP_INPUTS, make_warp_queues)
+    frame_copy_size = nv12_copy_size(nv12.stride, nv12.y_height, nv12.uv_height)
+    make_model_queues = partial(make_input_queues, out['metadata']['input_shapes'], args.frame_skip,
+                                frame_copy_size=frame_copy_size)
+    warp = make_warp(nv12, model_w, model_h)
+    run_model_jit = TinyJit(make_run_model(warp, run_policy, out['metadata'], frame_copy_size), prune=True)
+    out['run_model'][(cam_w,cam_h)] = compile_jit(run_model_jit, MODELD_INPUTS, make_model_queues,
+                                                  args.benchmark_runs)
 
   with open(args.output, "wb") as f:
     dump_oob(out, f)
