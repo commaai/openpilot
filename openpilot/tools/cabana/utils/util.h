@@ -5,6 +5,7 @@
 #include <cmath>
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -89,6 +90,14 @@ std::string bootstrapSvg(const std::string &id);  // empty if unknown
 // boundary conversions for the remaining Qt byte-array based state APIs
 template <typename T>
 std::vector<uint8_t> toBytes(const T &dat) { return {dat.begin(), dat.end()}; }
+
+// a callback that is skipped once `alive` expired: the owner resets its token when it goes away
+template <typename F>
+auto guarded(const std::shared_ptr<bool> &alive, F fn) {
+  return [alive = std::weak_ptr<bool>(alive), fn = std::move(fn)](auto &&...args) {
+    if (!alive.expired()) fn(std::forward<decltype(args)>(args)...);
+  };
+}
 
 }
 

@@ -10,23 +10,24 @@
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/util.h"
 
-const int MIN_CACHE_MINIUTES = 30;
-const int MAX_CACHE_MINIUTES = 120;
-
 namespace {
 
+const int MIN_CACHE_MINUTES = 30;
+const int MAX_CACHE_MINUTES = 120;
+
 // the label sits in the left column, the field in the right one, all fields aligned
-const char *kFormLabels[] = {"Color Theme", "Max Cached Minutes", "Drag Direction", "Chart Height"};
+enum FormLabel { THEME, CACHED_MINUTES, DRAG_DIRECTION, CHART_HEIGHT, FORM_LABEL_COUNT };
+const char *FORM_LABELS[FORM_LABEL_COUNT] = {"Color Theme", "Max Cached Minutes", "Drag Direction", "Chart Height"};
 
 float formLabelWidth() {
   float w = 0.0f;
-  for (const char *label : kFormLabels) w = std::max(w, ImGui::CalcTextSize(label).x);
+  for (const char *label : FORM_LABELS) w = std::max(w, ImGui::CalcTextSize(label).x);
   return w + ImGui::GetStyle().ItemSpacing.x * 2;  // horizontal spacing between label and field
 }
 
-void formRow(const char *label, float label_width) {
+void formRow(FormLabel label, float label_width) {
   ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(label);
+  ImGui::TextUnformatted(FORM_LABELS[label]);
   ImGui::SameLine(label_width);
   ImGui::SetNextItemWidth(-FLT_MIN);
 }
@@ -51,24 +52,23 @@ void SettingsDialog::draw() {
 
   ImGui::SeparatorText("General");
   static const char *themes[] = {"Light", "Dark"};
-  formRow("Color Theme", label_width);
+  formRow(THEME, label_width);
   int theme_index = theme_ - LIGHT_THEME;
-  if (ImGui::Combo("##Color Theme", &theme_index, themes, 2)) theme_ = theme_index + LIGHT_THEME;
-  ImGui::SetItemTooltip("You may need to restart cabana after changes theme");
-  formRow("Max Cached Minutes", label_width);
+  if (ImGui::Combo("##theme", &theme_index, themes, IM_ARRAYSIZE(themes))) theme_ = theme_index + LIGHT_THEME;
+  formRow(CACHED_MINUTES, label_width);
   // InputInt takes no character filter, so out of range text is clamped after the edit
-  if (ImGui::InputInt("##Max Cached Minutes", &cached_minutes_, 1, 10)) {
-    cached_minutes_ = std::clamp(cached_minutes_, MIN_CACHE_MINIUTES, MAX_CACHE_MINIUTES);
+  if (ImGui::InputInt("##cached_minutes", &cached_minutes_, 1, 10)) {
+    cached_minutes_ = std::clamp(cached_minutes_, MIN_CACHE_MINUTES, MAX_CACHE_MINUTES);
   }
 
   ImGui::SeparatorText("New Signal Settings");
   static const char *directions[] = {"MSB First", "LSB First", "Always Little Endian", "Always Big Endian"};
-  formRow("Drag Direction", label_width);
-  ImGui::Combo("##Drag Direction", &drag_direction_, directions, 4);
+  formRow(DRAG_DIRECTION, label_width);
+  ImGui::Combo("##drag_direction", &drag_direction_, directions, IM_ARRAYSIZE(directions));
 
   ImGui::SeparatorText("Chart");
-  formRow("Chart Height", label_width);
-  if (ImGui::InputInt("##Chart Height", &chart_height_, 10, 10)) chart_height_ = std::clamp(chart_height_, 100, 500);
+  formRow(CHART_HEIGHT, label_width);
+  if (ImGui::InputInt("##chart_height", &chart_height_, 10, 10)) chart_height_ = std::clamp(chart_height_, 100, 500);
 
   checkBox("Enable live stream logging", &log_livestream_);
   ImGui::BeginDisabled(!log_livestream_);
@@ -89,7 +89,6 @@ void SettingsDialog::draw() {
     save();
     done = true;
   }
-  if (dialogEscapePressed()) done = true;
   FileDialog::draw();  // nested so the directory picker stacks on this modal
   if (done) {
     open_ = false;
@@ -99,10 +98,7 @@ void SettingsDialog::draw() {
 }
 
 void SettingsDialog::save() {
-  if (std::exchange(settings.theme, theme_) != settings.theme) {
-    // set the theme before notifying
-    applyTheme(settings.theme);
-  }
+  if (std::exchange(settings.theme, theme_) != settings.theme) applyTheme(settings.theme);
   settings.max_cached_minutes = cached_minutes_;
   settings.chart_height = chart_height_;
   settings.log_livestream = log_livestream_;

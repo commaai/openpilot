@@ -2,29 +2,39 @@
 #include "tools/cabana/ui/chart/tiplabel.h"
 
 #include <algorithm>
-#include <utility>
+#include <cfloat>
 
-#include "tools/cabana/core/settings.h"
-#include "tools/cabana/settings.h"
 #include "tools/cabana/ui/util.h"
 
-ImVec2 TipLabel::sizeHint() const {
+ImVec2 TipLabel::layoutLines(ImDrawList *p, const ImVec2 &origin, ImU32 fg) const {
+  ImFont *bold = boldFont();
+  const float font_size = ImGui::GetFontSize();
+  const float line_height = ImGui::GetTextLineHeight();
   ImVec2 size(0, 0);
-  const float marker = ImGui::GetTextLineHeight() - 4;
+  float y = origin.y;
   for (const auto &line : text_) {
-    float w = 0;
-    if (line.has_marker) w += marker + 4;
-    w += ImGui::CalcTextSize(line.name.c_str()).x;
-    if (!line.bold.empty()) {
-      pushBoldFont();
-      w += ImGui::CalcTextSize(line.bold.c_str()).x;
-      popBoldFont();
+    float x = origin.x;
+    if (line.has_marker) {
+      if (p) drawColorMarker(p, ImVec2(x, y), line.marker);
+      x += markerSize() + 4;
     }
-    w += ImGui::CalcTextSize(line.rest.c_str()).x;
-    size.x = std::max(size.x, w);
-    size.y += ImGui::GetTextLineHeight();
+    if (p) p->AddText(ImVec2(x, y), fg, line.name.c_str());
+    x += ImGui::CalcTextSize(line.name.c_str()).x;
+    if (!line.bold.empty()) {
+      if (p) p->AddText(bold, font_size, ImVec2(x, y), fg, line.bold.c_str());
+      x += bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, line.bold.c_str()).x;
+    }
+    if (p) p->AddText(ImVec2(x, y), fg, line.rest.c_str());
+    x += ImGui::CalcTextSize(line.rest.c_str()).x;
+    size.x = std::max(size.x, x - origin.x);
+    y += line_height;
   }
-  return ImVec2(size.x + margin_ * 2, size.y + margin_ * 2);
+  size.y = y - origin.y;
+  return size;
+}
+
+ImVec2 TipLabel::sizeHint() const {
+  return layoutLines(nullptr, ImVec2(0, 0), 0) + ImVec2(MARGIN * 2, MARGIN * 2);
 }
 
 void TipLabel::showText(const ImVec2 &pt, const std::vector<TipLine> &text, const ImRect &rect) {
@@ -45,7 +55,7 @@ void TipLabel::showText(const ImVec2 &pt, const std::vector<TipLine> &text, cons
   visible_ = false;
 }
 
-void TipLabel::paintEvent() {
+void TipLabel::draw() {
   if (!visible_) return;
 
   ImDrawList *p = ImGui::GetForegroundDrawList();
@@ -55,25 +65,5 @@ void TipLabel::paintEvent() {
   // filled panel with a 1px frame
   p->AddRectFilled(pos_, pos_ + size_, bg);
   p->AddRect(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_Border));
-
-  const float line_height = ImGui::GetTextLineHeight();
-  const float marker = line_height - 4;
-  float y = pos_.y + margin_;
-  for (const auto &line : text_) {
-    float x = pos_.x + margin_;
-    if (line.has_marker) {
-      p->AddRectFilled(ImVec2(x, y + 2), ImVec2(x + marker, y + 2 + marker), line.marker);
-      x += marker + 4;
-    }
-    p->AddText(ImVec2(x, y), fg, line.name.c_str());
-    x += ImGui::CalcTextSize(line.name.c_str()).x;
-    if (!line.bold.empty()) {
-      pushBoldFont();
-      p->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(x, y), fg, line.bold.c_str());
-      x += ImGui::CalcTextSize(line.bold.c_str()).x;
-      popBoldFont();
-    }
-    p->AddText(ImVec2(x, y), fg, line.rest.c_str());
-    y += line_height;
-  }
+  layoutLines(p, pos_ + ImVec2(MARGIN, MARGIN), fg);
 }

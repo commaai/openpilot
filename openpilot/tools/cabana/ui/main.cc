@@ -2,6 +2,7 @@
 #include <cstring>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "tools/cabana/streams/devicestream.h"
@@ -65,7 +66,6 @@ void printUsage(const char *argv0) {
           argv0);
 }
 
-// Returns true if value was consumed from argv[i+1].
 bool takeValue(int argc, char *argv[], int &i, std::string &out) {
   if (i + 1 >= argc) {
     fprintf(stderr, "error: %s requires a value\n", argv[i]);
@@ -75,9 +75,8 @@ bool takeValue(int argc, char *argv[], int &i, std::string &out) {
   return true;
 }
 
-// Returns 0 to continue, or a process exit code (0 for --help, 1 for errors).
-int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
-  ok = false;
+// the process exit code, or nullopt to continue
+std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
   for (int i = 1; i < argc; ++i) {
     const char *a = argv[i];
     if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0) {
@@ -102,8 +101,7 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
       args.panda = true;
     } else if (std::strcmp(a, "--socketcan") == 0) {
       if (!takeValue(argc, argv, i, args.socketcan)) return 1;
-#ifdef __linux__
-#else
+#ifndef __linux__
       fprintf(stderr, "error: --socketcan is only supported on Linux\n");
       return 1;
 #endif
@@ -129,8 +127,7 @@ int parseArgs(int argc, char *argv[], CabanaArgs &args, bool &ok) {
       return 1;
     }
   }
-  ok = true;
-  return 0;
+  return std::nullopt;
 }
 
 }  // namespace
@@ -146,10 +143,7 @@ int main(int argc, char *argv[]) {
   std::filesystem::current_path(executableDir(), ec);
 
   CabanaArgs args;
-  bool args_ok = false;
-  if (const int code = parseArgs(argc, argv, args, args_ok); !args_ok) {
-    return code;
-  }
+  if (auto code = parseArgs(argc, argv, args)) return *code;
 
   std::unique_ptr<AbstractStream> stream;
 
@@ -157,15 +151,19 @@ int main(int argc, char *argv[]) {
     stream = std::make_unique<DeviceStream>();
   } else if (!args.zmq.empty()) {
     stream = std::make_unique<DeviceStream>(args.zmq);
-  } else if (args.panda || !args.panda_serial.empty()) {
+  } else if (args.panda) {
     try {
       stream = std::make_unique<PandaStream>(PandaStreamConfig{.serial = args.panda_serial});
     } catch (std::exception &e) {
       fprintf(stderr, "%s\n", e.what());
-      return 0;
+      return 1;
     }
 #ifdef __linux__
-  } else if (SocketCanStream::available() && !args.socketcan.empty()) {
+  } else if (!args.socketcan.empty()) {
+    if (!SocketCanStream::available()) {
+      fprintf(stderr, "error: SocketCAN is not available on this system\n");
+      return 1;
+    }
     stream = std::make_unique<SocketCanStream>(SocketCanStreamConfig{.device = args.socketcan});
 #endif
   } else {
@@ -186,7 +184,7 @@ int main(int argc, char *argv[]) {
       auto replay_stream = std::make_unique<ReplayStream>();
       Connection err = replay_stream->error.connect([](const std::string &msg) { fprintf(stderr, "%s\n", msg.c_str()); });
       if (!replay_stream->loadRoute(route, args.data_dir, replay_flags, args.auto_source)) {
-        return 0;
+        return 1;
       }
       stream = std::move(replay_stream);
     }

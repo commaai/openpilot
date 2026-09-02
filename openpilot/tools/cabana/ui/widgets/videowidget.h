@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <future>
 #include <map>
 #include <memory>
 #include <set>
@@ -20,7 +21,7 @@
 
 class Slider {
 public:
-  Slider();
+  Slider() = default;
   double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
   void setTimeRange(double min, double max) { setRange(min * factor, max * factor); }
@@ -30,20 +31,18 @@ public:
   int minimum() const { return minimum_; }
   int maximum() const { return maximum_; }
   bool isSliderDown() const { return slider_down_; }
-  void setSingleStep(int) {}
   float width() const { return rect_.GetWidth(); }
   const ImRect &rect() const { return rect_; }
   bool underMouse() const { return hovered_; }
   bool mouseLeft() const { return left_; }  // the mouse left the slider in the last draw()
-  void draw();
-  const double factor = 1000.0;
-  double thumbnail_dispaly_time = -1;
+  void draw(double thumbnail_time);  // thumbnail_time < 0: no thumbnail marker
+  static constexpr double factor = 1000.0;
 
   Observable<> sliderReleased;
 
 private:
-  void mousePressEvent();
-  void paintEvent();
+  void handleMousePress();
+  void paint(double thumbnail_time);
   ImRect handleRect() const;
   int pixelPosToRangeValue(float x) const;
   int minimum_ = 0;
@@ -59,19 +58,26 @@ private:
 class StreamCameraView : public CameraWidget {
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type);
-  void draw(const ImVec2 &size);
-  void parseQLog(std::shared_ptr<LogReader> qlog);
+  ~StreamCameraView();
+  void draw(const ImVec2 &size, double thumbnail_time);  // thumbnail_time < 0: no thumbnail
+  void parseQLog(std::shared_ptr<LogReader> qlog);  // decodes the thumbnails on the thread pool
 
 private:
+  struct PendingThumbnails {
+    std::future<void> done;
+    std::shared_ptr<std::map<uint64_t, RgbImage>> thumbnails;
+  };
+  void collectThumbnails();  // moves the decoded thumbnails in once a parseQLog task is done
+  // the first thumbnail at or after sec, uploaded to big_thumbnail_texture_; nullptr when there is none
+  const RgbImage *thumbnailAt(double sec, uint64_t *mono_time);
   void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size);
-  void drawThumbnail(ImDrawList *p);
-  void drawScrubThumbnail(ImDrawList *p);
+  void drawThumbnail(ImDrawList *p, double sec);
+  void drawScrubThumbnail(ImDrawList *p, double sec);
   void drawTime(ImDrawList *p, const ImRect &rect, double seconds);
 
-  std::map<uint64_t, RgbImage> big_thumbnails;
-  GlTexture big_thumbnail_texture;  // the currently shown thumbnail
-  double thumbnail_dispaly_time = -1;
-  friend class VideoWidget;
+  std::map<uint64_t, RgbImage> big_thumbnails_;
+  GlTexture big_thumbnail_texture_;  // the currently shown thumbnail
+  std::vector<PendingThumbnails> pending_thumbnails_;
 };
 
 class VideoWidget {
@@ -81,13 +87,13 @@ public:
   float sizeHintHeight() const;
   float defaultHeight(float width) const;
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
-  // showEvent/hideEvent (vipc thread start/stop)
+  // vipc thread started and stopped
   void setVisible(bool visible);
   void showThumbnail(double seconds);
   std::string whatsThis() const;
 
-protected:
-  void eventFilter();  // mouse move / leave on the slider
+private:
+  void updateSliderThumbnail();  // the thumbnail follows the mouse over the slider
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
   void createCameraWidget();
@@ -102,13 +108,13 @@ protected:
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
   void showRouteInfo();
 
-  std::unique_ptr<StreamCameraView> cam_widget;
+  std::unique_ptr<StreamCameraView> cam_widget_;
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
-  bool time_tooltip_shown_ = false;
-  std::unique_ptr<Slider> slider;
-  std::unique_ptr<TabBar> camera_tab;
+  double thumbnail_display_time_ = -1;
+  std::unique_ptr<Slider> slider_;
+  std::unique_ptr<TabBar> camera_tab_;
   std::vector<std::unique_ptr<RouteInfoDlg>> route_info_dlgs_;
   Connections connections_;  // last: disconnected before the widgets its handlers dereference are destroyed
 };

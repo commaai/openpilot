@@ -1,12 +1,11 @@
 #include "tools/cabana/ui/widgets/messageswidget.h"
 
+#include <algorithm>
 #include <cctype>
-#include <cerrno>
 #include <cfloat>
 #include <charconv>
 #include <cmath>
 #include <cstdio>
-#include <cstdlib>
 #include <limits>
 #include <numeric>
 #include <utility>
@@ -14,28 +13,29 @@
 #include "imgui_internal.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
-MessagesWidget::MessagesWidget() : view(&header), delegate(settings.multiple_lines_hex) {
-  view.setItemDelegate(&delegate);
-  view.setModel(&model);
-  header.setModel(&model);
-  model.sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);
+MessagesWidget::MessagesWidget() : view_(&header_), delegate_(settings.multiple_lines_hex) {
+  view_.setItemDelegate(&delegate_);
+  view_.setModel(&model_);
+  header_.setModel(&model_);
+  model_.sort(MessageListModel::Column::NAME, ImGuiSortDirection_Ascending);
 
-  connections_.push_back(model.modelReset.connect([this]() {
-    if (current_msg_id) {
-      selectMessage(*current_msg_id);
+  connections_.push_back(model_.modelReset.connect([this]() {
+    if (current_msg_id_) {
+      selectMessage(*current_msg_id_);
     }
-    view.updateBytesSectionSize();
+    view_.updateBytesSectionSize();
     updateTitle();
   }));
-  connections_.push_back(view.currentChanged.connect([this](int current, int previous) {
-    if (current >= 0 && current < (int)model.items_.size()) {
-      const auto &id = model.items_[current].id;
-      if (!current_msg_id || id != *current_msg_id) {
-        current_msg_id = id;
-        msgSelectionChanged(*current_msg_id);
+  connections_.push_back(view_.currentChanged.connect([this](int current, int previous) {
+    if (current >= 0 && current < (int)model_.items.size()) {
+      const auto &id = model_.items[current].id;
+      if (!current_msg_id_ || id != *current_msg_id_) {
+        current_msg_id_ = id;
+        msgSelectionChanged(*current_msg_id_);
       }
     }
   }));
@@ -46,7 +46,6 @@ MessagesWidget::MessagesWidget() : view(&header), delegate(settings.multiple_lin
 std::string MessagesWidget::whatsThis() const {
   return R"(
     <b>Message View</b><br/>
-    <!-- TODO: add description here -->
     <span style="color:gray">Byte color</span><br />
     <span style="color:gray;">&#9632; </span> constant changing<br />
     <span style="color:blue;">&#9632; </span> increasing<br />
@@ -56,23 +55,20 @@ std::string MessagesWidget::whatsThis() const {
   )";
 }
 
-void MessagesWidget::createToolBar() {
+void MessagesWidget::drawToolBar() {
   ImGui::Dummy(ImVec2(0, std::max(0.0f, 9 - ImGui::GetStyle().ItemSpacing.y)));
   if (ImGui::Button("Suppress Highlighted")) suppressHighlighted(true);
   ImGui::SameLine();
-  ImGui::BeginDisabled(!suppress_clear_enabled);
-  const std::string clear_label = suppress_clear_text + "##suppress_clear";
+  ImGui::BeginDisabled(!suppress_clear_enabled_);
+  const std::string clear_label = suppress_clear_text_ + "##suppress_clear";
   if (ImGui::Button(clear_label.c_str())) suppressHighlighted(false);
   ImGui::EndDisabled();
-  if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Clear suppressed");
+  disabledItemTooltip("Clear suppressed");
 
-  // right-align the rest
   const ImGuiStyle &style = ImGui::GetStyle();
   const float checkbox_width = ImGui::CalcTextSize("Suppress Signals").x + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x;
   const float view_button_width = ImGui::CalcTextSize(icon::THREE_DOTS).x + style.FramePadding.x * 2;
-  ImGui::SameLine();
-  const float x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - (checkbox_width + style.ItemSpacing.x + view_button_width);
-  ImGui::SetCursorPosX(std::max(x, ImGui::GetCursorPosX()));
+  alignRight(checkbox_width + style.ItemSpacing.x + view_button_width);
 
   bool suppress_defined_signals = settings.suppress_defined_signals;
   if (checkBox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
@@ -84,65 +80,61 @@ void MessagesWidget::createToolBar() {
 
 void MessagesWidget::updateTitle() {
   auto stats = std::accumulate(
-      model.items_.begin(), model.items_.end(), std::pair<size_t, size_t>(),
+      model_.items.begin(), model_.items.end(), std::pair<size_t, size_t>(),
       [](const auto &pair, const auto &item) {
         auto m = dbc()->msg(item.id);
         return m ? std::make_pair(pair.first + 1, pair.second + m->sigs.size()) : pair;
       });
   char buf[128];
-  snprintf(buf, sizeof(buf), "%zu Messages (%zu DBC Messages, %zu Signals)", model.items_.size(), stats.first, stats.second);
+  snprintf(buf, sizeof(buf), "%zu Messages (%zu DBC Messages, %zu Signals)", model_.items.size(), stats.first, stats.second);
   title_ = buf;
   titleChanged(title_);
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
-  auto it = std::find_if(model.items_.cbegin(), model.items_.cend(),
+  auto it = std::find_if(model_.items.cbegin(), model_.items.cend(),
                          [&msg_id](auto &item) { return item.id == msg_id; });
-  if (it != model.items_.cend()) {
-    view.setCurrentIndex(std::distance(model.items_.cbegin(), it));
+  if (it != model_.items.cend()) {
+    view_.setCurrentIndex(std::distance(model_.items.cbegin(), it));
   }
 }
 
 void MessagesWidget::suppressHighlighted(bool from_suppress_add) {
   int n = from_suppress_add ? can->suppressHighlighted() : (can->clearSuppressed(), 0);
-  suppress_clear_text = n > 0 ? "Clear (" + std::to_string(n) + ")" : "Clear";
-  suppress_clear_enabled = n > 0;
+  suppress_clear_text_ = n > 0 ? "Clear (" + std::to_string(n) + ")" : "Clear";
+  suppress_clear_enabled_ = n > 0;
 }
 
-void MessagesWidget::headerContextMenuEvent() {
-  ImGui::OpenPopup("menu");  // at the mouse position
-}
-
-void MessagesWidget::menuAboutToShow() {
+void MessagesWidget::drawContextMenu() {
   if (!ImGui::BeginPopup("menu")) return;
-  for (int i = 0; i < header.count(); ++i) {
-    int logical_index = header.logicalIndex(i);
+  for (int i = 0; i < header_.count(); ++i) {
+    int logical_index = header_.logicalIndex(i);
     // can't hide the name column
-    if (ImGui::MenuItem(model.headerData(logical_index).c_str(), nullptr, !header.isSectionHidden(logical_index), logical_index > 0)) {
-      header.setSectionHidden(logical_index, !header.isSectionHidden(logical_index));
+    if (ImGui::MenuItem(model_.headerData(logical_index).c_str(), nullptr, !header_.isSectionHidden(logical_index), logical_index > 0)) {
+      header_.setSectionHidden(logical_index, !header_.isSectionHidden(logical_index));
     }
   }
   ImGui::Separator();
   if (ImGui::MenuItem("Multi-Line bytes", nullptr, settings.multiple_lines_hex)) {
     setMultiLineBytes(!settings.multiple_lines_hex);
   }
-  if (ImGui::MenuItem("Show inactive messages", nullptr, model.show_inactive_messages)) {
-    model.showInactiveMessages(!model.show_inactive_messages);
+  if (ImGui::MenuItem("Show inactive messages", nullptr, model_.show_inactive_messages)) {
+    model_.showInactiveMessages(!model_.show_inactive_messages);
   }
   ImGui::EndPopup();
 }
 
 void MessagesWidget::setMultiLineBytes(bool multi) {
   settings.multiple_lines_hex = multi;
-  delegate.setMultipleLines(multi);
-  view.updateBytesSectionSize();
+  delegate_.setMultipleLines(multi);
+  view_.updateBytesSectionSize();
 }
 
 void MessagesWidget::draw() {
-  createToolBar();
-  view.draw();
-  if (std::exchange(header.customContextMenuRequested, false)) headerContextMenuEvent();
-  menuAboutToShow();
+  drawToolBar();
+  view_.draw();
+  if (std::exchange(header_.customContextMenuRequested, false)) ImGui::OpenPopup("menu");  // at the mouse position
+  drawContextMenu();
 }
 
 MessageListModel::MessageListModel() {
@@ -165,7 +157,7 @@ std::string MessageListModel::headerData(int section) const {
 }
 
 std::string MessageListModel::data(int row, int column) const {
-  if (row < 0 || row >= (int)items_.size()) return {};
+  if (row < 0 || row >= (int)items.size()) return {};
 
   auto getFreq = [](float freq) -> std::string {
     if (freq > 0) {
@@ -182,7 +174,7 @@ std::string MessageListModel::data(int row, int column) const {
   };
 
   const static std::string NA = "N/A";
-  const auto &item = items_[row];
+  const auto &item = items[row];
   switch (column) {
     case Column::NAME: return item.name;
     case Column::SOURCE: return item.id.source != INVALID_SOURCE ? std::to_string(item.id.source) : NA;
@@ -197,8 +189,8 @@ std::string MessageListModel::data(int row, int column) const {
 }
 
 std::string MessageListModel::toolTip(int row, int column) const {
-  if (row < 0 || row >= (int)items_.size()) return {};
-  const auto &item = items_[row];
+  if (row < 0 || row >= (int)items.size()) return {};
+  const auto &item = items[row];
   if (column == Column::NAME) {
     auto msg = dbc()->msg(item.id);
     auto tooltip = item.name;
@@ -226,9 +218,9 @@ void MessageListModel::dbcModified() {
   filterAndSort();
 }
 
-void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
+void MessageListModel::sortItems(std::vector<MessageListModel::Item> &list) {
   auto compare = [this](const auto &l, const auto &r) {
-    switch (sort_column) {
+    switch (sort_column_) {
       case Column::NAME: return std::tie(l.name, l.id) < std::tie(r.name, r.id);
       case Column::SOURCE: return std::tie(l.id.source, l.id.address) < std::tie(r.id.source, r.id.address);
       case Column::ADDRESS: return std::tie(l.id.address, l.id.source) < std::tie(r.id.address, r.id.source);
@@ -239,14 +231,16 @@ void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
     }
   };
 
-  if (sort_order == ImGuiSortDirection_Descending)
-    std::stable_sort(items.rbegin(), items.rend(), compare);
+  if (sort_order_ == ImGuiSortDirection_Descending)
+    std::stable_sort(list.rbegin(), list.rend(), compare);
   else
-    std::stable_sort(items.begin(), items.end(), compare);
+    std::stable_sort(list.begin(), list.end(), compare);
 }
 
+namespace {
+
 // surrounding whitespace is ignored; no sign, no 0x prefix
-static unsigned int toUInt(const std::string &s, bool *ok, int base) {
+unsigned int toUInt(const std::string &s, bool *ok, int base) {
   const char *b = s.data(), *e = b + s.size();
   while (b < e && std::isspace((unsigned char)*b)) ++b;
   while (e > b && std::isspace((unsigned char)e[-1])) --e;
@@ -256,7 +250,7 @@ static unsigned int toUInt(const std::string &s, bool *ok, int base) {
   return *ok ? v : 0;
 }
 
-static bool parseRange(const std::string &filter, uint32_t value, int base = 10) {
+bool parseRange(const std::string &filter, uint32_t value, int base = 10) {
   // parse the filter string into a range: "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf}
   unsigned int min = std::numeric_limits<unsigned int>::min();
   unsigned int max = std::numeric_limits<unsigned int>::max();
@@ -270,6 +264,16 @@ static bool parseRange(const std::string &filter, uint32_t value, int base = 10)
   }
   return ok && value >= min && value <= max;
 }
+
+constexpr float DEFAULT_SECTION_SIZE = 100.0f;
+
+// imgui draws an up arrow for ImGuiSortDirection_Ascending, cabana wants a down pointing one. Feed imgui
+// the opposite direction and flip it back before it reaches the model.
+inline ImGuiSortDirection flipSortDirection(ImGuiSortDirection dir) {
+  return dir == ImGuiSortDirection_Ascending ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending;
+}
+
+}  // namespace
 
 bool MessageListModel::match(const MessageListModel::Item &item) {
   if (filters_.empty())
@@ -325,8 +329,8 @@ bool MessageListModel::filterAndSort() {
   all_messages.insert(all_messages.end(), dbc_msgs.begin(), dbc_msgs.end());
 
   // filter and sort
-  std::vector<Item> items;
-  items.reserve(all_messages.size());
+  std::vector<Item> new_items;
+  new_items.reserve(all_messages.size());
   for (const auto &id : all_messages) {
     if (show_inactive_messages || can->isMessageActive(id)) {
       auto msg = dbc()->msg(id);
@@ -334,13 +338,13 @@ bool MessageListModel::filterAndSort() {
                    .name = msg ? msg->name : UNTITLED,
                    .node = msg ? msg->transmitter : std::string()};
       if (match(item))
-        items.emplace_back(item);
+        new_items.emplace_back(item);
     }
   }
-  sortItems(items);
+  sortItems(new_items);
 
-  if (items_ != items) {
-    items_ = std::move(items);
+  if (items != new_items) {
+    items = std::move(new_items);
     modelReset();
     return true;
   }
@@ -351,28 +355,20 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
   if (has_new_ids || ((filters_.count(Column::FREQ) || filters_.count(Column::COUNT) || filters_.count(Column::DATA)) &&
                       ++sort_threshold_ == STREAM_UPDATE_FPS)) {
     sort_threshold_ = 0;
-    if (filterAndSort()) return;
+    filterAndSort();
   }
 }
 
 void MessageListModel::sort(int column, ImGuiSortDirection order) {
   if (column != Column::DATA) {
-    sort_column = column;
-    sort_order = order;
+    sort_column_ = column;
+    sort_order_ = order;
     filterAndSort();
   }
 }
 
-static constexpr float DEFAULT_SECTION_SIZE = 100.0f;
-
-// imgui draws an up arrow for ImGuiSortDirection_Ascending, cabana wants a down pointing one. Feed imgui
-// the opposite direction and flip it back before it reaches the model.
-static inline ImGuiSortDirection flipSortDirection(ImGuiSortDirection dir) {
-  return dir == ImGuiSortDirection_Ascending ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending;
-}
-
 void MessageView::drawRow(int row) {
-  const auto &item = model_->items_[row];
+  const auto &item = model_->items[row];
   const bool selected = row == current_row_;
   const bool inactive = !can->isMessageActive(item.id);
   const auto &m = can->lastMessage(item.id);
@@ -462,7 +458,7 @@ void MessageView::updateBytesSectionSize() {
   bytes_section_bytes_ = max_bytes;
 }
 
-void MessageView::keyPressEvent() {
+void MessageView::handleKeys() {
   if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) || ImGui::IsAnyItemActive()) return;
   const int last = model_->rowCount() - 1;
   if (last < 0) return;
@@ -483,7 +479,7 @@ void MessageView::keyPressEvent() {
 
 void MessageView::draw() {
   delegate_->updateFontMetrics();
-  keyPressEvent();
+  handleKeys();
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
                                 ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders |
@@ -539,7 +535,7 @@ void MessageView::draw() {
     }
   }
 
-  // for the next frame: the stretch inner width and the page size of keyPressEvent
+  // for the next frame: the stretch inner width and the page size of handleKeys
   const ImGuiTableColumn &data_column = table->Columns[MessageListModel::Column::DATA];
   fixed_columns_width_ = data_column.IsEnabled ? table->ColumnsGivenWidth - data_column.WidthGiven : 0;
   has_scrollbar_y_ = table->InnerWindow->ScrollbarY;
@@ -578,17 +574,7 @@ void MessageViewHeader::applyPendingHidden() {
 }
 
 void MessageViewHeader::draw() {
-  // the headers row, submitted manually to catch the right click
-  ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-  for (int i = 0; i < count(); i++) {
-    if (!ImGui::TableSetColumnIndex(i)) continue;
-    ImGui::PushID(i);
-    ImGui::TableHeader(ImGui::TableGetColumnName(i));
-    // same timing as TableHeader's own TableOpenContextMenu, so MessagesWidget's menu is opened last
-    // and replaces the (disabled) table context menu in the popup stack
-    if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) customContextMenuRequested = true;
-    ImGui::PopID();
-  }
+  if (tableHeadersRow() >= 0) customContextMenuRequested = true;
   updateHeaderPositions();
 
   // the filter editors under the header
@@ -600,15 +586,7 @@ void MessageViewHeader::draw() {
     ImGui::PushID(i);
     ImGui::SetNextItemWidth(editors[i].empty() ? -FLT_MIN : std::max(1.0f, ImGui::GetContentRegionAvail().x - clear_width));
     const std::string placeholder = "Filter " + model_->headerData(i);
-    if (inputText("##filter", &editors[i], placeholder.c_str())) updateFilters();
-    // the clear button only shows when the field is non-empty
-    if (!editors[i].empty()) {
-      ImGui::SameLine(0, 0);
-      if (ImGui::Button(icon::X)) {
-        editors[i].clear();
-        updateFilters();
-      }
-    }
+    if (clearableInput("##filter", &editors[i], placeholder.c_str())) updateFilters();
     ImGui::PopID();
   }
 }

@@ -7,30 +7,25 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/ui/util.h"
-#include "tools/cabana/utils/strings.h"
-
-// QIntValidator: optional sign followed by digits
-static ValidState validateInt(const std::string &s) {
-  size_t i = (!s.empty() && (s[0] == '-' || s[0] == '+')) ? 1 : 0;
-  for (; i < s.size(); ++i) {
-    if (s[i] < '0' || s[i] > '9') return ValidState::Invalid;
-  }
-  return ValidState::Acceptable;
-}
 
 FindSimilarBitsDlg::FindSimilarBitsDlg() {
   setTitle("Find similar bits");
 
   for (int bus : can->sources) {
-    bus_items.push_back(bus);
+    bus_items_.push_back(bus);
   }
+  updateMessages();
+}
 
-  // TODO: update when src_bus_combo changes
-  for (auto &[address, msg] : dbc()->getMessages(-1)) {
-    msg_items.push_back({msg.name, address});
+void FindSimilarBitsDlg::updateMessages() {
+  msg_items_.clear();
+  msg_names_.clear();
+  for (auto &[address, msg] : dbc()->getMessages(busAt(src_bus_))) {
+    msg_items_.push_back({msg.name, address});
   }
-  std::sort(msg_items.begin(), msg_items.end(), [](auto &l, auto &r) { return l.first < r.first; });
-  msg_cb = 0;
+  std::sort(msg_items_.begin(), msg_items_.end(), [](auto &l, auto &r) { return l.first < r.first; });
+  for (auto &[name, _] : msg_items_) msg_names_.push_back(name);
+  msg_index_ = 0;
 }
 
 bool FindSimilarBitsDlg::draw() {
@@ -41,27 +36,20 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::TextUnformatted("Bus");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
-    comboBox("##src_bus", &src_bus_combo, bus_items.data(), (int)bus_items.size());
+    if (comboBox("##src_bus", &src_bus_, bus_items_.data(), (int)bus_items_.size())) updateMessages();
     ImGui::SameLine();
     ImGui::SetNextItemWidth(200);
-    if (ImGui::BeginCombo("##msg", msg_cb < (int)msg_items.size() ? msg_items[msg_cb].first.c_str() : "")) {
-      for (int i = 0; i < (int)msg_items.size(); ++i) {
-        ImGui::PushID(i);
-        if (ImGui::Selectable(msg_items[i].first.c_str(), i == msg_cb)) msg_cb = i;
-        ImGui::PopID();
-      }
-      ImGui::EndCombo();
-    }
+    comboBox("##msg", &msg_index_, msg_names_);
     ImGui::SameLine();
     ImGui::TextUnformatted("Byte Index");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##byte_idx", &byte_idx_sb, 1, 10)) byte_idx_sb = std::clamp(byte_idx_sb, 0, 63);
+    if (ImGui::InputInt("##byte_idx", &byte_idx_, 1, 10)) byte_idx_ = std::clamp(byte_idx_, 0, 63);
     ImGui::SameLine();
     ImGui::TextUnformatted("Bit Index");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##bit_idx", &bit_idx_sb, 1, 10)) bit_idx_sb = std::clamp(bit_idx_sb, 0, 7);
+    if (ImGui::InputInt("##bit_idx", &bit_idx_, 1, 10)) bit_idx_ = std::clamp(bit_idx_, 0, 7);
 
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Find In:");
@@ -69,17 +57,17 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::TextUnformatted("Bus");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
-    comboBox("##find_bus", &find_bus_combo, bus_items.data(), (int)bus_items.size());
+    comboBox("##find_bus", &find_bus_, bus_items_.data(), (int)bus_items_.size());
     ImGui::SameLine();
     ImGui::TextUnformatted("Equal");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
-    ImGui::Combo("##equal", &equal_combo, "Yes\0No\0");
+    ImGui::Combo("##equal", &equal_, "Yes\0No\0");
     ImGui::SameLine();
     ImGui::TextUnformatted("Min msg count");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
-    validatedText("##min_msgs", &min_msgs, validateInt);
+    if (ImGui::InputInt("##min_msgs", &min_msgs_, 1, 10)) min_msgs_ = std::max(min_msgs_, 0);
     ImGui::SameLine();
     if (ImGui::Button("Find")) find();
 
@@ -90,7 +78,7 @@ bool FindSimilarBitsDlg::draw() {
 
 void FindSimilarBitsDlg::drawTable() {
   // columns are set by find(); until then the table is an empty frame
-  if (!table_has_columns) {
+  if (!table_has_columns_) {
     ImGui::BeginChild("table", ImVec2(0, 0), ImGuiChildFlags_Borders);
     ImGui::EndChild();
     return;
@@ -108,18 +96,16 @@ void FindSimilarBitsDlg::drawTable() {
   }
   tableHeadersRow();
   ImGuiListClipper clipper;
-  clipper.Begin((int)table.size());
+  clipper.Begin((int)table_.size());
   while (clipper.Step()) {
     for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-      auto &m = table[i];
+      auto &m = table_[i];
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::PushID(i);
       if (ImGui::Selectable(std::to_string(i + 1).c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-          uint8_t find_bus = find_bus_combo < (int)bus_items.size() ? bus_items[find_bus_combo] : 0;
-          MessageId msg_id = {.source = find_bus, .address = m.address};
-          openMessage(msg_id);
+          openMessage(MessageId{.source = busAt(find_bus_), .address = m.address});
         }
       }
       ImGui::PopID();
@@ -141,18 +127,13 @@ void FindSimilarBitsDlg::drawTable() {
 }
 
 void FindSimilarBitsDlg::find() {
-  table.clear();
-  uint32_t selected_address = msg_cb < (int)msg_items.size() ? msg_items[msg_cb].second : 0;
-  uint8_t src_bus = src_bus_combo < (int)bus_items.size() ? bus_items[src_bus_combo] : 0;
-  uint8_t find_bus = find_bus_combo < (int)bus_items.size() ? bus_items[find_bus_combo] : 0;
-  auto msg_mismatched = calcBits(src_bus, selected_address, byte_idx_sb, bit_idx_sb,
-                                 find_bus, equal_combo == 0, utils::toInt(min_msgs));
-  table = std::move(msg_mismatched);
-  table_has_columns = true;
+  const uint32_t selected_address = msg_index_ < (int)msg_items_.size() ? msg_items_[msg_index_].second : 0;
+  table_ = calcBits(busAt(src_bus_), selected_address, byte_idx_, bit_idx_, busAt(find_bus_), equal_ == 0, min_msgs_);
+  table_has_columns_ = true;
 }
 
-std::vector<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx,
-                                                                               int bit_idx, uint8_t find_bus, bool equal, int min_msgs_cnt) {
+std::vector<FindSimilarBitsDlg::Mismatch> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx,
+                                                                      int bit_idx, uint8_t find_bus, bool equal, int min_msgs_cnt) {
   std::unordered_map<uint32_t, std::vector<uint32_t>> mismatches;
   std::unordered_map<uint32_t, uint32_t> msg_count;
   const auto &events = can->allEvents();
@@ -180,7 +161,7 @@ std::vector<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(
     }
   }
 
-  std::vector<mismatched_struct> result;
+  std::vector<Mismatch> result;
   result.reserve(mismatches.size());
   for (auto it = mismatches.begin(); it != mismatches.end(); ++it) {
     if (auto cnt = msg_count[it->first]; cnt > (uint32_t)min_msgs_cnt) {

@@ -14,8 +14,6 @@
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/util.h"
 
-OpenReplayWidget::OpenReplayWidget() {}
-
 void OpenReplayWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Route");
@@ -24,18 +22,18 @@ void OpenReplayWidget::draw() {
   inputText("##route", &route_, "Enter route name or browse for local/remote route");
   ImGui::SameLine();
   if (ImGui::Button("Remote route...")) {
-    routes_dialog_.open([this, alive = std::weak_ptr<bool>(alive_)](bool accepted, const std::string &route) {
-      if (!alive.expired() && accepted) route_ = route;
-    });
+    routes_dialog_.open(utils::guarded(alive_, [this](bool accepted, const std::string &route) {
+      if (accepted) route_ = route;
+    }));
   }
   ImGui::SameLine();
   if (ImGui::Button("Local route...")) {
-    FileDialog::getExistingDirectory("Open Local Route", settings.last_route_dir, [this, alive = std::weak_ptr<bool>(alive_)](const std::string &dir) {
-      if (!alive.expired() && !dir.empty()) {
+    FileDialog::getExistingDirectory("Open Local Route", settings.last_route_dir, utils::guarded(alive_, [this](const std::string &dir) {
+      if (!dir.empty()) {
         route_ = dir;
         settings.last_route_dir = std::filesystem::absolute(dir).parent_path().string();
       }
-    });
+    }));
   }
   checkBox("Road camera", &cameras_[0]);
   ImGui::SameLine();
@@ -76,8 +74,10 @@ std::unique_ptr<AbstractStream> OpenReplayWidget::open() {
   return nullptr;
 }
 
-static const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
-static const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};
+namespace {
+const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
+const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};
+}
 
 OpenPandaWidget::OpenPandaWidget() {
   if (can && dynamic_cast<PandaStream *>(can) != nullptr) {
@@ -114,7 +114,7 @@ void OpenPandaWidget::buildConfigForm() {
     data_speed_index_.assign(3, 0);
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < static_cast<int>(std::size(speeds)); j++) {
-        if (data_speeds[j] == config.bus_config[i].can_speed_kbps) can_speed_index_[i] = j;
+        if (speeds[j] == config.bus_config[i].can_speed_kbps) can_speed_index_[i] = j;
       }
       for (int j = 0; j < static_cast<int>(std::size(data_speeds)); j++) {
         if (data_speeds[j] == config.bus_config[i].data_speed_kbps) data_speed_index_[i] = j;
@@ -211,7 +211,7 @@ OpenSocketCanWidget::OpenSocketCanWidget() {
 
 void OpenSocketCanWidget::refreshDevices() {
   devices_.clear();
-  // Scan /sys/class/net/ for CAN interfaces (type 280 = ARPHRD_CAN)
+  // type 280 = ARPHRD_CAN
   std::error_code ec;
   for (const auto &entry : std::filesystem::directory_iterator("/sys/class/net", ec)) {
     std::ifstream type_file(entry.path() / "type");
@@ -305,7 +305,6 @@ void StreamSelector::draw() {
   if (open_clicked) {
     if (stream = current->open(); stream) accepted = true;
   }
-  if (dialogEscapePressed()) rejected = true;
 
   // nested so they stack on this modal
   if (current) current->drawPopups();

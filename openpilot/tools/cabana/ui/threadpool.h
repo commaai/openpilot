@@ -64,3 +64,18 @@ private:
   std::condition_variable cv_;
   bool stop_ = false;
 };
+
+// fn(begin, end) over [0, n) split into one chunk per pool thread plus one for the caller, which also
+// waits for the others. Not for use from a pool thread.
+inline void parallelFor(size_t n, const std::function<void(size_t begin, size_t end)> &fn) {
+  const size_t chunks = std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 4) + 1;
+  const size_t chunk = (n + chunks - 1) / chunks;
+  if (chunk == 0) return;
+  std::vector<std::future<void>> futures;
+  size_t begin = chunk;
+  for (; begin < n; begin += chunk) {
+    futures.push_back(ThreadPool::instance().run([&fn, begin, end = std::min(begin + chunk, n)]() { fn(begin, end); }));
+  }
+  fn(0, std::min(chunk, n));
+  for (auto &f : futures) f.get();
+}

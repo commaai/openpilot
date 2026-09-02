@@ -28,17 +28,15 @@ struct BinaryIndex {
 
 class BinaryItemDelegate {
 public:
-  BinaryItemDelegate(BinaryView *parent);
+  BinaryItemDelegate(BinaryView *parent) : bin_view_(parent) {}
   void paint(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const;
   bool hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const;
   void drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
 
   const float small_font_size = 10.0f;  // Inter needs 10 px for a 7 px cap height
-  std::array<std::string, 256> hex_text_table;
-  std::array<std::string, 2> bin_text_table;
 
 private:
-  BinaryView *bin_view;
+  BinaryView *bin_view_;
 };
 
 class BinaryViewModel {
@@ -82,11 +80,11 @@ public:
   void setMessage(const MessageId &message_id);
   void highlight(const cabana::Signal *sig);
   std::set<const cabana::Signal*> getOverlappingSignals() const;
-  void updateState() { model->updateState(); }
+  void updateState() { model_->updateState(); }
   // draws inline into the current (scrollable) window and handles the mouse/keyboard
   void draw();
   ImVec2 minimumSizeHint() const;
-  void setHeatmapLiveMode(bool live) { model->heatmap_live_mode = live; updateState(); }
+  void setHeatmapLiveMode(bool live) { model_->heatmap_live_mode = live; updateState(); }
   std::string whatsThis() const;
 
   Observable<const cabana::Signal *> signalClicked;
@@ -99,10 +97,9 @@ private:
   void refresh();
   std::tuple<int, int, bool> getSelection(BinaryIndex index);
   void setSelection();
-  void mousePressEvent(const ImVec2 &pos);
-  void mouseMoveEvent(const ImVec2 &pos);
-  void mouseReleaseEvent(const ImVec2 &pos);
-  void leaveEvent();
+  void handleMousePress(const ImVec2 &pos);
+  void handleMouseMove(const ImVec2 &pos);
+  void handleMouseRelease(const ImVec2 &pos);
   void highlightPosition(const ImVec2 &pt);
   BinaryIndex indexAt(const ImVec2 &pos) const;
   ImRect visualRect(const BinaryIndex &index) const;
@@ -110,13 +107,13 @@ private:
   void clearSelection() { selection_.clear(); }
   bool isSelected(const BinaryIndex &index) const { return selection_.count(index) > 0; }
 
-  BinaryIndex anchor_index;
-  ImVec2 last_mouse_pos{-1, -1};
-  std::unique_ptr<BinaryViewModel> model;
-  std::unique_ptr<BinaryItemDelegate> delegate;
-  bool is_message_active = false;
-  const cabana::Signal *resize_sig = nullptr;
-  const cabana::Signal *hovered_sig = nullptr;
+  BinaryIndex anchor_index_;
+  ImVec2 last_mouse_pos_{-1, -1};
+  std::unique_ptr<BinaryViewModel> model_;
+  std::unique_ptr<BinaryItemDelegate> delegate_;
+  bool is_message_active_ = false;
+  const cabana::Signal *resize_sig_ = nullptr;
+  const cabana::Signal *hovered_sig_ = nullptr;
   Connections connections_;
   std::set<BinaryIndex> selection_;
   ImVec2 grid_pos_;         // viewport origin of the current frame

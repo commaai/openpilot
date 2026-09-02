@@ -8,13 +8,10 @@
 #include <vector>
 
 #include "imgui.h"
-#include "imgui_internal.h"
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/widgets/messagebytes.h"
-
 
 class HistoryLogModel {
 public:
@@ -55,6 +52,8 @@ public:
   std::deque<Message> messages;
   std::vector<cabana::Signal *> sigs;
   bool hex_mode = false;
+
+private:
   Connections connections_;
 };
 
@@ -62,11 +61,11 @@ class LogsWidget {
 public:
   LogsWidget();
   void setMessage(const MessageId &message_id) {
-    selected_row = -1;
-    model.setMessage(message_id);
+    selected_row_ = -1;
+    model_.setMessage(message_id);
   }
-  void updateState() { model.updateState(); }
-  void showEvent() { model.updateState(true); }  // call when the Logs tab becomes visible
+  void updateState() { model_.updateState(); }
+  void onShown() { model_.updateState(true); }  // reloads the log when the Logs tab becomes visible
   void draw();
 
 private:
@@ -75,14 +74,14 @@ private:
   void modelReset();
   void drawTable();
 
-  HistoryLogModel model;
-  int signals_cb = 0, comp_box = 0, display_type_cb = 0;  // current combo box indices
-  std::string value_edit;
-  bool value_edit_modified = false;
-  bool filters_widget_visible = true;
-  bool export_btn_enabled = false;
-  int selected_row = -1, selected_col = -1;
+  HistoryLogModel model_;
+  int signals_cb_ = 0, comp_box_ = 0, display_type_cb_ = 0;  // current combo box indices
+  std::string value_edit_;
+  bool value_edit_modified_ = false;
+  bool filters_widget_visible_ = true;
+  bool export_btn_enabled_ = false;
+  int selected_row_ = -1, selected_col_ = -1;
   bool vscrollbar_visible_ = false;
-  MessageBytesDelegate delegate;
+  MessageBytesDelegate delegate_;
   Connections connections_;
 };

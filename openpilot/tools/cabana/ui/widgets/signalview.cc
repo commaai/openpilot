@@ -1,7 +1,6 @@
 #include "tools/cabana/ui/widgets/signalview.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -26,38 +25,35 @@ constexpr float SIGNAL_ROW_SCALE = 1.25f;
 constexpr float FILTER_WIDTH = 160.0f;
 constexpr float SPARKLINE_SLIDER_WIDTH = 120.0f;
 constexpr float COLLAPSE_ICON_SIZE = 12.0f;
+// WARNING: increasing the maximum range can result in severe performance degradation.
+// 30s is a reasonable value at present.
+constexpr int SPARKLINE_RANGE_MAX = 30;
 
-void drawElidedText(ImDrawList *painter, const ImRect &rect, const std::string &text, ImU32 color, bool align_right) {
-  const ImVec2 size = ImGui::CalcTextSize(text.c_str());
-  const float y = rect.Min.y + (rect.GetHeight() - size.y) * 0.5f;
-  if (size.x <= rect.GetWidth()) {
-    painter->AddText(ImVec2(align_right ? rect.Max.x - size.x : rect.Min.x, y), color, text.c_str());
-  } else {
-    ImGui::PushStyleColor(ImGuiCol_Text, color);
-    ImGui::RenderTextEllipsis(painter, ImVec2(rect.Min.x, y), ImVec2(rect.Max.x, y + size.y), rect.Max.x, text.c_str(), nullptr, &size);
-    ImGui::PopStyleColor();
-  }
-}
-
-// text at a specific font size, vertically centered, optionally aligned to the top or bottom
-void drawSmallText(ImDrawList *painter, const ImRect &rect, float font_size, const std::string &text, ImU32 color, int valign = 0) {
-  ImFont *font = ImGui::GetFont();
-  const ImVec2 size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, text.c_str());
-  float y = rect.Min.y + (rect.GetHeight() - size.y) * 0.5f;
-  if (valign < 0) y = rect.Min.y;
-  else if (valign > 0) y = rect.Max.y - size.y;
-  painter->AddText(font, font_size, ImVec2(rect.Min.x, y), color, text.c_str());
-}
-
-}  // namespace
-
-static std::string signalTypeToString(cabana::Signal::Type type) {
+std::string signalTypeToString(cabana::Signal::Type type) {
   if (type == cabana::Signal::Type::Multiplexor) return "Multiplexor Signal";
   else if (type == cabana::Signal::Type::Multiplexed) return "Multiplexed Signal";
   else return "Normal Signal";
 }
 
-SignalModel::SignalModel() : root(new Item) {
+std::string multiplexIndicator(const cabana::Signal *sig) {
+  return sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(sig->multiplex_value) + " ";
+}
+
+// column 0 has a double validator. Returns true when the cell was clicked (row selection); the two cells
+// of a row share the row's id scope, so each editor needs its own column id
+bool valueDescriptionEditor(int column, std::string *text) {
+  ImGui::PushID(column);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  validatedInput("##edit", text, column == 0 ? doubleValidator : nullptr);
+  ImGui::PopStyleVar();
+  const bool clicked = ImGui::IsItemActivated() || ImGui::IsItemClicked();
+  ImGui::PopID();
+  return clicked;
+}
+
+}  // namespace
+
+SignalModel::SignalModel() : root_(new Item) {
   connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
   connections_.push_back(dbc()->msgUpdated.connect([this](MessageId id) { handleMsgChanged(id); }));
   connections_.push_back(dbc()->msgRemoved.connect([this](MessageId id) { handleMsgChanged(id); }));
@@ -81,22 +77,22 @@ void SignalModel::insertItem(SignalModel::Item *root_item, int pos, const cabana
 }
 
 void SignalModel::setMessage(const MessageId &id) {
-  msg_id = id;
-  filter_str = "";
+  msg_id_ = id;
+  filter_str_ = "";
   refresh();
 }
 
 void SignalModel::setFilter(const std::string &txt) {
-  filter_str = txt;
+  filter_str_ = txt;
   refresh();
 }
 
 void SignalModel::refresh() {
-  root.reset(new SignalModel::Item);
-  if (auto msg = dbc()->msg(msg_id)) {
+  root_.reset(new SignalModel::Item);
+  if (auto msg = dbc()->msg(msg_id_)) {
     for (auto s : msg->getSignals()) {
-      if (filter_str.empty() || utils::containsCI(s->name, filter_str)) {
-        insertItem(root.get(), root->children.size(), s);
+      if (filter_str_.empty() || utils::containsCI(s->name, filter_str_)) {
+        insertItem(root_.get(), root_->children.size(), s);
       }
     }
   }
@@ -105,7 +101,7 @@ void SignalModel::refresh() {
 }
 
 int SignalModel::flags(const Item *item, int column) const {
-  if (!item || item == root.get()) return NoItemFlags;
+  if (!item || item == root_.get()) return NoItemFlags;
 
   int flags = ItemIsSelectable | ItemIsEnabled;
   if (column == 1  && item->children.empty()) {
@@ -118,14 +114,14 @@ int SignalModel::flags(const Item *item, int column) const {
 }
 
 int SignalModel::signalRow(const cabana::Signal *sig) const {
-  for (int i = 0; i < root->children.size(); ++i) {
-    if (root->children[i]->sig == sig) return i;
+  for (int i = 0; i < root_->children.size(); ++i) {
+    if (root_->children[i]->sig == sig) return i;
   }
   return -1;
 }
 
 std::string SignalModel::data(const Item *item, int column) const {
-  if (item && item != root.get()) {
+  if (item && item != root_.get()) {
     if (column == 0) {
       return item->type == Item::Sig ? item->sig->name : item->title;
     } else {
@@ -189,12 +185,11 @@ bool SignalModel::setData(Item *item, const ItemValue &value) {
     case Item::Desc: s.val_desc = value.toValueDescription(); break;
     default: return false;
   }
-  bool ret = saveSignal(item->sig, s);
-  return ret;
+  return saveSignal(item->sig, s);
 }
 
 bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) {
-  auto msg = dbc()->msg(msg_id);
+  auto msg = dbc()->msg(msg_id_);
   if (s.name != origin_s->name && msg->sig(s.name) != nullptr) {
     std::string text = "There is already a signal with the same name '" + s.name + "'";
     MessageBox::warning("Failed to save signal", text);
@@ -204,23 +199,23 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
   if (s.is_little_endian != origin_s->is_little_endian) {
     s.start_bit = flipBitPos(s.start_bit);
   }
-  UndoStack::instance()->push(new EditSignalCommand(msg_id, origin_s, s));
+  UndoStack::instance()->push(new EditSignalCommand(msg_id_, origin_s, s));
   return true;
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
-  if (id.address == msg_id.address) {
+  if (id.address == msg_id_.address) {
     refresh();
   }
 }
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
-  if (id == msg_id) {
-    if (filter_str.empty()) {
-      int i = dbc()->msg(msg_id)->indexOf(sig);
-      insertItem(root.get(), i, sig);
+  if (id == msg_id_) {
+    if (filter_str_.empty()) {
+      int i = dbc()->msg(msg_id_)->indexOf(sig);
+      insertItem(root_.get(), i, sig);
       rowsChanged();
-    } else if (utils::containsCI(sig->name, filter_str)) {
+    } else if (utils::containsCI(sig->name, filter_str_)) {
       refresh();
     }
   }
@@ -228,13 +223,13 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 
 void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
-    if (filter_str.empty()) {
+    if (filter_str_.empty()) {
       // move row when the order changes.
-      int to = dbc()->msg(msg_id)->indexOf(sig);
+      int to = dbc()->msg(msg_id_)->indexOf(sig);
       if (to != row) {
-        auto item = root->children[row];
-        root->children.erase(root->children.begin() + row);
-        root->children.insert(root->children.begin() + to, item);
+        auto item = root_->children[row];
+        root_->children.erase(root_->children.begin() + row);
+        root_->children.insert(root_->children.begin() + to, item);
       }
     }
   }
@@ -242,16 +237,13 @@ void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
 
 void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
-    delete root->children[row];
-    root->children.erase(root->children.begin() + row);
+    delete root_->children[row];
+    root_->children.erase(root_->children.begin() + row);
     rowsChanged();
   }
 }
 
 SignalItemDelegate::SignalItemDelegate() {
-  name_validator = nameValidator;
-  node_validator = nodeValidator;
-  double_validator = doubleValidator;
   // seed the size of the [plot][remove] widget (two 22px tool buttons plus the spacing) so the first
   // updateState() calls already leave room for the sparklines
   button_size = ImVec2(22 * 2 + TOOLBAR_ITEM_SPACING, 22);
@@ -259,8 +251,8 @@ SignalItemDelegate::SignalItemDelegate() {
   // the sig pointers die with the signal
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) {
     if (desc_sig_ == sig) desc_sig_ = nullptr;
-    if ((editing_item_ && editing_item_->sig == sig) || (open_item_ && open_item_->sig == sig) ||
-        (focus_item_ && focus_item_->sig == sig)) closeEditor();
+    if ((editing_item_ && editing_item_->sig == sig) || (open_item && open_item->sig == sig) ||
+        (focus_item && focus_item->sig == sig)) closeEditor();
   }));
   connections_.push_back(dbc()->fileChanged.connect([this]() {
     desc_sig_ = nullptr;
@@ -287,7 +279,7 @@ float SignalItemDelegate::sizeHint(const SignalModel::Item *item, float widget_w
   float spacing = INDENTATION + color_label_width + 8;
   std::string txt = text;
   if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
-    txt += item->sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(item->sig->multiplex_value) + " ";
+    txt += multiplexIndicator(item->sig);
     spacing += H_MARGIN * 2;
   }
   return std::min<float>(widget_width / 3.0, textWidth(txt) + spacing);
@@ -306,18 +298,14 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + color_label_width, rect.Max.y);
-      const CabanaColor c = item->sig->color.darker(item->highlight ? 125 : 0);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, IM_COL32(c.r, c.g, c.b, c.a), 3.0f);
-      const std::string number = std::to_string(const_cast<SignalModel::Item *>(item)->row() + 1);
-      ImFont *font = ImGui::GetFont();
-      const ImVec2 size = font->CalcTextSizeA(label_font, FLT_MAX, 0.0f, number.c_str());
-      painter->AddText(font, label_font, ImVec2(icon_rect.Min.x + (icon_rect.GetWidth() - size.x) * 0.5f, icon_rect.Min.y + (icon_rect.GetHeight() - size.y) * 0.5f),
-                       item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK, number.c_str());
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->sig->color.darker(item->highlight ? 125 : 0)), 3.0f);
+      drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
+               nullptr, label_font);
 
       rect.Min.x = icon_rect.Max.x + h_margin * 2;
       // multiplexer indicator
       if (item->sig->type != cabana::Signal::Type::Normal) {
-        std::string indicator = item->sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(item->sig->multiplex_value) + " ";
+        const std::string indicator = multiplexIndicator(item->sig);
         ImRect indicator_rect(rect.Min.x, rect.Min.y, rect.Min.x + ImGui::CalcTextSize(indicator.c_str()).x, rect.Max.y);
         painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, IM_COL32(160, 160, 164, 255), 3.0f);
         drawElidedText(painter, indicator_rect, indicator, IM_COL32_WHITE, false);
@@ -343,15 +331,15 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
         rect.Max.y += v_margin;
         std::string min = utils::toString(item->sparkline.min_val);
         std::string max = utils::toString(item->sparkline.max_val);
-        drawSmallText(painter, rect, minmax_font, max, text_color, -1);
-        drawSmallText(painter, rect, minmax_font, min, text_color, 1);
+        drawText(painter, rect, max.c_str(), text_color, nullptr, minmax_font, ImVec2(0.0f, 0.0f));
+        drawText(painter, rect, min.c_str(), text_color, nullptr, minmax_font, ImVec2(0.0f, 1.0f));
         value_adjust = std::max(textWidth(min, minmax_font), textWidth(max, minmax_font)) + 5;
       } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
         // display freq of multiplexed signal
         char freq[64];
         snprintf(freq, sizeof(freq), "%.2g hz", item->sparkline.freq());
         ImRect freq_rect(rect.Min.x + 5, rect.Min.y, rect.Max.x, rect.Max.y);
-        drawSmallText(painter, freq_rect, label_font, freq, text_color);
+        drawText(painter, freq_rect, freq, text_color, nullptr, label_font, ImVec2(0.0f, 0.5f));
         value_adjust = textWidth(freq, label_font) + 10;
       }
       // signal value
@@ -367,15 +355,15 @@ void SignalItemDelegate::paint(ImDrawList *painter, const ImRect &option_rect, c
 }
 
 void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *model) {
-  const bool take_focus = focus_item_ == item;
-  if (take_focus) focus_item_ = nullptr;
+  const bool take_focus = focus_item == item;
+  if (take_focus) focus_item = nullptr;
   if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Node || item->type == SignalModel::Item::Offset ||
       item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::MultiplexValue ||
       item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     ImGuiInputTextCallback validator = nullptr;
-    if (item->type == SignalModel::Item::Name) validator = name_validator;
-    else if (item->type == SignalModel::Item::Node) validator = node_validator;
-    else validator = double_validator;
+    if (item->type == SignalModel::Item::Name) validator = nameValidator;
+    else if (item->type == SignalModel::Item::Node) validator = nodeValidator;
+    else validator = doubleValidator;
 
     lineEditor(item, model, validator, take_focus);
   } else if (item->type == SignalModel::Item::Size) {
@@ -383,7 +371,7 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     if (take_focus) ImGui::SetKeyboardFocusHere();
     bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
     if (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
-      open_item_ = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
+      open_item = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
       return;
     }
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
@@ -392,19 +380,19 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     // Enter, Escape and a click outside close the editor; the step buttons keep it open
     if (ImGui::IsItemDeactivated() && (!ImGui::IsItemHovered() || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
                                        ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false))) {
-      open_item_ = nullptr;
+      open_item = nullptr;
     }
   } else if (item->type == SignalModel::Item::SignalType) {
     // the combo editor is closed by Enter and Escape; the cell is painted as text again next frame
     if (combo_focused_ && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
                            ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false))) {
-      open_item_ = nullptr;
+      open_item = nullptr;
       combo_focused_ = false;
       return;
     }
     std::vector<std::pair<std::string, int>> items;
     items.emplace_back(signalTypeToString(cabana::Signal::Type::Normal), (int)cabana::Signal::Type::Normal);
-    if (!dbc()->msg(model->msg_id)->multiplexor) {
+    if (!dbc()->msg(model->msg_id_)->multiplexor) {
       items.emplace_back(signalTypeToString(cabana::Signal::Type::Multiplexor), (int)cabana::Signal::Type::Multiplexor);
     } else if (item->sig->type != cabana::Signal::Type::Multiplexor) {
       items.emplace_back(signalTypeToString(cabana::Signal::Type::Multiplexed), (int)cabana::Signal::Type::Multiplexed);
@@ -419,10 +407,10 @@ void SignalItemDelegate::createEditor(SignalModel::Item *item, SignalModel *mode
     if (take_focus) ImGui::SetKeyboardFocusHere();
     if (ImGui::Combo("##editor", &current, names.data(), names.size())) {
       setModelData(item, model, items[current].second);
-      open_item_ = nullptr;  // commit and close the editor
+      open_item = nullptr;  // commit and close the editor
     }
     combo_focused_ = ImGui::IsItemFocused() || ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
-    if (!take_focus && !combo_focused_) open_item_ = nullptr;  // the editor is closed when it loses the focus
+    if (!take_focus && !combo_focused_) open_item = nullptr;  // the editor is closed when it loses the focus
   } else if (item->type == SignalModel::Item::Desc) {
     ImGui::PushStyleColor(ImGuiCol_Header, (ImU32)0);
     const bool clicked = ImGui::Selectable("##editor", false, 0, ImVec2(0, rowHeight()));
@@ -450,7 +438,7 @@ void SignalItemDelegate::commitEditor(SignalModel *model) {
 }
 
 void SignalItemDelegate::closeEditor() {
-  editing_item_ = open_item_ = focus_item_ = nullptr;
+  editing_item_ = open_item = focus_item = nullptr;
   editor_active_ = refocus_editor_ = enter_pressed_ = combo_focused_ = false;
   pending_commit = nullptr;  // the items it captured are deleted by the caller
 }
@@ -489,7 +477,7 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
   if (was_active) {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       // InputText already reverted the text; only the commit has to be skipped
-      editing_item_ = open_item_ = nullptr;
+      editing_item_ = open_item = nullptr;
       enter_pressed_ = false;
       return;
     }
@@ -500,19 +488,19 @@ void SignalItemDelegate::lineEditor(SignalModel::Item *item, SignalModel *model,
   if (ImGui::IsItemDeactivated()) {
     const bool by_enter = std::exchange(enter_pressed_, false);
     if (!ImGui::IsItemDeactivatedAfterEdit()) {
-      editing_item_ = open_item_ = nullptr;  // nothing was typed, nothing to commit
+      editing_item_ = open_item = nullptr;  // nothing was typed, nothing to commit
     } else if (validateEditor(item, edit_text_) == ValidState::Acceptable) {
       setModelData(item, model, edit_text_);
-      editing_item_ = open_item_ = nullptr;
+      editing_item_ = open_item = nullptr;
     } else if (by_enter) {
       refocus_editor_ = true;  // the editor stays open with the text the user typed
     } else {
-      editing_item_ = open_item_ = nullptr;
+      editing_item_ = open_item = nullptr;
     }
   }
 }
 
-void SignalItemDelegate::setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value) const {
+void SignalItemDelegate::setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value) {
   pending_commit = [item, model, value]() { model->setData(item, value); };
 }
 
@@ -522,7 +510,7 @@ void SignalItemDelegate::drawValueDescriptionDlg(SignalModel *model) {
 
   if (desc_dlg_->accepted) {
     // the dialog closed: apply to the Desc item of the edited signal
-    for (auto sig_item : model->root->children) {
+    for (auto sig_item : model->root_->children) {
       if (sig_item->sig != desc_sig_) continue;
       for (auto child : sig_item->children) {
         if (child->type != SignalModel::Item::ExtraInfo) continue;
@@ -536,20 +524,17 @@ void SignalItemDelegate::drawValueDescriptionDlg(SignalModel *model) {
   desc_sig_ = nullptr;
 }
 
-SignalView::SignalView(ChartsWidget *charts) : charts(charts) {
-  // WARNING: increasing the maximum range can result in severe performance degradation.
-  // 30s is a reasonable value at present.
-  const int max_range = sparkline_range_max;
-  settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
+SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
+  settings.sparkline_range = std::clamp(settings.sparkline_range, 1, SPARKLINE_RANGE_MAX);
 
   model = std::make_unique<SignalModel>();
-  delegate = std::make_unique<SignalItemDelegate>();
+  delegate_ = std::make_unique<SignalItemDelegate>();
   updateToolBar();
 
   connections_.push_back(model->rowsChanged.connect([this]() { rowsChanged(); }));
   // a reset closes the open editors; the items they point at are deleted by refresh()
   connections_.push_back(model->modelReset.connect([this]() {
-    delegate->closeEditor();
+    delegate_->closeEditor();
     // the visible range is computed while drawing; reset it to the top so the sparklines are ready in the
     // frame that paints them
     if (first_visible_row_ != -1) {
@@ -567,13 +552,11 @@ SignalView::SignalView(ChartsWidget *charts) : charts(charts) {
 std::string SignalView::whatsThis() const {
   return R"(
     <b>Signal view</b><br />
-    <!-- TODO: add description here -->
   )";
 }
 
 void SignalView::setMessage(const MessageId &id) {
-  max_value_width = 0;
-  filter_edit.clear();
+  filter_edit_.clear();
   model->setMessage(id);
 }
 
@@ -591,7 +574,7 @@ void SignalView::rowClicked(SignalModel::Item *item) {
 
 void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
   if (int row = model->signalRow(sig); row != -1) {
-    auto item = model->root->children[row];
+    auto item = model->root_->children[row];
     if (expand) {
       item->expanded = !item->expanded;
     }
@@ -602,21 +585,21 @@ void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
 }
 
 void SignalView::updateChartState() {
-  for (auto item : model->root->children) {
-    item->chart_opened = charts->hasSignal(model->msg_id, item->sig);
+  for (auto item : model->root_->children) {
+    item->chart_opened = charts_->hasSignal(model->msg_id_, item->sig);
   }
 }
 
 void SignalView::signalHovered(const cabana::Signal *sig) {
-  auto &children = model->root->children;
+  auto &children = model->root_->children;
   for (int i = 0; i < children.size(); ++i) {
     children[i]->highlight = children[i]->sig == sig;
   }
 }
 
 void SignalView::updateToolBar() {
-  signal_count_lb = "Signals: " + std::to_string(model->rowCount());
-  sparkline_label = utils::formatSeconds(settings.sparkline_range);
+  signal_count_lb_ = "Signals: " + std::to_string(model->rowCount());
+  sparkline_label_ = utils::formatSeconds(settings.sparkline_range);
 }
 
 void SignalView::setSparklineRange(int value) {
@@ -626,7 +609,7 @@ void SignalView::setSparklineRange(int value) {
 }
 
 void SignalView::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
-  if (id.address == model->msg_id.address) {
+  if (id.address == model->msg_id_.address) {
     selectSignal(sig);
   }
 }
@@ -640,7 +623,7 @@ void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
   if (!sig || current_sig_ == sig) {
     // the current index moves to the row that took the removed one, or to the last row
     current_sig_ = nullptr;
-    auto &children = model->root->children;
+    auto &children = model->root_->children;
     if (sig && !children.empty() && current_row_ >= 0) {
       current_sig_ = children[std::min<int>(current_row_, children.size() - 1)]->sig;
       current_type_ = SignalModel::Item::Sig;
@@ -664,13 +647,13 @@ float SignalView::widestValueWidth(const cabana::Signal *sig) {
 }
 
 void SignalView::updateState(const std::set<MessageId> *msgs) {
-  const auto &last_msg = can->lastMessage(model->msg_id);
-  if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
+  const auto &last_msg = can->lastMessage(model->msg_id_);
+  if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id_)) || last_msg.dat.size() == 0) return;
 
   // sized for the widest value the signals can produce, not the widest one in the last message: sizing
   // to the current values moved the sparklines every time a value changed length
-  max_value_width = 0;
-  for (auto item : model->root->children) {
+  float max_value_width = 0;
+  for (auto item : model->root_->children) {
     double value = 0;
     if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
@@ -679,11 +662,11 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
   }
 
   if (first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model->rowCount()) {
-    const float min_max_width = SignalItemDelegate::textWidth("-000.00", delegate->minmax_font) + 5;
-    float available_width = value_column_width - delegate->button_size.x;
+    const float min_max_width = SignalItemDelegate::textWidth("-000.00", delegate_->minmax_font) + 5;
+    float available_width = value_column_width_ - delegate_->button_size.x;
     float value_width = std::min<float>(max_value_width + min_max_width, available_width / 2);
     ImVec2 size(std::floor(available_width - value_width),
-                std::floor(delegate->signalRowHeight() - V_MARGIN * 2));
+                std::floor(delegate_->signalRowHeight() - V_MARGIN * 2));
 
     // the window ends at the playback clock, not at the last message: its timestamp only moves when a
     // message of this id arrives, so a slow message held the sparkline still for several updates and
@@ -693,11 +676,11 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     // points slide off the left edge instead of disappearing the moment they age out
     const double lead_in = settings.sparkline_range * 0.05;
     // plain locals: capturing structured bindings in a lambda is C++20
-    const auto range = can->eventsInRange(model->msg_id, std::make_pair(window_end - settings.sparkline_range - lead_in, window_end));
+    const auto range = can->eventsInRange(model->msg_id_, std::make_pair(window_end - settings.sparkline_range - lead_in, window_end));
     const CanEventIter first = range.first, last = range.second;
     std::vector<std::future<void>> futures;
     for (int i = first_visible_row_; i <= last_visible_row_; ++i) {
-      auto item = model->root->children[i];
+      auto item = model->root_->children[i];
       futures.push_back(ThreadPool::instance().run([item, first, last, size, window_end]() {
         item->sparkline.update(item->sig, first, last, settings.sparkline_range, size, window_end);
       }));
@@ -729,30 +712,20 @@ void SignalView::draw() {
   }
 
   ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(signal_count_lb.c_str());
+  ImGui::TextUnformatted(signal_count_lb_.c_str());
   ImGui::SameLine();
   ImGui::SetNextItemWidth(FILTER_WIDTH);
-  if (validatedInput("##filter_edit", &filter_edit, nonWhitespaceValidator, "Filter Signal")) {
-    model->setFilter(filter_edit);
-  }
-  if (!filter_edit.empty()) {
-    ImGui::SameLine(0.0f, 0.0f);
-    if (ImGui::SmallButton((std::string(icon::X) + "##clear").c_str())) {
-      filter_edit.clear();
-      model->setFilter(filter_edit);
-    }
+  if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
+    model->setFilter(filter_edit_);
   }
 
   // stretch: the sparkline controls sit at the right edge
-  const float right_width = toolBarRightWidth(sparkline_label);
-  ImGui::SameLine();
-  const float right_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - right_width;
-  if (right_x > ImGui::GetCursorPosX()) ImGui::SetCursorPosX(right_x);
+  alignRight(toolBarRightWidth(sparkline_label_));
   ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(sparkline_label.c_str());
+  ImGui::TextUnformatted(sparkline_label_.c_str());
   ImGui::SameLine();
   int range = settings.sparkline_range;
-  if (fusionSliderInt("##sparkline_range_slider", &range, 1, sparkline_range_max, SPARKLINE_SLIDER_WIDTH)) {
+  if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, SPARKLINE_SLIDER_WIDTH)) {
     setSparklineRange(range);
   }
   ImGui::SetItemTooltip("Sparkline time range");
@@ -764,9 +737,9 @@ void SignalView::draw() {
   if (collapse) collapseAll();
 
   drawTree();
-  delegate->drawValueDescriptionDlg(model.get());
+  delegate_->drawValueDescriptionDlg(model.get());
   // model changes run after the tree is drawn: dbc()->signalUpdated/signalRemoved reorder or delete the rows
-  if (delegate->pending_commit) std::exchange(delegate->pending_commit, nullptr)();
+  if (delegate_->pending_commit) std::exchange(delegate_->pending_commit, nullptr)();
   if (pending_action_) std::exchange(pending_action_, nullptr)();
   current_row_ = model->signalRow(current_sig_);  // used when the row is removed
 
@@ -774,8 +747,8 @@ void SignalView::draw() {
 }
 
 void SignalView::collapseAll() {
-  delegate->commitEditor(model.get());  // the editor loses the focus, which commits it
-  for (auto item : model->root->children) {
+  delegate_->commitEditor(model.get());  // the editor loses the focus, which commits it
+  for (auto item : model->root_->children) {
     item->expanded = false;
     for (auto child : item->children) child->expanded = false;
   }
@@ -788,12 +761,12 @@ void SignalView::drawTree() {
   const bool visible = ImGui::BeginChild("tree", ImVec2(0, min_height), ImGuiChildFlags_None);
   ImGui::PopStyleVar();
   if (visible) {
-    DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, delegate->rowHeight()};
+    DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, delegate_->rowHeight()};
     // the press that closes an open editor is consumed by the focus change, the index widgets never see it
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = delegate->open_item_ != nullptr;
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = delegate_->open_item != nullptr;
 
     int first_visible = -1, last_visible = -1;
-    auto &children = model->root->children;
+    auto &children = model->root_->children;
     for (int i = 0; i < children.size(); ++i) {
       ctx.any_visible = false;
       const bool header_visible = drawItem(children[i], 0, ctx);
@@ -807,9 +780,9 @@ void SignalView::drawTree() {
     last_visible_row_ = last_visible;
     scroll_to_sig_ = nullptr;
 
-    if (ctx.name_width > 0) name_column_width = ctx.name_width;
-    if (ctx.value_column_width > 0 && ctx.value_column_width != value_column_width) {
-      value_column_width = ctx.value_column_width;
+    if (ctx.name_width > 0) name_column_width_ = ctx.name_width;
+    if (ctx.value_column_width > 0 && ctx.value_column_width != value_column_width_) {
+      value_column_width_ = ctx.value_column_width;
       changed = true;
     }
     if (changed) updateState();
@@ -833,7 +806,7 @@ void SignalView::drawTree() {
 bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) {
   const int flags = model->flags(item, 0);
   const bool selected = item->sig == current_sig_ && item->type == current_type_;
-  const float row_height = item->type == SignalModel::Item::Sig ? delegate->signalRowHeight() : ctx.row_height;
+  const float row_height = item->type == SignalModel::Item::Sig ? delegate_->signalRowHeight() : ctx.row_height;
   const ImVec2 row_min = ImGui::GetCursorScreenPos();
   const ImVec2 row_max(row_min.x + ctx.width, row_min.y + row_height);
   const bool row_visible = ImGui::IsRectVisible(row_min, row_max);
@@ -854,9 +827,9 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
     current_type_ = item->type;
     // the new current item opens its editor. The name column and the non-editable cells (signal rows,
     // check boxes) have no editor, so a click there only makes the cell current.
-    delegate->closeEditor();
-    if ((model->flags(item, 1) & SignalModel::ItemIsEditable) && ImGui::GetMousePos().x >= row_min.x + name_column_width) {
-      delegate->focus_item_ = delegate->open_item_ = item;
+    delegate_->closeEditor();
+    if ((model->flags(item, 1) & SignalModel::ItemIsEditable) && ImGui::GetMousePos().x >= row_min.x + name_column_width_) {
+      delegate_->focus_item = delegate_->open_item = item;
     }
     rowClicked(item);
   }
@@ -877,16 +850,16 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 
   // every row is measured, the header sizes column 0 to the contents of the whole tree
   const std::string text0 = model->data(item, 0);
-  ctx.name_width = std::max(ctx.name_width, delegate->sizeHint(item, ctx.width, text0));
-  const ImRect rect1(ImVec2(row_min.x + name_column_width, row_min.y), row_max);
+  ctx.name_width = std::max(ctx.name_width, delegate_->sizeHint(item, ctx.width, text0));
+  const ImRect rect1(ImVec2(row_min.x + name_column_width_, row_min.y), row_max);
   ctx.value_column_width = rect1.GetWidth();
 
   // a row outside the viewport is not painted and has no index widget, like a QTreeView row. The row that
   // holds the open editor is always submitted, so scrolling it out does not drop the edit.
-  const bool editor_open = selected && delegate->open_item_ == item;
+  const bool editor_open = selected && delegate_->open_item == item;
   if (row_visible || editor_open) {
-    const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width, row_max.y));
-    delegate->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
+    const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width_, row_max.y));
+    delegate_->paint(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
     if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
         ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
       ImGui::TextUnformatted(utils::stripHtml(model->toolTip(item)).c_str());
@@ -895,23 +868,23 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 
     const int flags1 = model->flags(item, 1);
     if (item->type == SignalModel::Item::Sig) {
-      delegate->paint(ctx.draw_list, rect1, item, 1, selected, item->sig_val, ctx.viewport_x);
+      delegate_->paint(ctx.draw_list, rect1, item, 1, selected, item->sig_val, ctx.viewport_x);
       drawIndexWidget(item, rect1);
     } else if (flags1 & SignalModel::ItemIsUserCheckable) {
       bool checked = model->checkState(item);
       ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
-      if (checkBox("##check", &checked)) delegate->setModelData(item, model.get(), checked);
+      if (checkBox("##check", &checked)) delegate_->setModelData(item, model.get(), checked);
     } else if (flags1 & SignalModel::ItemIsEditable) {
-      // only the current item gets an editor; the others paint through the delegate
+      // only the current item gets an editor; the others paint through the delegate_
       if (editor_open) {
         ImGui::SetCursorScreenPos(rect1.Min);
         ImGui::SetNextItemWidth(rect1.GetWidth());
-        delegate->createEditor(item, model.get());
+        delegate_->createEditor(item, model.get());
       } else {
-        delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
+        delegate_->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
       }
     } else {
-      delegate->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
+      delegate_->paint(ctx.draw_list, rect1, item, 1, selected, model->data(item, 1), ctx.viewport_x);
     }
   }
   ImGui::EndDisabled();
@@ -936,22 +909,22 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
   if (ImGui::Button((std::string(icon::GRAPH_UP) + "##plot").c_str(), btn_size) && !editor_open_on_press_) {
     item->chart_opened = !checked;
-    showChart(model->msg_id, sig, item->chart_opened, ImGui::GetIO().KeyShift);
+    showChart(model->msg_id_, sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
   if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nSHIFT click to add to previous opened plot");
   ImGui::SameLine(0.0f, TOOLBAR_ITEM_SPACING);
   if (ImGui::Button((std::string(icon::X) + "##remove").c_str(), btn_size) && !editor_open_on_press_) {
-    pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model->msg_id, sig)); };
+    pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model->msg_id_, sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");
   ImGui::PopStyleVar();
-  delegate->button_size = size;
+  delegate_->button_size = size;
 }
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions) {
   for (auto &[val, desc] : descriptions) {
-    table.emplace_back(utils::toString(val), desc);
+    table_.emplace_back(utils::toString(val), desc);
   }
 }
 
@@ -961,22 +934,20 @@ bool ValueDescriptionDlg::draw() {
     ImGui::OpenPopup(popup_id.c_str());
     opened_ = true;
   }
-  ImGui::SetNextWindowSize(ImVec2(500.0f, 0.0f), ImGuiCond_Appearing);
-  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  setNextDialogWindow(ImVec2(500.0f, 0.0f));
   bool open = true;
   // not drawn while the dock is collapsed or another modal is on top; only closed once the popup is gone
-  setNextWindowFloatsOut();
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
   if (ImGui::Button(icon::PLUS)) {
-    table.emplace_back("", "");
+    table_.emplace_back("", "");
   }
   ImGui::SameLine();
-  ImGui::BeginDisabled(current_row == -1);
-  if (ImGui::Button(icon::DASH) && current_row < table.size()) {
-    table.erase(table.begin() + current_row);
-    current_row = -1;
+  ImGui::BeginDisabled(current_row_ == -1);
+  if (ImGui::Button(icon::DASH) && current_row_ < table_.size()) {
+    table_.erase(table_.begin() + current_row_);
+    current_row_ = -1;
   }
   ImGui::EndDisabled();
 
@@ -989,19 +960,19 @@ bool ValueDescriptionDlg::draw() {
     ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 120.0f);
     ImGui::TableSetupColumn("Description", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableHeadersRow();
-    for (int row = 0; row < table.size(); ++row) {
+    for (int row = 0; row < table_.size(); ++row) {
       ImGui::PushID(row);
       ImGui::TableNextRow();
-      if (row == current_row) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImGuiCol_Header));
+      if (row == current_row_) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImGuiCol_Header));
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(std::to_string(row + 1).c_str());
       ImGui::TableSetColumnIndex(1);
       ImGui::SetNextItemWidth(-FLT_MIN);
-      if (Delegate::createEditor(0, &table[row].first)) current_row = row;
+      if (valueDescriptionEditor(0, &table_[row].first)) current_row_ = row;
       ImGui::TableSetColumnIndex(2);
       ImGui::SetNextItemWidth(-FLT_MIN);
-      if (Delegate::createEditor(1, &table[row].second)) current_row = row;
+      if (valueDescriptionEditor(1, &table_[row].second)) current_row_ = row;
       ImGui::PopID();
     }
     ImGui::EndTable();
@@ -1019,24 +990,12 @@ bool ValueDescriptionDlg::draw() {
 }
 
 void ValueDescriptionDlg::save() {
-  for (int i = 0; i < table.size(); ++i) {
-    std::string val = utils::trimmed(table[i].first);
-    std::string desc = utils::trimmed(table[i].second);
+  for (int i = 0; i < table_.size(); ++i) {
+    std::string val = utils::trimmed(table_[i].first);
+    std::string desc = utils::trimmed(table_[i].second);
     if (!val.empty() && !desc.empty()) {
-      val_desc.push_back({std::atof(val.c_str()), desc});
+      val_desc.push_back({utils::toDouble(val), desc});
     }
   }
   accepted = true;
-}
-
-bool ValueDescriptionDlg::Delegate::createEditor(int column, std::string *text) {
-  // column 0 has a double validator. Returns true when the cell was clicked (row selection); the two cells
-  // of a row share the row's id scope, so each editor needs its own column id
-  ImGui::PushID(column);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  validatedInput("##edit", text, column == 0 ? doubleValidator : nullptr);
-  ImGui::PopStyleVar();
-  const bool clicked = ImGui::IsItemActivated() || ImGui::IsItemClicked();
-  ImGui::PopID();
-  return clicked;
 }

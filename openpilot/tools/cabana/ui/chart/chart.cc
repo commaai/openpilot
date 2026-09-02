@@ -11,18 +11,17 @@
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
+#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
+#include "tools/cabana/utils/strings.h"
 
 const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
 const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
-const float EPSILON = 0.000001;
-static inline bool xLessThan(const ImPlotPoint &p, float x) { return p.x < (x - EPSILON); }
+const double EPSILON = 1e-6;
+constexpr ImVec4 LAYOUT_MARGINS{8, 6, 8, 6};  // left, top, right, bottom
+static inline bool xLessThan(const ImPlotPoint &p, double x) { return p.x < (x - EPSILON); }
 static inline bool isNull(const ImPlotPoint &p) { return p.x == 0 && p.y == 0; }
-
-static ImVec4 layoutMargins() {
-  return {8, 6, 8, 6};  // left, top, right, bottom
-}
 
 static std::string formatNumber(double value, int precision) {
   char buf[64];
@@ -30,38 +29,21 @@ static std::string formatNumber(double value, int precision) {
   return buf;
 }
 
-static std::string formatNumberG(double value) {
-  char buf[64];
-  snprintf(buf, sizeof(buf), "%g", value);
-  return buf;
+// the decimals needed to tell tick_count ticks over range apart
+static int axisPrecision(double range, int tick_count, int min_precision) {
+  return std::max(int(-std::floor(std::log10(range / (tick_count - 1)))), min_precision);
 }
 
-static float hueF(const CabanaColor &c) {
-  float h, s, v;
-  ImGui::ColorConvertRGBtoHSV(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, h, s, v);
-  return h;
-}
-
-struct FontInfo {
-  ImFont *font;
-  float size;
-};
-static FontInfo boldFont() {
-  pushBoldFont();
-  FontInfo f{ImGui::GetFont(), ImGui::GetFontSize()};
-  popBoldFont();
-  return f;
-}
-
-static void addTextEllipsis(ImDrawList *dl, const FontInfo &f, ImU32 col, const ImVec2 &pos, float max_x, const std::string &text) {
-  ImGui::PushFont(f.font, 0.0f);
-  ImGui::RenderTextEllipsis(dl, pos, ImVec2(max_x, pos.y + f.size), max_x, text.c_str(), nullptr, nullptr);
+static void addTextEllipsis(ImDrawList *dl, ImFont *font, ImU32 col, const ImVec2 &pos, float max_x, const std::string &text) {
+  const float size = ImGui::GetFontSize();
+  ImGui::PushFont(font, 0.0f);
+  ImGui::RenderTextEllipsis(dl, pos, ImVec2(max_x, pos.y + size), max_x, text.c_str(), nullptr, nullptr);
   ImGui::PopFont();
 }
 
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
-    : x_min(x_range.first), x_max(x_range.second), charts_widget(parent) {
-  series_type = (SeriesType)settings.chart_series_type;
+    : x_min_(x_range.first), x_max_(x_range.second), charts_widget_(parent) {
+  series_type_ = (SeriesType)settings.chart_series_type;
 
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) { signalRemoved(sig); }));
   connections_.push_back(dbc()->signalUpdated.connect([this](const cabana::Signal *sig) { signalUpdated(sig); }));
@@ -70,67 +52,62 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
 void ChartView::drawMenuActions() {
   // the current series type is marked with a radio bullet on the left
-  static const char *types[] = {"Line", "Step Line", "Scatter"};
   const float indent = ImGui::GetFontSize();
   float label_width = ImGui::CalcTextSize("Manage Signals").x;
-  for (const char *type : types) label_width = std::max(label_width, ImGui::CalcTextSize(type).x);
-  for (int i = 0; i < 3; ++i) {
-    if (radioMenuItem(types[i], i == (int)series_type, indent + label_width + indent)) {
+  for (const char *type : SERIES_TYPE_NAMES) label_width = std::max(label_width, ImGui::CalcTextSize(type).x);
+  for (int i = 0; i < (int)std::size(SERIES_TYPE_NAMES); ++i) {
+    if (radioMenuItem(SERIES_TYPE_NAMES[i], i == (int)series_type_, indent + label_width + indent)) {
       setSeriesType((SeriesType)i);
     }
   }
   ImGui::Separator();
   ImGui::Indent(indent);
   if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs.size() > 1)) charts_widget->splitChart(this);
+  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
   ImGui::Unindent(indent);
 }
 
-// the buttons and their menus are drawn every frame, at the rects resizeEvent() placed them at
+// the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
 void ChartView::createToolButtons() {
-  ImGui::SetCursorScreenPos(ImVec2(layout_.close_btn_rect.Min.x, layout_.close_btn_rect.Min.y));
+  ImGui::SetCursorScreenPos(layout_.close_btn_rect.Min);
   bool close_clicked = toolButton("close_btn", icon::X, "Remove Chart");
 
-  ImGui::SetCursorScreenPos(ImVec2(layout_.manage_btn_rect.Min.x, layout_.manage_btn_rect.Min.y));
+  ImGui::SetCursorScreenPos(layout_.manage_btn_rect.Min);
   if (toolButton("manage_btn", icon::LIST, "")) ImGui::OpenPopup("manage_menu");
   if (ImGui::BeginPopup("manage_menu")) {
     drawMenuActions();
     ImGui::EndPopup();
   }
 
-  if (close_clicked) charts_widget->removeChart(this);
-}
-
-ImVec2 ChartView::sizeHint() const {
-  return {(float)CHART_MIN_WIDTH, (float)settings.chart_height};
+  if (close_clicked) charts_widget_->removeChart(this);
 }
 
 void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSignal(msg_id, sig)) return;
 
-  sigs.push_back({.msg_id = msg_id, .sig = sig, .color = uniqueColor(sig->color)});
+  sigs_.push_back({.msg_id = msg_id, .sig = sig, .color = uniqueColor(sig->color)});
   updateSeries(sig);
-  charts_widget->seriesChanged();
+  charts_widget_->seriesChanged();
 }
 
 bool ChartView::hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const {
-  return std::any_of(sigs.cbegin(), sigs.cend(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
+  return std::any_of(sigs_.cbegin(), sigs_.cend(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
 void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
-  int prev_size = sigs.size();
-  sigs.erase(std::remove_if(sigs.begin(), sigs.end(), predicate), sigs.end());
-  if (sigs.empty()) {
-    charts_widget->removeChart(this);
-  } else if (sigs.size() != prev_size) {
-    charts_widget->seriesChanged();
+  int prev_size = sigs_.size();
+  sigs_.erase(std::remove_if(sigs_.begin(), sigs_.end(), predicate), sigs_.end());
+  if (sigs_.empty()) {
+    charts_widget_->removeChart(this);
+  } else if (sigs_.size() != prev_size) {
+    charts_widget_->seriesChanged();
     updateAxisY();
   }
 }
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [sig](auto &s) { return s.sig == sig; });
-  if (it != sigs.end()) {
+  auto it = std::find_if(sigs_.begin(), sigs_.end(), [sig](auto &s) { return s.sig == sig; });
+  if (it != sigs_.end()) {
     if (!(it->color == sig->color)) {
       it->color = uniqueColor(sig->color, sig);
     }
@@ -140,46 +117,47 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
 
 void ChartView::manageSignals() {
   auto dlg = std::make_unique<SignalSelector>("Manage Chart");
-  for (auto &s : sigs) {
+  for (auto &s : sigs_) {
     dlg->addSelected(s.msg_id, s.sig);
   }
   // runs once the dialog is accepted, dropped if the chart is removed first
-  charts_widget->execSignalSelector(std::move(dlg), this, [this](SignalSelector &selector) {
-    auto items = selector.seletedItems();
-    for (auto s : items) {
-      addSignal(s->msg_id, s->sig);
+  charts_widget_->execSignalSelector(std::move(dlg), this, [this](SignalSelector &selector) {
+    const auto &items = selector.selectedItems();
+    for (const auto &s : items) {
+      addSignal(s.msg_id, s.sig);
     }
     removeIf([&](auto &s) {
-      return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.msg_id == it->msg_id && s.sig == it->sig; });
+      return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.msg_id == it.msg_id && s.sig == it.sig; });
     });
   });
 }
 
-void ChartView::resizeEvent() {
-  const auto margins = layoutMargins();
+void ChartView::updateLayout() {
   const ImVec2 grip = ImGui::CalcTextSize(icon::GRIP_HORIZONTAL);
-  layout_.move_icon_rect = ImRect(layout_.rect.Min + ImVec2(margins.x, margins.y), layout_.rect.Min + ImVec2(margins.x, margins.y) + grip);
+  const ImVec2 top_left = layout_.rect.Min + ImVec2(LAYOUT_MARGINS.x, LAYOUT_MARGINS.y);
+  layout_.move_icon_rect = ImRect(top_left, top_left + grip);
   const ImVec2 pad = ImGui::GetStyle().FramePadding * 2;
   const ImVec2 close_size = ImGui::CalcTextSize(icon::X) + pad;
   const ImVec2 manage_size = ImGui::CalcTextSize(icon::LIST) + pad;
-  layout_.close_btn_rect = ImRect(ImVec2(layout_.rect.Max.x - margins.z - close_size.x, layout_.rect.Min.y + margins.y), ImVec2(0, 0));
-  layout_.close_btn_rect.Max = layout_.close_btn_rect.Min + close_size;
-  layout_.manage_btn_rect = ImRect(ImVec2(layout_.close_btn_rect.Min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, layout_.rect.Min.y + margins.y), ImVec2(0, 0));
-  layout_.manage_btn_rect.Max = layout_.manage_btn_rect.Min + manage_size;
+  const ImVec2 close_min(layout_.rect.Max.x - LAYOUT_MARGINS.z - close_size.x, top_left.y);
+  layout_.close_btn_rect = ImRect(close_min, close_min + close_size);
+  const ImVec2 manage_min(close_min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, top_left.y);
+  layout_.manage_btn_rect = ImRect(manage_min, manage_min + manage_size);
 
-  const FontInfo bfm = boldFont();
+  ImFont *bold = boldFont();
+  const float font_size = ImGui::GetFontSize();
   const float fm_height = ImGui::GetTextLineHeight();
-  const int marker_size = fm_height - 4;
+  const int marker_size = markerSize();
   const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
-  const int legend_left = layout_.move_icon_rect.Max.x + margins.x;
-  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - margins.z, legend_left + 10);
+  const int legend_left = layout_.move_icon_rect.Max.x + LAYOUT_MARGINS.x;
+  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - LAYOUT_MARGINS.z, legend_left + 10);
 
   // layout legend entries left-to-right, wrapping between the move icon and the buttons
   layout_.legend_rects.clear();
-  int x = legend_left, y = layout_.rect.Min.y + margins.y;
-  for (auto &s : sigs) {
-    int w = marker_size + 5 + bfm.font->CalcTextSizeA(bfm.size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
-            ImGui::CalcTextSize((" " + msgName(s.msg_id) + " " + s.msg_id.toString()).c_str()).x;
+  int x = legend_left, y = top_left.y;
+  for (auto &s : sigs_) {
+    int w = marker_size + 5 + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
+            ImGui::CalcTextSize(msgLabel(s.msg_id).c_str()).x;
     w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
     if (x + w > legend_right && x > legend_left) {
       x = legend_left;
@@ -190,27 +168,27 @@ void ChartView::resizeEvent() {
   }
 
   // add top space for the legend and signal values
-  int adjust_top = (y + row_height) - layout_.rect.Min.y - margins.y;
-  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y + margins.y);
-  layout_.header_bottom = layout_.rect.Min.y + adjust_top + margins.y;
+  int adjust_top = (y + row_height) - top_left.y;
+  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y + LAYOUT_MARGINS.y);
+  layout_.header_bottom = layout_.rect.Min.y + adjust_top + LAYOUT_MARGINS.y;
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
-  cur_sec = cur;
-  if (min != x_min || max != x_max) {
-    x_min = min;
-    x_max = max;
+  cur_sec_ = cur;
+  if (min != x_min_ || max != x_max_) {
+    x_min_ = min;
+    x_max_ = max;
     updateAxisY();
-    if (tooltip_x >= 0) {
-      showTip(secondsAtPoint({(float)tooltip_x, 0}));
+    if (tooltip_x_ >= 0) {
+      showTip(secondsAtPoint({(float)tooltip_x_, 0}));
     }
   }
 }
 
 void ChartView::appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
                                 std::vector<ImPlotPoint> &vals, std::vector<ImPlotPoint> &step_vals) {
-  vals.reserve(vals.size() + events.capacity());
-  step_vals.reserve(step_vals.size() + events.capacity() * 2);
+  vals.reserve(vals.size() + events.size());
+  step_vals.reserve(step_vals.size() + events.size() * 2);
 
   double value = 0;
   for (const CanEvent *e : events) {
@@ -225,7 +203,7 @@ void ChartView::appendCanEvents(const cabana::Signal *sig, const std::vector<con
 }
 
 void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *msg_new_events) {
-  for (auto &s : sigs) {
+  for (auto &s : sigs_) {
     if (!sig || s.sig == sig) {
       if (!msg_new_events) {
         s.vals.clear();
@@ -240,6 +218,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
       } else {
         std::vector<ImPlotPoint> vals, step_vals;
         appendCanEvents(s.sig, it->second, vals, step_vals);
+        if (vals.empty()) continue;
         s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.front().x, xLessThan),
                       vals.begin(), vals.end());
         s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.front().x, xLessThan),
@@ -254,14 +233,25 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
   updateAxisY();
 }
 
+std::pair<ChartView::PointIter, ChartView::PointIter> ChartView::visibleRange(const std::vector<ImPlotPoint> &points) const {
+  auto first = std::lower_bound(points.cbegin(), points.cend(), x_min_, xLessThan);
+  auto last = std::lower_bound(first, points.cend(), x_max_, xLessThan);
+  return {first, last};
+}
+
+const ImPlotPoint *ChartView::lastPointBefore(const SigItem &s, double sec) const {
+  auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double x) { return p.x > x + EPSILON; });
+  return it != s.vals.crend() && it->x >= x_min_ ? &*it : nullptr;
+}
+
 void ChartView::updateAxisY() {
-  if (sigs.empty()) return;
+  if (sigs_.empty()) return;
 
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
-  std::string unit = sigs[0].sig->unit;
+  std::string unit = sigs_[0].sig->unit;
 
-  for (auto &s : sigs) {
+  for (auto &s : sigs_) {
     if (!s.visible) continue;
 
     // Only show unit when all signals have the same unit
@@ -269,8 +259,7 @@ void ChartView::updateAxisY() {
       unit.clear();
     }
 
-    auto first = std::lower_bound(s.vals.cbegin(), s.vals.cend(), x_min, xLessThan);
-    auto last = std::lower_bound(first, s.vals.cend(), x_max, xLessThan);
+    auto [first, last] = visibleRange(s.vals);
     s.min = std::numeric_limits<double>::max();
     s.max = std::numeric_limits<double>::lowest();
     if (can->liveStreaming()) {
@@ -287,15 +276,15 @@ void ChartView::updateAxisY() {
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
 
-  y_unit = unit;
+  y_unit_ = unit;
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, 3);
-  if (min_y != y_min || max_y != y_max) {
-    y_min = min_y;
-    y_max = max_y;
-    y_tick_count = tick_count;
-    y_precision = std::max(int(-std::floor(std::log10((max_y - min_y) / (tick_count - 1)))), 0);
+  if (min_y != y_min_ || max_y != y_max_) {
+    y_min_ = min_y;
+    y_max_ = max_y;
+    y_tick_count_ = tick_count;
+    y_precision_ = axisPrecision(max_y - min_y, tick_count, 0);
   }
 }
 
@@ -309,7 +298,7 @@ std::tuple<double, double, int> ChartView::getNiceAxisNumbers(double min, double
 }
 
 int ChartView::xAxisPrecision() const {
-  return std::max(int(-std::floor(std::log10((x_max - x_min) / (X_TICK_COUNT - 1)))), 2);
+  return axisPrecision(x_max_ - x_min_, X_TICK_COUNT, 2);
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
@@ -330,14 +319,14 @@ double ChartView::niceNumber(double x, bool ceiling) {
   return q * z;
 }
 
-void ChartView::contextMenuEvent() {
-  if (drawing_ghost) return;
-  // the menu opens on right press; a right release with no menu open reaches mouseReleaseEvent
+void ChartView::drawContextMenu() {
+  if (drawing_ghost_) return;
+  // the menu opens on right press; a right release with no menu open reaches handleMouseRelease
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
       !ImGui::IsAnyItemActive()) {
     ImGui::OpenPopup("context_menu");
   }
-  context_menu_id = ImGui::GetID("context_menu");
+  context_menu_id_ = ImGui::GetID("context_menu");
   if (ImGui::BeginPopup("context_menu")) {
     drawMenuActions();
     // the menu holds checkable entries, so every entry keeps the same left margin
@@ -348,153 +337,165 @@ void ChartView::contextMenuEvent() {
     if (can->timeRange().has_value()) {
       const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
       const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
-      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget->zoom_undo_stack.canUndo())) charts_widget->zoom_undo_stack.undo();
-      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget->zoom_undo_stack.canRedo())) charts_widget->zoom_undo_stack.redo();
+      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
+      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
       ImGui::Separator();
     }
-    if (ImGui::MenuItem("Close")) charts_widget->removeChart(this);
+    if (ImGui::MenuItem("Close")) charts_widget_->removeChart(this);
     ImGui::Unindent(indent);
     ImGui::EndPopup();
   }
 }
 
-void ChartView::mousePressEvent() {
-  if (drawing_ghost) return;
+void ChartView::handleMousePress() {
+  if (drawing_ghost_) return;
   const ImVec2 pos = ImGui::GetMousePos();
   // a press on the close/manage buttons does not reach the widget
   const bool widget_pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left) && layout_.rect.Contains(pos) &&
                               ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
                               !layout_.close_btn_rect.Contains(pos) && !layout_.manage_btn_rect.Contains(pos);
   if (!widget_pressed) return;
-  press_pos = pos;
+  press_pos_ = pos;
   if (layout_.move_icon_rect.Contains(pos)) return;  // the move icon press is handled by the grip item (startChartDrag)
 
   if (ImGui::GetIO().KeyShift) {
     // Save current playback state when scrubbing
-    resume_after_scrub = !can->isPaused();
-    if (resume_after_scrub) {
+    resume_after_scrub_ = !can->isPaused();
+    if (resume_after_scrub_) {
       can->pause(true);
     }
-    mouse_mode = MouseMode::Scrub;
+    mouse_mode_ = MouseMode::Scrub;
   } else if (layout_.plot_area.Contains(pos)) {
-    mouse_mode = MouseMode::Rubber;
-    rubber_rect = ImRect();
+    mouse_mode_ = MouseMode::Rubber;
+    rubber_rect_ = ImRect();
   }
 }
 
-void ChartView::mouseMoveEvent() {
-  if (drawing_ghost) return;
+void ChartView::handleMouseMove() {
+  if (drawing_ghost_) return;
   const ImVec2 pos = ImGui::GetMousePos();
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
   // a click alone must not hide the tip
   if (delta.x == 0 && delta.y == 0) return;
   // only the widget under the mouse, or the one dragging, reacts to a move
-  if (mouse_mode == MouseMode::None && !layout_.rect.Contains(pos)) return;
+  if (mouse_mode_ == MouseMode::None && !layout_.rect.Contains(pos)) return;
 
-  if (mouse_mode == MouseMode::Scrub && ImGui::GetIO().KeyShift) {
+  if (mouse_mode_ == MouseMode::Scrub && ImGui::GetIO().KeyShift) {
     if (layout_.plot_area.Contains(pos)) {
       can->seekTo(std::clamp(secondsAtPoint(pos), can->minSeconds(), can->maxSeconds()));
     }
   }
 
-  if (mouse_mode == MouseMode::Rubber) {
+  if (mouse_mode_ == MouseMode::Rubber) {
     // horizontal selection, clamped to the plot area
-    float left = std::clamp(std::min(press_pos.x, pos.x), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
-    float right = std::clamp(std::max(press_pos.x, pos.x), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
-    rubber_rect = ImRect(ImVec2(left, layout_.plot_area.Min.y), ImVec2(right, layout_.plot_area.Max.y));
+    float left = std::clamp(std::min(press_pos_.x, pos.x), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
+    float right = std::clamp(std::max(press_pos_.x, pos.x), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
+    rubber_rect_ = ImRect(ImVec2(left, layout_.plot_area.Min.y), ImVec2(right, layout_.plot_area.Max.y));
   }
 
   clearTrackPoints();
-  if (mouse_mode != MouseMode::Rubber && layout_.plot_area.Contains(pos) && (layout_.plot_hovered || mouse_mode != MouseMode::None) &&
+  if (mouse_mode_ != MouseMode::Rubber && layout_.plot_area.Contains(pos) && (layout_.plot_hovered || mouse_mode_ != MouseMode::None) &&
       ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
-    charts_widget->showValueTip(secondsAtPoint(pos));
-  } else if (tip_label.isVisible()) {
-    charts_widget->showValueTip(-1);
+    charts_widget_->showValueTip(secondsAtPoint(pos));
+  } else if (tip_label_.isVisible()) {
+    charts_widget_->showValueTip(-1);
   }
 }
 
-void ChartView::mouseReleaseEvent() {
-  if (drawing_ghost) return;
+void ChartView::handleMouseRelease() {
+  if (drawing_ghost_) return;
   const bool left_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
   const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && layout_.rect.Contains(ImGui::GetMousePos());
   if (!left_released && !right_released) return;
-  if (left_released && mouse_mode == MouseMode::Rubber) {
-    mouse_mode = MouseMode::None;
+  if (left_released && mouse_mode_ == MouseMode::Rubber) {
+    mouse_mode_ = MouseMode::None;
     // Prevent zooming/seeking past the end of the route
-    double min = std::clamp(secondsAtPoint(rubber_rect.Min), can->minSeconds(), can->maxSeconds());
-    double max = std::clamp(secondsAtPoint(rubber_rect.Max), can->minSeconds(), can->maxSeconds());
-    if (rubber_rect.GetWidth() <= 0) {
+    double min = std::clamp(secondsAtPoint(rubber_rect_.Min), can->minSeconds(), can->maxSeconds());
+    double max = std::clamp(secondsAtPoint(rubber_rect_.Max), can->minSeconds(), can->maxSeconds());
+    if (rubber_rect_.GetWidth() <= 0) {
       // no rubber dragged, seek to mouse position
-      can->seekTo(std::clamp(secondsAtPoint(press_pos), can->minSeconds(), can->maxSeconds()));
-    } else if (rubber_rect.GetWidth() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
-      charts_widget->zoom_undo_stack.push(new ZoomCommand({min, max}));
+      can->seekTo(std::clamp(secondsAtPoint(press_pos_), can->minSeconds(), can->maxSeconds()));
+    } else if (rubber_rect_.GetWidth() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
+      charts_widget_->zoom_undo_stack_.push(new ZoomCommand({min, max}));
     }
-    rubber_rect = ImRect();
-  } else if (left_released && mouse_mode == MouseMode::None && sigs.size() > 1) {
-    // toggling series visibility by clicking a legend entry is handled by the legend items in drawLegend
-  } else if (right_released && !ImGui::IsPopupOpen(context_menu_id, ImGuiPopupFlags_None)) {
-    charts_widget->zoom_undo_stack.undo();
+    rubber_rect_ = ImRect();
+  } else if (right_released && !ImGui::IsPopupOpen(context_menu_id_, ImGuiPopupFlags_None)) {
+    charts_widget_->zoom_undo_stack_.undo();
   }
 
-  if (mouse_mode == MouseMode::Scrub) {
-    mouse_mode = MouseMode::None;
-    if (resume_after_scrub) {
+  if (mouse_mode_ == MouseMode::Scrub) {
+    mouse_mode_ = MouseMode::None;
+    if (resume_after_scrub_) {
       can->pause(false);
-      resume_after_scrub = false;
+      resume_after_scrub_ = false;
     }
   }
 }
 
 void ChartView::takeSignalsFrom(ChartView *source) {
-  for (auto &s : source->sigs) {
-    sigs.push_back(std::move(s));
-    sigs.back().color = uniqueColor(sigs.back().color, sigs.back().sig);
+  for (auto &s : source->sigs_) {
+    sigs_.push_back(std::move(s));
+    sigs_.back().color = uniqueColor(sigs_.back().color, sigs_.back().sig);
   }
-  source->sigs.clear();
+  source->sigs_.clear();
   updateAxisY();
-  charts_widget->removeChart(source);
+  charts_widget_->removeChart(source);
+}
+
+std::vector<ChartView::SigItem> ChartView::takeExtraSignals() {
+  std::vector<SigItem> extra;
+  for (auto it = sigs_.begin() + 1; it != sigs_.end(); ++it) {
+    it->color = it->sig->color;
+    extra.push_back(std::move(*it));
+  }
+  sigs_.resize(1);
+  updateAxisY();
+  return extra;
+}
+
+void ChartView::adoptSignal(SigItem s) {
+  sigs_.push_back(std::move(s));
+  updateAxisY();
 }
 
 void ChartView::showTip(double sec) {
   ImRect tip_area(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y), ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y));
-  ImRect visible_rect = charts_widget->chartVisibleRect(this);
+  ImRect visible_rect = charts_widget_->chartVisibleRect(this);
   visible_rect.ClipWith(tip_area);
   if (visible_rect.GetWidth() <= 0 || visible_rect.GetHeight() <= 0) {
-    tip_label.hide();
+    tip_label_.hide();
     return;
   }
 
-  tooltip_x = xPos(sec);
+  tooltip_x_ = xPos(sec);
   float x = -1;
   std::vector<TipLine> text_list;
-  for (auto &s : sigs) {
+  for (auto &s : sigs_) {
     if (s.visible) {
       std::string value = "--";
-      // use reverse iterator to find last item <= sec.
-      auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double v) { return p.x > v; });
-      if (it != s.vals.crend() && it->x >= x_min) {
-        value = s.sig->formatValue(it->y, false);
-        s.track_pt = *it;
-        x = std::max(x, xPos(it->x));
+      if (const ImPlotPoint *pt = lastPointBefore(s, sec)) {
+        value = s.sig->formatValue(pt->y, false);
+        s.track_pt = *pt;
+        x = std::max(x, xPos(pt->x));
       }
-      std::string name = sigs.size() > 1 ? s.sig->name + ": " : "";
-      std::string min = s.min == std::numeric_limits<double>::max() ? "--" : formatNumberG(s.min);
-      std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : formatNumberG(s.max);
+      std::string name = sigs_.size() > 1 ? s.sig->name + ": " : "";
+      std::string min = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
+      std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
       text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .bold = value, .rest = " (" + min + ", " + max + ")"});
     }
   }
   if (x < 0) {
-    x = tooltip_x;
+    x = tooltip_x_;
   }
   ImVec2 pt(x, layout_.plot_area.Min.y);
   text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 3)});
-  tip_label.showText(pt, text_list, visible_rect);
+  tip_label_.showText(pt, text_list, visible_rect);
 }
 
 void ChartView::hideTip() {
   clearTrackPoints();
-  tooltip_x = -1;
-  tip_label.hide();
+  tooltip_x_ = -1;
+  tip_label_.hide();
 }
 
 void ChartView::draw(float width) {
@@ -503,33 +504,33 @@ void ChartView::draw(float width) {
   layout_.plot_hovered = false;
   // the tile geometry is known before the child is entered, so it stays valid when imgui culls a scrolled out chart
   const ImVec2 tile_pos = ImGui::GetCursorScreenPos();
-  layout_.rect = ImRect(tile_pos, tile_pos + ImVec2(width, sizeHint().y));
-  if (ImGui::BeginChild("chart", ImVec2(width, sizeHint().y), ImGuiChildFlags_None,
-                        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    resizeEvent();
-    paintEvent();
-    contextMenuEvent();
+  const ImVec2 tile_size(width, (float)settings.chart_height);
+  layout_.rect = ImRect(tile_pos, tile_pos + tile_size);
+  if (ImGui::BeginChild("chart", tile_size, ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    updateLayout();
+    paint();
+    drawContextMenu();
   }
   ImGui::EndChild();
   // a chart scrolled out of the viewport draws no tip
-  const ImRect visible_rect = charts_widget->chartVisibleRect(this);
-  if (!drawing_ghost && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label.paintEvent();
+  const ImRect visible_rect = charts_widget_->chartVisibleRect(this);
+  if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw();
   ImGui::PopID();
 }
 
 void ChartView::drawGhost(float width) {
   // the ghost is drawn in its own window: keep the geometry of the live tile so hit testing stays correct
-  drawing_ghost = true;
+  drawing_ghost_ = true;
   const Layout saved = layout_;
   draw(width);
   layout_ = saved;
-  drawing_ghost = false;
+  drawing_ghost_ = false;
 }
 
-void ChartView::paintEvent() {
+void ChartView::paint() {
   drawStaticLayer();
 
-  if (can_drop) {
+  if (can_drop_) {
     ImGui::GetWindowDrawList()->AddRect(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_Header), 0.0f, 0, 4.0f);
   }
 }
@@ -539,7 +540,7 @@ void ChartView::drawStaticLayer() {
   painter->AddRectFilled(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_ChildBg));
   ImGui::SetCursorScreenPos(layout_.move_icon_rect.Min);
   ImGui::InvisibleButton("grip", layout_.move_icon_rect.GetSize());
-  if (ImGui::IsItemActivated()) charts_widget->startChartDrag(this, ImGui::GetMousePos());
+  if (ImGui::IsItemActivated()) charts_widget_->startChartDrag(this, ImGui::GetMousePos());
   if (ImGui::IsItemHovered()) ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
   painter->AddText(layout_.move_icon_rect.Min, ImGui::GetColorU32(ImGuiCol_Text), icon::GRIP_HORIZONTAL);
   createToolButtons();
@@ -549,10 +550,9 @@ void ChartView::drawStaticLayer() {
 }
 
 void ChartView::drawAxes() {
-  const auto margins = layoutMargins();
   ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x, layout_.header_bottom));
-  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - margins.w, 10.0f);
-  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(margins.x, AXIS_X_TOP_MARGIN));
+  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - LAYOUT_MARGINS.w, 10.0f);
+  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(LAYOUT_MARGINS.x, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
   // every tick is a 1 px line in the text color at alpha 50, the edge ticks close the box, no tick marks.
@@ -576,26 +576,26 @@ void ChartView::drawAxes() {
                             ImPlotFlags_NoBoxSelect | ImPlotFlags_NoInputs | ImPlotFlags_NoFrame;
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
   // reserve room for the right half of the last x tick label
-  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max, xAxisPrecision()).c_str()).x + 5;
+  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + 5;
   if (ImPlot::BeginPlot("##plot", ImVec2(layout_.rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
-    ImPlot::SetupAxis(ImAxis_Y1, y_unit.empty() ? nullptr : y_unit.c_str(), axis_flags);
-    ImPlot::SetupAxisLimits(ImAxis_X1, x_min, x_max, ImPlotCond_Always);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, y_min, y_max, ImPlotCond_Always);
+    ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
+    ImPlot::SetupAxisLimits(ImAxis_X1, x_min_, x_max_, ImPlotCond_Always);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, y_min_, y_max_, ImPlotCond_Always);
     // the format must be set before the ticks are generated
-    ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision) + "f").c_str());
-    ImPlot::SetupAxisTicks(ImAxis_Y1, y_min, y_max, y_tick_count);
+    ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision_) + "f").c_str());
+    ImPlot::SetupAxisTicks(ImAxis_Y1, y_min_, y_max_, y_tick_count_);
     ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
-    ImPlot::SetupAxisTicks(ImAxis_X1, x_min, x_max, X_TICK_COUNT);
+    ImPlot::SetupAxisTicks(ImAxis_X1, x_min_, x_max_, X_TICK_COUNT);
     ImPlot::SetupFinish();
 
     layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
     // ImPlotFlags_NoInputs disables implot's own hover tracking
     layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
-    mousePressEvent();
-    mouseMoveEvent();
-    mouseReleaseEvent();
+    handleMousePress();
+    handleMouseMove();
+    handleMouseRelease();
     drawForeground();
     ImPlot::EndPlot();
   }
@@ -607,36 +607,38 @@ void ChartView::drawLegend() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
   const ImU32 title_color = ImGui::GetColorU32(ImGuiCol_Text);
   // Draw message details in similar color, but slightly fade it to the background
-  ImU32 msg_color = (title_color & ~IM_COL32_A_MASK) | (180 << IM_COL32_A_SHIFT);
-  const FontInfo bold_font = boldFont();
-  const FontInfo normal_font{ImGui::GetFont(), ImGui::GetFontSize()};
-  const int marker_size = ImGui::GetTextLineHeight() - 4;
+  const ImU32 msg_color = withAlpha(title_color, 180);
+  ImFont *bold = boldFont();
+  ImFont *normal = ImGui::GetFont();
+  const float font_size = ImGui::GetFontSize();
+  const float marker_size = markerSize();
 
-  for (int i = 0; i < sigs.size() && i < layout_.legend_rects.size(); ++i) {
-    const auto &s = sigs[i];
+  for (int i = 0; i < sigs_.size() && i < layout_.legend_rects.size(); ++i) {
+    const auto &s = sigs_[i];
     const ImRect &r = layout_.legend_rects[i];
     // toggle series visibility by clicking its legend entry
     ImGui::PushID(i);
     ImGui::SetCursorScreenPos(r.Min);
     if (ImGui::InvisibleButton("legend", ImVec2(std::max(r.GetWidth(), 1.0f), std::max(r.GetHeight(), 1.0f))) &&
-        mouse_mode == MouseMode::None && sigs.size() > 1) {
-      sigs[i].visible = !sigs[i].visible;
+        mouse_mode_ == MouseMode::None && sigs_.size() > 1) {
+      sigs_[i].visible = !sigs_[i].visible;
       updateAxisY();
     }
     ImGui::PopID();
 
-    ImVec2 marker_rect(r.Min.x, r.GetCenter().y - marker_size / 2.0f);
-    series_type == SeriesType::Scatter
-        ? painter->AddCircleFilled(marker_rect + ImVec2(marker_size / 2.0f, marker_size / 2.0f), marker_size / 2.0f, toImU32(s.color))
-        : painter->AddRectFilled(marker_rect, marker_rect + ImVec2(marker_size, marker_size), toImU32(s.color));
+    if (series_type_ == SeriesType::Scatter) {
+      painter->AddCircleFilled(r.Min + ImVec2(marker_size / 2.0f, 2.0f + marker_size / 2.0f), marker_size / 2.0f, toImU32(s.color));
+    } else {
+      drawColorMarker(painter, r.Min, toImU32(s.color));
+    }
 
     float x = r.Min.x + marker_size + 5;
-    const float text_y = r.GetCenter().y - normal_font.size / 2.0f;
-    addTextEllipsis(painter, bold_font, title_color, ImVec2(x, text_y), r.Max.x, s.sig->name);
-    float name_w = std::min(bold_font.font->CalcTextSizeA(bold_font.size, FLT_MAX, 0.0f, s.sig->name.c_str()).x, r.Max.x - x);
+    const float text_y = r.GetCenter().y - font_size / 2.0f;
+    addTextEllipsis(painter, bold, title_color, ImVec2(x, text_y), r.Max.x, s.sig->name);
+    float name_w = std::min(bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x, r.Max.x - x);
     x += name_w;
-    std::string msg = " " + msgName(s.msg_id) + " " + s.msg_id.toString();
-    addTextEllipsis(painter, normal_font, msg_color, ImVec2(x, text_y), r.Max.x, msg);
+    const std::string msg = msgLabel(s.msg_id);
+    addTextEllipsis(painter, normal, msg_color, ImVec2(x, text_y), r.Max.x, msg);
     if (!s.visible) {  // strike out
       const float y = r.GetCenter().y;
       painter->AddLine(ImVec2(r.Min.x + marker_size + 5, y), ImVec2(std::min(x + ImGui::CalcTextSize(msg.c_str()).x, r.Max.x), y), title_color);
@@ -645,13 +647,12 @@ void ChartView::drawLegend() {
 }
 
 void ChartView::drawSeries() {
-  for (int i = 0; i < sigs.size(); ++i) {
-    auto &s = sigs[i];
+  for (int i = 0; i < sigs_.size(); ++i) {
+    auto &s = sigs_[i];
     if (!s.visible) continue;
 
     // visible points in vals to compute point density
-    auto first = std::lower_bound(s.vals.cbegin(), s.vals.cend(), x_min, xLessThan);
-    auto last = std::lower_bound(first, s.vals.cend(), x_max, xLessThan);
+    auto [first, last] = visibleRange(s.vals);
     int num_points = std::max<int>(last - first, 1);
     double pixels_per_point = 0;
     if (first != last) {
@@ -663,16 +664,16 @@ void ChartView::drawSeries() {
     ImPlotSpec spec;
     spec.LineColor = toImVec4(s.color);
     spec.Stride = sizeof(ImPlotPoint);
-    if (series_type == SeriesType::Scatter) {
+    if (series_type_ == SeriesType::Scatter) {
       float radius = std::clamp(pixels_per_point / 2.0, 2.0, 8.0) / 2.0;
       spec.Marker = ImPlotMarker_Circle;
       spec.MarkerSize = radius;
       if (first != last) ImPlot::PlotScatter(label.c_str(), &first->x, &first->y, last - first, spec);
     } else {
-      const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
-      auto begin = std::lower_bound(points.cbegin(), points.cend(), x_min, xLessThan);
+      const auto &points = series_type_ == SeriesType::StepLine ? s.step_vals : s.vals;
+      // one sample beyond each edge so the line runs out of the plot
+      auto [begin, end] = visibleRange(points);
       if (begin != points.cbegin()) --begin;
-      auto end = std::lower_bound(begin, points.cend(), x_max, xLessThan);
       if (end != points.cend()) ++end;
       if (begin == end) continue;
 
@@ -697,7 +698,7 @@ void ChartView::drawForeground() {
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   ImPlot::PushPlotClipRect();
   float track_line_x = -1;
-  for (auto &s : sigs) {
+  for (auto &s : sigs_) {
     if (!isNull(s.track_pt) && s.visible) {
       ImVec2 pos(xPos(s.track_pt.x), yPos(s.track_pt.y));
       painter->AddCircleFilled(pos, 5.5f, toImU32(s.color.darker(125)));
@@ -716,24 +717,23 @@ void ChartView::drawForeground() {
 }
 
 void ChartView::drawRubberBandTimeRange() {
-  if (rubber_rect.GetWidth() <= 1) return;
+  if (rubber_rect_.GetWidth() <= 1) return;
 
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   // ImGuiCol_Header is translucent, so the 1px selection outline is drawn at full alpha
-  ImU32 highlight = ImGui::GetColorU32(ImGuiCol_Header) | IM_COL32_A_MASK;
-  ImU32 fill = (highlight & ~IM_COL32_A_MASK) | (50 << IM_COL32_A_SHIFT);
-  painter->AddRectFilled(rubber_rect.Min, rubber_rect.Max, fill);
-  painter->AddRect(rubber_rect.Min, rubber_rect.Max, highlight);
+  const ImU32 highlight = withAlpha(ImGui::GetColorU32(ImGuiCol_Header), 255);
+  painter->AddRectFilled(rubber_rect_.Min, rubber_rect_.Max, withAlpha(highlight, 50));
+  painter->AddRect(rubber_rect_.Min, rubber_rect_.Max, highlight);
 
   // time labels at the bottom corners (below the plot, so clip to the widget instead of the plot)
   const ImU32 white = IM_COL32_WHITE;
   const ImU32 gray = IM_COL32(0xa0, 0xa0, 0xa4, 0xff);
   painter = ImGui::GetWindowDrawList();
   painter->PushClipRect(layout_.rect.Min, layout_.rect.Max);
-  for (const auto &pt : {rubber_rect.GetBL(), rubber_rect.GetBR()}) {
+  for (const auto &pt : {rubber_rect_.GetBL(), rubber_rect_.GetBR()}) {
     std::string sec = formatNumber(secondsAtPoint(pt), 2);
     ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, AXIS_X_TOP_MARGIN * 2);
-    ImVec2 top_left = pt.x == rubber_rect.Min.x ? ImVec2(pt.x - size.x, pt.y + 2) : ImVec2(pt.x, pt.y + 2);
+    ImVec2 top_left = pt.x == rubber_rect_.Min.x ? ImVec2(pt.x - size.x, pt.y + 2) : ImVec2(pt.x, pt.y + 2);
     painter->AddRectFilled(top_left, top_left + size, gray);
     painter->AddText(top_left + ImVec2(6, AXIS_X_TOP_MARGIN), white, sec.c_str());
   }
@@ -742,10 +742,10 @@ void ChartView::drawRubberBandTimeRange() {
 
 void ChartView::drawTimeline() {
   ImDrawList *painter = ImPlot::GetPlotDrawList();
-  float x = std::clamp(xPos(cur_sec), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
+  float x = std::clamp(xPos(cur_sec_), layout_.plot_area.Min.x, layout_.plot_area.Max.x);
   painter->AddLine(ImVec2(x, layout_.plot_area.Min.y - 1.0f), ImVec2(x, layout_.plot_area.Max.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
 
-  std::string time_str = formatNumber(cur_sec, 2);
+  std::string time_str = formatNumber(cur_sec_, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
   ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + AXIS_X_TOP_MARGIN);
   const bool dark = isDarkTheme();
@@ -755,32 +755,31 @@ void ChartView::drawTimeline() {
 
 void ChartView::drawSignalValue() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
-  const FontInfo font{ImGui::GetFont(), ImGui::GetFontSize()};
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
-  for (int i = 0; i < sigs.size() && i < layout_.legend_rects.size(); ++i) {
-    const auto &s = sigs[i];
-    auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec,
-                               [](auto &p, double x) { return p.x > x + EPSILON; });
-    std::string value = (it != s.vals.crend() && it->x >= x_min) ? s.sig->formatValue(it->y) : "--";
-    ImRect value_rect(layout_.legend_rects[i].GetBL() - ImVec2(0, 1), layout_.legend_rects[i].GetBL() - ImVec2(0, 1) + layout_.legend_rects[i].GetSize());
+  for (int i = 0; i < sigs_.size() && i < layout_.legend_rects.size(); ++i) {
+    const auto &s = sigs_[i];
+    const ImPlotPoint *pt = lastPointBefore(s, cur_sec_);
+    std::string value = pt ? s.sig->formatValue(pt->y) : "--";
+    const ImVec2 value_min = layout_.legend_rects[i].GetBL() - ImVec2(0, 1);
+    ImRect value_rect(value_min, value_min + layout_.legend_rects[i].GetSize());
     float w = ImGui::CalcTextSize(value.c_str()).x;
     if (w <= value_rect.GetWidth()) {
       painter->AddText(ImVec2(value_rect.GetCenter().x - w / 2, value_rect.Min.y), color, value.c_str());
     } else {
-      addTextEllipsis(painter, font, color, value_rect.Min, value_rect.Max.x, value);
+      addTextEllipsis(painter, ImGui::GetFont(), color, value_rect.Min, value_rect.Max.x, value);
     }
   }
 }
 
 CabanaColor ChartView::uniqueColor(CabanaColor color, const cabana::Signal *exclude) const {
-  for (auto &s : sigs) {
-    if (s.sig != exclude && std::abs(hueF(color) - hueF(s.color)) < 0.1) {
+  for (auto &s : sigs_) {
+    if (s.sig != exclude && std::abs(color.hsv().hue - s.color.hsv().hue) < 0.1) {
       // use different color to distinguish it from others.
-      auto last_color = sigs.back().color;
+      auto last_color = sigs_.back().color;
       static thread_local std::mt19937 rng{std::random_device{}()};
       std::uniform_int_distribution<int> sat(35, 99);
       std::uniform_int_distribution<int> val(85, 99);
-      color = CabanaColor::fromHsv(std::fmod(hueF(last_color) + 60 / 360.0, 1.0),
+      color = CabanaColor::fromHsv(std::fmod(last_color.hsv().hue + 60 / 360.0, 1.0),
                                    sat(rng) / 100.0,
                                    val(rng) / 100.0,
                                    color.a / 255.0f);
@@ -788,10 +787,4 @@ CabanaColor ChartView::uniqueColor(CabanaColor color, const cabana::Signal *excl
     }
   }
   return color;
-}
-
-void ChartView::setSeriesType(SeriesType type) {
-  if (type != series_type) {
-    series_type = type;
-  }
 }

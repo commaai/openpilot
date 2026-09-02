@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <map>
@@ -32,7 +31,7 @@ public:
   int columnCount() const { return Column::DATA + 1; }
   std::string data(int row, int column) const;
   std::string toolTip(int row, int column) const;  // name and comment separated by '\n'
-  int rowCount() const { return items_.size(); }
+  int rowCount() const { return items.size(); }
   void sort(int column, ImGuiSortDirection order = ImGuiSortDirection_Ascending);
   void setFilterStrings(const std::map<int, std::string> &filters);
   void showInactiveMessages(bool show);
@@ -48,18 +47,18 @@ public:
       return id == other.id && name == other.name && node == other.node;
     }
   };
-  std::vector<Item> items_;
+  std::vector<Item> items;
   bool show_inactive_messages = true;
   Observable<> modelReset;
 
 private:
-  void sortItems(std::vector<MessageListModel::Item> &items);
+  void sortItems(std::vector<MessageListModel::Item> &list);
   bool match(const MessageListModel::Item &id);
 
   std::map<int, std::string> filters_;
   std::set<MessageId> dbc_messages_;
-  int sort_column = 0;
-  ImGuiSortDirection sort_order = ImGuiSortDirection_Ascending;
+  int sort_column_ = 0;
+  ImGuiSortDirection sort_order_ = ImGuiSortDirection_Ascending;
   int sort_threshold_ = 0;
   Connections connections_;
 };
@@ -78,9 +77,9 @@ public:
 
   Observable<int, int> currentChanged;  // (current, previous)
 
-protected:
+private:
   void drawRow(int row);
-  void keyPressEvent();  // up/down move the current row
+  void handleKeys();  // up/down move the current row
 
   MessageListModel *model_ = nullptr;
   MessageViewHeader *header_ = nullptr;
@@ -95,7 +94,6 @@ protected:
 };
 
 class MessageViewHeader {
-  // https://stackoverflow.com/a/44346317
 public:
   MessageViewHeader();
   void setModel(MessageListModel *model) { model_ = model; }
@@ -132,22 +130,19 @@ public:
   Observable<const MessageId &> msgSelectionChanged;
   Observable<const std::string &> titleChanged;
 
-protected:
-  void createToolBar();  // drawn each frame
-  void headerContextMenuEvent();
-  void menuAboutToShow();
+private:
+  void drawToolBar();
+  void drawContextMenu();
   void setMultiLineBytes(bool multi);
   void updateTitle();
 
-  MessageView view;
-  MessageViewHeader header;
-  MessageBytesDelegate delegate;
-  std::optional<MessageId> current_msg_id;
-  MessageListModel model;
-  std::string suppress_clear_text;
-  bool suppress_clear_enabled = false;
+  MessageView view_;
+  MessageViewHeader header_;
+  MessageBytesDelegate delegate_;
+  std::optional<MessageId> current_msg_id_;
+  MessageListModel model_;
+  std::string suppress_clear_text_;
+  bool suppress_clear_enabled_ = false;
   std::string title_ = "MESSAGES";
-
-private:
   Connections connections_;
 };

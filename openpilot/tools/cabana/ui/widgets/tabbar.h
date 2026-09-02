@@ -25,7 +25,6 @@ public:
   void removeTab(int index);
   void moveTab(int from, int to);
   void setAutoHide(bool hide) { auto_hide_ = hide; }
-  void setExpanding(bool) {}  // imgui tabs never expand
   void setTabsClosable(bool closable) { tabs_closable_ = closable; }  // off by default
   void setUsesScrollButtons(bool use) { scroll_buttons_ = use; }
   void draw();

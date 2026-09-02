@@ -141,8 +141,15 @@ std::vector<std::string> DBCManager::signalNames() {
 }
 
 int DBCManager::nonEmptyDBCCount() {
-  auto files = allDBCFiles();
-  return std::count_if(files.cbegin(), files.cend(), [](auto &f) { return !f->isEmpty(); });
+  return nonEmptyDBCFiles().size();
+}
+
+std::vector<DBCFile *> DBCManager::nonEmptyDBCFiles() {
+  std::vector<DBCFile *> files;
+  for (auto f : allDBCFiles()) {
+    if (!f->isEmpty()) files.push_back(f);
+  }
+  return files;
 }
 
 DBCFile *DBCManager::findDBCFile(const uint8_t source) {

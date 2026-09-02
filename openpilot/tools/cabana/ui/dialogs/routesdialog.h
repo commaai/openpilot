@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <functional>
 #include <memory>
 #include <string>
@@ -26,17 +25,21 @@ private:
     std::string name;
   };
 
+  struct State {
+    bool devices_loaded = false;
+    std::vector<std::string> devices;
+    int device_index = 0;
+    int period_index = 0;
+    std::vector<RouteItem> routes;
+    int route_index = -1;
+    std::string empty_text = "No items";
+    int fetch_id = 0;  // the reply of an older request is dropped
+  };
+
   bool open_ = false;
   PopupOwner popup_;
-  bool devices_loaded_ = false;
-  std::vector<std::string> devices_;
-  int device_index_ = 0;
-  int period_index_ = 0;
-  std::vector<RouteItem> routes_;
-  int route_index_ = -1;
-  std::string empty_text_ = "No items";
+  State s_;
   std::function<void(bool, const std::string &)> on_done_;
-  std::atomic<int> fetch_id_{0};
-  // expires on destruction; guards main-thread callbacks from detached worker threads
-  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
+  // created by open() and reset by finish(); guards main-thread callbacks from detached worker threads
+  std::shared_ptr<bool> alive_;
 };

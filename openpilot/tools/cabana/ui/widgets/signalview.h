@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cstdlib>
 #include <functional>
 #include <memory>
 #include <set>
@@ -14,6 +13,7 @@
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/chart/sparkline.h"
+#include "tools/cabana/utils/strings.h"
 
 // the value SignalModel::setData takes: text, a number, a check state or a value table
 class ItemValue {
@@ -24,9 +24,9 @@ public:
   ItemValue(const ValueDescription &v) : val_desc_(v) {}
   ItemValue(const char *) = delete;  // a literal would bind to ItemValue(bool)
   std::string toString() const { return str_; }
-  int toInt() const { return std::atoi(str_.c_str()); }
-  bool toBool() const { return str_ == "1" || str_ == "true"; }
-  double toDouble() const { return std::atof(str_.c_str()); }
+  int toInt() const { return utils::toInt(str_); }
+  bool toBool() const { return str_ == "1"; }
+  double toDouble() const { return utils::toDouble(str_); }
   const ValueDescription &toValueDescription() const { return val_desc_; }
 
 private:
@@ -39,7 +39,7 @@ public:
   struct Item {
     enum Type {Root, Sig, Name, Size, Node, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
     ~Item() { for (auto c : children) delete c; }
-    inline int row() {
+    inline int row() const {
       auto it = std::find(parent->children.begin(), parent->children.end(), this);
       return it != parent->children.end() ? std::distance(parent->children.begin(), it) : -1;
     }
@@ -59,7 +59,7 @@ public:
   enum ItemFlag { NoItemFlags = 0, ItemIsSelectable = 1, ItemIsEnabled = 2, ItemIsEditable = 4, ItemIsUserCheckable = 8 };
 
   SignalModel();
-  int rowCount() const { return root->children.size(); }
+  int rowCount() const { return root_->children.size(); }
   std::string data(const Item *item, int column) const;
   bool checkState(const Item *item) const;  // column 1
   std::string toolTip(const Item *item) const;
@@ -81,9 +81,9 @@ private:
   void handleMsgChanged(MessageId id);
   void refresh();
 
-  MessageId msg_id;
-  std::string filter_str;
-  std::unique_ptr<Item> root;
+  MessageId msg_id_;
+  std::string filter_str_;
+  std::unique_ptr<Item> root_;
   Connections connections_;
   friend class SignalView;
   friend class SignalItemDelegate;
@@ -99,13 +99,9 @@ public:
   bool accepted = false;
 
 private:
-  struct Delegate {
-    static bool createEditor(int column, std::string *text);
-  };
-
   void save();
-  std::vector<std::pair<std::string, std::string>> table;  // rows of {Value, Description}
-  int current_row = -1;
+  std::vector<std::pair<std::string, std::string>> table_;  // rows of {Value, Description}
+  int current_row_ = -1;
   bool opened_ = false;
 };
 
@@ -122,22 +118,21 @@ public:
   void createEditor(SignalModel::Item *item, SignalModel *model);
   // queues the commit in pending_commit: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
   // the rows, so the model is only changed after the tree is drawn (see SignalView::draw)
-  void setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value) const;
+  void setModelData(SignalModel::Item *item, SignalModel *model, const ItemValue &value);
   void drawValueDescriptionDlg(SignalModel *model);  // continuation of the ValueDescriptionDlg opened in createEditor
   static float textWidth(const std::string &text, float font_size = 0);
+  void closeEditor();
+  void commitEditor(SignalModel *model);  // Qt commits an open editor on focus out
 
-  ImGuiInputTextCallback name_validator, double_validator, node_validator;
   const float label_font = 12.0f;   // Inter needs 12 px for 8 px tall digits
   const float minmax_font = 10.0f;
   const int color_label_width = 18;
-  mutable ImVec2 button_size = {};
+  ImVec2 button_size = {};
   // the editor is created for the item that just became current and takes the focus
-  SignalModel::Item *focus_item_ = nullptr;
+  SignalModel::Item *focus_item = nullptr;
   // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
-  SignalModel::Item *open_item_ = nullptr;
-  mutable std::function<void()> pending_commit;
-  void closeEditor();
-  void commitEditor(SignalModel *model);  // Qt commits an open editor on focus out
+  SignalModel::Item *open_item = nullptr;
+  std::function<void()> pending_commit;
 
 private:
   // only an Acceptable value is committed
@@ -164,7 +159,6 @@ public:
   void signalHovered(const cabana::Signal *sig);  // handler for BinaryView::signalHovered
   void updateChartState();
   void selectSignal(const cabana::Signal *sig, bool expand = false);
-  void rowClicked(SignalModel::Item *item);
   std::string whatsThis() const;
   std::unique_ptr<SignalModel> model;
 
@@ -173,6 +167,7 @@ public:
 
 private:
   void rowsChanged();
+  void rowClicked(SignalModel::Item *item);
   static float toolBarRightWidth(const std::string &range_label);
   void updateToolBar();
   void setSparklineRange(int value);
@@ -197,9 +192,9 @@ private:
   void drawIndexWidget(SignalModel::Item *item, const ImRect &rect);    // the [plot][remove] widget
   void collapseAll();
   static float widestValueWidth(const cabana::Signal *sig);
-  float max_value_width = 0;
-  float value_column_width = 0;
-  float name_column_width = 150;
+
+  float value_column_width_ = 0;
+  float name_column_width_ = 150;
   bool editor_open_on_press_ = false;
   // computed while drawing the tree: the first top-level row whose own row is visible (a signal whose header
   // is scrolled out but whose children are visible is skipped), and the last top-level row with any visible row
@@ -211,11 +206,10 @@ private:
   const cabana::Signal *scroll_to_sig_ = nullptr;
   const cabana::Signal *hovered_sig_ = nullptr;
   std::function<void()> pending_action_;  // button clicks that destroy rows run after the tree is drawn
-  std::string sparkline_label;
-  const int sparkline_range_max = 30;
-  std::string filter_edit;
-  ChartsWidget *charts;
-  std::string signal_count_lb;
-  std::unique_ptr<SignalItemDelegate> delegate;
+  std::string sparkline_label_;
+  std::string filter_edit_;
+  ChartsWidget *charts_;
+  std::string signal_count_lb_;
+  std::unique_ptr<SignalItemDelegate> delegate_;
   Connections connections_;
 };

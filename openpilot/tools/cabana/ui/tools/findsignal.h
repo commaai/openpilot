@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <functional>
+#include <future>
 #include <limits>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -21,12 +21,9 @@ public:
     std::vector<std::string> values;
   };
 
-  FindSignalModel() {}
-  std::string headerData(int section, bool horizontal) const;
   std::string data(int row, int column) const;
-  int columnCount() const { return 3; }
   int rowCount() const { return std::min((int)filtered_signals.size(), 300); }
-  void search(std::function<bool(double)> cmp);
+  void search(const std::function<bool(double)> &cmp);
   void reset();
   void undo();
 
@@ -39,6 +36,7 @@ public:
 class FindSignalDlg : public ToolDialog {
 public:
   FindSignalDlg();
+  ~FindSignalDlg() override;
   bool draw() override;
 
   Observable<const MessageId &> openMessage;
@@ -46,20 +44,19 @@ public:
 private:
   void search();
   void setInitialSignals();
-  void customMenuRequested(int row);
+  void drawContextMenu(int row);
   void drawMessageGroup();
   void drawPropertiesGroup();
   void drawFindGroup();
   void drawTable();
 
-  std::string value1, value2, factor_edit = "1.0", offset_edit = "0.0";
-  std::string bus_edit, address_edit, first_time_edit = "0", last_time_edit = "MAX";
-  int compare_cb = 0;
-  int min_size = 8, max_size = 8;
-  bool litter_endian = true, is_signed = false;
-  bool to_label_visible = false;
+  std::string value1_, value2_, factor_ = "1.0", offset_ = "0.0";
+  std::string bus_, address_, first_time_ = "0", last_time_ = "MAX";
+  int compare_ = 0;
+  int min_size_ = 8, max_size_ = 8;
+  bool little_endian_ = true, is_signed_ = false;
   bool searched_ = false;  // a search/undo/reset ran, so the stats line is shown
-  std::unique_ptr<FindSignalModel> model;
-  std::function<bool(double)> pending_cmp_;  // deferred so the "Finding ...." frame paints first
-  bool pending_painted_ = false;
+  FindSignalModel model_;
+  std::future<void> search_future_;  // the model is off limits while it is valid
+  bool searching_ = false;
 };

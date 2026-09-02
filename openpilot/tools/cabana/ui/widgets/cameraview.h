@@ -49,10 +49,10 @@ class CameraWidget {
 public:
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type);
   ~CameraWidget();
-  void setStreamType(VisionStreamType type) { requested_stream_type = type; }
+  void setStreamType(VisionStreamType type) { requested_stream_type_ = type; }
   void stopVipcThread();
-  // runs showEvent()/hideEvent() when the visibility flips. draw() implies visible; the owner calls
-  // setVisible(false) when the widget is no longer drawn, which stops the vipc thread.
+  // draw() implies visible; the owner calls setVisible(false) when the widget is no longer drawn, which
+  // stops the vipc thread.
   void setVisible(bool visible);
   // draws an item of `size` into the current window
   void draw(const ImVec2 &size);
@@ -64,26 +64,25 @@ public:
   Observable<> clicked;
   Observable<std::set<VisionStreamType>> availableStreamsUpdated;  // invoked on the main thread
 
-protected:
-  void paintEvent();
-  void showEvent();  // starts the vipc thread
-  void hideEvent() { stopVipcThread(); }
+private:
+  void paint();
+  void startVipcThread();
   void vipcThread();
   void clearFrames();
 
-  ImU32 bg = IM_COL32(0, 0, 0, 255);
-  RgbImage rgb_frame;   // written by vipc thread, drawn by GUI thread; guarded by frame_lock
-  RgbImage rgb_back;    // vipc thread only
-  bool frame_updated = false;  // rgb_frame changed since the last upload; guarded by frame_lock
-  GlTexture frame_texture;     // GUI thread only
+  ImU32 bg_ = IM_COL32(0, 0, 0, 255);
+  RgbImage rgb_frame_;   // written by vipc thread, drawn by GUI thread; guarded by frame_lock_
+  RgbImage rgb_back_;    // vipc thread only
+  bool frame_updated_ = false;  // rgb_frame_ changed since the last upload; guarded by frame_lock_
+  GlTexture frame_texture_;     // GUI thread only
   ImRect rect_;
   bool visible_ = false;
 
-  std::string stream_name;
-  std::atomic<VisionStreamType> active_stream_type;
-  std::atomic<VisionStreamType> requested_stream_type;
-  std::thread vipc_thread;
-  std::atomic<bool> vipc_exit = false;
-  std::mutex frame_lock;
+  std::string stream_name_;
+  std::atomic<VisionStreamType> active_stream_type_;
+  std::atomic<VisionStreamType> requested_stream_type_;
+  std::thread vipc_thread_;
+  std::atomic<bool> vipc_exit_ = false;
+  std::mutex frame_lock_;
   std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 };

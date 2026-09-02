@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
@@ -75,6 +76,16 @@ inline unsigned long toULong(const std::string &s, int base = 10) {
   char *end = nullptr;
   unsigned long v = std::strtoul(s.c_str(), &end, base);
   return (end != s.c_str() && *end == '\0') ? v : 0;
+}
+
+// "00".."FF"
+inline const char *hexByte(uint8_t value) {
+  static const auto table = [] {
+    std::array<char[3], 256> t;
+    for (int i = 0; i < 256; ++i) snprintf(t[i], sizeof(t[i]), "%02X", i);
+    return t;
+  }();
+  return table[value];
 }
 
 inline std::string toHex(const std::vector<uint8_t> &dat, char separator = '\0') {

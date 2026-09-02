@@ -17,75 +17,65 @@ void RoutesDialog::open(std::function<void(bool, const std::string &)> on_done) 
   on_done_ = std::move(on_done);
   open_ = true;
   popup_.reset();
-  devices_loaded_ = false;
-  devices_.clear();
-  device_index_ = 0;
-  period_index_ = 0;
-  routes_.clear();
-  route_index_ = -1;
-  empty_text_ = "No items";
+  s_ = State{};
   alive_ = std::make_shared<bool>(true);
 
   routes::fetchDevices([this, alive = std::weak_ptr<bool>(alive_)](std::vector<routes::DeviceInfo> devices, bool success, int error_code) {
-    utils::runOnMainThread([this, alive, devices = std::move(devices), success, error_code]() {
-      if (!alive.expired()) setDeviceList(devices, success, error_code);
-    });
+    utils::runOnMainThread(utils::guarded(alive.lock(), [this, devices = std::move(devices), success, error_code]() {
+      setDeviceList(devices, success, error_code);
+    }));
   });
 }
 
 void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices, bool success, int error_code) {
   if (success) {
-    devices_.clear();
-    for (const auto &device : devices) devices_.push_back(device.dongle_id);
-    devices_loaded_ = true;
-    device_index_ = 0;
+    s_.devices.clear();
+    for (const auto &device : devices) s_.devices.push_back(device.dongle_id);
+    s_.devices_loaded = true;
+    s_.device_index = 0;
     fetchRoutes();
   } else {
     // the box shows on top of the dialog, which is rejected once the box is dismissed
     MessageBox::warning("Error", error_code == 401 ? "Unauthorized. Authenticate with openpilot/tools/lib/auth.py" : "Network error", "",
-                        [this, alive = std::weak_ptr<bool>(alive_)]() {
-                          if (!alive.expired()) finish(false);
-                        });
+                        utils::guarded(alive_, [this]() { finish(false); }));
   }
 }
 
 void RoutesDialog::fetchRoutes() {
-  if (!devices_loaded_ || devices_.empty()) return;
+  if (!s_.devices_loaded || s_.devices.empty()) return;
 
-  routes_.clear();
-  route_index_ = -1;
-  empty_text_ = "Loading...";
+  s_.routes.clear();
+  s_.route_index = -1;
+  s_.empty_text = "Loading...";
 
-  int request_id = ++fetch_id_;
+  const int request_id = ++s_.fetch_id;
   auto on_routes = [this, alive = std::weak_ptr<bool>(alive_), request_id](std::vector<routes::RouteInfo> list, bool success, int) {
-    utils::runOnMainThread([this, alive, list = std::move(list), success, request_id]() {
-      if (!alive.expired() && fetch_id_ == request_id) setRouteList(list, success);
-    });
+    utils::runOnMainThread(utils::guarded(alive.lock(), [this, list = std::move(list), success, request_id]() {
+      if (s_.fetch_id == request_id) setRouteList(list, success);
+    }));
   };
-  routes::fetchRoutes(devices_[device_index_], PERIOD_DAYS[period_index_], std::move(on_routes));
+  routes::fetchRoutes(s_.devices[s_.device_index], PERIOD_DAYS[s_.period_index], std::move(on_routes));
 }
 
 void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool success) {
   if (success) {
     for (const auto &route : list) {
       const int mins = static_cast<int>((route.end_ms - route.start_ms) / 60000);
-      routes_.push_back({routes::formatUnixMs(route.start_ms) + "    " + std::to_string(mins) + "min", route.name});
+      s_.routes.push_back({routes::formatUnixMs(route.start_ms) + "    " + std::to_string(mins) + "min", route.name});
     }
-    if (!routes_.empty()) route_index_ = 0;
+    if (!s_.routes.empty()) s_.route_index = 0;
   } else {
     MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.", "",
-                        [this, alive = std::weak_ptr<bool>(alive_)]() {
-                          if (!alive.expired()) finish(false);
-                        });
+                        utils::guarded(alive_, [this]() { finish(false); }));
   }
-  empty_text_ = "No items";
+  s_.empty_text = "No items";
 }
 
 void RoutesDialog::finish(bool accepted) {
   alive_.reset();
   open_ = false;
   auto on_done = std::move(on_done_);
-  if (on_done) on_done(accepted, accepted && route_index_ >= 0 ? routes_[route_index_].name : "");
+  if (on_done) on_done(accepted, accepted && s_.route_index >= 0 ? s_.routes[s_.route_index].name : "");
 }
 
 void RoutesDialog::draw() {
@@ -96,28 +86,30 @@ void RoutesDialog::draw() {
   ImGui::TextUnformatted("Device");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(-1.0f);
-  if (!devices_loaded_) {
-    int idx = 0;
-    ImGui::Combo("##device", &idx, "Loading...\0", 1);
+  if (s_.devices_loaded) {
+    if (comboBox("##device", &s_.device_index, s_.devices)) fetchRoutes();
   } else {
-    if (comboBox("##device", &device_index_, devices_)) fetchRoutes();
+    int idx = 0;
+    ImGui::BeginDisabled();
+    comboBox("##device", &idx, {"Loading..."});
+    ImGui::EndDisabled();
   }
   ImGui::SetNextItemWidth(-1.0f);
-  if (ImGui::Combo("##period", &period_index_, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
+  if (ImGui::Combo("##period", &s_.period_index, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
 
   bool accepted = false, rejected = false;
   const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
   ImGui::BeginChild("routes", ImVec2(0, -footer), ImGuiChildFlags_Borders);
-  if (routes_.empty()) {
-    const ImVec2 size = ImGui::CalcTextSize(empty_text_.c_str());
+  if (s_.routes.empty()) {
+    const ImVec2 size = ImGui::CalcTextSize(s_.empty_text.c_str());
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     ImGui::SetCursorPos(ImVec2((avail.x - size.x) * 0.5f, (avail.y - size.y) * 0.5f));
-    ImGui::TextUnformatted(empty_text_.c_str());
+    ImGui::TextUnformatted(s_.empty_text.c_str());
   }
-  for (int i = 0; i < static_cast<int>(routes_.size()); ++i) {
+  for (int i = 0; i < static_cast<int>(s_.routes.size()); ++i) {
     ImGui::PushID(i);
-    if (ImGui::Selectable(routes_[i].label.c_str(), route_index_ == i, ImGuiSelectableFlags_AllowDoubleClick)) {
-      route_index_ = i;
+    if (ImGui::Selectable(s_.routes[i].label.c_str(), s_.route_index == i, ImGuiSelectableFlags_AllowDoubleClick)) {
+      s_.route_index = i;
       if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) accepted = true;
     }
     ImGui::PopID();
@@ -125,7 +117,6 @@ void RoutesDialog::draw() {
   ImGui::EndChild();
 
   dialogButtons("OK", &accepted, &rejected);
-  if (dialogEscapePressed()) rejected = true;
   MessageBox::draw();
   if (accepted || rejected || !open_) ImGui::CloseCurrentPopup();
   ImGui::EndPopup();

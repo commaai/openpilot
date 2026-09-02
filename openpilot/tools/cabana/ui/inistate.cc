@@ -10,6 +10,7 @@
 
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/qtstate.h"
+#include "tools/cabana/ui/util.h"
 
 namespace inistate {
 
@@ -57,9 +58,8 @@ void writeAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuffer *bu
 }
 
 std::string migrateQtHeaderState(const qtstate::QtHeaderState &header) {
-  // "###MessagesPanel" must match MESSAGES_PANEL in ui/mainwin.cc: imgui restarts the hash at
-  // "###" in a window name and BeginTable seeds the table id from the window id
-  const ImGuiID table_id = ImHashStr("messages", 0, ImHashStr("###MessagesPanel", 0));
+  // imgui restarts the hash at "###" in a window name and BeginTable seeds the table id from the window id
+  const ImGuiID table_id = ImHashStr("messages", 0, ImHashStr(MESSAGES_PANEL_ID, 0));
   const float cell_padding = ImGui::GetStyle().CellPadding.x;
 
   ImGuiTextBuffer buf;

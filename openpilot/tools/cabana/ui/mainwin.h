@@ -7,13 +7,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "imgui_internal.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/ui/dialogs/settingsdialog.h"
 #include "tools/cabana/ui/dialogs/streamselector.h"
-#include "tools/cabana/ui/tools/findsignal.h"
-#include "tools/cabana/ui/tools/findsimilarbits.h"
+#include "tools/cabana/ui/helpoverlay.h"
 #include "tools/cabana/ui/tools/tooldialog.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/widgets/detailwidget.h"
@@ -46,6 +44,8 @@ public:
   void saveToClipboard();
 
 private:
+  bool hasStream() const { return dynamic_cast<const DummyStream *>(can) == nullptr; }
+  void releaseStream();
   void startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
   void remindSaveChanges(std::function<void()> then);
   void closeFile(SourceSet s, std::function<void()> then);
@@ -54,15 +54,16 @@ private:
   void saveFile(DBCFile *dbc_file, std::function<void()> then = {});
   void saveFileAs(DBCFile *dbc_file, std::function<void()> then = {});
   void saveFileToClipboard(DBCFile *dbc_file);
+  void copyToClipboard(const std::string &text);
   void loadFingerprints();
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
   void updateRecentFiles(const std::string &fn);
-  void DBCFileChanged();
+  void dbcFileChanged();
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
-  void setOption();
+  void openSettings();
   void findSimilarBits();
   void findSignal();
-  void onlineHelp();
+  void toggleHelp();
   void toggleFullScreen();
   void updateWindowTitle();
   void eventsMerged();
@@ -78,9 +79,10 @@ private:
   void drawManageDBCsMenu();
   void drawRecentFilesMenu();
   void drawDockspace();
+  void drawMessagesPanel();
+  void drawVideoPanel();
   void drawStatusBar();
   void drawWaitDialog();
-  void drawHelpOverlay();
 
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
@@ -92,6 +94,7 @@ private:
   std::unique_ptr<ChartsWidget> charts_widget_;
   StreamSelector stream_selector_;
   SettingsDialog settings_dialog_;
+  HelpOverlay help_overlay_;
   std::unordered_map<std::string, std::string> fingerprint_to_dbc_;
   std::vector<std::string> opendbc_names_;
   enum { MAX_RECENT_FILES = 15 };
@@ -106,26 +109,25 @@ private:
 #endif
   bool charts_floating_ = false;
   float video_splitter_ratio_ = -1.0f;  // < 0: the video widget is at its size hint
-  std::vector<std::pair<std::string, ImRect>> help_texts_;
   std::vector<std::unique_ptr<ToolDialog>> tool_dialogs_;
-  bool help_overlay_ = false;
-  int help_overlay_frame_ = -1;
   bool closing_ = false;
   bool exited_ = false;
   bool window_modified_ = false;
-  // status bar
-  std::string status_message_;
-  double status_message_until_ = 0;
-  bool progress_visible_ = false;
-  float progress_value_ = 0;
-  std::string progress_text_;
+  struct StatusBar {
+    std::string message;
+    double message_until = 0;
+    bool progress_visible = false;
+    float progress_value = 0;
+    std::string progress_text;
+  } status_bar_;
   // "Loading segment data..." dialog
-  bool wait_dlg_open_ = false;
-  double wait_dlg_show_at_ = 0;
-  bool manage_dbcs_enabled_ = false;
-  std::string wait_dlg_text_;
-  int wait_dlg_value_ = 0;
-  Connection wait_dlg_connection_;
+  struct WaitDialog {
+    bool open = false;
+    double show_at = 0;
+    std::string text;
+    int value = 0;
+    Connection connection;
+  } wait_dlg_;
   std::vector<std::function<void()>> next_frame_;
   Connections connections_;
   Connections stream_connections_;

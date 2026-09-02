@@ -16,15 +16,14 @@ public:
   };
 
   SignalSelector(std::string title);
-  std::vector<ListItem *> seletedItems();
-  inline void addSelected(const MessageId &id, const cabana::Signal *sig) { addItemToList(selected_list, id, sig); }
+  const std::vector<ListItem> &selectedItems() const { return selected_list_; }
+  inline void addSelected(const MessageId &id, const cabana::Signal *sig) { selected_list_.emplace_back(id, sig); }
   void open() { open_ = true; show_ = false; accepted_ = false; }
   bool draw();  // false once the dialog is closed
   bool accepted() const { return accepted_; }
 
 private:
   void updateAvailableList(int index);
-  void addItemToList(std::vector<ListItem> &parent, const MessageId id, const cabana::Signal *sig);
   void add(int row);
   void remove(int row);
   void drawList(const char *id, std::vector<ListItem> &list, int *current_row, bool show_msg_name, bool *double_clicked, const ImVec2 &size);
@@ -34,11 +33,11 @@ private:
     MessageId id;
   };
   std::string title_;
-  std::vector<ComboItem> msgs_combo;
+  std::vector<ComboItem> msgs_combo_;
   int msgs_combo_index_ = -1;
   std::string msgs_combo_filter_;
-  std::vector<ListItem> available_list;
-  std::vector<ListItem> selected_list;
+  std::vector<ListItem> available_list_;
+  std::vector<ListItem> selected_list_;
   int available_row_ = -1;
   int selected_row_ = -1;
   bool accepted_ = false;

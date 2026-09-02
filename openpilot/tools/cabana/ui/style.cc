@@ -266,6 +266,9 @@ bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
   return changed;
 }
 
+ImFont *boldFont() { return g_bold_font; }
+ImFont *monoFont() { return g_mono_font; }
+
 void pushMonoFont(float size) {
   if (!g_mono_font) return;
   size > 0.0f ? ImGui::PushFont(g_mono_font, size) : ImGui::PushFont(g_mono_font);

@@ -27,7 +27,6 @@ public:
 
 class OpenReplayWidget : public AbstractOpenStreamWidget {
 public:
-  OpenReplayWidget();
   const char *title() const override { return "Replay"; }
   void draw() override;
   void drawPopups() override;
@@ -37,7 +36,7 @@ private:
   std::string route_;
   bool cameras_[3] = {true, false, false};
   RoutesDialog routes_dialog_;
-  // expires on destruction; guards dialog continuations that outlive the stream selector
+  // guards dialog continuations that outlive the stream selector
   std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 };
 

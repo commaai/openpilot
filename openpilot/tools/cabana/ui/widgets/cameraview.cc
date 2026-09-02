@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <cstdio>
 
 #include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3_loader.h"
@@ -53,34 +52,32 @@ void GlTexture::destroy() {
   key = 0;
 }
 
-CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type) :
-                          stream_name(stream_name), active_stream_type(type), requested_stream_type(type) {
-  // the destructor runs before the GL/GLFW runtime is torn down
-}
+CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type)
+    : stream_name_(stream_name), active_stream_type_(type), requested_stream_type_(type) {}
 
 CameraWidget::~CameraWidget() {
   stopVipcThread();
 }
 
-void CameraWidget::showEvent() {
-  if (!vipc_thread.joinable()) {
+void CameraWidget::startVipcThread() {
+  if (!vipc_thread_.joinable()) {
     clearFrames();
-    vipc_exit = false;
-    vipc_thread = std::thread(&CameraWidget::vipcThread, this);
+    vipc_exit_ = false;
+    vipc_thread_ = std::thread(&CameraWidget::vipcThread, this);
   }
 }
 
 void CameraWidget::stopVipcThread() {
-  vipc_exit = true;
-  if (vipc_thread.joinable()) {
-    vipc_thread.join();
+  vipc_exit_ = true;
+  if (vipc_thread_.joinable()) {
+    vipc_thread_.join();
   }
 }
 
 void CameraWidget::setVisible(bool visible) {
   if (visible == visible_) return;
   visible_ = visible;
-  visible ? showEvent() : hideEvent();
+  visible ? startVipcThread() : stopVipcThread();
 }
 
 void CameraWidget::draw(const ImVec2 &size) {
@@ -88,71 +85,66 @@ void CameraWidget::draw(const ImVec2 &size) {
   ImGui::InvisibleButton("##camera", ImVec2(std::max(1.0f, size.x), std::max(1.0f, size.y)),
                          ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
   rect_ = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-  paintEvent();
+  paint();
   if (ImGui::IsItemDeactivated()) clicked();
 }
 
 float CameraWidget::frameAspectRatio() const {
-  if (frame_texture.width > 0 && frame_texture.height > 0) {
-    return (float)frame_texture.width / frame_texture.height;
+  if (frame_texture_.width > 0 && frame_texture_.height > 0) {
+    return (float)frame_texture_.width / frame_texture_.height;
   }
   return 1928.0f / 1208.0f;  // the road camera, until the first frame arrives
 }
 
-void CameraWidget::paintEvent() {
+void CameraWidget::paint() {
   ImDrawList *p = ImGui::GetWindowDrawList();
-  p->AddRectFilled(rect_.Min, rect_.Max, bg);
+  p->AddRectFilled(rect_.Min, rect_.Max, bg_);
 
-  std::lock_guard lk(frame_lock);
-  if (rgb_frame.isNull()) return;
-  if (frame_updated) {
-    frame_texture.upload(rgb_frame);
-    frame_updated = false;
+  std::lock_guard lk(frame_lock_);
+  if (rgb_frame_.isNull()) return;
+  if (frame_updated_) {
+    frame_texture_.upload(rgb_frame_);
+    frame_updated_ = false;
   }
 
   // Scale for aspect ratio
   float widget_ratio = (float)width() / height();
-  float frame_ratio = (float)rgb_frame.width / rgb_frame.height;
+  float frame_ratio = (float)rgb_frame_.width / rgb_frame_.height;
   int w = std::lround(width() * std::min(frame_ratio / widget_ratio, 1.0f));
   int h = std::lround(height() * std::min(widget_ratio / frame_ratio, 1.0f));
   ImVec2 video_min(rect_.Min.x + (int)(width() - w) / 2, rect_.Min.y + (int)(height() - h) / 2);
   ImVec2 video_max(video_min.x + w, video_min.y + h);
 
   ImVec2 uv0(0, 0), uv1(1, 1);
-  if (active_stream_type == VISION_STREAM_CABIN) {
+  if (active_stream_type_ == VISION_STREAM_CABIN) {
     // mirror cabin camera horizontally
     uv0.x = 1;
     uv1.x = 0;
   }
-  p->AddImage(frame_texture.ref(), video_min, video_max, uv0, uv1);
+  p->AddImage(frame_texture_.ref(), video_min, video_max, uv0, uv1);
 }
 
 void CameraWidget::vipcThread() {
-  VisionStreamType cur_stream = requested_stream_type;
+  VisionStreamType cur_stream = requested_stream_type_;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra frame_meta = {};
 
-  while (!vipc_exit) {
-    if (!vipc_client || cur_stream != requested_stream_type) {
+  while (!vipc_exit_) {
+    if (!vipc_client || cur_stream != requested_stream_type_) {
       clearFrames();
-      fprintf(stderr, "connecting to stream %d, was connected to %d\n",
-              (int)requested_stream_type, (int)cur_stream);
-      cur_stream = requested_stream_type;
-      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
+      cur_stream = requested_stream_type_;
+      vipc_client.reset(new VisionIpcClient(stream_name_, cur_stream, false));
     }
-    active_stream_type = cur_stream;
+    active_stream_type_ = cur_stream;
 
     if (!vipc_client->connected) {
       clearFrames();
-      auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
+      auto streams = VisionIpcClient::getAvailableStreams(stream_name_, false);
       if (streams.empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
-      utils::runOnMainThread([this, alive = std::weak_ptr<bool>(alive_), streams]() {
-        if (alive.expired()) return;
-        availableStreamsUpdated(streams);
-      });
+      utils::runOnMainThread(utils::guarded(alive_, [this, streams]() { availableStreamsUpdated(streams); }));
 
       if (!vipc_client->connect(false)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -162,23 +154,23 @@ void CameraWidget::vipcThread() {
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {
       // NV12 -> RGBA once per frame on the receive thread; paint just draws the image
-      if (rgb_back.width != (int)buf->width || rgb_back.height != (int)buf->height) {
-        rgb_back.resize(buf->width, buf->height);
+      if (rgb_back_.width != (int)buf->width || rgb_back_.height != (int)buf->height) {
+        rgb_back_.resize(buf->width, buf->height);
       }
       yuv::nv12_to_rgba(buf->y, buf->stride, buf->uv, buf->stride,
-                        rgb_back.data.data(), rgb_back.bytesPerLine(), buf->width, buf->height);
+                        rgb_back_.data.data(), rgb_back_.bytesPerLine(), buf->width, buf->height);
       {
-        std::lock_guard lk(frame_lock);
-        rgb_frame.swap(rgb_back);
-        frame_updated = true;
+        std::lock_guard lk(frame_lock_);
+        rgb_frame_.swap(rgb_back_);
+        frame_updated_ = true;
       }
     }
   }
 }
 
 void CameraWidget::clearFrames() {
-  std::lock_guard lk(frame_lock);
-  rgb_frame.reset();
-  rgb_back.reset();
-  frame_updated = false;
+  std::lock_guard lk(frame_lock_);
+  rgb_frame_.reset();
+  rgb_back_.reset();
+  frame_updated_ = false;
 }

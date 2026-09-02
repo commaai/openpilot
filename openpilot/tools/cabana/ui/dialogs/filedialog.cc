@@ -65,7 +65,6 @@ struct State {
 State g_state;
 PopupOwner g_owner;
 
-
 void listDir() {
   State &s = g_state;
   s.entries.clear();
@@ -147,11 +146,7 @@ void draw() {
   State &s = g_state;
   if (!s.active) return;
   const std::string popup_id = s.title + "###FileDialog";
-  if (!g_owner.begin(popup_id.c_str())) return;
-  ImGui::SetNextWindowSize(ImVec2(640.0f, 480.0f), ImGuiCond_Appearing);
-  ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  setNextWindowFloatsOut();
-  if (!ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
+  if (!beginDialog(popup_id.c_str(), &g_owner, ImVec2(640.0f, 480.0f), 0)) return;
 
   if (ImGui::Button("Up")) setDir(s.dir.parent_path());
   ImGui::SameLine();
@@ -159,6 +154,8 @@ void draw() {
   if (inputText("##dir", &s.dir_input, "", ImGuiInputTextFlags_EnterReturnsTrue)) setDir(s.dir_input);
 
   const float footer = ImGui::GetFrameHeightWithSpacing() * (s.mode == Mode::Directory ? 1.0f : 2.0f) + ImGui::GetStyle().ItemSpacing.y;
+  bool ok = false, cancel = false;
+  fs::path result, pending_dir;
   ImGui::BeginChild("entries", ImVec2(0, -footer), ImGuiChildFlags_Borders);
   std::error_code dir_ec;
   for (size_t i = 0; i < s.entries.size(); ++i) {
@@ -169,30 +166,27 @@ void draw() {
     ImGui::PushID(static_cast<int>(i));
     const bool selected = !is_dir && name == s.filename;
     if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
+      const bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
       if (is_dir) {
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-          ImGui::PopID();
-          setDir(entry.path());
-          break;
+        if (double_clicked) {
+          pending_dir = entry.path();
+        } else if (s.mode == Mode::Directory) {
+          s.filename = name;
         }
-        if (s.mode == Mode::Directory) s.filename = name;
       } else {
         s.filename = name;
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && s.mode == Mode::OpenFile) {
-          ImGui::PopID();
-          ImGui::CloseCurrentPopup();
-          ImGui::EndChild();
-          ImGui::EndPopup();
-          accept(entry.path());
-          return;
+        if (double_clicked && s.mode == Mode::OpenFile) {
+          result = entry.path();
+          ok = true;
         }
       }
     }
     ImGui::PopID();
+    if (ok || !pending_dir.empty()) break;
   }
   ImGui::EndChild();
+  if (!pending_dir.empty()) setDir(pending_dir);
 
-  bool ok = false, cancel = false;
   if (s.mode != Mode::Directory) {
     ImGui::SetNextItemWidth(-90.0f);
     if (inputText("##name", &s.filename, "File name", ImGuiInputTextFlags_EnterReturnsTrue)) ok = true;
@@ -201,10 +195,8 @@ void draw() {
   }
   const char *accept_label = s.mode == Mode::SaveFile ? "Save" : (s.mode == Mode::Directory ? "Choose" : "Open");
   dialogButtons(accept_label, &ok, &cancel);
-  if (dialogEscapePressed()) cancel = true;
 
-  fs::path result;
-  if (ok) {
+  if (ok && result.empty()) {
     if (s.mode == Mode::Directory) {
       result = s.filename.empty() ? s.dir : s.dir / s.filename;
     } else if (!s.filename.empty()) {

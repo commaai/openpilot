@@ -100,65 +100,81 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwSwapBuffers(window);
 }
 
-}  // namespace
+class GlfwRuntime {
+public:
+  GlfwRuntime() {
+    glfwSetErrorCallback(glfwErrorCallback);
+#ifdef __APPLE__
+    setMacAppName("Cabana");
+#endif
+    if (!glfwInit()) throw std::runtime_error("glfwInit failed");
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
+    window_ = glfwCreateWindow(1600, 900, "Cabana", nullptr, nullptr);
+    if (window_ == nullptr) {
+      glfwTerminate();
+      throw std::runtime_error("glfwCreateWindow failed");
+    }
+    glfwMakeContextCurrent(window_);
+    glfwSwapInterval(1);
+  }
 
-GlfwRuntime::GlfwRuntime() {
-  glfwSetErrorCallback(glfwErrorCallback);
-#ifdef __APPLE__
-  setMacAppName("Cabana");
-#endif
-  if (!glfwInit()) throw std::runtime_error("glfwInit failed");
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-#endif
-  window_ = glfwCreateWindow(1600, 900, "Cabana", nullptr, nullptr);
-  if (window_ == nullptr) {
+  ~GlfwRuntime() {
+    if (window_ != nullptr) glfwDestroyWindow(window_);
     glfwTerminate();
-    throw std::runtime_error("glfwCreateWindow failed");
   }
-  glfwMakeContextCurrent(window_);
-  glfwSwapInterval(1);
-}
 
-GlfwRuntime::~GlfwRuntime() {
-  if (window_ != nullptr) glfwDestroyWindow(window_);
-  glfwTerminate();
-}
+  GlfwRuntime(const GlfwRuntime &) = delete;
+  GlfwRuntime &operator=(const GlfwRuntime &) = delete;
+  GLFWwindow *window() const { return window_; }
 
-ImGuiRuntime::ImGuiRuntime(GLFWwindow *window) {
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImPlot::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-  io.ConfigViewportsNoDecoration = false;
-  io.IniFilename = nullptr;
-  io.LogFilename = nullptr;
-  if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
-    ImPlot::DestroyContext();
-    ImGui::DestroyContext();
-    throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
+private:
+  GLFWwindow *window_ = nullptr;
+};
+
+class ImGuiRuntime {
+public:
+  explicit ImGuiRuntime(GLFWwindow *window) {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImPlot::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigViewportsNoDecoration = false;
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+    if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
+      ImPlot::DestroyContext();
+      ImGui::DestroyContext();
+      throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
+    }
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetWindowFocusCallback(window, windowFocusCallback);
+    if (!ImGui_ImplOpenGL3_Init("#version 330")) {
+      ImGui_ImplGlfw_Shutdown();
+      ImPlot::DestroyContext();
+      ImGui::DestroyContext();
+      throw std::runtime_error("ImGui_ImplOpenGL3_Init failed");
+    }
   }
-  glfwSetKeyCallback(window, keyCallback);
-  glfwSetWindowFocusCallback(window, windowFocusCallback);
-  if (!ImGui_ImplOpenGL3_Init("#version 330")) {
+
+  ~ImGuiRuntime() {
+    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
-    throw std::runtime_error("ImGui_ImplOpenGL3_Init failed");
   }
-}
 
-ImGuiRuntime::~ImGuiRuntime() {
-  ImGui_ImplOpenGL3_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImPlot::DestroyContext();
-  ImGui::DestroyContext();
-}
+  ImGuiRuntime(const ImGuiRuntime &) = delete;
+  ImGuiRuntime &operator=(const ImGuiRuntime &) = delete;
+};
+
+}  // namespace
 
 std::vector<KeyEvent> takeKeyEvents() {
   return std::exchange(g_key_events, {});
