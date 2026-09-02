@@ -1006,20 +1006,38 @@ void MainWindow::draw() {
     }
   }
   ImGui::End();
+  // closing a panel that floated out into its own os window brings it back into the default layout, only
+  // the close button of a docked panel hides it
+  auto floating_out = []() { return ImGui::GetWindowViewport() != ImGui::GetMainViewport(); };
+  auto redock_if_closed = [this](bool &visible, bool floating) {
+    if (!visible && floating) visible = reset_layout_ = true;
+  };
+  // the side panels float out like the dialogs, and their dock nodes have no window menu button: its
+  // only entry hides the tab bar, and with it the title and the close button
+  auto set_next_panel_class = []() {
+    ImGuiWindowClass window_class;
+    window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
+    window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoWindowMenuButton;
+    ImGui::SetNextWindowClass(&window_class);
+  };
   if (messages_widget_ && messages_visible_) {
     const std::string name = messages_widget_->title() + MESSAGES_PANEL;
-    setNextWindowFloatsOut();
+    set_next_panel_class();
     if (ImGui::Begin(name.c_str(), &messages_visible_)) {
       if (help_overlay_) help_texts_.emplace_back(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       messages_widget_->draw();
     }
+    const bool floating = floating_out();
     ImGui::End();
+    redock_if_closed(messages_visible_, floating);
   }
   if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
   if (video_widget_ && video_visible_) {
     const std::string name = video_dock_title_ + VIDEO_PANEL;
-    setNextWindowFloatsOut();
-    if (!ImGui::Begin(name.c_str(), &video_visible_)) {
+    set_next_panel_class();
+    const bool video_open = ImGui::Begin(name.c_str(), &video_visible_);
+    const bool floating = floating_out();
+    if (!video_open) {
       video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
     } else {
       const ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -1050,7 +1068,8 @@ void MainWindow::draw() {
           video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - top) / avail.y, 0.0f, 1.0f);
         }
         if (ImGui::IsItemHovered() && !live) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-        ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders);
+        // the chart list scrolls in its own child, the container itself never scrolls
+        ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         ImGui::PopStyleVar();
         if (help_overlay_) help_texts_.emplace_back(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         charts_widget_->draw();
@@ -1058,12 +1077,13 @@ void MainWindow::draw() {
       }
     }
     ImGui::End();
+    redock_if_closed(video_visible_, floating);
   }
   if (charts_widget_ && charts_floating_) {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
     setNextWindowFloatsOut();
-    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings)) charts_widget_->draw();
+    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) charts_widget_->draw();
     ImGui::End();
     if (!open) toggleChartsDocking();
   }
