@@ -18,6 +18,10 @@
 #include "tools/cabana/ui/mainwin.h"
 #include "tools/cabana/utils/util.h"
 
+#ifdef __APPLE__
+void setMacAppName(const char *name);  // macapp.cc
+#endif
+
 namespace {
 
 std::atomic<bool> g_signal_exit{false};
@@ -104,6 +108,9 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
 
 GlfwRuntime::GlfwRuntime() {
   glfwSetErrorCallback(glfwErrorCallback);
+#ifdef __APPLE__
+  setMacAppName("Cabana");
+#endif
   if (!glfwInit()) throw std::runtime_error("glfwInit failed");
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
