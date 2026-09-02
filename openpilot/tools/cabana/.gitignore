@@ -7,6 +7,7 @@ bootstrap_icons.cc
 
 _cabana
 _cabana_ui
+Cabana.app
 dbc/car_fingerprint_to_dbc.json
 tests/test_cabana
 tests/test_dbc_core
