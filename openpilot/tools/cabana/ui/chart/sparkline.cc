@@ -156,7 +156,7 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
     }
 
     // antialiasing smooths the gentle slopes but smears the near-vertical segments of a spiky signal
-    // over neighbouring columns, so those are drawn aliased. runs of one kind are stroked together and
+    // over neighboring columns, so those are drawn aliased. runs of one kind are stroked together and
     // share their end points with the next run
     auto steep = [&](size_t i) { return std::abs(pts[i + 1].y - pts[i].y) > 2.0f * std::abs(pts[i + 1].x - pts[i].x) + px; };
     const ImDrawListFlags saved = draw_list->Flags;
