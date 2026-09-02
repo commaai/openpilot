@@ -28,7 +28,7 @@ const float POINT_10_FONT_SIZE = 13.0f;  // 10 pt at 96 dpi
 const float POINT_16_FONT_SIZE = 21.0f;  // 16 pt at 96 dpi
 const float MENU_BUTTON_INDICATOR = 12.0f;
 const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
-const float TOOLBAR_BUTTON_PADDING_Y = 10.0f;  // the toolbar is 36 px tall at the 16 px font, the items are centered in it
+const float TOOLBAR_MARGIN_Y = 6.0f;  // between the slider and the buttons, which are as tall as the ones in the charts toolbar
 const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;
 const float MENU_ARROW_SIZE = 6.0f;            // dropdown arrow on a menu button
 const float SLIDER_HEIGHT = 15.0f;     // the handle plus a 1 px margin
@@ -137,13 +137,14 @@ std::string VideoWidget::whatsThis() const {
          "Pause/Resume: <span style=\"background-color:lightGray;color:gray\">&nbsp;space&nbsp;</span>";
 }
 
-static float toolbarHeight() { return ImGui::GetFontSize() + TOOLBAR_BUTTON_PADDING_Y * 2; }
+static float toolbarHeight() { return TOOLBAR_MARGIN_Y + ImGui::GetFrameHeight(); }
 
 void VideoWidget::drawPlaybackController() {
   // the toolbar items sit next to each other, the buttons only carry the auto raise margin
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(TOOLBAR_ITEM_SPACING, ImGui::GetStyle().ItemSpacing.y));
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, TOOLBAR_BUTTON_PADDING_Y));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(TOOLBAR_BUTTON_PADDING, ImGui::GetStyle().FramePadding.y));
   const ImGuiStyle &style = ImGui::GetStyle();
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + TOOLBAR_MARGIN_Y);
   // a button is its text plus 2 * FramePadding.x
   auto button_width = [&](const char *label) { return ImGui::CalcTextSize(label).x + style.FramePadding.x * 2; };
   pushBoldFont();
