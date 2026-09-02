@@ -212,8 +212,8 @@ void ChartsWidget::drawToolBar() {
   };
   std::vector<Item> items;
 
-  items.push_back({buttonWidth(icon::FILE_PLUS), [this]() {
-    if (toolButton("new_plot_btn", icon::FILE_PLUS, "New Chart")) newChart();
+  items.push_back({buttonWidth(icon::PLUS_SQUARE), [this]() {
+    if (toolButton("new_plot_btn", icon::PLUS_SQUARE, "New Chart")) newChart();
   }});
   items.push_back({buttonWidth(icon::WINDOW_STACK), [this]() {
     if (toolButton("new_tab_btn", icon::WINDOW_STACK, "New Tab")) newTab();
