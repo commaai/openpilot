@@ -4,11 +4,8 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd "$DIR/../../../" && pwd)"
 
-# Build _cabana_ui, on macOS wrapped in an app bundle so the menu bar and the dock show its name
+# Build _cabana_ui
 cd "$ROOT"
-if [[ "$(uname)" == "Darwin" ]]; then
-  scons -u openpilot/tools/cabana/Cabana.app openpilot/cereal/messaging/bridge
-  exec "$DIR/Cabana.app/Contents/MacOS/Cabana" "$@"
-fi
 scons -u openpilot/tools/cabana/_cabana_ui openpilot/cereal/messaging/bridge
+
 exec "$DIR/_cabana_ui" "$@"

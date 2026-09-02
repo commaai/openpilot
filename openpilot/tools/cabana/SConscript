@@ -55,11 +55,6 @@ if arch == "Darwin":
 else:
   ui_libs += ['GL', 'dl']
 cabana_ui = ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
-if arch == "Darwin":
-  # the menu bar and the dock show the name from an app bundle, a bare binary shows its file name
-  cabana_app = ui_env.InstallAs('Cabana.app/Contents/MacOS/Cabana', cabana_ui)
-  cabana_app += ui_env.Install('Cabana.app/Contents', 'ui/Info.plist')
-  ui_env.Default(cabana_app)
 
 # Detect Qt - skip build if not available
 if arch == "Darwin":
