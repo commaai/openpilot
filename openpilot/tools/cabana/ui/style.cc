@@ -157,9 +157,9 @@ void applyTheme(int theme) {
     colors[ImGuiCol_FrameBg] = base;
     colors[ImGuiCol_FrameBgHovered] = colorRgb(0xf7, 0xf7, 0xf7);
     colors[ImGuiCol_FrameBgActive] = colorRgb(0xef, 0xef, 0xef);
-    colors[ImGuiCol_Button] = colorRgb(0xf5, 0xf5, 0xf5);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0xfa, 0xfa, 0xfa);
-    colors[ImGuiCol_ButtonActive] = colorRgb(0xd9, 0xd9, 0xd9);
+    colors[ImGuiCol_Button] = colorRgb(0xe4, 0xe4, 0xe4);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0xec, 0xec, 0xec);
+    colors[ImGuiCol_ButtonActive] = colorRgb(0xd0, 0xd0, 0xd0);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = colorRgb(0x30, 0x8c, 0xc6, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;
