@@ -108,8 +108,9 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
   xscale_ = xscale;
 }
 
-void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
+void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos, ImU32 color) const {
   if (render_points_.empty()) return;
+  if (color == 0) color = color_;
 
   // update() only runs when a message of this id arrives, so a slow message would hold the sparkline
   // still for many frames and then move it in one step. scroll the rendered polyline by the time that
@@ -132,14 +133,14 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
   draw_list->PushClipRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), true);
 
   // a point is a 3x3 square
-  auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color_); };
+  auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color); };
 
   if (draw_individual_points_) {
     for (const auto &p : render_points_) {
       draw_list->PathLineTo(point_at(p));
       draw_point(point_at(p));
     }
-    draw_list->PathStroke(color_, ImDrawFlags_None, 1.5f);
+    draw_list->PathStroke(color, ImDrawFlags_None, 1.5f);
   } else {
     // one sample per pixel column: several strokes in a column overlap into a blur, and a dense
     // high-contrast texture scrolling by is hard on the eyes
@@ -167,7 +168,7 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos) const {
       while (j + 1 < pts.size() && steep(j) == is_steep) ++j;
       draw_list->Flags = is_steep ? (saved & ~ImDrawListFlags_AntiAliasedLines) : saved;
       for (size_t n = i; n <= j; ++n) draw_list->PathLineTo(pts[n]);
-      draw_list->PathStroke(color_, ImDrawFlags_None, 1.0f);
+      draw_list->PathStroke(color, ImDrawFlags_None, 1.0f);
       i = j;
     }
     draw_list->Flags = saved;

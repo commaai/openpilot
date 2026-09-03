@@ -787,8 +787,8 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
-  // a panel never shrinks past the width where the signal view's tool bar squishes
-  const float min_panel_width = SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2;
+  // a panel never shrinks past half the width where the signal view's tool bar squishes
+  const float min_panel_width = (SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2) * 0.5f;
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();

@@ -137,6 +137,7 @@ void drawColorMarker(ImDrawList *dl, const ImVec2 &pos, ImU32 col);
 void loadFonts();
 void applyTheme(int theme);  // safe to call at runtime
 bool isDarkTheme();  // the theme applyTheme() resolved
+CabanaColor signalFillColor(const CabanaColor &c);
 
 ImU32 highlightedTextColor();
 ImU32 paletteBrightText();

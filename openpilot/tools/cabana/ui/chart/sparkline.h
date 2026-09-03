@@ -12,7 +12,7 @@ public:
   inline double freq() const { return freq_; }
   bool isEmpty() const { return render_points_.empty(); }
   // emits the rendered polyline at pos (top-left, screen coordinates)
-  void draw(ImDrawList *draw_list, ImVec2 pos) const;
+  void draw(ImDrawList *draw_list, ImVec2 pos, ImU32 color = 0) const;
 
   ImVec2 size = {};  // empty when isEmpty()
   double min_val = 0;
