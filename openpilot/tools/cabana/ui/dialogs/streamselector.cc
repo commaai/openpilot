@@ -266,7 +266,6 @@ void StreamSelector::draw() {
   if (!beginDialog("Open stream", &popup_, ImVec2(768.0f, 0.0f))) return;
 
   AbstractOpenStreamWidget *current = nullptr;
-  // a QTabWidget pane sits on the window color with a frame, so the fields inside keep their sunken base
   const ImVec4 pane = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
   ImGui::PushStyleColor(ImGuiCol_ChildBg, pane);
   ImGui::PushStyleColor(ImGuiCol_TabSelected, pane);

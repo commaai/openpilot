@@ -461,7 +461,6 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
         }
       }
     } else if (item->valid) {
-      // the Fusion dark base is near black, so lift the unassigned bits off it to keep the byte grid readable
       if (isDarkTheme()) painter->AddRectFilled(rect.Min, rect.Max, IM_COL32(255, 255, 255, 20));
       if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }

@@ -86,7 +86,6 @@ void applyTheme(int theme) {
   auto c = [](const CabanaColor &col, float a = 1.0f) { return colorRgb(col.r, col.g, col.b, a); };
   ImVec4 *colors = style.Colors;
   if (dark) {
-    // Fusion derives its frame outline from the window color (darker(140)) and its bevels from the button color
     const ImVec4 highlight = c(DarkTheme::highlight);
     const ImVec4 outline = colorRgb(0x26, 0x26, 0x26);
     colors[ImGuiCol_WindowBg] = c(DarkTheme::window);
@@ -142,7 +141,6 @@ void applyTheme(int theme) {
     colors[ImGuiCol_PlotHistogram] = highlight;
     colors[ImGuiCol_DragDropTarget] = highlight;
   } else {
-    // the Fusion standard palette
     const ImVec4 window = colorRgb(0xef, 0xef, 0xef);
     const ImVec4 base = colorRgb(0xff, 0xff, 0xff);
     const ImVec4 outline = colorRgb(0xab, 0xab, 0xab);

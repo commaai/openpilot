@@ -60,7 +60,6 @@ ValidState validateIpAddress(const std::string &input);
 // C-locale floating-point
 ValidState validateDouble(const std::string &input);
 
-// the Qt Fusion dark palette
 struct DarkTheme {
   static constexpr CabanaColor window{0x35, 0x35, 0x35};
   static constexpr CabanaColor window_text{0xff, 0xff, 0xff};

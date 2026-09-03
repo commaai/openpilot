@@ -137,7 +137,6 @@ void drawColorMarker(ImDrawList *dl, const ImVec2 &pos, ImU32 col);
 void loadFonts();
 void applyTheme(int theme);  // safe to call at runtime
 bool isDarkTheme();  // the theme applyTheme() resolved
-// the signal color as painted on the dark base: more saturated and a little darker so white text reads on it
 CabanaColor signalFillColor(const CabanaColor &c);
 
 ImU32 highlightedTextColor();
