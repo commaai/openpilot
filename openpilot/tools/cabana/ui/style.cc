@@ -100,9 +100,9 @@ void applyTheme(int theme) {
     colors[ImGuiCol_FrameBg] = c(DarkTheme::base);
     colors[ImGuiCol_FrameBgHovered] = colorRgb(0x1f, 0x1f, 0x1f);
     colors[ImGuiCol_FrameBgActive] = colorRgb(0x24, 0x24, 0x24);
-    colors[ImGuiCol_Button] = colorRgb(0x3a, 0x3a, 0x3a);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0x42, 0x42, 0x42);
-    colors[ImGuiCol_ButtonActive] = colorRgb(0x30, 0x30, 0x30);
+    colors[ImGuiCol_Button] = colorRgb(0x5e, 0x5e, 0x5e);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0x6a, 0x6a, 0x6a);
+    colors[ImGuiCol_ButtonActive] = colorRgb(0x52, 0x52, 0x52);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = c(DarkTheme::highlight, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;
