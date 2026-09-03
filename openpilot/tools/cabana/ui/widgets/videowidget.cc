@@ -534,20 +534,19 @@ void StreamCameraView::draw(const ImVec2 &size, double thumbnail_time) {
   }
 }
 
-const RgbImage *StreamCameraView::thumbnailAt(double sec, uint64_t *mono_time) {
+const RgbImage *StreamCameraView::thumbnailAt(double sec) {
   auto it = big_thumbnails_.lower_bound(can->toMonoTime(sec));
   if (it == big_thumbnails_.end()) return nullptr;
   if (big_thumbnail_texture_.id == 0 || big_thumbnail_texture_.key != it->first) {
     big_thumbnail_texture_.upload(it->second);
     big_thumbnail_texture_.key = it->first;
   }
-  if (mono_time) *mono_time = it->first;
   return &it->second;
 }
 
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255));
-  if (const RgbImage *image = thumbnailAt(sec, nullptr)) {
+  if (const RgbImage *image = thumbnailAt(sec)) {
     // scale to the widget size, keeping the aspect ratio
     const float scale = std::min(width() / image->width, height() / image->height);
     const ImVec2 scaled_size(std::floor(image->width * scale), std::floor(image->height * scale));
@@ -560,8 +559,7 @@ void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
 }
 
 void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
-  uint64_t mono_time = 0;
-  if (const RgbImage *image = thumbnailAt(sec, &mono_time)) {
+  if (const RgbImage *image = thumbnailAt(sec)) {
     // AddImage scales the stored image to the thumbnail height, keeping the aspect ratio
     const int h = MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2;
     const int w = std::max(1, (int)std::lround((double)image->width * h / image->height));
@@ -574,7 +572,8 @@ void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
     ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + w, rect().Min.y + y + h));
     p->AddImage(big_thumbnail_texture_.ref(), thumb_rect.Min, thumb_rect.Max);
     p->AddRect(thumb_rect.Min, thumb_rect.Max, paletteBrightText(), 0.0f, 0, 2.0f);
-    if (auto alert = getReplay()->findAlertAtTime(can->toSeconds(mono_time))) {
+    // look up the alert at the hovered time, the thumbnail frame itself can be seconds away
+    if (auto alert = getReplay()->findAlertAtTime(sec)) {
       drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE);
     }
     drawTime(p, thumb_rect, sec);
@@ -583,7 +582,7 @@ void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
 
 void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double seconds) {
   char text[32];
-  snprintf(text, sizeof(text), "%.3f", seconds);
+  snprintf(text, sizeof(text), "%.2f", seconds);
   ImFont *font = ImGui::GetFont();
   const ImVec2 text_size = font->CalcTextSizeA(POINT_10_FONT_SIZE, FLT_MAX, 0.0f, text);
   // centered horizontally, above the bottom margin
