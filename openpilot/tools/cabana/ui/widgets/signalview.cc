@@ -267,7 +267,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + COLOR_LABEL_WIDTH, rect.Max.y);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->sig->color.darker(item->highlight ? 125 : 0)), 3.0f);
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(signalFillColor(item->sig->color).darker(item->highlight ? 125 : 0)), 3.0f);
       drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
                nullptr, LABEL_FONT);
 
@@ -289,7 +289,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
   } else if (column == 1) {
     if (!item->sparkline.isEmpty()) {
       const ImVec2 sparkline_size = item->sparkline.size;
-      item->sparkline.draw(painter, rect.Min);
+      item->sparkline.draw(painter, rect.Min, selected ? text_color : 0);
       // min-max value
       rect.Min.x += sparkline_size.x + 1;
       float value_adjust = 10;

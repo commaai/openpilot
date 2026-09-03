@@ -86,46 +86,45 @@ void applyTheme(int theme) {
   auto c = [](const CabanaColor &col, float a = 1.0f) { return colorRgb(col.r, col.g, col.b, a); };
   ImVec4 *colors = style.Colors;
   if (dark) {
-    // the low contrast Darcula grays are opened up: text and outlines sit further from the window and
-    // base grays
+    // Fusion derives its frame outline from the window color (darker(140)) and its bevels from the button color
     const ImVec4 highlight = c(DarkTheme::highlight);
-    const ImVec4 outline = colorRgb(0x5a, 0x5d, 0x60);
+    const ImVec4 outline = colorRgb(0x26, 0x26, 0x26);
     colors[ImGuiCol_WindowBg] = c(DarkTheme::window);
     colors[ImGuiCol_ChildBg] = c(DarkTheme::base);
-    colors[ImGuiCol_PopupBg] = c(DarkTheme::base);
+    colors[ImGuiCol_PopupBg] = c(DarkTheme::window);
     colors[ImGuiCol_MenuBarBg] = c(DarkTheme::window);
     colors[ImGuiCol_DockingEmptyBg] = c(DarkTheme::window);
-    colors[ImGuiCol_Text] = colorRgb(0xdc, 0xdc, 0xdc);
-    colors[ImGuiCol_TextDisabled] = colorRgb(0x8c, 0x8c, 0x8c);
+    colors[ImGuiCol_Text] = c(DarkTheme::text);
+    colors[ImGuiCol_TextDisabled] = c(DarkTheme::disabled_text);
     colors[ImGuiCol_Border] = outline;
     colors[ImGuiCol_BorderShadow] = colorRgb(0, 0, 0, 0.0f);
-    colors[ImGuiCol_FrameBg] = colorRgb(0x2e, 0x30, 0x32);  // darker than the base so fields read as sunken
-    colors[ImGuiCol_FrameBgHovered] = colorRgb(0x3a, 0x3d, 0x40);
-    colors[ImGuiCol_FrameBgActive] = colorRgb(0x45, 0x48, 0x4b);
-    colors[ImGuiCol_Button] = c(DarkTheme::button);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0x52, 0x56, 0x59);
-    colors[ImGuiCol_ButtonActive] = colorRgb(0x2b, 0x2d, 0x30);
+    colors[ImGuiCol_FrameBg] = c(DarkTheme::base);
+    colors[ImGuiCol_FrameBgHovered] = colorRgb(0x1f, 0x1f, 0x1f);
+    colors[ImGuiCol_FrameBgActive] = colorRgb(0x24, 0x24, 0x24);
+    colors[ImGuiCol_Button] = colorRgb(0x3a, 0x3a, 0x3a);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0x42, 0x42, 0x42);
+    colors[ImGuiCol_ButtonActive] = colorRgb(0x30, 0x30, 0x30);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = c(DarkTheme::highlight, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;
     colors[ImGuiCol_CheckMark] = c(DarkTheme::bright_text);
-    colors[ImGuiCol_SliderGrab] = colorRgb(0x8f, 0x92, 0x95);
-    colors[ImGuiCol_SliderGrabActive] = colorRgb(0xa8, 0xab, 0xae);
+    colors[ImGuiCol_SliderGrab] = colorRgb(0x6a, 0x6a, 0x6a);
+    colors[ImGuiCol_SliderGrabActive] = colorRgb(0x80, 0x80, 0x80);
     colors[ImGuiCol_ScrollbarBg] = c(DarkTheme::window);
-    colors[ImGuiCol_ScrollbarGrab] = colorRgb(0x70, 0x73, 0x76);
-    colors[ImGuiCol_ScrollbarGrabHovered] = colorRgb(0x85, 0x88, 0x8b);
-    colors[ImGuiCol_ScrollbarGrabActive] = c(DarkTheme::light);
+    colors[ImGuiCol_ScrollbarGrab] = colorRgb(0x5a, 0x5a, 0x5a);
+    colors[ImGuiCol_ScrollbarGrabHovered] = colorRgb(0x6a, 0x6a, 0x6a);
+    colors[ImGuiCol_ScrollbarGrabActive] = colorRgb(0x7a, 0x7a, 0x7a);
     colors[ImGuiCol_Separator] = outline;
     colors[ImGuiCol_SeparatorHovered] = c(DarkTheme::highlight, 0.6f);
     colors[ImGuiCol_SeparatorActive] = highlight;
     colors[ImGuiCol_ResizeGrip] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_ResizeGripHovered] = c(DarkTheme::highlight, 0.6f);
     colors[ImGuiCol_ResizeGripActive] = highlight;
-    colors[ImGuiCol_Tab] = c(DarkTheme::window);
-    colors[ImGuiCol_TabHovered] = colorRgb(0x4b, 0x4e, 0x52);
+    colors[ImGuiCol_Tab] = colorRgb(0x2c, 0x2c, 0x2c);
+    colors[ImGuiCol_TabHovered] = colorRgb(0x3a, 0x3a, 0x3a);
     colors[ImGuiCol_TabSelected] = c(DarkTheme::base);
     colors[ImGuiCol_TabSelectedOverline] = highlight;
-    colors[ImGuiCol_TabDimmed] = c(DarkTheme::window);
+    colors[ImGuiCol_TabDimmed] = colorRgb(0x2c, 0x2c, 0x2c);
     colors[ImGuiCol_TabDimmedSelected] = c(DarkTheme::base);
     colors[ImGuiCol_TabDimmedSelectedOverline] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_TitleBg] = c(DarkTheme::window);
@@ -133,7 +132,7 @@ void applyTheme(int theme) {
     colors[ImGuiCol_TitleBgCollapsed] = c(DarkTheme::window);
     colors[ImGuiCol_TableHeaderBg] = c(DarkTheme::window);
     colors[ImGuiCol_TableBorderStrong] = outline;
-    colors[ImGuiCol_TableBorderLight] = colorRgb(0x23, 0x26, 0x28);  // darker than the cells, like the qt grid
+    colors[ImGuiCol_TableBorderLight] = colorRgb(0x2c, 0x2c, 0x2c);
     colors[ImGuiCol_TableRowBg] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_TableRowBgAlt] = colorRgb(0xff, 0xff, 0xff, 0.06f);
     colors[ImGuiCol_TextSelectedBg] = c(DarkTheme::highlight, 0.6f);
@@ -143,13 +142,14 @@ void applyTheme(int theme) {
     colors[ImGuiCol_PlotHistogram] = highlight;
     colors[ImGuiCol_DragDropTarget] = highlight;
   } else {
+    // the Fusion standard palette
     const ImVec4 window = colorRgb(0xef, 0xef, 0xef);
     const ImVec4 base = colorRgb(0xff, 0xff, 0xff);
-    const ImVec4 outline = colorRgb(0xb9, 0xb9, 0xb9);
+    const ImVec4 outline = colorRgb(0xab, 0xab, 0xab);
     const ImVec4 highlight = colorRgb(0x30, 0x8c, 0xc6);
     colors[ImGuiCol_WindowBg] = window;
     colors[ImGuiCol_ChildBg] = base;
-    colors[ImGuiCol_PopupBg] = colorRgb(0xfb, 0xfb, 0xfb);
+    colors[ImGuiCol_PopupBg] = colorRgb(0xf8, 0xf8, 0xf8);
     colors[ImGuiCol_MenuBarBg] = window;
     colors[ImGuiCol_DockingEmptyBg] = window;
     colors[ImGuiCol_Text] = colorRgb(0x00, 0x00, 0x00);
@@ -159,9 +159,9 @@ void applyTheme(int theme) {
     colors[ImGuiCol_FrameBg] = base;
     colors[ImGuiCol_FrameBgHovered] = colorRgb(0xf7, 0xf7, 0xf7);
     colors[ImGuiCol_FrameBgActive] = colorRgb(0xef, 0xef, 0xef);
-    colors[ImGuiCol_Button] = colorRgb(0xf3, 0xf3, 0xf3);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0xf9, 0xf9, 0xf9);
-    colors[ImGuiCol_ButtonActive] = colorRgb(0xdc, 0xdc, 0xdc);
+    colors[ImGuiCol_Button] = colorRgb(0xf5, 0xf5, 0xf5);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0xfa, 0xfa, 0xfa);
+    colors[ImGuiCol_ButtonActive] = colorRgb(0xd9, 0xd9, 0xd9);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = colorRgb(0x30, 0x8c, 0xc6, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;
@@ -178,11 +178,11 @@ void applyTheme(int theme) {
     colors[ImGuiCol_ResizeGrip] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_ResizeGripHovered] = colorRgb(0x30, 0x8c, 0xc6, 0.6f);
     colors[ImGuiCol_ResizeGripActive] = highlight;
-    colors[ImGuiCol_Tab] = colorRgb(0xe2, 0xe2, 0xe2);
+    colors[ImGuiCol_Tab] = colorRgb(0xdc, 0xdc, 0xdc);
     colors[ImGuiCol_TabHovered] = colorRgb(0xf5, 0xf5, 0xf5);
     colors[ImGuiCol_TabSelected] = base;
     colors[ImGuiCol_TabSelectedOverline] = highlight;
-    colors[ImGuiCol_TabDimmed] = colorRgb(0xe2, 0xe2, 0xe2);
+    colors[ImGuiCol_TabDimmed] = colorRgb(0xdc, 0xdc, 0xdc);
     colors[ImGuiCol_TabDimmedSelected] = base;
     colors[ImGuiCol_TabDimmedSelectedOverline] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_TitleBg] = window;
@@ -190,7 +190,7 @@ void applyTheme(int theme) {
     colors[ImGuiCol_TitleBgCollapsed] = window;
     colors[ImGuiCol_TableHeaderBg] = colorRgb(0xf2, 0xf2, 0xf2);
     colors[ImGuiCol_TableBorderStrong] = outline;
-    colors[ImGuiCol_TableBorderLight] = colorRgb(0xd8, 0xd8, 0xd8);
+    colors[ImGuiCol_TableBorderLight] = colorRgb(0xc7, 0xc7, 0xc7);
     colors[ImGuiCol_TableRowBg] = colorRgb(0, 0, 0, 0.0f);
     colors[ImGuiCol_TableRowBgAlt] = colorRgb(0, 0, 0, 0.03f);
     colors[ImGuiCol_TextSelectedBg] = colorRgb(0x30, 0x8c, 0xc6, 0.35f);
@@ -207,6 +207,12 @@ void applyTheme(int theme) {
 
 bool isDarkTheme() { return g_dark; }
 
+CabanaColor signalFillColor(const CabanaColor &c) {
+  if (!g_dark) return c;
+  auto [h, s, v] = c.hsv();
+  return CabanaColor::fromHsv(h, std::min(1.0f, s * 1.4f), v * 0.8f, c.a / 255.0f);
+}
+
 ImU32 highlightedTextColor() {
   return g_dark ? IM_COL32(DarkTheme::window_text.r, DarkTheme::window_text.g, DarkTheme::window_text.b, 255)
                 : IM_COL32(255, 255, 255, 255);
@@ -219,11 +225,11 @@ ImU32 paletteBrightText() {
 
 void drawSliderHandle(ImDrawList *p, const ImRect &r) {
   const bool dark = isDarkTheme();
-  const ImU32 top = dark ? IM_COL32(0x3e, 0x41, 0x43, 255) : IM_COL32(255, 255, 255, 255);
-  const ImU32 bottom = dark ? IM_COL32(0x39, 0x3c, 0x3e, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
+  const ImU32 top = dark ? IM_COL32(0x41, 0x41, 0x41, 255) : IM_COL32(255, 255, 255, 255);
+  const ImU32 bottom = dark ? IM_COL32(0x36, 0x36, 0x36, 255) : IM_COL32(0xf0, 0xf0, 0xf0, 255);
   // the top/left edge is one step lighter than the bottom/right edge
-  const ImU32 outline_top = dark ? IM_COL32(0xa3, 0xa3, 0xa3, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
-  const ImU32 outline_bottom = dark ? IM_COL32(0x9c, 0x9c, 0x9c, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
+  const ImU32 outline_top = dark ? IM_COL32(0x5c, 0x5c, 0x5c, 255) : IM_COL32(0xab, 0xab, 0xab, 255);
+  const ImU32 outline_bottom = dark ? IM_COL32(0x26, 0x26, 0x26, 255) : IM_COL32(0xa4, 0xa4, 0xa4, 255);
   p->AddRectFilled(r.Min, r.Max, top, 2.0f);
   p->AddRectFilled(ImVec2(r.Min.x, r.GetCenter().y), r.Max, bottom, 2.0f, ImDrawFlags_RoundCornersBottom);
   p->AddRect(r.Min, r.Max, outline_bottom, 2.0f, 0, 1.0f);
@@ -237,7 +243,7 @@ void drawSliderHandle(ImDrawList *p, const ImRect &r) {
 
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
   // a grey groove over the full width with the part left of the handle filled, and a 13x13 handle on top
-  const ImU32 groove_col = isDarkTheme() ? IM_COL32(0x2a, 0x2c, 0x2e, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
+  const ImU32 groove_col = isDarkTheme() ? IM_COL32(0x2b, 0x2b, 0x2b, 255) : IM_COL32(0xc4, 0xc4, 0xc4, 255);
   const ImU32 fill_col = ImGui::GetColorU32(ImGuiCol_Header);
   ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);

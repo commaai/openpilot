@@ -60,19 +60,19 @@ ValidState validateIpAddress(const std::string &input);
 // C-locale floating-point
 ValidState validateDouble(const std::string &input);
 
-// "Darcula" like dark theme
+// the Qt Fusion dark palette
 struct DarkTheme {
   static constexpr CabanaColor window{0x35, 0x35, 0x35};
-  static constexpr CabanaColor window_text{0xbb, 0xbb, 0xbb};
-  static constexpr CabanaColor base{0x3c, 0x3f, 0x41};
-  static constexpr CabanaColor tooltip_text{0xbb, 0xbb, 0xbb};
-  static constexpr CabanaColor text{0xbb, 0xbb, 0xbb};
-  static constexpr CabanaColor button{0x3c, 0x3f, 0x41};
-  static constexpr CabanaColor highlight{0x2f, 0x65, 0xca};
-  static constexpr CabanaColor bright_text{0xf0, 0xf0, 0xf0};
-  static constexpr CabanaColor disabled_text{0x77, 0x77, 0x77};
-  static constexpr CabanaColor light{0x77, 0x77, 0x77};
-  static constexpr CabanaColor dark{0x35, 0x35, 0x35};
+  static constexpr CabanaColor window_text{0xff, 0xff, 0xff};
+  static constexpr CabanaColor base{0x19, 0x19, 0x19};
+  static constexpr CabanaColor tooltip_text{0xff, 0xff, 0xff};
+  static constexpr CabanaColor text{0xff, 0xff, 0xff};
+  static constexpr CabanaColor button{0x35, 0x35, 0x35};
+  static constexpr CabanaColor highlight{0x2a, 0x82, 0xda};
+  static constexpr CabanaColor bright_text{0xff, 0xff, 0xff};
+  static constexpr CabanaColor disabled_text{0x7f, 0x7f, 0x7f};
+  static constexpr CabanaColor light{0x50, 0x50, 0x50};
+  static constexpr CabanaColor dark{0x23, 0x23, 0x23};
 };
 
 namespace utils {

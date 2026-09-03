@@ -455,13 +455,15 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == hovered_sig_) {
-          painter->AddRectFilled(rect.Min, rect.Max, toImU32(s->color.darker(125)));  // 4/5x brightness
+          painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalFillColor(s->color).darker(125)));  // 4/5x brightness
         } else {
           drawSignalCell(painter, rect, index, s);
         }
       }
-    } else if (item->valid && item->bg_color.alpha() > 0) {
-      painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
+    } else if (item->valid) {
+      // the Fusion dark base is near black, so lift the unassigned bits off it to keep the byte grid readable
+      if (isDarkTheme()) painter->AddRectFilled(rect.Min, rect.Max, IM_COL32(255, 255, 255, 20));
+      if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
     bool bright = std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
     pen = bright ? paletteBrightText() : paletteText(is_message_active_);
@@ -524,9 +526,9 @@ void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const B
   if (bottom_notch) band(bottom_notch, rc.Max.y - spacing, rc.Max.y);
 
   auto item = &cellAt(index);
-  CabanaColor color = sig->color;
+  CabanaColor color = signalFillColor(sig->color);
   color.a = item->bg_color.alpha();
-  const ImU32 edge = toImU32(sig->color.darker(125));
+  const ImU32 edge = toImU32(signalFillColor(sig->color).darker(125));
 
   for (const ImRect &clip : region) {
     painter->PushClipRect(clip.Min, clip.Max, true);
