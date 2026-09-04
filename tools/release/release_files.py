@@ -15,7 +15,6 @@ blacklist = [
   "matlab.*.md",
 
   # no LFS or submodules in release
-  ".lfsconfig",
   ".gitattributes",
   ".git$",
   ".gitmodules",

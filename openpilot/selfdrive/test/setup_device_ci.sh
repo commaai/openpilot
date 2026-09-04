@@ -63,15 +63,14 @@ pull_lfs() {
   LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"
 
   git config --local lfs.fetchexclude "$LFS_EXCLUDE"
-  git lfs pull --exclude="$LFS_EXCLUDE"
+  ./lfs.py pull
   if git cat-file -e "HEAD:$LFS_EXCLUDE"; then
     rm -f "$LFS_EXCLUDE"
     git checkout -- "$LFS_EXCLUDE"
 
-    # `git lfs prune` retains objects referenced by HEAD, even when excluded.
     # Remove this one explicitly so safe checkout doesn't rsync it either.
     oid=$(git show "HEAD:$LFS_EXCLUDE" | sed -n 's/^oid sha256://p')
-    lfs_objects=$(git lfs env | sed -n 's/^LocalMediaDir=//p')
+    lfs_objects="$(git rev-parse --git-dir)/lfs/objects"
     if [[ "$oid" =~ ^[0-9a-f]{64}$ && -n "$lfs_objects" ]]; then
       rm -f "$lfs_objects/${oid:0:2}/${oid:2:2}/$oid"
     fi
