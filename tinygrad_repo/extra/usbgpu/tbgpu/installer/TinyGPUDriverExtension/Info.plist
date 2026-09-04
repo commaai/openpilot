@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IOKitPersonalities</key>
+	<dict>
+		<key>TinyGPUDriver</key>
+		<dict>
+			<key>CFBundleIdentifier</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>IOClass</key>
+			<string>IOUserService</string>
+			<key>IOMatchCategory</key>
+			<string>TinyGPUDriver</string>
+			<key>IOPCIClassMatch</key>
+			<string>0x03000000</string>
+			<key>IOPCITunnelCompatible</key>
+			<true/>
+			<key>IOProviderClass</key>
+			<string>IOPCIDevice</string>
+			<key>IOResourceMatch</key>
+			<string>IOKit</string>
+			<key>IOUserClass</key>
+			<string>TinyGPUDriver</string>
+			<key>IOUserServerName</key>
+			<string>org.tinygrad.tinygpu.Driver</string>
+			<key>TinyGPUDriverUserClientProperties</key>
+			<dict>
+				<key>IOClass</key>
+				<string>IOUserUserClient</string>
+				<key>IOUserClass</key>
+				<string>TinyGPUDriverUserClient</string>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>
