@@ -1,0 +1,69 @@
+{
+  "Offroad_TemperatureTooHigh": {
+    "text": "Device temperature too high. System cooling down before starting. Current internal component temperature: %1",
+    "severity": 0
+  },
+  "Offroad_ConnectivityNeededPrompt": {
+    "text": "Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in %1",
+    "severity": 0,
+    "_comment": "Set extra field to number of days"
+  },
+  "Offroad_ConnectivityNeeded": {
+    "text": "Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.",
+    "severity": 1
+  },
+  "Offroad_UpdateFailed": {
+    "text": "Unable to download updates\n%1",
+    "severity": 1,
+    "_comment": "Set extra field to the failed reason."
+  },
+  "Offroad_ChestnutBranch": {
+    "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
+    "severity": -1
+  },
+  "Offroad_ChestnutNotDetected": {
+    "text": "Chestnut not detected. Check USB and 12V connections.",
+    "severity": 0
+  },
+  "Offroad_ChestnutOverheated": {
+    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
+    "severity": 0
+  },
+  "Offroad_ChestnutPcieUnavailable": {
+    "text": "%1",
+    "severity": 0
+  },
+  "Offroad_ChestnutUncompiled": {
+    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUpdateFailed": {
+    "text": "Chestnut update failed. Check the USB cable.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUsbSlow": {
+    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
+    "severity": 0
+  },
+  "Offroad_UnregisteredHardware": {
+    "text": "Failed to register with comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.",
+    "severity": 1
+  },
+  "Offroad_CarUnrecognized": {
+    "text": "openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.",
+    "severity": 0
+  },
+  "Offroad_Recalibration": {
+    "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
+    "severity": 0
+  },
+  "Offroad_DriverMonitoringUncertain": {
+    "text": "Poor visibility detected for driver monitoring. Ensure the device has a clear view of the driver. This can be checked in the device settings. Extreme lighting conditions and/or unconventional mounting positions may also trigger this alert.",
+    "severity": 0
+  },
+  "Offroad_ExcessiveActuation": {
+    "text": "Excessive %1 actuation detected on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
+    "severity": 1,
+    "_comment": "Set extra field to lateral or longitudinal."
+  }
+}

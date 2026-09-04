@@ -1,0 +1,77 @@
+import os
+
+import bootstrap_icons
+import imgui
+import libusb
+from openpilot.common.basedir import BASEDIR
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
+
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
+
+# embed the bootstrap icons SVG into the binary
+def build_bootstrap_icons_src(target, source, env):
+  data = open(str(source[0]), 'rb').read()
+  with open(str(target[0]), 'w') as f:
+    f.write('#include <cstddef>\n')
+    f.write('extern const unsigned char bootstrap_icons_svg[];\n')
+    f.write('extern const size_t bootstrap_icons_svg_len;\n')
+    f.write('const unsigned char bootstrap_icons_svg[] = {\n')
+    for i in range(0, len(data), 32):
+      f.write(','.join(str(b) for b in data[i:i+32]) + ',\n')
+    f.write('};\n')
+    f.write('const size_t bootstrap_icons_svg_len = sizeof(bootstrap_icons_svg);\n')
+  return None
+
+bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_icons.SVG_PATH), build_bootstrap_icons_src)
+
+# sources shared by the imgui frontend and the core test
+core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
+             'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
+             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc']
+if arch != "Darwin":
+  core_srcs += ['streams/socketcanstream.cc']
+
+# imgui frontend (tools/cabana/ui), no Qt
+ui_env = env.Clone()
+ui_env['CPPPATH'] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
+ui_env['LIBPATH'] += [imgui.MESA_DIR, libusb.LIB_DIR]
+ui_env['CXXFLAGS'] += [
+  opendbc_path,
+  "-DGLFW_INCLUDE_NONE",
+  '-DCABANA_FONTS_DIR=\'"%s"\'' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts"),
+  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
+]
+ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
+ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
+ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
+ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
+          ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
+if arch == "Darwin":
+  ui_env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'Security', 'VideoToolbox']
+else:
+  ui_libs += ['GL', 'dl']
+cabana_ui = ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
+
+if GetOption('extras'):
+  cabana_core_test_env = env.Clone()
+  cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
+  cabana_core_test_objects = [
+    cabana_core_test_env.Object('tests/cabana_core_tests', 'tests/test_cabana.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_model', 'dbc/dbc.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_file', 'dbc/dbcfile.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_manager', 'dbc/dbcmanager.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_strings', 'utils/strings.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_util', 'utils/util.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_icons', bootstrap_icons_src),
+    cabana_core_test_env.Object('tests/cabana_core_routes', 'routes.cc'),
+    cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
+  ]
+  cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[replay_lib, common])
+
+output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
+generate_dbc = ui_env.Command('#' + output_json_file,
+                              ['dbc/generate_dbc_json.py'],
+                              "python3 openpilot/tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
+ui_env.Depends(generate_dbc, ["#openpilot/common", '#opendbc_repo', "#openpilot/cereal", "#msgq_repo"])
+ui_env.Depends(cabana_ui, generate_dbc)
