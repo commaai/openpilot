@@ -199,15 +199,15 @@ wheels = [
 
 [[package]]
 name = "comma-deps-raylib"
-version = "6.0.0.1.post98"
+version = "6.0.0.1.post101"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cffi" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/21/59509b2758e3612c63336df5534ea3b36e472e06c18a50f0b96c32e8e3e0/comma_deps_raylib-6.0.0.1.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:838a6115f508ee4ca0e4c84975c0892d67c10f94b11dd2bc0e023ad65138d010", size = 2004199, upload-time = "2026-07-23T17:03:17.648Z" },
-    { url = "https://files.pythonhosted.org/packages/c2/f5/84e135ac611a6dfe8b95ff989097c200770907907afba78455d4c863981e/comma_deps_raylib-6.0.0.1.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9347fe18799c209dd1af746a44a94433bae69d4644de10e11dcc307aecd87fb1", size = 7203023, upload-time = "2026-07-23T17:03:21.525Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/1b/ae0959dac622f7169de230ec98c6555870ae0ad4f61e7b8d32922fa960ed/comma_deps_raylib-6.0.0.1.post98-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:f9fd393fbaf1f16d7785be0b2252ef3b14a953c93d89296ed9a67bc7063de882", size = 5055448, upload-time = "2026-07-23T17:03:25.737Z" },
+    { url = "https://files.pythonhosted.org/packages/ff/90/e289acd1725d71c792c33399422f1052c4b0c38aeb4222a866d30c4a2cad/comma_deps_raylib-6.0.0.1.post101-py3-none-macosx_11_0_arm64.whl", hash = "sha256:fa69d5093a92d7d2bfd2714a1afccca63b94d4c55fae88e61b80e8841de6a6cd", size = 1885392, upload-time = "2026-08-27T18:24:37.25Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/17/12977631f6d86d1daa4f67a310cfdf2783ba288f42d444d6a89b2297a0a4/comma_deps_raylib-6.0.0.1.post101-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:c93ff9b45df414620b3011280da77151764c027e2f95d384fe255615d78872cc", size = 21707644, upload-time = "2026-08-27T18:24:41.282Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/ca/ef33aff790b37dfc925f94fbb3a86da19f67929c15b3725ddb18afb91e96/comma_deps_raylib-6.0.0.1.post101-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:8f2a1ffe5f60cac06170b144d6ce84925c91657e7ada3ae35bc5df6ccbe0b461", size = 20722616, upload-time = "2026-08-27T18:24:45.803Z" },
 ]
 
 [[package]]
@@ -663,7 +663,7 @@ requires-dist = [
     { name = "rednose", marker = "extra == 'submodules'", editable = "rednose_repo" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
-    { name = "scons", specifier = "==4.10.1" },
+    { name = "scons" },
     { name = "sentry-sdk" },
     { name = "setproctitle" },
     { name = "sounddevice" },
@@ -911,11 +911,11 @@ wheels = [
 
 [[package]]
 name = "scons"
-version = "4.10.1"
+version = "4.11.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7d/c9/2f430bb39e4eccba32ce8008df4a3206df651276422204e177a09e12b30b/scons-4.10.1.tar.gz", hash = "sha256:99c0e94a42a2c1182fa6859b0be697953db07ba936ecc9817ae0d218ced20b15", size = 3258403, upload-time = "2025-11-16T22:43:39.258Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/b9/b7a5c88f348a0c34594d88100872c55fa1cae863ccb222c1c438341b5503/scons-4.11.1.tar.gz", hash = "sha256:4210d1a80a62e986029208117991b6347ccaaaab37b67463a3ff31ee065dc487", size = 3268963, upload-time = "2026-08-27T04:33:18.232Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/bf/931fb9fbb87234c32b8b1b1c15fba23472a10777c12043336675633809a7/scons-4.10.1-py3-none-any.whl", hash = "sha256:bd9d1c52f908d874eba92a8c0c0a8dcf2ed9f3b88ab956d0fce1da479c4e7126", size = 4136069, upload-time = "2025-11-16T22:43:35.933Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/43/d6285848e893c19682c06e92679dc1a07d37ff7ea148747b1df681ec496c/scons-4.11.1-py3-none-any.whl", hash = "sha256:454cef364348053422696e3d2ecb4fa593c96a624f955842eaaea64f95c8d11d", size = 4123659, upload-time = "2026-08-27T04:33:12.728Z" },
 ]
 
 [[package]]
@@ -1022,7 +1022,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "tinygrad"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "tinygrad_repo" }
 
 [package.metadata]
@@ -1036,6 +1036,7 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'testing-minimal'", specifier = ">=6.148.9" },
     { name = "influxdb3-python", marker = "extra == 'testing'" },
     { name = "librosa", marker = "extra == 'testing'" },
+    { name = "mako", marker = "extra == 'autogen'" },
     { name = "markdown-callouts", marker = "extra == 'docs'" },
     { name = "markdown-exec", extras = ["ansi"], marker = "extra == 'docs'" },
     { name = "mkdocs", marker = "extra == 'docs'" },
@@ -1050,7 +1051,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'testing-minimal'" },
     { name = "onnx", marker = "extra == 'testing'", specifier = "==1.19.0" },
     { name = "onnx2torch", marker = "extra == 'testing'" },
-    { name = "onnxruntime", marker = "extra == 'testing'" },
+    { name = "onnxruntime", marker = "extra == 'testing'", specifier = "==1.24.1" },
     { name = "openai", marker = "extra == 'testing-unit'" },
     { name = "opencv-python", marker = "extra == 'testing'" },
     { name = "pandas", marker = "extra == 'testing'" },
@@ -1061,6 +1062,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'testing-minimal'" },
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
+    { name = "pyyaml", marker = "extra == 'autogen'" },
     { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
@@ -1076,7 +1078,7 @@ requires-dist = [
     { name = "typing-extensions", marker = "extra == 'linting'" },
     { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
 ]
-provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa"]
+provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 
 [[package]]
 name = "tqdm"
