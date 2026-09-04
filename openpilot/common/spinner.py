@@ -5,10 +5,12 @@ from openpilot.common.basedir import BASEDIR
 
 class Spinner:
   def __init__(self):
+    ui_dir = os.path.join(BASEDIR, "openpilot/system", "ui")
     try:
       self.spinner_proc = subprocess.Popen(["./spinner.py"],
                                            stdin=subprocess.PIPE,
-                                           cwd=os.path.join(BASEDIR, "openpilot/system", "ui"),
+                                           cwd=ui_dir,
+                                           env={**os.environ, "PWD": ui_dir},
                                            close_fds=True)
     except OSError:
       self.spinner_proc = None

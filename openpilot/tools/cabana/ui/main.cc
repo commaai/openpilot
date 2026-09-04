@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <memory>
@@ -142,6 +143,7 @@ int main(int argc, char *argv[]) {
   // ensure the current dir matches the executable's directory
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);
+  setenv("PWD", executableDir().c_str(), 1);
 
   CabanaArgs args;
   if (auto code = parseArgs(argc, argv, args)) return *code;

@@ -270,6 +270,7 @@ def main():
 
   capture_output = not args.no_capture
   os.chdir(ROOT)
+  os.environ["PWD"] = str(ROOT)
   warnings.simplefilter(args.warnings)
   started = time.monotonic()
   tests, errors = collect(args.targets, args.k)

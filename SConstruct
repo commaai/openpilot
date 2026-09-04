@@ -16,6 +16,9 @@ SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
 
+# SCons chdirs while reading SConscripts, which makes kj warn about a stale PWD when capnp schemas are loaded
+os.environ.pop('PWD', None)
+
 SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2))))
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')

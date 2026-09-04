@@ -7,10 +7,12 @@ from openpilot.common.basedir import BASEDIR
 
 class TextWindow:
   def __init__(self, text):
+    ui_dir = os.path.join(BASEDIR, "openpilot/system", "ui")
     try:
       self.text_proc = subprocess.Popen(["./text.py", text],
                                         stdin=subprocess.PIPE,
-                                        cwd=os.path.join(BASEDIR, "openpilot/system", "ui"),
+                                        cwd=ui_dir,
+                                        env={**os.environ, "PWD": ui_dir},
                                         close_fds=True)
     except OSError:
       self.text_proc = None
