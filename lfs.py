@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""A small, curl-backed Git LFS client."""
+"""A small Git LFS client. Downloads use urllib; uploads require curl."""
 
 import concurrent.futures
 import contextlib
 import fcntl
 import hashlib
+import http.client
 import io
 import os
 from pathlib import Path
@@ -15,6 +16,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.request
 import xml.etree.ElementTree as ET
 
 POINTER_VERSION = "https://git-lfs.github.com/spec/v1"
@@ -171,6 +174,34 @@ def parallel(function, arguments, workers=TRANSFERS):
     return [future.result() for future in futures]
 
 
+def download(url, path, size, span=None):
+  # can't call out to curl for downloads since some modern Linux
+  # distros don't ship without it anymore. pure stdlib python only.
+  headers = {} if span is None else {"Range": f"bytes={span[0]}-{span[1]}"}
+  expected_size = size if span is None else span[1] - span[0] + 1
+  for attempt in range(RETRIES + 1):
+    try:
+      request = urllib.request.Request(url, headers=headers)
+      with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status != (200 if span is None else 206):
+          raise RuntimeError(f"unexpected HTTP {response.status} downloading {url}")
+        if span is not None and response.headers.get("Content-Range") != f"bytes {span[0]}-{span[1]}/{size}":
+          raise RuntimeError(f"invalid Content-Range downloading {url}")
+        with path.open("wb") as out:
+          shutil.copyfileobj(response, out, length=1 << 20)
+      if path.stat().st_size != expected_size:
+        raise http.client.HTTPException(f"expected {expected_size} bytes downloading {url}, got {path.stat().st_size}")
+      return
+    except (OSError, http.client.HTTPException) as error:
+      if isinstance(error, urllib.error.HTTPError):
+        error.close()
+        if error.code not in (408, 429, 500, 502, 503, 504):
+          raise
+      if attempt == RETRIES:
+        raise
+      time.sleep(min(2**attempt, 8))
+
+
 def download_one(oid, size):
   dst = object_path(oid)
   with object_lock(oid):
@@ -186,7 +217,7 @@ def download_one(oid, size):
         parts = [Path(directory) / str(i) for i in range(ranges)]
 
         def fetch(part, span):
-          curl(href, *RETRY_OPTIONS, "--range", f"{span[0]}-{span[1]}", output=part)
+          download(href, part, size, span)
 
         parallel(fetch, zip(parts, spans, strict=True), ranges)
         with tmp.open("wb") as out:
@@ -194,7 +225,7 @@ def download_one(oid, size):
             with part.open("rb") as stream:
               shutil.copyfileobj(stream, out)
       else:
-        curl(href, *RETRY_OPTIONS, output=tmp)
+        download(href, tmp, size)
       if tmp.stat().st_size != size or hash_file(tmp) != oid:
         raise RuntimeError(f"sha256 mismatch for {oid}")
       os.replace(tmp, dst)
