@@ -157,7 +157,7 @@ function op_check_venv() {
   fi
 }
 
-function op_before_cmd() {
+function op_verify_env() {
   if [[ ! -z "$NO_VERIFY" ]]; then
     return 0
   fi
@@ -176,6 +176,38 @@ function op_before_cmd() {
     echo -e "${BOLD}Checking system →${NC} [${GREEN}✔${NC}]"
   else
     echo -e "$result"
+  fi
+}
+
+function op_before_cmd() {
+  if [[ -n "$NO_VERIFY" ]]; then
+    return 0
+  fi
+
+  op_get_openpilot_dir
+  cd "$OPENPILOT_ROOT"
+
+  if [[ -n "$DRY" || -f /AGNOS ]]; then
+    op_activate_venv
+    return 0
+  fi
+
+  # Only initialize missing submodules: developers may be working on another
+  # commit or branch in an existing checkout.
+  local name
+  while IFS= read -r name; do
+    if [[ ! -e "$name/.git" ]]; then
+      echo "Initializing submodule $name..."
+      git submodule update --init --recursive -- "$name"
+    fi
+  done < <(git config --file .gitmodules --get-regexp path | awk '{ print $2 }')
+
+  "$OPENPILOT_ROOT/tools/setup_dependencies.sh" --sync
+  op_activate_venv
+
+  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") != "data" ]]; then
+    echo "Pulling git lfs files..."
+    git lfs pull
   fi
 }
 
@@ -292,7 +324,7 @@ function op_script() {
 
 function op_check() {
   VERBOSE=1
-  op_before_cmd
+  op_verify_env
   unset VERBOSE
 }
 
@@ -431,7 +463,7 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Description:${NC}"
   echo "  op is your entry point for all things related to openpilot development."
-  echo "  op is only a wrapper for existing scripts, tools, and commands."
+  echo "  op prepares project dependencies before running scripts, tools, and commands."
   echo "  op will always show you what it will run on your system."
   echo ""
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
@@ -471,7 +503,7 @@ function op_default() {
   echo -e "  ${BOLD}--dry${NC}"
   echo "          Don't actually run anything, just print what would be run"
   echo -e "  ${BOLD}-n, --no-verify${NC}"
-  echo "          Skip environment check before running commands"
+  echo "          Skip environment preparation and activation (use your current environment)"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
   echo "  op setup"
