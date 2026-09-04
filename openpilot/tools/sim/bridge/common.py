@@ -5,13 +5,13 @@ import numpy as np
 
 from collections import namedtuple
 from enum import Enum
-from multiprocessing import Process, Queue, Value
+from multiprocessing import Queue
 from abc import ABC, abstractmethod
 from opendbc.car.honda.values import CruiseButtons
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.selfdrive.test.helpers import set_params_enabled
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SIM_MP_CTX, SimulatorState, World
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
@@ -49,8 +49,7 @@ class SimulatorBridge(ABC):
     self._exit_event: threading.Event | None = None
     self._threads = []
     self._keep_alive = True
-    self.started = Value('i', False)
-    signal.signal(signal.SIGTERM, self._on_shutdown)
+    self.started = SIM_MP_CTX.Value('i', False)
     self.simulator_state = SimulatorState()
 
     self.world: World | None = None
@@ -60,6 +59,18 @@ class SimulatorBridge(ABC):
 
     self.test_run = False
 
+  def __getstate__(self):
+    # the bridge is pickled to reach the spawned bridge process, and these are either
+    # unpicklable or owned by whichever process runs the bridge loop
+    return {k: v for k, v in self.__dict__.items() if k not in ("params", "world", "_exit_event", "_threads")}
+
+  def __setstate__(self, state):
+    self.__dict__.update(state)
+    self.params = Params()
+    self.world = None
+    self._exit_event = None
+    self._threads = []
+
   def _on_shutdown(self, signal, frame):
     self.shutdown()
 
@@ -67,6 +78,7 @@ class SimulatorBridge(ABC):
     self._keep_alive = False
 
   def bridge_keep_alive(self, q: Queue, retries: int):
+    signal.signal(signal.SIGTERM, self._on_shutdown)
     try:
       self._run(q)
     finally:
@@ -82,7 +94,7 @@ class SimulatorBridge(ABC):
       self.world.close(reason)
 
   def run(self, queue, retries=-1):
-    bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))
+    bridge_p = SIM_MP_CTX.Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))
     bridge_p.start()
     return bridge_p
 
