@@ -34,7 +34,6 @@ jobs:
     # Build
     - name: Build docs
       run: |
-        ./lfs.py install
         ./lfs.py pull
         python docs/serve.py --build
 

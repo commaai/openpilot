@@ -195,8 +195,6 @@ EOF
   op_get_openpilot_dir
   cd $OPENPILOT_ROOT
 
-  ./lfs.py install
-
   op_check_openpilot_dir
   op_check_os
 

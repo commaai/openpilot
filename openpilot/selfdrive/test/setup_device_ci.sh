@@ -90,7 +90,6 @@ safe_checkout() {
   find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
   git reset --hard $GIT_COMMIT
   git checkout $GIT_COMMIT
-  ./lfs.py install
   git clean -xdff
   git submodule sync
   git submodule foreach --recursive "git reset --hard && git clean -xdff"
@@ -116,7 +115,6 @@ unsafe_checkout() {( set -e
   git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
   git checkout --force --no-recurse-submodules $GIT_COMMIT
   git reset --hard $GIT_COMMIT
-  ./lfs.py install
   git clean -dff
   git submodule sync
   git submodule foreach --recursive "git reset --hard && git clean -df"

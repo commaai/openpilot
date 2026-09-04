@@ -284,6 +284,7 @@ def pointers_for_head():
 
 
 def pull():
+  install()
   found = pointers_for_head()
   exclude = git("config", "--get", "lfs.fetchexclude", check=False).decode().strip()
   if exclude:
