@@ -1,8 +1,10 @@
 #include "tools/cabana/ui/app.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <stdexcept>
+#include <thread>
 #include <utility>
 
 #include "imgui.h"
@@ -68,8 +70,23 @@ void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-// vsync paces the loop: glfwSwapBuffers blocks until the next refresh. Throttling on top of that beats
-// against the refresh rate and makes the camera view stutter.
+void paceFrame() {
+  using clock = std::chrono::steady_clock;
+  static clock::duration period = [] {
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int hz = (mode != nullptr && mode->refreshRate > 0) ? mode->refreshRate : 60;
+    return std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / hz));
+  }();
+  static clock::time_point next = clock::now();
+  next += period;
+  auto now = clock::now();
+  if (next < now) {
+    next = now;  // fell behind (slow frame or hidden window): don't try to catch up
+    return;
+  }
+  std::this_thread::sleep_until(next);
+}
+
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
   deliverPendingFocusLoss();
@@ -98,6 +115,7 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     glfwMakeContextCurrent(backup_context);
   }
   glfwSwapBuffers(window);
+  paceFrame();
 }
 
 class GlfwRuntime {
@@ -120,7 +138,7 @@ public:
       throw std::runtime_error("glfwCreateWindow failed");
     }
     glfwMakeContextCurrent(window_);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
   }
 
   ~GlfwRuntime() {
