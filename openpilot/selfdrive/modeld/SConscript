@@ -116,7 +116,8 @@ lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_file
 
 dm_w, dm_h = DM_INPUT_SIZE
 compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
-for cam_w, cam_h in camera_configs:
+dm_camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
+for cam_w, cam_h in dm_camera_configs:
   dm_pkl_path = File(f"models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
   cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_dm_warp.py '
          f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} '
