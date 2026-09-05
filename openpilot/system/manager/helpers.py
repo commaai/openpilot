@@ -13,6 +13,11 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 
 def unblock_stdout() -> None:
+  if sys.platform == "darwin":
+    # forking a multi-threaded process is unsafe on macOS: the child is killed before
+    # main() runs, and macOS ptys discard its output, so manager dies silently
+    return
+
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0:  # parent
