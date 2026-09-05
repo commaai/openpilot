@@ -222,6 +222,12 @@ EOF
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
+  git config --local filter.lfs.clean ".venv/bin/git-lfs clean -- %f"
+  git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
+  git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
+  git config --local filter.lfs.required true
+  printf '#!/bin/sh\nexec .venv/bin/git-lfs pre-push "$@"\n' > "$(git rev-parse --git-path hooks)/pre-push"
+  chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     return 1
