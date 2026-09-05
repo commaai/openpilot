@@ -51,6 +51,9 @@ st[0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z]
 *.pkl
 *.pkl*
 config.json
+# Host-compiled big model artifacts are source inputs for custom model branches.
+!openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunk*
+!openpilot/selfdrive/modeld/models/big_driving_tinygrad.precompiled.json
 compile_commands.json
 compare_runtime*.html
 openpilot/selfdrive/modeld/models/tg_input_devices.json

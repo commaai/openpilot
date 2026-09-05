@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "artifact": "big_driving_tinygrad.pkl",
+  "target": "chestnut",
+  "backend": "USB+AMD:LLVM",
+  "artifact_size": 787814877,
+  "files": [
+    "big_driving_tinygrad.pkl.chunkmanifest",
+    "big_driving_tinygrad.pkl.chunk01of17",
+    "big_driving_tinygrad.pkl.chunk02of17",
+    "big_driving_tinygrad.pkl.chunk03of17",
+    "big_driving_tinygrad.pkl.chunk04of17",
+    "big_driving_tinygrad.pkl.chunk05of17",
+    "big_driving_tinygrad.pkl.chunk06of17",
+    "big_driving_tinygrad.pkl.chunk07of17",
+    "big_driving_tinygrad.pkl.chunk08of17",
+    "big_driving_tinygrad.pkl.chunk09of17",
+    "big_driving_tinygrad.pkl.chunk10of17",
+    "big_driving_tinygrad.pkl.chunk11of17",
+    "big_driving_tinygrad.pkl.chunk12of17",
+    "big_driving_tinygrad.pkl.chunk13of17",
+    "big_driving_tinygrad.pkl.chunk14of17",
+    "big_driving_tinygrad.pkl.chunk15of17",
+    "big_driving_tinygrad.pkl.chunk16of17",
+    "big_driving_tinygrad.pkl.chunk17of17"
+  ],
+  "model_checkpoint": "b9facbcc-4d47-410e-b3ce-dfcbad12ba92/56320/4e6d9816-7774-4dd5-9fb1-7d478337f632/12864"
+}
