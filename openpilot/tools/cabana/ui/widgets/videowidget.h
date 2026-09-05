@@ -105,6 +105,7 @@ private:
   void drawSpeedDropdown(float width);
   void drawSpeedMenuItems();
   void loopPlaybackClicked();
+  void cropVideoClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
   void showRouteInfo();
 

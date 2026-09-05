@@ -197,10 +197,14 @@ void VideoWidget::drawPlaybackController() {
     item.in_menu = false;
     return item;
   };
+  const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
+  items.push_back({toolbarButtonWidth(aspect_ratio_icon), [&]() {
+    if (toolButton("crop_video", aspect_ratio_icon, "Crop to fill")) cropVideoClicked();
+  }, "Crop to fill", [this]() { cropVideoClicked(); }});
   if (!can->liveStreaming()) {
+    items.push_back(separator());
     items.push_back({toolbarButtonWidth(loop_icon), [&]() { if (toolButton("loop", loop_icon, "Loop playback")) loopPlaybackClicked(); },
                      "Loop playback", [this]() { loopPlaybackClicked(); }});
-    items.push_back(separator());
   }
   items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }});
   if (!can->liveStreaming()) {
@@ -311,6 +315,11 @@ void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams
 
 void VideoWidget::loopPlaybackClicked() {
   getReplay()->setLoop(!getReplay()->loop());
+}
+
+void VideoWidget::cropVideoClicked() {
+  settings.crop_video = !settings.crop_video;
+  settings.changed();
 }
 
 void VideoWidget::timeRangeChanged() {
@@ -551,14 +560,9 @@ const RgbImage *StreamCameraView::thumbnailAt(double sec) {
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255));
   if (const RgbImage *image = thumbnailAt(sec)) {
-    // scale to the widget size, keeping the aspect ratio
-    const float scale = std::min(width() / image->width, height() / image->height);
-    const ImVec2 scaled_size(std::floor(image->width * scale), std::floor(image->height * scale));
-    const ImVec2 center = rect().GetCenter();
-    const ImVec2 thumb_min(center.x - (int)(scaled_size.x / 2), center.y - (int)(scaled_size.y / 2));
-    ImRect thumb_rect(thumb_min, ImVec2(thumb_min.x + scaled_size.x, thumb_min.y + scaled_size.y));
-    p->AddImage(big_thumbnail_texture_.ref(), thumb_rect.Min, thumb_rect.Max);
-    drawTime(p, thumb_rect, sec);
+    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
+    p->AddImage(big_thumbnail_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1);
+    drawTime(p, rect(), sec);
   }
 }
 

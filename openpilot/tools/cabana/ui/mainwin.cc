@@ -156,6 +156,7 @@ void MainWindow::drawMenuBar() {
     ImGui::Separator();
     if (ImGui::MenuItem("Reset Window Layout")) {
       messages_visible_ = video_visible_ = true;
+      video_splitter_ratio_ = -1.0f;
       reset_layout_ = true;
     }
     ImGui::EndMenu();

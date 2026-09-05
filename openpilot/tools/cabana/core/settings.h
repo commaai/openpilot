@@ -21,6 +21,7 @@ struct CabanaSettingsState {
   bool multiple_lines_hex = false;
   bool log_livestream = true;
   bool suppress_defined_signals = false;
+  bool crop_video = true;
   std::string log_path;
   std::string last_dir;
   std::string last_route_dir;
