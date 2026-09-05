@@ -123,23 +123,7 @@ function op_check_git() {
 function op_check_os() {
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
-    if [ -f "/etc/os-release" ]; then
-      source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
-          ;;
-        * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          return 1
-          ;;
-      esac
-    else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      return 1
-    fi
-
+    echo -e " ↳ [${GREEN}✔${NC}] Linux detected."
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
