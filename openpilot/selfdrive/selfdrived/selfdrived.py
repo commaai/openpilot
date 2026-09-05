@@ -116,7 +116,9 @@ class SelfdriveD:
 
     self.initialized = False
     self.enabled = False
-    self.active = False
+    # i don't think we can keep selfdrived lat/long agnostic since it handles event state machine
+    self.lat_active = False
+    self.long_active = False
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
     self.last_steering_pressed_frame = 0
@@ -526,7 +528,8 @@ class SelfdriveD:
     ss_msg.valid = True
     ss = ss_msg.selfdriveState
     ss.enabled = self.enabled
-    ss.active = self.active
+    ss.latActive = self.lat_active
+    ss.longActive = self.long_active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
     ss.experimentalMode = self.experimental_mode
@@ -554,7 +557,7 @@ class SelfdriveD:
     CS = self.data_sample()
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
-      self.enabled, self.active = self.state_machine.update(self.events)
+      self.enabled, self.long_active = self.state_machine.update(self.events)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)
