@@ -17,6 +17,7 @@ public:
   bool eventFilter(const Event *event);
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   bool liveStreaming() const override { return false; }
+  bool logSignalsEnabled() const override { return replay && replay->hasFlag(REPLAY_FLAG_LOAD_ALL_EVENTS); }
   inline std::string routeName() const override { return replay->route().name(); }
   inline std::string carFingerprint() const override { return replay->carFingerprint(); }
   double minSeconds() const override { return replay->minSeconds(); }
@@ -36,8 +37,12 @@ public:
 
 private:
   void mergeSegments();
-  std::unique_ptr<Replay> replay = nullptr;
+  void updateLastMessages() override;
+  cabana::LogSegments log_cache_;  // replay merge thread only
+  std::atomic<bool> log_cancel_ = false;
   Connection settings_connection_;
   std::set<int> processed_segments;
   std::unique_ptr<OpenpilotPrefix> op_prefix;
+  // Destroy Replay first: its merge thread reads the fields above until it has joined.
+  std::unique_ptr<Replay> replay = nullptr;
 };

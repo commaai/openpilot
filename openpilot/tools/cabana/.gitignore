@@ -1,5 +1,8 @@
 bootstrap_icons.cc
 
 _cabana_ui
+tests/test_logsignals
+tests/test_log_replay
+tests/test_logpanel
 dbc/car_fingerprint_to_dbc.json
 tests/test_cabana

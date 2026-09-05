@@ -15,6 +15,7 @@
 #include "tools/cabana/ui/helpoverlay.h"
 #include "tools/cabana/ui/tools/tooldialog.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
+#include "tools/cabana/ui/chart/logpanel.h"
 #include "tools/cabana/ui/widgets/detailwidget.h"
 #include "tools/cabana/ui/widgets/messageswidget.h"
 #include "tools/cabana/ui/widgets/videowidget.h"
@@ -23,7 +24,8 @@ struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file,
+             const std::string &log_layout = {});
   ~MainWindow();
   void draw();
   void toggleChartsDocking();
@@ -95,6 +97,9 @@ private:
   CenterWidget center_widget_;
   std::unique_ptr<VideoWidget> video_widget_;
   std::unique_ptr<ChartsWidget> charts_widget_;
+  std::unique_ptr<LogPanel> log_panel_;
+  std::string startup_log_layout_;
+  bool log_visible_ = false;
   StreamSelector stream_selector_;
   SettingsDialog settings_dialog_;
   HelpOverlay help_overlay_;

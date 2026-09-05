@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plots": [
+    [
+      {"signal": "carState/steeringAngleDeg"}
+    ],
+    [
+      {"signal": "carControl/actuators/torque"},
+      {"signal": "carOutput/actuatorsOutput/torque"},
+      {"signal": "carState/steeringPressed"}
+    ],
+    [
+      {"signal": "carState/vEgo", "scale": 3.6}
+    ],
+    [
+      {"signal": "controlsState/lateralControlState/torqueState/actualLateralAccel"},
+      {"signal": "controlsState/lateralControlState/torqueState/desiredLateralAccel"}
+    ]
+  ]
+}

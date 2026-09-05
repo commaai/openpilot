@@ -12,7 +12,7 @@ using StreamLoader = std::function<std::unique_ptr<AbstractStream>()>;
 
 // takes ownership of stream; a loader runs behind the window instead of before it; with neither, the
 // stream selector opens
-int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &log_layout = {});
 
 // key presses with the modifier state at event time: imgui may apply a modifier release in the same frame as
 // the key press it belongs to, which loses fast shortcut sequences. Consumed once per frame by MainWindow.

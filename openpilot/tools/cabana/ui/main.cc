@@ -31,12 +31,14 @@ struct CabanaArgs {
   bool panda = false;
   bool no_vipc = false;
   bool no_cache = false;
+  bool log = false;
   std::string panda_serial;
   std::string socketcan;
   std::string zmq;
   std::string data_dir;
   std::string dbc;
   std::string route;
+  std::string log_layout;
 };
 
 void printUsage(const char *argv0) {
@@ -63,6 +65,8 @@ void printUsage(const char *argv0) {
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
           "  --no-cache                turn off the local route file cache\n"
+          "  --log                     plot numeric openpilot log fields (route replay)\n"
+          "  --log-layout <file>       load a Cabana log layout and enable --log\n"
           "  --dbc <file>              dbc file to open\n",
           argv0);
 }
@@ -114,6 +118,11 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.no_vipc = true;
     } else if (std::strcmp(a, "--no-cache") == 0) {
       args.no_cache = true;
+    } else if (std::strcmp(a, "--log") == 0) {
+      args.log = true;
+    } else if (std::strcmp(a, "--log-layout") == 0) {
+      if (!takeValue(argc, argv, i, args.log_layout)) return 1;
+      args.log = true;
     } else if (std::strcmp(a, "--dbc") == 0) {
       if (!takeValue(argc, argv, i, args.dbc)) return 1;
     } else if (a[0] == '-') {
@@ -139,12 +148,22 @@ int main(int argc, char *argv[]) {
   // arenas fragment without bound (RSS grew ~3 MB/min with charts open). macOS has a single allocator zone.
   mallopt(M_ARENA_MAX, 1);
 #endif
+  const auto invocation_dir = std::filesystem::current_path();
   // ensure the current dir matches the executable's directory
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);
 
   CabanaArgs args;
   if (auto code = parseArgs(argc, argv, args)) return *code;
+  if (!args.log_layout.empty()) args.log_layout = (invocation_dir / args.log_layout).string();
+  if (args.log && (args.msgq || args.panda || !args.zmq.empty() || !args.socketcan.empty())) {
+    fprintf(stderr, "error: --log currently requires route replay\n");
+    return 1;
+  }
+  if (args.log && args.route.empty() && !args.demo) {
+    fprintf(stderr, "error: --log requires a route or --demo\n");
+    return 1;
+  }
 
   std::unique_ptr<AbstractStream> stream;
   StreamLoader stream_loader;
@@ -175,6 +194,7 @@ int main(int argc, char *argv[]) {
     if (args.cabin) replay_flags |= REPLAY_FLAG_CABIN_CAMERA;
     if (args.no_vipc) replay_flags |= REPLAY_FLAG_NO_VIPC;
     if (args.no_cache) replay_flags |= REPLAY_FLAG_NO_FILE_CACHE;
+    if (args.log) replay_flags |= REPLAY_FLAG_LOAD_ALL_EVENTS;
 
     std::string route;
     if (!args.route.empty()) {
@@ -198,5 +218,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, args.log_layout);
 }
