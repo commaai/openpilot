@@ -835,7 +835,8 @@ void MainWindow::drawVideoPanel() {
     const bool live = can->liveStreaming();
     // the bordered child pads its content, so the heights the widget asks for grow by the padding
     const float video_padding = ImGui::GetStyle().WindowPadding.y * 2.0f;
-    const float default_h = video_widget_->defaultHeight(avail.x) + video_padding;
+    // the camera is as wide as the child's content region, not the panel
+    const float default_h = video_widget_->defaultHeight(avail.x - ImGui::GetStyle().WindowPadding.x * 2.0f) + video_padding;
     const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : default_h;
     float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
     if (live) video_h = default_h;  // display video at minimum size.

@@ -21,7 +21,7 @@ std::string formatSeconds(double sec, bool include_milliseconds, bool absolute_t
     char buf[64] = {};
     std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
     if (!include_milliseconds) return buf;
-    snprintf(out, sizeof(out), "%s.%03d", buf, millis);
+    snprintf(out, sizeof(out), "%s.%02d", buf, millis / 10);
     return out;
   }
 
@@ -33,11 +33,11 @@ std::string formatSeconds(double sec, bool include_milliseconds, bool absolute_t
   const int seconds = (total_ms / 1000) % 60;
   const int millis = total_ms % 1000;
   if (show_hours && include_milliseconds) {
-    snprintf(out, sizeof(out), "%02d:%02d:%02d.%03d", hours, minutes, seconds, millis);
+    snprintf(out, sizeof(out), "%02d:%02d:%02d.%02d", hours, minutes, seconds, millis / 10);
   } else if (show_hours) {
     snprintf(out, sizeof(out), "%02d:%02d:%02d", hours, minutes, seconds);
   } else if (include_milliseconds) {
-    snprintf(out, sizeof(out), "%02d:%02d.%03d", minutes, seconds, millis);
+    snprintf(out, sizeof(out), "%02d:%02d.%02d", minutes, seconds, millis / 10);
   } else {
     snprintf(out, sizeof(out), "%02d:%02d", minutes, seconds);
   }
