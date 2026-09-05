@@ -63,7 +63,7 @@ void Replay::setupServices(const std::vector<std::string> &allow, const std::vec
 void Replay::setupSegmentManager(bool has_filters) {
   seg_mgr_->setCallback([this]() { handleSegmentMerge(); });
 
-  if (has_filters) {
+  if (has_filters && !hasFlag(REPLAY_FLAG_LOAD_ALL_EVENTS)) {
     std::vector<bool> filters(sockets_.size(), false);
     for (size_t i = 0; i < sockets_.size(); ++i) {
       filters[i] = (i == cereal::Event::Which::INIT_DATA || i == cereal::Event::Which::CAR_PARAMS || sockets_[i]);
@@ -366,7 +366,8 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
     cur_which_ = evt.which;
 
     // Skip events if socket is not present
-    if (!sockets_[evt.which]) continue;
+    const bool publish = sockets_[evt.which] != nullptr;
+    if (!publish && !hasFlag(REPLAY_FLAG_LOAD_ALL_EVENTS)) continue;
 
     const uint64_t current_nanos = nanos_since_boot();
     const int64_t time_diff = (evt.mono_time - evt_start_ts) / speed_ - (current_nanos - loop_start_ts);
@@ -385,7 +386,10 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
 
     if (interrupt_requested_) break;
 
-    if (evt.eidx_segnum == -1) {
+    if (!publish) {
+      // Log viewers still need a paced clock and callbacks for un-published services.
+      if (event_filter_) event_filter_(&evt);
+    } else if (evt.eidx_segnum == -1) {
       publishMessage(&evt);
     } else if (camera_server_) {
       if (speed_ > 1.0) {

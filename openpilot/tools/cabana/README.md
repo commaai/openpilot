@@ -95,4 +95,6 @@ cabana
 
 ## Additional Information
 
+For plotting numeric openpilot log fields, layouts, and CSV export, see [Log Signals](LOG_SIGNALS.md).
+
 For more information, see the [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)

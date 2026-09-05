@@ -18,14 +18,38 @@ ReplayStream::ReplayStream() {
 }
 
 ReplayStream::~ReplayStream() {
+  log_cancel_ = true;
   cancelWaits();
 }
 
 // runs on replay's merge thread: a segment of CAN data takes ~30 ms to parse and group, which dropped
 // frames when it ran on the main thread. Only the sorted insert and the merged signal need the main thread.
 void ReplayStream::mergeSegments() {
+  if (log_cancel_) return;
   auto event_data = replay->getEventData();
+  cabana::LogSegments next_log_segments;
   for (const auto &[n, seg] : event_data->segments) {
+    if (logSignalsEnabled()) {
+      auto it = log_cache_.find(n);
+      if (it != log_cache_.end()) {
+        next_log_segments.emplace(n, it->second);
+      } else {
+        auto signals = std::make_shared<cabana::LogSignals>();
+        for (const Event &e : seg->log->events) {
+          if (log_cancel_) return;
+          if (e.eidx_segnum != -1 || e.which == cereal::Event::CAN || e.which == cereal::Event::SENDCAN) continue;
+          capnp::FlatArrayMessageReader reader(e.data);
+          auto event = reader.getRoot<cereal::Event>();
+          auto dynamic = capnp::toDynamic(event);
+          KJ_IF_MAYBE(field, dynamic.which()) {
+            const std::string topic = field->getProto().getName().cStr();
+            cabana::appendLogSignal(dynamic.get(*field), topic, e.mono_time, *signals);
+            (*signals)[topic + "/_valid"].push_back({e.mono_time, double(event.getValid())});
+          }
+        }
+        next_log_segments.emplace(n, std::move(signals));
+      }
+    }
     if (!processed_segments.count(n)) {
       processed_segments.insert(n);
 
@@ -46,6 +70,20 @@ void ReplayStream::mergeSegments() {
       postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
     }
   }
+  if (logSignalsEnabled()) {
+    log_cache_ = std::move(next_log_segments);
+    postToMainThreadAndWait([this]() {
+      log_segments_ = log_cache_;
+      ++log_revision_;
+      logSignalsChanged();
+    });
+  }
+}
+
+void ReplayStream::updateLastMessages() {
+  // qlogs and other logs can contain no CAN messages; their playback clock must still advance.
+  if (logSignalsEnabled()) current_sec_ = replay->currentSeconds();
+  AbstractStream::updateLastMessages();
 }
 
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {

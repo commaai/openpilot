@@ -28,7 +28,7 @@ bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_ico
 # sources shared by the imgui frontend and the core test
 core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
-             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc']
+             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc', 'core/logsignals.cc']
 if arch != "Darwin":
   core_srcs += ['streams/socketcanstream.cc']
 
@@ -54,6 +54,8 @@ else:
 cabana_ui = ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
 
 if GetOption('extras'):
+  logpanel_objs = [src for src in ui_objs if src != ui_env.File('ui/main.cc')]
+  ui_env.Program('tests/test_logpanel', ['tests/test_logpanel.cc'] + logpanel_objs, LIBS=ui_libs)
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
   cabana_core_test_objects = [
@@ -68,6 +70,12 @@ if GetOption('extras'):
     cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
   ]
   cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[replay_lib, common])
+  cabana_core_test_env.Program('tests/test_logsignals', ['tests/test_logsignals.cc', 'core/logsignals.cc'],
+                             LIBS=[cereal, 'capnp', 'kj', 'json11'])
+  log_replay_objects = [cabana_core_test_env.Object('tests/log_replay_' + src.replace('/', '_')[:-3], src)
+                       for src in ['tests/test_log_replay.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'settings.cc', 'core/logsignals.cc']]
+  cabana_core_test_env.Program('tests/test_log_replay', log_replay_objects + cabana_core_test_objects[1:],
+                             LIBS=[replay_lib, common, messaging, visionipc, cereal] + ffmpeg_libs + ['zstd', 'm', 'pthread'])
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = ui_env.Command('#' + output_json_file,

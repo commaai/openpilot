@@ -25,6 +25,7 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_VIPC = 0x0400,
   REPLAY_FLAG_ALL_SERVICES = 0x0800,
   REPLAY_FLAG_BENCHMARK = 0x1000,
+  REPLAY_FLAG_LOAD_ALL_EVENTS = 0x2000,  // retain log fields without changing the services published
 };
 
 struct BenchmarkStats {

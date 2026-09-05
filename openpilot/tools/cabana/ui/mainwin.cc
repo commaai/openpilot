@@ -33,10 +33,11 @@ namespace {
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
 constexpr const char *CENTER_PANEL = "###CenterWidget";
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
+constexpr const char *LOG_PANEL = "Log Signals###LogSignals";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &log_layout) : window_(window), startup_log_layout_(log_layout) {
   can = &dummy_;
   video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
   messages_visible_ = inistate::main_window.messages_visible;
@@ -153,6 +154,7 @@ void MainWindow::drawMenuBar() {
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
     ImGui::MenuItem(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), nullptr, &video_visible_);
+    ImGui::MenuItem("Log Signals", nullptr, &log_visible_);
     ImGui::Separator();
     if (ImGui::MenuItem("Reset Window Layout")) {
       messages_visible_ = video_visible_ = true;
@@ -180,6 +182,9 @@ void MainWindow::createDockWidgets() {
   widget_connections_.push_back(messages_widget_->msgSelectionChanged.connect([this](const MessageId &id) { center_widget_.setMessage(id); }));
 
   charts_widget_ = std::make_unique<ChartsWidget>();
+  log_panel_ = std::make_unique<LogPanel>();
+  log_visible_ = can->logSignalsEnabled();
+  if (!startup_log_layout_.empty()) log_panel_->loadLayout(std::exchange(startup_log_layout_, {}));
   center_widget_.setChartsWidget(charts_widget_.get());
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
@@ -336,6 +341,7 @@ void MainWindow::releaseStream() {
   wait_dlg_.open = false;
   widget_connections_.clear();
   charts_widget_.reset();
+  log_panel_.reset();
   video_widget_.reset();
   center_widget_.clear();
   messages_widget_.reset();
@@ -368,6 +374,10 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
     }
 
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
+    stream_connections_.push_back(can->logSignalsChanged.connect([this]() {
+      eventsMerged();
+      wait_dlg_.open = false;
+    }));
 
     if (hasStream()) {
       wait_dlg_.text = can->liveStreaming() ? "Waiting for the live stream to start..." : "Loading segment data...";
@@ -783,7 +793,7 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderDockWindow(MESSAGES_PANEL_ID, left);
     ImGui::DockBuilderDockWindow(VIDEO_PANEL, right);
     ImGui::DockBuilderDockWindow(CENTER_PANEL, center);
-    ImGui::DockBuilderGetNode(center)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+    ImGui::DockBuilderDockWindow(LOG_PANEL, center);
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
@@ -901,6 +911,10 @@ void MainWindow::draw() {
   if (messages_widget_ && messages_visible_) drawMessagesPanel();
   if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
   if (video_widget_ && video_visible_) drawVideoPanel();
+  if (log_panel_ && log_visible_) {
+    if (ImGui::Begin(LOG_PANEL, &log_visible_)) log_panel_->draw();
+    ImGui::End();
+  }
   if (charts_widget_ && charts_floating_) {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);

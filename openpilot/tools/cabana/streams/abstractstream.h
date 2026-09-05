@@ -15,6 +15,7 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "tools/cabana/core/can_data.h"
+#include "tools/cabana/core/logsignals.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
@@ -37,6 +38,9 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  virtual bool logSignalsEnabled() const { return false; }
+  const cabana::LogSegments &logSegments() const { return log_segments_; }
+  uint64_t logRevision() const { return log_revision_; }
   void setTimeRange(const std::optional<std::pair<double, double>> &range);
   const std::optional<std::pair<double, double>> &timeRange() const { return time_range_; }
 
@@ -63,6 +67,7 @@ public:
   Observable<double> seekedTo;
   Observable<const std::optional<std::pair<double, double>> &> timeRangeChanged;
   Observable<const MessageEventsMap &> eventsMerged;
+  Observable<> logSignalsChanged;
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
 
@@ -82,6 +87,8 @@ protected:
   std::vector<const CanEvent *> all_events_;
   double current_sec_ = 0;
   std::optional<std::pair<double, double>> time_range_;
+  cabana::LogSegments log_segments_;  // main thread only, immutable segment payloads
+  uint64_t log_revision_ = 0;
 
 private:
   void updateLastMsgsTo(double sec);
