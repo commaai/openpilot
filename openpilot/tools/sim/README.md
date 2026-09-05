@@ -65,3 +65,7 @@ The bridge runs on Apple silicon. Two things to know:
 * The simulator processes are started with the `spawn` start method everywhere, since an
   OpenGL context can't be inherited through `fork()`. Anything you add that's shared with a
   sim process must be created from `openpilot.tools.sim.lib.common.SIM_MP_CTX`.
+* `manager`'s `unblock_stdout` skips `forkpty` on Darwin — forking a multi-threaded process
+  there kills the child before `main()` runs, so the manager would otherwise die silently.
+* Simulated camera frames use `time.monotonic()` for EOF timestamps (same clock as
+  `logMonoTime`) so consumers like locationd don't see rewind checks fail.
