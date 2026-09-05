@@ -675,7 +675,7 @@ requires-dist = [
     { name = "rednose", marker = "extra == 'submodules'", editable = "rednose_repo" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
-    { name = "scons", specifier = "==4.10.1" },
+    { name = "scons" },
     { name = "sentry-sdk" },
     { name = "setproctitle" },
     { name = "sounddevice" },
@@ -923,11 +923,11 @@ wheels = [
 
 [[package]]
 name = "scons"
-version = "4.10.1"
+version = "4.11.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7d/c9/2f430bb39e4eccba32ce8008df4a3206df651276422204e177a09e12b30b/scons-4.10.1.tar.gz", hash = "sha256:99c0e94a42a2c1182fa6859b0be697953db07ba936ecc9817ae0d218ced20b15", size = 3258403, upload-time = "2025-11-16T22:43:39.258Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/b9/b7a5c88f348a0c34594d88100872c55fa1cae863ccb222c1c438341b5503/scons-4.11.1.tar.gz", hash = "sha256:4210d1a80a62e986029208117991b6347ccaaaab37b67463a3ff31ee065dc487", size = 3268963, upload-time = "2026-08-27T04:33:18.232Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/bf/931fb9fbb87234c32b8b1b1c15fba23472a10777c12043336675633809a7/scons-4.10.1-py3-none-any.whl", hash = "sha256:bd9d1c52f908d874eba92a8c0c0a8dcf2ed9f3b88ab956d0fce1da479c4e7126", size = 4136069, upload-time = "2025-11-16T22:43:35.933Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/43/d6285848e893c19682c06e92679dc1a07d37ff7ea148747b1df681ec496c/scons-4.11.1-py3-none-any.whl", hash = "sha256:454cef364348053422696e3d2ecb4fa593c96a624f955842eaaea64f95c8d11d", size = 4123659, upload-time = "2026-08-27T04:33:12.728Z" },
 ]
 
 [[package]]
@@ -1034,7 +1034,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "tinygrad"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "tinygrad_repo" }
 
 [package.metadata]
@@ -1048,6 +1048,7 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'testing-minimal'", specifier = ">=6.148.9" },
     { name = "influxdb3-python", marker = "extra == 'testing'" },
     { name = "librosa", marker = "extra == 'testing'" },
+    { name = "mako", marker = "extra == 'autogen'" },
     { name = "markdown-callouts", marker = "extra == 'docs'" },
     { name = "markdown-exec", extras = ["ansi"], marker = "extra == 'docs'" },
     { name = "mkdocs", marker = "extra == 'docs'" },
@@ -1062,7 +1063,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'testing-minimal'" },
     { name = "onnx", marker = "extra == 'testing'", specifier = "==1.19.0" },
     { name = "onnx2torch", marker = "extra == 'testing'" },
-    { name = "onnxruntime", marker = "extra == 'testing'" },
+    { name = "onnxruntime", marker = "extra == 'testing'", specifier = "==1.24.1" },
     { name = "openai", marker = "extra == 'testing-unit'" },
     { name = "opencv-python", marker = "extra == 'testing'" },
     { name = "pandas", marker = "extra == 'testing'" },
@@ -1073,6 +1074,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'testing-minimal'" },
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
+    { name = "pyyaml", marker = "extra == 'autogen'" },
     { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
@@ -1088,7 +1090,7 @@ requires-dist = [
     { name = "typing-extensions", marker = "extra == 'linting'" },
     { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
 ]
-provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa"]
+provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 
 [[package]]
 name = "tqdm"

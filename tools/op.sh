@@ -334,6 +334,11 @@ function op_clip() {
   op_run_command openpilot/tools/clip/run.py "$@"
 }
 
+function op_docs() {
+  op_before_cmd
+  op_run_command python docs/serve.py "$@"
+}
+
 function op_check_agnos_update() {
   if [[ ! -f "/AGNOS" ]]; then
     return 0
@@ -430,8 +435,9 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
-  echo -e "  ${BOLD}cabana${NC}       Run Cabana (--legacy for the old Qt version)"
+  echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
+  echo -e "  ${BOLD}docs${NC}         Build or serve the openpilot documentation"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
@@ -487,6 +493,7 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
+    docs )          shift 1; op_docs "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
     start )         shift 1; op_start "$@" ;;
