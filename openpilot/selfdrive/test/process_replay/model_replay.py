@@ -212,9 +212,9 @@ def get_frames():
       print(f"Failed to load frames from cache {cache_name}: {e}")
 
   frs = {
-    'narrowRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
-    'cabinCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'narrowRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "narrow_road.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'cabinCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "cabin.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "wide_road.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
   }
   for fr in frs.values():
     for fidx in range(START_FRAME, END_FRAME):
