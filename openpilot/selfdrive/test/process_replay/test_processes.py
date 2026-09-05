@@ -189,7 +189,7 @@ if __name__ == "__main__":
           continue
 
         # to speed things up, we only test all segments on card
-        if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
+        if cfg.proc_name not in ('card', 'controlsd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_"))
