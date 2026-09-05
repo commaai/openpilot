@@ -4,10 +4,13 @@ import os
 import socket
 import subprocess
 import time
+import uuid
 from functools import cached_property, lru_cache
 from pathlib import Path
 
 from openpilot.cereal import log
+from openpilot.common.nm_keyfile import decode_nm_keyfile_ssid
+from openpilot.common.wifi import WPA_CTRL_PATH, decode_wpa_ssid
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
@@ -41,7 +44,7 @@ def wpa_supplicant_cmd(cmd: str, timeout: float = 0.2) -> dict[str, str]:
   with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
     sock.settimeout(timeout)
     sock.bind(f"\0openpilot-wpa-{os.getpid()}-{time.monotonic_ns()}")
-    sock.connect("/run/wpa_supplicant/wlan0")
+    sock.connect(WPA_CTRL_PATH)
     sock.send(cmd.encode())
 
     while True:
@@ -56,6 +59,12 @@ def get_default_route_iface():
   with open("/proc/net/route") as f:
     routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
   return min(routes)[1] if routes else None
+
+def _normalize_uuid(value: str) -> str | None:
+  try:
+    return str(uuid.UUID(value))
+  except ValueError:
+    return None
 
 class HardwareComma(HardwareBase):
   """
@@ -211,23 +220,28 @@ class HardwareComma(HardwareBase):
       return Params().get_bool("GsmMetered")
     try:
       if network_type == NetworkType.wifi:
-        ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
-        if ssid:
-          # wpa_supplicant escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
-          ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
-          ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
-
-          nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
-          for fpath in (p for d in nm_dirs for p in Path(d).glob("*.nmconnection")):
+        status = wpa_supplicant_cmd("STATUS")
+        profile_uuid = status.get("id_str", "").strip('"')
+        normalized_profile_uuid = _normalize_uuid(profile_uuid) if profile_uuid else None
+        if profile_uuid and normalized_profile_uuid is None:
+          return super().get_network_metered(network_type)
+        ssid = decode_wpa_ssid(status.get("ssid", ""))
+        if profile_uuid or ssid:
+          nm_dirs = ("/data/etc/NetworkManager/system-connections", "/run/NetworkManager/system-connections")
+          for fpath in (path for directory in nm_dirs for path in Path(directory).glob("*.nmconnection")):
             raw = sudo_read(str(fpath))
             if not raw:
               continue
             cp = configparser.ConfigParser(interpolation=None)
             try:
               cp.read_string(raw)
-              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
-              if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
-                continue
+              if profile_uuid:
+                if _normalize_uuid(cp.get("connection", "uuid", fallback="")) != normalized_profile_uuid:
+                  continue
+              else:
+                wifi_section = "wifi" if cp.has_section("wifi") else "802-11-wireless"
+                if decode_nm_keyfile_ssid(cp.get(wifi_section, "ssid", fallback="")) != ssid:
+                  continue
               metered = cp.getint("connection", "metered", fallback=0)
             except (configparser.Error, ValueError):
               continue

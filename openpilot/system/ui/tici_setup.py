@@ -61,7 +61,8 @@ class Setup(Widget):
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self.wifi_ui = WifiManagerUI(WifiManager())
+    self.wifi_manager = WifiManager()
+    self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.keyboard = Keyboard()
     self.selected_radio = None
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
@@ -151,43 +152,47 @@ class Setup(Widget):
     elif self.state == SetupState.DOWNLOAD_FAILED:
       self.render_download_failed(rect)
 
+  def set_state(self, state: SetupState):
+    self.state = state
+    self.wifi_manager.set_active(state == SetupState.NETWORK_SETUP)
+
   def _low_voltage_continue_button_callback(self):
-    self.state = SetupState.GETTING_STARTED
+    self.set_state(SetupState.GETTING_STARTED)
 
   def _custom_software_warning_back_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
+    self.set_state(SetupState.SOFTWARE_SELECTION)
 
   def _custom_software_warning_continue_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
+    self.set_state(SetupState.NETWORK_SETUP)
     self.stop_network_check_thread.clear()
     self.start_network_check()
 
   def _getting_started_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
+    self.set_state(SetupState.SOFTWARE_SELECTION)
 
   def _software_selection_back_button_callback(self):
-    self.state = SetupState.GETTING_STARTED
+    self.set_state(SetupState.GETTING_STARTED)
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
-      self.state = SetupState.NETWORK_SETUP
+      self.set_state(SetupState.NETWORK_SETUP)
       self.stop_network_check_thread.clear()
       self.start_network_check()
     else:
-      self.state = SetupState.CUSTOM_SOFTWARE_WARNING
+      self.set_state(SetupState.CUSTOM_SOFTWARE_WARNING)
 
   def _download_failed_startover_button_callback(self):
-    self.state = SetupState.GETTING_STARTED
+    self.set_state(SetupState.GETTING_STARTED)
 
   def _network_setup_back_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
+    self.set_state(SetupState.SOFTWARE_SELECTION)
 
   def _network_setup_continue_button_callback(self):
     self.stop_network_check_thread.set()
     if self._software_selection_openpilot_button.selected:
       self.download(OPENPILOT_URL)
     else:
-      self.state = SetupState.CUSTOM_SOFTWARE
+      self.set_state(SetupState.CUSTOM_SOFTWARE)
 
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture_ex(self.warning, rl.Vector2(rect.x + 150, rect.y + 110), 0.0, 1.0, rl.WHITE)
@@ -336,7 +341,7 @@ class Setup(Widget):
 
       # Cancel pressed
       elif result == DialogResult.CANCEL:
-        self.state = SetupState.SOFTWARE_SELECTION
+        self.set_state(SetupState.SOFTWARE_SELECTION)
 
     self.keyboard.reset(min_text_size=1)
     self.keyboard.set_title("Enter URL", "for Custom Software")
@@ -351,7 +356,7 @@ class Setup(Widget):
     parsed = urlparse(url, scheme='https')
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
 
-    self.state = SetupState.DOWNLOADING
+    self.set_state(SetupState.DOWNLOADING)
 
     self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
     self.download_thread.start()
@@ -415,7 +420,7 @@ class Setup(Widget):
   def download_failed(self, url: str, reason: str):
     self.failed_url = url
     self.failed_reason = reason
-    self.state = SetupState.DOWNLOAD_FAILED
+    self.set_state(SetupState.DOWNLOAD_FAILED)
 
 
 def main():

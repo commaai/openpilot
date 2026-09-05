@@ -6,16 +6,16 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType, normalize_ssid
+from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
+from openpilot.system.ui.lib.wpa_ctrl import normalize_ssid
 from openpilot.system.ui.widgets import DialogResult, Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
-from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.widgets.confirm_dialog import alert_dialog, ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
 
-NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 64
 ITEM_HEIGHT = 160
@@ -63,6 +63,7 @@ class NetworkUI(Widget):
     self._advanced_panel = self._child(AdvancedNetworkSettings(wifi_manager))
     self._nav_button = self._child(NavButton(tr("Advanced")))
     self._nav_button.set_click_callback(self._cycle_panel)
+    self._wifi_panel.set_panel_active(True)
 
   def show_event(self):
     super().show_event()
@@ -91,6 +92,7 @@ class NetworkUI(Widget):
 
   def _set_current_panel(self, panel: PanelType):
     self._current_panel = panel
+    self._wifi_panel.set_panel_active(panel == PanelType.WIFI)
 
 
 class AdvancedNetworkSettings(Widget):
@@ -101,7 +103,11 @@ class AdvancedNetworkSettings(Widget):
     from openpilot.selfdrive.ui.lib.prime_state import PrimeType
     super().__init__()
     self._wifi_manager = wifi_manager
-    self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)
+    self._wifi_manager.add_callbacks(
+      networks_updated=self._on_network_updated,
+      activated=lambda: self._on_tethering_finished(),
+      disconnected=lambda: self._on_tethering_finished(),
+    )
     self._params = Params()
     self._prime_state = ui_state.prime_state
     self._cell_prime_types = (PrimeType.NONE, PrimeType.LITE)
@@ -150,11 +156,13 @@ class AdvancedNetworkSettings(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
-  def _on_network_updated(self, networks: list[Network]):
+  def _on_tethering_finished(self):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
     self._tethering_password_action.set_enabled(True)
+    self._on_network_updated(self._wifi_manager.networks)
 
+  def _on_network_updated(self, networks: list[Network]):
     if self._wifi_manager.is_tethering_active() or self._wifi_manager.ipv4_address == "":
       self._wifi_metered_action.set_enabled(False)
       self._wifi_metered_action.selected_button = 0
@@ -215,10 +223,10 @@ class AdvancedNetworkSettings(Widget):
         password = self._keyboard.text
         if password == "":
           # connect without password
-          self._wifi_manager.connect_to_network(ssid, "", hidden=True)
+          self._wifi_manager.connect_to_network(ssid, "", hidden=True, security=SecurityType.OPEN)
           return
 
-        self._wifi_manager.connect_to_network(ssid, password, hidden=True)
+        self._wifi_manager.connect_to_network(ssid, password, hidden=True, security=SecurityType.WPA)
 
       self._keyboard.reset(min_text_size=0)
       self._keyboard.set_title(tr("Enter password"), tr("for \"{}\"").format(ssid))
@@ -237,7 +245,9 @@ class AdvancedNetworkSettings(Widget):
 
       password = self._keyboard.text
       self._wifi_manager.set_tethering_password(password)
-      self._tethering_password_action.set_enabled(False)
+      # Debounce only while an active hotspot restarts
+      if self._wifi_manager.is_tethering_active():
+        self._tethering_password_action.set_enabled(False)
 
     self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
     self._keyboard.set_title(tr("Enter new tethering password"), "")
@@ -264,6 +274,8 @@ class WifiManagerUI(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self.state: UIState = UIState.IDLE
+    self._page_shown = False
+    self._panel_active = True
     self._state_network: Network | None = None  # for CONNECTING / NEEDS_AUTH / SHOW_FORGET_CONFIRM / FORGETTING
     self._password_retry: bool = False  # for NEEDS_AUTH
     self.btn_width: int = 200
@@ -278,17 +290,22 @@ class WifiManagerUI(Widget):
     self._wifi_manager.add_callbacks(need_auth=self._on_need_auth,
                                      activated=self._on_activated,
                                      forgotten=self._on_forgotten,
+                                     forget_failed=self._on_forget_failed,
                                      networks_updated=self._on_network_updated,
                                      disconnected=self._on_disconnected)
 
   def show_event(self):
     super().show_event()
-    # start/stop scanning when widget is visible
+    self._page_shown = True
     self._wifi_manager.set_active(True)
 
   def hide_event(self):
     super().hide_event()
+    self._page_shown = False
     self._wifi_manager.set_active(False)
+
+  def set_panel_active(self, active: bool):
+    self._panel_active = active
 
   def _load_icons(self):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
@@ -389,6 +406,9 @@ class WifiManagerUI(Widget):
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
   def _networks_buttons_callback(self, network):
+    if self._wifi_manager.is_tethering_active():
+      return
+
     if not self._wifi_manager.is_connection_saved(network.ssid) and network.security_type != SecurityType.OPEN:
       self.state = UIState.NEEDS_AUTH
       self._state_network = network
@@ -423,12 +443,15 @@ class WifiManagerUI(Widget):
     rl.draw_texture_v(gui_app.texture(STRENGTH_ICONS[strength_level], ICON_SIZE, ICON_SIZE), rl.Vector2(rect.x, rect.y), rl.WHITE)
 
   def connect_to_network(self, network: Network, password=''):
+    if self._wifi_manager.is_tethering_active():
+      return
+
     self.state = UIState.CONNECTING
     self._state_network = network
     if self._wifi_manager.is_connection_saved(network.ssid) and not password:
       self._wifi_manager.activate_connection(network.ssid)
     else:
-      self._wifi_manager.connect_to_network(network.ssid, password)
+      self._wifi_manager.connect_to_network(network.ssid, password, security=network.security_type)
 
   def forget_network(self, network: Network):
     self.state = UIState.FORGETTING
@@ -447,6 +470,8 @@ class WifiManagerUI(Widget):
 
   def _on_need_auth(self, ssid):
     network = next((n for n in self._networks if n.ssid == ssid), None)
+    if network is None and self._state_network is not None and self._state_network.ssid == ssid:
+      network = self._state_network
     if network:
       self.state = UIState.NEEDS_AUTH
       self._state_network = network
@@ -459,6 +484,12 @@ class WifiManagerUI(Widget):
   def _on_forgotten(self, _):
     if self.state == UIState.FORGETTING:
       self.state = UIState.IDLE
+
+  def _on_forget_failed(self, _):
+    if self.state == UIState.FORGETTING:
+      self.state = UIState.IDLE
+    if self._page_shown and self._panel_active:
+      gui_app.push_widget(alert_dialog(tr("Failed to forget Wi-Fi network")))
 
   def _on_disconnected(self):
     if self.state == UIState.CONNECTING:
