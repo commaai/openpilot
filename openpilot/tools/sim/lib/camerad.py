@@ -1,3 +1,6 @@
+import os
+import time
+
 import numpy as np
 
 from openpilot.cereal.visionipc import VisionStreamType
@@ -10,6 +13,24 @@ from openpilot.tools.sim.lib.common import W, H
 def rgb_to_nv12(rgb):
   """Convert RGB image to NV12 (YUV420) format using BT.601 coefficients."""
   h, w = rgb.shape[:2]
+  if os.environ.get("SIM_USE_OPENCV_YUV"):
+    import cv2
+
+    # MetaDrive, tinygrad's image warp, and ONNX Runtime are already using the
+    # runner's CPU cores. OpenCV's native worker pool can oversubscribe those
+    # libraries (and has caused SIGSEGVs in the full simulator), so keep this
+    # conversion single-threaded and on the CPU.
+    cv2.setNumThreads(1)
+    cv2.ocl.setUseOpenCL(False)
+    i420 = cv2.cvtColor(rgb, cv2.COLOR_RGB2YUV_I420).reshape(-1)
+    y_size = h * w
+    chroma_size = y_size // 4
+    nv12 = np.empty(y_size + 2 * chroma_size, dtype=np.uint8)
+    nv12[:y_size] = i420[:y_size]
+    nv12[y_size::2] = i420[y_size:y_size + chroma_size]
+    nv12[y_size + 1::2] = i420[y_size + chroma_size:]
+    return nv12.tobytes()
+
   r = rgb[:, :, 0].astype(np.int32)
   g = rgb[:, :, 1].astype(np.int32)
   b = rgb[:, :, 2].astype(np.int32)
@@ -42,6 +63,7 @@ class Camerad:
 
     self.frame_road_id = 0
     self.frame_wide_id = 0
+    self.start_time = time.monotonic_ns()
     self.vipc_server = VisionIpcServer("camerad")
 
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H)
@@ -65,7 +87,7 @@ class Camerad:
     return rgb_to_nv12(rgb)
 
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
-    eof = int(frame_id * 0.05 * 1e9)
+    eof = self.start_time + int(frame_id * 0.05 * 1e9)
     self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
 
     dat = messaging.new_message(pub_type, valid=True)
@@ -77,3 +99,4 @@ class Camerad:
     }
     setattr(dat, pub_type, msg)
     self.pm.send(pub_type, dat)
+

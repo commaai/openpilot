@@ -175,23 +175,47 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
-    jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
-    input_devices = jits['input_devices']
-    self.model_device = input_devices['model']
-    metadata = jits['metadata']
-    self.input_shapes = metadata['input_shapes']
-    self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
-    self.output_slices = metadata['output_slices']
-
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
-
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
     self.parser = Parser()
-    self.run_model = jits['run_model'][(cam_w,cam_h)]
+
+    self.onnx_policy = None
+    self.onnx_warp = None
+    self.run_model = None
+    self.model_device = None
+    self.input_queues = {}
+    self.frame_views = {}
+
+    if (onnx_cpu_model := os.getenv('ONNX_CPU_MODEL')) is not None:
+      if chestnut:
+        raise RuntimeError("ONNX_CPU_MODEL is only supported by the small model")
+      from openpilot.selfdrive.modeld.onnx_cpu import OnnxCpuPolicy, OpenCvCpuWarp
+      self.onnx_policy = OnnxCpuPolicy(onnx_cpu_model, self.frame_skip)
+      self.onnx_warp = OpenCvCpuWarp(cam_w, cam_h)
+      self.input_shapes = self.onnx_policy.input_shapes
+      self.output_slices = self.onnx_policy.output_slices
+      self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
+      self.npy = {
+        'desire': np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32),
+        'traffic_convention': np.zeros((1, 2), dtype=np.float32),
+        'action_t': np.zeros((1, 2), dtype=np.float32),
+        'prev_feat': np.zeros((1, ModelConstants.FEATURE_LEN), dtype=np.float32),
+        'tfm': np.zeros((3, 3), dtype=np.float32),
+        'big_tfm': np.zeros((3, 3), dtype=np.float32),
+      }
+      cloudlog.warning(f"using ONNX Runtime CPU policy: {onnx_cpu_model}")
+    else:
+      jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
+      self.model_device = jits['input_devices']['model']
+      metadata = jits['metadata']
+      self.input_shapes = metadata['input_shapes']
+      self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
+      self.output_slices = metadata['output_slices']
+      self.input_queues, self.npy, self.frame_views = make_input_queues(
+        self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+      self.run_model = jits['run_model'][(cam_w,cam_h)]
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -199,9 +223,6 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
-    for key, buf in bufs.items():
-      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
-
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
     self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
@@ -211,10 +232,23 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
-    if after_enqueue is not None:
-      after_enqueue()
-    model_output = outs.numpy()[0]
+    if self.onnx_policy is None:
+      assert self.run_model is not None
+      for key, buf in bufs.items():
+        np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
+      if after_enqueue is not None:
+        after_enqueue()
+      model_output = outs.numpy()[0]
+    else:
+      assert self.onnx_warp is not None
+      warped = self.onnx_warp.run(bufs, transforms)
+      model_output = self.onnx_policy.run(warped, self.npy['desire'], self.npy['traffic_convention'],
+                                          self.npy['action_t'], self.npy['prev_feat'])[0]
+      # ONNX Runtime is synchronous, so inference has completed before this callback.
+      if after_enqueue is not None:
+        after_enqueue()
+
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
@@ -229,8 +263,14 @@ class ModelState:
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    if self.onnx_policy is not None:
+      self.onnx_policy.reset()
+      for value in self.npy.values():
+        value.fill(0)
+    else:
+      assert self.model_device is not None
+      self.input_queues, self.npy, self.frame_views = make_input_queues(
+        self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
     self.prev_desire[:] = 0
 
 
@@ -462,3 +502,4 @@ if __name__ == "__main__":
     main(demo=args.demo)
   except KeyboardInterrupt:
     cloudlog.warning("got SIGINT")
+

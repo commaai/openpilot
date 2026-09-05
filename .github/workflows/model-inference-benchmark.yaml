@@ -1,0 +1,106 @@
+name: Model inference CPU benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - benchmark/model-cpu-backends
+
+permissions:
+  contents: read
+
+jobs:
+  compare_backends:
+    name: tinygrad vs ONNX Runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Fetch Tinygrad and the small driving model
+      run: |
+        git submodule update --init --depth 1 tinygrad_repo
+        git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
+        git lfs pull --include="openpilot/selfdrive/modeld/models/driving_supercombo.onnx" --exclude=""
+
+    - name: Install benchmark dependencies
+      run: |
+        python3 -m venv .venv
+        .venv/bin/python -m pip install --upgrade pip numpy onnx onnxruntime psutil
+
+    - name: Convert the driving model to FP32
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/convert_onnx_fp16_to_fp32.py \
+          openpilot/selfdrive/modeld/models/driving_supercombo.onnx \
+          driving_supercombo_fp32.onnx
+
+    - name: Benchmark the original FP16 model and Tinygrad
+      env:
+        BEAM: "0"
+        CACHEDB: ${{ runner.temp }}/tinygrad-cache.db
+        DEBUG: "0"
+        PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/tinygrad_repo
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --warmup 3 \
+          --runs 20 \
+          --onnxruntime-threads 1 2 4 \
+          --tinygrad-device CPU:LLVM \
+          --profile-runs 3 \
+          --compare-model driving_supercombo_fp32.onnx \
+          --temporal-steps 80 \
+          --json model-inference-fp16-benchmark.json
+
+    - name: Benchmark the FP32 model in ONNX Runtime
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --model driving_supercombo_fp32.onnx \
+          --backend onnxruntime \
+          --warmup 3 \
+          --runs 20 \
+          --onnxruntime-threads 1 2 4 \
+          --profile-runs 3 \
+          --json model-inference-fp32-benchmark.json
+
+    - name: Direct FP16 vs FP32 comparison
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --backend onnxruntime \
+          --onnxruntime-threads 2 \
+          --warmup 3 \
+          --runs 50 \
+          --compare-model driving_supercombo_fp32.onnx \
+          --temporal-steps 80 \
+          --json model-inference-fp16-vs-fp32.json
+
+    - name: Measure isolated backend memory
+      env:
+        BEAM: "0"
+        CACHEDB: ${{ runner.temp }}/tinygrad-cache.db
+        DEBUG: "0"
+        PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/tinygrad_repo
+      run: |
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --backend onnxruntime --onnxruntime-threads 2 --warmup 3 --runs 20 --measure-memory \
+          --json model-inference-memory-fp16-ort-benchmark.json
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --backend tinygrad --tinygrad-device CPU:LLVM --warmup 3 --runs 20 --measure-memory \
+          --json model-inference-memory-tinygrad-benchmark.json
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --model driving_supercombo_fp32.onnx \
+          --backend onnxruntime --onnxruntime-threads 2 --warmup 3 --runs 20 --measure-memory \
+          --json model-inference-memory-fp32-ort-benchmark.json
+        .venv/bin/python openpilot/selfdrive/modeld/benchmark_cpu_backends.py \
+          --model driving_supercombo_fp32.onnx \
+          --backend onnxruntime --onnxruntime-threads 2 --warmup 3 --runs 20 --measure-memory \
+          --onnxruntime-io-binding \
+          --json model-inference-memory-fp32-ort-iobinding-benchmark.json
+
+    - name: Upload benchmark report
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: model-inference-cpu-benchmark-${{ github.run_id }}
+        path: model-inference-*-benchmark.json
+        if-no-files-found: warn
+

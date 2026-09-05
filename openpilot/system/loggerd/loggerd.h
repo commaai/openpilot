@@ -196,4 +196,10 @@ const LogCameraInfo stream_cabin_camera_info{
 };
 
 const LogCameraInfo cameras_logged[] = {narrow_road_camera_info, wide_road_camera_info, cabin_camera_info};
+const LogCameraInfo qcam_only_cameras_logged[] = {{
+  .thread_name = "narrow_road_cam_encoder",
+  .stream_type = VISION_STREAM_NARROW_ROAD,
+  .encoder_infos = {qcam_encoder_info},
+}};
 const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_cabin_camera_info};
+
