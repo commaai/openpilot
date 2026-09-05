@@ -64,6 +64,7 @@ class UIState:
         "selfdriveState",
         "longitudinalPlan",
         "gpsLocationExternal",
+        "ubloxGnss",
         "carOutput",
         "carControl",
         "vehicleParameters",

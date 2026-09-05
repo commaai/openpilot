@@ -14,7 +14,8 @@ from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
+from openpilot.common.hardware.usb import CHESTNUT_ROM_USB_IDS, CHESTNUT_USB_IDS
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
@@ -130,6 +131,8 @@ class BookmarkIcon(Widget):
 
 
 class AugmentedRoadView(CameraView):
+  GNSS_DT = 0.1
+
   def __init__(self, bookmark_callback=None, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_NARROW_ROAD):
     super().__init__("camerad", stream_type)
     self._bookmark_callback = bookmark_callback
@@ -143,6 +146,8 @@ class AugmentedRoadView(CameraView):
     self._cached_matrix: np.ndarray | None = None
     self._content_rect = rl.Rectangle()
     self._last_click_time = 0.0
+    self._cn0_fast_filter = FirstOrderFilter(0.0, 0.5, self.GNSS_DT, initialized=False)
+    self._cn0_slow_filter = FirstOrderFilter(0.0, 10.0, self.GNSS_DT, initialized=False)
 
     # Bookmark icon with swipe gesture
     self._bookmark_icon = BookmarkIcon(bookmark_callback)
@@ -165,6 +170,15 @@ class AugmentedRoadView(CameraView):
 
   def _update_state(self):
     super()._update_state()
+
+    if ui_state.sm.updated["ubloxGnss"]:
+      ublox_gnss = ui_state.sm["ubloxGnss"]
+      if ublox_gnss.which() == "measurementReport":
+        cn0_values = [measurement.cno for measurement in ublox_gnss.measurementReport.measurements if measurement.cno > 0]
+        if cn0_values:
+          mean_cn0 = sum(cn0_values) / len(cn0_values)
+          self._cn0_fast_filter.update(mean_cn0)
+          self._cn0_slow_filter.update(mean_cn0)
 
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
@@ -243,6 +257,26 @@ class AugmentedRoadView(CameraView):
     self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
+
+    gps = ui_state.sm["gpsLocationExternal"]
+    chestnut = next((device for device in ui_state.sm["deviceState"].usbState.devices
+                     if (device.vendorId, device.productId) in CHESTNUT_USB_IDS + CHESTNUT_ROM_USB_IDS), None)
+    usb3_debug_text = "NO USB3"
+    if chestnut is not None and chestnut.speedMbps >= 5000:
+      usb3_debug_text = f"USB3 lane: {str(chestnut.usb3Lane).upper()}"
+
+    gps_debug_text = (
+      f"GPS sats: {gps.satelliteCount}",
+      f"GPS fix: {gps.hasFix}",
+      f"GPS hacc: {gps.horizontalAccuracy:.1f} m",
+      (f"CN0: {self._cn0_slow_filter.x:.1f} | {self._cn0_fast_filter.x:.1f}"
+       if self._cn0_slow_filter.initialized else "CN0: -- | --"),
+      usb3_debug_text,
+    )
+    font_size = 36
+    for i, text in enumerate(gps_debug_text):
+      rl.draw_text_ex(gui_app.font(FontWeight.SEMI_BOLD), text,
+                      rl.Vector2(self.rect.x + 10, self.rect.y + 10 + i * font_size), font_size, 0, rl.WHITE)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
