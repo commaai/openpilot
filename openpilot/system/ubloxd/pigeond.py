@@ -3,18 +3,20 @@ import sys
 import time
 import signal
 import struct
+import threading
 import requests
 import urllib.parse
 from datetime import datetime, UTC
 
-from openpilot.cereal import messaging
+from openpilot.cereal import log, messaging
+from openpilot.common.api import Api
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.serial import Serial
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.hardware import TICI
+from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.common.gpio import gpio_init, gpio_set
-from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.common.hardware.comma.pins import GPIO
 
 UBLOX_TTY = "/dev/ttyHS0"
 
@@ -41,15 +43,23 @@ def add_ubx_checksum(msg: bytes) -> bytes:
     B = (B + A) % 256
   return msg + bytes([A, B])
 
-def get_assistnow_messages(token: str) -> list[bytes]:
-  # make request
-  # TODO: implement adding the last known location
-  r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
-    'token': token,
-    'gnss': 'gps,glo',
-    'datatype': 'eph,alm,aux',
-  }, safe=':,'), timeout=5)
-  assert r.status_code == 200, "Got invalid status code"
+def get_assistnow_messages() -> list[bytes]:
+  params = Params()
+  if token := params.get('AssistNowToken'):
+    cloudlog.warning("Downloading AssistNow data directly from u-blox")
+    r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
+      'token': token,
+      'gnss': 'gps,glo',
+      'datatype': 'eph,alm,aux',
+    }, safe=':,'), timeout=5)
+  elif dongle_id := params.get('DongleId'):
+    cloudlog.warning("Downloading AssistNow data from comma's AGPS proxy")
+    api = Api(dongle_id)
+    r = api.get(f"v1/{dongle_id}/assist", access_token=api.get_token(), timeout=5)
+  else:
+    raise RuntimeError("Neither AssistNowToken nor DongleId is configured")
+
+  r.raise_for_status()
   dat = r.content
 
   # split up messages
@@ -230,16 +240,6 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
         ))
         pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
 
-      # try getting AssistNow if we have a token
-      token = Params().get('AssistNowToken')
-      if token is not None:
-        try:
-          for msg in get_assistnow_messages(token):
-            pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-          cloudlog.warning("AssistNow messages sent")
-        except Exception:
-          cloudlog.warning("failed to get AssistNow messages")
-
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
@@ -279,12 +279,38 @@ def run_receiving(duration: int = 0):
 
   start_time = time.monotonic()
   last_almanac_save = time.monotonic()
+  assist_attempted = False
+  assist_messages = None
+
+  def download_assistnow() -> None:
+    nonlocal assist_messages
+    sm = messaging.SubMaster(['deviceState'])
+    while assist_messages is None:
+      sm.update(1000)
+      if system_time_valid() and sm['deviceState'].networkType != log.DeviceState.NetworkType.none:
+        try:
+          assist_messages = get_assistnow_messages()
+        except Exception:
+          cloudlog.warning("failed to get AssistNow messages")
+      time.sleep(10.)
+  threading.Thread(target=download_assistnow, daemon=True).start()
+
   while (duration == 0) or (time.monotonic() - start_time < duration):
+    if assist_messages is not None and not assist_attempted:
+      assist_attempted = True
+      try:
+        for msg in assist_messages:
+          pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+        cloudlog.warning("AssistNow messages sent")
+      except Exception:
+        cloudlog.warning("failed to send AssistNow messages")
+
     dat = pigeon.receive()
     if len(dat) > 0:
       if dat[0] == 0x00:
         cloudlog.warning("received invalid data from ublox, re-initing!")
         init(pigeon)
+        assist_attempted = False
         continue
 
       # send out to socket
@@ -302,7 +328,7 @@ def run_receiving(duration: int = 0):
 
 
 def main():
-  assert TICI, "unsupported hardware for pigeond"
+  assert COMMA_HARDWARE, "unsupported hardware for pigeond"
   run_receiving()
 
 if __name__ == "__main__":

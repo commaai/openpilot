@@ -35,6 +35,7 @@ build_files = [f'{gen}/acados_solver_long.c'] + casadi_model + casadi_cost_y + c
 
 # extra generated files used to trigger a rebuild
 generated_files = [
+  'acados_ocp_long.json',
   f'{gen}/Makefile',
 
   f'{gen}/main_long.c',

@@ -37,12 +37,12 @@ class _NoneCameraConfig(CameraConfig):
 
 @dataclass(frozen=True)
 class DeviceCameraConfig:
-  fcam: CameraConfig
-  dcam: CameraConfig
-  ecam: CameraConfig
+  narrow_road: CameraConfig
+  cabin: CameraConfig
+  wide_road: CameraConfig
 
   def all_cams(self):
-    for cam in ['fcam', 'dcam', 'ecam']:
+    for cam in ['narrow_road', 'cabin', 'wide_road']:
       if not isinstance(getattr(self, cam), _NoneCameraConfig):
         yield cam, getattr(self, cam)
 

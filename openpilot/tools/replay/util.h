@@ -10,8 +10,8 @@
 #include "openpilot/cereal/messaging/messaging.h"
 
 enum CameraType {
-  RoadCam = 0,
-  DriverCam,
+  NarrowRoadCam = 0,
+  CabinCam,
   WideRoadCam
 };
 

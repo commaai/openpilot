@@ -108,10 +108,14 @@ def atomic_write(path: str, mode: str = 'w', buffering: int = -1, encoding: str 
   if not overwrite and os.path.exists(path):
     raise FileExistsError(f"File '{path}' already exists. To overwrite it, set 'overwrite' to True.")
 
-  with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=dir_name, delete=False) as tmp_file:
-    yield tmp_file
-    tmp_file_name = tmp_file.name
-  os.replace(tmp_file_name, path)
+  tmp_file = tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=dir_name, delete=False)
+  try:
+    with tmp_file:
+      yield tmp_file
+    os.replace(tmp_file.name, path)
+  finally:
+    with contextlib.suppress(FileNotFoundError):
+      os.unlink(tmp_file.name)
 
 
 def get_upload_stream(filepath: str, should_compress: bool) -> tuple[io.BufferedIOBase, int]:

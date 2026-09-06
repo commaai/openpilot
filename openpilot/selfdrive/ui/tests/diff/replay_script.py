@@ -138,21 +138,25 @@ def setup_update_available(available: bool = True) -> None:
     params.remove("UpdaterTargetBranch")
 
 
+def set_updater_state(state: str) -> None:
+  Params().put("UpdaterState", state, block=True)
+
+
 def setup_calibration_params() -> None:
   params = Params()
-  # live calibration
-  calib = messaging.new_message('liveCalibration')
-  calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
-  calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
+  # camera calibration
+  calib = messaging.new_message('extrinsicsCalibration')
+  calib.extrinsicsCalibration.calStatus = log.ExtrinsicsCalibration.Status.calibrated
+  calib.extrinsicsCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
   params.put("CalibrationParams", calib.to_bytes(), block=True)
-  # live delay
-  delay = messaging.new_message('liveDelay')
-  delay.liveDelay.calPerc = 75
+  # lateral delay
+  delay = messaging.new_message('lateralDelay')
+  delay.lateralDelay.calPerc = 75
   params.put("LiveDelay", delay.to_bytes(), block=True)
-  # live torque parameters
-  torque = messaging.new_message('liveTorqueParameters')
-  torque.liveTorqueParameters.useParams = True
-  torque.liveTorqueParameters.calPerc = 60
+  # lateral torque parameters
+  torque = messaging.new_message('lateralTorqueParameters')
+  torque.lateralTorqueParameters.useParams = True
+  torque.lateralTorqueParameters.calPerc = 60
   params.put("LiveTorqueParameters", torque.to_bytes(), block=True)
 
 
@@ -317,7 +321,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
       lambda: swipe_left(width * 2), click,  # first page, click next
       lambda: swipe_left(width * 2), swipe_down  # second page, go back (TODO: make driver cam preview work)
     ),
-    None,  # TODO: preview driver camera; enabling this causes MultiplePublishersError later in onroad alert tests
+    None,  # TODO: preview cabin camera; enabling this causes MultiplePublishersError later in onroad alert tests
     lambda: explore_setting(swipe_left),  # terms & conditions (swipe to view QR code)
     lambda: explore_setting(lambda: swipe_up(height * 3), lambda: swipe_down(height * 3)),  # regulatory info
     lambda: run_actions(click, lambda: swipe_left(width)),  # reset calibration confirm (goes back automatically)
@@ -479,6 +483,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # === Settings - Software ===
   script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
   script.click(278, 720)  # software
+  script.setup(lambda: set_updater_state("checking..."))  # updater mid-check
+  script.setup(lambda: set_updater_state("downloading..."))  # updater mid-download
+  script.setup(lambda: set_updater_state("idle"), wait_after=0)
   for _ in range(2):
     script.click(720, 120)  # toggle current release notes
   script.setup(setup_update_available)  # set update available

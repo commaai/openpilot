@@ -173,12 +173,6 @@ jobs:
         timeout_minutes: 2
         max_attempts: 3
         command: cd ${{ github.workspace }}/ci-artifacts && git push origin process-replay --force
-    - name: Run regen
-      if: false
-      timeout-minutes: 4
-      env:
-        ONNXCPU: 1
-      run: python openpilot/selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcfile.h"
 
 typedef std::set<int> SourceSet;
@@ -15,16 +15,6 @@ inline bool operator<(const std::shared_ptr<DBCFile> &l, const std::shared_ptr<D
 
 class DBCManager {
 public:
-  struct Callbacks {
-    std::function<void(MessageId, const cabana::Signal *)> signal_added;
-    std::function<void(const cabana::Signal *)> signal_removed;
-    std::function<void(const cabana::Signal *)> signal_updated;
-    std::function<void(MessageId)> msg_updated;
-    std::function<void(MessageId)> msg_removed;
-    std::function<void()> file_changed;
-    std::function<void()> mask_updated;
-  };
-
   DBCManager() = default;
   bool open(const SourceSet &sources, const std::string &dbc_file_name, std::string *error = nullptr);
   bool open(const SourceSet &sources, const std::string &name, const std::string &content, std::string *error = nullptr);
@@ -49,16 +39,23 @@ public:
   std::vector<std::string> signalNames();
   inline int dbcCount() { return allDBCFiles().size(); }
   int nonEmptyDBCCount();
+  std::vector<DBCFile *> nonEmptyDBCFiles();
 
   const SourceSet sources(const DBCFile *dbc_file) const;
   DBCFile *findDBCFile(const uint8_t source);
   inline DBCFile *findDBCFile(const MessageId &id) { return findDBCFile(id.source); }
   std::set<DBCFile *> allDBCFiles();
-  void setCallbacks(Callbacks callbacks) { callbacks_ = std::move(callbacks); }
+
+  Observable<MessageId, const cabana::Signal *> signalAdded;
+  Observable<const cabana::Signal *> signalRemoved;
+  Observable<const cabana::Signal *> signalUpdated;
+  Observable<MessageId> msgUpdated;
+  Observable<MessageId> msgRemoved;
+  Observable<> fileChanged;
+  Observable<> maskUpdated;
 
 private:
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;
-  Callbacks callbacks_;
 };
 
 DBCManager *dbc();

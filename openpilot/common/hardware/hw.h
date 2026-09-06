@@ -5,9 +5,9 @@
 #include "common/hardware/base.h"
 #include "common/util.h"
 
-#if __TICI__
-#include "common/hardware/tici/hardware.h"
-#define Hardware HardwareTici
+#if __COMMA_HARDWARE__
+#include "common/hardware/comma/hardware.h"
+#define Hardware HardwareComma
 #else
 #include "common/hardware/pc/hardware.h"
 #define Hardware HardwarePC

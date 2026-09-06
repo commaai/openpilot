@@ -52,7 +52,7 @@ msgstr "<br><br>스티어링 지연 보정이 {}% 완료되었습니다."
 msgid "ADD"
 msgstr "추가"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "APN Setting"
 msgstr "APN 설정"
 
@@ -60,7 +60,7 @@ msgstr "APN 설정"
 msgid "Acknowledge Excessive Actuation"
 msgstr "과도한 작동을 확인"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Advanced"
 msgstr "고급"
 
@@ -93,7 +93,7 @@ msgid "Are you sure you want to uninstall?"
 msgstr "정말 제거하시겠습니까?"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Back"
 msgstr "뒤로"
 
@@ -118,22 +118,26 @@ msgid "CHILL MODE ON"
 msgstr "안정적 모드 켜짐"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
 msgstr "연결"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
 msgstr "연결 중..."
 
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/keyboard.py
-#: system/ui/widgets/network.py
-#: system/ui/widgets/option_dialog.py
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/keyboard.py
+#: openpilot/system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Cancel"
 msgstr "취소"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Cellular Metered"
 msgstr "종량제 셀룰러"
 
@@ -205,15 +209,11 @@ msgstr "동글 ID"
 msgid "Download"
 msgstr "다운로드"
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "운전자 카메라"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
 msgstr "주행 성향"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "편집"
 
@@ -242,7 +242,7 @@ msgstr "ADB 사용"
 msgid "Enable Lane Departure Warnings"
 msgstr "차선 이탈 경고 사용"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Roaming"
 msgstr "로밍 사용"
 
@@ -250,7 +250,7 @@ msgstr "로밍 사용"
 msgid "Enable SSH"
 msgstr "SSH 사용"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Tethering"
 msgstr "테더링 사용"
 
@@ -266,19 +266,19 @@ msgstr "openpilot 사용"
 msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 msgstr "실험 모드를 사용하려면 openpilot 롱컨 제어(알파) 토글을 켜세요."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "APN 입력"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter SSID"
 msgstr "SSID 입력"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter new tethering password"
 msgstr "새 테더링 비밀번호 입력"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter password"
 msgstr "비밀번호 입력"
 
@@ -286,7 +286,7 @@ msgstr "비밀번호 입력"
 msgid "Enter your GitHub username"
 msgstr "GitHub 사용자 이름 입력"
 
-#: system/ui/widgets/list_view.py
+#: openpilot/system/ui/widgets/list_view.py
 msgid "Error"
 msgstr "오류"
 
@@ -298,7 +298,7 @@ msgstr "실험 모드"
 msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 msgstr "이 차량은 롱컨 제어에 순정 ACC를 사용하므로 현재 실험 모드를 사용할 수 없습니다."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "삭제 중..."
 
@@ -311,14 +311,15 @@ msgid "Firehose"
 msgstr "파이어호스"
 
 #: openpilot/selfdrive/ui/layouts/settings/firehose.py
+#: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "파이어호스 모드"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget"
 msgstr "삭제"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr "Wi‑Fi 네트워크 \"{}\"를 삭제하시겠습니까?"
 
@@ -334,7 +335,7 @@ msgstr "휴대폰에서 https://connect.comma.ai 에 접속하세요"
 msgid "HIGH"
 msgstr "높음"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Hidden Network"
 msgstr "숨겨진 네트워크"
 
@@ -342,7 +343,7 @@ msgstr "숨겨진 네트워크"
 msgid "INSTALL"
 msgstr "설치"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "IP 주소"
 
@@ -361,6 +362,10 @@ msgstr "로딩 중"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "LTE"
 msgstr "LTE"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Lateral Maneuver Mode"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Longitudinal Maneuver Mode"
@@ -398,9 +403,8 @@ msgstr "릴리스 노트가 없습니다."
 msgid "OFFLINE"
 msgstr "오프라인"
 
-#: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/html_render.py
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/html_render.py
 msgid "OK"
 msgstr "확인"
 
@@ -453,17 +457,17 @@ msgstr "초기 페어링을 완료하려면 Wi‑Fi에 연결하세요"
 msgid "Power Off"
 msgstr "전원 끄기"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
 msgstr "종량제 Wi‑Fi 연결 시 대용량 업로드 방지"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "종량제 셀룰러 연결 시 대용량 업로드 방지"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "운전자 모니터링의 가시성을 확인하기 위해 운전자 카메라를 미리 봅니다. (차량은 꺼져 있어야 합니다)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -494,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "재시작 및 업데이트"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "운전자 카메라 기록 및 업로드"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -549,11 +553,11 @@ msgstr "선택"
 msgid "SSH Keys"
 msgstr "SSH 키"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Scanning Wi-Fi networks..."
 msgstr "Wi‑Fi 네트워크 검색 중..."
 
-#: system/ui/widgets/option_dialog.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Select"
 msgstr "선택"
 
@@ -597,7 +601,7 @@ msgstr "온도"
 msgid "Target Branch"
 msgstr "대상 브랜치"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Tethering Password"
 msgstr "테더링 비밀번호"
 
@@ -634,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "지금 업그레이드"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "운전자 방향 카메라 데이터를 업로드하여 운전자 모니터링 알고리즘 개선에 도움을 주세요."
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -665,11 +669,11 @@ msgstr "이 옵션을 켜면 가속 페달을 밟을 때 openpilot이 해제됩�
 msgid "Wi-Fi"
 msgstr "Wi‑Fi"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wi-Fi Network Metered"
 msgstr "Wi‑Fi 네트워크 종량제"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wrong password"
 msgstr "비밀번호가 올바르지 않습니다"
 
@@ -681,7 +685,7 @@ msgstr "openpilot을 사용하려면 약관에 동의해야 합니다."
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "openpilot을 사용하려면 약관에 동의해야 합니다. 계속하기 전에 https://comma.ai/terms 에서 최신 약관을 읽어주세요."
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "카메라 시작 중"
 
@@ -693,7 +697,7 @@ msgstr "확인 중..."
 msgid "comma prime"
 msgstr "comma 프라임"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "default"
 msgstr "기본값"
 
@@ -713,7 +717,7 @@ msgstr "업데이트 확인 실패"
 msgid "finalizing update..."
 msgstr "업데이트 마무리 중..."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "for \"{}\""
 msgstr "\"{}\"용"
 
@@ -721,7 +725,7 @@ msgstr "\"{}\"용"
 msgid "km/h"
 msgstr "km/h"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "leave blank for automatic configuration"
 msgstr "자동 구성을 사용하려면 비워 두세요"
 
@@ -729,7 +733,7 @@ msgstr "자동 구성을 사용하려면 비워 두세요"
 msgid "left"
 msgstr "왼쪽"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "metered"
 msgstr "종량제"
 
@@ -765,7 +769,7 @@ msgstr "openpilot은 장치를 좌우 4°, 위쪽 5°, 아래쪽 9° 이내로 �
 msgid "right"
 msgstr "오른쪽"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "unmetered"
 msgstr "비종량제"
 
@@ -805,16 +809,7 @@ msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "{}분 전"
 
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "현재까지 귀하의 주행 {}구간이 학습 데이터셋에 포함되었습니다."
-
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "✓ SUBSCRIBED"
 msgstr "✓ 구독됨"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 파이어호스 모드 🔥"
 

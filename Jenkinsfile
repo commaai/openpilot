@@ -22,6 +22,7 @@ shopt -s huponexit # kill all child processes when the shell exits
 
 export CI=1
 export PYTHONWARNINGS=error
+export COMMA_CACHE=/data/tmp/comma_download_cache
 #export LOGPRINT=debug # this has gotten too spammy...
 export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
@@ -30,14 +31,14 @@ export GIT_COMMIT=${env.GIT_COMMIT}
 export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
 export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
-# only use 1 thread for tici tests since most require HIL
+# only use 1 thread since most require real hardware that can't be shared
 export PYTEST_ADDOPTS="-n0 -s"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 source ~/.bash_profile
-if [ -f /TICI ]; then
+if [ -f /AGNOS ]; then
   source /etc/profile
 
   rm -rf /tmp/tmp*
@@ -248,7 +249,7 @@ node {
           step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("test pandad loopback", "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test amp", "./openpilot/common/hardware/tici/tests/test_amplifier.py"),
+          step("test amp", "./openpilot/common/hardware/comma/tests/test_amplifier.py"),
         ])
       },
 

@@ -11,7 +11,7 @@ from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 
 REFRESH_INTERVAL = 5.0  # seconds
@@ -62,12 +62,12 @@ class AlertItem(Widget):
     self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", self.ICON_SIZE, self.ICON_SIZE)
 
     self._title_label = UnifiedLabel(text="", font_size=32, font_weight=FontWeight.SEMI_BOLD, text_color=self.TEXT_COLOR,
-                                     alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                     alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP, line_height=0.95)
+                                     alignment=TextAlignment.LEFT,
+                                     alignment_vertical=TextAlignmentVertical.TOP, line_height=0.95)
 
     self._body_label = UnifiedLabel(text="", font_size=28, font_weight=FontWeight.ROMAN, text_color=self.TEXT_COLOR,
-                                    alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                    alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.95)
+                                    alignment=TextAlignment.LEFT,
+                                    alignment_vertical=TextAlignmentVertical.BOTTOM, line_height=0.95)
 
     self._title_text = ""
     self._body_text = ""
@@ -200,8 +200,8 @@ class MiciOffroadAlerts(Scroller):
 
     # Create empty state label
     self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,
-                                     alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                     alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                                     alignment=TextAlignment.CENTER,
+                                     alignment_vertical=TextAlignmentVertical.MIDDLE)
 
     # Build initial alert list
     self._build_alerts()

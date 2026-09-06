@@ -62,8 +62,8 @@ def find_events(lr: LogReader, extrapolate: bool = False, qlog: bool = False) ->
     elif msg.which() == 'controlsState':
       curvature = msg.controlsState.curvature
 
-    elif msg.which() == 'liveParameters':
-      roll = msg.liveParameters.roll
+    elif msg.which() == 'vehicleParameters':
+      roll = msg.vehicleParameters.roll
 
     if lat_active > min_lat_active and steering_unpressed > min_steering_unpressed and requesting_max > min_requesting_max:
       # TODO: record max lat accel at the end of the event, need to use the past lat accel as overriding can happen before we detect it

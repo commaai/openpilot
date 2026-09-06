@@ -39,11 +39,11 @@ const bool kLogCameraTimings = env_flag_enabled("JOTP_CAMERA_TIMINGS");
 
 CameraType decoder_camera_type(CameraViewKind view) {
   switch (view) {
-    case CameraViewKind::Driver: return DriverCam;
+    case CameraViewKind::Cabin: return CabinCam;
     case CameraViewKind::WideRoad: return WideRoadCam;
-    case CameraViewKind::QRoad: return RoadCam;
+    case CameraViewKind::QRoad: return NarrowRoadCam;
     case CameraViewKind::Road:
-    default: return RoadCam;
+    default: return NarrowRoadCam;
   }
 }
 
@@ -59,17 +59,17 @@ bool stream_batch_has_data(const StreamExtractBatch &batch) {
 
 bool should_subscribe_stream_service(const std::string &name) {
   static const std::array<std::string_view, 13> kSkippedServices = {{
-    "roadEncodeIdx",
-    "driverEncodeIdx",
+    "narrowRoadEncodeIdx",
+    "cabinEncodeIdx",
     "wideRoadEncodeIdx",
-    "qRoadEncodeIdx",
-    "roadEncodeData",
-    "driverEncodeData",
+    "qNarrowRoadEncodeIdx",
+    "narrowRoadEncodeData",
+    "cabinEncodeData",
     "wideRoadEncodeData",
-    "qRoadEncodeData",
+    "qNarrowRoadEncodeData",
     "livestreamWideRoadEncodeIdx",
-    "livestreamRoadEncodeIdx",
-    "livestreamDriverEncodeIdx",
+    "livestreamNarrowRoadEncodeIdx",
+    "livestreamCabinEncodeIdx",
     "thumbnail",
   }};
   if (name == "rawAudioData") return false;

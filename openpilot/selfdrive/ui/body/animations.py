@@ -87,21 +87,12 @@ BROW_LOWERED = [
 (2, 0)
 ]
 BROW_STRAIGHT = [(1, 0), (1, 1), (1, 2)]
-BROW_DOWN = [
-(0, 1), (0, 2),
-                (1, 3)
-]
-
 # Mouths (centered, not mirrored)
 MOUTH_SMILE = [
 (6, 6),                 (6, 9),
         (7, 7), (7, 8),
 ]
 MOUTH_NORMAL = [(7, 7), (7, 8)]
-MOUTH_SAD = [
-        (6, 7), (6, 8),
-(7, 6),                 (7, 9)
-]
 
 # --- Animations ---
 
@@ -167,16 +158,6 @@ INQUISITIVE = Animation(
   frame_duration=0.15,
   repeat_interval=10
 )
-
-WINK = Animation(
-  frames=[
-    _make_frame(EYE_OPEN, _mirror(EYE_OPEN), BROW_HIGH, _mirror(BROW_HIGH), MOUTH_SMILE),
-    _make_frame(EYE_OPEN, _mirror(EYE_CLOSED), BROW_HIGH, _mirror(_shift(BROW_DOWN, (0, 2))), MOUTH_SMILE),
-  ],
-  mode=AnimationMode.ONCE_FORWARD_BACKWARD,
-  frame_duration=0.75,
-)
-
 
 # --- Face Animator Class ---
 

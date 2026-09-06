@@ -16,7 +16,6 @@ import warnings
 ROOT = Path(__file__).resolve().parents[1]
 IGNORED = (
   ROOT / "openpilot/selfdrive/test/process_replay/test_processes.py",
-  ROOT / "openpilot/selfdrive/test/process_replay/test_regen.py",
   ROOT / "openpilot/tools/sim",
 )
 FAILURES = {"failed", "error", "xpassed"}

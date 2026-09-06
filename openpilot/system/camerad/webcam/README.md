@@ -1,7 +1,7 @@
 # Run openpilot with webcam on PC
 
 ## Setup openpilot
-- Follow [this readme](../README.md) to install and build the requirements
+- Follow [this readme](/tools/README.md) to install and build the requirements
 
 ## Connect the hardware
 - Connect the camera first

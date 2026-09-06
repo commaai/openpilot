@@ -4,13 +4,13 @@ import unittest
 
 # FIXME: known small leaks not worth worrying about at the moment
 KNOWN_LEAKS = {
-  "openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog.DriverCameraView",
+  "openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog.CabinCameraView",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.TermsPage",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.TrainingGuide",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.DeclinePage",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.OnboardingWindow",
   "openpilot.selfdrive.ui.onroad.driver_state.DriverStateRenderer",
-  "openpilot.selfdrive.ui.onroad.driver_camera_dialog.DriverCameraDialog",
+  "openpilot.selfdrive.ui.onroad.cabin_camera_dialog.CabinCameraDialog",
   "openpilot.selfdrive.ui.layouts.onboarding.TermsPage",
   "openpilot.selfdrive.ui.layouts.onboarding.DeclinePage",
   "openpilot.selfdrive.ui.layouts.onboarding.OnboardingWindow",
@@ -51,13 +51,13 @@ class TestWidgetLeaks(OpenpilotTestCase):
 
     # mici dialogs
     from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
-    from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog as MiciDriverCameraDialog
+    from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog as MiciCabinCameraDialog
     from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
     from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
     from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
 
     # tici dialogs
-    from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog as TiciDriverCameraDialog
+    from openpilot.selfdrive.ui.onroad.cabin_camera_dialog import CabinCameraDialog as TiciCabinCameraDialog
     from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
     from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
     from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
@@ -71,7 +71,7 @@ class TestWidgetLeaks(OpenpilotTestCase):
 
     for ctor in (
       # mici
-      MiciDriverCameraDialog, MiciPairingDialog,
+      MiciCabinCameraDialog, MiciPairingDialog,
       lambda: MiciTrainingGuide(lambda: None),
       lambda: MiciOnboardingWindow(lambda: None),
       lambda: BigDialog("test", "test"),
@@ -79,7 +79,7 @@ class TestWidgetLeaks(OpenpilotTestCase):
       lambda: BigInputDialog("test"),
       lambda: MiciFccModal(text="test"),
       # tici
-      TiciDriverCameraDialog, TiciOnboardingWindow, TiciPairingDialog, Keyboard,
+      TiciCabinCameraDialog, TiciOnboardingWindow, TiciPairingDialog, Keyboard,
       lambda: ConfirmDialog("test", "ok"),
       lambda: MultiOptionDialog("test", ["a", "b"]),
       lambda: HtmlModal(text="test"),

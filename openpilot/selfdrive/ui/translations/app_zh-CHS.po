@@ -52,7 +52,7 @@ msgstr "<br><br>转向延迟校准已完成 {}%。"
 msgid "ADD"
 msgstr "添加"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "APN Setting"
 msgstr "APN 设置"
 
@@ -60,7 +60,7 @@ msgstr "APN 设置"
 msgid "Acknowledge Excessive Actuation"
 msgstr "确认过度作动"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Advanced"
 msgstr "高级"
 
@@ -93,7 +93,7 @@ msgid "Are you sure you want to uninstall?"
 msgstr "确定要卸载吗？"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Back"
 msgstr "返回"
 
@@ -118,22 +118,26 @@ msgid "CHILL MODE ON"
 msgstr "安稳模式已开启"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
 msgstr "连接"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
 msgstr "连接中..."
 
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/keyboard.py
-#: system/ui/widgets/network.py
-#: system/ui/widgets/option_dialog.py
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/keyboard.py
+#: openpilot/system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Cancel"
 msgstr "取消"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Cellular Metered"
 msgstr "蜂窝计量"
 
@@ -205,15 +209,11 @@ msgstr "设备 ID"
 msgid "Download"
 msgstr "下载"
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "车内摄像头"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
 msgstr "驾驶风格"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "编辑"
 
@@ -242,7 +242,7 @@ msgstr "启用 ADB"
 msgid "Enable Lane Departure Warnings"
 msgstr "启用车道偏离警示"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Roaming"
 msgstr "启用漫游"
 
@@ -250,7 +250,7 @@ msgstr "启用漫游"
 msgid "Enable SSH"
 msgstr "启用 SSH"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Tethering"
 msgstr "启用网络共享"
 
@@ -266,19 +266,19 @@ msgstr "启用 openpilot"
 msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 msgstr "启用 openpilot 纵向控制（alpha）开关，以使用实验模式。"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "输入 APN"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter SSID"
 msgstr "输入 SSID"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter new tethering password"
 msgstr "输入新的网络共享密码"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter password"
 msgstr "输入密码"
 
@@ -286,7 +286,7 @@ msgstr "输入密码"
 msgid "Enter your GitHub username"
 msgstr "输入您的 GitHub 用户名"
 
-#: system/ui/widgets/list_view.py
+#: openpilot/system/ui/widgets/list_view.py
 msgid "Error"
 msgstr "错误"
 
@@ -298,7 +298,7 @@ msgstr "实验模式"
 msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 msgstr "此车型当前无法使用实验模式，因为纵向控制使用的是原厂 ACC。"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "正在遗忘..."
 
@@ -311,14 +311,15 @@ msgid "Firehose"
 msgstr "数据洪流"
 
 #: openpilot/selfdrive/ui/layouts/settings/firehose.py
+#: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Firehose 模式"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget"
 msgstr "忘记"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr "要忘记 Wi‑Fi 网络“{}”吗？"
 
@@ -334,7 +335,7 @@ msgstr "在手机上前往 https://connect.comma.ai"
 msgid "HIGH"
 msgstr "高"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Hidden Network"
 msgstr "隐藏网络"
 
@@ -342,7 +343,7 @@ msgstr "隐藏网络"
 msgid "INSTALL"
 msgstr "安装"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "IP 地址"
 
@@ -361,6 +362,10 @@ msgstr "加载中"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "LTE"
 msgstr "LTE"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Lateral Maneuver Mode"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Longitudinal Maneuver Mode"
@@ -398,9 +403,8 @@ msgstr "暂无发行说明。"
 msgid "OFFLINE"
 msgstr "离线"
 
-#: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/html_render.py
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/html_render.py
 msgid "OK"
 msgstr "确定"
 
@@ -453,17 +457,17 @@ msgstr "请连接 Wi‑Fi 以完成初始配对"
 msgid "Power Off"
 msgstr "关机"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
 msgstr "在计量制 Wi‑Fi 连接时避免大量上传"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "在计量制蜂窝网络时避免大量上传"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "预览车内摄像头以确保驾驶员监控视野良好。（车辆必须熄火）"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -494,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "重启并更新"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "录制并上传车内摄像头"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -549,11 +553,11 @@ msgstr "选择"
 msgid "SSH Keys"
 msgstr "SSH 密钥"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Scanning Wi-Fi networks..."
 msgstr "正在扫描 Wi‑Fi 网络…"
 
-#: system/ui/widgets/option_dialog.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Select"
 msgstr "选择"
 
@@ -597,7 +601,7 @@ msgstr "温度"
 msgid "Target Branch"
 msgstr "目标分支"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Tethering Password"
 msgstr "网络共享密码"
 
@@ -634,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "立即升级"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "上传车内摄像头数据，帮助改进驾驶员监控算法。"
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -665,11 +669,11 @@ msgstr "启用后，踩下加速踏板将会脱离 openpilot。"
 msgid "Wi-Fi"
 msgstr "Wi‑Fi"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wi-Fi Network Metered"
 msgstr "Wi‑Fi 计量网络"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wrong password"
 msgstr "密码错误"
 
@@ -681,7 +685,7 @@ msgstr "您必须接受条款与条件才能使用 openpilot。"
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "您必须接受条款与条件才能使用 openpilot。继续前请阅读 https://comma.ai/terms 上的最新条款。"
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "相机启动中"
 
@@ -693,7 +697,7 @@ msgstr "检查中..."
 msgid "comma prime"
 msgstr "comma prime"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "default"
 msgstr "默认"
 
@@ -713,7 +717,7 @@ msgstr "检查更新失败"
 msgid "finalizing update..."
 msgstr "正在完成更新..."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "for \"{}\""
 msgstr "用于“{}”"
 
@@ -721,7 +725,7 @@ msgstr "用于“{}”"
 msgid "km/h"
 msgstr "km/h"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "leave blank for automatic configuration"
 msgstr "留空以自动配置"
 
@@ -729,7 +733,7 @@ msgstr "留空以自动配置"
 msgid "left"
 msgstr "左"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "metered"
 msgstr "计量"
 
@@ -765,7 +769,7 @@ msgstr "openpilot 要求设备安装在左右 4°、上 5° 或下 9° 以内。
 msgid "right"
 msgstr "右"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "unmetered"
 msgstr "不限流量"
 
@@ -809,17 +813,7 @@ msgid_plural "{} minutes ago"
 msgstr[0] "{} 分钟前"
 msgstr[1] "{} 分钟前"
 
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "目前已有 {} 个您的驾驶片段被纳入训练数据集。"
-msgstr[1] "目前已有 {} 个您的驾驶片段被纳入训练数据集。"
-
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "✓ SUBSCRIBED"
 msgstr "✓ 已订阅"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Firehose 模式 🔥"
 

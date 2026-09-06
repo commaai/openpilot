@@ -8,7 +8,8 @@ import numpy as np
 
 from openpilot.cereal import messaging
 from openpilot.cereal.messaging import PubMaster, SubMaster
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
@@ -28,7 +29,7 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
-    self.DEV = get_tg_input_devices(PROCESS_NAME, usbgpu=False)['DEV']
+    self.DEV = get_tg_input_devices(PROCESS_NAME, chestnut=False)['DEV']
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
@@ -109,8 +110,8 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
 def main():
   config_realtime_process(7, 5)
 
-  cloudlog.warning("connecting to driver stream")
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
+  cloudlog.warning("connecting to cabin stream")
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_CABIN, True)
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()
@@ -119,7 +120,7 @@ def main():
   model = ModelState(vipc_client.width, vipc_client.height)
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
 
-  sm = SubMaster(["liveCalibration"])
+  sm = SubMaster(["extrinsicsCalibration"])
   pm = PubMaster(["driverStateV2"])
 
   calib = np.zeros(model.numpy_inputs['calib'].size, dtype=np.float32)
@@ -135,8 +136,8 @@ def main():
       model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(cam.intrinsics))).astype(np.float32)
 
     sm.update(0)
-    if sm.updated["liveCalibration"]:
-      calib[:] = np.array(sm["liveCalibration"].rpyCalib)
+    if sm.updated["extrinsicsCalibration"]:
+      calib[:] = np.array(sm["extrinsicsCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)

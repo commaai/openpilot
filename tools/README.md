@@ -46,14 +46,19 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 ## Directory Structure
 
 ```
+├── car_porting/        # Tools for porting new cars
+├── release/            # Scripts for building openpilot releases
+└── scripts/            # Miscellaneous scripts
+```
+
+Development tools such as cabana, plotjuggler, and replay live in [openpilot/tools/](/openpilot/tools/):
+
+```
 ├── cabana/             # View and plot CAN messages from drives or in realtime
 ├── camerastream/       # Cameras stream over the network
 ├── joystick/           # Control your car with a joystick
 ├── lib/                # Libraries to support the tools and reading openpilot logs
 ├── plotjuggler/        # A tool to plot openpilot logs
 ├── replay/             # Replay drives and mock openpilot services
-├── scripts/            # Miscellaneous scripts
-├── serial/             # Tools for using the comma serial
-├── sim/                # Run openpilot in a simulator
-└── webcam/             # Run openpilot on a PC with webcams
+└── sim/                # Run openpilot in a simulator
 ```

@@ -3,7 +3,7 @@ import os
 import time
 
 from openpilot.cereal import messaging
-from openpilot.common.hardware import TICI
+from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
@@ -31,7 +31,7 @@ def main():
 
     if should_render:
       # reaffine after power save offlines our core
-      if TICI and os.sched_getaffinity(0) != cores:
+      if COMMA_HARDWARE and os.sched_getaffinity(0) != cores:
         try:
           set_core_affinity(list(cores))
         except OSError:

@@ -117,6 +117,7 @@ class Params:
     path = ensure_bytes(d)
     self.p = params_create(path, len(path))
     self._finalizer = weakref.finalize(self, params_destroy, self.p)
+    self._finalizer.atexit = False  # daemon threads can still be using live Params handles during interpreter shutdown
     self.d = d
 
   def __reduce__(self):

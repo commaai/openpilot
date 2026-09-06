@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, GreyBigButton
 
 DEBUG = False
 
@@ -214,18 +214,6 @@ class BigInputDialog(BigDialogBase):
     elif rl.check_collision_point_rec(mouse_pos, self._top_left_button_rect) and self._enter_img_alpha.x > 254:
       # handle enter icon click
       self._confirm_callback()
-
-
-class BigDialogButton(BigButton):
-  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", description: str = ""):
-    super().__init__(text, value, icon)
-    self._description = description
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-
-    dlg = BigDialog(self.text, self._description)
-    gui_app.push_widget(dlg)
 
 
 class BigConfirmationCircleButton(BigCircleButton):

@@ -123,23 +123,7 @@ function op_check_git() {
 function op_check_os() {
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
-    if [ -f "/etc/os-release" ]; then
-      source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
-          ;;
-        * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          return 1
-          ;;
-      esac
-    else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      return 1
-    fi
-
+    echo -e " ↳ [${GREEN}✔${NC}] Linux detected."
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
@@ -222,6 +206,12 @@ EOF
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
+  git config --local filter.lfs.clean ".venv/bin/git-lfs clean -- %f"
+  git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
+  git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
+  git config --local filter.lfs.required true
+  printf '#!/bin/sh\nexec .venv/bin/git-lfs pre-push "$@"\n' > "$(git rev-parse --git-path hooks)/pre-push"
+  chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     return 1
@@ -349,6 +339,37 @@ function op_clip() {
   op_run_command openpilot/tools/clip/run.py "$@"
 }
 
+function op_docs() {
+  op_before_cmd
+  op_run_command python docs/serve.py "$@"
+}
+
+function op_check_agnos_update() {
+  if [[ ! -f "/AGNOS" ]]; then
+    return 0
+  fi
+
+  local choice current_version target_version
+  current_version="$(< /VERSION)"
+  target_version="$(unset AGNOS_VERSION; source "$OPENPILOT_ROOT/launch_env.sh"; echo "$AGNOS_VERSION")"
+
+  if [[ "$current_version" == "$target_version" ]]; then
+    return 0
+  fi
+
+  echo -e "${BOLD}AGNOS update available:${NC} $current_version → $target_version"
+  if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+    op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.py" --swap \
+      "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.json"
+
+    if read -r -p "Reboot now to apply the update? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+      op_run_command sudo reboot
+    else
+      echo "Reboot before starting openpilot to apply the AGNOS update."
+    fi
+  fi
+}
+
 function op_switch() {
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
@@ -376,11 +397,14 @@ function op_switch() {
 
   # remove openpilot update flag if present
   rm -f .overlay_init
+
+  op_check_agnos_update
 }
 
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
+    op_check_agnos_update
     op_run_command sudo systemctl restart comma $@
   fi
 }
@@ -418,6 +442,7 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
+  echo -e "  ${BOLD}docs${NC}         Build or serve the openpilot documentation"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
@@ -473,6 +498,7 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
+    docs )          shift 1; op_docs "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
     start )         shift 1; op_start "$@" ;;

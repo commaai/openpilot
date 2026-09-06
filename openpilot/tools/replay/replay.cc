@@ -251,13 +251,13 @@ void Replay::publishMessage(const Event *e) {
 void Replay::publishFrame(const Event *e) {
   CameraType cam;
   switch (e->which) {
-    case cereal::Event::ROAD_ENCODE_IDX: cam = RoadCam; break;
-    case cereal::Event::DRIVER_ENCODE_IDX: cam = DriverCam; break;
+    case cereal::Event::NARROW_ROAD_ENCODE_IDX: cam = NarrowRoadCam; break;
+    case cereal::Event::CABIN_ENCODE_IDX: cam = CabinCam; break;
     case cereal::Event::WIDE_ROAD_ENCODE_IDX: cam = WideRoadCam; break;
     default: return;  // Invalid event type
   }
 
-  if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM)))
+  if ((cam == CabinCam && !hasFlag(REPLAY_FLAG_CABIN_CAMERA)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_WIDE_ROAD)))
     return;  // Camera isdisabled
 
   auto seg_it = event_data_->segments.find(e->eidx_segnum);

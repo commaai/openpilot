@@ -2,9 +2,10 @@ import platform
 import numpy as np
 import pyray as rl
 
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.hardware import TICI
+from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 from openpilot.system.ui.widgets import Widget
@@ -38,7 +39,7 @@ void main() {
 """
 
 # Choose fragment shader based on platform capabilities
-if TICI:
+if COMMA_HARDWARE:
   FRAME_FRAGMENT_SHADER = """
     #version 300 es
     #extension GL_OES_EGL_image_external_essl3 : enable
@@ -71,7 +72,7 @@ class CameraView(Widget):
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
-    self._stream_type = stream_type
+    self._stream_type: VisionStreamType = stream_type
     self.available_streams: list[VisionStreamType] = []
 
     # Target stream for switching
@@ -82,7 +83,7 @@ class CameraView(Widget):
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
-    self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
+    self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not COMMA_HARDWARE else -1
 
     self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
@@ -94,8 +95,8 @@ class CameraView(Widget):
 
     self._placeholder_color: rl.Color | None = None
 
-    # Initialize EGL for zero-copy rendering on TICI
-    if TICI:
+    # Initialize EGL for zero-copy rendering on COMMA_HARDWARE
+    if COMMA_HARDWARE:
       if not init_egl():
         raise RuntimeError("Failed to initialize EGL")
 
@@ -146,7 +147,7 @@ class CameraView(Widget):
     self._clear_textures()
 
     # Clean up EGL texture
-    if TICI and self.egl_texture:
+    if COMMA_HARDWARE and self.egl_texture:
       rl.unload_texture(self.egl_texture)
       self.egl_texture = None
 
@@ -202,8 +203,8 @@ class CameraView(Widget):
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
-    # Flip driver camera horizontally
-    if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+    # Flip cabin camera horizontally
+    if self._stream_type == VisionStreamType.VISION_STREAM_CABIN:
       src_rect.width = -src_rect.width
 
     # Calculate scale
@@ -220,7 +221,7 @@ class CameraView(Widget):
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
     # Render with appropriate method
-    if TICI:
+    if COMMA_HARDWARE:
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
@@ -323,6 +324,7 @@ class CameraView(Widget):
       del self.client
 
     # Switch to target
+    assert self._target_client is not None and self._target_stream_type is not None
     self.client = self._target_client
     self._stream_type = self._target_stream_type
     self._texture_needs_update = True
@@ -337,7 +339,7 @@ class CameraView(Widget):
 
   def _initialize_textures(self):
     self._clear_textures()
-    if not TICI:
+    if not COMMA_HARDWARE:
       self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
         int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
       self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
@@ -353,7 +355,7 @@ class CameraView(Widget):
       self.texture_uv = None
 
     # Clean up EGL resources
-    if TICI:
+    if COMMA_HARDWARE:
       for data in self.egl_images.values():
         destroy_egl_image(data)
       self.egl_images = {}
@@ -361,6 +363,6 @@ class CameraView(Widget):
 
 if __name__ == "__main__":
   gui_app.init_window("camera view")
-  road = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  road = CameraView("camerad", VisionStreamType.VISION_STREAM_NARROW_ROAD)
   for _ in gui_app.render():
     road.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

@@ -13,13 +13,13 @@ import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import HARDWARE, PC
-from openpilot.system.ui.lib.multilang import multilang
+from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
@@ -92,25 +92,45 @@ FONT_SCALE = 1.242 if BIG_UI else 1.16
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
+EXTRA_FONT_CHARS = "–‑✓×°§•X⚙✕◀▶✔⌫⇧␣○●↳çêüñ–‑✓×°§•€£¥"
+NOTO_FONTS = {
+  "ja": "NotoSansCJKjp-Regular.otf",
+  "ko": "NotoSansCJKkr-Regular.otf",
+  "th": "NotoSansThai-Regular.ttf",
+  "zh-CHS": "NotoSansCJKsc-Regular.otf",
+  "zh-CHT": "NotoSansCJKtc-Regular.otf",
+}
 
 
 class FontWeight(StrEnum):
-  NORMAL = "Inter-Regular.fnt" if BIG_UI else "Inter-Medium.fnt"
-  MEDIUM = "Inter-Medium.fnt"
-  BOLD = "Inter-Bold.fnt"
-  SEMI_BOLD = "Inter-SemiBold.fnt"
-  UNIFONT = "unifont.fnt"
+  NORMAL = "Inter-Regular.ttf" if BIG_UI else "Inter-Medium.ttf"
+  MEDIUM = "Inter-Medium.ttf"
+  BOLD = "Inter-Bold.ttf"
+  SEMI_BOLD = "Inter-SemiBold.ttf"
+  UNIFONT = "unifont.otf"
 
   # Small UI fonts
-  DISPLAY_REGULAR = "Inter-Regular.fnt"
-  ROMAN = "Inter-Regular.fnt"
-  DISPLAY = "Inter-Bold.fnt"
+  DISPLAY_REGULAR = "Inter-Regular.ttf"
+  ROMAN = "Inter-Regular.ttf"
+  DISPLAY = "Inter-Bold.ttf"
+
+
+class TextAlignment(IntEnum):
+  LEFT = 0
+  CENTER = 1
+  RIGHT = 2
+
+
+class TextAlignmentVertical(IntEnum):
+  TOP = 0
+  MIDDLE = 1
+  BOTTOM = 2
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
-  """Fall back to unifont for languages that require it."""
-  if multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
+  """Use a Noto fallback for languages not covered by Inter."""
+  if multilang.requires_font_fallback():
+    return gui_app.fallback_font()
   return font
 
 
@@ -198,6 +218,7 @@ class GuiApplication:
     self._set_log_callback()
 
     self._fonts: dict[FontWeight, rl.Font] = {}
+    self._fallback_fonts: dict[str, rl.Font] = {}
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
 
@@ -321,7 +342,6 @@ class GuiApplication:
       rl.set_target_fps(0 if OFFSCREEN or vblank_control else fps)
 
       self._target_fps = fps
-      self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
       self._patch_scissor_mode()
@@ -553,6 +573,9 @@ class GuiApplication:
     for font in self._fonts.values():
       rl.unload_font(font)
     self._fonts = {}
+    for font in self._fallback_fonts.values():
+      rl.unload_font(font)
+    self._fallback_fonts = {}
 
     if self._render_texture is not None:
       rl.unload_render_texture(self._render_texture)
@@ -675,6 +698,21 @@ class GuiApplication:
   def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
     return self._fonts[font_weight]
 
+  def fallback_font(self) -> rl.Font:
+    language = multilang.language
+    if language not in self._fallback_fonts:
+      chars = set(map(chr, range(32, 127))) | set(EXTRA_FONT_CHARS)
+      chars.update(TRANSLATIONS_DIR.joinpath(f"app_{language}.po").read_text(encoding="utf-8"))
+      codepoints = sorted(map(ord, chars))
+      codepoint_buffer = rl.ffi.new("int[]", codepoints)
+      with as_file(FONT_DIR) as fspath:
+        font = rl.load_font_ex((fspath / NOTO_FONTS[language]).as_posix(), 48,
+                               rl.ffi.cast("int *", codepoint_buffer), len(codepoints))
+      rl.gen_texture_mipmaps(font.texture)
+      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
+      self._fallback_fonts[language] = font
+    return self._fallback_fonts[language]
+
   @property
   def width(self):
     return self._width
@@ -684,22 +722,26 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
+    base_chars = set(map(chr, range(32, 127))) | set(EXTRA_FONT_CHARS)
+    unifont_chars = set(base_chars)
+    for language, code in multilang.languages.items():
+      unifont_chars.update(language)
+      if code not in FONT_FALLBACK_LANGUAGES:
+        base_chars.update(TRANSLATIONS_DIR.joinpath(f"app_{code}.po").read_text(encoding="utf-8"))
+
     for font_weight_file in FontWeight:
       with as_file(FONT_DIR) as fspath:
-        fnt_path = fspath / font_weight_file
-        font = rl.load_font(fnt_path.as_posix())
+        unifont = font_weight_file == FontWeight.UNIFONT
+        codepoints = sorted(map(ord, unifont_chars if unifont else base_chars))
+        codepoint_buffer = rl.ffi.new("int[]", codepoints)
+        font = rl.load_font_ex((fspath / font_weight_file).as_posix(), 16 if unifont else 200,
+                               rl.ffi.cast("int *", codepoint_buffer), len(codepoints))
         if font_weight_file != FontWeight.UNIFONT:
           rl.gen_texture_mipmaps(font.texture)
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
         self._fonts[font_weight_file] = font
-    rl.gui_set_font(self._fonts[FontWeight.NORMAL])
-
-  def _set_styles(self):
-    rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
-    rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, DEFAULT_TEXT_SIZE)
-    rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
-    rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
-    rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+    if multilang.requires_font_fallback():
+      self.fallback_font()
 
   def _patch_text_functions(self):
     # Wrap pyray text APIs to apply a global text size scale so our px sizes match Qt

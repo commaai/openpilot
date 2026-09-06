@@ -30,20 +30,14 @@ git submodule deinit -f --all
 git rm -rf --cached .
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 
-# cleanup before the copy
-cd $SOURCE_DIR
-git clean -xdff
-git submodule foreach --recursive git clean -xdff
-
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-./tools/release/release_files.py | xargs -d '\n' cp -pR --parents -t "$TARGET_DIR"
+./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$TARGET_DIR" --
 
 # in the directory
 cd $TARGET_DIR
 rm -rf .git/modules/
-rm -f panda/board/obj/panda.bin.signed
 
 find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 
@@ -57,9 +51,10 @@ echo -n "$GIT_HASH" > git_src_commit
 echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 echo "[-] committing version $VERSION T=$SECONDS"
-git add -f .
+# writing larger objects is faster than compressing them on-device
+git -c core.compression=0 add -f .
 git status
-git commit -a -m "openpilot v$VERSION release
+git -c core.compression=0 commit -a -m "openpilot v$VERSION release
 
 date: $DATETIME
 master commit: $GIT_HASH
@@ -83,7 +78,8 @@ fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
-  git push -f origin tmp:$BRANCH
+  # uploading the larger pack is faster than spending CPU to optimize it
+  git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin tmp:$BRANCH
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"

@@ -117,8 +117,8 @@ MANEUVERS = [
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "brake step response: -4m/s^2 from 20mph",
-    [Action([-4], [3])],
+    "brake step response: -3.5m/s^2 from 20mph",
+    [Action([-3.5], [3])],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
@@ -129,8 +129,8 @@ MANEUVERS = [
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "gas step response: +4m/s^2 from 20mph",
-    [Action([4], [3])],
+    "gas step response: +2m/s^2 from 20mph",
+    [Action([2], [3])],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),

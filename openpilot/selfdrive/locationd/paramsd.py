@@ -65,10 +65,10 @@ class VehicleParamsLearner:
     self.avg_angle_offset = self.angle_offset
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
-    if which == 'livePose':
+    if which == 'deviceMotion':
       t = msg.timestamp * 1e-9
-      device_pose = Pose.from_live_pose(msg)
-      calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+      device_motion = Pose.from_device_motion(msg)
+      calibrated_pose = self.calibrator.build_calibrated_pose(device_motion)
 
       yaw_rate, yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
       yaw_rate_valid = msg.angularVelocityDevice.valid
@@ -79,7 +79,7 @@ class VehicleParamsLearner:
         yaw_rate, yaw_rate_std = 0.0, np.radians(10.0)
       self.observed_yaw_rate = yaw_rate
 
-      localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
+      localizer_roll, localizer_roll_std = device_motion.orientation.x, device_motion.orientation.x_std
       localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
       roll_valid = (localizer_roll_std < ROLL_STD_MAX) and (ROLL_MIN < localizer_roll < ROLL_MAX) and msg.sensorsOK
       if roll_valid:
@@ -113,15 +113,15 @@ class VehicleParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[stiffness]]))
         self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
-    elif which == 'liveCalibration':
-      self.calibrator.feed_live_calib(msg)
+    elif which == 'extrinsicsCalibration':
+      self.calibrator.feed_extrinsics_calibration(msg)
 
     elif which == 'carState':
       steering_angle = msg.steeringAngleDeg
 
       in_linear_region = abs(steering_angle) < 45
       self.observed_speed = msg.vEgo
-      self.active = self.observed_speed > MIN_ACTIVE_SPEED and in_linear_region
+      self.active = self.observed_speed > MIN_ACTIVE_SPEED and in_linear_region and msg.gearShifter != car.CarState.GearShifter.reverse
 
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[np.radians(steering_angle)]]))
@@ -136,7 +136,7 @@ class VehicleParamsLearner:
     x = self.kf.x
     P = np.sqrt(self.kf.P.diagonal())
     if not np.all(np.isfinite(x)):
-      cloudlog.error("NaN in liveParameters estimate. Resetting to default values")
+      cloudlog.error("NaN in vehicleParameters estimate. Resetting to default values")
       self.reset(self.kf.t)
       x = self.kf.x
 
@@ -156,38 +156,38 @@ class VehicleParamsLearner:
     self.total_offset_valid = check_valid_with_hysteresis(self.total_offset_valid, self.angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
     self.roll_valid = check_valid_with_hysteresis(self.roll_valid, self.roll, ROLL_MAX, ROLL_LOWERED_MAX)
 
-    msg = messaging.new_message('liveParameters')
+    msg = messaging.new_message('vehicleParameters')
 
     msg.valid = valid
 
-    liveParameters = msg.liveParameters
-    liveParameters.posenetValid = True
-    liveParameters.sensorValid = sensors_valid
-    liveParameters.steerRatio = float(x[States.STEER_RATIO].item())
-    liveParameters.stiffnessFactor = float(x[States.STIFFNESS].item())
-    liveParameters.roll = float(self.roll)
-    liveParameters.angleOffsetAverageDeg = float(self.avg_angle_offset)
-    liveParameters.angleOffsetDeg = float(self.angle_offset)
-    liveParameters.steerRatioValid = self.min_sr <= liveParameters.steerRatio <= self.max_sr
-    liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
-    liveParameters.angleOffsetAverageValid = bool(self.avg_offset_valid)
-    liveParameters.angleOffsetValid = bool(self.total_offset_valid)
-    liveParameters.valid = all((
-      liveParameters.angleOffsetAverageValid,
-      liveParameters.angleOffsetValid ,
+    vehicleParameters = msg.vehicleParameters
+    vehicleParameters.posenetValid = True
+    vehicleParameters.sensorValid = sensors_valid
+    vehicleParameters.steerRatio = float(x[States.STEER_RATIO].item())
+    vehicleParameters.stiffnessFactor = float(x[States.STIFFNESS].item())
+    vehicleParameters.roll = float(self.roll)
+    vehicleParameters.angleOffsetAverageDeg = float(self.avg_angle_offset)
+    vehicleParameters.angleOffsetDeg = float(self.angle_offset)
+    vehicleParameters.steerRatioValid = self.min_sr <= vehicleParameters.steerRatio <= self.max_sr
+    vehicleParameters.stiffnessFactorValid = 0.2 <= vehicleParameters.stiffnessFactor <= 5.0
+    vehicleParameters.angleOffsetAverageValid = bool(self.avg_offset_valid)
+    vehicleParameters.angleOffsetValid = bool(self.total_offset_valid)
+    vehicleParameters.valid = all((
+      vehicleParameters.angleOffsetAverageValid,
+      vehicleParameters.angleOffsetValid ,
       self.roll_valid,
       roll_std < ROLL_STD_MAX,
-      liveParameters.stiffnessFactorValid,
-      liveParameters.steerRatioValid,
+      vehicleParameters.stiffnessFactorValid,
+      vehicleParameters.steerRatioValid,
     ))
-    liveParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
-    liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())
-    liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET].item())
-    liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST].item())
+    vehicleParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
+    vehicleParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())
+    vehicleParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET].item())
+    vehicleParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST].item())
     if debug:
-      liveParameters.debugFilterState = log.LiveParametersData.FilterState.new_message()
-      liveParameters.debugFilterState.value = x.tolist()
-      liveParameters.debugFilterState.std = P.tolist()
+      vehicleParameters.debugFilterState = log.VehicleParameters.FilterState.new_message()
+      vehicleParameters.debugFilterState.value = x.tolist()
+      vehicleParameters.debugFilterState.std = P.tolist()
 
     return msg
 
@@ -210,7 +210,7 @@ def retrieve_initial_vehicle_params(params: Params, CP: car.CarParams, replay: b
   if last_parameters_data is not None and last_carparams_data is not None:
     try:
       with log.Event.from_bytes(last_parameters_data) as last_lp_msg, car.CarParams.from_bytes(last_carparams_data) as last_CP:
-        lp = last_lp_msg.liveParameters
+        lp = last_lp_msg.vehicleParameters
         # Check if car model matches
         if last_CP.carFingerprint != CP.carFingerprint:
           raise Exception("Car model mismatch")
@@ -248,8 +248,8 @@ def main():
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
-  pm = messaging.PubMaster(['liveParameters'])
-  sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carState'], poll='livePose')
+  pm = messaging.PubMaster(['vehicleParameters'])
+  sm = messaging.SubMaster(['deviceMotion', 'extrinsicsCalibration', 'carState'], poll='deviceMotion')
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
@@ -265,14 +265,14 @@ def main():
           t = sm.logMonoTime[which] * 1e-9
           learner.handle_log(t, which, sm[which])
 
-    if sm.updated['livePose']:
+    if sm.updated['deviceMotion']:
       msg = learner.get_msg(sm.all_checks(), debug=DEBUG)
 
       msg_dat = msg.to_bytes()
       if sm.frame % 1200 == 0:  # once a minute
         params.put("LiveParametersV2", msg_dat)
 
-      pm.send('liveParameters', msg_dat)
+      pm.send('vehicleParameters', msg_dat)
 
 
 if __name__ == "__main__":
