@@ -51,7 +51,7 @@ if arch == "Darwin":
   ui_env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'Security', 'VideoToolbox']
 else:
   ui_libs += ['GL', 'dl']
-cabana_ui = ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
+cabana_ui = ui_env.Program('cabana', ui_objs, LIBS=ui_libs)
 
 if GetOption('extras'):
   cabana_core_test_env = env.Clone()

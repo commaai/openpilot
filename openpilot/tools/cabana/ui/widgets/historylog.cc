@@ -22,7 +22,7 @@ constexpr float COMPARE_WIDTH = 50.0f;
 
 std::string formatTime(uint64_t mono_time) {
   char buf[32] = {};
-  snprintf(buf, sizeof(buf), "%.3f", can->toSeconds(mono_time));
+  snprintf(buf, sizeof(buf), "%.2f", can->toSeconds(mono_time));
   return buf;
 }
 
@@ -184,7 +184,7 @@ std::string LogsWidget::headerText(int column) const {
 }
 
 ImVec2 LogsWidget::headerSize(int column, float viewport_width) const {
-  const ImVec2 time_text_size = ImGui::CalcTextSize("000000.000");
+  const ImVec2 time_text_size = ImGui::CalcTextSize("000000.00");
   const ImVec2 time_col_size(time_text_size.x + 10, time_text_size.y + 6);
   if (column == 0) return time_col_size;
   const int default_size = std::max(100, (int)((viewport_width - time_col_size.x) / (columnCount() - 1)));

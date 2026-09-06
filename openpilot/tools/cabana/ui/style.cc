@@ -100,9 +100,9 @@ void applyTheme(int theme) {
     colors[ImGuiCol_FrameBg] = c(DarkTheme::base);
     colors[ImGuiCol_FrameBgHovered] = colorRgb(0x1f, 0x1f, 0x1f);
     colors[ImGuiCol_FrameBgActive] = colorRgb(0x24, 0x24, 0x24);
-    colors[ImGuiCol_Button] = colorRgb(0x3a, 0x3a, 0x3a);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0x42, 0x42, 0x42);
-    colors[ImGuiCol_ButtonActive] = colorRgb(0x30, 0x30, 0x30);
+    colors[ImGuiCol_Button] = colorRgb(0x5e, 0x5e, 0x5e);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0x6a, 0x6a, 0x6a);
+    colors[ImGuiCol_ButtonActive] = colorRgb(0x52, 0x52, 0x52);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = c(DarkTheme::highlight, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;
@@ -157,9 +157,9 @@ void applyTheme(int theme) {
     colors[ImGuiCol_FrameBg] = base;
     colors[ImGuiCol_FrameBgHovered] = colorRgb(0xf7, 0xf7, 0xf7);
     colors[ImGuiCol_FrameBgActive] = colorRgb(0xef, 0xef, 0xef);
-    colors[ImGuiCol_Button] = colorRgb(0xf5, 0xf5, 0xf5);
-    colors[ImGuiCol_ButtonHovered] = colorRgb(0xfa, 0xfa, 0xfa);
-    colors[ImGuiCol_ButtonActive] = colorRgb(0xd9, 0xd9, 0xd9);
+    colors[ImGuiCol_Button] = colorRgb(0xe4, 0xe4, 0xe4);
+    colors[ImGuiCol_ButtonHovered] = colorRgb(0xec, 0xec, 0xec);
+    colors[ImGuiCol_ButtonActive] = colorRgb(0xd0, 0xd0, 0xd0);
     colors[ImGuiCol_Header] = highlight;
     colors[ImGuiCol_HeaderHovered] = colorRgb(0x30, 0x8c, 0xc6, 0.8f);
     colors[ImGuiCol_HeaderActive] = highlight;

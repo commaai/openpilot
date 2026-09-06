@@ -442,18 +442,21 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
   // on press; a press while it is open toggles it closed (imgui closes the popup at the end of the frame of
   // a click outside it, so only open when it is not already open)
   if (bold) pushBoldFont();
-  ImGui::PushStyleColor(ImGuiCol_Button, popup_open ? style.Colors[ImGuiCol_ButtonActive] : ImVec4(0, 0, 0, 0));
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-  const bool clicked = ImGui::ButtonEx((text + "###" + id).c_str(), ImVec2(width, 0.0f), ImGuiButtonFlags_PressedOnClick);
-  ImGui::PopStyleVar(2);
-  ImGui::PopStyleColor();
   const float text_width = ImGui::CalcTextSize(text.c_str(), nullptr, true).x;
   const float ascent = ImGui::GetFontBaked()->Ascent;
+  // the text and the arrow are centered as a group in the button
+  const float padding_x = std::max(style.FramePadding.x, (width - (text_width + MENU_ARROW_SPACING + MENU_ARROW_SIZE)) * 0.5f);
+  ImGui::PushStyleColor(ImGuiCol_Button, popup_open ? style.Colors[ImGuiCol_ButtonActive] : ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding_x, style.FramePadding.y));
+  ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+  const bool clicked = ImGui::ButtonEx((text + "###" + id).c_str(), ImVec2(width, 0.0f), ImGuiButtonFlags_PressedOnClick);
+  ImGui::PopStyleVar(3);
+  ImGui::PopStyleColor();
   if (bold) popBoldFont();
   // a 6 px arrow right after the text, sitting on the text baseline
   const ImVec2 min = ImGui::GetItemRectMin();
-  const float x = min.x + style.FramePadding.x + text_width + MENU_ARROW_SPACING;
+  const float x = min.x + padding_x + text_width + MENU_ARROW_SPACING;
   const float baseline = min.y + style.FramePadding.y + ascent;
   ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(x, baseline - MENU_ARROW_SIZE * 0.5f),
                                                 ImVec2(x + MENU_ARROW_SIZE, baseline - MENU_ARROW_SIZE * 0.5f),

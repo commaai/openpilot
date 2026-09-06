@@ -182,7 +182,7 @@ float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);
 void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index);
 
 // an auto-raise button that opens `popup_id` below itself, with a dropdown arrow after the text. width 0:
-// sized to the text, otherwise the arrow sits at the right edge
+// sized to the text, otherwise the text and the arrow are centered in the button
 float menuButtonWidth(const std::string &text, bool bold = false);
 bool menuButton(const char *id, const std::string &text, const char *popup_id, bool bold = false, float width = 0.0f);
 

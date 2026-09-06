@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -15,6 +17,35 @@
 #include "openpilot/cereal/visionstream.h"
 #include "tools/cabana/core/observable.h"
 #include "msgq/visionipc/visionipc_client.h"
+
+// Center-crop the source to fill the destination without stretching.
+inline ImVec2 videoFillUv(const ImVec2 &size, float aspect_ratio) {
+  const float ratio = size.x / size.y / aspect_ratio;
+  return ImVec2(0.5f * (1.0f - std::min(ratio, 1.0f)),
+                0.5f * (1.0f - std::min(1.0f / ratio, 1.0f)));
+}
+
+struct VideoPlacement {
+  ImVec2 min;
+  ImVec2 max;
+  ImVec2 uv0;
+  ImVec2 uv1;
+};
+
+inline VideoPlacement videoPlacement(const ImRect &rect, float source_aspect_ratio, bool crop) {
+  VideoPlacement placement{rect.Min, rect.Max, ImVec2(0, 0), ImVec2(1, 1)};
+  if (crop) {
+    placement.uv0 = videoFillUv(rect.GetSize(), source_aspect_ratio);
+    placement.uv1 = ImVec2(1.0f - placement.uv0.x, 1.0f - placement.uv0.y);
+  } else {
+    const float widget_aspect_ratio = rect.GetWidth() / rect.GetHeight();
+    const int width = std::lround(rect.GetWidth() * std::min(source_aspect_ratio / widget_aspect_ratio, 1.0f));
+    const int height = std::lround(rect.GetHeight() * std::min(widget_aspect_ratio / source_aspect_ratio, 1.0f));
+    placement.min = ImVec2(rect.Min.x + (int)(rect.GetWidth() - width) / 2, rect.Min.y + (int)(rect.GetHeight() - height) / 2);
+    placement.max = ImVec2(placement.min.x + width, placement.min.y + height);
+  }
+  return placement;
+}
 
 // tightly packed RGBA pixels
 struct RgbImage {

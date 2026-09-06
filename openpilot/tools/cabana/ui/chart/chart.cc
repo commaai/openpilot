@@ -488,7 +488,7 @@ void ChartView::showTip(double sec) {
     x = tooltip_x_;
   }
   ImVec2 pt(x, layout_.plot_area.Min.y);
-  text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 3)});
+  text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 2)});
   tip_label_.showText(pt, text_list, visible_rect);
 }
 

@@ -143,7 +143,7 @@ static float toolbarHeight() { return TOOLBAR_MARGIN_Y + ImGui::GetFrameHeight()
 void VideoWidget::drawPlaybackController() {
   beginToolbar();
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + TOOLBAR_MARGIN_Y);
-  const float speed_width = menuButtonWidth("0.05x  ", true);
+  const float speed_width = menuButtonWidth("0.05x", true);
 
   const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
   const char *play_tooltip = can->isPaused() ? "Play" : "Pause";
@@ -186,21 +186,29 @@ void VideoWidget::drawPlaybackController() {
   }
   // the expanding spacer: the items after it are right aligned as long as everything fits
   const size_t spacer_index = items.size();
-  if (!can->liveStreaming()) {
-    items.push_back({toolbarButtonWidth(loop_icon), [&]() { if (toolButton("loop", loop_icon, "Loop playback")) loopPlaybackClicked(); },
-                     "Loop playback", [this]() { loopPlaybackClicked(); }});
-  }
-  items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }});
-  if (!can->liveStreaming()) {
-    ToolbarItem separator{TOOLBAR_SEPARATOR_EXTENT, []() {
+  auto separator = []() {
+    ToolbarItem item{TOOLBAR_SEPARATOR_EXTENT, []() {
       // a 1 px separator line centered in TOOLBAR_SEPARATOR_EXTENT, inset from the top and bottom
       const ImVec2 min = ImGui::GetCursorScreenPos();
       ImGui::Dummy(ImVec2(TOOLBAR_SEPARATOR_EXTENT, ImGui::GetFrameHeight()));
       const float x = std::floor(min.x + TOOLBAR_SEPARATOR_EXTENT * 0.5f);
       ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + 4.0f), ImVec2(x, min.y + ImGui::GetFrameHeight() - 4.0f), ImGui::GetColorU32(ImGuiCol_Separator));
     }};
-    separator.in_menu = false;
-    items.push_back(std::move(separator));
+    item.in_menu = false;
+    return item;
+  };
+  const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
+  items.push_back({toolbarButtonWidth(aspect_ratio_icon), [&]() {
+    if (toolButton("crop_video", aspect_ratio_icon, "Crop to fill")) cropVideoClicked();
+  }, "Crop to fill", [this]() { cropVideoClicked(); }});
+  if (!can->liveStreaming()) {
+    items.push_back(separator());
+    items.push_back({toolbarButtonWidth(loop_icon), [&]() { if (toolButton("loop", loop_icon, "Loop playback")) loopPlaybackClicked(); },
+                     "Loop playback", [this]() { loopPlaybackClicked(); }});
+  }
+  items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }});
+  if (!can->liveStreaming()) {
+    items.push_back(separator());
     items.push_back({toolbarButtonWidth(icon::INFO_CIRCLE),
                      [&]() { if (toolButton("route_info", icon::INFO_CIRCLE, "View route details")) showRouteInfo(); },
                      "View route details", [this]() { showRouteInfo(); }});
@@ -221,16 +229,16 @@ void VideoWidget::toggleTimeDisplay() {
   settings.absolute_time = !settings.absolute_time;
 }
 
-static std::string speedText(float speed, const char *suffix) {
+static std::string speedText(float speed) {
   char buf[32];
-  snprintf(buf, sizeof(buf), "%gx%s", speed, suffix);
+  snprintf(buf, sizeof(buf), "%gx", speed);
   return buf;
 }
 
 void VideoWidget::createSpeedDropdown() {
   speed_index_ = NORMAL_SPEED_INDEX;
   can->setSpeed(speeds[speed_index_]);
-  speed_text_ = speedText(speeds[speed_index_], "  ");
+  speed_text_ = speedText(speeds[speed_index_]);
 }
 
 void VideoWidget::drawSpeedDropdown(float width) {
@@ -247,14 +255,14 @@ void VideoWidget::drawSpeedMenuItems() {
   const float indent = ImGui::GetFontSize();
   float label_width = 0;
   for (int i = 0; i < (int)std::size(speeds); ++i) {
-    label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i], "").c_str()).x);
+    label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i]).c_str()).x);
   }
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
-    if (radioMenuItem(speedText(speed, "").c_str(), speed_index_ == i, indent + label_width + indent)) {
+    if (radioMenuItem(speedText(speed).c_str(), speed_index_ == i, indent + label_width + indent)) {
       speed_index_ = i;
       can->setSpeed(speed);
-      speed_text_ = speedText(speed, "  ");
+      speed_text_ = speedText(speed);
     }
   }
 }
@@ -307,6 +315,11 @@ void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams
 
 void VideoWidget::loopPlaybackClicked() {
   getReplay()->setLoop(!getReplay()->loop());
+}
+
+void VideoWidget::cropVideoClicked() {
+  settings.crop_video = !settings.crop_video;
+  settings.changed();
 }
 
 void VideoWidget::timeRangeChanged() {
@@ -534,34 +547,27 @@ void StreamCameraView::draw(const ImVec2 &size, double thumbnail_time) {
   }
 }
 
-const RgbImage *StreamCameraView::thumbnailAt(double sec, uint64_t *mono_time) {
+const RgbImage *StreamCameraView::thumbnailAt(double sec) {
   auto it = big_thumbnails_.lower_bound(can->toMonoTime(sec));
   if (it == big_thumbnails_.end()) return nullptr;
   if (big_thumbnail_texture_.id == 0 || big_thumbnail_texture_.key != it->first) {
     big_thumbnail_texture_.upload(it->second);
     big_thumbnail_texture_.key = it->first;
   }
-  if (mono_time) *mono_time = it->first;
   return &it->second;
 }
 
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255));
-  if (const RgbImage *image = thumbnailAt(sec, nullptr)) {
-    // scale to the widget size, keeping the aspect ratio
-    const float scale = std::min(width() / image->width, height() / image->height);
-    const ImVec2 scaled_size(std::floor(image->width * scale), std::floor(image->height * scale));
-    const ImVec2 center = rect().GetCenter();
-    const ImVec2 thumb_min(center.x - (int)(scaled_size.x / 2), center.y - (int)(scaled_size.y / 2));
-    ImRect thumb_rect(thumb_min, ImVec2(thumb_min.x + scaled_size.x, thumb_min.y + scaled_size.y));
-    p->AddImage(big_thumbnail_texture_.ref(), thumb_rect.Min, thumb_rect.Max);
-    drawTime(p, thumb_rect, sec);
+  if (const RgbImage *image = thumbnailAt(sec)) {
+    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
+    p->AddImage(big_thumbnail_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1);
+    drawTime(p, rect(), sec);
   }
 }
 
 void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
-  uint64_t mono_time = 0;
-  if (const RgbImage *image = thumbnailAt(sec, &mono_time)) {
+  if (const RgbImage *image = thumbnailAt(sec)) {
     // AddImage scales the stored image to the thumbnail height, keeping the aspect ratio
     const int h = MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2;
     const int w = std::max(1, (int)std::lround((double)image->width * h / image->height));
@@ -574,7 +580,8 @@ void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
     ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + w, rect().Min.y + y + h));
     p->AddImage(big_thumbnail_texture_.ref(), thumb_rect.Min, thumb_rect.Max);
     p->AddRect(thumb_rect.Min, thumb_rect.Max, paletteBrightText(), 0.0f, 0, 2.0f);
-    if (auto alert = getReplay()->findAlertAtTime(can->toSeconds(mono_time))) {
+    // look up the alert at the hovered time, the thumbnail frame itself can be seconds away
+    if (auto alert = getReplay()->findAlertAtTime(sec)) {
       drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE);
     }
     drawTime(p, thumb_rect, sec);
@@ -583,7 +590,7 @@ void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
 
 void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double seconds) {
   char text[32];
-  snprintf(text, sizeof(text), "%.3f", seconds);
+  snprintf(text, sizeof(text), "%.2f", seconds);
   ImFont *font = ImGui::GetFont();
   const ImVec2 text_size = font->CalcTextSizeA(POINT_10_FONT_SIZE, FLT_MAX, 0.0f, text);
   // centered horizontally, above the bottom margin

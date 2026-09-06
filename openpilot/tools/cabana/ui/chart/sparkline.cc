@@ -61,7 +61,10 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
   }
 
   const double xscale = (sz.x - 1) / (double)range;
-  const double yscale = (sz.y - 3) / (max_val - min_val);
+  // Leave room for the stroke's antialiasing fringe and the 3x3 endpoint marker
+  // at both extrema, including the half-pixel offset applied by ImGui's strokes.
+  const double ypadding = std::min(3.0, sz.y / 2.0);
+  const double yscale = (sz.y - 2 * ypadding) / (max_val - min_val);
   const double span = points_.back().x - points_.front().x;
   bool draw_individual_points = (span * xscale / points_.size()) > 8.0;
 
@@ -70,7 +73,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
   render_points_.clear();
   if (draw_individual_points) {
     for (const auto &p : points_) {
-      render_points_.emplace_back(p.x * xscale, 1.0 + (max_val - p.y) * yscale);
+      render_points_.emplace_back(p.x * xscale, ypadding + (max_val - p.y) * yscale);
     }
   } else if (is_flat_line) {
     double y = sz.y / 2.0;
@@ -78,7 +81,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
     render_points_.emplace_back(points_.back().x * xscale, y);
   } else {
     double prev_y = points_.front().y;
-    render_points_.emplace_back(points_.front().x * xscale, 1.0 + (max_val - prev_y) * yscale);
+    render_points_.emplace_back(points_.front().x * xscale, ypadding + (max_val - prev_y) * yscale);
     bool in_flat = false;
 
     for (size_t i = 1; i < points_.size(); ++i) {
@@ -87,13 +90,13 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
       if (std::abs(y - prev_y) < 1e-6) {
         in_flat = true;
       } else {
-        if (in_flat) render_points_.emplace_back(points_[i - 1].x * xscale, 1.0 + (max_val - prev_y) * yscale);
-        render_points_.emplace_back(p.x * xscale, 1.0 + (max_val - y) * yscale);
+        if (in_flat) render_points_.emplace_back(points_[i - 1].x * xscale, ypadding + (max_val - prev_y) * yscale);
+        render_points_.emplace_back(p.x * xscale, ypadding + (max_val - y) * yscale);
         in_flat = false;
       }
       prev_y = y;
     }
-    if (in_flat) render_points_.emplace_back(points_.back().x * xscale, 1.0 + (max_val - prev_y) * yscale);
+    if (in_flat) render_points_.emplace_back(points_.back().x * xscale, ypadding + (max_val - prev_y) * yscale);
   }
 
   size = sz;
@@ -135,43 +138,29 @@ void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos, ImU32 color) const {
   // a point is a 3x3 square
   auto draw_point = [&](const ImVec2 &p) { draw_list->AddRectFilled(ImVec2(p.x - 1.5f, p.y - 1.5f), ImVec2(p.x + 1.5f, p.y + 1.5f), color); };
 
-  if (draw_individual_points_) {
-    for (const auto &p : render_points_) {
-      draw_list->PathLineTo(point_at(p));
-      draw_point(point_at(p));
-    }
-    draw_list->PathStroke(color, ImDrawFlags_None, 1.5f);
-  } else {
-    // one sample per pixel column: several strokes in a column overlap into a blur, and a dense
-    // high-contrast texture scrolling by is hard on the eyes
-    std::vector<ImVec2> pts;
-    pts.reserve(render_points_.size());
-    float col = -1e9f;
-    for (const auto &p : render_points_) {
-      ImVec2 sp = point_at(p);
-      float c = snap(sp.x);
-      if (c != col) {
-        pts.push_back(sp);
-        col = c;
+  // Keep ordinary curves joined so short segments don't leave antialiasing seams.
+  // Split at turns sharper than 120 degrees: a joined narrow spike folds back on
+  // itself and loses its tip. Both paths retain the actual peak and every sample.
+  const float thickness = 1.5f;
+  for (size_t i = 0; i < render_points_.size(); ++i) {
+    const auto &p = render_points_[i];
+    draw_list->PathLineTo(point_at(p));
+    if (i > 0 && i + 1 < render_points_.size()) {
+      const auto &prev = render_points_[i - 1];
+      const auto &next = render_points_[i + 1];
+      const double ax = p.x - prev.x, ay = p.y - prev.y;
+      const double bx = next.x - p.x, by = next.y - p.y;
+      const double dot = ax * bx + ay * by;
+      if (dot < 0 && 4 * dot * dot > (ax * ax + ay * ay) * (bx * bx + by * by)) {
+        draw_list->PathStroke(color, ImDrawFlags_None, thickness);
+        draw_list->PathLineTo(point_at(p));
       }
     }
-
-    // antialiasing smooths the gentle slopes but smears the near-vertical segments of a spiky signal
-    // over neighboring columns, so those are drawn aliased. runs of one kind are stroked together and
-    // share their end points with the next run
-    auto steep = [&](size_t i) { return std::abs(pts[i + 1].y - pts[i].y) > 2.0f * std::abs(pts[i + 1].x - pts[i].x) + px; };
-    const ImDrawListFlags saved = draw_list->Flags;
-    size_t i = 0;
-    while (i + 1 < pts.size()) {
-      const bool is_steep = steep(i);
-      size_t j = i + 1;
-      while (j + 1 < pts.size() && steep(j) == is_steep) ++j;
-      draw_list->Flags = is_steep ? (saved & ~ImDrawListFlags_AntiAliasedLines) : saved;
-      for (size_t n = i; n <= j; ++n) draw_list->PathLineTo(pts[n]);
-      draw_list->PathStroke(color, ImDrawFlags_None, 1.0f);
-      i = j;
-    }
-    draw_list->Flags = saved;
+  }
+  draw_list->PathStroke(color, ImDrawFlags_None, thickness);
+  if (draw_individual_points_) {
+    for (const auto &p : render_points_) draw_point(point_at(p));
+  } else {
     draw_point(point_at(render_points_.back()));
   }
   draw_list->PopClipRect();

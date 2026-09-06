@@ -9,6 +9,7 @@
 
 #include "common/yuv.h"
 #include "tools/cabana/utils/util.h"
+#include "tools/cabana/settings.h"
 
 namespace {
 constexpr GLenum GL_LINEAR_MIPMAP_LINEAR_ = 0x2703;
@@ -107,21 +108,12 @@ void CameraWidget::paint() {
     frame_updated_ = false;
   }
 
-  // Scale for aspect ratio
-  float widget_ratio = (float)width() / height();
-  float frame_ratio = (float)rgb_frame_.width / rgb_frame_.height;
-  int w = std::lround(width() * std::min(frame_ratio / widget_ratio, 1.0f));
-  int h = std::lround(height() * std::min(widget_ratio / frame_ratio, 1.0f));
-  ImVec2 video_min(rect_.Min.x + (int)(width() - w) / 2, rect_.Min.y + (int)(height() - h) / 2);
-  ImVec2 video_max(video_min.x + w, video_min.y + h);
-
-  ImVec2 uv0(0, 0), uv1(1, 1);
+  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), settings.crop_video);
   if (active_stream_type_ == VISION_STREAM_CABIN) {
     // mirror cabin camera horizontally
-    uv0.x = 1;
-    uv1.x = 0;
+    std::swap(placement.uv0.x, placement.uv1.x);
   }
-  p->AddImage(frame_texture_.ref(), video_min, video_max, uv0, uv1);
+  p->AddImage(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1);
 }
 
 void CameraWidget::vipcThread() {

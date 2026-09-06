@@ -195,10 +195,10 @@ void test_format_seconds() {
   REQUIRE(utils::formatSeconds(0) == "00:00");
   REQUIRE(utils::formatSeconds(59.4) == "00:59");
   REQUIRE(utils::formatSeconds(-1) == "00:00");
-  REQUIRE(utils::formatSeconds(61.234, true) == "01:01.234");
+  REQUIRE(utils::formatSeconds(61.234, true) == "01:01.23");
   REQUIRE(utils::formatSeconds(3599.9) == "59:59");
   REQUIRE(utils::formatSeconds(3601) == "01:00:01");
-  REQUIRE(utils::formatSeconds(3601.5, true) == "01:00:01.500");
+  REQUIRE(utils::formatSeconds(3601.5, true) == "01:00:01.50");
 
   const char *tz = getenv("TZ");
   const bool had_tz = tz != nullptr;
@@ -206,7 +206,7 @@ void test_format_seconds() {
   setenv("TZ", "UTC", 1);
   tzset();
   REQUIRE(utils::formatSeconds(0, false, true) == "1970-01-01 00:00:00");
-  REQUIRE(utils::formatSeconds(1700000000.123, true, true) == "2023-11-14 22:13:20.123");
+  REQUIRE(utils::formatSeconds(1700000000.123, true, true) == "2023-11-14 22:13:20.12");
   if (had_tz) {
     setenv("TZ", saved_tz.c_str(), 1);
   } else {
