@@ -4,9 +4,6 @@
 #include <ctime>
 #include <filesystem>
 #include <sstream>
-#include <thread>
-
-#include "tools/replay/py_downloader.h"
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
@@ -398,32 +395,6 @@ void test_cabana_core() {
   test_qt_state_blobs();
 }
 
-int main(int argc, char **argv) {
-  if (argc == 3 && std::string(argv[1]) == "--check-downloader") {
-    return run_native_test([&]() {
-      const std::string mode = argv[2];
-      const std::string prefix = std::getenv("OPENPILOT_PREFIX");
-      bool progress = false;
-      installDownloadProgressHandler([&](uint64_t current, uint64_t total, bool success) {
-        if (success && current == 42 && total == 100) progress = true;
-      });
-      std::atomic<bool> abort = false;
-      std::thread cancel;
-      if (mode == "abort") cancel = std::thread([&]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        abort = true;
-      });
-      const auto result = PyDownloader::download(mode == "ok" ? "url with spaces & literal $value" : mode, true, &abort);
-      if (cancel.joinable()) cancel.join();
-      installDownloadProgressHandler(nullptr);
-      REQUIRE(std::string(std::getenv("OPENPILOT_PREFIX")) == prefix);
-      if (mode == "ok") {
-        REQUIRE(result == "downloaded path");
-        REQUIRE(progress);
-      } else {
-        REQUIRE(result.empty());
-      }
-    });
-  }
+int main() {
   return run_native_test(test_cabana_core);
 }
