@@ -74,8 +74,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
 
 void DetailWidget::drawToolBar() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  auto radio_width = [&](const char *label) { return ImGui::GetFrameHeight() + style.ItemInnerSpacing.x + ImGui::CalcTextSize(label).x; };
-  // name ... "Heatmap:" [Live] [All] | [edit][remove]: the name takes what the rest leaves, and what does
+  // name ... [Heatmap: Live/All] | [edit][remove]: the name takes what the rest leaves, and what does
   // not fit in a narrow panel goes into the ">>" menu
   std::vector<ToolbarItem> items;
   items.push_back({0.0f, [this]() {
@@ -86,23 +85,25 @@ void DetailWidget::drawToolBar() {
   }});
   items.back().in_menu = false;
   const size_t spacer_index = items.size();
-  items.push_back({ImGui::CalcTextSize("Heatmap:").x, []() {
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted("Heatmap:");
-  }});
-  items.back().in_menu = false;
-  items.push_back({radio_width("Live"), [this]() {
-    if (ImGui::RadioButton("Live##heatmap_live_", heatmap_live_) && !heatmap_live_) {
+  const std::string heatmap_text = "Heatmap: " + (heatmap_live_ ? std::string("Live") : heatmap_all_text_);
+  auto heatmap_items = [this]() {
+    if (ImGui::MenuItem("Live", nullptr, heatmap_live_) && !heatmap_live_) {
       heatmap_live_ = true;
       binary_view_->setHeatmapLiveMode(true);
     }
-  }, "Heatmap: live", [this]() { heatmap_live_ = true; binary_view_->setHeatmapLiveMode(true); }});
-  items.push_back({radio_width(heatmap_all_text_.c_str()), [this]() {
-    if (ImGui::RadioButton((heatmap_all_text_ + "##heatmap_all").c_str(), !heatmap_live_) && heatmap_live_) {
+    if (ImGui::MenuItem(heatmap_all_text_.c_str(), nullptr, !heatmap_live_) && heatmap_live_) {
       heatmap_live_ = false;
       binary_view_->setHeatmapLiveMode(false);
     }
-  }, "Heatmap: " + heatmap_all_text_, [this]() { heatmap_live_ = false; binary_view_->setHeatmapLiveMode(false); }});
+  };
+  items.push_back({menuButtonWidth(heatmap_text), [&heatmap_text, heatmap_items]() {
+    menuButton("heatmap", heatmap_text, "heatmap_menu");
+    if (ImGui::BeginPopup("heatmap_menu")) {
+      heatmap_items();
+      ImGui::EndPopup();
+    }
+  }, "Heatmap"});
+  items.back().submenu = heatmap_items;
   items.push_back({1.0f, []() { ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); }});
   items.back().in_menu = false;
   // Capture the panel width before the action can run inside the overflow popup.
