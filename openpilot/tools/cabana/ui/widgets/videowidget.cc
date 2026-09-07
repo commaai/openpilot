@@ -523,7 +523,7 @@ void StreamCameraView::draw(const ImVec2 &size, double thumbnail_time) {
     scrubbing ? drawScrubThumbnail(p, thumbnail_time) : drawThumbnail(p, thumbnail_time);
   }
   if (auto alert = getReplay()->findAlertAtTime(scrubbing ? thumbnail_time : can->currentSec())) {
-    drawAlert(p, rect(), *alert, ImGui::GetFontSize());
+    drawAlert(p, rect(), *alert, ImGui::GetFontSize(), ImGui::GetStyle().ChildRounding);
   }
 
   if (can->isPaused()) {
@@ -571,7 +571,7 @@ void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
     p->AddRect(thumb_rect.Min, thumb_rect.Max, IM_COL32_WHITE, ImGui::GetStyle().FrameRounding, 0, 2.0f);
     // look up the alert at the hovered time, the thumbnail frame itself can be seconds away
     if (auto alert = getReplay()->findAlertAtTime(sec)) {
-      drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE);
+      drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE, ImGui::GetStyle().FrameRounding);
     }
     drawTime(p, thumb_rect, sec);
   }
@@ -587,17 +587,17 @@ void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double second
              IM_COL32_WHITE, text);
 }
 
-void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size) {
+void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size, float rounding) {
   const ImU32 pen = IM_COL32_WHITE;
   ImU32 color = withAlpha(timeline_colors[int(alert.type)], 128);
   std::string text = alert.text1;
   if (!alert.text2.empty()) text += "\n" + alert.text2;
 
-  ImRect text_rect(ImVec2(rect.Min.x + 1, rect.Min.y + 1), ImVec2(rect.Max.x - 1, rect.Max.y - 1));
+  const ImRect &text_rect = rect;
   ImFont *font = ImGui::GetFont();
   const float wrap_width = std::max(1.0f, text_rect.GetWidth());
   const ImVec2 r = font->CalcTextSizeA(font_size, FLT_MAX, wrap_width, text.c_str());
-  p->AddRectFilled(ImVec2(text_rect.Min.x, text_rect.Min.y), ImVec2(text_rect.Max.x, text_rect.Min.y + r.y), color, ImGui::GetStyle().FrameRounding, ImDrawFlags_RoundCornersTop);
+  p->AddRectFilled(ImVec2(text_rect.Min.x, text_rect.Min.y), ImVec2(text_rect.Max.x, text_rect.Min.y + r.y), color, rounding, ImDrawFlags_RoundCornersTop);
   // each line is centered, wrapped continuations stay left aligned
   float y = text_rect.Min.y;
   for (const auto &line : utils::split(text, '\n')) {
