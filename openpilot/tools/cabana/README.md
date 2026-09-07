@@ -58,20 +58,15 @@ cabana "5beb9b58bd12b691/0000010a--a51155e496" --cabin --wide-road
 
 ### Streaming CAN Messages from a comma Device
 
-[SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and start the bridge with the following command:
+Enable SSH on your device and configure key authentication for `comma@<ipaddress>` using your SSH agent or `~/.ssh/config`. Cabana uses the system `ssh` client and automatically accepts new host keys; changed host keys are rejected. Password prompts are not supported.
 
-```shell
-cd /data/openpilot
-./openpilot/cereal/messaging/bridge &
-```
-
-Then Run Cabana with the device's IP address:
+Run Cabana with the device's IP address, or select **Device → ZMQ** in the stream selector. The dialog stays open while connecting (up to 20 seconds), supports cancellation, and lets you correct the IP address and retry after an error:
 
 ```shell
 cabana --zmq <ipaddress>
 ```
 
-Replace &lt;ipaddress&gt; with your comma device's IP address.
+Replace &lt;ipaddress&gt; with your comma device's IP address. Cabana starts the cereal bridge over SSH in a `cabana-bridge` window in the existing `comma` tmux session and reuses an existing bridge. The bridge and its output stay in tmux after SSH or Cabana disconnects. Attach with `ssh -t comma@<ipaddress> tmux attach -t comma` to inspect it. Loopback addresses use an already running local bridge without SSH.
 
 While streaming from the device, Cabana will log the CAN messages to a local directory. By default, this directory is ~/cabana_live_stream/. You can change the log directory in Cabana by navigating to menu -> tools -> settings.
 

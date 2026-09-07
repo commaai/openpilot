@@ -1,11 +1,13 @@
 #pragma once
 
 #include <functional>
+#include <future>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #ifdef __linux__
 #include "tools/cabana/streams/socketcanstream.h"
@@ -23,6 +25,8 @@ public:
   virtual void drawPopups() {}
   virtual std::unique_ptr<AbstractStream> open() = 0;
   virtual bool openEnabled() const { return true; }
+  virtual bool opening() const { return false; }
+  virtual std::unique_ptr<AbstractStream> pollOpen() { return nullptr; }
 };
 
 class OpenReplayWidget : public AbstractOpenStreamWidget {
@@ -63,13 +67,20 @@ private:
 
 class OpenDeviceWidget : public AbstractOpenStreamWidget {
 public:
+  ~OpenDeviceWidget();
   const char *title() const override { return "Device"; }
   void draw() override;
   std::unique_ptr<AbstractStream> open() override;
+  bool openEnabled() const override;
+  bool opening() const override { return preparation_.valid(); }
+  std::unique_ptr<AbstractStream> pollOpen() override;
 
 private:
   int mode_ = 1;  // 0 = MSGQ, 1 = ZMQ
   std::string ip_address_;
+  std::unique_ptr<DeviceStream> pending_;
+  std::future<bool> preparation_;
+  std::string failure_;
 };
 
 #ifdef __linux__
@@ -98,6 +109,7 @@ public:
 
 private:
   bool open_ = false;
+  AbstractOpenStreamWidget *opening_ = nullptr;
   PopupOwner popup_;
   bool first_frame_ = false;
   std::string dbc_file_;

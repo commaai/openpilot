@@ -384,13 +384,18 @@ void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::s
 void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
   stream_ = std::move(stream);
   can = stream_.get();
-  stream_connections_.push_back(can->error.connect([](const std::string &msg) {
+  stream_failed_ = false;
+  stream_connections_.push_back(can->error.connect([this](const std::string &msg) {
+    stream_failed_ = true;
+    wait_dlg_.open = false;
+    wait_dlg_.connection.disconnect();
+    showStatusMessage("Stream failed to start", 5000);
     MessageBox::warning("Error", msg);
   }));
   can->start();
 
   loadFile(dbc_file, SOURCE_ALL, [this]() {
-    showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
+    if (!stream_failed_) showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
     createDockWidgets();
 
     video_dock_title_ = can->routeName();
@@ -401,7 +406,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
 
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
-    if (hasStream()) {
+    if (hasStream() && !stream_failed_) {
       wait_dlg_.text = can->liveStreaming() ? "Waiting for the live stream to start..." : "Loading segment data...";
       wait_dlg_.value = 0;
       wait_dlg_.open = true;

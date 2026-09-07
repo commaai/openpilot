@@ -113,6 +113,7 @@ private:
   bool charts_floating_ = false;
   float video_splitter_ratio_ = -1.0f;  // < 0: the video widget is at its size hint
   std::vector<std::unique_ptr<ToolDialog>> tool_dialogs_;
+  bool stream_failed_ = false;
   bool closing_ = false;
   bool exited_ = false;
   bool window_modified_ = false;

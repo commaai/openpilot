@@ -193,14 +193,37 @@ void OpenDeviceWidget::draw() {
   ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
-  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device Ip Address", ipValidator);
+  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device IP address", ipValidator);
   ImGui::EndDisabled();
+  if (opening()) {
+    ImGui::TextWrapped("Connecting to device over SSH... (up to 20 seconds)");
+  } else if (mode_ == 1) {
+    ImGui::TextWrapped("openpilot must be running. Enable SSH and add your SSH keys in openpilot.");
+  }
+}
+
+OpenDeviceWidget::~OpenDeviceWidget() {
+  if (pending_) pending_->cancelPreparation();
+  if (preparation_.valid()) preparation_.wait();
+}
+
+bool OpenDeviceWidget::openEnabled() const {
+  return !opening() && (mode_ == 0 || ip_address_.empty() || validateIpAddress(ip_address_) == ValidState::Acceptable);
 }
 
 std::unique_ptr<AbstractStream> OpenDeviceWidget::open() {
-  std::string ip = ip_address_.empty() ? "127.0.0.1" : ip_address_;
-  bool msgq = mode_ == 0;
-  return std::make_unique<DeviceStream>(msgq ? "" : ip);
+  if (mode_ == 0) return std::make_unique<DeviceStream>();
+  pending_ = std::make_unique<DeviceStream>(ip_address_.empty() ? "127.0.0.1" : ip_address_);
+  preparation_ = std::async(std::launch::async, [this]() { return pending_->prepare(failure_); });
+  return nullptr;
+}
+
+std::unique_ptr<AbstractStream> OpenDeviceWidget::pollOpen() {
+  if (!preparation_.valid() || preparation_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return nullptr;
+  if (preparation_.get()) return std::move(pending_);
+  pending_.reset();
+  MessageBox::warning("Device connection failed", failure_);
+  return nullptr;
 }
 
 #ifdef __linux__
@@ -247,6 +270,7 @@ std::unique_ptr<AbstractStream> OpenSocketCanWidget::open() {
 void StreamSelector::open(Callback on_done) {
   on_done_ = std::move(on_done);
   open_ = true;
+  opening_ = nullptr;
   popup_.reset();
   first_frame_ = true;
   dbc_file_.clear();
@@ -265,6 +289,7 @@ void StreamSelector::draw() {
   if (!open_) return;
   if (!beginDialog("Open stream", &popup_, ImVec2(768.0f, 0.0f))) return;
 
+  ImGui::BeginDisabled(opening_ != nullptr);
   AbstractOpenStreamWidget *current = nullptr;
   const ImVec4 pane = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
   ImGui::PushStyleColor(ImGuiCol_ChildBg, pane);
@@ -300,14 +325,21 @@ void StreamSelector::draw() {
       }
     });
   }
+  ImGui::EndDisabled();
   ImGui::Separator();
 
   bool accepted = false, rejected = false;
   std::unique_ptr<AbstractStream> stream;
   bool open_clicked = false;
-  dialogButtons("Open", &open_clicked, &rejected, current != nullptr && current->openEnabled());
+  dialogButtons("Open", &open_clicked, &rejected, !opening_ && current != nullptr && current->openEnabled());
   if (open_clicked) {
     if (stream = current->open(); stream) accepted = true;
+    if (current->opening()) opening_ = current;
+  }
+  if (opening_ && !rejected) {
+    stream = opening_->pollOpen();
+    accepted = stream != nullptr;
+    if (!opening_->opening()) opening_ = nullptr;
   }
 
   // nested so they stack on this modal
@@ -319,6 +351,7 @@ void StreamSelector::draw() {
   ImGui::EndPopup();
   if (accepted || rejected) {
     open_ = false;
+    opening_ = nullptr;
     widgets_.clear();
     auto on_done = std::move(on_done_);
     if (on_done) on_done(std::move(stream), dbc_file_);
