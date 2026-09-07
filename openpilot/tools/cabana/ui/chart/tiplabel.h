@@ -28,7 +28,7 @@ private:
   ImVec2 sizeHint() const;
   void updateLayout();
 
-  static constexpr float MARGIN = 2.0f;  // 1 + PM_ToolTipLabelFrameWidth
+  static constexpr float MARGIN = 6.0f;
   std::vector<TipLine> text_;
   std::array<float, 4> column_widths_{};
   ImVec2 anchor_;
