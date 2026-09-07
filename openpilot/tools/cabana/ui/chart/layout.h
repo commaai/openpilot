@@ -1,6 +1,5 @@
 #pragma once
 
-#include <charconv>
 #include <optional>
 #include <set>
 
@@ -71,29 +70,12 @@ inline std::optional<Layout> parseLayout(const std::string &contents) {
             !s["offset"].is_number() || !std::isfinite(s["offset"].number_value())) return std::nullopt;
         const std::string path = s["path"].string_value();
         if (s["path"].is_string() && path.empty()) return std::nullopt;
-        uint32_t source = 0, address = 0;
-        if (path.empty()) {
-          const auto &text = s["message"].string_value();
-          const auto colon = text.find(':');
-          if (colon == std::string::npos) return std::nullopt;
-          const char *begin = text.data(), *end = begin + text.size();
-          auto bus = std::from_chars(begin, begin + colon, source);
-          auto addr = std::from_chars(begin + colon + 1, end, address, 16);
-          if (bus.ec != std::errc() || bus.ptr != begin + colon || source > 255 ||
-              addr.ec != std::errc() || addr.ptr != end) return std::nullopt;
-        }
-        CabanaColor color{0, 114, 178};
-        if (!s["color"].is_null()) {
-          const auto &hex = s["color"].string_value();
-          uint32_t rgb = 0;
-          if (hex.size() != 7 || hex[0] != '#') return std::nullopt;
-          auto parsed = std::from_chars(hex.data() + 1, hex.data() + 7, rgb, 16);
-          if (parsed.ec != std::errc() || parsed.ptr != hex.data() + 7) return std::nullopt;
-          color = CabanaColor(rgb >> 16, rgb >> 8, rgb);
-        }
-        chart.signals.push_back({{(uint8_t)source, address}, s["signal"].string_value(),
+        const auto id = path.empty() ? MessageId::parse(s["message"].string_value()) : MessageId{};
+        const auto color = s["color"].is_null() ? CabanaColor{0, 114, 178} : CabanaColor::fromHex(s["color"].string_value());
+        if (!id || !color) return std::nullopt;
+        chart.signals.push_back({*id, s["signal"].string_value(),
           {(Transform)s["transform"].int_value(), s["scale"].number_value(), s["offset"].number_value(), s["window"].int_value()},
-          s["visible"].bool_value(), path, color});
+          s["visible"].bool_value(), path, *color});
       }
     }
   }

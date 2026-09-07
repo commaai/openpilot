@@ -55,19 +55,6 @@ struct TransformState {
   }
 };
 
-// Apply scale/offset before the transform. Points must be ordered by time.
-// Duplicate timestamps have no derivative; integration uses the trapezoidal rule.
-template <class Point>
-std::vector<Point> transform(const std::vector<Point> &raw, const TransformSettings &settings) {
-  std::vector<Point> result;
-  result.reserve(raw.size());
-  TransformState state;
-  for (const auto &pt : raw) {
-    if (auto value = state.append(pt.x, pt.y, settings)) result.emplace_back(pt.x, *value);
-  }
-  return result;
-}
-
 inline std::string csvField(const std::string &text) {
   std::string escaped = "\"";
   for (char c : text) {

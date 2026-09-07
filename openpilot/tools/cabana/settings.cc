@@ -492,7 +492,7 @@ void settingsOp(Store &s, SettingOperation op) {
   op(s, "recent_dbc_file", settings.recent_dbc_file);
   op(s, "active_msg_id", settings.active_msg_id);
   op(s, "selected_msg_ids", settings.selected_msg_ids);
-  op(s, "active_charts", settings.active_charts);
+  op(s, "chart_layout", settings.chart_layout);
 }
 
 }  // namespace

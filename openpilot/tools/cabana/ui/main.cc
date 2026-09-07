@@ -98,8 +98,6 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.cabin = true;
     } else if (std::strncmp(a, "--layout=", 9) == 0) {
       args.layout = a + 9;
-    } else if (std::strcmp(a, "--can") == 0) {
-      // CAN is always available alongside cereal signals.
     } else if (std::strcmp(a, "--layout") == 0) {
       if (!takeValue(argc, argv, i, args.layout)) return 1;
     } else if (std::strcmp(a, "--msgq") == 0 || std::strcmp(a, "--stream") == 0) {

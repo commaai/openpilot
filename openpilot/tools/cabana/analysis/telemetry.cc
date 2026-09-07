@@ -108,21 +108,12 @@ void TelemetryExtractor::extract(cereal::Event::Reader event) {
 void prepareTelemetryMerge(const TelemetrySnapshot &destination, Telemetry &batch) {
   for (auto &[path, samples] : batch) {
     auto old = destination.find(path);
-    if (old == destination.end()) continue;
-    std::vector<Sample> merged;
+    if (old == destination.end() || samples.empty()) continue;
+    Samples merged;
     merged.reserve(old->second->size() + samples.size());
     std::merge(old->second->begin(), old->second->end(), samples.begin(), samples.end(),
                std::back_inserter(merged), [](const auto &a, const auto &b) { return a.x < b.x; });
     samples.swap(merged);
-  }
-}
-
-void mergeTelemetry(Telemetry &destination, Telemetry source) {
-  for (auto &[path, samples] : source) {
-    auto &points = destination[path];
-    const size_t previous = points.size();
-    points.insert(points.end(), samples.begin(), samples.end());
-    std::inplace_merge(points.begin(), points.begin() + previous, points.end(), [](const auto &a, const auto &b) { return a.x < b.x; });
   }
 }
 }  // namespace cabana

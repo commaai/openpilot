@@ -350,28 +350,6 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
   }
 }
 
-std::vector<std::string> ChartsWidget::serializeChartIds() const {
-  return {"@layout:" + serializeLayout()};
-}
-
-bool ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids, bool defer_missing_can) {
-  if (chart_ids.size() == 1 && chart_ids.front().rfind("@layout:", 0) == 0) {
-    return restoreLayout(chart_ids.front().substr(8), defer_missing_can);
-  }
-  for (const auto &chart_id : chart_ids) {
-    int index = 0;
-    for (const auto &part : utils::split(chart_id, ',')) {
-      const size_t sep = part.find('|');
-      if (sep == std::string::npos) continue;
-      MessageId msg_id = MessageId::fromString(part.substr(0, sep));
-      if (auto *msg = dbc()->msg(msg_id))
-        if (auto *sig = msg->sig(part.substr(sep + 1)))
-          showChart(msg_id, sig, true, index++ > 0);
-    }
-  }
-  return true;
-}
-
 void ChartsWidget::setColumnCount(int n) {
   n = std::clamp(n, 1, MAX_COLUMN_COUNT);
   if (column_count_ != n) {

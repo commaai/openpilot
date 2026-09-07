@@ -48,9 +48,7 @@ static Replay *getReplay() {
 }
 
 static std::string colorName(ImU32 c) {
-  char buf[16];
-  snprintf(buf, sizeof(buf), "#%02x%02x%02x", (c >> IM_COL32_R_SHIFT) & 0xff, (c >> IM_COL32_G_SHIFT) & 0xff, (c >> IM_COL32_B_SHIFT) & 0xff);
-  return buf;
+  return CabanaColor((c >> IM_COL32_R_SHIFT) & 0xff, (c >> IM_COL32_G_SHIFT) & 0xff, (c >> IM_COL32_B_SHIFT) & 0xff).toHex();
 }
 
 // the zoomed range, or the whole route

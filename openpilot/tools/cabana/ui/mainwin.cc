@@ -687,7 +687,7 @@ void MainWindow::saveSessionState() {
   settings.recent_dbc_file = "";
   settings.active_msg_id = "";
   settings.selected_msg_ids.clear();
-  settings.active_charts.clear();
+  settings.chart_layout.clear();
 
   const auto files = dbc()->nonEmptyDBCFiles();
   if (!files.empty()) settings.recent_dbc_file = files.front()->filename;
@@ -697,9 +697,7 @@ void MainWindow::saveSessionState() {
     settings.active_msg_id = active_id;
     settings.selected_msg_ids = ids;
   }
-  if (charts_widget_) {
-    settings.active_charts = charts_widget_->serializeChartIds();
-  }
+  if (charts_widget_) settings.chart_layout = charts_widget_->serializeLayout();
 }
 
 void MainWindow::restoreSessionState() {
@@ -709,10 +707,9 @@ void MainWindow::restoreSessionState() {
     if (charts_restored_) startup_layout_.clear();
     return;
   }
-  const bool workspace = settings.active_charts.size() == 1 && settings.active_charts.front().rfind("@layout:", 0) == 0;
-  if (workspace && !charts_restored_) {
-    // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
-    charts_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts, true);
+  // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
+  if (!charts_restored_ && !settings.chart_layout.empty()) {
+    charts_restored_ = charts_widget_->restoreLayout(settings.chart_layout, true);
   }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
@@ -720,10 +717,6 @@ void MainWindow::restoreSessionState() {
 
   if (!settings.selected_msg_ids.empty()) {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
-  }
-
-  if (!workspace && !charts_restored_ && !settings.active_charts.empty()) {
-    charts_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts);
   }
 }
 
@@ -904,17 +897,15 @@ void MainWindow::drawVideoPanel() {
   } else if (video_widget_) {
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const bool live = can->liveStreaming();
-    // the bordered child pads its content, so the heights the widget asks for grow by the padding
-    const float video_padding = ImGui::GetStyle().WindowPadding.y * 2.0f;
-    // the camera is as wide as the child's content region, not the panel
+    const bool split_view = !charts_floating_ && !analysis_mode_;
+    const float video_padding = ImGui::GetStyle().WindowPadding.y * 2.0f;  // the bordered child pads its content
     const float default_h = video_widget_->defaultHeight(avail.x - ImGui::GetStyle().WindowPadding.x * 2.0f) + video_padding;
     const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : default_h;
-    float video_h = analysis_mode_ ? default_h : charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
-    if (live) video_h = default_h;  // display video at minimum size.
+    float video_h = analysis_mode_ || live ? default_h : charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
     // Collapse panes below half their minimum height to keep partially clipped controls out of view.
     bool charts_collapsed = false;
     const float splitter_h = ImGui::GetStyle().WindowPadding.x * 2.0f + 2.0f;
-    if ((!charts_floating_ && !analysis_mode_) && !live) {
+    if (split_view && !live) {
       const float min_h = std::min(video_widget_->sizeHintHeight() + video_padding, avail.y - 1.0f);
       video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
       const float charts_min_h = ImGui::GetFrameHeight() + video_padding + ImGui::GetStyle().ChildBorderSize * 2.0f;
@@ -927,7 +918,7 @@ void MainWindow::drawVideoPanel() {
       }
     }
     // The splitter provides the gap; extra ItemSpacing would leave an undraggable strip.
-    if ((!charts_floating_ && !analysis_mode_)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+    if (split_view) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
@@ -936,11 +927,10 @@ void MainWindow::drawVideoPanel() {
     } else {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
-    if ((!charts_floating_ && !analysis_mode_)) {
+    if (split_view) {
       ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
       const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
       if (splitter_active) {
-        // the size of the video is the position of the handle inside the splitter
         const float top = ImGui::GetWindowPos().y + ImGui::GetCursorStartPos().y;
         video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - top) / avail.y, 0.0f, 1.0f);
       }

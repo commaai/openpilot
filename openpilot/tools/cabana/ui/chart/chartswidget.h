@@ -78,8 +78,6 @@ public:
   void draw();  // content only; MainWindow wraps it in a child region or the floating window
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
-  std::vector<std::string> serializeChartIds() const;
-  bool restoreChartsFromIds(const std::vector<std::string> &chart_ids, bool defer_missing_can = false);
   std::string whatsThis() const;
 
   void setColumnCount(int n);

@@ -425,26 +425,32 @@ void test_pixel_envelope() {
 
 void test_chart_analysis() {
   struct Point { double x, y; Point(double x, double y) : x(x), y(y) {} };
+  auto transform = [](const std::vector<Point> &raw, const chart::TransformSettings &settings) {
+    std::vector<Point> result;
+    chart::TransformState state;
+    for (const auto &pt : raw) if (auto value = state.append(pt.x, pt.y, settings)) result.emplace_back(pt.x, *value);
+    return result;
+  };
   const std::vector<Point> raw{{0, 2}, {1, 4}, {3, 8}, {3, 10}, {4, 12}};
-  auto original = chart::transform(raw, {});
+  auto original = transform(raw, {});
   REQUIRE(original.size() == raw.size());
   REQUIRE(original.front().x == 0);
   REQUIRE(original.front().y == 2);
-  auto scaled = chart::transform(raw, {chart::Transform::None, -2, 1});
+  auto scaled = transform(raw, {chart::Transform::None, -2, 1});
   REQUIRE(scaled.back().y == -23);
-  auto derivative = chart::transform(raw, {chart::Transform::Derivative});
+  auto derivative = transform(raw, {chart::Transform::Derivative});
   REQUIRE(derivative.size() == 3);  // omit first point and duplicate timestamp
   REQUIRE(derivative[0].x == 1);
   REQUIRE(derivative[0].y == 2);
   REQUIRE(derivative[1].x == 3);
   REQUIRE(derivative[1].y == 2);
   REQUIRE(derivative[2].y == 2);
-  auto integral = chart::transform(raw, {chart::Transform::Integral});
+  auto integral = transform(raw, {chart::Transform::Integral});
   REQUIRE(integral.front().y == 0);
   REQUIRE(integral[2].y == 15);  // trapezoids over unequal time steps
   REQUIRE(integral[3].y == 15);
   REQUIRE(integral.back().y == 26);
-  auto average = chart::transform(raw, {chart::Transform::MovingAverage, 2, 1, 2});
+  auto average = transform(raw, {chart::Transform::MovingAverage, 2, 1, 2});
   REQUIRE(average[0].y == 5);
   REQUIRE(average[1].y == 7);
   REQUIRE(average[2].y == 13);
@@ -452,7 +458,7 @@ void test_chart_analysis() {
   // A streaming processor produces the same values when a batch boundary falls between samples.
   for (auto type : {chart::Transform::None, chart::Transform::Derivative, chart::Transform::Integral, chart::Transform::MovingAverage}) {
     chart::TransformSettings settings{type, -2, 3, 3};
-    const auto expected = chart::transform(raw, settings);
+    const auto expected = transform(raw, settings);
     chart::TransformState state;
     std::vector<Point> streamed;
     for (size_t batch = 0; batch < raw.size(); batch += 2) {
@@ -466,9 +472,9 @@ void test_chart_analysis() {
       REQUIRE(streamed[i].y == expected[i].y);
     }
   }
-  REQUIRE(chart::transform(std::vector<Point>{}, {}).empty());
-  REQUIRE(chart::transform(std::vector<Point>{{0, 0}}, {chart::Transform::Derivative}).empty());
-  REQUIRE(chart::transform(std::vector<Point>{{0, 0}}, {}).front().y == 0);
+  REQUIRE(transform({}, {}).empty());
+  REQUIRE(transform({{0, 0}}, {chart::Transform::Derivative}).empty());
+  REQUIRE(transform({{0, 0}}, {}).front().y == 0);
   REQUIRE(chart::csvField("signal, \"left\"\n") == "\"signal, \"\"left\"\"\n\"");
 }
 
@@ -561,10 +567,6 @@ void test_cereal_telemetry() {
   REQUIRE(data.at("/carControl/orientationNED/0").front().y == 0.125);
   REQUIRE(data.at("/carControl/orientationNED/1").front().y == 0);
   REQUIRE(data.at("/carControl/orientationNED/2").front().y == -1.5);
-  cabana::Telemetry earlier{{"/carState/vEgo", {{0.5, 10}}}};
-  cabana::mergeTelemetry(data, std::move(earlier));
-  REQUIRE(data.at("/carState/vEgo").front().x == 0.5);
-  REQUIRE(data.at("/carState/vEgo").back().x == 1);
 }
 
 void require_same_telemetry(const cabana::Telemetry &expected, const cabana::Telemetry &actual) {
@@ -645,29 +647,20 @@ void test_log_telemetry_skips_video_frames() {
 }
 
 void test_prepared_telemetry_merge() {
-  const cabana::Telemetry published{{"a", {{2, 20}, {4, 40}}}, {"unchanged", {{1, 10}}}};
-  for (const auto &samples : std::vector<std::vector<cabana::Sample>>{
-         {}, {{0, 0}}, {{5, 50}}, {{1, 10}, {2, 21}, {3, 30}, {6, 60}}}) {
+  cabana::TelemetrySnapshot published{{"a", std::make_shared<const cabana::Samples>(cabana::Samples{{2, 20}, {4, 40}})},
+                                      {"unchanged", std::make_shared<const cabana::Samples>(cabana::Samples{{1, 10}})}};
+  const std::vector<std::pair<cabana::Samples, cabana::Samples>> cases{
+    {{}, {}},  // nothing new: the published series is left alone
+    {{{0, 0}}, {{0, 0}, {2, 20}, {4, 40}}},
+    {{{5, 50}}, {{2, 20}, {4, 40}, {5, 50}}},
+    {{{1, 10}, {2, 21}, {3, 30}, {6, 60}}, {{1, 10}, {2, 20}, {2, 21}, {3, 30}, {4, 40}, {6, 60}}}};
+  for (const auto &[samples, expected] : cases) {
     cabana::Telemetry batch{{"a", samples}, {"new", {{1, 100}}}};
-    auto expected = published;
-    cabana::mergeTelemetry(expected, batch);
-    cabana::TelemetrySnapshot snapshot;
-    for (const auto &[path, points] : published) snapshot[path] = std::make_shared<const cabana::Samples>(points);
-    cabana::prepareTelemetryMerge(snapshot, batch);
+    cabana::prepareTelemetryMerge(published, batch);
     REQUIRE(!batch.count("unchanged"));
-    REQUIRE(published.at("a").size() == 2);
-    REQUIRE(published.at("a").front().y == 20);
-    auto actual = published;
-    for (auto &[path, points] : batch) actual[path].swap(points);
-    REQUIRE(actual.size() == expected.size());
-    for (const auto &[path, points] : expected) {
-      REQUIRE(actual.at(path).size() == points.size());
-      for (size_t i = 0; i < points.size(); ++i) {
-        REQUIRE(actual.at(path)[i].x == points[i].x);
-        REQUIRE(actual.at(path)[i].y == points[i].y);
-      }
-    }
-    REQUIRE(batch.at("a").size() == 2);  // retired data is owned by the worker's batch
+    REQUIRE(batch.at("new").size() == 1);
+    REQUIRE(published.at("a")->size() == 2);
+    require_same_telemetry({{"a", expected}}, {{"a", batch.at("a")}});
   }
 }
 
