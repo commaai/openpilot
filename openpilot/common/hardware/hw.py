@@ -29,7 +29,7 @@ class Paths:
 
   @staticmethod
   def swaglog_ipc() -> str:
-    return os.path.join(Paths.shm_path(), "logmessage" + os.environ.get("OPENPILOT_PREFIX", "") + ".shm")
+    return os.path.join(Paths.shm_path(), "logmessage" + os.environ.get("OPENPILOT_PREFIX", "") + ".d")
 
   @staticmethod
   def download_cache_root() -> str:

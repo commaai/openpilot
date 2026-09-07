@@ -1,13 +1,10 @@
 #include <cstdlib>
-#include <string>
-
-#include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <iterator>
+#include <string>
+#include <dirent.h>
 #include <sys/wait.h>
-#include <sys/mman.h>
-#include <sys/file.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 #include "common/hardware/hw.h"
@@ -21,26 +18,27 @@ void test_swaglog() {
   setenv("DONGLE_ID", "test_dongle_id", 1);
   setenv("CLEAN", "1", 1);
 
-  // LOGD creates the queue and synchronously publishes a complete record.
-  unlink(Path::swaglog_ipc().c_str());
   LOGD("native-cpp-log");
-
-  int fd = open(Path::swaglog_ipc().c_str(), O_RDONLY);
-  CHECK(fd >= 0);
-  CHECK(flock(fd, LOCK_SH) == 0);
-  void *mapping = mmap(nullptr, 4096, PROT_READ, MAP_SHARED, fd, 0);
-  CHECK(mapping != MAP_FAILED);
-  const auto *positions = static_cast<const uint64_t *>(mapping);
-  CHECK(positions[0] == 0);
-  const auto *size_ptr = reinterpret_cast<const uint32_t *>(positions + 2);
-  const int size = *size_ptr;
-  CHECK(positions[1] == sizeof(uint32_t) + static_cast<size_t>(size));
-  CHECK(size < 4096 - 20);
-  const char *buffer = reinterpret_cast<const char *>(size_ptr + 1);
-  CHECK(size > 1);
+  const std::string root = Path::swaglog_ipc();
+  DIR *ready = opendir((root + "/ready").c_str());
+  CHECK(ready != nullptr);
+  std::string filename;
+  int count = 0;
+  while (const auto *entry = readdir(ready)) {
+    if (entry->d_name[0] == '.') continue;
+    filename = root + "/ready/" + entry->d_name;
+    ++count;
+  }
+  CHECK(closedir(ready) == 0);
+  CHECK(count == 1);
+  std::ifstream file(filename, std::ios::binary);
+  CHECK(file.good());
+  const std::string buffer{std::istreambuf_iterator<char>(file), {}};
+  file.close();
+  CHECK(buffer.size() > 1);
   CHECK(buffer[0] == CLOUDLOG_DEBUG);
   std::string error;
-  const auto message = json11::Json::parse(std::string(buffer + 1, size - 1), error);
+  const auto message = json11::Json::parse(buffer.substr(1), error);
   CHECK(error.empty());
   CHECK(message["levelnum"].int_value() == CLOUDLOG_DEBUG);
   CHECK(message["msg"].string_value() == "native-cpp-log");
@@ -50,18 +48,10 @@ void test_swaglog() {
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
 
-  // An initialized logger must drop instead of blocking on another descriptor's lock.
-  const uint64_t write = positions[1];
-  CHECK(flock(fd, LOCK_EX) == 0);
-  LOGD("contended");
-  CHECK(positions[1] == write);
-  CHECK(flock(fd, LOCK_UN) == 0);
-  LOGD("after contention");
-  CHECK(positions[1] > write);
-
-  CHECK(munmap(mapping, 4096) == 0);
-  CHECK(close(fd) == 0);
-  CHECK(unlink(Path::swaglog_ipc().c_str()) == 0);
+  CHECK(unlink(filename.c_str()) == 0);
+  CHECK(rmdir((root + "/pending").c_str()) == 0);  // Publishing leaves no partial file.
+  CHECK(rmdir((root + "/ready").c_str()) == 0);
+  CHECK(rmdir(root.c_str()) == 0);
 }
 
 int main(int argc, char **argv) {

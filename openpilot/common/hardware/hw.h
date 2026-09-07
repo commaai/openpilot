@@ -52,6 +52,6 @@ namespace Path {
     #endif
  }
   inline std::string swaglog_ipc() {
-    return Path::shm_path() + "/logmessage" + Path::openpilot_prefix() + ".shm";
+    return Path::shm_path() + "/logmessage" + Path::openpilot_prefix() + ".d";
   }
 }  // namespace Path

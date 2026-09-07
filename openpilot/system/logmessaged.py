@@ -6,7 +6,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import get_file_handler
-from openpilot.common.shm_queue import ShmQueue
+from openpilot.common.file_queue import FileQueue
 
 
 def main() -> NoReturn:
@@ -14,7 +14,7 @@ def main() -> NoReturn:
   log_handler.setFormatter(SwagLogFileFormatter(None))
   log_level = 20  # logging.INFO
 
-  queue = ShmQueue(Paths.swaglog_ipc())
+  queue = FileQueue(Paths.swaglog_ipc())
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')
@@ -44,8 +44,6 @@ def main() -> NoReturn:
         msg = messaging.new_message(None, valid=True, errorLogMessage=record)
         error_log_message_sock.send(msg.to_bytes())
   finally:
-    queue.close()
-
     # can hit this if interrupted during a rollover
     try:
       log_handler.close()

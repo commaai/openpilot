@@ -6,10 +6,9 @@
 
 #include <cassert>
 #include <limits>
-#include <mutex>
 #include <string>
 
-#include "common/shm_queue.h"
+#include "common/file_queue.h"
 #include <stdarg.h>
 #include "json11/json11.hpp"
 #include "common/version.h"
@@ -51,18 +50,17 @@ public:
     ctx_j["version"] = COMMA_VERSION;
     ctx_j["dirty"] = !getenv("CLEAN");
     ctx_j["device"] = Hardware::get_name();
+
   }
 
   void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
-    std::lock_guard lk(lock);
     if (levelnum >= print_level) {
       printf("%s: %s\n", filename, msg);
     }
     queue.send(log_s);
   }
 
-  std::mutex lock;
-  ShmQueue queue;
+  FileQueue queue;
   int print_level;
   json11::Json::object ctx_j;
 };

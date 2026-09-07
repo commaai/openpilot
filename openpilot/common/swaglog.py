@@ -6,7 +6,7 @@ from logging.handlers import BaseRotatingHandler
 
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.shm_queue import ShmQueue
+from openpilot.common.file_queue import FileQueue
 
 
 def get_file_handler():
@@ -62,31 +62,25 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
 
-class ShmQueueHandler(logging.Handler):
+class FileQueueHandler(logging.Handler):
   def __init__(self, formatter):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
-    self.pid = None
-
     self.queue = None
-
-  def __del__(self):
-    self.close()
+    self.pid = None
 
   def close(self):
-    if self.queue is not None:
-      self.queue.close()
-      self.queue = None
+    self.queue = None
     self.pid = None
+    super().close()
 
   def connect(self):
-    self.close()
-    self.queue = ShmQueue(Paths.swaglog_ipc(), blocking=False)
+    self.queue = FileQueue(Paths.swaglog_ipc())
     self.pid = os.getpid()
 
   def emit(self, record):
     try:
-      if os.getpid() != self.pid:
+      if self.pid != os.getpid():
         self.connect()
       msg = self.format(record).rstrip('\n')
       self.queue.send(bytes([record.levelno]) + msg.encode('utf8'))
@@ -128,8 +122,8 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
-ipchandler = ShmQueueHandler(SwagFormatter(log))
+ipchandler = FileQueueHandler(SwagFormatter(log))
 
 log.addHandler(outhandler)
-# logs are sent through IPC before writing to disk to prevent disk I/O blocking
+# Spool locally; logmessaged handles persistent log files and publication.
 log.addHandler(ipchandler)
