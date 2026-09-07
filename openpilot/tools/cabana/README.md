@@ -138,7 +138,8 @@ branches and restores your previous expansion state when cleared. Search for fie
 to compare fields. Arrays, booleans, enums, and nested numeric fields are included. Hover a
 field to inspect its value. Imported equations also appear in the browser.
 
-Use **+** in the Charts toolbar to create an empty chart, then drag fields or CAN signals onto it.
+Use **+** in the Charts toolbar to create an empty chart, then drag openpilot fields onto it
+or add decoded CAN through **Manage Signals**.
 Empty charts are preserved in saved layouts. For decoded CAN, open **Manage Signals** from
 the chart's menu to search by signal name, message name, or message ID.
 Select several signals to overlay them on one chart. You can also
@@ -157,7 +158,7 @@ Transforms include scale/offset, derivative, integral, and a moving average over
 number of samples. Scale and offset apply first. Derivatives omit the first sample and repeated
 timestamps; integrals use trapezoids starting at zero at the first loaded sample. Moving averages
 use the available samples while the window fills. Transformed series have an asterisk in their
-legend and adjusted units. Statistics show sample count, minimum, maximum, and sample mean for
+legend and adjusted units when the source has a known unit. Statistics show sample count, minimum, maximum, and sample mean for
 the visible time range. These operations affect chart values only.
 
 ### Saved layouts and equations

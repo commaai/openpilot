@@ -335,8 +335,9 @@ void ChartView::configureSignal(size_t index, const chart::TransformSettings &tr
 
 std::string ChartView::signalUnit(const SigItem &s) {
   const std::string unit = s.path.empty() ? s.sig->unit : "";
-  if (s.transform.type == chart::Transform::Derivative) return unit.empty() ? "1/s" : unit + "/s";
-  if (s.transform.type == chart::Transform::Integral) return unit.empty() ? "s" : unit + "·s";
+  if (unit.empty()) return {};
+  if (s.transform.type == chart::Transform::Derivative) return unit + "/s";
+  if (s.transform.type == chart::Transform::Integral) return unit + "·s";
   return unit;
 }
 
