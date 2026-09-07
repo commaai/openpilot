@@ -105,7 +105,9 @@ void DetailWidget::drawToolBar() {
   }, "Heatmap: " + heatmap_all_text_, [this]() { heatmap_live_ = false; binary_view_->setHeatmapLiveMode(false); }});
   items.push_back({1.0f, []() { ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); }});
   items.back().in_menu = false;
-  items.push_back(toolbarAction("edit_msg", icon::PENCIL, "Edit Message", [this]() { editMsg(); }));
+  // Capture the panel width before the action can run inside the overflow popup.
+  const float panel_width = ImGui::GetWindowWidth();
+  items.push_back(toolbarAction("edit_msg", icon::PENCIL, "Edit Message", [this, panel_width]() { editMsg(panel_width); }));
   items.push_back({iconButtonWidth(), [this]() {
     ImGui::BeginDisabled(!action_remove_msg_enabled_);
     if (iconButton("remove_msg", icon::TRASH)) UndoStack::instance()->push(new RemoveMsgCommand(msg_id_));
@@ -213,10 +215,10 @@ void DetailWidget::updateState(const std::set<MessageId> *msgs) {
     history_log_->updateState();
 }
 
-void DetailWidget::editMsg() {
+void DetailWidget::editMsg(float parent_width) {
   auto msg = dbc()->msg(msg_id_);
   int size = msg ? msg->size : can->lastMessage(msg_id_).dat.size();
-  edit_dlg_ = std::make_unique<EditMessageDialog>(msg_id_, msgName(msg_id_), size, ImGui::GetWindowWidth());
+  edit_dlg_ = std::make_unique<EditMessageDialog>(msg_id_, msgName(msg_id_), size, parent_width);
 }
 
 void DetailWidget::drawTabWidget() {
