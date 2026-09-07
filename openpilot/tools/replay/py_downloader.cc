@@ -31,6 +31,7 @@ void reportProgress(const char *line) {
 // Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
 // through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
 std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+  // Build argv for the downloader module
   std::vector<const char *> argv;
   argv.push_back("python3");
   argv.push_back("-m");
