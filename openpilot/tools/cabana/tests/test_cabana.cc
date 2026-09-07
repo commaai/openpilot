@@ -725,7 +725,7 @@ void test_live_fields() {
   REQUIRE(std::abs(retained->front().x - 2) < 1e-9 && std::abs(retained->back().x - 122) < 1e-9);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   stream.stop();  // must release a worker waiting for publication without pumping the UI
-  utils::drainMainThreadQueue();  // cancelled publication must not use its retired captures
+  utils::drainMainThreadQueue();  // canceled publication must not use its retired captures
   REQUIRE(updates == 3);
   static_cast<CabanaSettingsState &>(settings) = saved_settings;
 }
