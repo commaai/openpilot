@@ -50,6 +50,25 @@ inline VideoPlacement videoPlacement(const ImRect &rect, float source_aspect_rat
   return placement;
 }
 
+// Rounded images normally receive a translucent fringe along all four sides. At
+// pixel-aligned video edges that exposes the backing color and changes with each
+// frame. Keep that fringe only on the curved corners.
+inline void drawVideoImage(ImDrawList *p, ImTextureRef texture, const VideoPlacement &placement, float rounding) {
+  const int first_vertex = p->VtxBuffer.Size;
+  p->AddImageRounded(texture, placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, rounding);
+  const float radius = std::min(rounding, std::min(placement.max.x - placement.min.x, placement.max.y - placement.min.y) * 0.5f);
+  const float corner = std::max(0.0f, radius - 1.0f);  // include the displaced AA vertices at each arc endpoint
+  for (int i = first_vertex; i < p->VtxBuffer.Size; ++i) {
+    auto &vertex = p->VtxBuffer[i];
+    if ((vertex.pos.x >= placement.min.x + corner && vertex.pos.x <= placement.max.x - corner) ||
+        (vertex.pos.y >= placement.min.y + corner && vertex.pos.y <= placement.max.y - corner)) {
+      vertex.pos.x = std::clamp(vertex.pos.x, placement.min.x, placement.max.x);
+      vertex.pos.y = std::clamp(vertex.pos.y, placement.min.y, placement.max.y);
+      vertex.col |= IM_COL32_A_MASK;
+    }
+  }
+}
+
 // tightly packed RGBA pixels
 struct RgbImage {
   int width = 0;
