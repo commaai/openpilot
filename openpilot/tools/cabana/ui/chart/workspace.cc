@@ -121,7 +121,6 @@ bool ChartsWidget::restoreLayout(const std::string &contents) {
     if (i) newTab();
     if (i < layout->tab_names.size()) tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = layout->tab_names[i];
     for (const auto &saved : layout->tabs[i]) {
-      if (saved.signals.empty()) continue;
       auto *c = createChart(currentCharts().size());
       c->title = saved.title == "..." ? "" : saved.title;
       c->limit_min = saved.y_min;

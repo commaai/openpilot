@@ -162,7 +162,7 @@ bool ChartView::hasSignal(const MessageId &msg_id, const cabana::Signal *sig) co
 void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   int prev_size = sigs_.size();
   sigs_.erase(std::remove_if(sigs_.begin(), sigs_.end(), predicate), sigs_.end());
-  if (sigs_.empty()) {
+  if (sigs_.empty() && prev_size > 0) {
     charts_widget_->removeChart(this);
   } else if (sigs_.size() != prev_size) {
     updateTelemetry();
@@ -775,6 +775,9 @@ void ChartView::drawAxes() {
         bool hovered, held;
         ImGui::ButtonBehavior(layout_.plot_area, input_id, &hovered, &held);
       }
+    }
+    if (sigs_.empty()) {
+      drawText(ImGui::GetWindowDrawList(), layout_.plot_area, "Drag signals here to plot", ImGui::GetColorU32(ImGuiCol_TextDisabled));
     }
     if (!drawing_ghost_ && layout_.plot_hovered && ImGui::GetIO().KeyCtrl) {
       ImGui::SetKeyOwner(ImGuiKey_MouseWheelY, ImGui::GetID("##plot"));
