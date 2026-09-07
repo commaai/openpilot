@@ -53,9 +53,11 @@ void ReplayStream::mergeSegments() {
       // Replay is the only writer. Prepare replacements while the UI reads the published
       // vectors, then swap on the UI thread. Retired buffers are freed on this thread.
       cabana::prepareTelemetryMerge(telemetry, telemetry_batch);
+      auto next = telemetry;
+      for (auto &[path, samples] : telemetry_batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
       postToMainThreadAndWait([&]() {
         insertEvents(new_events, msg_events);
-        for (auto &[path, samples] : telemetry_batch) telemetry[path].swap(samples);
+        telemetry.swap(next);
         telemetryChanged();
       });
     }
