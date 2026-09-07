@@ -471,7 +471,8 @@ double ChartView::niceNumber(double x, bool ceiling) {
 void ChartView::drawContextMenu() {
   if (drawing_ghost_) return;
   // the menu opens on right press; a right release with no menu open reaches handleMouseRelease
-  if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && layout_.plot_area.Contains(ImGui::GetMousePos()) &&
+      ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
       !ImGui::IsAnyItemActive() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
     ImGui::OpenPopup("context_menu");
   }
@@ -563,7 +564,7 @@ void ChartView::handleMouseMove() {
 void ChartView::handleMouseRelease() {
   if (drawing_ghost_) return;
   const bool left_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-  const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && layout_.rect.Contains(ImGui::GetMousePos());
+  const bool right_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right) && layout_.plot_area.Contains(ImGui::GetMousePos());
   if (!left_released && !right_released) return;
   if (left_released && mouse_mode_ == MouseMode::Pan) {
     mouse_mode_ = MouseMode::None;
@@ -685,6 +686,11 @@ void ChartView::draw(float width) {
   }
   ImGui::EndChild();
   ImGui::PopID();
+  if (pending_signal_removal_ >= 0) {
+    const int index = std::exchange(pending_signal_removal_, -1);
+    int i = 0;
+    removeIf([index, &i](const SigItem &) { return i++ == index; });
+  }
 }
 
 void ChartView::drawGhost(float width) {
@@ -817,8 +823,13 @@ void ChartView::drawLegend() {
     }
     ImGui::SetItemTooltip("%s%s\nClick to show/hide · Right-click for transforms and statistics",
                           s.name().c_str(), s.transform.original() ? "" : " (transformed)");
-    if (ImGui::BeginPopupContextItem("signal_analysis")) {
+    if (!drawing_ghost_ && ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+      ImGui::OpenPopup("signal_analysis");
+    }
+    if (ImGui::BeginPopup("signal_analysis")) {
       drawSignalAnalysis(sigs_[i]);
+      ImGui::Separator();
+      if (ImGui::MenuItem("Remove signal from chart")) pending_signal_removal_ = i;
       ImGui::EndPopup();
     }
     ImGui::PopID();
