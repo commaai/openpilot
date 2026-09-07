@@ -551,8 +551,6 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding_x, style.FramePadding.y));
   ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
   const bool pressed = ImGui::ButtonEx((text + "###" + id).c_str(), ImVec2(width, 0.0f), ImGuiButtonFlags_PressedOnClick);
-  // A sibling menu blocks normal button input. Let this press replace its popup immediately;
-  // IsItemHovered still respects modal dialogs, disabled items, and overlapping windows.
   const bool clicked = pressed || (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
                                    ImGui::IsMouseClicked(ImGuiMouseButton_Left));
   ImGui::PopStyleVar(2);
