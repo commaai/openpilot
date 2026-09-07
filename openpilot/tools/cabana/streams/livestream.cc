@@ -51,22 +51,57 @@ void LiveStream::start() {
   begin_date_time = std::chrono::system_clock::now();
   exit_ = false;
   stream_thread = std::thread(&LiveStream::streamThread, this);
-  update_thread = std::thread(&LiveStream::updateThread, this);
+  update_thread = std::thread(&LiveStream::updateThread, this, settings.max_cached_minutes * 60);
 }
 
 void LiveStream::stop() {
   exit_ = true;
+  cancelWaits();
   if (stream_thread.joinable()) stream_thread.join();
   if (update_thread.joinable()) update_thread.join();
 }
 
-void LiveStream::updateThread() {
+void LiveStream::updateThread(int cache_seconds) {
   while (!exit_) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000 / STREAM_UPDATE_FPS));
-    // coalesce: skip the request if the main thread hasn't processed the previous one yet.
-    if (!update_pending_.exchange(true)) {
-      requestUpdateLastMessages();
+    cabana::Fields batch;
+    std::vector<const CanEvent *> events;
+    uint64_t first_ts, last_ts;
+    {
+      std::lock_guard lk(lock);
+      first_ts = received_first_ts_;
+      last_ts = received_last_ts_;
+      events.swap(received_events_);
+      // Keep map entries alive: the extractor caches pointers to their vectors.
+      for (auto &[path, samples] : received_fields_) {
+        if (!samples.empty()) batch[path].swap(samples);
+      }
     }
+    auto next = fields;
+    cabana::prepareFieldsMerge(next, batch);
+    for (auto &[path, samples] : batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
+    bool changed = !batch.empty();
+    const double cutoff = last_ts * 1e-9 - cache_seconds;
+    for (auto &[path, samples] : next) {
+      if (samples->empty() || samples->front().x >= cutoff - 60) continue;
+      auto first = std::lower_bound(samples->begin(), samples->end(), cutoff, [](const auto &p, double t) { return p.x < t; });
+      if (first != samples->begin()) --first;  // retain the boundary sample for nearest-sample equations
+      if (first != samples->begin()) {
+        samples = std::make_shared<const cabana::Samples>(first, samples->end());
+        changed = true;
+      }
+    }
+    // Publish completed snapshots; retired history is freed here after the UI acknowledges it.
+    postToMainThreadAndWait([&]() {
+      if (exit_) return;
+      begin_event_ts = begin_event_ts ? std::min(begin_event_ts, first_ts) : first_ts;
+      lastest_event_ts = std::max(lastest_event_ts, last_ts);
+      fields.swap(next);
+      cache_seconds = settings.max_cached_minutes * 60;
+      mergeEvents(events);
+      if (changed) fieldsChanged();
+      if (begin_event_ts) updateEvents();
+    });
   }
 }
 
@@ -88,34 +123,6 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
     }
   } else {
     field_extractor_.extract(event);
-  }
-}
-
-// called on the main thread via requestUpdateLastMessages()
-void LiveStream::updateLastMessages() {
-  update_pending_ = false;
-  {
-    // merge events received from live stream thread.
-    std::lock_guard lk(lock);
-    begin_event_ts = begin_event_ts ? std::min(begin_event_ts, received_first_ts_) : received_first_ts_;
-    lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
-    cabana::prepareFieldsMerge(fields, received_fields_);
-    for (auto &[path, samples] : received_fields_) {
-      if (!samples.empty()) fields[path] = std::make_shared<const cabana::Samples>(std::exchange(samples, {}));
-    }
-    const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
-    for (auto &[path, samples] : fields) {
-      if (samples->empty() || samples->front().x >= cutoff - 60) continue;  // trim each series at most once a minute
-      auto first = std::lower_bound(samples->begin(), samples->end(), cutoff, [](const auto &p, double t) { return p.x < t; });
-      if (first != samples->begin()) --first;  // retain the boundary sample for nearest-sample equations
-      if (first != samples->begin()) samples = std::make_shared<const cabana::Samples>(first, samples->end());
-    }
-    mergeEvents(received_events_);
-    received_events_.clear();
-  }
-  if (begin_event_ts) {
-    fieldsChanged();
-    updateEvents();
   }
 }
 

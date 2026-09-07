@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from openpilot.tools.cabana.analysis.cabana_equations import (
-  EquationError, MAX_DEPTH, MAX_INPUTS, MAX_ITEMS, MAX_NODES, MAX_SOURCE_BYTES, MAX_VARIABLES, compile_equation, compile_numeric_equation,
+  EquationError, MAX_DEPTH, MAX_INPUTS, MAX_ITEMS, MAX_NODES, MAX_SOURCE_BYTES, MAX_VARIABLES, compile_numeric_equation,
 )
 
 
@@ -22,24 +22,24 @@ class TestEquationRestrictions(unittest.TestCase):
     }
     for expression, expected in cases.items():
       with self.subTest(expression=expression):
-        result = compile_equation('', 'return ' + expression, 0)(0, 9)
+        result = compile_numeric_equation('', 'return ' + expression, 0)(0.0, 9.0)
         self.assertIs(type(result), float)
         self.assertAlmostEqual(result, expected)
-    self.assertTrue(math.isnan(compile_equation('', 'return math.nan', 0)(0, 1)))
+    self.assertTrue(math.isnan(compile_numeric_equation('', 'return math.nan', 0)(0.0, 1.0)))
 
   def test_numeric_state_and_reset(self):
     code = 'global total\nif value > 0:\n  total += value\nelse:\n  total -= v1\nreturn total'
-    calc = compile_equation('total = 0', code, 1)
-    self.assertEqual(calc(0, 2, 1), 2)
-    self.assertEqual(calc(1, 3, 1), 5)
-    self.assertEqual(calc(2, -1, 1), 4)
-    self.assertEqual(compile_equation('total = 0', code, 1)(0, 2, 1), 2)
+    calc = compile_numeric_equation('total = 0', code, 1)
+    self.assertEqual(calc(0.0, 2.0, 1.0), 2)
+    self.assertEqual(calc(1.0, 3.0, 1.0), 5)
+    self.assertEqual(calc(2.0, -1.0, 1.0), 4)
+    self.assertEqual(compile_numeric_equation('total = 0', code, 1)(0.0, 2.0, 1.0), 2)
     # Local variables retain Python's scope rules and do not persist between samples.
-    self.assertEqual(compile_equation('offset = 3', 'offset = value\nreturn offset', 0)(0, 5), 5)
+    self.assertEqual(compile_numeric_equation('offset = 3', 'offset = value\nreturn offset', 0)(0.0, 5.0), 5)
 
   def test_unpacking_and_timestamp_return(self):
-    calc = compile_equation('', 'a, b = map(math.radians, (value, v1))\nx, y = (a, b)\nreturn time + 1, x + y', 1)
-    time, value = calc(10, 90, 90)
+    calc = compile_numeric_equation('', 'a, b = math.radians(value), math.radians(v1)\nx, y = (a, b)\nreturn time + 1, x + y', 1)
+    time, value = calc(10.0, 90.0, 90.0)
     self.assertEqual(time, 11)
     self.assertAlmostEqual(value, math.pi)
 
@@ -70,7 +70,7 @@ class TestEquationRestrictions(unittest.TestCase):
       'return math.factorial(1000000)', 'return math.comb(1000000, 100)', 'return math.prod(value)',
       'return min(*value)', 'return math.sin(x=value)', 'return map(math.sin, (1, 2))',
       'x = (1, 2)\nreturn x', 'return (1, (2, 3))', 'return (1, 2) * 1000000000',
-      'x, y = map(abs, (1, 2))\nreturn x', 'x, y = (1,)\nreturn x',
+      'x, y = map(abs, (1, 2))\nreturn x', 'x, y = map(math.sin, (1, 2))\nreturn x', 'x, y = (1,)\nreturn x',
       'x, *y = (1, 2)\nreturn x', 'return (1, 2, 3)',
       'math.pi = 3\nreturn value', 'math = 3\nreturn value', 'abs = 3\nreturn value',
       'value[0] = 3\nreturn value', 'del value\nreturn 0',
@@ -78,24 +78,23 @@ class TestEquationRestrictions(unittest.TestCase):
       'global unknown\nunknown = 1\nreturn unknown',
       'if False:\n  import os\nreturn 1', 'return 1\nimport os',
     ]
-    for compiler in (compile_equation, compile_numeric_equation):
-      for code in cases:
-        with self.subTest(code=code, compiler=compiler.__name__), self.assertRaises(EquationError):
-          compiler('', code, 0)
+    for code in cases:
+      with self.subTest(code=code), self.assertRaises(EquationError):
+        compile_numeric_equation('', code, 0)
 
   def test_globals_are_equally_restricted(self):
     for code in ('import math', 'x = ().__class__', 'while True:\n  pass', 'x = [1]', 'math.pi = 2',
                  'value = 0', 'time = 0', 'v1 = 0', 'return 0'):
       with self.subTest(code=code), self.assertRaises(EquationError):
-        compile_equation(code, 'return value', 1)
+        compile_numeric_equation(code, 'return value', 1)
 
   def test_validates_everything_before_executing_initialization(self):
     # The division would raise first if initialization ran before validating the body.
     with self.assertRaises(EquationError):
-      compile_equation('x = 1 / 0', 'return math.__dict__', 0)
+      compile_numeric_equation('x = 1 / 0', 'return math.__dict__', 0)
     with patch('builtins.exec', side_effect=AssertionError('unvalidated exec')):
       with self.assertRaises(EquationError):
-        compile_equation('import os', 'return value', 0)
+        compile_numeric_equation('import os', 'return value', 0)
 
   def test_structural_limits(self):
     cases = [
@@ -110,29 +109,19 @@ class TestEquationRestrictions(unittest.TestCase):
     ]
     for globals_code, code, count in cases:
       with self.subTest(code=code[:80], count=count), self.assertRaises(EquationError):
-        compile_equation(globals_code, code, count)
+        compile_numeric_equation(globals_code, code, count)
 
-  def test_no_host_object_conversion_or_state_leakage(self):
-    class HostObject:
-      def __float__(self):
-        self.fail = True
-        raise AssertionError('must never be invoked')
-    with self.assertRaises(EquationError):
-      compile_equation('', 'return value', 0)(0, HostObject())
-    with self.assertRaises(EquationError):
-      compile_equation('', 'return value', 0)(0)
-    with self.assertRaises(EquationError):
-      compile_equation('', 'pass', 0)(0, 1)
-    compile_equation('state = 4', 'return state', 0)(0, 1)
+  def test_no_state_leakage(self):
+    compile_numeric_equation('state = 4', 'return state', 0)(0.0, 1.0)
     with self.assertRaises(NameError):
-      compile_equation('', 'return state', 0)(0, 1)
+      compile_numeric_equation('', 'return state', 0)(0.0, 1.0)
 
   def test_resource_attacks_in_limited_process(self):
     # Keep this regression safe even if the language restrictions accidentally regress.
     script = '''
 import math
 import resource
-from openpilot.tools.cabana.analysis.cabana_equations import compile_equation
+from openpilot.tools.cabana.analysis.cabana_equations import compile_numeric_equation
 resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
 resource.setrlimit(resource.RLIMIT_CPU, (3, 3))
 attacks = ['return 10 ** (10 ** 10)', 'x = 10\\nx **= 10 ** 10\\nreturn x',
@@ -141,7 +130,7 @@ attacks = ['return 10 ** (10 ** 10)', 'x = 10\\nx **= 10 ** 10\\nreturn x',
            'return round(value, 1000000000)']
 for code in attacks:
   try:
-    compile_equation('', code, 0)(0, 1)
+    compile_numeric_equation('', code, 0)(0.0, 1.0)
   except (ValueError, OverflowError):
     pass
   else:
@@ -149,7 +138,7 @@ for code in attacks:
 # Numeric helper results must not reintroduce arbitrary-size integer multiplication.
 for expression in ('int(1e100)', 'abs(1e100)', '(value > 0) + (value > 0)', '(not 0) + (not 0)'):
   code = f'x = {expression}\\n' + 'x *= x\\n' * 40 + 'return x'
-  result = compile_equation('', code, 0)(0, 1)
+  result = compile_numeric_equation('', code, 0)(0.0, 1.0)
   assert type(result) is float and math.isinf(result)
 print('resource limits passed')
 '''

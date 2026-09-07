@@ -6,7 +6,7 @@ MAX_SOURCE_BYTES, MAX_NODES, MAX_DEPTH = 8192, 512, 32
 MAX_INPUTS, MAX_VARIABLES, MAX_ITEMS = 32, 64, 16
 MATH_FUNCTIONS = {"sin", "cos", "sqrt", "atan2", "radians"}
 MATH_CONSTANTS = {"pi", "e", "tau", "inf", "nan"}
-HELPERS = {"abs", "min", "max", "int", "map"}
+HELPERS = {"abs", "min", "max", "int"}
 ALLOWED = {
   ast.Module, ast.Assign, ast.AugAssign, ast.If, ast.Global, ast.Return, ast.Pass,
   ast.Name, ast.Load, ast.Store, ast.Constant, ast.Attribute, ast.Call, ast.Tuple,
@@ -56,22 +56,16 @@ def _validate(source, initialization=False, globals_names=()):
     if isinstance(node, ast.Attribute):
       if not (isinstance(node.ctx, ast.Load) and isinstance(node.value, ast.Name) and node.value.id == "math"):
         raise EquationError("Only approved math attributes are allowed")
-      if node.attr not in MATH_CONSTANTS:
-        if node.attr not in MATH_FUNCTIONS or not (
-          (isinstance(parent, ast.Call) and parent.func is node) or (_is_call(parent, "map") and parent.args[0] is node)
-        ):
-          raise EquationError("Only approved math functions may be called")
+      if node.attr not in MATH_CONSTANTS and (node.attr not in MATH_FUNCTIONS or not (
+        isinstance(parent, ast.Call) and parent.func is node
+      )):
+        raise EquationError("Only approved math functions may be called")
     if isinstance(node, ast.Call):
       if node.keywords or not 1 <= len(node.args) <= MAX_ITEMS:
         raise EquationError("Only bounded positional calls are allowed")
       if isinstance(node.func, ast.Name):
         if node.func.id not in HELPERS:
           raise EquationError("Only numeric helpers may be called")
-        if node.func.id == "map" and not (
-          isinstance(parent, ast.Assign) and isinstance(parent.targets[0], ast.Tuple) and len(node.args) == 2 and
-          isinstance(node.args[0], ast.Attribute) and isinstance(node.args[1], ast.Tuple)
-        ):
-          raise EquationError("map is only supported for math tuple unpacking")
       elif not (isinstance(node.func, ast.Attribute) and node.func.attr in MATH_FUNCTIONS):
         raise EquationError("Dynamic calls are not allowed")
     if isinstance(node, ast.Assign):
@@ -84,7 +78,6 @@ def _validate(source, initialization=False, globals_names=()):
     if isinstance(node, ast.Tuple):
       unpack = isinstance(parent, ast.Assign) and isinstance(parent.targets[0], ast.Tuple)
       valid = (unpack or (isinstance(parent, ast.Return) and len(node.elts) == 2) or
-               (_is_call(parent, "map") and parent.args[1] is node) or
                (any(_is_call(parent, name) for name in ("min", "max")) and len(parent.args) == 1))
       if not valid or not 1 <= len(node.elts) <= MAX_ITEMS or any(isinstance(e, ast.Tuple) for e in node.elts):
         raise EquationError("Tuples are limited to numeric unpacking, min/max, and (time, value) returns")
@@ -133,21 +126,7 @@ def compile_numeric_equation(globals_code, function_code, input_count):
   wrapper.body[0].body = body.body or [ast.Pass()]
   program = ast.fix_missing_locations(_NumericBools().visit(ast.Module(body=initialization.body + wrapper.body, type_ignores=[])))
   namespace = {"__builtins__": {}, "math": math, "abs": abs, "min": min, "max": max,
-               "int": lambda x: float(int(x)), "map": map, "_number": _number}
+               "int": lambda x: float(int(x)), "_number": _number}
   # Only the fully validated, float-normalized AST crosses this execution boundary.
   exec(compile(program, '<layout equation>', 'exec'), namespace)
   return namespace['_calc']
-
-
-def compile_equation(globals_code, function_code, input_count):
-  calc = compile_numeric_equation(globals_code, function_code, input_count)
-
-  def evaluate(*args):
-    if len(args) != input_count + 2:
-      raise EquationError("Incorrect number of signal inputs")
-    result = calc(*(_number(v) for v in args))
-    if type(result) is tuple and len(result) == 2:
-      return tuple(_number(v) for v in result)
-    return _number(result)
-
-  return evaluate

@@ -66,7 +66,7 @@
       "name": "haversine distance [m]",
       "source": "/gpsLocationExternal/latitude",
       "globals": "R = 6378.137  # Earth radius in km",
-      "function": "lat1, lon1, lat2, lon2 = map(math.radians, (value, v1, v2, v3))\na = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2\na = min(1.0, max(0.0, a))\nreturn R * 2000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))",
+      "function": "lat1 = math.radians(value)\nlon1 = math.radians(v1)\nlat2 = math.radians(v2)\nlon2 = math.radians(v3)\na = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2\na = min(1.0, max(0.0, a))\nreturn R * 2000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))",
       "additional": [
         "/gpsLocationExternal/longitude",
         "/liveLocationKalmanDEPRECATED/positionGeodetic/value/0",
