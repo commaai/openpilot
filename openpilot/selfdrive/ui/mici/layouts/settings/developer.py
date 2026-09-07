@@ -179,7 +179,6 @@ class DeveloperLayoutMici(NavScroller):
 
   def _on_lat_maneuver_mode(self, state: bool):
     ui_state.params.put_bool("LateralManeuverMode", state, block=True)
-    ui_state.params.put_bool("ExperimentalMode", False, block=True)
     ui_state.params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.set_checked(False)
     ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
