@@ -36,7 +36,7 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &layout) : startup_layout_(layout), window_(window) {
   can = &dummy_;
   video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
   messages_visible_ = inistate::main_window.messages_visible;
@@ -183,6 +183,7 @@ void MainWindow::drawMenuBar() {
   if (beginTopMenu("View")) {
     if (ImGui::MenuItem("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
+    if (ImGui::MenuItem("Signal Analysis", nullptr, analysis_mode_)) { analysis_mode_ = !analysis_mode_; messages_visible_ = true; }
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
     ImGui::MenuItem(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
     ImGui::Separator();
@@ -214,6 +215,10 @@ void MainWindow::createDockWidgets() {
 
   charts_widget_ = std::make_unique<ChartsWidget>();
   center_widget_.setChartsWidget(charts_widget_.get());
+  widget_connections_.push_back(charts_widget_->analysisRequested.connect([this]() {
+    analysis_mode_ = true;
+    messages_visible_ = true;
+  }));
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
 }
@@ -382,6 +387,7 @@ void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::s
 }
 
 void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
+  session_restored_ = false;
   stream_ = std::move(stream);
   can = stream_.get();
   stream_connections_.push_back(can->error.connect([](const std::string &msg) {
@@ -392,6 +398,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
   loadFile(dbc_file, SOURCE_ALL, [this]() {
     showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
     createDockWidgets();
+    nextFrame([this]() { restoreSessionState(); });
 
     video_dock_title_ = can->routeName();
     // Don't overwrite already loaded DBC
@@ -399,6 +406,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
       newFile();
     }
 
+    stream_connections_.push_back(can->telemetryChanged.connect([this]() { wait_dlg_.open = false; }));
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
     if (hasStream()) {
@@ -695,6 +703,17 @@ void MainWindow::saveSessionState() {
 }
 
 void MainWindow::restoreSessionState() {
+  if (!charts_widget_ || session_restored_) return;
+  if (!startup_layout_.empty()) {
+    session_restored_ = true;
+    charts_widget_->openLayout(std::exchange(startup_layout_, {}));
+    return;
+  }
+  const bool workspace = settings.active_charts.size() == 1 && settings.active_charts.front().rfind("@layout:", 0) == 0;
+  if (workspace) {
+    charts_widget_->restoreChartsFromIds(settings.active_charts);
+    session_restored_ = true;
+  }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
   if (dbc()->nonEmptyDBCFiles().front()->filename != settings.recent_dbc_file) return;
@@ -703,7 +722,7 @@ void MainWindow::restoreSessionState() {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
   }
 
-  if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
+  if (!workspace && charts_widget_ != nullptr && !settings.active_charts.empty()) {
     charts_widget_->restoreChartsFromIds(settings.active_charts);
   }
 }
@@ -858,12 +877,13 @@ bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
-  const std::string name = (messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
+  const std::string name = (analysis_mode_ ? "Route Signals" : messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
   setNextPanelClass();
   if (beginPanel(name.c_str(), &messages_visible_)) {
     if (messages_widget_) {
       help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      messages_widget_->draw();
+      if (analysis_mode_) charts_widget_->drawSignalBrowser();
+      else messages_widget_->draw();
     }
   }
   const bool floating = floatingOut();
@@ -886,12 +906,12 @@ void MainWindow::drawVideoPanel() {
     // the camera is as wide as the child's content region, not the panel
     const float default_h = video_widget_->defaultHeight(avail.x - ImGui::GetStyle().WindowPadding.x * 2.0f) + video_padding;
     const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : default_h;
-    float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
+    float video_h = analysis_mode_ ? default_h : charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
     if (live) video_h = default_h;  // display video at minimum size.
     // Collapse panes below half their minimum height to keep partially clipped controls out of view.
     bool charts_collapsed = false;
     const float splitter_h = ImGui::GetStyle().WindowPadding.x * 2.0f + 2.0f;
-    if (!charts_floating_ && !live) {
+    if ((!charts_floating_ && !analysis_mode_) && !live) {
       const float min_h = std::min(video_widget_->sizeHintHeight() + video_padding, avail.y - 1.0f);
       video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
       const float charts_min_h = ImGui::GetFrameHeight() + video_padding + ImGui::GetStyle().ChildBorderSize * 2.0f;
@@ -904,7 +924,7 @@ void MainWindow::drawVideoPanel() {
       }
     }
     // The splitter provides the gap; extra ItemSpacing would leave an undraggable strip.
-    if (!charts_floating_) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+    if ((!charts_floating_ && !analysis_mode_)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
@@ -913,7 +933,7 @@ void MainWindow::drawVideoPanel() {
     } else {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
-    if (!charts_floating_) {
+    if ((!charts_floating_ && !analysis_mode_)) {
       ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
       const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
       if (splitter_active) {
@@ -959,7 +979,14 @@ void MainWindow::draw() {
   // the central widget has no scrollbars of its own (the views inside scroll)
   if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    center_widget_.draw();
+    if (charts_widget_) {
+      if (ImGui::RadioButton("CAN Editor", !analysis_mode_)) analysis_mode_ = false;
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Signal Analysis", analysis_mode_)) { analysis_mode_ = true; messages_visible_ = true; }
+      ImGui::Separator();
+    }
+    if (analysis_mode_ && charts_widget_ && !charts_floating_) charts_widget_->draw();
+    else center_widget_.draw();
     if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }

@@ -23,7 +23,7 @@ struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &layout);
   ~MainWindow();
   void draw();
   void toggleChartsDocking();
@@ -86,6 +86,9 @@ private:
   void drawStatusBar();
   void drawWaitDialog();
 
+  std::string startup_layout_;
+  bool session_restored_ = false;
+  bool analysis_mode_ = false;
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
   StreamLoader startup_loader_;  // run on a worker after the first frame

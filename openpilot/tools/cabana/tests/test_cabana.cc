@@ -2,9 +2,11 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <capnp/message.h>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <thread>
@@ -16,6 +18,8 @@
 #include "tools/cabana/ui/qtstate.h"
 #include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/ui/chart/downsample.h"
+#include "tools/cabana/ui/chart/analysis.h"
+#include "tools/cabana/ui/chart/layout.h"
 #include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
@@ -413,8 +417,153 @@ void test_pixel_envelope() {
   REQUIRE(chart::pixelEnvelope(points.begin(), points.begin(), 0, 1, 10).empty());
 }
 
+void test_chart_analysis() {
+  struct Point { double x, y; Point(double x, double y) : x(x), y(y) {} };
+  const std::vector<Point> raw{{0, 2}, {1, 4}, {3, 8}, {3, 10}, {4, 12}};
+  auto original = chart::transform(raw, {});
+  REQUIRE(original.size() == raw.size());
+  REQUIRE(original.front().x == 0);
+  REQUIRE(original.front().y == 2);
+  auto scaled = chart::transform(raw, {chart::Transform::None, -2, 1});
+  REQUIRE(scaled.back().y == -23);
+  auto derivative = chart::transform(raw, {chart::Transform::Derivative});
+  REQUIRE(derivative.size() == 3);  // omit first point and duplicate timestamp
+  REQUIRE(derivative[0].x == 1);
+  REQUIRE(derivative[0].y == 2);
+  REQUIRE(derivative[1].x == 3);
+  REQUIRE(derivative[1].y == 2);
+  REQUIRE(derivative[2].y == 2);
+  auto integral = chart::transform(raw, {chart::Transform::Integral});
+  REQUIRE(integral.front().y == 0);
+  REQUIRE(integral[2].y == 15);  // trapezoids over unequal time steps
+  REQUIRE(integral[3].y == 15);
+  REQUIRE(integral.back().y == 26);
+  auto average = chart::transform(raw, {chart::Transform::MovingAverage, 2, 1, 2});
+  REQUIRE(average[0].y == 5);
+  REQUIRE(average[1].y == 7);
+  REQUIRE(average[2].y == 13);
+  REQUIRE(average.back().y == 23);
+  // A streaming processor produces the same values when a batch boundary falls between samples.
+  for (auto type : {chart::Transform::None, chart::Transform::Derivative, chart::Transform::Integral, chart::Transform::MovingAverage}) {
+    chart::TransformSettings settings{type, -2, 3, 3};
+    const auto expected = chart::transform(raw, settings);
+    chart::TransformState state;
+    std::vector<Point> streamed;
+    for (size_t batch = 0; batch < raw.size(); batch += 2) {
+      for (size_t i = batch; i < std::min(batch + 2, raw.size()); ++i) {
+        if (auto value = state.append(raw[i].x, raw[i].y, settings)) streamed.emplace_back(raw[i].x, *value);
+      }
+    }
+    REQUIRE(streamed.size() == expected.size());
+    for (size_t i = 0; i < streamed.size(); ++i) {
+      REQUIRE(streamed[i].x == expected[i].x);
+      REQUIRE(streamed[i].y == expected[i].y);
+    }
+  }
+  REQUIRE(chart::transform(std::vector<Point>{}, {}).empty());
+  REQUIRE(chart::transform(std::vector<Point>{{0, 0}}, {chart::Transform::Derivative}).empty());
+  REQUIRE(chart::transform(std::vector<Point>{{0, 0}}, {}).front().y == 0);
+  REQUIRE(chart::csvField("signal, \"left\"\n") == "\"signal, \"\"left\"\"\n\"");
+}
+
+void test_chart_layout() {
+  using json11::Json;
+  Json::object signal{{"message", "2:1AF"}, {"signal", "Speed"}, {"visible", false}, {"transform", 3},
+                      {"scale", -2.5}, {"offset", 1.0}, {"window", 20}};
+  auto document = [&](const Json &s) {
+    return Json(Json::object{{"cabana_layout", 1}, {"columns", 2}, {"range", 60},
+      {"tabs", Json::array{Json::array{Json::object{{"type", 1}, {"signals", Json::array{s}}}}, Json::array{}}}}).dump();
+  };
+  auto layout = chart::parseLayout(document(signal));
+  REQUIRE(layout.has_value());
+  REQUIRE(layout->tabs.size() == 2);
+  REQUIRE(layout->tabs[1].empty());
+  const auto &s = layout->tabs[0][0].signals[0];
+  REQUIRE(s.id.source == 2);
+  REQUIRE(s.id.address == 0x1af);
+  REQUIRE(!s.visible);
+  REQUIRE(s.transform.scale == -2.5);
+  REQUIRE(s.transform.window == 20);
+  for (const auto &bad_id : {"bad", "x:1", "256:1", "1:100000000", "0:", ":1", "0:1junk", "-1:1"}) {
+    auto bad = signal;
+    bad["message"] = bad_id;
+    REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  }
+  for (const auto &key : {"visible", "transform", "window", "scale", "signal"}) {
+    auto bad = signal;
+    bad.erase(key);
+    REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  }
+  auto bad = signal;
+  bad["window"] = 0;
+  REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  bad["window"] = 1.5;
+  REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  REQUIRE(!chart::parseLayout("{}").has_value());
+  REQUIRE(!chart::parseLayout("{truncated").has_value());
+}
+
+void test_cereal_telemetry() {
+  capnp::MallocMessageBuilder message;
+  auto event = message.initRoot<cereal::Event>();
+  event.setLogMonoTime(1000000000);
+  event.setValid(true);
+  auto state = event.initCarState();
+  state.setVEgo(12.5);
+  state.setAEgo(0);
+  state.setSteeringPressed(false);
+  state.setGearShifter(cereal::CarState::GearShifter::DRIVE);
+  cabana::Telemetry data;
+  cabana::extractTelemetry(event.asReader(), data);
+  REQUIRE(data.at("/carState/vEgo").front().y == 12.5);
+  REQUIRE(data.at("/carState/aEgo").front().y == 0);
+  REQUIRE(data.at("/carState/steeringPressed").front().y == 0);
+  REQUIRE(data.at("/carState/gearShifter").front().y == (int)cereal::CarState::GearShifter::DRIVE);
+  REQUIRE(data.at("/carState/__logMonoTimeSeconds").front().y == 1);
+  REQUIRE(data.at("/carState/__valid").front().y == 1);
+  auto control = event.initCarControl();
+  auto orientation = control.initOrientationNED(3);
+  orientation.set(0, 0.125);
+  orientation.set(1, 0);
+  orientation.set(2, -1.5);
+  cabana::extractTelemetry(event.asReader(), data);
+  REQUIRE(data.at("/carControl/orientationNED/0").front().y == 0.125);
+  REQUIRE(data.at("/carControl/orientationNED/1").front().y == 0);
+  REQUIRE(data.at("/carControl/orientationNED/2").front().y == -1.5);
+  cabana::Telemetry earlier{{"/carState/vEgo", {{0.5, 10}}}};
+  cabana::mergeTelemetry(data, std::move(earlier));
+  REQUIRE(data.at("/carState/vEgo").front().x == 0.5);
+  REQUIRE(data.at("/carState/vEgo").back().x == 1);
+}
+
+void test_layout_equations() {
+  cabana::Telemetry data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
+  REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
+  REQUIRE(cabana::nearestValue(data.at("enabled"), -1) == 0);
+  REQUIRE(cabana::nearestValue(data.at("enabled"), 5) == 1);
+  cabana::Equation equation{"scaled", "speed", "sum = 0", "sum = sum + value; return sum * v1", {"enabled"}};
+  auto values = cabana::evaluateEquation(equation, data);
+  REQUIRE(values.size() == 3);
+  REQUIRE(values[0].y == 0);
+  REQUIRE(values[1].y == 30);
+  REQUIRE(values[2].y == 60);
+  REQUIRE(cabana::evaluateEquation(equation, data)[2].y == 60);  // state resets when reloading earlier data
+  equation.function = "return time + 1, math.abs(value)";
+  REQUIRE(cabana::evaluateEquation(equation, data)[0].x == 1);
+  for (auto code : {"return os.execute('false')", "while true do end", "invalid Lua !"}) {
+    equation.function = code;
+    bool failed = false;
+    try { cabana::evaluateEquation(equation, data); } catch (const std::exception &) { failed = true; }
+    REQUIRE(failed);
+  }
+}
+
 void test_cabana_core() {
   test_pixel_envelope();
+  test_cereal_telemetry();
+  test_layout_equations();
+  test_chart_analysis();
+  test_chart_layout();
   test_format_seconds();
   test_to_hex();
   test_message_id_parsing();
@@ -433,6 +582,34 @@ void test_cabana_core() {
   test_qt_state_blobs();
 }
 
-int main() {
+int main(int argc, char **argv) {
+  if (argc == 3 && std::string(argv[1]) == "--check-layout") {
+    return run_native_test([&]() {
+      std::ifstream in(argv[2]);
+      const std::string contents{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+      auto layout = chart::parseLayout(contents);
+      REQUIRE(layout.has_value());
+      for (const auto &e : layout->equations) {
+        cabana::Telemetry data;
+        auto add = [&](const std::string &path) { for (int i = 0; i < 10; ++i) data[path].emplace_back(100 + i, 1); };
+        add(e.source);
+        for (const auto &path : e.additional) add(path);
+        auto values = cabana::evaluateEquation(e, data);
+        REQUIRE(values.size() == 10);
+        for (const auto &value : values) REQUIRE(std::isfinite(value.y));
+        if (e.name == "engaged curvature yaw") {
+          for (int i = 0; i < 10; ++i) {
+            data[e.source][i].y = 0.02;
+            data["/carState/vEgo"][i].y = 20;
+            data["/carState/steeringPressed"][i].y = i < 2 ? 1 : 0;
+          }
+          values = cabana::evaluateEquation(e, data);
+          REQUIRE(values.size() == 10);
+          for (int i = 0; i <= 6; ++i) REQUIRE(values[i].y == 0);
+          for (int i = 7; i < 10; ++i) REQUIRE(std::abs(values[i].y - 0.001) < 1e-12);
+        }
+      }
+    });
+  }
   return run_native_test(test_cabana_core);
 }
