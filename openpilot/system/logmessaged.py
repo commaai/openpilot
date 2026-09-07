@@ -6,7 +6,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import get_file_handler
-from openpilot.common.file_queue import FileQueue
+from openpilot.common.shm_queue import ShmQueue
 
 
 def main() -> NoReturn:
@@ -14,7 +14,7 @@ def main() -> NoReturn:
   log_handler.setFormatter(SwagLogFileFormatter(None))
   log_level = 20  # logging.INFO
 
-  queue = FileQueue(Paths.swaglog_ipc())
+  queue = ShmQueue(Paths.swaglog_ipc())
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')

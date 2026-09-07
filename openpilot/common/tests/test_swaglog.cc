@@ -19,9 +19,10 @@ void test_swaglog() {
 
   LOGD("native-cpp-log");
   const std::string root = Path::swaglog_ipc();
-  const auto ready = std::filesystem::directory_iterator(root + "/ready");
-  CHECK(std::distance(begin(ready), end(ready)) == 1);
+  auto ready = std::filesystem::directory_iterator(root + "/ready");
+  CHECK(ready != end(ready));
   const auto filename = ready->path();
+  CHECK(++ready == end(ready));
   std::ifstream file(filename, std::ios::binary);
   CHECK(file.good());
   const std::string buffer{std::istreambuf_iterator<char>(file), {}};
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
   // Used by test_logmessaged.py to exercise the real C++ producer with Python's reader.
   if (argc >= 2 && std::string(argv[1]) == "--emit") {
     const std::string message{std::istreambuf_iterator<char>(std::cin), {}};
-    for (int i = 0; i < (argc == 3 ? std::stoi(argv[2]) : 1); ++i) LOGI("%s", message.c_str());
+    for (int i = 0; i < (argc == 3 ? std::stoi(argv[2]) : 1); ++i) LOGD("%s", message.c_str());
     return 0;
   }
   return run_native_test(test_swaglog);

@@ -14,11 +14,11 @@
 #include <time.h>
 #include <unistd.h>
 
-// Protocol shared with file_queue.py. Each pending filename reserves its full
+// Protocol shared with shm_queue.py. Each pending filename reserves its full
 // payload size; rename publishes a complete record without shared locks or fds.
-class FileQueue {
+class ShmQueue {
 public:
-  explicit FileQueue(std::string path, size_t capacity = 64 * 1024 * 1024)
+  explicit ShmQueue(std::string path, size_t capacity = 64 * 1024 * 1024)
       : path(std::move(path)), capacity(capacity) {}
 
   bool send(const std::string &data) const {

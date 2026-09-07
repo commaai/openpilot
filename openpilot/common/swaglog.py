@@ -6,7 +6,7 @@ from logging.handlers import BaseRotatingHandler
 
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.file_queue import FileQueue
+from openpilot.common.shm_queue import ShmQueue
 
 
 def get_file_handler():
@@ -62,7 +62,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
 
-class FileQueueHandler(logging.Handler):
+class ShmQueueHandler(logging.Handler):
   def __init__(self, formatter):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
@@ -75,7 +75,7 @@ class FileQueueHandler(logging.Handler):
     super().close()
 
   def connect(self):
-    self.queue = FileQueue(Paths.swaglog_ipc())
+    self.queue = ShmQueue(Paths.swaglog_ipc())
     self.pid = os.getpid()
 
   def emit(self, record):
@@ -122,7 +122,7 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
-ipchandler = FileQueueHandler(SwagFormatter(log))
+ipchandler = ShmQueueHandler(SwagFormatter(log))
 
 log.addHandler(outhandler)
 # Spool locally; logmessaged handles persistent log files and publication.

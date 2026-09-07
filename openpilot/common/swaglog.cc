@@ -8,7 +8,7 @@
 #include <limits>
 #include <string>
 
-#include "common/file_queue.h"
+#include "common/shm_queue.h"
 #include <stdarg.h>
 #include "json11/json11.hpp"
 #include "common/version.h"
@@ -60,7 +60,7 @@ public:
     queue.send(log_s);
   }
 
-  FileQueue queue;
+  ShmQueue queue;
   int print_level;
   json11::Json::object ctx_j;
 };

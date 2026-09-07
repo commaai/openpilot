@@ -5,8 +5,8 @@ import tempfile
 import time
 
 
-class FileQueue:
-  """Best-effort, single-reader spool. Pending filenames reserve space before writes.
+class ShmQueue:
+  """Best-effort, single-reader queue using files in shared memory. Pending filenames reserve space before writes.
 
   Producers share no locks or open handles. Scan pending before ready so a file
   being published can be counted twice, but is not lost between the two scans.
