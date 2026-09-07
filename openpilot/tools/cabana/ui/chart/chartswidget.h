@@ -84,11 +84,10 @@ public:
 
   void setColumnCount(int n);
   void removeAll();
-  void setIsDocked(bool dock);
 
   void drawSignalBrowser();
-  Observable<> analysisRequested;
-  Observable<> toggleChartsDocking;
+  Observable<> showLogMessages;
+  Observable<> chartAdded;
   Observable<> seriesChanged;
 
 private:
@@ -117,6 +116,7 @@ private:
   void drawFunctionEditor();
   void saveLayout();
   void loadLayout();
+  void drawPresetsMenu();
   void exportCsv();
   void fitTimeRange();
   void updateTabBar();
@@ -133,9 +133,6 @@ private:
   void drawDragPreview();
 
   LogSlider range_slider_{1000};
-  bool is_docked_ = true;
-  bool float_window_init_ = false;  // the floating window geometry is set once, right after undocking
-
   UndoStack zoom_undo_stack_;
 
   std::vector<std::unique_ptr<ChartView>> charts_;

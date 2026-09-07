@@ -85,13 +85,29 @@ void ChartsWidget::loadLayout() {
     [this](const std::string &path) { if (!path.empty()) openLayout(path); });
 }
 
+void ChartsWidget::drawPresetsMenu() {
+  if (ImGui::IsWindowAppearing()) {
+    presets_.clear();
+    std::error_code error;
+    for (const auto &entry : std::filesystem::directory_iterator(executableDir() / "layouts", error)) {
+      if (entry.path().extension() == ".json") presets_.push_back(entry.path());
+    }
+    std::sort(presets_.begin(), presets_.end());
+  }
+  for (const auto &path : presets_) if (ImGui::MenuItem(path.stem().c_str())) openLayout(path.string());
+}
+
 ChartsWidget::LayoutStatus ChartsWidget::openLayout(const std::string &path, bool defer_missing_can) {
   const std::string contents = util::read_file(path);
   if (contents.empty()) {
     MessageBox::warning("Open Layout", "Could not read the chart layout");
     return LayoutStatus::Failed;
   }
-  return restoreLayout(contents, defer_missing_can);
+  const auto status = restoreLayout(contents, defer_missing_can);
+  if (status == LayoutStatus::Restored && std::any_of(charts_.begin(), charts_.end(), [](const auto &c) {
+    return std::any_of(c->signals().begin(), c->signals().end(), [](const auto &s) { return !s.path.empty(); });
+  })) showLogMessages();
+  return status;
 }
 
 ChartsWidget::LayoutStatus ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing_can) {
@@ -109,7 +125,6 @@ ChartsWidget::LayoutStatus ChartsWidget::restoreLayout(const std::string &conten
   removeAll();
   equations_ = layout->equations;
   rebuildSignalBrowser();
-  if (!equations_.empty()) analysisRequested();
   for (size_t i = 0; i < layout->tabs.size(); ++i) {
     if (i) newTab();
     if (i < layout->tab_names.size()) tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = layout->tab_names[i];
@@ -241,6 +256,8 @@ void ChartsWidget::exportCsv() {
 }
 
 void ChartsWidget::drawSignalBrowser() {
+  // Calculated field previews also update while the Charts panel is hidden.
+  pollFields();
   ImGui::SetNextItemWidth(-1.0f);
   const bool filter_changed = inputText("##search_fields", &browser_filter_, "Search openpilot messages...");
   if (filter_changed || browser_tree_dirty_) {

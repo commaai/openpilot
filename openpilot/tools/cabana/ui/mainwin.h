@@ -26,7 +26,6 @@ public:
   MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &layout);
   ~MainWindow();
   void draw();
-  void toggleChartsDocking();
   void close();  // remind unsaved changes, save state, exit
   bool exited() const { return exited_; }
   void showStatusMessage(const std::string &msg, int timeout_ms = 0);
@@ -82,12 +81,17 @@ private:
   void drawRecentFilesMenu();
   void drawDockspace();
   void drawMessagesPanel();
+  void drawLogMessagesPanel();
+  void drawChartsPanel();
+  void selectPanelTab(const char *name);
   void drawVideoPanel();
+  void drawDetailsPanel();
+  void showMessage(const MessageId &id);
   void drawStatusBar();
   void drawWaitDialog();
 
   std::string startup_layout_;
-  bool analysis_mode_ = false;
+  bool details_visible_ = false;
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
   StreamLoader startup_loader_;  // run on a worker after the first frame
@@ -106,14 +110,14 @@ private:
   std::string car_fingerprint_;
   std::string video_dock_title_;
   bool messages_visible_ = true;
+  bool log_messages_visible_ = true;
+  bool charts_visible_ = true;
   bool video_visible_ = true;
   bool reset_layout_ = false;
   bool full_screen_ = false;
 #ifndef __APPLE__
   int windowed_rect_[4] = {0, 0, 1600, 900};
 #endif
-  bool charts_floating_ = false;
-  float video_splitter_ratio_ = -1.0f;  // < 0: the video widget is at its size hint
   std::vector<std::unique_ptr<ToolDialog>> tool_dialogs_;
   bool closing_ = false;
   bool exited_ = false;

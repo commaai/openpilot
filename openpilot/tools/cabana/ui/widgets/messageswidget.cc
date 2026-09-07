@@ -219,7 +219,10 @@ MessagesWidget::MessagesWidget() {
 
   connections_.push_back(list_.changed.connect([this]() {
     current_row_ = -1;  // the rows moved
-    if (current_msg_id_) selectMessage(*current_msg_id_);
+    if (current_msg_id_) {
+      auto it = std::find_if(list_.items.cbegin(), list_.items.cend(), [this](const auto &item) { return item.id == *current_msg_id_; });
+      if (it != list_.items.cend()) setCurrentRow(std::distance(list_.items.cbegin(), it), false);
+    }
     updateBytesSectionSize();
     updateTitle();
   }));
@@ -283,12 +286,12 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
   if (it != list_.items.cend()) setCurrentRow(std::distance(list_.items.cbegin(), it));
 }
 
-void MessagesWidget::setCurrentRow(int row) {
+void MessagesWidget::setCurrentRow(int row, bool activate) {
   if (row < 0 || row >= (int)list_.items.size()) return;
   current_row_ = row;
   scroll_to_current_ = true;
   const auto &id = list_.items[row].id;
-  if (!current_msg_id_ || id != *current_msg_id_) {
+  if (activate || !current_msg_id_ || id != *current_msg_id_) {
     current_msg_id_ = id;
     msgSelectionChanged(*current_msg_id_);
   }

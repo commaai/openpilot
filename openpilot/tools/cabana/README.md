@@ -110,10 +110,27 @@ Cabana includes [openpilot analysis layouts](layouts), including
 `--layout` takes a file path relative to the directory where you run the command,
 or an absolute path. Omitting its value leaves the saved session layout unchanged.
 
-**Layout → openpilot Presets** opens a bundled layout on the current route. Presets open the
-central **Plots** workspace, with the route's openpilot messages in the left sidebar and
-synchronized playback/video on the right. Switch back to **CAN Editor** for DBC work.
-Plotting openpilot messages does not need a DBC or CAN data.
+Charts, CAN inspection, and playback share one workspace. **CAN signals** and **openpilot Messages**
+are independent dock panels, initially tabbed together in the sidebar. Drag either panel's title tab
+to show both sources beside each other, move it elsewhere, or float it in a separate window.
+Selecting a CAN message opens **CAN Details**
+beside the charts, with the bit grid, signal editor, and message history. Close that pane to give
+the space back to charts; selecting the message again reopens it with its inspection tabs intact.
+Browsing openpilot fields leaves CAN details open, so both sources can be compared together.
+This works the same for live streams and recorded routes, including dashcam-only recordings.
+
+**Layout → openpilot Presets** opens a bundled layout on the current route and selects the
+openpilot browser. The empty chart area also offers **Browse openpilot** and **Presets**.
+Plotting openpilot messages does not need a DBC or CAN data. Synchronized playback and video sit
+below the source panels. **CAN signals**, **openpilot Messages**, **CAN Details**, **Charts**, and
+**Playback** all follow the same docking rules. Closing a panel hides it and preserves its contents;
+reopen it from **View**. Closing a floating panel leaves the rest of the layout in place. Dock
+positions, the selected panel, and panel visibility are remembered between sessions. **View → Reset Window Layout**
+restores the default arrangement.
+
+Inside **CAN Details**, message tabs select the CAN message being inspected; inside **Charts**, named
+tabs select pages of charts. Those tabs organize a panel's contents. Move the outer panel title tab
+to undock the whole inspector or chart workspace.
 
 Browse **openpilot Messages** as a tree of messages, fields, and array indices. Search expands matching
 branches and restores your previous expansion state when cleared. Search for fields such as `/carState/vEgo`, `/carControl/actuators/accel`, or

@@ -109,7 +109,6 @@ void ChartView::addFields(const std::string &path, CabanaColor color) {
   sigs_.push_back({.path = path, .color = uniqueColor(color)});
   updateFields();
   charts_widget_->seriesChanged();
-  charts_widget_->analysisRequested();
 }
 
 void ChartView::updateFields() {
