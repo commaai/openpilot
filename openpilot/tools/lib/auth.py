@@ -17,7 +17,6 @@ Usage::
 Examples::
 
   ./auth.py google  # Log in with Google Account
-  ./auth.py github  # Log in with GitHub Account
   ./auth.py jwt ey......hw  # Log in with a JWT from https://jwt.comma.ai, for use in CI
 """
 
