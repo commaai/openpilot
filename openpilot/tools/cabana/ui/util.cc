@@ -439,6 +439,36 @@ bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size, ImGuiWin
 
 // tool bar
 
+namespace {
+void positionMenuAtButton(const char *popup_id, bool align_right = false) {
+  if (!ImGui::IsPopupOpen(popup_id)) return;
+  ImGuiContext &g = *GImGui;
+  ImGuiWindow *popup = g.OpenPopupStack[g.BeginPopupStack.Size].Window;
+  // On the first frame ImGui measures the popup while hidden. Use that size to
+  // attach it to the button, flipping above or inward at the monitor's work area.
+  if (!popup) return;
+  const ImRect button(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+  const ImRect bounds = ImGui::GetPopupAllowedExtentRect(popup);
+  const ImVec2 size = ImGui::CalcWindowNextAutoFitSize(popup);
+  ImGuiDir direction = align_right ? (button.Max.y + size.y <= bounds.Max.y ? ImGuiDir_Left : ImGuiDir_Up) : ImGuiDir_Down;
+  ImGui::SetNextWindowPos(ImGui::FindBestWindowPosForPopupEx(button.GetBL(), size, &direction, bounds, button,
+                                                          ImGuiPopupPositionPolicy_ComboBox));
+}
+}  // namespace
+
+bool beginSubMenu(const char *label, bool enabled) {
+  ImGuiContext &g = *GImGui;
+  const ImGuiDir direction = ImGui::GetCurrentWindow()->AutoPosLastDirection;
+  if ((direction == ImGuiDir_Left || direction == ImGuiDir_Right) && ImGui::IsPopupOpen(label)) {
+    if (ImGuiWindow *popup = g.OpenPopupStack[g.BeginPopupStack.Size].Window) popup->AutoPosLastDirection = direction;
+  }
+  // ImGui uses ItemInnerSpacing.x as the horizontal overlap between menus.
+  ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 0.0f);
+  const bool open = ImGui::BeginMenu(label, enabled);
+  ImGui::PopStyleVar();
+  return open;
+}
+
 ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger, bool enabled, bool tight) {
   return {iconButtonWidth(), [=]() {
     ImGui::BeginDisabled(!enabled);
@@ -525,15 +555,14 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
         (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) {
       ImGui::OpenPopup("toolbar_extension_menu");
     }
-    // the popup opens inward: its right edge is aligned with the button so it stays inside the window
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
+    positionMenuAtButton("toolbar_extension_menu", true);
     if (ImGui::BeginPopup("toolbar_extension_menu")) {
       for (size_t i = visible; i < items.size(); ++i) {
         if (!items[i].in_menu) continue;
         if (items[i].menu_label.empty()) {
           items[i].draw();
         } else if (items[i].submenu) {
-          if (ImGui::BeginMenu(items[i].menu_label.c_str(), items[i].enabled)) {
+          if (beginSubMenu(items[i].menu_label.c_str(), items[i].enabled)) {
             items[i].submenu();
             ImGui::EndMenu();
           }
@@ -585,8 +614,7 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
                                                 ImVec2(x + MENU_ARROW_SIZE * 0.5f, baseline),
                                                 ImGui::GetColorU32(ImGuiCol_TextDisabled));
   if (clicked && !popup_open) ImGui::OpenPopup(popup_id);
-  // the menu drops down from below the button, not at the mouse cursor
-  ImGui::SetNextWindowPos(ImVec2(min.x, ImGui::GetItemRectMax().y), ImGuiCond_Always);
+  positionMenuAtButton(popup_id);
   return clicked;
 }
 

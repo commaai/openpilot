@@ -30,14 +30,15 @@ protected:
   std::atomic<bool> exit_ = false;
 
 private:
-  void updateThread();
-  void updateLastMessages() override;
+  void updateThread(int cache_seconds);
   void updateEvents();
 
   std::mutex lock;
   std::thread stream_thread, update_thread;
-  std::atomic<bool> update_pending_ = false;
   std::vector<const CanEvent *> received_events_;
+  cabana::Fields received_fields_;
+  cabana::FieldExtractor field_extractor_{received_fields_};
+  uint64_t received_first_ts_ = 0, received_last_ts_ = 0;
 
   std::chrono::system_clock::time_point begin_date_time;
   uint64_t begin_event_ts = 0;

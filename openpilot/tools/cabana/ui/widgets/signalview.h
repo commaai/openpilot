@@ -123,6 +123,7 @@ private:
   void rowsChanged();
   void rowClicked(SignalModel::Item *item);
   static float toolBarRightWidth(const std::string &range_label);
+  void drawToolBar();
   void updateToolBar();
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);

@@ -15,6 +15,7 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "tools/cabana/core/can_data.h"
+#include "tools/cabana/analysis/fields.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
@@ -37,7 +38,7 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  void setTimeRange(const std::optional<std::pair<double, double>> &range);
+  void setTimeRange(const std::optional<std::pair<double, double>> &range, bool seek_into_range = true);
   const std::optional<std::pair<double, double>> &timeRange() const { return time_range_; }
 
   inline double currentSec() const { return current_sec_; }
@@ -66,6 +67,8 @@ public:
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
 
+  cabana::FieldsSnapshot fields;  // main thread; timestamps are absolute monotonic seconds
+  Observable<> fieldsChanged;
   SourceSet sources;
 
 protected:

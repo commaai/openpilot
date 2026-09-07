@@ -1,0 +1,164 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/cpuTempC/0",
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/deviceState/cpuTempC/1",
+            "color": "#d62728"
+          },
+          {
+            "path": "/deviceState/cpuTempC/2",
+            "color": "#1ac938"
+          },
+          {
+            "path": "/deviceState/cpuTempC/3",
+            "color": "#ff7f0e"
+          },
+          {
+            "path": "/deviceState/cpuTempC/4",
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/deviceState/cpuTempC/5",
+            "color": "#9467bd"
+          },
+          {
+            "path": "/deviceState/cpuTempC/6",
+            "color": "#17becf"
+          },
+          {
+            "path": "/deviceState/cpuTempC/7",
+            "color": "#bcbd22"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/pmicTempC/0",
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/deviceState/gpuTempC/0",
+            "color": "#d62728"
+          },
+          {
+            "path": "/deviceState/gpuTempC/1",
+            "color": "#1ac938"
+          },
+          {
+            "path": "/deviceState/memoryTempC",
+            "color": "#f14cc1"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/maxTempC",
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/thermalStatus",
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/powerDrawW",
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/fanSpeedPercentDesired",
+            "color": "#9467bd"
+          },
+          {
+            "path": "/pandaStates/0/fanPower",
+            "color": "#1f77b4"
+          }
+        ],
+        "y_min": 0.0,
+        "y_max": 100.0
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/peripheralState/fanSpeedRpm",
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/cpuUsagePercent/0",
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/deviceState/cpuUsagePercent/1",
+            "color": "#d62728"
+          },
+          {
+            "path": "/deviceState/cpuUsagePercent/2",
+            "color": "#1ac938"
+          },
+          {
+            "path": "/deviceState/cpuUsagePercent/3",
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceState/cpuUsagePercent/4",
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/deviceState/cpuUsagePercent/5",
+            "color": "#9467bd"
+          },
+          {
+            "path": "/deviceState/cpuUsagePercent/6",
+            "color": "#17becf"
+          },
+          {
+            "path": "/deviceState/cpuUsagePercent/7",
+            "color": "#bcbd22"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

@@ -1,0 +1,51 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/hasFix",
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/satelliteCount",
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/horizontalAccuracy",
+            "color": "#1ac938"
+          }
+        ],
+        "y_min": 0.0,
+        "y_max": 3.0
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/horizontalAccuracy",
+            "color": "#1ac938"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

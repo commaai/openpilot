@@ -1,0 +1,94 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "Actual lateral accel (roll compensated)",
+            "color": "#1ac938"
+          },
+          {
+            "path": "Desired lateral accel (roll compensated)",
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "roll compensated lateral acceleration",
+            "color": "#1ac938"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/steeringPressed",
+            "color": "#0097ff"
+          },
+          {
+            "path": "/carOutput/actuatorsOutput/torque",
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/vEgo",
+            "scale": 2.23694,
+            "color": "#f14cc1"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": [
+    {
+      "name": "roll compensated lateral acceleration",
+      "source": "/controlsState/curvature",
+      "globals": "",
+      "function": "if v3 == 0 and v4 == 1:\n  return value * v1 ** 2 - v2 * 9.81\nreturn 0",
+      "additional": [
+        "/carState/vEgo",
+        "/vehicleParameters/roll",
+        "/carState/steeringPressed",
+        "/carControl/latActive"
+      ],
+      "language": "python"
+    },
+    {
+      "name": "Desired lateral accel (roll compensated)",
+      "source": "/controlsState/desiredCurvature",
+      "globals": "",
+      "function": "return value * v1 ** 2 - v2 * 9.81",
+      "additional": [
+        "/carState/vEgo",
+        "/vehicleParameters/roll"
+      ],
+      "language": "python"
+    },
+    {
+      "name": "Actual lateral accel (roll compensated)",
+      "source": "/controlsState/curvature",
+      "globals": "",
+      "function": "return value * v1 ** 2 - v2 * 9.81",
+      "additional": [
+        "/carState/vEgo",
+        "/vehicleParameters/roll"
+      ],
+      "language": "python"
+    }
+  ]
+}

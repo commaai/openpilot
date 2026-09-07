@@ -1,0 +1,40 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/horizontalAccuracy",
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/flags",
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/ubloxGnss/measurementReport/numMeas",
+            "color": "#1ac938"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

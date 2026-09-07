@@ -4,6 +4,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
+#include "tools/cabana/analysis/logfields.h"
 #include "tools/cabana/settings.h"
 
 ReplayStream::ReplayStream() {
@@ -15,18 +16,25 @@ ReplayStream::ReplayStream() {
   settings_connection_ = settings.changed.connect([this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
+  fields_thread_ = std::thread([this]() { indexFields(); });
 }
 
 ReplayStream::~ReplayStream() {
+  {
+    std::lock_guard lock(fields_mutex_);
+    stopping_ = true;
+  }
   cancelWaits();
   if (replay) replay->stop();
+  fields_cv_.notify_one();
+  if (fields_thread_.joinable()) fields_thread_.join();
 }
 
-// runs on replay's merge thread: a segment of CAN data takes ~30 ms to parse and group, which dropped
-// frames when it ran on the main thread. Only the sorted insert and the merged signal need the main thread.
+// CAN history must be ready for seeking. Cereal indexing can finish in the background.
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
   for (const auto &[n, seg] : event_data->segments) {
+    if (stopping_) return;
     if (!processed_segments.count(n)) {
       processed_segments.insert(n);
 
@@ -34,6 +42,7 @@ void ReplayStream::mergeSegments() {
       new_events.reserve(seg->log->events.size());
       MessageEventsMap msg_events;
       for (const Event &e : seg->log->events) {
+        if (stopping_) return;
         if (e.which == cereal::Event::Which::CAN) {
           capnp::FlatArrayMessageReader reader(e.data);
           auto event = reader.getRoot<cereal::Event>();
@@ -45,12 +54,39 @@ void ReplayStream::mergeSegments() {
         }
       }
       postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
+      {
+        std::lock_guard lock(fields_mutex_);
+        pending_segments_.push_back(seg);
+      }
+      fields_cv_.notify_one();
     }
   }
 }
 
+void ReplayStream::indexFields() {
+  while (true) {
+    std::unique_lock lock(fields_mutex_);
+    fields_cv_.wait(lock, [this]() { return stopping_ || !pending_segments_.empty(); });
+    if (stopping_) return;
+    auto segment = std::move(pending_segments_.front());
+    pending_segments_.pop_front();
+    lock.unlock();
+
+    auto fields_batch = cabana::extractLogFields(*segment->log, stopping_);
+    if (stopping_) return;
+    // This worker is the only writer. Retired snapshots are freed here, off the UI thread.
+    cabana::prepareFieldsMerge(fields, fields_batch);
+    auto next = fields;
+    for (auto &[path, samples] : fields_batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
+    postToMainThreadAndWait([&]() {
+      fields.swap(next);
+      fieldsChanged();
+    });
+  }
+}
+
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {
-  replay.reset(new Replay(route, {"can", "narrowRoadEncodeIdx", "cabinEncodeIdx", "wideRoadEncodeIdx", "carParams"},
+  replay.reset(new Replay(route, {},
                           {}, nullptr, replay_flags, data_dir, auto_source));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
@@ -104,7 +140,8 @@ bool ReplayStream::eventFilter(const Event *event) {
 
   double ts = millis_since_boot();
   if ((ts - prev_update_ts) > (1000.0 / STREAM_UPDATE_FPS)) {
-    requestUpdateLastMessages();
+    const double sec = toSeconds(event->mono_time);
+    postToMainThread([this, sec]() { current_sec_ = sec; updateLastMessages(); });
     prev_update_ts = ts;
   }
   return true;

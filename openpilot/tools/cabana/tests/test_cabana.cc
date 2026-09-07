@@ -2,20 +2,32 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <capnp/message.h>
+#include <capnp/serialize.h>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <thread>
 
+#include "tools/replay/py_downloader.h"
+#include "tools/replay/logreader.h"
+
 #include "common/tests/native_test.h"
+#include "tools/cabana/analysis/logfields.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
+#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/settings.h"
 #include "tools/cabana/ui/qtstate.h"
 #include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/ui/chart/downsample.h"
+#include "tools/cabana/ui/chart/analysis.h"
+#include "tools/cabana/ui/chart/layout.h"
+#include "tools/cabana/ui/chart/signaltree.h"
 #include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
@@ -413,8 +425,401 @@ void test_pixel_envelope() {
   REQUIRE(chart::pixelEnvelope(points.begin(), points.begin(), 0, 1, 10).empty());
 }
 
+void test_chart_analysis() {
+  struct Point { double x, y; Point(double x, double y) : x(x), y(y) {} };
+  auto transform = [](const std::vector<Point> &raw, const chart::TransformSettings &transform_settings) {
+    std::vector<Point> result;
+    chart::TransformState state;
+    for (const auto &pt : raw) if (auto value = state.append(pt.x, pt.y, transform_settings)) result.emplace_back(pt.x, *value);
+    return result;
+  };
+  const std::vector<Point> raw{{0, 2}, {1, 4}, {3, 8}, {3, 10}, {4, 12}};
+  auto original = transform(raw, {});
+  REQUIRE(original.size() == raw.size());
+  REQUIRE(original.front().x == 0);
+  REQUIRE(original.front().y == 2);
+  auto scaled = transform(raw, {chart::Transform::None, -2, 1});
+  REQUIRE(scaled.back().y == -23);
+  auto derivative = transform(raw, {chart::Transform::Derivative});
+  REQUIRE(derivative.size() == 3);  // omit first point and duplicate timestamp
+  REQUIRE(derivative[0].x == 1);
+  REQUIRE(derivative[0].y == 2);
+  REQUIRE(derivative[1].x == 3);
+  REQUIRE(derivative[1].y == 2);
+  REQUIRE(derivative[2].y == 2);
+  auto integral = transform(raw, {chart::Transform::Integral});
+  REQUIRE(integral.front().y == 0);
+  REQUIRE(integral[2].y == 15);  // trapezoids over unequal time steps
+  REQUIRE(integral[3].y == 15);
+  REQUIRE(integral.back().y == 26);
+  auto average = transform(raw, {chart::Transform::MovingAverage, 2, 1, 2});
+  REQUIRE(average[0].y == 5);
+  REQUIRE(average[1].y == 7);
+  REQUIRE(average[2].y == 13);
+  REQUIRE(average.back().y == 23);
+  // A streaming processor produces the same values when a batch boundary falls between samples.
+  for (auto type : {chart::Transform::None, chart::Transform::Derivative, chart::Transform::Integral, chart::Transform::MovingAverage}) {
+    chart::TransformSettings transform_settings{type, -2, 3, 3};
+    const auto expected = transform(raw, transform_settings);
+    chart::TransformState state;
+    std::vector<Point> streamed;
+    for (size_t batch = 0; batch < raw.size(); batch += 2) {
+      for (size_t i = batch; i < std::min(batch + 2, raw.size()); ++i) {
+        if (auto value = state.append(raw[i].x, raw[i].y, transform_settings)) streamed.emplace_back(raw[i].x, *value);
+      }
+    }
+    REQUIRE(streamed.size() == expected.size());
+    for (size_t i = 0; i < streamed.size(); ++i) {
+      REQUIRE(streamed[i].x == expected[i].x);
+      REQUIRE(streamed[i].y == expected[i].y);
+    }
+  }
+  REQUIRE(transform({}, {}).empty());
+  REQUIRE(transform({{0, 0}}, {chart::Transform::Derivative}).empty());
+  REQUIRE(transform({{0, 0}}, {}).front().y == 0);
+  REQUIRE(chart::csvField("signal, \"left\"\n") == "\"signal, \"\"left\"\"\n\"");
+}
+
+void test_chart_layout() {
+  using json11::Json;
+  Json::object signal{{"message", "2:1AF"}, {"signal", "Speed"}, {"visible", false}, {"transform", 3},
+                      {"scale", -2.5}, {"offset", 1.0}, {"window", 20}};
+  auto document = [&](const Json &s) {
+    return Json(Json::object{{"cabana_layout", 1}, {"columns", 2}, {"range", 60},
+      {"tabs", Json::array{Json::array{Json::object{{"type", 1}, {"signals", Json::array{s}}}}, Json::array{}}}}).dump();
+  };
+  auto layout = chart::parseLayout(document(signal));
+  REQUIRE(layout.has_value());
+  REQUIRE(layout->tabs.size() == 2);
+  REQUIRE(layout->tabs[1].empty());
+  const auto &s = layout->tabs[0][0].signals[0];
+  REQUIRE(s.id.source == 2);
+  REQUIRE(s.id.address == 0x1af);
+  REQUIRE(!s.visible);
+  REQUIRE(s.transform.scale == -2.5);
+  REQUIRE(s.transform.window == 20);
+  for (const auto &bad_id : {"bad", "x:1", "256:1", "1:100000000", "0:", ":1", "0:1junk", "-1:1"}) {
+    auto bad = signal;
+    bad["message"] = bad_id;
+    REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  }
+  for (const auto &key : {"message", "signal"}) {
+    auto bad = signal;
+    bad.erase(key);
+    REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  }
+  Json::object minimal{{"path", "/carState/vEgo"}};
+  auto defaults = chart::parseLayout(document(minimal));
+  REQUIRE(defaults.has_value());
+  const auto &plain = defaults->tabs[0][0].signals[0];
+  REQUIRE(plain.path == "/carState/vEgo");
+  REQUIRE(plain.visible);
+  REQUIRE(plain.transform.original());
+  REQUIRE(plain.transform.window == 10);
+  REQUIRE(chart::parseLayout(document(Json::object{{"message", "2:1AF"}, {"signal", "Speed"}})).has_value());
+  for (const auto &key : {"visible", "transform", "window", "scale", "offset", "signal"}) {
+    const Json invalid_text = std::string(key) == "signal" ? "" : "invalid";
+    for (const Json &value : {Json(), invalid_text, Json(Json::array{})}) {
+      auto bad = minimal;
+      bad[key] = value;
+      REQUIRE(!chart::parseLayout(document(bad)).has_value());
+    }
+  }
+  for (const auto &[key, value] : chart::SIGNAL_DEFAULTS) minimal[key] = value;
+  minimal["signal"] = "/carState/vEgo";
+  REQUIRE(chart::parseLayout(document(minimal)).has_value());
+  auto bad = signal;
+  bad["window"] = 0;
+  REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  bad["window"] = 1.5;
+  REQUIRE(!chart::parseLayout(document(bad)).has_value());
+  REQUIRE(!chart::parseLayout("{}").has_value());
+  REQUIRE(!chart::parseLayout("{truncated").has_value());
+}
+
+void test_message_fields() {
+  capnp::MallocMessageBuilder message;
+  auto event = message.initRoot<cereal::Event>();
+  event.setLogMonoTime(1000000000);
+  event.setValid(true);
+  auto state = event.initCarState();
+  state.setVEgo(12.5);
+  state.setAEgo(0);
+  state.setSteeringPressed(false);
+  state.setGearShifter(cereal::CarState::GearShifter::DRIVE);
+  cabana::Fields data;
+  cabana::FieldExtractor extractor(data);
+  extractor.extract(event.asReader());
+  REQUIRE(data.at("/carState/vEgo").front().y == 12.5);
+  REQUIRE(data.at("/carState/aEgo").front().y == 0);
+  REQUIRE(data.at("/carState/steeringPressed").front().y == 0);
+  REQUIRE(data.at("/carState/gearShifter").front().y == (int)cereal::CarState::GearShifter::DRIVE);
+  REQUIRE(data.at("/carState/__logMonoTimeSeconds").front().y == 1);
+  REQUIRE(data.at("/carState/__valid").front().y == 1);
+  state.setVEgo(std::numeric_limits<float>::quiet_NaN());
+  extractor.extract(event.asReader());
+  REQUIRE(data.at("/carState/vEgo").size() == 1);
+  REQUIRE(data.at("/carState/aEgo").size() == 2);
+  auto control = event.initCarControl();
+  auto orientation = control.initOrientationNED(3);
+  orientation.set(0, 0.125);
+  orientation.set(1, 0);
+  orientation.set(2, -1.5);
+  extractor.extract(event.asReader());
+  REQUIRE(data.at("/carControl/orientationNED/0").front().y == 0.125);
+  REQUIRE(data.at("/carControl/orientationNED/1").front().y == 0);
+  REQUIRE(data.at("/carControl/orientationNED/2").front().y == -1.5);
+}
+
+void require_same_fields(const cabana::Fields &expected, const cabana::Fields &actual) {
+  REQUIRE(actual.size() == expected.size());
+  for (const auto &[path, samples] : expected) {
+    const auto &other = actual.at(path);
+    REQUIRE(samples.size() == other.size());
+    for (size_t i = 0; i < samples.size(); ++i) {
+      REQUIRE(samples[i].x == other[i].x);
+      REQUIRE(samples[i].y == other[i].y);
+    }
+  }
+}
+
+void test_cached_field_extractor() {
+  cabana::Fields data;
+  for (int batch = 0; batch < 2; ++batch) {
+    data.clear();
+    cabana::FieldExtractor extractor(data);
+    for (int i = 0; i < 4; ++i) {
+      capnp::MallocMessageBuilder message;
+      auto event = message.initRoot<cereal::Event>();
+      event.setLogMonoTime((i + 1) * 1000000000ULL);
+      auto sensor = event.initAccelerometer();
+      if (i % 2) sensor.setTemperature(i);
+      else {
+        auto values = sensor.initAcceleration().initV(i + 1);
+        for (size_t j = 0; j < values.size(); ++j) values.set(j, j == 2 ? std::numeric_limits<float>::infinity() : i + j);
+      }
+      extractor.extract(event.asReader());
+      event.initCan(1);
+      extractor.extract(event.asReader());
+      event.initSendcan(1);
+      extractor.extract(event.asReader());
+    }
+    const auto &temperature = data.at("/accelerometer/temperature");
+    REQUIRE(temperature.size() == 2);
+    REQUIRE(temperature[0].x == 2);
+    REQUIRE(temperature[0].y == 1);
+    REQUIRE(temperature[1].x == 4);
+    REQUIRE(temperature[1].y == 3);
+    const auto &accel = data.at("/accelerometer/acceleration/v/0");
+    REQUIRE(accel.size() == 2);
+    REQUIRE(accel[0].x == 1);
+    REQUIRE(accel[0].y == 0);
+    REQUIRE(accel[1].x == 3);
+    REQUIRE(accel[1].y == 2);
+    REQUIRE(data.at("/accelerometer/acceleration/v/1").size() == 1);
+    REQUIRE(data.at("/accelerometer/acceleration/v/1")[0].y == 3);
+    REQUIRE(!data.count("/accelerometer/acceleration/v/2"));
+    REQUIRE(data.at("/accelerometer/__logMonoTime").size() == 4);
+    for (const auto &[path, _] : data) REQUIRE(path.rfind("/accelerometer/", 0) == 0);
+  }
+}
+
+void test_log_fields_skips_video_frames() {
+  std::string data;
+  cabana::Fields expected;
+  cabana::FieldExtractor extractor(expected);
+  for (int i = 0; i < 3; ++i) {
+    capnp::MallocMessageBuilder message;
+    auto event = message.initRoot<cereal::Event>();
+    const uint64_t sof = 1000000000ULL + i * 50000000ULL;
+    event.setLogMonoTime(sof + 120000000ULL);
+    auto idx = event.initNarrowRoadEncodeIdx();
+    idx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    idx.setTimestampSof(sof);
+    idx.setFrameId(i);
+    extractor.extract(event.asReader());
+    auto words = capnp::messageToFlatArray(message);
+    auto bytes = words.asBytes();
+    data.append(reinterpret_cast<const char *>(bytes.begin()), bytes.size());
+  }
+  LogReader log;
+  REQUIRE(log.load(data.data(), data.size()));
+  REQUIRE(log.events.size() == 6);
+  require_same_fields(expected, cabana::extractLogFields(log, std::atomic<bool>{false}));
+}
+
+void test_prepared_fields_merge() {
+  cabana::FieldsSnapshot published{{"a", std::make_shared<const cabana::Samples>(cabana::Samples{{2, 20}, {4, 40}})},
+                                      {"unchanged", std::make_shared<const cabana::Samples>(cabana::Samples{{1, 10}})}};
+  const std::vector<std::pair<cabana::Samples, cabana::Samples>> cases{
+    {{}, {}},  // nothing new: the published series is left alone
+    {{{0, 0}}, {{0, 0}, {2, 20}, {4, 40}}},
+    {{{5, 50}}, {{2, 20}, {4, 40}, {5, 50}}},
+    {{{1, 10}, {2, 21}, {3, 30}, {6, 60}}, {{1, 10}, {2, 20}, {2, 21}, {3, 30}, {4, 40}, {6, 60}}}};
+  for (const auto &[samples, expected] : cases) {
+    cabana::Fields batch{{"a", samples}, {"new", {{1, 100}}}};
+    cabana::prepareFieldsMerge(published, batch);
+    REQUIRE(!batch.count("unchanged"));
+    REQUIRE(batch.at("new").size() == 1);
+    REQUIRE(published.at("a")->size() == 2);
+    require_same_fields({{"a", expected}}, {{"a", batch.at("a")}});
+  }
+}
+
+cabana::FieldsSnapshot snapshotFields(const cabana::Fields &data) {
+  cabana::FieldsSnapshot snapshot;
+  for (const auto &[path, samples] : data) snapshot.emplace(path, std::make_shared<const cabana::Samples>(samples));
+  return snapshot;
+}
+
+void test_live_fields() {
+  struct TestStream : LiveStream {
+    std::atomic<int> phase = 0, sent = 0;
+    std::string routeName() const override { return "test"; }
+    void streamThread() override {
+      while (!exit_) {
+        if (phase > sent) {
+          capnp::MallocMessageBuilder message;
+          auto event = message.initRoot<cereal::Event>();
+          event.setLogMonoTime((sent == 2 ? 122ULL : sent + 1ULL) * 1000000000);
+          event.initCarState().setVEgo(sent + 1);
+          auto data = capnp::messageToFlatArray(message);
+          handleEvent(data.asPtr());
+          ++sent;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    }
+    ~TestStream() { stop(); }
+  };
+  const auto saved_settings = static_cast<CabanaSettingsState>(settings);
+  settings.log_livestream = false;
+  settings.max_cached_minutes = 1;
+  TestStream stream;
+  int updates = 0;
+  auto connection = stream.fieldsChanged.connect([&]() { REQUIRE(utils::isMainThread()); ++updates; });
+  stream.start();
+  auto wait = [&](auto ready) {
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (!ready() && std::chrono::steady_clock::now() < deadline) {
+      utils::drainMainThreadQueue();
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    REQUIRE(ready());
+  };
+  stream.phase = 1;
+  wait([&]() { return updates == 1; });
+  const auto original = stream.fields.at("/carState/vEgo");
+  stream.phase = 2;
+  // Reception continues while publication waits for the main thread.
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  REQUIRE(stream.sent == 2);
+  wait([&]() { return updates == 2; });
+  REQUIRE(stream.fields.at("/carState/vEgo")->size() == 2);
+  REQUIRE(original->size() == 1 && original->front().y == 1);
+  stream.phase = 3;
+  wait([&]() { return updates == 3; });
+  const auto retained = stream.fields.at("/carState/vEgo");
+  REQUIRE(retained->size() == 2);
+  REQUIRE(retained->front().y == 2 && retained->back().y == 3);
+  REQUIRE(std::abs(retained->front().x - 2) < 1e-9 && std::abs(retained->back().x - 122) < 1e-9);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  stream.stop();  // must release a worker waiting for publication without pumping the UI
+  utils::drainMainThreadQueue();  // canceled publication must not use its retired captures
+  REQUIRE(updates == 3);
+  static_cast<CabanaSettingsState &>(settings) = saved_settings;
+}
+
+void test_layout_equations() {
+  cabana::Fields data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
+  REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
+  REQUIRE(cabana::nearestValue(data.at("enabled"), -1) == 0);
+  REQUIRE(cabana::nearestValue(data.at("enabled"), 5) == 1);
+  cabana::Equation equation{"scaled", "speed", "sum = 0", "global sum\nsum += value\nreturn sum * v1", {"enabled"}};
+  auto values = cabana::evaluateEquation(equation, snapshotFields(data));
+  REQUIRE(values.size() == 3);
+  REQUIRE(values[0].y == 0);
+  REQUIRE(values[1].y == 30);
+  REQUIRE(values[2].y == 60);
+  auto snapshot = snapshotFields(data);
+  const auto source = snapshot.at("speed");
+  snapshot["scaled"] = std::make_shared<const cabana::Samples>(std::move(values));
+  const auto chained = cabana::evaluateEquation({"chained", "scaled", "", "return value - v1", {"speed"}}, snapshot);
+  REQUIRE(chained[2].y == 30);
+  REQUIRE(snapshot.at("speed") == source);
+  REQUIRE(source->back().y == 30);
+  REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[2].y == 60);  // state resets when reloading earlier data
+  equation.function = "return time + 1, abs(value)";
+  REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].x == 1);
+  // Native vector calls must preserve state, tuple results, filtering, and time ordering.
+  equation.function = "return -time, value";
+  const auto reversed = cabana::evaluateEquation(equation, snapshotFields(data));
+  REQUIRE(reversed.size() == 3);
+  REQUIRE(reversed[0].x == -2 && reversed[0].y == 30);
+  REQUIRE(reversed[2].x == 0 && reversed[2].y == 10);
+  equation.function = "return value if value > 10 else math.nan";
+  const auto filtered = cabana::evaluateEquation(equation, snapshotFields(data));
+  REQUIRE(filtered.size() == 2);
+  REQUIRE(filtered[0].y == 20 && filtered[1].y == 30);
+  equation.globals = "offset = math.sqrt(4)";
+  equation.function = "return (value + v1) / offset";
+  REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].y == 5);
+  equation.globals.clear();
+  for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "import os\nreturn 0", "import math\nreturn value",
+                    "import statistics\nreturn value", "return ().__class__", "return eval(value)",
+                    "return math.__dict__", "return 10 ** (10 ** 10)",
+                    "return open('/dev/null')", "invalid Python !", "return None", "return (1, 2, 3)", "pass"}) {
+    equation.function = code;
+    bool failed = false;
+    try { cabana::evaluateEquation(equation, snapshotFields(data)); } catch (const std::exception &) { failed = true; }
+    REQUIRE(failed);
+  }
+}
+
+void test_signal_tree() {
+  chart::SignalTree tree;
+  tree.rebuild({"/carState/vEgo", "/carState/aEgo", "/model/accel/10", "/model/accel/2", "/model/accel/0", "speed error"});
+  tree.filter("");
+  REQUIRE(tree.nodes[0].matches == 6);
+  auto rows = tree.visible({});
+  REQUIRE(rows.size() == 3);
+  REQUIRE(tree.nodes[rows[0]].name == "carState");
+  REQUIRE(tree.nodes[rows[1]].name == "model");
+  REQUIRE(tree.nodes[rows[2]].path == "speed error");
+  rows = tree.visible({"/model", "/model/accel"});
+  REQUIRE(rows.size() == 7);
+  REQUIRE(tree.nodes[rows[3]].name == "0");
+  REQUIRE(tree.nodes[rows[4]].name == "2");
+  REQUIRE(tree.nodes[rows[5]].name == "10");
+  REQUIRE(tree.nodes[rows[5]].path == "/model/accel/10");
+  tree.filter("VEGO");
+  REQUIRE(tree.nodes[0].matches == 1);
+  rows = tree.visible({"/carState"});
+  REQUIRE(rows.size() == 2);
+  REQUIRE(tree.nodes[rows[1]].path == "/carState/vEgo");
+  tree.filter("model/accel");
+  REQUIRE(tree.nodes[0].matches == 3);
+  tree.filter("missing");
+  REQUIRE(tree.visible({}).empty());
+  tree.rebuild({"/carState/vEgo", "/carState/vEgo"});
+  tree.filter("");
+  REQUIRE(tree.nodes[0].matches == 1);
+  tree.rebuild({});
+  tree.filter("");
+  REQUIRE(tree.visible({}).empty());
+}
+
 void test_cabana_core() {
   test_pixel_envelope();
+  test_signal_tree();
+  test_message_fields();
+  test_cached_field_extractor();
+  test_log_fields_skips_video_frames();
+  test_prepared_fields_merge();
+  test_layout_equations();
+  test_live_fields();
+  test_chart_analysis();
+  test_chart_layout();
   test_format_seconds();
   test_to_hex();
   test_message_id_parsing();
@@ -433,6 +838,78 @@ void test_cabana_core() {
   test_qt_state_blobs();
 }
 
-int main() {
+int main(int argc, char **argv) {
+  if (argc == 3 && std::string(argv[1]) == "--check-downloader") {
+    return run_native_test([&]() {
+      const std::string mode = argv[2];
+      const std::string prefix = std::getenv("OPENPILOT_PREFIX");
+      bool progress = false;
+      installDownloadProgressHandler([&](uint64_t current, uint64_t total, bool success) {
+        if (success && current == 42 && total == 100) progress = true;
+      });
+      std::atomic<bool> abort = false;
+      std::thread cancel;
+      if (mode == "abort") cancel = std::thread([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        abort = true;
+      });
+      const auto result = PyDownloader::download(mode == "ok" ? "url with spaces & literal $value" : mode, true, &abort);
+      if (cancel.joinable()) cancel.join();
+      installDownloadProgressHandler(nullptr);
+      REQUIRE(std::string(std::getenv("OPENPILOT_PREFIX")) == prefix);
+      if (mode == "ok") {
+        REQUIRE(result == "downloaded path");
+        REQUIRE(progress);
+      } else {
+        REQUIRE(result.empty());
+      }
+    });
+  }
+  if (argc == 3 && std::string(argv[1]) == "--check-fields") {
+    return run_native_test([&]() {
+      LogReader log;
+      REQUIRE(log.load(argv[2]));
+      cabana::Fields actual;
+      cabana::FieldExtractor extractor(actual);
+      for (const auto &event : log.events) {
+        if (event.eidx_segnum != -1) continue;
+        capnp::FlatArrayMessageReader reader(event.data);
+        extractor.extract(reader.getRoot<cereal::Event>());
+      }
+      require_same_fields(actual, cabana::extractLogFields(log, std::atomic<bool>{false}));
+      REQUIRE(cabana::extractLogFields(log, std::atomic<bool>{true}).empty());
+      size_t count = 0;
+      for (const auto &[path, samples] : actual) count += samples.size();
+      printf("Verified %zu paths and %zu samples across %zu events\n", actual.size(), count, log.events.size());
+    });
+  }
+  if (argc == 3 && std::string(argv[1]) == "--check-layout") {
+    return run_native_test([&]() {
+      std::ifstream in(argv[2]);
+      const std::string contents{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+      auto layout = chart::parseLayout(contents);
+      REQUIRE(layout.has_value());
+      for (const auto &e : layout->equations) {
+        cabana::Fields data;
+        auto add = [&](const std::string &path) { for (int i = 0; i < 10; ++i) data[path].emplace_back(100 + i, 1); };
+        add(e.source);
+        for (const auto &path : e.additional) add(path);
+        auto values = cabana::evaluateEquation(e, snapshotFields(data));
+        REQUIRE(values.size() == 10);
+        for (const auto &value : values) REQUIRE(std::isfinite(value.y));
+        if (e.name == "engaged curvature yaw") {
+          for (int i = 0; i < 10; ++i) {
+            data[e.source][i].y = 0.02;
+            data["/carState/vEgo"][i].y = 20;
+            data["/carState/steeringPressed"][i].y = i < 2 ? 1 : 0;
+          }
+          values = cabana::evaluateEquation(e, snapshotFields(data));
+          REQUIRE(values.size() == 10);
+          for (int i = 0; i <= 6; ++i) REQUIRE(values[i].y == 0);
+          for (int i = 7; i < 10; ++i) REQUIRE(std::abs(values[i].y - 0.001) < 1e-12);
+        }
+      }
+    });
+  }
   return run_native_test(test_cabana_core);
 }

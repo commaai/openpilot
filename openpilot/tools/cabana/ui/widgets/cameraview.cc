@@ -109,7 +109,7 @@ void CameraWidget::paint() {
     frame_updated_ = false;
   }
 
-  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), settings.crop_video);
+  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), crop());
   if (active_stream_type_ == VISION_STREAM_CABIN) {
     // mirror cabin camera horizontally
     std::swap(placement.uv0.x, placement.uv1.x);

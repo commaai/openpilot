@@ -1,0 +1,70 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carControl/enabled",
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/pandaStates/0/controlsAllowed",
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/cumLagMs",
+            "color": "#9467bd"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/safetyRxInvalid",
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/pandaStates/0/safetyRxChecksInvalid",
+            "color": "#e801ce"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/safetyTxBlocked",
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/gasPressed",
+            "color": "#1ac938"
+          },
+          {
+            "path": "/carState/brakePressed",
+            "color": "#ff7f0e"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

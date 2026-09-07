@@ -61,9 +61,13 @@ If streaming to PlotJuggler from a replay on your PC, simply run: `./juggle.py -
 
 For a quick demo, go through the installation step and run this command:
 
-`./juggle.py --demo --layout=layouts/tuning.xml`
+`./juggle.py --demo`
 
 ## Layouts
+
+[Cabana](../cabana/README.md#plotting-and-analysis) contains the bundled layouts
+with Python equations: `../cabana/cabana --demo --layout ../cabana/layouts/tuning.json`. Cabana provides a
+Plots workspace for openpilot messages alongside its CAN editor and synchronized route playback.
 
 If you create a layout that's useful for others, consider upstreaming it.
 
@@ -71,7 +75,7 @@ If you create a layout that's useful for others, consider upstreaming it.
 
 Use this layout to improve your car's tuning and generate plots for tuning PRs. Also see the [tuning wiki](https://github.com/commaai/openpilot/wiki/Tuning) and tuning PR template.
 
-`--layout layouts/tuning.xml`
+`../cabana/cabana --demo --layout ../cabana/layouts/tuning.json`
 
 
 ![screenshot](https://i.imgur.com/cizHCH3.png)

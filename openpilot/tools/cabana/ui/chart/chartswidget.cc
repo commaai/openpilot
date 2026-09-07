@@ -35,7 +35,12 @@ ChartsWidget::ChartsWidget() {
   display_range_ = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range_);
   range_slider_.setValue(max_chart_range_);
 
-  connections_.push_back(dbc()->fileChanged.connect([this]() { removeAll(); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() {
+    std::vector<ChartView *> charts;
+    for (auto &c : charts_) charts.push_back(c.get());
+    for (auto *c : charts) c->removeIf([](const auto &s) { return s.path.empty(); });
+  }));
+  connections_.push_back(can->fieldsChanged.connect([this]() { fieldsChanged(); }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
   connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
@@ -57,20 +62,21 @@ ChartsWidget::ChartsWidget() {
     if (index != -1) updateLayout();
   }));
 
-  setIsDocked(true);
   newTab();
 }
 
 ChartsWidget::~ChartsWidget() = default;
 
 std::string ChartsWidget::whatsThis() const {
-  return R"(
-    <b>Chart View</b><br />
-    <b>Click</b>: Click to seek to a corresponding time.<br />
-    <b>Drag</b>: Zoom into the chart.<br />
-    <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
-    <b>Right-click</b>: Open the context menu.<br />
-  )";
+  const std::string mod = MOD_KEY;
+  return "<b>Chart View</b><br />"
+         "<b>Click</b>: Click to seek to a corresponding time.<br />"
+         "<b>Drag</b>: Zoom into the chart.<br />"
+         "<b>" + mod + " + Drag</b>: Pan the time range.<br />"
+         "<b>" + mod + " + Wheel</b>: Zoom around the pointer.<br />"
+         "<b>Signal right-click</b>: Transforms and statistics.<br />"
+         "<b>Shift + Drag</b>: Scrub through the chart to view values.<br />"
+         "<b>Right-click</b>: Open the context menu.<br />";
 }
 
 void ChartsWidget::newTab() {
@@ -94,13 +100,16 @@ void ChartsWidget::removeTab(int index) {
 void ChartsWidget::updateTabBar() {
   for (int i = 0; i < tabbar_.count(); ++i) {
     const auto &charts_in_tab = tab_charts_[tabbar_.tabData(i)];
-    tabbar_.setTabText(i, "Tab " + std::to_string(i + 1) + " (" + std::to_string((int)charts_in_tab.size()) + ")");
+    tabbar_.setTabText(i, (tab_names_.count(tabbar_.tabData(i)) ? tab_names_[tabbar_.tabData(i)] : "Tab " + std::to_string(i + 1)) + " (" + std::to_string((int)charts_in_tab.size()) + ")");
   }
 }
 
 void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
   std::vector<std::future<void>> futures;
   for (auto &c : charts_) {
+    if (std::none_of(c->signals().begin(), c->signals().end(), [&](const auto &s) {
+          return s.path.empty() && new_events.count(s.msg_id);
+        })) continue;
     futures.push_back(ThreadPool::instance().run([c = c.get(), &new_events]() { c->updateSeries(nullptr, &new_events); }));
   }
   for (auto &f : futures) f.get();
@@ -119,7 +128,6 @@ ImRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 
 void ChartsWidget::showValueTip(double sec) {
   if (chartDragActive()) sec = -1;  // no value tip while a drag is in progress
-  showTip(sec);
   if (sec < 0 && !value_tip_visible_) return;
 
   value_tip_visible_ = sec >= 0;
@@ -152,11 +160,6 @@ void ChartsWidget::updateState() {
 void ChartsWidget::setMaxChartRange(int value) {
   max_chart_range_ = settings.chart_range = value;
   updateState();
-}
-
-void ChartsWidget::setIsDocked(bool docked) {
-  is_docked_ = docked;
-  if (!docked) float_window_init_ = true;
 }
 
 void ChartsWidget::drawToolBar() {
@@ -199,6 +202,33 @@ void ChartsWidget::drawToolBar() {
     };
     items.push_back(toolbarMenu("columns", columns_action_text, "Columns", column_items));
   }
+
+  items.push_back(toolbarMenu("chart_functions", "Functions", "Functions", [this]() {
+    if (ImGui::MenuItem("New Function...")) openFunctionEditor();
+    if (!equations_.empty()) ImGui::Separator();
+    for (const auto &equation : equations_) {
+      ImGui::PushID(equation.name.c_str());
+      if (ImGui::MenuItem(equation.name.c_str())) openFunctionEditor(&equation);
+      ImGui::PopID();
+    }
+  }));
+  items.push_back(toolbarMenu("chart_workspace", "Layout", "Layout", [this]() {
+    if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty() || !equations_.empty())) saveLayout();
+    if (ImGui::MenuItem("Open Layout...")) loadLayout();
+    if (beginSubMenu("openpilot Presets")) {
+      drawPresetsMenu();
+      ImGui::EndMenu();
+    }
+    ImGui::Separator();
+    if (ImGui::MenuItem("Export Visible Data to CSV...", nullptr, false, !currentCharts().empty())) exportCsv();
+  }));
+  items.push_back(toolbarMenu("chart_navigation", "View", "View", [this]() {
+    if (ImGui::MenuItem("Fit Loaded Data", nullptr, false, !charts_.empty())) fitTimeRange();
+    if (ImGui::MenuItem("Follow Playback", nullptr, !can->timeRange().has_value())) zoomReset();
+    ImGui::Separator();
+    ImGui::TextDisabled("Drag to zoom · Shift-drag to scrub");
+    ImGui::TextDisabled("%s-drag to pan · %s-wheel to zoom", MOD_KEY, MOD_KEY);
+  }));
 
   // the spacer right aligns the rest
   const size_t spacer_index = items.size();
@@ -250,10 +280,6 @@ void ChartsWidget::drawToolBar() {
     items.back().tight = true;
   }
   items.push_back(toolbarAction("remove_all_btn", icon::TRASH, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()));
-  const char *dock_btn_icon = is_docked_ ? icon::BOX_ARROW_UP_RIGHT : icon::BOX_ARROW_IN_DOWN_LEFT;
-  const char *dock_label = is_docked_ ? "Float the charts window" : "Dock the charts window";
-  items.push_back(toolbarAction("dock_btn", dock_btn_icon, dock_label, [this]() { toggleChartsDocking(); }, true, true));
-
   // the slider shrinks first, the buttons stay pinned to the right edge
   if (slider_index != (size_t)-1) {
     const float shrink = std::min(slider_width - MIN_RANGE_SLIDER_WIDTH, toolbarWidth(items, spacer_index) - ImGui::GetContentRegionAvail().x);
@@ -288,6 +314,7 @@ ChartView *ChartsWidget::createChart(int pos) {
   auto &current = currentCharts();
   current.insert(current.begin() + std::min(pos, (int)current.size()), ptr);
   updateLayout();
+  chartAdded();
   return ptr;
 }
 
@@ -310,34 +337,6 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
       createChart(pos)->adoptSignal(std::move(s));
     }
     updateState();
-  }
-}
-
-std::vector<std::string> ChartsWidget::serializeChartIds() const {
-  std::vector<std::string> chart_ids;
-  for (auto &c : charts_) {
-    std::string ids;
-    for (const auto &s : c->signals()) {
-      if (!ids.empty()) ids += ',';
-      ids += s.msg_id.toString() + "|" + s.sig->name;
-    }
-    chart_ids.push_back(ids);
-  }
-  std::reverse(chart_ids.begin(), chart_ids.end());
-  return chart_ids;
-}
-
-void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids) {
-  for (const auto &chart_id : chart_ids) {
-    int index = 0;
-    for (const auto &part : utils::split(chart_id, ',')) {
-      const size_t sep = part.find('|');
-      if (sep == std::string::npos) continue;
-      MessageId msg_id = MessageId::fromString(part.substr(0, sep));
-      if (auto *msg = dbc()->msg(msg_id))
-        if (auto *sig = msg->sig(part.substr(sep + 1)))
-          showChart(msg_id, sig, true, index++ > 0);
-    }
   }
 }
 
@@ -498,16 +497,8 @@ void ChartsWidget::doAutoScroll() {
 }
 
 void ChartsWidget::newChart() {
-  execSignalSelector(std::make_unique<SignalSelector>("New Chart"), nullptr, [this](SignalSelector &dlg) {
-    const auto &items = dlg.selectedItems();
-    if (!items.empty()) {
-      auto c = createChart();
-      for (const auto &it : items) {
-        c->addSignal(it.msg_id, it.sig);
-      }
-      updateState();
-    }
-  });
+  createChart();
+  updateState();
 }
 
 void ChartsWidget::execSignalSelector(std::unique_ptr<SignalSelector> dlg, ChartView *owner, std::function<void(SignalSelector &)> accepted) {
@@ -544,6 +535,16 @@ void ChartsWidget::removeAll() {
   for (auto &c : charts_) all.push_back(c.get());
   for (auto c : all) removeChart(c);
   tab_charts_.clear();
+  tab_names_.clear();
+  ++equation_revision_;
+  fields_dirty_ = false;
+  browser_expanded_.clear();
+  browser_search_expanded_.clear();
+  function_editor_open_ = false;
+  equations_.clear();
+  calculated_.clear();
+  equation_errors_.clear();
+  rebuildSignalBrowser();
   zoomReset();
 }
 
@@ -577,16 +578,9 @@ void ChartsWidget::handleEvents() {
 }
 
 void ChartsWidget::draw() {
+  pollFields();
+  for (auto &c : charts_) c->pollFields();
   deleted_charts_.clear();
-  // the floating window is a top level window sized to its contents: keep it inside the main viewport so its
-  // toolbar stays reachable, then let the user resize it
-  if (float_window_init_ && !is_docked_) {
-    float_window_init_ = false;
-    const ImGuiViewport *viewport = ImGui::GetMainViewport();
-    const ImVec2 size(viewport->WorkSize.x * 0.6f, viewport->WorkSize.y * 0.6f);
-    ImGui::SetWindowSize(size);
-    ImGui::SetWindowPos(viewport->WorkPos + (viewport->WorkSize - size) * 0.5f);
-  }
   ImGui::PushID(this);
   if (auto_scroll_timer_active_ && ImGui::GetTime() >= auto_scroll_timer_next_) {
     auto_scroll_timer_next_ = ImGui::GetTime() + 0.05;
@@ -597,6 +591,10 @@ void ChartsWidget::draw() {
   handleEvents();
 
   drawToolBar();
+  if (!equation_errors_.empty()) {
+    ImGui::TextDisabled("Some layout signals are unavailable");
+    ImGui::SetItemTooltip("%s", equation_errors_.c_str());
+  }
   tabbar_.draw();
 
   any_plot_hovered_ = false;
@@ -608,6 +606,7 @@ void ChartsWidget::draw() {
   ImGui::EndChild();
 
   drawDragPreview();
+  drawFunctionEditor();
 
   if (signal_selector_ && !signal_selector_->draw()) {
     auto dlg = std::move(signal_selector_);
@@ -630,12 +629,29 @@ void ChartsContainer::draw() {
   const ImVec2 origin = ImGui::GetCursorScreenPos() + ImVec2(0, CHART_SPACING);
   auto current_charts = charts_widget_->currentCharts();  // copy: drawing may remove charts
   float bottom = origin.y;
+  if (current_charts.empty()) {
+    ImGui::Spacing();
+    pushBoldFont();
+    ImGui::TextWrapped("Plot CAN signals and openpilot fields");
+    popBoldFont();
+    ImGui::TextWrapped("Select a CAN message to inspect its bits and plot signals. Double-click an openpilot field to chart logged data.");
+    if (ImGui::Button("Browse openpilot")) charts_widget_->showLogMessages();
+    ImGui::SameLine();
+    if (ImGui::Button("Presets")) ImGui::OpenPopup("empty_presets");
+    if (ImGui::BeginPopup("empty_presets")) {
+      charts_widget_->drawPresetsMenu();
+      ImGui::EndPopup();
+    }
+    bottom = ImGui::GetCursorScreenPos().y;
+  }
   const bool aligned = ImPlot::BeginAlignedPlots("charts_align", true);
+  float row_y = origin.y;
   for (int i = 0; i < current_charts.size(); ++i) {
-    ImVec2 pos = origin + ImVec2((i % n) * (width + spacing), (i / n) * (settings.chart_height + spacing));
+    if (i > 0 && i % n == 0) row_y = bottom + spacing;
+    ImVec2 pos(origin.x + (i % n) * (width + spacing), row_y);
     ImGui::SetCursorScreenPos(pos);
     current_charts[i]->draw(width);
-    bottom = std::max(bottom, pos.y + settings.chart_height);
+    bottom = std::max(bottom, current_charts[i]->rect().Max.y);
     if (current_charts[i]->plotHovered()) charts_widget_->any_plot_hovered_ = true;  // the window must be hovered too
   }
   if (aligned) ImPlot::EndAlignedPlots();

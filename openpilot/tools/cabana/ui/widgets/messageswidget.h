@@ -68,7 +68,7 @@ private:
   void drawRow(int row);
   void drawContextMenu();
   void handleKeys();  // up/down move the current row
-  void setCurrentRow(int row);  // scrolls to the row
+  void setCurrentRow(int row, bool activate = true);  // scrolls to the row
   void updateBytesSectionSize();
   void updateTitle();
   void setMultiLineBytes(bool multi);

@@ -92,6 +92,8 @@ public:
   void draw(const ImVec2 &size);
   const ImRect &rect() const { return rect_; }
   float frameAspectRatio() const;
+  void setCrop(bool crop) { crop_ = crop; }
+  bool crop() const { return crop_; }
   float width() const { return rect_.GetWidth(); }
   float height() const { return rect_.GetHeight(); }
 
@@ -111,6 +113,7 @@ private:
   GlTexture frame_texture_;     // GUI thread only
   ImRect rect_;
   bool visible_ = false;
+  bool crop_ = false;
 
   std::string stream_name_;
   std::atomic<VisionStreamType> active_stream_type_;

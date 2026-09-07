@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <future>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -11,6 +12,7 @@
 #include "implot.h"
 
 #include "tools/cabana/ui/chart/tiplabel.h"
+#include "tools/cabana/ui/chart/analysis.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/utils/util.h"
@@ -29,10 +31,26 @@ class ChartsWidget;
 class ChartView {
 public:
   struct SigItem {
+    std::string path;  // cereal path or named equation; empty for decoded CAN
+    std::string name() const { return path.empty() ? sig->name : path; }
+    std::string label() const {
+      if (path.empty() || path.front() != '/') return name();
+      const auto slash = path.rfind('/');
+      auto leaf = path.substr(slash + 1);
+      if (!leaf.empty() && leaf.find_first_not_of("0123456789") == std::string::npos && slash > 0) {
+        const auto parent = path.rfind('/', slash - 1);
+        return path.substr(parent + 1, slash - parent - 1) + "[" + leaf + "]";
+      }
+      return leaf;
+    }
+    std::string description() const { return path.empty() ? msgLabel(msg_id) : ""; }
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
     CabanaColor color;
     bool visible = true;
+    chart::TransformSettings transform;
+    chart::TransformState transform_state;
+    std::vector<ImPlotPoint> raw_vals;
     std::vector<ImPlotPoint> vals;
     std::vector<ImPlotPoint> step_vals;
     ImPlotPoint track_pt{};
@@ -42,10 +60,17 @@ public:
   };
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
+  void addFields(const std::string &path, CabanaColor color = {0, 114, 178});
+  void updateFields();
+  void pollFields();
+  std::string title;
+  std::optional<double> limit_min, limit_max;
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
+  SeriesType seriesType() const { return series_type_; }
+  void configureSignal(size_t index, const chart::TransformSettings &transform, bool visible, std::optional<CabanaColor> color = std::nullopt);
   void setSeriesType(SeriesType type) { series_type_ = type; }
   void showTip(double sec);
   void hideTip();
@@ -69,11 +94,20 @@ private:
 
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
-  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.path.empty() && s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
   void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
-                       std::vector<ImPlotPoint> &vals, std::vector<ImPlotPoint> &step_vals);
+                       std::vector<ImPlotPoint> &vals);
+  void rebuildSeries(SigItem &s, size_t begin = 0);
+  static void buildSeries(SigItem &s, size_t begin, bool build_tree);
+  std::future<void> fields_task_;
+  std::shared_ptr<std::vector<SigItem>> fields_result_;
+  bool fields_dirty_ = false;
+  void drawSignalAnalysis(SigItem &s);
+  std::string legendName(const SigItem &s) const;
+  static std::string signalUnit(const SigItem &s);
+  static std::string signalValue(const SigItem &s, double value);
   void createToolButtons();
   void drawContextMenu();
   void handleMousePress();
@@ -123,13 +157,15 @@ private:
   int y_precision_ = 1;
   std::string y_unit_;
   // interaction
-  enum class MouseMode { None, Rubber, Scrub };
+  enum class MouseMode { None, Rubber, Scrub, Pan };
   MouseMode mouse_mode_ = MouseMode::None;
   ImVec2 press_pos_;
+  std::pair<double, double> pan_range_;
+  std::optional<std::pair<double, double>> pan_previous_;
   ImRect rubber_rect_;
   bool resume_after_scrub_ = false;
   bool drawing_ghost_ = false;  // drawing the drag preview: no mouse handling, no tip
-  ImGuiID context_menu_id_ = 0;
+  int pending_signal_removal_ = -1;
 
   TipLabel tip_label_;
   std::vector<SigItem> sigs_;

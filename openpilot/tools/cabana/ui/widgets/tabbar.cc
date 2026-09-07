@@ -62,9 +62,6 @@ void TabBar::draw() {
     ImGui::PopID();
     return;
   }
-  // every tab gets a close button, not only the hovered/selected one
-  ImGuiStyle &style = ImGui::GetStyle();
-  const float close_button_min_width = tabs_closable_ ? std::exchange(style.TabCloseButtonMinWidthUnselected, -1.0f) : 0.0f;
   // setCurrentIndex requests are applied on the next frame
   const bool select_current = std::exchange(select_current_, false);
   int close_index = -1;
@@ -85,7 +82,6 @@ void TabBar::draw() {
     tabContextMenu(i);
     if (!open) close_index = i;
   }
-  if (tabs_closable_) style.TabCloseButtonMinWidthUnselected = close_button_min_width;
   scroll_buttons_ ? endScrollableTabBar() : ImGui::EndTabBar();
   ImGui::PopID();
   if (close_index >= 0) tabCloseRequested(close_index);

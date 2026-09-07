@@ -1,0 +1,76 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "title": "CAN RX",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/canState0/totalRxCnt",
+            "transform": 1,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/pandaStates/0/canState1/totalRxCnt",
+            "transform": 1,
+            "color": "#9467bd"
+          },
+          {
+            "path": "/pandaStates/0/canState2/totalRxCnt",
+            "transform": 1,
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "title": "CAN TX",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/canState0/totalTxCnt",
+            "transform": 1,
+            "color": "#17becf"
+          },
+          {
+            "path": "/pandaStates/0/canState1/totalTxCnt",
+            "transform": 1,
+            "color": "#bcbd22"
+          },
+          {
+            "path": "/pandaStates/0/canState2/totalTxCnt",
+            "transform": 1,
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "title": "CAN errors",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/canState0/totalErrorCnt",
+            "transform": 1,
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/pandaStates/0/canState1/totalErrorCnt",
+            "transform": 1,
+            "color": "#d62728"
+          },
+          {
+            "path": "/pandaStates/0/canState2/totalErrorCnt",
+            "transform": 1,
+            "color": "#1ac938"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

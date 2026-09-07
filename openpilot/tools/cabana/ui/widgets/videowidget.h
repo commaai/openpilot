@@ -83,7 +83,7 @@ private:
 class VideoWidget {
 public:
   VideoWidget();
-  void draw();  // content only; MainWindow puts it in a child region above the charts
+  void draw(bool fill = false);  // content only; MainWindow puts it in the shared playback pane
   float sizeHintHeight() const;
   float defaultHeight(float width) const;
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
@@ -112,6 +112,7 @@ private:
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
+  bool force_fill_ = false;
   bool msgs_received_ = false;  // the time is blank until the live stream delivers its first messages
   double thumbnail_display_time_ = -1;
   std::unique_ptr<Slider> slider_;

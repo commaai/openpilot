@@ -1,6 +1,8 @@
 #pragma once
 
+#include <filesystem>
 #include <functional>
+#include <future>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,8 +14,10 @@
 #include "imgui_internal.h"
 
 #include "tools/cabana/ui/chart/signalselector.h"
+#include "tools/cabana/ui/chart/signaltree.h"
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
+#include "tools/cabana/analysis/equations.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/utils/util.h"
@@ -68,20 +72,23 @@ class ChartsWidget {
 public:
   ChartsWidget();
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
+  std::shared_ptr<const cabana::Samples> fieldsSnapshot(const std::string &path) const;
+  std::string serializeLayout() const;
+  enum class LayoutStatus { Restored, MissingCan, Failed };
+  LayoutStatus restoreLayout(const std::string &contents, bool defer_missing_can = false);
+  LayoutStatus openLayout(const std::string &path, bool defer_missing_can = false);
   void draw();  // content only; MainWindow wraps it in a child region or the floating window
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
-  std::vector<std::string> serializeChartIds() const;
-  void restoreChartsFromIds(const std::vector<std::string> &chart_ids);
   std::string whatsThis() const;
 
   void setColumnCount(int n);
   void removeAll();
-  void setIsDocked(bool dock);
 
-  Observable<> toggleChartsDocking;
+  void drawSignalBrowser();
+  Observable<> showLogMessages;
+  Observable<> chartAdded;
   Observable<> seriesChanged;
-  Observable<double> showTip;
 
 private:
   void handleEvents();  // the back button, focus loss, the chart drag and the value tip leave
@@ -90,6 +97,9 @@ private:
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
   ImRect chartVisibleRect(ChartView *chart);
+  void fieldsChanged();
+  void rebuildSignalBrowser();
+  void pollFields();
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
@@ -102,6 +112,13 @@ private:
   void stopAutoScroll();
   void doAutoScroll();
   void drawToolBar();
+  void openFunctionEditor(const cabana::Equation *equation = nullptr);
+  void drawFunctionEditor();
+  void saveLayout();
+  void loadLayout();
+  void drawPresetsMenu();
+  void exportCsv();
+  void fitTimeRange();
   void updateTabBar();
   void setMaxChartRange(int value);
   void updateLayout();
@@ -116,14 +133,34 @@ private:
   void drawDragPreview();
 
   LogSlider range_slider_{1000};
-  bool is_docked_ = true;
-  bool float_window_init_ = false;  // the floating window geometry is set once, right after undocking
-
   UndoStack zoom_undo_stack_;
 
   std::vector<std::unique_ptr<ChartView>> charts_;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts_;
   TabBar tabbar_;
+  std::unordered_map<int, std::string> tab_names_;
+  std::vector<cabana::Equation> equations_;
+  cabana::Equation function_draft_;
+  std::string function_original_name_, function_filter_;
+  std::vector<std::string> function_sources_;
+  bool function_editor_open_ = false, function_editor_show_ = false, function_plot_ = true;
+  cabana::FieldsSnapshot calculated_;
+  struct EquationResult {
+    cabana::FieldsSnapshot values;
+    std::string errors;
+    size_t revision = 0;
+  };
+  std::shared_ptr<EquationResult> equation_result_;
+  std::future<void> equation_task_;
+  bool fields_dirty_ = false;
+  size_t equation_revision_ = 0;
+  std::string equation_errors_;
+  std::string browser_filter_;
+  std::vector<std::filesystem::path> presets_;
+  size_t browser_field_count_ = 0;
+  chart::SignalTree browser_tree_;
+  bool browser_tree_dirty_ = true;
+  std::unordered_set<std::string> browser_expanded_, browser_search_expanded_;
   ChartsContainer charts_container_{this};
   ImGuiWindow *charts_scroll_ = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport_;
@@ -159,9 +196,9 @@ private:
 
 class ZoomCommand : public UndoCommand {
 public:
-  ZoomCommand(std::pair<double, double> range) : range(range) {
-    prev_range = can->timeRange();
-  }
+  ZoomCommand(std::pair<double, double> range) : ZoomCommand(range, can->timeRange()) {}
+  ZoomCommand(std::pair<double, double> range, std::optional<std::pair<double, double>> previous)
+      : prev_range(previous), range(range) {}
   void undo() override { can->setTimeRange(prev_range); }
   void redo() override { can->setTimeRange(range); }
   std::optional<std::pair<double, double>> prev_range, range;

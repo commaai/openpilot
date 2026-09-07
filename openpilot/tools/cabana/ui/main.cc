@@ -37,6 +37,7 @@ struct CabanaArgs {
   std::string data_dir;
   std::string dbc;
   std::string route;
+  std::optional<std::string> layout;
 };
 
 void printUsage(const char *argv0) {
@@ -53,13 +54,15 @@ void printUsage(const char *argv0) {
           "  --qcam                    load qcamera\n"
           "  --wide-road               load wide road camera (alias: --ecam)\n"
           "  --cabin                   load cabin camera (alias: --dcam)\n"
-          "  --msgq                    read can messages from the msgq\n"
+          "  --layout [LAYOUT]         open a Cabana JSON layout file\n"
+          "  --stream                  read openpilot messages from local msgq (alias: --msgq)\n"
+          "  --msgq                    read openpilot messages from local msgq\n"
           "  --panda                   read can messages from panda\n"
           "  --panda-serial <serial>   read can messages from panda with given serial\n"
 #ifdef __linux__
           "  --socketcan <device>      read can messages from given SocketCAN device\n"
 #endif
-          "  --zmq <ip-address>        read can messages from zmq at the specified ip-address\n"
+          "  --zmq <ip-address>        read openpilot messages from zmq at the specified ip-address\n"
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
           "  --no-cache                turn off the local route file cache\n"
@@ -93,7 +96,12 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.wide_road = true;
     } else if (std::strcmp(a, "--cabin") == 0 || std::strcmp(a, "--dcam") == 0) {
       args.cabin = true;
-    } else if (std::strcmp(a, "--msgq") == 0) {
+    } else if (std::strncmp(a, "--layout=", 9) == 0) {
+      args.layout = a + 9;
+    } else if (std::strcmp(a, "--layout") == 0) {
+      args.layout.reset();
+      if (i + 1 < argc && (argv[i + 1][0] != '-' || std::strcmp(argv[i + 1], "-") == 0)) args.layout = argv[++i];
+    } else if (std::strcmp(a, "--msgq") == 0 || std::strcmp(a, "--stream") == 0) {
       args.msgq = true;
     } else if (std::strcmp(a, "--panda") == 0) {
       args.panda = true;
@@ -140,11 +148,13 @@ int main(int argc, char *argv[]) {
   mallopt(M_ARENA_MAX, 1);
 #endif
   // ensure the current dir matches the executable's directory
+  const auto invocation_dir = std::filesystem::current_path();
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);
 
   CabanaArgs args;
   if (auto code = parseArgs(argc, argv, args)) return *code;
+  const std::string layout = args.layout ? (invocation_dir / *args.layout).lexically_normal().string() : "";
 
   std::unique_ptr<AbstractStream> stream;
   StreamLoader stream_loader;
@@ -198,5 +208,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, layout);
 }

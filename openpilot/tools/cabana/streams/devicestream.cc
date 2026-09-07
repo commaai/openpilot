@@ -1,27 +1,25 @@
 #include "tools/cabana/streams/devicestream.h"
 
-#include <cassert>
 #include <cerrno>
-#include <chrono>
 #include <csignal>
 #include <cstring>
 #include <fcntl.h>
-#include <filesystem>
 #include <memory>
-#include <string>
-#include <thread>
-#include <utility>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
+#include <utility>
 
 #include "openpilot/cereal/services.h"
 #include "tools/cabana/utils/util.h"
 
-// DeviceStream
-
-DeviceStream::DeviceStream(std::string address) : zmq_address(std::move(address)) {
+namespace {
+bool isStreamService(const std::string &name) {
+  // Video payloads carry no plottable fields.
+  return name.size() < 10 || name.compare(name.size() - 10, 10, "EncodeData") != 0;
 }
+}  // namespace
 
+DeviceStream::DeviceStream(std::string address) : zmq_address(std::move(address)) {}
 DeviceStream::~DeviceStream() {
   stop();
   stopBridge();
@@ -49,7 +47,10 @@ void DeviceStream::start() {
   if (!zmq_address.empty()) {
     stopBridge();
     const std::string path = (executableDir() / "../../cereal/messaging/bridge").lexically_normal().string();
-    const char *can_filter = "/\"can/\"";
+    std::string service_filter;
+    for (const auto &[name, service] : services) {
+      if (isStreamService(name)) service_filter += "\"" + name + "\",";
+    }
 
     // Self-pipe: write end is CLOEXEC so it closes on successful exec. If exec
     // fails, the child writes errno and the parent aborts stream start.
@@ -63,7 +64,7 @@ void DeviceStream::start() {
     if (pid == 0) {
       ::close(err_pipe[0]);
       ::fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
-      execl(path.c_str(), path.c_str(), zmq_address.c_str(), can_filter, static_cast<char *>(nullptr));
+      execl(path.c_str(), path.c_str(), zmq_address.c_str(), service_filter.c_str(), static_cast<char *>(nullptr));
       const int err = errno;
       (void)!::write(err_pipe[1], &err, sizeof(err));
       _exit(127);
@@ -94,18 +95,21 @@ void DeviceStream::start() {
 }
 
 void DeviceStream::streamThread() {
-  zmq_address.empty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
-
   std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", "127.0.0.1", false, true, services.at("can").queue_size));
-  assert(sock != NULL);
-  // run as fast as messages come in
+  std::unique_ptr<Poller> poller(Poller::create());
+  std::vector<std::unique_ptr<SubSocket>> sockets;
+  for (const auto &[name, service] : services) {
+    if (!isStreamService(name)) continue;
+    auto socket = std::unique_ptr<SubSocket>(SubSocket::create(context.get(), name,
+      "127.0.0.1", false, true, service.queue_size));
+    if (!socket) continue;
+    poller->registerSocket(socket.get());
+    sockets.push_back(std::move(socket));
+  }
   while (!exit_) {
-    std::unique_ptr<Message> msg(sock->receive(true));
-    if (!msg) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      continue;
+    for (auto *socket : poller->poll(50)) {
+      std::unique_ptr<Message> msg(socket->receive(true));
+      if (msg) handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
     }
-    handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   }
 }

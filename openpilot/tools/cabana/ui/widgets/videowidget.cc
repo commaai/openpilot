@@ -48,9 +48,7 @@ static Replay *getReplay() {
 }
 
 static std::string colorName(ImU32 c) {
-  char buf[16];
-  snprintf(buf, sizeof(buf), "#%02x%02x%02x", (c >> IM_COL32_R_SHIFT) & 0xff, (c >> IM_COL32_G_SHIFT) & 0xff, (c >> IM_COL32_B_SHIFT) & 0xff);
-  return buf;
+  return CabanaColor((c >> IM_COL32_R_SHIFT) & 0xff, (c >> IM_COL32_G_SHIFT) & 0xff, (c >> IM_COL32_B_SHIFT) & 0xff).toHex();
 }
 
 // the zoomed range, or the whole route
@@ -192,9 +190,11 @@ void VideoWidget::drawPlaybackController() {
     item.tight = true;
     return item;
   };
-  const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
   if (!can->liveStreaming()) {
-    items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
+    if (!force_fill_) {
+      const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
+      items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
+    }
     items.push_back(separator());
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
     items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, true, speed_width));
@@ -363,13 +363,15 @@ float VideoWidget::defaultHeight(float width) const {
   return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
 }
 
-void VideoWidget::draw() {
+void VideoWidget::draw(bool fill) {
+  force_fill_ = fill;
+  if (cam_widget_) cam_widget_->setCrop(fill || settings.crop_video);
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   if (!can->liveStreaming())
     drawCameraWidget();
+  ImGui::PopStyleVar();
 
   drawPlaybackController();
-  ImGui::PopStyleVar();
 
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);
@@ -549,7 +551,7 @@ const RgbImage *StreamCameraView::thumbnailAt(double sec) {
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255), ImGui::GetStyle().ChildRounding);
   if (const RgbImage *image = thumbnailAt(sec)) {
-    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
+    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, crop());
     p->AddImageRounded(big_thumbnail_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
     drawTime(p, rect(), sec);
   }

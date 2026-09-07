@@ -165,11 +165,12 @@ void DetailWidget::restoreTabs(const std::string &active_msg_id, const std::vect
 
 void DetailWidget::refresh() {
   std::vector<std::string> warnings;
+  last_message_size_ = can->lastMessage(msg_id_).dat.size();
   auto msg = dbc()->msg(msg_id_);
   if (msg) {
     if (msg_id_.source == INVALID_SOURCE) {
       warnings.push_back("No messages received.");
-    } else if (msg->size != can->lastMessage(msg_id_).dat.size()) {
+    } else if (msg->size != last_message_size_) {
       warnings.push_back("Message size (" + std::to_string(msg->size) + ") is incorrect.");
     }
     for (auto s : binary_view_->getOverlappingSignals()) {
@@ -195,6 +196,9 @@ void DetailWidget::refresh() {
 void DetailWidget::updateState(const std::set<MessageId> *msgs) {
   if ((msgs && !msgs->count(msg_id_)))
     return;
+
+  // Restored tabs can be drawn before their first frame arrives.
+  if (last_message_size_ != can->lastMessage(msg_id_).dat.size()) refresh();
 
   if (tab_widget_index_ == 0)
     binary_view_->updateState();

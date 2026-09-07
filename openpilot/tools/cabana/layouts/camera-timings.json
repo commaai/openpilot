@@ -1,0 +1,145 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/cabinEncodeIdx/timestampSof",
+            "transform": 1,
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/narrowRoadEncodeIdx/timestampSof",
+            "transform": 1,
+            "color": "#d62728"
+          },
+          {
+            "path": "/wideRoadEncodeIdx/timestampSof",
+            "transform": 1,
+            "color": "#1ac938"
+          }
+        ],
+        "y_min": 35000000.0,
+        "y_max": 65000000.0
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/cabinEncodeIdx/timestampEof",
+            "transform": 1,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/narrowRoadEncodeIdx/timestampEof",
+            "transform": 1,
+            "color": "#9467bd"
+          },
+          {
+            "path": "/wideRoadEncodeIdx/timestampEof",
+            "transform": 1,
+            "color": "#17becf"
+          }
+        ],
+        "y_min": 35000000.0,
+        "y_max": 65000000.0
+      }
+    ],
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/modelV2/modelExecutionTime",
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/modelV2/frameDropPerc",
+            "color": "#f14cc1"
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/cabinCameraState/sensor",
+            "color": "#bcbd22"
+          },
+          {
+            "path": "/narrowRoadCameraState/sensor",
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/wideRoadCameraState/sensor",
+            "color": "#d62728"
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/cabinCameraState/timestampSof",
+            "transform": 1,
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/narrowRoadCameraState/timestampSof",
+            "transform": 1,
+            "color": "#d62728"
+          },
+          {
+            "path": "/wideRoadCameraState/timestampSof",
+            "transform": 1,
+            "color": "#1ac938"
+          }
+        ],
+        "y_min": 35000000.0,
+        "y_max": 65000000.0
+      },
+      {
+        "type": 0,
+        "signals": [
+          {
+            "path": "/cabinCameraState/timestampEof",
+            "transform": 1,
+            "color": "#ff7f0e"
+          },
+          {
+            "path": "/narrowRoadCameraState/timestampEof",
+            "transform": 1,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/wideRoadCameraState/timestampEof",
+            "transform": 1,
+            "color": "#9467bd"
+          }
+        ],
+        "y_min": 35000000.0,
+        "y_max": 65000000.0
+      }
+    ]
+  ],
+  "tab_names": [
+    "SOF / EOF (encodeIdx)",
+    "model timings",
+    "sensor info",
+    "SOF / EOF (cameraState)"
+  ],
+  "equations": []
+}
