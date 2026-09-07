@@ -32,9 +32,10 @@ inline bool inputText(const char *label, std::string *s, const char *hint = "", 
 bool inputTextMultiline(const char *label, std::string *s, const ImVec2 &size, ImGuiInputTextFlags flags = 0);
 
 constexpr float CONTROL_OUTLINE_PADDING = 1.0f;
+// Always pair with ImGui::EndChild(), even when false is returned.
 bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flags = 0);
 
-// an input with a trailing clear button once it holds text; true when the text changed
+// SetNextItemWidth includes the field and clear button. Returns true when text changes.
 bool clearableInput(const char *label, std::string *s, const char *hint = "", ImGuiInputTextCallback validator = nullptr);
 
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items);
