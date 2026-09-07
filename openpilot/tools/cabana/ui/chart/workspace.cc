@@ -15,6 +15,7 @@
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/ui/util.h"
+#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/utils/strings.h"
 
 using json11::Json;
@@ -265,14 +266,16 @@ void ChartsWidget::drawSignalBrowser() {
   }
   auto &expanded = browser_filter_.empty() ? browser_expanded_ : browser_search_expanded_;
   ImGui::TextDisabled("Double-click to plot · Drag onto a chart to compare");
+  ImGui::AlignTextToFramePadding();
   ImGui::Text("%zu signals", browser_tree_.nodes[0].matches);
-  if (ImGui::SmallButton("Expand all")) {
+  alignRight(iconButtonWidth() * 2 + ImGui::GetStyle().ItemInnerSpacing.x);
+  if (iconButton("expand_signals", icon::PLUS_LG, "Expand all")) {
     for (const auto &node : browser_tree_.nodes) {
       if (node.matches && !node.children.empty()) expanded.insert(node.key);
     }
   }
-  ImGui::SameLine();
-  if (ImGui::SmallButton("Collapse all")) expanded.clear();
+  ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+  if (iconButton("collapse_signals", icon::ARROWS_COLLAPSE, "Collapse all")) expanded.clear();
   if (browser_paths_.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
   else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No signals match your search.");
   if (ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar)) {
@@ -285,7 +288,7 @@ void ChartsWidget::drawSignalBrowser() {
       const bool branch = !node.children.empty();
       const std::string label = chart::SignalTree::isIndex(node.name) ? "[" + node.name + "]" : node.name;
       ImGui::PushID(node.key.c_str());
-      const float indent = node.depth * ImGui::GetStyle().IndentSpacing;
+      const float indent = node.depth * ImGui::GetStyle().IndentSpacing * 0.5f;
       if (indent > 0) ImGui::Indent(indent);
       ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
       if (branch) flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
