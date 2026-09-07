@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from openpilot.tools.cabana.analysis.cabana_equations import (
-  EquationError, MAX_DEPTH, MAX_INPUTS, MAX_ITEMS, MAX_NODES, MAX_SOURCE_BYTES, MAX_VARIABLES, compile_equation,
+  EquationError, MAX_DEPTH, MAX_INPUTS, MAX_ITEMS, MAX_NODES, MAX_SOURCE_BYTES, MAX_VARIABLES, compile_equation, compile_numeric_equation,
 )
 
 
@@ -78,9 +78,10 @@ class TestEquationRestrictions(unittest.TestCase):
       'global unknown\nunknown = 1\nreturn unknown',
       'if False:\n  import os\nreturn 1', 'return 1\nimport os',
     ]
-    for code in cases:
-      with self.subTest(code=code), self.assertRaises(EquationError):
-        compile_equation('', code, 0)
+    for compiler in (compile_equation, compile_numeric_equation):
+      for code in cases:
+        with self.subTest(code=code, compiler=compiler.__name__), self.assertRaises(EquationError):
+          compiler('', code, 0)
 
   def test_globals_are_equally_restricted(self):
     for code in ('import math', 'x = ().__class__', 'while True:\n  pass', 'x = [1]', 'math.pi = 2',
