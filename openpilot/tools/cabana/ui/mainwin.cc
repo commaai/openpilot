@@ -878,7 +878,10 @@ void MainWindow::drawMessagesPanel() {
   setNextPanelClass();
   if (beginPanel(name.c_str(), &messages_visible_)) {
     if (messages_widget_) {
-      help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      const std::string help = analysis_mode_ ?
+        "<b>Route Signals</b><br />Search to filter signals.<br />Click a group to expand it.<br />"
+        "Double-click a signal to create a chart.<br />Drag a signal onto a chart to compare." : messages_widget_->whatsThis();
+      help_overlay_.add(help, ImGui::GetCurrentWindow()->Rect());
       if (analysis_mode_) charts_widget_->drawSignalBrowser();
       else messages_widget_->draw();
     }
