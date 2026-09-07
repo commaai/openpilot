@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <utility>
 
 #include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3_loader.h"
@@ -120,6 +121,7 @@ void CameraWidget::vipcThread() {
   VisionStreamType cur_stream = requested_stream_type_;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra frame_meta = {};
+  bool was_connected = false;
 
   while (!vipc_exit_) {
     if (!vipc_client || cur_stream != requested_stream_type_) {
@@ -130,6 +132,8 @@ void CameraWidget::vipcThread() {
     active_stream_type_ = cur_stream;
 
     if (!vipc_client->connected) {
+      // the server changed (a new route): the last frame is stale. A fresh thread keeps it, see startVipcThread().
+      if (std::exchange(was_connected, false)) clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name_, false);
       if (streams.empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -141,6 +145,7 @@ void CameraWidget::vipcThread() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
+      was_connected = true;
     }
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {

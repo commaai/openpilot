@@ -4,7 +4,9 @@
 #include <cctype>
 #include <cfloat>
 #include <cmath>
+#include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "imgui.h"
@@ -159,6 +161,17 @@ GlyphInk glyphInk(const ImFontGlyph *g) {
   return {g->X0 + (ix0 - px0) * sx, g->Y0 + (iy0 - py0) * sy, g->X0 + (ix1 - px0) * sx, g->Y0 + (iy1 - py0) * sy};
 }
 
+// The scan reads the atlas pixels: do it once per icon, and again when the atlas repacked the glyph.
+const GlyphInk &cachedGlyphInk(const ImFontGlyph *g, float size, unsigned int codepoint) {
+  struct Entry { ImVec4 uv; GlyphInk ink; };
+  static std::unordered_map<uint64_t, Entry> cache;
+  const uint64_t key = ((uint64_t)(uint32_t)size << 32) | codepoint;
+  const ImVec4 uv(g->U0, g->V0, g->U1, g->V1);
+  auto it = cache.find(key);
+  if (it == cache.end() || memcmp(&it->second.uv, &uv, sizeof(uv)) != 0) it = cache.insert_or_assign(key, Entry{uv, glyphInk(g)}).first;
+  return it->second.ink;
+}
+
 bool squareIconButton(const char *id, const char *icon) {
   const bool clicked = ImGui::Button((std::string("###") + id).c_str(), ImVec2(iconButtonWidth(), 0.0f));
   const ImRect r(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
@@ -168,7 +181,7 @@ bool squareIconButton(const char *id, const char *icon) {
   const float size = std::round(ImGui::GetFontSize() * ICON_BUTTON_GLYPH_SCALE);
   ImFontBaked *baked = ImGui::GetFont()->GetFontBaked(size);
   if (const ImFontGlyph *g = baked->FindGlyph((ImWchar)codepoint)) {
-    const GlyphInk ink = glyphInk(g);
+    const GlyphInk ink = cachedGlyphInk(g, size, codepoint);
     // Preserve half-logical-pixel positions on HiDPI displays.
     const float snap = std::max(1.0f, ImGui::GetIO().DisplayFramebufferScale.x);
     auto snapped = [snap](float v) { return std::round(v * snap) / snap; };
@@ -396,9 +409,25 @@ bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size, ImGuiWin
 ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger, bool enabled, bool tight) {
   return {iconButtonWidth(), [=]() {
     ImGui::BeginDisabled(!enabled);
-    if (iconButton(id, icon, label)) trigger();
+    if (iconButton(id, icon)) trigger();
     ImGui::EndDisabled();
+    disabledItemTooltip(label);
   }, label, trigger, enabled, true, tight};
+}
+
+ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *label, std::function<void()> items, bool bold, bool tight, float width) {
+  if (width <= 0.0f) width = menuButtonWidth(text, bold);
+  ToolbarItem item{width, [id, text, items, bold, width]() {
+    const std::string popup_id = std::string(id) + "_menu";
+    menuButton(id, text, popup_id.c_str(), bold, width);
+    if (ImGui::BeginPopup(popup_id.c_str())) {
+      items();
+      ImGui::EndPopup();
+    }
+  }, label};
+  item.tight = tight;
+  item.submenu = std::move(items);
+  return item;
 }
 
 float toolbarButtonWidth(const std::string &label) {
@@ -433,7 +462,8 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
 
   // when everything fits the spacer takes the slack, otherwise the extension button is reserved at the
   // right edge and the items are packed from the left until the next one does not fit
-  const bool fits = toolbarWidth(items, spacer_index) <= avail;
+  // a caller may size a flexible item from the same available width: allow for the float error of the round trip
+  const bool fits = toolbarWidth(items, spacer_index) <= avail + 0.5f;
   size_t visible = items.size();
   if (!fits) {
     const float usable = avail - (extension_width + style.ItemSpacing.x);

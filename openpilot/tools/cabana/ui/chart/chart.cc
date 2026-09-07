@@ -714,14 +714,14 @@ void ChartView::drawRubberBandTimeRange() {
 
   // time labels at the bottom corners (below the plot, so clip to the widget instead of the plot)
   const ImU32 white = IM_COL32_WHITE;
-  const ImU32 gray = IM_COL32(0xa0, 0xa0, 0xa4, 0xff);
+  const ImU32 badge = ImGui::GetColorU32(palette().badge);
   painter = ImGui::GetWindowDrawList();
   painter->PushClipRect(layout_.rect.Min, layout_.rect.Max);
   for (const auto &pt : {rubber_rect_.GetBL(), rubber_rect_.GetBR()}) {
     std::string sec = formatNumber(secondsAtPoint(pt), 2);
     ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, AXIS_X_TOP_MARGIN * 2);
     ImVec2 top_left = pt.x == rubber_rect_.Min.x ? ImVec2(pt.x - size.x, pt.y + 2) : ImVec2(pt.x, pt.y + 2);
-    painter->AddRectFilled(top_left, top_left + size, gray, ImGui::GetStyle().FrameRounding);
+    painter->AddRectFilled(top_left, top_left + size, badge, ImGui::GetStyle().FrameRounding);
     painter->AddText(top_left + ImVec2(6, AXIS_X_TOP_MARGIN), white, sec.c_str());
   }
   painter->PopClipRect();
@@ -735,8 +735,7 @@ void ChartView::drawTimeline() {
   std::string time_str = formatNumber(cur_sec_, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
   ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + AXIS_X_TOP_MARGIN);
-  const bool dark = isDarkTheme();
-  painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, dark ? IM_COL32(0x80, 0x80, 0x80, 0xff) : IM_COL32(0xa0, 0xa0, 0xa4, 0xff), ImGui::GetStyle().FrameRounding);
+  painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, ImGui::GetColorU32(palette().badge), ImGui::GetStyle().FrameRounding);
   painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());
 }
 

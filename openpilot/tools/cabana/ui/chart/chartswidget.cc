@@ -188,14 +188,7 @@ void ChartsWidget::drawToolBar() {
       }
     }
   };
-  items.push_back({menuButtonWidth(chart_type_text), [&chart_type_text, chart_type_items]() {
-    menuButton("chart_type", chart_type_text, "chart_type_menu");
-    if (ImGui::BeginPopup("chart_type_menu")) {
-      chart_type_items();
-      ImGui::EndPopup();
-    }
-  }, "Type"});
-  items.back().submenu = chart_type_items;
+  items.push_back(toolbarMenu("chart_type", chart_type_text, "Type", chart_type_items));
 
   const std::string columns_action_text = "Columns:  " + std::to_string(column_count_);
   if (columns_action_visible_) {
@@ -204,14 +197,7 @@ void ChartsWidget::drawToolBar() {
         if (ImGui::MenuItem(std::to_string(i + 1).c_str(), nullptr, column_count_ == i + 1)) setColumnCount(i + 1);
       }
     };
-    items.push_back({menuButtonWidth(columns_action_text), [&columns_action_text, column_items]() {
-      menuButton("columns", columns_action_text, "columns_menu");
-      if (ImGui::BeginPopup("columns_menu")) {
-        column_items();
-        ImGui::EndPopup();
-      }
-    }, "Columns"});
-    items.back().submenu = column_items;
+    items.push_back(toolbarMenu("columns", columns_action_text, "Columns", column_items));
   }
 
   // the spacer right aligns the rest

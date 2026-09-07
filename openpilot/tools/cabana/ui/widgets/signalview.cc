@@ -491,11 +491,16 @@ void SignalView::drawValueDescriptionDlg() {
   desc_sig_ = nullptr;
 }
 
+// plot_btn + remove_btn side by side, with the inner spacing before and between them
+static ImVec2 indexButtonsSize(float button) {
+  return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
+}
+
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, SPARKLINE_RANGE_MAX);
 
-  // Reserve button space for updateState() calls before the first draw.
-  button_size_ = ImVec2(26 * 2 + 4 * 2, 26);
+  // Reserve button space for updateState() calls before the first draw (no frame yet: derive the frame height).
+  button_size_ = indexButtonsSize(UI_FONT_SIZE + ImGui::GetStyle().FramePadding.y * 2.0f);
   updateToolBar();
 
   connections_.push_back(model_.rowsChanged.connect([this]() { rowsChanged(); }));
@@ -871,7 +876,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   // plot_btn + remove_btn, right aligned in the value column
   const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-  const ImVec2 size(iconButtonWidth() * 2 + spacing * 2, iconButtonWidth());
+  const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
   const auto sig = item->sig;

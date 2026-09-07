@@ -159,6 +159,10 @@ struct ToolbarItem {
 // An icon button and its overflow menu action share a label, callback, and enabled state.
 ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger,
                           bool enabled = true, bool tight = false);
+// A drop-down button that opens `items` in a popup; in the overflow menu they become a submenu.
+// width 0: sized to the text.
+ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *label, std::function<void()> items,
+                        bool bold = false, bool tight = false, float width = 0.0f);
 float toolbarButtonWidth(const std::string &label);
 // the width of every item plus the spacing between neighbors and the two groups
 float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);

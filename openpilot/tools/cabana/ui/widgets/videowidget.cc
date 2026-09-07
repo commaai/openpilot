@@ -195,9 +195,7 @@ void VideoWidget::drawPlaybackController() {
     items.push_back(separator());
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
   }
-  items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }, "Speed"});
-  items.back().tight = true;
-  items.back().submenu = [this]() { drawSpeedMenuItems(); };
+  items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, true, speed_width));
   if (!can->liveStreaming()) {
     items.push_back(separator());
     items.push_back(toolbarAction("route_info", icon::INFO_CIRCLE, "View route details", [this]() { showRouteInfo(); }, true, true));
@@ -227,14 +225,6 @@ void VideoWidget::createSpeedDropdown() {
   speed_index_ = NORMAL_SPEED_INDEX;
   can->setSpeed(speeds[speed_index_]);
   speed_text_ = speedText(speeds[speed_index_]);
-}
-
-void VideoWidget::drawSpeedDropdown(float width) {
-  menuButton("speed_btn", speed_text_, "speed_menu", true, width);
-  if (ImGui::BeginPopup("speed_menu")) {
-    drawSpeedMenuItems();
-    ImGui::EndPopup();
-  }
 }
 
 void VideoWidget::drawSpeedMenuItems() {

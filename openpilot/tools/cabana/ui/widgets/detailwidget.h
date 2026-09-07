@@ -79,7 +79,6 @@ private:
   MessageId msg_id_;
   const char *warning_icon_ = nullptr;
   std::string warning_label_;
-  float name_width_ = 0.0f;
   ElidedLabel name_label_;
   bool warning_widget_visible_ = false;
   TabBar tabbar_;

@@ -804,8 +804,8 @@ void MainWindow::drawDockspace() {
 
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
-  const float status_height = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
-  const float top_gap = ImGui::GetStyle().ItemSpacing.y;
+  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
+  const float top_gap = full_screen_ ? 0.0f : ImGui::GetStyle().ItemSpacing.y;
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + top_gap);
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
@@ -829,7 +829,7 @@ void MainWindow::drawDockspace() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();
-  drawStatusBar();
+  if (!full_screen_) drawStatusBar();
   ImGui::End();
 }
 
@@ -849,9 +849,8 @@ void setNextPanelClass() {
 
 bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
   const bool visible = ImGui::Begin(name, open, flags);
-  ImGui::PopStyleVar(2);
+  ImGui::PopStyleVar();
   return visible;
 }
 }  // namespace
@@ -887,8 +886,8 @@ void MainWindow::drawVideoPanel() {
     if (live) video_h = default_h;  // display video at minimum size.
     // Collapse panes below half their minimum height to keep partially clipped controls out of view.
     bool charts_collapsed = false;
+    const float splitter_h = ImGui::GetStyle().WindowPadding.x * 2.0f + 2.0f;
     if (!charts_floating_ && !live) {
-      const float splitter_h = ImGui::GetStyle().WindowPadding.x * 2.0f + 2.0f;
       const float min_h = std::min(video_widget_->sizeHintHeight() + video_padding, avail.y - 1.0f);
       video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
       const float charts_min_h = ImGui::GetFrameHeight() + video_padding + ImGui::GetStyle().ChildBorderSize * 2.0f;
@@ -901,7 +900,7 @@ void MainWindow::drawVideoPanel() {
       }
     }
     // The splitter provides the gap; extra ItemSpacing would leave an undraggable strip.
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+    if (!charts_floating_) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
@@ -911,7 +910,7 @@ void MainWindow::drawVideoPanel() {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
     if (!charts_floating_) {
-      ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, ImGui::GetStyle().WindowPadding.x * 2.0f + 2.0f));
+      ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
       const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
       if (splitter_active) {
         // the size of the video is the position of the handle inside the splitter
@@ -931,8 +930,6 @@ void MainWindow::drawVideoPanel() {
         charts_widget_->draw();
         ImGui::EndChild();
       }
-    } else {
-      ImGui::PopStyleVar();
     }
   }
   ImGui::End();
@@ -952,7 +949,7 @@ void MainWindow::draw() {
   } else {
     takeKeyEvents();  // modal dialogs swallow the shortcuts
   }
-  drawMenuBar();
+  if (!full_screen_) drawMenuBar();
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)

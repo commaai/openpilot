@@ -20,7 +20,7 @@ constexpr Palette DARK_PALETTE = {
   .accent = rgb(0x57a9e3),
   .border = rgb(0x65737a), .separator = rgb(0x4b5559),
   .tab = rgb(0x272c2f), .tab_hovered = rgb(0x424a4f), .table_header = rgb(0x424a4f),
-  .plot_bg = rgb(0x151819), .grid = rgb(0x65737a, 0.45f),
+  .grid = rgb(0x65737a, 0.45f), .badge = rgb(0x808080),
 };
 
 constexpr Palette LIGHT_PALETTE = {
@@ -32,7 +32,7 @@ constexpr Palette LIGHT_PALETTE = {
   .accent = rgb(0x1c6ea8),
   .border = rgb(0x98a3a9), .separator = rgb(0xcdd3d6),
   .tab = rgb(0xe3e6e8), .tab_hovered = rgb(0xddeef9), .table_header = rgb(0xd8dcdf),
-  .plot_bg = rgb(0xf8f9f9), .grid = rgb(0x98a3a9, 0.4f),
+  .grid = rgb(0x98a3a9, 0.4f), .badge = rgb(0xa0a0a4),
 };
 
 bool g_dark = false;
@@ -71,8 +71,8 @@ ImVec4 alpha(ImVec4 c, float a) { return ImVec4(c.x, c.y, c.z, a); }
 void loadFonts() {
   ImGuiIO &io = ImGui::GetIO();
   const fs::path fonts = fs::path(CABANA_FONTS_DIR);
-  g_ui_font = addFont(fonts / "Inter-Regular.ttf", 16.0f);
-  g_bold_font = addFont(fonts / "Inter-SemiBold.ttf", 16.0f);
+  g_ui_font = addFont(fonts / "Inter-Regular.ttf", UI_FONT_SIZE);
+  g_bold_font = addFont(fonts / "Inter-SemiBold.ttf", UI_FONT_SIZE);
   g_mono_font = addFont(fonts / "JetBrainsMono-Medium.ttf", 15.0f);
   g_large_font = addFont(fonts / "Inter-Bold.ttf", 50.0f);
   if (g_ui_font != nullptr) io.FontDefault = g_ui_font;
@@ -141,15 +141,16 @@ void applyTheme(int theme) {
   c[ImGuiCol_TableHeaderBg] = p.table_header;
   c[ImGuiCol_TableRowBgAlt] = g_dark ? ImVec4(1, 1, 1, 0.065f) : ImVec4(0, 0, 0, 0.045f);
   c[ImGuiCol_PlotLines] = p.text;
+  // ImGuiStyle() seeds every slot from the dark theme: set the rest so the light theme does not keep a white caret.
+  c[ImGuiCol_InputTextCursor] = c[ImGuiCol_UnsavedMarker] = p.text;
+  c[ImGuiCol_TextLink] = c[ImGuiCol_PlotLinesHovered] = c[ImGuiCol_PlotHistogramHovered] = c[ImGuiCol_NavWindowingHighlight] = p.accent;
+  c[ImGuiCol_TreeLines] = p.separator;
+  c[ImGuiCol_DragDropTargetBg] = alpha(p.accent, 0.2f);
   // Disable the modal dim fade to make dialogs appear immediately.
   c[ImGuiCol_ModalWindowDimBg] = c[ImGuiCol_NavWindowingDimBg] = none;
 
-  ImVec4 *pc = ImPlot::GetStyle().Colors;
-  pc[ImPlotCol_FrameBg] = pc[ImPlotCol_LegendBg] = p.surface;
-  pc[ImPlotCol_PlotBg] = p.plot_bg;
-  pc[ImPlotCol_PlotBorder] = pc[ImPlotCol_LegendBorder] = p.border;
-  pc[ImPlotCol_AxisText] = p.text_disabled;
-  pc[ImPlotCol_AxisGrid] = p.grid;
+  // ChartView::drawAxes() pushes the other plot colors it needs; the rest are auto colors derived from the ImGui style.
+  ImPlot::GetStyle().Colors[ImPlotCol_AxisGrid] = p.grid;
 }
 
 bool isDarkTheme() { return g_dark; }

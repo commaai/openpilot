@@ -75,10 +75,11 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
 void DetailWidget::drawToolBar() {
   const ImGuiStyle &style = ImGui::GetStyle();
   std::vector<ToolbarItem> items;
-  items.push_back({0.0f, [this]() {
+  float name_width = 0.0f;  // the name takes what the right aligned items leave, set below
+  items.push_back({0.0f, [this, &name_width]() {
     ImGui::AlignTextToFramePadding();
     pushBoldFont();
-    name_label_.draw(name_width_);
+    name_label_.draw(name_width);
     popBoldFont();
   }});
   items.back().in_menu = false;
@@ -94,30 +95,18 @@ void DetailWidget::drawToolBar() {
       binary_view_->setHeatmapLiveMode(false);
     }
   };
-  items.push_back({menuButtonWidth(heatmap_text), [&heatmap_text, heatmap_items]() {
-    menuButton("heatmap", heatmap_text, "heatmap_menu");
-    if (ImGui::BeginPopup("heatmap_menu")) {
-      heatmap_items();
-      ImGui::EndPopup();
-    }
-  }, "Heatmap"});
-  items.back().submenu = heatmap_items;
+  items.push_back(toolbarMenu("heatmap", heatmap_text, "Heatmap", heatmap_items));
   items.push_back({1.0f, []() { ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); }});
   items.back().in_menu = false;
   // Capture the panel width before the action can run inside the overflow popup.
   const float panel_width = ImGui::GetWindowWidth();
   items.push_back(toolbarAction("edit_msg", icon::PENCIL, "Edit Message", [this, panel_width]() { editMsg(panel_width); }));
-  items.push_back({iconButtonWidth(), [this]() {
-    ImGui::BeginDisabled(!action_remove_msg_enabled_);
-    if (iconButton("remove_msg", icon::TRASH)) UndoStack::instance()->push(new RemoveMsgCommand(msg_id_));
-    ImGui::EndDisabled();
-    disabledItemTooltip("Remove Message");
-  }, "Remove Message", [this]() { UndoStack::instance()->push(new RemoveMsgCommand(msg_id_)); }, action_remove_msg_enabled_});
-  items.back().tight = true;
+  items.push_back(toolbarAction("remove_msg", icon::TRASH, "Remove Message",
+                                [this]() { UndoStack::instance()->push(new RemoveMsgCommand(msg_id_)); }, action_remove_msg_enabled_, true));
 
   const float right_width = toolbarWidth(items, spacer_index) - style.ItemSpacing.x;
-  name_width_ = std::max(ImGui::CalcTextSize("MMMMMM").x, ImGui::GetContentRegionAvail().x - right_width - style.ItemSpacing.x);
-  items[0].width = name_width_;
+  name_width = std::max(ImGui::CalcTextSize("MMMMMM").x, ImGui::GetContentRegionAvail().x - right_width - style.ItemSpacing.x);
+  items[0].width = name_width;
   drawToolbar(items, spacer_index);
 }
 

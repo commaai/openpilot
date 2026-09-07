@@ -102,7 +102,6 @@ private:
   void skipToEnd();
   void toggleTimeDisplay();
   void createSpeedDropdown();
-  void drawSpeedDropdown(float width);
   void drawSpeedMenuItems();
   void loopPlaybackClicked();
   void cropVideoClicked();
