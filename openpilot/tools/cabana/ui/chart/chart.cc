@@ -345,7 +345,13 @@ std::string ChartView::signalValue(const SigItem &s, double value) {
 }
 
 void ChartView::drawSignalAnalysis(SigItem &s) {
+  ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(s.name().c_str());
+  alignRight(iconButtonWidth());
+  if (iconButton("remove_signal", icon::X_LG, "Remove signal from chart")) {
+    pending_signal_removal_ = &s - sigs_.data();
+    ImGui::CloseCurrentPopup();
+  }
   const std::string description = s.description();
   if (!description.empty()) ImGui::TextDisabled("%s", description.c_str());
   ImGui::Separator();
@@ -826,8 +832,6 @@ void ChartView::drawLegend() {
       ImGui::OpenPopup("signal_analysis");
     }
     if (ImGui::BeginPopup("signal_analysis")) {
-      if (ImGui::MenuItem("Remove signal from chart")) pending_signal_removal_ = i;
-      ImGui::Separator();
       drawSignalAnalysis(sigs_[i]);
       ImGui::EndPopup();
     }
