@@ -75,7 +75,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
 void DetailWidget::drawToolBar() {
   const ImGuiStyle &style = ImGui::GetStyle();
   std::vector<ToolbarItem> items;
-  float name_width = 0.0f;  // the name takes what the right aligned items leave, set below
+  float name_width = 0.0f;
   items.push_back({0.0f, [this, &name_width]() {
     ImGui::AlignTextToFramePadding();
     pushBoldFont();

@@ -922,7 +922,7 @@ void MainWindow::drawVideoPanel() {
       const float line_y = std::floor(splitter.GetCenter().y) - 1.0f;
       ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(splitter.Min.x, line_y), ImVec2(splitter.Max.x, line_y + 2.0f),
                                                 ImGui::GetColorU32(splitter_active ? ImGuiCol_SeparatorActive : splitter_hovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Border));
-      ImGui::PopStyleVar();  // Restore spacing before drawing the charts toolbar.
+      ImGui::PopStyleVar();
       if (!charts_collapsed) {
         // the chart list scrolls in its own child, the container itself never scrolls
         ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);

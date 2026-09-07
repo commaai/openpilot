@@ -69,7 +69,7 @@ int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 
 // Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
-float iconButtonWidth();  // the side of a square icon button
+float iconButtonWidth();
 
 // tooltip for the last item that also shows while the item is disabled
 void disabledItemTooltip(const char *text);
@@ -156,7 +156,6 @@ struct ToolbarItem {
   bool tight = false;   // true: ItemInnerSpacing before it, it belongs to the previous item's group
   std::function<void()> submenu;  // set: the ">>" entry is a submenu with these items instead of an action
 };
-// An icon button and its overflow menu action share a label, callback, and enabled state.
 ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger,
                           bool enabled = true, bool tight = false);
 // A drop-down button that opens `items` in a popup; in the overflow menu they become a submenu.

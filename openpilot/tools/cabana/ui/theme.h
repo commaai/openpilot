@@ -17,7 +17,7 @@ struct Palette {
   ImVec4 accent;
   ImVec4 border, separator;
   ImVec4 tab, tab_hovered, table_header;
-  ImVec4 grid;   // chart grid lines
+  ImVec4 grid;
   ImVec4 badge;  // the fill behind the time labels drawn over a chart
 };
 
@@ -38,7 +38,6 @@ void applyTheme(int theme);  // Safe to call at runtime.
 bool isDarkTheme();
 const Palette &palette();
 
-// the fill behind a signal's bits and rows
 CabanaColor signalFillColor(const CabanaColor &c);
 
 ImFont *boldFont();

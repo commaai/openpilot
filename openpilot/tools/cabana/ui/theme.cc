@@ -121,7 +121,6 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
   c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
-  // Keep the scrollbar grab distinct from its window-colored track.
   c[ImGuiCol_ScrollbarGrab] = p.border;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;

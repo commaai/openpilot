@@ -491,7 +491,6 @@ void SignalView::drawValueDescriptionDlg() {
   desc_sig_ = nullptr;
 }
 
-// plot_btn + remove_btn side by side, with the inner spacing before and between them
 static ImVec2 indexButtonsSize(float button) {
   return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
 }
@@ -874,7 +873,6 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  // plot_btn + remove_btn, right aligned in the value column
   const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
   const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
