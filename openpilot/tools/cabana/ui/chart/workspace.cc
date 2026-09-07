@@ -278,7 +278,11 @@ void ChartsWidget::drawSignalBrowser() {
   if (iconButton("collapse_signals", icon::ARROWS_COLLAPSE, "Collapse all")) expanded.clear();
   if (browser_paths_.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
   else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No signals match your search.");
-  if (ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar)) {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, ImGui::GetStyle().WindowPadding.y));
+  const bool browser_visible = ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding,
+                                                ImGuiWindowFlags_HorizontalScrollbar);
+  ImGui::PopStyleVar();
+  if (browser_visible) {
     if (filter_changed) ImGui::SetScrollY(0);
     const auto rows = browser_tree_.visible(expanded);
     ImGuiListClipper clipper;
