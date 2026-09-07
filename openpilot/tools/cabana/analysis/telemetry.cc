@@ -46,6 +46,18 @@ void extractTelemetry(cereal::Event::Reader event, Telemetry &out) {
   }
 }
 
+void prepareTelemetryMerge(const Telemetry &destination, Telemetry &batch) {
+  for (auto &[path, samples] : batch) {
+    auto old = destination.find(path);
+    if (old == destination.end()) continue;
+    std::vector<Sample> merged;
+    merged.reserve(old->second.size() + samples.size());
+    std::merge(old->second.begin(), old->second.end(), samples.begin(), samples.end(),
+               std::back_inserter(merged), [](const auto &a, const auto &b) { return a.x < b.x; });
+    samples.swap(merged);
+  }
+}
+
 void mergeTelemetry(Telemetry &destination, Telemetry source) {
   for (auto &[path, samples] : source) {
     auto &points = destination[path];

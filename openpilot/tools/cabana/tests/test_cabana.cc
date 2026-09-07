@@ -536,6 +536,31 @@ void test_cereal_telemetry() {
   REQUIRE(data.at("/carState/vEgo").back().x == 1);
 }
 
+void test_prepared_telemetry_merge() {
+  const cabana::Telemetry published{{"a", {{2, 20}, {4, 40}}}, {"unchanged", {{1, 10}}}};
+  for (const auto &samples : std::vector<std::vector<cabana::Sample>>{
+         {}, {{0, 0}}, {{5, 50}}, {{1, 10}, {2, 21}, {3, 30}, {6, 60}}}) {
+    cabana::Telemetry batch{{"a", samples}, {"new", {{1, 100}}}};
+    auto expected = published;
+    cabana::mergeTelemetry(expected, batch);
+    cabana::prepareTelemetryMerge(published, batch);
+    REQUIRE(!batch.count("unchanged"));
+    REQUIRE(published.at("a").size() == 2);
+    REQUIRE(published.at("a").front().y == 20);
+    auto actual = published;
+    for (auto &[path, points] : batch) actual[path].swap(points);
+    REQUIRE(actual.size() == expected.size());
+    for (const auto &[path, points] : expected) {
+      REQUIRE(actual.at(path).size() == points.size());
+      for (size_t i = 0; i < points.size(); ++i) {
+        REQUIRE(actual.at(path)[i].x == points[i].x);
+        REQUIRE(actual.at(path)[i].y == points[i].y);
+      }
+    }
+    REQUIRE(batch.at("a").size() == 2);  // retired data is owned by the worker's batch
+  }
+}
+
 void test_layout_equations() {
   cabana::Telemetry data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
   REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
@@ -565,6 +590,7 @@ void test_layout_equations() {
 void test_cabana_core() {
   test_pixel_envelope();
   test_cereal_telemetry();
+  test_prepared_telemetry_merge();
   test_layout_equations();
   test_chart_analysis();
   test_chart_layout();

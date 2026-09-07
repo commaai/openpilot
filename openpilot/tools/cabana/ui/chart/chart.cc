@@ -1,6 +1,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS  // ImVec2 arithmetic, must precede imgui.h
 #include "tools/cabana/ui/chart/chart.h"
 
+#include "tools/cabana/ui/threadpool.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -111,18 +113,48 @@ void ChartView::addTelemetry(const std::string &path, CabanaColor color) {
 }
 
 void ChartView::updateTelemetry() {
-  for (auto &s : sigs_) {
-    if (s.path.empty()) continue;
-    s.raw_vals.clear();
-    const auto *samples = charts_widget_->telemetrySeries(s.path);
-    if (samples) {
-      const double origin = can->beginMonoTime() * 1e-9;
-      s.raw_vals.reserve(samples->size());
-      for (const auto &p : *samples) s.raw_vals.emplace_back(p.x - origin, p.y);
+  telemetry_dirty_ = true;
+  pollTelemetry();
+}
+
+void ChartView::pollTelemetry() {
+  if (telemetry_task_.valid()) {
+    if (telemetry_task_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    telemetry_task_.get();
+    for (size_t i = 0; i < std::min(sigs_.size(), telemetry_result_->size()); ++i) {
+      auto &ready = (*telemetry_result_)[i];
+      auto &s = sigs_[i];
+      if (ready.path.empty() || s.path != ready.path) continue;
+      if (s.transform.type != ready.transform.type || s.transform.scale != ready.transform.scale ||
+          s.transform.offset != ready.transform.offset || s.transform.window != ready.transform.window) continue;
+      s.raw_vals.swap(ready.raw_vals);
+      s.vals.swap(ready.vals);
+      s.step_vals.swap(ready.step_vals);
+      std::swap(s.segment_tree, ready.segment_tree);
+      s.transform_state = std::move(ready.transform_state);
+      s.track_pt = {};
     }
-    rebuildSeries(s);
+    updateAxisY();
+    ThreadPool::instance().run([retired = std::move(telemetry_result_)]() mutable { retired.reset(); });
   }
-  updateAxisY();
+  if (!telemetry_dirty_) return;
+  telemetry_dirty_ = false;
+  if (std::none_of(sigs_.begin(), sigs_.end(), [](const auto &s) { return !s.path.empty(); })) return;
+  telemetry_result_ = std::make_shared<std::vector<SigItem>>();
+  const double origin = can->beginMonoTime() * 1e-9;
+  for (const auto &s : sigs_) {
+    auto &item = telemetry_result_->emplace_back();
+    if (s.path.empty()) continue;
+    item.path = s.path;
+    item.transform = s.transform;
+    if (const auto *samples = charts_widget_->telemetrySeries(s.path)) {
+      item.raw_vals.reserve(samples->size());
+      for (const auto &p : *samples) item.raw_vals.emplace_back(p.x - origin, p.y);
+    }
+  }
+  telemetry_task_ = ThreadPool::instance().run([result = telemetry_result_, build_tree = !can->liveStreaming()]() {
+    for (auto &s : *result) if (!s.path.empty()) buildSeries(s, 0, build_tree);
+  });
 }
 
 bool ChartView::hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const {
@@ -135,6 +167,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   if (sigs_.empty()) {
     charts_widget_->removeChart(this);
   } else if (sigs_.size() != prev_size) {
+    updateTelemetry();
     charts_widget_->seriesChanged();
     updateAxisY();
   }
@@ -261,6 +294,10 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
 }
 
 void ChartView::rebuildSeries(SigItem &s, size_t begin) {
+  buildSeries(s, begin, !can->liveStreaming());
+}
+
+void ChartView::buildSeries(SigItem &s, size_t begin, bool build_tree) {
   if (begin == 0) {
     s.vals.clear();
     s.step_vals.clear();
@@ -274,7 +311,7 @@ void ChartView::rebuildSeries(SigItem &s, size_t begin) {
       s.step_vals.emplace_back(pt.x, *value);
     }
   }
-  if (!can->liveStreaming()) s.segment_tree.build(s.vals.size(), [&s](int i) { return s.vals[i].y; });
+  if (build_tree) s.segment_tree.build(s.vals.size(), [&s](int i) { return s.vals[i].y; });
   s.track_pt = {};
 }
 
@@ -282,6 +319,7 @@ void ChartView::configureSignal(size_t index, const chart::TransformSettings &tr
   if (index >= sigs_.size()) return;
   auto &s = sigs_[index];
   s.transform = transform;
+  if (!s.path.empty()) telemetry_dirty_ = true;
   s.visible = visible;
   if (color) s.color = *color;
   rebuildSeries(s);
@@ -564,6 +602,7 @@ void ChartView::takeSignalsFrom(ChartView *source) {
     sigs_.push_back(std::move(s));
   }
   source->sigs_.clear();
+  updateTelemetry();
   updateAxisY();
   charts_widget_->removeChart(source);
 }
@@ -581,6 +620,7 @@ std::vector<ChartView::SigItem> ChartView::takeExtraSignals() {
 
 void ChartView::adoptSignal(SigItem s) {
   sigs_.push_back(std::move(s));
+  updateTelemetry();
   updateAxisY();
 }
 

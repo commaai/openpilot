@@ -575,6 +575,8 @@ void ChartsWidget::removeAll() {
   for (auto c : all) removeChart(c);
   tab_charts_.clear();
   tab_names_.clear();
+  ++equation_revision_;
+  telemetry_dirty_ = false;
   equations_.clear();
   calculated_.clear();
   equation_errors_.clear();
@@ -611,6 +613,8 @@ void ChartsWidget::handleEvents() {
 }
 
 void ChartsWidget::draw() {
+  pollTelemetry();
+  for (auto &c : charts_) c->pollTelemetry();
   deleted_charts_.clear();
   // the floating window is a top level window sized to its contents: keep it inside the main viewport so its
   // toolbar stays reachable, then let the user resize it

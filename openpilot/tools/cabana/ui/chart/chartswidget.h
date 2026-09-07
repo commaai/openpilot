@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <future>
 #include <memory>
 #include <optional>
 #include <string>
@@ -98,6 +99,7 @@ private:
   void splitChart(ChartView *chart);
   ImRect chartVisibleRect(ChartView *chart);
   void telemetryChanged();
+  void pollTelemetry();
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
@@ -139,6 +141,15 @@ private:
   std::unordered_map<int, std::string> tab_names_;
   std::vector<cabana::Equation> equations_;
   cabana::Telemetry calculated_;
+  struct EquationResult {
+    cabana::Telemetry values;
+    std::string errors;
+    size_t revision = 0;
+  };
+  std::shared_ptr<EquationResult> equation_result_;
+  std::future<void> equation_task_;
+  bool telemetry_dirty_ = false;
+  size_t equation_revision_ = 0;
   std::string equation_errors_;
   std::string browser_filter_;
   std::vector<std::string> browser_paths_;
