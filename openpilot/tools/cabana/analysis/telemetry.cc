@@ -54,7 +54,7 @@ struct TelemetryExtractor::Impl {
     std::vector<std::pair<capnp::StructSchema::Field, std::unique_ptr<Node>>> fields;
     std::vector<std::unique_ptr<Node>> elements;
 
-    void read(capnp::DynamicValue::Reader value, double time, Telemetry &out) {
+    void read(capnp::DynamicValue::Reader value, double time, Telemetry &telemetry) {
       double number;
       switch (value.getType()) {
         case capnp::DynamicValue::BOOL: number = value.as<bool>(); break;
@@ -70,20 +70,20 @@ struct TelemetryExtractor::Impl {
             }
           }
           for (auto &[field, child] : fields) {
-            if (node.has(field)) child->read(node.get(field), time, out);
+            if (node.has(field)) child->read(node.get(field), time, telemetry);
           }
           return;
         }
         case capnp::DynamicValue::LIST: {
           auto list = value.as<capnp::DynamicList>();
           while (elements.size() < list.size()) elements.push_back(std::make_unique<Node>(path + '/' + std::to_string(elements.size())));
-          for (size_t i = 0; i < list.size(); ++i) elements[i]->read(list[i], time, out);
+          for (size_t i = 0; i < list.size(); ++i) elements[i]->read(list[i], time, telemetry);
           return;
         }
         default: return;
       }
       if (std::isfinite(number)) {
-        if (!samples) samples = &out[path];
+        if (!samples) samples = &telemetry[path];
         samples->emplace_back(time, number);
       }
     }
