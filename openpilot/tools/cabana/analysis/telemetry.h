@@ -18,6 +18,19 @@ using Samples = std::vector<Sample>;
 using TelemetrySnapshot = std::map<std::string, std::shared_ptr<const Samples>>;
 using Telemetry = std::map<std::string, std::vector<Sample>>;
 
+// Reuses paths, schema fields and sample destinations across a batch of events.
+// The destination map must outlive the extractor and must not erase entries while it is in use.
+class TelemetryExtractor {
+public:
+  explicit TelemetryExtractor(Telemetry &destination);
+  ~TelemetryExtractor();
+  void extract(cereal::Event::Reader event);
+
+private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};
+
 // PlotJuggler's cereal path convention, including indexed lists, active unions and root metadata.
 void extractTelemetry(cereal::Event::Reader event, Telemetry &out);
 void mergeTelemetry(Telemetry &destination, Telemetry source);
