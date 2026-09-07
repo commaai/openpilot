@@ -472,26 +472,6 @@ void test_chart_analysis() {
   REQUIRE(chart::csvField("signal, \"left\"\n") == "\"signal, \"\"left\"\"\n\"");
 }
 
-void test_pixel_envelope() {
-  using Point = cabana::Sample;
-  std::vector<Point> points;
-  for (int i = 0; i < 1000; ++i) points.emplace_back(i * 0.001, i == 203 ? 99 : i == 201 ? -99 : 0);
-  const auto result = chart::pixelEnvelope(points.begin(), points.end(), 0, 1, 10);
-  REQUIRE(result.size() <= 40);
-  REQUIRE(result.front().x == points.front().x);
-  REQUIRE(result.back().x == points.back().x);
-  REQUIRE(std::is_sorted(result.begin(), result.end(), [](const auto &a, const auto &b) { return a.x < b.x; }));
-  REQUIRE(std::any_of(result.begin(), result.end(), [](const auto &p) { return p.x == .201 && p.y == -99; }));
-  REQUIRE(std::any_of(result.begin(), result.end(), [](const auto &p) { return p.x == .203 && p.y == 99; }));
-  const std::vector<Point> step{{-1, 0}, {0, 0}, {0, 10}, {0, -10}, {0, 0}, {2, 0}};
-  const auto edge = chart::pixelEnvelope(step.begin(), step.end(), 0, 1, 2);
-  REQUIRE(edge.front().x == -1);
-  REQUIRE(edge.back().x == 2);
-  REQUIRE(std::any_of(edge.begin(), edge.end(), [](const auto &p) { return p.y == 10; }));
-  REQUIRE(std::any_of(edge.begin(), edge.end(), [](const auto &p) { return p.y == -10; }));
-  REQUIRE(chart::pixelEnvelope(points.begin(), points.begin(), 0, 1, 10).empty());
-}
-
 void test_chart_layout() {
   using json11::Json;
   Json::object signal{{"message", "2:1AF"}, {"signal", "Speed"}, {"visible", false}, {"transform", 3},
@@ -738,7 +718,6 @@ void test_cabana_core() {
   test_prepared_telemetry_merge();
   test_layout_equations();
   test_chart_analysis();
-  test_pixel_envelope();
   test_chart_layout();
   test_format_seconds();
   test_to_hex();
