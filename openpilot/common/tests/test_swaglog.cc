@@ -2,6 +2,9 @@
 #include <string>
 
 #include <cstdint>
+#include <iostream>
+#include <iterator>
+#include <sys/wait.h>
 #include <sys/mman.h>
 #include <sys/file.h>
 #include <fcntl.h>
@@ -47,11 +50,42 @@ void test_swaglog() {
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
 
+  // An initialized logger must drop instead of blocking on another descriptor's lock.
+  const uint64_t write = positions[1];
+  CHECK(flock(fd, LOCK_EX) == 0);
+  LOGD("contended");
+  CHECK(positions[1] == write);
+  CHECK(flock(fd, LOCK_UN) == 0);
+  LOGD("after contention");
+  CHECK(positions[1] > write);
+
   CHECK(munmap(mapping, 4096) == 0);
   CHECK(close(fd) == 0);
   CHECK(unlink(Path::swaglog_ipc().c_str()) == 0);
 }
 
-int main() {
+int main(int argc, char **argv) {
+  // Used by test_logmessaged.py to exercise the real C++ producer with Python's reader.
+  if (argc >= 2 && std::string(argv[1]) == "--emit") {
+    const std::string message{std::istreambuf_iterator<char>(std::cin), {}};
+    if (argc == 3) {
+      for (int i = 0; i < std::stoi(argv[2]); ++i) LOGD("%s:%d", message.c_str(), i);
+    } else {
+      LOGD("%s", message.c_str());
+    }
+    return 0;
+  }
+  if (argc == 2 && std::string(argv[1]) == "--fork") {
+    LOGD("parent");
+    const pid_t pid = fork();
+    if (pid < 0) return 1;
+    if (pid == 0) {
+      LOGD("child");
+      _exit(0);
+    }
+    int status = 0;
+    if (waitpid(pid, &status, 0) != pid) return 1;
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
+  }
   return run_native_test(test_swaglog);
 }

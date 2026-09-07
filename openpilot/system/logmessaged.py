@@ -24,7 +24,7 @@ def main() -> NoReturn:
     while True:
       dat = queue.receive()
       if dat is None:
-        time.sleep(0.01)
+        time.sleep(0.1)
         continue
       level = dat[0]
       record = dat[1:].decode("utf-8")
