@@ -112,7 +112,8 @@ open the central **Signal Analysis** workspace, with the route's numeric cereal 
 left sidebar and synchronized playback/video on the right. Switch back to **CAN Editor** for
 DBC work. Cereal plotting does not need a DBC or CAN messages.
 
-Search **Route Signals** for fields such as `/carState/vEgo`, `/carControl/actuators/accel`, or
+Browse **Route Signals** as a tree of services, fields, and array indices. Search expands matching
+branches and restores your previous expansion state when cleared. Search for fields such as `/carState/vEgo`, `/carControl/actuators/accel`, or
 `/modelV2/position/x/0`. Double-click a field to create a plot, or drag it onto an existing plot
 to compare signals. Arrays, booleans, enums, and nested numeric fields are included. Hover a
 field to inspect its value. Imported equations also appear in the browser.
