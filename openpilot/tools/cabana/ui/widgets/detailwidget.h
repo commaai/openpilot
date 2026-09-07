@@ -73,7 +73,7 @@ private:
   void drawTabWidget();
   int findOrAddTab(const MessageId& message_id);
   void showTabBarContextMenu(int index);
-  void editMsg();
+  void editMsg(float parent_width);
   void updateState(const std::set<MessageId> *msgs = nullptr);
 
   MessageId msg_id_;

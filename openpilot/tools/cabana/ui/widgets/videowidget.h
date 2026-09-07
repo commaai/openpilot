@@ -89,10 +89,10 @@ public:
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
   // vipc thread started and stopped
   void setVisible(bool visible);
-  void showThumbnail(double seconds);
   std::string whatsThis() const;
 
 private:
+  void showThumbnail(double seconds);
   void updateSliderThumbnail();  // the thumbnail follows the mouse over the slider
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
@@ -102,7 +102,6 @@ private:
   void skipToEnd();
   void toggleTimeDisplay();
   void createSpeedDropdown();
-  void drawSpeedDropdown(float width);
   void drawSpeedMenuItems();
   void loopPlaybackClicked();
   void cropVideoClicked();

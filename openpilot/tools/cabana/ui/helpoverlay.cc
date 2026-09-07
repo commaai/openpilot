@@ -139,15 +139,19 @@ void HelpOverlay::toggle() {
 }
 
 void HelpOverlay::add(const std::string &text, const ImRect &rect) {
-  if (visible_) texts_.emplace_back(text, rect);
+  if (visible_) texts_.push_back({text, rect, ImGui::GetWindowViewport()});
 }
 
 void HelpOverlay::draw() {
   if (!visible_) return;
-  const ImGuiViewport *viewport = ImGui::GetMainViewport();
-  ImDrawList *dl = ImGui::GetForegroundDrawList();
-  const ImRect work_rect(viewport->WorkPos, ImVec2(viewport->WorkPos.x + viewport->WorkSize.x, viewport->WorkPos.y + viewport->WorkSize.y));
-  dl->AddRectFilled(viewport->Pos, ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y), IM_COL32(0, 0, 0, 50));
+  // Each panel belongs to a viewport; detached panels need their own foreground layer.
+  std::vector<ImGuiViewport *> viewports{ImGui::GetMainViewport()};
+  for (const auto &entry : texts_) {
+    if (std::find(viewports.begin(), viewports.end(), entry.viewport) == viewports.end()) viewports.push_back(entry.viewport);
+  }
+  for (auto *viewport : viewports) {
+    ImGui::GetForegroundDrawList(viewport)->AddRectFilled(viewport->Pos, ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y), IM_COL32(0, 0, 0, 50));
+  }
   ImFont *font = ImGui::GetFont();
   ImFont *bold_font = boldFont() ? boldFont() : font;
   const float font_size = ImGui::GetFontSize();
@@ -156,7 +160,8 @@ void HelpOverlay::draw() {
     if (r.swatch) return font_size;
     return (r.bold ? bold_font : font)->CalcTextSizeA(font_size, FLT_MAX, 0.0f, r.text.c_str()).x;
   };
-  for (const auto &[raw, rect] : texts_) {
+  for (const auto &[raw, rect, viewport] : texts_) {
+    ImDrawList *dl = ImGui::GetForegroundDrawList(viewport);
     if (raw.empty()) continue;
     const auto lines = parseHelpHtml(raw);
     float width = 0;
@@ -167,12 +172,10 @@ void HelpOverlay::draw() {
     }
     const ImVec2 size(width, lines.size() * line_h);
     const ImVec2 center((rect.Min.x + rect.Max.x) * 0.5f, (rect.Min.y + rect.Max.y) * 0.5f);
-    if (!work_rect.Contains(center)) continue;  // a torn off panel is in another viewport
     const ImVec2 min(center.x - size.x * 0.5f - 8.0f, center.y - size.y * 0.5f - 8.0f);
     const ImVec2 max(center.x + size.x * 0.5f + 8.0f, center.y + size.y * 0.5f + 8.0f);
-    // pale yellow in the light theme
-    const ImU32 tooltip_base = isDarkTheme() ? ImGui::GetColorU32(ImGuiCol_PopupBg) : IM_COL32(255, 255, 220, 255);
-    dl->AddRectFilled(min, max, tooltip_base);
+    dl->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_PopupBg), ImGui::GetStyle().PopupRounding);
+    dl->AddRect(min, max, ImGui::GetColorU32(ImGuiCol_Border), ImGui::GetStyle().PopupRounding);
     float y = min.y + 8.0f;
     for (const auto &line : lines) {
       float x = min.x + 8.0f;
@@ -182,7 +185,7 @@ void HelpOverlay::draw() {
         if (r.swatch) {
           dl->AddRectFilled(ImVec2(x + 2, y + 3), ImVec2(x + font_size - 2, y + font_size - 1), color);
         } else {
-          if (r.chip) dl->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + font_size), IM_COL32(211, 211, 211, 255));  // lightGray
+          if (r.chip) dl->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + font_size), ImGui::GetColorU32(ImGuiCol_Button), 3.0f);
           dl->AddText(r.bold ? bold_font : font, font_size, ImVec2(x, y), color, r.text.c_str());
         }
         x += w;

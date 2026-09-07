@@ -3,6 +3,10 @@
 #include <algorithm>
 
 SegmentManager::~SegmentManager() {
+  stop();
+}
+
+void SegmentManager::stop() {
   {
     std::unique_lock lock(mutex_);
     exit_ = true;
