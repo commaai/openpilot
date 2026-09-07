@@ -105,9 +105,7 @@ void DetailWidget::drawToolBar() {
   }, "Heatmap: " + heatmap_all_text_, [this]() { heatmap_live_ = false; binary_view_->setHeatmapLiveMode(false); }});
   items.push_back({1.0f, []() { ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); }});
   items.back().in_menu = false;
-  items.push_back({iconButtonWidth(), [this]() {
-    if (iconButton("edit_msg", icon::PENCIL, "Edit Message")) editMsg();
-  }, "Edit Message", [this]() { editMsg(); }});
+  items.push_back(toolbarAction("edit_msg", icon::PENCIL, "Edit Message", [this]() { editMsg(); }));
   items.push_back({iconButtonWidth(), [this]() {
     ImGui::BeginDisabled(!action_remove_msg_enabled_);
     if (iconButton("remove_msg", icon::TRASH)) UndoStack::instance()->push(new RemoveMsgCommand(msg_id_));

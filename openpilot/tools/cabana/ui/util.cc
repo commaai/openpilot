@@ -65,7 +65,7 @@ bool clearableInput(const char *label, std::string *s, const char *hint, ImGuiIn
   if (!s->empty()) {
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     ImGui::PushID(label);
-    if (toolButton("clear", icon::X_LG)) {
+    if (iconButton("clear", icon::X_LG)) {
       s->clear();
       changed = true;
     }
@@ -188,16 +188,6 @@ bool squareIconButton(const char *id, const char *icon) {
 
 bool iconButton(const char *id, const char *icon, const char *tooltip) {
   const bool clicked = squareIconButton(id, icon);
-  if (tooltip && *tooltip) ImGui::SetItemTooltip("%s", tooltip);
-  return clicked;
-}
-
-bool toolButton(const char *id, const char *icon, const char *tooltip, const char *text) {
-  const bool has_text = text && *text;
-  // a single glyph (an icon) gets a square, a text label its own width
-  const bool square = !has_text && ImTextCountCharsFromUtf8(icon, nullptr) == 1;
-  const bool clicked = square ? squareIconButton(id, icon)
-                              : ImGui::Button((has_text ? std::string(icon) + " " + text + "###" + id : std::string(icon) + "###" + id).c_str());
   if (tooltip && *tooltip) ImGui::SetItemTooltip("%s", tooltip);
   return clicked;
 }
@@ -407,6 +397,14 @@ bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size, ImGuiWin
 
 // tool bar
 
+ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger, bool enabled, bool tight) {
+  return {iconButtonWidth(), [=]() {
+    ImGui::BeginDisabled(!enabled);
+    if (iconButton(id, icon, label)) trigger();
+    ImGui::EndDisabled();
+  }, label, trigger, enabled, true, tight};
+}
+
 float toolbarButtonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
 }
@@ -429,12 +427,12 @@ float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index) {
   return w;
 }
 
-void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index) {
+void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, float width) {
   const ImGuiStyle &style = ImGui::GetStyle();
   spacer_index = std::min(spacer_index, items.size());
   const float right_width = toolbarGroupWidth(items, spacer_index, items.size());
   const float start_x = ImGui::GetCursorPosX();
-  const float avail = ImGui::GetContentRegionAvail().x;
+  const float avail = width < 0.0f ? ImGui::GetContentRegionAvail().x : width;
   const float right_edge = start_x + avail;
   const float extension_width = iconButtonWidth();
 
@@ -463,7 +461,7 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index) {
     // the extension button sits fully inside the toolbar: its right edge is the content region right edge
     const float extension_x = std::max(start_x, right_edge - extension_width);
     visible == 0 ? ImGui::SetCursorPosX(extension_x) : ImGui::SameLine(extension_x);
-    if (toolButton("toolbar_extension", icon::CHEVRON_DOUBLE_RIGHT, "More")) ImGui::OpenPopup("toolbar_extension_menu");
+    if (iconButton("toolbar_extension", icon::CHEVRON_DOUBLE_RIGHT, "More")) ImGui::OpenPopup("toolbar_extension_menu");
     // the popup opens inward: its right edge is aligned with the button so it stays inside the window
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_extension_menu")) {

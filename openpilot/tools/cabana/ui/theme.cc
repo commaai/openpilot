@@ -161,30 +161,7 @@ CabanaColor signalFillColor(const CabanaColor &c) {
   return CabanaColor::fromHsv(h, std::min(1.0f, s * 1.4f), v * 0.8f, c.a / 255.0f);
 }
 
-ImVec4 readableCurveColor(const CabanaColor &c) {
-  ImVec4 color = toImVec4(c);
-  auto luminance = [](const ImVec4 &v) {
-    auto linear = [](float x) { return x <= 0.04045f ? x / 12.92f : std::pow((x + 0.055f) / 1.055f, 2.4f); };
-    return 0.2126f * linear(v.x) + 0.7152f * linear(v.y) + 0.0722f * linear(v.z);
-  };
-  // blend a little towards the plot's opposite tone until the curve stands out from it
-  const float target = g_dark ? 1.0f : 0.0f;
-  for (int i = 0; i < 24 && (g_dark ? luminance(color) < 0.25f : luminance(color) > 0.23f); ++i) {
-    color.x += (target - color.x) * 0.1f;
-    color.y += (target - color.y) * 0.1f;
-    color.z += (target - color.z) * 0.1f;
-  }
-  return color;
-}
-
-void sectionTitle(const char *title) {
-  ImGui::PushFont(g_bold_font, ImGui::GetFontSize());
-  ImGui::TextUnformatted(title);
-  ImGui::PopFont();
-}
-
 ImFont *boldFont() { return g_bold_font; }
-ImFont *monoFont() { return g_mono_font; }
 
 void pushMonoFont(float size) {
   if (!g_mono_font) return;

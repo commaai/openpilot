@@ -67,13 +67,11 @@ int doubleValidator(ImGuiInputTextCallbackData *data);
 int ipValidator(ImGuiInputTextCallbackData *data);
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 
-// Buttons come in three standard shapes, all one frame height tall with the style's padding and rounding:
+// Buttons are one frame height tall with the style's padding and rounding:
 //   ImGui::Button  a framed text button
 //   iconButton     a framed square icon button
-//   toolButton     iconButton with an optional text after the icon (tool bars)
 // Adjacent buttons of a group are ItemInnerSpacing apart, groups are ItemSpacing apart.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
-bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr);
 float iconButtonWidth();  // the side of a square icon button
 
 // tooltip for the last item that also shows while the item is disabled
@@ -161,11 +159,15 @@ struct ToolbarItem {
   bool tight = false;   // true: ItemInnerSpacing before it, it belongs to the previous item's group
   std::function<void()> submenu;  // set: the ">>" entry is a submenu with these items instead of an action
 };
-float toolbarButtonWidth(const std::string &label);  // a flat text button
+// An icon button and its overflow menu action share a label, callback, and enabled state.
+ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger,
+                          bool enabled = true, bool tight = false);
+float toolbarButtonWidth(const std::string &label);  // a text button
 // the width of every item plus the spacing between neighbors and the two groups
 float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);
 // items before spacer_index sit at the left, the rest are right aligned; the overflow goes into the ">>" menu
-void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index);
+// width < 0 uses the available content width.
+void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, float width = -1.0f);
 
 // an auto-raise button that opens `popup_id` below itself, with a dropdown arrow after the text. width 0:
 // sized to the text, otherwise the text and the arrow are centered in the button

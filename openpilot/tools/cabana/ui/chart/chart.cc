@@ -71,10 +71,10 @@ void ChartView::drawMenuActions() {
 // the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
 void ChartView::createToolButtons() {
   ImGui::SetCursorScreenPos(layout_.close_btn_rect.Min);
-  bool close_clicked = toolButton("close_btn", icon::X_LG, "Remove Chart");
+  bool close_clicked = iconButton("close_btn", icon::X_LG, "Remove Chart");
 
   ImGui::SetCursorScreenPos(layout_.manage_btn_rect.Min);
-  if (toolButton("manage_btn", icon::THREE_DOTS_VERTICAL, "")) ImGui::OpenPopup("manage_menu");
+  if (iconButton("manage_btn", icon::THREE_DOTS_VERTICAL, "")) ImGui::OpenPopup("manage_menu");
   if (ImGui::BeginPopup("manage_menu")) {
     drawMenuActions();
     ImGui::EndPopup();

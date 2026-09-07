@@ -151,24 +151,13 @@ void VideoWidget::drawPlaybackController() {
                                         : formatTime(can->currentSec(), true);
   const char *time_tooltip = settings.absolute_time ? "Elapsed time" : "Absolute time";
 
-  auto seek_backward = []() { can->seekTo(can->currentSec() - 1); };
-  auto toggle_play = []() { can->pause(!can->isPaused()); };
-  auto seek_forward = []() { can->seekTo(can->currentSec() + 1); };
-
   std::vector<ToolbarItem> items = {
-    {iconButtonWidth(), [&]() { if (toolButton("rewind", icon::REWIND, "Seek backward")) seek_backward(); },
-     "Seek backward", seek_backward},
-    {iconButtonWidth(), [&]() { if (toolButton("play", play_icon, play_tooltip)) toggle_play(); },
-     play_tooltip, toggle_play, true, true, true},
-    {iconButtonWidth(), [&]() { if (toolButton("fast-forward", icon::FAST_FORWARD, "Seek forward")) seek_forward(); },
-     "Seek forward", seek_forward, true, true, true},
+    toolbarAction("rewind", icon::REWIND, "Seek backward", []() { can->seekTo(can->currentSec() - 1); }),
+    toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }, true, true),
+    toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true),
   };
   if (can->liveStreaming()) {
-    items.push_back({iconButtonWidth(), [&]() {
-      ImGui::BeginDisabled(!skip_to_end_enabled_);
-      if (toolButton("skip-end", icon::SKIP_END, "Skip to the end")) skipToEnd();
-      ImGui::EndDisabled();
-    }, "Skip to the end", [this]() { skipToEnd(); }, skip_to_end_enabled_, true, true});
+    items.push_back(toolbarAction("skip-end", icon::SKIP_END, "Skip to the end", [this]() { skipToEnd(); }, skip_to_end_enabled_, true));
   }
   if (slider_ || msgs_received_) {
     // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
@@ -202,22 +191,17 @@ void VideoWidget::drawPlaybackController() {
     return item;
   };
   const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
-  items.push_back({iconButtonWidth(), [&]() {
-    if (toolButton("crop_video", aspect_ratio_icon, "Crop to fill")) cropVideoClicked();
-  }, "Crop to fill", [this]() { cropVideoClicked(); }});
+  items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
   if (!can->liveStreaming()) {
     items.push_back(separator());
-    items.push_back({iconButtonWidth(), [&]() { if (toolButton("loop", loop_icon, "Loop playback")) loopPlaybackClicked(); },
-                     "Loop playback", [this]() { loopPlaybackClicked(); }, true, true, true});
+    items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
   }
   items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }, "Speed"});
   items.back().tight = true;  // with the loop button, like the playback buttons
   items.back().submenu = [this]() { drawSpeedMenuItems(); };
   if (!can->liveStreaming()) {
     items.push_back(separator());
-    items.push_back({iconButtonWidth(),
-                     [&]() { if (toolButton("route_info", icon::INFO_CIRCLE, "View route details")) showRouteInfo(); },
-                     "View route details", [this]() { showRouteInfo(); }, true, true, true});
+    items.push_back(toolbarAction("route_info", icon::INFO_CIRCLE, "View route details", [this]() { showRouteInfo(); }, true, true));
   }
 
   drawToolbar(items, spacer_index);

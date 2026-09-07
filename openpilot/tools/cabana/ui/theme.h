@@ -35,16 +35,10 @@ void applyTheme(int theme);  // sets the imgui and implot styles from the palett
 bool isDarkTheme();  // the theme applyTheme() resolved
 const Palette &palette();  // the palette applyTheme() resolved
 
-// a saved series color with its brightness adapted to the theme, so a dark curve stays visible on the dark plot
-ImVec4 readableCurveColor(const CabanaColor &c);
 // the fill behind a signal's bits and rows
 CabanaColor signalFillColor(const CabanaColor &c);
 
-// bold text at the current size
-void sectionTitle(const char *title);
-
 ImFont *boldFont();
-ImFont *monoFont();
 void pushMonoFont(float size = 0.0f);
 void popMonoFont();
 void pushBoldFont();

@@ -261,17 +261,10 @@ void MessagesWidget::drawToolBar() {
     ImGui::SetItemTooltip("Suppress defined signals");
   }});
 
-  // the tool bar lays out in the region left of the view button (GetContentRegionAvail reads ContentRegionRect)
-  ImGuiWindow *window = ImGui::GetCurrentWindow();
   const float reserved = iconButtonWidth() + style.ItemSpacing.x;
-  const float backup_content_max_x = window->ContentRegionRect.Max.x, backup_work_max_x = window->WorkRect.Max.x;
-  window->ContentRegionRect.Max.x -= reserved;
-  window->WorkRect.Max.x -= reserved;
-  drawToolbar(items, spacer_index);
-  window->ContentRegionRect.Max.x = backup_content_max_x;
-  window->WorkRect.Max.x = backup_work_max_x;
+  drawToolbar(items, spacer_index, std::max(0.0f, ImGui::GetContentRegionAvail().x - reserved));
   ImGui::SameLine();
-  if (toolButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
+  if (iconButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
 }
 
 void MessagesWidget::updateTitle() {

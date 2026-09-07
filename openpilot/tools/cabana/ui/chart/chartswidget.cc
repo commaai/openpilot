@@ -166,10 +166,10 @@ void ChartsWidget::drawToolBar() {
   // the labels are captured by reference, they outlive the draw calls below
   std::vector<ToolbarItem> items;
   items.push_back({iconButtonWidth(), [this]() {
-    if (toolButton("new_plot_btn", icon::PLUS_LG, "New Chart")) newChart();
+    if (iconButton("new_plot_btn", icon::PLUS_LG, "New Chart")) newChart();
   }});
   items.push_back({iconButtonWidth(), [this]() {
-    if (toolButton("new_tab_btn", icon::WINDOW_PLUS, "New Tab")) newTab();
+    if (iconButton("new_tab_btn", icon::WINDOW_PLUS, "New Tab")) newTab();
   }});
   items.back().tight = true;
   const std::string title_label = "Charts: " + std::to_string(charts_.size());
@@ -238,29 +238,23 @@ void ChartsWidget::drawToolBar() {
     reset_zoom_text = buf;
     items.push_back({iconButtonWidth(), [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack_.canUndo());
-      if (toolButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack_.undo();
+      if (iconButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack_.undo();
       ImGui::EndDisabled();
     }});
     items.push_back({iconButtonWidth(), [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack_.canRedo());
-      if (toolButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack_.redo();
+      if (iconButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack_.redo();
       ImGui::EndDisabled();
     }});
     items.push_back({toolbarButtonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this, &reset_zoom_text]() {
-      if (toolButton("reset_zoom_btn", icon::ZOOM_OUT, "Reset Zoom", reset_zoom_text.c_str())) zoomReset();
+      if (ImGui::Button((std::string(icon::ZOOM_OUT) + " " + reset_zoom_text + "###reset_zoom_btn").c_str())) zoomReset();
+      ImGui::SetItemTooltip("Reset Zoom");
     }});
   }
-  items.push_back({iconButtonWidth(), [this]() {
-    ImGui::BeginDisabled(charts_.empty());
-    if (toolButton("remove_all_btn", icon::TRASH, "Remove all charts")) removeAll();
-    ImGui::EndDisabled();
-  }, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()});
+  items.push_back(toolbarAction("remove_all_btn", icon::TRASH, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()));
   const char *dock_btn_icon = is_docked_ ? icon::BOX_ARROW_UP_RIGHT : icon::BOX_ARROW_IN_DOWN_LEFT;
   const char *dock_label = is_docked_ ? "Float the charts window" : "Dock the charts window";
-  items.push_back({iconButtonWidth(), [this, dock_btn_icon, dock_label]() {
-    if (toolButton("dock_btn", dock_btn_icon, dock_label)) toggleChartsDocking();
-  }, dock_label, [this]() { toggleChartsDocking(); }});
-  items.back().tight = true;
+  items.push_back(toolbarAction("dock_btn", dock_btn_icon, dock_label, [this]() { toggleChartsDocking(); }, true, true));
 
   // the slider shrinks first, the buttons stay pinned to the right edge
   if (slider_index != (size_t)-1) {
