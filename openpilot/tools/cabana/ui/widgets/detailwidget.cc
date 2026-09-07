@@ -345,8 +345,11 @@ bool EditMessageDialog::draw() {
     ImGui::OpenPopup(window_title_.c_str());
     opened_ = true;
   }
-  setNextDialogWindow(ImVec2(0.0f, 0.0f));
-  ImGui::SetNextWindowSize(ImVec2(width_, 0.0f), ImGuiCond_Always);  // fixed width, the height fits the form
+  // The form needs room for message names and comments even when its panel is narrow.
+  const float max_width = std::max(1.0f, ImGui::GetMainViewport()->WorkSize.x - ImGui::GetStyle().WindowPadding.x * 2);
+  const float min_width = std::min(600.0f, max_width);
+  ImGui::SetNextWindowSizeConstraints(ImVec2(min_width, 0.0f), ImVec2(max_width, FLT_MAX));
+  setNextDialogWindow(ImVec2(std::clamp(width_, min_width, max_width), 0.0f));
   bool open = true;
   if (ImGui::BeginPopupModal(window_title_.c_str(), &open)) {
     const float label_width = ImGui::CalcTextSize("Comment").x + ImGui::GetStyle().ItemSpacing.x * 2;
