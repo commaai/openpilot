@@ -6,12 +6,7 @@ from pathlib import Path
 
 
 class ShmQueue:
-  """Best-effort, single-reader queue using files in shared memory. Pending filenames reserve space before writes.
-
-  Producers share no locks or open handles. Scan pending before ready so a file
-  being published can be counted twice, but is not lost between the two scans.
-  The cap is approximate under concurrent directory changes.
-  """
+  """Best-effort, single-reader queue using files in shared memory."""
   CAPACITY = 64 * 1024 * 1024
   PAGE_SIZE = os.sysconf('SC_PAGE_SIZE')
 
