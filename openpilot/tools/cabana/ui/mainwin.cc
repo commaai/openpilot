@@ -845,7 +845,7 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
-  // A panel never shrinks past half the width where the signal view's toolbar squishes.
+  // Panels can shrink below the full signals toolbar width; extra controls go into overflow menus.
   const float min_panel_width = (SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2) * 0.5f;
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
@@ -915,12 +915,10 @@ void MainWindow::drawLogMessagesPanel() {
 void MainWindow::drawChartsPanel() {
   setNextPanelClass();
   if (beginPanel(CHARTS_PANEL, &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (charts_widget_) {
       help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       charts_widget_->draw();
     }
-    ImGui::EndChild();
   }
   ImGui::End();
 }
@@ -943,12 +941,10 @@ void MainWindow::drawDetailsPanel() {
   auto *detail = center_widget_.getDetailWidget();
   const std::string title = detail ? "CAN Details: " + detail->messageId().toString() + "###CenterWidget" : CENTER_PANEL;
   if (beginPanel(title.c_str(), &details_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     center_widget_.draw();
     if (detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }
-    ImGui::EndChild();
   }
   ImGui::End();
 }

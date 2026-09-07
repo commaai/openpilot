@@ -24,6 +24,7 @@ constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it
 constexpr float SIGNAL_ROW_SCALE = 1.25f;
 constexpr float FILTER_WIDTH = 160.0f;
 constexpr float SPARKLINE_SLIDER_WIDTH = 120.0f;
+constexpr float MIN_SPARKLINE_SLIDER_WIDTH = 60.0f;
 // WARNING: increasing the maximum range can result in severe performance degradation.
 // 30s is a reasonable value at present.
 constexpr int SPARKLINE_RANGE_MAX = 30;
@@ -749,6 +750,39 @@ void SignalView::draw() {
 
   ImGui::EndChild();
   ImGui::PopStyleColor();
+}
+
+void SignalView::drawToolBar() {
+  float slider_width = SPARKLINE_SLIDER_WIDTH;
+  std::vector<ToolbarItem> items;
+  items.push_back({ImGui::CalcTextSize(signal_count_lb_.c_str()).x, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(signal_count_lb_.c_str());
+  }});
+  items.push_back({FILTER_WIDTH, [this]() {
+    ImGui::SetNextItemWidth(FILTER_WIDTH);
+    if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) model_.setFilter(filter_edit_);
+  }});
+  const size_t spacer_index = items.size();
+  const size_t slider_index = items.size();
+  items.push_back({ImGui::CalcTextSize(sparkline_label_.c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x + slider_width, [this, &slider_width]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(sparkline_label_.c_str());
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    const bool in_menu = ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_Popup;
+    int range = settings.sparkline_range;
+    if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, in_menu ? SPARKLINE_SLIDER_WIDTH : slider_width)) {
+      setSparklineRange(range);
+    }
+    ImGui::SetItemTooltip("Sparkline time range");
+  }});
+  items.push_back(toolbarAction("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All", [this]() { collapseAll(); }));
+  const float shrink = std::min(slider_width - MIN_SPARKLINE_SLIDER_WIDTH, toolbarWidth(items, spacer_index) - ImGui::GetContentRegionAvail().x);
+  if (shrink > 0.0f) {
+    slider_width -= shrink;
+    items[slider_index].width -= shrink;
+  }
+  drawToolbar(items, spacer_index);
 }
 
 void SignalView::collapseAll() {
