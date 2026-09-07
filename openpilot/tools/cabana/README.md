@@ -97,12 +97,12 @@ cabana
 
 ## Plotting and analysis
 
-Cabana can use the [openpilot PlotJuggler layouts](../plotjuggler/layouts) directly, including
+Cabana includes [openpilot analysis layouts](layouts), including
 `tuning`, `longitudinal`, `torque`, and camera/debug presets. From this directory, try:
 
 ```shell
 ./cabana --demo --layout tuning
-./cabana "5beb9b58bd12b691/0000010a--a51155e496" --layout ../plotjuggler/layouts/tuning.xml
+./cabana "5beb9b58bd12b691/0000010a--a51155e496" --layout layouts/tuning.json
 ./cabana --stream --layout longitudinal       # local replay or running openpilot
 ./cabana --zmq <ipaddress> --layout tuning    # device running the messaging bridge
 ```
@@ -138,16 +138,41 @@ the visible time range. These operations affect chart values only.
 
 ### Saved layouts and equations
 
-**Layout → Open Layout** accepts PlotJuggler XML and Cabana JSON. XML import preserves named
-tabs, chart titles, overlaid curves, colors, line styles, fixed Y limits, scale/offset transforms,
-and Lua equations used by the bundled layouts. Panels are arranged in Cabana's chart grid.
-The tuning layout's stateful engagement gating and multi-signal calculations run on the loaded
-data using PlotJuggler's nearest-sample alignment.
+**Layout → Open Layout** accepts Cabana JSON and PlotJuggler XML. The bundled presets are native
+Cabana layouts with Python equations. XML import preserves named tabs, chart titles, overlaid
+curves, colors, line styles, fixed Y limits, and scale/offset transforms. Known equations from
+the bundled PlotJuggler layouts are migrated to their Python ports; custom Lua equations must
+be rewritten in Python. Panels are arranged in Cabana's chart grid.
 
-Equations require a Lua 5.3 or 5.4 shared library on the system. They can use `time`, `value`,
-additional inputs (`v1`, `v2`, …), persistent globals, and the Lua math library, returning a value
-or `(time, value)`. Errors appear on the affected signals. Plugin panels, XY plots, time-offset
-transforms, and unrestricted Lua libraries are outside this importer’s scope.
+Equations run in the Python interpreter from the openpilot environment used to build Cabana.
+No Lua installation is needed. Each equation uses `language: "python"`, a `globals` initialization
+block, and a `function` body. The function receives `time`, `value`, and additional inputs
+(`v1`, `v2`, …), aligned to the nearest sample. It returns a number or `(time, value)`; non-finite
+results are omitted. The `math` module is available, and initialization code can import other
+Python modules from the environment.
+
+Globals persist across samples and reset when the loaded data is recalculated. Use Python's
+`global` declaration to update them, for example:
+
+```json
+{
+  "name": "running total",
+  "source": "/carState/vEgo",
+  "language": "python",
+  "globals": "total = 0",
+  "function": "global total\ntotal += value\nreturn total",
+  "additional": []
+}
+```
+
+The tuning layout retains its five-second engagement gating; curvature, roll compensation,
+GPS distance, and steering-rate checks have Python ports. Older Cabana layouts containing
+these known Lua equations migrate when opened and save as Python. Unsupported legacy equations
+leave the current workspace intact. Equation errors appear in the chart workspace.
+
+Layout scripts run with Cabana's permissions. A per-sample Python execution limit catches
+runaway Python loops; it is not a sandbox or a timeout for native extension calls. Plugin panels,
+XY plots, and time-offset transforms remain outside the XML importer's scope.
 
 **Layout → Save Layout** saves the workspace as Cabana JSON, including equations, tabs,
 chart grouping, colors, limits, signal visibility, transforms, column count, and window duration.

@@ -60,10 +60,10 @@ std::string ChartsWidget::serializeLayout() const {
   for (const auto &e : equations_) {
     Json::array additional;
     for (const auto &s : e.additional) additional.push_back(s);
-    equations.push_back(Json::object{{"name", e.name}, {"source", e.source}, {"globals", e.globals},
+    equations.push_back(Json::object{{"name", e.name}, {"language", "python"}, {"source", e.source}, {"globals", e.globals},
                                    {"function", e.function}, {"additional", additional}});
   }
-  return Json(Json::object{{"cabana_layout", 2}, {"columns", column_count_},
+  return Json(Json::object{{"cabana_layout", 3}, {"columns", column_count_},
     {"range", max_chart_range_}, {"tabs", tabs}, {"tab_names", names}, {"equations", equations}}).dump();
 }
 
@@ -87,7 +87,7 @@ bool ChartsWidget::openLayout(const std::string &name) {
   auto path = std::filesystem::path(name);
   if (!std::filesystem::exists(path) && path.parent_path() == "layouts") path = executableDir() / "../plotjuggler" / path;
   if (!std::filesystem::exists(path) && path.parent_path().empty()) {
-    path = executableDir() / "../plotjuggler/layouts" / (path.extension() == ".xml" ? name : name + ".xml");
+    path = executableDir() / "layouts" / (path.has_extension() ? path.stem().string() + ".json" : name + ".json");
   }
   try {
     std::string contents;

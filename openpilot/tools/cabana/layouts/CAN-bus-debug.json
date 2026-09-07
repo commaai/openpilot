@@ -1,0 +1,121 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "title": "CAN RX",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/canState0/totalRxCnt",
+            "signal": "/pandaStates/0/canState0/totalRxCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/pandaStates/0/canState1/totalRxCnt",
+            "signal": "/pandaStates/0/canState1/totalRxCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#9467bd"
+          },
+          {
+            "path": "/pandaStates/0/canState2/totalRxCnt",
+            "signal": "/pandaStates/0/canState2/totalRxCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "title": "CAN TX",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/canState0/totalTxCnt",
+            "signal": "/pandaStates/0/canState0/totalTxCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#17becf"
+          },
+          {
+            "path": "/pandaStates/0/canState1/totalTxCnt",
+            "signal": "/pandaStates/0/canState1/totalTxCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#bcbd22"
+          },
+          {
+            "path": "/pandaStates/0/canState2/totalTxCnt",
+            "signal": "/pandaStates/0/canState2/totalTxCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "title": "CAN errors",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/pandaStates/0/canState0/totalErrorCnt",
+            "signal": "/pandaStates/0/canState0/totalErrorCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/pandaStates/0/canState1/totalErrorCnt",
+            "signal": "/pandaStates/0/canState1/totalErrorCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#d62728"
+          },
+          {
+            "path": "/pandaStates/0/canState2/totalErrorCnt",
+            "signal": "/pandaStates/0/canState2/totalErrorCnt",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1ac938"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

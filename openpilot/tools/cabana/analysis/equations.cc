@@ -1,65 +1,97 @@
+#include <Python.h>
+
 #include "tools/cabana/analysis/equations.h"
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
-#include <dlfcn.h>
 #include <limits>
 #include <memory>
 #include <stdexcept>
 
 namespace cabana {
 namespace {
-struct lua_State;
-struct lua_Debug;
-using LuaFunction = int (*)(lua_State *);
-using LuaContinuation = int (*)(lua_State *, int, intptr_t);
+struct PyDeleter { void operator()(PyObject *object) const { Py_XDECREF(object); } };
+using PyPtr = std::unique_ptr<PyObject, PyDeleter>;
 
-// Lua 5.3/5.4's stable C ABI. Resolve at runtime so ordinary Cabana charts need no Lua installation.
-struct Lua {
-  void *library = nullptr;
-  lua_State *(*newstate)();
-  void (*close)(lua_State *);
-  void (*requiref)(lua_State *, const char *, LuaFunction, int);
-  LuaFunction math;
-  int (*loadstring)(lua_State *, const char *);
-  int (*pcall)(lua_State *, int, int, int, intptr_t, LuaContinuation);
-  int (*getglobal)(lua_State *, const char *);
-  void (*pushnumber)(lua_State *, double);
-  double (*tonumber)(lua_State *, int, int *);
-  const char *(*tostring)(lua_State *, int, size_t *);
-  void (*settop)(lua_State *, int);
-  int (*gettop)(lua_State *);
-  void (*sethook)(lua_State *, void (*)(lua_State *, lua_Debug *), int, int);
-  int (*error)(lua_State *, const char *, ...);
+[[noreturn]] void pythonError() {
+  PyObject *type = nullptr, *value = nullptr, *traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
+  PyPtr owned_type(type), owned_value(value), owned_traceback(traceback);
+  PyPtr message(value ? PyObject_Str(value) : nullptr);
+  const char *text = message ? PyUnicode_AsUTF8(message.get()) : nullptr;
+  const std::string error = text ? text : "Python equation failed";
+  PyErr_Clear();
+  throw std::runtime_error(error);
+}
 
-  Lua() {
-    for (const char *name : {"liblua5.4.so", "liblua5.4.so.0", "liblua5.3.so.0", "liblua.5.4.dylib",
-                             "/opt/homebrew/opt/lua/lib/liblua.dylib", "/usr/local/opt/lua/lib/liblua.dylib"}) {
-      if ((library = dlopen(name, RTLD_NOW | RTLD_LOCAL))) break;
+PyPtr checked(PyObject *object) {
+  if (!object) pythonError();
+  return PyPtr(object);
+}
+
+void initializePython() {
+  static const bool initialized = []() {
+    if (!Py_IsInitialized()) {
+      PyConfig config;
+      PyConfig_InitIsolatedConfig(&config);
+      config.install_signal_handlers = 0;
+      auto status = PyConfig_SetBytesString(&config, &config.home, CABANA_PYTHON_HOME);
+      if (!PyStatus_Exception(status)) status = Py_InitializeFromConfig(&config);
+      const std::string error = PyStatus_Exception(status) ? (status.err_msg ? status.err_msg : "Python initialization failed") : "";
+      PyConfig_Clear(&config);
+      if (!error.empty()) throw std::runtime_error(error);
+      PyEval_SaveThread();
     }
-    if (!library) throw std::runtime_error("Lua 5.3 or 5.4 is required for this layout's equations (install the Lua shared library).");
-#define LUA_SYMBOL(member, symbol) member = reinterpret_cast<decltype(member)>(dlsym(library, symbol)); if (!member) throw std::runtime_error("Incomplete Lua runtime: " symbol)
-    LUA_SYMBOL(newstate, "luaL_newstate");
-    LUA_SYMBOL(close, "lua_close");
-    LUA_SYMBOL(requiref, "luaL_requiref");
-    LUA_SYMBOL(math, "luaopen_math");
-    LUA_SYMBOL(loadstring, "luaL_loadstring");
-    LUA_SYMBOL(pcall, "lua_pcallk");
-    LUA_SYMBOL(getglobal, "lua_getglobal");
-    LUA_SYMBOL(pushnumber, "lua_pushnumber");
-    LUA_SYMBOL(tonumber, "lua_tonumberx");
-    LUA_SYMBOL(tostring, "lua_tolstring");
-    LUA_SYMBOL(settop, "lua_settop");
-    LUA_SYMBOL(gettop, "lua_gettop");
-    LUA_SYMBOL(sethook, "lua_sethook");
-    LUA_SYMBOL(error, "luaL_error");
-#undef LUA_SYMBOL
-  }
+    return true;
+  }();
+  (void)initialized;
+}
+
+struct PythonLock {
+  PythonLock() { initializePython(); state = PyGILState_Ensure(); }
+  ~PythonLock() { PyGILState_Release(state); }
+  PyGILState_STATE state;
 };
-Lua &lua() { static Lua api; return api; }
-void instructionLimit(lua_State *state, lua_Debug *) { lua().error(state, "Equation exceeded its instruction limit"); }
+
+PyObject *runtimeModule() {
+  // Kept alive with the interpreter; all access is under the GIL.
+  static PyObject *module = []() {
+    auto *path = PySys_GetObject("path");
+    auto site = checked(PyUnicode_FromString(CABANA_PYTHON_SITE));
+    auto analysis = checked(PyUnicode_FromString(CABANA_ANALYSIS_DIR));
+    if (PyList_Insert(path, 0, site.get()) || PyList_Insert(path, 0, analysis.get())) pythonError();
+    return checked(PyImport_ImportModule("cabana_equations")).release();
+  }();
+  return module;
+}
+
+thread_local int remaining_steps;
+int traceEquation(PyObject *, PyFrameObject *, int event, PyObject *) {
+  if (event == PyTrace_LINE && --remaining_steps <= 0) {
+    PyErr_SetString(PyExc_RuntimeError, "Equation exceeded its execution limit");
+    return -1;
+  }
+  return 0;
+}
+struct ExecutionLimit {
+  ExecutionLimit() { reset(); PyEval_SetTrace(traceEquation, nullptr); }
+  ~ExecutionLimit() { PyEval_SetTrace(nullptr, nullptr); }
+  void reset() { remaining_steps = 100000; }
+};
 }  // namespace
+
+void portLegacyEquation(Equation &equation) {
+  PythonLock lock;
+  auto port = checked(PyObject_GetAttrString(runtimeModule(), "port_equation"));
+  auto result = checked(PyObject_CallFunction(port.get(), "ss", equation.globals.c_str(), equation.function.c_str()));
+  const char *globals = PyUnicode_AsUTF8(PyTuple_GetItem(result.get(), 0));
+  if (!globals) pythonError();
+  equation.globals = globals;
+  const char *function = PyUnicode_AsUTF8(PyTuple_GetItem(result.get(), 1));
+  if (!function) pythonError();
+  equation.function = function;
+}
 
 double nearestValue(const std::vector<Sample> &samples, double time) {
   if (samples.empty()) return std::numeric_limits<double>::quiet_NaN();
@@ -78,44 +110,31 @@ std::vector<Sample> evaluateEquation(const Equation &equation, const Telemetry &
     if (it == data.end() || it->second.empty()) throw std::runtime_error("Waiting for " + path);
     inputs.push_back(&it->second);
   }
-  auto &api = lua();
-  std::unique_ptr<lua_State, decltype(api.close)> state(api.newstate(), api.close);
-  if (!state) throw std::runtime_error("Could not create Lua state");
-  auto *L = state.get();
-  api.requiref(L, "math", api.math, 1);
-  api.settop(L, 0);
-  auto check = [&](int result) {
-    if (result) {
-      const char *message = api.tostring(L, -1, nullptr);
-      throw std::runtime_error(message ? message : "Lua equation failed");
-    }
-  };
-  std::string code = equation.globals + "\nfunction calc(time, value";
-  for (size_t i = 0; i < inputs.size(); ++i) code += ", v" + std::to_string(i + 1);
-  code += ")\n" + equation.function + "\nend";
-  api.sethook(L, instructionLimit, 8, 100000);
-  check(api.loadstring(L, code.c_str()));
-  check(api.pcall(L, 0, 0, 0, 0, nullptr));
+  PythonLock lock;
+  auto compile = checked(PyObject_GetAttrString(runtimeModule(), "compile_equation"));
+  ExecutionLimit limit;
+  auto function = checked(PyObject_CallFunction(compile.get(), "ssi", equation.globals.c_str(), equation.function.c_str(), (int)inputs.size()));
   std::vector<Sample> result;
   result.reserve(source->second.size());
   for (const auto &sample : source->second) {
-    api.sethook(L, instructionLimit, 8, 100000);
-    api.getglobal(L, "calc");
-    api.pushnumber(L, sample.x);
-    api.pushnumber(L, sample.y);
-    for (auto input : inputs) api.pushnumber(L, nearestValue(*input, sample.x));
-    check(api.pcall(L, inputs.size() + 2, -1, 0, 0, nullptr));
-    int count = api.gettop(L), valid = 0;
-    double time = sample.x;
-    if (count == 2) {
-      time = api.tonumber(L, 1, &valid);
-      if (!valid) throw std::runtime_error("Equation time must be a number");
+    limit.reset();
+    auto args = checked(PyTuple_New(inputs.size() + 2));
+    PyTuple_SET_ITEM(args.get(), 0, checked(PyFloat_FromDouble(sample.x)).release());
+    PyTuple_SET_ITEM(args.get(), 1, checked(PyFloat_FromDouble(sample.y)).release());
+    for (size_t i = 0; i < inputs.size(); ++i) {
+      PyTuple_SET_ITEM(args.get(), i + 2, checked(PyFloat_FromDouble(nearestValue(*inputs[i], sample.x))).release());
     }
-    if (count != 1 && count != 2) throw std::runtime_error("Equation must return value or time, value");
-    double value = api.tonumber(L, count, &valid);
-    if (!valid) throw std::runtime_error("Equation value must be a number");
-    if (std::isfinite(time) && std::isfinite(value)) result.emplace_back(time, value);
-    api.settop(L, 0);
+    auto output = checked(PyObject_CallObject(function.get(), args.get()));
+    double time = sample.x;
+    PyObject *value = output.get();
+    if (PyTuple_Check(value)) {
+      if (PyTuple_Size(value) != 2) throw std::runtime_error("Equation must return value or (time, value)");
+      time = PyFloat_AsDouble(PyTuple_GetItem(value, 0));
+      value = PyTuple_GetItem(value, 1);
+    }
+    double y = PyFloat_AsDouble(value);
+    if (PyErr_Occurred()) pythonError();
+    if (std::isfinite(time) && std::isfinite(y)) result.emplace_back(time, y);
   }
   std::stable_sort(result.begin(), result.end(), [](const auto &a, const auto &b) { return a.x < b.x; });
   return result;

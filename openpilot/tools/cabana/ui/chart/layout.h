@@ -40,7 +40,7 @@ inline std::optional<Layout> parseLayout(const std::string &contents) {
   auto integer = [](const Json &v, int min, int max) {
     return v.is_number() && v.number_value() >= min && v.number_value() <= max && v.number_value() == v.int_value();
   };
-  if (!error.empty() || !integer(doc["cabana_layout"], 1, 2) || !integer(doc["columns"], 1, 4) ||
+  if (!error.empty() || !integer(doc["cabana_layout"], 1, 3) || !integer(doc["columns"], 1, 4) ||
       !integer(doc["range"], 1, 86400) || !doc["tabs"].is_array() || doc["tabs"].array_items().empty()) return std::nullopt;
   if ((!doc["tab_names"].is_null() && !doc["tab_names"].is_array()) ||
       (!doc["equations"].is_null() && !doc["equations"].is_array())) return std::nullopt;
@@ -101,6 +101,11 @@ inline std::optional<Layout> parseLayout(const std::string &contents) {
         !e["globals"].is_string() || !e["function"].is_string() || !e["additional"].is_array() ||
         !equation_names.insert(e["name"].string_value()).second) return std::nullopt;
     cabana::Equation equation{e["name"].string_value(), e["source"].string_value(), e["globals"].string_value(), e["function"].string_value(), {}};
+    if (e["language"].string_value() != "python") {
+      if (!e["language"].is_null() && e["language"].string_value() != "lua") return std::nullopt;
+      if (doc["cabana_layout"].int_value() >= 3) return std::nullopt;
+      try { cabana::portLegacyEquation(equation); } catch (const std::exception &) { return std::nullopt; }
+    }
     for (const auto &source : e["additional"].array_items()) {
       if (!source.is_string()) return std::nullopt;
       equation.additional.push_back(source.string_value());

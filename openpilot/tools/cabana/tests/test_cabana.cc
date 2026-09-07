@@ -541,16 +541,20 @@ void test_layout_equations() {
   REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
   REQUIRE(cabana::nearestValue(data.at("enabled"), -1) == 0);
   REQUIRE(cabana::nearestValue(data.at("enabled"), 5) == 1);
-  cabana::Equation equation{"scaled", "speed", "sum = 0", "sum = sum + value; return sum * v1", {"enabled"}};
+  cabana::Equation equation{"scaled", "speed", "sum = 0", "global sum\nsum += value\nreturn sum * v1", {"enabled"}};
   auto values = cabana::evaluateEquation(equation, data);
   REQUIRE(values.size() == 3);
   REQUIRE(values[0].y == 0);
   REQUIRE(values[1].y == 30);
   REQUIRE(values[2].y == 60);
   REQUIRE(cabana::evaluateEquation(equation, data)[2].y == 60);  // state resets when reloading earlier data
-  equation.function = "return time + 1, math.abs(value)";
+  equation.function = "return time + 1, abs(value)";
   REQUIRE(cabana::evaluateEquation(equation, data)[0].x == 1);
-  for (auto code : {"return os.execute('false')", "while true do end", "invalid Lua !"}) {
+  equation.globals = "import statistics";
+  equation.function = "return statistics.mean((value, v1))";
+  REQUIRE(cabana::evaluateEquation(equation, data)[0].y == 5);
+  equation.globals.clear();
+  for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "invalid Python !", "return None", "return (1, 2, 3)"}) {
     equation.function = code;
     bool failed = false;
     try { cabana::evaluateEquation(equation, data); } catch (const std::exception &) { failed = true; }
