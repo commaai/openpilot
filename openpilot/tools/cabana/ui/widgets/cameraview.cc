@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <utility>
 
 #include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3_loader.h"
@@ -62,7 +63,7 @@ CameraWidget::~CameraWidget() {
 
 void CameraWidget::startVipcThread() {
   if (!vipc_thread_.joinable()) {
-    clearFrames();
+    // Preserve the last frame when restoring a collapsed video; paused replay sends no replacement.
     vipc_exit_ = false;
     vipc_thread_ = std::thread(&CameraWidget::vipcThread, this);
   }
@@ -99,7 +100,7 @@ float CameraWidget::frameAspectRatio() const {
 
 void CameraWidget::paint() {
   ImDrawList *p = ImGui::GetWindowDrawList();
-  p->AddRectFilled(rect_.Min, rect_.Max, bg_);
+  p->AddRectFilled(rect_.Min, rect_.Max, bg_, ImGui::GetStyle().ChildRounding);
 
   std::lock_guard lk(frame_lock_);
   if (rgb_frame_.isNull()) return;
@@ -113,24 +114,26 @@ void CameraWidget::paint() {
     // mirror cabin camera horizontally
     std::swap(placement.uv0.x, placement.uv1.x);
   }
-  p->AddImage(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1);
+  p->AddImageRounded(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
 }
 
 void CameraWidget::vipcThread() {
   VisionStreamType cur_stream = requested_stream_type_;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra frame_meta = {};
+  bool was_connected = false;
 
   while (!vipc_exit_) {
     if (!vipc_client || cur_stream != requested_stream_type_) {
-      clearFrames();
+      if (cur_stream != requested_stream_type_) clearFrames();
       cur_stream = requested_stream_type_;
       vipc_client.reset(new VisionIpcClient(stream_name_, cur_stream, false));
     }
     active_stream_type_ = cur_stream;
 
     if (!vipc_client->connected) {
-      clearFrames();
+      // the server changed (a new route): the last frame is stale. A fresh thread keeps it, see startVipcThread().
+      if (std::exchange(was_connected, false)) clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name_, false);
       if (streams.empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -142,6 +145,7 @@ void CameraWidget::vipcThread() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
+      was_connected = true;
     }
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {

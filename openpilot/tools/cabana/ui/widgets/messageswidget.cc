@@ -240,26 +240,30 @@ std::string MessagesWidget::whatsThis() const {
 }
 
 void MessagesWidget::drawToolBar() {
-  ImGui::Dummy(ImVec2(0, std::max(0.0f, 9 - ImGui::GetStyle().ItemSpacing.y)));
-  if (ImGui::Button("Suppress Highlighted")) suppressHighlighted(true);
-  ImGui::SameLine();
-  ImGui::BeginDisabled(!suppress_clear_enabled_);
-  const std::string clear_label = suppress_clear_text_ + "##suppress_clear";
-  if (ImGui::Button(clear_label.c_str())) suppressHighlighted(false);
-  ImGui::EndDisabled();
-  disabledItemTooltip("Clear suppressed");
-
   const ImGuiStyle &style = ImGui::GetStyle();
-  const float checkbox_width = ImGui::CalcTextSize("Suppress Signals").x + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x;
-  const float view_button_width = ImGui::CalcTextSize(icon::THREE_DOTS).x + style.FramePadding.x * 2;
-  alignRight(checkbox_width + style.ItemSpacing.x + view_button_width);
+  // Reserve space for View so it remains accessible when other controls overflow.
+  const std::string clear_label = suppress_clear_text_ + "##suppress_clear";
+  std::vector<ToolbarItem> items;
+  items.push_back({toolbarButtonWidth("Suppress Highlighted"), [this]() {
+    if (ImGui::Button("Suppress Highlighted")) suppressHighlighted(true);
+  }, "Suppress Highlighted", [this]() { suppressHighlighted(true); }});
+  items.push_back({toolbarButtonWidth(suppress_clear_text_), [this, &clear_label]() {
+    ImGui::BeginDisabled(!suppress_clear_enabled_);
+    if (ImGui::Button(clear_label.c_str())) suppressHighlighted(false);
+    ImGui::EndDisabled();
+    disabledItemTooltip("Clear suppressed");
+  }, suppress_clear_text_, [this]() { suppressHighlighted(false); }, suppress_clear_enabled_});
+  const size_t spacer_index = items.size();
+  items.push_back({ImGui::CalcTextSize("Suppress Signals").x + CHECKBOX_SIZE + style.ItemInnerSpacing.x, []() {
+    bool suppress_defined_signals = settings.suppress_defined_signals;
+    if (checkBox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
+    ImGui::SetItemTooltip("Suppress defined signals");
+  }});
 
-  bool suppress_defined_signals = settings.suppress_defined_signals;
-  if (checkBox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
-  ImGui::SetItemTooltip("Suppress defined signals");
+  const float reserved = iconButtonWidth() + style.ItemSpacing.x;
+  drawToolbar(items, spacer_index, std::max(0.0f, ImGui::GetContentRegionAvail().x - reserved));
   ImGui::SameLine();
-
-  if (toolButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
+  if (iconButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
 }
 
 void MessagesWidget::updateTitle() {
@@ -430,7 +434,7 @@ void MessagesWidget::drawHeader() {
   }
 
   // the filter editors under the header
-  const float clear_width = ImGui::CalcTextSize(icon::X).x + ImGui::GetStyle().FramePadding.x * 2;
+  const float clear_width = iconButtonWidth();
   ImGui::TableNextRow();
   for (int i = 0; i < MessageList::COLUMN_COUNT; i++) {
     if (!ImGui::TableSetColumnIndex(i)) continue;

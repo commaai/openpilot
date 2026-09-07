@@ -132,14 +132,46 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("Exit", "Ctrl+Q")) close();
 }
 
+namespace {
+bool beginTopMenu(const char *label, bool enabled = true) {
+  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetColorU32(ImGuiCol_Header));
+  const bool open = ImGui::BeginMenu(label, enabled);
+  ImGui::PopStyleColor();
+  if (open) {
+    // Erase the popup's rounded top border so it joins the menu bar's separator.
+    const ImGuiStyle &style = ImGui::GetStyle();
+    const ImGuiWindow *w = ImGui::GetCurrentWindow();
+    const float r = style.PopupRounding, b = style.PopupBorderSize;
+    const ImVec2 min = w->Pos, max(w->Pos.x + w->Size.x, w->Pos.y + w->Size.y);
+    const ImU32 bg = ImGui::GetColorU32(ImGuiCol_PopupBg), border = ImGui::GetColorU32(ImGuiCol_Border);
+    ImDrawList *dl = w->DrawList;
+    dl->PushClipRect(min, max, false);  // the window's own clip rect excludes its border
+    dl->AddRectFilled(min, ImVec2(max.x, min.y + r), bg);
+    dl->AddRectFilled(ImVec2(min.x, min.y), ImVec2(min.x + b, min.y + r), border);
+    dl->AddRectFilled(ImVec2(max.x - b, min.y), ImVec2(max.x, min.y + r), border);
+    dl->PopClipRect();
+  }
+  return open;
+}
+}  // namespace
+
 void MainWindow::drawMenuBar() {
-  if (!ImGui::BeginMainMenuBar()) return;
-  if (ImGui::BeginMenu("File")) {
+  // Avoid a double border with the separator drawn below.
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  const bool open = ImGui::BeginMainMenuBar();
+  ImGui::PopStyleVar();
+  if (!open) return;
+  {
+    const ImVec2 min = ImGui::GetWindowPos();
+    const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
+  }
+  if (beginTopMenu("File")) {
     drawFileMenu();
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Edit")) {
+  if (beginTopMenu("Edit")) {
     auto stack = UndoStack::instance();
     const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
     const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
@@ -148,7 +180,7 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("View")) {
+  if (beginTopMenu("View")) {
     if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
@@ -162,13 +194,13 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Tools", hasStream())) {
+  if (beginTopMenu("Tools", hasStream())) {
     if (ImGui::MenuItem("Find Similar Bits")) findSimilarBits();
     if (ImGui::MenuItem("Find Signal")) findSignal();
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Help")) {
+  if (beginTopMenu("Help")) {
     if (ImGui::MenuItem("Help", "F1")) toggleHelp();
     ImGui::EndMenu();
   }
@@ -710,6 +742,8 @@ void MainWindow::handleShortcuts() {
 void MainWindow::drawStatusBar() {
   ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_MenuBarBg]);
   ImGui::BeginChild("status_bar", ImVec2(0, ImGui::GetFrameHeight()), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+  const ImVec2 min = ImGui::GetWindowPos();
+  ImGui::GetWindowDrawList()->AddRectFilled(min, ImVec2(min.x + ImGui::GetWindowWidth(), min.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Border));
   // a borderless child gets no WindowPadding, so both ends sit flush against the edge and clip. Inset by
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
@@ -771,6 +805,8 @@ void MainWindow::drawDockspace() {
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
+  const float top_gap = full_screen_ ? 0.0f : ImGui::GetStyle().ItemSpacing.y;
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + top_gap);
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr) {
@@ -810,12 +846,19 @@ void setNextPanelClass() {
   window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoWindowMenuButton;
   ImGui::SetNextWindowClass(&window_class);
 }
+
+bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  const bool visible = ImGui::Begin(name, open, flags);
+  ImGui::PopStyleVar();
+  return visible;
+}
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
   const std::string name = messages_widget_->title() + MESSAGES_PANEL_ID;
   setNextPanelClass();
-  if (ImGui::Begin(name.c_str(), &messages_visible_)) {
+  if (beginPanel(name.c_str(), &messages_visible_)) {
     help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
     messages_widget_->draw();
   }
@@ -827,7 +870,7 @@ void MainWindow::drawMessagesPanel() {
 void MainWindow::drawVideoPanel() {
   const std::string name = video_dock_title_ + VIDEO_PANEL;
   setNextPanelClass();
-  const bool video_open = ImGui::Begin(name.c_str(), &video_visible_);
+  const bool video_open = beginPanel(name.c_str(), &video_visible_);
   const bool floating = floatingOut();
   if (!video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
@@ -841,11 +884,23 @@ void MainWindow::drawVideoPanel() {
     const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : default_h;
     float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
     if (live) video_h = default_h;  // display video at minimum size.
-    // dragging below half of the minimum size collapses the video, it never shrinks below it otherwise
+    // Collapse panes below half their minimum height to keep partially clipped controls out of view.
+    bool charts_collapsed = false;
+    const float splitter_h = ImGui::GetStyle().WindowPadding.x * 2.0f + 2.0f;
     if (!charts_floating_ && !live) {
       const float min_h = std::min(video_widget_->sizeHintHeight() + video_padding, avail.y - 1.0f);
       video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
+      const float charts_min_h = ImGui::GetFrameHeight() + video_padding + ImGui::GetStyle().ChildBorderSize * 2.0f;
+      const float charts_h = avail.y - video_h - splitter_h;
+      if (charts_h < charts_min_h / 2) {
+        charts_collapsed = true;
+        video_h = avail.y - splitter_h;
+      } else if (charts_h < charts_min_h) {
+        video_h = avail.y - splitter_h - charts_min_h;
+      }
     }
+    // The splitter provides the gap; extra ItemSpacing would leave an undraggable strip.
+    if (!charts_floating_) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
@@ -855,21 +910,26 @@ void MainWindow::drawVideoPanel() {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
     if (!charts_floating_) {
-      // the gap between the video and the charts is the same as the padding at the sides
-      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-      ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, ImGui::GetStyle().WindowPadding.x));
-      if (ImGui::IsItemActive() && !live) {
+      ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
+      const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
+      if (splitter_active) {
         // the size of the video is the position of the handle inside the splitter
         const float top = ImGui::GetWindowPos().y + ImGui::GetCursorStartPos().y;
         video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - top) / avail.y, 0.0f, 1.0f);
       }
-      if (ImGui::IsItemHovered() && !live) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-      // the chart list scrolls in its own child, the container itself never scrolls
-      ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+      if (splitter_hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+      const ImRect splitter(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+      const float line_y = std::floor(splitter.GetCenter().y) - 1.0f;
+      ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(splitter.Min.x, line_y), ImVec2(splitter.Max.x, line_y + 2.0f),
+                                                ImGui::GetColorU32(splitter_active ? ImGuiCol_SeparatorActive : splitter_hovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Border));
       ImGui::PopStyleVar();
-      help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      charts_widget_->draw();
-      ImGui::EndChild();
+      if (!charts_collapsed) {
+        // the chart list scrolls in its own child, the container itself never scrolls
+        ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+        charts_widget_->draw();
+        ImGui::EndChild();
+      }
     }
   }
   ImGui::End();
@@ -893,11 +953,13 @@ void MainWindow::draw() {
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
-  if (ImGui::Begin(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+  if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     center_widget_.draw();
     if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }
+    ImGui::EndChild();
   }
   ImGui::End();
   if (messages_widget_ && messages_visible_) drawMessagesPanel();

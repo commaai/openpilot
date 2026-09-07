@@ -59,11 +59,8 @@ void TipLabel::draw() {
   if (!visible_) return;
 
   ImDrawList *p = ImGui::GetForegroundDrawList();
-  const bool dark = isDarkTheme();
-  const ImU32 bg = dark ? ImGui::GetColorU32(ImGuiCol_PopupBg) : ImGui::GetColorU32(ImGuiCol_ChildBg);
-  const ImU32 fg = dark ? ImGui::GetColorU32(ImGuiCol_Text) : IM_COL32(0x40, 0x40, 0x44, 0xff);
   // filled panel with a 1px frame
-  p->AddRectFilled(pos_, pos_ + size_, bg);
-  p->AddRect(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_Border));
-  layoutLines(p, pos_ + ImVec2(MARGIN, MARGIN), fg);
+  p->AddRectFilled(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_PopupBg), ImGui::GetStyle().PopupRounding);
+  p->AddRect(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_Border), ImGui::GetStyle().PopupRounding);
+  layoutLines(p, pos_ + ImVec2(MARGIN, MARGIN), ImGui::GetColorU32(ImGuiCol_Text));
 }

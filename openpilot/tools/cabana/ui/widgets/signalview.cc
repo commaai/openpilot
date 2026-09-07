@@ -24,7 +24,6 @@ constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it
 constexpr float SIGNAL_ROW_SCALE = 1.25f;
 constexpr float FILTER_WIDTH = 160.0f;
 constexpr float SPARKLINE_SLIDER_WIDTH = 120.0f;
-constexpr float COLLAPSE_ICON_SIZE = 12.0f;
 // WARNING: increasing the maximum range can result in severe performance degradation.
 // 30s is a reasonable value at present.
 constexpr int SPARKLINE_RANGE_MAX = 30;
@@ -261,13 +260,13 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
 
   ImRect rect(option_rect.Min.x + h_margin, option_rect.Min.y + v_margin, option_rect.Max.x - h_margin, option_rect.Max.y - v_margin);
   // selection background is painted by the row's Selectable
-  const ImU32 text_color = selected ? highlightedTextColor() : ImGui::GetColorU32(ImGuiCol_Text);
+  const ImU32 text_color = ImGui::GetColorU32(ImGuiCol_Text);
 
   if (column == 0) {
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + COLOR_LABEL_WIDTH, rect.Max.y);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(signalFillColor(item->sig->color).darker(item->highlight ? 125 : 0)), 3.0f);
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(signalFillColor(item->sig->color).darker(item->highlight ? 125 : 0)), ImGui::GetStyle().FrameRounding);
       drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
                nullptr, LABEL_FONT);
 
@@ -276,7 +275,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
       if (item->sig->type != cabana::Signal::Type::Normal) {
         const std::string indicator = multiplexIndicator(item->sig);
         ImRect indicator_rect(rect.Min.x, rect.Min.y, rect.Min.x + ImGui::CalcTextSize(indicator.c_str()).x, rect.Max.y);
-        painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, IM_COL32(160, 160, 164, 255), 3.0f);
+        painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, IM_COL32(160, 160, 164, 255), ImGui::GetStyle().FrameRounding);
         drawElidedText(painter, indicator_rect, indicator, IM_COL32_WHITE, false);
         rect.Min.x = indicator_rect.Max.x + h_margin * 2;
       }
@@ -313,13 +312,12 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
       }
       // signal value
       rect.Min.x += value_adjust;
-      rect.Max.x -= button_size_.x;
-      if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
-    } else {
-      // no sparkline yet: the value still belongs against the buttons, where it sits once there is one
-      rect.Max.x -= button_size_.x;
-      if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
     }
+    // Monospaced digits prevent the value width from changing during playback.
+    rect.Max.x -= button_size_.x;
+    pushMonoFont(ImGui::GetFontSize());
+    if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
+    popMonoFont();
   }
 }
 
@@ -385,7 +383,7 @@ void SignalView::drawEditor(SignalModel::Item *item) {
     const bool clicked = ImGui::Selectable("##editor", false, 0, ImVec2(0, rowHeight()));
     ImGui::PopStyleColor();
     drawElidedText(ImGui::GetWindowDrawList(), ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()), model_.valueText(item),
-                   highlightedTextColor(), false);
+                   ImGui::GetColorU32(ImGuiCol_Text), false);
     if (clicked || take_focus) {
       desc_dlg_ = std::make_unique<ValueDescriptionDlg>(item->sig->val_desc);
       desc_dlg_->title = item->sig->name;
@@ -493,12 +491,15 @@ void SignalView::drawValueDescriptionDlg() {
   desc_sig_ = nullptr;
 }
 
+static ImVec2 indexButtonsSize(float button) {
+  return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
+}
+
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, SPARKLINE_RANGE_MAX);
 
-  // seed the size of the [plot][remove] widget (two 22px tool buttons plus the spacing) so the first
-  // updateState() calls already leave room for the sparklines
-  button_size_ = ImVec2(22 * 2 + TOOLBAR_ITEM_SPACING, 22);
+  // Reserve button space for updateState() calls before the first draw (no frame yet: derive the frame height).
+  button_size_ = indexButtonsSize(UI_FONT_SIZE + ImGui::GetStyle().FramePadding.y * 2.0f);
   updateToolBar();
 
   connections_.push_back(model_.rowsChanged.connect([this]() { rowsChanged(); }));
@@ -617,12 +618,14 @@ float SignalView::widestValueWidth(const cabana::Signal *sig) {
   const double raw_max = sig->is_signed ? std::ldexp(1.0, sig->size - 1) - 1 : std::ldexp(1.0, sig->size) - 1;
   const double raw_min = sig->is_signed ? -std::ldexp(1.0, sig->size - 1) : 0.0;
   float width = 0;
+  pushMonoFont(ImGui::GetFontSize());
   for (double raw : {raw_min, raw_max}) {
     width = std::max(width, textWidth(sig->formatValue(raw * sig->factor + sig->offset)));
   }
   for (const auto &[_, desc] : sig->val_desc) {
     width = std::max(width, textWidth(desc));
   }
+  popMonoFont();
   return width;
 }
 
@@ -672,8 +675,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
 // the sparkline label, the range slider and the collapse button
 float SignalView::toolBarRightWidth(const std::string &range_label) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::CalcTextSize(range_label.c_str()).x + style.ItemSpacing.x + SPARKLINE_SLIDER_WIDTH + style.ItemSpacing.x +
-         ImGui::GetFont()->CalcTextSizeA(COLLAPSE_ICON_SIZE, FLT_MAX, 0.0f, icon::DASH_SQUARE).x + style.FramePadding.x * 2;
+  return ImGui::CalcTextSize(range_label.c_str()).x + style.ItemSpacing.x + SPARKLINE_SLIDER_WIDTH + style.ItemSpacing.x + iconButtonWidth();
 }
 
 // the width at which the tool bar stops squishing: the signal count and the filter box on the left, the
@@ -686,8 +688,10 @@ float SignalView::minimumWidth() {
 }
 
 void SignalView::draw() {
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
     ImGui::EndChild();
+    ImGui::PopStyleColor();
     return;
   }
 
@@ -710,11 +714,7 @@ void SignalView::draw() {
   }
   ImGui::SetItemTooltip("Sparkline time range");
   ImGui::SameLine();
-  // auto-raise tool button with a 12x12 icon
-  ImGui::PushFont(ImGui::GetFont(), COLLAPSE_ICON_SIZE);
-  const bool collapse = toolButton("collapse_all", icon::DASH_SQUARE, "Collapse All");
-  ImGui::PopFont();
-  if (collapse) collapseAll();
+  if (iconButton("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All")) collapseAll();
 
   drawTree();
   drawValueDescriptionDlg();
@@ -724,6 +724,7 @@ void SignalView::draw() {
   current_row_ = model_.signalRow(current_sig_);  // used when the row is removed
 
   ImGui::EndChild();
+  ImGui::PopStyleColor();
 }
 
 void SignalView::collapseAll() {
@@ -872,27 +873,24 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  // plot_btn + remove_btn, right aligned in the value column
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3.0f, 2.0f));
-  const ImVec2 btn_size(ImGui::CalcTextSize(icon::GRAPH_UP).x + 6.0f, ImGui::GetFrameHeight());
-  const ImVec2 size(btn_size.x * 2 + TOOLBAR_ITEM_SPACING, btn_size.y);
+  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
   if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (ImGui::Button((std::string(icon::GRAPH_UP) + "##plot").c_str(), btn_size) && !editor_open_on_press_) {
+  if (iconButton("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model_.msgId(), sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
   if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nSHIFT click to add to previous opened plot");
-  ImGui::SameLine(0.0f, TOOLBAR_ITEM_SPACING);
-  if (ImGui::Button((std::string(icon::X) + "##remove").c_str(), btn_size) && !editor_open_on_press_) {
+  ImGui::SameLine(0.0f, spacing);
+  if (iconButton("remove", icon::X_LG) && !editor_open_on_press_) {
     pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");
-  ImGui::PopStyleVar();
   button_size_ = size;
 }
 
@@ -914,12 +912,12 @@ bool ValueDescriptionDlg::draw() {
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
-  if (ImGui::Button(icon::PLUS)) {
+  if (iconButton("add", icon::PLUS_LG, "Add")) {
     table_.emplace_back("", "");
   }
-  ImGui::SameLine();
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::BeginDisabled(current_row_ == -1);
-  if (ImGui::Button(icon::DASH) && current_row_ < table_.size()) {
+  if (iconButton("remove", icon::DASH_LG, "Remove") && current_row_ < table_.size()) {
     table_.erase(table_.begin() + current_row_);
     current_row_ = -1;
   }

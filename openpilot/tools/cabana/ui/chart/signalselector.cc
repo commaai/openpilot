@@ -32,7 +32,7 @@ bool SignalSelector::draw() {
     return false;
   }
 
-  const float btn_w = ImGui::GetFrameHeight() + 8.0f;
+  const float btn_w = iconButtonWidth();
   const float column_w = (ImGui::GetContentRegionAvail().x - btn_w - ImGui::GetStyle().ItemSpacing.x * 2) / 2;
   // the selected list spans the combo row too; both lists end above the Ok/Cancel row
   const float lists_h = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 3;
@@ -67,10 +67,10 @@ bool SignalSelector::draw() {
   ImGui::BeginGroup();
   ImGui::Dummy(ImVec2(btn_w, (lists_h + ImGui::GetFrameHeightWithSpacing() * 2) / 2 - ImGui::GetFrameHeight()));
   ImGui::BeginDisabled(available_row_ == -1);
-  bool add_clicked = ImGui::Button(icon::CHEVRON_RIGHT, ImVec2(btn_w, 0));
+  bool add_clicked = iconButton("add", icon::CHEVRON_RIGHT, "Add");
   ImGui::EndDisabled();
   ImGui::BeginDisabled(selected_row_ == -1);
-  bool remove_clicked = ImGui::Button(icon::CHEVRON_LEFT, ImVec2(btn_w, 0));
+  bool remove_clicked = iconButton("remove", icon::CHEVRON_LEFT, "Remove");
   ImGui::EndDisabled();
   ImGui::EndGroup();
 
