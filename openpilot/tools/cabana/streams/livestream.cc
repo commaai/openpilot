@@ -77,12 +77,16 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
 
   capnp::FlatArrayMessageReader reader(data);
   auto event = reader.getRoot<cereal::Event>();
+  const uint64_t mono_time = event.getLogMonoTime();
+  std::lock_guard lk(lock);
+  if (!received_first_ts_) received_first_ts_ = mono_time;
+  received_last_ts_ = std::max(received_last_ts_, mono_time);
   if (event.which() == cereal::Event::Which::CAN) {
-    const uint64_t mono_time = event.getLogMonoTime();
-    std::lock_guard lk(lock);
     for (const auto &c : event.getCan()) {
       received_events_.push_back(newEvent(mono_time, c));
     }
+  } else {
+    cabana::extractTelemetry(event, received_telemetry_);
   }
 }
 
@@ -92,13 +96,23 @@ void LiveStream::updateLastMessages() {
   {
     // merge events received from live stream thread.
     std::lock_guard lk(lock);
+    if (!begin_event_ts) begin_event_ts = received_first_ts_;
+    lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
+    cabana::mergeTelemetry(telemetry, std::move(received_telemetry_));
+    received_telemetry_.clear();
+    const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
+    for (auto &[path, samples] : telemetry) {
+      auto first = std::lower_bound(samples.begin(), samples.end(), cutoff, [](const auto &p, double t) { return p.x < t; });
+      if (first != samples.begin()) --first;  // retain the boundary sample for nearest-sample equations
+      samples.erase(samples.begin(), first);
+    }
     mergeEvents(received_events_);
     uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;
     lastest_event_ts = std::max(lastest_event_ts, last_received_ts);
     received_events_.clear();
   }
-  if (!all_events_.empty()) {
-    begin_event_ts = all_events_.front()->mono_time;
+  if (begin_event_ts) {
+    telemetryChanged();
     updateEvents();
   }
 }
@@ -108,7 +122,7 @@ void LiveStream::updateEvents() {
 
   if (first_update_ts == 0) {
     first_update_ts = nanos_since_boot();
-    first_event_ts = current_event_ts = all_events_.back()->mono_time;
+    first_event_ts = current_event_ts = lastest_event_ts;
   }
 
   if (paused_ || prev_speed != speed_) {
@@ -119,7 +133,7 @@ void LiveStream::updateEvents() {
   }
 
   uint64_t last_ts = post_last_event && speed_ == 1.0
-                       ? all_events_.back()->mono_time
+                       ? lastest_event_ts
                        : first_event_ts + (nanos_since_boot() - first_update_ts) * speed_;
   auto first = std::upper_bound(all_events_.cbegin(), all_events_.cend(), current_event_ts, CompareCanEvent());
   auto last = std::upper_bound(first, all_events_.cend(), last_ts, CompareCanEvent());
@@ -130,6 +144,8 @@ void LiveStream::updateEvents() {
     updateEvent(id, (e->mono_time - begin_event_ts) / 1e9, e->dat, e->size);
     current_event_ts = e->mono_time;
   }
+  current_event_ts = std::min(last_ts, lastest_event_ts);
+  current_sec_ = (current_event_ts - begin_event_ts) / 1e9;
   AbstractStream::updateLastMessages();
 }
 

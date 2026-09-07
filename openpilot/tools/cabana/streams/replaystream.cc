@@ -18,6 +18,7 @@ ReplayStream::ReplayStream() {
 }
 
 ReplayStream::~ReplayStream() {
+  stopping_ = true;
   cancelWaits();
   if (replay) replay->stop();
 }
@@ -27,13 +28,16 @@ ReplayStream::~ReplayStream() {
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
   for (const auto &[n, seg] : event_data->segments) {
+    if (stopping_) return;
     if (!processed_segments.count(n)) {
       processed_segments.insert(n);
 
       std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
       MessageEventsMap msg_events;
+      cabana::Telemetry telemetry_batch;
       for (const Event &e : seg->log->events) {
+        if (stopping_) return;
         if (e.which == cereal::Event::Which::CAN) {
           capnp::FlatArrayMessageReader reader(e.data);
           auto event = reader.getRoot<cereal::Event>();
@@ -42,15 +46,22 @@ void ReplayStream::mergeSegments() {
             new_events.push_back(ce);
             msg_events[{.source = ce->src, .address = ce->address}].push_back(ce);
           }
+        } else {
+          capnp::FlatArrayMessageReader reader(e.data);
+          cabana::extractTelemetry(reader.getRoot<cereal::Event>(), telemetry_batch);
         }
       }
-      postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
+      postToMainThreadAndWait([&]() {
+        insertEvents(new_events, msg_events);
+        cabana::mergeTelemetry(telemetry, std::move(telemetry_batch));
+        telemetryChanged();
+      });
     }
   }
 }
 
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {
-  replay.reset(new Replay(route, {"can", "narrowRoadEncodeIdx", "cabinEncodeIdx", "wideRoadEncodeIdx", "carParams"},
+  replay.reset(new Replay(route, {},
                           {}, nullptr, replay_flags, data_dir, auto_source));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
@@ -104,7 +115,8 @@ bool ReplayStream::eventFilter(const Event *event) {
 
   double ts = millis_since_boot();
   if ((ts - prev_update_ts) > (1000.0 / STREAM_UPDATE_FPS)) {
-    requestUpdateLastMessages();
+    const double sec = toSeconds(event->mono_time);
+    postToMainThread([this, sec]() { current_sec_ = sec; updateLastMessages(); });
     prev_update_ts = ts;
   }
   return true;

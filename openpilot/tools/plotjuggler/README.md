@@ -65,6 +65,10 @@ For a quick demo, go through the installation step and run this command:
 
 ## Layouts
 
+These time-series layouts can also be opened in [Cabana](../cabana/README.md#plotting-and-analysis),
+including their Lua equations: `../cabana/cabana --demo --layout tuning`. Cabana provides a
+Signal Analysis workspace alongside its CAN editor and synchronized route playback.
+
 If you create a layout that's useful for others, consider upstreaming it.
 
 ### Tuning

@@ -36,7 +36,7 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &layout) : startup_layout_(layout), window_(window) {
   can = &dummy_;
   messages_visible_ = inistate::main_window.messages_visible;
   video_visible_ = inistate::main_window.video_visible;
@@ -155,6 +155,7 @@ void MainWindow::drawMenuBar() {
   if (dropdown::BeginMenu("View")) {
     if (dropdown::Item("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
+    if (dropdown::Item("Signal Analysis", nullptr, analysis_mode_)) { analysis_mode_ = !analysis_mode_; messages_visible_ = true; }
     dropdown::Item(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
     dropdown::Item(videoPanelTitle(), nullptr, &video_visible_);
     dropdown::Item("Charts", nullptr, &charts_visible_);
@@ -189,6 +190,10 @@ void MainWindow::createDockWidgets() {
 
   charts_widget_ = std::make_unique<ChartsWidget>();
   center_widget_.setChartsWidget(charts_widget_.get());
+  widget_connections_.push_back(charts_widget_->analysisRequested.connect([this]() {
+    analysis_mode_ = true;
+    messages_visible_ = true;
+  }));
   video_widget_ = std::make_unique<VideoWidget>();
 }
 
@@ -360,6 +365,7 @@ void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::s
 }
 
 void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
+  session_restored_ = false;
   stream_ = std::move(stream);
   can = stream_.get();
   stream_connections_.push_back(can->error.connect([](const std::string &msg) {
@@ -371,12 +377,14 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
   loadFile(dbc_file, SOURCE_ALL, [this]() {
     showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
     createDockWidgets();
+    nextFrame([this]() { restoreSessionState(); });
 
     // Don't overwrite already loaded DBC
     if (!dbc()->nonEmptyDBCCount()) {
       newFile();
     }
 
+    stream_connections_.push_back(can->telemetryChanged.connect([this]() { wait_dlg_.open = false; }));
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
     if (hasStream()) {
@@ -667,6 +675,17 @@ void MainWindow::saveSessionState() {
 }
 
 void MainWindow::restoreSessionState() {
+  if (!charts_widget_ || session_restored_) return;
+  if (!startup_layout_.empty()) {
+    session_restored_ = true;
+    charts_widget_->openLayout(std::exchange(startup_layout_, {}));
+    return;
+  }
+  const bool workspace = settings.active_charts.size() == 1 && settings.active_charts.front().rfind("@layout:", 0) == 0;
+  if (workspace) {
+    charts_widget_->restoreChartsFromIds(settings.active_charts);
+    session_restored_ = true;
+  }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
   if (dbc()->nonEmptyDBCFiles().front()->filename != settings.recent_dbc_file) return;
@@ -675,7 +694,7 @@ void MainWindow::restoreSessionState() {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
   }
 
-  if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
+  if (!workspace && charts_widget_ != nullptr && !settings.active_charts.empty()) {
     charts_widget_->restoreChartsFromIds(settings.active_charts);
   }
 }
@@ -855,12 +874,13 @@ bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
-  const std::string name = (messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
+  const std::string name = (analysis_mode_ ? "Route Signals" : messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
   setNextPanelClass();
   if (beginPanel(name.c_str(), &messages_visible_)) {
     if (messages_widget_) {
       help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      messages_widget_->draw();
+      if (analysis_mode_) charts_widget_->drawSignalBrowser();
+      else messages_widget_->draw();
     }
   }
   const bool floating = floatingOut();

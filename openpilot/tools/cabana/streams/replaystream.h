@@ -36,6 +36,7 @@ public:
 
 private:
   void mergeSegments();
+  std::atomic<bool> stopping_ = false;
   std::unique_ptr<Replay> replay = nullptr;
   Connection settings_connection_;
   std::set<int> processed_segments;

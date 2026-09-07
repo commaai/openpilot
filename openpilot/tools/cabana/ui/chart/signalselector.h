@@ -11,6 +11,9 @@ class SignalSelector {
 public:
   struct ListItem {
     ListItem(const MessageId &msg_id, const cabana::Signal *sig) : msg_id(msg_id), sig(sig) {}
+    ListItem(std::string path) : path(std::move(path)), sig(nullptr) {}
+    std::string path;
+    std::string name() const { return path.empty() ? sig->name : path; }
     MessageId msg_id;
     const cabana::Signal *sig;
   };
@@ -18,12 +21,13 @@ public:
   SignalSelector(std::string title);
   const std::vector<ListItem> &selectedItems() const { return selected_list_; }
   inline void addSelected(const MessageId &id, const cabana::Signal *sig) { selected_list_.emplace_back(id, sig); }
+  void addTelemetry(const std::string &path) { selected_list_.emplace_back(path); }
   void open() { open_ = true; show_ = false; accepted_ = false; }
   bool draw();  // false once the dialog is closed
   bool accepted() const { return accepted_; }
 
 private:
-  void updateAvailableList(int index);
+  void updateAvailableList();
   void add(int row);
   void remove(int row);
   void drawList(const char *id, std::vector<ListItem> &list, int *current_row, bool show_msg_name, bool *double_clicked, const ImVec2 &size);
@@ -34,12 +38,12 @@ private:
   };
   std::string title_;
   std::vector<ComboItem> msgs_combo_;
-  int msgs_combo_index_ = -1;
   std::string msgs_combo_filter_;
   std::vector<ListItem> available_list_;
   std::vector<ListItem> selected_list_;
   int available_row_ = -1;
   int selected_row_ = -1;
+  bool available_dirty_ = true;
   bool accepted_ = false;
   bool open_ = false;
   bool show_ = false;

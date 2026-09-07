@@ -38,6 +38,8 @@ private:
   std::thread stream_thread, update_thread;
   std::atomic<bool> update_pending_ = false;
   std::vector<const CanEvent *> received_events_;
+  cabana::Telemetry received_telemetry_;
+  uint64_t received_first_ts_ = 0, received_last_ts_ = 0;
 
   std::chrono::system_clock::time_point begin_date_time;
   uint64_t begin_event_ts = 0;

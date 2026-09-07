@@ -14,6 +14,7 @@
 #include "tools/cabana/ui/chart/signalselector.h"
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
+#include "tools/cabana/analysis/equations.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/utils/util.h"
@@ -70,6 +71,10 @@ public:
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
   void draw();  // content only; MainWindow owns the dockable panel
   size_t chartCount() const { return charts_.size(); }
+  const std::vector<cabana::Sample> *telemetrySeries(const std::string &path) const;
+  std::string serializeLayout() const;
+  bool restoreLayout(const std::string &contents);
+  bool openLayout(const std::string &path);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
   std::vector<std::string> serializeChartIds() const;
@@ -79,6 +84,9 @@ public:
   void setColumnCount(int n);
   void removeAll();
 
+  void drawSignalBrowser();
+  Observable<> analysisRequested;
+  Observable<> toggleChartsDocking;
   Observable<> seriesChanged;
   Observable<double> showTip;
 
@@ -89,6 +97,7 @@ private:
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
   ImRect chartVisibleRect(ChartView *chart);
+  void telemetryChanged();
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
@@ -101,6 +110,10 @@ private:
   void stopAutoScroll();
   void doAutoScroll();
   void drawToolBar();
+  void saveLayout();
+  void loadLayout();
+  void exportCsv();
+  void fitTimeRange();
   void updateTabBar();
   void setMaxChartRange(int value);
   void updateLayout();
@@ -121,6 +134,12 @@ private:
   std::vector<std::unique_ptr<ChartView>> charts_;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts_;
   TabBar tabbar_;
+  std::unordered_map<int, std::string> tab_names_;
+  std::vector<cabana::Equation> equations_;
+  cabana::Telemetry calculated_;
+  std::string equation_errors_;
+  std::string browser_filter_;
+  std::vector<std::string> browser_paths_;
   ChartsContainer charts_container_{this};
   ImGuiWindow *charts_scroll_ = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport_;
@@ -156,9 +175,9 @@ private:
 
 class ZoomCommand : public UndoCommand {
 public:
-  ZoomCommand(std::pair<double, double> range) : range(range) {
-    prev_range = can->timeRange();
-  }
+  ZoomCommand(std::pair<double, double> range) : ZoomCommand(range, can->timeRange()) {}
+  ZoomCommand(std::pair<double, double> range, std::optional<std::pair<double, double>> previous)
+      : prev_range(previous), range(range) {}
   void undo() override { can->setTimeRange(prev_range); }
   void redo() override { can->setTimeRange(range); }
   std::optional<std::pair<double, double>> prev_range, range;
