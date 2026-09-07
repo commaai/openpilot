@@ -100,9 +100,10 @@ float CameraWidget::frameAspectRatio() const {
 
 void CameraWidget::paint() {
   ImDrawList *p = ImGui::GetWindowDrawList();
-  p->AddRectFilled(rect_.Min, rect_.Max, bg_, ImGui::GetStyle().ChildRounding);
-
   std::lock_guard lk(frame_lock_);
+  if (rgb_frame_.isNull() || !settings.crop_video) {
+    p->AddRectFilled(rect_.Min, rect_.Max, bg_, ImGui::GetStyle().ChildRounding);
+  }
   if (rgb_frame_.isNull()) return;
   if (frame_updated_) {
     frame_texture_.upload(rgb_frame_);
