@@ -286,13 +286,12 @@ void ChartsWidget::drawSignalBrowser() {
     while (clipper.Step()) for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
       const auto &node = browser_tree_.nodes[rows[i]];
       const bool branch = !node.children.empty();
-      const std::string label = chart::SignalTree::isIndex(node.name) ? "[" + node.name + "]" : node.name;
+      const std::string label = chart::SignalTree::isIndex(node.name) ? browser_tree_.nodes[node.parent].name + "/" + node.name : node.name;
       ImGui::PushID(node.key.c_str());
       const float indent = node.depth * ImGui::GetStyle().IndentSpacing * 0.5f;
       if (indent > 0) ImGui::Indent(indent);
       ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-      if (branch) flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-      else flags |= ImGuiTreeNodeFlags_Leaf;
+      if (!branch) flags |= ImGuiTreeNodeFlags_Leaf;
       ImGui::SetNextItemOpen(branch && expanded.count(node.key), ImGuiCond_Always);
       const bool open = ImGui::TreeNodeEx("node", flags, "%s", label.c_str());
       if (branch && ImGui::IsItemToggledOpen()) {
