@@ -79,6 +79,7 @@ private:
   void updateWarnings();
 
   MessageId msg_id_;
+  size_t last_message_size_ = 0;
   const char *warning_icon_ = nullptr;
   std::string warning_label_;
   ElidedLabel name_label_;

@@ -186,15 +186,16 @@ void DetailWidget::refresh() {
 
 void DetailWidget::updateWarnings() {
   std::vector<std::string> warnings;
+  last_message_size_ = can->lastMessage(msg_id_).dat.size();
   auto msg = dbc()->msg(msg_id_);
   if (msg) {
     // A restored tab or a seek can refer to a bus with no sample at the current time.
     // lastMessage() returns empty data in that case, not a received zero-byte frame.
     if (msg_id_.source == INVALID_SOURCE || !can->lastMessages().count(msg_id_)) {
       warnings.push_back("No messages received.");
-    } else if (msg->size != can->lastMessage(msg_id_).dat.size()) {
+    } else if (msg->size != last_message_size_) {
       warnings.push_back("Message size mismatch: DBC defines " + std::to_string(msg->size) +
-                         " bytes, received " + std::to_string(can->lastMessage(msg_id_).dat.size()) + " bytes.");
+                         " bytes, received " + std::to_string(last_message_size_) + " bytes.");
     }
     for (auto s : binary_view_->getOverlappingSignals()) {
       warnings.push_back(s->name + " has overlapping bits.");
@@ -214,6 +215,9 @@ void DetailWidget::updateWarnings() {
 void DetailWidget::updateState(const std::set<MessageId> *msgs) {
   if ((msgs && !msgs->count(msg_id_)))
     return;
+
+  // Restored tabs can be drawn before their first frame arrives.
+  if (last_message_size_ != can->lastMessage(msg_id_).dat.size()) refresh();
 
   if (tab_widget_index_ == 0)
     binary_view_->updateState();
