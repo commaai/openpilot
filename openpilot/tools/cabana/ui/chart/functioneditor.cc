@@ -32,8 +32,10 @@ void ChartsWidget::drawFunctionEditor() {
   auto &e = function_draft_;
   const bool editing = !function_original_name_.empty();
   // Keep the identity stable: charts and other functions refer to this name.
+  ImGui::TextUnformatted("Name");
+  ImGui::SetNextItemWidth(-1);
   ImGui::BeginDisabled(editing);
-  inputText("Name", &e.name, "e.g. speed_mph");
+  inputText("##name", &e.name, "e.g. speed_mph");
   ImGui::EndDisabled();
   if (editing) ImGui::SetItemTooltip("The name is used by charts and other functions.");
 
@@ -114,6 +116,33 @@ void ChartsWidget::drawFunctionEditor() {
   ImGui::EndDisabled();
   ImGui::SameLine();
   const bool cancel = ImGui::Button("Cancel");
+  bool remove = false;
+  if (editing) {
+    std::string dependents;
+    for (const auto &other : equations_) {
+      if (other.name != function_original_name_ && (other.source == function_original_name_ ||
+          std::find(other.additional.begin(), other.additional.end(), function_original_name_) != other.additional.end())) {
+        if (!dependents.empty()) dependents += ", ";
+        dependents += other.name;
+      }
+    }
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!dependents.empty());
+    remove = ImGui::Button("Delete function");
+    ImGui::EndDisabled();
+    disabledItemTooltip(dependents.empty() ? "Remove this function from the layout and all charts." :
+                        ("Update or delete these functions first: " + dependents).c_str());
+  }
+  if (remove) {
+    equations_.erase(std::remove_if(equations_.begin(), equations_.end(),
+      [&](const auto &other) { return other.name == function_original_name_; }), equations_.end());
+    // Removing a series may remove its chart, so retain a separate list while walking all tabs.
+    std::vector<ChartView *> charts;
+    for (const auto &chart : charts_) charts.push_back(chart.get());
+    for (auto *chart : charts) {
+      chart->removeIf([&](const auto &signal) { return signal.path == function_original_name_; });
+    }
+  }
   if (save) {
     e.name = name;
     e.source = utils::trimmed(e.source);
@@ -121,18 +150,20 @@ void ChartsWidget::drawFunctionEditor() {
     auto existing = std::find_if(equations_.begin(), equations_.end(), [&](const auto &other) { return other.name == function_original_name_; });
     if (existing == equations_.end()) equations_.push_back(e);
     else *existing = e;
+  }
+  if (save || remove) {
     // Discard old results, including any in-flight evaluation of the previous definition.
     ++equation_revision_;
     calculated_.clear();
     equation_errors_.clear();
     for (auto &chart : charts_) chart->updateFields();
     rebuildSignalBrowser();
-    analysisRequested();
+    if (save) analysisRequested();
     fieldsChanged();
-    if (function_plot_) createChart()->addFields(e.name);
+    if (save && function_plot_) createChart()->addFields(e.name);
     updateState();
   }
-  if (save || cancel) {
+  if (save || remove || cancel) {
     function_editor_open_ = false;
     ImGui::CloseCurrentPopup();
   }

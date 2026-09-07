@@ -150,7 +150,9 @@ not loaded yet. **Plot in a new chart** displays the result immediately.
 
 Saved functions appear in the **Functions** menu for editing and in the signal browser for
 plotting. Editing recalculates existing plots and dependent functions. Names stay fixed because
-other signals and charts refer to them. Use **Layout → Save Layout** to keep the definitions.
+other signals and charts refer to them. **Delete function** removes its definition and plotted
+series from all tabs. If another function uses it, update or delete that dependent function first.
+Use **Layout → Save Layout** to keep the changes.
 
 
 **Layout → Open Layout** accepts Cabana JSON. The bundled presets use Python equations
