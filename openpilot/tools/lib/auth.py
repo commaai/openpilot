@@ -2,7 +2,7 @@
 """
 Usage::
 
-  usage: auth.py [-h] [{google,apple,github,jwt}] [jwt]
+  usage: auth.py [-h] {google,apple,github,jwt} [jwt]
 
   Login to your comma account
 
@@ -16,7 +16,7 @@ Usage::
 
 Examples::
 
-  ./auth.py  # Log in with google account
+  ./auth.py google  # Log in with Google Account
   ./auth.py github  # Log in with GitHub Account
   ./auth.py jwt ey......hw  # Log in with a JWT from https://jwt.comma.ai, for use in CI
 """
@@ -120,7 +120,7 @@ def login(method):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Login to your comma account')
-  parser.add_argument('method', default='google', const='google', nargs='?', choices=['google', 'apple', 'github', 'jwt'])
+  parser.add_argument('method', choices=['google', 'apple', 'github', 'jwt'])
   parser.add_argument('jwt', nargs='?')
 
   args = parser.parse_args()
