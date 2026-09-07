@@ -4,13 +4,17 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <fstream>
+#include <iomanip>
 #include <limits>
 #include <random>
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
+#include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
@@ -64,7 +68,57 @@ void ChartView::drawMenuActions() {
   ImGui::Indent(indent);
   if (ImGui::MenuItem("Manage Signals")) manageSignals();
   if (ImGui::MenuItem("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
+  if (ImGui::MenuItem("Export to CSV...", nullptr, false, !sigs_.empty())) {
+    std::string dir = settings.last_dir + "/" + can->routeName() + "_chart.csv";
+    FileDialog::getSaveFileName("Export chart to CSV file", dir, ".csv", [this](const std::string &fn) {
+      if (!fn.empty()) exportToCSV(fn);
+    });
+  }
   ImGui::Unindent(indent);
+}
+
+// exports exactly what's plotted: every signal on this chart, time-aligned onto one shared axis.
+// Unlike utils::exportSignalsToCSV (which is scoped to a single message), a chart's signals can
+// come from several different messages, so each column is held at its last known value (the same
+// zero-order hold the chart itself renders) rather than only printing rows where every signal
+// happens to update at once.
+void ChartView::exportToCSV(const std::string &file_name) const {
+  if (sigs_.empty()) return;
+
+  // round to microseconds so near-identical floats from different signals collapse into one row
+  auto quantize = [](double sec) { return (int64_t)std::llround(sec * 1e6); };
+
+  std::vector<int64_t> times;
+  for (const auto &s : sigs_) {
+    times.reserve(times.size() + s.vals.size());
+    for (const auto &pt : s.vals) times.push_back(quantize(pt.x));
+  }
+  std::sort(times.begin(), times.end());
+  times.erase(std::unique(times.begin(), times.end()), times.end());
+  if (times.empty()) return;
+
+  std::ofstream stream(file_name, std::ios::trunc);
+  if (!stream) return;
+
+  stream << "time";
+  for (const auto &s : sigs_) stream << "," << msgName(s.msg_id) << "." << s.sig->name;
+  stream << "\n";
+
+  // one cursor per signal; `times` and every signal's `vals` are both already sorted, so each
+  // cursor only advances forward as we scan `times` once (a single linear merge, no per-row search)
+  std::vector<size_t> cursor(sigs_.size(), 0);
+  for (int64_t t : times) {
+    stream << std::fixed << std::setprecision(6) << (t / 1e6);
+    for (size_t i = 0; i < sigs_.size(); ++i) {
+      const auto &vals = sigs_[i].vals;
+      while (cursor[i] < vals.size() && quantize(vals[cursor[i]].x) <= t) ++cursor[i];
+      stream << ",";
+      if (cursor[i] > 0) {
+        stream << std::fixed << std::setprecision(sigs_[i].sig->precision) << vals[cursor[i] - 1].y;
+      }
+    }
+    stream << "\n";
+  }
 }
 
 // the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
