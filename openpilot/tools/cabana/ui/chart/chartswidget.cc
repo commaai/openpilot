@@ -214,14 +214,15 @@ void ChartsWidget::drawToolBar() {
     if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty())) saveLayout();
     if (ImGui::MenuItem("Open Layout...")) loadLayout();
     if (ImGui::BeginMenu("openpilot Presets")) {
-      const auto dir = executableDir() / "layouts";
-      std::error_code error;
-      std::vector<std::filesystem::path> presets;
-      for (const auto &entry : std::filesystem::directory_iterator(dir, error)) {
-        if (entry.path().extension() == ".json") presets.push_back(entry.path());
+      if (ImGui::IsWindowAppearing()) {
+        presets_.clear();
+        std::error_code error;
+        for (const auto &entry : std::filesystem::directory_iterator(executableDir() / "layouts", error)) {
+          if (entry.path().extension() == ".json") presets_.push_back(entry.path());
+        }
+        std::sort(presets_.begin(), presets_.end());
       }
-      std::sort(presets.begin(), presets.end());
-      for (const auto &path : presets) if (ImGui::MenuItem(path.stem().c_str())) openLayout(path.string());
+      for (const auto &path : presets_) if (ImGui::MenuItem(path.stem().c_str())) openLayout(path.string());
       ImGui::EndMenu();
     }
     ImGui::Separator();

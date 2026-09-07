@@ -67,16 +67,18 @@ PyObject *runtimeModule() {
 }
 
 thread_local int remaining_steps;
+// Lines cover Python loops and C calls cover call-heavy code. A loop that never leaves C, like
+// max(iter(int, 1)), cannot be interrupted, so the thread pool detaches stuck workers at exit.
 int traceEquation(PyObject *, PyFrameObject *, int event, PyObject *) {
-  if (event == PyTrace_LINE && --remaining_steps <= 0) {
+  if ((event == PyTrace_LINE || event == PyTrace_C_CALL) && --remaining_steps <= 0) {
     PyErr_SetString(PyExc_RuntimeError, "Equation exceeded its execution limit");
     return -1;
   }
   return 0;
 }
 struct ExecutionLimit {
-  ExecutionLimit() { reset(); PyEval_SetTrace(traceEquation, nullptr); }
-  ~ExecutionLimit() { PyEval_SetTrace(nullptr, nullptr); }
+  ExecutionLimit() { reset(); PyEval_SetTrace(traceEquation, nullptr); PyEval_SetProfile(traceEquation, nullptr); }
+  ~ExecutionLimit() { PyEval_SetTrace(nullptr, nullptr); PyEval_SetProfile(nullptr, nullptr); }
   void reset() { remaining_steps = 100000; }
 };
 }  // namespace

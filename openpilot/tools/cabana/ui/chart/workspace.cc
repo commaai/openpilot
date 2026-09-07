@@ -85,7 +85,7 @@ void ChartsWidget::loadLayout() {
     [this](const std::string &path) { if (!path.empty()) openLayout(path); });
 }
 
-bool ChartsWidget::openLayout(const std::string &name, bool defer_missing_can) {
+ChartsWidget::LayoutStatus ChartsWidget::openLayout(const std::string &name, bool defer_missing_can) {
   auto path = std::filesystem::path(name);
   if (!std::filesystem::exists(path) && (path.parent_path().empty() || path.parent_path() == "layouts")) {
     path = executableDir() / "layouts" / (path.has_extension() ? path.filename().string() : path.filename().string() + ".json");
@@ -93,21 +93,21 @@ bool ChartsWidget::openLayout(const std::string &name, bool defer_missing_can) {
   const std::string contents = util::read_file(path.string());
   if (contents.empty()) {
     MessageBox::warning("Open Layout", "Could not read the chart layout");
-    return false;
+    return LayoutStatus::Failed;
   }
   return restoreLayout(contents, defer_missing_can);
 }
 
-bool ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing_can) {
+ChartsWidget::LayoutStatus ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing_can) {
   auto layout = chart::parseLayout(contents);
-  if (!layout) { MessageBox::warning("Open Layout", "This is not a supported Cabana chart layout."); return false; }
+  if (!layout) { MessageBox::warning("Open Layout", "This is not a supported Cabana chart layout."); return LayoutStatus::Failed; }
   // Resolve CAN definitions before replacing charts. Cereal paths may arrive in later segments.
   for (const auto &tab : layout->tabs) for (const auto &chart : tab) for (const auto &s : chart.signals) {
     if (!s.path.empty()) continue;
     auto *msg = dbc()->msg(s.id);
     if (!msg || !msg->sig(s.name)) {
       if (!defer_missing_can) MessageBox::warning("Open Layout", "Load the matching DBC first. Missing " + s.id.toString() + " / " + s.name);
-      return false;
+      return defer_missing_can ? LayoutStatus::MissingCan : LayoutStatus::Failed;
     }
   }
   removeAll();
@@ -138,7 +138,7 @@ bool ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing
   telemetryChanged();
   updateTabBar();
   updateState();
-  return true;
+  return LayoutStatus::Restored;
 }
 
 std::shared_ptr<const cabana::Samples> ChartsWidget::telemetrySnapshot(const std::string &path) const {

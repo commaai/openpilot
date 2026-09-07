@@ -12,6 +12,7 @@ void DeviceStream::streamThread() {
   std::unique_ptr<Poller> poller(Poller::create());
   std::vector<std::unique_ptr<SubSocket>> sockets;
   for (const auto &[name, service] : services) {
+    if (name.size() > 10 && name.compare(name.size() - 10, 10, "EncodeData") == 0) continue;  // video payloads, not telemetry
     auto socket = std::unique_ptr<SubSocket>(SubSocket::create(context.get(), name,
       zmq_address.empty() ? "127.0.0.1" : zmq_address, false, true, service.queue_size));
     if (!socket) continue;

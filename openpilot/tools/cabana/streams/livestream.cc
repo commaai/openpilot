@@ -80,7 +80,7 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
   auto event = reader.getRoot<cereal::Event>();
   const uint64_t mono_time = event.getLogMonoTime();
   std::lock_guard lk(lock);
-  if (!received_first_ts_) received_first_ts_ = mono_time;
+  received_first_ts_ = received_first_ts_ ? std::min(received_first_ts_, mono_time) : mono_time;
   received_last_ts_ = std::max(received_last_ts_, mono_time);
   if (event.which() == cereal::Event::Which::CAN) {
     for (const auto &c : event.getCan()) {
@@ -97,7 +97,7 @@ void LiveStream::updateLastMessages() {
   {
     // merge events received from live stream thread.
     std::lock_guard lk(lock);
-    if (!begin_event_ts) begin_event_ts = received_first_ts_;
+    begin_event_ts = begin_event_ts ? std::min(begin_event_ts, received_first_ts_) : received_first_ts_;
     lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
     cabana::prepareTelemetryMerge(telemetry, received_telemetry_);
     for (auto &[path, samples] : received_telemetry_) {
@@ -105,6 +105,7 @@ void LiveStream::updateLastMessages() {
     }
     const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
     for (auto &[path, samples] : telemetry) {
+      if (samples->empty() || samples->front().x >= cutoff - 60) continue;  // trim each series at most once a minute
       auto first = std::lower_bound(samples->begin(), samples->end(), cutoff, [](const auto &p, double t) { return p.x < t; });
       if (first != samples->begin()) --first;  // retain the boundary sample for nearest-sample equations
       if (first != samples->begin()) samples = std::make_shared<const cabana::Samples>(first, samples->end());
@@ -142,7 +143,7 @@ void LiveStream::updateEvents() {
   for (auto it = first; it != last; ++it) {
     const CanEvent *e = *it;
     MessageId id = {.source = e->src, .address = e->address};
-    updateEvent(id, (e->mono_time - begin_event_ts) / 1e9, e->dat, e->size);
+    updateEvent(id, toSeconds(e->mono_time), e->dat, e->size);
     current_event_ts = e->mono_time;
   }
   current_event_ts = std::min(last_ts, lastest_event_ts);

@@ -695,7 +695,8 @@ void test_layout_equations() {
   equation.function = "return statistics.mean((value, v1))";
   REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[0].y == 5);
   equation.globals.clear();
-  for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "invalid Python !", "return None", "return (1, 2, 3)"}) {
+  for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "import os\nreturn 0",
+                    "return open('/dev/null')", "invalid Python !", "return None", "return (1, 2, 3)"}) {
     equation.function = code;
     bool failed = false;
     try { cabana::evaluateEquation(equation, snapshotTelemetry(data)); } catch (const std::exception &) { failed = true; }

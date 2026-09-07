@@ -558,7 +558,7 @@ void ChartView::handleMouseMove() {
     const double width = pan_range_.second - pan_range_.first;
     const double shift = (press_pos_.x - pos.x) * width / std::max(layout_.plot_area.GetWidth(), 1.0f);
     const double left = std::clamp(pan_range_.first + shift, can->minSeconds(), std::max(can->minSeconds(), can->maxSeconds() - width));
-    can->setTimeRange(std::make_pair(left, left + width));
+    can->setTimeRange(std::make_pair(left, left + width), false);
     ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
   }
 

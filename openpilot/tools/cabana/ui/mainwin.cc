@@ -702,14 +702,16 @@ void MainWindow::saveSessionState() {
 
 void MainWindow::restoreSessionState() {
   if (!charts_widget_) return;
+  // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries while definitions are missing.
+  using LayoutStatus = ChartsWidget::LayoutStatus;
   if (!startup_layout_.empty()) {
-    charts_restored_ = charts_widget_->openLayout(startup_layout_, true);
-    if (charts_restored_) startup_layout_.clear();
-    return;
-  }
-  // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
-  if (!charts_restored_ && !settings.chart_layout.empty()) {
-    charts_restored_ = charts_widget_->restoreLayout(settings.chart_layout, true);
+    const auto status = charts_widget_->openLayout(startup_layout_, true);
+    charts_restored_ = status == LayoutStatus::Restored;
+    if (status != LayoutStatus::MissingCan) startup_layout_.clear();
+  } else if (!charts_restored_ && !settings.chart_layout.empty()) {
+    const auto status = charts_widget_->restoreLayout(settings.chart_layout, true);
+    charts_restored_ = status == LayoutStatus::Restored;
+    if (status == LayoutStatus::Failed) settings.chart_layout.clear();
   }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
