@@ -7,6 +7,7 @@
 #include "imgui_internal.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
+#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/util.h"
 
@@ -30,6 +31,25 @@ void formRow(FormLabel label, float label_width) {
   ImGui::TextUnformatted(FORM_LABELS[label]);
   ImGui::SameLine(label_width);
   ImGui::SetNextItemWidth(-FLT_MIN);
+}
+
+void settingInputInt(const char *id, int *value, int step, int step_fast, int minimum, int maximum) {
+  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const float width = ImGui::CalcItemWidth();
+  ImGui::PushID(id);
+  ImGui::BeginGroup();
+  ImGui::SetNextItemWidth(width - 2 * (iconButtonWidth() + spacing));
+  ImGui::InputInt("##value", value, 0);
+  *value = std::clamp(*value, minimum, maximum);
+  const int increment = ImGui::GetIO().KeyCtrl ? step_fast : step;
+  ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
+  ImGui::SameLine(0.0f, spacing);
+  if (iconButton("decrement", icon::DASH_LG)) *value = std::max(minimum, *value - increment);
+  ImGui::SameLine(0.0f, spacing);
+  if (iconButton("increment", icon::PLUS_LG)) *value = std::min(maximum, *value + increment);
+  ImGui::PopItemFlag();
+  ImGui::EndGroup();
+  ImGui::PopID();
 }
 
 }  // namespace
@@ -56,10 +76,7 @@ void SettingsDialog::draw() {
   int theme_index = theme_ - LIGHT_THEME;
   if (ImGui::Combo("##theme", &theme_index, themes, IM_ARRAYSIZE(themes))) theme_ = theme_index + LIGHT_THEME;
   formRow(CACHED_MINUTES, label_width);
-  // InputInt takes no character filter, so out of range text is clamped after the edit
-  if (ImGui::InputInt("##cached_minutes", &cached_minutes_, 1, 10)) {
-    cached_minutes_ = std::clamp(cached_minutes_, MIN_CACHE_MINUTES, MAX_CACHE_MINUTES);
-  }
+  settingInputInt("cached_minutes", &cached_minutes_, 1, 10, MIN_CACHE_MINUTES, MAX_CACHE_MINUTES);
 
   ImGui::SeparatorText("New Signal Settings");
   static const char *directions[] = {"MSB First", "LSB First", "Always Little Endian", "Always Big Endian"};
@@ -68,7 +85,7 @@ void SettingsDialog::draw() {
 
   ImGui::SeparatorText("Chart");
   formRow(CHART_HEIGHT, label_width);
-  if (ImGui::InputInt("##chart_height", &chart_height_, 10, 10)) chart_height_ = std::clamp(chart_height_, 100, 500);
+  settingInputInt("chart_height", &chart_height_, 10, 10, 100, 500);
 
   checkBox("Enable live stream logging", &log_livestream_);
   ImGui::BeginDisabled(!log_livestream_);

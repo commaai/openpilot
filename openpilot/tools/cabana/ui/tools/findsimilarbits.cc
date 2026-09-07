@@ -9,7 +9,7 @@
 #include "tools/cabana/ui/util.h"
 
 FindSimilarBitsDlg::FindSimilarBitsDlg() {
-  setTitle("Find similar bits");
+  setTitle("Find Similar Bits");
 
   for (int bus : can->sources) {
     bus_items_.push_back(bus);
@@ -64,7 +64,7 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::SetNextItemWidth(60);
     ImGui::Combo("##equal", &equal_, "Yes\0No\0");
     ImGui::SameLine();
-    ImGui::TextUnformatted("Min msg count");
+    ImGui::TextUnformatted("Minimum Message Count");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(80);
     if (ImGui::InputInt("##min_msgs", &min_msgs_, 1, 10)) min_msgs_ = std::max(min_msgs_, 0);
@@ -86,7 +86,7 @@ void FindSimilarBitsDlg::drawTable() {
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
   if (!ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) return;
   ImGui::TableSetupScrollFreeze(0, 1);
-  static const char *headers[] = {"address", "byte idx", "bit idx", "mismatches", "total msgs", "% mismatched"};
+  static const char *headers[] = {"Address", "Byte Index", "Bit Index", "Mismatches", "Messages", "Mismatched (%)"};
   // the fixed widths are section sizes: imgui adds the cell padding on top of the column width
   const float padding = ImGui::GetStyle().CellPadding.x * 2;
   ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 40.0f - padding);  // vertical header: row number

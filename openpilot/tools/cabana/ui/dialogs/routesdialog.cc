@@ -61,7 +61,7 @@ void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool
   if (success) {
     for (const auto &route : list) {
       const int mins = static_cast<int>((route.end_ms - route.start_ms) / 60000);
-      s_.routes.push_back({routes::formatUnixMs(route.start_ms) + "    " + std::to_string(mins) + "min", route.name});
+      s_.routes.push_back({routes::formatUnixMs(route.start_ms) + "    " + std::to_string(mins) + " min", route.name});
     }
     if (!s_.routes.empty()) s_.route_index = 0;
   } else {
@@ -80,7 +80,7 @@ void RoutesDialog::finish(bool accepted) {
 
 void RoutesDialog::draw() {
   if (!open_) return;
-  if (!beginDialog("Remote routes", &popup_, ImVec2(480.0f, 420.0f))) return;
+  if (!beginDialog("Remote Routes", &popup_, ImVec2(480.0f, 420.0f))) return;
 
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Device");

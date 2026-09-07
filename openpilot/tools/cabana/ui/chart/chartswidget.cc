@@ -76,7 +76,7 @@ std::string ChartsWidget::whatsThis() const {
          "<b>" + mod + " + Wheel</b>: Zoom around the pointer.<br />"
          "<b>Signal right-click</b>: Transforms and statistics.<br />"
          "<b>Shift + Drag</b>: Scrub through the chart to view values.<br />"
-         "<b>Right Mouse</b>: Open the context menu.<br />";
+         "<b>Right-click</b>: Open the context menu.<br />";
 }
 
 void ChartsWidget::newTab() {
@@ -261,17 +261,15 @@ void ChartsWidget::drawToolBar() {
     pushMonoFont(ImGui::GetFontSize());
     const float reset_zoom_width = iconTextButtonWidth(icon::ZOOM_OUT, widest + "-" + widest);
     popMonoFont();
-    items.push_back({iconButtonWidth(), [this]() {
+    items.push_back({iconButtonWidth() * 2 + ImGui::GetStyle().ItemInnerSpacing.x, [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack_.canUndo());
       if (iconButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack_.undo();
       ImGui::EndDisabled();
-    }});
-    items.push_back({iconButtonWidth(), [this]() {
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::BeginDisabled(!zoom_undo_stack_.canRedo());
       if (iconButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack_.redo();
       ImGui::EndDisabled();
     }});
-    items.back().tight = true;
     items.push_back({reset_zoom_width, [this, &reset_zoom_text, reset_zoom_width]() {
       pushMonoFont(ImGui::GetFontSize());
       const bool clicked = iconTextButton("reset_zoom_btn", icon::ZOOM_OUT, reset_zoom_text, reset_zoom_width);
