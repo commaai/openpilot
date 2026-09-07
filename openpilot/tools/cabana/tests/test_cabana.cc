@@ -15,6 +15,18 @@
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
+void test_message_id_parsing() {
+  for (const auto &text : {"", "1", ":123", "1:", "-1:123", "256:1", "1:100000000", "1:1junk", "1junk:1", "1:1:1"}) {
+    REQUIRE(!MessageId::parse(text));
+    REQUIRE(MessageId::fromString(text) == MessageId{});
+  }
+  const MessageId expected{255, 0xffffffff};
+  REQUIRE(MessageId::parse("255:FFFFFFFF") == expected);
+  REQUIRE(MessageId::parse("255:ffffffff") == expected);
+  REQUIRE(MessageId::parse(expected.toString()) == expected);
+  REQUIRE(MessageId::parse("0:0") == MessageId{});
+}
+
 void test_generate_dbc() {
   std::string fn = std::string(OPENDBC_FILE_PATH) + "/tesla_can.dbc";
   DBCFile dbc_origin(fn);
@@ -381,6 +393,7 @@ void test_cabana_core() {
   test_pixel_envelope();
   test_format_seconds();
   test_to_hex();
+  test_message_id_parsing();
   test_signal_tooltip();
   test_generate_dbc();
   test_comment_order();
