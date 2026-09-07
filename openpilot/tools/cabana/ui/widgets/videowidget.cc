@@ -154,11 +154,13 @@ void VideoWidget::drawPlaybackController() {
 
   std::vector<ToolbarItem> items;
   if (!can->liveStreaming()) {
-    items = {
-      toolbarAction("rewind", icon::REWIND, "Seek backward", []() { can->seekTo(can->currentSec() - 1); }),
-      toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }, true, true),
-      toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true),
-    };
+    items.push_back(toolbarAction("rewind", icon::REWIND, "Seek backward", []() { can->seekTo(can->currentSec() - 1); }));
+  }
+  items.push_back(toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }, true, true));
+  if (can->liveStreaming()) {
+    items.push_back(toolbarAction("skip-end", icon::SKIP_END, "Go live", [this]() { skipToEnd(); }, skip_to_end_enabled_, true));
+  } else {
+    items.push_back(toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true));
   }
   if (slider_ || msgs_received_) {
     // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
