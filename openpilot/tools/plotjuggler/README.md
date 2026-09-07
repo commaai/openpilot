@@ -66,7 +66,7 @@ For a quick demo, go through the installation step and run this command:
 ## Layouts
 
 [Cabana](../cabana/README.md#plotting-and-analysis) contains the bundled layouts
-with Python equations: `../cabana/cabana --demo --layout tuning`. Cabana provides a
+with Python equations: `../cabana/cabana --demo --layout ../cabana/layouts/tuning.json`. Cabana provides a
 Plots workspace for openpilot messages alongside its CAN editor and synchronized route playback.
 
 If you create a layout that's useful for others, consider upstreaming it.
@@ -75,7 +75,7 @@ If you create a layout that's useful for others, consider upstreaming it.
 
 Use this layout to improve your car's tuning and generate plots for tuning PRs. Also see the [tuning wiki](https://github.com/commaai/openpilot/wiki/Tuning) and tuning PR template.
 
-`../cabana/cabana --demo --layout tuning`
+`../cabana/cabana --demo --layout ../cabana/layouts/tuning.json`
 
 
 ![screenshot](https://i.imgur.com/cizHCH3.png)

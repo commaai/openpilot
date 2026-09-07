@@ -18,7 +18,7 @@ Options:
   --qcam                    load qcamera
   --wide-road               load wide road camera (alias: --ecam)
   --cabin                   load cabin camera (alias: --dcam)
-  --layout <name|file>      open an openpilot preset or Cabana JSON layout
+  --layout [LAYOUT]         open a Cabana JSON layout file
   --stream                  read openpilot messages from local msgq (alias: --msgq)
   --msgq                    read openpilot messages from local msgq
   --panda                   read can messages from panda
@@ -101,11 +101,14 @@ Cabana includes [openpilot analysis layouts](layouts), including
 `tuning`, `longitudinal`, `torque`, and camera/debug presets. From this directory, try:
 
 ```shell
-./cabana --demo --layout tuning
+./cabana --demo --layout layouts/tuning.json
 ./cabana "5beb9b58bd12b691/0000010a--a51155e496" --layout layouts/tuning.json
-./cabana --stream --layout longitudinal       # local replay or running openpilot
-./cabana --zmq <ipaddress> --layout tuning    # device running the messaging bridge
+./cabana --stream --layout layouts/longitudinal.json       # local replay or running openpilot
+./cabana --zmq <ipaddress> --layout layouts/tuning.json    # device running the messaging bridge
 ```
+
+`--layout` takes a file path relative to the directory where you run the command,
+or an absolute path. Omitting its value leaves the saved session layout unchanged.
 
 **Layout → openpilot Presets** opens a bundled layout on the current route. Presets open the
 central **Plots** workspace, with the route's openpilot messages in the left sidebar and

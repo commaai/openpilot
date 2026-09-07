@@ -470,7 +470,7 @@ function op_default() {
   echo "  op build -j4"
   echo "          Compile openpilot using 4 cores"
   echo ""
-  echo "  op juggle --demo --layout tuning"
+  echo "  op juggle --demo --layout openpilot/tools/cabana/layouts/tuning.json"
   echo "          Run Cabana on the demo route with the tuning layout"
 }
 
