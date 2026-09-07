@@ -1,15 +1,20 @@
 
+#include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <sstream>
+#include <stdexcept>
+#include <thread>
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
 #include "tools/cabana/ui/qtstate.h"
+#include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/ui/chart/downsample.h"
 #include "tools/cabana/utils/strings.h"
 
@@ -354,6 +359,25 @@ void test_qt_state_blobs() {
   REQUIRE(!qtstate::parseQtHeaderState(fromHex("000000fe00000000000000010000000000000000010000000000000000")).has_value());
 }
 
+void test_parallel_failure_joins_workers() {
+  for (bool fail_on_caller : {true, false}) {
+    std::atomic<int> finished = 0;
+    const size_t chunks = std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 4) + 1;
+    bool caught = false;
+    try {
+      parallelFor(chunks, [&](size_t begin, size_t end) {
+        if (begin == (fail_on_caller ? 0u : 1u)) throw std::runtime_error("task failed");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        ++finished;
+      });
+    } catch (const std::runtime_error &) {
+      caught = true;
+    }
+    REQUIRE(caught);
+    REQUIRE(finished == chunks - 1);
+  }
+}
+
 void test_pixel_envelope() {
   struct Point {
     double x, y;
@@ -392,6 +416,7 @@ void test_cabana_core() {
   test_route_timestamps();
   test_route_api_response();
   test_route_json();
+  test_parallel_failure_joins_workers();
   test_qt_state_blobs();
 }
 
