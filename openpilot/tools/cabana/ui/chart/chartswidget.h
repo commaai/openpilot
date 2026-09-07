@@ -113,6 +113,8 @@ private:
   void stopAutoScroll();
   void doAutoScroll();
   void drawToolBar();
+  void openFunctionEditor(const cabana::Equation *equation = nullptr);
+  void drawFunctionEditor();
   void saveLayout();
   void loadLayout();
   void exportCsv();
@@ -141,6 +143,10 @@ private:
   TabBar tabbar_;
   std::unordered_map<int, std::string> tab_names_;
   std::vector<cabana::Equation> equations_;
+  cabana::Equation function_draft_;
+  std::string function_original_name_, function_filter_;
+  std::vector<std::string> function_sources_;
+  bool function_editor_open_ = false, function_editor_show_ = false, function_plot_ = true;
   cabana::FieldsSnapshot calculated_;
   struct EquationResult {
     cabana::FieldsSnapshot values;

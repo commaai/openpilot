@@ -209,8 +209,17 @@ void ChartsWidget::drawToolBar() {
     items.push_back(toolbarMenu("columns", columns_action_text, "Columns", column_items));
   }
 
+  items.push_back(toolbarMenu("chart_functions", "Functions", "Functions", [this]() {
+    if (ImGui::MenuItem("New Function...")) openFunctionEditor();
+    if (!equations_.empty()) ImGui::Separator();
+    for (const auto &equation : equations_) {
+      ImGui::PushID(equation.name.c_str());
+      if (ImGui::MenuItem(equation.name.c_str())) openFunctionEditor(&equation);
+      ImGui::PopID();
+    }
+  }));
   items.push_back(toolbarMenu("chart_workspace", "Layout", "Layout", [this]() {
-    if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty())) saveLayout();
+    if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty() || !equations_.empty())) saveLayout();
     if (ImGui::MenuItem("Open Layout...")) loadLayout();
     if (ImGui::BeginMenu("openpilot Presets")) {
       if (ImGui::IsWindowAppearing()) {
@@ -550,6 +559,7 @@ void ChartsWidget::removeAll() {
   fields_dirty_ = false;
   browser_expanded_.clear();
   browser_search_expanded_.clear();
+  function_editor_open_ = false;
   equations_.clear();
   calculated_.clear();
   equation_errors_.clear();
@@ -624,6 +634,7 @@ void ChartsWidget::draw() {
   ImGui::EndChild();
 
   drawDragPreview();
+  drawFunctionEditor();
 
   if (signal_selector_ && !signal_selector_->draw()) {
     auto dlg = std::move(signal_selector_);
