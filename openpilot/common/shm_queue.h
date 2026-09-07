@@ -1,14 +1,10 @@
 #pragma once
 
 #include <cerrno>
-#include <charconv>
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include <string_view>
 #include <utility>
-#include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -42,9 +38,8 @@ public:
 
     bool success = fcntl(fd, F_SETFD, FD_CLOEXEC) == 0;
     if (success) {
-      size_t used = 0;
-      // Reserve before writing. Scan pending first so publication can only overcount.
-      success = check_capacity(pending_dir, page_size, used) && check_capacity(ready_dir, page_size, used);
+      // The pending filename must be visible before opening a budget generation.
+      success = reserve_capacity(data.size(), page_size);
     }
     if (success) {
       success = write_all(fd, data);
@@ -81,46 +76,30 @@ private:
     return true;
   }
 
-  // Consume a decimal number and its trailing '-' from the filename.
-  static bool read_field(std::string_view &name, uint64_t &value) {
-    const size_t separator = name.find('-');
-    if (separator == std::string_view::npos || separator == 0) return false;
-    const auto result = std::from_chars(name.data(), name.data() + separator, value);
-    if (result.ec != std::errc() || result.ptr != name.data() + separator) return false;
-    name.remove_prefix(separator + 1);
-    return true;
-  }
+  bool reserve_capacity(size_t payload_size, size_t page_size) const {
+    const size_t pages = storage_cost(payload_size, page_size) / page_size;
+    const size_t limit = capacity / page_size;
+    const int fd = open((path + "/budget").c_str(), O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0600);
+    if (fd < 0) return false;
 
-  static bool parse_payload_size(std::string_view name, uint64_t &payload_size) {
-    // Filename: <20-digit monotonic timestamp>-<pid>-<payload bytes>-<random suffix>.
-    if (name.find('-') != 20) return false;
-    uint64_t timestamp = 0;
-    uint64_t pid = 0;
-    if (!read_field(name, timestamp) || !read_field(name, pid) || !read_field(name, payload_size)) return false;
-    return pid != 0 && !name.empty() && name.find('-') == std::string_view::npos;
-  }
-
-  bool check_capacity(const std::string &directory, size_t page_size, size_t &used) const {
-    DIR *dir = opendir(directory.c_str());
-    if (dir == nullptr) return false;
-
-    bool success = true;
-    while (true) {
-      errno = 0;
-      const auto *entry = readdir(dir);
-      if (entry == nullptr) {
-        success = errno == 0;
-        break;
-      }
-      uint64_t payload_size = 0;
-      if (!parse_payload_size(entry->d_name, payload_size)) continue;
-      if (payload_size > capacity || storage_cost(payload_size, page_size) > capacity - used) {
-        success = false;
-        break;
-      }
-      used += storage_cost(payload_size, page_size);
+    struct stat budget = {};
+    bool success = fstat(fd, &budget) == 0 && budget.st_size >= 0 &&
+                   static_cast<size_t>(budget.st_size) <= limit && pages <= limit - budget.st_size;
+    if (success) {
+      // One byte reserves one page. A single append gives this descriptor its
+      // own reservation end, even when other producers append concurrently.
+      const std::string credits(pages, '\0');
+      success = write(fd, credits.data(), credits.size()) == static_cast<ssize_t>(credits.size());
     }
-    closedir(dir);
+    if (success) {
+      const off_t end = lseek(fd, 0, SEEK_CUR);
+      success = end >= 0 && static_cast<size_t>(end) <= limit;
+    }
+    // Failed sends leave conservative credits until the consumer replaces the
+    // budget. Never truncate or decrement a generation another producer uses.
+    if (close(fd) != 0) {
+      success = false;
+    }
     return success;
   }
 

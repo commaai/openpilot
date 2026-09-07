@@ -3,6 +3,7 @@ import json
 import time
 import subprocess
 from pathlib import Path
+from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 
 from openpilot.common.hardware.hw import Paths
@@ -72,14 +73,16 @@ class TestLogmessaged(OpenpilotTestCase):
     usage = sum(p.stat().st_blocks * 512 + ShmQueue.PAGE_SIZE for p in self.queue.ready.iterdir())
     assert self.queue.capacity // 2 < usage <= 2 * self.queue.capacity
     # Fits individually, but must be dropped because the spool is already over half full.
-    cloudlog.info('x' * (self.queue.capacity // 2))
+    with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')):
+      cloudlog.info('x' * (self.queue.capacity // 2))
     while (data := self.queue.receive()) is not None:
       assert json.loads(data[1:])['msg'] == message
     assert not list(self.queue.pending.iterdir())
     assert not list(self.queue.ready.iterdir())
     cloudlog.info('x' * self.queue.capacity)
     assert self.queue.receive() is None
-    cloudlog.info('after overflow')
+    with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')):
+      cloudlog.info('after overflow')
     data = self.queue.receive()
     assert data is not None
     assert json.loads(data[1:])['msg'] == 'after overflow'

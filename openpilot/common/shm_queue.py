@@ -12,6 +12,7 @@ class ShmQueue:
 
   def __init__(self, path: str, capacity: int = CAPACITY):
     self.capacity = capacity
+    self.budget = Path(path) / 'budget'
     self.pending = Path(path) / 'pending'
     self.ready = Path(path) / 'ready'
     self.pending.mkdir(parents=True, exist_ok=True)
@@ -36,14 +37,8 @@ class ShmQueue:
     stamp = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
     fd, name = tempfile.mkstemp(prefix=f'{stamp:020d}-{os.getpid()}-{len(data)}-', dir=self.pending)
     try:
-      usage = 0
-      for directory in (self.pending, self.ready):
-        with os.scandir(directory) as entries:
-          for entry in entries:
-            if metadata := self._metadata(entry.name):
-              usage += self._charge(metadata[1])
-              if usage > self.capacity:
-                return False
+      if not self._reserve(len(data)):
+        return False
       view = memoryview(data)
       while view:
         written = os.write(fd, view)
@@ -59,9 +54,56 @@ class ShmQueue:
         os.close(fd)
       Path(name).unlink(missing_ok=True)
 
+  def _reserve(self, size: int) -> bool:
+    # One appended byte claims one page. Each sender has its own file offset,
+    # so the end of its append tells it whether it exceeded the shared budget.
+    pages = self._charge(size) // self.PAGE_SIZE
+    limit = self.capacity // self.PAGE_SIZE
+    fd = os.open(self.budget, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_CLOEXEC, 0o600)
+    try:
+      if os.fstat(fd).st_size + pages > limit:
+        return False
+      return os.write(fd, bytes(pages)) == pages and os.lseek(fd, 0, os.SEEK_CUR) <= limit
+    finally:
+      os.close(fd)
+
+  def _load_batch(self):
+    used = 0
+    ready = []
+    # Pending must be scanned first: publication may be counted twice, not missed.
+    # Every producer creates its reservation BEFORE opening the budget file.
+    for directory in (self.pending, self.ready):
+      for path in directory.iterdir():
+        if (metadata := self._metadata(path.name)) is None:
+          continue
+        if directory == self.pending:
+          try:
+            os.kill(metadata[0], 0)
+          except ProcessLookupError:
+            path.unlink(missing_ok=True)
+            continue
+          except PermissionError:
+            pass
+        else:
+          ready.append(path)
+        used += self._charge(metadata[1])
+
+    # Replace rather than truncate: in-flight appenders retain their old budget.
+    # Late reservations can overshoot by roughly one budget during this handoff.
+    # A fixed staging name also bounds leftovers if the single reader crashes.
+    staging = self.budget.with_name('budget.next')
+    fd = os.open(staging, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_CLOEXEC, 0o600)
+    try:
+      os.ftruncate(fd, min(used, self.capacity) // self.PAGE_SIZE)
+      os.replace(staging, self.budget)
+    finally:
+      os.close(fd)
+      staging.unlink(missing_ok=True)
+    self._batch = sorted(ready, reverse=True)
+
   def receive(self) -> bytes | None:
     if not self._batch:
-      self._batch = sorted(self.ready.iterdir(), reverse=True)
+      self._load_batch()
     while self._batch:
       path = self._batch.pop()
       if (metadata := self._metadata(path.name)) is None:
@@ -73,15 +115,4 @@ class ShmQueue:
         continue
       if len(data) == metadata[1] and data:
         return data
-    # Incomplete files are never delivered. Only reclaim reservations whose
-    # producer has exited; a slow live writer may still be using its file.
-    for path in self.pending.iterdir():
-      if (metadata := self._metadata(path.name)) is None:
-        continue
-      try:
-        os.kill(metadata[0], 0)
-      except ProcessLookupError:
-        path.unlink(missing_ok=True)
-      except PermissionError:
-        pass
     return None
