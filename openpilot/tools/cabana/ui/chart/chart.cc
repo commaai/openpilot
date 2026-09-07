@@ -655,11 +655,11 @@ void ChartView::showTip(double sec) {
     if (s.visible) {
       std::string value = "--";
       if (const ImPlotPoint *pt = lastPointBefore(s, sec)) {
-        value = signalValue(s, pt->y);
+        value = utils::trimmed(signalValue(s, pt->y));
         s.track_pt = *pt;
         x = std::max(x, xPos(pt->x));
       }
-      std::string name = s.name();
+      std::string name = legendName(s);
       std::string min = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
       std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
       text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .value = value, .min = min, .max = max});
