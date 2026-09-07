@@ -206,12 +206,13 @@ void ChartsWidget::drawToolBar() {
   const std::string range_lb = is_zoomed ? std::string() : utils::formatSeconds(max_chart_range_);
   std::string reset_zoom_text;
   if (!is_zoomed) {
-    items.push_back({ImGui::CalcTextSize(range_lb.c_str()).x, [&range_lb]() {
+    // the range label and the slider are one unit: drawn inline and moved to the overflow menu together
+    slider_index = items.size();
+    const float label_width = ImGui::CalcTextSize(range_lb.c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x;
+    items.push_back({label_width + slider_width, [this, &range_lb, &slider_width]() {
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(range_lb.c_str());
-    }});
-    slider_index = items.size();
-    items.push_back({slider_width, [this, &slider_width]() {
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       // Restore the slider width in overflow; the toolbar may have shrunk it.
       const bool in_menu = ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_Popup;
       const float width = in_menu ? std::max(ImGui::GetContentRegionAvail().x, 150.0f) : slider_width;
@@ -219,9 +220,17 @@ void ChartsWidget::drawToolBar() {
       ImGui::SetItemTooltip("Set the chart range");
     }});
   } else {
+    const auto &range = *can->timeRange();
     char buf[64];
-    snprintf(buf, sizeof(buf), "%.2f-%.2f", can->timeRange()->first, can->timeRange()->second);
+    snprintf(buf, sizeof(buf), "%.2f-%.2f", range.first, range.second);
     reset_zoom_text = buf;
+    // The undo/redo/reset buttons form one group. The reset button has a fixed width in the mono font,
+    // sized for the longest range the stream can show, so its neighbors do not shift as the range changes.
+    const int digits = std::max({1, (int)std::to_string((long long)can->maxSeconds()).size(), (int)std::to_string((long long)range.second).size()});
+    const std::string widest = std::string(digits, '0') + ".00";
+    pushMonoFont(ImGui::GetFontSize());
+    const float reset_zoom_width = iconTextButtonWidth(icon::ZOOM_OUT, widest + "-" + widest);
+    popMonoFont();
     items.push_back({iconButtonWidth(), [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack_.canUndo());
       if (iconButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack_.undo();
@@ -232,10 +241,15 @@ void ChartsWidget::drawToolBar() {
       if (iconButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack_.redo();
       ImGui::EndDisabled();
     }});
-    items.push_back({toolbarButtonWidth(std::string(icon::ZOOM_OUT) + " " + reset_zoom_text), [this, &reset_zoom_text]() {
-      if (ImGui::Button((std::string(icon::ZOOM_OUT) + " " + reset_zoom_text + "###reset_zoom_btn").c_str())) zoomReset();
+    items.back().tight = true;
+    items.push_back({reset_zoom_width, [this, &reset_zoom_text, reset_zoom_width]() {
+      pushMonoFont(ImGui::GetFontSize());
+      const bool clicked = iconTextButton("reset_zoom_btn", icon::ZOOM_OUT, reset_zoom_text, reset_zoom_width);
+      popMonoFont();
+      if (clicked) zoomReset();
       ImGui::SetItemTooltip("Reset Zoom");
     }});
+    items.back().tight = true;
   }
   items.push_back(toolbarAction("remove_all_btn", icon::TRASH, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()));
   const char *dock_btn_icon = is_docked_ ? icon::BOX_ARROW_UP_RIGHT : icon::BOX_ARROW_IN_DOWN_LEFT;
@@ -247,7 +261,7 @@ void ChartsWidget::drawToolBar() {
     const float shrink = std::min(slider_width - MIN_RANGE_SLIDER_WIDTH, toolbarWidth(items, spacer_index) - ImGui::GetContentRegionAvail().x);
     if (shrink > 0.0f) {
       slider_width -= shrink;
-      items[slider_index].width = slider_width;
+      items[slider_index].width -= shrink;
     }
   }
   drawToolbar(items, spacer_index);
@@ -273,7 +287,8 @@ ChartView *ChartsWidget::createChart(int pos) {
   ChartView *ptr = chart.get();
   pos = std::clamp(pos, 0, (int)charts_.size());
   charts_.insert(charts_.begin() + pos, std::move(chart));
-  currentCharts().insert(currentCharts().begin() + pos, ptr);
+  auto &current = currentCharts();
+  current.insert(current.begin() + std::min(pos, (int)current.size()), ptr);
   updateLayout();
   return ptr;
 }
@@ -291,8 +306,8 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
 
 void ChartsWidget::splitChart(ChartView *src_chart) {
   if (src_chart->signals().size() > 1) {
-    auto it = std::find_if(charts_.begin(), charts_.end(), [src_chart](auto &c) { return c.get() == src_chart; });
-    const int pos = it - charts_.begin() + 1;
+    auto &current = currentCharts();
+    const int pos = std::find(current.begin(), current.end(), src_chart) - current.begin() + 1;
     for (auto &s : src_chart->takeExtraSignals()) {
       createChart(pos)->adoptSignal(std::move(s));
     }
@@ -606,9 +621,8 @@ void ChartsWidget::draw() {
 }
 
 void ChartsContainer::draw() {
-  ImGuiWindow *window = ImGui::GetCurrentWindow();
   const ImVec2 start = ImGui::GetCursorScreenPos();
-  const float width_avail = window->InnerRect.GetWidth() - (window->ScrollbarY ? ImGui::GetStyle().ItemInnerSpacing.x : 0.0f);
+  const float width_avail = ImGui::GetContentRegionAvail().x;
   geometry_ = ImRect(start, start + ImVec2(width_avail, 0));
   charts_widget_->updateLayout();
 

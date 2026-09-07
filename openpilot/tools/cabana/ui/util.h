@@ -74,6 +74,8 @@ int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 // Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
 float iconButtonWidth();
+bool iconTextButton(const char *id, const char *icon, const std::string &text, float width = 0.0f);
+float iconTextButtonWidth(const char *icon, const std::string &text);
 
 // tooltip for the last item that also shows while the item is disabled
 void disabledItemTooltip(const char *text);

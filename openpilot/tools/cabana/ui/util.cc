@@ -214,6 +214,26 @@ bool iconButton(const char *id, const char *icon, const char *tooltip) {
   return clicked;
 }
 
+float iconTextButtonWidth(const char *icon, const std::string &text) {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::CalcTextSize(icon).x + style.ItemInnerSpacing.x + ImGui::CalcTextSize(text.c_str(), nullptr, true).x + style.FramePadding.x * 2;
+}
+
+bool iconTextButton(const char *id, const char *icon, const std::string &text, float width) {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  if (width <= 0.0f) width = iconTextButtonWidth(icon, text);
+  const bool clicked = ImGui::Button((std::string("###") + id).c_str(), ImVec2(width, 0.0f));
+  const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+  const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
+  auto *draw_list = ImGui::GetWindowDrawList();
+  draw_list->AddText(ImVec2(min.x + style.FramePadding.x, min.y + style.FramePadding.y), color, icon);
+  // the text is centered between the icon and the right padding
+  const float left = min.x + style.FramePadding.x + ImGui::CalcTextSize(icon).x + style.ItemInnerSpacing.x;
+  const float slack = max.x - style.FramePadding.x - left - ImGui::CalcTextSize(text.c_str(), nullptr, true).x;
+  draw_list->AddText(ImVec2(left + std::max(0.0f, slack * 0.5f), min.y + style.FramePadding.y), color, text.c_str());
+  return clicked;
+}
+
 void disabledItemTooltip(const char *text) {
   if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("%s", text);
 }

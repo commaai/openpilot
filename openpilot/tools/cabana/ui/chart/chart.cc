@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
-#include <random>
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
@@ -139,7 +138,7 @@ void ChartView::updateLayout() {
   const ImVec2 top_left = layout_.rect.Min + ImVec2(LAYOUT_MARGINS.x, LAYOUT_MARGINS.y);
   layout_.move_icon_rect = ImRect(top_left, top_left + grip);
   const ImVec2 btn_size(iconButtonWidth(), iconButtonWidth());
-  const ImVec2 close_min(layout_.rect.Max.x - std::max(LAYOUT_MARGINS.z, CONTROL_OUTLINE_PADDING) - btn_size.x, top_left.y);
+  const ImVec2 close_min(layout_.rect.Max.x - ImGui::GetStyle().WindowPadding.x - btn_size.x, top_left.y);
   layout_.close_btn_rect = ImRect(close_min, close_min + btn_size);
   const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemInnerSpacing.x, top_left.y);
   layout_.manage_btn_rect = ImRect(manage_min, manage_min + btn_size);
@@ -150,7 +149,7 @@ void ChartView::updateLayout() {
   const int marker_size = markerSize();
   const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
   const int legend_left = layout_.move_icon_rect.Max.x + LEGEND_SPACING;
-  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - LAYOUT_MARGINS.z, legend_left + 10);
+  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - ImGui::GetStyle().ItemInnerSpacing.x, legend_left + 10);
 
   // layout legend entries left-to-right, wrapping between the move icon and the buttons
   layout_.legend_rects.clear();
@@ -158,6 +157,9 @@ void ChartView::updateLayout() {
   for (auto &s : sigs_) {
     int w = marker_size + LEGEND_SPACING + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
             ImGui::CalcTextSize(msgLabel(s.msg_id).c_str()).x;
+    pushMonoFont(font_size);
+    w = std::max(w, (int)std::ceil(ImGui::CalcTextSize("-0.00000e+000").x));
+    popMonoFont();
     w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
     if (x + w > legend_right && x > legend_left) {
       x = legend_left;
@@ -262,13 +264,14 @@ void ChartView::updateAxisY() {
     auto [first, last] = visibleRange(s.vals);
     s.min = std::numeric_limits<double>::max();
     s.max = std::numeric_limits<double>::lowest();
+    if (first == last) continue;
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
         if (it->y < s.min) s.min = it->y;
         if (it->y > s.max) s.max = it->y;
       }
     } else {
-      std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last));
+      std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last) - 1);
     }
     min = std::min(min, s.min);
     max = std::max(max, s.max);
@@ -278,7 +281,8 @@ void ChartView::updateAxisY() {
 
   y_unit_ = unit;
 
-  double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
+  const double magnitude = std::max(std::abs(min), std::abs(max));
+  double delta = max - min <= magnitude * 1e-9 ? (magnitude > 0 ? magnitude * 0.05 : 1) : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, 3);
   if (min_y != y_min_ || max_y != y_max_) {
     y_min_ = min_y;
@@ -412,10 +416,10 @@ void ChartView::handleMouseRelease() {
     // Prevent zooming/seeking past the end of the route
     double min = std::clamp(secondsAtPoint(rubber_rect_.Min), can->minSeconds(), can->maxSeconds());
     double max = std::clamp(secondsAtPoint(rubber_rect_.Max), can->minSeconds(), can->maxSeconds());
-    if (rubber_rect_.GetWidth() <= 0) {
-      // no rubber dragged, seek to mouse position
+    if (rubber_rect_.GetWidth() <= 10) {
+      // Small movements are still clicks; use the same threshold as drag-to-zoom.
       can->seekTo(std::clamp(secondsAtPoint(press_pos_), can->minSeconds(), can->maxSeconds()));
-    } else if (rubber_rect_.GetWidth() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
+    } else if ((max - min) > MIN_ZOOM_SECONDS) {
       charts_widget_->zoom_undo_stack_.push(new ZoomCommand({min, max}));
     }
     rubber_rect_ = ImRect();
@@ -434,8 +438,8 @@ void ChartView::handleMouseRelease() {
 
 void ChartView::takeSignalsFrom(ChartView *source) {
   for (auto &s : source->sigs_) {
+    s.color = uniqueColor(s.color);
     sigs_.push_back(std::move(s));
-    sigs_.back().color = uniqueColor(sigs_.back().color, sigs_.back().sig);
   }
   source->sigs_.clear();
   updateAxisY();
@@ -478,17 +482,17 @@ void ChartView::showTip(double sec) {
         s.track_pt = *pt;
         x = std::max(x, xPos(pt->x));
       }
-      std::string name = sigs_.size() > 1 ? s.sig->name + ": " : "";
+      std::string name = s.sig->name;
       std::string min = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
       std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
-      text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .bold = value, .rest = " (" + min + ", " + max + ")"});
+      text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .value = value, .min = min, .max = max});
     }
   }
   if (x < 0) {
     x = tooltip_x_;
   }
   ImVec2 pt(x, layout_.plot_area.Min.y);
-  text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 2)});
+  text_list.insert(text_list.begin(), TipLine{.name = formatNumber(sec, 2) + " s"});
   tip_label_.showText(pt, text_list, visible_rect);
 }
 
@@ -747,6 +751,7 @@ void ChartView::drawTimeline() {
 }
 
 void ChartView::drawSignalValue() {
+  pushMonoFont(ImGui::GetFontSize());
   ImDrawList *painter = ImGui::GetWindowDrawList();
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
   for (int i = 0; i < sigs_.size() && i < layout_.legend_rects.size(); ++i) {
@@ -757,27 +762,35 @@ void ChartView::drawSignalValue() {
     ImRect value_rect(value_min, value_min + layout_.legend_rects[i].GetSize());
     float w = ImGui::CalcTextSize(value.c_str()).x;
     if (w <= value_rect.GetWidth()) {
-      painter->AddText(ImVec2(value_rect.GetCenter().x - w / 2, value_rect.Min.y), color, value.c_str());
+      painter->AddText(value_rect.Min, color, value.c_str());
     } else {
       addTextEllipsis(painter, ImGui::GetFont(), color, value_rect.Min, value_rect.Max.x, value);
     }
   }
+  popMonoFont();
 }
 
 CabanaColor ChartView::uniqueColor(CabanaColor color, const cabana::Signal *exclude) const {
-  for (auto &s : sigs_) {
-    if (s.sig != exclude && std::abs(color.hsv().hue - s.color.hsv().hue) < 0.1) {
-      // use different color to distinguish it from others.
-      auto last_color = sigs_.back().color;
-      static thread_local std::mt19937 rng{std::random_device{}()};
-      std::uniform_int_distribution<int> sat(35, 99);
-      std::uniform_int_distribution<int> val(85, 99);
-      color = CabanaColor::fromHsv(std::fmod(last_color.hsv().hue + 60 / 360.0, 1.0),
-                                   sat(rng) / 100.0,
-                                   val(rng) / 100.0,
-                                   color.a / 255.0f);
-      break;
+  auto separation = [&](float hue) {
+    float distance = 1.0f;
+    for (const auto &s : sigs_) {
+      if (exclude && s.sig == exclude) continue;
+      const float delta = std::abs(hue - s.color.hsv().hue);
+      distance = std::min(distance, std::min(delta, 1.0f - delta));
+    }
+    return distance;
+  };
+  const float original_hue = color.hsv().hue;
+  if (separation(original_hue) >= 0.1f) return color;
+
+  float best_hue = original_hue, best_distance = -1;
+  for (int i = 0; i < 36; ++i) {
+    const float hue = std::fmod(original_hue + i / 36.0f, 1.0f);
+    const float distance = separation(hue);
+    if (distance > best_distance) {
+      best_hue = hue;
+      best_distance = distance;
     }
   }
-  return color;
+  return CabanaColor::fromHsv(best_hue, 0.8f, 0.9f, color.a / 255.0f);
 }
