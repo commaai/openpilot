@@ -161,53 +161,7 @@ and scale/offset transforms. Panels are arranged in Cabana's chart grid.
 Series default to visible, untransformed values with scale 1, offset 0, and a moving-average
 window of 10 samples. openpilot message fields need only a `path`; CAN signals need `message` and `signal`.
 
-Equations run in the Python interpreter from the openpilot environment used to build Cabana.
-Each equation uses `language: "python"`, a `globals` initialization
-block, and a `function` body. The function receives `time`, `value`, and additional inputs
-(`v1`, `v2`, …), aligned to the nearest sample. It returns a number or `(time, value)`; non-finite
-results are omitted. Code is checked against an AST allowlist before compilation. The available
-first-release namespace contains the layout math functions `math.sin`, `math.cos`, `math.sqrt`,
-`math.atan2`, and `math.radians`; constants `math.pi`, `math.e`, `math.tau`, `math.inf`, and `math.nan`;
-and numeric helpers `abs`, `min`, `max`, and `int`. `map(math.function, (numbers, ...))` is
-supported for tuple unpacking.
-There are no ambient Python builtins or import capabilities.
-
-The supported language includes numeric assignments, arithmetic, comparisons, `and`/`or`/`not`,
-`if`/`elif`/`else`, conditional expressions, `global`, and `return`. Tuples are limited to 16 numbers
-and can only be used for unpacking, `min`/`max`, or `(time, value)` returns. Imports (including
-`import math`), loops, comprehensions, function/class definitions, recursion, strings, containers,
-indexing, dynamic calls, and attribute access beyond approved `math` names are rejected—even in
-unreachable branches. Existing custom functions using these features must be rewritten.
-
-Arithmetic, comparisons, and numeric helper results use floating-point values, including `int`.
-Powers (`**` and `**=`) require integer literals from 0 to 16, as used by the bundled layouts;
-arbitrary exponents and complex results are not supported. Integer precision
-is therefore limited to that of a double. Expensive math functions such as `factorial`, `comb`, and
-`perm` are unavailable. Each code block is limited to 8 KiB, 512 AST nodes, nesting depth 32, and
-64 assigned variable names; a function can have at most 32 additional signal inputs.
-
-Globals persist across samples and reset when the loaded data is recalculated. Use Python's
-`global` declaration to update them, for example:
-
-```json
-{
-  "name": "running total",
-  "source": "/carState/vEgo",
-  "language": "python",
-  "globals": "total = 0",
-  "function": "global total\ntotal += value\nreturn total",
-  "additional": []
-}
-```
-
-The tuning layout retains its five-second engagement gating; curvature, roll compensation,
-GPS distance, and steering-rate checks use Python equations. Equation errors appear in the
-chart workspace.
-
-The AST allowlist and bounded numeric values define the security boundary, not namespace
-filtering alone. Unsupported syntax fails closed; there is no unrestricted execution fallback.
-The evaluator still runs in Cabana's process and depends on trusted application code, CPython,
-and the math library. This is a restricted language, not an OS sandbox for arbitrary Python.
+Custom signal expressions use Python.
 
 **Layout → Save Layout** saves the workspace as Cabana JSON, including equations, tabs,
 chart grouping, colors, limits, signal visibility, transforms, column count, and window duration.
