@@ -130,7 +130,6 @@ ImRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 
 void ChartsWidget::showValueTip(double sec) {
   if (chartDragActive()) sec = -1;  // no value tip while a drag is in progress
-  showTip(sec);
   if (sec < 0 && !value_tip_visible_) return;
 
   value_tip_visible_ = sec >= 0;

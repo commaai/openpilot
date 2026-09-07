@@ -91,7 +91,6 @@ public:
   Observable<> analysisRequested;
   Observable<> toggleChartsDocking;
   Observable<> seriesChanged;
-  Observable<double> showTip;
 
 private:
   void handleEvents();  // the back button, focus loss, the chart drag and the value tip leave
