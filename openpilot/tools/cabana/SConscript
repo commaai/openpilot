@@ -86,6 +86,8 @@ if GetOption('extras'):
     cabana_core_test_env.Object('tests/cabana_core_routes', 'routes.cc'),
     cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
   ]
+  if arch == "Darwin":
+    cabana_core_test_env.Append(FRAMEWORKS=['CoreFoundation'])
   cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[File(python_library), replay_lib, common, cereal, messaging])
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
