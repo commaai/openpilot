@@ -87,7 +87,7 @@ private:
   void drawWaitDialog();
 
   std::string startup_layout_;
-  bool session_restored_ = false;
+  bool charts_restored_ = false;
   bool analysis_mode_ = false;
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame

@@ -10,22 +10,10 @@
         "signals": [
           {
             "path": "/controlsState/lateralControlState/torqueState/actualLateralAccel",
-            "signal": "/controlsState/lateralControlState/torqueState/actualLateralAccel",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/controlsState/lateralControlState/torqueState/desiredLateralAccel",
-            "signal": "/controlsState/lateralControlState/torqueState/desiredLateralAccel",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           }
         ]
@@ -36,22 +24,10 @@
         "signals": [
           {
             "path": "Actual lateral accel (roll compensated)",
-            "signal": "Actual lateral accel (roll compensated)",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "Desired lateral accel (roll compensated)",
-            "signal": "Desired lateral accel (roll compensated)",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
@@ -62,32 +38,15 @@
         "signals": [
           {
             "path": "/carOutput/actuatorsOutput/torque",
-            "signal": "/carOutput/actuatorsOutput/torque",
-            "visible": true,
-            "transform": 0,
             "scale": -1.0,
-            "offset": 0.0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/controlsState/lateralControlState/torqueState/f",
-            "signal": "/controlsState/lateralControlState/torqueState/f",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/carState/steeringPressed",
-            "signal": "/carState/steeringPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff000f"
           }
         ]
@@ -98,32 +57,14 @@
         "signals": [
           {
             "path": "carState.vEgo mph",
-            "signal": "carState.vEgo mph",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "carState.vEgo kmh",
-            "signal": "carState.vEgo kmh",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/carState/vEgo",
-            "signal": "/carState/vEgo",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
@@ -136,22 +77,10 @@
         "signals": [
           {
             "path": "/carParams/steerRatio",
-            "signal": "/carParams/steerRatio",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/vehicleParameters/steerRatio",
-            "signal": "/vehicleParameters/steerRatio",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           }
         ]
@@ -162,22 +91,10 @@
         "signals": [
           {
             "path": "/carParams/tireStiffnessFactor",
-            "signal": "/carParams/tireStiffnessFactor",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/vehicleParameters/stiffnessFactor",
-            "signal": "/vehicleParameters/stiffnessFactor",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
@@ -188,22 +105,10 @@
         "signals": [
           {
             "path": "/vehicleParameters/angleOffsetAverageDeg",
-            "signal": "/vehicleParameters/angleOffsetAverageDeg",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/vehicleParameters/angleOffsetDeg",
-            "signal": "/vehicleParameters/angleOffsetDeg",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           }
         ]
@@ -216,32 +121,14 @@
         "signals": [
           {
             "path": "/lateralTorqueParameters/latAccelFactorFiltered",
-            "signal": "/lateralTorqueParameters/latAccelFactorFiltered",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/lateralTorqueParameters/latAccelFactorRaw",
-            "signal": "/lateralTorqueParameters/latAccelFactorRaw",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/carParams/lateralTuning/torque/latAccelFactor",
-            "signal": "/carParams/lateralTuning/torque/latAccelFactor",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1c9222"
           }
         ]
@@ -252,22 +139,10 @@
         "signals": [
           {
             "path": "/lateralTorqueParameters/latAccelOffsetFiltered",
-            "signal": "/lateralTorqueParameters/latAccelOffsetFiltered",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/lateralTorqueParameters/latAccelOffsetRaw",
-            "signal": "/lateralTorqueParameters/latAccelOffsetRaw",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
@@ -278,32 +153,14 @@
         "signals": [
           {
             "path": "/lateralTorqueParameters/frictionCoefficientFiltered",
-            "signal": "/lateralTorqueParameters/frictionCoefficientFiltered",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/lateralTorqueParameters/frictionCoefficientRaw",
-            "signal": "/lateralTorqueParameters/frictionCoefficientRaw",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/carParams/lateralTuning/torque/friction",
-            "signal": "/carParams/lateralTuning/torque/friction",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1c9222"
           }
         ]
@@ -316,12 +173,6 @@
         "signals": [
           {
             "path": "/lateralDelay/status",
-            "signal": "/lateralDelay/status",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
@@ -332,32 +183,14 @@
         "signals": [
           {
             "path": "/lateralDelay/lateralDelay",
-            "signal": "/lateralDelay/lateralDelay",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/lateralDelay/lateralDelayEstimate",
-            "signal": "/lateralDelay/lateralDelayEstimate",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "opendbc default steering lag",
-            "signal": "opendbc default steering lag",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           }
         ]
@@ -368,12 +201,6 @@
         "signals": [
           {
             "path": "/lateralDelay/lateralDelayEstimateStd",
-            "signal": "/lateralDelay/lateralDelayEstimateStd",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           }
         ]
@@ -386,22 +213,10 @@
         "signals": [
           {
             "path": "/carControl/actuators/torque",
-            "signal": "/carControl/actuators/torque",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0c00f2"
           },
           {
             "path": "/carOutput/actuatorsOutput/torque",
-            "signal": "/carOutput/actuatorsOutput/torque",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#2cd63a"
           }
         ]
@@ -412,32 +227,15 @@
         "signals": [
           {
             "path": "/carOutput/actuatorsOutput/torque",
-            "signal": "/carOutput/actuatorsOutput/torque",
-            "visible": true,
-            "transform": 0,
             "scale": -1.0,
-            "offset": 0.0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/controlsState/lateralControlState/torqueState/f",
-            "signal": "/controlsState/lateralControlState/torqueState/f",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/carState/steeringPressed",
-            "signal": "/carState/steeringPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff000f"
           }
         ]
@@ -448,42 +246,18 @@
         "signals": [
           {
             "path": "/controlsState/lateralControlState/torqueState/f",
-            "signal": "/controlsState/lateralControlState/torqueState/f",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0ab027"
           },
           {
             "path": "/controlsState/lateralControlState/torqueState/p",
-            "signal": "/controlsState/lateralControlState/torqueState/p",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/controlsState/lateralControlState/torqueState/i",
-            "signal": "/controlsState/lateralControlState/torqueState/i",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ffaf00"
           },
           {
             "path": "Zero",
-            "signal": "Zero",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#756a6a"
           }
         ]
@@ -494,12 +268,6 @@
         "signals": [
           {
             "path": "/vehicleParameters/roll",
-            "signal": "/vehicleParameters/roll",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           }
         ]

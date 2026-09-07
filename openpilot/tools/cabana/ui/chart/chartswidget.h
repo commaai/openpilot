@@ -72,7 +72,6 @@ public:
   ChartsWidget();
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
   std::shared_ptr<const cabana::Samples> telemetrySnapshot(const std::string &path) const;
-  const std::vector<cabana::Sample> *telemetrySeries(const std::string &path) const;
   std::string serializeLayout() const;
   bool restoreLayout(const std::string &contents, bool defer_missing_can = false);
   bool openLayout(const std::string &path, bool defer_missing_can = false);
@@ -154,7 +153,6 @@ private:
   size_t equation_revision_ = 0;
   std::string equation_errors_;
   std::string browser_filter_;
-  std::vector<std::string> browser_paths_;
   size_t browser_telemetry_count_ = 0;
   chart::SignalTree browser_tree_;
   bool browser_tree_dirty_ = true;

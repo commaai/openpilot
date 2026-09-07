@@ -86,7 +86,8 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
       received_events_.push_back(newEvent(mono_time, c));
     }
   } else {
-    cabana::extractTelemetry(event, received_telemetry_);
+    if (!telemetry_extractor_) telemetry_extractor_.emplace(received_telemetry_);
+    telemetry_extractor_->extract(event);
   }
 }
 
@@ -100,6 +101,7 @@ void LiveStream::updateLastMessages() {
     lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
     cabana::prepareTelemetryMerge(telemetry, received_telemetry_);
     for (auto &[path, samples] : received_telemetry_) telemetry[path] = std::make_shared<const cabana::Samples>(std::move(samples));
+    telemetry_extractor_.reset();
     received_telemetry_.clear();
     const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
     for (auto &[path, samples] : telemetry) {
@@ -108,8 +110,6 @@ void LiveStream::updateLastMessages() {
       if (first != samples->begin()) samples = std::make_shared<const cabana::Samples>(first, samples->end());
     }
     mergeEvents(received_events_);
-    uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;
-    lastest_event_ts = std::max(lastest_event_ts, last_received_ts);
     received_events_.clear();
   }
   if (begin_event_ts) {

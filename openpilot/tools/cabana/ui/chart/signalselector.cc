@@ -128,7 +128,6 @@ void SignalSelector::remove(int row) {
 }
 
 void SignalSelector::updateAvailableList() {
-  // Rebuild only when the query or selection changes; preserve the selected row otherwise.
   std::vector<ListItem> available;
   for (const auto &msg : msgs_combo_) {
     auto *message = dbc()->msg(msg.id);

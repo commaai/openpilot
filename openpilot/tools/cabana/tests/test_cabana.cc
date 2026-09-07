@@ -495,11 +495,31 @@ void test_chart_layout() {
     bad["message"] = bad_id;
     REQUIRE(!chart::parseLayout(document(bad)).has_value());
   }
-  for (const auto &key : {"visible", "transform", "window", "scale", "signal"}) {
+  for (const auto &key : {"message", "signal"}) {
     auto bad = signal;
     bad.erase(key);
     REQUIRE(!chart::parseLayout(document(bad)).has_value());
   }
+  Json::object minimal{{"path", "/carState/vEgo"}};
+  auto defaults = chart::parseLayout(document(minimal));
+  REQUIRE(defaults.has_value());
+  const auto &plain = defaults->tabs[0][0].signals[0];
+  REQUIRE(plain.path == "/carState/vEgo");
+  REQUIRE(plain.visible);
+  REQUIRE(plain.transform.original());
+  REQUIRE(plain.transform.window == 10);
+  REQUIRE(chart::parseLayout(document(Json::object{{"message", "2:1AF"}, {"signal", "Speed"}})).has_value());
+  for (const auto &key : {"visible", "transform", "window", "scale", "offset", "signal"}) {
+    const Json invalid_text = std::string(key) == "signal" ? "" : "invalid";
+    for (const Json &value : {Json(), invalid_text, Json(Json::array{})}) {
+      auto bad = minimal;
+      bad[key] = value;
+      REQUIRE(!chart::parseLayout(document(bad)).has_value());
+    }
+  }
+  for (const auto &[key, value] : chart::SIGNAL_DEFAULTS) minimal[key] = value;
+  minimal["signal"] = "/carState/vEgo";
+  REQUIRE(chart::parseLayout(document(minimal)).has_value());
   auto bad = signal;
   bad["window"] = 0;
   REQUIRE(!chart::parseLayout(document(bad)).has_value());
@@ -520,19 +540,24 @@ void test_cereal_telemetry() {
   state.setSteeringPressed(false);
   state.setGearShifter(cereal::CarState::GearShifter::DRIVE);
   cabana::Telemetry data;
-  cabana::extractTelemetry(event.asReader(), data);
+  cabana::TelemetryExtractor extractor(data);
+  extractor.extract(event.asReader());
   REQUIRE(data.at("/carState/vEgo").front().y == 12.5);
   REQUIRE(data.at("/carState/aEgo").front().y == 0);
   REQUIRE(data.at("/carState/steeringPressed").front().y == 0);
   REQUIRE(data.at("/carState/gearShifter").front().y == (int)cereal::CarState::GearShifter::DRIVE);
   REQUIRE(data.at("/carState/__logMonoTimeSeconds").front().y == 1);
   REQUIRE(data.at("/carState/__valid").front().y == 1);
+  state.setVEgo(std::numeric_limits<float>::quiet_NaN());
+  extractor.extract(event.asReader());
+  REQUIRE(data.at("/carState/vEgo").size() == 1);
+  REQUIRE(data.at("/carState/aEgo").size() == 2);
   auto control = event.initCarControl();
   auto orientation = control.initOrientationNED(3);
   orientation.set(0, 0.125);
   orientation.set(1, 0);
   orientation.set(2, -1.5);
-  cabana::extractTelemetry(event.asReader(), data);
+  extractor.extract(event.asReader());
   REQUIRE(data.at("/carControl/orientationNED/0").front().y == 0.125);
   REQUIRE(data.at("/carControl/orientationNED/1").front().y == 0);
   REQUIRE(data.at("/carControl/orientationNED/2").front().y == -1.5);
@@ -555,54 +580,50 @@ void require_same_telemetry(const cabana::Telemetry &expected, const cabana::Tel
 }
 
 void test_cached_telemetry_extractor() {
-  cabana::Telemetry expected, actual;
-  cabana::TelemetryExtractor extractor(actual);
-  for (int i = 0; i < 100; ++i) {
-    capnp::MallocMessageBuilder message;
-    auto event = message.initRoot<cereal::Event>();
-    event.setLogMonoTime(1000000000ULL + i * 10000000ULL);
-    event.setValid(i % 3 != 0);
-    switch (i % 5) {
-      case 0: {
-        auto state = event.initCarState();
-        state.setVEgo(i % 2 ? std::numeric_limits<float>::quiet_NaN() : i);
-        state.setSteeringPressed(i % 2);
-        break;
+  cabana::Telemetry data;
+  for (int batch = 0; batch < 2; ++batch) {
+    data.clear();
+    cabana::TelemetryExtractor extractor(data);
+    for (int i = 0; i < 4; ++i) {
+      capnp::MallocMessageBuilder message;
+      auto event = message.initRoot<cereal::Event>();
+      event.setLogMonoTime((i + 1) * 1000000000ULL);
+      auto sensor = event.initAccelerometer();
+      if (i % 2) sensor.setTemperature(i);
+      else {
+        auto values = sensor.initAcceleration().initV(i + 1);
+        for (size_t j = 0; j < values.size(); ++j) values.set(j, j == 2 ? std::numeric_limits<float>::infinity() : i + j);
       }
-      case 1: {
-        auto values = event.initCarControl().initOrientationNED(i % 7);
-        for (size_t j = 0; j < values.size(); ++j) values.set(j, j == 2 ? std::numeric_limits<float>::infinity() : i - j * 0.25);
-        break;
-      }
-      case 2: {
-        auto sensor = event.initAccelerometer();
-        if (i % 2) sensor.setTemperature(i);
-        else {
-          auto values = sensor.initAcceleration().initV(i % 4);
-          for (size_t j = 0; j < values.size(); ++j) values.set(j, i + j * 0.125);
-        }
-        break;
-      }
-      case 3: {
-        auto lateral = event.initControlsState().initLateralControlState();
-        if (i % 2) lateral.initPidState().setActive(true);
-        else lateral.initAngleState().setActive(false);
-        break;
-      }
-      case 4:
-        if (i % 2) event.initCan(1);
-        else event.initSendcan(1);
-        break;
+      extractor.extract(event.asReader());
+      event.initCan(1);
+      extractor.extract(event.asReader());
+      event.initSendcan(1);
+      extractor.extract(event.asReader());
     }
-    cabana::extractTelemetry(event.asReader(), expected);
-    extractor.extract(event.asReader());
+    const auto &temperature = data.at("/accelerometer/temperature");
+    REQUIRE(temperature.size() == 2);
+    REQUIRE(temperature[0].x == 2);
+    REQUIRE(temperature[0].y == 1);
+    REQUIRE(temperature[1].x == 4);
+    REQUIRE(temperature[1].y == 3);
+    const auto &accel = data.at("/accelerometer/acceleration/v/0");
+    REQUIRE(accel.size() == 2);
+    REQUIRE(accel[0].x == 1);
+    REQUIRE(accel[0].y == 0);
+    REQUIRE(accel[1].x == 3);
+    REQUIRE(accel[1].y == 2);
+    REQUIRE(data.at("/accelerometer/acceleration/v/1").size() == 1);
+    REQUIRE(data.at("/accelerometer/acceleration/v/1")[0].y == 3);
+    REQUIRE(!data.count("/accelerometer/acceleration/v/2"));
+    REQUIRE(data.at("/accelerometer/__logMonoTime").size() == 4);
+    for (const auto &[path, _] : data) REQUIRE(path.rfind("/accelerometer/", 0) == 0);
   }
-  require_same_telemetry(expected, actual);
 }
 
 void test_log_telemetry_skips_video_frames() {
   std::string data;
   cabana::Telemetry expected;
+  cabana::TelemetryExtractor extractor(expected);
   for (int i = 0; i < 3; ++i) {
     capnp::MallocMessageBuilder message;
     auto event = message.initRoot<cereal::Event>();
@@ -612,7 +633,7 @@ void test_log_telemetry_skips_video_frames() {
     idx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
     idx.setTimestampSof(sof);
     idx.setFrameId(i);
-    cabana::extractTelemetry(event.asReader(), expected);
+    extractor.extract(event.asReader());
     auto words = capnp::messageToFlatArray(message);
     auto bytes = words.asBytes();
     data.append(reinterpret_cast<const char *>(bytes.begin()), bytes.size());
@@ -650,28 +671,41 @@ void test_prepared_telemetry_merge() {
   }
 }
 
+cabana::TelemetrySnapshot snapshotTelemetry(const cabana::Telemetry &data) {
+  cabana::TelemetrySnapshot snapshot;
+  for (const auto &[path, samples] : data) snapshot.emplace(path, std::make_shared<const cabana::Samples>(samples));
+  return snapshot;
+}
+
 void test_layout_equations() {
   cabana::Telemetry data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
   REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
   REQUIRE(cabana::nearestValue(data.at("enabled"), -1) == 0);
   REQUIRE(cabana::nearestValue(data.at("enabled"), 5) == 1);
   cabana::Equation equation{"scaled", "speed", "sum = 0", "global sum\nsum += value\nreturn sum * v1", {"enabled"}};
-  auto values = cabana::evaluateEquation(equation, data);
+  auto values = cabana::evaluateEquation(equation, snapshotTelemetry(data));
   REQUIRE(values.size() == 3);
   REQUIRE(values[0].y == 0);
   REQUIRE(values[1].y == 30);
   REQUIRE(values[2].y == 60);
-  REQUIRE(cabana::evaluateEquation(equation, data)[2].y == 60);  // state resets when reloading earlier data
+  auto snapshot = snapshotTelemetry(data);
+  const auto source = snapshot.at("speed");
+  snapshot["scaled"] = std::make_shared<const cabana::Samples>(std::move(values));
+  const auto chained = cabana::evaluateEquation({"chained", "scaled", "", "return value - v1", {"speed"}}, snapshot);
+  REQUIRE(chained[2].y == 30);
+  REQUIRE(snapshot.at("speed") == source);
+  REQUIRE(source->back().y == 30);
+  REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[2].y == 60);  // state resets when reloading earlier data
   equation.function = "return time + 1, abs(value)";
-  REQUIRE(cabana::evaluateEquation(equation, data)[0].x == 1);
+  REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[0].x == 1);
   equation.globals = "import statistics";
   equation.function = "return statistics.mean((value, v1))";
-  REQUIRE(cabana::evaluateEquation(equation, data)[0].y == 5);
+  REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[0].y == 5);
   equation.globals.clear();
   for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "invalid Python !", "return None", "return (1, 2, 3)"}) {
     equation.function = code;
     bool failed = false;
-    try { cabana::evaluateEquation(equation, data); } catch (const std::exception &) { failed = true; }
+    try { cabana::evaluateEquation(equation, snapshotTelemetry(data)); } catch (const std::exception &) { failed = true; }
     REQUIRE(failed);
   }
 }
@@ -768,16 +802,14 @@ int main(int argc, char **argv) {
     return run_native_test([&]() {
       LogReader log;
       REQUIRE(log.load(argv[2]));
-      cabana::Telemetry expected, actual;
+      cabana::Telemetry actual;
       cabana::TelemetryExtractor extractor(actual);
       for (const auto &event : log.events) {
         if (event.eidx_segnum != -1) continue;
         capnp::FlatArrayMessageReader reader(event.data);
-        cabana::extractTelemetry(reader.getRoot<cereal::Event>(), expected);
         extractor.extract(reader.getRoot<cereal::Event>());
       }
-      require_same_telemetry(expected, actual);
-      require_same_telemetry(expected, cabana::extractLogTelemetry(log, std::atomic<bool>{false}));
+      require_same_telemetry(actual, cabana::extractLogTelemetry(log, std::atomic<bool>{false}));
       REQUIRE(cabana::extractLogTelemetry(log, std::atomic<bool>{true}).empty());
       size_t count = 0;
       for (const auto &[path, samples] : actual) count += samples.size();
@@ -795,7 +827,7 @@ int main(int argc, char **argv) {
         auto add = [&](const std::string &path) { for (int i = 0; i < 10; ++i) data[path].emplace_back(100 + i, 1); };
         add(e.source);
         for (const auto &path : e.additional) add(path);
-        auto values = cabana::evaluateEquation(e, data);
+        auto values = cabana::evaluateEquation(e, snapshotTelemetry(data));
         REQUIRE(values.size() == 10);
         for (const auto &value : values) REQUIRE(std::isfinite(value.y));
         if (e.name == "engaged curvature yaw") {
@@ -804,7 +836,7 @@ int main(int argc, char **argv) {
             data["/carState/vEgo"][i].y = 20;
             data["/carState/steeringPressed"][i].y = i < 2 ? 1 : 0;
           }
-          values = cabana::evaluateEquation(e, data);
+          values = cabana::evaluateEquation(e, snapshotTelemetry(data));
           REQUIRE(values.size() == 10);
           for (int i = 0; i <= 6; ++i) REQUIRE(values[i].y == 0);
           for (int i = 7; i < 10; ++i) REQUIRE(std::abs(values[i].y - 0.001) < 1e-12);

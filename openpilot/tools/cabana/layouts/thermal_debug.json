@@ -5,207 +5,99 @@
   "tabs": [
     [
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/cpuTempC/0",
-            "signal": "/deviceState/cpuTempC/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/deviceState/cpuTempC/1",
-            "signal": "/deviceState/cpuTempC/1",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/deviceState/cpuTempC/2",
-            "signal": "/deviceState/cpuTempC/2",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/deviceState/cpuTempC/3",
-            "signal": "/deviceState/cpuTempC/3",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           },
           {
             "path": "/deviceState/cpuTempC/4",
-            "signal": "/deviceState/cpuTempC/4",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/deviceState/cpuTempC/5",
-            "signal": "/deviceState/cpuTempC/5",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/deviceState/cpuTempC/6",
-            "signal": "/deviceState/cpuTempC/6",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#17becf"
           },
           {
             "path": "/deviceState/cpuTempC/7",
-            "signal": "/deviceState/cpuTempC/7",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#bcbd22"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/pmicTempC/0",
-            "signal": "/deviceState/pmicTempC/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/deviceState/gpuTempC/0",
-            "signal": "/deviceState/gpuTempC/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/deviceState/gpuTempC/1",
-            "signal": "/deviceState/gpuTempC/1",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/deviceState/memoryTempC",
-            "signal": "/deviceState/memoryTempC",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/maxTempC",
-            "signal": "/deviceState/maxTempC",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/thermalStatus",
-            "signal": "/deviceState/thermalStatus",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/powerDrawW",
-            "signal": "/deviceState/powerDrawW",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/fanSpeedPercentDesired",
-            "signal": "/deviceState/fanSpeedPercentDesired",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/pandaStates/0/fanPower",
-            "signal": "/pandaStates/0/fanPower",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           }
         ],
@@ -213,109 +105,52 @@
         "y_max": 100.0
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/peripheralState/fanSpeedRpm",
-            "signal": "/peripheralState/fanSpeedRpm",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/cpuUsagePercent/0",
-            "signal": "/deviceState/cpuUsagePercent/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/deviceState/cpuUsagePercent/1",
-            "signal": "/deviceState/cpuUsagePercent/1",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/deviceState/cpuUsagePercent/2",
-            "signal": "/deviceState/cpuUsagePercent/2",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/deviceState/cpuUsagePercent/3",
-            "signal": "/deviceState/cpuUsagePercent/3",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/deviceState/cpuUsagePercent/4",
-            "signal": "/deviceState/cpuUsagePercent/4",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/deviceState/cpuUsagePercent/5",
-            "signal": "/deviceState/cpuUsagePercent/5",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/deviceState/cpuUsagePercent/6",
-            "signal": "/deviceState/cpuUsagePercent/6",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#17becf"
           },
           {
             "path": "/deviceState/cpuUsagePercent/7",
-            "signal": "/deviceState/cpuUsagePercent/7",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#bcbd22"
           }
         ]

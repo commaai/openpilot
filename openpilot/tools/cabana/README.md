@@ -144,6 +144,8 @@ the visible time range. These operations affect chart values only.
 **Layout → Open Layout** accepts Cabana JSON. The bundled presets use Python equations
 and preserve named tabs, chart titles, overlaid curves, colors, line styles, fixed Y limits,
 and scale/offset transforms. Panels are arranged in Cabana's chart grid.
+Signals default to visible, untransformed values with scale 1, offset 0, and a moving-average
+window of 10 samples. Telemetry signals need only a `path`; CAN signals need `message` and `signal`.
 
 Equations run in the Python interpreter from the openpilot environment used to build Cabana.
 Each equation uses `language: "python"`, a `globals` initialization

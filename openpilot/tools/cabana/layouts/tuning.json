@@ -10,12 +10,6 @@
         "signals": [
           {
             "path": "/carState/vEgo",
-            "signal": "/carState/vEgo",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -26,32 +20,14 @@
         "signals": [
           {
             "path": "engaged curvature plan",
-            "signal": "engaged curvature plan",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "engaged curvature vehicle model",
-            "signal": "engaged curvature vehicle model",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#785ef0"
           },
           {
             "path": "engaged curvature yaw",
-            "signal": "engaged curvature yaw",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -62,12 +38,6 @@
         "signals": [
           {
             "path": "/carControl/orientationNED/0",
-            "signal": "/carControl/orientationNED/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ffb000"
           }
         ]
@@ -78,22 +48,10 @@
         "signals": [
           {
             "path": "/selfdriveState/enabled",
-            "signal": "/selfdriveState/enabled",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "/carState/steeringPressed",
-            "signal": "/carState/steeringPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -104,22 +62,10 @@
         "signals": [
           {
             "path": "steering rate limited",
-            "signal": "steering rate limited",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ffb000"
           },
           {
             "path": "/controlsState/lateralControlState/pidState/saturated",
-            "signal": "/controlsState/lateralControlState/pidState/saturated",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#dc267f"
           }
         ]
@@ -132,32 +78,14 @@
         "signals": [
           {
             "path": "/carState/cruiseState/speed",
-            "signal": "/carState/cruiseState/speed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#dc267f"
           },
           {
             "path": "/longitudinalPlan/speeds/0",
-            "signal": "/longitudinalPlan/speeds/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "/carState/vEgo",
-            "signal": "/carState/vEgo",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -168,32 +96,14 @@
         "signals": [
           {
             "path": "engaged_accel_plan",
-            "signal": "engaged_accel_plan",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "engaged_accel_actuator",
-            "signal": "engaged_accel_actuator",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#785ef0"
           },
           {
             "path": "engaged_accel_actual",
-            "signal": "engaged_accel_actual",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -204,12 +114,6 @@
         "signals": [
           {
             "path": "/carControl/orientationNED/1",
-            "signal": "/carControl/orientationNED/1",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ffb000"
           }
         ]
@@ -220,32 +124,14 @@
         "signals": [
           {
             "path": "/carControl/enabled",
-            "signal": "/carControl/enabled",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "/carState/gasPressed",
-            "signal": "/carState/gasPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ffb000"
           },
           {
             "path": "/carState/brakePressed",
-            "signal": "/carState/brakePressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#dc267f"
           }
         ]
@@ -256,22 +142,10 @@
         "signals": [
           {
             "path": "/carControl/actuators/longControlState",
-            "signal": "/carControl/actuators/longControlState",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           },
           {
             "path": "/longitudinalPlan/longitudinalPlanSource",
-            "signal": "/longitudinalPlan/longitudinalPlanSource",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           }
         ]
@@ -284,32 +158,14 @@
         "signals": [
           {
             "path": "/controlsState/lateralControlState/pidState/f",
-            "signal": "/controlsState/lateralControlState/pidState/f",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/controlsState/lateralControlState/pidState/p",
-            "signal": "/controlsState/lateralControlState/pidState/p",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/controlsState/lateralControlState/pidState/i",
-            "signal": "/controlsState/lateralControlState/pidState/i",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#17becf"
           }
         ]
@@ -320,22 +176,10 @@
         "signals": [
           {
             "path": "/carState/steeringTorqueEps",
-            "signal": "/carState/steeringTorqueEps",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "/carState/steeringTorque",
-            "signal": "/carState/steeringTorque",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -346,22 +190,10 @@
         "signals": [
           {
             "path": "/carControl/enabled",
-            "signal": "/carControl/enabled",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#009e73"
           },
           {
             "path": "/carState/steeringPressed",
-            "signal": "/carState/steeringPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0072b2"
           }
         ]
@@ -372,22 +204,10 @@
         "signals": [
           {
             "path": "steering rate limited",
-            "signal": "steering rate limited",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ffb000"
           },
           {
             "path": "/controlsState/lateralControlState/pidState/saturated",
-            "signal": "/controlsState/lateralControlState/pidState/saturated",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#dc267f"
           }
         ]

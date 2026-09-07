@@ -588,7 +588,6 @@ void ChartView::handleMouseRelease() {
     if (range && range != pan_previous_) charts_widget_->zoom_undo_stack_.push(new ZoomCommand(*range, pan_previous_));
   } else if (left_released && mouse_mode_ == MouseMode::Rubber) {
     mouse_mode_ = MouseMode::None;
-    // Prevent zooming/seeking past the end of the route
     double min = std::clamp(secondsAtPoint(rubber_rect_.Min), can->minSeconds(), can->maxSeconds());
     double max = std::clamp(secondsAtPoint(rubber_rect_.Max), can->minSeconds(), can->maxSeconds());
     if (rubber_rect_.GetWidth() <= 10) {

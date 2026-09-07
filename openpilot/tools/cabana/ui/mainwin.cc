@@ -387,7 +387,7 @@ void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::s
 }
 
 void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
-  session_restored_ = false;
+  charts_restored_ = false;
   stream_ = std::move(stream);
   can = stream_.get();
   stream_connections_.push_back(can->error.connect([](const std::string &msg) {
@@ -703,16 +703,16 @@ void MainWindow::saveSessionState() {
 }
 
 void MainWindow::restoreSessionState() {
-  if (!charts_widget_ || session_restored_) return;
+  if (!charts_widget_) return;
   if (!startup_layout_.empty()) {
-    session_restored_ = charts_widget_->openLayout(startup_layout_, true);
-    if (session_restored_) startup_layout_.clear();
+    charts_restored_ = charts_widget_->openLayout(startup_layout_, true);
+    if (charts_restored_) startup_layout_.clear();
     return;
   }
   const bool workspace = settings.active_charts.size() == 1 && settings.active_charts.front().rfind("@layout:", 0) == 0;
-  if (workspace) {
+  if (workspace && !charts_restored_) {
     // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
-    session_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts, true);
+    charts_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts, true);
   }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
@@ -722,8 +722,8 @@ void MainWindow::restoreSessionState() {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
   }
 
-  if (!workspace && charts_widget_ != nullptr && !settings.active_charts.empty()) {
-    charts_widget_->restoreChartsFromIds(settings.active_charts);
+  if (!workspace && !charts_restored_ && !settings.active_charts.empty()) {
+    charts_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts);
   }
 }
 

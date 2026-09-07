@@ -42,14 +42,16 @@ std::string ChartsWidget::serializeLayout() const {
       for (const auto &s : c->signals()) {
         char color[8];
         snprintf(color, sizeof(color), "#%02x%02x%02x", s.color.r, s.color.g, s.color.b);
-        Json::object signal{{"signal", s.name()}, {"color", color},
+        Json::object signal{{"color", color},
           {"visible", s.visible}, {"transform", (int)s.transform.type}, {"scale", s.transform.scale},
           {"offset", s.transform.offset}, {"window", s.transform.window}};
-        if (s.path.empty()) signal["message"] = s.msg_id.toString();
+        for (const auto &[key, value] : chart::SIGNAL_DEFAULTS) if (signal.at(key) == value) signal.erase(key);
+        if (s.path.empty()) { signal["message"] = s.msg_id.toString(); signal["signal"] = s.name(); }
         else signal["path"] = s.path;
         signals.push_back(signal);
       }
-      Json::object chart{{"type", (int)c->seriesType()}, {"title", c->title}, {"signals", signals}};
+      Json::object chart{{"type", (int)c->seriesType()}, {"signals", signals}};
+      if (!c->title.empty()) chart["title"] = c->title;
       if (c->limit_min) chart["y_min"] = *c->limit_min;
       if (c->limit_max) chart["y_max"] = *c->limit_max;
       charts.push_back(chart);
@@ -113,17 +115,13 @@ bool ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing
   removeAll();
   equations_ = layout->equations;
   rebuildSignalBrowser();
-  if (!equations_.empty() || std::any_of(layout->tabs.begin(), layout->tabs.end(), [](const auto &tab) {
-    return std::any_of(tab.begin(), tab.end(), [](const auto &chart) {
-      return std::any_of(chart.signals.begin(), chart.signals.end(), [](const auto &s) { return !s.path.empty(); });
-    });
-  })) analysisRequested();
+  if (!equations_.empty()) analysisRequested();
   for (size_t i = 0; i < layout->tabs.size(); ++i) {
     if (i) newTab();
     if (i < layout->tab_names.size()) tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = layout->tab_names[i];
     for (const auto &saved : layout->tabs[i]) {
       auto *c = createChart(currentCharts().size());
-      c->title = saved.title == "..." ? "" : saved.title;
+      c->title = saved.title;
       c->limit_min = saved.y_min;
       c->limit_max = saved.y_max;
       c->setSeriesType((SeriesType)saved.type);
@@ -145,10 +143,6 @@ bool ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing
   return true;
 }
 
-const std::vector<cabana::Sample> *ChartsWidget::telemetrySeries(const std::string &path) const {
-  return telemetrySnapshot(path).get();
-}
-
 std::shared_ptr<const cabana::Samples> ChartsWidget::telemetrySnapshot(const std::string &path) const {
   auto derived = calculated_.find(path);
   if (derived != calculated_.end()) return derived->second;
@@ -158,7 +152,7 @@ std::shared_ptr<const cabana::Samples> ChartsWidget::telemetrySnapshot(const std
 
 void ChartsWidget::telemetryChanged() {
   telemetry_dirty_ = true;
-  if (browser_paths_.empty() || browser_telemetry_count_ != can->telemetry.size()) {
+  if (browser_telemetry_count_ != can->telemetry.size()) {
     rebuildSignalBrowser();
   }
   pollTelemetry();
@@ -166,12 +160,10 @@ void ChartsWidget::telemetryChanged() {
 
 void ChartsWidget::rebuildSignalBrowser() {
   browser_telemetry_count_ = can->telemetry.size();
-  browser_paths_.clear();
-  for (const auto &[path, _] : can->telemetry) browser_paths_.push_back(path);
-  for (const auto &e : equations_) browser_paths_.push_back(e.name);
-  std::sort(browser_paths_.begin(), browser_paths_.end());
-  browser_paths_.erase(std::unique(browser_paths_.begin(), browser_paths_.end()), browser_paths_.end());
-  browser_tree_.rebuild(browser_paths_);
+  std::vector<std::string> paths;
+  for (const auto &[path, _] : can->telemetry) paths.push_back(path);
+  for (const auto &e : equations_) paths.push_back(e.name);
+  browser_tree_.rebuild(paths);
   browser_tree_dirty_ = true;
 }
 
@@ -202,24 +194,22 @@ void ChartsWidget::pollTelemetry() {
   equation_result_ = std::make_shared<EquationResult>();
   equation_result_->revision = equation_revision_;
   equation_task_ = ThreadPool::instance().run([equations = equations_, snapshot = std::move(snapshot), result = equation_result_]() mutable {
-    cabana::Telemetry inputs;
-    for (const auto &[path, samples] : snapshot) inputs.emplace(path, *samples);
     std::vector<const cabana::Equation *> pending;
     for (const auto &e : equations) pending.push_back(&e);
     for (size_t pass = 0; pass < equations.size() && !pending.empty(); ++pass) {
       for (auto it = pending.begin(); it != pending.end();) {
         const auto &e = **it;
-        auto available = [&](const std::string &path) { auto p = inputs.find(path); return p != inputs.end() && !p->second.empty(); };
+        auto available = [&](const std::string &path) { auto p = snapshot.find(path); return p != snapshot.end() && !p->second->empty(); };
         if (!available(e.source) || !std::all_of(e.additional.begin(), e.additional.end(), available)) { ++it; continue; }
-        try { inputs[e.name] = cabana::evaluateEquation(e, inputs); }
+        try { snapshot[e.name] = std::make_shared<const cabana::Samples>(cabana::evaluateEquation(e, snapshot)); }
         catch (const std::exception &error) { result->errors += e.name + ": " + error.what() + "\n"; }
         it = pending.erase(it);
       }
     }
     for (auto *e : pending) result->errors += e->name + ": waiting for input signals (or cyclic dependency)\n";
     for (const auto &e : equations) {
-      auto it = inputs.find(e.name);
-      if (it != inputs.end()) result->values.emplace(e.name, std::make_shared<const cabana::Samples>(std::move(it->second)));
+      auto it = snapshot.find(e.name);
+      if (it != snapshot.end()) result->values.emplace(e.name, it->second);
     }
   });
 }
@@ -280,7 +270,7 @@ void ChartsWidget::drawSignalBrowser() {
   }
   ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
   if (iconButton("collapse_signals", icon::ARROWS_COLLAPSE, "Collapse all")) expanded.clear();
-  if (browser_paths_.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
+  if (browser_tree_.nodes[0].children.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
   else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No signals match your search.");
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, ImGui::GetStyle().WindowPadding.y));
   const bool browser_visible = ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding,
@@ -314,7 +304,7 @@ void ChartsWidget::drawSignalBrowser() {
           updateState();
         }
         if (ImGui::IsItemHovered()) {
-          const auto *points = telemetrySeries(path);
+          const auto points = telemetrySnapshot(path);
           const double time = can->beginMonoTime() * 1e-9 + can->currentSec();
           if (points && !points->empty()) ImGui::SetTooltip("%s\nValue: %.8g", path.c_str(), cabana::nearestValue(*points, time));
           else ImGui::SetTooltip("%s", path.c_str());

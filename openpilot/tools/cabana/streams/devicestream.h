@@ -3,7 +3,6 @@
 #include "tools/cabana/streams/livestream.h"
 
 #include <string>
-#include <sys/types.h>
 
 class DeviceStream : public LiveStream {
 public:
@@ -14,7 +13,6 @@ public:
   }
 
 protected:
-  void start() override;
   void streamThread() override;
   const std::string zmq_address;
 };

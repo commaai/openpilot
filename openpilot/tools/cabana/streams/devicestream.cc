@@ -5,7 +5,6 @@
 
 DeviceStream::DeviceStream(std::string address) : zmq_address(std::move(address)) {}
 DeviceStream::~DeviceStream() { stop(); }
-void DeviceStream::start() { LiveStream::start(); }
 
 void DeviceStream::streamThread() {
   zmq_address.empty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
