@@ -68,7 +68,7 @@ void draw() {
   ImGui::Separator();
   if (!box.detailed_text.empty()) {
     // the details button sits at the left of the button box
-    if (ImGui::Button(g_show_details ? "Hide Details..." : "Show Details...")) g_show_details = !g_show_details;
+    if (ImGui::Button(g_show_details ? "Hide Details" : "Show Details")) g_show_details = !g_show_details;
     ImGui::SameLine();
   }
   dialogButtons("OK", &result, &done, true, box.has_cancel ? "Cancel" : nullptr);

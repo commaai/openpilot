@@ -310,7 +310,7 @@ std::vector<std::pair<std::string, ImRect>> DetailWidget::helpRects() const {
 
 EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const std::string &title, int size, float parent_width)
     : msg_id_(msg_id), original_name_(title), name_edit_(title), size_spin_(size), width_(parent_width * 0.9f) {
-  window_title_ = "Edit message: " + msg_id.toString();
+  window_title_ = "Edit Message: " + msg_id.toString();
 
   if (auto msg = dbc()->msg(msg_id)) {
     node_ = msg->transmitter;
@@ -438,10 +438,10 @@ void CenterWidget::drawWelcomeWidget() {
     y += ImGui::GetFrameHeightWithSpacing();
   };
 
-  centered("<-Select a message to view details", y);
+  centered("<- Select a message to view details", y);
   y += ImGui::GetTextLineHeightWithSpacing();
   newShortcutRow("Pause", "Space");
   newShortcutRow("Help", "F1");
-  newShortcutRow("WhatsThis", "Shift+F1");
+  newShortcutRow("What's This?", "Shift+F1");
   ImGui::PopStyleColor();
 }

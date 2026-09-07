@@ -231,11 +231,11 @@ std::string MessagesWidget::whatsThis() const {
   return R"(
     <b>Message View</b><br/>
     <span style="color:gray">Byte color</span><br />
-    <span style="color:gray;">&#9632; </span> constant changing<br />
+    <span style="color:gray;">&#9632; </span> constantly changing<br />
     <span style="color:blue;">&#9632; </span> increasing<br />
     <span style="color:red;">&#9632; </span> decreasing<br />
     <span style="color:gray">Shortcuts</span><br />
-    Horizontal Scrolling: <span style="background-color:lightGray;color:gray">&nbsp;shift+wheel&nbsp;</span>
+    Horizontal Scrolling: <span style="background-color:lightGray;color:gray">&nbsp;Shift+Wheel&nbsp;</span>
   )";
 }
 
@@ -310,10 +310,10 @@ void MessagesWidget::drawContextMenu() {
     }
   }
   ImGui::Separator();
-  if (ImGui::MenuItem("Multi-Line bytes", nullptr, settings.multiple_lines_hex)) {
+  if (ImGui::MenuItem("Multiline Bytes", nullptr, settings.multiple_lines_hex)) {
     setMultiLineBytes(!settings.multiple_lines_hex);
   }
-  if (ImGui::MenuItem("Show inactive messages", nullptr, list_.show_inactive_messages)) {
+  if (ImGui::MenuItem("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
     list_.showInactiveMessages(!list_.show_inactive_messages);
   }
   ImGui::EndPopup();

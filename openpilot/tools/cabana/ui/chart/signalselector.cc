@@ -43,7 +43,7 @@ bool SignalSelector::draw() {
   ImGui::BeginGroup();
   ImGui::TextUnformatted("Available Signals");
   // a combo popup with a filter box
-  const char *preview = msgs_combo_index_ >= 0 ? msgs_combo_[msgs_combo_index_].text.c_str() : "Select a msg...";
+  const char *preview = msgs_combo_index_ >= 0 ? msgs_combo_[msgs_combo_index_].text.c_str() : "Select a message...";
   ImGui::SetNextItemWidth(column_w);
   if (ImGui::BeginCombo("##msgs_combo", preview)) {
     if (ImGui::IsWindowAppearing()) {
@@ -51,7 +51,7 @@ bool SignalSelector::draw() {
       ImGui::SetKeyboardFocusHere();
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
-    inputText("##msgs_filter", &msgs_combo_filter_, "Select a msg...");
+    inputText("##msgs_filter", &msgs_combo_filter_, "Select a message...");
     for (int i = 0; i < (int)msgs_combo_.size(); ++i) {
       if (!msgs_combo_filter_.empty() && !utils::containsCI(msgs_combo_[i].text, msgs_combo_filter_)) continue;
       if (ImGui::Selectable(msgs_combo_[i].text.c_str(), i == msgs_combo_index_)) {

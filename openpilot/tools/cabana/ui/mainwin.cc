@@ -92,7 +92,7 @@ void MainWindow::loadFingerprints() {
 void MainWindow::drawFileMenu() {
   const bool has_stream = hasStream();
   if (ImGui::MenuItem("Open Stream...")) selectAndOpenStream();
-  if (ImGui::MenuItem("Close stream", nullptr, false, has_stream)) closeStream();
+  if (ImGui::MenuItem("Close Stream", nullptr, false, has_stream)) closeStream();
   if (ImGui::MenuItem("Export to CSV...", nullptr, false, has_stream)) exportToCSV();
   ImGui::Separator();
 
@@ -115,7 +115,7 @@ void MainWindow::drawFileMenu() {
     }
     ImGui::EndMenu();
   }
-  if (ImGui::MenuItem("Load DBC From Clipboard")) loadFromClipboard();
+  if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard();
 
   ImGui::Separator();
   const int cnt = dbc()->nonEmptyDBCCount();
@@ -123,7 +123,7 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem(save_text.c_str(), shortcut("S").c_str(), false, cnt > 0)) save();
   if (ImGui::MenuItem("Save DBC As...", shortcut("Shift+S").c_str(), false, cnt == 1)) saveAs();
   // TODO: Support clipboard for multiple files
-  if (ImGui::MenuItem("Copy DBC To Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
+  if (ImGui::MenuItem("Copy DBC to Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
 
   ImGui::Separator();
   if (ImGui::MenuItem("Settings...")) openSettings();
@@ -283,7 +283,7 @@ void MainWindow::closeStream() {
   if (dbc()->nonEmptyDBCCount() > 0) {
     dbc()->fileChanged();
   }
-  showStatusMessage("stream closed");
+  showStatusMessage("Stream closed");
 }
 
 void MainWindow::exportToCSV() {
@@ -315,7 +315,7 @@ void MainWindow::loadFile(const std::string &fn, SourceSet s, std::function<void
       std::string error;
       if (dbc()->open(s, fn, &error)) {
         updateRecentFiles(fn);
-        showStatusMessage("DBC File " + fn + " loaded", 2000);
+        showStatusMessage("DBC file " + fn + " loaded", 2000);
         if (then) then();
       } else {
         MessageBox::warning("Failed to load DBC file", "Failed to parse DBC file " + fn, error, then);
@@ -333,11 +333,11 @@ void MainWindow::loadDBCFromOpendbc(const std::string &name) {
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   std::string text;
   if (!utils::getClipboardText(&text)) {
-    MessageBox::warning("Load From Clipboard", "No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland).");
+    MessageBox::warning("Load from Clipboard", "No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland).");
     return;
   }
   if (text.empty()) {
-    MessageBox::warning("Load From Clipboard", "Clipboard is empty.");
+    MessageBox::warning("Load from Clipboard", "Clipboard is empty.");
     return;
   }
 
@@ -345,9 +345,9 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
     std::string error;
     bool ret = dbc()->open(s, std::string(""), text, &error);
     if (ret && dbc()->nonEmptyDBCCount() > 0) {
-      MessageBox::information("Load From Clipboard", "DBC Successfully Loaded!");
+      MessageBox::information("Load from Clipboard", "DBC loaded successfully.");
     } else {
-      MessageBox::warning("Failed to load DBC from clipboard", "Make sure that you paste the text with correct format.", error);
+      MessageBox::warning("Failed to load DBC from clipboard", "Make sure the clipboard contains correctly formatted DBC text.", error);
     }
   });
 }
@@ -512,9 +512,9 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
 
 void MainWindow::copyToClipboard(const std::string &text) {
   if (utils::setClipboardText(text)) {
-    MessageBox::information("Copy To Clipboard", "DBC Successfully copied!");
+    MessageBox::information("Copy to Clipboard", "DBC copied successfully.");
   } else {
-    MessageBox::warning("Copy To Clipboard", "Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland).");
+    MessageBox::warning("Copy to Clipboard", "Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland).");
   }
 }
 
@@ -528,9 +528,9 @@ void MainWindow::drawManageDBCsMenu() {
     const std::string title = "Bus " + std::to_string(source) + " (" + (dbc_file ? dbc_file->name() : "No DBCs loaded") + ")";
     ImGui::PushID(source);
     if (ImGui::BeginMenu(title.c_str())) {
-      if (ImGui::MenuItem("New DBC File...")) newFile(ss);
+      if (ImGui::MenuItem("New DBC File")) newFile(ss);
       if (ImGui::MenuItem("Open DBC File...")) openFile(ss);
-      if (ImGui::MenuItem("Load DBC From Clipboard...")) loadFromClipboard(ss, false);
+      if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard(ss, false);
 
       // Show sub-menu for each dbc for this source.
       if (dbc_file) {
@@ -538,9 +538,9 @@ void MainWindow::drawManageDBCsMenu() {
         ImGui::MenuItem((dbc_file->name() + " (" + toString(dbc()->sources(dbc_file)) + ")").c_str(), nullptr, false, false);
         if (ImGui::MenuItem("Save...")) saveFile(dbc_file);
         if (ImGui::MenuItem("Save As...")) saveFileAs(dbc_file);
-        if (ImGui::MenuItem("Copy to Clipboard...")) saveFileToClipboard(dbc_file);
-        if (ImGui::MenuItem("Remove from this bus...")) closeFile(ss, {});
-        if (ImGui::MenuItem("Remove from all buses...")) closeFile(dbc_file);
+        if (ImGui::MenuItem("Copy to Clipboard")) saveFileToClipboard(dbc_file);
+        if (ImGui::MenuItem("Remove from This Bus...")) closeFile(ss, {});
+        if (ImGui::MenuItem("Remove from All Buses...")) closeFile(dbc_file);
       }
       ImGui::EndMenu();
     }
@@ -578,7 +578,7 @@ void MainWindow::remindSaveChanges(std::function<void()> then) {
     if (then) then();
     return;
   }
-  std::string text = "You have unsaved changes. Press ok to save them, cancel to discard.";
+  std::string text = "You have unsaved changes. Select OK to save them or Cancel to discard them.";
   MessageBox::question("Unsaved Changes", text, [this, then](bool ok) {
     if (ok) {
       save([this, then]() { remindSaveChanges(then); });
@@ -755,7 +755,7 @@ void MainWindow::drawStatusBar() {
     ImGui::TextUnformatted(bar.message.c_str());
   } else {
     bar.message.clear();
-    ImGui::TextUnformatted("For Help, Press F1");
+    ImGui::TextUnformatted("For help, press F1");
   }
   if (bar.progress_visible) {
     ImGui::SameLine(width - pad - 300.0f);
