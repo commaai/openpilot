@@ -199,7 +199,7 @@ void VideoWidget::drawPlaybackController() {
   };
   const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
   if (!can->liveStreaming()) {
-    items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
+    if (!force_fill_) items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
     items.push_back(separator());
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }));
     items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, speed_width));
@@ -365,7 +365,9 @@ float VideoWidget::defaultHeight(float width) const {
   return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
 }
 
-void VideoWidget::draw() {
+void VideoWidget::draw(bool fill) {
+  force_fill_ = fill;
+  if (cam_widget_) cam_widget_->setCrop(fill || settings.crop_video);
   if (!can->liveStreaming())
     drawCameraWidget();
 
@@ -550,7 +552,7 @@ const RgbImage *StreamCameraView::thumbnailAt(double sec) {
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255), ImGui::GetStyle().ChildRounding);
   if (const RgbImage *image = thumbnailAt(sec)) {
-    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
+    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, crop());
     drawVideoFrame(p, big_thumbnail_texture_.ref(), rect(), placement);
     drawTime(p, rect(), sec);
   }

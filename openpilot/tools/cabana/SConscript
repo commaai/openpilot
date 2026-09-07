@@ -85,9 +85,6 @@ if GetOption('extras'):
     cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
   ]
   cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[File(python_library), replay_lib, common, cereal, messaging])
-  video_render_test_env = env.Clone()
-  video_render_test_env.Append(CPPPATH=[imgui.INCLUDE_DIR])
-  video_render_test_env.Program('tests/test_video_render', 'tests/test_video_render.cc', LIBS=[File(f"{imgui.LIB_DIR}/libimgui.a")])
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = ui_env.Command('#' + output_json_file,

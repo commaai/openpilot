@@ -897,7 +897,7 @@ void MainWindow::drawVideoPanel() {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
   } else if (video_widget_) {
     help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-    video_widget_->draw();
+    video_widget_->draw(analysis_mode_);
   }
   ImGui::End();
   if (!video_visible_ && floating) video_visible_ = reset_layout_ = true;
