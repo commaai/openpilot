@@ -118,8 +118,10 @@ branches and restores your previous expansion state when cleared. Search for fie
 to compare signals. Arrays, booleans, enums, and nested numeric fields are included. Hover a
 field to inspect its value. Imported equations also appear in the browser.
 
-For decoded CAN, use **+** in the Charts toolbar to search available signals by signal name,
-message name, or message ID. Select several signals to overlay them on one chart. You can also
+Use **+** in the Charts toolbar to create an empty chart, then drag signals onto it.
+Empty charts are preserved in saved layouts. For decoded CAN, open **Manage Signals** from
+the chart's menu to search by signal name, message name, or message ID.
+Select several signals to overlay them on one chart. You can also
 add a signal from its message's signal view. Drag chart grips to reorder or merge charts;
 **Split Chart** separates an overlay.
 

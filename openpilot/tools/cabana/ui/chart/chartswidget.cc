@@ -529,17 +529,8 @@ void ChartsWidget::doAutoScroll() {
 }
 
 void ChartsWidget::newChart() {
-  execSignalSelector(std::make_unique<SignalSelector>("New Chart"), nullptr, [this](SignalSelector &dlg) {
-    const auto &items = dlg.selectedItems();
-    if (!items.empty()) {
-      auto c = createChart();
-      for (const auto &it : items) {
-        if (it.path.empty()) c->addSignal(it.msg_id, it.sig);
-        else c->addTelemetry(it.path);
-      }
-      updateState();
-    }
-  });
+  createChart();
+  updateState();
 }
 
 void ChartsWidget::execSignalSelector(std::unique_ptr<SignalSelector> dlg, ChartView *owner, std::function<void(SignalSelector &)> accepted) {
@@ -681,7 +672,7 @@ void ChartsContainer::draw() {
   float bottom = origin.y;
   if (current_charts.empty()) {
     ImGui::TextDisabled("Plot and compare route signals");
-    if (ImGui::Button("Add Signals...")) charts_widget_->newChart();
+    if (ImGui::Button("New Chart")) charts_widget_->newChart();
     ImGui::TextWrapped("Search by signal or message name. Add several signals to compare them on one chart.");
     ImGui::TextDisabled("Drag chart grips to arrange or merge plots.");
     bottom = ImGui::GetCursorScreenPos().y;
