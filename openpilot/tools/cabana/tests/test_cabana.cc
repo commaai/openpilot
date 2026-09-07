@@ -22,6 +22,7 @@
 #include "tools/cabana/ui/chart/downsample.h"
 #include "tools/cabana/ui/chart/analysis.h"
 #include "tools/cabana/ui/chart/layout.h"
+#include "tools/cabana/ui/chart/signaltree.h"
 #include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
@@ -611,8 +612,42 @@ void test_layout_equations() {
   }
 }
 
+void test_signal_tree() {
+  chart::SignalTree tree;
+  tree.rebuild({"/carState/vEgo", "/carState/aEgo", "/model/accel/10", "/model/accel/2", "/model/accel/0", "speed error"});
+  tree.filter("");
+  REQUIRE(tree.nodes[0].matches == 6);
+  auto rows = tree.visible({});
+  REQUIRE(rows.size() == 3);
+  REQUIRE(tree.nodes[rows[0]].name == "carState");
+  REQUIRE(tree.nodes[rows[1]].name == "model");
+  REQUIRE(tree.nodes[rows[2]].path == "speed error");
+  rows = tree.visible({"/model", "/model/accel"});
+  REQUIRE(rows.size() == 7);
+  REQUIRE(tree.nodes[rows[3]].name == "0");
+  REQUIRE(tree.nodes[rows[4]].name == "2");
+  REQUIRE(tree.nodes[rows[5]].name == "10");
+  REQUIRE(tree.nodes[rows[5]].path == "/model/accel/10");
+  tree.filter("VEGO");
+  REQUIRE(tree.nodes[0].matches == 1);
+  rows = tree.visible({"/carState"});
+  REQUIRE(rows.size() == 2);
+  REQUIRE(tree.nodes[rows[1]].path == "/carState/vEgo");
+  tree.filter("model/accel");
+  REQUIRE(tree.nodes[0].matches == 3);
+  tree.filter("missing");
+  REQUIRE(tree.visible({}).empty());
+  tree.rebuild({"/carState/vEgo", "/carState/vEgo"});
+  tree.filter("");
+  REQUIRE(tree.nodes[0].matches == 1);
+  tree.rebuild({});
+  tree.filter("");
+  REQUIRE(tree.visible({}).empty());
+}
+
 void test_cabana_core() {
   test_pixel_envelope();
+  test_signal_tree();
   test_cereal_telemetry();
   test_prepared_telemetry_merge();
   test_layout_equations();

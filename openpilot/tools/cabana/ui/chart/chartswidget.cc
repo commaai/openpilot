@@ -581,6 +581,10 @@ void ChartsWidget::removeAll() {
   ++equation_revision_;
   telemetry_dirty_ = false;
   browser_paths_.clear();
+  browser_tree_.rebuild({});
+  browser_tree_dirty_ = true;
+  browser_expanded_.clear();
+  browser_search_expanded_.clear();
   equations_.clear();
   calculated_.clear();
   equation_errors_.clear();

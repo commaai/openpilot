@@ -13,6 +13,7 @@
 #include "imgui_internal.h"
 
 #include "tools/cabana/ui/chart/signalselector.h"
+#include "tools/cabana/ui/chart/signaltree.h"
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/analysis/equations.h"
@@ -155,6 +156,9 @@ private:
   std::string browser_filter_;
   std::vector<std::string> browser_paths_;
   size_t browser_telemetry_count_ = 0;
+  chart::SignalTree browser_tree_;
+  bool browser_tree_dirty_ = true;
+  std::unordered_set<std::string> browser_expanded_, browser_search_expanded_;
   ChartsContainer charts_container_{this};
   ImGuiWindow *charts_scroll_ = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport_;

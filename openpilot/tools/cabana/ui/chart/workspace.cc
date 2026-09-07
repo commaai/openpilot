@@ -164,6 +164,8 @@ void ChartsWidget::telemetryChanged() {
     for (const auto &e : equations_) browser_paths_.push_back(e.name);
     std::sort(browser_paths_.begin(), browser_paths_.end());
     browser_paths_.erase(std::unique(browser_paths_.begin(), browser_paths_.end()), browser_paths_.end());
+    browser_tree_.rebuild(browser_paths_);
+    browser_tree_dirty_ = true;
   }
   pollTelemetry();
 }
@@ -250,33 +252,72 @@ void ChartsWidget::exportCsv() {
 }
 
 void ChartsWidget::drawSignalBrowser() {
-  inputText("##search_telemetry", &browser_filter_, "Search route signals...");
+  const bool filter_changed = inputText("##search_telemetry", &browser_filter_, "Search route signals...");
+  if (filter_changed || browser_tree_dirty_) {
+    browser_tree_.filter(browser_filter_);
+    browser_search_expanded_.clear();
+    if (!browser_filter_.empty()) {
+      for (const auto &node : browser_tree_.nodes) {
+        if (node.matches && !node.children.empty()) browser_search_expanded_.insert(node.key);
+      }
+    }
+    browser_tree_dirty_ = false;
+  }
+  auto &expanded = browser_filter_.empty() ? browser_expanded_ : browser_search_expanded_;
   ImGui::TextDisabled("Double-click to plot · Drag onto a chart to compare");
-  std::vector<const std::string *> matches;
-  for (const auto &path : browser_paths_) if (utils::containsCI(path, browser_filter_)) matches.push_back(&path);
-  ImGui::Text("%zu signals", matches.size());
-  if (matches.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
-  if (ImGui::BeginChild("signal_browser_list")) {
+  ImGui::Text("%zu signals", browser_tree_.nodes[0].matches);
+  if (ImGui::SmallButton("Expand all")) {
+    for (const auto &node : browser_tree_.nodes) {
+      if (node.matches && !node.children.empty()) expanded.insert(node.key);
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::SmallButton("Collapse all")) expanded.clear();
+  if (browser_paths_.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
+  else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No signals match your search.");
+  if (ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar)) {
+    if (filter_changed) ImGui::SetScrollY(0);
+    const auto rows = browser_tree_.visible(expanded);
     ImGuiListClipper clipper;
-    clipper.Begin(matches.size());
+    clipper.Begin(rows.size(), ImGui::GetTextLineHeightWithSpacing());
     while (clipper.Step()) for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-      const auto &path = *matches[i];
-      ImGui::PushID(path.c_str());
-      if (ImGui::Selectable(path.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick) && ImGui::IsMouseDoubleClicked(0)) {
-        auto *c = createChart();
-        c->addTelemetry(path);
-        updateState();
+      const auto &node = browser_tree_.nodes[rows[i]];
+      const bool branch = !node.children.empty();
+      const std::string label = chart::SignalTree::isIndex(node.name) ? "[" + node.name + "]" : node.name;
+      ImGui::PushID(node.key.c_str());
+      const float indent = node.depth * ImGui::GetStyle().IndentSpacing;
+      if (indent > 0) ImGui::Indent(indent);
+      ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+      if (branch) flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+      else flags |= ImGuiTreeNodeFlags_Leaf;
+      ImGui::SetNextItemOpen(branch && expanded.count(node.key), ImGuiCond_Always);
+      const bool open = ImGui::TreeNodeEx("node", flags, "%s", label.c_str());
+      if (branch && ImGui::IsItemToggledOpen()) {
+        if (open) expanded.insert(node.key);
+        else expanded.erase(node.key);
       }
-      if (ImGui::IsItemHovered()) {
-        const auto *points = telemetrySeries(path);
-        const double time = can->beginMonoTime() * 1e-9 + can->currentSec();
-        if (points && !points->empty()) ImGui::SetTooltip("%s\nValue: %.8g", path.c_str(), cabana::nearestValue(*points, time));
+      if (node.signal_matches) {
+        const auto &path = node.path;
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && !ImGui::IsItemToggledOpen()) {
+          auto *c = createChart();
+          c->addTelemetry(path);
+          updateState();
+        }
+        if (ImGui::IsItemHovered()) {
+          const auto *points = telemetrySeries(path);
+          const double time = can->beginMonoTime() * 1e-9 + can->currentSec();
+          if (points && !points->empty()) ImGui::SetTooltip("%s\nValue: %.8g", path.c_str(), cabana::nearestValue(*points, time));
+          else ImGui::SetTooltip("%s", path.c_str());
+        }
+        if (ImGui::BeginDragDropSource()) {
+          ImGui::SetDragDropPayload("CABANA_TELEMETRY", path.c_str(), path.size() + 1);
+          ImGui::TextUnformatted(path.c_str());
+          ImGui::EndDragDropSource();
+        }
+      } else if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s\n%zu signals", node.key.c_str(), node.matches);
       }
-      if (ImGui::BeginDragDropSource()) {
-        ImGui::SetDragDropPayload("CABANA_TELEMETRY", path.c_str(), path.size() + 1);
-        ImGui::TextUnformatted(path.c_str());
-        ImGui::EndDragDropSource();
-      }
+      if (indent > 0) ImGui::Unindent(indent);
       ImGui::PopID();
     }
   }
