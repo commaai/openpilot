@@ -81,18 +81,6 @@ struct ExecutionLimit {
 };
 }  // namespace
 
-void portLegacyEquation(Equation &equation) {
-  PythonLock lock;
-  auto port = checked(PyObject_GetAttrString(runtimeModule(), "port_equation"));
-  auto result = checked(PyObject_CallFunction(port.get(), "ss", equation.globals.c_str(), equation.function.c_str()));
-  const char *globals = PyUnicode_AsUTF8(PyTuple_GetItem(result.get(), 0));
-  if (!globals) pythonError();
-  equation.globals = globals;
-  const char *function = PyUnicode_AsUTF8(PyTuple_GetItem(result.get(), 1));
-  if (!function) pythonError();
-  equation.function = function;
-}
-
 double nearestValue(const std::vector<Sample> &samples, double time) {
   if (samples.empty()) return std::numeric_limits<double>::quiet_NaN();
   auto it = std::lower_bound(samples.begin(), samples.end(), time, [](const auto &p, double x) { return p.x < x; });

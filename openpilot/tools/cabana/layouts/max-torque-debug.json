@@ -105,7 +105,6 @@
         "/carState/steeringPressed",
         "/carControl/latActive"
       ],
-      "legacy_lua_hash": "b9749f5807707b781e58e3bf01bd3ac0b0204574d5cfcc5c034d1bc54ff1f2aa",
       "language": "python"
     },
     {
@@ -117,7 +116,6 @@
         "/carState/vEgo",
         "/vehicleParameters/roll"
       ],
-      "legacy_lua_hash": "fbd979db4127cddf0a7b82a77c9b45aa7d44906c2ac0acf72c3e963c8b380877",
       "language": "python"
     },
     {
@@ -129,7 +127,6 @@
         "/carState/vEgo",
         "/vehicleParameters/roll"
       ],
-      "legacy_lua_hash": "fbd979db4127cddf0a7b82a77c9b45aa7d44906c2ac0acf72c3e963c8b380877",
       "language": "python"
     }
   ]

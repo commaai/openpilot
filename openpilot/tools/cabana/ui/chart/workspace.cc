@@ -5,10 +5,7 @@
 #include <iomanip>
 #include <locale>
 #include <sstream>
-#include <cerrno>
 #include <stdexcept>
-#include <sys/wait.h>
-#include <unistd.h>
 
 #include "json11/json11.hpp"
 #include "tools/cabana/settings.h"
@@ -79,45 +76,19 @@ void ChartsWidget::saveLayout() {
 }
 
 void ChartsWidget::loadLayout() {
-  FileDialog::getOpenFileName("Open Cabana or PlotJuggler Layout", settings.last_dir, "",
+  FileDialog::getOpenFileName("Open Chart Layout", settings.last_dir, ".json",
     [this](const std::string &path) { if (!path.empty()) openLayout(path); });
 }
 
 bool ChartsWidget::openLayout(const std::string &name) {
   auto path = std::filesystem::path(name);
-  if (!std::filesystem::exists(path) && path.parent_path() == "layouts") path = executableDir() / "../plotjuggler" / path;
-  if (!std::filesystem::exists(path) && path.parent_path().empty()) {
-    path = executableDir() / "layouts" / (path.has_extension() ? path.stem().string() + ".json" : name + ".json");
+  if (!std::filesystem::exists(path) && (path.parent_path().empty() || path.parent_path() == "layouts")) {
+    path = executableDir() / "layouts" / (path.has_extension() ? path.filename().string() : path.filename().string() + ".json");
   }
   try {
-    std::string contents;
-    if (path.extension() == ".xml") {
-      // No shell: layout paths are data, including spaces and metacharacters.
-      const std::string script = (executableDir() / "analysis/import_layout.py").string();
-      int pipes[2];
-      if (pipe(pipes) != 0) throw std::runtime_error("Could not start the layout importer");
-      pid_t pid = fork();
-      if (pid == 0) {
-        dup2(pipes[1], STDOUT_FILENO);
-        dup2(pipes[1], STDERR_FILENO);
-        close(pipes[0]); close(pipes[1]);
-        execlp("python3", "python3", script.c_str(), path.c_str(), static_cast<char *>(nullptr));
-        _exit(127);
-      }
-      close(pipes[1]);
-      if (pid < 0) { close(pipes[0]); throw std::runtime_error("Could not start the layout importer"); }
-      char buffer[4096];
-      ssize_t count;
-      while ((count = read(pipes[0], buffer, sizeof(buffer))) > 0) contents.append(buffer, count);
-      close(pipes[0]);
-      int status = 0;
-      while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
-      if (!WIFEXITED(status) || WEXITSTATUS(status)) throw std::runtime_error(contents.empty() ? "Layout import failed" : contents);
-    } else {
-      std::ifstream in(path);
-      if (!in) throw std::runtime_error("Could not read the chart layout");
-      contents.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-    }
+    std::ifstream in(path);
+    if (!in) throw std::runtime_error("Could not read the chart layout");
+    const std::string contents{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
     return restoreLayout(contents);
   } catch (const std::exception &e) {
     MessageBox::warning("Open Layout", e.what());
@@ -184,7 +155,7 @@ void ChartsWidget::telemetryChanged() {
   equation_errors_.clear();
   std::vector<const cabana::Equation *> pending;
   for (const auto &e : equations_) pending.push_back(&e);
-  // Resolve named-equation dependencies independently of their order in the XML file.
+  // Resolve named-equation dependencies independently of their order in the layout.
   for (size_t pass = 0; pass < equations_.size() && !pending.empty(); ++pass) {
     for (auto it = pending.begin(); it != pending.end();) {
       const auto &e = **it;
