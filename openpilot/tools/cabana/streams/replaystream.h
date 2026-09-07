@@ -1,8 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <deque>
 #include <memory>
 #include <set>
+#include <thread>
 
 #include "common/prefix.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -36,6 +38,11 @@ public:
 
 private:
   void mergeSegments();
+  void indexTelemetry();
+  std::thread telemetry_thread_;
+  std::mutex telemetry_mutex_;
+  std::condition_variable telemetry_cv_;
+  std::deque<std::shared_ptr<Segment>> pending_segments_;
   std::atomic<bool> stopping_ = false;
   std::unique_ptr<Replay> replay = nullptr;
   Connection settings_connection_;

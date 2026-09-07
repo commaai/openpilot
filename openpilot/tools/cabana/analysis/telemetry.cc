@@ -51,8 +51,26 @@ struct TelemetryExtractor::Impl {
     explicit Node(std::string path) : path(std::move(path)) {}
     std::string path;
     Samples *samples = nullptr;
-    std::vector<std::pair<capnp::StructSchema::Field, std::unique_ptr<Node>>> fields;
+    struct Field {
+      capnp::StructSchema::Field schema;
+      std::unique_ptr<Node> child;
+      bool optional;
+    };
+    std::vector<Field> fields;
     std::vector<std::unique_ptr<Node>> elements;
+
+    void append(double number, double time, Telemetry &telemetry) {
+      if (std::isfinite(number)) {
+        if (!samples) samples = &telemetry[path];
+        samples->emplace_back(time, number);
+      }
+    }
+
+    template <typename T>
+    void readNumbers(capnp::DynamicList::Reader list, double time, Telemetry &telemetry) {
+      auto numbers = list.as<capnp::List<T>>();
+      for (size_t i = 0; i < numbers.size(); ++i) elements[i]->append(numbers[i], time, telemetry);
+    }
 
     void read(capnp::DynamicValue::Reader value, double time, Telemetry &telemetry) {
       double number;
@@ -66,26 +84,33 @@ struct TelemetryExtractor::Impl {
           auto node = value.as<capnp::DynamicStruct>();
           if (fields.empty()) {
             for (auto field : node.getSchema().getFields()) {
-              fields.emplace_back(field, std::make_unique<Node>(path + '/' + field.getProto().getName().cStr()));
+              auto type = field.getType();
+              if (type.isVoid() || type.isText() || type.isData() || type.isInterface() || type.isAnyPointer()) continue;
+              const bool optional = type.isStruct() || type.isList() ||
+                                    field.getProto().getDiscriminantValue() != capnp::schema::Field::NO_DISCRIMINANT;
+              fields.push_back({field, std::make_unique<Node>(path + '/' + field.getProto().getName().cStr()), optional});
             }
           }
-          for (auto &[field, child] : fields) {
-            if (node.has(field)) child->read(node.get(field), time, telemetry);
+          for (auto &field : fields) {
+            if (!field.optional || node.has(field.schema)) field.child->read(node.get(field.schema), time, telemetry);
           }
           return;
         }
         case capnp::DynamicValue::LIST: {
           auto list = value.as<capnp::DynamicList>();
           while (elements.size() < list.size()) elements.push_back(std::make_unique<Node>(path + '/' + std::to_string(elements.size())));
-          for (size_t i = 0; i < list.size(); ++i) elements[i]->read(list[i], time, telemetry);
+          switch (list.getSchema().getElementType().which()) {
+            case capnp::schema::Type::FLOAT32: readNumbers<float>(list, time, telemetry); break;
+            case capnp::schema::Type::FLOAT64: readNumbers<double>(list, time, telemetry); break;
+            default:
+              for (size_t i = 0; i < list.size(); ++i) elements[i]->read(list[i], time, telemetry);
+              break;
+          }
           return;
         }
         default: return;
       }
-      if (std::isfinite(number)) {
-        if (!samples) samples = &telemetry[path];
-        samples->emplace_back(time, number);
-      }
+      append(number, time, telemetry);
     }
   };
   struct Root {
