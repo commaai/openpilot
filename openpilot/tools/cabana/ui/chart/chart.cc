@@ -142,18 +142,25 @@ void ChartView::pollTelemetry() {
   if (std::none_of(sigs_.begin(), sigs_.end(), [](const auto &s) { return !s.path.empty(); })) return;
   telemetry_result_ = std::make_shared<std::vector<SigItem>>();
   const double origin = can->beginMonoTime() * 1e-9;
+  std::vector<std::shared_ptr<const cabana::Samples>> samples;
   for (const auto &s : sigs_) {
     auto &item = telemetry_result_->emplace_back();
     if (s.path.empty()) continue;
     item.path = s.path;
     item.transform = s.transform;
-    if (const auto *samples = charts_widget_->telemetrySeries(s.path)) {
-      item.raw_vals.reserve(samples->size());
-      for (const auto &p : *samples) item.raw_vals.emplace_back(p.x - origin, p.y);
-    }
+    samples.push_back(charts_widget_->telemetrySnapshot(s.path));
   }
-  telemetry_task_ = ThreadPool::instance().run([result = telemetry_result_, build_tree = !can->liveStreaming()]() {
-    for (auto &s : *result) if (!s.path.empty()) buildSeries(s, 0, build_tree);
+  telemetry_task_ = ThreadPool::instance().run([result = telemetry_result_, samples = std::move(samples), origin, build_tree = !can->liveStreaming()]() {
+    size_t index = 0;
+    for (auto &s : *result) {
+      if (s.path.empty()) continue;
+      const auto &points = samples[index++];
+      if (points) {
+        s.raw_vals.reserve(points->size());
+        for (const auto &p : *points) s.raw_vals.emplace_back(p.x - origin, p.y);
+      }
+      buildSeries(s, 0, build_tree);
+    }
   });
 }
 
@@ -228,7 +235,9 @@ void ChartView::updateLayout() {
     int w = marker_size + LEGEND_SPACING + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, name.c_str()).x +
             ImGui::CalcTextSize(s.description().c_str()).x + 3;
     pushMonoFont(font_size);
-    w = std::max(w, (int)std::ceil(ImGui::CalcTextSize("-0.00000e+000").x));
+    const auto *point = lastPointBefore(s, cur_sec_);
+    const std::string value = point ? signalValue(s, point->y) : "No data";
+    w = std::max(w, (int)std::ceil(std::max(ImGui::CalcTextSize("-0.00000e+000").x, ImGui::CalcTextSize(value.c_str()).x)));
     popMonoFont();
     w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
     if (x + w > legend_right && x > legend_left) {

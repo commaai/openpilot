@@ -67,7 +67,7 @@ public:
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
 
-  cabana::Telemetry telemetry;  // main thread; timestamps are absolute monotonic seconds
+  cabana::TelemetrySnapshot telemetry;  // main thread; timestamps are absolute monotonic seconds
   Observable<> telemetryChanged;
   SourceSet sources;
 

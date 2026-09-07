@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <thread>
 
+#include "tools/replay/py_downloader.h"
+
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -466,6 +468,26 @@ void test_chart_analysis() {
   REQUIRE(chart::csvField("signal, \"left\"\n") == "\"signal, \"\"left\"\"\n\"");
 }
 
+void test_pixel_envelope() {
+  using Point = cabana::Sample;
+  std::vector<Point> points;
+  for (int i = 0; i < 1000; ++i) points.emplace_back(i * 0.001, i == 203 ? 99 : i == 201 ? -99 : 0);
+  const auto result = chart::pixelEnvelope(points.begin(), points.end(), 0, 1, 10);
+  REQUIRE(result.size() <= 40);
+  REQUIRE(result.front().x == points.front().x);
+  REQUIRE(result.back().x == points.back().x);
+  REQUIRE(std::is_sorted(result.begin(), result.end(), [](const auto &a, const auto &b) { return a.x < b.x; }));
+  REQUIRE(std::any_of(result.begin(), result.end(), [](const auto &p) { return p.x == .201 && p.y == -99; }));
+  REQUIRE(std::any_of(result.begin(), result.end(), [](const auto &p) { return p.x == .203 && p.y == 99; }));
+  const std::vector<Point> step{{-1, 0}, {0, 0}, {0, 10}, {0, -10}, {0, 0}, {2, 0}};
+  const auto edge = chart::pixelEnvelope(step.begin(), step.end(), 0, 1, 2);
+  REQUIRE(edge.front().x == -1);
+  REQUIRE(edge.back().x == 2);
+  REQUIRE(std::any_of(edge.begin(), edge.end(), [](const auto &p) { return p.y == 10; }));
+  REQUIRE(std::any_of(edge.begin(), edge.end(), [](const auto &p) { return p.y == -10; }));
+  REQUIRE(chart::pixelEnvelope(points.begin(), points.begin(), 0, 1, 10).empty());
+}
+
 void test_chart_layout() {
   using json11::Json;
   Json::object signal{{"message", "2:1AF"}, {"signal", "Speed"}, {"visible", false}, {"transform", 3},
@@ -543,7 +565,9 @@ void test_prepared_telemetry_merge() {
     cabana::Telemetry batch{{"a", samples}, {"new", {{1, 100}}}};
     auto expected = published;
     cabana::mergeTelemetry(expected, batch);
-    cabana::prepareTelemetryMerge(published, batch);
+    cabana::TelemetrySnapshot snapshot;
+    for (const auto &[path, points] : published) snapshot[path] = std::make_shared<const cabana::Samples>(points);
+    cabana::prepareTelemetryMerge(snapshot, batch);
     REQUIRE(!batch.count("unchanged"));
     REQUIRE(published.at("a").size() == 2);
     REQUIRE(published.at("a").front().y == 20);
@@ -593,6 +617,7 @@ void test_cabana_core() {
   test_prepared_telemetry_merge();
   test_layout_equations();
   test_chart_analysis();
+  test_pixel_envelope();
   test_chart_layout();
   test_format_seconds();
   test_to_hex();
@@ -613,6 +638,32 @@ void test_cabana_core() {
 }
 
 int main(int argc, char **argv) {
+  if (argc == 3 && std::string(argv[1]) == "--check-downloader") {
+    return run_native_test([&]() {
+      const std::string mode = argv[2];
+      const std::string prefix = std::getenv("OPENPILOT_PREFIX");
+      bool progress = false;
+      installDownloadProgressHandler([&](uint64_t current, uint64_t total, bool success) {
+        if (success && current == 42 && total == 100) progress = true;
+      });
+      std::atomic<bool> abort = false;
+      std::thread cancel;
+      if (mode == "abort") cancel = std::thread([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        abort = true;
+      });
+      const auto result = PyDownloader::download(mode == "ok" ? "url with spaces & literal $value" : mode, true, &abort);
+      if (cancel.joinable()) cancel.join();
+      installDownloadProgressHandler(nullptr);
+      REQUIRE(std::string(std::getenv("OPENPILOT_PREFIX")) == prefix);
+      if (mode == "ok") {
+        REQUIRE(result == "downloaded path");
+        REQUIRE(progress);
+      } else {
+        REQUIRE(result.empty());
+      }
+    });
+  }
   if (argc == 3 && std::string(argv[1]) == "--check-layout") {
     return run_native_test([&]() {
       std::ifstream in(argv[2]);

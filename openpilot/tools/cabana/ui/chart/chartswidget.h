@@ -70,6 +70,7 @@ class ChartsWidget {
 public:
   ChartsWidget();
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
+  std::shared_ptr<const cabana::Samples> telemetrySnapshot(const std::string &path) const;
   const std::vector<cabana::Sample> *telemetrySeries(const std::string &path) const;
   std::string serializeLayout() const;
   bool restoreLayout(const std::string &contents);
@@ -140,9 +141,9 @@ private:
   TabBar tabbar_;
   std::unordered_map<int, std::string> tab_names_;
   std::vector<cabana::Equation> equations_;
-  cabana::Telemetry calculated_;
+  cabana::TelemetrySnapshot calculated_;
   struct EquationResult {
-    cabana::Telemetry values;
+    cabana::TelemetrySnapshot values;
     std::string errors;
     size_t revision = 0;
   };
@@ -153,6 +154,7 @@ private:
   std::string equation_errors_;
   std::string browser_filter_;
   std::vector<std::string> browser_paths_;
+  size_t browser_telemetry_count_ = 0;
   ChartsContainer charts_container_{this};
   ImGuiWindow *charts_scroll_ = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport_;

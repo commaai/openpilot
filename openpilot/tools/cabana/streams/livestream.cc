@@ -98,13 +98,14 @@ void LiveStream::updateLastMessages() {
     std::lock_guard lk(lock);
     if (!begin_event_ts) begin_event_ts = received_first_ts_;
     lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
-    cabana::mergeTelemetry(telemetry, std::move(received_telemetry_));
+    cabana::prepareTelemetryMerge(telemetry, received_telemetry_);
+    for (auto &[path, samples] : received_telemetry_) telemetry[path] = std::make_shared<const cabana::Samples>(std::move(samples));
     received_telemetry_.clear();
     const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
     for (auto &[path, samples] : telemetry) {
-      auto first = std::lower_bound(samples.begin(), samples.end(), cutoff, [](const auto &p, double t) { return p.x < t; });
-      if (first != samples.begin()) --first;  // retain the boundary sample for nearest-sample equations
-      samples.erase(samples.begin(), first);
+      auto first = std::lower_bound(samples->begin(), samples->end(), cutoff, [](const auto &p, double t) { return p.x < t; });
+      if (first != samples->begin()) --first;  // retain the boundary sample for nearest-sample equations
+      if (first != samples->begin()) samples = std::make_shared<const cabana::Samples>(first, samples->end());
     }
     mergeEvents(received_events_);
     uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;

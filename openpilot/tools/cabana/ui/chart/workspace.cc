@@ -145,19 +145,26 @@ bool ChartsWidget::restoreLayout(const std::string &contents) {
 }
 
 const std::vector<cabana::Sample> *ChartsWidget::telemetrySeries(const std::string &path) const {
+  return telemetrySnapshot(path).get();
+}
+
+std::shared_ptr<const cabana::Samples> ChartsWidget::telemetrySnapshot(const std::string &path) const {
   auto derived = calculated_.find(path);
-  if (derived != calculated_.end()) return &derived->second;
+  if (derived != calculated_.end()) return derived->second;
   auto raw = can->telemetry.find(path);
-  return raw == can->telemetry.end() ? nullptr : &raw->second;
+  return raw == can->telemetry.end() ? nullptr : raw->second;
 }
 
 void ChartsWidget::telemetryChanged() {
   telemetry_dirty_ = true;
-  browser_paths_.clear();
-  for (const auto &[path, _] : can->telemetry) browser_paths_.push_back(path);
-  for (const auto &e : equations_) browser_paths_.push_back(e.name);
-  std::sort(browser_paths_.begin(), browser_paths_.end());
-  browser_paths_.erase(std::unique(browser_paths_.begin(), browser_paths_.end()), browser_paths_.end());
+  if (browser_paths_.empty() || browser_telemetry_count_ != can->telemetry.size()) {
+    browser_telemetry_count_ = can->telemetry.size();
+    browser_paths_.clear();
+    for (const auto &[path, _] : can->telemetry) browser_paths_.push_back(path);
+    for (const auto &e : equations_) browser_paths_.push_back(e.name);
+    std::sort(browser_paths_.begin(), browser_paths_.end());
+    browser_paths_.erase(std::unique(browser_paths_.begin(), browser_paths_.end()), browser_paths_.end());
+  }
   pollTelemetry();
 }
 
@@ -171,23 +178,25 @@ void ChartsWidget::pollTelemetry() {
       for (auto &c : charts_) c->updateTelemetry();
       updateState();
     }
-    equation_result_.reset();
+    ThreadPool::instance().run([retired = std::move(equation_result_)]() mutable { retired.reset(); });
   }
   if (!telemetry_dirty_) return;
   telemetry_dirty_ = false;
-  // Copy only equation inputs. Workers own their snapshots and never access widgets or streams.
-  cabana::Telemetry inputs;
+  // Retain immutable inputs without copying samples on the UI thread.
+  cabana::TelemetrySnapshot snapshot;
   for (const auto &e : equations_) {
     auto add = [&](const std::string &path) {
       auto it = can->telemetry.find(path);
-      if (it != can->telemetry.end() && !inputs.count(path)) inputs.emplace(path, it->second);
+      if (it != can->telemetry.end() && !snapshot.count(path)) snapshot.emplace(path, it->second);
     };
     add(e.source);
     for (const auto &path : e.additional) add(path);
   }
   equation_result_ = std::make_shared<EquationResult>();
   equation_result_->revision = equation_revision_;
-  equation_task_ = ThreadPool::instance().run([equations = equations_, inputs = std::move(inputs), result = equation_result_]() mutable {
+  equation_task_ = ThreadPool::instance().run([equations = equations_, snapshot = std::move(snapshot), result = equation_result_]() mutable {
+    cabana::Telemetry inputs;
+    for (const auto &[path, samples] : snapshot) inputs.emplace(path, *samples);
     std::vector<const cabana::Equation *> pending;
     for (const auto &e : equations) pending.push_back(&e);
     for (size_t pass = 0; pass < equations.size() && !pending.empty(); ++pass) {
@@ -203,7 +212,7 @@ void ChartsWidget::pollTelemetry() {
     for (auto *e : pending) result->errors += e->name + ": waiting for input signals (or cyclic dependency)\n";
     for (const auto &e : equations) {
       auto it = inputs.find(e.name);
-      if (it != inputs.end()) result->values.emplace(e.name, std::move(it->second));
+      if (it != inputs.end()) result->values.emplace(e.name, std::make_shared<const cabana::Samples>(std::move(it->second)));
     }
   });
 }

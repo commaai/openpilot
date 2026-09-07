@@ -109,6 +109,9 @@ void ChartsWidget::updateTabBar() {
 void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
   std::vector<std::future<void>> futures;
   for (auto &c : charts_) {
+    if (std::none_of(c->signals().begin(), c->signals().end(), [&](const auto &s) {
+          return s.path.empty() && new_events.count(s.msg_id);
+        })) continue;
     futures.push_back(ThreadPool::instance().run([c = c.get(), &new_events]() { c->updateSeries(nullptr, &new_events); }));
   }
   for (auto &f : futures) f.get();
@@ -577,6 +580,7 @@ void ChartsWidget::removeAll() {
   tab_names_.clear();
   ++equation_revision_;
   telemetry_dirty_ = false;
+  browser_paths_.clear();
   equations_.clear();
   calculated_.clear();
   equation_errors_.clear();
