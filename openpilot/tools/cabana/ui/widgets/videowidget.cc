@@ -189,8 +189,10 @@ void VideoWidget::drawPlaybackController() {
     item.tight = true;
     return item;
   };
-  const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
-  items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
+  if (!force_fill_) {
+    const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
+    items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
+  }
   if (!can->liveStreaming()) {
     items.push_back(separator());
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
@@ -362,7 +364,9 @@ float VideoWidget::defaultHeight(float width) const {
   return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
 }
 
-void VideoWidget::draw() {
+void VideoWidget::draw(bool fill) {
+  force_fill_ = fill;
+  if (cam_widget_) cam_widget_->setCrop(fill || settings.crop_video);
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   if (!can->liveStreaming())
     drawCameraWidget();
@@ -546,14 +550,12 @@ const RgbImage *StreamCameraView::thumbnailAt(double sec) {
 }
 
 void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
-  p->PushClipRect(rect().Min, rect().Max, true);
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255), ImGui::GetStyle().ChildRounding);
   if (const RgbImage *image = thumbnailAt(sec)) {
-    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
-    drawVideoImage(p, big_thumbnail_texture_.ref(), placement, ImGui::GetStyle().ChildRounding);
+    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, crop());
+    p->AddImageRounded(big_thumbnail_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
     drawTime(p, rect(), sec);
   }
-  p->PopClipRect();
 }
 
 void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {

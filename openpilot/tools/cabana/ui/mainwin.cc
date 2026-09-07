@@ -928,7 +928,7 @@ void MainWindow::drawVideoPanel() {
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      video_widget_->draw();
+      video_widget_->draw(analysis_mode_);
       ImGui::EndChild();
     } else {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread

@@ -100,23 +100,21 @@ float CameraWidget::frameAspectRatio() const {
 
 void CameraWidget::paint() {
   ImDrawList *p = ImGui::GetWindowDrawList();
-  p->PushClipRect(rect_.Min, rect_.Max, true);
   p->AddRectFilled(rect_.Min, rect_.Max, bg_, ImGui::GetStyle().ChildRounding);
 
   std::lock_guard lk(frame_lock_);
-  if (rgb_frame_.isNull()) { p->PopClipRect(); return; }
+  if (rgb_frame_.isNull()) return;
   if (frame_updated_) {
     frame_texture_.upload(rgb_frame_);
     frame_updated_ = false;
   }
 
-  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), settings.crop_video);
+  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), crop());
   if (active_stream_type_ == VISION_STREAM_CABIN) {
     // mirror cabin camera horizontally
     std::swap(placement.uv0.x, placement.uv1.x);
   }
-  drawVideoImage(p, frame_texture_.ref(), placement, ImGui::GetStyle().ChildRounding);
-  p->PopClipRect();
+  p->AddImageRounded(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
 }
 
 void CameraWidget::vipcThread() {
