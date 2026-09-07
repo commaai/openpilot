@@ -94,7 +94,6 @@ public:
 private:
   void showThumbnail(double seconds);
   void updateSliderThumbnail();  // the thumbnail follows the mouse over the slider
-  void showThumbnail(double seconds);
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
   void createCameraWidget();
