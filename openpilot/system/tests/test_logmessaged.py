@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import time
@@ -59,46 +60,76 @@ class TestLogmessaged(OpenpilotTestCase):
     assert self.logsize() < 10 * (len(message) + 1024)
     assert all(json.loads(m.logMessage)['msg'] != message for m in messaging.drain_sock(sock))
 
-  def test_burst_capacity(self):
-    message = 'a' * (8 * 1024 * 1024)
+  def test_slots(self):
+    with patch.object(ShmQueue, 'MAX_MESSAGE_SIZE', 1):
+      assert not self.queue.send(b'xx')
+    def native_burst():
+      subprocess.run([str(NATIVE), '--emit', '100'], input=b'native', check=True, timeout=30)
 
     with ThreadPoolExecutor(max_workers=4) as pool:
-      writers = [pool.submit(subprocess.run, [str(NATIVE), '--emit', '4'],
-                             input=message.encode(), check=True, timeout=30) for _ in range(4)]
-      for _ in range(4):
-        cloudlog.info(message)
+      writers = [pool.submit(native_burst) for _ in range(4)]
+      with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')):
+        for _ in range(100):
+          cloudlog.info('python')
       for writer in writers:
         writer.result()
-    # No consumer ran during the burst, so accepted files retain any overfill.
-    usage = sum(p.stat().st_blocks * 512 + ShmQueue.PAGE_SIZE for p in self.queue.ready.iterdir())
-    assert self.queue.capacity // 2 < usage <= 2 * self.queue.capacity
-    # Fits individually, but must be dropped because the spool is already over half full.
-    with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')):
-      cloudlog.info('x' * (self.queue.capacity // 2))
+    assert len(list(self.queue.ready.iterdir())) == len(list(self.queue.slots.iterdir())) <= ShmQueue.SLOT_COUNT
+    messages = []
     while (data := self.queue.receive()) is not None:
-      assert json.loads(data[1:])['msg'] == message
+      messages.append(json.loads(data[1:])['msg'])
+    assert set(messages) == {'python', 'native'}
     assert not list(self.queue.pending.iterdir())
+    assert not list(self.queue.slots.iterdir())
+
+    # Live claims occupy every slot without allocating thousands of payload files.
+    for slot in range(ShmQueue.SLOT_COUNT):
+      (self.queue.slots / str(slot)).symlink_to(f'{0:020d}-{os.getpid()}-1-{slot}')
+    with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')), \
+         patch('openpilot.common.shm_queue.random.randrange', return_value=0) as choose:
+      cloudlog.info('full')
+    assert choose.call_count == ShmQueue.CLAIM_ATTEMPTS
+    subprocess.run([str(NATIVE), '--emit'], input=b'full', check=True, timeout=10)
     assert not list(self.queue.ready.iterdir())
-    cloudlog.info('x' * self.queue.capacity)
-    assert self.queue.receive() is None
-    with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')):
-      cloudlog.info('after overflow')
+    assert not list(self.queue.pending.iterdir())
+    for slot in self.queue.slots.iterdir():
+      slot.unlink()
+    cloudlog.info('reused')
     data = self.queue.receive()
     assert data is not None
-    assert json.loads(data[1:])['msg'] == 'after overflow'
+    assert json.loads(data[1:])['msg'] == 'reused'
+    assert not list(self.queue.slots.iterdir())
 
   def test_crashed_writer(self):
-    script = """
+    for crash in ('Path.open', 'os.rename'):
+      with self.subTest(crash=crash):
+        script = f"""
 import os
+from pathlib import Path
 from openpilot.common.swaglog import cloudlog
-os.rename = lambda *args: os._exit(0)
+{crash} = lambda *args: os._exit(0)
 cloudlog.info('unpublished')
 """
-    subprocess.run([sys.executable, '-c', script], check=True, timeout=10)
-    assert list(self.queue.pending.iterdir())
-    cloudlog.info('committed')
+        subprocess.run([sys.executable, '-c', script], check=True, timeout=10)
+        assert list(self.queue.slots.iterdir())
+        cloudlog.info('committed')
+        data = self.queue.receive()
+        assert data is not None
+        assert json.loads(data[1:])['msg'] == 'committed'
+        assert self.queue.receive() is None
+        assert not list(self.queue.pending.iterdir())
+        assert not list(self.queue.slots.iterdir())
+
+    # Reader died after releasing a slot but before removing its published file.
+    with patch('openpilot.common.shm_queue.random.randrange', return_value=0):
+      cloudlog.info('old')
+      old = next(self.queue.ready.iterdir())
+      self.queue._release(self.queue.slots / '0', old.name)
+      cloudlog.info('new')
     data = self.queue.receive()
     assert data is not None
-    assert json.loads(data[1:])['msg'] == 'committed'
-    assert self.queue.receive() is None
-    assert not list(self.queue.pending.iterdir())
+    assert json.loads(data[1:])['msg'] == 'old'
+    assert (self.queue.slots / '0').is_symlink()
+    data = self.queue.receive()
+    assert data is not None
+    assert json.loads(data[1:])['msg'] == 'new'
+    assert not list(self.queue.slots.iterdir())

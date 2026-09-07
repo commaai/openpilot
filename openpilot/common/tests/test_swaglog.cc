@@ -40,13 +40,16 @@ void test_swaglog() {
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
 
-  const size_t page_size = sysconf(_SC_PAGESIZE);
-  const size_t reserved_pages = 1 + (buffer.size() + page_size - 1) / page_size;
-  CHECK(std::filesystem::file_size(root + "/budget") == reserved_pages);
+  auto slots = std::filesystem::directory_iterator(root + "/slots");
+  CHECK(slots != end(slots));
+  const auto slot = slots->path();
+  CHECK(++slots == end(slots));
+  CHECK(std::filesystem::read_symlink(slot) == filename.filename());
   CHECK(unlink(filename.c_str()) == 0);
-  CHECK(unlink((root + "/budget").c_str()) == 0);
+  CHECK(unlink(slot.c_str()) == 0);
   CHECK(rmdir((root + "/pending").c_str()) == 0);  // Publishing leaves no partial file.
   CHECK(rmdir((root + "/ready").c_str()) == 0);
+  CHECK(rmdir((root + "/slots").c_str()) == 0);
   CHECK(rmdir(root.c_str()) == 0);
 }
 

@@ -10,61 +10,68 @@
 #include <time.h>
 #include <unistd.h>
 
-// Protocol shared with shm_queue.py. Each pending filename reserves its full
-// payload size; rename publishes a complete record without shared locks or fds.
+#include "common/util.h"
+
+// Protocol shared with shm_queue.py. A slot symlink claims one message;
+// rename publishes its complete payload without shared locks or persistent fds.
 class ShmQueue {
 public:
-  explicit ShmQueue(std::string path, size_t capacity = 64 * 1024 * 1024)
-      : path(std::move(path)), capacity(capacity) {}
+  explicit ShmQueue(std::string path, size_t max_message_size = 64 * 1024 * 1024)
+      : path(std::move(path)), max_message_size(max_message_size) {}
 
   bool send(const std::string &data) const {
-    const long page_size = sysconf(_SC_PAGESIZE);
-    if (page_size <= 0 || data.size() > capacity || storage_cost(data.size(), page_size) > capacity) return false;
+    if (data.size() > max_message_size) return false;
 
     const std::string pending_dir = path + "/pending";
     const std::string ready_dir = path + "/ready";
-    for (const auto &directory : {path, pending_dir, ready_dir}) {
+    const std::string slots_dir = path + "/slots";
+    for (const auto &directory : {path, pending_dir, ready_dir, slots_dir}) {
       if (mkdir(directory.c_str(), 0700) != 0 && errno != EEXIST) return false;
     }
 
     struct timespec now = {};
     if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return false;
     const auto timestamp = static_cast<unsigned long long>(now.tv_sec) * 1000000000ULL + now.tv_nsec;
-    char name[128];
-    snprintf(name, sizeof(name), "%020llu-%ld-%zu-XXXXXX", timestamp, static_cast<long>(getpid()), data.size());
-    std::string pending_path = pending_dir + "/" + name;
-    const int fd = mkstemp(pending_path.data());
-    if (fd < 0) return false;
+    std::string filename;
+    std::string slot_path;
+    bool claimed = false;
+    for (int attempt = 0; attempt < 8; ++attempt) {
+      const int slot = util::random_int(0, 4095);
+      char name[128];
+      snprintf(name, sizeof(name), "%020llu-%ld-%zu-%d", timestamp, static_cast<long>(getpid()), data.size(), slot);
+      filename = name;
+      slot_path = slots_dir + "/" + std::to_string(slot);
+      if (symlink(filename.c_str(), slot_path.c_str()) == 0) {
+        claimed = true;
+        break;
+      }
+      if (errno != EEXIST) return false;
+    }
+    if (!claimed) return false;
 
-    bool success = fcntl(fd, F_SETFD, FD_CLOEXEC) == 0;
-    if (success) {
-      // The pending filename must be visible before opening a budget generation.
-      success = reserve_capacity(data.size(), page_size);
+    const std::string pending_path = pending_dir + "/" + filename;
+    const int fd = open(pending_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+    if (fd < 0) {
+      unlink(slot_path.c_str());
+      return false;
     }
-    if (success) {
-      success = write_all(fd, data);
-    }
-    // Always close, including when the capacity check or write failed.
+    bool success = write_all(fd, data);
+    // Always close, including when the write failed.
     if (close(fd) != 0) {
       success = false;
     }
     if (success) {
-      const std::string filename = pending_path.substr(pending_dir.size() + 1);
       const std::string ready_path = ready_dir + "/" + filename;
       success = rename(pending_path.c_str(), ready_path.c_str()) == 0;
     }
     if (!success) {
       unlink(pending_path.c_str());
+      unlink(slot_path.c_str());
     }
     return success;
   }
 
 private:
-  static size_t storage_cost(size_t payload_size, size_t page_size) {
-    const size_t payload_pages = (payload_size + page_size - 1) / page_size;
-    return (payload_pages + 1) * page_size;  // One extra page for file metadata.
-  }
-
   static bool write_all(int fd, const std::string &data) {
     size_t offset = 0;
     while (offset < data.size()) {
@@ -76,33 +83,6 @@ private:
     return true;
   }
 
-  bool reserve_capacity(size_t payload_size, size_t page_size) const {
-    const size_t pages = storage_cost(payload_size, page_size) / page_size;
-    const size_t limit = capacity / page_size;
-    const int fd = open((path + "/budget").c_str(), O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0600);
-    if (fd < 0) return false;
-
-    struct stat budget = {};
-    bool success = fstat(fd, &budget) == 0 && budget.st_size >= 0 &&
-                   static_cast<size_t>(budget.st_size) <= limit && pages <= limit - budget.st_size;
-    if (success) {
-      // One byte reserves one page. A single append gives this descriptor its
-      // own reservation end, even when other producers append concurrently.
-      const std::string credits(pages, '\0');
-      success = write(fd, credits.data(), credits.size()) == static_cast<ssize_t>(credits.size());
-    }
-    if (success) {
-      const off_t end = lseek(fd, 0, SEEK_CUR);
-      success = end >= 0 && static_cast<size_t>(end) <= limit;
-    }
-    // Failed sends leave conservative credits until the consumer replaces the
-    // budget. Never truncate or decrement a generation another producer uses.
-    if (close(fd) != 0) {
-      success = false;
-    }
-    return success;
-  }
-
   const std::string path;
-  const size_t capacity;
+  const size_t max_message_size;
 };
