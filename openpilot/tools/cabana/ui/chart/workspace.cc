@@ -245,6 +245,7 @@ void ChartsWidget::exportCsv() {
 }
 
 void ChartsWidget::drawSignalBrowser() {
+  ImGui::SetNextItemWidth(-1.0f);
   const bool filter_changed = inputText("##search_fields", &browser_filter_, "Search openpilot messages...");
   if (filter_changed || browser_tree_dirty_) {
     browser_tree_.filter(browser_filter_);
@@ -257,7 +258,9 @@ void ChartsWidget::drawSignalBrowser() {
     browser_tree_dirty_ = false;
   }
   auto &expanded = browser_filter_.empty() ? browser_expanded_ : browser_search_expanded_;
+  ImGui::PushTextWrapPos(0.0f);
   ImGui::TextDisabled("Double-click to plot · Drag onto a chart to compare");
+  ImGui::PopTextWrapPos();
   ImGui::AlignTextToFramePadding();
   ImGui::Text("%zu fields", browser_tree_.nodes[0].matches);
   alignRight(iconButtonWidth() * 2 + ImGui::GetStyle().ItemInnerSpacing.x);
@@ -269,7 +272,11 @@ void ChartsWidget::drawSignalBrowser() {
   ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
   if (iconButton("collapse_signals", icon::ARROWS_COLLAPSE, "Collapse all")) expanded.clear();
   if (browser_tree_.nodes[0].children.empty()) ImGui::TextWrapped("Open a route or start a stream to browse openpilot messages.");
-  else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No fields match your search.");
+  else if (!browser_tree_.nodes[0].matches) {
+    ImGui::PushTextWrapPos(0.0f);
+    ImGui::TextDisabled("No fields match your search.");
+    ImGui::PopTextWrapPos();
+  }
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, ImGui::GetStyle().WindowPadding.y));
   const bool browser_visible = ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding,
                                                 ImGuiWindowFlags_HorizontalScrollbar);
