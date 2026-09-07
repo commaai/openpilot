@@ -434,12 +434,11 @@ void MessagesWidget::drawHeader() {
   }
 
   // the filter editors under the header
-  const float clear_width = iconButtonWidth();
   ImGui::TableNextRow();
   for (int i = 0; i < MessageList::COLUMN_COUNT; i++) {
     if (!ImGui::TableSetColumnIndex(i)) continue;
     ImGui::PushID(i);
-    ImGui::SetNextItemWidth(filters_[i].empty() ? -FLT_MIN : std::max(1.0f, ImGui::GetContentRegionAvail().x - clear_width));
+    ImGui::SetNextItemWidth(-FLT_MIN);
     const std::string placeholder = std::string("Filter ") + COLUMN_TITLES[i];
     if (clearableInput("##filter", &filters_[i], placeholder.c_str())) {
       std::map<int, std::string> filters;

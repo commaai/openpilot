@@ -62,9 +62,22 @@ bool inputTextMultiline(const char *label, std::string *s, const ImVec2 &size, I
                                    inputCallback, &ctx);
 }
 
+bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flags) {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(CONTROL_OUTLINE_PADDING, CONTROL_OUTLINE_PADDING));
+  const bool visible = ImGui::BeginChild(id, size, ImGuiChildFlags_AlwaysUseWindowPadding, flags);
+  ImGui::PopStyleVar();
+  return visible;
+}
+
 bool clearableInput(const char *label, std::string *s, const char *hint, ImGuiInputTextCallback validator) {
+  const float width = ImGui::CalcItemWidth();
+  const float clear_width = iconButtonWidth() + ImGui::GetStyle().ItemInnerSpacing.x;
+  // Keep a usable input even in a column too narrow for the clear button.
+  const bool show_clear = !s->empty() && width >= clear_width + ImGui::GetFrameHeight();
+  ImGui::SetNextItemWidth(show_clear ? width - clear_width : width);
+  ImGui::BeginGroup();
   bool changed = validatedInput(label, s, validator, hint);
-  if (!s->empty()) {
+  if (show_clear) {
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     ImGui::PushID(label);
     if (iconButton("clear", icon::X_LG)) {
@@ -73,6 +86,7 @@ bool clearableInput(const char *label, std::string *s, const char *hint, ImGuiIn
     }
     ImGui::PopID();
   }
+  ImGui::EndGroup();
   return changed;
 }
 

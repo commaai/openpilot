@@ -138,7 +138,7 @@ void ChartView::updateLayout() {
   const ImVec2 top_left = layout_.rect.Min + ImVec2(LAYOUT_MARGINS.x, LAYOUT_MARGINS.y);
   layout_.move_icon_rect = ImRect(top_left, top_left + grip);
   const ImVec2 btn_size(iconButtonWidth(), iconButtonWidth());
-  const ImVec2 close_min(layout_.rect.Max.x - LAYOUT_MARGINS.z - btn_size.x, top_left.y);
+  const ImVec2 close_min(layout_.rect.Max.x - std::max(LAYOUT_MARGINS.z, CONTROL_OUTLINE_PADDING) - btn_size.x, top_left.y);
   layout_.close_btn_rect = ImRect(close_min, close_min + btn_size);
   const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemInnerSpacing.x, top_left.y);
   layout_.manage_btn_rect = ImRect(manage_min, manage_min + btn_size);
