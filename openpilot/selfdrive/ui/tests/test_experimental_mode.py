@@ -18,6 +18,8 @@ class TestExperimentalMode(unittest.TestCase):
     self.params_dir = tempfile.TemporaryDirectory()
     self.addCleanup(self.params_dir.cleanup)
     self.params = Params(self.params_dir.name)
+    # Drain pending writes before removing the temporary parameter directory.
+    self.addCleanup(self.params._finalizer)
 
   def read_experimental_mode(self, process_class, longitudinal_control=True):
     # Exercise one iteration of the real parameter reader without starting car/control loops.
