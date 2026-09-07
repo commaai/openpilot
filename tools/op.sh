@@ -437,7 +437,7 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
-  echo -e "  ${BOLD}juggle${NC}       Run Cabana"
+  echo -e "  ${BOLD}juggle${NC}       Run Cabana with signal plot views"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
