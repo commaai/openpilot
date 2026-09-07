@@ -126,7 +126,8 @@ add a signal from its message's signal view. Drag chart grips to reorder or merg
 **Split Chart** separates an overlay.
 
 - **Click** a chart to seek; **drag** to zoom all charts to a time range.
-- **Shift-drag** scrubs playback; **Ctrl-drag** pans; **Ctrl-wheel** zooms around the pointer.
+- **Shift-drag** scrubs playback; **Ctrl-drag** pans; **Ctrl-wheel** zooms around the pointer
+  (Cmd instead of Ctrl on macOS).
 - **View → Fit Loaded Data** fits the visible series in the current tab.
 - **View → Follow Playback** restores the rolling time window. Zoom and pan support undo/redo.
 - Click a legend entry to hide/show a series. Right-click it for **transforms and statistics**,

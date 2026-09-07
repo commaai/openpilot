@@ -668,6 +668,7 @@ void ChartView::showTip(double sec) {
   if (x < 0) {
     x = tooltip_x_;
   }
+  // the heading shows the shared hover time, so every chart agrees even when their samples do not align
   ImVec2 pt(x, layout_.plot_area.Min.y);
   text_list.insert(text_list.begin(), TipLine{.name = formatNumber(sec, 2) + " s"});
   tip_label_.showText(pt, text_list, visible_rect);

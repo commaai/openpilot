@@ -69,16 +69,15 @@ ChartsWidget::ChartsWidget() {
 ChartsWidget::~ChartsWidget() = default;
 
 std::string ChartsWidget::whatsThis() const {
-  return R"(
-    <b>Chart View</b><br />
-    <b>Click</b>: Click to seek to a corresponding time.<br />
-    <b>Drag</b>: Zoom into the chart.<br />
-    <b>Ctrl + Drag</b>: Pan the time range.<br />
-    <b>Ctrl + Wheel</b>: Zoom around the pointer.<br />
-    <b>Signal right-click</b>: Transforms and statistics.<br />
-    <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
-    <b>Right Mouse</b>: Open the context menu.<br />
-  )";
+  const std::string mod = MOD_KEY;
+  return "<b>Chart View</b><br />"
+         "<b>Click</b>: Click to seek to a corresponding time.<br />"
+         "<b>Drag</b>: Zoom into the chart.<br />"
+         "<b>" + mod + " + Drag</b>: Pan the time range.<br />"
+         "<b>" + mod + " + Wheel</b>: Zoom around the pointer.<br />"
+         "<b>Signal right-click</b>: Transforms and statistics.<br />"
+         "<b>Shift + Drag</b>: Scrub through the chart to view values.<br />"
+         "<b>Right Mouse</b>: Open the context menu.<br />";
 }
 
 void ChartsWidget::newTab() {
@@ -233,7 +232,7 @@ void ChartsWidget::drawToolBar() {
     if (ImGui::MenuItem("Follow Playback", nullptr, !can->timeRange().has_value())) zoomReset();
     ImGui::Separator();
     ImGui::TextDisabled("Drag to zoom · Shift-drag to scrub");
-    ImGui::TextDisabled("Ctrl-drag to pan · Ctrl-wheel to zoom");
+    ImGui::TextDisabled("%s-drag to pan · %s-wheel to zoom", MOD_KEY, MOD_KEY);
   }));
 
   // the spacer right aligns the rest
