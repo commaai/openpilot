@@ -104,17 +104,17 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("New DBC File", shortcut("N").c_str())) newFile();
   if (ImGui::MenuItem("Open DBC File...", shortcut("O").c_str())) openFile();
 
-  if (ImGui::BeginMenu("Manage DBC Files", has_stream)) {
+  if (beginSubMenu("Manage DBC Files", has_stream)) {
     drawManageDBCsMenu();
     ImGui::EndMenu();
   }
-  if (ImGui::BeginMenu("Open Recent")) {
+  if (beginSubMenu("Open Recent")) {
     drawRecentFilesMenu();
     ImGui::EndMenu();
   }
 
   ImGui::Separator();
-  if (ImGui::BeginMenu("Load DBC from commaai/opendbc")) {
+  if (beginSubMenu("Load DBC from commaai/opendbc")) {
     for (const auto &name : opendbc_names_) {
       if (ImGui::MenuItem(name.c_str())) loadDBCFromOpendbc(name);
     }
@@ -543,7 +543,7 @@ void MainWindow::drawManageDBCsMenu() {
     auto dbc_file = dbc()->findDBCFile(source);
     const std::string title = "Bus " + std::to_string(source) + " (" + (dbc_file ? dbc_file->name() : "No DBCs loaded") + ")";
     ImGui::PushID(source);
-    if (ImGui::BeginMenu(title.c_str())) {
+    if (beginSubMenu(title.c_str())) {
       if (ImGui::MenuItem("New DBC File")) newFile(ss);
       if (ImGui::MenuItem("Open DBC File...")) openFile(ss);
       if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard(ss, false);
@@ -844,7 +844,7 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
-  // A panel never shrinks past half the width where the signal view's toolbar squishes.
+  // Panels can shrink below the full signals toolbar width; extra controls go into overflow menus.
   const float min_panel_width = (SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2) * 0.5f;
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
@@ -914,12 +914,10 @@ void MainWindow::drawLogMessagesPanel() {
 void MainWindow::drawChartsPanel() {
   setNextPanelClass();
   if (beginPanel(CHARTS_PANEL, &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (charts_widget_) {
       help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       charts_widget_->draw();
     }
-    ImGui::EndChild();
   }
   ImGui::End();
 }
@@ -935,12 +933,8 @@ void MainWindow::drawVideoPanel() {
   if (video_widget_) {
     video_widget_->setVisible(video_open);
     if (video_open) {
-      const bool live = can->liveStreaming();
-      // Live streams only have a toolbar; give it the pane's full content area.
-      if (!live) ImGui::BeginChild("video", ImVec2(0, 0), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       video_widget_->draw();
-      if (!live) ImGui::EndChild();
     }
   }
   ImGui::End();
@@ -951,12 +945,10 @@ void MainWindow::drawDetailsPanel() {
   auto *detail = center_widget_.getDetailWidget();
   const std::string title = detail ? "CAN Details: " + detail->messageId().toString() + "###CenterWidget" : CENTER_PANEL;
   if (beginPanel(title.c_str(), &details_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     center_widget_.draw();
     if (detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }
-    ImGui::EndChild();
   }
   ImGui::End();
 }

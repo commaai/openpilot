@@ -66,10 +66,10 @@ void ChartView::drawMenuActions() {
   ImGui::Separator();
   ImGui::Indent(indent);
   if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::BeginMenu("Transforms and Statistics")) {
+  if (beginSubMenu("Transforms and Statistics")) {
     for (size_t i = 0; i < sigs_.size(); ++i) {
       ImGui::PushID((int)i);
-      if (ImGui::BeginMenu((sigs_[i].name() + sigs_[i].description()).c_str())) {
+      if (beginSubMenu((sigs_[i].name() + sigs_[i].description()).c_str())) {
         drawSignalAnalysis(sigs_[i]);
         ImGui::EndMenu();
       }

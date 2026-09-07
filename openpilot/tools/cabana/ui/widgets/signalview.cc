@@ -24,6 +24,7 @@ constexpr float SIGNAL_ROW_EXTRA = 5.0f;  // the tool button in the row makes it
 constexpr float SIGNAL_ROW_SCALE = 1.25f;
 constexpr float FILTER_WIDTH = 160.0f;
 constexpr float SPARKLINE_SLIDER_WIDTH = 120.0f;
+constexpr float MIN_SPARKLINE_SLIDER_WIDTH = 60.0f;
 // WARNING: increasing the maximum range can result in severe performance degradation.
 // 30s is a reasonable value at present.
 constexpr int SPARKLINE_RANGE_MAX = 30;
@@ -678,7 +679,7 @@ float SignalView::toolBarRightWidth(const std::string &range_label) {
   return ImGui::CalcTextSize(range_label.c_str()).x + style.ItemSpacing.x + SPARKLINE_SLIDER_WIDTH + style.ItemSpacing.x + iconButtonWidth();
 }
 
-// the width at which the tool bar stops squishing: the signal count and the filter box on the left, the
+// the width at which every tool bar control fits: the signal count and the filter box on the left, the
 // sparkline controls on the right, plus the borders and padding of the view's own child window
 float SignalView::minimumWidth() {
   const ImGuiStyle &style = ImGui::GetStyle();
@@ -695,26 +696,7 @@ void SignalView::draw() {
     return;
   }
 
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(signal_count_lb_.c_str());
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(FILTER_WIDTH);
-  if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
-    model_.setFilter(filter_edit_);
-  }
-
-  // stretch: the sparkline controls sit at the right edge
-  alignRight(toolBarRightWidth(sparkline_label_));
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(sparkline_label_.c_str());
-  ImGui::SameLine();
-  int range = settings.sparkline_range;
-  if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, SPARKLINE_SLIDER_WIDTH)) {
-    setSparklineRange(range);
-  }
-  ImGui::SetItemTooltip("Sparkline time range");
-  ImGui::SameLine();
-  if (iconButton("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All")) collapseAll();
+  drawToolBar();
 
   drawTree();
   drawValueDescriptionDlg();
@@ -725,6 +707,39 @@ void SignalView::draw() {
 
   ImGui::EndChild();
   ImGui::PopStyleColor();
+}
+
+void SignalView::drawToolBar() {
+  float slider_width = SPARKLINE_SLIDER_WIDTH;
+  std::vector<ToolbarItem> items;
+  items.push_back({ImGui::CalcTextSize(signal_count_lb_.c_str()).x, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(signal_count_lb_.c_str());
+  }});
+  items.push_back({FILTER_WIDTH, [this]() {
+    ImGui::SetNextItemWidth(FILTER_WIDTH);
+    if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) model_.setFilter(filter_edit_);
+  }});
+  const size_t spacer_index = items.size();
+  const size_t slider_index = items.size();
+  items.push_back({ImGui::CalcTextSize(sparkline_label_.c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x + slider_width, [this, &slider_width]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(sparkline_label_.c_str());
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    const bool in_menu = ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_Popup;
+    int range = settings.sparkline_range;
+    if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, in_menu ? SPARKLINE_SLIDER_WIDTH : slider_width)) {
+      setSparklineRange(range);
+    }
+    ImGui::SetItemTooltip("Sparkline time range");
+  }});
+  items.push_back(toolbarAction("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All", [this]() { collapseAll(); }));
+  const float shrink = std::min(slider_width - MIN_SPARKLINE_SLIDER_WIDTH, toolbarWidth(items, spacer_index) - ImGui::GetContentRegionAvail().x);
+  if (shrink > 0.0f) {
+    slider_width -= shrink;
+    items[slider_index].width -= shrink;
+  }
+  drawToolbar(items, spacer_index);
 }
 
 void SignalView::collapseAll() {

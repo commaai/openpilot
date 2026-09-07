@@ -215,7 +215,7 @@ void ChartsWidget::drawToolBar() {
   items.push_back(toolbarMenu("chart_workspace", "Layout", "Layout", [this]() {
     if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty() || !equations_.empty())) saveLayout();
     if (ImGui::MenuItem("Open Layout...")) loadLayout();
-    if (ImGui::BeginMenu("openpilot Presets")) {
+    if (beginSubMenu("openpilot Presets")) {
       drawPresetsMenu();
       ImGui::EndMenu();
     }

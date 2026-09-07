@@ -182,7 +182,10 @@ float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);
 // width < 0 uses the available content width.
 void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, float width = -1.0f);
 
-// Opens `popup_id` below the button on press. width 0:
+// Native submenu with adjoining edges and a consistent cascade direction. Pair with ImGui::EndMenu().
+bool beginSubMenu(const char *label, bool enabled = true);
+
+// Opens `popup_id` against the button, flipping above or inward to fit the screen. width 0:
 // sized to the text, otherwise the text and the arrow are centered in the button
 float menuButtonWidth(const std::string &text, bool bold = false);
 bool menuButton(const char *id, const std::string &text, const char *popup_id, bool bold = false, float width = 0.0f);

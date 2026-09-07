@@ -369,9 +369,9 @@ void VideoWidget::draw(bool fill) {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   if (!can->liveStreaming())
     drawCameraWidget();
+  ImGui::PopStyleVar();
 
   drawPlaybackController();
-  ImGui::PopStyleVar();
 
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);
