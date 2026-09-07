@@ -11,7 +11,10 @@
 #include "tools/cabana/utils/strings.h"
 
 SignalSelector::SignalSelector(std::string title) : title_(std::move(title)) {
-  for (const auto &[id, _] : can->lastMessages()) {
+  std::set<MessageId> ids;
+  for (const auto &[id, _] : can->eventsMap()) ids.insert(id);
+  for (const auto &[id, _] : can->lastMessages()) ids.insert(id);
+  for (const auto &id : ids) {
     if (auto m = dbc()->msg(id)) {
       msgs_combo_.push_back({m->name + " (" + id.toString() + ")", id});
     }
@@ -32,7 +35,7 @@ bool SignalSelector::draw() {
     return false;
   }
 
-  const float btn_w = ImGui::GetFrameHeight() + 8.0f;
+  const float btn_w = iconButtonWidth();
   const float column_w = (ImGui::GetContentRegionAvail().x - btn_w - ImGui::GetStyle().ItemSpacing.x * 2) / 2;
   // the selected list spans the combo row too; both lists end above the Ok/Cancel row
   const float lists_h = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 3;
@@ -40,7 +43,7 @@ bool SignalSelector::draw() {
   ImGui::BeginGroup();
   ImGui::TextUnformatted("Available Signals");
   // a combo popup with a filter box
-  const char *preview = msgs_combo_index_ >= 0 ? msgs_combo_[msgs_combo_index_].text.c_str() : "Select a msg...";
+  const char *preview = msgs_combo_index_ >= 0 ? msgs_combo_[msgs_combo_index_].text.c_str() : "Select a message...";
   ImGui::SetNextItemWidth(column_w);
   if (ImGui::BeginCombo("##msgs_combo", preview)) {
     if (ImGui::IsWindowAppearing()) {
@@ -48,7 +51,7 @@ bool SignalSelector::draw() {
       ImGui::SetKeyboardFocusHere();
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
-    inputText("##msgs_filter", &msgs_combo_filter_, "Select a msg...");
+    inputText("##msgs_filter", &msgs_combo_filter_, "Select a message...");
     for (int i = 0; i < (int)msgs_combo_.size(); ++i) {
       if (!msgs_combo_filter_.empty() && !utils::containsCI(msgs_combo_[i].text, msgs_combo_filter_)) continue;
       if (ImGui::Selectable(msgs_combo_[i].text.c_str(), i == msgs_combo_index_)) {
@@ -67,10 +70,10 @@ bool SignalSelector::draw() {
   ImGui::BeginGroup();
   ImGui::Dummy(ImVec2(btn_w, (lists_h + ImGui::GetFrameHeightWithSpacing() * 2) / 2 - ImGui::GetFrameHeight()));
   ImGui::BeginDisabled(available_row_ == -1);
-  bool add_clicked = ImGui::Button(icon::CHEVRON_RIGHT, ImVec2(btn_w, 0));
+  bool add_clicked = iconButton("add", icon::CHEVRON_RIGHT, "Add");
   ImGui::EndDisabled();
   ImGui::BeginDisabled(selected_row_ == -1);
-  bool remove_clicked = ImGui::Button(icon::CHEVRON_LEFT, ImVec2(btn_w, 0));
+  bool remove_clicked = iconButton("remove", icon::CHEVRON_LEFT, "Remove");
   ImGui::EndDisabled();
   ImGui::EndGroup();
 

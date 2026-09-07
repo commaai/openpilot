@@ -24,7 +24,7 @@ ImVec2 bytesCellSize(int n, bool multiple_lines) {
 }
 
 ImU32 cellTextColor(bool selected, bool inactive) {
-  if (selected) return inactive ? withAlpha(highlightedTextColor(), 100) : highlightedTextColor();
+  if (selected && inactive) return withAlpha(ImGui::GetColorU32(ImGuiCol_Text), 100);
   return ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
 }
 

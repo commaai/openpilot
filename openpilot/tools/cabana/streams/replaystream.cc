@@ -19,6 +19,7 @@ ReplayStream::ReplayStream() {
 
 ReplayStream::~ReplayStream() {
   cancelWaits();
+  if (replay) replay->stop();
 }
 
 // runs on replay's merge thread: a segment of CAN data takes ~30 ms to parse and group, which dropped

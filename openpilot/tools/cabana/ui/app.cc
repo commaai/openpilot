@@ -1,8 +1,10 @@
 #include "tools/cabana/ui/app.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <stdexcept>
+#include <thread>
 #include <utility>
 
 #include "imgui.h"
@@ -68,8 +70,23 @@ void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-// vsync paces the loop: glfwSwapBuffers blocks until the next refresh. Throttling on top of that beats
-// against the refresh rate and makes the camera view stutter.
+void paceFrame() {
+  using clock = std::chrono::steady_clock;
+  static clock::duration period = [] {
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int hz = (mode != nullptr && mode->refreshRate > 0) ? mode->refreshRate : 60;
+    return std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / hz));
+  }();
+  static clock::time_point next = clock::now();
+  next += period;
+  auto now = clock::now();
+  if (next < now) {
+    next = now;  // fell behind (slow frame or hidden window): don't try to catch up
+    return;
+  }
+  std::this_thread::sleep_until(next);
+}
+
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
   deliverPendingFocusLoss();
@@ -98,6 +115,7 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     glfwMakeContextCurrent(backup_context);
   }
   glfwSwapBuffers(window);
+  paceFrame();
 }
 
 class GlfwRuntime {
@@ -114,13 +132,15 @@ public:
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
+    // Restore geometry and render the initial layout before mapping the window.
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     window_ = glfwCreateWindow(1600, 900, "Cabana", nullptr, nullptr);
     if (window_ == nullptr) {
       glfwTerminate();
       throw std::runtime_error("glfwCreateWindow failed");
     }
     glfwMakeContextCurrent(window_);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
   }
 
   ~GlfwRuntime() {
@@ -194,6 +214,8 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     inistate::applyWindowGeometry(glfw.window());
 
     MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
+    renderFrame(glfw.window(), &win);
+    glfwShowWindow(glfw.window());
     while (!win.exited()) {
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");

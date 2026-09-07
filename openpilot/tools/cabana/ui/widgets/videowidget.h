@@ -69,7 +69,7 @@ private:
   };
   void collectThumbnails();  // moves the decoded thumbnails in once a parseQLog task is done
   // the first thumbnail at or after sec, uploaded to big_thumbnail_texture_; nullptr when there is none
-  const RgbImage *thumbnailAt(double sec, uint64_t *mono_time);
+  const RgbImage *thumbnailAt(double sec);
   void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size);
   void drawThumbnail(ImDrawList *p, double sec);
   void drawScrubThumbnail(ImDrawList *p, double sec);
@@ -89,10 +89,10 @@ public:
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
   // vipc thread started and stopped
   void setVisible(bool visible);
-  void showThumbnail(double seconds);
   std::string whatsThis() const;
 
 private:
+  void showThumbnail(double seconds);
   void updateSliderThumbnail();  // the thumbnail follows the mouse over the slider
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
@@ -102,9 +102,9 @@ private:
   void skipToEnd();
   void toggleTimeDisplay();
   void createSpeedDropdown();
-  void drawSpeedDropdown(float width);
   void drawSpeedMenuItems();
   void loopPlaybackClicked();
+  void cropVideoClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
   void showRouteInfo();
 

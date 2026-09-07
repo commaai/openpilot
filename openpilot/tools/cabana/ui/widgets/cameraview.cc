@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <utility>
 
 #include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3_loader.h"
 
 #include "common/yuv.h"
 #include "tools/cabana/utils/util.h"
+#include "tools/cabana/settings.h"
 
 namespace {
 constexpr GLenum GL_LINEAR_MIPMAP_LINEAR_ = 0x2703;
@@ -61,7 +63,7 @@ CameraWidget::~CameraWidget() {
 
 void CameraWidget::startVipcThread() {
   if (!vipc_thread_.joinable()) {
-    clearFrames();
+    // Preserve the last frame when restoring a collapsed video; paused replay sends no replacement.
     vipc_exit_ = false;
     vipc_thread_ = std::thread(&CameraWidget::vipcThread, this);
   }
@@ -93,12 +95,12 @@ float CameraWidget::frameAspectRatio() const {
   if (frame_texture_.width > 0 && frame_texture_.height > 0) {
     return (float)frame_texture_.width / frame_texture_.height;
   }
-  return 1928.0f / 1208.0f;  // the road camera, until the first frame arrives
+  return DEFAULT_CAMERA_ASPECT_RATIO;  // the road camera, until the first frame arrives
 }
 
 void CameraWidget::paint() {
   ImDrawList *p = ImGui::GetWindowDrawList();
-  p->AddRectFilled(rect_.Min, rect_.Max, bg_);
+  p->AddRectFilled(rect_.Min, rect_.Max, bg_, ImGui::GetStyle().ChildRounding);
 
   std::lock_guard lk(frame_lock_);
   if (rgb_frame_.isNull()) return;
@@ -107,38 +109,31 @@ void CameraWidget::paint() {
     frame_updated_ = false;
   }
 
-  // Scale for aspect ratio
-  float widget_ratio = (float)width() / height();
-  float frame_ratio = (float)rgb_frame_.width / rgb_frame_.height;
-  int w = std::lround(width() * std::min(frame_ratio / widget_ratio, 1.0f));
-  int h = std::lround(height() * std::min(widget_ratio / frame_ratio, 1.0f));
-  ImVec2 video_min(rect_.Min.x + (int)(width() - w) / 2, rect_.Min.y + (int)(height() - h) / 2);
-  ImVec2 video_max(video_min.x + w, video_min.y + h);
-
-  ImVec2 uv0(0, 0), uv1(1, 1);
+  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), settings.crop_video);
   if (active_stream_type_ == VISION_STREAM_CABIN) {
     // mirror cabin camera horizontally
-    uv0.x = 1;
-    uv1.x = 0;
+    std::swap(placement.uv0.x, placement.uv1.x);
   }
-  p->AddImage(frame_texture_.ref(), video_min, video_max, uv0, uv1);
+  p->AddImageRounded(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
 }
 
 void CameraWidget::vipcThread() {
   VisionStreamType cur_stream = requested_stream_type_;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra frame_meta = {};
+  bool was_connected = false;
 
   while (!vipc_exit_) {
     if (!vipc_client || cur_stream != requested_stream_type_) {
-      clearFrames();
+      if (cur_stream != requested_stream_type_) clearFrames();
       cur_stream = requested_stream_type_;
       vipc_client.reset(new VisionIpcClient(stream_name_, cur_stream, false));
     }
     active_stream_type_ = cur_stream;
 
     if (!vipc_client->connected) {
-      clearFrames();
+      // the server changed (a new route): the last frame is stale. A fresh thread keeps it, see startVipcThread().
+      if (std::exchange(was_connected, false)) clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name_, false);
       if (streams.empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -150,6 +145,7 @@ void CameraWidget::vipcThread() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         continue;
       }
+      was_connected = true;
     }
 
     if (VisionBuf *buf = vipc_client->recv(&frame_meta, 100)) {
