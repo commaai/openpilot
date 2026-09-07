@@ -789,8 +789,10 @@ void MainWindow::drawWaitDialog() {
 
 void MainWindow::drawDockspace() {
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->WorkPos);
-  ImGui::SetNextWindowSize(viewport->WorkSize);
+  // Use the menu bar's current-frame reservation, including on the first frame.
+  const ImRect work_rect = static_cast<const ImGuiViewportP *>(viewport)->GetBuildWorkRect();
+  ImGui::SetNextWindowPos(work_rect.Min);
+  ImGui::SetNextWindowSize(work_rect.GetSize());
   ImGui::SetNextWindowViewport(viewport->ID);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -813,6 +815,7 @@ void MainWindow::drawDockspace() {
     // messages left, video (with charts) right, center widget in the middle
     ImGui::DockBuilderRemoveNode(dock_id);
     ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderSetNodePos(dock_id, ImGui::GetCursorScreenPos());
     ImGui::DockBuilderSetNodeSize(dock_id, dock_size);
     ImGuiID center = dock_id, left = 0, right = 0;
     ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.28f, &left, &center);

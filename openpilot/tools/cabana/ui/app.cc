@@ -214,9 +214,7 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     inistate::applyWindowGeometry(glfw.window());
 
     MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
-    // Docking, menu work areas and auto-sized windows use the previous frame's
-    // measurements. Let them settle before presenting the first frame.
-    for (int i = 0; i < 3; ++i) renderFrame(glfw.window(), &win);
+    renderFrame(glfw.window(), &win);
     glfwShowWindow(glfw.window());
     while (!win.exited()) {
       if (g_signal_exit.exchange(false)) {
