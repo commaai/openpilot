@@ -647,8 +647,7 @@ void ChartsWidget::draw() {
 
 void ChartsContainer::draw() {
   const ImVec2 start = ImGui::GetCursorScreenPos();
-  const float scrollbar_gap = ImGui::GetCurrentWindow()->ScrollbarY ? ImGui::GetStyle().ItemSpacing.x : 0.0f;
-  const float width_avail = ImGui::GetContentRegionAvail().x - scrollbar_gap;
+  const float width_avail = ImGui::GetContentRegionAvail().x;
   geometry_ = ImRect(start, start + ImVec2(width_avail, 0));
   charts_widget_->updateLayout();
 
