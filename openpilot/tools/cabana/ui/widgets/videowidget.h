@@ -83,7 +83,7 @@ private:
 class VideoWidget {
 public:
   VideoWidget();
-  void draw(bool fill = false);  // content only; MainWindow puts it in a child region above the charts
+  void draw(bool fill = false);  // content only; MainWindow puts it in the shared playback pane
   float sizeHintHeight() const;
   float defaultHeight(float width) const;
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its

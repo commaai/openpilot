@@ -209,15 +209,7 @@ void ChartsWidget::drawToolBar() {
     if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty() || !equations_.empty())) saveLayout();
     if (ImGui::MenuItem("Open Layout...")) loadLayout();
     if (ImGui::BeginMenu("openpilot Presets")) {
-      if (ImGui::IsWindowAppearing()) {
-        presets_.clear();
-        std::error_code error;
-        for (const auto &entry : std::filesystem::directory_iterator(executableDir() / "layouts", error)) {
-          if (entry.path().extension() == ".json") presets_.push_back(entry.path());
-        }
-        std::sort(presets_.begin(), presets_.end());
-      }
-      for (const auto &path : presets_) if (ImGui::MenuItem(path.stem().c_str())) openLayout(path.string());
+      drawPresetsMenu();
       ImGui::EndMenu();
     }
     ImGui::Separator();
@@ -280,7 +272,6 @@ void ChartsWidget::drawToolBar() {
     }});
   }
   items.push_back(toolbarAction("remove_all_btn", icon::TRASH, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()));
-
   // the slider shrinks first, the buttons stay pinned to the right edge
   if (slider_index != (size_t)-1) {
     const float shrink = std::min(slider_width - MIN_RANGE_SLIDER_WIDTH, toolbarWidth(items, spacer_index) - ImGui::GetContentRegionAvail().x);
@@ -315,6 +306,7 @@ ChartView *ChartsWidget::createChart(int pos) {
   auto &current = currentCharts();
   current.insert(current.begin() + std::min(pos, (int)current.size()), ptr);
   updateLayout();
+  chartAdded();
   return ptr;
 }
 
@@ -630,10 +622,18 @@ void ChartsContainer::draw() {
   auto current_charts = charts_widget_->currentCharts();  // copy: drawing may remove charts
   float bottom = origin.y;
   if (current_charts.empty()) {
-    ImGui::TextDisabled("Plot and compare openpilot messages and CAN signals");
-    if (ImGui::Button("New Chart")) charts_widget_->newChart();
-    ImGui::TextWrapped("Double-click a field or CAN signal to plot it. Add several to compare them on one chart.");
-    ImGui::TextDisabled("Drag chart grips to arrange or merge plots.");
+    ImGui::Spacing();
+    pushBoldFont();
+    ImGui::TextWrapped("Plot CAN signals and openpilot fields");
+    popBoldFont();
+    ImGui::TextWrapped("Select a CAN message to inspect its bits and plot signals. Double-click an openpilot field to chart logged data.");
+    if (ImGui::Button("Browse openpilot")) charts_widget_->showLogMessages();
+    ImGui::SameLine();
+    if (ImGui::Button("Presets")) ImGui::OpenPopup("empty_presets");
+    if (ImGui::BeginPopup("empty_presets")) {
+      charts_widget_->drawPresetsMenu();
+      ImGui::EndPopup();
+    }
     bottom = ImGui::GetCursorScreenPos().y;
   }
   const bool aligned = ImPlot::BeginAlignedPlots("charts_align", true);

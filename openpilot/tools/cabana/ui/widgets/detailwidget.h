@@ -62,6 +62,7 @@ class DetailWidget {
 public:
   DetailWidget(ChartsWidget *charts);
   void setMessage(const MessageId &message_id);
+  const MessageId &messageId() const { return msg_id_; }
   void refresh();
   void draw();  // tab bar of message ids, toolbar, warning, Messages/Logs tabs
   std::pair<std::string, std::vector<std::string>> serializeMessageIds() const;

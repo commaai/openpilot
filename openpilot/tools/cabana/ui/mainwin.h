@@ -82,12 +82,17 @@ private:
   void drawRecentFilesMenu();
   void drawDockspace();
   void drawMessagesPanel();
+  void drawLogMessagesPanel();
+  void drawChartsPanel();
+  void selectPanelTab(const char *name);
   void drawVideoPanel();
+  void drawDetailsPanel();
+  void showMessage(const MessageId &id);
   void drawStatusBar();
   void drawWaitDialog();
 
   std::string startup_layout_;
-  bool analysis_mode_ = false;
+  bool details_visible_ = false;
   GLFWwindow *window_;
   std::unique_ptr<AbstractStream> startup_stream_;  // opened on the first frame
   StreamLoader startup_loader_;  // run on a worker after the first frame
@@ -105,8 +110,9 @@ private:
   enum { MAX_RECENT_FILES = 15 };
   std::string car_fingerprint_;
   bool messages_visible_ = true;
-  bool video_visible_ = true;
+  bool log_messages_visible_ = true;
   bool charts_visible_ = true;
+  bool video_visible_ = true;
   bool reset_layout_ = false;
   bool full_screen_ = false;
 #ifndef __APPLE__

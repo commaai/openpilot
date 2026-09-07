@@ -87,8 +87,8 @@ public:
   void removeAll();
 
   void drawSignalBrowser();
-  Observable<> analysisRequested;
-  Observable<> toggleChartsDocking;
+  Observable<> showLogMessages;
+  Observable<> chartAdded;
   Observable<> seriesChanged;
 
 private:
@@ -117,6 +117,7 @@ private:
   void drawFunctionEditor();
   void saveLayout();
   void loadLayout();
+  void drawPresetsMenu();
   void exportCsv();
   void fitTimeRange();
   void updateTabBar();
@@ -133,7 +134,6 @@ private:
   void drawDragPreview();
 
   LogSlider range_slider_{1000};
-
   UndoStack zoom_undo_stack_;
 
   std::vector<std::unique_ptr<ChartView>> charts_;

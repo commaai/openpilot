@@ -31,16 +31,21 @@
 namespace {
 // dock window ids (the visible titles change, the part after ### is the identity)
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
-constexpr const char *CENTER_PANEL = "Signals###CenterWidget";
-constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
+constexpr const char *CENTER_PANEL = "CAN Details###CenterWidget";
+constexpr const char *CHARTS_PANEL = "Charts###ChartsPanel";
+constexpr const char *LOG_MESSAGES_PANEL = "openpilot Messages###LogMessagesPanel";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
                        const std::string &dbc_file, const std::string &layout) : startup_layout_(layout), window_(window) {
   can = &dummy_;
+  details_visible_ = inistate::main_window.details_visible;
+  // Replace the old combined Messages pane with independently dockable source panels.
+  reset_layout_ = inistate::main_window.workspace_version < 2;
   messages_visible_ = inistate::main_window.messages_visible;
-  video_visible_ = inistate::main_window.video_visible;
+  log_messages_visible_ = inistate::main_window.log_messages_visible;
   charts_visible_ = inistate::main_window.charts_visible;
+  video_visible_ = inistate::main_window.video_visible;
   loadFingerprints();
   std::error_code ec;
   for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH, ec)) {
@@ -155,13 +160,14 @@ void MainWindow::drawMenuBar() {
   if (dropdown::BeginMenu("View")) {
     if (dropdown::Item("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
-    if (dropdown::Item("Plots", nullptr, analysis_mode_)) { analysis_mode_ = !analysis_mode_; messages_visible_ = true; }
-    dropdown::Item(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    dropdown::Item(videoPanelTitle(), nullptr, &video_visible_);
+    dropdown::Item("CAN signals", nullptr, &messages_visible_);
+    dropdown::Item("openpilot Messages", nullptr, &log_messages_visible_);
     dropdown::Item("Charts", nullptr, &charts_visible_);
+    dropdown::Item("CAN Details", nullptr, &details_visible_);
+    dropdown::Item("Playback", nullptr, &video_visible_);
     ImGui::Separator();
     if (dropdown::Item("Reset Window Layout")) {
-      messages_visible_ = video_visible_ = charts_visible_ = true;
+      messages_visible_ = log_messages_visible_ = charts_visible_ = video_visible_ = true;
       reset_layout_ = true;
     }
     dropdown::EndMenu();
@@ -186,15 +192,19 @@ void MainWindow::drawMenuBar() {
 void MainWindow::createDockWidgets() {
   widget_connections_.clear();
   messages_widget_ = std::make_unique<MessagesWidget>();
-  widget_connections_.push_back(messages_widget_->msgSelectionChanged.connect([this](const MessageId &id) { center_widget_.setMessage(id); }));
+  widget_connections_.push_back(messages_widget_->msgSelectionChanged.connect([this](const MessageId &id) { showMessage(id); }));
 
   charts_widget_ = std::make_unique<ChartsWidget>();
   center_widget_.setChartsWidget(charts_widget_.get());
-  widget_connections_.push_back(charts_widget_->analysisRequested.connect([this]() {
-    analysis_mode_ = true;
-    messages_visible_ = true;
+  widget_connections_.push_back(charts_widget_->showLogMessages.connect([this]() {
+    log_messages_visible_ = true;
+    selectPanelTab(LOG_MESSAGES_PANEL);
   }));
   video_widget_ = std::make_unique<VideoWidget>();
+  widget_connections_.push_back(charts_widget_->chartAdded.connect([this]() {
+    charts_visible_ = true;
+    selectPanelTab(CHARTS_PANEL);
+  }));
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -606,9 +616,12 @@ void MainWindow::finishClose() {
     glfwGetWindowSize(window_, &state.size[0], &state.size[1]);
   }
   state.has_geometry = state.size[0] > 0 && state.size[1] > 0;
+  state.workspace_version = 2;
+  state.log_messages_visible = log_messages_visible_;
+  state.charts_visible = charts_visible_;
+  state.details_visible = details_visible_;
   state.messages_visible = messages_visible_;
   state.video_visible = video_visible_;
-  state.charts_visible = charts_visible_;
   settings.ui_state = inistate::save();
 
   saveSessionState();
@@ -809,25 +822,30 @@ void MainWindow::drawDockspace() {
   const float status_height = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
-  if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
-      (!ImGui::FindWindowByName(CHARTS_WINDOW) && !ImGui::FindWindowSettingsByID(ImHashStr(CHARTS_WINDOW)))) {
-    // Messages left, route above charts on the right, details in the middle.
+  if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr) {
+    // A shared browser/playback column, with charts and an optional CAN inspector alongside.
     ImGui::DockBuilderRemoveNode(dock_id);
     ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodePos(dock_id, ImGui::GetCursorScreenPos());
     ImGui::DockBuilderSetNodeSize(dock_id, dock_size);
-    ImGuiID center = dock_id, left = 0, right = 0, charts = 0;
-    ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.28f, &left, &center);
-    ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.4f, &right, &center);
-    ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.55f, &charts, &right);
-    ImGui::DockBuilderDockWindow(CHARTS_WINDOW, charts);
+    ImGuiID charts = dock_id, left = 0, video = 0, details = 0;
+    ImGui::DockBuilderSplitNode(charts, ImGuiDir_Left, 0.28f, &left, &charts);
+    const float playback_ratio = hasStream() && can->liveStreaming() ?
+      std::clamp((ImGui::GetFrameHeight() * 2 + ImGui::GetStyle().WindowPadding.y * 4) / dock_size.y, 0.1f, 0.5f) : 0.36f;
+    ImGui::DockBuilderSplitNode(left, ImGuiDir_Down, playback_ratio, &video, &left);
+    ImGui::DockBuilderSplitNode(charts, ImGuiDir_Left, 0.52f, &details, &charts);
     ImGui::DockBuilderDockWindow(MESSAGES_PANEL_ID, left);
-    ImGui::DockBuilderDockWindow(VIDEO_PANEL, right);
-    ImGui::DockBuilderDockWindow(CENTER_PANEL, center);
+    ImGui::DockBuilderDockWindow(LOG_MESSAGES_PANEL, left);
+    ImGui::DockBuilderDockWindow(VIDEO_PANEL, video);
+    ImGui::DockBuilderDockWindow(CENTER_PANEL, details);
+    ImGui::DockBuilderDockWindow(CHARTS_PANEL, charts);
+    // All panes resize proportionally. A central node would absorb the entire window
+    // resize, squeezing charts while preserving the browser and inspector widths.
+    ImGui::DockBuilderGetNode(charts)->LocalFlags &= ~ImGuiDockNodeFlags_CentralNode;
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
-  // a panel never shrinks past half the width where the signal view's tool bar squishes
+  // A panel never shrinks past half the width where the signal view's toolbar squishes.
   const float min_panel_width = (SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2) * 0.5f;
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
@@ -837,12 +855,8 @@ void MainWindow::drawDockspace() {
 }
 
 namespace {
-// closing a panel that floated out into its own os window brings it back into the default layout, only
-// the close button of a docked panel hides it
-bool floatingOut() { return ImGui::GetWindowViewport() != ImGui::GetMainViewport(); }
-
-// the side panels float out like the dialogs, and their dock nodes have no window menu button: its
-// only entry hides the tab bar, and with it the title and the close button
+// Every workspace panel uses the same docking and floating behavior. Keep the title
+// strip visible so moving and closing a panel are always available.
 void setNextPanelClass() {
   ImGuiWindowClass window_class;
   window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
@@ -852,43 +866,91 @@ void setNextPanelClass() {
 
 bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  const bool visible = ImGui::Begin(name, open, flags | ImGuiWindowFlags_NoCollapse);
+  const bool visible = ImGui::Begin(name, open, flags | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoCollapse);
   ImGui::PopStyleVar();
   return visible;
 }
 }  // namespace
 
-void MainWindow::drawMessagesPanel() {
-  const std::string name = (analysis_mode_ ? "openpilot Messages" : messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
-  setNextPanelClass();
-  if (beginPanel(name.c_str(), &messages_visible_)) {
-    if (messages_widget_) {
-      const std::string help = analysis_mode_ ?
-        "<b>openpilot Messages</b><br />Search to filter messages and fields.<br />Click a message to expand it.<br />"
-        "Double-click a field to create a chart.<br />Drag a field onto a chart to compare." : messages_widget_->whatsThis();
-      help_overlay_.add(help, ImGui::GetCurrentWindow()->Rect());
-      if (analysis_mode_) charts_widget_->drawSignalBrowser();
-      else messages_widget_->draw();
+void MainWindow::showMessage(const MessageId &id) {
+  center_widget_.setMessage(id);
+  details_visible_ = true;
+  selectPanelTab(CENTER_PANEL);
+}
+
+void MainWindow::selectPanelTab(const char *name) {
+  // Select a docked panel after it has been submitted, without stealing keyboard
+  // focus from the message list (which needs to keep handling the arrow keys).
+  nextFrame([name]() {
+    if (auto *window = ImGui::FindWindowByName(name); window && window->DockNode && window->DockNode->TabBar) {
+      window->DockNode->TabBar->NextSelectedTabId = window->TabId;
     }
+  });
+}
+
+void MainWindow::drawMessagesPanel() {
+  const std::string name = "CAN signals" + std::string(MESSAGES_PANEL_ID);
+  setNextPanelClass();
+  if (beginPanel(name.c_str(), &messages_visible_) && messages_widget_) {
+    help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+    ImGui::PushTextWrapPos(0.0f);
+    ImGui::TextDisabled("%s", messages_widget_->title().c_str());
+    ImGui::PopTextWrapPos();
+    messages_widget_->draw();
   }
-  const bool floating = floatingOut();
   ImGui::End();
-  if (!messages_visible_ && floating) messages_visible_ = reset_layout_ = true;
+}
+
+void MainWindow::drawLogMessagesPanel() {
+  setNextPanelClass();
+  if (beginPanel(LOG_MESSAGES_PANEL, &log_messages_visible_) && charts_widget_) {
+    help_overlay_.add("<b>openpilot Messages</b><br />Search to filter messages and fields.<br />"
+                      "Double-click a field to create a chart.<br />Drag a field onto a chart to compare.",
+                      ImGui::GetCurrentWindow()->Rect());
+    charts_widget_->drawSignalBrowser();
+  }
+  ImGui::End();
+}
+
+void MainWindow::drawChartsPanel() {
+  setNextPanelClass();
+  if (beginPanel(CHARTS_PANEL, &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    if (charts_widget_) {
+      help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      charts_widget_->draw();
+    }
+    ImGui::EndChild();
+  }
+  ImGui::End();
 }
 
 void MainWindow::drawVideoPanel() {
   const std::string name = std::string(videoPanelTitle()) + VIDEO_PANEL;
   setNextPanelClass();
   const bool video_open = beginPanel(name.c_str(), &video_visible_);
-  const bool floating = floatingOut();
   if (video_widget_ && !video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
   } else if (video_widget_) {
     help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-    video_widget_->draw(analysis_mode_);
+    video_widget_->draw();
   }
   ImGui::End();
-  if (!video_visible_ && floating) video_visible_ = reset_layout_ = true;
+}
+
+void MainWindow::drawDetailsPanel() {
+  setNextPanelClass();
+  auto *detail = center_widget_.getDetailWidget();
+  const std::string title = detail ? "CAN Details: " + detail->messageId().toString() + "###CenterWidget" : CENTER_PANEL;
+  if (beginPanel(title.c_str(), &details_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    center_widget_.draw();
+    if (detail && help_overlay_.visible()) {
+      for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
+    }
+    ImGui::EndChild();
+  }
+  ImGui::End();
 }
 
 void MainWindow::draw() {
@@ -907,31 +969,13 @@ void MainWindow::draw() {
   if (!full_screen_) drawMenuBar();
   drawDockspace();
 
-  // the central widget has no scrollbars of its own (the views inside scroll)
-  setNextPanelClass();
-  if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    center_widget_.draw();
-    if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
-      for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
-    }
-  }
-  ImGui::End();
-  // Submit the same dock windows while loading, so ImGui doesn't collapse their
-  // nodes and then redistribute the layout when the stream's widgets arrive.
+  // All workspace panels can be tabbed together, split, floated, or closed.
+  if (details_visible_) drawDetailsPanel();
   if (messages_visible_) drawMessagesPanel();
+  if (log_messages_visible_) drawLogMessagesPanel();
   if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
   if (video_visible_) drawVideoPanel();
-  if (charts_visible_) {
-    const std::string charts_title = "Charts: " + std::to_string(charts_widget_ ? charts_widget_->chartCount() : 0) + "###ChartsWindow";
-    setNextPanelClass();
-    if (beginPanel(charts_title.c_str(), &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-      if (charts_widget_) {
-        help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-        charts_widget_->draw();
-      }
-    }
-    ImGui::End();
-  }
+  if (charts_visible_) drawChartsPanel();
   for (auto it = tool_dialogs_.begin(); it != tool_dialogs_.end();) {
     it = (*it)->draw() ? it + 1 : tool_dialogs_.erase(it);
   }

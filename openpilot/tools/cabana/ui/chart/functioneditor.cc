@@ -181,7 +181,6 @@ void ChartsWidget::drawFunctionEditor() {
     equation_errors_.clear();
     for (auto &chart : charts_) chart->updateFields();
     rebuildSignalBrowser();
-    if (save) analysisRequested();
     fieldsChanged();
     if (save && function_plot_) createChart()->addFields(e.name);
     updateState();
