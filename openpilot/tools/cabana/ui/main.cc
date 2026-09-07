@@ -37,7 +37,7 @@ struct CabanaArgs {
   std::string data_dir;
   std::string dbc;
   std::string route;
-  std::string layout;
+  std::optional<std::string> layout;
 };
 
 void printUsage(const char *argv0) {
@@ -54,7 +54,7 @@ void printUsage(const char *argv0) {
           "  --qcam                    load qcamera\n"
           "  --wide-road               load wide road camera (alias: --ecam)\n"
           "  --cabin                   load cabin camera (alias: --dcam)\n"
-          "  --layout <name|file>      open an openpilot preset or Cabana JSON layout\n"
+          "  --layout [LAYOUT]         open a Cabana JSON layout file\n"
           "  --stream                  read openpilot messages from local msgq (alias: --msgq)\n"
           "  --msgq                    read openpilot messages from local msgq\n"
           "  --panda                   read can messages from panda\n"
@@ -99,7 +99,8 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
     } else if (std::strncmp(a, "--layout=", 9) == 0) {
       args.layout = a + 9;
     } else if (std::strcmp(a, "--layout") == 0) {
-      if (!takeValue(argc, argv, i, args.layout)) return 1;
+      args.layout.reset();
+      if (i + 1 < argc && (argv[i + 1][0] != '-' || std::strcmp(argv[i + 1], "-") == 0)) args.layout = argv[++i];
     } else if (std::strcmp(a, "--msgq") == 0 || std::strcmp(a, "--stream") == 0) {
       args.msgq = true;
     } else if (std::strcmp(a, "--panda") == 0) {
@@ -153,9 +154,7 @@ int main(int argc, char *argv[]) {
 
   CabanaArgs args;
   if (auto code = parseArgs(argc, argv, args)) return *code;
-  if (!args.layout.empty() && std::filesystem::exists(invocation_dir / args.layout)) {
-    args.layout = (invocation_dir / args.layout).string();
-  }
+  const std::string layout = args.layout ? (invocation_dir / *args.layout).lexically_normal().string() : "";
 
   std::unique_ptr<AbstractStream> stream;
   StreamLoader stream_loader;
@@ -209,5 +208,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc, args.layout);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, layout);
 }

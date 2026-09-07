@@ -85,12 +85,8 @@ void ChartsWidget::loadLayout() {
     [this](const std::string &path) { if (!path.empty()) openLayout(path); });
 }
 
-ChartsWidget::LayoutStatus ChartsWidget::openLayout(const std::string &name, bool defer_missing_can) {
-  auto path = std::filesystem::path(name);
-  if (!std::filesystem::exists(path) && (path.parent_path().empty() || path.parent_path() == "layouts")) {
-    path = executableDir() / "layouts" / (path.has_extension() ? path.filename().string() : path.filename().string() + ".json");
-  }
-  const std::string contents = util::read_file(path.string());
+ChartsWidget::LayoutStatus ChartsWidget::openLayout(const std::string &path, bool defer_missing_can) {
+  const std::string contents = util::read_file(path);
   if (contents.empty()) {
     MessageBox::warning("Open Layout", "Could not read the chart layout");
     return LayoutStatus::Failed;
