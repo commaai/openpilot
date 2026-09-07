@@ -9,10 +9,11 @@ import time
 import glob
 from typing import NoReturn
 
-import openpilot.system.sentry as sentry
+from openpilot.common.hardware import PC
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
+from openpilot.system.athena.registration import is_registered_device
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
@@ -65,22 +66,12 @@ def report_tombstone_apport(fn):
     return
 
   message = ""  # One line description of the crash
-  contents = ""  # Full file contents without coredump
   path = ""  # File path relative to openpilot directory
-
-  proc_maps = False
 
   with open(fn) as f:
     for line in f:
       if "CoreDump" in line:
         break
-      elif "ProcMaps" in line:
-        proc_maps = True
-      elif "ProcStatus" in line:
-        proc_maps = False
-
-      if not proc_maps:
-        contents += line
 
       if "ExecutablePath" in line:
         path = line.strip().split(': ')[-1]
@@ -112,13 +103,12 @@ def report_tombstone_apport(fn):
     if not found:
       crash_function = stacktrace_s[1]
 
-    # Remove arguments that can contain pointers to make sentry one-liner unique
+    # Remove arguments that can contain pointers from the crash summary
     crash_function = " ".join(x for x in crash_function.split(' ')[1:] if not x.startswith('0x'))
     crash_function = re.sub(r'\(.*?\)', '', crash_function)
 
-  contents = stacktrace + "\n\n" + contents
   message = message + " - " + crash_function
-  sentry.report_tombstone(fn, message, contents)
+  cloudlog.error({'tombstone': message})
 
   # Copy crashlog to upload folder
   clean_path = path.replace('/', '_')
@@ -141,7 +131,9 @@ def report_tombstone_apport(fn):
 
 
 def main() -> NoReturn:
-  should_report = sentry.init(sentry.SentryProject.SELFDRIVE_NATIVE)
+  build_metadata = get_build_metadata()
+  comma_remote = build_metadata.openpilot.comma_remote and "commaai" in build_metadata.openpilot.git_origin
+  should_report = comma_remote and is_registered_device() and not PC
 
   # Clear apport folder on start, otherwise duplicate crashes won't register
   clear_apport_folder()
