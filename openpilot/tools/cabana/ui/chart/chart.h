@@ -165,6 +165,7 @@ private:
   ImRect rubber_rect_;
   bool resume_after_scrub_ = false;
   bool drawing_ghost_ = false;  // drawing the drag preview: no mouse handling, no tip
+  int pending_signal_removal_ = -1;
 
   TipLabel tip_label_;
   std::vector<SigItem> sigs_;
