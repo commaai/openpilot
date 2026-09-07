@@ -903,8 +903,8 @@ void MainWindow::drawVideoPanel() {
         video_h = avail.y - splitter_h - charts_min_h;
       }
     }
-    // The splitter provides the gap; extra ItemSpacing would leave an undraggable strip.
-    if (!charts_floating_) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+    // Replay uses a splitter for the gap; live streams use normal item spacing.
+    if (!charts_floating_ && !live) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
@@ -913,7 +913,7 @@ void MainWindow::drawVideoPanel() {
     } else {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
-    if (!charts_floating_) {
+    if (!charts_floating_ && !live) {
       ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
       const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
       if (splitter_active) {
@@ -927,6 +927,8 @@ void MainWindow::drawVideoPanel() {
       ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(splitter.Min.x, line_y), ImVec2(splitter.Max.x, line_y + 2.0f),
                                                 ImGui::GetColorU32(splitter_active ? ImGuiCol_SeparatorActive : splitter_hovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Border));
       ImGui::PopStyleVar();
+    }
+    if (!charts_floating_) {
       if (!charts_collapsed) {
         // the chart list scrolls in its own child, the container itself never scrolls
         ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
