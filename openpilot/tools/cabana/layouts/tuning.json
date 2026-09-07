@@ -410,7 +410,6 @@
         "/carControl/enabled",
         "/carState/vEgo"
       ],
-      "legacy_lua_hash": "e320975ce21a70380ee3189ad726c4dada35d07a032378e2f953d6c676f64ed7",
       "language": "python"
     },
     {
@@ -422,7 +421,6 @@
         "/carState/steeringPressed",
         "/carControl/enabled"
       ],
-      "legacy_lua_hash": "b81a6c8d9aedf328b5d13989634db86f37b039f70c5d1e1f760dac267868252d",
       "language": "python"
     },
     {
@@ -434,7 +432,6 @@
         "/carState/steeringPressed",
         "/carControl/enabled"
       ],
-      "legacy_lua_hash": "b81a6c8d9aedf328b5d13989634db86f37b039f70c5d1e1f760dac267868252d",
       "language": "python"
     },
     {
@@ -447,7 +444,6 @@
         "/carState/gasPressed",
         "/carControl/enabled"
       ],
-      "legacy_lua_hash": "f0a07c0d52fc865b241f140f6c715f8e3e1ad41b3753cadcaed04d6a15ecc2a9",
       "language": "python"
     },
     {
@@ -460,7 +456,6 @@
         "/carState/gasPressed",
         "/carControl/enabled"
       ],
-      "legacy_lua_hash": "f0a07c0d52fc865b241f140f6c715f8e3e1ad41b3753cadcaed04d6a15ecc2a9",
       "language": "python"
     },
     {
@@ -473,7 +468,6 @@
         "/carState/gasPressed",
         "/carControl/enabled"
       ],
-      "legacy_lua_hash": "f0a07c0d52fc865b241f140f6c715f8e3e1ad41b3753cadcaed04d6a15ecc2a9",
       "language": "python"
     },
     {
@@ -486,7 +480,6 @@
         "/carControl/actuators/steeringAngleDeg",
         "/carOutput/actuatorsOutput/steeringAngleDeg"
       ],
-      "legacy_lua_hash": "cbf1ebd642391bd5ff558ea64f04f5247bb983309c9fee0bc8c5f7af1d90d930",
       "language": "python"
     }
   ]

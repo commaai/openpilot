@@ -20,7 +20,7 @@ Options:
   --cabin                   load cabin camera (alias: --dcam)
   --msgq                    read openpilot messages from local msgq
   --stream                  alias for --msgq
-  --layout <name-or-file>    open a preset, PlotJuggler XML, or Cabana JSON layout
+  --layout <name-or-file>    open a preset or Cabana JSON layout
   --panda                   read can messages from panda
   --panda-serial <serial>   read can messages from panda with given serial
   --socketcan <device>      read can messages from given SocketCAN device
@@ -138,14 +138,12 @@ the visible time range. These operations affect chart values only.
 
 ### Saved layouts and equations
 
-**Layout → Open Layout** accepts Cabana JSON and PlotJuggler XML. The bundled presets are native
-Cabana layouts with Python equations. XML import preserves named tabs, chart titles, overlaid
-curves, colors, line styles, fixed Y limits, and scale/offset transforms. Known equations from
-the bundled PlotJuggler layouts are migrated to their Python ports; custom Lua equations must
-be rewritten in Python. Panels are arranged in Cabana's chart grid.
+**Layout → Open Layout** accepts Cabana JSON. The bundled presets use Python equations
+and preserve named tabs, chart titles, overlaid curves, colors, line styles, fixed Y limits,
+and scale/offset transforms. Panels are arranged in Cabana's chart grid.
 
 Equations run in the Python interpreter from the openpilot environment used to build Cabana.
-No Lua installation is needed. Each equation uses `language: "python"`, a `globals` initialization
+Each equation uses `language: "python"`, a `globals` initialization
 block, and a `function` body. The function receives `time`, `value`, and additional inputs
 (`v1`, `v2`, …), aligned to the nearest sample. It returns a number or `(time, value)`; non-finite
 results are omitted. The `math` module is available, and initialization code can import other
@@ -166,13 +164,11 @@ Globals persist across samples and reset when the loaded data is recalculated. U
 ```
 
 The tuning layout retains its five-second engagement gating; curvature, roll compensation,
-GPS distance, and steering-rate checks have Python ports. Older Cabana layouts containing
-these known Lua equations migrate when opened and save as Python. Unsupported legacy equations
-leave the current workspace intact. Equation errors appear in the chart workspace.
+GPS distance, and steering-rate checks use Python equations. Equation errors appear in the
+chart workspace.
 
 Layout scripts run with Cabana's permissions. A per-sample Python execution limit catches
-runaway Python loops; it is not a sandbox or a timeout for native extension calls. Plugin panels,
-XY plots, and time-offset transforms remain outside the XML importer's scope.
+runaway Python loops; it is not a sandbox or a timeout for native extension calls.
 
 **Layout → Save Layout** saves the workspace as Cabana JSON, including equations, tabs,
 chart grouping, colors, limits, signal visibility, transforms, column count, and window duration.

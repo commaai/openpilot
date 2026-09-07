@@ -54,7 +54,7 @@ void printUsage(const char *argv0) {
           "  --qcam                    load qcamera\n"
           "  --wide-road               load wide road camera (alias: --ecam)\n"
           "  --cabin                   load cabin camera (alias: --dcam)\n"
-          "  --layout <name|file>      open an openpilot preset, PlotJuggler XML, or Cabana layout\n"
+          "  --layout <name|file>      open an openpilot preset or Cabana JSON layout\n"
           "  --stream                  stream local cereal messages (alias: --msgq)\n"
           "  --msgq                    read openpilot messages from local msgq\n"
           "  --panda                   read can messages from panda\n"

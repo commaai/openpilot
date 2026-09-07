@@ -101,11 +101,7 @@ inline std::optional<Layout> parseLayout(const std::string &contents) {
         !e["globals"].is_string() || !e["function"].is_string() || !e["additional"].is_array() ||
         !equation_names.insert(e["name"].string_value()).second) return std::nullopt;
     cabana::Equation equation{e["name"].string_value(), e["source"].string_value(), e["globals"].string_value(), e["function"].string_value(), {}};
-    if (e["language"].string_value() != "python") {
-      if (!e["language"].is_null() && e["language"].string_value() != "lua") return std::nullopt;
-      if (doc["cabana_layout"].int_value() >= 3) return std::nullopt;
-      try { cabana::portLegacyEquation(equation); } catch (const std::exception &) { return std::nullopt; }
-    }
+    if (e["language"].string_value() != "python") return std::nullopt;
     for (const auto &source : e["additional"].array_items()) {
       if (!source.is_string()) return std::nullopt;
       equation.additional.push_back(source.string_value());

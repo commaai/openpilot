@@ -520,7 +520,6 @@
       "globals": "",
       "function": "return value * 3.6",
       "additional": [],
-      "legacy_lua_hash": "c2f2f1947269171331e08908b7634bc251c94e863e3ea3e3c1b4be95356bca31",
       "language": "python"
     },
     {
@@ -529,7 +528,6 @@
       "globals": "",
       "function": "return value * 2.23694",
       "additional": [],
-      "legacy_lua_hash": "732e7aac13bc57a0fdfb848e825799a1d5545b99d5b63c5bf2bd795c48bba4d4",
       "language": "python"
     },
     {
@@ -541,7 +539,6 @@
         "/carState/vEgo",
         "/vehicleParameters/roll"
       ],
-      "legacy_lua_hash": "fbd979db4127cddf0a7b82a77c9b45aa7d44906c2ac0acf72c3e963c8b380877",
       "language": "python"
     },
     {
@@ -553,7 +550,6 @@
         "/carState/vEgo",
         "/vehicleParameters/roll"
       ],
-      "legacy_lua_hash": "fbd979db4127cddf0a7b82a77c9b45aa7d44906c2ac0acf72c3e963c8b380877",
       "language": "python"
     },
     {
@@ -562,7 +558,6 @@
       "globals": "",
       "function": "return value + 0.2",
       "additional": [],
-      "legacy_lua_hash": "68dfa7c095f8a07669a46f45e96fadd901549e54bdee4258db8f2a9e1e50008a",
       "language": "python"
     },
     {
@@ -571,7 +566,6 @@
       "globals": "",
       "function": "return 0",
       "additional": [],
-      "legacy_lua_hash": "ac1d9e3eba69ed8aba499a932495759edde86c97aec95bc1893a85158c74a2fa",
       "language": "python"
     }
   ]

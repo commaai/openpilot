@@ -124,7 +124,6 @@
         "/liveLocationKalmanDEPRECATED/positionGeodetic/value/0",
         "/liveLocationKalmanDEPRECATED/positionGeodetic/value/1"
       ],
-      "legacy_lua_hash": "450a8d147f51006b9fe885e152d3e5de62478148f4a54e8002fac343afc5ce4a",
       "language": "python"
     }
   ]
