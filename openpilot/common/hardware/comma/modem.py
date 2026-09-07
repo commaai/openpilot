@@ -236,10 +236,15 @@ class Modem:
   def _has_modem_manager() -> bool:
     return os.path.isfile("/lib/systemd/system/ModemManager.service")
 
+  def _is_comma_sim(self) -> bool:
+    return self.S["iccid"].startswith(WEBBING_ICCID_PREFIX)
+
   def _is_roaming_allowed(self) -> bool:
-    if self.S["iccid"].startswith(WEBBING_ICCID_PREFIX):
-      return True
-    return self._read_param("GsmRoaming") == "1"
+    return self._is_comma_sim() or self._read_param("GsmRoaming") == "1"
+
+  def _apn_setting(self) -> str:
+    # comma SIM always uses the network-provided APN
+    return "" if self._is_comma_sim() else self._read_param("GsmApn")
 
   def _publish_state(self, **kwargs):
     self.S.update(kwargs)
@@ -335,7 +340,7 @@ class Modem:
     self._configure_modem(identity["modem_version"])
 
     self.S.update(identity)
-    self._apn = self._read_param("GsmApn")
+    self._apn = self._apn_setting()
     self._roaming_allowed = self._is_roaming_allowed()
     # blank APN lets the carrier supply one via PCO
     self._at(f'AT+CGDCONT={DIAL_CID},"IP","{self._apn}"')
@@ -420,7 +425,7 @@ class Modem:
     return State.CONNECTED
 
   def _params_changed(self) -> bool:
-    new_apn = self._read_param("GsmApn")
+    new_apn = self._apn_setting()
     if new_apn != self._apn:
       logging.info(f"GsmApn changed: '{self._apn}' -> '{new_apn}'")
       return True
