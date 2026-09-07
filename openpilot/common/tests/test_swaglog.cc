@@ -3,8 +3,7 @@
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <dirent.h>
-#include <sys/wait.h>
+#include <filesystem>
 #include <unistd.h>
 
 #include "common/hardware/hw.h"
@@ -20,17 +19,9 @@ void test_swaglog() {
 
   LOGD("native-cpp-log");
   const std::string root = Path::swaglog_ipc();
-  DIR *ready = opendir((root + "/ready").c_str());
-  CHECK(ready != nullptr);
-  std::string filename;
-  int count = 0;
-  while (const auto *entry = readdir(ready)) {
-    if (entry->d_name[0] == '.') continue;
-    filename = root + "/ready/" + entry->d_name;
-    ++count;
-  }
-  CHECK(closedir(ready) == 0);
-  CHECK(count == 1);
+  const auto ready = std::filesystem::directory_iterator(root + "/ready");
+  CHECK(std::distance(begin(ready), end(ready)) == 1);
+  const auto filename = ready->path();
   std::ifstream file(filename, std::ios::binary);
   CHECK(file.good());
   const std::string buffer{std::istreambuf_iterator<char>(file), {}};
@@ -58,24 +49,8 @@ int main(int argc, char **argv) {
   // Used by test_logmessaged.py to exercise the real C++ producer with Python's reader.
   if (argc >= 2 && std::string(argv[1]) == "--emit") {
     const std::string message{std::istreambuf_iterator<char>(std::cin), {}};
-    if (argc == 3) {
-      for (int i = 0; i < std::stoi(argv[2]); ++i) LOGD("%s:%d", message.c_str(), i);
-    } else {
-      LOGD("%s", message.c_str());
-    }
+    for (int i = 0; i < (argc == 3 ? std::stoi(argv[2]) : 1); ++i) LOGI("%s", message.c_str());
     return 0;
-  }
-  if (argc == 2 && std::string(argv[1]) == "--fork") {
-    LOGD("parent");
-    const pid_t pid = fork();
-    if (pid < 0) return 1;
-    if (pid == 0) {
-      LOGD("child");
-      _exit(0);
-    }
-    int status = 0;
-    if (waitpid(pid, &status, 0) != pid) return 1;
-    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
   }
   return run_native_test(test_swaglog);
 }
