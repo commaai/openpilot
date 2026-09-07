@@ -126,9 +126,9 @@ void AbstractStream::updateLastMessages() {
   msgsReceived(&msgs, prev_msg_size != last_msgs.size());
 }
 
-void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>> &range) {
+void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>> &range, bool seek_into_range) {
   time_range_ = range;
-  if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
+  if (seek_into_range && time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
     seekTo(time_range_->first);
   }
   timeRangeChanged(time_range_);

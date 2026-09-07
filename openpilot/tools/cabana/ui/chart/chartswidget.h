@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <memory>
@@ -75,8 +76,9 @@ public:
   size_t chartCount() const { return charts_.size(); }
   std::shared_ptr<const cabana::Samples> telemetrySnapshot(const std::string &path) const;
   std::string serializeLayout() const;
-  bool restoreLayout(const std::string &contents, bool defer_missing_can = false);
-  bool openLayout(const std::string &path, bool defer_missing_can = false);
+  enum class LayoutStatus { Restored, MissingCan, Failed };
+  LayoutStatus restoreLayout(const std::string &contents, bool defer_missing_can = false);
+  LayoutStatus openLayout(const std::string &path, bool defer_missing_can = false);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
   std::string whatsThis() const;
@@ -149,6 +151,7 @@ private:
   size_t equation_revision_ = 0;
   std::string equation_errors_;
   std::string browser_filter_;
+  std::vector<std::filesystem::path> presets_;
   size_t browser_telemetry_count_ = 0;
   chart::SignalTree browser_tree_;
   bool browser_tree_dirty_ = true;
