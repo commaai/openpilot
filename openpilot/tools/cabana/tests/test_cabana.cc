@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "tools/replay/py_downloader.h"
+#include "tools/replay/logreader.h"
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
@@ -559,6 +560,64 @@ void test_cereal_telemetry() {
   REQUIRE(data.at("/carState/vEgo").back().x == 1);
 }
 
+void require_same_telemetry(const cabana::Telemetry &expected, const cabana::Telemetry &actual) {
+  REQUIRE(actual.size() == expected.size());
+  for (const auto &[path, samples] : expected) {
+    const auto &other = actual.at(path);
+    REQUIRE(samples.size() == other.size());
+    for (size_t i = 0; i < samples.size(); ++i) {
+      REQUIRE(samples[i].x == other[i].x);
+      REQUIRE(samples[i].y == other[i].y);
+    }
+  }
+}
+
+void test_cached_telemetry_extractor() {
+  cabana::Telemetry expected, actual;
+  cabana::TelemetryExtractor extractor(actual);
+  for (int i = 0; i < 100; ++i) {
+    capnp::MallocMessageBuilder message;
+    auto event = message.initRoot<cereal::Event>();
+    event.setLogMonoTime(1000000000ULL + i * 10000000ULL);
+    event.setValid(i % 3 != 0);
+    switch (i % 5) {
+      case 0: {
+        auto state = event.initCarState();
+        state.setVEgo(i % 2 ? std::numeric_limits<float>::quiet_NaN() : i);
+        state.setSteeringPressed(i % 2);
+        break;
+      }
+      case 1: {
+        auto values = event.initCarControl().initOrientationNED(i % 7);
+        for (size_t j = 0; j < values.size(); ++j) values.set(j, j == 2 ? std::numeric_limits<float>::infinity() : i - j * 0.25);
+        break;
+      }
+      case 2: {
+        auto sensor = event.initAccelerometer();
+        if (i % 2) sensor.setTemperature(i);
+        else {
+          auto values = sensor.initAcceleration().initV(i % 4);
+          for (size_t j = 0; j < values.size(); ++j) values.set(j, i + j * 0.125);
+        }
+        break;
+      }
+      case 3: {
+        auto lateral = event.initControlsState().initLateralControlState();
+        if (i % 2) lateral.initPidState().setActive(true);
+        else lateral.initAngleState().setActive(false);
+        break;
+      }
+      case 4:
+        if (i % 2) event.initCan(1);
+        else event.initSendcan(1);
+        break;
+    }
+    cabana::extractTelemetry(event.asReader(), expected);
+    extractor.extract(event.asReader());
+  }
+  require_same_telemetry(expected, actual);
+}
+
 void test_prepared_telemetry_merge() {
   const cabana::Telemetry published{{"a", {{2, 20}, {4, 40}}}, {"unchanged", {{1, 10}}}};
   for (const auto &samples : std::vector<std::vector<cabana::Sample>>{
@@ -649,6 +708,7 @@ void test_cabana_core() {
   test_pixel_envelope();
   test_signal_tree();
   test_cereal_telemetry();
+  test_cached_telemetry_extractor();
   test_prepared_telemetry_merge();
   test_layout_equations();
   test_chart_analysis();
@@ -697,6 +757,23 @@ int main(int argc, char **argv) {
       } else {
         REQUIRE(result.empty());
       }
+    });
+  }
+  if (argc == 3 && std::string(argv[1]) == "--check-telemetry") {
+    return run_native_test([&]() {
+      LogReader log;
+      REQUIRE(log.load(argv[2]));
+      cabana::Telemetry expected, actual;
+      cabana::TelemetryExtractor extractor(actual);
+      for (const auto &event : log.events) {
+        capnp::FlatArrayMessageReader reader(event.data);
+        cabana::extractTelemetry(reader.getRoot<cereal::Event>(), expected);
+        extractor.extract(reader.getRoot<cereal::Event>());
+      }
+      require_same_telemetry(expected, actual);
+      size_t count = 0;
+      for (const auto &[path, samples] : actual) count += samples.size();
+      printf("Verified %zu paths and %zu samples across %zu events\n", actual.size(), count, log.events.size());
     });
   }
   if (argc == 3 && std::string(argv[1]) == "--check-layout") {

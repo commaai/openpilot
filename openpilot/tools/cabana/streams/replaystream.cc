@@ -35,6 +35,7 @@ void ReplayStream::mergeSegments() {
       new_events.reserve(seg->log->events.size());
       MessageEventsMap msg_events;
       cabana::Telemetry telemetry_batch;
+      cabana::TelemetryExtractor extractor(telemetry_batch);
       for (const Event &e : seg->log->events) {
         if (stopping_) return;
         if (e.which == cereal::Event::Which::CAN) {
@@ -47,7 +48,7 @@ void ReplayStream::mergeSegments() {
           }
         } else {
           capnp::FlatArrayMessageReader reader(e.data);
-          cabana::extractTelemetry(reader.getRoot<cereal::Event>(), telemetry_batch);
+          extractor.extract(reader.getRoot<cereal::Event>());
         }
       }
       // Replay is the only writer. Prepare replacements while the UI reads the published
