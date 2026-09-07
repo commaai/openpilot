@@ -60,9 +60,9 @@ public:
   };
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
-  void addTelemetry(const std::string &path, CabanaColor color = {0, 114, 178});
-  void updateTelemetry();
-  void pollTelemetry();
+  void addFields(const std::string &path, CabanaColor color = {0, 114, 178});
+  void updateFields();
+  void pollFields();
   std::string title;
   std::optional<double> limit_min, limit_max;
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
@@ -101,9 +101,9 @@ private:
                        std::vector<ImPlotPoint> &vals);
   void rebuildSeries(SigItem &s, size_t begin = 0);
   static void buildSeries(SigItem &s, size_t begin, bool build_tree);
-  std::future<void> telemetry_task_;
-  std::shared_ptr<std::vector<SigItem>> telemetry_result_;
-  bool telemetry_dirty_ = false;
+  std::future<void> fields_task_;
+  std::shared_ptr<std::vector<SigItem>> fields_result_;
+  bool fields_dirty_ = false;
   void drawSignalAnalysis(SigItem &s);
   std::string legendName(const SigItem &s) const;
   static std::string signalUnit(const SigItem &s);

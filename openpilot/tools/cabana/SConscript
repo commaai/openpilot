@@ -41,7 +41,7 @@ bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_ico
 # sources shared by the imgui frontend and the core test
 core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
-             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc', 'analysis/telemetry.cc', 'analysis/equations.cc']
+             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc', 'analysis/fields.cc', 'analysis/equations.cc']
 if arch != "Darwin":
   core_srcs += ['streams/socketcanstream.cc']
 
@@ -73,7 +73,7 @@ if GetOption('extras'):
   cabana_core_test_env.Append(CPPPATH=[sysconfig.get_config_var('INCLUDEPY')], CPPDEFINES=python_defines, RPATH=python_runtime_paths)
   cabana_core_test_objects = [
     cabana_core_test_env.Object('tests/cabana_core_tests', 'tests/test_cabana.cc'),
-    cabana_core_test_env.Object('tests/cabana_telemetry', 'analysis/telemetry.cc'),
+    cabana_core_test_env.Object('tests/cabana_fields', 'analysis/fields.cc'),
     cabana_core_test_env.Object('tests/cabana_equations', 'analysis/equations.cc'),
     cabana_core_test_env.Object('tests/cabana_core_model', 'dbc/dbc.cc'),
     cabana_core_test_env.Object('tests/cabana_core_file', 'dbc/dbcfile.cc'),

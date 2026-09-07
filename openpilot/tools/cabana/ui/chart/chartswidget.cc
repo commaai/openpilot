@@ -39,7 +39,7 @@ ChartsWidget::ChartsWidget() {
     for (auto &c : charts_) charts.push_back(c.get());
     for (auto *c : charts) c->removeIf([](const auto &s) { return s.path.empty(); });
   }));
-  connections_.push_back(can->telemetryChanged.connect([this]() { telemetryChanged(); }));
+  connections_.push_back(can->fieldsChanged.connect([this]() { fieldsChanged(); }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
   connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
@@ -529,7 +529,7 @@ void ChartsWidget::removeAll() {
   tab_charts_.clear();
   tab_names_.clear();
   ++equation_revision_;
-  telemetry_dirty_ = false;
+  fields_dirty_ = false;
   browser_expanded_.clear();
   browser_search_expanded_.clear();
   equations_.clear();
@@ -569,8 +569,8 @@ void ChartsWidget::handleEvents() {
 }
 
 void ChartsWidget::draw() {
-  pollTelemetry();
-  for (auto &c : charts_) c->pollTelemetry();
+  pollFields();
+  for (auto &c : charts_) c->pollFields();
   deleted_charts_.clear();
   ImGui::PushID(this);
   if (auto_scroll_timer_active_ && ImGui::GetTime() >= auto_scroll_timer_next_) {
@@ -620,9 +620,9 @@ void ChartsContainer::draw() {
   auto current_charts = charts_widget_->currentCharts();  // copy: drawing may remove charts
   float bottom = origin.y;
   if (current_charts.empty()) {
-    ImGui::TextDisabled("Plot and compare route signals");
+    ImGui::TextDisabled("Plot and compare openpilot messages and CAN signals");
     if (ImGui::Button("New Chart")) charts_widget_->newChart();
-    ImGui::TextWrapped("Search by signal or message name. Add several signals to compare them on one chart.");
+    ImGui::TextWrapped("Double-click a field or CAN signal to plot it. Add several to compare them on one chart.");
     ImGui::TextDisabled("Drag chart grips to arrange or merge plots.");
     bottom = ImGui::GetCursorScreenPos().y;
   }

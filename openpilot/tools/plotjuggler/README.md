@@ -67,7 +67,7 @@ For a quick demo, go through the installation step and run this command:
 
 [Cabana](../cabana/README.md#plotting-and-analysis) contains the bundled layouts
 with Python equations: `../cabana/cabana --demo --layout tuning`. Cabana provides a
-Signal Analysis workspace alongside its CAN editor and synchronized route playback.
+Plots workspace for openpilot messages alongside its CAN editor and synchronized route playback.
 
 If you create a layout that's useful for others, consider upstreaming it.
 

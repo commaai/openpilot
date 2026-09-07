@@ -87,7 +87,7 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
       received_events_.push_back(newEvent(mono_time, c));
     }
   } else {
-    telemetry_extractor_.extract(event);
+    field_extractor_.extract(event);
   }
 }
 
@@ -99,12 +99,12 @@ void LiveStream::updateLastMessages() {
     std::lock_guard lk(lock);
     begin_event_ts = begin_event_ts ? std::min(begin_event_ts, received_first_ts_) : received_first_ts_;
     lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
-    cabana::prepareTelemetryMerge(telemetry, received_telemetry_);
-    for (auto &[path, samples] : received_telemetry_) {
-      if (!samples.empty()) telemetry[path] = std::make_shared<const cabana::Samples>(std::exchange(samples, {}));
+    cabana::prepareFieldsMerge(fields, received_fields_);
+    for (auto &[path, samples] : received_fields_) {
+      if (!samples.empty()) fields[path] = std::make_shared<const cabana::Samples>(std::exchange(samples, {}));
     }
     const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
-    for (auto &[path, samples] : telemetry) {
+    for (auto &[path, samples] : fields) {
       if (samples->empty() || samples->front().x >= cutoff - 60) continue;  // trim each series at most once a minute
       auto first = std::lower_bound(samples->begin(), samples->end(), cutoff, [](const auto &p, double t) { return p.x < t; });
       if (first != samples->begin()) --first;  // retain the boundary sample for nearest-sample equations
@@ -114,7 +114,7 @@ void LiveStream::updateLastMessages() {
     received_events_.clear();
   }
   if (begin_event_ts) {
-    telemetryChanged();
+    fieldsChanged();
     updateEvents();
   }
 }
