@@ -160,8 +160,12 @@ void ChartsWidget::rebuildSignalBrowser() {
   browser_field_count_ = can->fields.size();
   std::vector<std::string> paths;
   for (const auto &[path, _] : can->fields) paths.push_back(path);
-  for (const auto &e : equations_) paths.push_back(e.name);
-  browser_tree_.rebuild(paths);
+  std::unordered_set<std::string> custom_paths;
+  for (const auto &e : equations_) {
+    paths.push_back(e.name);
+    custom_paths.insert(e.name);
+  }
+  browser_tree_.rebuild(paths, custom_paths);
   browser_tree_dirty_ = true;
 }
 
