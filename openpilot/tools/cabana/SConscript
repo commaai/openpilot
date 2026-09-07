@@ -73,6 +73,9 @@ if GetOption('extras'):
   cabana_core_test_objects = [
     cabana_core_test_env.Object('tests/cabana_core_tests', 'tests/test_cabana.cc'),
     cabana_core_test_env.Object('tests/cabana_fields', 'analysis/fields.cc'),
+    cabana_core_test_env.Object('tests/cabana_live', 'streams/livestream.cc'),
+    cabana_core_test_env.Object('tests/cabana_stream', 'streams/abstractstream.cc'),
+    cabana_core_test_env.Object('tests/cabana_settings', 'settings.cc'),
     cabana_core_test_env.Object('tests/cabana_equations', 'analysis/equations.cc'),
     cabana_core_test_env.Object('tests/cabana_core_model', 'dbc/dbc.cc'),
     cabana_core_test_env.Object('tests/cabana_core_file', 'dbc/dbcfile.cc'),

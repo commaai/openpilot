@@ -30,13 +30,11 @@ protected:
   std::atomic<bool> exit_ = false;
 
 private:
-  void updateThread();
-  void updateLastMessages() override;
+  void updateThread(int cache_seconds);
   void updateEvents();
 
   std::mutex lock;
   std::thread stream_thread, update_thread;
-  std::atomic<bool> update_pending_ = false;
   std::vector<const CanEvent *> received_events_;
   cabana::Fields received_fields_;
   cabana::FieldExtractor field_extractor_{received_fields_};

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <chrono>
 #include <condition_variable>
 #include <exception>
 #include <functional>
@@ -38,20 +37,13 @@ public:
       stop_ = true;
     }
     cv_.notify_all();
-    // A task stuck in foreign code (a Python equation that never returns) must not keep the process alive.
-    for (size_t i = 0; i < threads_.size(); ++i) {
-      if (done_[i].wait_for(std::chrono::seconds(2)) == std::future_status::ready) threads_[i].join();
-      else threads_[i].detach();
-    }
+    for (auto &thread : threads_) thread.join();
   }
 
 private:
   explicit ThreadPool(unsigned n) {
     for (unsigned i = 0; i < n; ++i) {
-      std::promise<void> done;
-      done_.push_back(done.get_future());
-      threads_.emplace_back([this, done = std::move(done)]() mutable {
-        struct Finished { std::promise<void> &p; ~Finished() { p.set_value(); } } finished{done};
+      threads_.emplace_back([this]() {
         for (;;) {
           std::function<void()> task;
           {
@@ -71,7 +63,6 @@ private:
   std::queue<std::function<void()>> tasks_;
   std::mutex mutex_;
   std::condition_variable cv_;
-  std::vector<std::future<void>> done_;
   bool stop_ = false;
 };
 

@@ -20,6 +20,8 @@
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
+#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/settings.h"
 #include "tools/cabana/ui/qtstate.h"
 #include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/ui/chart/downsample.h"
@@ -670,6 +672,64 @@ cabana::FieldsSnapshot snapshotFields(const cabana::Fields &data) {
   return snapshot;
 }
 
+void test_live_fields() {
+  struct TestStream : LiveStream {
+    std::atomic<int> phase = 0, sent = 0;
+    std::string routeName() const override { return "test"; }
+    void streamThread() override {
+      while (!exit_) {
+        if (phase > sent) {
+          capnp::MallocMessageBuilder message;
+          auto event = message.initRoot<cereal::Event>();
+          event.setLogMonoTime((sent == 2 ? 122ULL : sent + 1ULL) * 1000000000);
+          event.initCarState().setVEgo(sent + 1);
+          auto data = capnp::messageToFlatArray(message);
+          handleEvent(data.asPtr());
+          ++sent;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    }
+    ~TestStream() { stop(); }
+  };
+  const auto saved_settings = static_cast<CabanaSettingsState>(settings);
+  settings.log_livestream = false;
+  settings.max_cached_minutes = 1;
+  TestStream stream;
+  int updates = 0;
+  auto connection = stream.fieldsChanged.connect([&]() { REQUIRE(utils::isMainThread()); ++updates; });
+  stream.start();
+  auto wait = [&](auto ready) {
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (!ready() && std::chrono::steady_clock::now() < deadline) {
+      utils::drainMainThreadQueue();
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    REQUIRE(ready());
+  };
+  stream.phase = 1;
+  wait([&]() { return updates == 1; });
+  const auto original = stream.fields.at("/carState/vEgo");
+  stream.phase = 2;
+  // Reception continues while publication waits for the main thread.
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  REQUIRE(stream.sent == 2);
+  wait([&]() { return updates == 2; });
+  REQUIRE(stream.fields.at("/carState/vEgo")->size() == 2);
+  REQUIRE(original->size() == 1 && original->front().y == 1);
+  stream.phase = 3;
+  wait([&]() { return updates == 3; });
+  const auto retained = stream.fields.at("/carState/vEgo");
+  REQUIRE(retained->size() == 2);
+  REQUIRE(retained->front().y == 2 && retained->back().y == 3);
+  REQUIRE(std::abs(retained->front().x - 2) < 1e-9 && std::abs(retained->back().x - 122) < 1e-9);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  stream.stop();  // must release a worker waiting for publication without pumping the UI
+  utils::drainMainThreadQueue();  // cancelled publication must not use its retired captures
+  REQUIRE(updates == 3);
+  static_cast<CabanaSettingsState &>(settings) = saved_settings;
+}
+
 void test_layout_equations() {
   cabana::Fields data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
   REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
@@ -708,7 +768,7 @@ void test_layout_equations() {
   for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "import os\nreturn 0", "import math\nreturn value",
                     "import statistics\nreturn value", "return ().__class__", "return eval(value)",
                     "return math.__dict__", "return 10 ** (10 ** 10)",
-                    "return open('/dev/null')", "invalid Python !", "return None", "return (1, 2, 3)"}) {
+                    "return open('/dev/null')", "invalid Python !", "return None", "return (1, 2, 3)", "pass"}) {
     equation.function = code;
     bool failed = false;
     try { cabana::evaluateEquation(equation, snapshotFields(data)); } catch (const std::exception &) { failed = true; }
@@ -757,6 +817,7 @@ void test_cabana_core() {
   test_log_fields_skips_video_frames();
   test_prepared_fields_merge();
   test_layout_equations();
+  test_live_fields();
   test_chart_analysis();
   test_chart_layout();
   test_format_seconds();

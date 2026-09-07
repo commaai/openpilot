@@ -190,8 +190,9 @@
             "color": "#d62728"
           },
           {
-            "path": "opendbc default steering lag",
-            "color": "#1ac938"
+            "path": "/carParams/steerActuatorDelay",
+            "color": "#1ac938",
+            "offset": 0.2
           }
         ]
       },
@@ -257,8 +258,9 @@
             "color": "#ffaf00"
           },
           {
-            "path": "Zero",
-            "color": "#756a6a"
+            "path": "/carState/canValid",
+            "color": "#756a6a",
+            "scale": 0
           }
         ]
       },
@@ -318,22 +320,6 @@
         "/carState/vEgo",
         "/vehicleParameters/roll"
       ],
-      "language": "python"
-    },
-    {
-      "name": "opendbc default steering lag",
-      "source": "/carParams/steerActuatorDelay",
-      "globals": "",
-      "function": "return value + 0.2",
-      "additional": [],
-      "language": "python"
-    },
-    {
-      "name": "Zero",
-      "source": "/carState/canValid",
-      "globals": "",
-      "function": "return 0",
-      "additional": [],
       "language": "python"
     }
   ]
