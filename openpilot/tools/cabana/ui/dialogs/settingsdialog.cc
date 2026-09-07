@@ -42,18 +42,12 @@ void settingInputInt(const char *id, int *value, int step, int step_fast, int mi
   ImGui::InputInt("##value", value, 0);
   *value = std::clamp(*value, minimum, maximum);
   const int increment = ImGui::GetIO().KeyCtrl ? step_fast : step;
-  ImVec4 icon_color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-  icon_color.x += (1.0f - icon_color.x) * 0.35f;
-  icon_color.y += (1.0f - icon_color.y) * 0.35f;
-  icon_color.z += (1.0f - icon_color.z) * 0.35f;
-  ImGui::PushStyleColor(ImGuiCol_Text, icon_color);
   ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
   ImGui::SameLine(0.0f, spacing);
   if (iconButton("decrement", icon::DASH_LG)) *value = std::max(minimum, *value - increment);
   ImGui::SameLine(0.0f, spacing);
   if (iconButton("increment", icon::PLUS_LG)) *value = std::min(maximum, *value + increment);
   ImGui::PopItemFlag();
-  ImGui::PopStyleColor();
   ImGui::EndGroup();
   ImGui::PopID();
 }
