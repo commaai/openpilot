@@ -18,6 +18,8 @@
 #include "tools/cabana/core/observable.h"
 #include "msgq/visionipc/visionipc_client.h"
 
+constexpr float DEFAULT_CAMERA_ASPECT_RATIO = 1928.0f / 1208.0f;
+
 // Center-crop the source to fill the destination without stretching.
 inline ImVec2 videoFillUv(const ImVec2 &size, float aspect_ratio) {
   const float ratio = size.x / size.y / aspect_ratio;

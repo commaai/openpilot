@@ -184,7 +184,7 @@ void MainWindow::drawMenuBar() {
     if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    ImGui::MenuItem(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), nullptr, &video_visible_);
+    ImGui::MenuItem(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
     ImGui::Separator();
     if (ImGui::MenuItem("Reset Window Layout")) {
       messages_visible_ = video_visible_ = true;
@@ -856,11 +856,13 @@ bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
-  const std::string name = messages_widget_->title() + MESSAGES_PANEL_ID;
+  const std::string name = (messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
   setNextPanelClass();
   if (beginPanel(name.c_str(), &messages_visible_)) {
-    help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-    messages_widget_->draw();
+    if (messages_widget_) {
+      help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      messages_widget_->draw();
+    }
   }
   const bool floating = floatingOut();
   ImGui::End();
@@ -868,11 +870,13 @@ void MainWindow::drawMessagesPanel() {
 }
 
 void MainWindow::drawVideoPanel() {
-  const std::string name = video_dock_title_ + VIDEO_PANEL;
+  const std::string name = (video_dock_title_.empty() ? "Video" : video_dock_title_) + VIDEO_PANEL;
   setNextPanelClass();
   const bool video_open = beginPanel(name.c_str(), &video_visible_);
   const bool floating = floatingOut();
-  if (!video_open) {
+  if (!video_widget_) {
+    if (video_open && wait_dlg_.open) ImGui::TextDisabled("Loading route...");
+  } else if (!video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
   } else {
     const ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -962,9 +966,11 @@ void MainWindow::draw() {
     ImGui::EndChild();
   }
   ImGui::End();
-  if (messages_widget_ && messages_visible_) drawMessagesPanel();
+  // Submit the same dock windows while loading, so ImGui doesn't collapse their
+  // nodes and then redistribute the layout when the stream's widgets arrive.
+  if (messages_visible_) drawMessagesPanel();
   if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
-  if (video_widget_ && video_visible_) drawVideoPanel();
+  if (video_visible_) drawVideoPanel();
   if (charts_widget_ && charts_floating_) {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
