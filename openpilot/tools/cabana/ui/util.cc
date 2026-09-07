@@ -72,7 +72,6 @@ bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flag
 bool clearableInput(const char *label, std::string *s, const char *hint, ImGuiInputTextCallback validator) {
   const float width = ImGui::CalcItemWidth();
   const float clear_width = iconButtonWidth() + ImGui::GetStyle().ItemInnerSpacing.x;
-  // Keep a usable input even in a column too narrow for the clear button.
   const bool show_clear = !s->empty() && width >= clear_width + ImGui::GetFrameHeight();
   ImGui::SetNextItemWidth(show_clear ? width - clear_width : width);
   ImGui::BeginGroup();

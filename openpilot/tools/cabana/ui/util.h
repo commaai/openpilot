@@ -31,13 +31,10 @@ inline bool inputText(const char *label, std::string *s, const char *hint = "", 
 
 bool inputTextMultiline(const char *label, std::string *s, const ImVec2 &size, ImGuiInputTextFlags flags = 0);
 
-// Borderless control containers need room for antialiasing outside the item bounds.
 constexpr float CONTROL_OUTLINE_PADDING = 1.0f;
-// Pair with ImGui::EndChild(), including when false is returned.
 bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flags = 0);
 
-// An input with a trailing clear button; SetNextItemWidth sizes the whole component.
-// True when the text changed.
+// an input with a trailing clear button once it holds text; true when the text changed
 bool clearableInput(const char *label, std::string *s, const char *hint = "", ImGuiInputTextCallback validator = nullptr);
 
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items);
