@@ -262,8 +262,6 @@ void VideoWidget::createCameraWidget() {
   }));
   connections_.push_back(static_cast<ReplayStream *>(can)->qLogLoaded.connect([this](std::shared_ptr<LogReader> qlog) { cam_widget_->parseQLog(qlog); }));
 
-  // The route listing is already available. Show the camera tabs immediately,
-  // instead of moving the playback controls and charts when VIPC connects.
   if (auto *replay = getReplay(); replay && !replay->hasFlag(REPLAY_FLAG_NO_VIPC)) {
     std::set<VisionStreamType> streams;
     for (const auto &[num, segment] : replay->route().segments()) {
