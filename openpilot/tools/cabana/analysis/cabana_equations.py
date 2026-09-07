@@ -117,7 +117,8 @@ class _NumericBools(ast.NodeTransformer):
     return node
 
 
-def compile_equation(globals_code, function_code, input_count):
+def compile_numeric_equation(globals_code, function_code, input_count):
+  """Validated function for native callers that supply floats and check numeric results."""
   if type(input_count) is not int or not 0 <= input_count <= MAX_INPUTS:
     raise EquationError("At most 32 additional inputs are allowed")
   inputs = ["time", "value"] + [f"v{i + 1}" for i in range(input_count)]
@@ -134,10 +135,14 @@ def compile_equation(globals_code, function_code, input_count):
                "int": lambda x: float(int(x)), "map": map, "_number": _number}
   # Only the fully validated, float-normalized AST crosses this execution boundary.
   exec(compile(program, '<layout equation>', 'exec'), namespace)
-  calc = namespace['_calc']
+  return namespace['_calc']
+
+
+def compile_equation(globals_code, function_code, input_count):
+  calc = compile_numeric_equation(globals_code, function_code, input_count)
 
   def evaluate(*args):
-    if len(args) != len(inputs):
+    if len(args) != input_count + 2:
       raise EquationError("Incorrect number of signal inputs")
     result = calc(*(_number(v) for v in args))
     if type(result) is tuple and len(result) == 2:

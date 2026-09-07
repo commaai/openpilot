@@ -66,21 +66,6 @@ PyObject *runtimeModule() {
   return module;
 }
 
-thread_local int remaining_steps;
-// Defense in depth for the trusted evaluator. The AST allowlist, bounded numeric
-// values, and rejection of loops/recursion enforce the layout language restrictions.
-int traceEquation(PyObject *, PyFrameObject *, int event, PyObject *) {
-  if ((event == PyTrace_LINE || event == PyTrace_C_CALL) && --remaining_steps <= 0) {
-    PyErr_SetString(PyExc_RuntimeError, "Equation exceeded its execution limit");
-    return -1;
-  }
-  return 0;
-}
-struct ExecutionLimit {
-  ExecutionLimit() { reset(); PyEval_SetTrace(traceEquation, nullptr); PyEval_SetProfile(traceEquation, nullptr); }
-  ~ExecutionLimit() { PyEval_SetTrace(nullptr, nullptr); PyEval_SetProfile(nullptr, nullptr); }
-  void reset() { remaining_steps = 100000; }
-};
 }  // namespace
 
 double nearestValue(const std::vector<Sample> &samples, double time) {
@@ -101,20 +86,25 @@ std::vector<Sample> evaluateEquation(const Equation &equation, const FieldsSnaps
     inputs.push_back(it->second.get());
   }
   PythonLock lock;
-  auto compile = checked(PyObject_GetAttrString(runtimeModule(), "compile_equation"));
-  ExecutionLimit limit;
+  auto compile = checked(PyObject_GetAttrString(runtimeModule(), "compile_numeric_equation"));
   auto function = checked(PyObject_CallFunction(compile.get(), "ssi", equation.globals.c_str(), equation.function.c_str(), (int)inputs.size()));
   std::vector<Sample> result;
   result.reserve(source->second->size());
+  // The AST compiler still validates every equation. Native inputs are already floats;
+  // call the compiled function directly without a Python conversion wrapper or argument tuple.
+  std::vector<PyPtr> args(inputs.size() + 2);
+  std::vector<PyObject *> argv(args.size());
+  auto setArg = [&](size_t index, double value) {
+    args[index] = checked(PyFloat_FromDouble(value));
+    argv[index] = args[index].get();
+  };
   for (const auto &sample : *source->second) {
-    limit.reset();
-    auto args = checked(PyTuple_New(inputs.size() + 2));
-    PyTuple_SET_ITEM(args.get(), 0, checked(PyFloat_FromDouble(sample.x)).release());
-    PyTuple_SET_ITEM(args.get(), 1, checked(PyFloat_FromDouble(sample.y)).release());
+    setArg(0, sample.x);
+    setArg(1, sample.y);
     for (size_t i = 0; i < inputs.size(); ++i) {
-      PyTuple_SET_ITEM(args.get(), i + 2, checked(PyFloat_FromDouble(nearestValue(*inputs[i], sample.x))).release());
+      setArg(i + 2, nearestValue(*inputs[i], sample.x));
     }
-    auto output = checked(PyObject_CallObject(function.get(), args.get()));
+    auto output = checked(PyObject_Vectorcall(function.get(), argv.data(), argv.size(), nullptr));
     double time = sample.x;
     PyObject *value = output.get();
     if (PyTuple_Check(value)) {

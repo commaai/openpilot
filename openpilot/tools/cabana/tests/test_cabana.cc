@@ -691,6 +691,16 @@ void test_layout_equations() {
   REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[2].y == 60);  // state resets when reloading earlier data
   equation.function = "return time + 1, abs(value)";
   REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].x == 1);
+  // Native vector calls must preserve state, tuple results, filtering, and time ordering.
+  equation.function = "return -time, value";
+  const auto reversed = cabana::evaluateEquation(equation, snapshotFields(data));
+  REQUIRE(reversed.size() == 3);
+  REQUIRE(reversed[0].x == -2 && reversed[0].y == 30);
+  REQUIRE(reversed[2].x == 0 && reversed[2].y == 10);
+  equation.function = "return value if value > 10 else math.nan";
+  const auto filtered = cabana::evaluateEquation(equation, snapshotFields(data));
+  REQUIRE(filtered.size() == 2);
+  REQUIRE(filtered[0].y == 20 && filtered[1].y == 30);
   equation.globals = "offset = math.sqrt(4)";
   equation.function = "return (value + v1) / offset";
   REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].y == 5);
