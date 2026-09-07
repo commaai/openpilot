@@ -877,11 +877,9 @@ void MainWindow::drawVideoPanel() {
   setNextPanelClass();
   const bool video_open = beginPanel(name.c_str(), &video_visible_);
   const bool floating = floatingOut();
-  if (!video_widget_) {
-    if (video_open && wait_dlg_.open) ImGui::TextDisabled("Loading route...");
-  } else if (!video_open) {
+  if (video_widget_ && !video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
-  } else {
+  } else if (video_widget_) {
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const bool live = can->liveStreaming();
     // the bordered child pads its content, so the heights the widget asks for grow by the padding
