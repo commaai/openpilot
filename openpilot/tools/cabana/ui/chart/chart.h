@@ -58,6 +58,8 @@ public:
   void adoptSignal(SigItem s);
   void setDropHighlight(bool highlight) { can_drop_ = highlight; }
   const std::vector<SigItem> &signals() const { return sigs_; }
+  // every signal on this chart, time-aligned onto one shared, zero-order-held axis
+  void exportToCSV(const std::string &file_name) const;
   const ImRect &rect() const { return layout_.rect; }  // the whole chart widget, screen coordinates
   bool plotHovered() const { return layout_.plot_hovered; }
   double secondsAtPoint(const ImVec2 &pt) const {
