@@ -114,7 +114,7 @@ void CameraWidget::paint() {
     // mirror cabin camera horizontally
     std::swap(placement.uv0.x, placement.uv1.x);
   }
-  p->AddImageRounded(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
+  p->AddImage(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE);
 }
 
 void CameraWidget::vipcThread() {
