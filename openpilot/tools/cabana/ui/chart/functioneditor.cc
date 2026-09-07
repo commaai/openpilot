@@ -45,17 +45,17 @@ void ChartsWidget::drawFunctionEditor() {
   const float content_bottom = ImGui::GetCursorPosY() + ImGui::GetContentRegionAvail().y;
   const float footer_height = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetTextLineHeight() + 4 * style.ItemSpacing.y + 1;
   const float footer_top = content_bottom - footer_height;
-  if (ImGui::BeginChild("function_body", ImVec2(0, std::max(1.0f, footer_top - ImGui::GetCursorPosY() - style.ItemSpacing.y)))) {
+  if (ImGui::BeginChild("function_body", ImVec2(0, std::max(1.0f, footer_top - ImGui::GetCursorPosY() - style.ItemSpacing.y)),
+                        ImGuiChildFlags_AlwaysUseWindowPadding)) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Inputs");
     alignRight(iconButtonWidth());
     if (iconButton("add_input", icon::PLUS_LG, "Add input")) e.additional.emplace_back();
     int remove_input = -1;
-    if (ImGui::BeginTable("inputs", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX)) {
+    if (ImGui::BeginTable("inputs", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX)) {
       ImGui::TableSetupColumn("Variable", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("value").x);
       ImGui::TableSetupColumn("Signal", ImGuiTableColumnFlags_WidthStretch);
-      ImGui::TableSetupColumn("Browse", ImGuiTableColumnFlags_WidthFixed, iconButtonWidth());
-      ImGui::TableSetupColumn("Remove", ImGuiTableColumnFlags_WidthFixed, iconButtonWidth());
+      ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, iconButtonWidth() * 2 + style.ItemInnerSpacing.x);
       auto signalInput = [&](const char *label, std::string &path, int index) {
         ImGui::PushID(index);
         ImGui::TableNextRow();
@@ -91,7 +91,7 @@ void ChartsWidget::drawFunctionEditor() {
           ImGui::EndChild();
           ImGui::EndPopup();
         }
-        ImGui::TableNextColumn();
+        ImGui::SameLine(0, style.ItemInnerSpacing.x);
         ImGui::BeginDisabled(index < 0);
         if (iconButton("remove", icon::X_LG)) remove_input = index;
         ImGui::EndDisabled();
