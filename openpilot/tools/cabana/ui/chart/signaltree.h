@@ -20,9 +20,10 @@ public:
     std::vector<size_t> children;
     size_t matches = 0;
     bool signal_matches = false;
+    bool custom = false;
   };
 
-  void rebuild(const std::vector<std::string> &paths) {
+  void rebuild(const std::vector<std::string> &paths, const std::unordered_set<std::string> &custom_paths = {}) {
     nodes = {Node{}};
     std::unordered_map<std::string, size_t> indices;
     for (const auto &path : paths) {
@@ -41,6 +42,7 @@ public:
           nodes[parent].children.push_back(index);
           nodes.push_back(std::move(node));
         }
+        nodes[index].custom |= custom_paths.count(path) != 0;
         parent = index;
         start = end == std::string::npos ? end : path.find_first_not_of('/', end);
       }
@@ -48,7 +50,9 @@ public:
     }
     for (auto &node : nodes) {
       std::sort(node.children.begin(), node.children.end(), [&](size_t a, size_t b) {
+        if (nodes[a].custom != nodes[b].custom) return nodes[a].custom;
         const auto &left = nodes[a].name, &right = nodes[b].name;
+        if (nodes[a].custom) return left < right;
         const bool left_index = isIndex(left), right_index = isIndex(right);
         if (left_index != right_index) return left_index;
         if (left_index && left.size() != right.size()) return left.size() < right.size();
