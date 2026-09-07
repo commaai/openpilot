@@ -1,0 +1,131 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "haversine distance [m]",
+            "signal": "haversine distance [m]",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/vEgo",
+            "signal": "/carState/vEgo",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#17becf"
+          },
+          {
+            "path": "/gpsLocationExternal/speed",
+            "signal": "/gpsLocationExternal/speed",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#bcbd22"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/0",
+            "signal": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/0",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#d62728"
+          },
+          {
+            "path": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/1",
+            "signal": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/1",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1ac938"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/horizontalAccuracy",
+            "signal": "/gpsLocationExternal/horizontalAccuracy",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ff7f0e"
+          },
+          {
+            "path": "/gpsLocationExternal/verticalAccuracy",
+            "signal": "/gpsLocationExternal/verticalAccuracy",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/gpsLocationExternal/speedAccuracy",
+            "signal": "/gpsLocationExternal/speedAccuracy",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#9467bd"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": [
+    {
+      "name": "haversine distance [m]",
+      "source": "/gpsLocationExternal/latitude",
+      "globals": "R = 6378.137  # Earth radius in km",
+      "function": "lat1, lon1, lat2, lon2 = map(math.radians, (value, v1, v2, v3))\na = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2\na = min(1.0, max(0.0, a))\nreturn R * 2000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))",
+      "additional": [
+        "/gpsLocationExternal/longitude",
+        "/liveLocationKalmanDEPRECATED/positionGeodetic/value/0",
+        "/liveLocationKalmanDEPRECATED/positionGeodetic/value/1"
+      ],
+      "legacy_lua_hash": "450a8d147f51006b9fe885e152d3e5de62478148f4a54e8002fac343afc5ce4a",
+      "language": "python"
+    }
+  ]
+}

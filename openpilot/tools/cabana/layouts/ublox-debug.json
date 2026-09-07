@@ -1,0 +1,61 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/horizontalAccuracy",
+            "signal": "/gpsLocationExternal/horizontalAccuracy",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1f77b4"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gpsLocationExternal/flags",
+            "signal": "/gpsLocationExternal/flags",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/ubloxGnss/measurementReport/numMeas",
+            "signal": "/ubloxGnss/measurementReport/numMeas",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1ac938"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

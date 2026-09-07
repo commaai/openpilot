@@ -1,0 +1,209 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/deviceMotion/inputsOK",
+            "signal": "/deviceMotion/inputsOK",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/accelerometer/acceleration/v/0",
+            "signal": "/accelerometer/acceleration/v/0",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/accelerometer/acceleration/v/1",
+            "signal": "/accelerometer/acceleration/v/1",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#9467bd"
+          },
+          {
+            "path": "/accelerometer/acceleration/v/2",
+            "signal": "/accelerometer/acceleration/v/2",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#17becf"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gyroscope/gyroUncalibrated/v/0",
+            "signal": "/gyroscope/gyroUncalibrated/v/0",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#d62728"
+          },
+          {
+            "path": "/gyroscope/gyroUncalibrated/v/1",
+            "signal": "/gyroscope/gyroUncalibrated/v/1",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1ac938"
+          },
+          {
+            "path": "/gyroscope/gyroUncalibrated/v/2",
+            "signal": "/gyroscope/gyroUncalibrated/v/2",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ff7f0e"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/accelerometer/__valid",
+            "signal": "/accelerometer/__valid",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#17becf"
+          },
+          {
+            "path": "/gyroscope/__valid",
+            "signal": "/gyroscope/__valid",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#bcbd22"
+          },
+          {
+            "path": "/carState/__valid",
+            "signal": "/carState/__valid",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/extrinsicsCalibration/__valid",
+            "signal": "/extrinsicsCalibration/__valid",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1ac938"
+          },
+          {
+            "path": "/cameraOdometry/__valid",
+            "signal": "/cameraOdometry/__valid",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#9467bd"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/gyroscope/__logMonoTime",
+            "signal": "/gyroscope/__logMonoTime",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1f77b4"
+          },
+          {
+            "path": "/accelerometer/__logMonoTime",
+            "signal": "/accelerometer/__logMonoTime",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#d62728"
+          }
+        ]
+      },
+      {
+        "title": "...",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/accelerometer/timestamp",
+            "signal": "/accelerometer/timestamp",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#bcbd22"
+          },
+          {
+            "path": "/gyroscope/timestamp",
+            "signal": "/gyroscope/timestamp",
+            "visible": true,
+            "transform": 1,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#1f77b4"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "tab1"
+  ],
+  "equations": []
+}

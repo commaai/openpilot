@@ -1,4 +1,6 @@
 import os
+import sys
+import sysconfig
 
 import bootstrap_icons
 import imgui
@@ -8,6 +10,17 @@ from openpilot.common.basedir import BASEDIR
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
+
+python_libdir = sysconfig.get_config_var('LIBDIR')
+python_library = os.path.join(python_libdir, sysconfig.get_config_var('LDLIBRARY'))
+if not os.path.isfile(python_library):
+  python_library = os.path.join(sys.base_prefix, sysconfig.get_config_var('LDLIBRARY'))
+python_runtime_paths = list(dict.fromkeys([python_libdir, os.path.dirname(python_library)]))
+python_defines = [
+  ('CABANA_PYTHON_HOME', r'\"' + sys.base_prefix + r'\"'),
+  ('CABANA_PYTHON_SITE', r'\"' + sysconfig.get_path('purelib') + r'\"'),
+  ('CABANA_ANALYSIS_DIR', r'\"' + env.Dir('analysis').abspath + r'\"'),
+]
 
 # embed the bootstrap icons SVG into the binary
 def build_bootstrap_icons_src(target, source, env):
@@ -34,7 +47,8 @@ if arch != "Darwin":
 
 # imgui frontend (tools/cabana/ui), no Qt
 ui_env = env.Clone()
-ui_env['CPPPATH'] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
+ui_env['CPPPATH'] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR, sysconfig.get_config_var('INCLUDEPY')]
+ui_env.Append(CPPDEFINES=python_defines, RPATH=python_runtime_paths)
 ui_env['LIBPATH'] += [imgui.MESA_DIR, libusb.LIB_DIR]
 ui_env['CXXFLAGS'] += [
   opendbc_path,
@@ -45,7 +59,7 @@ ui_env['CXXFLAGS'] += [
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
 ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
-ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
+ui_libs = [File(python_library), replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
           ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
 if arch == "Darwin":
   ui_env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'Security', 'VideoToolbox']
@@ -56,6 +70,7 @@ cabana_ui = ui_env.Program('cabana', ui_objs, LIBS=ui_libs)
 if GetOption('extras'):
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
+  cabana_core_test_env.Append(CPPPATH=[sysconfig.get_config_var('INCLUDEPY')], CPPDEFINES=python_defines, RPATH=python_runtime_paths)
   cabana_core_test_objects = [
     cabana_core_test_env.Object('tests/cabana_core_tests', 'tests/test_cabana.cc'),
     cabana_core_test_env.Object('tests/cabana_telemetry', 'analysis/telemetry.cc'),
@@ -69,7 +84,7 @@ if GetOption('extras'):
     cabana_core_test_env.Object('tests/cabana_core_routes', 'routes.cc'),
     cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
   ]
-  cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[replay_lib, common, cereal, messaging])
+  cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[File(python_library), replay_lib, common, cereal, messaging])
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = ui_env.Command('#' + output_json_file,

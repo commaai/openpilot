@@ -1,0 +1,493 @@
+{
+  "cabana_layout": 3,
+  "columns": 1,
+  "range": 60,
+  "tabs": [
+    [
+      {
+        "title": "Velocity [m/s]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/vEgo",
+            "signal": "/carState/vEgo",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Curvature [1/m] True [blue] Vehicle Model [purple] Plan [green]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "engaged curvature plan",
+            "signal": "engaged curvature plan",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "engaged curvature vehicle model",
+            "signal": "engaged curvature vehicle model",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#785ef0"
+          },
+          {
+            "path": "engaged curvature yaw",
+            "signal": "engaged curvature yaw",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Roll [rad]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carControl/orientationNED/0",
+            "signal": "/carControl/orientationNED/0",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ffb000"
+          }
+        ]
+      },
+      {
+        "title": "Engaged [green] Steering Pressed [blue]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/selfdriveState/enabled",
+            "signal": "/selfdriveState/enabled",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "/carState/steeringPressed",
+            "signal": "/carState/steeringPressed",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Steering Limited: Rate [orange] Saturated [magenta]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "steering rate limited",
+            "signal": "steering rate limited",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ffb000"
+          },
+          {
+            "path": "/controlsState/lateralControlState/pidState/saturated",
+            "signal": "/controlsState/lateralControlState/pidState/saturated",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#dc267f"
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "title": "Velocity [m/s] True [blue] Plan [green] Cruise [magenta]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/cruiseState/speed",
+            "signal": "/carState/cruiseState/speed",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#dc267f"
+          },
+          {
+            "path": "/longitudinalPlan/speeds/0",
+            "signal": "/longitudinalPlan/speeds/0",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "/carState/vEgo",
+            "signal": "/carState/vEgo",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Acceleration [m/s^2] True [blue] Actuator [purple] Plan [green]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "engaged_accel_plan",
+            "signal": "engaged_accel_plan",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "engaged_accel_actuator",
+            "signal": "engaged_accel_actuator",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#785ef0"
+          },
+          {
+            "path": "engaged_accel_actual",
+            "signal": "engaged_accel_actual",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Pitch [rad]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carControl/orientationNED/1",
+            "signal": "/carControl/orientationNED/1",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ffb000"
+          }
+        ]
+      },
+      {
+        "title": "Engaged [green] Gas [orange] Brake [magenta]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carControl/enabled",
+            "signal": "/carControl/enabled",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "/carState/gasPressed",
+            "signal": "/carState/gasPressed",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ffb000"
+          },
+          {
+            "path": "/carState/brakePressed",
+            "signal": "/carState/brakePressed",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#dc267f"
+          }
+        ]
+      },
+      {
+        "title": "State [blue: off,pid,stop,start] Source [green: cruise,lead0,lead1,lead2,e2e]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carControl/actuators/longControlState",
+            "signal": "/carControl/actuators/longControlState",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          },
+          {
+            "path": "/longitudinalPlan/longitudinalPlanSource",
+            "signal": "/longitudinalPlan/longitudinalPlanSource",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "title": "Controller F [magenta] P [purple] I [blue]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/controlsState/lateralControlState/pidState/f",
+            "signal": "/controlsState/lateralControlState/pidState/f",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#f14cc1"
+          },
+          {
+            "path": "/controlsState/lateralControlState/pidState/p",
+            "signal": "/controlsState/lateralControlState/pidState/p",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#9467bd"
+          },
+          {
+            "path": "/controlsState/lateralControlState/pidState/i",
+            "signal": "/controlsState/lateralControlState/pidState/i",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#17becf"
+          }
+        ]
+      },
+      {
+        "title": "Driver Torque [blue] EPS Torque [green]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carState/steeringTorqueEps",
+            "signal": "/carState/steeringTorqueEps",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "/carState/steeringTorque",
+            "signal": "/carState/steeringTorque",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Engaged [green] Steering Pressed [blue]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "/carControl/enabled",
+            "signal": "/carControl/enabled",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#009e73"
+          },
+          {
+            "path": "/carState/steeringPressed",
+            "signal": "/carState/steeringPressed",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#0072b2"
+          }
+        ]
+      },
+      {
+        "title": "Steering Limited: Rate [orange] Saturated [magenta]",
+        "type": 0,
+        "signals": [
+          {
+            "path": "steering rate limited",
+            "signal": "steering rate limited",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#ffb000"
+          },
+          {
+            "path": "/controlsState/lateralControlState/pidState/saturated",
+            "signal": "/controlsState/lateralControlState/pidState/saturated",
+            "visible": true,
+            "transform": 0,
+            "scale": 1,
+            "offset": 0,
+            "window": 10,
+            "color": "#dc267f"
+          }
+        ]
+      }
+    ]
+  ],
+  "tab_names": [
+    "Lateral",
+    "Longitudinal",
+    "Lateral Debug"
+  ],
+  "equations": [
+    {
+      "name": "engaged curvature yaw",
+      "source": "/carControl/angularVelocity/2",
+      "globals": "engage_delay = 5\nlast_bad_time = -engage_delay",
+      "function": "global last_bad_time\nif v1 == 1 or v2 == 0:\n  last_bad_time = time\nif time > last_bad_time + engage_delay:\n  return value / v3 if v3 != 0 else math.nan\nreturn 0",
+      "additional": [
+        "/carState/steeringPressed",
+        "/carControl/enabled",
+        "/carState/vEgo"
+      ],
+      "legacy_lua_hash": "e320975ce21a70380ee3189ad726c4dada35d07a032378e2f953d6c676f64ed7",
+      "language": "python"
+    },
+    {
+      "name": "engaged curvature vehicle model",
+      "source": "/controlsState/curvature",
+      "globals": "engage_delay = 5\nlast_bad_time = -engage_delay",
+      "function": "global last_bad_time\nif v1 == 1 or v2 == 0:\n  last_bad_time = time\nif time > last_bad_time + engage_delay:\n  return value\nreturn 0",
+      "additional": [
+        "/carState/steeringPressed",
+        "/carControl/enabled"
+      ],
+      "legacy_lua_hash": "b81a6c8d9aedf328b5d13989634db86f37b039f70c5d1e1f760dac267868252d",
+      "language": "python"
+    },
+    {
+      "name": "engaged curvature plan",
+      "source": "/modelV2/action/desiredCurvature",
+      "globals": "engage_delay = 5\nlast_bad_time = -engage_delay",
+      "function": "global last_bad_time\nif v1 == 1 or v2 == 0:\n  last_bad_time = time\nif time > last_bad_time + engage_delay:\n  return value\nreturn 0",
+      "additional": [
+        "/carState/steeringPressed",
+        "/carControl/enabled"
+      ],
+      "legacy_lua_hash": "b81a6c8d9aedf328b5d13989634db86f37b039f70c5d1e1f760dac267868252d",
+      "language": "python"
+    },
+    {
+      "name": "engaged_accel_actual",
+      "source": "/carState/aEgo",
+      "globals": "engage_delay = 5\nlast_bad_time = -engage_delay",
+      "function": "global last_bad_time\nif v1 != 0 or v2 != 0 or v3 == 0:\n  last_bad_time = time\nif time > last_bad_time + engage_delay:\n  return value\nreturn 0",
+      "additional": [
+        "/carState/brakePressed",
+        "/carState/gasPressed",
+        "/carControl/enabled"
+      ],
+      "legacy_lua_hash": "f0a07c0d52fc865b241f140f6c715f8e3e1ad41b3753cadcaed04d6a15ecc2a9",
+      "language": "python"
+    },
+    {
+      "name": "engaged_accel_plan",
+      "source": "/longitudinalPlan/accels/0",
+      "globals": "engage_delay = 5\nlast_bad_time = -engage_delay",
+      "function": "global last_bad_time\nif v1 != 0 or v2 != 0 or v3 == 0:\n  last_bad_time = time\nif time > last_bad_time + engage_delay:\n  return value\nreturn 0",
+      "additional": [
+        "/carState/brakePressed",
+        "/carState/gasPressed",
+        "/carControl/enabled"
+      ],
+      "legacy_lua_hash": "f0a07c0d52fc865b241f140f6c715f8e3e1ad41b3753cadcaed04d6a15ecc2a9",
+      "language": "python"
+    },
+    {
+      "name": "engaged_accel_actuator",
+      "source": "/carControl/actuators/accel",
+      "globals": "engage_delay = 5\nlast_bad_time = -engage_delay",
+      "function": "global last_bad_time\nif v1 != 0 or v2 != 0 or v3 == 0:\n  last_bad_time = time\nif time > last_bad_time + engage_delay:\n  return value\nreturn 0",
+      "additional": [
+        "/carState/brakePressed",
+        "/carState/gasPressed",
+        "/carControl/enabled"
+      ],
+      "legacy_lua_hash": "f0a07c0d52fc865b241f140f6c715f8e3e1ad41b3753cadcaed04d6a15ecc2a9",
+      "language": "python"
+    },
+    {
+      "name": "steering rate limited",
+      "source": "/carControl/actuators/torque",
+      "globals": "",
+      "function": "return int(abs(value - v1) > 0.001 or abs(v2 - v3) > 0.05)",
+      "additional": [
+        "/carOutput/actuatorsOutput/torque",
+        "/carControl/actuators/steeringAngleDeg",
+        "/carOutput/actuatorsOutput/steeringAngleDeg"
+      ],
+      "legacy_lua_hash": "cbf1ebd642391bd5ff558ea64f04f5247bb983309c9fee0bc8c5f7af1d90d930",
+      "language": "python"
+    }
+  ]
+}

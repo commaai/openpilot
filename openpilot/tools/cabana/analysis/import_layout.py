@@ -6,6 +6,11 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+try:
+  from .cabana_equations import port_equation
+except ImportError:
+  from cabana_equations import port_equation
+
 
 def number(value, default=0):
   result = float(value) if value is not None else default
@@ -62,10 +67,11 @@ def import_layout(path):
   equations = []
   for snippet in root.findall("./customMathEquations/snippet"):
     additional = snippet.find("additional_sources")
-    equations.append(dict(name=snippet.attrib["name"], source=snippet.findtext("linked_source", "").strip(),
-                          globals=snippet.findtext("global", ""), function=snippet.findtext("function", ""),
+    globals_code, function_code = port_equation(snippet.findtext("global", ""), snippet.findtext("function", ""))
+    equations.append(dict(language="python", name=snippet.attrib["name"], source=snippet.findtext("linked_source", "").strip(),
+                          globals=globals_code, function=function_code,
                           additional=[] if additional is None else [(v.text or "").strip() for v in additional]))
-  return dict(cabana_layout=2, columns=1, range=60, tabs=tabs, tab_names=names, equations=equations)
+  return dict(cabana_layout=3, columns=1, range=60, tabs=tabs, tab_names=names, equations=equations)
 
 
 if __name__ == "__main__":
