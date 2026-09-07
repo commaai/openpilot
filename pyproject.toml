@@ -43,7 +43,6 @@ dependencies = [
   "inputs",
 
   # these should be removed
-  "sentry-sdk",
   "setproctitle",
   "jeepney",
   "zstandard",  # this can go once we're on Python 3.14+

@@ -19,16 +19,14 @@ import shutil
 import sys
 import tempfile
 
-import zstandard as zstd
-
 from openpilot.common.hardware.hw import Paths
-from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
-from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.url_file import URLFile
 
 
 def api_call(func):
   """Run an API call, outputting JSON result or error to stdout."""
+  from openpilot.tools.lib.api import CommaApi, UnauthorizedError, APIError
+  from openpilot.tools.lib.auth_config import get_token
+
   try:
     result = func(CommaApi(get_token()))
     json.dump(result, sys.stdout)
@@ -62,6 +60,7 @@ def make_decompressor(compression):
   if compression == 'bz2':
     return bz2.BZ2Decompressor()
   if compression == 'zst':
+    import zstandard as zstd
     return zstd.ZstdDecompressor().decompressobj()
   raise ValueError(f"Unsupported compression type: {compression}")
 
@@ -126,6 +125,7 @@ def cmd_download(args):
   try:
     # Stream the file in a single HTTP request instead of making
     # a separate Range request per chunk (which was very slow).
+    from openpilot.tools.lib.url_file import URLFile
     pool = URLFile.pool_manager()
     r = pool.request("GET", url, preload_content=False)
     if r.status not in (200, 206):
