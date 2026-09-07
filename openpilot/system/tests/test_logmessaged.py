@@ -1,15 +1,15 @@
-from concurrent.futures import ThreadPoolExecutor
-import json
-from pathlib import Path
-import subprocess
-import time
 import sys
+import json
+import time
+import subprocess
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
+from openpilot.common.hardware.hw import Paths
 import openpilot.cereal.messaging as messaging
 from openpilot.common.shm_queue import ShmQueue
-from openpilot.common.hardware.hw import Paths
-from openpilot.common.swaglog import cloudlog, ipchandler
 from openpilot.common.test import OpenpilotTestCase
+from openpilot.common.swaglog import cloudlog, ipchandler
 from openpilot.system.manager.process_config import managed_processes
 
 NATIVE = Path(__file__).resolve().parents[2] / 'common/tests/test_swaglog'
@@ -71,6 +71,8 @@ class TestLogmessaged(OpenpilotTestCase):
     # No consumer ran during the burst, so accepted files retain any overfill.
     usage = sum(p.stat().st_blocks * 512 + ShmQueue.PAGE_SIZE for p in self.queue.ready.iterdir())
     assert self.queue.capacity // 2 < usage <= 2 * self.queue.capacity
+    # Fits individually, but must be dropped because the spool is already over half full.
+    cloudlog.info('x' * (self.queue.capacity // 2))
     while (data := self.queue.receive()) is not None:
       assert json.loads(data[1:])['msg'] == message
     assert not list(self.queue.pending.iterdir())

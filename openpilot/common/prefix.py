@@ -1,11 +1,11 @@
 import os
-import platform
-import shutil
 import uuid
+import shutil
+import platform
 
 
-from openpilot.common.params import Params
 from openpilot.common.hardware import PC
+from openpilot.common.params import Params
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 

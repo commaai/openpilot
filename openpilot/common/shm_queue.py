@@ -1,8 +1,8 @@
 import os
-from pathlib import Path
 import re
-import tempfile
 import time
+import tempfile
+from pathlib import Path
 
 
 class ShmQueue:

@@ -23,74 +23,105 @@ public:
 
   bool send(const std::string &data) const {
     const long page_size = sysconf(_SC_PAGESIZE);
-    if (page_size <= 0 || data.size() > capacity || charge(data.size(), page_size) > capacity) return false;
-    const std::string pending = path + "/pending", ready = path + "/ready";
-    for (const auto &dir : {path, pending, ready}) {
-      if (mkdir(dir.c_str(), 0700) != 0 && errno != EEXIST) return false;
+    if (page_size <= 0 || data.size() > capacity || storage_cost(data.size(), page_size) > capacity) return false;
+
+    const std::string pending_dir = path + "/pending";
+    const std::string ready_dir = path + "/ready";
+    for (const auto &directory : {path, pending_dir, ready_dir}) {
+      if (mkdir(directory.c_str(), 0700) != 0 && errno != EEXIST) return false;
     }
+
     struct timespec now = {};
     if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return false;
     const auto timestamp = static_cast<unsigned long long>(now.tv_sec) * 1000000000ULL + now.tv_nsec;
     char name[128];
     snprintf(name, sizeof(name), "%020llu-%ld-%zu-XXXXXX", timestamp, static_cast<long>(getpid()), data.size());
-    std::string temporary = pending + "/" + name;
-    const int fd = mkstemp(temporary.data());
+    std::string pending_path = pending_dir + "/" + name;
+    const int fd = mkstemp(pending_path.data());
     if (fd < 0) return false;
-    bool ok = fcntl(fd, F_SETFD, FD_CLOEXEC) == 0;
-    size_t used = 0;
-    // A file moving from pending to ready can be counted twice, never missed.
-    if (ok) ok = count_bytes(pending, page_size, used) && count_bytes(ready, page_size, used);
-    size_t offset = 0;
-    while (ok && offset < data.size()) {
-      const ssize_t written = write(fd, data.data() + offset, data.size() - offset);
-      if (written < 0 && errno == EINTR) continue;
-      if (written <= 0) ok = false;
-      else offset += written;
+
+    bool success = fcntl(fd, F_SETFD, FD_CLOEXEC) == 0;
+    if (success) {
+      size_t used = 0;
+      // Reserve before writing. Scan pending first so publication can only overcount.
+      success = check_capacity(pending_dir, page_size, used) && check_capacity(ready_dir, page_size, used);
     }
-    if (close(fd) != 0) ok = false;
-    if (ok) ok = rename(temporary.c_str(), (ready + temporary.substr(pending.size())).c_str()) == 0;
-    if (!ok) unlink(temporary.c_str());
-    return ok;
+    if (success) {
+      success = write_all(fd, data);
+    }
+    // Always close, including when the capacity check or write failed.
+    if (close(fd) != 0) {
+      success = false;
+    }
+    if (success) {
+      const std::string filename = pending_path.substr(pending_dir.size() + 1);
+      const std::string ready_path = ready_dir + "/" + filename;
+      success = rename(pending_path.c_str(), ready_path.c_str()) == 0;
+    }
+    if (!success) {
+      unlink(pending_path.c_str());
+    }
+    return success;
   }
 
 private:
-  static size_t charge(size_t size, size_t page_size) {
-    return (1 + (size + page_size - 1) / page_size) * page_size;
+  static size_t storage_cost(size_t payload_size, size_t page_size) {
+    const size_t payload_pages = (payload_size + page_size - 1) / page_size;
+    return (payload_pages + 1) * page_size;  // One extra page for file metadata.
   }
 
-  bool count_bytes(const std::string &directory, size_t page_size, size_t &used) const {
+  static bool write_all(int fd, const std::string &data) {
+    size_t offset = 0;
+    while (offset < data.size()) {
+      const ssize_t written = write(fd, data.data() + offset, data.size() - offset);
+      if (written < 0 && errno == EINTR) continue;
+      if (written <= 0) return false;
+      offset += written;
+    }
+    return true;
+  }
+
+  // Consume a decimal number and its trailing '-' from the filename.
+  static bool read_field(std::string_view &name, uint64_t &value) {
+    const size_t separator = name.find('-');
+    if (separator == std::string_view::npos || separator == 0) return false;
+    const auto result = std::from_chars(name.data(), name.data() + separator, value);
+    if (result.ec != std::errc() || result.ptr != name.data() + separator) return false;
+    name.remove_prefix(separator + 1);
+    return true;
+  }
+
+  static bool parse_payload_size(std::string_view name, uint64_t &payload_size) {
+    // Filename: <20-digit monotonic timestamp>-<pid>-<payload bytes>-<random suffix>.
+    if (name.find('-') != 20) return false;
+    uint64_t timestamp = 0;
+    uint64_t pid = 0;
+    if (!read_field(name, timestamp) || !read_field(name, pid) || !read_field(name, payload_size)) return false;
+    return pid != 0 && !name.empty() && name.find('-') == std::string_view::npos;
+  }
+
+  bool check_capacity(const std::string &directory, size_t page_size, size_t &used) const {
     DIR *dir = opendir(directory.c_str());
     if (dir == nullptr) return false;
-    bool ok = true;
-    while (ok) {
+
+    bool success = true;
+    while (true) {
       errno = 0;
       const auto *entry = readdir(dir);
       if (entry == nullptr) {
-        ok = errno == 0;
+        success = errno == 0;
         break;
       }
-      std::string_view name(entry->d_name);
-      uint64_t fields[3] = {};
-      bool valid = true;
-      for (int i = 0; i < 3; ++i) {
-        const auto end = name.find('-');
-        if (end == std::string_view::npos || end == 0 || (i == 0 && end != 20)) {
-          valid = false;
-          break;
-        }
-        const auto result = std::from_chars(name.data(), name.data() + end, fields[i]);
-        if (result.ec != std::errc() || result.ptr != name.data() + end) {
-          valid = false;
-          break;
-        }
-        name.remove_prefix(end + 1);
+      uint64_t payload_size = 0;
+      if (!parse_payload_size(entry->d_name, payload_size)) continue;
+      if (payload_size > capacity || storage_cost(payload_size, page_size) > capacity - used) {
+        success = false;
+        break;
       }
-      if (!valid || fields[1] == 0 || name.empty() || name.find('-') != std::string_view::npos) continue;
-      if (fields[2] > capacity || charge(fields[2], page_size) > capacity - used) ok = false;
-      else used += charge(fields[2], page_size);
+      used += storage_cost(payload_size, page_size);
     }
     closedir(dir);
-    return ok;
+    return success;
   }
 
   const std::string path;

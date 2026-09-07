@@ -1,12 +1,12 @@
-import logging
 import os
 import time
+import logging
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
 
-from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.shm_queue import ShmQueue
+from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 
 
 def get_file_handler():

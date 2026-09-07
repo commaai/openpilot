@@ -2,11 +2,11 @@
 import time
 from typing import NoReturn
 
-import openpilot.cereal.messaging as messaging
-from openpilot.common.logging_extra import SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.swaglog import get_file_handler
+import openpilot.cereal.messaging as messaging
 from openpilot.common.shm_queue import ShmQueue
+from openpilot.common.swaglog import get_file_handler
+from openpilot.common.logging_extra import SwagLogFileFormatter
 
 
 def main() -> NoReturn:
