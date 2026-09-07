@@ -99,6 +99,7 @@ void applyTheme(int theme) {
   style.WindowBorderSize = 1.0f;
   style.FrameBorderSize = 1.0f;
   style.TabBorderSize = 1.0f;
+  style.TabCloseButtonMinWidthUnselected = -1.0f;  // Keep close buttons visible on inactive tabs, including dock panels.
   style.WindowPadding = ImVec2(12.0f, 10.0f);
   style.FramePadding = ImVec2(9.0f, 5.0f);
   style.ItemSpacing = ImVec2(10.0f, 8.0f);
