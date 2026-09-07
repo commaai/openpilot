@@ -142,6 +142,17 @@ the visible time range. These operations affect chart values only.
 
 ### Saved layouts and equations
 
+Use **Functions → New Function** to build a custom signal. Enter a unique name, browse for
+its primary signal, and write a Python function body, for example `return value * 2.23694`
+to convert `/carState/vEgo` to mph. Add inputs to use `v1`, `v2`, and so on; expand
+**Global code** for imports or initial state. You can also type paths for signals that have
+not loaded yet. **Plot in a new chart** displays the result immediately.
+
+Saved functions appear in the **Functions** menu for editing and in the signal browser for
+plotting. Editing recalculates existing plots and dependent functions. Names stay fixed because
+other signals and charts refer to them. Use **Layout → Save Layout** to keep the definitions.
+
+
 **Layout → Open Layout** accepts Cabana JSON. The bundled presets use Python equations
 and preserve named tabs, chart titles, overlaid curves, colors, line styles, fixed Y limits,
 and scale/offset transforms. Panels are arranged in Cabana's chart grid.
