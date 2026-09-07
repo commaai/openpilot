@@ -296,7 +296,7 @@ void BinaryView::draw() {
   }
 
   const int rows = row_count_;
-  // the cells shrink with the panel down to the width of a byte ("FF" plus margins), then the view scrolls
+  // Keep hex bytes readable in narrow panels by scrolling instead of shrinking further.
   const float min_column_width = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
   const float width = std::max(ImGui::GetContentRegionAvail().x, VERTICAL_HEADER_WIDTH + min_column_width * COLUMN_COUNT);
   column_width_ = std::max(min_column_width, (width - VERTICAL_HEADER_WIDTH) / COLUMN_COUNT);

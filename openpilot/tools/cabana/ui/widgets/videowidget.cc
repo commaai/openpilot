@@ -164,7 +164,6 @@ void VideoWidget::drawPlaybackController() {
     pushMonoFont(ImGui::GetFontSize());
     const float time_width = ImGui::CalcTextSize(time_text.c_str()).x;
     popMonoFont();
-    // a readout, not a button: a click still toggles between elapsed and absolute time
     items.push_back({time_width,
                      [&]() {
                        pushMonoFont(ImGui::GetFontSize());
@@ -187,7 +186,7 @@ void VideoWidget::drawPlaybackController() {
       ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + 4.0f), ImVec2(x, min.y + ImGui::GetFrameHeight() - 4.0f), ImGui::GetColorU32(ImGuiCol_Separator));
     }};
     item.in_menu = false;
-    item.tight = true;  // the separator and the item after it sit close, like the sides of a border
+    item.tight = true;
     return item;
   };
   const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
@@ -197,7 +196,7 @@ void VideoWidget::drawPlaybackController() {
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
   }
   items.push_back({speed_width, [&]() { drawSpeedDropdown(speed_width); }, "Speed"});
-  items.back().tight = true;  // with the loop button, like the playback buttons
+  items.back().tight = true;
   items.back().submenu = [this]() { drawSpeedMenuItems(); };
   if (!can->liveStreaming()) {
     items.push_back(separator());

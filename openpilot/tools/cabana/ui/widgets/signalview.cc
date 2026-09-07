@@ -313,7 +313,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
       // signal value
       rect.Min.x += value_adjust;
     }
-    // the value sits against the buttons in the mono font, so it keeps its width as the digits tick
+    // Monospaced digits prevent the value width from changing during playback.
     rect.Max.x -= button_size_.x;
     pushMonoFont(ImGui::GetFontSize());
     if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, true);
@@ -494,8 +494,7 @@ void SignalView::drawValueDescriptionDlg() {
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, SPARKLINE_RANGE_MAX);
 
-  // seed the size of the [plot][remove] widget (two 22px tool buttons plus the spacing) so the first
-  // updateState() calls already leave room for the sparklines
+  // Reserve button space for updateState() calls before the first draw.
   button_size_ = ImVec2(26 * 2 + 4 * 2, 26);
   updateToolBar();
 
@@ -685,8 +684,6 @@ float SignalView::minimumWidth() {
 }
 
 void SignalView::draw() {
-  // a card nested in the message card: recessed in the window color so it stands out from the surface
-  // (the children inside keep the same background)
   ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
     ImGui::EndChild();
@@ -874,7 +871,6 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   // plot_btn + remove_btn, right aligned in the value column
   const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-  // the same spacing between the two buttons and between the last one and the edge (the scrollbar)
   const ImVec2 size(iconButtonWidth() * 2 + spacing * 2, iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 

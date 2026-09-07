@@ -5,8 +5,8 @@
 
 #include "tools/cabana/core/color.h"
 
-// The colors of the active theme. Palette from commaai/connect src/colors.js and src/theme.js (7091050):
-// connect defines the dark mode, the light mode uses its lightGrey and lightBlue families.
+// Palette source: commaai/connect src/{colors,theme}.js at 7091050.
+// Dark colors follow connect; light colors use its lightGrey and lightBlue families.
 struct Palette {
   ImVec4 text, text_disabled;
   ImVec4 window;   // the background behind panels and docked windows
@@ -31,9 +31,9 @@ inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g /
 inline ImU32 withAlpha(ImU32 c, int alpha) { return (c & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT); }
 
 void loadFonts();
-void applyTheme(int theme);  // sets the imgui and implot styles from the palette; safe to call at runtime
-bool isDarkTheme();  // the theme applyTheme() resolved
-const Palette &palette();  // the palette applyTheme() resolved
+void applyTheme(int theme);  // Safe to call at runtime.
+bool isDarkTheme();
+const Palette &palette();
 
 // the fill behind a signal's bits and rows
 CabanaColor signalFillColor(const CabanaColor &c);

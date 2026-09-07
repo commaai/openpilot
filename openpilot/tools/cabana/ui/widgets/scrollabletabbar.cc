@@ -9,7 +9,6 @@
 namespace {
 float scrollButtonsWidth() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  // the spacing before the pair and the two buttons, flush with the right edge
   return style.ItemSpacing.x + ImGui::GetFrameHeight() * 2.0f + style.ItemInnerSpacing.x;
 }
 

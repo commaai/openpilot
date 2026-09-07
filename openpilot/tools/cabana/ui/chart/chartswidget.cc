@@ -226,7 +226,7 @@ void ChartsWidget::drawToolBar() {
     }});
     slider_index = items.size();
     items.push_back({slider_width, [this, &slider_width]() {
-      // in the ">>" menu the slider spans the menu like the entries, in the bar it takes its shrunk width
+      // Restore the slider width in overflow; the toolbar may have shrunk it.
       const bool in_menu = ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_Popup;
       const float width = in_menu ? std::max(ImGui::GetContentRegionAvail().x, 150.0f) : slider_width;
       if (range_slider_.draw("##range_slider", width)) setMaxChartRange(range_slider_.value());
@@ -622,7 +622,6 @@ void ChartsWidget::draw() {
 void ChartsContainer::draw() {
   ImGuiWindow *window = ImGui::GetCurrentWindow();
   const ImVec2 start = ImGui::GetCursorScreenPos();
-  // the charts keep clear of the scrollbar by the inner spacing, like the buttons of a group
   const float width_avail = window->InnerRect.GetWidth() - (window->ScrollbarY ? ImGui::GetStyle().ItemInnerSpacing.x : 0.0f);
   geometry_ = ImRect(start, start + ImVec2(width_avail, 0));
   charts_widget_->updateLayout();

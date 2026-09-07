@@ -67,10 +67,7 @@ int doubleValidator(ImGuiInputTextCallbackData *data);
 int ipValidator(ImGuiInputTextCallbackData *data);
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 
-// Buttons are one frame height tall with the style's padding and rounding:
-//   ImGui::Button  a framed text button
-//   iconButton     a framed square icon button
-// Adjacent buttons of a group are ItemInnerSpacing apart, groups are ItemSpacing apart.
+// Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
 float iconButtonWidth();  // the side of a square icon button
 
@@ -162,20 +159,18 @@ struct ToolbarItem {
 // An icon button and its overflow menu action share a label, callback, and enabled state.
 ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger,
                           bool enabled = true, bool tight = false);
-float toolbarButtonWidth(const std::string &label);  // a text button
+float toolbarButtonWidth(const std::string &label);
 // the width of every item plus the spacing between neighbors and the two groups
 float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);
 // items before spacer_index sit at the left, the rest are right aligned; the overflow goes into the ">>" menu
 // width < 0 uses the available content width.
 void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, float width = -1.0f);
 
-// an auto-raise button that opens `popup_id` below itself, with a dropdown arrow after the text. width 0:
+// Opens `popup_id` below the button on press. width 0:
 // sized to the text, otherwise the text and the arrow are centered in the button
 float menuButtonWidth(const std::string &text, bool bold = false);
 bool menuButton(const char *id, const std::string &text, const char *popup_id, bool bold = false, float width = 0.0f);
 
-// a 13x13 raised handle with a border
 void drawSliderHandle(ImDrawList *p, const ImRect &r);
 
-// full width groove, filled left of the handle, 13x13 handle
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width);

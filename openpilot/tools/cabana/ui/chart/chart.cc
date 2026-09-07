@@ -19,8 +19,8 @@ const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
 const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
 const double EPSILON = 1e-6;
-constexpr ImVec4 LAYOUT_MARGINS{0, 6, 0, 6};  // left, top, right, bottom: the content lines up with the tool bar
-constexpr int LEGEND_SPACING = 5;  // grip | marker | name: the same gap between each
+constexpr ImVec4 LAYOUT_MARGINS{0, 6, 0, 6};  // left, top, right, bottom
+constexpr int LEGEND_SPACING = 5;
 static inline bool xLessThan(const ImPlotPoint &p, double x) { return p.x < (x - EPSILON); }
 static inline bool isNull(const ImPlotPoint &p) { return p.x == 0 && p.y == 0; }
 
@@ -554,7 +554,6 @@ void ChartView::drawAxes() {
   ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(LAYOUT_MARGINS.x, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
-  // every tick is a 1 px grid line, the edge ticks close the box, no tick marks
   ImPlot::PushStyleColor(ImPlotCol_PlotBorder, palette().grid);
   ImPlot::PushStyleColor(ImPlotCol_AxisTick, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_AxisText, ImGui::GetStyleColorVec4(ImGuiCol_Text));

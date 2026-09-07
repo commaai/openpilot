@@ -1,6 +1,6 @@
 #pragma once
 
-// bootstrap icon glyphs, merged into the fonts by theme.cc
+// Bootstrap Icons codepoints; loadFonts() merges the icon font into each text font.
 namespace icon {
 constexpr const char ARROW_CLOCKWISE[]        = "\xef\x84\x96";
 constexpr const char ARROW_COUNTERCLOCKWISE[] = "\xef\x84\x97";

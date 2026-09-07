@@ -138,8 +138,7 @@ float iconButtonWidth() { return ImGui::GetFrameHeight(); }
 namespace {
 constexpr float ICON_BUTTON_GLYPH_SCALE = 0.8f;
 
-// the bounds of the visible ink of a glyph, in the glyph's own units: the corners imgui reports include the
-// rasterization slack, which differs per icon and makes a row of them look misaligned
+// Exclude rasterization padding when centering icons; it varies between glyphs.
 struct GlyphInk { float x0, y0, x1, y1; };
 GlyphInk glyphInk(const ImFontGlyph *g) {
   ImTextureData *tex = ImGui::GetIO().Fonts->TexData;
@@ -160,24 +159,21 @@ GlyphInk glyphInk(const ImFontGlyph *g) {
   return {g->X0 + (ix0 - px0) * sx, g->Y0 + (iy0 - py0) * sy, g->X0 + (ix1 - px0) * sx, g->Y0 + (iy1 - py0) * sy};
 }
 
-// the icon glyphs are padded to a square advance and their ink sits off center in it, so a square button
-// draws the glyph itself, centered on the ink
 bool squareIconButton(const char *id, const char *icon) {
   const bool clicked = ImGui::Button((std::string("###") + id).c_str(), ImVec2(iconButtonWidth(), 0.0f));
   const ImRect r(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
   unsigned int codepoint = 0;
   ImTextCharFromUtf8(&codepoint, icon, nullptr);
-  // the glyph is drawn a little smaller than the text so full bleed icons keep a margin inside the frame
+  // Leave a margin even for icons that fill the glyph bounds.
   const float size = std::round(ImGui::GetFontSize() * ICON_BUTTON_GLYPH_SCALE);
   ImFontBaked *baked = ImGui::GetFont()->GetFontBaked(size);
   if (const ImFontGlyph *g = baked->FindGlyph((ImWchar)codepoint)) {
     const GlyphInk ink = glyphInk(g);
-    // snapped to the framebuffer pixel, not the logical one, so a hidpi screen keeps the half pixels
+    // Preserve half-logical-pixel positions on HiDPI displays.
     const float snap = std::max(1.0f, ImGui::GetIO().DisplayFramebufferScale.x);
     auto snapped = [snap](float v) { return std::round(v * snap) / snap; };
     const ImVec2 pos(snapped(r.GetCenter().x - (ink.x0 + ink.x1) * 0.5f), snapped(r.GetCenter().y - (ink.y0 + ink.y1) * 0.5f));
-    // the glyph quad is drawn directly: AddText truncates its position to whole logical pixels, which pulls
-    // every icon up and left by up to a pixel
+    // AddText truncates to whole logical pixels, undoing the framebuffer snapping above.
     ImGui::GetWindowDrawList()->AddImage(ImGui::GetIO().Fonts->TexRef, ImVec2(pos.x + g->X0, pos.y + g->Y0),
                                          ImVec2(pos.x + g->X1, pos.y + g->Y1), ImVec2(g->U0, g->V0), ImVec2(g->U1, g->V1),
                                          ImGui::GetColorU32(ImGuiCol_Text));
@@ -409,7 +405,6 @@ float toolbarButtonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
 }
 
-// the spacing in front of an item: groups are ItemSpacing apart, the items of a group ItemInnerSpacing
 static float toolbarSpacing(const ToolbarItem &item) {
   return item.tight ? ImGui::GetStyle().ItemInnerSpacing.x : ImGui::GetStyle().ItemSpacing.x;
 }
@@ -498,9 +493,7 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
   const ImGuiStyle &style = ImGui::GetStyle();
   const bool popup_open = ImGui::IsPopupOpen(popup_id);
   if (width <= 0.0f) width = menuButtonWidth(text, bold);
-  // a framed button drawn pressed while the menu is open. The menu opens on press; a press while it is open
-  // toggles it closed (imgui closes the popup at the end of the frame of a click outside it, so only open
-  // when it is not already open)
+  // ImGui closes popups at frame end on outside clicks. Only open a closed popup so a second press toggles it off.
   if (bold) pushBoldFont();
   const float text_width = ImGui::CalcTextSize(text.c_str(), nullptr, true).x;
   const float ascent = ImGui::GetFontBaked()->Ascent;
@@ -535,13 +528,13 @@ void drawSliderHandle(ImDrawList *p, const ImRect &r) {
 }
 
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
-  // a grey groove over the full width with the part left of the handle filled, and a 13x13 handle on top
+  // Keep ImGui slider input handling, but replace its frame and grab with custom drawing.
   ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_FrameBgActive, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_SliderGrab, IM_COL32_BLACK_TRANS);
   ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, IM_COL32_BLACK_TRANS);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);  // the slider has no frame
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   ImGui::SetNextItemWidth(width);
   bool changed = ImGui::SliderInt(label, v, min, max, "", ImGuiSliderFlags_NoInput);
   ImGui::PopStyleVar();

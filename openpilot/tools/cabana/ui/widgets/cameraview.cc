@@ -62,8 +62,7 @@ CameraWidget::~CameraWidget() {
 
 void CameraWidget::startVipcThread() {
   if (!vipc_thread_.joinable()) {
-    // the last frame stays up until the stream delivers a new one: a paused replay sends none, and a
-    // black view after the video is restored from a collapsed splitter reads as broken
+    // Preserve the last frame when restoring a collapsed video; paused replay sends no replacement.
     vipc_exit_ = false;
     vipc_thread_ = std::thread(&CameraWidget::vipcThread, this);
   }
@@ -124,7 +123,7 @@ void CameraWidget::vipcThread() {
 
   while (!vipc_exit_) {
     if (!vipc_client || cur_stream != requested_stream_type_) {
-      if (cur_stream != requested_stream_type_) clearFrames();  // another camera: its old picture is wrong
+      if (cur_stream != requested_stream_type_) clearFrames();
       cur_stream = requested_stream_type_;
       vipc_client.reset(new VisionIpcClient(stream_name_, cur_stream, false));
     }

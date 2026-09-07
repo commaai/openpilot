@@ -74,8 +74,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
 
 void DetailWidget::drawToolBar() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  // name ... [Heatmap: Live/All] | [edit][remove]: the name takes what the rest leaves, and what does
-  // not fit in a narrow panel goes into the ">>" menu
   std::vector<ToolbarItem> items;
   items.push_back({0.0f, [this]() {
     ImGui::AlignTextToFramePadding();
@@ -117,7 +115,6 @@ void DetailWidget::drawToolBar() {
   }, "Remove Message", [this]() { UndoStack::instance()->push(new RemoveMsgCommand(msg_id_)); }, action_remove_msg_enabled_});
   items.back().tight = true;
 
-  // the name gets what is left next to the right group, at least a few characters
   const float right_width = toolbarWidth(items, spacer_index) - style.ItemSpacing.x;
   name_width_ = std::max(ImGui::CalcTextSize("MMMMMM").x, ImGui::GetContentRegionAvail().x - right_width - style.ItemSpacing.x);
   items[0].width = name_width_;
@@ -223,13 +220,11 @@ void DetailWidget::editMsg(float parent_width) {
 }
 
 void DetailWidget::drawTabWidget() {
-  // the page stops above the page switch, which floats in the strip left below it
   const ImGuiStyle &style = ImGui::GetStyle();
   const float pad = style.ItemInnerSpacing.x, pill_height = ImGui::GetFrameHeight() + pad * 2;
   ImGui::BeginChild("tab_widget", ImVec2(0, 0), ImGuiChildFlags_None,
                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   const ImRect page_rect = ImGui::GetCurrentWindow()->Rect();
-  // the gap above the switch matches the card padding below it, so it sits centered between page and card edge
   const float gap = style.WindowPadding.y;
   ImGui::BeginChild("page", ImVec2(0, std::max(page_rect.GetHeight() - pill_height - gap, 1.0f)),
                     ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -253,7 +248,6 @@ void DetailWidget::drawTabWidget() {
   }
   ImGui::EndChild();
 
-  // two standard buttons in a card, centered in the strip below the page
   std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Messages", std::string(icon::STOPWATCH) + " Logs"};
   auto pill_width = [&]() {
     float w = pad;
@@ -261,7 +255,7 @@ void DetailWidget::drawTabWidget() {
     return w;
   };
   float width = pill_width();
-  if (width > page_rect.GetWidth()) {  // too narrow for the labels: icons only
+  if (width > page_rect.GetWidth()) {
     labels[0] = icon::FILE_EARMARK_RULED;
     labels[1] = icon::STOPWATCH;
     width = pill_width();

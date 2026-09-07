@@ -110,7 +110,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_Text] = p.text;
   c[ImGuiCol_TextDisabled] = p.text_disabled;
   c[ImGuiCol_WindowBg] = c[ImGuiCol_ScrollbarBg] = c[ImGuiCol_DockingEmptyBg] = p.window;
-  c[ImGuiCol_MenuBarBg] = p.surface;  // the menu bar and the status bar are strips in the card color
+  c[ImGuiCol_MenuBarBg] = p.surface;
   c[ImGuiCol_TitleBg] = c[ImGuiCol_TitleBgActive] = c[ImGuiCol_TitleBgCollapsed] = p.window;
   c[ImGuiCol_ChildBg] = c[ImGuiCol_PopupBg] = p.surface;
   c[ImGuiCol_Border] = c[ImGuiCol_TableBorderStrong] = p.border;
@@ -121,7 +121,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
   c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
-  // the scrollbar track is the window color, so its grab has to be darker than any button
+  // Keep the scrollbar grab distinct from its window-colored track.
   c[ImGuiCol_ScrollbarGrab] = p.border;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;
@@ -141,7 +141,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_TableHeaderBg] = p.table_header;
   c[ImGuiCol_TableRowBgAlt] = g_dark ? ImVec4(1, 1, 1, 0.065f) : ImVec4(0, 0, 0, 0.045f);
   c[ImGuiCol_PlotLines] = p.text;
-  // imgui fades the modal dim in over several frames, which reads as the dialog lagging
+  // Disable the modal dim fade to make dialogs appear immediately.
   c[ImGuiCol_ModalWindowDimBg] = c[ImGuiCol_NavWindowingDimBg] = none;
 
   ImVec4 *pc = ImPlot::GetStyle().Colors;

@@ -241,8 +241,7 @@ std::string MessagesWidget::whatsThis() const {
 
 void MessagesWidget::drawToolBar() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  // [Suppress Highlighted][Clear] ... [Suppress Signals] [...]: what does not fit goes into the ">>" menu,
-  // the view button always stays at the right edge
+  // Reserve space for View so it remains accessible when other controls overflow.
   const std::string clear_label = suppress_clear_text_ + "##suppress_clear";
   std::vector<ToolbarItem> items;
   items.push_back({toolbarButtonWidth("Suppress Highlighted"), [this]() {

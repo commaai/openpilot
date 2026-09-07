@@ -279,7 +279,6 @@ void LogsWidget::drawTable() {
           if (!ImGui::TableSetColumnIndex(col)) continue;
           // cells are selected, not rows; there is no hover highlight, only the selection background
           const bool cell_selected = selected_row_ == row && selected_col_ == col;
-          // the text sits inside the cell padding, like the rows of the messages table
           const ImVec2 pos = ImGui::GetCursorScreenPos();
           const ImRect rect(pos, ImVec2(pos.x + ImGui::GetContentRegionAvail().x, pos.y + row_height - style.CellPadding.y * 2));
           ImGui::PushID(col);
