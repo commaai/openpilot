@@ -1,8 +1,12 @@
 #pragma once
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
+#include <optional>
+#include <string>
 
 struct CabanaColor {
   uint8_t r = 0;
@@ -47,6 +51,19 @@ struct CabanaColor {
     const float scaled_value = value * factor / 100.0f;
     if (scaled_value > 1.0f) saturation = std::max(0.0f, saturation - (scaled_value - 1.0f));
     return fromHsv(hue, saturation, std::min(1.0f, scaled_value), a / 255.0f);
+  }
+
+  std::string toHex() const {
+    char buf[8];
+    snprintf(buf, sizeof(buf), "#%02x%02x%02x", r, g, b);
+    return buf;
+  }
+  static std::optional<CabanaColor> fromHex(const std::string &hex) {
+    uint32_t rgb = 0;
+    if (hex.size() != 7 || hex[0] != '#') return std::nullopt;
+    auto parsed = std::from_chars(hex.data() + 1, hex.data() + 7, rgb, 16);
+    if (parsed.ec != std::errc() || parsed.ptr != hex.data() + 7) return std::nullopt;
+    return CabanaColor(rgb >> 16, rgb >> 8, rgb);
   }
 
   constexpr int red() const { return r; }

@@ -81,7 +81,7 @@ class TestLayouts(OpenpilotTestCase):
       "engaged_accel_actuator": (5, [0, 0, 1], 5),
       "steering rate limited": (5, [5, 1, 1], 0),
     }
-    for path in (Path(__file__).resolve().parents[1] / "layouts").glob("*.json"):
+    for path in LAYOUTS.glob("*.json"):
       for e in json.loads(path.read_text())["equations"]:
         value, additional, expected = cases[e["name"]]
         calc = compile_equation(e["globals"], e["function"], len(additional))

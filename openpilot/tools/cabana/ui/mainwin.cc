@@ -659,7 +659,7 @@ void MainWindow::saveSessionState() {
   settings.recent_dbc_file = "";
   settings.active_msg_id = "";
   settings.selected_msg_ids.clear();
-  settings.active_charts.clear();
+  settings.chart_layout.clear();
 
   const auto files = dbc()->nonEmptyDBCFiles();
   if (!files.empty()) settings.recent_dbc_file = files.front()->filename;
@@ -669,9 +669,7 @@ void MainWindow::saveSessionState() {
     settings.active_msg_id = active_id;
     settings.selected_msg_ids = ids;
   }
-  if (charts_widget_) {
-    settings.active_charts = charts_widget_->serializeChartIds();
-  }
+  if (charts_widget_) settings.chart_layout = charts_widget_->serializeLayout();
 }
 
 void MainWindow::restoreSessionState() {
@@ -681,10 +679,9 @@ void MainWindow::restoreSessionState() {
     if (charts_restored_) startup_layout_.clear();
     return;
   }
-  const bool workspace = settings.active_charts.size() == 1 && settings.active_charts.front().rfind("@layout:", 0) == 0;
-  if (workspace && !charts_restored_) {
-    // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
-    charts_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts, true);
+  // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
+  if (!charts_restored_ && !settings.chart_layout.empty()) {
+    charts_restored_ = charts_widget_->restoreLayout(settings.chart_layout, true);
   }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
@@ -692,10 +689,6 @@ void MainWindow::restoreSessionState() {
 
   if (!settings.selected_msg_ids.empty()) {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
-  }
-
-  if (!workspace && !charts_restored_ && !settings.active_charts.empty()) {
-    charts_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts);
   }
 }
 

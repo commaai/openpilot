@@ -6,8 +6,8 @@
 #include <iomanip>
 #include <locale>
 #include <sstream>
-#include <stdexcept>
 
+#include "common/util.h"
 #include "json11/json11.hpp"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chart.h"
@@ -40,9 +40,7 @@ std::string ChartsWidget::serializeLayout() const {
     if (tab != tab_charts_.end()) for (auto *c : tab->second) {
       Json::array signals;
       for (const auto &s : c->signals()) {
-        char color[8];
-        snprintf(color, sizeof(color), "#%02x%02x%02x", s.color.r, s.color.g, s.color.b);
-        Json::object signal{{"color", color},
+        Json::object signal{{"color", s.color.toHex()},
           {"visible", s.visible}, {"transform", (int)s.transform.type}, {"scale", s.transform.scale},
           {"offset", s.transform.offset}, {"window", s.transform.window}};
         for (const auto &[key, value] : chart::SIGNAL_DEFAULTS) if (signal.at(key) == value) signal.erase(key);
@@ -68,14 +66,17 @@ std::string ChartsWidget::serializeLayout() const {
     {"range", max_chart_range_}, {"tabs", tabs}, {"tab_names", names}, {"equations", equations}}).dump();
 }
 
+static bool writeFile(const std::string &path, const std::string &contents) {
+  std::ofstream out(path);
+  out << contents;
+  out.close();
+  return bool(out);
+}
+
 void ChartsWidget::saveLayout() {
   FileDialog::getSaveFileName("Save Chart Layout", settings.last_dir + "/charts.json", ".json",
-    [contents = serializeLayout()](const std::string &path) {
-      if (path.empty()) return;
-      std::ofstream out(path);
-      out << contents << '\n';
-      out.close();
-      if (!out) MessageBox::warning("Save Layout", "Could not write the chart layout.");
+    [contents = serializeLayout() + '\n'](const std::string &path) {
+      if (!path.empty() && !writeFile(path, contents)) MessageBox::warning("Save Layout", "Could not write the chart layout.");
     });
 }
 
@@ -89,15 +90,12 @@ bool ChartsWidget::openLayout(const std::string &name, bool defer_missing_can) {
   if (!std::filesystem::exists(path) && (path.parent_path().empty() || path.parent_path() == "layouts")) {
     path = executableDir() / "layouts" / (path.has_extension() ? path.filename().string() : path.filename().string() + ".json");
   }
-  try {
-    std::ifstream in(path);
-    if (!in) throw std::runtime_error("Could not read the chart layout");
-    const std::string contents{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
-    return restoreLayout(contents, defer_missing_can);
-  } catch (const std::exception &e) {
-    MessageBox::warning("Open Layout", e.what());
+  const std::string contents = util::read_file(path.string());
+  if (contents.empty()) {
+    MessageBox::warning("Open Layout", "Could not read the chart layout");
     return false;
   }
+  return restoreLayout(contents, defer_missing_can);
 }
 
 bool ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing_can) {
@@ -238,11 +236,7 @@ void ChartsWidget::exportCsv() {
   if (!rows) { MessageBox::information("Export CSV", "There are no visible samples in this time range."); return; }
   FileDialog::getSaveFileName("Export Visible Chart Data", settings.last_dir + "/charts.csv", ".csv",
     [contents = out.str()](const std::string &path) {
-      if (path.empty()) return;
-      std::ofstream file(path);
-      file << contents;
-      file.close();
-      if (!file) MessageBox::warning("Export CSV", "Could not write the chart data.");
+      if (!path.empty() && !writeFile(path, contents)) MessageBox::warning("Export CSV", "Could not write the chart data.");
     });
 }
 

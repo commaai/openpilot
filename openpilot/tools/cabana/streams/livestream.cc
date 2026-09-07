@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <memory>
 #include <sstream>
+#include <utility>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -86,8 +87,7 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
       received_events_.push_back(newEvent(mono_time, c));
     }
   } else {
-    if (!telemetry_extractor_) telemetry_extractor_.emplace(received_telemetry_);
-    telemetry_extractor_->extract(event);
+    telemetry_extractor_.extract(event);
   }
 }
 
@@ -100,9 +100,9 @@ void LiveStream::updateLastMessages() {
     if (!begin_event_ts) begin_event_ts = received_first_ts_;
     lastest_event_ts = std::max(lastest_event_ts, received_last_ts_);
     cabana::prepareTelemetryMerge(telemetry, received_telemetry_);
-    for (auto &[path, samples] : received_telemetry_) telemetry[path] = std::make_shared<const cabana::Samples>(std::move(samples));
-    telemetry_extractor_.reset();
-    received_telemetry_.clear();
+    for (auto &[path, samples] : received_telemetry_) {
+      if (!samples.empty()) telemetry[path] = std::make_shared<const cabana::Samples>(std::exchange(samples, {}));
+    }
     const double cutoff = lastest_event_ts * 1e-9 - settings.max_cached_minutes * 60;
     for (auto &[path, samples] : telemetry) {
       auto first = std::lower_bound(samples->begin(), samples->end(), cutoff, [](const auto &p, double t) { return p.x < t; });

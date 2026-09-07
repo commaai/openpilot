@@ -16,7 +16,7 @@ struct Sample {
 };
 using Samples = std::vector<Sample>;
 using TelemetrySnapshot = std::map<std::string, std::shared_ptr<const Samples>>;
-using Telemetry = std::map<std::string, std::vector<Sample>>;
+using Telemetry = std::map<std::string, Samples>;
 
 // Reuses paths, schema fields and sample destinations across a batch of events.
 // The destination map must outlive the extractor and must not erase entries while it is in use.
@@ -31,7 +31,6 @@ private:
   std::unique_ptr<Impl> impl_;
 };
 
-void mergeTelemetry(Telemetry &destination, Telemetry source);
 // Prepare only changed series without modifying the published data. Callers can swap
 // these replacements into the destination and release its old buffers off the UI thread.
 void prepareTelemetryMerge(const TelemetrySnapshot &destination, Telemetry &batch);
