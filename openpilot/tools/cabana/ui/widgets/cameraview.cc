@@ -95,7 +95,7 @@ float CameraWidget::frameAspectRatio() const {
   if (frame_texture_.width > 0 && frame_texture_.height > 0) {
     return (float)frame_texture_.width / frame_texture_.height;
   }
-  return 1928.0f / 1208.0f;  // the road camera, until the first frame arrives
+  return DEFAULT_CAMERA_ASPECT_RATIO;  // the road camera, until the first frame arrives
 }
 
 void CameraWidget::paint() {

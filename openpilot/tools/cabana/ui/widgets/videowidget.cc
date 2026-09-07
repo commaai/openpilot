@@ -261,6 +261,16 @@ void VideoWidget::createCameraWidget() {
     if (index != -1) cam_widget_->setStreamType((VisionStreamType)camera_tab_->tabData(index));
   }));
   connections_.push_back(static_cast<ReplayStream *>(can)->qLogLoaded.connect([this](std::shared_ptr<LogReader> qlog) { cam_widget_->parseQLog(qlog); }));
+
+  if (auto *replay = getReplay(); replay && !replay->hasFlag(REPLAY_FLAG_NO_VIPC)) {
+    std::set<VisionStreamType> streams;
+    for (const auto &[num, segment] : replay->route().segments()) {
+      if (!segment.narrow_road_cam.empty() || !segment.qcamera.empty()) streams.insert(VISION_STREAM_NARROW_ROAD);
+      if (replay->hasFlag(REPLAY_FLAG_CABIN_CAMERA) && !segment.cabin_cam.empty()) streams.insert(VISION_STREAM_CABIN);
+      if (replay->hasFlag(REPLAY_FLAG_WIDE_ROAD) && !segment.wide_road_cam.empty()) streams.insert(VISION_STREAM_WIDE_ROAD);
+    }
+    vipcAvailableStreamsUpdated(streams);
+  }
 }
 
 void VideoWidget::drawCameraWidget() {
@@ -344,10 +354,10 @@ float VideoWidget::sizeHintHeight() const {
   return MIN_VIDEO_HEIGHT + SLIDER_HEIGHT + toolbarHeight();
 }
 
-// the video pane opens with the camera at its natural aspect ratio, filling the width of the dock
+// Keep the pane's default proportions stable as frames arrive or cameras change.
 float VideoWidget::defaultHeight(float width) const {
   if (!cam_widget_) return toolbarHeight();  // live streams have no camera or slider
-  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / cam_widget_->frameAspectRatio());
+  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / DEFAULT_CAMERA_ASPECT_RATIO);
   const float tab_height = camera_tab_->count() >= 2 ? ImGui::GetFrameHeight() : 0.0f;
   return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
 }

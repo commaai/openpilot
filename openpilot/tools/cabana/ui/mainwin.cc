@@ -96,8 +96,8 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("Export to CSV...", nullptr, false, has_stream)) exportToCSV();
   ImGui::Separator();
 
-  if (ImGui::MenuItem("New DBC File", "Ctrl+N")) newFile();
-  if (ImGui::MenuItem("Open DBC File...", "Ctrl+O")) openFile();
+  if (ImGui::MenuItem("New DBC File", shortcut("N").c_str())) newFile();
+  if (ImGui::MenuItem("Open DBC File...", shortcut("O").c_str())) openFile();
 
   if (ImGui::BeginMenu("Manage DBC Files", has_stream)) {
     drawManageDBCsMenu();
@@ -120,8 +120,8 @@ void MainWindow::drawFileMenu() {
   ImGui::Separator();
   const int cnt = dbc()->nonEmptyDBCCount();
   const std::string save_text = cnt > 1 ? "Save " + std::to_string(cnt) + " DBCs..." : "Save DBC...";
-  if (ImGui::MenuItem(save_text.c_str(), "Ctrl+S", false, cnt > 0)) save();
-  if (ImGui::MenuItem("Save DBC As...", "Ctrl+Shift+S", false, cnt == 1)) saveAs();
+  if (ImGui::MenuItem(save_text.c_str(), shortcut("S").c_str(), false, cnt > 0)) save();
+  if (ImGui::MenuItem("Save DBC As...", shortcut("Shift+S").c_str(), false, cnt == 1)) saveAs();
   // TODO: Support clipboard for multiple files
   if (ImGui::MenuItem("Copy DBC To Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
 
@@ -129,7 +129,7 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("Settings...")) openSettings();
 
   ImGui::Separator();
-  if (ImGui::MenuItem("Exit", "Ctrl+Q")) close();
+  if (ImGui::MenuItem("Exit", shortcut("Q").c_str())) close();
 }
 
 namespace {
@@ -175,16 +175,16 @@ void MainWindow::drawMenuBar() {
     auto stack = UndoStack::instance();
     const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
     const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
-    if (ImGui::MenuItem(undo_text.c_str(), "Ctrl+Z", false, stack->canUndo())) stack->undo();
-    if (ImGui::MenuItem(redo_text.c_str(), "Ctrl+Shift+Z", false, stack->canRedo())) stack->redo();
+    if (ImGui::MenuItem(undo_text.c_str(), shortcut("Z").c_str(), false, stack->canUndo())) stack->undo();
+    if (ImGui::MenuItem(redo_text.c_str(), shortcut("Shift+Z").c_str(), false, stack->canRedo())) stack->redo();
     ImGui::EndMenu();
   }
 
   if (beginTopMenu("View")) {
-    if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
+    if (ImGui::MenuItem("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    ImGui::MenuItem(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), nullptr, &video_visible_);
+    ImGui::MenuItem(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
     ImGui::Separator();
     if (ImGui::MenuItem("Reset Window Layout")) {
       messages_visible_ = video_visible_ = true;
@@ -216,7 +216,6 @@ void MainWindow::createDockWidgets() {
   center_widget_.setChartsWidget(charts_widget_.get());
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
-  widget_connections_.push_back(charts_widget_->showTip.connect([this](double sec) { video_widget_->showThumbnail(sec); }));
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -789,8 +788,10 @@ void MainWindow::drawWaitDialog() {
 
 void MainWindow::drawDockspace() {
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->WorkPos);
-  ImGui::SetNextWindowSize(viewport->WorkSize);
+  // Use the menu bar's current-frame reservation, including on the first frame.
+  const ImRect work_rect = static_cast<const ImGuiViewportP *>(viewport)->GetBuildWorkRect();
+  ImGui::SetNextWindowPos(work_rect.Min);
+  ImGui::SetNextWindowSize(work_rect.GetSize());
   ImGui::SetNextWindowViewport(viewport->ID);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -813,6 +814,7 @@ void MainWindow::drawDockspace() {
     // messages left, video (with charts) right, center widget in the middle
     ImGui::DockBuilderRemoveNode(dock_id);
     ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderSetNodePos(dock_id, ImGui::GetCursorScreenPos());
     ImGui::DockBuilderSetNodeSize(dock_id, dock_size);
     ImGuiID center = dock_id, left = 0, right = 0;
     ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.28f, &left, &center);
@@ -856,11 +858,13 @@ bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
-  const std::string name = messages_widget_->title() + MESSAGES_PANEL_ID;
+  const std::string name = (messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
   setNextPanelClass();
   if (beginPanel(name.c_str(), &messages_visible_)) {
-    help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-    messages_widget_->draw();
+    if (messages_widget_) {
+      help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      messages_widget_->draw();
+    }
   }
   const bool floating = floatingOut();
   ImGui::End();
@@ -868,13 +872,13 @@ void MainWindow::drawMessagesPanel() {
 }
 
 void MainWindow::drawVideoPanel() {
-  const std::string name = video_dock_title_ + VIDEO_PANEL;
+  const std::string name = (video_dock_title_.empty() ? "Video" : video_dock_title_) + VIDEO_PANEL;
   setNextPanelClass();
   const bool video_open = beginPanel(name.c_str(), &video_visible_);
   const bool floating = floatingOut();
-  if (!video_open) {
+  if (video_widget_ && !video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
-  } else {
+  } else if (video_widget_) {
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const bool live = can->liveStreaming();
     // the bordered child pads its content, so the heights the widget asks for grow by the padding
@@ -962,14 +966,19 @@ void MainWindow::draw() {
     ImGui::EndChild();
   }
   ImGui::End();
-  if (messages_widget_ && messages_visible_) drawMessagesPanel();
+  // Submit the same dock windows while loading, so ImGui doesn't collapse their
+  // nodes and then redistribute the layout when the stream's widgets arrive.
+  if (messages_visible_) drawMessagesPanel();
   if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
-  if (video_widget_ && video_visible_) drawVideoPanel();
+  if (video_visible_) drawVideoPanel();
   if (charts_widget_ && charts_floating_) {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
     setNextWindowFloatsOut();
-    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) charts_widget_->draw();
+    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+      help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      charts_widget_->draw();
+    }
     ImGui::End();
     if (!open) toggleChartsDocking();
   }

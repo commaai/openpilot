@@ -132,11 +132,13 @@ void LogsWidget::exportToCSV() {
 void LogsWidget::draw() {
   const ImGuiStyle &style = ImGui::GetStyle();
 
+  beginControlChild("toolbar", ImVec2(0, ImGui::GetFrameHeight() + CONTROL_OUTLINE_PADDING * 2),
+                    ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
   // toolbar: the export button is right aligned and never clipped, the value input shrinks first
   const float export_w = iconButtonWidth();
   if (!sigs_.empty()) {
-    const float clear_w = value_edit_.empty() ? 0.0f : iconButtonWidth();
-    const float fixed = DISPLAY_TYPE_WIDTH + SIGNALS_WIDTH + COMPARE_WIDTH + clear_w + style.ItemSpacing.x * 4 + export_w;
+    const float fixed = DISPLAY_TYPE_WIDTH + SIGNALS_WIDTH + COMPARE_WIDTH + style.ItemSpacing.x * 4 + export_w;
     const float value_w = std::clamp(ImGui::GetContentRegionAvail().x - fixed, 30.0f, 120.0f);
 
     ImGui::SetNextItemWidth(DISPLAY_TYPE_WIDTH);
@@ -169,6 +171,7 @@ void LogsWidget::draw() {
   if (iconButton("export_csv", icon::FILETYPE_CSV)) exportToCSV();
   ImGui::EndDisabled();
   disabledItemTooltip("Export to CSV file...");
+  ImGui::EndChild();
 
   ImGui::Separator();
   drawTable();

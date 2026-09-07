@@ -132,6 +132,8 @@ public:
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
+    // Restore geometry and render the initial layout before mapping the window.
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     window_ = glfwCreateWindow(1600, 900, "Cabana", nullptr, nullptr);
     if (window_ == nullptr) {
       glfwTerminate();
@@ -212,6 +214,8 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     inistate::applyWindowGeometry(glfw.window());
 
     MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
+    renderFrame(glfw.window(), &win);
+    glfwShowWindow(glfw.window());
     while (!win.exited()) {
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");
