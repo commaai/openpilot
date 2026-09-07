@@ -74,13 +74,13 @@ public:
   std::shared_ptr<const cabana::Samples> telemetrySnapshot(const std::string &path) const;
   const std::vector<cabana::Sample> *telemetrySeries(const std::string &path) const;
   std::string serializeLayout() const;
-  bool restoreLayout(const std::string &contents);
-  bool openLayout(const std::string &path);
+  bool restoreLayout(const std::string &contents, bool defer_missing_can = false);
+  bool openLayout(const std::string &path, bool defer_missing_can = false);
   void draw();  // content only; MainWindow wraps it in a child region or the floating window
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
   std::vector<std::string> serializeChartIds() const;
-  void restoreChartsFromIds(const std::vector<std::string> &chart_ids);
+  bool restoreChartsFromIds(const std::vector<std::string> &chart_ids, bool defer_missing_can = false);
   std::string whatsThis() const;
 
   void setColumnCount(int n);
@@ -100,6 +100,7 @@ private:
   void splitChart(ChartView *chart);
   ImRect chartVisibleRect(ChartView *chart);
   void telemetryChanged();
+  void rebuildSignalBrowser();
   void pollTelemetry();
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();

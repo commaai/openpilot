@@ -82,7 +82,7 @@ void ChartsWidget::loadLayout() {
     [this](const std::string &path) { if (!path.empty()) openLayout(path); });
 }
 
-bool ChartsWidget::openLayout(const std::string &name) {
+bool ChartsWidget::openLayout(const std::string &name, bool defer_missing_can) {
   auto path = std::filesystem::path(name);
   if (!std::filesystem::exists(path) && (path.parent_path().empty() || path.parent_path() == "layouts")) {
     path = executableDir() / "layouts" / (path.has_extension() ? path.filename().string() : path.filename().string() + ".json");
@@ -91,14 +91,14 @@ bool ChartsWidget::openLayout(const std::string &name) {
     std::ifstream in(path);
     if (!in) throw std::runtime_error("Could not read the chart layout");
     const std::string contents{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
-    return restoreLayout(contents);
+    return restoreLayout(contents, defer_missing_can);
   } catch (const std::exception &e) {
     MessageBox::warning("Open Layout", e.what());
     return false;
   }
 }
 
-bool ChartsWidget::restoreLayout(const std::string &contents) {
+bool ChartsWidget::restoreLayout(const std::string &contents, bool defer_missing_can) {
   auto layout = chart::parseLayout(contents);
   if (!layout) { MessageBox::warning("Open Layout", "This is not a supported Cabana chart layout."); return false; }
   // Resolve CAN definitions before replacing charts. Cereal paths may arrive in later segments.
@@ -106,12 +106,13 @@ bool ChartsWidget::restoreLayout(const std::string &contents) {
     if (!s.path.empty()) continue;
     auto *msg = dbc()->msg(s.id);
     if (!msg || !msg->sig(s.name)) {
-      MessageBox::warning("Open Layout", "Load the matching DBC first. Missing " + s.id.toString() + " / " + s.name);
+      if (!defer_missing_can) MessageBox::warning("Open Layout", "Load the matching DBC first. Missing " + s.id.toString() + " / " + s.name);
       return false;
     }
   }
   removeAll();
   equations_ = layout->equations;
+  rebuildSignalBrowser();
   if (!equations_.empty() || std::any_of(layout->tabs.begin(), layout->tabs.end(), [](const auto &tab) {
     return std::any_of(tab.begin(), tab.end(), [](const auto &chart) {
       return std::any_of(chart.signals.begin(), chart.signals.end(), [](const auto &s) { return !s.path.empty(); });
@@ -158,16 +159,20 @@ std::shared_ptr<const cabana::Samples> ChartsWidget::telemetrySnapshot(const std
 void ChartsWidget::telemetryChanged() {
   telemetry_dirty_ = true;
   if (browser_paths_.empty() || browser_telemetry_count_ != can->telemetry.size()) {
-    browser_telemetry_count_ = can->telemetry.size();
-    browser_paths_.clear();
-    for (const auto &[path, _] : can->telemetry) browser_paths_.push_back(path);
-    for (const auto &e : equations_) browser_paths_.push_back(e.name);
-    std::sort(browser_paths_.begin(), browser_paths_.end());
-    browser_paths_.erase(std::unique(browser_paths_.begin(), browser_paths_.end()), browser_paths_.end());
-    browser_tree_.rebuild(browser_paths_);
-    browser_tree_dirty_ = true;
+    rebuildSignalBrowser();
   }
   pollTelemetry();
+}
+
+void ChartsWidget::rebuildSignalBrowser() {
+  browser_telemetry_count_ = can->telemetry.size();
+  browser_paths_.clear();
+  for (const auto &[path, _] : can->telemetry) browser_paths_.push_back(path);
+  for (const auto &e : equations_) browser_paths_.push_back(e.name);
+  std::sort(browser_paths_.begin(), browser_paths_.end());
+  browser_paths_.erase(std::unique(browser_paths_.begin(), browser_paths_.end()), browser_paths_.end());
+  browser_tree_.rebuild(browser_paths_);
+  browser_tree_dirty_ = true;
 }
 
 void ChartsWidget::pollTelemetry() {

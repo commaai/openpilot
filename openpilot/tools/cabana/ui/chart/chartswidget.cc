@@ -354,10 +354,9 @@ std::vector<std::string> ChartsWidget::serializeChartIds() const {
   return {"@layout:" + serializeLayout()};
 }
 
-void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids) {
+bool ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids, bool defer_missing_can) {
   if (chart_ids.size() == 1 && chart_ids.front().rfind("@layout:", 0) == 0) {
-    restoreLayout(chart_ids.front().substr(8));
-    return;
+    return restoreLayout(chart_ids.front().substr(8), defer_missing_can);
   }
   for (const auto &chart_id : chart_ids) {
     int index = 0;
@@ -370,6 +369,7 @@ void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_id
           showChart(msg_id, sig, true, index++ > 0);
     }
   }
+  return true;
 }
 
 void ChartsWidget::setColumnCount(int n) {
@@ -570,14 +570,12 @@ void ChartsWidget::removeAll() {
   tab_names_.clear();
   ++equation_revision_;
   telemetry_dirty_ = false;
-  browser_paths_.clear();
-  browser_tree_.rebuild({});
-  browser_tree_dirty_ = true;
   browser_expanded_.clear();
   browser_search_expanded_.clear();
   equations_.clear();
   calculated_.clear();
   equation_errors_.clear();
+  rebuildSignalBrowser();
   zoomReset();
 }
 

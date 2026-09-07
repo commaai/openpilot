@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <capnp/message.h>
+#include <capnp/serialize.h>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
@@ -619,6 +620,29 @@ void test_cached_telemetry_extractor() {
   require_same_telemetry(expected, actual);
 }
 
+void test_log_telemetry_skips_video_frames() {
+  std::string data;
+  cabana::Telemetry expected;
+  for (int i = 0; i < 3; ++i) {
+    capnp::MallocMessageBuilder message;
+    auto event = message.initRoot<cereal::Event>();
+    const uint64_t sof = 1000000000ULL + i * 50000000ULL;
+    event.setLogMonoTime(sof + 120000000ULL);
+    auto idx = event.initNarrowRoadEncodeIdx();
+    idx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    idx.setTimestampSof(sof);
+    idx.setFrameId(i);
+    cabana::extractTelemetry(event.asReader(), expected);
+    auto words = capnp::messageToFlatArray(message);
+    auto bytes = words.asBytes();
+    data.append(reinterpret_cast<const char *>(bytes.begin()), bytes.size());
+  }
+  LogReader log;
+  REQUIRE(log.load(data.data(), data.size()));
+  REQUIRE(log.events.size() == 6);
+  require_same_telemetry(expected, cabana::extractLogTelemetry(log, std::atomic<bool>{false}));
+}
+
 void test_prepared_telemetry_merge() {
   const cabana::Telemetry published{{"a", {{2, 20}, {4, 40}}}, {"unchanged", {{1, 10}}}};
   for (const auto &samples : std::vector<std::vector<cabana::Sample>>{
@@ -710,6 +734,7 @@ void test_cabana_core() {
   test_signal_tree();
   test_cereal_telemetry();
   test_cached_telemetry_extractor();
+  test_log_telemetry_skips_video_frames();
   test_prepared_telemetry_merge();
   test_layout_equations();
   test_chart_analysis();
@@ -767,6 +792,7 @@ int main(int argc, char **argv) {
       cabana::Telemetry expected, actual;
       cabana::TelemetryExtractor extractor(actual);
       for (const auto &event : log.events) {
+        if (event.eidx_segnum != -1) continue;
         capnp::FlatArrayMessageReader reader(event.data);
         cabana::extractTelemetry(reader.getRoot<cereal::Event>(), expected);
         extractor.extract(reader.getRoot<cereal::Event>());

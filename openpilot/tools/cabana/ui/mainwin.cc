@@ -705,14 +705,14 @@ void MainWindow::saveSessionState() {
 void MainWindow::restoreSessionState() {
   if (!charts_widget_ || session_restored_) return;
   if (!startup_layout_.empty()) {
-    session_restored_ = true;
-    charts_widget_->openLayout(std::exchange(startup_layout_, {}));
+    session_restored_ = charts_widget_->openLayout(startup_layout_, true);
+    if (session_restored_) startup_layout_.clear();
     return;
   }
   const bool workspace = settings.active_charts.size() == 1 && settings.active_charts.front().rfind("@layout:", 0) == 0;
   if (workspace) {
-    charts_widget_->restoreChartsFromIds(settings.active_charts);
-    session_restored_ = true;
+    // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries.
+    session_restored_ = charts_widget_->restoreChartsFromIds(settings.active_charts, true);
   }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
