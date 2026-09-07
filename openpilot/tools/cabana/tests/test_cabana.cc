@@ -691,11 +691,13 @@ void test_layout_equations() {
   REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[2].y == 60);  // state resets when reloading earlier data
   equation.function = "return time + 1, abs(value)";
   REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].x == 1);
-  equation.globals = "import statistics";
-  equation.function = "return statistics.mean((value, v1))";
+  equation.globals = "offset = math.sqrt(4)";
+  equation.function = "return (value + v1) / offset";
   REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].y == 5);
   equation.globals.clear();
-  for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "import os\nreturn 0",
+  for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "import os\nreturn 0", "import math\nreturn value",
+                    "import statistics\nreturn value", "return ().__class__", "return eval(value)",
+                    "return math.__dict__", "return 10 ** (10 ** 10)",
                     "return open('/dev/null')", "invalid Python !", "return None", "return (1, 2, 3)"}) {
     equation.function = code;
     bool failed = false;

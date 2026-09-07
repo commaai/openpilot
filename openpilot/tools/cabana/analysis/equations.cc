@@ -36,6 +36,7 @@ void initializePython() {
       PyConfig config;
       PyConfig_InitIsolatedConfig(&config);
       config.install_signal_handlers = 0;
+      config.site_import = 0;  // Do not execute site customizations or .pth files.
       auto status = PyConfig_SetBytesString(&config, &config.home, CABANA_PYTHON_HOME);
       if (!PyStatus_Exception(status)) status = Py_InitializeFromConfig(&config);
       const std::string error = PyStatus_Exception(status) ? (status.err_msg ? status.err_msg : "Python initialization failed") : "";
@@ -58,17 +59,16 @@ PyObject *runtimeModule() {
   // Kept alive with the interpreter; all access is under the GIL.
   static PyObject *module = []() {
     auto *path = PySys_GetObject("path");
-    auto site = checked(PyUnicode_FromString(CABANA_PYTHON_SITE));
     auto analysis = checked(PyUnicode_FromString(CABANA_ANALYSIS_DIR));
-    if (PyList_Insert(path, 0, site.get()) || PyList_Insert(path, 0, analysis.get())) pythonError();
+    if (PyList_Insert(path, 0, analysis.get())) pythonError();
     return checked(PyImport_ImportModule("cabana_equations")).release();
   }();
   return module;
 }
 
 thread_local int remaining_steps;
-// Lines cover Python loops and C calls cover call-heavy code. A loop that never leaves C, like
-// max(iter(int, 1)), cannot be interrupted, so the thread pool detaches stuck workers at exit.
+// Defense in depth for the trusted evaluator. The AST allowlist, bounded numeric
+// values, and rejection of loops/recursion enforce the layout language restrictions.
 int traceEquation(PyObject *, PyFrameObject *, int event, PyObject *) {
   if ((event == PyTrace_LINE || event == PyTrace_C_CALL) && --remaining_steps <= 0) {
     PyErr_SetString(PyExc_RuntimeError, "Equation exceeded its execution limit");
