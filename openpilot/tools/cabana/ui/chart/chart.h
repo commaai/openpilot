@@ -120,7 +120,7 @@ private:
   double y_min_ = 0;
   double y_max_ = 1;
   int y_tick_count_ = 3;
-  int y_precision_ = 0;
+  int y_precision_ = 1;
   std::string y_unit_;
   // interaction
   enum class MouseMode { None, Rubber, Scrub };

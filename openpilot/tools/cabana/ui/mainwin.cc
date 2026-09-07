@@ -92,12 +92,12 @@ void MainWindow::loadFingerprints() {
 void MainWindow::drawFileMenu() {
   const bool has_stream = hasStream();
   if (ImGui::MenuItem("Open Stream...")) selectAndOpenStream();
-  if (ImGui::MenuItem("Close stream", nullptr, false, has_stream)) closeStream();
+  if (ImGui::MenuItem("Close Stream", nullptr, false, has_stream)) closeStream();
   if (ImGui::MenuItem("Export to CSV...", nullptr, false, has_stream)) exportToCSV();
   ImGui::Separator();
 
-  if (ImGui::MenuItem("New DBC File", "Ctrl+N")) newFile();
-  if (ImGui::MenuItem("Open DBC File...", "Ctrl+O")) openFile();
+  if (ImGui::MenuItem("New DBC File", shortcut("N").c_str())) newFile();
+  if (ImGui::MenuItem("Open DBC File...", shortcut("O").c_str())) openFile();
 
   if (ImGui::BeginMenu("Manage DBC Files", has_stream)) {
     drawManageDBCsMenu();
@@ -115,21 +115,21 @@ void MainWindow::drawFileMenu() {
     }
     ImGui::EndMenu();
   }
-  if (ImGui::MenuItem("Load DBC From Clipboard")) loadFromClipboard();
+  if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard();
 
   ImGui::Separator();
   const int cnt = dbc()->nonEmptyDBCCount();
   const std::string save_text = cnt > 1 ? "Save " + std::to_string(cnt) + " DBCs..." : "Save DBC...";
-  if (ImGui::MenuItem(save_text.c_str(), "Ctrl+S", false, cnt > 0)) save();
-  if (ImGui::MenuItem("Save DBC As...", "Ctrl+Shift+S", false, cnt == 1)) saveAs();
+  if (ImGui::MenuItem(save_text.c_str(), shortcut("S").c_str(), false, cnt > 0)) save();
+  if (ImGui::MenuItem("Save DBC As...", shortcut("Shift+S").c_str(), false, cnt == 1)) saveAs();
   // TODO: Support clipboard for multiple files
-  if (ImGui::MenuItem("Copy DBC To Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
+  if (ImGui::MenuItem("Copy DBC to Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
 
   ImGui::Separator();
   if (ImGui::MenuItem("Settings...")) openSettings();
 
   ImGui::Separator();
-  if (ImGui::MenuItem("Exit", "Ctrl+Q")) close();
+  if (ImGui::MenuItem("Exit", shortcut("Q").c_str())) close();
 }
 
 namespace {
@@ -175,13 +175,13 @@ void MainWindow::drawMenuBar() {
     auto stack = UndoStack::instance();
     const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
     const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
-    if (ImGui::MenuItem(undo_text.c_str(), "Ctrl+Z", false, stack->canUndo())) stack->undo();
-    if (ImGui::MenuItem(redo_text.c_str(), "Ctrl+Shift+Z", false, stack->canRedo())) stack->redo();
+    if (ImGui::MenuItem(undo_text.c_str(), shortcut("Z").c_str(), false, stack->canUndo())) stack->undo();
+    if (ImGui::MenuItem(redo_text.c_str(), shortcut("Shift+Z").c_str(), false, stack->canRedo())) stack->redo();
     ImGui::EndMenu();
   }
 
   if (beginTopMenu("View")) {
-    if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
+    if (ImGui::MenuItem("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
     ImGui::MenuItem(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
@@ -216,7 +216,6 @@ void MainWindow::createDockWidgets() {
   center_widget_.setChartsWidget(charts_widget_.get());
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
-  widget_connections_.push_back(charts_widget_->showTip.connect([this](double sec) { video_widget_->showThumbnail(sec); }));
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -284,7 +283,7 @@ void MainWindow::closeStream() {
   if (dbc()->nonEmptyDBCCount() > 0) {
     dbc()->fileChanged();
   }
-  showStatusMessage("stream closed");
+  showStatusMessage("Stream closed");
 }
 
 void MainWindow::exportToCSV() {
@@ -316,7 +315,7 @@ void MainWindow::loadFile(const std::string &fn, SourceSet s, std::function<void
       std::string error;
       if (dbc()->open(s, fn, &error)) {
         updateRecentFiles(fn);
-        showStatusMessage("DBC File " + fn + " loaded", 2000);
+        showStatusMessage("DBC file " + fn + " loaded", 2000);
         if (then) then();
       } else {
         MessageBox::warning("Failed to load DBC file", "Failed to parse DBC file " + fn, error, then);
@@ -334,11 +333,11 @@ void MainWindow::loadDBCFromOpendbc(const std::string &name) {
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   std::string text;
   if (!utils::getClipboardText(&text)) {
-    MessageBox::warning("Load From Clipboard", "No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland).");
+    MessageBox::warning("Load from Clipboard", "No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland).");
     return;
   }
   if (text.empty()) {
-    MessageBox::warning("Load From Clipboard", "Clipboard is empty.");
+    MessageBox::warning("Load from Clipboard", "Clipboard is empty.");
     return;
   }
 
@@ -346,9 +345,9 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
     std::string error;
     bool ret = dbc()->open(s, std::string(""), text, &error);
     if (ret && dbc()->nonEmptyDBCCount() > 0) {
-      MessageBox::information("Load From Clipboard", "DBC Successfully Loaded!");
+      MessageBox::information("Load from Clipboard", "DBC loaded successfully.");
     } else {
-      MessageBox::warning("Failed to load DBC from clipboard", "Make sure that you paste the text with correct format.", error);
+      MessageBox::warning("Failed to load DBC from clipboard", "Make sure the clipboard contains correctly formatted DBC text.", error);
     }
   });
 }
@@ -513,9 +512,9 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
 
 void MainWindow::copyToClipboard(const std::string &text) {
   if (utils::setClipboardText(text)) {
-    MessageBox::information("Copy To Clipboard", "DBC Successfully copied!");
+    MessageBox::information("Copy to Clipboard", "DBC copied successfully.");
   } else {
-    MessageBox::warning("Copy To Clipboard", "Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland).");
+    MessageBox::warning("Copy to Clipboard", "Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland).");
   }
 }
 
@@ -529,9 +528,9 @@ void MainWindow::drawManageDBCsMenu() {
     const std::string title = "Bus " + std::to_string(source) + " (" + (dbc_file ? dbc_file->name() : "No DBCs loaded") + ")";
     ImGui::PushID(source);
     if (ImGui::BeginMenu(title.c_str())) {
-      if (ImGui::MenuItem("New DBC File...")) newFile(ss);
+      if (ImGui::MenuItem("New DBC File")) newFile(ss);
       if (ImGui::MenuItem("Open DBC File...")) openFile(ss);
-      if (ImGui::MenuItem("Load DBC From Clipboard...")) loadFromClipboard(ss, false);
+      if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard(ss, false);
 
       // Show sub-menu for each dbc for this source.
       if (dbc_file) {
@@ -539,9 +538,9 @@ void MainWindow::drawManageDBCsMenu() {
         ImGui::MenuItem((dbc_file->name() + " (" + toString(dbc()->sources(dbc_file)) + ")").c_str(), nullptr, false, false);
         if (ImGui::MenuItem("Save...")) saveFile(dbc_file);
         if (ImGui::MenuItem("Save As...")) saveFileAs(dbc_file);
-        if (ImGui::MenuItem("Copy to Clipboard...")) saveFileToClipboard(dbc_file);
-        if (ImGui::MenuItem("Remove from this bus...")) closeFile(ss, {});
-        if (ImGui::MenuItem("Remove from all buses...")) closeFile(dbc_file);
+        if (ImGui::MenuItem("Copy to Clipboard")) saveFileToClipboard(dbc_file);
+        if (ImGui::MenuItem("Remove from This Bus...")) closeFile(ss, {});
+        if (ImGui::MenuItem("Remove from All Buses...")) closeFile(dbc_file);
       }
       ImGui::EndMenu();
     }
@@ -579,7 +578,7 @@ void MainWindow::remindSaveChanges(std::function<void()> then) {
     if (then) then();
     return;
   }
-  std::string text = "You have unsaved changes. Press ok to save them, cancel to discard.";
+  std::string text = "You have unsaved changes. Select OK to save them or Cancel to discard them.";
   MessageBox::question("Unsaved Changes", text, [this, then](bool ok) {
     if (ok) {
       save([this, then]() { remindSaveChanges(then); });
@@ -756,7 +755,7 @@ void MainWindow::drawStatusBar() {
     ImGui::TextUnformatted(bar.message.c_str());
   } else {
     bar.message.clear();
-    ImGui::TextUnformatted("For Help, Press F1");
+    ImGui::TextUnformatted("For help, press F1");
   }
   if (bar.progress_visible) {
     ImGui::SameLine(width - pad - 300.0f);
@@ -904,8 +903,8 @@ void MainWindow::drawVideoPanel() {
         video_h = avail.y - splitter_h - charts_min_h;
       }
     }
-    // The splitter provides the gap; extra ItemSpacing would leave an undraggable strip.
-    if (!charts_floating_) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+    // Replay uses a splitter for the gap; live streams use normal item spacing.
+    if (!charts_floating_ && !live) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
@@ -914,7 +913,7 @@ void MainWindow::drawVideoPanel() {
     } else {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
-    if (!charts_floating_) {
+    if (!charts_floating_ && !live) {
       ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
       const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
       if (splitter_active) {
@@ -928,6 +927,8 @@ void MainWindow::drawVideoPanel() {
       ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(splitter.Min.x, line_y), ImVec2(splitter.Max.x, line_y + 2.0f),
                                                 ImGui::GetColorU32(splitter_active ? ImGuiCol_SeparatorActive : splitter_hovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Border));
       ImGui::PopStyleVar();
+    }
+    if (!charts_floating_) {
       if (!charts_collapsed) {
         // the chart list scrolls in its own child, the container itself never scrolls
         ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -976,7 +977,10 @@ void MainWindow::draw() {
     bool open = true;
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
     setNextWindowFloatsOut();
-    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) charts_widget_->draw();
+    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+      help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      charts_widget_->draw();
+    }
     ImGui::End();
     if (!open) toggleChartsDocking();
   }
