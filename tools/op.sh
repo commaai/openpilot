@@ -304,7 +304,6 @@ function op_build() {
 }
 
 function op_juggle() {
-  # Keep the existing command as a compatibility alias for Cabana.
   op_cabana "$@"
 }
 
@@ -438,7 +437,7 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
-  echo -e "  ${BOLD}juggle${NC}       Run Cabana (compatibility alias)"
+  echo -e "  ${BOLD}juggle${NC}       Run Cabana"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
