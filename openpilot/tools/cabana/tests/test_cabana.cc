@@ -16,7 +16,7 @@
 #include "tools/replay/logreader.h"
 
 #include "common/tests/native_test.h"
-#include "tools/cabana/analysis/logtelemetry.h"
+#include "tools/cabana/analysis/logfields.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
@@ -535,7 +535,7 @@ void test_chart_layout() {
   REQUIRE(!chart::parseLayout("{truncated").has_value());
 }
 
-void test_cereal_telemetry() {
+void test_message_fields() {
   capnp::MallocMessageBuilder message;
   auto event = message.initRoot<cereal::Event>();
   event.setLogMonoTime(1000000000);
@@ -545,8 +545,8 @@ void test_cereal_telemetry() {
   state.setAEgo(0);
   state.setSteeringPressed(false);
   state.setGearShifter(cereal::CarState::GearShifter::DRIVE);
-  cabana::Telemetry data;
-  cabana::TelemetryExtractor extractor(data);
+  cabana::Fields data;
+  cabana::FieldExtractor extractor(data);
   extractor.extract(event.asReader());
   REQUIRE(data.at("/carState/vEgo").front().y == 12.5);
   REQUIRE(data.at("/carState/aEgo").front().y == 0);
@@ -569,7 +569,7 @@ void test_cereal_telemetry() {
   REQUIRE(data.at("/carControl/orientationNED/2").front().y == -1.5);
 }
 
-void require_same_telemetry(const cabana::Telemetry &expected, const cabana::Telemetry &actual) {
+void require_same_fields(const cabana::Fields &expected, const cabana::Fields &actual) {
   REQUIRE(actual.size() == expected.size());
   for (const auto &[path, samples] : expected) {
     const auto &other = actual.at(path);
@@ -581,11 +581,11 @@ void require_same_telemetry(const cabana::Telemetry &expected, const cabana::Tel
   }
 }
 
-void test_cached_telemetry_extractor() {
-  cabana::Telemetry data;
+void test_cached_field_extractor() {
+  cabana::Fields data;
   for (int batch = 0; batch < 2; ++batch) {
     data.clear();
-    cabana::TelemetryExtractor extractor(data);
+    cabana::FieldExtractor extractor(data);
     for (int i = 0; i < 4; ++i) {
       capnp::MallocMessageBuilder message;
       auto event = message.initRoot<cereal::Event>();
@@ -622,10 +622,10 @@ void test_cached_telemetry_extractor() {
   }
 }
 
-void test_log_telemetry_skips_video_frames() {
+void test_log_fields_skips_video_frames() {
   std::string data;
-  cabana::Telemetry expected;
-  cabana::TelemetryExtractor extractor(expected);
+  cabana::Fields expected;
+  cabana::FieldExtractor extractor(expected);
   for (int i = 0; i < 3; ++i) {
     capnp::MallocMessageBuilder message;
     auto event = message.initRoot<cereal::Event>();
@@ -643,11 +643,11 @@ void test_log_telemetry_skips_video_frames() {
   LogReader log;
   REQUIRE(log.load(data.data(), data.size()));
   REQUIRE(log.events.size() == 6);
-  require_same_telemetry(expected, cabana::extractLogTelemetry(log, std::atomic<bool>{false}));
+  require_same_fields(expected, cabana::extractLogFields(log, std::atomic<bool>{false}));
 }
 
-void test_prepared_telemetry_merge() {
-  cabana::TelemetrySnapshot published{{"a", std::make_shared<const cabana::Samples>(cabana::Samples{{2, 20}, {4, 40}})},
+void test_prepared_fields_merge() {
+  cabana::FieldsSnapshot published{{"a", std::make_shared<const cabana::Samples>(cabana::Samples{{2, 20}, {4, 40}})},
                                       {"unchanged", std::make_shared<const cabana::Samples>(cabana::Samples{{1, 10}})}};
   const std::vector<std::pair<cabana::Samples, cabana::Samples>> cases{
     {{}, {}},  // nothing new: the published series is left alone
@@ -655,51 +655,51 @@ void test_prepared_telemetry_merge() {
     {{{5, 50}}, {{2, 20}, {4, 40}, {5, 50}}},
     {{{1, 10}, {2, 21}, {3, 30}, {6, 60}}, {{1, 10}, {2, 20}, {2, 21}, {3, 30}, {4, 40}, {6, 60}}}};
   for (const auto &[samples, expected] : cases) {
-    cabana::Telemetry batch{{"a", samples}, {"new", {{1, 100}}}};
-    cabana::prepareTelemetryMerge(published, batch);
+    cabana::Fields batch{{"a", samples}, {"new", {{1, 100}}}};
+    cabana::prepareFieldsMerge(published, batch);
     REQUIRE(!batch.count("unchanged"));
     REQUIRE(batch.at("new").size() == 1);
     REQUIRE(published.at("a")->size() == 2);
-    require_same_telemetry({{"a", expected}}, {{"a", batch.at("a")}});
+    require_same_fields({{"a", expected}}, {{"a", batch.at("a")}});
   }
 }
 
-cabana::TelemetrySnapshot snapshotTelemetry(const cabana::Telemetry &data) {
-  cabana::TelemetrySnapshot snapshot;
+cabana::FieldsSnapshot snapshotFields(const cabana::Fields &data) {
+  cabana::FieldsSnapshot snapshot;
   for (const auto &[path, samples] : data) snapshot.emplace(path, std::make_shared<const cabana::Samples>(samples));
   return snapshot;
 }
 
 void test_layout_equations() {
-  cabana::Telemetry data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
+  cabana::Fields data{{"speed", {{0, 10}, {1, 20}, {2, 30}}}, {"enabled", {{0, 0}, {1.5, 1}}}};
   REQUIRE(cabana::nearestValue(data.at("enabled"), 0.75) == 1);  // tie: later sample, as PlotJuggler
   REQUIRE(cabana::nearestValue(data.at("enabled"), -1) == 0);
   REQUIRE(cabana::nearestValue(data.at("enabled"), 5) == 1);
   cabana::Equation equation{"scaled", "speed", "sum = 0", "global sum\nsum += value\nreturn sum * v1", {"enabled"}};
-  auto values = cabana::evaluateEquation(equation, snapshotTelemetry(data));
+  auto values = cabana::evaluateEquation(equation, snapshotFields(data));
   REQUIRE(values.size() == 3);
   REQUIRE(values[0].y == 0);
   REQUIRE(values[1].y == 30);
   REQUIRE(values[2].y == 60);
-  auto snapshot = snapshotTelemetry(data);
+  auto snapshot = snapshotFields(data);
   const auto source = snapshot.at("speed");
   snapshot["scaled"] = std::make_shared<const cabana::Samples>(std::move(values));
   const auto chained = cabana::evaluateEquation({"chained", "scaled", "", "return value - v1", {"speed"}}, snapshot);
   REQUIRE(chained[2].y == 30);
   REQUIRE(snapshot.at("speed") == source);
   REQUIRE(source->back().y == 30);
-  REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[2].y == 60);  // state resets when reloading earlier data
+  REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[2].y == 60);  // state resets when reloading earlier data
   equation.function = "return time + 1, abs(value)";
-  REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[0].x == 1);
+  REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].x == 1);
   equation.globals = "import statistics";
   equation.function = "return statistics.mean((value, v1))";
-  REQUIRE(cabana::evaluateEquation(equation, snapshotTelemetry(data))[0].y == 5);
+  REQUIRE(cabana::evaluateEquation(equation, snapshotFields(data))[0].y == 5);
   equation.globals.clear();
   for (auto code : {"raise ValueError('bad equation')", "while True:\n  pass", "import os\nreturn 0",
                     "return open('/dev/null')", "invalid Python !", "return None", "return (1, 2, 3)"}) {
     equation.function = code;
     bool failed = false;
-    try { cabana::evaluateEquation(equation, snapshotTelemetry(data)); } catch (const std::exception &) { failed = true; }
+    try { cabana::evaluateEquation(equation, snapshotFields(data)); } catch (const std::exception &) { failed = true; }
     REQUIRE(failed);
   }
 }
@@ -740,10 +740,10 @@ void test_signal_tree() {
 void test_cabana_core() {
   test_pixel_envelope();
   test_signal_tree();
-  test_cereal_telemetry();
-  test_cached_telemetry_extractor();
-  test_log_telemetry_skips_video_frames();
-  test_prepared_telemetry_merge();
+  test_message_fields();
+  test_cached_field_extractor();
+  test_log_fields_skips_video_frames();
+  test_prepared_fields_merge();
   test_layout_equations();
   test_chart_analysis();
   test_chart_layout();
@@ -792,19 +792,19 @@ int main(int argc, char **argv) {
       }
     });
   }
-  if (argc == 3 && std::string(argv[1]) == "--check-telemetry") {
+  if (argc == 3 && std::string(argv[1]) == "--check-fields") {
     return run_native_test([&]() {
       LogReader log;
       REQUIRE(log.load(argv[2]));
-      cabana::Telemetry actual;
-      cabana::TelemetryExtractor extractor(actual);
+      cabana::Fields actual;
+      cabana::FieldExtractor extractor(actual);
       for (const auto &event : log.events) {
         if (event.eidx_segnum != -1) continue;
         capnp::FlatArrayMessageReader reader(event.data);
         extractor.extract(reader.getRoot<cereal::Event>());
       }
-      require_same_telemetry(actual, cabana::extractLogTelemetry(log, std::atomic<bool>{false}));
-      REQUIRE(cabana::extractLogTelemetry(log, std::atomic<bool>{true}).empty());
+      require_same_fields(actual, cabana::extractLogFields(log, std::atomic<bool>{false}));
+      REQUIRE(cabana::extractLogFields(log, std::atomic<bool>{true}).empty());
       size_t count = 0;
       for (const auto &[path, samples] : actual) count += samples.size();
       printf("Verified %zu paths and %zu samples across %zu events\n", actual.size(), count, log.events.size());
@@ -817,11 +817,11 @@ int main(int argc, char **argv) {
       auto layout = chart::parseLayout(contents);
       REQUIRE(layout.has_value());
       for (const auto &e : layout->equations) {
-        cabana::Telemetry data;
+        cabana::Fields data;
         auto add = [&](const std::string &path) { for (int i = 0; i < 10; ++i) data[path].emplace_back(100 + i, 1); };
         add(e.source);
         for (const auto &path : e.additional) add(path);
-        auto values = cabana::evaluateEquation(e, snapshotTelemetry(data));
+        auto values = cabana::evaluateEquation(e, snapshotFields(data));
         REQUIRE(values.size() == 10);
         for (const auto &value : values) REQUIRE(std::isfinite(value.y));
         if (e.name == "engaged curvature yaw") {
@@ -830,7 +830,7 @@ int main(int argc, char **argv) {
             data["/carState/vEgo"][i].y = 20;
             data["/carState/steeringPressed"][i].y = i < 2 ? 1 : 0;
           }
-          values = cabana::evaluateEquation(e, snapshotTelemetry(data));
+          values = cabana::evaluateEquation(e, snapshotFields(data));
           REQUIRE(values.size() == 10);
           for (int i = 0; i <= 6; ++i) REQUIRE(values[i].y == 0);
           for (int i = 7; i < 10; ++i) REQUIRE(std::abs(values[i].y - 0.001) < 1e-12);

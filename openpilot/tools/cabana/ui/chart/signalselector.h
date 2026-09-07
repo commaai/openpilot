@@ -21,7 +21,7 @@ public:
   SignalSelector(std::string title);
   const std::vector<ListItem> &selectedItems() const { return selected_list_; }
   inline void addSelected(const MessageId &id, const cabana::Signal *sig) { selected_list_.emplace_back(id, sig); }
-  void addTelemetry(const std::string &path) { selected_list_.emplace_back(path); }
+  void addFields(const std::string &path) { selected_list_.emplace_back(path); }
   void open() { open_ = true; show_ = false; accepted_ = false; }
   bool draw();  // false once the dialog is closed
   bool accepted() const { return accepted_; }

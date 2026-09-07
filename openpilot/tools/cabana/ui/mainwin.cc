@@ -183,7 +183,7 @@ void MainWindow::drawMenuBar() {
   if (beginTopMenu("View")) {
     if (ImGui::MenuItem("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
-    if (ImGui::MenuItem("Signal Analysis", nullptr, analysis_mode_)) { analysis_mode_ = !analysis_mode_; messages_visible_ = true; }
+    if (ImGui::MenuItem("Plots", nullptr, analysis_mode_)) { analysis_mode_ = !analysis_mode_; messages_visible_ = true; }
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
     ImGui::MenuItem(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
     ImGui::Separator();
@@ -406,7 +406,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
       newFile();
     }
 
-    stream_connections_.push_back(can->telemetryChanged.connect([this]() { wait_dlg_.open = false; }));
+    stream_connections_.push_back(can->fieldsChanged.connect([this]() { wait_dlg_.open = false; }));
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
 
     if (hasStream()) {
@@ -872,13 +872,13 @@ bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
-  const std::string name = (analysis_mode_ ? "Route Signals" : messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
+  const std::string name = (analysis_mode_ ? "openpilot Messages" : messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
   setNextPanelClass();
   if (beginPanel(name.c_str(), &messages_visible_)) {
     if (messages_widget_) {
       const std::string help = analysis_mode_ ?
-        "<b>Route Signals</b><br />Search to filter signals.<br />Click a group to expand it.<br />"
-        "Double-click a signal to create a chart.<br />Drag a signal onto a chart to compare." : messages_widget_->whatsThis();
+        "<b>openpilot Messages</b><br />Search to filter messages and fields.<br />Click a message to expand it.<br />"
+        "Double-click a field to create a chart.<br />Drag a field onto a chart to compare." : messages_widget_->whatsThis();
       help_overlay_.add(help, ImGui::GetCurrentWindow()->Rect());
       if (analysis_mode_) charts_widget_->drawSignalBrowser();
       else messages_widget_->draw();
@@ -977,7 +977,7 @@ void MainWindow::draw() {
     if (charts_widget_) {
       if (ImGui::RadioButton("CAN Editor", !analysis_mode_)) analysis_mode_ = false;
       ImGui::SameLine();
-      if (ImGui::RadioButton("Signal Analysis", analysis_mode_)) { analysis_mode_ = true; messages_visible_ = true; }
+      if (ImGui::RadioButton("Plots", analysis_mode_)) { analysis_mode_ = true; messages_visible_ = true; }
       ImGui::Separator();
     }
     if (analysis_mode_ && charts_widget_ && !charts_floating_) {

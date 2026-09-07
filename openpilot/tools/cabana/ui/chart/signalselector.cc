@@ -139,7 +139,7 @@ void SignalSelector::updateAvailableList() {
           })) available.emplace_back(msg.id, sig);
     }
   }
-  for (const auto &entry : can->telemetry) {
+  for (const auto &entry : can->fields) {
     const auto &path = entry.first;
     if (!utils::containsCI(path, msgs_combo_filter_)) continue;
     if (std::none_of(selected_list_.begin(), selected_list_.end(), [&](const auto &item) { return item.path == path; }))

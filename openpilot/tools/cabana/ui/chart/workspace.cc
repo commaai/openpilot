@@ -126,7 +126,7 @@ ChartsWidget::LayoutStatus ChartsWidget::restoreLayout(const std::string &conten
       for (const auto &s : saved.signals) {
         const size_t count = c->signals().size();
         if (s.path.empty()) c->addSignal(s.id, dbc()->msg(s.id)->sig(s.name));
-        else c->addTelemetry(s.path, s.color);
+        else c->addFields(s.path, s.color);
         if (c->signals().size() != count) c->configureSignal(count, s.transform, s.visible, s.color);
       }
     }
@@ -135,56 +135,56 @@ ChartsWidget::LayoutStatus ChartsWidget::restoreLayout(const std::string &conten
   setColumnCount(layout->columns);
   setMaxChartRange(std::min(layout->range, range_slider_.maximum()));
   range_slider_.setValue(max_chart_range_);
-  telemetryChanged();
+  fieldsChanged();
   updateTabBar();
   updateState();
   return LayoutStatus::Restored;
 }
 
-std::shared_ptr<const cabana::Samples> ChartsWidget::telemetrySnapshot(const std::string &path) const {
+std::shared_ptr<const cabana::Samples> ChartsWidget::fieldsSnapshot(const std::string &path) const {
   auto derived = calculated_.find(path);
   if (derived != calculated_.end()) return derived->second;
-  auto raw = can->telemetry.find(path);
-  return raw == can->telemetry.end() ? nullptr : raw->second;
+  auto raw = can->fields.find(path);
+  return raw == can->fields.end() ? nullptr : raw->second;
 }
 
-void ChartsWidget::telemetryChanged() {
-  telemetry_dirty_ = true;
-  if (browser_telemetry_count_ != can->telemetry.size()) {
+void ChartsWidget::fieldsChanged() {
+  fields_dirty_ = true;
+  if (browser_field_count_ != can->fields.size()) {
     rebuildSignalBrowser();
   }
-  pollTelemetry();
+  pollFields();
 }
 
 void ChartsWidget::rebuildSignalBrowser() {
-  browser_telemetry_count_ = can->telemetry.size();
+  browser_field_count_ = can->fields.size();
   std::vector<std::string> paths;
-  for (const auto &[path, _] : can->telemetry) paths.push_back(path);
+  for (const auto &[path, _] : can->fields) paths.push_back(path);
   for (const auto &e : equations_) paths.push_back(e.name);
   browser_tree_.rebuild(paths);
   browser_tree_dirty_ = true;
 }
 
-void ChartsWidget::pollTelemetry() {
+void ChartsWidget::pollFields() {
   if (equation_task_.valid()) {
     if (equation_task_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
     equation_task_.get();
     if (equation_result_->revision == equation_revision_) {
       calculated_.swap(equation_result_->values);
       equation_errors_ = std::move(equation_result_->errors);
-      for (auto &c : charts_) c->updateTelemetry();
+      for (auto &c : charts_) c->updateFields();
       updateState();
     }
     ThreadPool::instance().run([retired = std::move(equation_result_)]() mutable { retired.reset(); });
   }
-  if (!telemetry_dirty_) return;
-  telemetry_dirty_ = false;
+  if (!fields_dirty_) return;
+  fields_dirty_ = false;
   // Retain immutable inputs without copying samples on the UI thread.
-  cabana::TelemetrySnapshot snapshot;
+  cabana::FieldsSnapshot snapshot;
   for (const auto &e : equations_) {
     auto add = [&](const std::string &path) {
-      auto it = can->telemetry.find(path);
-      if (it != can->telemetry.end() && !snapshot.count(path)) snapshot.emplace(path, it->second);
+      auto it = can->fields.find(path);
+      if (it != can->fields.end() && !snapshot.count(path)) snapshot.emplace(path, it->second);
     };
     add(e.source);
     for (const auto &path : e.additional) add(path);
@@ -216,7 +216,7 @@ void ChartsWidget::exportCsv() {
   // Snapshot the visible tab/range now, so playback or later edits cannot change the export.
   std::ostringstream out;
   out.imbue(std::locale::classic());
-  out << "chart,message,signal,transform,scale,offset,window,time,value\n" << std::setprecision(17);
+  out << "chart,source,name,transform,scale,offset,window,time,value\n" << std::setprecision(17);
   const auto range = can->timeRange().value_or(display_range_);
   size_t rows = 0;
   int index = 0;
@@ -224,7 +224,7 @@ void ChartsWidget::exportCsv() {
     ++index;
     for (const auto &s : c->signals()) {
       if (!s.visible) continue;
-      const auto prefix = std::to_string(index) + ',' + chart::csvField(s.path.empty() ? s.msg_id.toString() : "cereal") + ',' +
+      const auto prefix = std::to_string(index) + ',' + chart::csvField(s.path.empty() ? s.msg_id.toString() : "openpilot") + ',' +
         chart::csvField(s.name()) + ',' + chart::csvField(chart::TRANSFORM_NAMES[(int)s.transform.type]) + ',';
       auto first = std::lower_bound(s.vals.begin(), s.vals.end(), range.first, [](const auto &p, double t) { return p.x < t; });
       for (auto it = first; it != s.vals.end() && it->x < range.second; ++it) {
@@ -241,7 +241,7 @@ void ChartsWidget::exportCsv() {
 }
 
 void ChartsWidget::drawSignalBrowser() {
-  const bool filter_changed = inputText("##search_telemetry", &browser_filter_, "Search route signals...");
+  const bool filter_changed = inputText("##search_fields", &browser_filter_, "Search openpilot messages...");
   if (filter_changed || browser_tree_dirty_) {
     browser_tree_.filter(browser_filter_);
     browser_search_expanded_.clear();
@@ -255,7 +255,7 @@ void ChartsWidget::drawSignalBrowser() {
   auto &expanded = browser_filter_.empty() ? browser_expanded_ : browser_search_expanded_;
   ImGui::TextDisabled("Double-click to plot · Drag onto a chart to compare");
   ImGui::AlignTextToFramePadding();
-  ImGui::Text("%zu signals", browser_tree_.nodes[0].matches);
+  ImGui::Text("%zu fields", browser_tree_.nodes[0].matches);
   alignRight(iconButtonWidth() * 2 + ImGui::GetStyle().ItemInnerSpacing.x);
   if (iconButton("expand_signals", icon::PLUS_LG, "Expand all")) {
     for (const auto &node : browser_tree_.nodes) {
@@ -264,8 +264,8 @@ void ChartsWidget::drawSignalBrowser() {
   }
   ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
   if (iconButton("collapse_signals", icon::ARROWS_COLLAPSE, "Collapse all")) expanded.clear();
-  if (browser_tree_.nodes[0].children.empty()) ImGui::TextWrapped("Open a route or start a cereal stream to browse its numeric signals.");
-  else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No signals match your search.");
+  if (browser_tree_.nodes[0].children.empty()) ImGui::TextWrapped("Open a route or start a stream to browse openpilot messages.");
+  else if (!browser_tree_.nodes[0].matches) ImGui::TextDisabled("No fields match your search.");
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, ImGui::GetStyle().WindowPadding.y));
   const bool browser_visible = ImGui::BeginChild("signal_browser_list", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding,
                                                 ImGuiWindowFlags_HorizontalScrollbar);
@@ -294,11 +294,11 @@ void ChartsWidget::drawSignalBrowser() {
         const auto &path = node.path;
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && !ImGui::IsItemToggledOpen()) {
           auto *c = createChart();
-          c->addTelemetry(path);
+          c->addFields(path);
           updateState();
         }
         if (ImGui::IsItemHovered()) {
-          const auto points = telemetrySnapshot(path);
+          const auto points = fieldsSnapshot(path);
           const double time = can->beginMonoTime() * 1e-9 + can->currentSec();
           if (points && !points->empty()) ImGui::SetTooltip("%s\nValue: %.8g", path.c_str(), cabana::nearestValue(*points, time));
           else ImGui::SetTooltip("%s", path.c_str());
@@ -309,7 +309,7 @@ void ChartsWidget::drawSignalBrowser() {
           ImGui::EndDragDropSource();
         }
       } else if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s\n%zu signals", node.key.c_str(), node.matches);
+        ImGui::SetTooltip("%s\n%zu fields", node.key.c_str(), node.matches);
       }
       if (indent > 0) ImGui::Unindent(indent);
       ImGui::PopID();

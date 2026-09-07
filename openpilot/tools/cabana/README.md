@@ -1,6 +1,6 @@
 # Cabana
 
-Cabana visualizes openpilot telemetry and raw CAN data. One use for this is creating and editing [CAN Dictionaries](http://socialledge.com/sjsu/index.php/DBC_Format) (DBC files), and the tool provides direct integration with [commaai/opendbc](https://github.com/commaai/opendbc) (a collection of DBC files), allowing you to load the DBC files direct from source, and save to your fork. In addition, you can load routes from [comma connect](https://connect.comma.ai).
+Cabana visualizes openpilot messages and raw CAN data. One use for this is creating and editing [CAN Dictionaries](http://socialledge.com/sjsu/index.php/DBC_Format) (DBC files), and the tool provides direct integration with [commaai/opendbc](https://github.com/commaai/opendbc) (a collection of DBC files), allowing you to load the DBC files direct from source, and save to your fork. In addition, you can load routes from [comma connect](https://connect.comma.ai).
 
 ## Usage Instructions
 
@@ -18,9 +18,9 @@ Options:
   --qcam                    load qcamera
   --wide-road               load wide road camera (alias: --ecam)
   --cabin                   load cabin camera (alias: --dcam)
+  --layout <name|file>      open an openpilot preset or Cabana JSON layout
+  --stream                  read openpilot messages from local msgq (alias: --msgq)
   --msgq                    read openpilot messages from local msgq
-  --stream                  alias for --msgq
-  --layout <name-or-file>    open a preset or Cabana JSON layout
   --panda                   read can messages from panda
   --panda-serial <serial>   read can messages from panda with given serial
   --socketcan <device>      read can messages from given SocketCAN device
@@ -107,18 +107,18 @@ Cabana includes [openpilot analysis layouts](layouts), including
 ./cabana --zmq <ipaddress> --layout tuning    # device running the messaging bridge
 ```
 
-**Layout → openpilot Presets** opens a bundled layout on the current route. Telemetry layouts
-open the central **Signal Analysis** workspace, with the route's numeric cereal fields in the
-left sidebar and synchronized playback/video on the right. Switch back to **CAN Editor** for
-DBC work. Cereal plotting does not need a DBC or CAN messages.
+**Layout → openpilot Presets** opens a bundled layout on the current route. Presets open the
+central **Plots** workspace, with the route's openpilot messages in the left sidebar and
+synchronized playback/video on the right. Switch back to **CAN Editor** for DBC work.
+Plotting openpilot messages does not need a DBC or CAN data.
 
-Browse **Route Signals** as a tree of services, fields, and array indices. Search expands matching
+Browse **openpilot Messages** as a tree of messages, fields, and array indices. Search expands matching
 branches and restores your previous expansion state when cleared. Search for fields such as `/carState/vEgo`, `/carControl/actuators/accel`, or
 `/modelV2/position/x/0`. Double-click a field to create a plot, or drag it onto an existing plot
-to compare signals. Arrays, booleans, enums, and nested numeric fields are included. Hover a
+to compare fields. Arrays, booleans, enums, and nested numeric fields are included. Hover a
 field to inspect its value. Imported equations also appear in the browser.
 
-Use **+** in the Charts toolbar to create an empty chart, then drag signals onto it.
+Use **+** in the Charts toolbar to create an empty chart, then drag fields or CAN signals onto it.
 Empty charts are preserved in saved layouts. For decoded CAN, open **Manage Signals** from
 the chart's menu to search by signal name, message name, or message ID.
 Select several signals to overlay them on one chart. You can also
@@ -127,15 +127,15 @@ add a signal from its message's signal view. Drag chart grips to reorder or merg
 
 - **Click** a chart to seek; **drag** to zoom all charts to a time range.
 - **Shift-drag** scrubs playback; **Ctrl-drag** pans; **Ctrl-wheel** zooms around the pointer.
-- **View → Fit Loaded Data** fits the visible signals in the current tab.
+- **View → Fit Loaded Data** fits the visible series in the current tab.
 - **View → Follow Playback** restores the rolling time window. Zoom and pan support undo/redo.
-- Click a legend entry to hide/show a signal. Right-click it for **transforms and statistics**,
+- Click a legend entry to hide/show a series. Right-click it for **transforms and statistics**,
   also available through the chart's three-dot menu.
 
 Transforms include scale/offset, derivative, integral, and a moving average over a configurable
 number of samples. Scale and offset apply first. Derivatives omit the first sample and repeated
 timestamps; integrals use trapezoids starting at zero at the first loaded sample. Moving averages
-use the available samples while the window fills. Transformed signals have an asterisk in their
+use the available samples while the window fills. Transformed series have an asterisk in their
 legend and adjusted units. Statistics show sample count, minimum, maximum, and sample mean for
 the visible time range. These operations affect chart values only.
 
@@ -144,8 +144,8 @@ the visible time range. These operations affect chart values only.
 **Layout → Open Layout** accepts Cabana JSON. The bundled presets use Python equations
 and preserve named tabs, chart titles, overlaid curves, colors, line styles, fixed Y limits,
 and scale/offset transforms. Panels are arranged in Cabana's chart grid.
-Signals default to visible, untransformed values with scale 1, offset 0, and a moving-average
-window of 10 samples. Telemetry signals need only a `path`; CAN signals need `message` and `signal`.
+Series default to visible, untransformed values with scale 1, offset 0, and a moving-average
+window of 10 samples. openpilot message fields need only a `path`; CAN signals need `message` and `signal`.
 
 Equations run in the Python interpreter from the openpilot environment used to build Cabana.
 Each equation uses `language: "python"`, a `globals` initialization
@@ -178,13 +178,14 @@ runaway Python loops; it is not a sandbox or a timeout for native extension call
 **Layout → Save Layout** saves the workspace as Cabana JSON, including equations, tabs,
 chart grouping, colors, limits, signal visibility, transforms, column count, and window duration.
 The workspace also restores when Cabana restarts. Layouts contain no route data and can be reused
-on another route. Missing cereal fields remain visible as **No data** until their data arrives;
+on another route. Missing openpilot fields remain visible as **No data** until their data arrives;
 older layouts may reference fields no longer logged by current openpilot. PlotJuggler's optional
 CAN-parser diagnostic fields are not produced by Cabana. Layouts with decoded CAN curves require
 the matching DBC; invalid files or unresolved CAN signals leave the current workspace intact.
 
-**Layout → Export Visible Data to CSV** exports visible signals in the current tab and time
-range, including calculated/transformed values and transform settings. Each row contains one
+**Layout → Export Visible Data to CSV** exports visible series in the current tab and time
+range, including calculated/transformed values and transform settings. The `source` column holds
+`openpilot` for message fields or the CAN message ID. Each row contains one
 sample at its original timestamp; signals with different sample rates are not resampled.
 The right edge of the visible time range is excluded. Narrow panels place toolbar actions in
 an overflow menu (**»**).

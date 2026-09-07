@@ -4,7 +4,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
-#include "tools/cabana/analysis/logtelemetry.h"
+#include "tools/cabana/analysis/logfields.h"
 #include "tools/cabana/settings.h"
 
 ReplayStream::ReplayStream() {
@@ -16,18 +16,18 @@ ReplayStream::ReplayStream() {
   settings_connection_ = settings.changed.connect([this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
-  telemetry_thread_ = std::thread([this]() { indexTelemetry(); });
+  fields_thread_ = std::thread([this]() { indexFields(); });
 }
 
 ReplayStream::~ReplayStream() {
   {
-    std::lock_guard lock(telemetry_mutex_);
+    std::lock_guard lock(fields_mutex_);
     stopping_ = true;
   }
   cancelWaits();
   if (replay) replay->stop();
-  telemetry_cv_.notify_one();
-  if (telemetry_thread_.joinable()) telemetry_thread_.join();
+  fields_cv_.notify_one();
+  if (fields_thread_.joinable()) fields_thread_.join();
 }
 
 // CAN history must be ready for seeking. Cereal indexing can finish in the background.
@@ -55,32 +55,32 @@ void ReplayStream::mergeSegments() {
       }
       postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
       {
-        std::lock_guard lock(telemetry_mutex_);
+        std::lock_guard lock(fields_mutex_);
         pending_segments_.push_back(seg);
       }
-      telemetry_cv_.notify_one();
+      fields_cv_.notify_one();
     }
   }
 }
 
-void ReplayStream::indexTelemetry() {
+void ReplayStream::indexFields() {
   while (true) {
-    std::unique_lock lock(telemetry_mutex_);
-    telemetry_cv_.wait(lock, [this]() { return stopping_ || !pending_segments_.empty(); });
+    std::unique_lock lock(fields_mutex_);
+    fields_cv_.wait(lock, [this]() { return stopping_ || !pending_segments_.empty(); });
     if (stopping_) return;
     auto segment = std::move(pending_segments_.front());
     pending_segments_.pop_front();
     lock.unlock();
 
-    auto telemetry_batch = cabana::extractLogTelemetry(*segment->log, stopping_);
+    auto fields_batch = cabana::extractLogFields(*segment->log, stopping_);
     if (stopping_) return;
     // This worker is the only writer. Retired snapshots are freed here, off the UI thread.
-    cabana::prepareTelemetryMerge(telemetry, telemetry_batch);
-    auto next = telemetry;
-    for (auto &[path, samples] : telemetry_batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
+    cabana::prepareFieldsMerge(fields, fields_batch);
+    auto next = fields;
+    for (auto &[path, samples] : fields_batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
     postToMainThreadAndWait([&]() {
-      telemetry.swap(next);
-      telemetryChanged();
+      fields.swap(next);
+      fieldsChanged();
     });
   }
 }

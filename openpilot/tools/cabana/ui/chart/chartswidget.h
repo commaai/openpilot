@@ -72,7 +72,7 @@ class ChartsWidget {
 public:
   ChartsWidget();
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
-  std::shared_ptr<const cabana::Samples> telemetrySnapshot(const std::string &path) const;
+  std::shared_ptr<const cabana::Samples> fieldsSnapshot(const std::string &path) const;
   std::string serializeLayout() const;
   enum class LayoutStatus { Restored, MissingCan, Failed };
   LayoutStatus restoreLayout(const std::string &contents, bool defer_missing_can = false);
@@ -98,9 +98,9 @@ private:
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
   ImRect chartVisibleRect(ChartView *chart);
-  void telemetryChanged();
+  void fieldsChanged();
   void rebuildSignalBrowser();
-  void pollTelemetry();
+  void pollFields();
   void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
@@ -141,20 +141,20 @@ private:
   TabBar tabbar_;
   std::unordered_map<int, std::string> tab_names_;
   std::vector<cabana::Equation> equations_;
-  cabana::TelemetrySnapshot calculated_;
+  cabana::FieldsSnapshot calculated_;
   struct EquationResult {
-    cabana::TelemetrySnapshot values;
+    cabana::FieldsSnapshot values;
     std::string errors;
     size_t revision = 0;
   };
   std::shared_ptr<EquationResult> equation_result_;
   std::future<void> equation_task_;
-  bool telemetry_dirty_ = false;
+  bool fields_dirty_ = false;
   size_t equation_revision_ = 0;
   std::string equation_errors_;
   std::string browser_filter_;
   std::vector<std::filesystem::path> presets_;
-  size_t browser_telemetry_count_ = 0;
+  size_t browser_field_count_ = 0;
   chart::SignalTree browser_tree_;
   bool browser_tree_dirty_ = true;
   std::unordered_set<std::string> browser_expanded_, browser_search_expanded_;

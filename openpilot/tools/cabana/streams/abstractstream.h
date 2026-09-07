@@ -15,7 +15,7 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "tools/cabana/core/can_data.h"
-#include "tools/cabana/analysis/telemetry.h"
+#include "tools/cabana/analysis/fields.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
@@ -67,8 +67,8 @@ public:
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
 
-  cabana::TelemetrySnapshot telemetry;  // main thread; timestamps are absolute monotonic seconds
-  Observable<> telemetryChanged;
+  cabana::FieldsSnapshot fields;  // main thread; timestamps are absolute monotonic seconds
+  Observable<> fieldsChanged;
   SourceSet sources;
 
 protected:

@@ -91,7 +91,7 @@ double nearestValue(const std::vector<Sample> &samples, double time) {
   return it->y;
 }
 
-std::vector<Sample> evaluateEquation(const Equation &equation, const TelemetrySnapshot &data) {
+std::vector<Sample> evaluateEquation(const Equation &equation, const FieldsSnapshot &data) {
   auto source = data.find(equation.source);
   if (source == data.end() || source->second->empty()) throw std::runtime_error("Waiting for " + equation.source);
   std::vector<const std::vector<Sample> *> inputs;

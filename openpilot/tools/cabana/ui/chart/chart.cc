@@ -104,25 +104,25 @@ void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
   charts_widget_->seriesChanged();
 }
 
-void ChartView::addTelemetry(const std::string &path, CabanaColor color) {
+void ChartView::addFields(const std::string &path, CabanaColor color) {
   if (std::any_of(sigs_.begin(), sigs_.end(), [&](const auto &s) { return s.path == path; })) return;
-  sigs_.push_back({.path = path, .color = color});
-  updateTelemetry();
+  sigs_.push_back({.path = path, .color = uniqueColor(color)});
+  updateFields();
   charts_widget_->seriesChanged();
   charts_widget_->analysisRequested();
 }
 
-void ChartView::updateTelemetry() {
-  telemetry_dirty_ = true;
-  pollTelemetry();
+void ChartView::updateFields() {
+  fields_dirty_ = true;
+  pollFields();
 }
 
-void ChartView::pollTelemetry() {
-  if (telemetry_task_.valid()) {
-    if (telemetry_task_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
-    telemetry_task_.get();
-    for (size_t i = 0; i < std::min(sigs_.size(), telemetry_result_->size()); ++i) {
-      auto &ready = (*telemetry_result_)[i];
+void ChartView::pollFields() {
+  if (fields_task_.valid()) {
+    if (fields_task_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    fields_task_.get();
+    for (size_t i = 0; i < std::min(sigs_.size(), fields_result_->size()); ++i) {
+      auto &ready = (*fields_result_)[i];
       auto &s = sigs_[i];
       if (ready.path.empty() || s.path != ready.path) continue;
       if (s.transform.type != ready.transform.type || s.transform.scale != ready.transform.scale ||
@@ -135,22 +135,22 @@ void ChartView::pollTelemetry() {
       s.track_pt = {};
     }
     updateAxisY();
-    ThreadPool::instance().run([retired = std::move(telemetry_result_)]() mutable { retired.reset(); });
+    ThreadPool::instance().run([retired = std::move(fields_result_)]() mutable { retired.reset(); });
   }
-  if (!telemetry_dirty_) return;
-  telemetry_dirty_ = false;
+  if (!fields_dirty_) return;
+  fields_dirty_ = false;
   if (std::none_of(sigs_.begin(), sigs_.end(), [](const auto &s) { return !s.path.empty(); })) return;
-  telemetry_result_ = std::make_shared<std::vector<SigItem>>();
+  fields_result_ = std::make_shared<std::vector<SigItem>>();
   const double origin = can->beginMonoTime() * 1e-9;
   std::vector<std::shared_ptr<const cabana::Samples>> samples;
   for (const auto &s : sigs_) {
-    auto &item = telemetry_result_->emplace_back();
+    auto &item = fields_result_->emplace_back();
     if (s.path.empty()) continue;
     item.path = s.path;
     item.transform = s.transform;
-    samples.push_back(charts_widget_->telemetrySnapshot(s.path));
+    samples.push_back(charts_widget_->fieldsSnapshot(s.path));
   }
-  telemetry_task_ = ThreadPool::instance().run([result = telemetry_result_, samples = std::move(samples), origin, build_tree = !can->liveStreaming()]() {
+  fields_task_ = ThreadPool::instance().run([result = fields_result_, samples = std::move(samples), origin, build_tree = !can->liveStreaming()]() {
     size_t index = 0;
     for (auto &s : *result) {
       if (s.path.empty()) continue;
@@ -174,7 +174,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   if (sigs_.empty() && prev_size > 0) {
     charts_widget_->removeChart(this);
   } else if (sigs_.size() != prev_size) {
-    updateTelemetry();
+    updateFields();
     charts_widget_->seriesChanged();
     updateAxisY();
   }
@@ -194,14 +194,14 @@ void ChartView::manageSignals() {
   auto dlg = std::make_unique<SignalSelector>("Manage Chart");
   for (auto &s : sigs_) {
     if (s.path.empty()) dlg->addSelected(s.msg_id, s.sig);
-    else dlg->addTelemetry(s.path);
+    else dlg->addFields(s.path);
   }
   // runs once the dialog is accepted, dropped if the chart is removed first
   charts_widget_->execSignalSelector(std::move(dlg), this, [this](SignalSelector &selector) {
     const auto &items = selector.selectedItems();
     for (const auto &s : items) {
       if (s.path.empty()) addSignal(s.msg_id, s.sig);
-      else addTelemetry(s.path);
+      else addFields(s.path);
     }
     removeIf([&](auto &s) {
       return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.path == it.path && s.msg_id == it.msg_id && s.sig == it.sig; });
@@ -326,7 +326,7 @@ void ChartView::configureSignal(size_t index, const chart::TransformSettings &tr
   if (index >= sigs_.size()) return;
   auto &s = sigs_[index];
   s.transform = transform;
-  if (!s.path.empty()) telemetry_dirty_ = true;
+  if (!s.path.empty()) fields_dirty_ = true;
   s.visible = visible;
   if (color) s.color = *color;
   rebuildSeries(s);
@@ -617,7 +617,7 @@ void ChartView::takeSignalsFrom(ChartView *source) {
     sigs_.push_back(std::move(s));
   }
   source->sigs_.clear();
-  updateTelemetry();
+  updateFields();
   updateAxisY();
   charts_widget_->removeChart(source);
 }
@@ -635,7 +635,7 @@ std::vector<ChartView::SigItem> ChartView::takeExtraSignals() {
 
 void ChartView::adoptSignal(SigItem s) {
   sigs_.push_back(std::move(s));
-  updateTelemetry();
+  updateFields();
   updateAxisY();
 }
 
@@ -775,7 +775,7 @@ void ChartView::drawAxes() {
     layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
     if (sigs_.empty()) {
-      drawText(ImGui::GetWindowDrawList(), layout_.plot_area, "Drag signals here to plot", ImGui::GetColorU32(ImGuiCol_TextDisabled));
+      drawText(ImGui::GetWindowDrawList(), layout_.plot_area, "Drag fields or CAN signals here to plot", ImGui::GetColorU32(ImGuiCol_TextDisabled));
     }
     if (!drawing_ghost_ && layout_.plot_hovered && ImGui::GetIO().KeyCtrl) {
       ImGui::SetKeyOwner(ImGuiKey_MouseWheelY, ImGui::GetID("##plot"));
@@ -799,7 +799,7 @@ void ChartView::drawAxes() {
   }
   if (!drawing_ghost_ && ImGui::BeginDragDropTargetCustom(layout_.rect, ImGui::GetID("signal_drop"))) {
     if (const auto *payload = ImGui::AcceptDragDropPayload("CABANA_TELEMETRY")) {
-      addTelemetry(static_cast<const char *>(payload->Data));
+      addFields(static_cast<const char *>(payload->Data));
       charts_widget_->updateState();
     }
     ImGui::EndDragDropTarget();
