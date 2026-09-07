@@ -5,105 +5,53 @@
   "tabs": [
     [
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "haversine distance [m]",
-            "signal": "haversine distance [m]",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/vEgo",
-            "signal": "/carState/vEgo",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#17becf"
           },
           {
             "path": "/gpsLocationExternal/speed",
-            "signal": "/gpsLocationExternal/speed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#bcbd22"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/0",
-            "signal": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/1",
-            "signal": "/liveLocationKalmanDEPRECATED/positionGeodetic/std/1",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/gpsLocationExternal/horizontalAccuracy",
-            "signal": "/gpsLocationExternal/horizontalAccuracy",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           },
           {
             "path": "/gpsLocationExternal/verticalAccuracy",
-            "signal": "/gpsLocationExternal/verticalAccuracy",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/gpsLocationExternal/speedAccuracy",
-            "signal": "/gpsLocationExternal/speedAccuracy",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           }
         ]

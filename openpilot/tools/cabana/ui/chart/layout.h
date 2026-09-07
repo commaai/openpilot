@@ -11,6 +11,8 @@
 #include "tools/cabana/ui/chart/analysis.h"
 
 namespace chart {
+inline const json11::Json::object SIGNAL_DEFAULTS{{"visible", true}, {"transform", 0}, {"scale", 1}, {"offset", 0}, {"window", 10}};
+
 struct LayoutSignal {
   MessageId id;
   std::string name;
@@ -58,7 +60,11 @@ inline std::optional<Layout> parseLayout(const std::string &contents) {
         (std::string(key) == "y_min" ? chart.y_min : chart.y_max) = c[key].number_value();
       }
       if (chart.y_min && chart.y_max && *chart.y_min >= *chart.y_max) return std::nullopt;
-      for (const auto &s : c["signals"].array_items()) {
+      for (const auto &raw : c["signals"].array_items()) {
+        auto fields = raw.object_items();
+        fields.insert(SIGNAL_DEFAULTS.begin(), SIGNAL_DEFAULTS.end());
+        fields.emplace("signal", raw["path"]);
+        const Json s(std::move(fields));
         if ((!s["message"].is_string() && !s["path"].is_string()) || !s["signal"].is_string() || s["signal"].string_value().empty() || !s["visible"].is_bool() ||
             !integer(s["transform"], 0, 3) || !integer(s["window"], 1, 100000) ||
             !s["scale"].is_number() || !std::isfinite(s["scale"].number_value()) ||

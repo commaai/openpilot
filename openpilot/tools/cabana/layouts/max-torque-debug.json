@@ -5,85 +5,46 @@
   "tabs": [
     [
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "Actual lateral accel (roll compensated)",
-            "signal": "Actual lateral accel (roll compensated)",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "Desired lateral accel (roll compensated)",
-            "signal": "Desired lateral accel (roll compensated)",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "roll compensated lateral acceleration",
-            "signal": "roll compensated lateral acceleration",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/steeringPressed",
-            "signal": "/carState/steeringPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#0097ff"
           },
           {
             "path": "/carOutput/actuatorsOutput/torque",
-            "signal": "/carOutput/actuatorsOutput/torque",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/vEgo",
-            "signal": "/carState/vEgo",
-            "visible": true,
-            "transform": 0,
             "scale": 2.23694,
-            "offset": 0.0,
-            "window": 10,
             "color": "#f14cc1"
           }
         ]

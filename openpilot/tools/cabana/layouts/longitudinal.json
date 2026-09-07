@@ -5,135 +5,65 @@
   "tabs": [
     [
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/aEgo",
-            "signal": "/carState/aEgo",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#f14cc1"
           },
           {
             "path": "/longitudinalPlan/accels/0",
-            "signal": "/longitudinalPlan/accels/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           },
           {
             "path": "/carControl/actuators/accel",
-            "signal": "/carControl/actuators/accel",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#17becf"
           },
           {
             "path": "/carOutput/actuatorsOutput/accel",
-            "signal": "/carOutput/actuatorsOutput/accel",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/controlsState/upAccelCmd",
-            "signal": "/controlsState/upAccelCmd",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/controlsState/uiAccelCmd",
-            "signal": "/controlsState/uiAccelCmd",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           },
           {
             "path": "/controlsState/ufAccelCmd",
-            "signal": "/controlsState/ufAccelCmd",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/vEgo",
-            "signal": "/carState/vEgo",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/longitudinalPlan/speeds/0",
-            "signal": "/longitudinalPlan/speeds/0",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carControl/longActive",
-            "signal": "/carControl/longActive",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/carState/gasPressed",
-            "signal": "/carState/gasPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           }
         ]

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -39,6 +40,7 @@ private:
   std::atomic<bool> update_pending_ = false;
   std::vector<const CanEvent *> received_events_;
   cabana::Telemetry received_telemetry_;
+  std::optional<cabana::TelemetryExtractor> telemetry_extractor_;
   uint64_t received_first_ts_ = 0, received_last_ts_ = 0;
 
   std::chrono::system_clock::time_point begin_date_time;

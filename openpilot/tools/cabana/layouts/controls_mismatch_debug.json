@@ -5,111 +5,58 @@
   "tabs": [
     [
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carControl/enabled",
-            "signal": "/carControl/enabled",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/pandaStates/0/controlsAllowed",
-            "signal": "/pandaStates/0/controlsAllowed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/cumLagMs",
-            "signal": "/carState/cumLagMs",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#9467bd"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/pandaStates/0/safetyRxInvalid",
-            "signal": "/pandaStates/0/safetyRxInvalid",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1f77b4"
           },
           {
             "path": "/pandaStates/0/safetyRxChecksInvalid",
-            "signal": "/pandaStates/0/safetyRxChecksInvalid",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#e801ce"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/pandaStates/0/safetyTxBlocked",
-            "signal": "/pandaStates/0/safetyTxBlocked",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#d62728"
           }
         ]
       },
       {
-        "title": "...",
         "type": 0,
         "signals": [
           {
             "path": "/carState/gasPressed",
-            "signal": "/carState/gasPressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#1ac938"
           },
           {
             "path": "/carState/brakePressed",
-            "signal": "/carState/brakePressed",
-            "visible": true,
-            "transform": 0,
-            "scale": 1,
-            "offset": 0,
-            "window": 10,
             "color": "#ff7f0e"
           }
         ]

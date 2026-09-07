@@ -9,7 +9,6 @@ struct Equation {
 };
 // Matches PlotJuggler's nearest-sample alignment (ties select the later sample).
 double nearestValue(const std::vector<Sample> &samples, double time);
-// Migrate only the known, ported equations from old saved layouts.
 // Each evaluation has fresh Python globals, shared by its samples.
-std::vector<Sample> evaluateEquation(const Equation &equation, const Telemetry &data);
+std::vector<Sample> evaluateEquation(const Equation &equation, const TelemetrySnapshot &data);
 }  // namespace cabana

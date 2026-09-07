@@ -89,22 +89,22 @@ double nearestValue(const std::vector<Sample> &samples, double time) {
   return it->y;
 }
 
-std::vector<Sample> evaluateEquation(const Equation &equation, const Telemetry &data) {
+std::vector<Sample> evaluateEquation(const Equation &equation, const TelemetrySnapshot &data) {
   auto source = data.find(equation.source);
-  if (source == data.end() || source->second.empty()) throw std::runtime_error("Waiting for " + equation.source);
+  if (source == data.end() || source->second->empty()) throw std::runtime_error("Waiting for " + equation.source);
   std::vector<const std::vector<Sample> *> inputs;
   for (const auto &path : equation.additional) {
     auto it = data.find(path);
-    if (it == data.end() || it->second.empty()) throw std::runtime_error("Waiting for " + path);
-    inputs.push_back(&it->second);
+    if (it == data.end() || it->second->empty()) throw std::runtime_error("Waiting for " + path);
+    inputs.push_back(it->second.get());
   }
   PythonLock lock;
   auto compile = checked(PyObject_GetAttrString(runtimeModule(), "compile_equation"));
   ExecutionLimit limit;
   auto function = checked(PyObject_CallFunction(compile.get(), "ssi", equation.globals.c_str(), equation.function.c_str(), (int)inputs.size()));
   std::vector<Sample> result;
-  result.reserve(source->second.size());
-  for (const auto &sample : source->second) {
+  result.reserve(source->second->size());
+  for (const auto &sample : *source->second) {
     limit.reset();
     auto args = checked(PyTuple_New(inputs.size() + 2));
     PyTuple_SET_ITEM(args.get(), 0, checked(PyFloat_FromDouble(sample.x)).release());
