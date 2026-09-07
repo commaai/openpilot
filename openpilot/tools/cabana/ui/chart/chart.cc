@@ -235,9 +235,7 @@ void ChartView::updateLayout() {
     int w = marker_size + LEGEND_SPACING + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, name.c_str()).x +
             ImGui::CalcTextSize(s.description().c_str()).x + 3;
     pushMonoFont(font_size);
-    const auto *point = lastPointBefore(s, cur_sec_);
-    const std::string value = point ? signalValue(s, point->y) : "No data";
-    w = std::max(w, (int)std::ceil(std::max(ImGui::CalcTextSize("-0.00000e+000").x, ImGui::CalcTextSize(value.c_str()).x)));
+    w = std::max(w, (int)std::ceil(ImGui::CalcTextSize("-0.00000e+000").x));
     popMonoFont();
     w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
     if (x + w > legend_right && x > legend_left) {
