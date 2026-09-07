@@ -427,10 +427,10 @@ void test_pixel_envelope() {
 
 void test_chart_analysis() {
   struct Point { double x, y; Point(double x, double y) : x(x), y(y) {} };
-  auto transform = [](const std::vector<Point> &raw, const chart::TransformSettings &settings) {
+  auto transform = [](const std::vector<Point> &raw, const chart::TransformSettings &transform_settings) {
     std::vector<Point> result;
     chart::TransformState state;
-    for (const auto &pt : raw) if (auto value = state.append(pt.x, pt.y, settings)) result.emplace_back(pt.x, *value);
+    for (const auto &pt : raw) if (auto value = state.append(pt.x, pt.y, transform_settings)) result.emplace_back(pt.x, *value);
     return result;
   };
   const std::vector<Point> raw{{0, 2}, {1, 4}, {3, 8}, {3, 10}, {4, 12}};
@@ -459,13 +459,13 @@ void test_chart_analysis() {
   REQUIRE(average.back().y == 23);
   // A streaming processor produces the same values when a batch boundary falls between samples.
   for (auto type : {chart::Transform::None, chart::Transform::Derivative, chart::Transform::Integral, chart::Transform::MovingAverage}) {
-    chart::TransformSettings settings{type, -2, 3, 3};
-    const auto expected = transform(raw, settings);
+    chart::TransformSettings transform_settings{type, -2, 3, 3};
+    const auto expected = transform(raw, transform_settings);
     chart::TransformState state;
     std::vector<Point> streamed;
     for (size_t batch = 0; batch < raw.size(); batch += 2) {
       for (size_t i = batch; i < std::min(batch + 2, raw.size()); ++i) {
-        if (auto value = state.append(raw[i].x, raw[i].y, settings)) streamed.emplace_back(raw[i].x, *value);
+        if (auto value = state.append(raw[i].x, raw[i].y, transform_settings)) streamed.emplace_back(raw[i].x, *value);
       }
     }
     REQUIRE(streamed.size() == expected.size());
