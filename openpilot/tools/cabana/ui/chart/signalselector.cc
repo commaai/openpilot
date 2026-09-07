@@ -11,7 +11,10 @@
 #include "tools/cabana/utils/strings.h"
 
 SignalSelector::SignalSelector(std::string title) : title_(std::move(title)) {
-  for (const auto &[id, _] : can->lastMessages()) {
+  std::set<MessageId> ids;
+  for (const auto &[id, _] : can->eventsMap()) ids.insert(id);
+  for (const auto &[id, _] : can->lastMessages()) ids.insert(id);
+  for (const auto &id : ids) {
     if (auto m = dbc()->msg(id)) {
       msgs_combo_.push_back({m->name + " (" + id.toString() + ")", id});
     }

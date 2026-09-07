@@ -23,6 +23,7 @@ public:
   SegmentManager(const std::string &route_name, uint32_t flags, const std::string &data_dir = "", bool auto_source = false)
       : flags_(flags), route_(route_name, data_dir, auto_source), event_data_(std::make_shared<EventData>()) {}
   ~SegmentManager();
+  void stop();
 
   bool load();
   void setCurrentSegment(int seg_num);
