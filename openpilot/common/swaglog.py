@@ -1,14 +1,12 @@
 import logging
 import os
 import time
-import warnings
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
 
-import zmq
-
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.shm_queue import ShmQueue
 
 
 def get_file_handler():
@@ -64,44 +62,36 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
 
-class UnixDomainSocketHandler(logging.Handler):
+class ShmQueueHandler(logging.Handler):
   def __init__(self, formatter):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
     self.pid = None
 
-    self.zctx = None
-    self.sock = None
+    self.queue = None
 
   def __del__(self):
     self.close()
 
   def close(self):
-    if self.sock is not None:
-      self.sock.close()
-    if self.zctx is not None:
-      self.zctx.term()
+    if self.queue is not None:
+      self.queue.close()
+      self.queue = None
+    self.pid = None
 
   def connect(self):
-    self.zctx = zmq.Context()
-    self.sock = self.zctx.socket(zmq.PUSH)
-    self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect(Paths.swaglog_ipc())
+    self.close()
+    self.queue = ShmQueue(Paths.swaglog_ipc(), blocking=False)
     self.pid = os.getpid()
 
   def emit(self, record):
-    if os.getpid() != self.pid:
-      # TODO suppresses warning about forking proc with zmq socket, fix root cause
-      warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
-      self.connect()
-
-    msg = self.format(record).rstrip('\n')
-    # print("SEND".format(repr(msg)))
     try:
-      s = chr(record.levelno)+msg
-      self.sock.send(s.encode('utf8'), zmq.NOBLOCK)
-    except zmq.error.Again:
-      # drop :/
+      if os.getpid() != self.pid:
+        self.connect()
+      msg = self.format(record).rstrip('\n')
+      self.queue.send(bytes([record.levelno]) + msg.encode('utf8'))
+    except OSError:
+      # Logging must still work when the IPC queue is unavailable.
       pass
 
 
@@ -138,7 +128,7 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
-ipchandler = UnixDomainSocketHandler(SwagFormatter(log))
+ipchandler = ShmQueueHandler(SwagFormatter(log))
 
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking

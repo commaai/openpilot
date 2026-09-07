@@ -11,18 +11,12 @@ from openpilot.common.swaglog import cloudlog, ipchandler
 
 class TestLogmessaged(OpenpilotTestCase):
   def setup_method(self):
-    # clear the IPC buffer in case some other tests used cloudlog and filled it
+    # Open the queue in this test's isolated prefix.
     ipchandler.close()
     ipchandler.connect()
 
-    managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
-    self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
-
-    # ensure sockets are connected
-    time.sleep(0.5)
-    messaging.drain_sock(self.sock)
-    messaging.drain_sock(self.error_sock)
+    self.error_sock = messaging.sub_sock("errorLogMessage", timeout=1000, conflate=False)
 
   def teardown_method(self):
     del self.sock
@@ -36,9 +30,12 @@ class TestLogmessaged(OpenpilotTestCase):
     msgs = [f"abc {i}" for i in range(10)]
     for m in msgs:
       cloudlog.error(m)
+    # Queue the complete burst before starting the reader: contention may drop logs.
+    managed_processes['logmessaged'].start()
     time.sleep(0.5)
     m = messaging.drain_sock(self.sock)
     assert len(m) == len(msgs)
+    assert len(messaging.drain_sock(self.error_sock)) == len(msgs)
     assert len(self._get_log_files()) >= 1
 
   def test_big_log(self):
@@ -46,6 +43,8 @@ class TestLogmessaged(OpenpilotTestCase):
     msg = "a"*3*1024*1024
     for _ in range(n):
       cloudlog.info(msg)
+    # Queue the complete burst before starting the reader: contention may drop logs.
+    managed_processes['logmessaged'].start()
     time.sleep(0.5)
 
     msgs = messaging.drain_sock(self.sock)

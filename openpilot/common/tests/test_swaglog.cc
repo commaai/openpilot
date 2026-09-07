@@ -1,7 +1,11 @@
 #include <cstdlib>
 #include <string>
 
-#include <zmq.h>
+#include <cstdint>
+#include <sys/mman.h>
+#include <sys/file.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "common/hardware/hw.h"
 #include "common/swaglog.h"
@@ -9,22 +13,27 @@
 #include "json11/json11.hpp"
 
 void test_swaglog() {
+  setenv("OPENPILOT_PREFIX", ("swaglog_test_" + std::to_string(getpid())).c_str(), 1);
   setenv("MANAGER_DAEMON", "swaglog_test", 1);
   setenv("DONGLE_ID", "test_dongle_id", 1);
   setenv("CLEAN", "1", 1);
 
-  void *context = zmq_ctx_new();
-  CHECK(context != nullptr);
-  void *socket = zmq_socket(context, ZMQ_PULL);
-  CHECK(socket != nullptr);
-  int timeout = 5000;
-  CHECK(zmq_setsockopt(socket, ZMQ_RCVTIMEO, &timeout, sizeof(timeout)) == 0);
-  CHECK(zmq_bind(socket, Path::swaglog_ipc().c_str()) == 0);
-
+  // LOGD creates the queue and synchronously publishes a complete record.
+  unlink(Path::swaglog_ipc().c_str());
   LOGD("native-cpp-log");
 
-  char buffer[4096] = {};
-  const int size = zmq_recv(socket, buffer, sizeof(buffer), 0);
+  int fd = open(Path::swaglog_ipc().c_str(), O_RDONLY);
+  CHECK(fd >= 0);
+  CHECK(flock(fd, LOCK_SH) == 0);
+  void *mapping = mmap(nullptr, 4096, PROT_READ, MAP_SHARED, fd, 0);
+  CHECK(mapping != MAP_FAILED);
+  const auto *positions = static_cast<const uint64_t *>(mapping);
+  CHECK(positions[0] == 0);
+  const auto *size_ptr = reinterpret_cast<const uint32_t *>(positions + 2);
+  const int size = *size_ptr;
+  CHECK(positions[1] == sizeof(uint32_t) + static_cast<size_t>(size));
+  CHECK(size < 4096 - 20);
+  const char *buffer = reinterpret_cast<const char *>(size_ptr + 1);
   CHECK(size > 1);
   CHECK(buffer[0] == CLOUDLOG_DEBUG);
   std::string error;
@@ -38,8 +47,9 @@ void test_swaglog() {
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
 
-  CHECK(zmq_close(socket) == 0);
-  CHECK(zmq_ctx_destroy(context) == 0);
+  CHECK(munmap(mapping, 4096) == 0);
+  CHECK(close(fd) == 0);
+  CHECK(unlink(Path::swaglog_ipc().c_str()) == 0);
 }
 
 int main() {

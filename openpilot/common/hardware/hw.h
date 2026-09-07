@@ -37,10 +37,6 @@ namespace Path {
     return Hardware::PC() ? Path::comma_home() + "/persist/comma/id_rsa" : "/persist/comma/id_rsa";
   }
 
-  inline std::string swaglog_ipc() {
-    return "ipc:///tmp/logmessage" + Path::openpilot_prefix();
-  }
-
   inline std::string download_cache_root() {
     if (const char *env = getenv("COMMA_CACHE")) {
       return env;
@@ -55,4 +51,7 @@ namespace Path {
      return "/dev/shm";
     #endif
  }
+  inline std::string swaglog_ipc() {
+    return Path::shm_path() + "/logmessage" + Path::openpilot_prefix() + ".shm";
+  }
 }  // namespace Path

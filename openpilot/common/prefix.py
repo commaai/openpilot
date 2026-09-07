@@ -54,6 +54,10 @@ class OpenpilotPrefix:
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
+    try:
+      os.unlink(Paths.swaglog_ipc())
+    except FileNotFoundError:
+      pass
     if PC:
       shutil.rmtree(Paths.log_root(), ignore_errors=True)
     if not os.environ.get("COMMA_CACHE", False):

@@ -9,7 +9,7 @@
 #include <mutex>
 #include <string>
 
-#include <zmq.h>
+#include "common/shm_queue.h"
 #include <stdarg.h>
 #include "json11/json11.hpp"
 #include "common/version.h"
@@ -17,15 +17,7 @@
 
 class SwaglogState {
 public:
-  SwaglogState() {
-    zctx = zmq_ctx_new();
-    sock = zmq_socket(zctx, ZMQ_PUSH);
-
-    // Timeout on shutdown for messages to be received by the logging process
-    int timeout = 100;
-    zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
-    zmq_connect(sock, Path::swaglog_ipc().c_str());
-
+  SwaglogState() : queue(Path::swaglog_ipc()) {
     // workaround for https://github.com/dropbox/json11/issues/38
     setlocale(LC_NUMERIC, "C");
 
@@ -61,22 +53,16 @@ public:
     ctx_j["device"] = Hardware::get_name();
   }
 
-  ~SwaglogState() {
-    zmq_close(sock);
-    zmq_ctx_destroy(zctx);
-  }
-
   void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
     std::lock_guard lk(lock);
     if (levelnum >= print_level) {
       printf("%s: %s\n", filename, msg);
     }
-    zmq_send(sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
+    queue.send(log_s);
   }
 
   std::mutex lock;
-  void* zctx = nullptr;
-  void* sock = nullptr;
+  ShmQueue queue;
   int print_level;
   json11::Json::object ctx_j;
 };
