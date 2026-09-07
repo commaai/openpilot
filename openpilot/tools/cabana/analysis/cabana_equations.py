@@ -37,7 +37,8 @@ def _validate(source, initialization=False, globals_names=()):
   if type(source) is not str or len(source) > MAX_SOURCE_BYTES or len(source.encode()) > MAX_SOURCE_BYTES:
     raise EquationError("Code exceeds 8 KiB")
   tree = ast.parse(source)
-  stack, count, assigned = [(tree, None, 0)], 0, set()
+  stack: list[tuple[ast.AST, ast.AST | None, int]] = [(tree, None, 0)]
+  count, assigned = 0, set()
   while stack:
     node, parent, depth = stack.pop()
     count += 1
@@ -92,7 +93,7 @@ def _validate(source, initialization=False, globals_names=()):
     if isinstance(node, (ast.BinOp, ast.AugAssign)) and isinstance(node.op, ast.Pow):
       # Layouts only need small integer powers. This also excludes complex results.
       exponent = node.right if isinstance(node, ast.BinOp) else node.value
-      if not (isinstance(exponent, ast.Constant) and type(exponent.value) in (int, float) and
+      if not (isinstance(exponent, ast.Constant) and (type(exponent.value) is int or type(exponent.value) is float) and
               0 <= exponent.value <= 16 and exponent.value == int(exponent.value)):
         raise EquationError("Powers require an integer literal between 0 and 16")
     if isinstance(node, ast.Constant):

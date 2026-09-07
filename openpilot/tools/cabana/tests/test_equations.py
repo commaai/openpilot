@@ -155,4 +155,4 @@ print('resource limits passed')
 '''
     result = subprocess.run([sys.executable, '-c', textwrap.dedent(script)], capture_output=True, text=True, timeout=5)
     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-    self.assertIn('resource limits passed', result.stdout)
+    assert 'resource limits passed' in result.stdout
