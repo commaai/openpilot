@@ -19,6 +19,9 @@ inline Telemetry extractLogTelemetry(const LogReader &log, const std::atomic<boo
       TelemetryExtractor extractor(batches[batch]);
       for (size_t i = events.size() * batch / batch_count; i < events.size() * (batch + 1) / batch_count; ++i) {
         if (stopping.load(std::memory_order_relaxed)) return;
+        // Replay duplicates encode-index messages at frame timestamps for video playback.
+        // Only the original log events belong in telemetry and are ordered by logMonoTime.
+        if (events[i].eidx_segnum != -1) continue;
         if (events[i].which == cereal::Event::Which::CAN || events[i].which == cereal::Event::Which::SENDCAN) continue;
         capnp::FlatArrayMessageReader reader(events[i].data);
         extractor.extract(reader.getRoot<cereal::Event>());
