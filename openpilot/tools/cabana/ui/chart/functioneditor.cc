@@ -109,10 +109,10 @@ void ChartsWidget::drawFunctionEditor() {
     ImGui::Spacing();
     ImGui::SeparatorText("Python function body");
     inputTextMultiline("##function", &e.function, ImVec2(-1, ImGui::GetTextLineHeightWithSpacing() * 8), ImGuiInputTextFlags_AllowTabInput);
-    ImGui::TextDisabled("Return a number or (time, value). math is available.");
-    ImGui::SetItemTooltip("Example: return value * 2.23694 converts m/s to mph.");
+    ImGui::TextDisabled("Return a number or (time, value). Numeric math only.");
+    ImGui::SetItemTooltip("Example: return value * 2.23694 converts m/s to mph.\nUse math functions, numeric variables, and if/else. Imports, loops, and object access are not allowed.");
     if (ImGui::CollapsingHeader("Global code (optional)")) {
-      ImGui::TextWrapped("Runs before the first sample on each recalculation. Use for imports, constants, and initial state.");
+      ImGui::TextWrapped("Runs before the first sample on each recalculation. Initialize numeric constants and state here; imports are not allowed.");
       inputTextMultiline("##globals", &e.globals, ImVec2(-1, ImGui::GetTextLineHeightWithSpacing() * 5), ImGuiInputTextFlags_AllowTabInput);
     }
   }

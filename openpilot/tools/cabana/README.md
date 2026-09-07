@@ -145,7 +145,7 @@ the visible time range. These operations affect chart values only.
 Use **Functions → New Function** to build a custom signal. Enter a unique name, browse for
 its primary signal, and write a Python function body, for example `return value * 2.23694`
 to convert `/carState/vEgo` to mph. Add inputs to use `v1`, `v2`, and so on; expand
-**Global code** for imports or initial state. You can also type paths for signals that have
+**Global code** for numeric constants or initial state. You can also type paths for signals that have
 not loaded yet. **Plot in a new chart** displays the result immediately.
 
 Saved functions appear in the **Functions** menu for editing and in the signal browser for
@@ -165,8 +165,26 @@ Equations run in the Python interpreter from the openpilot environment used to b
 Each equation uses `language: "python"`, a `globals` initialization
 block, and a `function` body. The function receives `time`, `value`, and additional inputs
 (`v1`, `v2`, …), aligned to the nearest sample. It returns a number or `(time, value)`; non-finite
-results are omitted. The `math` module is available, and initialization code can import other
-Python modules from the environment.
+results are omitted. Code is checked against an AST allowlist before compilation. The available
+first-release namespace contains the layout math functions `math.sin`, `math.cos`, `math.sqrt`,
+`math.atan2`, and `math.radians`; constants `math.pi`, `math.e`, `math.tau`, `math.inf`, and `math.nan`;
+and numeric helpers `abs`, `min`, `max`, and `int`. `map(math.function, (numbers, ...))` is
+supported for tuple unpacking.
+There are no ambient Python builtins or import capabilities.
+
+The supported language includes numeric assignments, arithmetic, comparisons, `and`/`or`/`not`,
+`if`/`elif`/`else`, conditional expressions, `global`, and `return`. Tuples are limited to 16 numbers
+and can only be used for unpacking, `min`/`max`, or `(time, value)` returns. Imports (including
+`import math`), loops, comprehensions, function/class definitions, recursion, strings, containers,
+indexing, dynamic calls, and attribute access beyond approved `math` names are rejected—even in
+unreachable branches. Existing custom functions using these features must be rewritten.
+
+Arithmetic, comparisons, and numeric helper results use floating-point values, including `int`.
+Powers (`**` and `**=`) require integer literals from 0 to 16, as used by the bundled layouts;
+arbitrary exponents and complex results are not supported. Integer precision
+is therefore limited to that of a double. Expensive math functions such as `factorial`, `comb`, and
+`perm` are unavailable. Each code block is limited to 8 KiB, 512 AST nodes, nesting depth 32, and
+64 assigned variable names; a function can have at most 32 additional signal inputs.
 
 Globals persist across samples and reset when the loaded data is recalculated. Use Python's
 `global` declaration to update them, for example:
@@ -186,8 +204,10 @@ The tuning layout retains its five-second engagement gating; curvature, roll com
 GPS distance, and steering-rate checks use Python equations. Equation errors appear in the
 chart workspace.
 
-Layout scripts run with Cabana's permissions. A per-sample Python execution limit catches
-runaway Python loops; it is not a sandbox or a timeout for native extension calls.
+The AST allowlist and bounded numeric values define the security boundary, not namespace
+filtering alone. Unsupported syntax fails closed; there is no unrestricted execution fallback.
+The evaluator still runs in Cabana's process and depends on trusted application code, CPython,
+and the math library. This is a restricted language, not an OS sandbox for arbitrary Python.
 
 **Layout → Save Layout** saves the workspace as Cabana JSON, including equations, tabs,
 chart grouping, colors, limits, signal visibility, transforms, column count, and window duration.

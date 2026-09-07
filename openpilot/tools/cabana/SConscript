@@ -18,7 +18,6 @@ if not os.path.isfile(python_library):
 python_runtime_paths = list(dict.fromkeys([python_libdir, os.path.dirname(python_library)]))
 python_defines = [
   ('CABANA_PYTHON_HOME', r'\"' + sys.base_prefix + r'\"'),
-  ('CABANA_PYTHON_SITE', r'\"' + sysconfig.get_path('purelib') + r'\"'),
   ('CABANA_ANALYSIS_DIR', r'\"' + env.Dir('analysis').abspath + r'\"'),
 ]
 
