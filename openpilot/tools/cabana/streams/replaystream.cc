@@ -4,6 +4,7 @@
 
 #include "common/timing.h"
 #include "common/util.h"
+#include "tools/cabana/analysis/logtelemetry.h"
 #include "tools/cabana/settings.h"
 
 ReplayStream::ReplayStream() {
@@ -15,15 +16,21 @@ ReplayStream::ReplayStream() {
   settings_connection_ = settings.changed.connect([this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
+  telemetry_thread_ = std::thread([this]() { indexTelemetry(); });
 }
 
 ReplayStream::~ReplayStream() {
-  stopping_ = true;
+  {
+    std::lock_guard lock(telemetry_mutex_);
+    stopping_ = true;
+  }
   cancelWaits();
   if (replay) replay->stop();
+  telemetry_cv_.notify_one();
+  if (telemetry_thread_.joinable()) telemetry_thread_.join();
 }
 
-// Parse and merge on replay's merge thread; publish the completed data on the main thread.
+// CAN history must be ready for seeking. Cereal indexing can finish in the background.
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
   for (const auto &[n, seg] : event_data->segments) {
@@ -34,8 +41,6 @@ void ReplayStream::mergeSegments() {
       std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
       MessageEventsMap msg_events;
-      cabana::Telemetry telemetry_batch;
-      cabana::TelemetryExtractor extractor(telemetry_batch);
       for (const Event &e : seg->log->events) {
         if (stopping_) return;
         if (e.which == cereal::Event::Which::CAN) {
@@ -46,22 +51,37 @@ void ReplayStream::mergeSegments() {
             new_events.push_back(ce);
             msg_events[{.source = ce->src, .address = ce->address}].push_back(ce);
           }
-        } else {
-          capnp::FlatArrayMessageReader reader(e.data);
-          extractor.extract(reader.getRoot<cereal::Event>());
         }
       }
-      // Replay is the only writer. Prepare replacements while the UI reads the published
-      // vectors, then swap on the UI thread. Retired buffers are freed on this thread.
-      cabana::prepareTelemetryMerge(telemetry, telemetry_batch);
-      auto next = telemetry;
-      for (auto &[path, samples] : telemetry_batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
-      postToMainThreadAndWait([&]() {
-        insertEvents(new_events, msg_events);
-        telemetry.swap(next);
-        telemetryChanged();
-      });
+      postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
+      {
+        std::lock_guard lock(telemetry_mutex_);
+        pending_segments_.push_back(seg);
+      }
+      telemetry_cv_.notify_one();
     }
+  }
+}
+
+void ReplayStream::indexTelemetry() {
+  while (true) {
+    std::unique_lock lock(telemetry_mutex_);
+    telemetry_cv_.wait(lock, [this]() { return stopping_ || !pending_segments_.empty(); });
+    if (stopping_) return;
+    auto segment = std::move(pending_segments_.front());
+    pending_segments_.pop_front();
+    lock.unlock();
+
+    auto telemetry_batch = cabana::extractLogTelemetry(*segment->log, stopping_);
+    if (stopping_) return;
+    // This worker is the only writer. Retired snapshots are freed here, off the UI thread.
+    cabana::prepareTelemetryMerge(telemetry, telemetry_batch);
+    auto next = telemetry;
+    for (auto &[path, samples] : telemetry_batch) next[path] = std::make_shared<const cabana::Samples>(std::move(samples));
+    postToMainThreadAndWait([&]() {
+      telemetry.swap(next);
+      telemetryChanged();
+    });
   }
 }
 

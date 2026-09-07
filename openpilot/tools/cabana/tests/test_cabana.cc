@@ -15,6 +15,7 @@
 #include "tools/replay/logreader.h"
 
 #include "common/tests/native_test.h"
+#include "tools/cabana/analysis/logtelemetry.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/core/heatmap.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -795,6 +796,8 @@ int main(int argc, char **argv) {
         extractor.extract(reader.getRoot<cereal::Event>());
       }
       require_same_telemetry(expected, actual);
+      require_same_telemetry(expected, cabana::extractLogTelemetry(log, std::atomic<bool>{false}));
+      REQUIRE(cabana::extractLogTelemetry(log, std::atomic<bool>{true}).empty());
       size_t count = 0;
       for (const auto &[path, samples] : actual) count += samples.size();
       printf("Verified %zu paths and %zu samples across %zu events\n", actual.size(), count, log.events.size());
