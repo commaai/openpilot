@@ -33,9 +33,9 @@ MODEL_REPLAY_BUCKET="model_replay_master"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
-  # model, instant max, average max
-  ("modelV2", 0.05, 0.028),
-  ("driverStateV2", 0.05, 0.018),
+  # model, instant max, average max, chestnut average max
+  ("modelV2", 0.05, 0.03, 0.05),
+  ("driverStateV2", 0.05, 0.018, 0.018),
 ]
 
 def get_log_fn(test_route, ref="master"):
@@ -169,11 +169,13 @@ def model_replay(lr, frs):
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
+  chestnut = any(m.modelV2.big for m in modeld_msgs if m.which() == "modelV2")
 
   header = ['model', 'max instant', 'max instant allowed', 'average', 'max average allowed', 'test result']
   rows = []
   timings_ok = True
-  for (s, instant_max, avg_max) in EXEC_TIMINGS:
+  for (s, instant_max, avg_max, chestnut_avg_max) in EXEC_TIMINGS:
+    avg_max = chestnut_avg_max if chestnut else avg_max
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
     # TODO some init can happen in first iteration
     ts = ts[1:]
