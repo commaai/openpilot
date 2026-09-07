@@ -7,9 +7,9 @@ from pathlib import Path
 
 class ShmQueue:
   """Best-effort, single-reader queue with a fixed pool of file slots."""
-  SLOT_COUNT = 4096
+  SLOT_COUNT = 1024
   CLAIM_ATTEMPTS = 8
-  MAX_MESSAGE_SIZE = 64 * 1024 * 1024
+  MAX_MESSAGE_SIZE = 128 * 1024
 
   def __init__(self, path: str):
     self.slots = Path(path) / 'slots'
@@ -28,6 +28,9 @@ class ShmQueue:
 
   def send(self, data: bytes) -> bool:
     if len(data) > self.MAX_MESSAGE_SIZE:
+      return False
+    space = os.statvfs(self.slots)
+    if space.f_bavail * space.f_frsize < len(data) + 128 * 1024 * 1024:
       return False
     for _ in range(self.CLAIM_ATTEMPTS):
       slot = self.slots / str(random.randrange(self.SLOT_COUNT))
@@ -68,6 +71,7 @@ class ShmQueue:
         (self.pending / name).unlink(missing_ok=True)
         if not (self.ready / name).exists():
           self._release(slot, name)
+          continue
       except PermissionError:
         pass
     self._batch = sorted(self.ready.iterdir(), reverse=True)

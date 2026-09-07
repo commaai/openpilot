@@ -68,6 +68,13 @@ public:
 bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
 uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
 
+static void truncate_utf8(std::string &text, size_t limit) {
+  if (text.size() <= limit) return;
+  // Back up to the start of any character crossing the new end.
+  while (limit > 0 && (static_cast<unsigned char>(text[limit]) & 0xc0) == 0x80) --limit;
+  text.resize(limit);
+}
+
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
                             char* msg_buf, const json11::Json::object &msg_j={}) {
   static SwaglogState s;
@@ -81,7 +88,14 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
     {"created", seconds_since_epoch()}
   };
   if (msg_j.empty()) {
-    log_j["msg"] = msg_buf;
+    std::string text = msg_buf;
+    // Allow up to 6x expansion from JSON escaping, plus room for metadata.
+    if (text.size() > 16 * 1024) {
+      truncate_utf8(text, 16 * 1024);
+      text += " [truncated]";
+      log_j["truncated"] = true;
+    }
+    log_j["msg"] = text;
   } else {
     log_j["msg"] = msg_j;
   }

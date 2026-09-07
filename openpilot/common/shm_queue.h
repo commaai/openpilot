@@ -7,6 +7,7 @@
 #include <utility>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -16,11 +17,13 @@
 // rename publishes its complete payload without shared locks or persistent fds.
 class ShmQueue {
 public:
-  explicit ShmQueue(std::string path, size_t max_message_size = 64 * 1024 * 1024)
-      : path(std::move(path)), max_message_size(max_message_size) {}
+  static constexpr size_t MAX_MESSAGE_SIZE = 128 * 1024;
+  static constexpr int SLOT_COUNT = 1024;
+
+  explicit ShmQueue(std::string path) : path(std::move(path)) {}
 
   bool send(const std::string &data) const {
-    if (data.size() > max_message_size) return false;
+    if (data.size() > MAX_MESSAGE_SIZE) return false;
 
     const std::string pending_dir = path + "/pending";
     const std::string ready_dir = path + "/ready";
@@ -29,6 +32,10 @@ public:
       if (mkdir(directory.c_str(), 0700) != 0 && errno != EEXIST) return false;
     }
 
+    struct statvfs filesystem = {};
+    const size_t required_space = data.size() + 128 * 1024 * 1024;
+    if (statvfs(path.c_str(), &filesystem) != 0 || filesystem.f_bavail * filesystem.f_frsize < required_space) return false;
+
     struct timespec now = {};
     if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return false;
     const auto timestamp = static_cast<unsigned long long>(now.tv_sec) * 1000000000ULL + now.tv_nsec;
@@ -36,7 +43,7 @@ public:
     std::string slot_path;
     bool claimed = false;
     for (int attempt = 0; attempt < 8; ++attempt) {
-      const int slot = util::random_int(0, 4095);
+      const int slot = util::random_int(0, SLOT_COUNT - 1);
       char name[128];
       snprintf(name, sizeof(name), "%020llu-%ld-%zu-%d", timestamp, static_cast<long>(getpid()), data.size(), slot);
       filename = name;
@@ -48,7 +55,6 @@ public:
       if (errno != EEXIST) return false;
     }
     if (!claimed) return false;
-
     const std::string pending_path = pending_dir + "/" + filename;
     const int fd = open(pending_path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
     if (fd < 0) {
@@ -84,5 +90,4 @@ private:
   }
 
   const std::string path;
-  const size_t max_message_size;
 };

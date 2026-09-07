@@ -122,7 +122,8 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
-ipchandler = ShmQueueHandler(SwagFormatter(log))
+# Allow up to 6x expansion from JSON escaping, plus room for metadata.
+ipchandler = ShmQueueHandler(SwagFormatter(log, max_message_bytes=16 * 1024))
 
 log.addHandler(outhandler)
 # Spool locally; logmessaged handles persistent log files and publication.

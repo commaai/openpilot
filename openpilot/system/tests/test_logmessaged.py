@@ -51,14 +51,24 @@ class TestLogmessaged(OpenpilotTestCase):
     self.wait_for(lambda: self.logsize() > 0)
 
   def test_large_logs(self):
-    message = 'a' * (3 * 1024 * 1024)
-    for _ in range(10):
-      cloudlog.info(message)
-    sock = messaging.sub_sock('logMessage', conflate=False)
+    cloudlog.info('path /tmp/\udcff')  # Surrogateescaped filenames must still serialize.
+    data = self.queue.receive()
+    assert data is not None and json.loads(data[1:])['msg'] == 'path /tmp/\udcff'
+    message = '\n"\\🚘' * (512 * 1024)
+    cloudlog.info(message)
+    subprocess.run([str(NATIVE), '--emit'], input=message.encode(), check=True, timeout=10)
+    records = list(self.queue.ready.iterdir())
+    assert len(records) == 2
+    for path in records:
+      data = path.read_bytes()
+      assert len(data) <= ShmQueue.MAX_MESSAGE_SIZE
+      record = json.loads(data[1:])
+      assert record['truncated'] and record['levelnum'] == data[0]
+      assert record['filename'] and isinstance(record['ctx'], dict)
+      prefix = record['msg'].removesuffix(' [truncated]')
+      assert prefix and message.startswith(prefix)
     managed_processes['logmessaged'].start()
-    self.wait_for(lambda: self.logsize() > 10 * len(message))
-    assert self.logsize() < 10 * (len(message) + 1024)
-    assert all(json.loads(m.logMessage)['msg'] != message for m in messaging.drain_sock(sock))
+    self.wait_for(lambda: any('"truncated"' in p.read_text() for p in Path(Paths.swaglog_root()).glob('swaglog.*')))
 
   def test_slots(self):
     with patch.object(ShmQueue, 'MAX_MESSAGE_SIZE', 1):
@@ -98,6 +108,17 @@ class TestLogmessaged(OpenpilotTestCase):
     assert data is not None
     assert json.loads(data[1:])['msg'] == 'reused'
     assert not list(self.queue.slots.iterdir())
+
+  def test_large_context_and_low_space(self):
+    with patch('os.statvfs', return_value=os.statvfs_result((0,) * 10)):
+      assert not self.queue.send(b'no space')
+    assert not list(self.queue.pending.iterdir())
+    assert not list(self.queue.slots.iterdir())
+    with cloudlog.ctx(oversized='"' * ShmQueue.MAX_MESSAGE_SIZE):
+      cloudlog.info('context')
+    subprocess.run([str(NATIVE), '--emit'], input=b'context', check=True, timeout=10,
+                   env=dict(os.environ, MANAGER_DAEMON='"' * (96 * 1024)))
+    assert self.queue.receive() is None
 
   def test_crashed_writer(self):
     for crash in ('Path.open', 'os.rename'):
