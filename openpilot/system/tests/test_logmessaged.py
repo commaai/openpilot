@@ -80,7 +80,9 @@ class TestLogmessaged(OpenpilotTestCase):
     cloudlog.info('x' * self.queue.capacity)
     assert self.queue.receive() is None
     cloudlog.info('after overflow')
-    assert json.loads(self.queue.receive()[1:])['msg'] == 'after overflow'
+    data = self.queue.receive()
+    assert data is not None
+    assert json.loads(data[1:])['msg'] == 'after overflow'
 
   def test_crashed_writer(self):
     script = """
@@ -92,6 +94,8 @@ cloudlog.info('unpublished')
     subprocess.run([sys.executable, '-c', script], check=True, timeout=10)
     assert list(self.queue.pending.iterdir())
     cloudlog.info('committed')
-    assert json.loads(self.queue.receive()[1:])['msg'] == 'committed'
+    data = self.queue.receive()
+    assert data is not None
+    assert json.loads(data[1:])['msg'] == 'committed'
     assert self.queue.receive() is None
     assert not list(self.queue.pending.iterdir())
