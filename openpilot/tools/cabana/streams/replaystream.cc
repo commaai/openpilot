@@ -23,8 +23,7 @@ ReplayStream::~ReplayStream() {
   if (replay) replay->stop();
 }
 
-// runs on replay's merge thread: a segment of CAN data takes ~30 ms to parse and group, which dropped
-// frames when it ran on the main thread. Only the sorted insert and the merged signal need the main thread.
+// Parse and merge on replay's merge thread; publish the completed data on the main thread.
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
   for (const auto &[n, seg] : event_data->segments) {
@@ -51,9 +50,12 @@ void ReplayStream::mergeSegments() {
           cabana::extractTelemetry(reader.getRoot<cereal::Event>(), telemetry_batch);
         }
       }
+      // Replay is the only writer. Prepare replacements while the UI reads the published
+      // vectors, then swap on the UI thread. Retired buffers are freed on this thread.
+      cabana::prepareTelemetryMerge(telemetry, telemetry_batch);
       postToMainThreadAndWait([&]() {
         insertEvents(new_events, msg_events);
-        cabana::mergeTelemetry(telemetry, std::move(telemetry_batch));
+        for (auto &[path, samples] : telemetry_batch) telemetry[path].swap(samples);
         telemetryChanged();
       });
     }

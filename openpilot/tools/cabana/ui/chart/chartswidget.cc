@@ -556,6 +556,8 @@ void ChartsWidget::removeAll() {
   for (auto c : all) removeChart(c);
   tab_charts_.clear();
   tab_names_.clear();
+  ++equation_revision_;
+  telemetry_dirty_ = false;
   equations_.clear();
   calculated_.clear();
   equation_errors_.clear();
@@ -592,6 +594,8 @@ void ChartsWidget::handleEvents() {
 }
 
 void ChartsWidget::draw() {
+  pollTelemetry();
+  for (auto &c : charts_) c->pollTelemetry();
   deleted_charts_.clear();
   ImGui::PushID(this);
   if (auto_scroll_timer_active_ && ImGui::GetTime() >= auto_scroll_timer_next_) {
