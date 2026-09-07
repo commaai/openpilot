@@ -499,7 +499,12 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
     // the extension button sits fully inside the toolbar: its right edge is the content region right edge
     const float extension_x = std::max(start_x, right_edge - extension_width);
     visible == 0 ? ImGui::SetCursorPosX(extension_x) : ImGui::SameLine(extension_x);
-    if (iconButton("toolbar_extension", icon::CHEVRON_DOUBLE_RIGHT, "More")) ImGui::OpenPopup("toolbar_extension_menu");
+    const bool extension_open = ImGui::IsPopupOpen("toolbar_extension_menu");
+    const bool extension_clicked = iconButton("toolbar_extension", icon::CHEVRON_DOUBLE_RIGHT, "More");
+    if (!extension_open && (extension_clicked ||
+        (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) {
+      ImGui::OpenPopup("toolbar_extension_menu");
+    }
     // the popup opens inward: its right edge is aligned with the button so it stays inside the window
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
     if (ImGui::BeginPopup("toolbar_extension_menu")) {
@@ -545,7 +550,11 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
   ImGui::PushStyleColor(ImGuiCol_Button, popup_open ? style.Colors[ImGuiCol_ButtonActive] : style.Colors[ImGuiCol_Button]);
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding_x, style.FramePadding.y));
   ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-  const bool clicked = ImGui::ButtonEx((text + "###" + id).c_str(), ImVec2(width, 0.0f), ImGuiButtonFlags_PressedOnClick);
+  const bool pressed = ImGui::ButtonEx((text + "###" + id).c_str(), ImVec2(width, 0.0f), ImGuiButtonFlags_PressedOnClick);
+  // A sibling menu blocks normal button input. Let this press replace its popup immediately;
+  // IsItemHovered still respects modal dialogs, disabled items, and overlapping windows.
+  const bool clicked = pressed || (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
+                                   ImGui::IsMouseClicked(ImGuiMouseButton_Left));
   ImGui::PopStyleVar(2);
   ImGui::PopStyleColor();
   if (bold) popBoldFont();

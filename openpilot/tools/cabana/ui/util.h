@@ -71,6 +71,15 @@ int doubleValidator(ImGuiInputTextCallbackData *data);
 int ipValidator(ImGuiInputTextCallbackData *data);
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 
+// The primary shortcut modifier as shown in labels. ImGui swaps Cmd and Ctrl on macOS, so io.KeyCtrl and
+// the menu shortcuts already follow the platform; only the copy needs to.
+#ifdef __APPLE__
+constexpr const char *MOD_KEY = "Cmd";
+#else
+constexpr const char *MOD_KEY = "Ctrl";
+#endif
+inline std::string shortcut(const char *keys) { return std::string(MOD_KEY) + "+" + keys; }
+
 // Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
 float iconButtonWidth();
