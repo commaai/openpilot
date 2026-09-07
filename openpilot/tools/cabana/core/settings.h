@@ -31,5 +31,4 @@ struct CabanaSettingsState {
   std::string recent_dbc_file;
   std::string active_msg_id;
   std::vector<std::string> selected_msg_ids;
-  std::string chart_layout;
 };

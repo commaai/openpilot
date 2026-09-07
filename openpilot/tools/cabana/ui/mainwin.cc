@@ -387,7 +387,6 @@ void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::s
 }
 
 void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
-  charts_restored_ = false;
   stream_ = std::move(stream);
   can = stream_.get();
   stream_connections_.push_back(can->error.connect([](const std::string &msg) {
@@ -687,7 +686,6 @@ void MainWindow::saveSessionState() {
   settings.recent_dbc_file = "";
   settings.active_msg_id = "";
   settings.selected_msg_ids.clear();
-  settings.chart_layout.clear();
 
   const auto files = dbc()->nonEmptyDBCFiles();
   if (!files.empty()) settings.recent_dbc_file = files.front()->filename;
@@ -697,21 +695,13 @@ void MainWindow::saveSessionState() {
     settings.active_msg_id = active_id;
     settings.selected_msg_ids = ids;
   }
-  if (charts_widget_) settings.chart_layout = charts_widget_->serializeLayout();
 }
 
 void MainWindow::restoreSessionState() {
   if (!charts_widget_) return;
   // CAN layouts may need the DBC loaded by eventsMerged(). dbcFileChanged() retries while definitions are missing.
-  using LayoutStatus = ChartsWidget::LayoutStatus;
   if (!startup_layout_.empty()) {
-    const auto status = charts_widget_->openLayout(startup_layout_, true);
-    charts_restored_ = status == LayoutStatus::Restored;
-    if (status != LayoutStatus::MissingCan) startup_layout_.clear();
-  } else if (!charts_restored_ && !settings.chart_layout.empty()) {
-    const auto status = charts_widget_->restoreLayout(settings.chart_layout, true);
-    charts_restored_ = status == LayoutStatus::Restored;
-    if (status == LayoutStatus::Failed) settings.chart_layout.clear();
+    if (charts_widget_->openLayout(startup_layout_, true) != ChartsWidget::LayoutStatus::MissingCan) startup_layout_.clear();
   }
   if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
 
