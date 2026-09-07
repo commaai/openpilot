@@ -11,6 +11,7 @@
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
+#include "tools/cabana/ui/chart/downsample.h"
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
@@ -665,7 +666,13 @@ void ChartView::drawSeries() {
       if (begin == end) continue;
 
       spec.LineWeight = 2;
-      ImPlot::PlotLine(label.c_str(), &begin->x, &begin->y, end - begin, spec);
+      const int pixels = std::max(1, (int)layout_.plot_area.GetWidth());
+      if (end - begin > pixels * 4) {
+        const auto envelope = chart::pixelEnvelope(begin, end, x_min_, x_max_, pixels);
+        ImPlot::PlotLine(label.c_str(), &envelope.front().x, &envelope.front().y, envelope.size(), spec);
+      } else {
+        ImPlot::PlotLine(label.c_str(), &begin->x, &begin->y, end - begin, spec);
+      }
 
       // show points when zoomed in enough
       if ((num_points == 1 || pixels_per_point > 20) && first != last) {
