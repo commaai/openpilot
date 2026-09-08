@@ -139,17 +139,17 @@ class EsimProfileButton(BigButton):
 
     btn_x = self._rect.x + self._rect.width - (ProfileActionButton.MARGIN - ProfileActionButton.HORIZONTAL_MARGIN)
     btn_bottom = btn_y + self._rect.height
-    if self._rename_btn is not None:
-      btn_x -= self._rename_btn.rect.width
-      self._rename_btn.render(rl.Rectangle(
-        btn_x, btn_bottom - self._rename_btn.rect.height,
-        self._rename_btn.rect.width, self._rename_btn.rect.height,
-      ))
     if self._show_delete_btn:
       btn_x -= self._delete_btn.rect.width
       self._delete_btn.render(rl.Rectangle(
         btn_x, btn_bottom - self._delete_btn.rect.height,
         self._delete_btn.rect.width, self._delete_btn.rect.height,
+      ))
+    if self._rename_btn is not None:
+      btn_x -= self._rename_btn.rect.width
+      self._rename_btn.render(rl.Rectangle(
+        btn_x, btn_bottom - self._rename_btn.rect.height,
+        self._rename_btn.rect.width, self._rename_btn.rect.height,
       ))
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
