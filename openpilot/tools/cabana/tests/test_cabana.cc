@@ -1,16 +1,36 @@
 
+#include <atomic>
+#include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <sstream>
+#include <stdexcept>
+#include <thread>
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
+#include "tools/cabana/ui/qtstate.h"
+#include "tools/cabana/ui/threadpool.h"
+#include "tools/cabana/ui/chart/downsample.h"
 #include "tools/cabana/utils/strings.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
+
+void test_message_id_parsing() {
+  for (const auto &text : {"", "1", ":123", "1:", "-1:123", "256:1", "1:100000000", "1:1junk", "1junk:1", "1:1:1"}) {
+    REQUIRE(!MessageId::parse(text));
+    REQUIRE(MessageId::fromString(text) == MessageId{});
+  }
+  const MessageId expected{255, 0xffffffff};
+  REQUIRE(MessageId::parse("255:FFFFFFFF") == expected);
+  REQUIRE(MessageId::parse("255:ffffffff") == expected);
+  REQUIRE(MessageId::parse(expected.toString()) == expected);
+  REQUIRE(MessageId::parse("0:0") == MessageId{});
+}
 
 void test_generate_dbc() {
   std::string fn = std::string(OPENDBC_FILE_PATH) + "/tesla_can.dbc";
@@ -193,10 +213,10 @@ void test_format_seconds() {
   REQUIRE(utils::formatSeconds(0) == "00:00");
   REQUIRE(utils::formatSeconds(59.4) == "00:59");
   REQUIRE(utils::formatSeconds(-1) == "00:00");
-  REQUIRE(utils::formatSeconds(61.234, true) == "01:01.234");
+  REQUIRE(utils::formatSeconds(61.234, true) == "01:01.23");
   REQUIRE(utils::formatSeconds(3599.9) == "59:59");
   REQUIRE(utils::formatSeconds(3601) == "01:00:01");
-  REQUIRE(utils::formatSeconds(3601.5, true) == "01:00:01.500");
+  REQUIRE(utils::formatSeconds(3601.5, true) == "01:00:01.50");
 
   const char *tz = getenv("TZ");
   const bool had_tz = tz != nullptr;
@@ -204,7 +224,7 @@ void test_format_seconds() {
   setenv("TZ", "UTC", 1);
   tzset();
   REQUIRE(utils::formatSeconds(0, false, true) == "1970-01-01 00:00:00");
-  REQUIRE(utils::formatSeconds(1700000000.123, true, true) == "2023-11-14 22:13:20.123");
+  REQUIRE(utils::formatSeconds(1700000000.123, true, true) == "2023-11-14 22:13:20.12");
   if (had_tz) {
     setenv("TZ", saved_tz.c_str(), 1);
   } else {
@@ -299,9 +319,105 @@ void test_route_json() {
   REQUIRE(routes::parseRoutes("not json", false).empty());
 }
 
+static std::vector<uint8_t> fromHex(const std::string &hex) {
+  std::vector<uint8_t> out;
+  for (size_t i = 0; i + 1 < hex.size(); i += 2) {
+    out.push_back((uint8_t)std::stoul(hex.substr(i, 2), nullptr, 16));
+  }
+  return out;
+}
+
+void test_qt_state_blobs() {
+  // blobs written by the Qt frontend
+  auto geometry = qtstate::parseQtGeometry(fromHex(
+      "01d9d0cb000300000000000000000014000004ff000003330000000000000014000004ff"
+      "00000333000000000000000006400000000000000014000004ff00000333"));
+  REQUIRE(geometry.has_value());
+  REQUIRE(geometry->x == 0);
+  REQUIRE(geometry->y == 20);
+  REQUIRE(geometry->w == 1280);
+  REQUIRE(geometry->h == 800);
+  REQUIRE(geometry->maximized == false);
+
+  auto splitter = qtstate::parseQtSplitter(fromHex("000000ff0000000100000002000000960000006801ffffffff010000000200"));
+  REQUIRE(splitter.has_value());
+  REQUIRE(std::fabs(splitter->ratio - 150.0f / 254.0f) < 1e-6f);
+
+  auto header = qtstate::parseQtHeaderState(fromHex(
+      "000000ff000000000000000100000000000000000100000000000000000000000000000000000003360000000701"
+      "01000100000000000000000000000068ffffffff0000008400000000000000070000006800000001000000000000"
+      "00680000000100000000000000680000000100000000000000680000000100000000000000680000000100000000"
+      "000000680000000100000000000000c60000000100000002000003e800000000c6"));
+  REQUIRE(header.has_value());
+  REQUIRE(header->sort_section == 0);
+  REQUIRE(header->sort_order == 0);
+  REQUIRE(header->sort_shown == true);
+  const int expected_width[] = {104, 104, 104, 104, 104, 104, 198};
+  for (int i = 0; i < qtstate::kMessageColumnCount; ++i) {
+    REQUIRE(header->visual[i] == i);
+    REQUIRE(header->width[i] == expected_width[i]);
+    REQUIRE(header->hidden[i] == false);
+  }
+
+  // empty, truncated and wrong magic blobs are rejected
+  REQUIRE(!qtstate::parseQtGeometry({}).has_value());
+  REQUIRE(!qtstate::parseQtSplitter({}).has_value());
+  REQUIRE(!qtstate::parseQtHeaderState({}).has_value());
+  REQUIRE(!qtstate::parseQtGeometry(fromHex("01d9d0cb00030000000000000000")).has_value());
+  REQUIRE(!qtstate::parseQtSplitter(fromHex("000000ff000000010000000200000096")).has_value());
+  REQUIRE(!qtstate::parseQtHeaderState(fromHex("000000ff0000000000000001000000000000000001")).has_value());
+  REQUIRE(!qtstate::parseQtGeometry(fromHex("deadbeef000300000000000000000014000004ff00000333")).has_value());
+  REQUIRE(!qtstate::parseQtSplitter(fromHex("000000fe0000000100000002000000960000006801ffffffff010000000200")).has_value());
+  REQUIRE(!qtstate::parseQtHeaderState(fromHex("000000fe00000000000000010000000000000000010000000000000000")).has_value());
+}
+
+void test_parallel_failure_joins_workers() {
+  for (bool fail_on_caller : {true, false}) {
+    std::atomic<int> finished = 0;
+    const size_t chunks = std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 4) + 1;
+    bool caught = false;
+    try {
+      parallelFor(chunks, [&](size_t begin, size_t end) {
+        if (begin == (fail_on_caller ? 0u : 1u)) throw std::runtime_error("task failed");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        ++finished;
+      });
+    } catch (const std::runtime_error &) {
+      caught = true;
+    }
+    REQUIRE(caught);
+    REQUIRE(finished == chunks - 1);
+  }
+}
+
+void test_pixel_envelope() {
+  struct Point {
+    double x, y;
+    Point(double x, double y) : x(x), y(y) {}
+  };
+  std::vector<Point> points;
+  for (int i = 0; i < 1000; ++i) points.emplace_back(i * 0.001, i == 203 ? 99 : i == 201 ? -99 : 0);
+  const auto result = chart::pixelEnvelope(points.begin(), points.end(), 0, 1, 10);
+  REQUIRE(result.size() <= 40);
+  REQUIRE(result.front().x == points.front().x);
+  REQUIRE(result.back().x == points.back().x);
+  REQUIRE(std::is_sorted(result.begin(), result.end(), [](const auto &a, const auto &b) { return a.x < b.x; }));
+  REQUIRE(std::any_of(result.begin(), result.end(), [](const auto &p) { return p.x == .201 && p.y == -99; }));
+  REQUIRE(std::any_of(result.begin(), result.end(), [](const auto &p) { return p.x == .203 && p.y == 99; }));
+  const std::vector<Point> step{{-1, 0}, {0, 0}, {0, 10}, {0, -10}, {0, 0}, {2, 0}};
+  const auto edge = chart::pixelEnvelope(step.begin(), step.end(), 0, 1, 2);
+  REQUIRE(edge.front().x == -1);
+  REQUIRE(edge.back().x == 2);
+  REQUIRE(std::any_of(edge.begin(), edge.end(), [](const auto &p) { return p.y == 10; }));
+  REQUIRE(std::any_of(edge.begin(), edge.end(), [](const auto &p) { return p.y == -10; }));
+  REQUIRE(chart::pixelEnvelope(points.begin(), points.begin(), 0, 1, 10).empty());
+}
+
 void test_cabana_core() {
+  test_pixel_envelope();
   test_format_seconds();
   test_to_hex();
+  test_message_id_parsing();
   test_signal_tooltip();
   test_generate_dbc();
   test_comment_order();
@@ -313,6 +429,8 @@ void test_cabana_core() {
   test_route_timestamps();
   test_route_api_response();
   test_route_json();
+  test_parallel_failure_joins_workers();
+  test_qt_state_blobs();
 }
 
 int main() {

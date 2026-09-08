@@ -5,6 +5,7 @@
 #include <cmath>
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -59,21 +60,6 @@ ValidState validateIpAddress(const std::string &input);
 // C-locale floating-point
 ValidState validateDouble(const std::string &input);
 
-// "Darcula" like dark theme
-struct DarkTheme {
-  static constexpr CabanaColor window{0x35, 0x35, 0x35};
-  static constexpr CabanaColor window_text{0xbb, 0xbb, 0xbb};
-  static constexpr CabanaColor base{0x3c, 0x3f, 0x41};
-  static constexpr CabanaColor tooltip_text{0xbb, 0xbb, 0xbb};
-  static constexpr CabanaColor text{0xbb, 0xbb, 0xbb};
-  static constexpr CabanaColor button{0x3c, 0x3f, 0x41};
-  static constexpr CabanaColor highlight{0x2f, 0x65, 0xca};
-  static constexpr CabanaColor bright_text{0xf0, 0xf0, 0xf0};
-  static constexpr CabanaColor disabled_text{0x77, 0x77, 0x77};
-  static constexpr CabanaColor light{0x77, 0x77, 0x77};
-  static constexpr CabanaColor dark{0x35, 0x35, 0x35};
-};
-
 namespace utils {
 
 bool isMainThread();
@@ -89,6 +75,14 @@ std::string bootstrapSvg(const std::string &id);  // empty if unknown
 // boundary conversions for the remaining Qt byte-array based state APIs
 template <typename T>
 std::vector<uint8_t> toBytes(const T &dat) { return {dat.begin(), dat.end()}; }
+
+// a callback that is skipped once `alive` expired: the owner resets its token when it goes away
+template <typename F>
+auto guarded(const std::shared_ptr<bool> &alive, F fn) {
+  return [alive = std::weak_ptr<bool>(alive), fn = std::move(fn)](auto &&...args) {
+    if (!alive.expired()) fn(std::forward<decltype(args)>(args)...);
+  };
+}
 
 }
 

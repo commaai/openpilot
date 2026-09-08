@@ -58,6 +58,12 @@ chmod +x $CONTINUE_PATH
 
 export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
+  if [ -n "${CHESTNUT:-}" ]
+  then
+    git lfs pull --exclude=''
+    return
+  fi
+
   # The big driving model is not used on these devices yet. Keep its pointer in
   # the worktree, but don't download or copy the 1.8 GB LFS object.
   LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"

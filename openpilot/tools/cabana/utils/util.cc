@@ -242,7 +242,6 @@ static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
 }
 
 namespace utils {
-
 std::string homePath() {
   const char *home = ::getenv("HOME");
   return home ? home : "";

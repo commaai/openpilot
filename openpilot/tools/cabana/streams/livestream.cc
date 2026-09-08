@@ -48,7 +48,6 @@ LiveStream::~LiveStream() {
 
 void LiveStream::start() {
   begin_date_time = std::chrono::system_clock::now();
-  fps_ = settings.fps;
   exit_ = false;
   stream_thread = std::thread(&LiveStream::streamThread, this);
   update_thread = std::thread(&LiveStream::updateThread, this);
@@ -62,7 +61,7 @@ void LiveStream::stop() {
 
 void LiveStream::updateThread() {
   while (!exit_) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps_));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / STREAM_UPDATE_FPS));
     // coalesce: skip the request if the main thread hasn't processed the previous one yet.
     if (!update_pending_.exchange(true)) {
       requestUpdateLastMessages();
@@ -90,7 +89,6 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
 // called on the main thread via requestUpdateLastMessages()
 void LiveStream::updateLastMessages() {
   update_pending_ = false;
-  fps_ = settings.fps;
   {
     // merge events received from live stream thread.
     std::lock_guard lk(lock);

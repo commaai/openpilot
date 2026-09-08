@@ -26,16 +26,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: commaai/timeout@v1
-
     - uses: actions/checkout@v7
-      with:
-        submodules: true
+    - run: ./tools/op.sh setup
 
     # Build
     - name: Build docs
-      run: |
-        git lfs pull
-        python docs/serve.py --build
+      run: ./tools/op.sh docs --build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v7
