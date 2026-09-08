@@ -9,8 +9,6 @@ from openpilot.common.esim.base import LPABase, Profile
 from openpilot.common.esim.esim import execute_and_process_notifications
 
 
-
-
 def _get_modem_state() -> dict:
   try:
     return HARDWARE.get_modem_state()

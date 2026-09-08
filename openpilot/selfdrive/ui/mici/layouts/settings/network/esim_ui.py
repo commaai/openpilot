@@ -10,9 +10,6 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import NavScroller
 
-SUB_LABEL_DISABLED = rl.Color(255, 255, 255, int(255 * 0.585))
-CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
-
 
 class ProfileActionButton(Widget):
   SIZE = 68
@@ -44,6 +41,8 @@ class ProfileActionButton(Widget):
 
 
 class EsimProfileButton(BigButton):
+  SUB_LABEL_DISABLED = rl.Color(255, 255, 255, int(255 * 0.585))
+  CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28
   SUB_LABEL_WIDTH = 402 - BigButton.LABEL_HORIZONTAL_PADDING * 2
@@ -80,7 +79,7 @@ class EsimProfileButton(BigButton):
 
   def _update_state(self):
     super()._update_state()
-    self._sub_label.set_color(DEFAULT_TEXT_COLOR if self.enabled else SUB_LABEL_DISABLED)
+    self._sub_label.set_color(DEFAULT_TEXT_COLOR if self.enabled else self.SUB_LABEL_DISABLED)
     self._sub_label.set_font_weight(FontWeight.SEMI_BOLD if self.enabled else FontWeight.ROMAN)
 
   @property
@@ -119,7 +118,7 @@ class EsimProfileButton(BigButton):
     return 48
 
   def _draw_content(self, btn_y: float):
-    self._label.set_color(SUB_LABEL_DISABLED if self._locked else LABEL_COLOR)
+    self._label.set_color(self.SUB_LABEL_DISABLED if self._locked else LABEL_COLOR)
     label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
@@ -136,7 +135,7 @@ class EsimProfileButton(BigButton):
 
       if active:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
-        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, CHECK_ICON_COLOR)
+        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, self.CHECK_ICON_COLOR)
         sub_label_x += self._check_txt.width + 14
 
       sub_label_rect = rl.Rectangle(sub_label_x, label_y - sub_label_height, sub_label_w, sub_label_height)
