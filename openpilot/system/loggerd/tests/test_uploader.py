@@ -157,6 +157,17 @@ class TestUploader(UploaderTestCase):
       fn = f_path.with_suffix(f_path.suffix.replace(".zst", ""))
       assert all(candidate[2] != str(fn) for candidate in uploader.list_upload_files(metered=False)), "Locked file selected for upload"
 
+  def test_metered_delays_recent_boot_logs(self):
+    self.gen_files(lock=False, boot=True)
+    uploader = Uploader("0000000000000000", Paths.log_root())
+
+    unmetered = {candidate[1] for candidate in uploader.list_upload_files(metered=False)}
+    metered = {candidate[1] for candidate in uploader.list_upload_files(metered=True)}
+
+    boot_keys = {key for key in unmetered if key.startswith("boot/")}
+    assert boot_keys, "Expected a boot log to be uploadable on an unmetered connection"
+    assert not (boot_keys & metered), "Boot logs younger than 12h should wait on a metered connection"
+
   def test_no_upload_with_xattr(self):
     f_paths = self.gen_files(lock=False, xattr=UPLOAD_ATTR_VALUE)
     uploader = Uploader("0000000000000000", Paths.log_root())
