@@ -152,7 +152,8 @@ class Car:
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
     self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    self.experimental_mode = (self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl and
+                              not self.params.get_bool("LateralManeuverMode"))
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -255,7 +256,8 @@ class Car:
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.experimental_mode = (self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl and
+                                not self.params.get_bool("LateralManeuverMode"))
       time.sleep(0.1)
 
   def card_thread(self):
