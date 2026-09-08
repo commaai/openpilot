@@ -89,6 +89,8 @@ class CellularManager:
 
   def _finish(self, profiles: list[Profile] | None = None, error: str | None = None):
     self._busy = False
+    # defer the next poll a full interval; the eUICC can briefly report stale state after an operation
+    self._last_profile_poll = time.monotonic()
     if profiles is not None:
       self._set_profiles(profiles)
     if error is not None:
@@ -135,6 +137,10 @@ class CellularManager:
   def _finish_poll(self, is_euicc: bool, profiles: list[Profile]):
     self._polling = False
     if self._busy:
+      return
+    if not is_euicc and self._is_euicc:
+      # is_euicc() is False on any AT error (e.g. SIM busy during a profile refresh); confirm on the next poll
+      self._is_euicc = None
       return
     self._is_euicc = is_euicc
     self._set_profiles(profiles)
