@@ -1,3 +1,6 @@
+import sys
+
+
 class LinuxSystemStats:
   def __init__(self) -> None:
     self._last_cpu_times = self._read_cpu_times()
@@ -48,3 +51,19 @@ class LinuxSystemStats:
 
     total = memory['MemTotal:']
     return max(0., min(100., 100. * (total - memory['MemAvailable:']) / total))
+
+
+class UnsupportedSystemStats:
+  """There is no /proc off Linux. Only the simulator runs openpilot there, and it reads these
+  numbers for telemetry alone, so report nothing rather than stopping hardwared."""
+
+  @staticmethod
+  def cpu_usage_percent() -> list[float]:
+    return []
+
+  @staticmethod
+  def memory_usage_percent() -> float:
+    return 0.
+
+
+SystemStats = LinuxSystemStats if sys.platform == 'linux' else UnsupportedSystemStats
