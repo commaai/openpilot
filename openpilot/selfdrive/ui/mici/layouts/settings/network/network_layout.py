@@ -1,4 +1,3 @@
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.mici.layouts.settings.network import EsimNetworkButton, WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.esim_ui import EsimUI
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
@@ -70,7 +69,7 @@ class NetworkLayoutMici(NavScroller):
     self._cellular_manager = CellularManager()
     self._esim_ui = EsimUI(
       self._cellular_manager,
-      lambda: ui_state.prime_state.get_type() in (PrimeType.UNKNOWN, PrimeType.UNPAIRED, PrimeType.NONE, PrimeType.LITE),
+      lambda: not ui_state.prime_state.is_full_prime(),
     )
     self._esim_button = EsimNetworkButton(self._cellular_manager)
     self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))
@@ -103,7 +102,7 @@ class NetworkLayoutMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.UNKNOWN, PrimeType.UNPAIRED, PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = not ui_state.prime_state.is_full_prime()
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)
