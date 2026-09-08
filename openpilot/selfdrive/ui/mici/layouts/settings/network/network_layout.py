@@ -69,7 +69,10 @@ class NetworkLayoutMici(NavScroller):
     # ******** eSIM ********
     self._cellular_manager = CellularManager()
     self._esim_ui = EsimUI(self._cellular_manager)
-    self._esim_button = EsimNetworkButton(self._cellular_manager)
+    self._esim_button = EsimNetworkButton(
+      self._cellular_manager,
+      lambda: ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE),
+    )
 
     self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))
 
@@ -103,7 +106,6 @@ class NetworkLayoutMici(NavScroller):
 
     show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
-    self._esim_button.set_enabled(show_cell_settings and self._cellular_manager.is_euicc is not False)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)
     self._cellular_metered_btn.set_visible(show_cell_settings)
