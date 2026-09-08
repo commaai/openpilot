@@ -149,3 +149,16 @@ class TestVCruiseHelper(OpenpilotTestCase):
         self.enable(float(v_ego), experimental_mode)
         assert V_CRUISE_INITIAL <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX
         assert self.v_cruise_helper.v_cruise_initialized
+
+
+class TestHyundaiVCruiseHelper(OpenpilotTestCase):
+  def test_main_button_preserves_cruise_speed(self):
+    CP = car.CarParams(brand="hyundai", pcmCruise=False)
+    cruise_helper = VCruiseHelper(CP)
+    cruise_helper.initialize_v_cruise(car.CarState(vEgo=20), experimental_mode=False)
+    expected_speed = cruise_helper.v_cruise_kph
+
+    cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": False}), enabled=False, is_metric=True)
+
+    assert cruise_helper.v_cruise_kph == expected_speed
+    assert cruise_helper.v_cruise_cluster_kph == expected_speed
