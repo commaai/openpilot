@@ -141,7 +141,8 @@ std::string VideoWidget::whatsThis() const {
 static float toolbarHeight() { return TOOLBAR_MARGIN_Y + ImGui::GetFrameHeight(); }
 
 void VideoWidget::drawPlaybackController() {
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + TOOLBAR_MARGIN_Y);
+  if (!can->liveStreaming())
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + TOOLBAR_MARGIN_Y);
   const float speed_width = menuButtonWidth("0.05x", true);
 
   const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
@@ -151,13 +152,15 @@ void VideoWidget::drawPlaybackController() {
                                         : formatTime(can->currentSec(), true);
   const char *time_tooltip = settings.absolute_time ? "Elapsed time" : "Absolute time";
 
-  std::vector<ToolbarItem> items = {
-    toolbarAction("rewind", icon::REWIND, "Seek backward", []() { can->seekTo(can->currentSec() - 1); }),
-    toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }, true, true),
-    toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true),
-  };
+  std::vector<ToolbarItem> items;
+  if (!can->liveStreaming()) {
+    items.push_back(toolbarAction("rewind", icon::REWIND, "Seek backward", []() { can->seekTo(can->currentSec() - 1); }));
+  }
+  items.push_back(toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }, true, true));
   if (can->liveStreaming()) {
-    items.push_back(toolbarAction("skip-end", icon::SKIP_END, "Skip to the end", [this]() { skipToEnd(); }, skip_to_end_enabled_, true));
+    items.push_back(toolbarAction("skip-end", icon::SKIP_END, "Go live", [this]() { skipToEnd(); }, skip_to_end_enabled_, true));
+  } else {
+    items.push_back(toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true));
   }
   if (slider_ || msgs_received_) {
     // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
@@ -190,13 +193,11 @@ void VideoWidget::drawPlaybackController() {
     return item;
   };
   const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
-  items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
   if (!can->liveStreaming()) {
+    items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
     items.push_back(separator());
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
-  }
-  items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, true, speed_width));
-  if (!can->liveStreaming()) {
+    items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, true, speed_width));
     items.push_back(separator());
     items.push_back(toolbarAction("route_info", icon::INFO_CIRCLE, "View route details", [this]() { showRouteInfo(); }, true, true));
   }
@@ -356,7 +357,7 @@ float VideoWidget::sizeHintHeight() const {
 
 // Keep the pane's default proportions stable as frames arrive or cameras change.
 float VideoWidget::defaultHeight(float width) const {
-  if (!cam_widget_) return toolbarHeight();  // live streams have no camera or slider
+  if (!cam_widget_) return ImGui::GetFrameHeight();  // live streams have no camera or slider
   const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / DEFAULT_CAMERA_ASPECT_RATIO);
   const float tab_height = camera_tab_->count() >= 2 ? ImGui::GetFrameHeight() : 0.0f;
   return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
@@ -522,7 +523,7 @@ void StreamCameraView::draw(const ImVec2 &size, double thumbnail_time) {
     scrubbing ? drawScrubThumbnail(p, thumbnail_time) : drawThumbnail(p, thumbnail_time);
   }
   if (auto alert = getReplay()->findAlertAtTime(scrubbing ? thumbnail_time : can->currentSec())) {
-    drawAlert(p, rect(), *alert, ImGui::GetFontSize());
+    drawAlert(p, rect(), *alert, ImGui::GetFontSize(), ImGui::GetStyle().ChildRounding);
   }
 
   if (can->isPaused()) {
@@ -549,7 +550,7 @@ void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255), ImGui::GetStyle().ChildRounding);
   if (const RgbImage *image = thumbnailAt(sec)) {
     const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
-    p->AddImageRounded(big_thumbnail_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
+    drawVideoFrame(p, big_thumbnail_texture_.ref(), rect(), placement);
     drawTime(p, rect(), sec);
   }
 }
@@ -570,7 +571,7 @@ void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
     p->AddRect(thumb_rect.Min, thumb_rect.Max, IM_COL32_WHITE, ImGui::GetStyle().FrameRounding, 0, 2.0f);
     // look up the alert at the hovered time, the thumbnail frame itself can be seconds away
     if (auto alert = getReplay()->findAlertAtTime(sec)) {
-      drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE);
+      drawAlert(p, thumb_rect, *alert, POINT_10_FONT_SIZE, ImGui::GetStyle().FrameRounding);
     }
     drawTime(p, thumb_rect, sec);
   }
@@ -586,17 +587,17 @@ void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double second
              IM_COL32_WHITE, text);
 }
 
-void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size) {
+void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size, float rounding) {
   const ImU32 pen = IM_COL32_WHITE;
   ImU32 color = withAlpha(timeline_colors[int(alert.type)], 128);
   std::string text = alert.text1;
   if (!alert.text2.empty()) text += "\n" + alert.text2;
 
-  ImRect text_rect(ImVec2(rect.Min.x + 1, rect.Min.y + 1), ImVec2(rect.Max.x - 1, rect.Max.y - 1));
+  const ImRect &text_rect = rect;
   ImFont *font = ImGui::GetFont();
   const float wrap_width = std::max(1.0f, text_rect.GetWidth());
   const ImVec2 r = font->CalcTextSizeA(font_size, FLT_MAX, wrap_width, text.c_str());
-  p->AddRectFilled(ImVec2(text_rect.Min.x, text_rect.Min.y), ImVec2(text_rect.Max.x, text_rect.Min.y + r.y), color, ImGui::GetStyle().FrameRounding, ImDrawFlags_RoundCornersTop);
+  p->AddRectFilled(ImVec2(text_rect.Min.x, text_rect.Min.y), ImVec2(text_rect.Max.x, text_rect.Min.y + r.y), color, rounding, ImDrawFlags_RoundCornersTop);
   // each line is centered, wrapped continuations stay left aligned
   float y = text_rect.Min.y;
   for (const auto &line : utils::split(text, '\n')) {

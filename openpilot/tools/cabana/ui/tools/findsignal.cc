@@ -89,7 +89,7 @@ bool FindSignalDlg::draw() {
     drawFindGroup();
     ImGui::EndChild();
     if (searched_) {
-      ImGui::Text("%zu matches. right click on an item to create signal. double click to open message",
+      ImGui::Text("%zu matches. Right-click an item to create a signal. Double-click to open the message.",
                   search_.filtered_signals.size());
     }
   }
@@ -103,12 +103,12 @@ void FindSignalDlg::drawMessageGroup() {
   ImGui::TextUnformatted("Bus");
   ImGui::SameLine(80);
   ImGui::SetNextItemWidth(-1);
-  inputText("##bus", &bus_, "comma-separated values. Leave blank for all");
+  inputText("##bus", &bus_, "Comma-separated values. Leave blank for all.");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Address");
   ImGui::SameLine(80);
   ImGui::SetNextItemWidth(-1);
-  inputText("##address", &address_, "comma-separated hex values. Leave blank for all");
+  inputText("##address", &address_, "Comma-separated hex values. Leave blank for all.");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Time");
   ImGui::SameLine(80);
@@ -138,7 +138,7 @@ void FindSignalDlg::drawPropertiesGroup() {
   ImGui::SetNextItemWidth(70);
   if (ImGui::InputInt("##max_size", &max_size_, 1, 10)) max_size_ = std::clamp(max_size_, 1, 64);
   ImGui::SameLine();
-  checkBox("Little endian", &little_endian_);
+  checkBox("Little Endian", &little_endian_);
   ImGui::SameLine();
   checkBox("Signed", &is_signed_);
   ImGui::AlignTextToFramePadding();
@@ -157,7 +157,7 @@ void FindSignalDlg::drawPropertiesGroup() {
 void FindSignalDlg::drawFindGroup() {
   static const char *compare_items[] = {"=", ">", ">=", "!=", "<", "<=", "between"};
   const int compare_count = IM_ARRAYSIZE(compare_items);
-  ImGui::TextUnformatted("Find signal");
+  ImGui::TextUnformatted("Find Signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Value");
   ImGui::SameLine();
@@ -177,14 +177,14 @@ void FindSignalDlg::drawFindGroup() {
   ImGui::SameLine();
   const bool first = !searching_ && search_.histories.empty();
   ImGui::BeginDisabled(searching_ || search_.histories.size() <= 1);
-  if (ImGui::Button("Undo prev find")) {
+  if (ImGui::Button("Undo Previous Find")) {
     search_.undo();
     searched_ = true;
   }
   ImGui::EndDisabled();
   ImGui::SameLine();
   ImGui::BeginDisabled(searching_ || (search_.filtered_signals.empty() && !first));
-  if (ImGui::Button(searching_ ? "Finding ...." : (first ? "Find" : "Find Next"))) search();
+  if (ImGui::Button(searching_ ? "Finding..." : (first ? "Find" : "Find Next"))) search();
   ImGui::EndDisabled();
   ImGui::SameLine();
   ImGui::BeginDisabled(searching_ || first);
@@ -203,7 +203,7 @@ void FindSignalDlg::drawFindGroup() {
 }
 
 void FindSignalDlg::drawTable() {
-  static const char *titles[] = {"Id", "Start Bit, size", "(time, value)"};
+  static const char *titles[] = {"ID", "Start Bit, Size", "(Time, Value)"};
   const int columns = IM_ARRAYSIZE(titles);
   const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
   if (!ImGui::BeginTable("view", columns + 1, flags, ImVec2(0, 0))) return;

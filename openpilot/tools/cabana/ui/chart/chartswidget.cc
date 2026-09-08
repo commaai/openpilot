@@ -69,7 +69,7 @@ std::string ChartsWidget::whatsThis() const {
     <b>Click</b>: Click to seek to a corresponding time.<br />
     <b>Drag</b>: Zoom into the chart.<br />
     <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
-    <b>Right Mouse</b>: Open the context menu.<br />
+    <b>Right-click</b>: Open the context menu.<br />
   )";
 }
 

@@ -50,6 +50,8 @@ inline VideoPlacement videoPlacement(const ImRect &rect, float source_aspect_rat
   return placement;
 }
 
+void drawVideoFrame(ImDrawList *draw_list, ImTextureRef texture, const ImRect &rect, const VideoPlacement &placement);
+
 // tightly packed RGBA pixels
 struct RgbImage {
   int width = 0;
