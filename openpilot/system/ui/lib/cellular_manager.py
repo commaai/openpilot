@@ -9,7 +9,6 @@ from openpilot.common.esim.base import LPABase, Profile
 from openpilot.common.esim.esim import execute_and_process_notifications
 
 
-PROFILE_POLL_INTERVAL_S = 5.0
 
 
 def _get_modem_state() -> dict:
@@ -20,6 +19,8 @@ def _get_modem_state() -> dict:
 
 
 class CellularManager:
+  PROFILE_POLL_INTERVAL_S = 5.0
+
   def __init__(self):
     self._lpa: LPABase | None = None
     self._profiles: list[Profile] = []
@@ -50,7 +51,7 @@ class CellularManager:
 
     self._modem_state = _get_modem_state()
 
-    if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= PROFILE_POLL_INTERVAL_S:
+    if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= self.PROFILE_POLL_INTERVAL_S:
       self._last_profile_poll = time.monotonic()
       self._poll_profiles()
 
