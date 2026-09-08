@@ -2,10 +2,9 @@ import pyray as rl
 from collections.abc import Callable
 
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
-from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import ForgetButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationDialog
 from openpilot.common.esim.base import Profile
-from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, gui_app
+from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, TextAlignment, gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_label
@@ -15,27 +14,32 @@ SUB_LABEL_DISABLED = rl.Color(255, 255, 255, int(255 * 0.585))
 CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
 
 
-class RenameButton(Widget):
-  SIZE = 84
-  MARGIN = 12
+class ProfileActionButton(Widget):
+  SIZE = 68
+  MARGIN = 10
 
-  def __init__(self, rename_callback: Callable):
+  def __init__(self, callback: Callable, delete: bool = False):
     super().__init__()
-    self._rename_callback = rename_callback
+    self.set_click_callback(callback)
+    self._delete = delete
+    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 25, 30) if delete else None
 
     self._bg_txt = gui_app.texture("icons_mici/buttons/button_circle.png", self.SIZE, self.SIZE)
     self._bg_pressed_txt = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", self.SIZE, self.SIZE)
     self.set_rect(rl.Rectangle(0, 0, self.SIZE + self.MARGIN * 2, self.SIZE + self.MARGIN * 2))
 
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-    self._rename_callback()
-
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
     rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
                                 self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
-    gui_label(self._rect, "Aa", 32, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    color = rl.Color(255, 105, 115, 255) if self._delete else DEFAULT_TEXT_COLOR
+    if not self.enabled:
+      color = rl.Color(color.r, color.g, color.b, 90)
+    if self._trash_txt:
+      rl.draw_texture_ex(self._trash_txt, (self._rect.x + (self._rect.width - self._trash_txt.width) / 2,
+                                          self._rect.y + (self._rect.height - self._trash_txt.height) / 2), 0, 1.0, color)
+    else:
+      gui_label(self._rect, "Aa", 30, color=color, alignment=TextAlignment.CENTER)
 
 
 class EsimProfileButton(BigButton):
@@ -54,8 +58,11 @@ class EsimProfileButton(BigButton):
     self._check_txt = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 32, 32)
     self._comma_txt = gui_app.texture("icons_mici/settings/comma_icon.png", 36, 36) if profile.is_comma else None
 
-    self._delete_btn = ForgetButton(lambda: self._cellular_manager.delete_profile(self._profile.iccid), "slide to delete", size=63)
-    self._rename_btn = RenameButton(self._on_rename) if not profile.is_comma else None
+    self._delete_btn = ProfileActionButton(self._on_delete, delete=True)
+    self._rename_btn = ProfileActionButton(self._on_rename) if not profile.is_comma else None
+    self._delete_btn.set_enabled(lambda: not self._cellular_manager.busy and self._show_delete_btn)
+    if self._rename_btn:
+      self._rename_btn.set_enabled(lambda: not self._cellular_manager.busy)
     self.update_profile(profile)
 
   @property
@@ -79,6 +86,12 @@ class EsimProfileButton(BigButton):
     current = self._profile.nickname or ""
     dlg = BigInputDialog("nickname", default_text=current, minimum_length=0, confirm_callback=self._on_nickname_entered)
     gui_app.push_widget(dlg)
+
+  def _on_delete(self):
+    iccid = self._profile.iccid
+    icon = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
+    gui_app.push_widget(BigConfirmationDialog("slide to delete", icon,
+                                             lambda: self._cellular_manager.delete_profile(iccid), red=True))
 
   def _on_nickname_entered(self, nickname: str):
     self._cellular_manager.nickname_profile(self._profile.iccid, nickname.strip())
@@ -105,8 +118,7 @@ class EsimProfileButton(BigButton):
       sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
       label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
       action_w = self._rename_btn.rect.width if self._rename_btn is not None else 0
-      # delete sits just inside rename's left edge (overlap their inner margins) so the sub_label has more room
-      action_w += self._delete_btn.rect.width - ForgetButton.MARGIN if self._show_delete_btn else 0
+      action_w += self._delete_btn.rect.width if self._show_delete_btn else 0
       sub_label_w = self.SUB_LABEL_WIDTH - action_w
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
@@ -133,7 +145,7 @@ class EsimProfileButton(BigButton):
         self._rename_btn.rect.width, self._rename_btn.rect.height,
       ))
     if self._show_delete_btn:
-      btn_x -= self._delete_btn.rect.width - ForgetButton.MARGIN
+      btn_x -= self._delete_btn.rect.width
       self._delete_btn.render(rl.Rectangle(
         btn_x, btn_bottom - self._delete_btn.rect.height,
         self._delete_btn.rect.width, self._delete_btn.rect.height,
