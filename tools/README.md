@@ -32,6 +32,8 @@ source .venv/bin/activate
 scons -u
 ```
 
+Model and asset transfers use Xet storage. See [storage and publishing](XET.md) for authentication and fork setup.
+
 ## WSL on Windows
 
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.

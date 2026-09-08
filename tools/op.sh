@@ -204,6 +204,9 @@ EOF
 
   op_activate_venv
 
+  echo "Setting up Xet transfers..."
+  python3 tools/xet.py install
+
   echo "Pulling git lfs files..."
   st="$(date +%s)"
   git config --local filter.lfs.clean ".venv/bin/git-lfs clean -- %f"
