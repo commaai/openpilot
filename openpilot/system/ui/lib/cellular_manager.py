@@ -124,16 +124,12 @@ class CellularManager:
 
   def _poll_profiles(self):
     self._polling = True
-    prev_is_euicc = self._is_euicc
-
     def worker():
       try:
         with self._lock:
           lpa = self._ensure_lpa()
           is_euicc = lpa.is_euicc()
           profiles = lpa.list_profiles() if is_euicc else []
-        if is_euicc != prev_is_euicc:
-          cloudlog.info(f"eSIM: is_euicc={is_euicc}")
         self._enqueue(lambda: self._finish_poll(is_euicc, profiles))
       except Exception:
         cloudlog.exception("Failed to poll eSIM profiles")
