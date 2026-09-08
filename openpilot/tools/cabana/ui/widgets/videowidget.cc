@@ -550,7 +550,7 @@ void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
   p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255), ImGui::GetStyle().ChildRounding);
   if (const RgbImage *image = thumbnailAt(sec)) {
     const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, settings.crop_video);
-    p->AddImage(big_thumbnail_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE);
+    drawVideoFrame(p, big_thumbnail_texture_.ref(), rect(), placement);
     drawTime(p, rect(), sec);
   }
 }
