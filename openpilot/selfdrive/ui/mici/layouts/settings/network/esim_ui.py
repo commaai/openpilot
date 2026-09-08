@@ -17,6 +17,7 @@ CHECK_ICON_COLOR = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
 class ProfileActionButton(Widget):
   SIZE = 68
   MARGIN = 10
+  HORIZONTAL_MARGIN = 4
 
   def __init__(self, callback: Callable, delete: bool = False):
     super().__init__()
@@ -26,7 +27,7 @@ class ProfileActionButton(Widget):
 
     self._bg_txt = gui_app.texture("icons_mici/buttons/button_circle.png", self.SIZE, self.SIZE)
     self._bg_pressed_txt = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", self.SIZE, self.SIZE)
-    self.set_rect(rl.Rectangle(0, 0, self.SIZE + self.MARGIN * 2, self.SIZE + self.MARGIN * 2))
+    self.set_rect(rl.Rectangle(0, 0, self.SIZE + self.HORIZONTAL_MARGIN * 2, self.SIZE + self.MARGIN * 2))
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
@@ -136,7 +137,7 @@ class EsimProfileButton(BigButton):
       cell_icon = self._cell_full_txt if active else self._cell_none_txt
       rl.draw_texture_ex(cell_icon, (self._rect.x + 30, btn_y + 38), 0.0, 1.0, rl.WHITE)
 
-    btn_x = self._rect.x + self._rect.width
+    btn_x = self._rect.x + self._rect.width - (ProfileActionButton.MARGIN - ProfileActionButton.HORIZONTAL_MARGIN)
     btn_bottom = btn_y + self._rect.height
     if self._rename_btn is not None:
       btn_x -= self._rename_btn.rect.width
