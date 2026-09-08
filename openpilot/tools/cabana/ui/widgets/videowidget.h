@@ -70,7 +70,7 @@ private:
   void collectThumbnails();  // moves the decoded thumbnails in once a parseQLog task is done
   // the first thumbnail at or after sec, uploaded to big_thumbnail_texture_; nullptr when there is none
   const RgbImage *thumbnailAt(double sec);
-  void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size);
+  void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size, float rounding);
   void drawThumbnail(ImDrawList *p, double sec);
   void drawScrubThumbnail(ImDrawList *p, double sec);
   void drawTime(ImDrawList *p, const ImRect &rect, double seconds);

@@ -21,6 +21,23 @@ void generateMipmap() {
 }
 }  // namespace
 
+void drawVideoFrame(ImDrawList *draw_list, ImTextureRef texture, const ImRect &rect, const VideoPlacement &placement) {
+  const ImVec2 size(placement.max.x - placement.min.x, placement.max.y - placement.min.y);
+  if (size.x <= 0 || size.y <= 0) return;
+
+  // Round the full frame, then clip to the square video bounds so letterboxing
+  // doesn't introduce a second set of rounded corners around the image.
+  const ImVec2 uv_scale((placement.uv1.x - placement.uv0.x) / size.x,
+                       (placement.uv1.y - placement.uv0.y) / size.y);
+  const ImVec2 uv0(placement.uv0.x + (rect.Min.x - placement.min.x) * uv_scale.x,
+                  placement.uv0.y + (rect.Min.y - placement.min.y) * uv_scale.y);
+  const ImVec2 uv1(placement.uv1.x + (rect.Max.x - placement.max.x) * uv_scale.x,
+                  placement.uv1.y + (rect.Max.y - placement.max.y) * uv_scale.y);
+  draw_list->PushClipRect(placement.min, placement.max, true);
+  draw_list->AddImageRounded(texture, rect.Min, rect.Max, uv0, uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
+  draw_list->PopClipRect();
+}
+
 void GlTexture::upload(const RgbImage &image) {
   if (id == 0) {
     glGenTextures(1, &id);
@@ -114,7 +131,7 @@ void CameraWidget::paint() {
     // mirror cabin camera horizontally
     std::swap(placement.uv0.x, placement.uv1.x);
   }
-  p->AddImageRounded(frame_texture_.ref(), placement.min, placement.max, placement.uv0, placement.uv1, IM_COL32_WHITE, ImGui::GetStyle().ChildRounding);
+  drawVideoFrame(p, frame_texture_.ref(), rect_, placement);
 }
 
 void CameraWidget::vipcThread() {
