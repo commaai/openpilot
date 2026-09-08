@@ -49,10 +49,9 @@ class CellularManager:
     for cb in to_run:
       cb()
 
-    self._modem_state = _get_modem_state()
-
     if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= self.PROFILE_POLL_INTERVAL_S:
       self._last_profile_poll = time.monotonic()
+      self._modem_state = _get_modem_state()
       self._poll_profiles()
 
   @property
