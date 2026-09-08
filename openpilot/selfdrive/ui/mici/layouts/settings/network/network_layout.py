@@ -68,12 +68,11 @@ class NetworkLayoutMici(NavScroller):
 
     # ******** eSIM ********
     self._cellular_manager = CellularManager()
-    self._esim_ui = EsimUI(self._cellular_manager)
-    self._esim_button = EsimNetworkButton(
+    self._esim_ui = EsimUI(
       self._cellular_manager,
       lambda: ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE),
     )
-
+    self._esim_button = EsimNetworkButton(self._cellular_manager)
     self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))
 
     # ******** Advanced settings ********

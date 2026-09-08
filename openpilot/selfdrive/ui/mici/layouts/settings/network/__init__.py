@@ -1,5 +1,4 @@
 import pyray as rl
-from collections.abc import Callable
 
 from openpilot.cereal import log
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
@@ -14,9 +13,8 @@ NetworkType = log.DeviceState.NetworkType
 
 
 class EsimNetworkButton(BigButton):
-  def __init__(self, cellular_manager: CellularManager, profiles_enabled: Callable[[], bool]):
+  def __init__(self, cellular_manager: CellularManager):
     self._cellular_manager = cellular_manager
-    self._profiles_enabled = profiles_enabled
     self._cell_icons = {
       NetworkStrength.unknown: gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 64, 47),
       NetworkStrength.poor: gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 64, 47),
@@ -28,7 +26,7 @@ class EsimNetworkButton(BigButton):
 
   def _update_state(self):
     super()._update_state()
-    self.set_enabled(self._profiles_enabled() and self._cellular_manager.is_euicc is not False)
+    self.set_enabled(self._cellular_manager.is_euicc is not False)
     text, value, icon = self._compute_state()
     self.set_text(text)
     self.set_value(value)

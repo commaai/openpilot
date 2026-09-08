@@ -48,8 +48,9 @@ class EsimProfileButton(BigButton):
   LABEL_WIDTH = 402 - 98 - 28
   SUB_LABEL_WIDTH = 402 - BigButton.LABEL_HORIZONTAL_PADDING * 2
 
-  def __init__(self, profile: Profile, cellular_manager: CellularManager):
+  def __init__(self, profile: Profile, cellular_manager: CellularManager, profiles_enabled: Callable[[], bool]):
     self._cellular_manager = cellular_manager
+    self._profiles_enabled = profiles_enabled
     super().__init__(profile.display_name, scroll=True)
 
     self._profile = profile
@@ -61,9 +62,10 @@ class EsimProfileButton(BigButton):
 
     self._delete_btn = ProfileActionButton(self._on_delete, delete=True)
     self._rename_btn = ProfileActionButton(self._on_rename) if not profile.is_comma else None
-    self._delete_btn.set_enabled(lambda: not self._cellular_manager.busy and self._show_delete_btn)
+    self._delete_btn.set_enabled(lambda: not self._locked and not self._cellular_manager.busy and self._show_delete_btn)
     if self._rename_btn:
-      self._rename_btn.set_enabled(lambda: not self._cellular_manager.busy)
+      self._rename_btn.set_enabled(lambda: not self._locked and not self._cellular_manager.busy)
+    self.set_enabled(lambda: not self._profile.enabled and not self._locked)
     self.update_profile(profile)
 
   @property
@@ -75,9 +77,15 @@ class EsimProfileButton(BigButton):
     active = profile.enabled
     self.set_text(profile.display_name)
     self.set_value("active" if active else "switch")
-    self.set_enabled(not active)
-    self._sub_label.set_color(SUB_LABEL_DISABLED if active else DEFAULT_TEXT_COLOR)
-    self._sub_label.set_font_weight(FontWeight.ROMAN if active else FontWeight.SEMI_BOLD)
+
+  def _update_state(self):
+    super()._update_state()
+    self._sub_label.set_color(DEFAULT_TEXT_COLOR if self.enabled else SUB_LABEL_DISABLED)
+    self._sub_label.set_font_weight(FontWeight.SEMI_BOLD if self.enabled else FontWeight.ROMAN)
+
+  @property
+  def _locked(self) -> bool:
+    return not self._profile.is_comma and not self._profiles_enabled()
 
   @property
   def _show_delete_btn(self) -> bool:
@@ -89,13 +97,16 @@ class EsimProfileButton(BigButton):
     gui_app.push_widget(dlg)
 
   def _on_delete(self):
-    iccid = self._profile.iccid
     icon = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
-    gui_app.push_widget(BigConfirmationDialog("slide to delete", icon,
-                                             lambda: self._cellular_manager.delete_profile(iccid), red=True))
+    gui_app.push_widget(BigConfirmationDialog("slide to delete", icon, self._delete_profile, red=True))
+
+  def _delete_profile(self):
+    if not self._locked and not self._cellular_manager.busy and self._show_delete_btn:
+      self._cellular_manager.delete_profile(self._profile.iccid)
 
   def _on_nickname_entered(self, nickname: str):
-    self._cellular_manager.nickname_profile(self._profile.iccid, nickname.strip())
+    if not self._locked and not self._cellular_manager.busy:
+      self._cellular_manager.nickname_profile(self._profile.iccid, nickname.strip())
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_delete_btn and rl.check_collision_point_rec(mouse_pos, self._delete_btn.rect):
@@ -108,7 +119,7 @@ class EsimProfileButton(BigButton):
     return 48
 
   def _draw_content(self, btn_y: float):
-    self._label.set_color(LABEL_COLOR)
+    self._label.set_color(SUB_LABEL_DISABLED if self._locked else LABEL_COLOR)
     label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
@@ -162,23 +173,19 @@ class EsimProfileButton(BigButton):
 
 
 class EsimUI(NavScroller):
-  def __init__(self, cellular_manager: CellularManager):
+  def __init__(self, cellular_manager: CellularManager, profiles_enabled: Callable[[], bool]):
     super().__init__()
 
     self._cellular_manager = cellular_manager
+    self._profiles_enabled = profiles_enabled
 
-    self._cellular_manager.add_callbacks(
-      profiles_updated=self._on_profiles_updated,
-      operation_error=self._on_error,
-    )
+    self._cellular_manager.on_profiles_updated = self._update_buttons
+    self._cellular_manager.on_operation_error = self._on_error
 
   def show_event(self):
     super().show_event()
     self._update_buttons(re_sort=True)
     self._cellular_manager.refresh_profiles()
-
-  def _on_profiles_updated(self, profiles: list[Profile]):
-    self._update_buttons()
 
   def _update_buttons(self, re_sort: bool = False):
     existing = {btn.profile.iccid: btn for btn in self._scroller.items}
@@ -186,8 +193,8 @@ class EsimUI(NavScroller):
     for profile in self._cellular_manager.profiles:
       btn = existing.get(profile.iccid)
       if btn is None:
-        btn = EsimProfileButton(profile, self._cellular_manager)
-        btn.set_click_callback(lambda iccid=profile.iccid: self._on_profile_clicked(iccid))
+        btn = EsimProfileButton(profile, self._cellular_manager, self._profiles_enabled)
+        btn.set_click_callback(lambda btn=btn: self._on_profile_clicked(btn.profile))
         self._scroller.add_widget(btn)
       else:
         btn.update_profile(profile)
@@ -217,8 +224,8 @@ class EsimUI(NavScroller):
     dlg = BigDialog("esim error", error)
     gui_app.push_widget(dlg)
 
-  def _on_profile_clicked(self, iccid: str):
-    if self._cellular_manager.busy:
+  def _on_profile_clicked(self, profile: Profile):
+    if self._cellular_manager.busy or (not profile.is_comma and not self._profiles_enabled()):
       return
-    self._cellular_manager.switch_profile(iccid)
-    self._move_profile_to_front(iccid, scroll=True)
+    self._cellular_manager.switch_profile(profile.iccid)
+    self._move_profile_to_front(profile.iccid, scroll=True)

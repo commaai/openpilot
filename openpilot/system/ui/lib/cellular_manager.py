@@ -6,6 +6,7 @@ from dataclasses import replace
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.esim.base import LPABase, Profile
+from openpilot.common.esim.esim import execute_and_process_notifications
 
 
 PROFILE_POLL_INTERVAL_S = 5.0
@@ -31,17 +32,11 @@ class CellularManager:
     self._callback_lock = threading.Lock()
     self._callback_queue: list[Callable] = []
 
-    self._profiles_updated_cbs: list[Callable[[list[Profile]], None]] = []
-    self._operation_error_cbs: list[Callable[[str], None]] = []
+    self.on_profiles_updated: Callable[[], None] | None = None
+    self.on_operation_error: Callable[[str], None] | None = None
 
     self._last_profile_poll: float = 0.0
     self._polling: bool = False
-
-  def add_callbacks(self, profiles_updated: Callable | None = None, operation_error: Callable | None = None):
-    if profiles_updated:
-      self._profiles_updated_cbs.append(profiles_updated)
-    if operation_error:
-      self._operation_error_cbs.append(operation_error)
 
   @property
   def modem_state(self) -> dict:
@@ -89,8 +84,8 @@ class CellularManager:
 
   def _set_profiles(self, profiles: list[Profile]):
     self._profiles = profiles
-    for cb in self._profiles_updated_cbs:
-      cb(profiles)
+    if self.on_profiles_updated:
+      self.on_profiles_updated()
 
   def _finish(self, profiles: list[Profile] | None = None, error: str | None = None):
     self._busy = False
@@ -98,8 +93,8 @@ class CellularManager:
       self._set_profiles(profiles)
     if error is not None:
       self.refresh_profiles()
-      for cb in self._operation_error_cbs:
-        cb(error)
+      if self.on_operation_error:
+        self.on_operation_error(error)
 
   def _run_operation(self, fn: Callable[[LPABase], None], error_msg: str, relist: bool = True):
     self._busy = True
@@ -145,9 +140,12 @@ class CellularManager:
     self._set_profiles(profiles)
 
   def switch_profile(self, iccid: str):
+    def switch(lpa: LPABase):
+      execute_and_process_notifications(lpa, lambda: lpa.switch_profile(iccid))
+
     # optimistic: list_profiles() can briefly return stale enabled state after a switch
     self._set_profiles([replace(p, enabled=(p.iccid == iccid)) for p in self._profiles])
-    self._run_operation(lambda lpa: lpa.switch_profile(iccid), "Failed to switch eSIM profile", relist=False)
+    self._run_operation(switch, "Failed to switch eSIM profile", relist=False)
 
   def delete_profile(self, iccid: str):
     self._run_operation(lambda lpa: lpa.delete_profile(iccid), "Failed to delete eSIM profile")
