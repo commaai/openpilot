@@ -42,10 +42,7 @@ class CellularManager:
 
     if not self._busy and not self._polling and time.monotonic() - self._last_profile_poll >= self.PROFILE_POLL_INTERVAL_S:
       self._last_profile_poll = time.monotonic()
-      try:
-        self._modem_state = HARDWARE.get_modem_state()
-      except Exception:
-        self._modem_state = {}
+      self._modem_state = HARDWARE.get_modem_state()
       self._poll_profiles()
 
   @property
