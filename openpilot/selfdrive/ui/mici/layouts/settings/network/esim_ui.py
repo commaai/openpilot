@@ -65,7 +65,7 @@ class EsimProfileButton(BigButton):
     self._delete_btn.set_enabled(lambda: not self._locked and not self._cellular_manager.busy and self._show_delete_btn)
     if self._rename_btn:
       self._rename_btn.set_enabled(lambda: not self._locked and not self._cellular_manager.busy)
-    self.set_enabled(lambda: not self._profile.enabled and not self._locked)
+    self.set_enabled(lambda: not self._profile.enabled and self._profiles_enabled() and not self._cellular_manager.busy)
     self.update_profile(profile)
 
   @property
@@ -225,7 +225,7 @@ class EsimUI(NavScroller):
     gui_app.push_widget(dlg)
 
   def _on_profile_clicked(self, profile: Profile):
-    if self._cellular_manager.busy or (not profile.is_comma and not self._profiles_enabled()):
+    if self._cellular_manager.busy or not self._profiles_enabled():
       return
     self._cellular_manager.switch_profile(profile.iccid)
     self._move_profile_to_front(profile.iccid, scroll=True)
