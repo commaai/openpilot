@@ -23,11 +23,7 @@ def estimate_pickle_max_size(onnx_size):
   # the ONNX size. Overestimating only adds an empty trailing chunk.
   return 2.0 * onnx_size + 10 * 1024 * 1024
 
-CAMERA_CONFIGS = [
-  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
-  (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
-]
-camera_configs = CAMERA_CONFIGS
+camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
 
 if arch == 'comma_arm64':
   tg_backend = 'QCOM'
