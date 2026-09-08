@@ -58,7 +58,6 @@ chmod +x $CONTINUE_PATH
 
 export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
-  python3 tools/xet.py install
   if [ -n "${CHESTNUT:-}" ]
   then
     git lfs pull --exclude=''
