@@ -169,8 +169,8 @@ class DriverStateRenderer(Widget):
     self._is_rhd = dm_state.isRHD
     self._face_detected = dm_state.visionPolicyState.faceDetected
     self._awareness_unfull = self.effective_active and dm_state.visionPolicyState.awarenessPercent < self.AWARENESS_UNFULL_PERCENT
-    self._face_pitch = dm_state.visionPolicyState.pose.pitch + math.radians(6) # calib or DM pose is not accurate, add a fake upward pitch to bias forward
-    self._face_yaw = -dm_state.visionPolicyState.pose.yaw # undo sign flip in face_orientation_from_model to match UI convention
+    self._face_pitch = dm_state.visionPolicyState.pose.pitch + math.radians(6)  # calib or DM pose is not accurate, add a fake upward pitch to bias forward
+    self._face_yaw = dm_state.visionPolicyState.pose.yaw * (1 if self._is_rhd else -1)  # undo sign flip in face_orientation_from_model to match UI convention
 
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData

@@ -45,7 +45,7 @@ def get_select_fields_data(logs):
     for key in keys:
       val = getattr(val, key) if isinstance(key, str) else val[key]
     return val
-  lp = [x.livePose for x in logs if x.which() == 'livePose']
+  lp = [x.deviceMotion for x in logs if x.which() == 'deviceMotion']
   data = defaultdict(list)
   for msg in lp:
     for key, fields in SELECT_COMPARE_FIELDS.items():

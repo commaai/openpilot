@@ -33,8 +33,8 @@ struct RouteIdentifier {
 struct SegmentFile {
   std::string rlog;
   std::string qlog;
-  std::string road_cam;
-  std::string driver_cam;
+  std::string narrow_road_cam;
+  std::string cabin_cam;
   std::string wide_road_cam;
   std::string qcamera;
 };

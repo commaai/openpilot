@@ -33,6 +33,13 @@ cat << 'EOF'
 EOF
 }
 
+function check_platform() {
+  if [[ -f /AGNOS ]]; then
+    echo -e "[${RED}✗${NC}] This installer is for PCs only. The environment is pre-configured in AGNOS."
+    return 1
+  fi
+}
+
 function check_stdin() {
   if [ -t 0 ]; then
     INTERACTIVE=1
@@ -135,6 +142,7 @@ function install_with_op() {
 }
 
 show_motd
+check_platform
 check_stdin
 ask_dir
 check_dir

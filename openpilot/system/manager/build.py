@@ -50,6 +50,8 @@ def build() -> None:
     if scons.returncode == 0:
       break
 
+  os.sync()
+
   if scons.returncode != 0:
     # Build failed log errors
     error_s = b"\n".join(compile_output).decode('utf8', 'replace')

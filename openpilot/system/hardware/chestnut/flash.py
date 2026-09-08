@@ -33,6 +33,7 @@ USBDEVFS_SETCONFIGURATION = 0x80045505
 USBDEVFS_CLAIMINTERFACE = 0x8004550F
 USBDEVFS_RESET = 0x5514
 USBDEVFS_CLEAR_HALT = 0x80045515
+MAX_REGISTER_READ_SIZE = 255
 
 _deadline = float("inf")
 
@@ -104,6 +105,26 @@ def open_device(path):
   return os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
 
 
+def link_up() -> bool:
+  # asm enumerates on USB-C alone, gpu is only usable once pcie link is up
+  try:
+    path, _, _ = find_chestnut()
+    if path is None:
+      return False
+    fd = open_device(path)
+  except (OSError, RuntimeError):
+    return False
+  try:
+    fcntl.ioctl(fd, USBDEVFS_CONTROL, Ctrl(0x40, 0xF3, 1, 0, 0, 2000, None))
+    buf = (ctypes.c_ubyte * 1)()
+    fcntl.ioctl(fd, USBDEVFS_CONTROL, Ctrl(0xC0, 0xE4, 0xB450, 0, 1, 1000, ctypes.cast(buf, ctypes.c_void_p)))
+    return buf[0] == 0x78  # LTSSM L0
+  except OSError:
+    return False
+  finally:
+    os.close(fd)
+
+
 def claim_interface(path, setup=False):
   # unbind usb-storage, which binds to the ROM bootloader
   disable_runtime_pm(path)
@@ -126,6 +147,7 @@ def claim_interface(path, setup=False):
 class Flash:
   def __init__(self):
     self.fd = -1
+    self.max_register_read_size = MAX_REGISTER_READ_SIZE
 
   def close(self):
     if self.fd >= 0:
@@ -140,6 +162,9 @@ class Flash:
       if in_rom_bootloader(vid_pid, product):
         raise RomFallback("chestnut fell back to the ROM bootloader")
       if path is not None:
+        speed = int(open(path + "/speed").read())
+        # USB2 firmware truncates larger reads to one full packet without a terminating ZLP.
+        self.max_register_read_size = 64 if speed < 5000 else MAX_REGISTER_READ_SIZE
         self.fd = claim_interface(path)
         return
       time.sleep(0.1)
@@ -211,8 +236,8 @@ class Flash:
     while len(out) < length:
       n = min(4096, length - len(out))
       self.transaction(0x03, addr + len(out), max(4096, n))
-      for off in range(0, n, 255):
-        out += self.reg_read(0x7000 + off, min(255, n - off))
+      for off in range(0, n, self.max_register_read_size):
+        out += self.reg_read(0x7000 + off, min(self.max_register_read_size, n - off))
     return bytes(out)
 
   def erase_sector(self, addr):

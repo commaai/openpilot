@@ -2,8 +2,15 @@
 
 #include <csignal>
 #include <fcntl.h>
+#include <cstdio>
+#include <cstring>
 #include <mutex>
+#include <spawn.h>
+#ifdef __APPLE__
+#include <crt_externs.h>
+#endif
 #include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -14,10 +21,17 @@ namespace {
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
-// Run a Python command and capture stdout. Stderr is left attached to the parent.
-// Returns stdout content. If abort is signaled, kills the child process.
+void reportProgress(const char *line) {
+  uint64_t cur = 0, total = 0;
+  if (sscanf(line, "PROGRESS:%llu:%llu", (unsigned long long *)&cur, (unsigned long long *)&total) != 2) return;
+  std::lock_guard<std::mutex> lk(handler_mutex);
+  if (progress_handler && total > 0) progress_handler(cur, total, true);
+}
+
+// Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
+// through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
 std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
-  // Build argv for execvp
+  // Build argv for the downloader module
   std::vector<const char *> argv;
   argv.push_back("python3");
   argv.push_back("-m");
@@ -27,43 +41,94 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   }
   argv.push_back(nullptr);
 
-  int stdout_pipe[2];
-  if (pipe(stdout_pipe) != 0) {
+  auto open_pipe = [](int (&fds)[2]) {
+#ifdef __linux__
+    return pipe2(fds, O_CLOEXEC);
+#else
+    if (pipe(fds) != 0) return -1;
+    if (fcntl(fds[0], F_SETFD, FD_CLOEXEC) == 0 && fcntl(fds[1], F_SETFD, FD_CLOEXEC) == 0) return 0;
+    close(fds[0]); close(fds[1]);
+    return -1;
+#endif
+  };
+  int stdout_pipe[2], stderr_pipe[2];
+  if (open_pipe(stdout_pipe) != 0) {
     rWarning("py_downloader: pipe() failed");
     return {};
   }
-
-  pid_t pid = fork();
-  if (pid < 0) {
-    rWarning("py_downloader: fork() failed");
+  if (open_pipe(stderr_pipe) != 0) {
+    rWarning("py_downloader: pipe() failed");
     close(stdout_pipe[0]); close(stdout_pipe[1]);
     return {};
   }
 
-  if (pid == 0) {
-    // Child process — detach from controlling terminal so Python
-    // cannot corrupt terminal settings needed by ncurses in the parent.
-    setsid();
-    int devnull = open("/dev/null", O_RDONLY);
-    if (devnull >= 0) {
-      dup2(devnull, STDIN_FILENO);
-      if (devnull > STDERR_FILENO) close(devnull);
-    }
+  // Avoid copying the large replay address space and running atfork handlers on
+  // every segment download: both can stall rendering even from a worker thread.
+  std::vector<std::string> environment;
+#ifdef __APPLE__
+  char **parent_environment = *_NSGetEnviron();
+#else
+  char **parent_environment = environ;
+#endif
+  for (char **entry = parent_environment; *entry; ++entry) {
+    if (strncmp(*entry, "OPENPILOT_PREFIX=", 17) != 0) environment.emplace_back(*entry);
+  }
+  std::vector<char *> envp;
+  for (auto &entry : environment) envp.push_back(entry.data());
+  envp.push_back(nullptr);
 
-    // Clear OPENPILOT_PREFIX so the Python process uses default paths
-    // (e.g. ~/.comma/auth.json). The prefix is only for IPC in the parent.
-    unsetenv("OPENPILOT_PREFIX");
-
-    close(stdout_pipe[0]);
-    dup2(stdout_pipe[1], STDOUT_FILENO);
-    close(stdout_pipe[1]);
-
-    execvp("python3", const_cast<char *const *>(argv.data()));
-    _exit(127);
+  posix_spawn_file_actions_t actions;
+  posix_spawnattr_t attributes;
+  int error = posix_spawn_file_actions_init(&actions);
+  const bool actions_initialized = error == 0;
+  if (!error) error = posix_spawnattr_init(&attributes);
+  const bool attributes_initialized = error == 0;
+  if (!error) error = posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0);
+  if (!error) error = posix_spawn_file_actions_adddup2(&actions, stdout_pipe[1], STDOUT_FILENO);
+  if (!error) error = posix_spawn_file_actions_adddup2(&actions, stderr_pipe[1], STDERR_FILENO);
+  for (int fd : {stdout_pipe[0], stdout_pipe[1], stderr_pipe[0], stderr_pipe[1]}) {
+    if (!error) error = posix_spawn_file_actions_addclose(&actions, fd);
+  }
+#ifdef POSIX_SPAWN_SETSID
+  if (!error) error = posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSID);
+#else
+  if (!error) error = posix_spawnattr_setpgroup(&attributes, 0);
+  if (!error) error = posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);
+#endif
+  pid_t pid = -1;
+  if (!error) error = posix_spawnp(&pid, "python3", &actions, &attributes, const_cast<char *const *>(argv.data()), envp.data());
+  if (attributes_initialized) posix_spawnattr_destroy(&attributes);
+  if (actions_initialized) posix_spawn_file_actions_destroy(&actions);
+  if (error) {
+    rWarning("py_downloader: posix_spawnp() failed: %s", strerror(error));
+    close(stdout_pipe[0]); close(stdout_pipe[1]);
+    close(stderr_pipe[0]); close(stderr_pipe[1]);
+    return {};
   }
 
   // Parent process
   close(stdout_pipe[1]);
+  close(stderr_pipe[1]);
+
+  // stderr carries the progress lines, so a thread reads it while the loop below waits on stdout
+  std::thread stderr_thread([fd = stderr_pipe[0]]() {
+    FILE *f = fdopen(fd, "r");
+    if (!f) {
+      close(fd);
+      return;
+    }
+    char *line = nullptr;
+    size_t cap = 0;
+    while (getline(&line, &cap, f) > 0) {
+      if (strncmp(line, "PROGRESS:", 9) == 0) {
+        reportProgress(line);
+      } else {
+        fputs(line, stderr);
+      }
+    }
+    free(line);
+    fclose(f);
+  });
 
   std::string stdout_data;
   char buf[4096];
@@ -102,6 +167,7 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     stdout_data.append(buf, n);
   }
   close(stdout_pipe[0]);
+  stderr_thread.join();
 
   int status;
   waitpid(pid, &status, 0);

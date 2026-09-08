@@ -23,7 +23,7 @@ struct SpecialItemSpec {
 
 inline constexpr std::array<CameraViewSpec, 4> kCameraViewSpecs = {{
   {CameraViewKind::Road,     "Road Camera",      "road",   "road",      "camera_road",      &RouteData::road_camera},
-  {CameraViewKind::Driver,   "Driver Camera",    "driver", "driver",    "camera_driver",    &RouteData::driver_camera},
+  {CameraViewKind::Cabin,    "Cabin Camera",     "driver", "driver",    "camera_driver",    &RouteData::cabin_camera},
   {CameraViewKind::WideRoad, "Wide Road Camera", "wide",   "wide_road", "camera_wide_road", &RouteData::wide_road_camera},
   {CameraViewKind::QRoad,    "qRoad Camera",     "qroad",  "qroad",     "camera_qroad",     &RouteData::qroad_camera},
 }};

@@ -8,13 +8,13 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.athena import athenad
-from openpilot.common.hardware import TICI
+from openpilot.common.hardware import COMMA_HARDWARE
 
 TIMEOUT_TOLERANCE = 20  # seconds
 
 
 def wifi_radio(on: bool) -> None:
-  if not TICI:
+  if not COMMA_HARDWARE:
     return
   print(f"wifi {'on' if on else 'off'}")
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
@@ -91,12 +91,12 @@ class TestAthenadPing(OpenpilotTestCase):
         time.sleep(0.1)
       print("ping received")
 
-  @unittest.skipIf(not TICI, "only run on desk")
+  @unittest.skipIf(not COMMA_HARDWARE, "only run on desk")
   def test_offroad(self, subtests, mocker) -> None:
     self.params.put_bool("IsOffroad", True, block=True)
     self.assertTimeout(60 + TIMEOUT_TOLERANCE, subtests, mocker)  # based using TCP keepalive settings
 
-  @unittest.skipIf(not TICI, "only run on desk")
+  @unittest.skipIf(not COMMA_HARDWARE, "only run on desk")
   def test_onroad(self, subtests, mocker) -> None:
     self.params.put_bool("IsOffroad", False, block=True)
     self.assertTimeout(21 + TIMEOUT_TOLERANCE, subtests, mocker)

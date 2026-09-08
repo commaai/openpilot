@@ -1,4 +1,5 @@
 import datetime
+import math
 import time
 
 from openpilot.cereal import log
@@ -8,8 +9,8 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
+from openpilot.selfdrive.ui.ui_state import ui_state, ChestnutState
 from openpilot.common.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
@@ -69,8 +70,8 @@ class AlertsPill(Widget):
 
       count_rect = rl.Rectangle(self.rect.x + self.COUNT_OFFSET, self.rect.y, pill_w - self.COUNT_OFFSET, pill_h)
       gui_label(count_rect, str(alert_count), font_size=36,
-                alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                alignment=TextAlignment.CENTER,
+                alignment_vertical=TextAlignmentVertical.MIDDLE)
 
 
 class NetworkIcon(Widget):
@@ -139,8 +140,10 @@ class MiciHomeLayout(Widget):
     self._version_text = self._get_version_text()
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
-    self._egpu_icon = IconWidget("icons_mici/egpu_green.png", (50, 37))
-    self._egpu_icon_gray = IconWidget("icons_mici/egpu_gray.png", (50, 37))
+    self._usb_icon = IconWidget("icons_mici/usb.png", (62, 40))
+    self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (68, 40))
+    self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40))
+    self._chestnut_failed_icon = IconWidget("icons_mici/chestnut_orange.png", (68, 40))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
 
@@ -150,8 +153,10 @@ class MiciHomeLayout(Widget):
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
-      self._egpu_icon,
-      self._egpu_icon_gray,
+      self._usb_icon,
+      self._chestnut_icon,
+      self._chestnut_loading_icon,
+      self._chestnut_failed_icon,
       self._body_icon,
       self._mic_icon,
     ], spacing=18)
@@ -247,9 +252,17 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.render()
 
     # ***** Center-aligned bottom section icons *****
+    usb_connected = ui_state.usb_connected
+    usb_unknown = ui_state.usb_unknown
+    chestnut_state = ui_state.chestnut_state
     self._experimental_icon.set_visible(ui_state.experimental_mode)
-    self._egpu_icon.set_visible(ui_state.sm["deviceState"].chestnutPresent and ui_state.usbgpu_compiled)
-    self._egpu_icon_gray.set_visible(ui_state.sm["deviceState"].chestnutPresent and not ui_state.usbgpu_compiled)
+    self._usb_icon.set_visible(usb_connected and usb_unknown)
+    self._chestnut_icon.set_visible(not usb_unknown and chestnut_state not in
+                                    (ChestnutState.LOADING, ChestnutState.UNCOMPILED, ChestnutState.FAILED) and
+                                    (usb_connected or chestnut_state in (ChestnutState.READY, ChestnutState.ACTIVE)))
+    self._chestnut_loading_icon.set_visible(not usb_unknown and chestnut_state == ChestnutState.LOADING)
+    self._chestnut_loading_icon.set_opacity(0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)))
+    self._chestnut_failed_icon.set_visible(not usb_unknown and chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED))
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(bool(ui_state.is_body))
 

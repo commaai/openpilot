@@ -5,7 +5,7 @@ from openpilot.cereal import messaging, log
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
+from openpilot.selfdrive.ui.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
@@ -21,7 +21,7 @@ from openpilot.system.ui.widgets.scroller_tici import Scroller
 # Description constants
 DESCRIPTIONS = {
   'pair_device': tr_noop("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
-  'driver_camera': tr_noop("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
+  'cabin_camera': tr_noop("Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
   'reset_calibration': tr_noop("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
   'review_guide': tr_noop("Review the rules, features, and limitations of openpilot"),
 }
@@ -57,8 +57,8 @@ class DeviceLayout(Widget):
       text_item(lambda: tr("Dongle ID"), self._params.get("DongleId") or (lambda: tr("N/A"))),
       text_item(lambda: tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
       self._pair_device_btn,
-      button_item(lambda: tr("Driver Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['driver_camera']),
-                  callback=lambda: gui_app.push_widget(DriverCameraDialog()), enabled=ui_state.is_offroad),
+      button_item(lambda: tr("Cabin Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['cabin_camera']),
+                  callback=lambda: gui_app.push_widget(CabinCameraDialog()), enabled=ui_state.is_offroad),
       self._reset_calib_btn,
       button_item(lambda: tr("Review Training Guide"), lambda: tr("REVIEW"), lambda: tr(DESCRIPTIONS['review_guide']),
                   self._on_review_training_guide, enabled=ui_state.is_offroad),
@@ -116,9 +116,9 @@ class DeviceLayout(Widget):
     calib_bytes = self._params.get("CalibrationParams")
     if calib_bytes:
       try:
-        calib = messaging.log_from_bytes(calib_bytes, log.Event).liveCalibration
+        calib = messaging.log_from_bytes(calib_bytes, log.Event).extrinsicsCalibration
 
-        if calib.calStatus != log.LiveCalibrationData.Status.uncalibrated:
+        if calib.calStatus != log.ExtrinsicsCalibration.Status.uncalibrated:
           pitch = math.degrees(calib.rpyCalib[1])
           yaw = math.degrees(calib.rpyCalib[2])
           desc += tr(" Your device is pointed {:.1f}° {} and {:.1f}° {}.").format(abs(pitch), tr("down") if pitch > 0 else tr("up"),
@@ -130,7 +130,7 @@ class DeviceLayout(Widget):
     lag_bytes = self._params.get("LiveDelay")
     if lag_bytes:
       try:
-        lag_perc = messaging.log_from_bytes(lag_bytes, log.Event).liveDelay.calPerc
+        lag_perc = messaging.log_from_bytes(lag_bytes, log.Event).lateralDelay.calPerc
       except Exception:
         cloudlog.exception("invalid LiveDelay")
     if lag_perc < 100:
@@ -141,7 +141,7 @@ class DeviceLayout(Widget):
     torque_bytes = self._params.get("LiveTorqueParameters")
     if torque_bytes:
       try:
-        torque = messaging.log_from_bytes(torque_bytes, log.Event).liveTorqueParameters
+        torque = messaging.log_from_bytes(torque_bytes, log.Event).lateralTorqueParameters
         # don't add for non-torque cars
         if torque.useParams:
           torque_perc = torque.calPerc

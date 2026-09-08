@@ -1,6 +1,7 @@
 import numpy as np
 
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 from openpilot.cereal import messaging
 
 from openpilot.tools.sim.lib.common import W, H
@@ -37,20 +38,20 @@ def rgb_to_nv12(rgb):
 class Camerad:
   """Simulates the camerad daemon"""
   def __init__(self, dual_camera):
-    self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState'])
+    self.pm = messaging.PubMaster(['narrowRoadCameraState', 'wideRoadCameraState'])
 
     self.frame_road_id = 0
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H)
     if dual_camera:
       self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H)
 
     self.vipc_server.start_listener()
 
   def cam_send_yuv_road(self, yuv):
-    self._send_yuv(yuv, self.frame_road_id, 'roadCameraState', VisionStreamType.VISION_STREAM_ROAD)
+    self._send_yuv(yuv, self.frame_road_id, 'narrowRoadCameraState', VisionStreamType.VISION_STREAM_NARROW_ROAD)
     self.frame_road_id += 1
 
   def cam_send_yuv_wide_road(self, yuv):

@@ -21,14 +21,14 @@ In general, driver monitoring feedback is very actionable, and we can fix your c
 To post your feedback:
 
 1. Join the [community Discord](https://discord.comma.ai).
-2. If driver camera recording is toggled off, temporarily enable driver camera recording in the settings until you reproduce the issue.
-3. Using comma connect, identify the relevant segment and upload the segment's logs and driver camera.
+2. If cabin camera recording is toggled off, temporarily enable cabin camera recording in the settings until you reproduce the issue.
+3. Using comma connect, identify the relevant segment and upload the segment's logs and cabin camera.
 4. Post the segment in the `#openpilot-experience` channel on Discord with a good description.
 
 Before posting feedback, please ensure:
 
 - **openpilot is up to date** you should be on the latest openpilot release or nightly
-- **the driver camera has a clear view of the driver** ensure nothing blocks view of the driver (e.g. a cable), the lens is clean, etc.
+- **the cabin camera has a clear view of the driver** ensure nothing blocks view of the driver (e.g. a cable), the lens is clean, etc.
 - **your device is mounted properly** your device must be mounted horizontally center and relatively high on the windshield
 
 ## Other bugs

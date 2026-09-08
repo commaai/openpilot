@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
-from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
+from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
@@ -189,9 +189,9 @@ class DeviceLayoutMici(NavScroller):
     regulatory_btn = BigButton("regulatory info", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     regulatory_btn.set_click_callback(self._on_regulatory)
 
-    driver_cam_btn = BigButton("driver\ncamera preview", "", gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64))
-    driver_cam_btn.set_click_callback(lambda: gui_app.push_widget(DriverCameraDialog()))
-    driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
+    cabin_cam_btn = BigButton("driver\ncamera preview", "", gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64))
+    cabin_cam_btn.set_click_callback(lambda: gui_app.push_widget(CabinCameraDialog()))
+    cabin_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
     review_training_guide_btn = BigButton("review\ntraining guide", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
@@ -204,7 +204,7 @@ class DeviceLayoutMici(NavScroller):
       DeviceInfoLayoutMici(),
       PairBigButton(),
       review_training_guide_btn,
-      driver_cam_btn,
+      cabin_cam_btn,
       terms_btn,
       regulatory_btn,
       reset_calibration_btn,

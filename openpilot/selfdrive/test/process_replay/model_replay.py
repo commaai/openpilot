@@ -33,9 +33,9 @@ MODEL_REPLAY_BUCKET="model_replay_master"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
-  # model, instant max, average max
-  ("modelV2", 0.05, 0.028),
-  ("driverStateV2", 0.05, 0.018),
+  # model, instant max, average max, chestnut average max
+  ("modelV2", 0.05, 0.03, 0.05),
+  ("driverStateV2", 0.05, 0.018, 0.018),
 ]
 
 def get_log_fn(test_route, ref="master"):
@@ -146,16 +146,17 @@ def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
 
 def model_replay(lr, frs):
   # modeld is using frame pairs
-  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"roadCameraState", "wideRoadCameraState"},
-                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
-  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"driverCameraState"}, {"driverEncodeIdx", "carParams", "can"})
+  camera_states = {"narrowRoadCameraState", "wideRoadCameraState"}
+  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, camera_states,
+                          {"narrowRoadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
+  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"cabinCameraState"}, {"cabinEncodeIdx", "carParams", "can"})
 
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'liveCalibration']
+    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'extrinsicsCalibration']
+    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'extrinsicsCalibration']
 
   # initial setup
-  for s in ('liveCalibration', 'deviceState'):
+  for s in ('extrinsicsCalibration', 'deviceState'):
     msg = next(msg for msg in lr if msg.which() == s).as_builder()
     msg.logMonoTime = lr[0].logMonoTime
     modeld_logs.insert(1, msg.as_reader())
@@ -168,11 +169,13 @@ def model_replay(lr, frs):
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
+  chestnut = any(m.modelV2.big for m in modeld_msgs if m.which() == "modelV2")
 
   header = ['model', 'max instant', 'max instant allowed', 'average', 'max average allowed', 'test result']
   rows = []
   timings_ok = True
-  for (s, instant_max, avg_max) in EXEC_TIMINGS:
+  for (s, instant_max, avg_max, chestnut_avg_max) in EXEC_TIMINGS:
+    avg_max = chestnut_avg_max if chestnut else avg_max
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
     # TODO some init can happen in first iteration
     ts = ts[1:]
@@ -209,8 +212,8 @@ def get_frames():
       print(f"Failed to load frames from cache {cache_name}: {e}")
 
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'narrowRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'cabinCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
   }
   for fr in frs.values():

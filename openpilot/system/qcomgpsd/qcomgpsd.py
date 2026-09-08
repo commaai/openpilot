@@ -15,7 +15,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.utils import retry
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.common.hardware.comma.pins import GPIO
 from openpilot.common.serial import Serial
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv

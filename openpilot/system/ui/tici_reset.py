@@ -11,7 +11,7 @@ from openpilot.common.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -38,6 +38,7 @@ class Reset(Widget):
     self._cancel_button = Button("Cancel", gui_app.request_close)
     self._confirm_button = Button("Confirm", self._confirm, button_style=ButtonStyle.PRIMARY)
     self._reboot_button = Button("Reboot", self._reboot)
+    self._body_label = UnifiedLabel(self._get_body_text, 90, line_height=1 / 0.9)
 
   @staticmethod
   def _reboot() -> None:
@@ -75,7 +76,7 @@ class Reset(Widget):
     gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
 
     text_rect = rl.Rectangle(content_rect.x + 140, content_rect.y + 140, content_rect.width - 280, content_rect.height - 90 - 100 * FONT_SCALE)
-    gui_text_box(text_rect, self._get_body_text(), 90)
+    self._body_label.render(text_rect)
 
     button_height = 160
     button_spacing = 50

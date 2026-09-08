@@ -5,6 +5,7 @@
 #include <tuple>
 #include <utility>
 
+#include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "tools/replay/framereader.h"
@@ -32,8 +33,8 @@ protected:
   VisionBuf *getFrame(Camera &cam, FrameReader *fr, int32_t segment_id, uint32_t frame_id);
 
   Camera cameras_[MAX_CAMERAS] = {
-      {.type = RoadCam, .stream_type = VISION_STREAM_ROAD},
-      {.type = DriverCam, .stream_type = VISION_STREAM_DRIVER},
+      {.type = NarrowRoadCam, .stream_type = VISION_STREAM_NARROW_ROAD},
+      {.type = CabinCam, .stream_type = VISION_STREAM_CABIN},
       {.type = WideRoadCam, .stream_type = VISION_STREAM_WIDE_ROAD},
   };
   std::atomic<int> publishing_ = 0;

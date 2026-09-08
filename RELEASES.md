@@ -1,4 +1,4 @@
-Version 0.11.2 (2026-08-11)
+Version 0.11.2 (2026-08-12)
 =======================
 * New driving model
   * Big model with 880M parameters
@@ -7,6 +7,7 @@ Version 0.11.2 (2026-08-11)
 * Generate dashcam clips from comma connect
 * Remote comma body control from comma connect
 * New alert sounds
+* CUPRA Born 2021-2023 support thanks to DaHansi!
 * Volkswagen ID.4 2021-2025 support thanks to DaHansi!
 
 Version 0.11.1 (2026-05-18)

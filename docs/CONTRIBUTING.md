@@ -58,7 +58,7 @@ A good pull request has all of the following:
 
 * Report bugs in GitHub issues.
 * Report driving issues in the `#driving-feedback` Discord channel.
-* Consider opting into driver camera uploads to improve the driver monitoring model.
+* Consider opting into cabin camera uploads to improve the driver monitoring model.
 * Connect your device to Wi-Fi regularly, so that we can pull data for training better driving models.
 * Run the `nightly` branch and report issues. This branch is like `master` but it's built just like a release.
 * Annotate images in the [comma10k dataset](https://github.com/commaai/comma10k).

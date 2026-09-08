@@ -10,13 +10,13 @@ For each segment, openpilot records the following log types:
 
 rlogs contain all the messages passed amongst openpilot's processes. See [openpilot/cereal/services.py](https://github.com/commaai/openpilot/blob/master/openpilot/cereal/services.py) for a list of all the logged services. They're a zstd archive of the serialized [Cap’n Proto](https://capnproto.org/) messages.
 
-## {f,e,d}camera.hevc
+## camera video files
 
 Each camera stream is H.265 encoded and written to its respective file.
 
-* `fcamera.hevc` is the road camera
+* `fcamera.hevc` is the narrow road camera (the main forward camera)
 * `ecamera.hevc` is the wide road camera
-* `dcamera.hevc` is the driver camera
+* `dcamera.hevc` is the cabin camera
 
 ## qlog.zst & qcamera.ts
 

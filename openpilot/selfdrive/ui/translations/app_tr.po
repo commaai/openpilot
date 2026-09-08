@@ -52,7 +52,7 @@ msgstr "<br><br>Direksiyon gecikmesi kalibrasyonu %{} tamamlandı."
 msgid "ADD"
 msgstr "EKLE"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "APN Setting"
 msgstr "APN Ayarı"
 
@@ -60,7 +60,7 @@ msgstr "APN Ayarı"
 msgid "Acknowledge Excessive Actuation"
 msgstr "Aşırı Müdahaleyi Onayla"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Advanced"
 msgstr "Gelişmiş"
 
@@ -93,7 +93,7 @@ msgid "Are you sure you want to uninstall?"
 msgstr "Kaldırmak istediğinizden emin misiniz?"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Back"
 msgstr "Geri"
 
@@ -118,22 +118,26 @@ msgid "CHILL MODE ON"
 msgstr "CHILL MODU AÇIK"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
 msgstr "BAĞLAN"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
 msgstr "BAĞLAN"
 
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/keyboard.py
-#: system/ui/widgets/network.py
-#: system/ui/widgets/option_dialog.py
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/keyboard.py
+#: openpilot/system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Cancel"
 msgstr "İptal"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Cellular Metered"
 msgstr "Ölçülü Hücresel"
 
@@ -205,15 +209,11 @@ msgstr "Dongle kimliği"
 msgid "Download"
 msgstr "İndir"
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "Sürücü Kamerası"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
 msgstr "Sürüş Kişiliği"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "DÜZENLE"
 
@@ -242,7 +242,7 @@ msgstr "ADB'yi Etkinleştir"
 msgid "Enable Lane Departure Warnings"
 msgstr "Şerit Terk Uyarılarını Etkinleştir"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Roaming"
 msgstr "Dolaşımı Etkinleştir"
 
@@ -250,7 +250,7 @@ msgstr "Dolaşımı Etkinleştir"
 msgid "Enable SSH"
 msgstr "SSH'yi Etkinleştir"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Tethering"
 msgstr "İnternet Paylaşımını Etkinleştir"
 
@@ -266,19 +266,19 @@ msgstr "openpilot'u etkinleştir"
 msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 msgstr "Deneysel modu etkinleştirmek için openpilot boylamsal kontrolünü (alfa) açın."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "APN girin"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter SSID"
 msgstr "SSID girin"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter new tethering password"
 msgstr "Yeni internet paylaşımı şifresini girin"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter password"
 msgstr "Şifre girin"
 
@@ -286,7 +286,7 @@ msgstr "Şifre girin"
 msgid "Enter your GitHub username"
 msgstr "GitHub kullanıcı adınızı girin"
 
-#: system/ui/widgets/list_view.py
+#: openpilot/system/ui/widgets/list_view.py
 msgid "Error"
 msgstr "Hata"
 
@@ -298,7 +298,7 @@ msgstr "Deneysel Mod"
 msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 msgstr "Bu araçta boylamsal kontrol için stok ACC kullanıldığından şu anda Deneysel mod kullanılamıyor."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "UNUTULUYOR..."
 
@@ -311,14 +311,15 @@ msgid "Firehose"
 msgstr "Yoğun veri akışı"
 
 #: openpilot/selfdrive/ui/layouts/settings/firehose.py
+#: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Firehose Modu"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget"
 msgstr "Unut"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr "\"{}\" Wi‑Fi ağı unutulsun mu?"
 
@@ -334,7 +335,7 @@ msgstr "Telefonunuzda https://connect.comma.ai adresine gidin"
 msgid "HIGH"
 msgstr "YÜKSEK"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Hidden Network"
 msgstr "Gizli Ağ"
 
@@ -342,7 +343,7 @@ msgstr "Gizli Ağ"
 msgid "INSTALL"
 msgstr "YÜKLE"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "IP Adresi"
 
@@ -361,6 +362,10 @@ msgstr "YÜKLENİYOR"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "LTE"
 msgstr "LTE"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Lateral Maneuver Mode"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Longitudinal Maneuver Mode"
@@ -398,9 +403,8 @@ msgstr "Sürüm notu mevcut değil."
 msgid "OFFLINE"
 msgstr "ÇEVRİMDIŞI"
 
-#: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/html_render.py
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/html_render.py
 msgid "OK"
 msgstr "OK"
 
@@ -453,17 +457,17 @@ msgstr "İlk eşleştirmeyi tamamlamak için lütfen Wi‑Fi'a bağlanın"
 msgid "Power Off"
 msgstr "Kapat"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
 msgstr "Ölçülü bir Wi‑Fi bağlantısındayken büyük veri yüklemelerini engelle"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "Ölçülü bir hücresel bağlantıdayken büyük veri yüklemelerini engelle"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "Sürücü izleme görünürlüğünün iyi olduğundan emin olmak için sürücüye bakan kamerayı önizleyin. (araç kapalı olmalıdır)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -494,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "Yeniden Başlat ve Güncelle"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "Sürücü Kamerasını Kaydet ve Yükle"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -549,11 +553,11 @@ msgstr "SEÇ"
 msgid "SSH Keys"
 msgstr "SSH Anahtarları"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Scanning Wi-Fi networks..."
 msgstr "Wi‑Fi ağları taranıyor..."
 
-#: system/ui/widgets/option_dialog.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Select"
 msgstr "Seç"
 
@@ -597,7 +601,7 @@ msgstr "SIC."
 msgid "Target Branch"
 msgstr "Hedef Dal"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Tethering Password"
 msgstr "İnternet Paylaşımı Şifresi"
 
@@ -634,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "Şimdi Yükselt"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "Sürücüye bakan kameradan veri yükleyin ve sürücü izleme algoritmasını geliştirmeye yardımcı olun."
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -665,11 +669,11 @@ msgstr "Etkinleştirildiğinde, gaz pedalına basmak openpilot'u devreden çıka
 msgid "Wi-Fi"
 msgstr "Wi‑Fi"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wi-Fi Network Metered"
 msgstr "Ölçülü Wi‑Fi Ağı"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wrong password"
 msgstr "Yanlış şifre"
 
@@ -681,7 +685,7 @@ msgstr "openpilot'u kullanmak için Şartlar ve Koşulları kabul etmelisiniz."
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "openpilot'u kullanmak için Şartlar ve Koşulları kabul etmelisiniz. Devam etmeden önce en güncel şartları https://comma.ai/terms adresinde okuyun."
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "kamera başlatılıyor"
 
@@ -693,7 +697,7 @@ msgstr "kontrol ediliyor..."
 msgid "comma prime"
 msgstr "comma prime"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "default"
 msgstr "varsayılan"
 
@@ -713,7 +717,7 @@ msgstr "güncelleme kontrolü başarısız"
 msgid "finalizing update..."
 msgstr "güncelleme tamamlanıyor..."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "for \"{}\""
 msgstr "\"{}\" için"
 
@@ -721,7 +725,7 @@ msgstr "\"{}\" için"
 msgid "km/h"
 msgstr "km/h"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "leave blank for automatic configuration"
 msgstr "otomatik yapılandırma için boş bırakın"
 
@@ -729,7 +733,7 @@ msgstr "otomatik yapılandırma için boş bırakın"
 msgid "left"
 msgstr "sol"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "metered"
 msgstr "ölçülü"
 
@@ -765,7 +769,7 @@ msgstr "openpilot, cihazın sağa/sola 4° ve yukarı 5° veya aşağı 9° içi
 msgid "right"
 msgstr "sağ"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "unmetered"
 msgstr "ölçüsüz"
 
@@ -809,17 +813,7 @@ msgid_plural "{} minutes ago"
 msgstr[0] "{} dakika önce"
 msgstr[1] "{} dakika önce"
 
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "{} segment sürüşünüz eğitim veri setinde."
-msgstr[1] "{} segment sürüşünüz eğitim veri setinde."
-
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "✓ SUBSCRIBED"
 msgstr "✓ ABONE"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Firehose Modu 🔥"
 

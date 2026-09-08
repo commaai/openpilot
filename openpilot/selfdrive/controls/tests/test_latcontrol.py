@@ -31,7 +31,7 @@ class TestLatControl(OpenpilotTestCase):
     CS.vEgo = 30
     CS.steeringPressed = False
 
-    params = log.LiveParametersData.new_message()
+    params = log.VehicleParameters.new_message()
 
     # Saturate for curvature limited and controller limited
     for _ in range(1000):

@@ -41,7 +41,7 @@ def simulate_straight_road_msgs(est):
   carControl = messaging.new_message('carControl').carControl
   carOutput = messaging.new_message('carOutput').carOutput
   carState = messaging.new_message('carState').carState
-  livePose = messaging.new_message('livePose').livePose
+  deviceMotion = messaging.new_message('deviceMotion').deviceMotion
   carControl.latActive = True
   carState.vEgo = V_EGO
   carState.steeringPressed = False
@@ -50,11 +50,11 @@ def simulate_straight_road_msgs(est):
   lat_accels = TORQUE_TUNE.latAccelFactor * steer_torques
   for t, steer_torque, lat_accel in zip(ts, steer_torques, lat_accels, strict=True):
     carOutput.actuatorsOutput.torque = float(-steer_torque)
-    livePose.orientationNED = {'x': float(np.deg2rad(ROLL_BIAS_DEG)), 'valid': True}
-    livePose.angularVelocityDevice = {'z': float(lat_accel / V_EGO), 'valid': True}
-    livePose.inputsOK, livePose.sensorsOK, livePose.posenetOK = True, True, True
-    livePose.timestamp = int(t * 1e9)
-    for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('livePose', livePose)):
+    deviceMotion.orientationNED = {'x': float(np.deg2rad(ROLL_BIAS_DEG)), 'valid': True}
+    deviceMotion.angularVelocityDevice = {'z': float(lat_accel / V_EGO), 'valid': True}
+    deviceMotion.inputsOK, deviceMotion.sensorsOK, deviceMotion.posenetOK = True, True, True
+    deviceMotion.timestamp = int(t * 1e9)
+    for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('deviceMotion', deviceMotion)):
       est.handle_log(t, which, msg)
 
 class TestTorquedLatAccelOffset(OpenpilotTestCase):
@@ -63,11 +63,11 @@ class TestTorquedLatAccelOffset(OpenpilotTestCase):
     est = get_warmed_up_estimator(steer_torques, lat_accels)
     msg = est.get_msg()
     # TODO add lataccelfactor and friction check when we have more accurate estimates
-    assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - TORQUE_TUNE_BIASED.latAccelOffset) < 0.1
+    assert abs(msg.lateralTorqueParameters.latAccelOffsetRaw - TORQUE_TUNE_BIASED.latAccelOffset) < 0.1
 
   def test_straight_road_roll_bias(self):
     steer_torques, lat_accels = generate_inputs(TORQUE_TUNE, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
     est = get_warmed_up_estimator(steer_torques, lat_accels)
     simulate_straight_road_msgs(est)
     msg = est.get_msg()
-    assert (msg.liveTorqueParameters.latAccelOffsetRaw < -0.05) and np.isfinite(msg.liveTorqueParameters.latAccelOffsetRaw)
+    assert (msg.lateralTorqueParameters.latAccelOffsetRaw < -0.05) and np.isfinite(msg.lateralTorqueParameters.latAccelOffsetRaw)

@@ -1,13 +1,11 @@
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <QObject>
-
+#include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -21,11 +19,6 @@ public:
 
 class UndoStack {
 public:
-  struct Callbacks {
-    std::function<void()> index_changed;
-    std::function<void(bool)> clean_changed;
-  };
-
   void push(UndoCommand *cmd);  // takes ownership and calls redo()
   void undo();
   void redo();
@@ -36,30 +29,17 @@ public:
   bool canRedo() const { return index_ < (int)commands_.size(); }
   std::string undoText() const { return canUndo() ? commands_[index_ - 1]->text : ""; }
   std::string redoText() const { return canRedo() ? commands_[index_]->text : ""; }
-  void setCallbacks(Callbacks callbacks) { callbacks_ = std::move(callbacks); }
   static UndoStack *instance();
+
+  Observable<> indexChanged;
+  Observable<bool> cleanChanged;
 
 private:
   void setIndex(int index);
   std::vector<std::unique_ptr<UndoCommand>> commands_;
   int index_ = 0;
   int clean_index_ = 0;
-  Callbacks callbacks_;
 };
-
-// emits Qt signals for the global undo stack
-class QtUndoNotifier : public QObject {
-  Q_OBJECT
-
-public:
-  explicit QtUndoNotifier(QObject *parent = nullptr);
-
-signals:
-  void indexChanged();
-  void cleanChanged(bool clean);
-};
-
-QtUndoNotifier *undoNotifier();
 
 class EditMsgCommand : public UndoCommand {
 public:
