@@ -1,9 +1,9 @@
 import threading
-import urllib.request
 
 import numpy as np
 import pyray as rl
 from collections.abc import Callable
+from openpilot.cereal import log
 from openpilot.cereal.visionipc import VisionStreamType
 
 from openpilot.common import qrcode
@@ -305,7 +305,6 @@ class EsimUI(NavScroller):
     self._scroller.add_widget(self._add_profile_btn)
     self._installing_dialog: InstallingProfileDialog | None = None
     self._installing: bool = False
-    self._checking_connectivity = False
 
     self._cellular_manager.on_profiles_updated = self._on_profiles_updated
     self._cellular_manager.on_operation_error = self._on_error
@@ -359,35 +358,17 @@ class EsimUI(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    self._add_profile_btn.set_enabled(not self._checking_connectivity and not self._cellular_manager.busy and self._profiles_enabled())
+    self._add_profile_btn.set_enabled(not self._cellular_manager.busy and self._profiles_enabled())
     active = self._cellular_manager.active_profile
     self._move_profile_to_front(active.iccid if active else None)
 
   def _on_add_profile(self):
-    if self._checking_connectivity or self._cellular_manager.busy or not self._profiles_enabled():
+    if self._cellular_manager.busy or not self._profiles_enabled():
       return
-    self._checking_connectivity = True
-
-    def check_connectivity():
-      try:
-        req = urllib.request.Request("https://openpilot.comma.ai", method="HEAD")
-        with urllib.request.urlopen(req, timeout=2.0):
-          pass
-        connected = True
-      except Exception:
-        connected = False
-
-      def on_main():
-        self._checking_connectivity = False
-        if not self.enabled or self.is_dismissing:
-          return
-        if connected:
-          gui_app.push_widget(QRScannerDialog(on_qr_detected=self._on_qr_scanned))
-        else:
-          self._on_error("no internet connection. connect to wifi or cellular to install")
-      self._cellular_manager._enqueue(on_main)
-
-    threading.Thread(target=check_connectivity, daemon=True).start()
+    if ui_state.sm["deviceState"].networkType == log.DeviceState.NetworkType.none:
+      gui_app.push_widget(BigDialog("", tr("Ensure you're connected to the internet and try again.")))
+      return
+    gui_app.push_widget(QRScannerDialog(on_qr_detected=self._on_qr_scanned))
 
   def _on_qr_scanned(self, lpa_code: str):
     self._pending_lpa_code = lpa_code
