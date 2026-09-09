@@ -21,7 +21,7 @@ cd openpilot
 tools/op.sh setup
 ```
 
-Setup enables Xet transfers for normal Git commands: the upstream Git Xet installer provides uploads, and a Git LFS download agent uses `hf_xet` through `uv` for parallel chunk downloads. Downloads are anonymous; uploads require your own Hugging Face write credentials in Git's credential helper.
+Setup enables Xet transfers for normal Git commands using Git Xet for uploads and Hugging Face's download helpers for pulls. Downloads are anonymous; uploads require your own Hugging Face write credentials in Git's credential helper.
 
 To use standard HTTP downloads for troubleshooting, run `git -c lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent= lfs pull`.
 

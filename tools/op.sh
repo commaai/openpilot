@@ -210,8 +210,7 @@ EOF
   git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
   git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
   git config --local filter.lfs.required true
-  git config --local lfs.customtransfer.xet.path git-xet
-  git config --local lfs.customtransfer.xet.args transfer
+  git xet install --local --concurrency 3
   git config --local lfs.customtransfer.xet.direction upload
   cp tools/lfs_xet.py .venv/bin/lfs-xet.py
   git config --local lfs.customtransfer.hf-xet.path "$(command -v uv || echo "$HOME/.local/bin/uv")"
@@ -219,7 +218,11 @@ EOF
   git config --local lfs.customtransfer.hf-xet.direction download
   git config --local lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent hf-xet
   # Older Git LFS versions also apply the standalone download agent to uploads unless it is explicitly disabled.
-  printf '#!/bin/sh\nlfs_remote=$(git config -f .lfsconfig lfs.pushurl)\nPATH=".venv/bin:$PATH" exec git -c "lfs.$lfs_remote.standalonetransferagent=" lfs pre-push "${lfs_remote%%/info/lfs}" "$2"\n' > "$(git rev-parse --git-path hooks)/pre-push"
+  cat > "$(git rev-parse --git-path hooks)/pre-push" <<'EOF'
+#!/bin/sh
+lfs_remote=$(git config -f .lfsconfig lfs.pushurl)
+PATH=".venv/bin:$PATH" exec git -c "lfs.$lfs_remote.standalonetransferagent=" lfs pre-push "${lfs_remote%/info/lfs}" "$2"
+EOF
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"

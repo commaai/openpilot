@@ -1,71 +1,54 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["hf-xet==1.4.2"]
+# dependencies = ["huggingface-hub==1.7.1", "hf-xet==1.4.2"]
 # ///
 """Git LFS download agent for the public openpilot Hugging Face repository."""
-from functools import cache
 import json
 from pathlib import Path
 import re
 import sys
 import tempfile
-import urllib.request
+
+from huggingface_hub.file_download import http_get, xet_get
+from huggingface_hub.utils import XetFileData, get_session, logging, tqdm
 
 LFS_URL = "https://huggingface.co/commaai/openpilot-lfs.git/info/lfs"
 TOKEN_URL = "https://huggingface.co/api/models/commaai/openpilot-lfs/xet-read-token/main"
-
-
-def request_json(url, data=None):
-  body = json.dumps(data).encode() if data is not None else None
-  request = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-  with urllib.request.urlopen(request, timeout=30) as response:
-    return json.load(response)
+logging.set_verbosity_error()
 
 
 def send(message):
   print(json.dumps(message), flush=True)
 
 
-@cache
-def xet_connection():
-  return request_json(TOKEN_URL)
-
-
 def download(oid, size, path):
-  obj = request_json(f"{LFS_URL}/objects/batch", {
+  response = get_session().post(f"{LFS_URL}/objects/batch", timeout=30, json={
     "operation": "download", "transfers": ["basic"], "objects": [{"oid": oid, "size": size}],
-  })["objects"][0]
+  })
+  response.raise_for_status()
+  obj = response.json()["objects"][0]
   if "error" in obj:
     raise RuntimeError(obj["error"]["message"])
   action = obj["actions"]["download"]
-  transferred = 0
 
-  def progress(amount):
-    nonlocal transferred
-    transferred += amount
-    send({"event": "progress", "oid": oid, "bytesSoFar": transferred, "bytesSinceLast": amount})
+  class Progress(tqdm):
+    def __init__(self, **kwargs):
+      super().__init__(initial=kwargs.get("initial", 0), disable=True)
+
+    def update(self, amount):
+      self.n += amount
+      send({"event": "progress", "oid": oid, "bytesSoFar": self.n, "bytesSinceLast": amount})
 
   # The LFS bridge URL identifies the Xet file by hash, including objects uploaded without a Hub Git commit.
   xet_hash = re.search(r"/xet-bridge-[^/]+/[^/]+/([0-9a-f]{64})(?:\?|$)", action["href"])
+  options = {"expected_size": size, "displayed_filename": oid, "tqdm_class": Progress}
   if xet_hash:
-    from hf_xet import PyXetDownloadInfo, download_files
-
-    def refresh_token():
-      xet_connection.cache_clear()
-      info = xet_connection()
-      return info["accessToken"], info["exp"]
-
-    info = xet_connection()
-    download_files([PyXetDownloadInfo(str(path), xet_hash[1], size)], endpoint=info["casUrl"],
-                   token_info=(info["accessToken"], info["exp"]), token_refresher=refresh_token, progress_updater=[progress])
+    xet_get(incomplete_path=path, xet_file_data=XetFileData(xet_hash[1], TOKEN_URL), headers={}, **options)
   else:
     # Newly uploaded LFS objects may not have been converted to Xet yet.
-    request = urllib.request.Request(action["href"], headers=action.get("header", {}))
-    with urllib.request.urlopen(request, timeout=30) as response, path.open("wb") as output:
-      while chunk := response.read(1024 * 1024):
-        output.write(chunk)
-        progress(len(chunk))
+    with path.open("wb") as output:
+      http_get(action["href"], output, headers=action.get("header", {}), **options)
 
 
 def main():
