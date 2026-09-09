@@ -20,6 +20,13 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
 fi
 
+# Windows builds run in an MSYS2 CLANG64 shell with a native Python, whose venv keeps its scripts in Scripts/
+VENV_BIN="bin"
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+  VENV_BIN="Scripts"
+  export PYTHONUTF8=1  # redirected output would use the ANSI code page otherwise
+fi
+
 function retry() {
   local attempts=$1
   shift
@@ -126,6 +133,12 @@ function op_check_os() {
     echo -e " ↳ [${GREEN}✔${NC}] Linux detected."
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
+  elif [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+    if [[ "${MSYSTEM:-}" != "CLANG64" ]]; then
+      echo -e " ↳ [${RED}✗${NC}] Windows needs an MSYS2 CLANG64 shell, this is ${MSYSTEM:-not MSYS2}!"
+      return 1
+    fi
+    echo -e " ↳ [${GREEN}✔${NC}] Windows (MSYS2 CLANG64) detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     return 1
@@ -134,7 +147,7 @@ function op_check_os() {
 
 function op_check_venv() {
   echo "Checking for venv..."
-  if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+  if [[ -f $OPENPILOT_ROOT/.venv/$VENV_BIN/activate ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
     echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $OPENPILOT_ROOT. Assuming global env!"
@@ -201,16 +214,17 @@ EOF
   fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
+  hash -r  # setup may have installed a git ahead of the one this shell already found
 
   op_activate_venv
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  git config --local filter.lfs.clean ".venv/bin/git-lfs clean -- %f"
-  git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
-  git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
+  git config --local filter.lfs.clean ".venv/$VENV_BIN/git-lfs clean -- %f"
+  git config --local filter.lfs.smudge ".venv/$VENV_BIN/git-lfs smudge -- %f"
+  git config --local filter.lfs.process ".venv/$VENV_BIN/git-lfs filter-process"
   git config --local filter.lfs.required true
-  printf '#!/bin/sh\nexec .venv/bin/git-lfs pre-push "$@"\n' > "$(git rev-parse --git-path hooks)/pre-push"
+  printf '#!/bin/sh\nexec .venv/%s/git-lfs pre-push "$@"\n' "$VENV_BIN" > "$(git rev-parse --git-path hooks)/pre-push"
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
@@ -230,19 +244,21 @@ function op_auth() {
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
-  source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
+  source $OPENPILOT_ROOT/.venv/$VENV_BIN/activate &> /dev/null || true
   set -e
 
   # persist venv on PATH across GitHub Actions steps
   if [ -n "$GITHUB_PATH" ]; then
-    echo "$OPENPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
+    VENV_PATH="$OPENPILOT_ROOT/.venv/$VENV_BIN"
+    command -v cygpath > /dev/null && VENV_PATH="$(cygpath -w "$VENV_PATH")"  # the runner's PATH is a Windows one
+    echo "$VENV_PATH" >> "$GITHUB_PATH"
   fi
 }
 
 function op_venv() {
   op_before_cmd
 
-  if [[ ! -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+  if [[ ! -f $OPENPILOT_ROOT/.venv/$VENV_BIN/activate ]]; then
     echo -e "No venv found in $OPENPILOT_ROOT"
     return 1
   fi
@@ -250,10 +266,10 @@ function op_venv() {
   case $SHELL_NAME in
     "zsh")
       ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
-      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
+      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/$VENV_BIN/activate" >> $ZSHRC_DIR/.zshrc
       ZDOTDIR=$ZSHRC_DIR zsh ;;
     *)
-      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/$VENV_BIN/activate") ;;
   esac
 }
 
