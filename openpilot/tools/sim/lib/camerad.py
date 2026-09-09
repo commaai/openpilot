@@ -5,12 +5,19 @@ import numpy as np
 from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcServer
 from openpilot.cereal import messaging
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 from openpilot.tools.sim.lib.common import W, H
 
+# Consumers read the frame straight out of the VisionIPC buffer, so it has to be laid out the way
+# camerad lays it out: rows padded to a 128 byte stride and the plane heights aligned. Packing NV12
+# tightly instead leaves modeld short of the bytes it copies, and it dies on the first frame.
+STRIDE, Y_HEIGHT, UV_HEIGHT, YUV_SIZE = get_nv12_info(W, H)
+UV_OFFSET = STRIDE * Y_HEIGHT
 
-def rgb_to_nv12(rgb):
-  """Convert RGB image to NV12 (YUV420) format using BT.601 coefficients."""
+
+def rgb_to_nv12(rgb, out=None):
+  """Convert an RGB image to a camerad-shaped NV12 buffer using BT.601 coefficients."""
   h, w = rgb.shape[:2]
   r = rgb[:, :, 0].astype(np.int32)
   g = rgb[:, :, 1].astype(np.int32)
@@ -29,12 +36,16 @@ def rgb_to_nv12(rgb):
   u = np.clip((b_sub * 56 - g_sub * 37 - r_sub * 19 + 0x8080) >> 8, 0, 255).astype(np.uint8)
   v = np.clip((r_sub * 56 - g_sub * 47 - b_sub * 9 + 0x8080) >> 8, 0, 255).astype(np.uint8)
 
-  # Interleave UV for NV12 format
-  uv = np.empty((h // 2, w), dtype=np.uint8)
-  uv[:, 0::2] = u
-  uv[:, 1::2] = v
+  if out is None:
+    out = np.zeros(YUV_SIZE, dtype=np.uint8)
 
-  return np.concatenate([y.ravel(), uv.ravel()]).tobytes()
+  # Write into the padded planes, leaving the alignment padding zeroed
+  out[:UV_OFFSET].reshape(Y_HEIGHT, STRIDE)[:h, :w] = y
+  uv = out[UV_OFFSET:UV_OFFSET + STRIDE * UV_HEIGHT].reshape(UV_HEIGHT, STRIDE)
+  uv[:h // 2, 0:w:2] = u
+  uv[:h // 2, 1:w:2] = v
+
+  return out
 
 
 class Camerad:
@@ -46,11 +57,15 @@ class Camerad:
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H)
+    self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H, YUV_SIZE, STRIDE, UV_OFFSET)
     if dual_camera:
-      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H)
+      self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H, YUV_SIZE, STRIDE, UV_OFFSET)
 
     self.vipc_server.start_listener()
+
+    # one scratch buffer per stream, these are 4.8MB each
+    self.yuv_bufs = {t: np.zeros(YUV_SIZE, dtype=np.uint8) for t in
+                     (VisionStreamType.VISION_STREAM_NARROW_ROAD, VisionStreamType.VISION_STREAM_WIDE_ROAD)}
 
   def cam_send_yuv_road(self, yuv):
     self._send_yuv(yuv, self.frame_road_id, 'narrowRoadCameraState', VisionStreamType.VISION_STREAM_NARROW_ROAD)
@@ -60,11 +75,11 @@ class Camerad:
     self._send_yuv(yuv, self.frame_wide_id, 'wideRoadCameraState', VisionStreamType.VISION_STREAM_WIDE_ROAD)
     self.frame_wide_id += 1
 
-  def rgb_to_yuv(self, rgb):
+  def rgb_to_yuv(self, rgb, yuv_type=VisionStreamType.VISION_STREAM_NARROW_ROAD):
     """Convert RGB to NV12 YUV format."""
     assert rgb.shape == (H, W, 3), f"{rgb.shape}"
     assert rgb.dtype == np.uint8
-    return rgb_to_nv12(rgb)
+    return rgb_to_nv12(rgb, self.yuv_bufs[yuv_type])
 
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
     # stamp frames with the same clock as logMonoTime, so consumers

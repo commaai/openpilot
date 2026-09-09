@@ -69,3 +69,8 @@ The bridge runs on Apple silicon. Two things to know:
   there kills the child before `main()` runs, so the manager would otherwise die silently.
 * Simulated camera frames use `time.monotonic()` for EOF timestamps (same clock as
   `logMonoTime`) so consumers like locationd don't see rewind checks fail.
+* Sim VisionIPC buffers use camerad's padded NV12 layout (`create_buffers_with_sizes`), so
+  modeld does not die on the first frame with a short buffer.
+* On non-Linux hosts the bridge paces the camera thread to 7 Hz by default so CPU modeld can
+  keep up (override with `SIM_CAMERA_HZ`). Without that, dropped frames mark
+  `cameraOdometry` invalid and engagement never sticks.

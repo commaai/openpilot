@@ -1,4 +1,6 @@
+import os
 import signal
+import sys
 import threading
 import functools
 import numpy as np
@@ -14,6 +16,14 @@ from openpilot.selfdrive.test.helpers import set_params_enabled
 from openpilot.tools.sim.lib.common import SIM_MP_CTX, SimulatorState, World
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
+
+# tinygrad DEV=CPU can't sustain the stack's 20 Hz camera budget (~50 ms). Publishing faster
+# marks cameraOdometry invalid and blocks engagement. On non-Linux (macOS sim) default to 7 Hz,
+# which matches measured CPU modeld throughput and lets the stack engage. Override with SIM_CAMERA_HZ.
+def _sim_camera_hz() -> int:
+  if "SIM_CAMERA_HZ" in os.environ:
+    return int(os.environ["SIM_CAMERA_HZ"])
+  return 7 if sys.platform != "linux" else 20
 
 QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
 
@@ -122,7 +132,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     self.simulated_car_thread.start()
 
     self.simulated_camera_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_sensors.send_camera_images, self.world),
-                                                                        20, self._exit_event))
+                                                                        _sim_camera_hz(), self._exit_event))
     self.simulated_camera_thread.start()
 
     # Simulation tends to be slow in the initial steps. This prevents lagging later

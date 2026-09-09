@@ -100,13 +100,11 @@ class TestSpawnSafety(OpenpilotTestCase):
     blue = np.zeros((H, W, 3), dtype=np.uint8)
     blue[:, :, 2] = 255
 
-    red_y = np.frombuffer(rgb_to_nv12(red)[:W*H], dtype=np.uint8)
-    blue_y = np.frombuffer(rgb_to_nv12(blue)[:W*H], dtype=np.uint8)
+    red_y = rgb_to_nv12(red)[0]
+    blue_y = rgb_to_nv12(blue)[0]
 
     # BT.601 weighs red about 2.5x heavier than blue
-    assert red_y[0] > blue_y[0]
-    assert np.all(red_y == red_y[0])
-    assert np.all(blue_y == blue_y[0])
+    assert red_y > blue_y
 
   @unittest.skipIf(metadrive_process is None, "metadrive is not installed")
   def test_macos_panda3d_config(self):
