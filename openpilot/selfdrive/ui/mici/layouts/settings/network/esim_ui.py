@@ -89,7 +89,6 @@ class QRScannerDialog(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    self._camera_view._update_state()
 
     now = rl.get_time()
     if self._detected or not self._camera_view.frame or now < self._invalid_code_until:
@@ -306,7 +305,6 @@ class EsimUI(NavScroller):
     self._add_profile_btn.set_click_callback(self._on_add_profile)
     self._scroller.add_widget(self._add_profile_btn)
     self._installing_dialog: InstallingProfileDialog | None = None
-    self._installing: bool = False
 
     self._cellular_manager.on_profiles_updated = self._on_profiles_updated
     self._cellular_manager.on_operation_error = self._on_error
@@ -317,10 +315,9 @@ class EsimUI(NavScroller):
     self._cellular_manager.refresh_profiles()
 
   def _on_profiles_updated(self):
-    if self._installing_dialog and self._installing:
+    if self._installing_dialog:
       existing = {btn.profile.iccid for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
       added = [profile for profile in self._cellular_manager.profiles if profile.iccid not in existing]
-      self._installing = False
       # Start the normal tap-to-activate flow once the profile list is visible again.
       self._installing_dialog.dismiss(lambda: self._on_profile_clicked(added[0]) if len(added) == 1 else None)
       self._installing_dialog = None
@@ -373,21 +370,17 @@ class EsimUI(NavScroller):
     gui_app.push_widget(QRScannerDialog(on_qr_detected=self._on_qr_scanned))
 
   def _on_qr_scanned(self, lpa_code: str):
-    self._pending_lpa_code = lpa_code
     dlg = BigInputDialog("enter a nickname...", minimum_length=0,
-                         confirm_callback=self._on_nickname_for_new_profile)
+                         confirm_callback=lambda nickname: self._download_profile(lpa_code, nickname))
     gui_app.push_widget(dlg)
 
-  def _on_nickname_for_new_profile(self, nickname: str):
-    self._pending_nickname = nickname.strip() or None
+  def _download_profile(self, lpa_code: str, nickname: str):
     self._installing_dialog = InstallingProfileDialog()
     gui_app.push_widget(self._installing_dialog)
-    self._installing = True
-    self._cellular_manager.download_profile(self._pending_lpa_code, self._pending_nickname)
+    self._cellular_manager.download_profile(lpa_code, nickname.strip() or None)
 
   def _on_error(self, error: str):
     cloudlog.error("eSIM error: %s", error)
-    self._installing = False
     dlg = BigDialog("esim error", error)
     dlg._card._sub_label.set_font_size(self.ERROR_FONT_SIZE)
     if self._installing_dialog:
