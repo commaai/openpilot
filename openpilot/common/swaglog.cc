@@ -62,6 +62,10 @@ public:
   }
 
   ~SwaglogState() {
+#ifdef _WIN32
+    // runs from DllMain at process exit, after the zmq I/O thread is gone: zmq_ctx_destroy() would wait forever
+    return;
+#endif
     zmq_close(sock);
     zmq_ctx_destroy(zctx);
   }
