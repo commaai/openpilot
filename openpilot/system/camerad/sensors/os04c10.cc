@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdlib>
 
 #include "system/camerad/sensors/sensor.h"
 #include <media/msm_camsensor_sdk.h>
@@ -37,6 +38,9 @@ OS04C10::OS04C10() {
 
   start_reg_array.assign(std::begin(start_reg_array_os04c10), std::end(start_reg_array_os04c10));
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
+  if (std::getenv("SPECTRA_TEST_PATTERN")) {
+    init_reg_array.push_back({0x5080, 0xc4});
+  }
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
   bits_per_pixel = 12;

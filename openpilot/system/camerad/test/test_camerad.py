@@ -3,13 +3,15 @@
 import os
 import time
 import unittest
+from unittest.mock import patch
 import numpy as np
 
+from msgq.visionipc import VisionIpcClient
 from openpilot.common.parameterized import parameterized
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
-from openpilot.system.camerad.snapshot import get_snapshots
+from openpilot.system.camerad.snapshot import VISION_STREAMS, get_snapshots
 from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
 
 TEST_TIMESPAN = 10
@@ -17,6 +19,13 @@ CAMERAS = ('narrowRoadCameraState', 'cabinCameraState', 'wideRoadCameraState')
 EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
 MAX_TEST_TIME = 25
+TEST_PATTERN_FRAMES = 200
+TEST_PATTERN_MIN_CONFIDENCE = 10
+# Full rolling-pattern cycle in frames and maximum detector position error in pixels.
+TEST_PATTERN_CONFIGS = {
+  'ox03c10': (41, 4),
+  'os04c10': (97, 4),
+}
 
 
 def _numpy_rgb2gray(im):
@@ -36,6 +45,39 @@ def _exposure_stable(results):
     len(v) >= EXPOSURE_STABLE_COUNT and all(_in_range(*s) for s in v[-EXPOSURE_STABLE_COUNT:])
     for v in results.values()
   )
+
+
+def _pattern_sample(client):
+  buf = client.recv(1000)
+  if buf is None:
+    return None
+
+  y = np.asarray(buf.data[:buf.uv_offset], dtype=np.uint8).reshape((-1, buf.stride))[:buf.height, :buf.width]
+  profile = y[:, ::8].mean(axis=1)
+  padded = np.pad(profile, (4, 4), mode='edge')
+  neighbors = [padded[i:i + len(profile)] for i in range(9) if i != 4]
+  residual = profile - np.median(neighbors, axis=0)
+  position = int(np.argmax(residual))
+  return client.frame_id, client.timestamp_sof, position, residual[position], buf.height
+
+
+def _test_pattern_session():
+  samples = {camera: [] for camera in CAMERAS}
+  env = {'SPECTRA_TEST_PATTERN': '1', 'SPECTRA_ERROR_PROB': '-1'}
+  with patch.dict(os.environ, env), processes_context(['camerad']), log_collector(CAMERAS) as (raw_logs, lock):
+    clients = {camera: VisionIpcClient('camerad', VISION_STREAMS[camera], False) for camera in CAMERAS}
+    for client in clients.values():
+      assert client.connect(True)
+
+    for _ in range(TEST_PATTERN_FRAMES):
+      for camera, client in clients.items():
+        sample = _pattern_sample(client)
+        if sample is not None:
+          samples[camera].append(sample)
+
+  with lock:
+    logs = msgs_to_time_series(raw_logs)
+  return logs, samples
 
 
 def run_and_log(procs, services, duration):
@@ -161,6 +203,66 @@ class TestCamerad(OpenpilotTestCase):
     assert np.max([ np.max(np.diff(ts[c]['requestId'])) for c in CAMERAS ]) > 1
 
     self._sanity_checks(ts)
+
+
+class TestCameradTestPattern(OpenpilotTestCase):
+  COMMA_HARDWARE_TEST = True
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.logs, cls.samples = _test_pattern_session()
+
+  def test_frame_delivery(self):
+    for camera in CAMERAS:
+      assert camera in self.logs
+      samples = self.samples[camera]
+      assert len(samples) > TEST_PATTERN_FRAMES * 0.9
+
+      state_frame_ids = self.logs[camera]['frameId']
+      state_request_ids = self.logs[camera]['requestId']
+      vipc_frame_ids = np.array([sample[0] for sample in samples])
+      for source, frame_ids in (('camera state', state_frame_ids), ('VisionIPC', vipc_frame_ids)):
+        frame_steps = np.diff(frame_ids)
+        skipped = frame_ids[1:][frame_steps != 1]
+        assert len(skipped) == 0, f'{camera} {source} skipped frames before {skipped}'
+
+      expected_sof_step = 1e9 / SERVICE_LIST[camera].frequency
+      sof_step_errors = np.diff(self.logs[camera]['timestampSof']) - expected_sof_step
+      assert np.all(np.abs(sof_step_errors) < 1e6), f'{camera} SOF cadence errors: {sof_step_errors[np.abs(sof_step_errors) >= 1e6]}'
+
+      request_steps = np.diff(state_request_ids)
+      skipped_requests = state_request_ids[1:][request_steps != 1]
+      assert len(skipped_requests) == 0, f'{camera} skipped requests before {skipped_requests}'
+
+      state_sofs = dict(zip(state_frame_ids, self.logs[camera]['timestampSof'], strict=True))
+      matched_samples = [sample for sample in samples if sample[0] in state_sofs]
+      assert len(matched_samples) > len(samples) * 0.8
+      mismatched_sofs = {
+        frame_id: (timestamp_sof, state_sofs[frame_id]) for frame_id, timestamp_sof, *_ in matched_samples if timestamp_sof != state_sofs[frame_id]
+      }
+      assert not mismatched_sofs, f'{camera} VisionIPC/camera state SOFs disagree: {mismatched_sofs}'
+
+  def test_pattern(self):
+    for camera in CAMERAS:
+      sensors = set(self.logs[camera]['sensor'])
+      assert len(sensors) == 1
+      sensor = sensors.pop()
+      assert sensor in TEST_PATTERN_CONFIGS, f'unsupported test pattern sensor: {sensor}'
+      cycle_frames, position_tolerance = TEST_PATTERN_CONFIGS[sensor]
+
+      samples = self.samples[camera]
+      confident = [sample for sample in samples if sample[3] > TEST_PATTERN_MIN_CONFIDENCE]
+      positions = np.array([sample[2] for sample in confident])
+      assert len(confident) > len(samples) * 0.7, f'{camera} test pattern confidence too low'
+      assert len(np.unique(positions)) > 20, f'{camera} test pattern is not moving'
+      assert np.ptp(positions) > confident[0][4] * 0.75, f'{camera} test pattern does not span the frame'
+
+      samples_by_frame = {sample[0]: sample for sample in confident}
+      repeating_pairs = [(sample, samples_by_frame[sample[0] + cycle_frames]) for sample in confident if sample[0] + cycle_frames in samples_by_frame]
+      assert len(repeating_pairs) > 20
+      unexpected = [(first[0], first[2], second[2]) for first, second in repeating_pairs if abs(second[2] - first[2]) > position_tolerance]
+      assert len(unexpected) < len(repeating_pairs) * 0.3, f'{camera} test pattern cycle mismatches: {unexpected}'
 
 
 if __name__ == "__main__":
