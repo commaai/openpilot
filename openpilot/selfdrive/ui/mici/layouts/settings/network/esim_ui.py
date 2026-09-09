@@ -7,6 +7,7 @@ from collections.abc import Callable
 from openpilot.cereal.visionipc import VisionStreamType
 
 from openpilot.common import qrcode
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.multilang import tr
@@ -392,12 +393,14 @@ class EsimUI(NavScroller):
     threading.Thread(target=check_connectivity, daemon=True).start()
 
   def _on_error(self, error: str):
+    cloudlog.error("eSIM error: %s", error)
     self._installing = False
+    dlg = BigDialog("esim error", error)
+    dlg._card._sub_label.set_font_size(24)
     if self._installing_dialog:
-      self._installing_dialog.dismiss(lambda: gui_app.push_widget(BigDialog("esim error", error)))
+      self._installing_dialog.dismiss(lambda: gui_app.push_widget(dlg))
       self._installing_dialog = None
     else:
-      dlg = BigDialog("esim error", error)
       gui_app.push_widget(dlg)
 
   def _on_profile_clicked(self, profile: Profile):
