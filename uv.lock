@@ -104,8 +104,11 @@ wheels = [
 name = "comma-deps-acados"
 version = "0.2.2.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3d/13/1190aed06e91a9f9024b16fb44a4184842e56ac39dbaec8e6aea83cb1d7e/comma_deps_acados-0.2.2.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:64c002e0d6170c7bdec300159bbbe07cf3e05fa54ae5890fe736190fc3543fe7", size = 10635996, upload-time = "2026-07-23T17:01:04.136Z" },
@@ -114,21 +117,63 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-acados"
+version = "0.2.2.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+dependencies = [
+    { name = "numpy", marker = "sys_platform == 'win32'" },
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_acados-0.2.2.post116-py3-none-win_amd64.whl", hash = "sha256:2123b992e68a4c7ba5c6bac4e10f2bd36d9f251660eb8aa829eb0560dc9b56b9" },
+]
+
+[[package]]
 name = "comma-deps-bootstrap-icons"
 version = "1.10.5.0.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/aa/69/da1a72b8b7783b0caf9a54b27c7124bad11768b8bce2c656ef3b700ab831/comma_deps_bootstrap_icons-1.10.5.0.post98-py3-none-any.whl", hash = "sha256:cabaeecea398eb867b96a6c653c6078691a437c0eff2364530194a218d94cb99", size = 385998, upload-time = "2026-07-23T17:01:17.476Z" },
+]
+
+[[package]]
+name = "comma-deps-bootstrap-icons"
+version = "1.10.5.0.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_bootstrap_icons-1.10.5.0.post116-py3-none-any.whl", hash = "sha256:21ca4cb414b13f7e3507a61d123257ae48c975d1021fd700f08203d2def3fc49" },
 ]
 
 [[package]]
 name = "comma-deps-capnproto"
 version = "1.0.1.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/83/d3e6346a31491be1d378e4585f37a7979eb772018616abfa74fb27750f1e/comma_deps_capnproto-1.0.1.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9f4d08682df92411b360bec855cb6475990313cd0ecd8ed5c6ee02befb9db913", size = 2407343, upload-time = "2026-07-23T17:01:21.247Z" },
     { url = "https://files.pythonhosted.org/packages/b0/8b/6f2a29d50ed4c8741dbf0a34ab109899268d09753518cd693e881bbf1a9d/comma_deps_capnproto-1.0.1.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:6cdf838a8d415ac71e1f52306624ab3ab6f27777f6ce89c0059c4129ea7b7f62", size = 2506355, upload-time = "2026-07-23T17:01:25.254Z" },
     { url = "https://files.pythonhosted.org/packages/08/24/e91f2203d62e4db9de7dae06dd0cdefb1e000d8b3ba0bde48367be7e5b63/comma_deps_capnproto-1.0.1.post98-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:3d95993c9aff0c89e39ca965e995021dd3dccdfc3d5d85152916cf4bf651b7ec", size = 2590764, upload-time = "2026-07-23T17:01:29.062Z" },
+]
+
+[[package]]
+name = "comma-deps-capnproto"
+version = "1.0.1.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_capnproto-1.0.1.post116-py3-none-win_amd64.whl", hash = "sha256:12c7d088a5e46995550f94010716743778c7bc0091c8825a22f52d91f250c33e" },
 ]
 
 [[package]]
@@ -145,6 +190,9 @@ wheels = [
 name = "comma-deps-ffmpeg"
 version = "7.1.0.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/20/59/4899ac0fa54905f43e237fff122008d6c591918b41e36880eeb18cd6279c/comma_deps_ffmpeg-7.1.0.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:7816c5adc9c6a7462209ccf1d023c42d7e38a4eee47aa2f43d45dfc8320063f8", size = 7326312, upload-time = "2026-07-23T17:01:55.975Z" },
     { url = "https://files.pythonhosted.org/packages/29/cb/6e047c19c39977c5ae322ad698b91d8d9fce43314cb86563de91bb161982/comma_deps_ffmpeg-7.1.0.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:45ad401b4058e3f7efb8d6841e1f187e8c265e942e56e7fb01db1ba9096e6b78", size = 4437675, upload-time = "2026-07-23T17:01:59.971Z" },
@@ -152,9 +200,23 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-ffmpeg"
+version = "7.1.0.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_ffmpeg-7.1.0.post116-py3-none-win_amd64.whl", hash = "sha256:103c92183aa6f518075a8a5f359b8d5e8f8f592acdab73fe55003d0ac4c6c9e1" },
+]
+
+[[package]]
 name = "comma-deps-gcc-arm-none-eabi"
 version = "13.2.1.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0e/e5/a4cd9faa80bf419c6a7052c99dfe565c283a5c966e90ce35b1b4040b24b8/comma_deps_gcc_arm_none_eabi-13.2.1.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d0e6991b845636ab19e46199bc5cb9dd056611bc6b93c6bca4f2bb5002783533", size = 15238810, upload-time = "2026-07-23T17:02:08.588Z" },
     { url = "https://files.pythonhosted.org/packages/5b/81/690ce48945aecf58e475cb728a8d2f6c034493afd87b5b0381a85dd324b4/comma_deps_gcc_arm_none_eabi-13.2.1.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:41fef00d033e0f6c12e1748829d95e53942826e0085f57d918351b2de69530d7", size = 17367240, upload-time = "2026-07-23T17:02:13.637Z" },
@@ -162,9 +224,23 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-gcc-arm-none-eabi"
+version = "13.2.1.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_gcc_arm_none_eabi-13.2.1.post116-py3-none-win_amd64.whl", hash = "sha256:8ff8c7cffd81c46a500c8b8b7b396abf7b3f1d2d4c388077482306efd3818c88" },
+]
+
+[[package]]
 name = "comma-deps-git-lfs"
 version = "3.6.1.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/79/27/ecfda511eb334822d9bc464ec2d9b74d3c553784811a885baba34a27eaf6/comma_deps_git_lfs-3.6.1.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:259b1f4859bb3ab20fdcc012be0a9868a3649e1087d5cec07eaade7adea44c78", size = 4685104, upload-time = "2026-07-23T17:02:23.67Z" },
     { url = "https://files.pythonhosted.org/packages/00/a5/9631b4a676279b353f82d4e2da62eb567c70fff628133a62d7f70fbf5924/comma_deps_git_lfs-3.6.1.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:60d39254138b2c7c3f15cc512c14504c11881e79885492321e1ffc3ecb840f93", size = 4485276, upload-time = "2026-07-23T17:02:27.751Z" },
@@ -172,9 +248,23 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-git-lfs"
+version = "3.6.1.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_git_lfs-3.6.1.post116-py3-none-win_amd64.whl", hash = "sha256:e7af591b2a790e01b3ccc2be14111a37db21931ef2059a50411c7f62544e05e5" },
+]
+
+[[package]]
 name = "comma-deps-imgui"
 version = "1.92.7.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f4/e4/b9f4b68973bfd529314c28fcd87cb2f52b5dc7d9fdeb3be2d3d15b7cea25/comma_deps_imgui-1.92.7.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:6fddf76138b1e54fe33e9f5ea3cbcb650f92fef8fbcf7e5080800ea851d68b98", size = 1688011, upload-time = "2026-07-23T17:02:35.416Z" },
     { url = "https://files.pythonhosted.org/packages/7f/46/92030abf6e42e9813f144d10bcf541b39a246c5ca2d63d049478deac650b/comma_deps_imgui-1.92.7.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9f7eed0f759e59afcf289967edb3d94c48a38fe97527f2909dbbc70a850dc2cc", size = 2522785, upload-time = "2026-07-23T17:02:39.092Z" },
@@ -182,9 +272,23 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-imgui"
+version = "1.92.7.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_imgui-1.92.7.post116-py3-none-win_amd64.whl", hash = "sha256:3f19551eb46b20a2fa8f6681f1df800712d0a6c523744fbe6c7990157d08c422" },
+]
+
+[[package]]
 name = "comma-deps-json11"
 version = "20170411.0.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/f4/50411c9134a8347831a72f90318b7b7d91ce566e63575b8a4a821be50ca4/comma_deps_json11-20170411.0.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:20d666897062487e4cd93b8e4eb9c53ecabf706864be8d8cbb60a56f0113c452", size = 34034, upload-time = "2026-07-23T17:02:46.595Z" },
     { url = "https://files.pythonhosted.org/packages/1f/54/0c87fae682ee52e6aec371336ac980921ad34cedabb69e576cc9f83c40a7/comma_deps_json11-20170411.0.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9b4a03909609b832dc99b06503fb8c77419399a99e0db982d4c3f51f1563aa73", size = 41848, upload-time = "2026-07-23T17:02:50.039Z" },
@@ -192,9 +296,23 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-json11"
+version = "20170411.0.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_json11-20170411.0.post116-py3-none-win_amd64.whl", hash = "sha256:16597ade2966c89a9dd859bbf8ff97e23d6cfc91c9b841ea9c4c8e52e6d677bd" },
+]
+
+[[package]]
 name = "comma-deps-libusb"
 version = "1.0.29.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/47/fb/f7d342a8f785fc1c0fd5d6883e1a5a7d424a1899b888f78f9091f4b98049/comma_deps_libusb-1.0.29.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:a10b82a946c33c23152cee3e330ce76d398ddce1f38fea62e33773bef8f56164", size = 102339, upload-time = "2026-07-23T17:02:56.567Z" },
     { url = "https://files.pythonhosted.org/packages/b7/fe/1b21692cc03078219a3946aae56086a109168a4b4dcfba3a22ce1cd01064/comma_deps_libusb-1.0.29.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:39567eeef6170ece389526780f90c3b75cbcfdf427f648f6b1539c203f7387a8", size = 94431, upload-time = "2026-07-23T17:03:00.01Z" },
@@ -202,9 +320,23 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-libusb"
+version = "1.0.29.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_libusb-1.0.29.post116-py3-none-win_amd64.whl", hash = "sha256:43105d4bedf06fed14f5a218c64cb3e730caa102628c52f339ee42d00cebe374" },
+]
+
+[[package]]
 name = "comma-deps-ncurses"
 version = "6.5.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/d4/03e62b2a0be92ad420653ff1cf4396de9840c4c59cdc6e000ea5614f7744/comma_deps_ncurses-6.5.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:22ade1596deb18538d4bf59708aa2747c28c2e0e7048f13f5bfce3e5588f7417", size = 264921, upload-time = "2026-07-23T17:03:06.576Z" },
     { url = "https://files.pythonhosted.org/packages/1a/ab/295b428ef473dbe0d7088ff02daf5ba17b924f3b915ac69a8a9c45a6eb2b/comma_deps_ncurses-6.5.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:6724d3e8c1f2e59d2475f7588d86494bcc4001e993fd7dff4c91ecb046edc97f", size = 260844, upload-time = "2026-07-23T17:03:10.329Z" },
@@ -212,11 +344,25 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-ncurses"
+version = "6.5.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_ncurses-6.5.post116-py3-none-win_amd64.whl", hash = "sha256:ae25aa8ca50f5e7691b778ed7a2c4560e572a1e5b5aa703d77557ba09d2c8671" },
+]
+
+[[package]]
 name = "comma-deps-raylib"
 version = "6.0.0.1.post101"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 dependencies = [
-    { name = "cffi" },
+    { name = "cffi", marker = "sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ff/90/e289acd1725d71c792c33399422f1052c4b0c38aeb4222a866d30c4a2cad/comma_deps_raylib-6.0.0.1.post101-py3-none-macosx_11_0_arm64.whl", hash = "sha256:fa69d5093a92d7d2bfd2714a1afccca63b94d4c55fae88e61b80e8841de6a6cd", size = 1885392, upload-time = "2026-08-27T18:24:37.25Z" },
@@ -225,9 +371,26 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-raylib"
+version = "6.0.0.1.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+dependencies = [
+    { name = "cffi", marker = "sys_platform == 'win32'" },
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_raylib-6.0.0.1.post116-py3-none-win_amd64.whl", hash = "sha256:774c27749e7ffa2c7f68db341f4338ddb8e3073f9dfa9266d5184e2bb9ce7fd6" },
+]
+
+[[package]]
 name = "comma-deps-zeromq"
 version = "4.3.5.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/12/b7/b0070e091dae4be2cecccfb2921167b568d0e7bb9ea600b5814603e0590f/comma_deps_zeromq-4.3.5.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:0ecde97133d657024bf99ac7302130905a131dabedbc8425b6666b2058ce6acb", size = 815150, upload-time = "2026-07-23T17:03:29.517Z" },
     { url = "https://files.pythonhosted.org/packages/2f/9a/d6a381b079516eca1b8a86aa3e972e550a48ff2f069ccc722b118ab53d60/comma_deps_zeromq-4.3.5.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:110a628ea440ea75707ad29fd90341d300414b0092137b1d43e8f19d100cf2fa", size = 833389, upload-time = "2026-07-23T17:03:33.25Z" },
@@ -235,13 +398,38 @@ wheels = [
 ]
 
 [[package]]
+name = "comma-deps-zeromq"
+version = "4.3.5.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_zeromq-4.3.5.post116-py3-none-win_amd64.whl", hash = "sha256:194f5a87061cab28afb95601fa16cfb9560ab454406ea906923f25943b5d1456" },
+]
+
+[[package]]
 name = "comma-deps-zstd"
 version = "1.5.6.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/66/fd1098b4514e759d85e19d604d446ecec1f67e2f452df9e280d01a2449f7/comma_deps_zstd-1.5.6.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:2b6acdd50e71ec67a1426423cda5116a7cb43900dd2e4fca2cbcbb7d588be171", size = 1065140, upload-time = "2026-07-23T17:03:40.465Z" },
     { url = "https://files.pythonhosted.org/packages/0c/ba/1d61aae97577bbf13c9c02e7e69d4c9391947d8d0d09ca4ad78f2e3d0faa/comma_deps_zstd-1.5.6.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:04825faf902754a0945ebac374d01d676b7e5f98a68e460452319de509b369f3", size = 1006145, upload-time = "2026-07-23T17:03:44.144Z" },
     { url = "https://files.pythonhosted.org/packages/a9/22/94d164407b579090eb3aceeeb63fbd8c540f6972a11e5b72fe3ca3139333/comma_deps_zstd-1.5.6.post98-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:316200a52c9ac1aeb6b22030480ffebaa1d91756c18a3f3cf216368a5fb35bfd", size = 1030359, upload-time = "2026-07-23T17:03:47.999Z" },
+]
+
+[[package]]
+name = "comma-deps-zstd"
+version = "1.5.6.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_zstd-1.5.6.post116-py3-none-win_amd64.whl", hash = "sha256:c4815a3c73aa62c7c9907947c831352b696528b296593efc36d3eff83df6c75f" },
 ]
 
 [[package]]
@@ -596,15 +784,24 @@ name = "openpilot"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "comma-deps-acados" },
-    { name = "comma-deps-capnproto" },
-    { name = "comma-deps-ffmpeg" },
-    { name = "comma-deps-gcc-arm-none-eabi" },
-    { name = "comma-deps-git-lfs" },
-    { name = "comma-deps-json11" },
-    { name = "comma-deps-raylib" },
-    { name = "comma-deps-zeromq" },
-    { name = "comma-deps-zstd" },
+    { name = "comma-deps-acados", version = "0.2.2.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-acados", version = "0.2.2.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-capnproto", version = "1.0.1.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-capnproto", version = "1.0.1.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-ffmpeg", version = "7.1.0.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-ffmpeg", version = "7.1.0.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-gcc-arm-none-eabi", version = "13.2.1.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-gcc-arm-none-eabi", version = "13.2.1.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-git-lfs", version = "3.6.1.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-git-lfs", version = "3.6.1.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-json11", version = "20170411.0.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-json11", version = "20170411.0.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-raylib", version = "6.0.0.1.post101", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-raylib", version = "6.0.0.1.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-zeromq", version = "4.3.5.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-zeromq", version = "4.3.5.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-zstd", version = "1.5.6.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-zstd", version = "1.5.6.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "numpy" },
@@ -636,10 +833,14 @@ testing = [
     { name = "ty" },
 ]
 tools = [
-    { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-imgui" },
-    { name = "comma-deps-libusb" },
-    { name = "comma-deps-ncurses" },
+    { name = "comma-deps-bootstrap-icons", version = "1.10.5.0.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-bootstrap-icons", version = "1.10.5.0.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-imgui", version = "1.92.7.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-imgui", version = "1.92.7.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-libusb", version = "1.0.29.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-libusb", version = "1.0.29.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
+    { name = "comma-deps-ncurses", version = "6.5.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-ncurses", version = "6.5.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
     { name = "matplotlib" },
 ]
 
@@ -651,19 +852,32 @@ standalone = [
 [package.metadata]
 requires-dist = [
     { name = "codespell", marker = "extra == 'testing'" },
-    { name = "comma-deps-acados" },
-    { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
-    { name = "comma-deps-capnproto" },
-    { name = "comma-deps-ffmpeg" },
-    { name = "comma-deps-gcc-arm-none-eabi" },
-    { name = "comma-deps-git-lfs" },
-    { name = "comma-deps-imgui", marker = "extra == 'tools'" },
-    { name = "comma-deps-json11" },
-    { name = "comma-deps-libusb", marker = "extra == 'tools'" },
-    { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
-    { name = "comma-deps-raylib" },
-    { name = "comma-deps-zeromq" },
-    { name = "comma-deps-zstd" },
+    { name = "comma-deps-acados", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-acados", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-bootstrap-icons", marker = "sys_platform == 'win32' and extra == 'tools'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-bootstrap-icons", marker = "sys_platform != 'win32' and extra == 'tools'" },
+    { name = "comma-deps-capnproto", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-capnproto", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-ffmpeg", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-ffmpeg", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-gcc-arm-none-eabi", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-gcc-arm-none-eabi", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-git-lfs", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-git-lfs", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-imgui", marker = "sys_platform == 'win32' and extra == 'tools'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-imgui", marker = "sys_platform != 'win32' and extra == 'tools'" },
+    { name = "comma-deps-json11", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-json11", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-libusb", marker = "sys_platform == 'win32' and extra == 'tools'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-libusb", marker = "sys_platform != 'win32' and extra == 'tools'" },
+    { name = "comma-deps-ncurses", marker = "sys_platform == 'win32' and extra == 'tools'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-ncurses", marker = "sys_platform != 'win32' and extra == 'tools'" },
+    { name = "comma-deps-raylib", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-raylib", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-zeromq", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-zeromq", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
+    { name = "comma-deps-zstd", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-zstd", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "inputs" },
     { name = "jeepney" },

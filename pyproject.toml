@@ -154,6 +154,14 @@ override-dependencies = [
   "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
 ]
 
+# --- TODO REMOVE AFTER DEPENDENCY PR MERGES (commaai/dependencies#107): fork-only index of the comma-deps Windows wheels until PyPI has them; not for upstream ---
+# (publish_windows.sh there). Point at a local `dist/` directory instead to use wheels built with its build.sh.
+[[tool.uv.index]]
+name = "comma-deps-windows"
+url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html"
+format = "flat"
+explicit = true
+
 [tool.uv.sources]
 msgq-ipc = { path = "msgq_repo", editable = true }
 opendbc = { path = "opendbc_repo", editable = true }
@@ -161,3 +169,16 @@ pandacan = { path = "panda", editable = true }
 rednose = { path = "rednose_repo", editable = true }
 teleoprtc = { path = "teleoprtc_repo", editable = true }
 tinygrad = { path = "tinygrad_repo", editable = true }
+comma-deps-acados = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-bootstrap-icons = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-capnproto = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-ffmpeg = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-gcc-arm-none-eabi = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-git-lfs = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-imgui = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-json11 = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-libusb = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-ncurses = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-raylib = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-zeromq = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
+comma-deps-zstd = { index = "comma-deps-windows", marker = "sys_platform == 'win32'" }
