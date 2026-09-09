@@ -6,10 +6,17 @@ export SIMULATION="1"
 export SKIP_FW_QUERY="1"
 export FINGERPRINT="HONDA_CIVIC_2022"
 
-export BLOCK="${BLOCK},camerad,loggerd,encoderd,micd,logmessaged,manage_athenad"
+# keep camera process blocked (simulator publishes frames), but optionally allow logging stack
+block_list="camerad,micd,logmessaged,manage_athenad"
+if [[ -z "${SIM_LOGS:-}" ]]; then
+  block_list="${block_list},loggerd,encoderd"
+fi
+export BLOCK="${BLOCK},${block_list}"
 if [[ "$CI" ]]; then
   # TODO: offscreen UI should work
   export BLOCK="${BLOCK},ui"
+  # no audio device on CI runners, soundd would crashloop and trip the test's process checks
+  export BLOCK="${BLOCK},soundd"
 fi
 
 python3 -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
