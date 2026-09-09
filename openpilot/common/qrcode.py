@@ -4,13 +4,41 @@ import numpy as np
 import pyray as rl
 
 
-# Indexes are QR versions. These are the only two Reed-Solomon parameters needed
-# for error-correction level L.
-_ECC_LEN = (0, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28)
-_NUM_BLOCKS = (0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8)
+# (ec codewords per block, block count) for levels L, M, Q, H, versions 1-40
+_EC = [
+  ((7, 1), (10, 1), (13, 1), (17, 1)), ((10, 1), (16, 1), (22, 1), (28, 1)), ((15, 1), (26, 1), (18, 2), (22, 2)),
+  ((20, 1), (18, 2), (26, 2), (16, 4)), ((26, 1), (24, 2), (18, 4), (22, 4)), ((18, 2), (16, 4), (24, 4), (28, 4)),
+  ((20, 2), (18, 4), (18, 6), (26, 5)), ((24, 2), (22, 4), (22, 6), (26, 6)), ((30, 2), (22, 5), (20, 8), (24, 8)),
+  ((18, 4), (26, 5), (24, 8), (28, 8)), ((20, 4), (30, 5), (28, 8), (24, 11)), ((24, 4), (22, 8), (26, 10), (28, 11)),
+  ((26, 4), (22, 9), (24, 12), (22, 16)), ((30, 4), (24, 9), (20, 16), (24, 16)), ((22, 6), (24, 10), (30, 12), (24, 18)),
+  ((24, 6), (28, 10), (24, 17), (30, 16)), ((28, 6), (28, 11), (28, 16), (28, 19)), ((30, 6), (26, 13), (28, 18), (28, 21)),
+  ((28, 7), (26, 14), (26, 21), (26, 25)), ((28, 8), (26, 16), (30, 20), (28, 25)), ((28, 8), (26, 17), (28, 23), (30, 25)),
+  ((28, 9), (28, 17), (30, 23), (24, 34)), ((30, 9), (28, 18), (30, 25), (30, 30)), ((30, 10), (28, 20), (30, 27), (30, 32)),
+  ((26, 12), (28, 21), (30, 29), (30, 35)), ((28, 12), (28, 23), (28, 34), (30, 37)), ((30, 12), (28, 25), (30, 34), (30, 40)),
+  ((30, 13), (28, 26), (30, 35), (30, 42)), ((30, 14), (28, 28), (30, 38), (30, 45)), ((30, 15), (28, 29), (30, 40), (30, 48)),
+  ((30, 16), (28, 31), (30, 43), (30, 51)), ((30, 17), (28, 33), (30, 45), (30, 54)), ((30, 18), (28, 35), (30, 48), (30, 57)),
+  ((30, 19), (28, 37), (30, 51), (30, 60)), ((30, 19), (28, 38), (30, 53), (30, 63)), ((30, 20), (28, 40), (30, 56), (30, 66)),
+  ((30, 21), (28, 43), (30, 59), (30, 70)), ((30, 22), (28, 45), (30, 62), (30, 74)), ((30, 24), (28, 47), (30, 65), (30, 77)),
+  ((30, 25), (28, 49), (30, 68), (30, 81)),
+]
 
-# 15 format-info bits for level L (01) with mask 0: ((0x08 << 10) | bch_remainder) ^ 0x5412
-_FORMAT_BITS = 0b111011111000100
+# GF(256) with the QR polynomial x^8 + x^4 + x^3 + x^2 + 1: powers of alpha and their logs
+_EXP = [1]
+for _ in range(254):
+  _EXP.append(_EXP[-1] << 1 ^ (0x11D if _EXP[-1] & 0x80 else 0))
+_LOG = {v: i for i, v in enumerate(_EXP)}
+
+
+def _bch_format(data: int) -> int:
+  v = data << 10
+  for shift in range(14, 9, -1):
+    if v >> shift & 1:
+      v ^= 0x537 << (shift - 10)
+  return (data << 10 | v) ^ 0x5412
+
+
+# 15-bit format info indexed by (level bits << 3 | mask). Level bits: L=01, M=00, Q=11, H=10.
+_FORMATS = [_bch_format(d) for d in range(32)]
 
 
 def _raw_modules(version: int) -> int:
@@ -21,8 +49,24 @@ def _raw_modules(version: int) -> int:
   return result - (36 if version >= 7 else 0)
 
 
+def _block_lengths(version: int, level: int) -> list[int]:
+  """Data codewords per Reed-Solomon block. The last blocks may be one longer."""
+  ec, nblocks = _EC[version - 1][level]
+  total = _raw_modules(version) // 8 - ec * nblocks
+  return [total // nblocks + (i >= nblocks - total % nblocks) for i in range(nblocks)]
+
+
+def _interleaved(version: int, level: int) -> list[tuple[int, int]]:
+  """(block, index within block) of each transmitted codeword: data column-major, then ECC column-major."""
+  ec, nblocks = _EC[version - 1][level]
+  lens = _block_lengths(version, level)
+  data = [(b, i) for i in range(max(lens)) for b in range(nblocks) if i < lens[b]]
+  ecc = [(b, lens[b] + i) for i in range(ec) for b in range(nblocks)]
+  return data + ecc
+
+
 def _capacity(version: int) -> int:
-  return _raw_modules(version) // 8 - _ECC_LEN[version] * _NUM_BLOCKS[version]
+  return sum(_block_lengths(version, 0))
 
 
 def _append_bits(bits: list[int], value: int, length: int) -> None:
@@ -49,37 +93,18 @@ def _data_codewords(data: bytes, version: int) -> bytes:
 def _codewords(data: bytes, version: int) -> bytes:
   """Split data codewords into Reed-Solomon blocks and interleave data + ECC."""
   data = _data_codewords(data, version)
-  num_blocks = _NUM_BLOCKS[version]
-  ecc_len = _ECC_LEN[version]
-  raw_codewords = _raw_modules(version) // 8
-  short_len = raw_codewords // num_blocks
-  num_short = num_blocks - raw_codewords % num_blocks
-  divisor = _divisor(ecc_len)
-  blocks: list[tuple[bytes, bytes]] = []
+  divisor = _divisor(_EC[version - 1][0][0])
+  blocks = []
   offset = 0
-  for i in range(num_blocks):
-    length = short_len - ecc_len + (0 if i < num_short else 1)
+  for length in _block_lengths(version, 0):
     block = data[offset:offset + length]
-    blocks.append((block, _remainder(block, divisor)))
+    blocks.append(block + _remainder(block, divisor))
     offset += length
-  result = bytearray()
-  for i in range(short_len - ecc_len + 1):
-    for block, _ in blocks:
-      result.extend(block[i:i + 1])
-  for i in range(ecc_len):
-    for _, ecc in blocks:
-      result.append(ecc[i])
-  return bytes(result)
+  return bytes(blocks[b][i] for b, i in _interleaved(version, 0))
 
 
 def _multiply(x: int, y: int) -> int:
-  result = 0
-  for _ in range(8):
-    result = (result << 1) ^ (0x11D if result & 0x80 else 0)
-    if y & 0x80:
-      result ^= x
-    y <<= 1
-  return result
+  return _EXP[(_LOG[x] + _LOG[y]) % 255] if x and y else 0
 
 
 def _divisor(degree: int) -> bytes:
@@ -171,7 +196,7 @@ class _Qr:
 
   def _format(self) -> None:
     for i in range(15):
-      bit = ((_FORMAT_BITS >> i) & 1) != 0
+      bit = ((_FORMATS[1 << 3 | 0] >> i) & 1) != 0  # level L, mask 0
       y_pos = i if i < 6 else i + 1 if i < 8 else self.size - 15 + i
       self._set_function(8, y_pos, bit)
       x_pos = self.size - 1 - i if i < 8 else 15 - i if i < 9 else 14 - i
