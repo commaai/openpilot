@@ -99,6 +99,10 @@ function install_python_deps() {
 
   cd "$ROOT"
 
+  if ! command -v uv > /dev/null 2>&1 && [[ -x "$HOME/.local/bin/uv" ]]; then
+    PATH="$HOME/.local/bin:$PATH"
+  fi
+
   if ! command -v "uv" > /dev/null 2>&1; then
     echo "installing uv..."
     # TODO: outer retry can be removed once https://github.com/axodotdev/cargo-dist/pull/2311 is merged
@@ -107,16 +111,30 @@ function install_python_deps() {
     PATH="$UV_BIN:$PATH"
   fi
 
-  echo "updating uv..."
-  # ok to fail, can also fail due to installing with brew
-  uv self update || true
+  if [[ "${1:-}" == "--sync" ]]; then
+    # Keep ordinary commands fast and preserve manually installed dev tools.
+    # One -q hides no-op output while still showing errors.
+    if [[ ! -f "$ROOT/.venv/bin/activate" ]]; then
+      echo "Preparing Python environment..."
+    fi
+    UV_PROJECT_ENVIRONMENT="$ROOT/.venv" uv sync --frozen --all-extras --inexact -q
+  else
+    echo "updating uv..."
+    # ok to fail, can also fail due to installing with brew
+    uv self update || true
 
-  echo "installing python packages..."
-  uv sync --frozen --all-extras
+    echo "installing python packages..."
+    uv sync --frozen --all-extras
+  fi
   source .venv/bin/activate
 }
 
 # --- Main ---
+
+if [[ "${1:-}" == "--sync" ]]; then
+  install_python_deps --sync
+  exit 0
+fi
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   install_linux_deps
