@@ -23,14 +23,12 @@ def estimate_pickle_max_size(onnx_size):
   # the ONNX size. Overestimating only adds an empty trailing chunk.
   return 2.0 * onnx_size + 10 * 1024 * 1024
 
+camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
+
 if arch == 'comma_arm64':
-  from openpilot.common.hardware import HARDWARE
-  camera = _os_fisheye if HARDWARE.get_device_type() == "mici" else _ar_ox_fisheye
-  camera_configs = [(camera.width, camera.height)]
   tg_backend = 'QCOM'
   tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
-  camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
   tg_backend = 'CPU'
   tg_flags = f'DEV=CPU' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
@@ -83,7 +81,7 @@ for chestnut in [False, True] if CHESTNUT else [False]:
         f'--onnx {File(f"models/{file_prefix}driving_supercombo.onnx").abspath} '
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
   onnx_sizes_sum = sum(os.path.getsize(f) for f in driving_onnx_deps)
-  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
+  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum * len(camera_configs)))
   def do_compile(target, source, env, command=cmd, pkl=target_pkl_path, chunks=chunk_targets):
     from openpilot.system.hardware.chestnut.flash import link_up
     # chestnut can enumerate before its PCIe link is up due to varying 12V power behavior across cars
