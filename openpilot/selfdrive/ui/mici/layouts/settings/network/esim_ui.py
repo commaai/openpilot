@@ -316,8 +316,11 @@ class EsimUI(NavScroller):
 
   def _on_profiles_updated(self):
     if self._installing_dialog and self._installing:
+      existing = {btn.profile.iccid for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
+      added = [profile for profile in self._cellular_manager.profiles if profile.iccid not in existing]
       self._installing = False
-      self._installing_dialog.dismiss()
+      # Start the normal tap-to-activate flow once the profile list is visible again.
+      self._installing_dialog.dismiss(lambda: self._on_profile_clicked(added[0]) if len(added) == 1 else None)
       self._installing_dialog = None
 
     self._update_buttons()
