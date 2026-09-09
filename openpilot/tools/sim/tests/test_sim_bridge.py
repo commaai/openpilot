@@ -21,7 +21,6 @@ class TestSimBridgeBase(OpenpilotTestCase):
   def setup_method(self):
     self.processes = []
 
-  @unittest.skip("TODO: re-enable simulator bridge test")
   def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)

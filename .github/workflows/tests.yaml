@@ -182,18 +182,28 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
     - name: Driving test
-      timeout-minutes: 2
+      timeout-minutes: 20
       env:
         # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
         EGL_PLATFORM: surfaceless
-      run: python openpilot/tools/sim/tests/test_metadrive_bridge.py
+        # run the logging stack so rlog/qlog/camera files are produced
+        SIM_LOGS: 1
+        LOG_ROOT: ${{ github.workspace }}/.ci_artifacts/sim_logs
+      run: tools/op.sh test openpilot/tools/sim/tests/test_metadrive_bridge.py
+    - name: Upload simulator logs
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: simulator-logs-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+        path: .ci_artifacts/sim_logs
+        retention-days: 7
+        if-no-files-found: warn
 
   create_ui_report:
     name: Create UI Report
