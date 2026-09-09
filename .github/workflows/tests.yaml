@@ -76,6 +76,24 @@ jobs:
     - name: Building openpilot
       run: scons
 
+  build_windows:
+    name: build Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v7
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: CLANG64
+        install: mingw-w64-clang-x86_64-git  # the README's first step, the setup installs the rest
+    - run: ./tools/op.sh setup
+    - name: Building openpilot
+      run: tools/op.sh build  # activates the venv: the msys2 shell puts its own python3 ahead of it
+    - name: Run the tool tests
+      timeout-minutes: 15
+      run: tools/op.sh test openpilot/common openpilot/cereal/messaging openpilot/tools/cabana openpilot/tools/jotpluggler openpilot/tools/lib openpilot/system/ui openpilot/test_native.py
   static_analysis:
     name: static analysis
     runs-on: ${{
