@@ -1,5 +1,6 @@
 """QR code encoding, decoding, and UI textures."""
 
+import functools
 import itertools
 
 import numpy as np
@@ -295,6 +296,7 @@ def _function_mask(version: int) -> np.ndarray:
   return func
 
 
+@functools.lru_cache
 def _data_coords(version: int) -> tuple[np.ndarray, np.ndarray]:
   """(rows, cols) of the non-function modules in placement order: two-column zigzag from the right."""
   dim = version * 4 + 17
@@ -322,10 +324,27 @@ def _poly_eval(p: list[int], x: int) -> int:
   return y
 
 
+_EXP_TABLE = np.array(_EXP)
+_LOG_TABLE = np.zeros(256, dtype=int)
+_LOG_TABLE[_EXP] = np.arange(255)
+
+
+@functools.lru_cache
+def _syndrome_exponents(n: int, nsym: int) -> np.ndarray:
+  """Exponent of alpha for codeword j in syndrome i, msg highest degree first."""
+  return np.arange(nsym)[:, None] * (n - 1 - np.arange(n))[None, :] % 255
+
+
+def _syndromes(msg: list[int], nsym: int) -> list[int]:
+  m = np.array(msg)
+  terms = _EXP_TABLE[(_LOG_TABLE[m] + _syndrome_exponents(len(msg), nsym)) % 255] * (m != 0)
+  return np.bitwise_xor.reduce(terms, axis=1).tolist()
+
+
 def _rs_correct(msg: list[int], nsym: int) -> list[int]:
   """Corrects up to nsym // 2 errors in a Reed-Solomon codeword, in place."""
   n = len(msg)
-  syn = [_poly_eval(msg, _EXP[i]) for i in range(nsym)]
+  syn = _syndromes(msg, nsym)
   if not any(syn):
     return msg
 
@@ -374,7 +393,7 @@ def _rs_correct(msg: list[int], nsym: int) -> list[int]:
   for k, p in enumerate(positions):
     msg[p] ^= A[k][L]
 
-  if any(_poly_eval(msg, _EXP[i]) for i in range(nsym)):
+  if any(_syndromes(msg, nsym)):
     raise QRError("uncorrectable")
   return msg
 
@@ -517,37 +536,41 @@ def decode_matrix(m: np.ndarray) -> str:
 # ---- Image decoding ----
 
 
-def _box_sum(a: np.ndarray) -> np.ndarray:
-  """Sum over a 5x5 neighborhood, edge padded."""
-  cs = np.pad(np.cumsum(np.cumsum(np.pad(a, 2, mode="edge"), 0), 1), ((1, 0), (1, 0)))
-  return cs[5:, 5:] - cs[:-5, 5:] - cs[5:, :-5] + cs[:-5, :-5]
+def _box_sums(a: np.ndarray, radii: tuple[int, ...]) -> list[np.ndarray]:
+  """Sums over (2r + 1)^2 neighborhoods of the last two axes, edge padded, from one integral image."""
+  P = max(radii)
+  lead = [(0, 0)] * (a.ndim - 2)
+  cs = np.pad(np.cumsum(np.cumsum(np.pad(a, lead + [(P, P), (P, P)], mode="edge"), -2), -1), lead + [(1, 0), (1, 0)])
+  H, W = a.shape[-2:]
+  out = []
+  for r in radii:
+    lo, hi = P - r, P + r + 1
+    out.append(cs[..., hi:hi + H, hi:hi + W] - cs[..., lo:lo + H, hi:hi + W] - cs[..., hi:hi + H, lo:lo + W] + cs[..., lo:lo + H, lo:lo + W])
+  return out
 
 
 def _binarize(gray: np.ndarray) -> np.ndarray:
-  """Adaptive threshold: each pixel against the mean of the surrounding tiles."""
+  """Adaptive threshold: each pixel against the mean of the surrounding tiles that have contrast."""
   h, w = gray.shape
   if h < 21 or w < 21:
     raise QRError("image too small")
-  B = max(8, min(h, w) // 64)
+  B = max(8, min(h, w) // 128 * 2)
   H, W = -(-h // B), -(-w // B)
-  tiles = np.pad(gray, ((0, H * B - h), (0, W * B - w)), mode="edge").reshape(H, B, W, B)
-  sub = tiles[:, ::2, :, ::2]  # block statistics from a subsample are plenty
-  blocks = sub.sum(axis=(1, 3), dtype=np.uint32) / (sub.shape[1] * sub.shape[3])
-  known = sub.max(axis=(1, 3)) - sub.min(axis=(1, 3)) >= 24
-  # Flat tiles cannot estimate their own threshold: fill them from the mean of
-  # the surrounding non-flat tiles, growing outward until every tile is covered.
-  est = np.where(known, blocks, 0.0)
-  weight = known.astype(float)
-  while not weight.all():
-    total, count = _box_sum(est), _box_sum(weight)
-    fill = (count > 0) & (weight == 0)
-    if not fill.any():
-      est[weight == 0] = (blocks.min() + blocks.max()) / 2  # nothing to learn from: global midrange
-      break
+  padded = np.pad(gray, ((0, H * B - h), (0, W * B - w)), mode="edge")
+  # block statistics from a subsample are plenty; gather each tile's samples into the last axis
+  sub = np.ascontiguousarray(padded[::2, ::2].reshape(H, B // 2, W, B // 2).transpose(0, 2, 1, 3)).reshape(H, W, -1)
+  blocks = sub.sum(axis=2, dtype=np.uint32) / sub.shape[2]
+  known = sub.max(axis=2) - sub.min(axis=2) >= 32
+  # Flat tiles cannot estimate their own threshold: use the tiles with contrast nearby, then
+  # further out, then the global midrange. A flat tile is then all dark or all light.
+  est = np.full((H, W), (blocks.min() + blocks.max()) / 2)
+  filled = np.zeros((H, W), dtype=bool)
+  for total, count in _box_sums(np.stack((known * blocks, known.astype(float))), (2, 6)):
+    fill = ~filled & (count > 0)
     est[fill] = total[fill] / count[fill]
-    weight[fill] = 1
-  local = _box_sum(est) / 25
-  return (tiles <= local[:, None, :, None]).reshape(H * B, W * B)[:h, :w]
+    filled |= fill
+  thr = np.where(known, np.minimum(est, 254) + 1, np.where(blocks <= est, 255, 0)).astype(np.uint8)
+  return (padded.reshape(H, B, W, B) < thr[:, None, :, None]).reshape(H * B, W * B)[:h, :w]
 
 
 class _Runs:
@@ -555,7 +578,7 @@ class _Runs:
 
   def __init__(self, padded: np.ndarray):
     self.flat = padded.ravel()
-    self.stride = padded.shape[1]
+    self.lines, self.stride = padded.shape
     change = self.flat[1:] != self.flat[:-1]
     self.starts = np.concatenate(([0], np.flatnonzero(change) + 1))
     self.lengths = np.diff(np.append(self.starts, self.flat.size)).astype(np.int32)
@@ -574,6 +597,17 @@ class _Runs:
       ok &= np.abs(2 * S * L - 2 * r * total) <= r * total  # integer form of |L - r * total / S| <= r * total / (2 * S)
     return ok, total / S
 
+  def scan(self, ratios: tuple[int, ...]) -> np.ndarray:
+    """Returns the indices of all dark runs starting a window of runs matching the ratios."""
+    n = len(ratios)
+    N = len(self.lengths) - n + 1
+    if N <= 0:
+      return np.zeros(0, dtype=int)
+    ok, _ = self._match([self.lengths[k:N + k] for k in range(n)], ratios)
+    ok &= self.flat[self.starts[:N]]
+    first = np.flatnonzero(ok)
+    return first[self.starts[first] // self.stride == self.starts[first + n - 1] // self.stride]
+
   def check(self, first: np.ndarray, ratios: tuple[int, ...]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Checks the run windows starting at run index `first`. Returns (ok, center position along the line, module size)."""
     n, half = len(ratios), len(ratios) // 2
@@ -588,19 +622,23 @@ class _Runs:
 
 def _find_patterns(binary: np.ndarray, ratios: tuple[int, ...]) -> list[tuple[float, float, float]]:
   """Finds dark/light run patterns with the given module ratios. Returns (x, y, module size)."""
-  h, w = binary.shape
   half = len(ratios) // 2
-  rows_t = _Runs(np.pad(binary, ((0, 0), (1, 1))))
-  ok, cx, hmod = rows_t.check(np.arange(len(rows_t.lengths)), ratios)
-  first = np.flatnonzero(ok)
-  cx, hmod = cx[first], hmod[first]
-  row = rows_t.starts[first] // rows_t.stride
+  step = 2  # the center rows of a 2 px finder pattern still get scanned twice
+  rows_t = _Runs(np.pad(binary[::step], ((0, 0), (1, 1))))
+  first = rows_t.scan(ratios)
+  if len(first) == 0:
+    return []
+  _, cx, hmod = rows_t.check(first, ratios)
+  row = rows_t.starts[first] // rows_t.stride * step
 
-  cols_t = _Runs(np.pad(binary.T, ((0, 0), (1, 1))))
+  # confirm each candidate along its column, then again along the row through the refined center
   xi = cx.astype(int)
-  ok, cy, vmod = cols_t.check(cols_t.run_at(xi, row) - half, ratios)
+  xs, col = np.unique(xi, return_inverse=True)
+  cols_t = _Runs(np.pad(binary[:, xs].T, ((0, 0), (1, 1))))
+  ok, cy, vmod = cols_t.check(cols_t.run_at(col, row) - half, ratios)
   ok &= (0.5 <= vmod / hmod) & (vmod / hmod <= 2)
-  ok2, cx2, hmod2 = rows_t.check(rows_t.run_at(np.clip(cy, 0, h - 1).astype(int), xi) - half, ratios)
+  line = np.clip(np.rint(cy / step), 0, rows_t.lines - 1).astype(int)
+  ok2, cx2, hmod2 = rows_t.check(rows_t.run_at(line, xi) - half, ratios)
   ok &= ok2 & (0.5 <= hmod2 / vmod) & (hmod2 / vmod <= 2)
 
   found: list[list[float]] = []  # [x, y, module, count]
@@ -688,7 +726,7 @@ def _locate_alignment(binary: np.ndarray, H: np.ndarray, center: float, module: 
   grid = np.mgrid[-2:3, -2:3].reshape(2, -1).T[:, ::-1] + center  # (25, 2) module coords (x, y)
   pts = _transform(H, grid)
   # the affine estimate can be off in both position and local scale under perspective
-  for radius in (4, 8, 16):
+  for radius in (2, 4, 8, 16):
     for scale in (1.0, 0.8, 1.25, 0.65, 1.5):
       found = _match_alignment(binary, pts[12], (pts - pts[12]) * scale, int(module * radius), module)
       if found is not None:
