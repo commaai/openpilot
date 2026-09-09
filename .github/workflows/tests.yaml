@@ -87,6 +87,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
+    - run: python -m unittest discover -s tools/tests -p test_lfs_xet.py
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh

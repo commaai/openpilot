@@ -12,7 +12,7 @@ Follow these instructions for a fully managed setup experience. If you'd like to
 
 **1. Clone openpilot**
 ``` bash
-git clone https://github.com/commaai/openpilot.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/commaai/openpilot.git
 ```
 
 **2. Run the setup script**
@@ -21,7 +21,9 @@ cd openpilot
 tools/op.sh setup
 ```
 
-Setup installs [Git Xet](https://huggingface.co/docs/hub/xet/using-xet-storage#git) using its upstream installer for uploads to Hugging Face. Downloads continue to use Git LFS.
+Setup enables Xet transfers for normal Git commands: the upstream Git Xet installer provides uploads, and a Git LFS download agent uses `hf_xet` through `uv` for parallel chunk downloads. Downloads are anonymous; uploads require your own Hugging Face write credentials in Git's credential helper.
+
+To use standard HTTP downloads for troubleshooting, run `git -c lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent= lfs pull`.
 
 **3. Activate a Python shell**
 Activate a shell with the Python dependencies installed:

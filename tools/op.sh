@@ -213,7 +213,13 @@ EOF
   git config --local lfs.customtransfer.xet.path git-xet
   git config --local lfs.customtransfer.xet.args transfer
   git config --local lfs.customtransfer.xet.direction upload
-  printf '#!/bin/sh\nlfs_remote=$(git config -f .lfsconfig lfs.pushurl)\nexec .venv/bin/git-lfs pre-push "${lfs_remote%%/info/lfs}" "$2"\n' > "$(git rev-parse --git-path hooks)/pre-push"
+  cp tools/lfs_xet.py .venv/bin/lfs-xet.py
+  git config --local lfs.customtransfer.hf-xet.path "$(command -v uv || echo "$HOME/.local/bin/uv")"
+  git config --local lfs.customtransfer.hf-xet.args "run --script .venv/bin/lfs-xet.py"
+  git config --local lfs.customtransfer.hf-xet.direction download
+  git config --local lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent hf-xet
+  # Older Git LFS versions also apply the standalone download agent to uploads unless it is explicitly disabled.
+  printf '#!/bin/sh\nlfs_remote=$(git config -f .lfsconfig lfs.pushurl)\nPATH=".venv/bin:$PATH" exec git -c "lfs.$lfs_remote.standalonetransferagent=" lfs pre-push "${lfs_remote%%/info/lfs}" "$2"\n' > "$(git rev-parse --git-path hooks)/pre-push"
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
