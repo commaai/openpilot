@@ -21,6 +21,8 @@ cd openpilot
 tools/op.sh setup
 ```
 
+Setup installs [Git Xet](https://github.com/huggingface/xet-core/tree/git-xet-v0.2.1/git_xet) for uploads to Hugging Face using your Hugging Face Git credentials. Downloads continue to use Git LFS; Git Xet 0.2.1 only supports uploads.
+
 **3. Activate a Python shell**
 Activate a shell with the Python dependencies installed:
 ``` bash
