@@ -120,6 +120,7 @@ function install_python_deps() {
   source .venv/bin/activate
 
   if ! command -v git-xet > /dev/null 2>&1; then
+    mkdir -p /usr/local/bin 2>/dev/null || sudo mkdir -p /usr/local/bin
     retry 3 bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/huggingface/xet-core/87d2ac9bcd6a1be8ae82ed6fde4116e4e625f98b/git_xet/install.sh | sh'
   fi
 }
