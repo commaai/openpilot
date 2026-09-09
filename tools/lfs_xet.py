@@ -5,20 +5,19 @@
 # ///
 """Git LFS download agent for the public openpilot Hugging Face repository."""
 import json
-from pathlib import Path
 import re
 import sys
 import tempfile
+from pathlib import Path
 
 from huggingface_hub.file_download import http_get, xet_get
 from huggingface_hub.utils import XetFileData, get_session, logging, tqdm
 
 LFS_URL = "https://huggingface.co/commaai/openpilot-lfs.git/info/lfs"
 TOKEN_URL = "https://huggingface.co/api/models/commaai/openpilot-lfs/xet-read-token/main"
-logging.set_verbosity_error()
 
 
-def send(message):
+def send(**message):
   print(json.dumps(message), flush=True)
 
 
@@ -33,14 +32,14 @@ def download(oid, size, path):
   action = obj["actions"]["download"]
 
   class Progress(tqdm):
-    def __init__(self, **kwargs):
-      super().__init__(initial=kwargs.get("initial", 0), disable=True)
+    def __init__(self, initial=0, **kwargs):
+      super().__init__(initial=initial, disable=True)
 
-    def update(self, amount):
-      self.n += amount
-      send({"event": "progress", "oid": oid, "bytesSoFar": self.n, "bytesSinceLast": amount})
+    def update(self, n=1):
+      self.n += n
+      send(event="progress", oid=oid, bytesSoFar=self.n, bytesSinceLast=n)
 
-  # The LFS bridge URL identifies the Xet file by hash, including objects uploaded without a Hub Git commit.
+  # The LFS bridge URL exposes the Xet hash, even for objects without a Hub commit.
   xet_hash = re.search(r"/xet-bridge-[^/]+/[^/]+/([0-9a-f]{64})(?:\?|$)", action["href"])
   options = {"expected_size": size, "displayed_filename": oid, "tqdm_class": Progress}
   if xet_hash:
@@ -51,28 +50,26 @@ def download(oid, size, path):
       http_get(action["href"], output, headers=action.get("header", {}), **options)
 
 
-def main():
+if __name__ == "__main__":
+  logging.set_verbosity_error()
   with tempfile.TemporaryDirectory(prefix="git-lfs-xet-") as directory:
     for line in sys.stdin:
       message = json.loads(line)
-      if message["event"] == "init":
-        if message["operation"] != "download":
-          send({"error": {"code": 1, "message": "This agent only supports downloads"}})
-          return
-        send({})
-      elif message["event"] == "terminate":
-        return
-      elif message["event"] == "download":
-        oid = message["oid"]
-        path = Path(directory) / oid
-        try:
-          download(oid, message["size"], path)
-          send({"event": "complete", "oid": oid, "path": str(path)})
-        except Exception as e:
-          path.unlink(missing_ok=True)
-          # Exceptions from HTTP/native clients can contain signed URLs; keep those out of Git's logs.
-          send({"event": "complete", "oid": oid, "error": {"code": 1, "message": f"Download failed ({type(e).__name__})"}})
-
-
-if __name__ == "__main__":
-  main()
+      match message["event"]:
+        case "init":
+          if message["operation"] != "download":
+            send(error={"code": 1, "message": "This agent only supports downloads"})
+            break
+          send()
+        case "terminate":
+          break
+        case "download":
+          oid = message["oid"]
+          path = Path(directory) / oid
+          try:
+            download(oid, message["size"], path)
+            send(event="complete", oid=oid, path=str(path))
+          except Exception as e:
+            path.unlink(missing_ok=True)
+            # HTTP/native errors can contain signed URLs; keep those out of Git's logs.
+            send(event="complete", oid=oid, error={"code": 1, "message": f"Download failed ({type(e).__name__})"})

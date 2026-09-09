@@ -21,9 +21,7 @@ cd openpilot
 tools/op.sh setup
 ```
 
-Setup enables Xet transfers for normal Git commands using Git Xet for uploads and Hugging Face's download helpers for pulls. Downloads are anonymous; uploads require your own Hugging Face write credentials in Git's credential helper.
-
-To use standard HTTP downloads for troubleshooting, run `git -c lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent= lfs pull`.
+Setup enables Xet downloads and uploads. Uploads require Hugging Face write credentials in Git's credential helper.
 
 **3. Activate a Python shell**
 Activate a shell with the Python dependencies installed:
@@ -35,6 +33,8 @@ source .venv/bin/activate
 ``` bash
 scons -u
 ```
+
+For standard LFS downloads, run `git -c lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent= lfs pull`.
 
 ## WSL on Windows
 

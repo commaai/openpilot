@@ -210,13 +210,14 @@ EOF
   git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
   git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
   git config --local filter.lfs.required true
-  git xet install --local --concurrency 3
+  git xet install --local --concurrency 8
   git config --local lfs.customtransfer.xet.direction upload
-  cp tools/lfs_xet.py .venv/bin/lfs-xet.py
+  cp tools/lfs_xet.py .venv/bin/lfs_xet.py
   git config --local lfs.customtransfer.hf-xet.path "$(command -v uv || echo "$HOME/.local/bin/uv")"
-  git config --local lfs.customtransfer.hf-xet.args "run --script .venv/bin/lfs-xet.py"
+  git config --local lfs.customtransfer.hf-xet.args "run --script .venv/bin/lfs_xet.py"
   git config --local lfs.customtransfer.hf-xet.direction download
-  git config --local lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent hf-xet
+  LFS_URL="$(git config -f .lfsconfig lfs.url)"
+  git config --local "lfs.$LFS_URL.standalonetransferagent" hf-xet
   # Older Git LFS versions also apply the standalone download agent to uploads unless it is explicitly disabled.
   cat > "$(git rev-parse --git-path hooks)/pre-push" <<'EOF'
 #!/bin/sh
