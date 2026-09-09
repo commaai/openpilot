@@ -166,7 +166,7 @@ class WifiManager:
       _wrap_router(self._router_main)
       self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
-    except FileNotFoundError:
+    except (FileNotFoundError, AttributeError):  # AttributeError: no AF_UNIX sockets on Windows
       cloudlog.exception("Failed to connect to system D-Bus")
       self._router_main = None
       self._conn_monitor = None
@@ -203,7 +203,8 @@ class WifiManager:
     self._scan_lock = threading.Lock()
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._state_thread = threading.Thread(target=self._monitor_state, daemon=True)
-    self._initialize()
+    if not self._exit:  # no D-Bus, nothing to scan with
+      self._initialize()
     atexit.register(self.stop)
 
   def _initialize(self):
