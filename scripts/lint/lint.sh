@@ -46,6 +46,7 @@ function run_tests() {
   PYTHON_FILES=$2
 
   run "ruff" ruff check openpilot --quiet
+  run "check_dependencies" python3 $DIR/check_dependencies.py
   run "check_indentation" $DIR/check_indentation.py $PYTHON_FILES
   run "check_added_large_files" $DIR/check_added_large_files.py --maxkb=120 $ALL_FILES
   run "check_shebang_scripts_are_executable" $DIR/check_shebang_scripts_are_executable.py $ALL_FILES
@@ -67,6 +68,7 @@ function help() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
   echo -e "  ${BOLD}ruff${NC}"
+  echo -e "  ${BOLD}check_dependencies${NC}"
   echo -e "  ${BOLD}check_indentation${NC}"
   echo -e "  ${BOLD}ty${NC}"
   echo -e "  ${BOLD}codespell${NC}"

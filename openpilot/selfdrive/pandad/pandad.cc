@@ -328,8 +328,8 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control, 
       }
     }
 
-    // Disable IR on input timeout
-    if (nanos_since_boot() - last_cabin_camera_t > 1e9) {
+    // Disable IR on input timeout or when requested offroad.
+    if (nanos_since_boot() - last_cabin_camera_t > 1e9 || (!is_onroad && params.getBool("DisableDriverCameraIR"))) {
       ir_pwr = 0;
     }
 
