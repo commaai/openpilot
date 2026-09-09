@@ -1,15 +1,12 @@
 import ctypes
 import functools
-import multiprocessing
 import numpy as np
 import time
-
-from multiprocessing import Pipe, Array
 
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SIM_MP_CTX, SimulatorState, World
 from openpilot.tools.sim.lib.camerad import W, H
 
 
@@ -17,19 +14,19 @@ class MetaDriveWorld(World):
   def __init__(self, status_q, config, test_duration, test_run, dual_camera=False):
     super().__init__(dual_camera)
     self.status_q = status_q
-    self.camera_array = Array(ctypes.c_uint8, W*H*3)
+    self.camera_array = SIM_MP_CTX.Array(ctypes.c_uint8, W*H*3)
     self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
     self.wide_camera_array = None
     if dual_camera:
-      self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
+      self.wide_camera_array = SIM_MP_CTX.Array(ctypes.c_uint8, W*H*3)
       self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
-    self.controls_send, self.controls_recv = Pipe()
-    self.simulation_state_send, self.simulation_state_recv = Pipe()
-    self.vehicle_state_send, self.vehicle_state_recv = Pipe()
+    self.controls_send, self.controls_recv = SIM_MP_CTX.Pipe()
+    self.simulation_state_send, self.simulation_state_recv = SIM_MP_CTX.Pipe()
+    self.vehicle_state_send, self.vehicle_state_recv = SIM_MP_CTX.Pipe()
 
-    self.exit_event = multiprocessing.Event()
-    self.op_engaged = multiprocessing.Event()
+    self.exit_event = SIM_MP_CTX.Event()
+    self.op_engaged = SIM_MP_CTX.Event()
 
     self.test_run = test_run
 
@@ -37,7 +34,7 @@ class MetaDriveWorld(World):
     self.last_check_timestamp = 0
     self.distance_moved = 0
 
-    self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
+    self.metadrive_process = SIM_MP_CTX.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config,
                                                 self.camera_array, self.wide_camera_array, self.image_lock,
                                                 self.controls_recv, self.simulation_state_send,

@@ -3,12 +3,11 @@ import subprocess
 import time
 import unittest
 
-from multiprocessing import Queue
-
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.sim.bridge.common import QueueMessageType
+from openpilot.tools.sim.lib.common import SIM_MP_CTX
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
 
@@ -28,7 +27,7 @@ class TestSimBridgeBase(OpenpilotTestCase):
     self.processes.append(p_manager)
 
     sm = messaging.SubMaster(['selfdriveState', 'onroadEvents', 'managerState'])
-    q = Queue()
+    q = SIM_MP_CTX.Queue()
     bridge = self.create_bridge()
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
