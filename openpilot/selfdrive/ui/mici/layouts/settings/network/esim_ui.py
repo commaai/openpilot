@@ -1,5 +1,16 @@
+import threading
+import urllib.request
+
+import numpy as np
 import pyray as rl
 from collections.abc import Callable
+from openpilot.cereal.visionipc import VisionStreamType
+
+from openpilot.common import qrcode
+from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationDialog
@@ -38,6 +49,110 @@ class ProfileActionButton(Widget):
                                           self._rect.y + (self._rect.height - self._trash_txt.height) / 2), 0, 1.0, color)
     else:
       gui_label(self._rect, "Aa", 30, color=color, alignment=TextAlignment.CENTER)
+
+
+def _is_valid_lpa_code(text: str) -> bool:
+  if not text.startswith("LPA:"):
+    return False
+  parts = text[4:].split("$")
+  return len(parts) == 3 and all(parts)
+
+
+QR_SCAN_INTERVAL_S = 0.5
+
+
+class QRScannerDialog(NavWidget):
+  def __init__(self, on_qr_detected: Callable[[str], None]):
+    super().__init__()
+    self._on_qr_detected = on_qr_detected
+    self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_CABIN)
+    self._detected = False
+    self._last_scan_time = 0.0
+    self._scan_thread: threading.Thread | None = None
+    self._scan_result: str | None = None
+    self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+
+  def show_event(self):
+    super().show_event()
+    ui_state.params.put_bool("DisableDriverCameraIR", True)
+    ui_state.params.put_bool("IsDriverViewEnabled", True)
+
+  def hide_event(self):
+    super().hide_event()
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
+    ui_state.params.put_bool("DisableDriverCameraIR", False)
+
+  def __del__(self):
+    self._camera_view.close()
+
+  def _update_state(self):
+    super()._update_state()
+    self._camera_view._update_state()
+
+    if self._detected or not self._camera_view.frame:
+      return
+
+    if self._scan_thread is not None:
+      if self._scan_thread.is_alive():
+        return
+      self._scan_thread = None
+      data = self._scan_result
+      if data is not None and _is_valid_lpa_code(data):
+        self._detected = True
+        self.dismiss(lambda: self._on_qr_detected(data))
+        return
+
+    now = rl.get_time()
+    if now - self._last_scan_time < QR_SCAN_INTERVAL_S:
+      return
+    self._last_scan_time = now
+
+    frame = self._camera_view.frame
+    y = np.frombuffer(frame.data, dtype=np.uint8, count=frame.height * frame.stride).reshape(frame.height, frame.stride)
+    gray = y[:, :frame.width].copy()  # the vision buffer is recycled under the scan thread
+    self._scan_thread = threading.Thread(target=self._scan, args=(gray,), daemon=True)
+    self._scan_thread.start()
+
+  def _scan(self, gray: np.ndarray):
+    self._scan_result = qrcode.decode(gray)
+
+  def _render(self, rect):
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    self._camera_view._render(rect)
+
+    if not self._camera_view.frame:
+      gui_label(rect, tr("camera starting"), font_size=54, font_weight=FontWeight.BOLD,
+                alignment=TextAlignment.CENTER)
+    else:
+      label_y = rect.y + rect.height * 3 / 4
+      label_rect = rl.Rectangle(rect.x, label_y + (rect.height - label_y) / 2 - 20, rect.width, 40)
+      gui_label(label_rect, "hold QR code to camera", font_size=32, font_weight=FontWeight.MEDIUM,
+                alignment=TextAlignment.CENTER,
+                color=rl.Color(255, 255, 255, int(255 * 0.9)))
+
+    rl.end_scissor_mode()
+
+
+class InstallingProfileDialog(BigDialog):
+  DOT_STEP = 0.6
+
+  def __init__(self):
+    super().__init__("installing profile", "please wait...")
+    self._show_time = 0.0
+
+  def show_event(self):
+    super().show_event()
+    self._nav_bar._alpha = 0.0
+    self._show_time = rl.get_time()
+
+  def _back_enabled(self) -> bool:
+    return False
+
+  def _render(self, _):
+    t = (rl.get_time() - self._show_time) % (self.DOT_STEP * 2)
+    dots = "." * min(int(t / (self.DOT_STEP / 4)), 3)
+    self._card.set_value(f"please wait{dots}")
+    super()._render(_)
 
 
 class EsimProfileButton(BigButton):
@@ -178,7 +293,13 @@ class EsimUI(NavScroller):
     self._cellular_manager = cellular_manager
     self._profiles_enabled = profiles_enabled
 
-    self._cellular_manager.on_profiles_updated = self._update_buttons
+    self._add_profile_btn = BigButton("add profile", "scan QR code")
+    self._add_profile_btn.set_click_callback(self._on_add_profile)
+    self._scroller.add_widget(self._add_profile_btn)
+    self._installing_dialog: InstallingProfileDialog | None = None
+    self._installing: bool = False
+
+    self._cellular_manager.on_profiles_updated = self._on_profiles_updated
     self._cellular_manager.on_operation_error = self._on_error
 
   def show_event(self):
@@ -186,8 +307,16 @@ class EsimUI(NavScroller):
     self._update_buttons(re_sort=True)
     self._cellular_manager.refresh_profiles()
 
+  def _on_profiles_updated(self):
+    if self._installing_dialog and self._installing:
+      self._installing = False
+      self._installing_dialog.dismiss()
+      self._installing_dialog = None
+
+    self._update_buttons()
+
   def _update_buttons(self, re_sort: bool = False):
-    existing = {btn.profile.iccid: btn for btn in self._scroller.items}
+    existing = {btn.profile.iccid: btn for btn in self._scroller.items if isinstance(btn, EsimProfileButton)}
     buttons = []
     for profile in self._cellular_manager.profiles:
       btn = existing.get(profile.iccid)
@@ -204,8 +333,11 @@ class EsimUI(NavScroller):
     else:
       self._scroller.items[:] = [btn for btn in self._scroller.items if btn in buttons]
 
+    self._scroller.items.append(self._add_profile_btn)
+
   def _move_profile_to_front(self, iccid: str | None, scroll: bool = False):
-    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items) if btn.profile.iccid == iccid), None) if iccid else None
+    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
+                          if isinstance(btn, EsimProfileButton) and btn.profile.iccid == iccid), None) if iccid else None
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
@@ -216,12 +348,51 @@ class EsimUI(NavScroller):
   def _update_state(self):
     super()._update_state()
 
+    self._add_profile_btn.set_enabled(not self._cellular_manager.busy and self._profiles_enabled())
     active = self._cellular_manager.active_profile
     self._move_profile_to_front(active.iccid if active else None)
 
-  def _on_error(self, error: str):
-    dlg = BigDialog("esim error", error)
+  def _on_add_profile(self):
+    scanner = QRScannerDialog(on_qr_detected=self._on_qr_scanned)
+    gui_app.push_widget(scanner)
+
+  def _on_qr_scanned(self, lpa_code: str):
+    self._pending_lpa_code = lpa_code
+    dlg = BigInputDialog("enter a nickname...", minimum_length=0,
+                         confirm_callback=self._on_nickname_for_new_profile)
     gui_app.push_widget(dlg)
+
+  def _on_nickname_for_new_profile(self, nickname: str):
+    self._pending_nickname = nickname.strip() or None
+    self._installing_dialog = InstallingProfileDialog()
+    gui_app.push_widget(self._installing_dialog)
+
+    def check_connectivity():
+      try:
+        req = urllib.request.Request("https://openpilot.comma.ai", method="HEAD")
+        urllib.request.urlopen(req, timeout=2.0)
+        connected = True
+      except Exception:
+        connected = False
+
+      def on_main():
+        if connected:
+          self._installing = True
+          self._cellular_manager.download_profile(self._pending_lpa_code, self._pending_nickname)
+        else:
+          self._on_error("no internet connection\nconnect to wifi or\ncellular to install")
+      self._cellular_manager._enqueue(on_main)
+
+    threading.Thread(target=check_connectivity, daemon=True).start()
+
+  def _on_error(self, error: str):
+    self._installing = False
+    if self._installing_dialog:
+      self._installing_dialog.dismiss(lambda: gui_app.push_widget(BigDialog("esim error", error)))
+      self._installing_dialog = None
+    else:
+      dlg = BigDialog("esim error", error)
+      gui_app.push_widget(dlg)
 
   def _on_profile_clicked(self, profile: Profile):
     if self._cellular_manager.busy or not self._profiles_enabled():
