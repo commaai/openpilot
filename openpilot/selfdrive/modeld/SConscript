@@ -31,8 +31,9 @@ if arch == 'comma_arm64':
   tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
   camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
-  tg_backend = 'CPU'
-  tg_flags = f'DEV=CPU' if arch == 'Darwin' else 'DEV=CPU:LLVM'
+  tg_backend = 'METAL' if arch == 'Darwin' else 'CPU'
+  # JIT=2 disables graph batching, which produces incorrect outputs after buffers change.
+  tg_flags = 'DEV=METAL JIT=2' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
 tg_devices = { # which device to put jit inputs to at runtime
   'openpilot.selfdrive.modeld.dmonitoringmodeld': {
