@@ -2,13 +2,14 @@
 
 #include <string>
 
+#include "common/hardware/hw.h"
 #include "common/timing.h"
 #include "common/util.h"
 #include "tools/cabana/settings.h"
 
 ReplayStream::ReplayStream() {
   unsetenv("ZMQ");
-  setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
+  setenv("COMMA_CACHE", (Path::tmp_dir() + "/comma_download_cache").c_str(), 1);
 
   op_prefix = std::make_unique<OpenpilotPrefix>();
 

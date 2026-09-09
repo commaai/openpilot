@@ -64,7 +64,7 @@ namespace Path {
     if (const char *env = getenv("COMMA_CACHE")) {
       return env;
     }
-    return "/tmp/comma_download_cache" + Path::openpilot_prefix() + "/";
+    return tmp_dir() + "/comma_download_cache" + Path::openpilot_prefix() + "/";
   }
 
  inline std::string shm_path() {
