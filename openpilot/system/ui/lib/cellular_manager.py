@@ -150,5 +150,8 @@ class CellularManager:
 
     self._run_operation(delete, "Failed to delete eSIM profile")
 
+  def download_profile(self, qr: str, nickname: str | None = None):
+    self._run_operation(lambda lpa: lpa.download_profile(qr, nickname), "Failed to download eSIM profile")
+
   def nickname_profile(self, iccid: str, nickname: str):
     self._run_operation(lambda lpa: lpa.nickname_profile(iccid, nickname), "Failed to update eSIM profile nickname")
