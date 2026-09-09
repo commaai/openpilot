@@ -31,7 +31,7 @@ function install_linux_deps() {
   fi
 
   local missing_linux_deps=0
-  for cmd in gcc g++ make curl curl-config git; do
+  for cmd in gcc g++ make curl curl-config git unzip; do
     if ! command -v "$cmd" > /dev/null 2>&1; then
       missing_linux_deps=1
       break
@@ -52,20 +52,20 @@ function install_linux_deps() {
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     $SUDO apt-get update
-    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard
+    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard unzip
   elif command -v dnf > /dev/null 2>&1; then
-    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git unzip
   elif command -v yum > /dev/null 2>&1; then
-    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git unzip
   elif command -v pacman > /dev/null 2>&1; then
-    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git
+    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git unzip
   elif command -v zypper > /dev/null 2>&1; then
     $SUDO zypper --non-interactive refresh
-    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git
+    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git unzip
   elif command -v apk > /dev/null 2>&1; then
-    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git
+    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git unzip
   elif command -v xbps-install > /dev/null 2>&1; then
-    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales
+    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales unzip
   else
     echo "Unsupported Linux distribution. Supported package managers: apt-get, dnf, yum, pacman, zypper, apk, xbps-install."
     exit 1
@@ -118,6 +118,10 @@ function install_python_deps() {
   echo "installing python packages..."
   uv sync --frozen --all-extras
   source .venv/bin/activate
+
+  if ! command -v git-xet > /dev/null 2>&1; then
+    retry 3 bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/huggingface/xet-core/87d2ac9bcd6a1be8ae82ed6fde4116e4e625f98b/git_xet/install.sh | sh'
+  fi
 }
 
 # --- Main ---
