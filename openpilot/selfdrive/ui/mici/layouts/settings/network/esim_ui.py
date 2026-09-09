@@ -301,6 +301,7 @@ class EsimUI(NavScroller):
     self._profiles_enabled = profiles_enabled
 
     self._add_profile_btn = BigButton("add profile", "scan QR code")
+    self._add_profile_btn._click_delay = None
     self._add_profile_btn.set_click_callback(self._on_add_profile)
     self._scroller.add_widget(self._add_profile_btn)
     self._installing_dialog: InstallingProfileDialog | None = None
