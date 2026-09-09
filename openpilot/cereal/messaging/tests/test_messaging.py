@@ -41,6 +41,11 @@ def assert_carstate(cs1, cs2):
     if isinstance(val1, numbers.Number):
       assert val1 == val2, f"{f}: sent '{val1}' vs recvd '{val2}'"
 
+def recv_one_retry_process(sock, timeout):
+  # module level: Windows spawns the process, and a socket cannot be pickled into it
+  messaging.recv_one_retry(messaging.sub_sock(sock, timeout=round(timeout * 1000)))
+
+
 def delayed_send(delay, sock, dat):
   def send_func():
     sock.send(dat)
@@ -148,7 +153,7 @@ class TestMessaging(OpenpilotTestCase):
     sub_sock = messaging.sub_sock(sock, timeout=round(sock_timeout*1000))
 
     # wait 5 socket timeouts and make sure it's still retrying
-    p = multiprocessing.Process(target=messaging.recv_one_retry, args=(sub_sock,))
+    p = multiprocessing.Process(target=recv_one_retry_process, args=(sock, sock_timeout))
     p.start()
     time.sleep(sock_timeout*5)
     assert p.is_alive()
@@ -156,9 +161,9 @@ class TestMessaging(OpenpilotTestCase):
 
     # wait 5 socket timeouts before sending
     msg = random_carstate()
-    start_time = time.monotonic()
+    start_time = time.perf_counter()
     delayed_send(sock_timeout*5, pub_sock, msg.to_bytes())
     recvd = messaging.recv_one_retry(sub_sock)
-    assert (time.monotonic() - start_time) >= sock_timeout*5
+    assert (time.perf_counter() - start_time) >= sock_timeout*5
     assert isinstance(recvd, capnp._DynamicStructReader)
     assert_carstate(msg.carState, recvd.carState)

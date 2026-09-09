@@ -1,5 +1,4 @@
 import errno
-import fcntl
 import os
 import sys
 import pathlib
@@ -13,6 +12,8 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 
 def unblock_stdout() -> None:
+  import fcntl  # POSIX only, keep the module importable on Windows
+
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0:  # parent
