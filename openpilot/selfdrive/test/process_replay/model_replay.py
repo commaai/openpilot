@@ -25,6 +25,8 @@ SEGMENT = 4
 START_FRAME = 0
 END_FRAME = 60
 
+CHESTNUT = "--chestnut" in sys.argv
+
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 DATA_TOKEN = os.getenv("CI_ARTIFACTS_TOKEN","")
@@ -39,7 +41,7 @@ EXEC_TIMINGS = [
 ]
 
 def get_log_fn(test_route, ref="master"):
-  return f"{test_route}_model_tici_{ref}.zst"
+  return f"{test_route}_model_{'chestnut' if CHESTNUT else 'tici'}_{ref}.zst"
 
 def plot(proposed, master, title, tmp):
   proposed = list(proposed)
@@ -170,6 +172,8 @@ def model_replay(lr, frs):
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
   chestnut = any(m.modelV2.big for m in modeld_msgs if m.which() == "modelV2")
+  if CHESTNUT:
+    assert chestnut and all(m.modelV2.big for m in modeld_msgs if m.which() == "modelV2"), "Chestnut replay must run the big model without fallback"
 
   header = ['model', 'max instant', 'max instant allowed', 'average', 'max average allowed', 'test result']
   rows = []
@@ -285,7 +289,8 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
-        comment_replay_report(log_msgs, cmp_log, log_msgs)
+        if not CHESTNUT:
+          comment_replay_report(log_msgs, cmp_log, log_msgs)
         failed = False
         print(diff_long)
       print('-------------\n'*5)
