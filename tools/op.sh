@@ -210,6 +210,11 @@ EOF
   git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
   git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
   git config --local filter.lfs.required true
+  if command -v git-xet > /dev/null 2>&1; then
+    git config --local lfs.customtransfer.xet.path "$(command -v git-xet)"
+    git config --local lfs.customtransfer.xet.args transfer
+    git config --local lfs.customtransfer.xet.direction upload
+  fi
   printf '#!/bin/sh\nlfs_remote=$(git config -f .lfsconfig lfs.pushurl)\nexec .venv/bin/git-lfs pre-push "${lfs_remote%%/info/lfs}" "$2"\n' > "$(git rev-parse --git-path hooks)/pre-push"
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then

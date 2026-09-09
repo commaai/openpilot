@@ -118,19 +118,6 @@ function install_python_deps() {
   echo "installing python packages..."
   uv sync --frozen --all-extras
   source .venv/bin/activate
-
-  local xet_version=0.2.1 xet_os=linux xet_arch="$(uname -m)"
-  [[ "$OSTYPE" == "darwin"* ]] && xet_os=macos
-  [[ "$xet_arch" == "arm64" ]] && xet_arch=aarch64
-  if [[ "$(.venv/bin/git-xet --version 2>/dev/null)" != "git-xet $xet_version" ]]; then
-    curl --retry 3 -fsSL "https://github.com/huggingface/xet-core/releases/download/git-xet-v$xet_version/git-xet-$xet_os-$xet_arch.zip" -o .venv/git-xet.zip
-    python -m zipfile -e .venv/git-xet.zip .venv/bin
-    chmod +x .venv/bin/git-xet
-    rm .venv/git-xet.zip
-  fi
-  git config --local lfs.customtransfer.xet.path .venv/bin/git-xet
-  git config --local lfs.customtransfer.xet.args transfer
-  git config --local lfs.customtransfer.xet.direction upload
 }
 
 # --- Main ---
