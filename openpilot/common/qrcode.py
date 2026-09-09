@@ -108,7 +108,7 @@ def _alignment_positions(version: int) -> list[int]:
   if version == 1:
     return []
   count = version // 7 + 2
-  step = ((version * 4 + count * 2 + 1) // (count * 2 - 2)) * 2
+  step = (version * 8 + count * 3 + 5) // (count * 4 - 4) * 2
   return [6] + [version * 4 + 10 - step * i for i in range(count - 1)][::-1]
 
 
