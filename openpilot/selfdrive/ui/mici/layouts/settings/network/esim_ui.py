@@ -16,6 +16,7 @@ from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationDialog
 from openpilot.common.esim.base import Profile
+from openpilot.common.esim.lpa import parse_lpa_activation_code
 from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, TextAlignment, gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.widgets import Widget
@@ -50,13 +51,6 @@ class ProfileActionButton(Widget):
                                           self._rect.y + (self._rect.height - self._trash_txt.height) / 2), 0, 1.0, color)
     else:
       gui_label(self._rect, "Aa", 30, color=color, alignment=TextAlignment.CENTER)
-
-
-def _is_valid_lpa_code(text: str) -> bool:
-  if not text.startswith("LPA:"):
-    return False
-  parts = text[4:].split("$")
-  return len(parts) == 3 and all(parts)
 
 
 class QRScannerDialog(NavWidget):
@@ -100,12 +94,14 @@ class QRScannerDialog(NavWidget):
       self._scan_thread = None
       data = self._scan_result
       if data is not None:
-        if _is_valid_lpa_code(data):
-          self._detected = True
-          self.dismiss(lambda: self._on_qr_detected(data))
-        else:
+        try:
+          parse_lpa_activation_code(data)
+        except ValueError:
           self._invalid_code_until = now + self.INVALID_CODE_DURATION_S
           self._last_scan_time = self._invalid_code_until
+        else:
+          self._detected = True
+          self.dismiss(lambda: self._on_qr_detected(data))
         return
 
     if now - self._last_scan_time < self.SCAN_INTERVAL_S:
