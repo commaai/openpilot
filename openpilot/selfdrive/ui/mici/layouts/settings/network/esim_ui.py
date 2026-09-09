@@ -20,8 +20,8 @@ from openpilot.common.esim.lpa import parse_lpa_activation_code
 from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, TextAlignment, gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_label
-from openpilot.system.ui.widgets.scroller import NavScroller
+from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
+from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 
 
 class ProfileActionButton(Widget):
@@ -288,9 +288,26 @@ class EsimProfileButton(BigButton):
       self._rename_btn.set_touch_valid_callback(touch_callback)
 
 
-class EsimUI(NavScroller):
-  ERROR_FONT_SIZE = 24
+class EsimErrorDialog(NavRawScrollPanel):
+  def __init__(self, error: str):
+    super().__init__()
+    self._title = UnifiedLabel("esim error", font_size=64, font_weight=FontWeight.BOLD)
+    self._error = UnifiedLabel(error, font_size=36, elide=False)
 
+  def _render(self, rect: rl.Rectangle):
+    width = int(rect.width - 80)
+    title_height = self._title.get_content_height(width)
+    error_height = self._error.get_content_height(width)
+    offset = self._scroll_panel.update(rect, title_height + error_height + 100)
+    y = rect.y + 40 + offset
+
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    self._title.render(rl.Rectangle(rect.x + 40, y, width, title_height))
+    self._error.render(rl.Rectangle(rect.x + 40, y + title_height + 20, width, error_height))
+    rl.end_scissor_mode()
+
+
+class EsimUI(NavScroller):
   def __init__(self, cellular_manager: CellularManager, profiles_enabled: Callable[[], bool]):
     super().__init__()
 
@@ -377,8 +394,7 @@ class EsimUI(NavScroller):
 
   def _on_error(self, error: str):
     cloudlog.error("eSIM error: %s", error)
-    dlg = BigDialog("esim error", error)
-    dlg._card._sub_label.set_font_size(self.ERROR_FONT_SIZE)
+    dlg = EsimErrorDialog(error)
     if self._installing_dialog:
       self._installing_dialog.dismiss(lambda: gui_app.push_widget(dlg))
       self._installing_dialog = None
