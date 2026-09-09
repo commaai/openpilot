@@ -54,7 +54,7 @@ class TestMessaging(OpenpilotTestCase):
       msg = messaging.new_message(evt)
     except capnp.lib.capnp.KjException:
       msg = messaging.new_message(evt, random.randrange(200))
-    assert (time.monotonic() - msg.logMonoTime) < 0.1
+    assert (time.perf_counter() - msg.logMonoTime) < 0.1
     assert not msg.valid
     assert evt == msg.which()
 

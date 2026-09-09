@@ -61,9 +61,9 @@ class TestSubMaster(OpenpilotTestCase):
     sock = random_sock()
     sm = messaging.SubMaster([sock,])
     timeout = random.randrange(10, 30)
-    start_time = time.monotonic()
+    start_time = time.perf_counter()
     sm.update(timeout)
-    t = time.monotonic() - start_time
+    t = time.perf_counter() - start_time
     assert t >= timeout/1000.
     assert t < 0.1
     assert not any(sm.updated.values())
