@@ -390,7 +390,7 @@ class EsimUI(NavScroller):
           self._installing = True
           self._cellular_manager.download_profile(self._pending_lpa_code, self._pending_nickname)
         else:
-          self._on_error("no internet connection\nconnect to wifi or\ncellular to install")
+          self._on_error("no internet connection. connect to wifi or cellular to install")
       self._cellular_manager._enqueue(on_main)
 
     threading.Thread(target=check_connectivity, daemon=True).start()
