@@ -209,7 +209,8 @@ class EsimProfileButton(BigButton):
 
   def _on_rename(self):
     current = self._profile.nickname or ""
-    dlg = BigInputDialog("nickname", default_text=current, minimum_length=0, confirm_callback=self._on_nickname_entered)
+    dlg = BigInputDialog("nickname", default_text=current, confirm_callback=self._on_nickname_entered,
+                         text_validator=lambda text: bool(text.strip()))
     gui_app.push_widget(dlg)
 
   def _on_delete(self):
@@ -383,14 +384,14 @@ class EsimUI(NavScroller):
     gui_app.push_widget(QRScannerDialog(on_qr_detected=self._on_qr_scanned))
 
   def _on_qr_scanned(self, lpa_code: str):
-    dlg = BigInputDialog("enter a nickname...", minimum_length=0,
+    dlg = BigInputDialog("enter a nickname...", text_validator=lambda text: bool(text.strip()),
                          confirm_callback=lambda nickname: self._download_profile(lpa_code, nickname))
     gui_app.push_widget(dlg)
 
   def _download_profile(self, lpa_code: str, nickname: str):
     self._installing_dialog = InstallingProfileDialog()
     gui_app.push_widget(self._installing_dialog)
-    self._cellular_manager.download_profile(lpa_code, nickname.strip() or None)
+    self._cellular_manager.download_profile(lpa_code, nickname.strip())
 
   def _on_error(self, error: str):
     cloudlog.error("eSIM error: %s", error)
