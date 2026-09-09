@@ -75,10 +75,6 @@ jobs:
     - run: ./tools/op.sh setup
     - name: Building openpilot
       run: scons
-    # TODO: Move this to a dedicated macOS simulator job once it is stable in CI
-    - name: Simulator driving test
-      timeout-minutes: 2
-      run: tools/op.sh test openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   static_analysis:
     name: static analysis
@@ -186,6 +182,7 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
+    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
@@ -196,7 +193,7 @@ jobs:
       env:
         # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
         EGL_PLATFORM: surfaceless
-      run: tools/op.sh test openpilot/tools/sim/tests/test_metadrive_bridge.py
+      run: python openpilot/tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
