@@ -59,10 +59,10 @@ def _is_valid_lpa_code(text: str) -> bool:
   return len(parts) == 3 and all(parts)
 
 
-QR_SCAN_INTERVAL_S = 0.25
-
-
 class QRScannerDialog(NavWidget):
+  SCAN_INTERVAL_S = 0.25
+  INVALID_CODE_DURATION_S = 1.0
+
   def __init__(self, on_qr_detected: Callable[[str], None]):
     super().__init__()
     self._on_qr_detected = on_qr_detected
@@ -105,11 +105,11 @@ class QRScannerDialog(NavWidget):
           self._detected = True
           self.dismiss(lambda: self._on_qr_detected(data))
         else:
-          self._invalid_code_until = now + 1.0
+          self._invalid_code_until = now + self.INVALID_CODE_DURATION_S
           self._last_scan_time = self._invalid_code_until
         return
 
-    if now - self._last_scan_time < QR_SCAN_INTERVAL_S:
+    if now - self._last_scan_time < self.SCAN_INTERVAL_S:
       return
     self._last_scan_time = now
 
@@ -294,6 +294,8 @@ class EsimProfileButton(BigButton):
 
 
 class EsimUI(NavScroller):
+  ERROR_FONT_SIZE = 24
+
   def __init__(self, cellular_manager: CellularManager, profiles_enabled: Callable[[], bool]):
     super().__init__()
 
@@ -387,7 +389,7 @@ class EsimUI(NavScroller):
     cloudlog.error("eSIM error: %s", error)
     self._installing = False
     dlg = BigDialog("esim error", error)
-    dlg._card._sub_label.set_font_size(24)
+    dlg._card._sub_label.set_font_size(self.ERROR_FONT_SIZE)
     if self._installing_dialog:
       self._installing_dialog.dismiss(lambda: gui_app.push_widget(dlg))
       self._installing_dialog = None
