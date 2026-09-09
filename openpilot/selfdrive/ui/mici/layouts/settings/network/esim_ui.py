@@ -58,7 +58,7 @@ def _is_valid_lpa_code(text: str) -> bool:
   return len(parts) == 3 and all(parts)
 
 
-QR_SCAN_INTERVAL_S = 0.5
+QR_SCAN_INTERVAL_S = 0.25
 
 
 class QRScannerDialog(NavWidget):
