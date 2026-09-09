@@ -180,10 +180,24 @@ wheels = [
 name = "comma-deps-eigen"
 version = "3.4.0.post98"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform != 'win32'",
+]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3e/2f/89011c71976da6e1c3d7be315afa3d86ff25deeada1ad2319ac6be0e18ea/comma_deps_eigen-3.4.0.post98-py3-none-macosx_11_0_arm64.whl", hash = "sha256:bd182634cf4fa537e7815238d3135e6e89be5826421a495be92258c6c388b527", size = 2275893, upload-time = "2026-07-23T17:01:44.622Z" },
     { url = "https://files.pythonhosted.org/packages/2c/61/fcd4ad536c51437ee73ac255f3b8a23fb5f21bb1f96e834d8036c3bbcf08/comma_deps_eigen-3.4.0.post98-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:250c15f6217c37736a2f54298d01f6e32f6e977faa87cc358de67ea3d121725e", size = 2275896, upload-time = "2026-07-23T17:01:48.397Z" },
     { url = "https://files.pythonhosted.org/packages/d3/a2/2b7633fe5a5a2914900933393c315e9bd86e8fb7bbbe328d3a220eaf2027/comma_deps_eigen-3.4.0.post98-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:dee9eb6c6c7e58201d7a36611857b7b3f3ba70f888ee07493fef2ea41d0d2cae", size = 2275898, upload-time = "2026-07-23T17:01:52.179Z" },
+]
+
+[[package]]
+name = "comma-deps-eigen"
+version = "3.4.0.post116"
+source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+]
+wheels = [
+    { url = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/comma_deps_eigen-3.4.0.post116-py3-none-win_amd64.whl", hash = "sha256:4ad9b58b90d9df72b5b32940fbab6cfb2cd3727f9ee16930e4c36134abf4d0c4" },
 ]
 
 [[package]]
@@ -776,7 +790,7 @@ provides-extras = ["testing", "examples"]
 [package.metadata.requires-dev]
 testing = [
     { name = "comma-car-segments", url = "https://huggingface.co/datasets/commaai/commaCarSegments/resolve/main/dist/comma_car_segments-0.1.0-py3-none-any.whl" },
-    { name = "cppcheck", git = "https://github.com/commaai/dependencies.git?subdirectory=cppcheck&rev=release-cppcheck" },
+    { name = "comma-deps-cppcheck", marker = "python_full_version >= '3.12'" },
 ]
 
 [[package]]
@@ -930,9 +944,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cffi", marker = "extra == 'dev'" },
-    { name = "cppcheck", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=cppcheck&rev=release-cppcheck" },
+    { name = "comma-deps-cppcheck", marker = "python_full_version >= '3.12' and extra == 'dev'" },
+    { name = "comma-deps-gcc-arm-none-eabi", marker = "python_full_version >= '3.12' and extra == 'dev'" },
     { name = "flaky", marker = "extra == 'dev'" },
-    { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=release-gcc-arm-none-eabi" },
     { name = "libusb-package" },
     { name = "libusb1" },
     { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=master" },
@@ -1074,7 +1088,8 @@ version = "0.0.1"
 source = { editable = "rednose_repo" }
 dependencies = [
     { name = "cffi" },
-    { name = "comma-deps-eigen" },
+    { name = "comma-deps-eigen", version = "3.4.0.post98", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-eigen", version = "3.4.0.post116", source = { registry = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" }, marker = "sys_platform == 'win32'" },
     { name = "cython" },
     { name = "numpy" },
     { name = "scons" },
@@ -1085,7 +1100,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cffi" },
-    { name = "comma-deps-eigen" },
+    { name = "comma-deps-eigen", marker = "sys_platform != 'win32'" },
+    { name = "comma-deps-eigen", marker = "sys_platform == 'win32'", index = "https://github.com/AmyJeanes/commaai-dependencies/releases/download/windows-post116/index.html" },
     { name = "cython" },
     { name = "numpy" },
     { name = "ruff", marker = "extra == 'dev'" },

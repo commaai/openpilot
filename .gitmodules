@@ -1,15 +1,19 @@
 [submodule "panda"]
   path = panda
-  url = ../../commaai/panda.git
+  # --- TODO REMOVE AFTER THE SUBMODULE PRS MERGE (commaai/panda#2427): the pinned commit is on the fork branch behind that PR ---
+  url = https://github.com/AmyJeanes/panda.git
 [submodule "opendbc"]
   path = opendbc_repo
-  url = ../../commaai/opendbc.git
+  # --- TODO REMOVE AFTER THE SUBMODULE PRS MERGE (commaai/opendbc#3724): the pinned commit is on the fork branch behind that PR ---
+  url = https://github.com/AmyJeanes/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
-  url = ../../commaai/msgq.git
+  # --- TODO REMOVE AFTER THE SUBMODULE PRS MERGE (commaai/msgq#709): the pinned commit is on the fork branch behind that PR ---
+  url = https://github.com/AmyJeanes/msgq.git
 [submodule "rednose_repo"]
   path = rednose_repo
-  url = ../../commaai/rednose.git
+  # --- TODO REMOVE AFTER THE SUBMODULE PRS MERGE (commaai/rednose#61): the pinned commit is on the fork branch behind that PR ---
+  url = https://github.com/AmyJeanes/rednose.git
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
   url = ../../commaai/teleoprtc
