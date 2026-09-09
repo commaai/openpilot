@@ -270,21 +270,16 @@ _ALIGNMENT = np.ones((5, 5), dtype=bool)
 _ALIGNMENT[1:4, 1:4] = False
 _ALIGNMENT[2, 2] = True
 
+
 def _gf_inv(a: int) -> int:
   return _EXP[-_LOG[a] % 255]
 
 
-def _format_coords(dim: int) -> tuple[list[tuple[int, int]], list[tuple[int, int]]]:
-  """The two copies of the format info as (row, col) lists, most significant bit first."""
-  a = [(8, i) for i in range(6)] + [(8, 7), (8, 8), (7, 8)] + [(5 - i, 8) for i in range(6)]
-  b = [(dim - 1 - i, 8) for i in range(7)] + [(8, dim - 8 + i) for i in range(8)]
-  return a, b
-
-
-def _function_mask(version: int) -> np.ndarray:
-  """True for the modules that are not data or error correction."""
+@functools.lru_cache
+def _data_coords(version: int) -> tuple[np.ndarray, np.ndarray]:
+  """(rows, cols) of the data and error correction modules in placement order: two-column zigzag from the right."""
   dim = version * 4 + 17
-  func = np.zeros((dim, dim), dtype=bool)
+  func = np.zeros((dim, dim), dtype=bool)  # finder, timing, alignment, format, and version modules
   func[:9, :9] = func[:9, dim - 8:] = func[dim - 8:, :9] = True
   func[6, :] = func[:, 6] = True
   positions = _alignment_positions(version)
@@ -293,14 +288,6 @@ def _function_mask(version: int) -> np.ndarray:
       func[r - 2:r + 3, c - 2:c + 3] = True
   if version >= 7:
     func[:6, dim - 11:dim - 8] = func[dim - 11:dim - 8, :6] = True
-  return func
-
-
-@functools.lru_cache
-def _data_coords(version: int) -> tuple[np.ndarray, np.ndarray]:
-  """(rows, cols) of the non-function modules in placement order: two-column zigzag from the right."""
-  dim = version * 4 + 17
-  func = _function_mask(version)
   ys = np.arange(dim)
   rows, cols = [], []
   # the vertical timing column is skipped, so the pairs left of it start at odd columns
@@ -325,20 +312,14 @@ def _poly_eval(p: list[int], x: int) -> int:
 
 
 _EXP_TABLE = np.array(_EXP)
-_LOG_TABLE = np.zeros(256, dtype=int)
-_LOG_TABLE[_EXP] = np.arange(255)
-
-
-@functools.lru_cache
-def _syndrome_exponents(n: int, nsym: int) -> np.ndarray:
-  """Exponent of alpha for codeword j in syndrome i, msg highest degree first."""
-  return np.arange(nsym)[:, None] * (n - 1 - np.arange(n))[None, :] % 255
+_LOG_TABLE = np.array([_LOG.get(v, 0) for v in range(256)])
 
 
 def _syndromes(msg: list[int], nsym: int) -> list[int]:
+  """syn[i] = msg(alpha^i), msg highest degree first."""
   m = np.array(msg)
-  terms = _EXP_TABLE[(_LOG_TABLE[m] + _syndrome_exponents(len(msg), nsym)) % 255] * (m != 0)
-  return np.bitwise_xor.reduce(terms, axis=1).tolist()
+  exponents = np.arange(nsym)[:, None] * (len(msg) - 1 - np.arange(len(msg)))
+  return np.bitwise_xor.reduce(_EXP_TABLE[(_LOG_TABLE[m] + exponents) % 255] * (m != 0), axis=1).tolist()
 
 
 def _rs_correct(msg: list[int], nsym: int) -> list[int]:
@@ -398,18 +379,14 @@ def _rs_correct(msg: list[int], nsym: int) -> list[int]:
   return msg
 
 
-def _mask_pattern(index: int, dim: int) -> np.ndarray:
-  rows, cols = np.mgrid[0:dim, 0:dim]
-  return _MASKS[index](rows, cols)
-
-
 def _read_format(m: np.ndarray) -> int:
   """Returns the closest format info (level bits << 3 | mask) from either copy."""
+  dim = m.shape[0]
+  copies = ([(8, i) for i in range(6)] + [(8, 7), (8, 8), (7, 8)] + [(5 - i, 8) for i in range(6)],
+            [(dim - 1 - i, 8) for i in range(7)] + [(8, dim - 8 + i) for i in range(8)])  # (row, col), msb first
   candidates = []
-  for coords in _format_coords(m.shape[0]):
-    bits = 0
-    for r, c in coords:
-      bits = bits << 1 | int(m[r, c])
+  for coords in copies:
+    bits = int("".join(str(int(m[r, c])) for r, c in coords), 2)
     candidates += [((bits ^ f).bit_count(), i) for i, f in enumerate(_FORMATS)]
   distance, fmt = min(candidates)
   if distance > 3:
@@ -456,34 +433,26 @@ def _parse_data(data: list[int], version: int) -> str:
       break
     if mode == 7:  # ECI character set assignment
       first = bits.read(8)
-      if first < 0x80:
-        assignment = first
-      elif first < 0xC0:
-        assignment = (first & 0x3F) << 8 | bits.read(8)
-      elif first < 0xE0:
-        assignment = (first & 0x1F) << 16 | bits.read(16)
-      else:
+      extra = 0 if first < 0x80 else 8 if first < 0xC0 else 16 if first < 0xE0 else -1  # 1, 2, or 3 byte assignment
+      if extra < 0:
         raise QRError("bad ECI assignment")
+      assignment = (first & 0x7F >> extra // 8) << extra | bits.read(extra)
       encoding = _ECI_ENCODINGS.get(assignment)
       if encoding is None:
         raise QRError(f"unsupported ECI assignment {assignment}")
     elif mode == 1:
       n = bits.read((10, 12, 14)[band])
-      while n >= 3:
-        out.append(f"{bits.read_below(10, 1000):03d}")
-        n -= 3
-      if n == 2:
-        out.append(f"{bits.read_below(7, 100):02d}")
-      elif n == 1:
-        out.append(str(bits.read_below(4, 10)))
+      while n > 0:
+        k = min(n, 3)  # 3 digits in 10 bits, the last 2 or 1 in 7 or 4
+        out.append(f"{bits.read_below((4, 7, 10)[k - 1], 10 ** k):0{k}d}")
+        n -= k
     elif mode == 2:
       n = bits.read((9, 11, 13)[band])
-      while n >= 2:
-        v = bits.read_below(11, 45 * 45)
-        out.append(_ALNUM[v // 45] + _ALNUM[v % 45])
-        n -= 2
-      if n:
-        out.append(_ALNUM[bits.read_below(6, 45)])
+      while n > 0:
+        k = min(n, 2)  # 2 characters in 11 bits, a last one in 6
+        v = bits.read_below((6, 11)[k - 1], 45 ** k)
+        out.append(_ALNUM[v // 45] * (k - 1) + _ALNUM[v % 45])
+        n -= k
     elif mode == 4:
       n = bits.read((8, 16, 16)[band])
       segment = bytes(bits.read(8) for _ in range(n))
@@ -518,7 +487,7 @@ def decode_matrix(m: np.ndarray) -> str:
   fmt = _read_format(m)
   level = _LEVELS[fmt >> 3]
   rows, cols = _data_coords(version)
-  bits = m[rows, cols] ^ _mask_pattern(fmt & 7, dim)[rows, cols]
+  bits = m[rows, cols] ^ _MASKS[fmt & 7](rows, cols)
   codewords = np.packbits(bits[:len(bits) // 8 * 8]).tolist()
 
   ec, _ = _EC[version - 1][level]
@@ -557,7 +526,7 @@ def _binarize(gray: np.ndarray) -> np.ndarray:
   B = max(8, min(h, w) // 128 * 2)
   H, W = -(-h // B), -(-w // B)
   padded = np.pad(gray, ((0, H * B - h), (0, W * B - w)), mode="edge")
-  # block statistics from a subsample are plenty; gather each tile's samples into the last axis
+  # block statistics from a subsample are plenty
   sub = np.ascontiguousarray(padded[::2, ::2].reshape(H, B // 2, W, B // 2).transpose(0, 2, 1, 3)).reshape(H, W, -1)
   blocks = sub.sum(axis=2, dtype=np.uint32) / sub.shape[2]
   known = sub.max(axis=2) - sub.min(axis=2) >= 32
@@ -631,7 +600,6 @@ def _find_patterns(binary: np.ndarray, ratios: tuple[int, ...]) -> list[tuple[fl
   _, cx, hmod = rows_t.check(first, ratios)
   row = rows_t.starts[first] // rows_t.stride * step
 
-  # confirm each candidate along its column, then again along the row through the refined center
   xi = cx.astype(int)
   xs, col = np.unique(xi, return_inverse=True)
   cols_t = _Runs(np.pad(binary[:, xs].T, ((0, 0), (1, 1))))
@@ -684,14 +652,11 @@ def _pick_finders(patterns: list[tuple[float, float, float]]) -> tuple[np.ndarra
 
 
 def _perspective(src: np.ndarray, dst: np.ndarray) -> np.ndarray:
-  A, b = [], []
-  for (x, y), (u, v) in zip(src, dst, strict=True):
-    A.append([x, y, 1, 0, 0, 0, -u * x, -u * y])
-    b.append(u)
-    A.append([0, 0, 0, x, y, 1, -v * x, -v * y])
-    b.append(v)
+  """Homography mapping the four src points onto the four dst points."""
+  A = [row for (x, y), (u, v) in zip(src, dst, strict=True)
+       for row in ([x, y, 1, 0, 0, 0, -u * x, -u * y], [0, 0, 0, x, y, 1, -v * x, -v * y])]
   try:
-    h = np.linalg.solve(np.array(A, dtype=float), np.array(b, dtype=float))
+    h = np.linalg.solve(np.array(A, dtype=float), np.asarray(dst, dtype=float).ravel())
   except np.linalg.LinAlgError as e:
     raise QRError("degenerate geometry") from e
   return np.append(h, 1).reshape(3, 3)
@@ -708,8 +673,8 @@ def _match_alignment(binary: np.ndarray, est: np.ndarray, offs: np.ndarray, r: i
   dx = np.arange(max(0, int(est[0]) - r), min(w, int(est[0]) + r)) - est[0]
   if len(dy) == 0 or len(dx) == 0:
     return None
-  y = np.rint(est[1] + dy[:, None, None] + offs[None, None, :, 1]).astype(int)  # (ny, 1, 25)
-  x = np.rint(est[0] + dx[None, :, None] + offs[None, None, :, 0]).astype(int)  # (1, nx, 25)
+  y = np.rint(est[1] + dy[:, None, None] + offs[None, None, :, 1]).astype(int)
+  x = np.rint(est[0] + dx[None, :, None] + offs[None, None, :, 0]).astype(int)
   valid = ((y >= 0) & (y < h) & (x >= 0) & (x < w)).all(axis=2)
   samples = binary[np.clip(y, 0, h - 1), np.clip(x, 0, w - 1)]
   score = np.where(valid, (samples == _ALIGNMENT.ravel()).sum(axis=2), 0)
@@ -764,17 +729,11 @@ def decode(gray: np.ndarray) -> str | None:
 
   d = (np.linalg.norm(tr - tl) + np.linalg.norm(bl - tl)) / 2
   dim = int(round((d / module + 7 - 17) / 4)) * 4 + 17
-  for cand in (dim, dim - 4, dim + 4):
-    if not 21 <= cand <= 177:
-      continue
-    for use_alignment in (True, False):
-      try:
-        m = _sample(binary, tl, tr, bl, module, cand, use_alignment)
-      except QRError:
-        continue
-      for mat in (m, m.T):
-        try:
-          return decode_matrix(mat)
-        except QRError:
-          pass
+  dims = [cand for cand in (dim, dim - 4, dim + 4) if 21 <= cand <= 177]
+  for cand, use_alignment, transpose in itertools.product(dims, (True, False), (False, True)):
+    try:
+      m = _sample(binary, tl, tr, bl, module, cand, use_alignment)
+      return decode_matrix(m.T if transpose else m)
+    except QRError:
+      pass
   return None

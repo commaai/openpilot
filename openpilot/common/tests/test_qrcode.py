@@ -175,5 +175,4 @@ class TestQRCode(OpenpilotTestCase):
   def test_encoder_roundtrip(self):
     for version in range(1, 21):
       with self.subTest(version=version):
-        data = "hello"
-        assert qr.decode_matrix(np.array(qr._Qr(version, data.encode()).modules)) == data
+        assert qr.decode_matrix(np.array(qr._Qr(version, b"hello").modules)) == "hello"
