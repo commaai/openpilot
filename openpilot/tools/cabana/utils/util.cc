@@ -14,13 +14,18 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
-#include <sys/socket.h>
+#ifdef _WIN32
+#include <io.h>
+#define pipe(fds) _pipe(fds, 64, _O_BINARY)
+#else
 #include <sys/wait.h>
+#endif
 #include <unistd.h>
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
 
+#include "common/hardware/hw.h"
 #include "common/util.h"
 
 static const std::thread::id main_thread_id = std::this_thread::get_id();
@@ -82,14 +87,14 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 // UnixSignalHandler
 
 UnixSignalHandler::UnixSignalHandler(std::function<void()> on_signal) {
-  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
-    fprintf(stderr, "Couldn't create TERM socketpair\n");
+  if (::pipe(sig_fd)) {
+    fprintf(stderr, "Couldn't create TERM pipe\n");
     abort();
   }
 
   waiter = std::thread([this, on_signal = std::move(on_signal)]() {
     int tmp = 0;
-    while (::read(sig_fd[1], &tmp, sizeof(tmp)) < 0) {
+    while (::read(sig_fd[0], &tmp, sizeof(tmp)) < 0) {
       if (errno != EINTR) return;
     }
     if (shutting_down.load()) return;
@@ -104,14 +109,14 @@ UnixSignalHandler::UnixSignalHandler(std::function<void()> on_signal) {
 UnixSignalHandler::~UnixSignalHandler() {
   shutting_down.store(true);
   int dummy = 0;
-  (void)!::write(sig_fd[0], &dummy, sizeof(dummy));
+  (void)!::write(sig_fd[1], &dummy, sizeof(dummy));
   if (waiter.joinable()) waiter.join();
   ::close(sig_fd[0]);
   ::close(sig_fd[1]);
 }
 
 void UnixSignalHandler::signalHandler(int s) {
-  (void)!::write(sig_fd[0], &s, sizeof(s));
+  (void)!::write(sig_fd[1], &s, sizeof(s));
 }
 
 // validators
@@ -243,8 +248,7 @@ static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
 
 namespace utils {
 std::string homePath() {
-  const char *home = ::getenv("HOME");
-  return home ? home : "";
+  return Path::home();
 }
 
 std::filesystem::path configPath() {
@@ -259,6 +263,9 @@ std::filesystem::path configPath() {
 #ifdef __APPLE__
 static const char *clipboard_read_cmds[] = {"pbpaste"};
 static const char *clipboard_write_cmds[] = {"pbcopy"};
+#elif defined(_WIN32)
+static const char *clipboard_read_cmds[] = {"powershell -NoProfile -Command Get-Clipboard -Raw"};
+static const char *clipboard_write_cmds[] = {"clip"};
 #else
 static const char *clipboard_read_cmds[] = {"wl-paste --no-newline 2>/dev/null", "xclip -selection clipboard -o 2>/dev/null", "xsel -ob 2>/dev/null"};
 static const char *clipboard_write_cmds[] = {"wl-copy 2>/dev/null", "xclip -selection clipboard 2>/dev/null", "xsel -ib 2>/dev/null"};
@@ -284,7 +291,9 @@ bool getClipboardText(std::string *text) {
 }
 
 bool setClipboardText(const std::string &text) {
+#ifdef SIGPIPE
   std::signal(SIGPIPE, SIG_IGN);
+#endif
   for (const char *cmd : clipboard_write_cmds) {
     FILE *f = ::popen(cmd, "w");
     if (!f) continue;
@@ -317,6 +326,10 @@ std::filesystem::path executableDir() {
   std::error_code ec;
   auto path = std::filesystem::canonical(buf, ec);
   return (ec ? std::filesystem::path(buf) : path).parent_path();
+#elif defined(_WIN32)
+  char *exe = nullptr;
+  _get_pgmptr(&exe);
+  return std::filesystem::path(exe).parent_path();
 #else
   return std::filesystem::path(util::readlink("/proc/self/exe")).parent_path();
 #endif

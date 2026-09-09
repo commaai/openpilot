@@ -3,7 +3,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 
 std::string read_file_or_throw(const std::filesystem::path &path) {
   const std::string contents = util::read_file(path.string());

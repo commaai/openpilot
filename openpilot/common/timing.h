@@ -3,8 +3,11 @@
 #include <cstdint>
 #include <ctime>
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(_WIN32)
 #define CLOCK_BOOTTIME CLOCK_MONOTONIC
+#endif
+#ifdef _WIN32
+#define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
 #endif
 
 static inline uint64_t nanos_since_boot() {

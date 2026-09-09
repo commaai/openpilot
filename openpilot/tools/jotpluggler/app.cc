@@ -257,7 +257,7 @@ void configure_style() {
   font_cfg.RasterizerDensity = 1.0f;
   icon_add_font(16.0f);
   const auto add_font_with_icons = [&](const fs::path &path, float size) -> ImFont * {
-    ImFont *font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, &font_cfg);
+    ImFont *font = io.Fonts->AddFontFromFileTTF(path.string().c_str(), size, &font_cfg);
     if (font != nullptr) {
       icon_add_font(size, true, font);
     }

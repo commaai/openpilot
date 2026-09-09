@@ -1,9 +1,11 @@
 import os
 import platform
+import sys
 from pathlib import Path
 
 from openpilot.common.hardware import PC
 
+TMP_DIR = os.environ.get("TEMP", "/tmp")  # Path::tmp_dir()
 DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache"
 
 class Paths:
@@ -29,7 +31,14 @@ class Paths:
 
   @staticmethod
   def swaglog_ipc() -> str:
-    return "ipc:///tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
+    prefix = os.environ.get("OPENPILOT_PREFIX", "")
+    if sys.platform == "win32":
+      # libzmq has no ipc:// transport on MinGW: derive a loopback port from the prefix (FNV-1a, mirrored in hw.h)
+      h = 14695981039346656037
+      for c in prefix.encode():
+        h = ((h ^ c) * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+      return f"tcp://127.0.0.1:{26000 + h % 1000}"
+    return "ipc:///tmp/logmessage" + prefix
 
   @staticmethod
   def download_cache_root() -> str:
@@ -55,4 +64,6 @@ class Paths:
   def shm_path() -> str:
     if PC and platform.system() == "Darwin":
       return "/tmp"  # This is not really shared memory on macOS, but it's the closest we can get
+    if sys.platform == "win32":
+      return TMP_DIR  # msgq reads %TEMP% for the same directory
     return "/dev/shm"

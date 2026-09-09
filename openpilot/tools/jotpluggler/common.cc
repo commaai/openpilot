@@ -148,7 +148,9 @@ bool app_begin_popup_modal(const char *name, bool *p_open, ImGuiWindowFlags flag
 }
 
 void open_external_url(std::string_view url) {
-#ifdef __APPLE__
+#if defined(_WIN32)
+  const std::string command = "start \"\" \"" + std::string(url) + "\"";
+#elif defined(__APPLE__)
   const std::string command = "open " + shell_quote(url) + " &";
 #else
   const std::string command = "xdg-open " + shell_quote(url) + " >/dev/null 2>&1 &";

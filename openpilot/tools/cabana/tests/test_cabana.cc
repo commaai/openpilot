@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "common/tests/native_test.h"
+#include "common/util.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"

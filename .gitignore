@@ -39,6 +39,9 @@ bin/
 *.os-*
 *.so
 *.a
+*.dll
+*.pyd
+*.exe
 st[0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z]
 *.unchunked
 *.clb

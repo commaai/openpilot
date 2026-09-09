@@ -183,7 +183,7 @@ class Generator:
     if elem_scalar is not None:
       self.emit(indent, f"if ({list_expr}.size() <= 16) {{")
       index_var = self.tmp("i")
-      self.emit(indent + 2, f"for (uint {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
+      self.emit(indent + 2, f"for (unsigned int {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
       item_series = self.tmp("item_series")
       self.emit(indent + 4, f"RouteSeries *{item_series} = ensure_list_scalar_series({base_path_var}, {index_var}, series);")
       if elem_scalar == "Enum":
@@ -195,7 +195,7 @@ class Generator:
 
     if elem_kind in {"struct", "list"}:
       index_var = self.tmp("i")
-      self.emit(indent, f"for (uint {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
+      self.emit(indent, f"for (unsigned int {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
       item_path = self.tmp("item_path")
       self.emit(indent + 2, f"const std::string {item_path} = {base_path_var} + \"/\" + std::to_string({index_var});")
       item = self.tmp("item")

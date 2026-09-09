@@ -5,14 +5,18 @@
 #include <cstdio>
 #include <cstring>
 #include <mutex>
+#include <thread>
+#include <vector>
+#ifdef _WIN32
+#include "common/win32.h"
+#else
 #include <spawn.h>
 #ifdef __APPLE__
 #include <crt_externs.h>
 #endif
 #include <sys/wait.h>
-#include <thread>
 #include <unistd.h>
-#include <vector>
+#endif
 
 #include "tools/replay/util.h"
 
@@ -30,6 +34,84 @@ void reportProgress(const char *line) {
 
 // Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
 // through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
+#ifdef _WIN32
+static void readLines(HANDLE pipe, const std::function<void(const std::string &)> &on_line) {
+  std::string buf;
+  char chunk[4096];
+  for (DWORD n = 0; ReadFile(pipe, chunk, sizeof(chunk), &n, nullptr) && n > 0;) {
+    buf.append(chunk, n);
+    for (size_t nl; (nl = buf.find('\n')) != std::string::npos; buf.erase(0, nl + 1)) on_line(buf.substr(0, nl + 1));
+  }
+  if (!buf.empty()) on_line(buf);
+  CloseHandle(pipe);
+}
+
+std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+  std::string cmdline = "python3 -m openpilot.tools.lib.file_downloader";
+  for (const auto &a : args) cmdline += " \"" + a + "\"";
+  // the child must not inherit OPENPILOT_PREFIX, the parent's IPC namespace
+  std::string env;
+  LPCH block = GetEnvironmentStringsA();
+  for (const char *e = block; *e; e += strlen(e) + 1) {
+    if (strncmp(e, "OPENPILOT_PREFIX=", 17) != 0) env.append(e, strlen(e) + 1);
+  }
+  FreeEnvironmentStringsA(block);
+  env.push_back('\0');
+
+  SECURITY_ATTRIBUTES inheritable = {sizeof(inheritable), nullptr, TRUE};
+  HANDLE out[2], err[2];  // read end, write end
+  if (!CreatePipe(&out[0], &out[1], &inheritable, 0) || !CreatePipe(&err[0], &err[1], &inheritable, 0)) {
+    rWarning("py_downloader: CreatePipe() failed");
+    return {};
+  }
+  SetHandleInformation(out[0], HANDLE_FLAG_INHERIT, 0);
+  SetHandleInformation(err[0], HANDLE_FLAG_INHERIT, 0);
+  STARTUPINFOA si = {sizeof(si)};
+  si.dwFlags = STARTF_USESTDHANDLES;
+  si.hStdInput = INVALID_HANDLE_VALUE;
+  si.hStdOutput = out[1];
+  si.hStdError = err[1];
+  PROCESS_INFORMATION pi;
+  bool started = CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, env.data(), nullptr, &si, &pi);
+  CloseHandle(out[1]);
+  CloseHandle(err[1]);
+  if (!started) {
+    rWarning("py_downloader: CreateProcess() failed: %lu", GetLastError());
+    CloseHandle(out[0]);
+    CloseHandle(err[0]);
+    return {};
+  }
+  CloseHandle(pi.hThread);
+
+  std::string stdout_data;
+  std::thread stdout_thread(readLines, out[0], [&](const std::string &line) { stdout_data += line; });
+  std::thread stderr_thread(readLines, err[0], [](const std::string &line) {
+    if (strncmp(line.c_str(), "PROGRESS:", 9) == 0) {
+      reportProgress(line.c_str());
+    } else {
+      fputs(line.c_str(), stderr);
+    }
+  });
+  while (WaitForSingleObject(pi.hProcess, 100) == WAIT_TIMEOUT) {
+    if (abort && *abort) TerminateProcess(pi.hProcess, 1);
+  }
+  stdout_thread.join();
+  stderr_thread.join();
+  DWORD code = 1;
+  GetExitCodeProcess(pi.hProcess, &code);
+  CloseHandle(pi.hProcess);
+
+  const bool aborted = abort && *abort;
+  if (aborted || code != 0) {
+    if (!aborted) rWarning("py_downloader: process exited with code %lu", code);
+    std::lock_guard<std::mutex> lk(handler_mutex);
+    if (progress_handler) progress_handler(0, 0, false);
+    return {};
+  }
+  while (!stdout_data.empty() && (stdout_data.back() == '\n' || stdout_data.back() == '\r')) stdout_data.pop_back();
+  return stdout_data;
+}
+#else
 std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
   // Build argv for the downloader module
   std::vector<const char *> argv;
@@ -200,6 +282,7 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
 
   return stdout_data;
 }
+#endif
 
 }  // namespace
 

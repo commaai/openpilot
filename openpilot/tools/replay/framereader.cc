@@ -40,7 +40,7 @@ struct DecoderManager {
     }
 
     std::unique_ptr<VideoDecoder> decoder;
-    #ifndef __APPLE__
+    #ifdef __linux__
     if (!Hardware::PC() && hw_decoder) {
       decoder = std::make_unique<V4LVideoDecoder>();
     } else
@@ -268,7 +268,7 @@ bool FFmpegVideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
   return true;
 }
 
-#ifndef __APPLE__
+#ifdef __linux__
 bool V4LVideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
   if (codecpar->codec_id != AV_CODEC_ID_HEVC) {
     rError("Hardware decoder only supports HEVC codec");

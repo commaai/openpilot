@@ -63,11 +63,11 @@ source_list = ['long_mpc.py',
 
 lenv = env.Clone()
 copied_acados_libs = []
-if arch != "Darwin":
+if arch not in ("Darwin", "Windows"):  # the Windows acados wheel ships static archives, they link into the solver library
   for lib in ["libacados.so", "libblasfeo.so", "libhpipm.so", "libqpOASES_e.so.3.1"]:
     copied_acados_libs += lenv.Command(f"{gen}/{lib}", Dir(acados.LIB_DIR).File(lib), [Mkdir(Dir(gen)), Copy("$TARGET", "$SOURCE")])
   lenv["RPATH"] += [lenv.Literal('\\$$ORIGIN')]
-else:
+elif arch == "Darwin":
   acados_rel_path = Dir(gen).rel_path(Dir(acados.LIB_DIR))
   lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
 lenv.Clean(generated_files, Dir(gen))
@@ -79,9 +79,9 @@ lenv.Depends(generated_long, [msgq_python, common_python])
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CCFLAGS"].append("-Wno-unused")
-if arch != "Darwin":
+if arch not in ("Darwin", "Windows"):
   lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
-else:
+elif arch == "Darwin":
   lenv["LINKFLAGS"].append("-Wl,-install_name,@loader_path/libacados_ocp_solver_long.dylib")
   lenv["LINKFLAGS"].append(f"-Wl,-rpath,@loader_path/{acados_rel_path}")
 lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
@@ -100,11 +100,11 @@ lenv2["RPATH"] += [lenv2.Literal('\\$$ORIGIN')]
 lenv2.Command(libacados_ocp_solver_c,
   [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
-  f' -o {libacados_ocp_solver_c.get_labspath()}' + \
-  f' -I {libacados_ocp_solver_pxd.get_dir().get_labspath()}' + \
-  f' -I {acados_ocp_solver_common.get_dir().get_labspath()}' + \
-  f' {acados_ocp_solver_pyx.get_labspath()}')
-lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=['acados_ocp_solver_long'])
+  f' -o {libacados_ocp_solver_c.abspath}' + \
+  f' -I {libacados_ocp_solver_pxd.get_dir().abspath}' + \
+  f' -I {acados_ocp_solver_common.get_dir().abspath}' + \
+  f' {acados_ocp_solver_pyx.abspath}')
+lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=lenv2["LIBS"] + ['acados_ocp_solver_long'])
 lenv2.Depends(lib_cython, lib_solver)
 lenv2.Depends(lib_cython, copied_acados_libs)
 lenv2.Depends(libacados_ocp_solver_c, np_version)

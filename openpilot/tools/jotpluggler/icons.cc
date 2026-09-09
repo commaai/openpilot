@@ -15,7 +15,7 @@ void icon_add_font(float size, bool merge, const ImFont *base_font) {
     config.GlyphOffset.y = std::round(size * 0.5f - base_center);
   }
   static const ImWchar ranges[] = {0xF000, 0xF8FF, 0};
-  io.Fonts->AddFontFromFileTTF(ttf.c_str(), size, &config, ranges);
+  io.Fonts->AddFontFromFileTTF(ttf.string().c_str(), size, &config, ranges);
 }
 
 bool icon_menu_item(const char *glyph, const char *label, const char *shortcut, bool selected, bool enabled) {

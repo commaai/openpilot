@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "common/util.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "tools/cabana/settings.h"

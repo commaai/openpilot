@@ -7,7 +7,7 @@ from openpilot.common.basedir import BASEDIR
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
-opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (env.Dir("../../../opendbc_repo/opendbc/dbc").abspath)
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (env.Dir("../../../opendbc_repo/opendbc/dbc").abspath.replace(os.sep, "/"))
 
 # embed the bootstrap icons SVG into the binary
 def build_bootstrap_icons_src(target, source, env):
@@ -29,7 +29,7 @@ bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_ico
 core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
              'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc']
-if arch != "Darwin":
+if arch not in ("Darwin", "Windows"):
   core_srcs += ['streams/socketcanstream.cc']
 
 # imgui frontend (tools/cabana/ui), no Qt
@@ -39,8 +39,8 @@ ui_env['LIBPATH'] += [imgui.MESA_DIR, libusb.LIB_DIR]
 ui_env['CXXFLAGS'] += [
   opendbc_path,
   "-DGLFW_INCLUDE_NONE",
-  '-DCABANA_FONTS_DIR=\'"%s"\'' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts"),
-  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
+  '-DCABANA_FONTS_DIR=\'"%s"\'' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts").replace(os.sep, "/"),
+  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH.as_posix(),
 ]
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
@@ -49,6 +49,8 @@ ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_D
           ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
 if arch == "Darwin":
   ui_env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'Security', 'VideoToolbox']
+elif arch == "Windows":
+  ui_libs += ['opengl32', 'gdi32', 'winmm', 'shell32', 'user32', 'setupapi', 'dl']
 else:
   ui_libs += ['GL', 'dl']
 cabana_ui = ui_env.Program('cabana', ui_objs, LIBS=ui_libs)

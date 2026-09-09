@@ -1,6 +1,10 @@
 version = 1
 revision = 3
 requires-python = ">=3.12.3, <3.13"
+resolution-markers = [
+    "sys_platform == 'win32'",
+    "sys_platform != 'win32'",
+]
 
 [manifest]
 overrides = [{ name = "opendbc", editable = "opendbc_repo" }]
@@ -622,7 +626,7 @@ submodules = [
     { name = "opendbc" },
     { name = "pandacan" },
     { name = "rednose" },
-    { name = "teleoprtc" },
+    { name = "teleoprtc", marker = "sys_platform != 'win32'" },
     { name = "tinygrad" },
 ]
 testing = [
@@ -677,7 +681,7 @@ requires-dist = [
     { name = "scons" },
     { name = "setproctitle" },
     { name = "sounddevice" },
-    { name = "teleoprtc", marker = "extra == 'submodules'", editable = "teleoprtc_repo" },
+    { name = "teleoprtc", marker = "sys_platform != 'win32' and extra == 'submodules'", editable = "teleoprtc_repo" },
     { name = "tinygrad", marker = "extra == 'submodules'", editable = "tinygrad_repo" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
@@ -1003,7 +1007,7 @@ name = "teleoprtc"
 version = "1.0.1"
 source = { editable = "teleoprtc_repo" }
 dependencies = [
-    { name = "libdatachannel-py" },
+    { name = "libdatachannel-py", marker = "sys_platform != 'win32'" },
 ]
 
 [package.metadata]

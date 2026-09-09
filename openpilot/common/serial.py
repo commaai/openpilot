@@ -1,10 +1,15 @@
 import errno
-import fcntl
 import os
 import select
 import struct
-import termios
+import sys
 import time
+
+if sys.platform == "win32":
+  fcntl = termios = None  # POSIX only; the device modem is unused on a Windows dev build
+else:
+  import fcntl
+  import termios
 
 
 # Modem control lines (linux/termios.h); fall back to common x86_64 values.

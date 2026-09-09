@@ -60,7 +60,7 @@ void PandaStream::streamThread() {
     MessageBuilder msg;
     auto evt = msg.initEvent();
     auto canData = evt.initCan(raw_can_data.size());
-    for (uint i = 0; i<raw_can_data.size(); i++) {
+    for (size_t i = 0; i<raw_can_data.size(); i++) {
       canData[i].setAddress(raw_can_data[i].address);
       canData[i].setDat(kj::arrayPtr((uint8_t*)raw_can_data[i].dat.data(), raw_can_data[i].dat.size()));
       canData[i].setSrc(raw_can_data[i].src);

@@ -5,6 +5,7 @@
 #include <ctime>
 #include <thread>
 
+#include "common/util.h"
 #include "json11/json11.hpp"
 #include "tools/replay/py_downloader.h"
 

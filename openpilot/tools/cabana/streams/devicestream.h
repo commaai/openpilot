@@ -17,6 +17,6 @@ protected:
   void start() override;
   void streamThread() override;
   void stopBridge();
-  pid_t bridge_pid = -1;
+  intptr_t bridge_pid = -1;  // a process handle on Windows
   const std::string zmq_address;
 };

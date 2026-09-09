@@ -16,8 +16,8 @@ jot_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
 jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 jot_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
-  '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
-  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
+  '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR).replace(os.sep, "/"),
+  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH.as_posix(),
 ]
 
 def materialize_generated_dbcs(target, source, env):
@@ -29,10 +29,10 @@ def materialize_generated_dbcs(target, source, env):
       os.unlink(os.path.join(out_dir, name))
 
   for name, content in sorted(get_generated_dbcs().items()):
-    with open(os.path.join(out_dir, f"{name}.dbc"), "w") as f:
+    with open(os.path.join(out_dir, f"{name}.dbc"), "w", encoding="utf-8") as f:
       f.write(content)
 
-  with open(str(target[0]), "w") as f:
+  with open(str(target[0]), "w", encoding="utf-8") as f:
     f.write("ok\n")
 
   return None
@@ -75,7 +75,7 @@ def write_car_fingerprint_to_dbc_header(target, source, env):
     "",
   ])
 
-  with open(str(target[0]), "w") as f:
+  with open(str(target[0]), "w", encoding="utf-8") as f:
     f.write("\n".join(lines))
 
   return None
@@ -105,6 +105,8 @@ libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}
         ffmpeg_libs + ["zstd", "m", "pthread", "usb-1.0"]
 if arch == "Darwin":
   jot_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
+elif arch == "Windows":
+  libs += ["opengl32", "gdi32", "winmm", "shell32", "user32", "setupapi", "dl"]
 else:
   libs += ["GL", "dl"]
 

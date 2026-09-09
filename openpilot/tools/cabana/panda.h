@@ -11,7 +11,10 @@
 
 #include <atomic>
 #include <mutex>
-#include <libusb-1.0/libusb.h>
+
+// libusb.h pulls in <windows.h> on Windows, which clashes with the capnp and params enums, so only panda.cc includes it
+struct libusb_context;
+struct libusb_device_handle;
 
 #include "openpilot/cereal/gen/cpp/car.capnp.h"
 #include "openpilot/cereal/gen/cpp/log.capnp.h"
