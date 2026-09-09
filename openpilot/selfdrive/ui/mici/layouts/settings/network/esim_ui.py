@@ -8,7 +8,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 
 from openpilot.common import qrcode
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
+from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraView
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -60,7 +60,7 @@ class QRScannerDialog(NavWidget):
   def __init__(self, on_qr_detected: Callable[[str], None]):
     super().__init__()
     self._on_qr_detected = on_qr_detected
-    self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_CABIN)
+    self._camera_view = CabinCameraView("camerad", VisionStreamType.VISION_STREAM_CABIN)
     self._detected = False
     self._last_scan_time = 0.0
     self._invalid_code_until = 0.0
