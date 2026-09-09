@@ -68,6 +68,7 @@ class QRScannerDialog(NavWidget):
     self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_CABIN)
     self._detected = False
     self._last_scan_time = 0.0
+    self._invalid_code_until = 0.0
     self._scan_thread: threading.Thread | None = None
     self._scan_result: str | None = None
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
@@ -89,7 +90,8 @@ class QRScannerDialog(NavWidget):
     super()._update_state()
     self._camera_view._update_state()
 
-    if self._detected or not self._camera_view.frame:
+    now = rl.get_time()
+    if self._detected or not self._camera_view.frame or now < self._invalid_code_until:
       return
 
     if self._scan_thread is not None:
@@ -97,12 +99,15 @@ class QRScannerDialog(NavWidget):
         return
       self._scan_thread = None
       data = self._scan_result
-      if data is not None and _is_valid_lpa_code(data):
-        self._detected = True
-        self.dismiss(lambda: self._on_qr_detected(data))
+      if data is not None:
+        if _is_valid_lpa_code(data):
+          self._detected = True
+          self.dismiss(lambda: self._on_qr_detected(data))
+        else:
+          self._invalid_code_until = now + 1.0
+          self._last_scan_time = self._invalid_code_until
         return
 
-    now = rl.get_time()
     if now - self._last_scan_time < QR_SCAN_INTERVAL_S:
       return
     self._last_scan_time = now
@@ -126,7 +131,8 @@ class QRScannerDialog(NavWidget):
     else:
       label_y = rect.y + rect.height * 3 / 4
       label_rect = rl.Rectangle(rect.x, label_y + (rect.height - label_y) / 2 - 20, rect.width, 40)
-      gui_label(label_rect, "hold QR code to camera", font_size=32, font_weight=FontWeight.MEDIUM,
+      text = "not an LPA code" if rl.get_time() < self._invalid_code_until else "hold QR code to camera"
+      gui_label(label_rect, text, font_size=32, font_weight=FontWeight.MEDIUM,
                 alignment=TextAlignment.CENTER,
                 color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
