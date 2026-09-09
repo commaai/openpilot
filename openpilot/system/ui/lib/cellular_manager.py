@@ -145,7 +145,10 @@ class CellularManager:
     self._run_operation(switch, "Failed to switch eSIM profile", relist=False)
 
   def delete_profile(self, iccid: str):
-    self._run_operation(lambda lpa: lpa.delete_profile(iccid), "Failed to delete eSIM profile")
+    def delete(lpa: LPABase):
+      execute_and_process_notifications(lpa, lambda: lpa.delete_profile(iccid))
+
+    self._run_operation(delete, "Failed to delete eSIM profile")
 
   def nickname_profile(self, iccid: str, nickname: str):
     self._run_operation(lambda lpa: lpa.nickname_profile(iccid, nickname), "Failed to update eSIM profile nickname")
