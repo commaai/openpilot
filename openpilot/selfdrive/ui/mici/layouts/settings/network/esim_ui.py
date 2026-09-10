@@ -219,6 +219,9 @@ class EsimProfileButton(BigButton):
 
   def _delete_profile(self):
     if not self._locked and not self._cellular_manager.busy and self._show_delete_btn:
+      if ui_state.sm["deviceState"].networkType == log.DeviceState.NetworkType.none:
+        gui_app.push_widget(BigDialog("", tr("Ensure you're connected to the internet and try again.")))
+        return
       self._cellular_manager.delete_profile(self._profile.iccid)
 
   def _on_nickname_entered(self, nickname: str):
