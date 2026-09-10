@@ -482,7 +482,7 @@ class TestChestnutOnroad(OpenpilotTestCase):
           pm.send('deviceState', device_state_bytes)
           sm.update(1000)
       assert sm['modelV2'].big, "Chestnut fell back to the small model"
-      with log_collector(services) as (logs, _):
+      with log_collector(services + ['chestnutState']) as (logs, _):
         time.sleep(TEST_DURATION)
 
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
@@ -499,6 +499,14 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
     assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
+
+    states = [m for m in logs if m.which() == 'chestnutState']
+    assert np.isclose(len(states), TEST_DURATION * SERVICE_LIST['chestnutState'].frequency, rtol=0.05, atol=2)
+    assert all(m.valid and not m.chestnutState.supplyFault for m in states)
+    power = np.array([m.chestnutState.supplyVoltage * m.chestnutState.supplyCurrent / 1e6 for m in states])
+    assert np.all(power > 0)
+    print(f"Chestnut supply power: {np.mean(power):.2f}W")
+    assert np.isclose(np.mean(power), 32, rtol=0.05, atol=5), f"Unexpected Chestnut power: {np.mean(power):.2f}W"
 
 
 if __name__ == "__main__":
