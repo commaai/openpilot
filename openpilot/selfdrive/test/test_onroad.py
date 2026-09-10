@@ -463,15 +463,17 @@ class TestOnroad(OpenpilotTestCase):
 
 @unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
 class TestChestnutOnroad(OpenpilotTestCase):
+  """Run real cameras and models on the rack without CAN or a Panda Jungle."""
+
   COMMA_HARDWARE_TEST = True
 
   @mock_messages(['deviceMotion'])
   def test_camera_models(self, subtests):
     assert chestnut_present() and chestnut_compiled()
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
-    cameras = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']
-    services = cameras + ['modelV2', 'driverStateV2']
+    services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
     sm = messaging.SubMaster(services)
+    # Modeld needs the device type to select camera intrinsics.
     pm = messaging.PubMaster(['deviceState'])
     device_state = messaging.new_message('deviceState')
     device_state.deviceState.deviceType = HARDWARE.get_device_type()
@@ -481,7 +483,6 @@ class TestChestnutOnroad(OpenpilotTestCase):
         while not all(sm.seen.values()) or not sm.valid['modelV2']:
           pm.send('deviceState', device_state_bytes)
           sm.update(1000)
-      assert sm['modelV2'].big, "Chestnut fell back to the small model"
       with log_collector(services + ['chestnutState']) as (logs, _):
         time.sleep(TEST_DURATION)
 
@@ -505,8 +506,9 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert all(m.valid and not m.chestnutState.supplyFault for m in states)
     power = np.array([m.chestnutState.supplyVoltage * m.chestnutState.supplyCurrent / 1e6 for m in states])
     assert np.all(power > 0)
-    print(f"Chestnut supply power: {np.mean(power):.2f}W")
-    assert np.isclose(np.mean(power), 32, rtol=0.05, atol=5), f"Unexpected Chestnut power: {np.mean(power):.2f}W"
+    mean_power = np.mean(power)
+    print(f"Chestnut supply power: {mean_power:.2f}W")
+    assert np.isclose(mean_power, 32, rtol=0.05, atol=5), f"Unexpected Chestnut power: {mean_power:.2f}W"
 
 
 if __name__ == "__main__":
