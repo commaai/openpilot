@@ -230,10 +230,13 @@ class BaseCabinCameraDialog(Widget):
 
 
 class CabinCameraDialog(NavWidget, BaseCabinCameraDialog):
-  def __init__(self):
-    super().__init__()
-    # TODO: this can grow unbounded, should be given some thought
+  def show_event(self):
+    super().show_event()
     device.add_interactive_timeout_callback(gui_app.pop_widget)
+
+  def hide_event(self):
+    super().hide_event()
+    device.remove_interactive_timeout_callback(gui_app.pop_widget)
 
 
 if __name__ == "__main__":
