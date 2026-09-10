@@ -256,6 +256,7 @@ node {
         deviceStage("chestnut", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
           step("build", "./openpilot/selfdrive/test/chestnut.sh"),
           step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
+          step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
         ])
       },
 
