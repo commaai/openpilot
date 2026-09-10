@@ -48,6 +48,7 @@ def chunk_file(path, targets):
           raise OSError("chunk write verification failed")
     if f.tell() != source_size or f.read(1):
       raise OSError("model changed while writing chunks")
+  sync_directory(Path(manifest_path).parent)
   with atomic_write(manifest_path) as out:
     out.write(str(len(chunk_paths)))
     out.flush()
