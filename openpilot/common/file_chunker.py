@@ -21,12 +21,20 @@ def get_chunk_targets(path, file_size):
   num_chunks = math.ceil(file_size / CHUNK_SIZE)
   return _chunk_paths(path, num_chunks)
 
+def sync_directory(path):
+  fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+  try:
+    os.fsync(fd)
+  finally:
+    os.close(fd)
+
 def chunk_file(path, targets):
   manifest_path, *chunk_paths = targets
   source_size = os.path.getsize(path)
   actual_num_chunks = max(1, math.ceil(source_size / CHUNK_SIZE))
   assert len(chunk_paths) >= actual_num_chunks, f"Allowed {len(chunk_paths)} chunks but needs at least {actual_num_chunks}, for path {path}"
   Path(manifest_path).unlink(missing_ok=True)
+  sync_directory(Path(manifest_path).parent)
   with open(path, 'rb') as f:
     for chunk_path in chunk_paths:
       data = f.read(CHUNK_SIZE)
@@ -44,6 +52,11 @@ def chunk_file(path, targets):
     out.write(str(len(chunk_paths)))
     out.flush()
     os.fsync(out.fileno())
+  try:
+    sync_directory(Path(manifest_path).parent)
+  except OSError:
+    Path(manifest_path).unlink(missing_ok=True)
+    raise
   os.remove(path)
 
 def get_existing_chunks(path):
