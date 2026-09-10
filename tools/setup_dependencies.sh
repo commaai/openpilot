@@ -42,6 +42,10 @@ function install_linux_deps() {
   # dependencies should never be added to this list.
   # these are only for inflating bare docker images
   # to their desktop equivalents.
+  #
+  # from a real desktop OS image, we install uv
+  # then use that to install all the dependencies
+  # specified in pyproject.toml.
   # ------------------------------------------------
   if [[ "$missing_linux_deps" -eq 0 ]]; then
     # the native package managers are slow, so skip if we can

@@ -252,6 +252,12 @@ node {
           step("test amp", "./openpilot/common/hardware/comma/tests/test_amplifier.py"),
         ])
       },
+      'chestnut': {
+        deviceStage("chestnut", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
+          step("build", "./openpilot/selfdrive/test/chestnut.sh"),
+          step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
+        ])
+      },
 
     )
     }
