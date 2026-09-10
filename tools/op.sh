@@ -81,10 +81,10 @@ function op_get_openpilot_dir() {
 function op_install_post_commit() {
   op_get_openpilot_dir
   if [[ ! -d $OPENPILOT_ROOT/.git/hooks/post-commit.d ]]; then
-    mkdir $OPENPILOT_ROOT/.git/hooks/post-commit.d
-    mv $OPENPILOT_ROOT/.git/hooks/post-commit $OPENPILOT_ROOT/.git/hooks/post-commit.d 2>/dev/null || true
+    mkdir "$OPENPILOT_ROOT/.git/hooks/post-commit.d"
+    mv "$OPENPILOT_ROOT/.git/hooks/post-commit" "$OPENPILOT_ROOT/.git/hooks/post-commit.d" 2>/dev/null || true
   fi
-  cd $OPENPILOT_ROOT/.git/hooks
+  cd "$OPENPILOT_ROOT/.git/hooks"
   ln -sf ../../scripts/post-commit post-commit
 }
 
@@ -110,7 +110,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -119,7 +119,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
-    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
+    if [[ -z $(ls "$OPENPILOT_ROOT/$name") ]]; then
       echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
@@ -160,7 +160,7 @@ function op_before_cmd() {
   fi
 
   op_get_openpilot_dir
-  cd $OPENPILOT_ROOT
+  cd "$OPENPILOT_ROOT"
 
   result="$((op_check_openpilot_dir ) 2>&1)" || (echo -e "$result" && return 1)
   result="${result}\n$(( op_check_git ) 2>&1)" || (echo -e "$result" && return 1)
@@ -189,7 +189,7 @@ EOF
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 
   op_get_openpilot_dir
-  cd $OPENPILOT_ROOT
+  cd "$OPENPILOT_ROOT"
 
   op_check_openpilot_dir
   op_check_os
@@ -208,7 +208,7 @@ EOF
   echo "Installing dependencies..."
   st="$(date +%s)"
   SETUP_SCRIPT="tools/setup_dependencies.sh"
-  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
+  if ! "$OPENPILOT_ROOT/$SETUP_SCRIPT"; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     return 1
   fi
@@ -244,7 +244,7 @@ function op_auth() {
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
-  source $OPENPILOT_ROOT/.venv/$VENV_BIN/activate &> /dev/null || true
+  source "$OPENPILOT_ROOT/.venv/$VENV_BIN/activate" &> /dev/null || true
   set -e
 
   # persist venv on PATH across GitHub Actions steps
@@ -266,10 +266,10 @@ function op_venv() {
   case $SHELL_NAME in
     "zsh")
       ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
-      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/$VENV_BIN/activate" >> $ZSHRC_DIR/.zshrc
+      echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/$VENV_BIN/activate\"" >> "$ZSHRC_DIR/.zshrc"
       ZDOTDIR=$ZSHRC_DIR zsh ;;
     *)
-      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/$VENV_BIN/activate") ;;
+      bash --rcfile <(echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/$VENV_BIN/activate\"") ;;
   esac
 }
 

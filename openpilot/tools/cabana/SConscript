@@ -7,7 +7,7 @@ from openpilot.common.basedir import BASEDIR
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
-opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (env.Dir("../../../opendbc_repo/opendbc/dbc").abspath.replace(os.sep, "/"))
+opendbc_path = '-DOPENDBC_FILE_PATH=\\"%s\\"' % (env.Dir("../../../opendbc_repo/opendbc/dbc").abspath.replace(os.sep, "/"))
 
 # embed the bootstrap icons SVG into the binary
 def build_bootstrap_icons_src(target, source, env):
@@ -39,8 +39,8 @@ ui_env['LIBPATH'] += [imgui.MESA_DIR, libusb.LIB_DIR]
 ui_env['CXXFLAGS'] += [
   opendbc_path,
   "-DGLFW_INCLUDE_NONE",
-  '-DCABANA_FONTS_DIR=\'"%s"\'' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts").replace(os.sep, "/"),
-  '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH.as_posix(),
+  '-DCABANA_FONTS_DIR=\\"%s\\"' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts").replace(os.sep, "/"),
+  '-DBOOTSTRAP_ICONS_TTF=\\"%s\\"' % bootstrap_icons.TTF_PATH.as_posix(),
 ]
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
