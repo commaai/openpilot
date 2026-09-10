@@ -20,8 +20,12 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
-from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
+from openpilot.selfdrive.test.helpers import set_params_enabled, release_only, processes_context, log_collector
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.mock import mock_messages
+from opendbc.car.car_helpers import get_demo_car_params
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -455,6 +459,44 @@ class TestOnroad(OpenpilotTestCase):
     eng = [m.selfdriveState.engageable for m in self.msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
+
+
+@unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
+class TestChestnutOnroad(OpenpilotTestCase):
+  COMMA_HARDWARE_TEST = True
+
+  @mock_messages(['deviceMotion'])
+  def test_camera_models(self, subtests):
+    assert chestnut_present() and chestnut_compiled()
+    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
+    services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
+    sm = messaging.SubMaster(services)
+    pm = messaging.PubMaster(['deviceState'])
+    device_state = messaging.new_message('deviceState')
+    device_state.deviceState.deviceType = HARDWARE.get_device_type()
+    device_state_bytes = device_state.to_bytes()
+    with processes_context(['camerad', 'calibrationd', 'modeld', 'dmonitoringmodeld']):
+      with Timeout(60, "camera models didn't start"):
+        while not all(sm.seen.values()) or not sm.valid['modelV2']:
+          pm.send('deviceState', device_state_bytes)
+          sm.update(1000)
+      with log_collector(services) as (logs, _):
+        time.sleep(TEST_DURATION)
+
+    msgs = {s: [m for m in logs if m.which() == s] for s in services}
+    for service, messages in msgs.items():
+      with subtests.test(service=service):
+        expected = TEST_DURATION * SERVICE_LIST[service].frequency
+        assert np.isclose(len(messages), expected, rtol=0.05, atol=2), f"{service}: expected {expected}, got {len(messages)}"
+        assert all(m.valid for m in messages)
+        frame_ids = [getattr(m, service).frameId for m in messages]
+        assert np.all(np.diff(frame_ids) > 0), f"{service}: repeated or reordered frames"
+
+    camera_frames = {m.narrowRoadCameraState.frameId for m in msgs['narrowRoadCameraState']}
+    model_frames = {m.modelV2.frameId for m in msgs['modelV2']}
+    assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
+    assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
+    assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
 
 
 if __name__ == "__main__":
