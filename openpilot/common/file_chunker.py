@@ -47,11 +47,11 @@ def chunk_file(path, targets):
   os.remove(path)
 
 def get_existing_chunks(path):
-  if os.path.isfile(path):
-    return [path]
   if os.path.isfile(manifest := get_manifest_path(path)):
     num_chunks = int(Path(manifest).read_text().strip())
     return _chunk_paths(path, num_chunks)
+  if os.path.isfile(path):
+    return [path]
   raise FileNotFoundError(path)
 
 class ChunkStream(io.RawIOBase):
