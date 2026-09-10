@@ -512,8 +512,8 @@ wheels = [
 ]
 
 [[package]]
-name = "msgq"
-version = "0.0.1"
+name = "msgq-ipc"
+version = "1.1"
 source = { editable = "msgq_repo" }
 
 [package.metadata]
@@ -618,7 +618,7 @@ dependencies = [
 
 [package.optional-dependencies]
 submodules = [
-    { name = "msgq" },
+    { name = "msgq-ipc" },
     { name = "opendbc" },
     { name = "pandacan" },
     { name = "rednose" },
@@ -664,7 +664,7 @@ requires-dist = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "matplotlib", marker = "extra == 'tools'" },
-    { name = "msgq", marker = "extra == 'submodules'", editable = "msgq_repo" },
+    { name = "msgq-ipc", marker = "extra == 'submodules'", editable = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },

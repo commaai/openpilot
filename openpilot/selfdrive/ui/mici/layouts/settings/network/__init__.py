@@ -35,7 +35,7 @@ class EsimNetworkButton(BigButton):
   def _compute_state(self):
     cm = self._cellular_manager
     none_icon = self._cell_icons[NetworkStrength.unknown]
-    ip = cm.modem_state.get("ip_address") or "obtaining IP..."
+    ip = cm.modem_state.get("ip_address") or "connecting..."
     if cm.is_euicc is False:
       iccid = cm.modem_state.get("iccid") or ""
       if not iccid:
