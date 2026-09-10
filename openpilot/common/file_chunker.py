@@ -4,6 +4,7 @@ import sys
 import math
 import os
 from pathlib import Path
+from openpilot.common.utils import atomic_write
 
 CHUNK_SIZE = 45 * 1024 * 1024  # 45MB, under GitHub's 50MB limit
 
@@ -22,14 +23,27 @@ def get_chunk_targets(path, file_size):
 
 def chunk_file(path, targets):
   manifest_path, *chunk_paths = targets
-  actual_num_chunks = max(1, math.ceil(os.path.getsize(path) / CHUNK_SIZE))
+  source_size = os.path.getsize(path)
+  actual_num_chunks = max(1, math.ceil(source_size / CHUNK_SIZE))
   assert len(chunk_paths) >= actual_num_chunks, f"Allowed {len(chunk_paths)} chunks but needs at least {actual_num_chunks}, for path {path}"
   Path(manifest_path).unlink(missing_ok=True)
   with open(path, 'rb') as f:
     for chunk_path in chunk_paths:
-      with open(chunk_path, 'wb') as out:
-        out.write(f.read(CHUNK_SIZE))
-  Path(manifest_path).write_text(str(len(chunk_paths)))
+      data = f.read(CHUNK_SIZE)
+      with open(chunk_path, 'w+b') as out:
+        if out.write(data) != len(data):
+          raise OSError("incomplete chunk write")
+        out.flush()
+        os.fsync(out.fileno())
+        out.seek(0)
+        if out.read() != data:
+          raise OSError("chunk write verification failed")
+    if f.tell() != source_size or f.read(1):
+      raise OSError("model changed while writing chunks")
+  with atomic_write(manifest_path) as out:
+    out.write(str(len(chunk_paths)))
+    out.flush()
+    os.fsync(out.fileno())
   os.remove(path)
 
 def get_existing_chunks(path):
