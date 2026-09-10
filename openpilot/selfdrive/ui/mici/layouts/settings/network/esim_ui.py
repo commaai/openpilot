@@ -1,9 +1,11 @@
 import pyray as rl
+import time
 from collections.abc import Callable
 
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationDialog
 from openpilot.common.esim.base import Profile
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import DEFAULT_TEXT_COLOR, FontWeight, MousePos, TextAlignment, gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.widgets import Widget
@@ -96,12 +98,24 @@ class EsimProfileButton(BigButton):
     gui_app.push_widget(dlg)
 
   def _on_delete(self):
+    if not self._check_delete_connection():
+      return
     icon = gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64)
     gui_app.push_widget(BigConfirmationDialog("slide to delete", icon, self._delete_profile, red=True))
 
   def _delete_profile(self):
     if not self._locked and not self._cellular_manager.busy and self._show_delete_btn:
+      if not self._check_delete_connection():
+        return
       self._cellular_manager.delete_profile(self._profile.iccid)
+
+  def _check_delete_connection(self) -> bool:
+    # Use the same recent Athena ping as the UI's online status.
+    last_ping = ui_state.sm["deviceState"].lastAthenaPingTime
+    if last_ping == 0 or time.monotonic_ns() - last_ping >= 80_000_000_000:
+      gui_app.push_widget(BigDialog("", "Connect to the internet to delete an eSIM profile."))
+      return False
+    return True
 
   def _on_nickname_entered(self, nickname: str):
     if not self._locked and not self._cellular_manager.busy:
