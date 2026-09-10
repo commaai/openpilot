@@ -9,7 +9,7 @@ NC='\033[0m'
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$DIR/../../"
-cd $ROOT
+cd "$ROOT"
 
 FAILED=0
 
@@ -41,21 +41,26 @@ function run() {
   set -e
 }
 
+# Batch the file list so it stays under the command-line length limit (~32k on Windows).
+function batch() {
+  printf '%s' "$1" | tr '\n' '\0' | xargs -0 -r -s 20000 "${@:2}"
+}
+
 function run_tests() {
   ALL_FILES=$1
   PYTHON_FILES=$2
 
   run "ruff" ruff check openpilot --quiet
-  run "check_dependencies" python3 $DIR/check_dependencies.py
-  run "check_indentation" $DIR/check_indentation.py $PYTHON_FILES
-  run "check_added_large_files" $DIR/check_added_large_files.py --maxkb=120 $ALL_FILES
-  run "check_shebang_scripts_are_executable" $DIR/check_shebang_scripts_are_executable.py $ALL_FILES
-  run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
-  run "check_nomerge_comments" $DIR/check_nomerge_comments.sh $ALL_FILES
+  run "check_dependencies" "python3 \"$DIR/check_dependencies.py\""
+  run "check_indentation" "batch \"\$PYTHON_FILES\" \"$DIR/check_indentation.py\""
+  run "check_added_large_files" "batch \"\$ALL_FILES\" \"$DIR/check_added_large_files.py\" --maxkb=120"
+  run "check_shebang_scripts_are_executable" "batch \"\$ALL_FILES\" \"$DIR/check_shebang_scripts_are_executable.py\""
+  run "check_shebang_format" "batch \"\$ALL_FILES\" \"$DIR/check_shebang_format.sh\""
+  run "check_nomerge_comments" "batch \"\$ALL_FILES\" \"$DIR/check_nomerge_comments.sh\""
 
   if [[ -z "$FAST" ]]; then
     run "ty" ty check openpilot
-    run "codespell" codespell $ALL_FILES
+    run "codespell" "batch \"\$ALL_FILES\" codespell"
   fi
 
   return $FAILED
