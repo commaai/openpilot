@@ -24,19 +24,16 @@ def rgb_to_nv12(rgb):
   g_sub = (g[0::2, 0::2] + g[0::2, 1::2] + g[1::2, 0::2] + g[1::2, 1::2] + 2) >> 2
   b_sub = (b[0::2, 0::2] + b[0::2, 1::2] + b[1::2, 0::2] + b[1::2, 1::2] + 2) >> 2
 
-  # U and V planes
+  # Interleave U and V planes for NV12 format
   u = np.clip((b_sub * 56 - g_sub * 37 - r_sub * 19 + 0x8080) >> 8, 0, 255).astype(np.uint8)
   v = np.clip((r_sub * 56 - g_sub * 47 - b_sub * 9 + 0x8080) >> 8, 0, 255).astype(np.uint8)
+  uv = np.stack((u, v), axis=-1).reshape(h // 2, w)
 
-  # Interleave UV for NV12 format
-  uv = np.empty((h // 2, w), dtype=np.uint8)
-  uv[:, 0::2] = u
-  uv[:, 1::2] = v
-
+  # Copy the visible image into the aligned NV12 buffer
   stride, y_height, uv_height, size = get_nv12_info(w, h)
   nv12 = np.zeros(size, dtype=np.uint8)
-
   planes = nv12[:stride * (y_height + uv_height)].reshape(-1, stride)
+
   planes[:h, :w] = y
   planes[y_height:y_height + h // 2, :w] = uv
 
@@ -52,11 +49,11 @@ class Camerad:
     self.vipc_server = VisionIpcServer("camerad")
 
     stride, y_height, _, size = get_nv12_info(W, H)
-    uv_offset = stride * y_height
+    buffer_args = (5, W, H, size, stride, stride * y_height)
 
-    self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H, size, stride, uv_offset)
+    self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_NARROW_ROAD, *buffer_args)
     if dual_camera:
-      self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H, size, stride, uv_offset)
+      self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_WIDE_ROAD, *buffer_args)
 
     self.vipc_server.start_listener()
 
