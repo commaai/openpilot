@@ -14,6 +14,7 @@ import numpy as np
 import usb1
 
 import openpilot.cereal.messaging as messaging
+from openpilot.common.file_chunker import get_existing_chunks
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
@@ -73,7 +74,7 @@ def fault_launcher(module, name, fault, trigger, injected, models):
     stack.enter_context(patch.object(modeld.ModelState, 'run', run))
     if models is not None:
       stack.enter_context(patch.object(modeld, 'modeld_pkl_path', lambda chestnut: Path(models) / modeld_pkl_path(chestnut).name))
-      stack.enter_context(patch.object(modeld, 'chestnut_compiled', lambda: (Path(models) / 'big_driving_tinygrad.pkl.chunkmanifest').is_file()))
+      stack.enter_context(patch('openpilot.selfdrive.modeld.helpers.modeld_pkl_path', lambda chestnut: Path(models) / modeld_pkl_path(chestnut).name))
     launcher(module, name)
 
 
@@ -163,16 +164,19 @@ class TestChestnutFaults(OpenpilotTestCase):
       for p in modeld_pkl_path(True).parent.glob('*driving_tinygrad.pkl*'):
         (models / p.name).symlink_to(p)
       manifest = models / 'big_driving_tinygrad.pkl.chunkmanifest'
-      chunk = sorted(models.glob('big_driving_tinygrad.pkl.chunk[0-9]*'))[0]
+      files = [Path(p) for p in get_existing_chunks(models / 'big_driving_tinygrad.pkl')]
+      chunk = files[1] if manifest.is_file() else files[0]
       if fault in ('missing_manifest', 'invalid_manifest'):
         manifest.unlink()
         if fault == 'invalid_manifest':
           manifest.write_text('invalid')
       else:
         if fault == 'truncated_buffer':
-          chunk = sorted(p for p in models.glob('big_driving_tinygrad.pkl.chunk[0-9]*') if p.stat().st_size)[-1]
+          chunk = [p for p in files if p != manifest and p.stat().st_size][-1]
         chunk.unlink()
-        if fault == 'corrupt_pickle':
+        if fault == 'lfs_pointer':
+          chunk.write_text('version https://git-lfs.github.com/spec/v1\noid sha256:' + '0'*64 + '\nsize 123\n')
+        elif fault == 'corrupt_pickle':
           chunk.write_bytes(b'\x01\x00\x00\x00\x00\x00\x00\x00!')
         elif fault == 'truncated_buffer':
           shutil.copyfile(modeld_pkl_path(True).parent / chunk.name, chunk)
@@ -183,7 +187,10 @@ class TestChestnutFaults(OpenpilotTestCase):
   @mock_messages(['deviceMotion'])
   def test_model_files(self):
     with processes_context(['camerad', 'calibrationd']):
-      for fault in ('missing_manifest', 'invalid_manifest', 'missing_chunk', 'corrupt_pickle', 'truncated_buffer'):
+      faults = ['missing_file', 'corrupt_pickle', 'truncated_buffer', 'lfs_pointer']
+      if not modeld_pkl_path(True).is_file():
+        faults += ['missing_manifest', 'invalid_manifest']
+      for fault in faults:
         with self.subTest(fault=fault):
           with self.damaged_models(fault) as models, self.model(models=models) as (sm, proc, _, _):
             self.frames(sm, proc, False)
