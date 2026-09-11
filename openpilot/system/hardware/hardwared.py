@@ -21,7 +21,7 @@ from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE, PC
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.git import get_short_branch
 from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_USB_PRODUCT, get_usb_state, get_usb_topology, is_chestnut_usb_id, set_usb_state
-from openpilot.common.linux import LinuxSystemStats
+from openpilot.common.linux import SystemStats
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring
@@ -194,7 +194,7 @@ def hw_state_thread(end_event, hw_queue):
 
 
 def hardware_thread(end_event, hw_queue) -> None:
-  system_stats = LinuxSystemStats()
+  system_stats = SystemStats()
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "chestnutState"], poll="pandaStates")
 
