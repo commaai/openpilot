@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from collections.abc import Callable
 import ctypes
+import codecs
 from functools import cached_property
 import os
+import pickle
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
 import usb1
@@ -23,17 +25,15 @@ from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, modeld_pkl_path, load_pickle, allocate_inputs
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
@@ -175,23 +175,26 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
-    jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
-    input_devices = jits['input_devices']
-    self.model_device = input_devices['model']
+    jits = load_pickle(open_file_chunked(modeld_pkl_path(chestnut)), out_of_band=True)
+    variant = jits['variants'][f'{cam_w}x{cam_h}']
     metadata = jits['metadata']
     self.input_shapes = metadata['input_shapes']
     self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
-    self.output_slices = metadata['output_slices']
+    self.output_slices = pickle.loads(codecs.decode(metadata['metadata']['output_slices'].encode(), 'base64'))
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
 
-    self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    self.input_specs = variant['input_specs']
+    self.packed_specs = variant['packed_specs']
+    self.reset_inputs()
     self.parser = Parser()
-    self.run_model = jits['run_model'][(cam_w,cam_h)]
+    self.run_model = variant['run']
+
+  def reset_inputs(self) -> None:
+    self.input_queues, views = allocate_inputs(self.input_specs, self.packed_specs)
+    self.frame_views = {name: views[name] for name in self.vision_input_names}
+    self.npy = {name: views[name] for name in self.packed_specs if name not in self.frame_views}
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -200,37 +203,36 @@ class ModelState:
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for key, buf in bufs.items():
-      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_views[key].size))
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
-    self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+    self.npy['desire'].flat[:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
+    outs = self.run_model(**self.input_queues)
     if after_enqueue is not None:
       after_enqueue()
     model_output = outs.numpy()[0]
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
-    self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
+    self.npy['prev_feat'].flat[:] = model_output[self.output_slices['hidden_state']]
 
     if SEND_RAW_PRED:
       outputs_dict['raw_pred'] = model_output.copy()
     return outputs_dict
 
   def warmup(self) -> None:
-    dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
+    dummy_frames = {k: np.zeros_like(v) for k, v in self.frame_views.items()}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    self.reset_inputs()
     self.prev_desire[:] = 0
 
 
