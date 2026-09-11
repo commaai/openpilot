@@ -169,7 +169,7 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
-  def excludeBranches = ['__nightly', 'devel', 'devel-staging',
+  def excludeBranches = ['__nightly', '__nightly-chestnut', 'devel', 'devel-staging',
                          'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
@@ -199,6 +199,12 @@ node {
           ])
         },
       )
+    }
+
+    if (env.BRANCH_NAME == '__nightly-chestnut') {
+      deviceStage("build nightly-chestnut", "mici-chestnut-ci", [], [
+        step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
+      ])
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
