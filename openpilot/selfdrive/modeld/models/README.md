@@ -10,7 +10,7 @@ To regenerate it, first export the desired checkpoint from the xx repository:
 
 ```sh
 python ml_tools/openpilot_compile/compile_torchtitan_supercombo.py \
-  --rldriving a4c5f1d1-1f5d-4807-9593-54afa27099d5/12864 \
+  --rldriving 1a421175-db71-4e3d-9d62-e2166421b02b/12864 \
   --path b9facbcc-4d47-410e-b3ce-dfcbad12ba92/56320 \
   --onnx-path /tmp/big_driving_supercombo.onnx
 ```
