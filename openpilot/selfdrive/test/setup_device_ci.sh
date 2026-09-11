@@ -64,9 +64,9 @@ pull_lfs() {
     return
   fi
 
-  # The big driving model is not used on these devices yet. Keep its pointer in
-  # the worktree, but don't download or copy the 1.8 GB LFS object.
-  LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"
+  # The big driving model is not used on these devices. Keep its pointer in
+  # the worktree, but don't download or copy the precompiled LFS pickle.
+  LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl"
 
   git config --local lfs.fetchexclude "$LFS_EXCLUDE"
   git lfs pull --exclude="$LFS_EXCLUDE"
