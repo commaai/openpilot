@@ -1,12 +1,12 @@
 #include "tools/cabana/ui/dialogs/routesdialog.h"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 #include <thread>
 
 #include "json11/json11.hpp"
 #include "tools/replay/py_downloader.h"
-#include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/theme.h"
 
 #include "imgui.h"
@@ -185,18 +185,25 @@ void RoutesDialog::drawLogin() {
   if (auth_abort_) {
     ImGui::TextWrapped("Sign in with %s in your browser, then return to Cabana to choose a device and route.", s_.provider.c_str());
     ImGui::Dummy(ImVec2(0, 8));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, p.frame);
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8);
-    ImGui::BeginChild("auth_status", ImVec2(-16, 76), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
-    const std::string status = std::string(icon::ARROW_CLOCKWISE) + "  Waiting for browser sign-in";
+    ImGui::BeginChild("auth_status", ImVec2(-16, 76), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+    const char *status = "Waiting for browser sign-in";
     const char *timeout = "This request expires after 3 minutes.";
-    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(status.c_str()).x) * 0.5f, 16));
-    ImGui::TextColored(p.accent, "%s", status.c_str());
+    const float spinner_size = ImGui::GetFontSize();
+    const float status_width = spinner_size + 8 + ImGui::CalcTextSize(status).x;
+    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - status_width) * 0.5f, 16));
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float angle = std::fmod(ImGui::GetTime() * 4.0, 2.0 * IM_PI);
+    auto *draw_list = ImGui::GetWindowDrawList();
+    draw_list->PathArcTo(ImVec2(pos.x + spinner_size * 0.5f, pos.y + spinner_size * 0.5f),
+                        spinner_size * 0.35f, angle, angle + IM_PI * 1.5f, 24);
+    draw_list->PathStroke(ImGui::GetColorU32(p.accent), 0, 2.0f);
+    ImGui::Dummy(ImVec2(spinner_size, spinner_size));
+    ImGui::SameLine(0, 8);
+    ImGui::TextColored(p.accent, "%s", status);
     ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(timeout).x) * 0.5f, 40));
     ImGui::TextDisabled("%s", timeout);
     ImGui::EndChild();
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor();
     ImGui::Dummy(ImVec2(0, 8));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8);
     if (ImGui::Button("Choose another method", ImVec2(-16, 44))) {
