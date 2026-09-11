@@ -52,7 +52,7 @@ echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 echo "[-] committing version $VERSION T=$SECONDS"
 # writing larger objects is faster than compressing them on-device
-git -c core.compression=0 -c filter.lfs.process='git-lfs filter-process' add -f .
+git -c core.compression=0 add -f .
 git status
 git -c core.compression=0 commit -a -m "openpilot v$VERSION release
 
@@ -60,15 +60,15 @@ date: $DATETIME
 master commit: $GIT_HASH
 "
 
-# Only the precompiled big model may use LFS.
+# should be no submodules or LFS files
 git submodule status
-if [ ! -z "$(git lfs ls-files --exclude='openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl')" ]; then
+if [ ! -z "$(git lfs ls-files)" ]; then
   echo "LFS files detected!"
   exit 1
 fi
 
 # ensure files are within GitHub's limit
-BIG_FILES="$(git ls-tree -rl HEAD | awk '$4 > 95*1024*1024 {print $5}')"
+BIG_FILES="$(find . -type f -not -path './.git/*' -size +95M)"
 if [ ! -z "$BIG_FILES" ]; then
   printf '\n\n\n'
   echo "Found files exceeding GitHub's 100MB limit:"

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from openpilot.common.file_chunker import get_manifest_path
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
@@ -21,4 +22,4 @@ def chestnut_present() -> bool:
   return False
 
 def chestnut_compiled() -> bool:
-  return modeld_pkl_path(chestnut=True).is_file()
+  return Path(get_manifest_path(modeld_pkl_path(chestnut=True))).is_file()

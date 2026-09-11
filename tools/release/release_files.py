@@ -14,7 +14,7 @@ blacklist = [
 
   "matlab.*.md",
 
-  # no submodules; only the precompiled big model uses LFS in release
+  # no LFS or submodules in release
   ".lfsconfig",
   ".gitattributes",
   ".git$",
@@ -22,7 +22,8 @@ blacklist = [
 ]
 
 # gets you through the blacklist
-whitelist = [r"^\.lfsconfig$", r"^openpilot/selfdrive/modeld/models/\.gitattributes$"] if os.getenv("INCLUDE_BIG_MODEL") else []
+whitelist: list[str] = [
+]
 
 if __name__ == "__main__":
   tracked_files = subprocess.check_output(["git", "ls-files", "-z", "--recurse-submodules"], cwd=ROOT).split(b"\0")
@@ -31,7 +32,7 @@ if __name__ == "__main__":
       continue
 
     rf = os.fsdecode(tracked_file)
-    if not os.getenv("INCLUDE_BIG_MODEL") and rf == "openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl":
+    if not os.getenv("INCLUDE_BIG_MODEL") and rf.startswith("openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx"):
       continue
     blacklisted = any(re.search(p, rf) for p in blacklist)
     whitelisted = any(re.search(p, rf) for p in whitelist)
