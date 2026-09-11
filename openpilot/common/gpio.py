@@ -1,5 +1,4 @@
 import os
-import fcntl
 import ctypes
 from functools import cache
 
@@ -82,6 +81,8 @@ def gpiochip_get_ro_value_fd(label: str, gpiochip_id: int, pin: int) -> int:
   rq.handleflags = GPIOHANDLE_REQUEST_INPUT
   rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES
   rq.label = label.encode('utf-8')[:31] + b'\0'
+
+  import fcntl  # POSIX only, keep the module importable on Windows
 
   fd = os.open(f"/dev/gpiochip{gpiochip_id}", os.O_RDONLY)
   fcntl.ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, rq)

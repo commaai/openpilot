@@ -30,7 +30,7 @@ class ParamKeyType(IntEnum):
   BYTES = 6
 
 
-_suffix = ".dylib" if sys.platform == "darwin" else ".so"
+_suffix = {"darwin": ".dylib", "win32": ".dll"}.get(sys.platform, ".so")
 lib = ctypes.CDLL(Path(__file__).with_name(f"libparams_c{_suffix}"))
 
 ParamsHandle = ctypes.c_void_p

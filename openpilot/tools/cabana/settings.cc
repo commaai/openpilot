@@ -17,8 +17,12 @@
 #include <vector>
 
 #include <fcntl.h>
-#include <sys/file.h>
 #include <unistd.h>
+#ifdef _WIN32
+#include <io.h>
+#define fsync _commit
+#define O_CLOEXEC 0
+#endif
 
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -28,6 +32,9 @@
 
 #include "json11/json11.hpp"
 #include "tools/cabana/utils/util.h"
+
+// util.h cannot be included here: its Rect collides with MacTypes' under CoreFoundation
+namespace util { int lock_file_exclusive(int fd); int replace_file(const char *from, const char *to); }
 
 Settings settings;
 
@@ -46,9 +53,9 @@ struct LoadedSettings {
 class FileLock {
 public:
   explicit FileLock(const std::filesystem::path &path) {
-    fd = open(path.c_str(), O_CREAT | O_CLOEXEC, 0600);
-    if (fd < 0 || flock(fd, LOCK_EX) < 0) {
-      fprintf(stderr, "failed to lock Cabana settings %s: %s\n", path.c_str(), strerror(errno));
+    fd = open(path.string().c_str(), O_CREAT | O_CLOEXEC, 0600);
+    if (fd < 0 || util::lock_file_exclusive(fd) < 0) {
+      fprintf(stderr, "failed to lock Cabana settings %s: %s\n", path.string().c_str(), strerror(errno));
       if (fd >= 0) close(fd);
       fd = -1;
     }
@@ -70,7 +77,7 @@ LoadedSettings loadSettings() {
   std::string error;
   auto settings_json = json11::Json::parse(contents, error);
   if (!error.empty() || !settings_json.is_object()) {
-    fprintf(stderr, "failed to read Cabana settings %s%s%s\n", settingsFile().c_str(), error.empty() ? "" : ": ", error.c_str());
+    fprintf(stderr, "failed to read Cabana settings %s%s%s\n", settingsFile().string().c_str(), error.empty() ? "" : ": ", error.c_str());
     return {.exists = true, .valid = false};
   }
   return {.values = settings_json.object_items(), .exists = true};
@@ -81,7 +88,7 @@ bool ensureSettingsDirectory() {
   std::error_code error;
   std::filesystem::create_directories(path.parent_path(), error);
   if (error) {
-    fprintf(stderr, "failed to create Cabana settings directory %s: %s\n", path.parent_path().c_str(), error.message().c_str());
+    fprintf(stderr, "failed to create Cabana settings directory %s: %s\n", path.parent_path().string().c_str(), error.message().c_str());
     return false;
   }
   return true;
@@ -110,18 +117,20 @@ bool saveSettings(const json11::Json::object &settings_json) {
 
   bool success = writeAll(fd, contents) && fsync(fd) == 0;
   if (close(fd) < 0) success = false;
-  if (success && rename(temporary_path.c_str(), path.c_str()) < 0) success = false;
+  if (success && util::replace_file(temporary_path.c_str(), path.string().c_str()) < 0) success = false;
 
+#ifndef _WIN32  // directories cannot be fsynced through the Windows CRT
   if (success) {
     int dir_fd = open(path.parent_path().c_str(), O_RDONLY | O_CLOEXEC);
     success = dir_fd >= 0 && fsync(dir_fd) == 0;
     if (dir_fd >= 0 && close(dir_fd) < 0) success = false;
   }
+#endif
 
   if (!success) {
     const int saved_errno = errno;
     unlink(temporary_path.c_str());
-    fprintf(stderr, "failed to save Cabana settings to %s: %s\n", path.c_str(), strerror(saved_errno));
+    fprintf(stderr, "failed to save Cabana settings to %s: %s\n", path.string().c_str(), strerror(saved_errno));
   }
   return success;
 }
@@ -134,11 +143,11 @@ bool preserveCorruptSettings() {
     backup = path;
     backup += ".corrupt." + std::to_string(i);
   }
-  if (rename(path.c_str(), backup.c_str()) < 0) {
-    fprintf(stderr, "failed to preserve corrupt Cabana settings %s: %s\n", path.c_str(), strerror(errno));
+  if (util::replace_file(path.string().c_str(), backup.string().c_str()) < 0) {
+    fprintf(stderr, "failed to preserve corrupt Cabana settings %s: %s\n", path.string().c_str(), strerror(errno));
     return false;
   }
-  fprintf(stderr, "preserved corrupt Cabana settings at %s\n", backup.c_str());
+  fprintf(stderr, "preserved corrupt Cabana settings at %s\n", backup.string().c_str());
   return true;
 }
 

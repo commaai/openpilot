@@ -17,6 +17,7 @@ class TestServices(OpenpilotTestCase):
     assert service.decimation != 0
 
   def test_generated_header(self):
-    with tempfile.NamedTemporaryFile(suffix=".h") as f:
+    with tempfile.NamedTemporaryFile(suffix=".h", delete_on_close=False) as f:
+      f.close()  # Windows: other processes cannot open the file while it is open here
       ret = subprocess.run(f"python3 {services.__file__} > {f.name} && clang++ {f.name} -std=c++11", shell=True).returncode
       assert ret == 0, "generated services header is not valid C"

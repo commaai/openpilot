@@ -1,6 +1,6 @@
 Import('env', 'arch', 'common', 'messaging')
 
-if arch != "Darwin":
+if arch not in ("Darwin", "Windows"):
   libs = [common, messaging, 'pthread']
   panda = env.Library('panda', ['panda.cc', 'spi.cc'])
 

@@ -1,14 +1,21 @@
+#ifdef _WIN32
+#include "common/win32.h"
+#endif
+
 #include "common/util.h"
 #include "common/swaglog.h"
 
-#include <sys/ioctl.h>
 #include <sys/stat.h>
+#ifndef _WIN32
+#include <sys/file.h>
+#include <sys/ioctl.h>
 #include <sys/resource.h>
+#endif
 
 #include <cassert>
 #include <cerrno>
 #include <cstring>
-#include <dirent.h>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <random>
@@ -63,6 +70,9 @@ int set_core_affinity(std::vector<int> cores) {
 }
 
 int set_file_descriptor_limit(uint64_t limit_val) {
+#ifdef _WIN32
+  return 0;  // the CRT allows 8192 open files
+#else
   struct rlimit limit;
   int status;
 
@@ -74,6 +84,7 @@ int set_file_descriptor_limit(uint64_t limit_val) {
     return status;
 
   return 0;
+#endif
 }
 
 std::string read_file(const std::string& fn) {
@@ -102,17 +113,12 @@ std::string read_file(const std::string& fn) {
 
 std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
   std::map<std::string, std::string> ret;
-  DIR *d = opendir(path.c_str());
-  if (!d) return ret;
-
-  struct dirent *de = NULL;
-  while ((de = readdir(d))) {
-    if (de->d_type != DT_DIR) {
-      ret[de->d_name] = util::read_file(path + "/" + de->d_name);
+  std::error_code ec;
+  for (const auto &entry : std::filesystem::directory_iterator(path, ec)) {
+    if (!entry.is_directory()) {
+      ret[entry.path().filename().string()] = util::read_file(entry.path().string());
     }
   }
-
-  closedir(d);
   return ret;
 }
 
@@ -152,6 +158,7 @@ int safe_fflush(FILE *stream) {
   return ret;
 }
 
+#ifndef _WIN32
 int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_msg) {
   int ret;
   do {
@@ -164,15 +171,11 @@ int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_
   }
   return ret;
 }
+#endif
 
 std::string readlink(const std::string &path) {
-  char buff[4096];
-  ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
-  if (len != -1) {
-    buff[len] = '\0';
-    return std::string(buff);
-  }
-  return "";
+  std::error_code ec;
+  return std::filesystem::read_symlink(path, ec).string();
 }
 
 bool file_exists(const std::string& fn) {
@@ -283,6 +286,27 @@ std::string strip(const std::string &str) {
   }
 
   return str.substr(start, end - start + 1);
+}
+
+int lock_file_exclusive(int fd) {
+#ifdef _WIN32
+  OVERLAPPED ov = {};
+  return LockFileEx((HANDLE)_get_osfhandle(fd), LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov) ? 0 : -1;
+#else
+  return HANDLE_EINTR(flock(fd, LOCK_EX));
+#endif
+}
+
+int replace_file(const char *from, const char *to) {
+  std::error_code ec;
+  // Windows refuses to replace a file another process has open for reading; those reads take microseconds
+  for (int i = 0; i < 200; ++i) {
+    std::filesystem::rename(from, to, ec);
+    if (ec != std::errc::permission_denied) break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  if (ec) errno = ec.default_error_condition().value();  // callers report strerror(errno)
+  return ec ? -1 : 0;
 }
 
 std::string check_output(const std::string& command) {

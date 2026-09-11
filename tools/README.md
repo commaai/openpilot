@@ -4,11 +4,13 @@
 
 openpilot is developed and tested on **Ubuntu 24.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-Most of openpilot should work natively on macOS. On Windows you can use WSL for a nearly native Ubuntu experience. Running natively on any other system is not currently recommended and will likely require modifications.
+Most of openpilot should work natively on macOS and, for development only, on Windows. On Windows you can also use WSL for a nearly native Ubuntu experience. Running natively on any other system is not currently recommended and will likely require modifications.
 
-## Native setup on Ubuntu 24.04 and macOS
+## Native setup on Ubuntu 24.04, macOS and Windows
 
 Follow these instructions for a fully managed setup experience. If you'd like to manage the dependencies yourself, just read the setup scripts in this directory.
+
+On Windows, the tools (cabana, replay, jotpluggler, the UI) build natively for development only, from an [MSYS2](https://www.msys2.org/) CLANG64 shell: install MSYS2, run `pacman -S mingw-w64-clang-x86_64-git` in that shell and follow the same steps there, activating the venv with `source .venv/Scripts/activate`. The setup also needs the [Visual C++ Redistributable](https://aka.ms/vc14/vc_redist.x64.exe), which most machines already have.
 
 **1. Clone openpilot**
 ``` bash

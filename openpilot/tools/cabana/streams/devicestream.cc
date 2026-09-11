@@ -12,8 +12,14 @@
 #include <thread>
 #include <utility>
 #include <unistd.h>
+#ifdef _WIN32
+#include <process.h>
+#include "common/win32.h"
+#else
 #include <sys/wait.h>
+#endif
 
+#include "common/util.h"
 #include "openpilot/cereal/services.h"
 #include "tools/cabana/utils/util.h"
 
@@ -27,6 +33,30 @@ DeviceStream::~DeviceStream() {
   stopBridge();
 }
 
+#ifdef _WIN32
+void DeviceStream::stopBridge() {
+  if (bridge_pid == -1) return;
+  TerminateProcess((HANDLE)bridge_pid, 0);
+  WaitForSingleObject((HANDLE)bridge_pid, 3000);
+  CloseHandle((HANDLE)bridge_pid);
+  bridge_pid = -1;
+}
+
+void DeviceStream::start() {
+  if (!zmq_address.empty()) {
+    stopBridge();
+    const std::string path = (executableDir() / "../../cereal/messaging/bridge").lexically_normal().string();
+    // the CRT joins argv unquoted into a command line, so the filter's quotes are escaped for the child's parser
+    const char *argv[] = {path.c_str(), zmq_address.c_str(), "\"/\\\"can/\\\"\"", nullptr};
+    if ((bridge_pid = _spawnv(_P_NOWAIT, path.c_str(), argv)) == -1) {
+      error(std::string("Failed to start bridge: ") + strerror(errno));
+      return;
+    }
+  }
+
+  LiveStream::start();
+}
+#else
 void DeviceStream::stopBridge() {
   if (bridge_pid <= 0) return;
 
@@ -92,6 +122,7 @@ void DeviceStream::start() {
 
   LiveStream::start();
 }
+#endif
 
 void DeviceStream::streamThread() {
   zmq_address.empty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);

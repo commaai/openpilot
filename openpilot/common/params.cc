@@ -1,11 +1,9 @@
 #include "common/params.h"
 
-#include <dirent.h>
-#include <sys/file.h>
-
 #include <algorithm>
 #include <cassert>
 #include <csignal>
+#include <filesystem>
 #include <unordered_map>
 
 #include "common/params_keys.h"
@@ -22,6 +20,9 @@ void params_sig_handler(int signal) {
 }
 
 int fsync_dir(const std::string &path) {
+#ifdef _WIN32
+  return 0;  // directories cannot be opened through the CRT; NTFS journals the rename
+#endif
   int result = -1;
   int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
   if (fd >= 0) {
@@ -39,6 +40,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
 
   // See if the symlink exists, otherwise create it
   if (!util::file_exists(key_path)) {
+#ifdef _WIN32
+    return mkdir(key_path.c_str(), 0775) == 0 || errno == EEXIST;  // symlinks need privileges; a plain directory does
+#else
     // 1) Create temp folder
     // 2) Symlink it to temp link
     // 3) Move symlink to <params>/d
@@ -59,6 +63,7 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
     if (rename(link_path.c_str(), key_path.c_str()) != 0 && errno != EEXIST) {
       return false;
     }
+#endif
   }
 
   return true;
@@ -78,7 +83,7 @@ class FileLock {
 public:
   FileLock(const std::string &fn) {
     fd_ = HANDLE_EINTR(open(fn.c_str(), O_CREAT, 0775));
-    if (fd_ < 0 || HANDLE_EINTR(flock(fd_, LOCK_EX)) < 0) {
+    if (fd_ < 0 || util::lock_file_exclusive(fd_) < 0) {
       LOGE("Failed to lock file %s, errno=%d", fn.c_str(), errno);
     }
   }
@@ -149,17 +154,19 @@ int Params::put(const char* key, const char* value, size_t value_size) {
 
     // fsync to force persist the changes.
     if ((result = HANDLE_EINTR(fsync(tmp_fd))) < 0) break;
+    close(tmp_fd);
+    tmp_fd = -1;  // closed before the move: Windows cannot rename an open file
 
     FileLock file_lock(params_path + "/.lock");
 
     // Move temp into place.
-    if ((result = rename(tmp_path.c_str(), getParamPath(key).c_str())) < 0) break;
+    if ((result = util::replace_file(tmp_path.c_str(), getParamPath(key).c_str())) < 0) break;
 
     // fsync parent directory
     result = fsync_dir(getParamPath());
   } while (false);
 
-  close(tmp_fd);
+  if (tmp_fd >= 0) close(tmp_fd);
   if (result != 0) {
     ::unlink(tmp_path.c_str());
   }
@@ -208,17 +215,13 @@ void Params::clearAll(ParamKeyFlag key_flag) {
 
   // 1) delete params of key_flag
   // 2) delete files that are not defined in the keys.
-  if (DIR *d = opendir(getParamPath().c_str())) {
-    struct dirent *de = NULL;
-    while ((de = readdir(d))) {
-      if (de->d_type != DT_DIR) {
-        auto it = keys.find(de->d_name);
-        if (it == keys.end() || (it->second.flags & key_flag)) {
-          unlink(getParamPath(de->d_name).c_str());
-        }
-      }
+  std::error_code ec;
+  for (const auto &entry : std::filesystem::directory_iterator(getParamPath(), ec)) {
+    if (entry.is_directory()) continue;
+    auto it = keys.find(entry.path().filename().string());
+    if (it == keys.end() || (it->second.flags & key_flag)) {
+      unlink(entry.path().string().c_str());
     }
-    closedir(d);
   }
 
   fsync_dir(getParamPath());

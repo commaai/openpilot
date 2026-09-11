@@ -73,7 +73,7 @@ def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event
 def new_message(service: str | None, size: int | None = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
   args = {
     'valid': False,
-    'logMonoTime': int(time.monotonic() * 1e9),
+    'logMonoTime': int(time.perf_counter() * 1e9),
     **kwargs
   }
   dat = log.Event.new_message(**args)
@@ -240,7 +240,7 @@ class SubMaster:
     # non-blocking receive for non-polled sockets
     for s in self.non_polled_services:
       msgs.append(recv_one_or_none(self.sock[s]))
-    self.update_msgs(time.monotonic(), msgs)
+    self.update_msgs(time.perf_counter(), msgs)
 
   def update_msgs(self, cur_time: float, msgs: list[capnp.lib.capnp._DynamicStructReader]) -> None:
     self.frame += 1

@@ -72,14 +72,15 @@ ConsoleUI::ConsoleUI(Replay *replay) : replay(replay), sm({"carState", "vehicleP
 
   // Initialize all the colors. https://www.ditig.com/256-colors-cheat-sheet
   start_color();
-  init_pair(Color::Debug, 246, COLOR_BLACK);  // #949494
-  init_pair(Color::Yellow, 184, COLOR_BLACK);
+  auto color = [](int xterm256, int basic) { return COLORS >= 256 ? xterm256 : basic; };  // 8/16-color terminals
+  init_pair(Color::Debug, color(246, COLOR_WHITE), COLOR_BLACK);  // #949494
+  init_pair(Color::Yellow, color(184, COLOR_YELLOW), COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
   init_pair(Color::Cyan, COLOR_CYAN, COLOR_BLACK);
-  init_pair(Color::BrightWhite, 15, COLOR_BLACK);
+  init_pair(Color::BrightWhite, color(15, COLOR_WHITE), COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
-  init_pair(Color::Engaged, 28, 28);
-  init_pair(Color::Green, 34, COLOR_BLACK);
+  init_pair(Color::Engaged, color(28, COLOR_GREEN), color(28, COLOR_GREEN));
+  init_pair(Color::Green, color(34, COLOR_GREEN), COLOR_BLACK);
 
   initWindows();
 
@@ -107,9 +108,9 @@ void ConsoleUI::initWindows() {
   w[Win::Title] = newwin(1, max_width, 0, 0);
   w[Win::Stats] = newwin(2, max_width - 2 * BORDER_SIZE, 2, BORDER_SIZE);
   w[Win::Timeline] = newwin(4, max_width - 2 * BORDER_SIZE, 5, BORDER_SIZE);
-  w[Win::TimelineDesc] = newwin(1, 100, 10, BORDER_SIZE);
-  w[Win::CarState] = newwin(3, 100, 12, BORDER_SIZE);
-  w[Win::DownloadBar] = newwin(1, 100, 16, BORDER_SIZE);
+  w[Win::TimelineDesc] = newwin(1, max_width - 2 * (BORDER_SIZE - 1), 10, BORDER_SIZE);
+  w[Win::CarState] = newwin(3, max_width - 2 * (BORDER_SIZE - 1), 12, BORDER_SIZE);
+  w[Win::DownloadBar] = newwin(1, max_width - 2 * (BORDER_SIZE - 1), 16, BORDER_SIZE);
   if (int log_height = max_height - 27; log_height > 4) {
     w[Win::LogBorder] = newwin(log_height, max_width - 2 * (BORDER_SIZE - 1), 17, BORDER_SIZE - 1);
     box(w[Win::LogBorder], 0, 0);
@@ -125,6 +126,7 @@ void ConsoleUI::initWindows() {
 
   // set the title bar
   wbkgd(w[Win::Title], A_REVERSE);
+  werase(w[Win::Title]);  // PDCurses applies a colorless background only to cells it clears itself
   mvwprintw(w[Win::Title], 0, 3, "openpilot replay %s", COMMA_VERSION);
 
   // show windows on the real screen
@@ -139,16 +141,20 @@ void ConsoleUI::initWindows() {
 }
 
 void ConsoleUI::updateSize() {
-  if (is_term_resized(max_height, max_width)) {
-    for (auto win : w) {
-      if (win) delwin(win);
-    }
-    endwin();
-    clear();
-    refresh();
-    initWindows();
-    rWarning("resize term %dx%d", max_height, max_width);
+#ifdef PDCURSES
+  if (!is_termresized()) return;
+  resize_term(0, 0);  // PDCurses reports the resize until it is acknowledged
+#else
+  if (!is_term_resized(max_height, max_width)) return;
+#endif
+  for (auto win : w) {
+    if (win) delwin(win);
   }
+  endwin();
+  clear();
+  refresh();
+  initWindows();
+  rWarning("resize term %dx%d", max_height, max_width);
 }
 
 void ConsoleUI::updateStatus() {
@@ -260,17 +266,18 @@ void ConsoleUI::updateTimeline() {
   for (const auto &entry : *replay->getTimeline()) {
     int start_pos = ((entry.start_time - replay->minSeconds()) / total_sec) * width;
     int end_pos = ((entry.end_time - replay->minSeconds()) / total_sec) * width;
+    // chgat takes a color pair, not attribute bits; the markers draw the legend's '_'
     if (entry.type == TimelineType::Engaged) {
-      mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
-      mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
+      mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_NORMAL, Color::Engaged, NULL);
+      mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_NORMAL, Color::Engaged, NULL);
     } else if (entry.type == TimelineType::UserBookmark) {
-      mvwchgat(win, 3, start_pos, end_pos - start_pos + 1, ACS_S3, Color::Cyan, NULL);
+      mvwhline(win, 3, start_pos, '_' | COLOR_PAIR(Color::Cyan), end_pos - start_pos + 1);
     } else {
       auto color_id = Color::Green;
       if (entry.type != TimelineType::AlertInfo) {
         color_id = entry.type == TimelineType::AlertWarning ? Color::Yellow : Color::Red;
       }
-      mvwchgat(win, 3, start_pos, end_pos - start_pos + 1, ACS_S3, color_id, NULL);
+      mvwhline(win, 3, start_pos, '_' | COLOR_PAIR(color_id), end_pos - start_pos + 1);
     }
   }
 

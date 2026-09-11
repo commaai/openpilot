@@ -59,7 +59,7 @@ ImFont *addFont(const fs::path &path, float size) {
   ImFontConfig cfg;
   cfg.OversampleH = 2;
   cfg.OversampleV = 2;
-  ImFont *font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path.c_str(), size, &cfg);
+  ImFont *font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), size, &cfg);
   if (font != nullptr) addIconFont(size, font);
   return font;
 }

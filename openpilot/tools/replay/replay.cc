@@ -1,14 +1,11 @@
 #include "tools/replay/replay.h"
 
 #include <capnp/dynamic.h>
-#include <csignal>
 #include <iomanip>
 #include <sstream>
 #include "openpilot/cereal/services.h"
 #include "common/params.h"
 #include "tools/replay/util.h"
-
-static void interrupt_sleep_handler(int signal) {}
 
 // Helper function to notify events with safety checks
 template <typename Callback, typename... Args>
@@ -19,8 +16,6 @@ void notifyEvent(Callback &callback, Args &&...args) {
 Replay::Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block,
                SubMaster *sm, uint32_t flags, const std::string &data_dir, bool auto_source)
     : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(route, flags, data_dir, auto_source)) {
-  std::signal(SIGUSR1, interrupt_sleep_handler);
-
   if (flags_ & REPLAY_FLAG_BENCHMARK) {
     benchmark_stats_.process_start_ts = nanos_since_boot();
     seg_mgr_->setBenchmarkCallback([this](int seg_num, const std::string& event) {
@@ -104,9 +99,6 @@ bool Replay::load() {
 }
 
 void Replay::interruptStream(const std::function<bool()> &update_fn) {
-  if (stream_thread_.joinable() && stream_thread_id) {
-    pthread_kill(stream_thread_id, SIGUSR1);  // Interrupt sleep in stream thread
-  }
   {
     interrupt_requested_ = true;
     std::unique_lock lock(stream_lock_);
@@ -273,7 +265,6 @@ void Replay::publishFrame(const Event *e) {
 }
 
 void Replay::streamThread() {
-  stream_thread_id = pthread_self();
   std::unique_lock lk(stream_lock_);
 
   int last_processed_segment = -1;

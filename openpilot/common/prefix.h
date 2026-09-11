@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cassert>
+#include <filesystem>
 #include <string>
 
-#include "common/params.h"
 #include "common/util.h"
 #include "common/hardware/hw.h"
 
@@ -13,28 +13,23 @@ public:
     if (prefix.empty()) {
       prefix = util::random_string(15);
     }
-#ifdef __APPLE__
-    msgq_path = "/tmp/msgq_" + prefix;
-#else
-    msgq_path = "/dev/shm/msgq_" + prefix;
-#endif
+    msgq_path = Path::shm_path() + "/msgq_" + prefix;
     bool ret = util::create_directories(msgq_path, 0777);
     assert(ret);
     setenv("OPENPILOT_PREFIX", prefix.c_str(), 1);
   }
 
   ~OpenpilotPrefix() {
-    auto param_path = Params().getParamPath();
-    if (util::file_exists(param_path)) {
-      std::string real_path = util::readlink(param_path);
-      util::check_system(util::string_format("rm -rf %s", real_path.c_str()));
-      unlink(param_path.c_str());
-    }
+    std::error_code ec;
+    // Params::getParamPath() without params.h: its BOOL/INT/FLOAT enumerators clash with cabana's Win32 typedefs
+    auto param_path = Path::params() + "/" + util::getenv("OPENPILOT_PREFIX");
+    std::filesystem::remove_all(util::readlink(param_path), ec);  // the temp folder behind the symlink, see params.cc
+    std::filesystem::remove_all(param_path, ec);
     if (getenv("COMMA_CACHE") == nullptr) {
-      util::check_system(util::string_format("rm -rf %s", Path::download_cache_root().c_str()));
+      std::filesystem::remove_all(Path::download_cache_root(), ec);
     }
-    util::check_system(util::string_format("rm -rf %s", Path::comma_home().c_str()));
-    util::check_system(util::string_format("rm -rf %s", msgq_path.c_str()));
+    std::filesystem::remove_all(Path::comma_home(), ec);
+    std::filesystem::remove_all(msgq_path, ec);
     unsetenv("OPENPILOT_PREFIX");
   }
 

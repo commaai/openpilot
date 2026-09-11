@@ -5,6 +5,7 @@
 #include <ctime>
 #include <sstream>
 
+#include "common/util.h"
 #include "tools/cabana/dbc/dbc.h"
 
 namespace utils {

@@ -1,5 +1,7 @@
 #include "tools/cabana/panda.h"
 
+#include <libusb-1.0/libusb.h>
+
 #include <unistd.h>
 #include <cassert>
 #include <stdexcept>

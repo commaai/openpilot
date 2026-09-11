@@ -769,6 +769,8 @@ class GuiApplication:
     rl.begin_scissor_mode = _begin_scissor_mode_scaled
 
   def _set_log_callback(self):
+    if sys.platform == "win32":
+      return  # no vasprintf in the Windows CRT; raylib keeps its default stdout logging
     ffi_libc = cffi.FFI()
     ffi_libc.cdef("""
       int vasprintf(char **strp, const char *fmt, void *ap);

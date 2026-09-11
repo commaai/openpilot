@@ -24,6 +24,7 @@ extern "C" {
 #include <utility>
 #include <vector>
 
+#include "common/hardware/hw.h"
 #include "common/util.h"
 #include "json11/json11.hpp"
 
@@ -425,8 +426,8 @@ uint64_t fnv1a64(std::string_view text) {
 }
 
 fs::path basemap_cache_root() {
-  const char *home = std::getenv("HOME");
-  fs::path root = home != nullptr ? fs::path(home) / ".comma" : fs::temp_directory_path();
+  const std::string home = Path::home();
+  fs::path root = !home.empty() ? fs::path(home) / ".comma" : fs::temp_directory_path();
   root /= "jotpluggler_vector_map";
   fs::create_directories(root);
   return root;

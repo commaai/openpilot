@@ -55,21 +55,12 @@ std::string getUrlWithoutQuery(const std::string &url) {
 }
 
 void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_requested) {
-  struct timespec req, rem;
-  req.tv_sec = nanoseconds / 1000000000;
-  req.tv_nsec = nanoseconds % 1000000000;
+  // sleep in slices so an interrupt is noticed within a few ms on every platform
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::nanoseconds(nanoseconds);
   while (!interrupt_requested) {
-#ifdef __APPLE__
-    int ret = nanosleep(&req, &rem);
-    if (ret == 0 || errno != EINTR)
-      break;
-#else
-    int ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem);
-    if (ret == 0 || ret != EINTR)
-      break;
-#endif
-    // Retry sleep if interrupted by a signal
-    req = rem;
+    const auto left = deadline - std::chrono::steady_clock::now();
+    if (left <= left.zero()) break;
+    std::this_thread::sleep_for(std::min<std::chrono::nanoseconds>(left, std::chrono::milliseconds(5)));
   }
 }
 
@@ -99,10 +90,10 @@ void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
   assert(bytes > 0);
   void *p = std::align(alignment, bytes, current_buf, available);
   if (p == nullptr) {
-    available = next_buffer_size = std::max(next_buffer_size, bytes);
-    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
+    available = next_buffer_size = std::max(next_buffer_size, bytes + alignment);
+    current_buf = buffers.emplace_back(malloc(next_buffer_size));
     next_buffer_size *= growth_factor;
-    p = current_buf;
+    p = std::align(alignment, bytes, current_buf, available);
   }
 
   current_buf = (char *)current_buf + bytes;

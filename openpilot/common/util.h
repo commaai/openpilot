@@ -4,6 +4,38 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#ifdef _WIN32
+#include <direct.h>
+#include <io.h>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+// POSIX calls this codebase uses that the Windows CRT spells differently
+inline int mkdir(const char *path, mode_t) { return _mkdir(path); }
+inline int fsync(int fd) { return _commit(fd); }
+inline int setenv(const char *name, const char *value, int) { return _putenv_s(name, value); }
+inline int unsetenv(const char *name) { return _putenv_s(name, ""); }
+inline struct tm *localtime_r(const time_t *t, struct tm *out) {
+  struct tm *r = localtime(t);  // thread-local storage in the Windows CRT
+  if (r) *out = *r;
+  return r ? out : nullptr;
+}
+inline time_t timegm(struct tm *tm) { return _mkgmtime(tm); }
+inline char *strptime(const char *s, const char *format, struct tm *tm) {
+  std::istringstream in(s);
+  in >> std::get_time(tm, format);
+  if (in.fail()) return nullptr;
+  return const_cast<char *>(s) + (in.eof() ? strlen(s) : static_cast<size_t>(in.tellg()));
+}
+// popen/pclose return the exit code directly, there is no wait status to decode
+#define WIFEXITED(status) 1
+#define WEXITSTATUS(status) (status)
+#define WIFSIGNALED(status) 0
+#define WTERMSIG(status) 0
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -81,6 +113,9 @@ int random_int(int min, int max);
 std::string random_string(std::string::size_type length);
 
 // **** file helpers *****
+// an exclusive lock held until fd closes, and a rename that replaces an existing target (waiting out Windows readers)
+int lock_file_exclusive(int fd);
+int replace_file(const char *from, const char *to);
 std::string read_file(const std::string& fn);
 std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
@@ -119,7 +154,7 @@ public:
     std::signal(SIGINT, (sighandler_t)set_do_exit);
     std::signal(SIGTERM, (sighandler_t)set_do_exit);
 
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(_WIN32)
     std::signal(SIGPWR, (sighandler_t)set_do_exit);
 #endif
   }
@@ -133,7 +168,7 @@ public:
   }
 private:
   static void set_do_exit(int sig) {
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(_WIN32)
     power_failure = (sig == SIGPWR);
 #endif
     signal = sig;

@@ -217,4 +217,5 @@ class URLFile:
     return self._url
 
 
-os.register_at_fork(after_in_child=URLFile.reset)
+if hasattr(os, "register_at_fork"):  # no fork on Windows
+  os.register_at_fork(after_in_child=URLFile.reset)

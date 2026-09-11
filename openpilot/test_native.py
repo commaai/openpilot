@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sysconfig
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.parameterized import parameterized
@@ -16,7 +17,7 @@ NATIVE_TESTS = (
 class TestNative(OpenpilotTestCase):
   @parameterized.expand(NATIVE_TESTS)
   def test_native(self, executable):
-    path = os.path.join(BASEDIR, executable)
+    path = os.path.join(BASEDIR, executable) + sysconfig.get_config_var("EXE")  # .exe on Windows
     if not os.path.exists(path):
       self.skipTest(f"optional native test was not built: {executable}")
     subprocess.run([path], check=True)

@@ -6,7 +6,7 @@
 #include "msgq/visionipc/visionbuf.h"
 #include "tools/replay/util.h"
 
-#ifndef __APPLE__
+#ifdef __linux__
 #include "system/loggerd/encoder/v4l_decoder.h"
 #endif
 
@@ -66,7 +66,7 @@ private:
   AVBufferRef *hw_device_ctx = nullptr;
 };
 
-#ifndef __APPLE__
+#ifdef __linux__
 class V4LVideoDecoder : public VideoDecoder {
 public:
   V4LVideoDecoder() {};

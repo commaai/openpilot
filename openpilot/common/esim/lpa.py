@@ -2,14 +2,18 @@
 
 import atexit
 import base64
-import fcntl
 import hashlib
 import os
 import requests
 import subprocess
 import sys
-import termios
 import time
+
+if sys.platform == "win32":
+  fcntl = termios = None  # POSIX only; the device modem is unused on a Windows dev build
+else:
+  import fcntl
+  import termios
 
 from collections.abc import Callable, Generator
 from contextlib import contextmanager

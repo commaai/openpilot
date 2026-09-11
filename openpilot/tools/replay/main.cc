@@ -9,6 +9,7 @@
 
 #include "common/prefix.h"
 #include "common/timing.h"
+#include "common/util.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"

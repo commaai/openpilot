@@ -259,7 +259,8 @@ class TestLogReader(OpenpilotTestCase):
     assert msgs == sorted(msgs, key=lambda m: m.logMonoTime)
 
   def test_only_union_types(self):
-    with tempfile.NamedTemporaryFile() as qlog:
+    with tempfile.NamedTemporaryFile(delete_on_close=False) as qlog:
+      qlog.close()  # Windows: the file cannot be reopened while this handle is open
       # write valid Event messages
       num_msgs = 100
       with open(qlog.name, "wb") as f:

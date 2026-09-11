@@ -4,6 +4,9 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(git -C "$DIR" rev-parse --show-toplevel)"
 
+VENV_BIN="bin"
+case "$(uname -s)" in MINGW*|MSYS*) VENV_BIN="Scripts" ;; esac  # native Python venv layout on Windows
+
 function retry() {
   local attempts=$1
   shift
@@ -97,6 +100,16 @@ function install_linux_deps() {
   fi
 }
 
+function install_windows_deps() {
+  [[ "${MSYSTEM:-}" == "CLANG64" ]] || { echo "Windows builds need an MSYS2 CLANG64 shell, this is ${MSYSTEM:-not MSYS2}"; exit 1; }
+  # pycapnp's wheel links the MSVC C++ runtime, which neither Python nor a fresh Windows ships
+  [[ -f "$(cygpath -u "$SYSTEMROOT")/System32/msvcp140.dll" ]] || { echo "install the Visual C++ Redistributable https://aka.ms/vc14/vc_redist.x64.exe and rerun"; exit 1; }
+  # clang/lld/libc++ (MSVC cannot build openpilot's GNU C), dlfcn, MSYS2's native git and uv (the venv's git-lfs mis-resolves msys git's POSIX paths)
+  pacman -S --needed --noconfirm \
+    "$MINGW_PACKAGE_PREFIX-toolchain" "$MINGW_PACKAGE_PREFIX-pkgconf" "$MINGW_PACKAGE_PREFIX-ccache" \
+    "$MINGW_PACKAGE_PREFIX-dlfcn" "$MINGW_PACKAGE_PREFIX-git" "$MINGW_PACKAGE_PREFIX-uv" file
+}
+
 function install_python_deps() {
   # Increase the pip timeout to handle TimeoutError
   export PIP_DEFAULT_TIMEOUT=200
@@ -117,7 +130,8 @@ function install_python_deps() {
 
   echo "installing python packages..."
   uv sync --frozen --all-extras
-  source .venv/bin/activate
+  [[ $VENV_BIN == bin ]] || cp -n .venv/Scripts/python.exe .venv/Scripts/python3.exe  # scons commands and shebangs say python3
+  source .venv/$VENV_BIN/activate
 }
 
 # --- Main ---
@@ -131,6 +145,9 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
   elif [[ $SHELL == "/bin/bash" ]]; then
     RC_FILE="$HOME/.bash_profile"
   fi
+elif [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+  install_windows_deps
+  echo "[ ] installed system dependencies t=$SECONDS"
 fi
 
 if [ -f "$ROOT/pyproject.toml" ]; then

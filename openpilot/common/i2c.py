@@ -1,5 +1,4 @@
 import os
-import fcntl
 import ctypes
 
 # I2C constants from /usr/include/linux/i2c-dev.h
@@ -49,10 +48,12 @@ class SMBus:
       self._fd = -1
 
   def _set_address(self, addr: int, force: bool = False) -> None:
+    import fcntl  # POSIX only, keep the module importable on Windows
     ioctl_arg = I2C_SLAVE_FORCE if force else I2C_SLAVE
     fcntl.ioctl(self._fd, ioctl_arg, addr)
 
   def _smbus_access(self, read_write: int, command: int, size: int, data: _I2cSmbusData) -> None:
+    import fcntl
     ioctl_data = _I2cSmbusIoctlData(read_write, command, size, ctypes.pointer(data))
     fcntl.ioctl(self._fd, I2C_SMBUS, ioctl_data)
 
