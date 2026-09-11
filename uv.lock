@@ -169,8 +169,8 @@ wheels = [
 
 [[package]]
 name = "comma-deps-git-xet"
-version = "0.2.2.dev1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-xet&rev=4959ed5278de85251a97477b0ca5530e8919ca56#4959ed5278de85251a97477b0ca5530e8919ca56" }
+version = "0.2.2"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-xet&rev=1fa5b439b9c4d17591ad5f15ebe2cbcbca1908b8#1fa5b439b9c4d17591ad5f15ebe2cbcbca1908b8" }
 
 [[package]]
 name = "comma-deps-imgui"
@@ -659,7 +659,7 @@ requires-dist = [
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
-    { name = "comma-deps-git-xet", git = "https://github.com/commaai/dependencies.git?subdirectory=git-xet&rev=4959ed5278de85251a97477b0ca5530e8919ca56" },
+    { name = "comma-deps-git-xet", git = "https://github.com/commaai/dependencies.git?subdirectory=git-xet&rev=1fa5b439b9c4d17591ad5f15ebe2cbcbca1908b8" },
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },
