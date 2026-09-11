@@ -11,7 +11,7 @@ from functools import partial
 import numpy as np
 
 from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
-from openpilot.selfdrive.modeld.compile_warp import NV12Frame, make_frame_prepare, _parse_size
+from openpilot.selfdrive.modeld.compile_warp import NV12Frame, make_warp, _parse_size
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
@@ -59,23 +59,6 @@ def make_input_queues(input_shapes, state_pairs, device, frame_copy_size):
                   for name, (shape, dtype) in input_shapes.items() if name in state_pairs}
   input_queues['packed_npy_inputs'] = Tensor(packed_input, device='NPY').realize()
   return input_queues, npy, frame_views
-
-
-def make_warp(nv12, model_w, model_h, layout="yuv420", border_fill=None):
-  frame_prepare = make_frame_prepare(nv12, model_w, model_h, layout, border_fill)
-
-  def warp(tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(Device.DEFAULT)
-    big_tfm = big_tfm.to(Device.DEFAULT)
-    frame = frame.to(Device.DEFAULT)
-    big_frame = big_frame.to(Device.DEFAULT)
-    Tensor.realize(tfm, big_tfm, frame, big_frame)
-
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    return Tensor.cat(warped_frame, warped_big_frame)
-
-  return warp
 
 
 def make_run_model(warp, model_runner, input_shapes, state_pairs, frame_copy_size):

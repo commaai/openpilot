@@ -86,6 +86,23 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h, layout="yuv420", borde
   return frame_prepare_tinygrad
 
 
+def make_warp(nv12, model_w, model_h, layout="yuv420", border_fill=None):
+  frame_prepare = make_frame_prepare(nv12, model_w, model_h, layout, border_fill)
+
+  def warp(tfm, big_tfm, frame, big_frame):
+    tfm = tfm.to(Device.DEFAULT)
+    big_tfm = big_tfm.to(Device.DEFAULT)
+    frame = frame.to(Device.DEFAULT)
+    big_frame = big_frame.to(Device.DEFAULT)
+    Tensor.realize(tfm, big_tfm, frame, big_frame)
+
+    warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
+    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
+    return Tensor.cat(warped_frame, warped_big_frame)
+
+  return warp
+
+
 def _parse_size(s):
   w, h = s.lower().split('x')
   return int(w), int(h)
