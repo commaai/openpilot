@@ -33,7 +33,11 @@ dependencies = [
   "comma-deps-zeromq",
   "comma-deps-json11",
   "comma-deps-git-lfs",
+  "comma-deps-git-xet @ git+https://github.com/commaai/dependencies.git@2afb726ac815c9d662a5a4ae4532f5a3580f1351#subdirectory=git-xet",
   "comma-deps-gcc-arm-none-eabi",
+
+  # Git LFS downloads
+  "hf-xet==1.4.2",
 
   # athena
   "PyJWT[crypto]",

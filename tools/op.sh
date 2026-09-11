@@ -213,8 +213,8 @@ EOF
   git xet install --local --concurrency 8
   git config --local lfs.customtransfer.xet.direction upload
   cp tools/lfs_xet.py .venv/bin/lfs_xet.py
-  git config --local lfs.customtransfer.hf-xet.path "$(command -v uv || echo "$HOME/.local/bin/uv")"
-  git config --local lfs.customtransfer.hf-xet.args "run --script .venv/bin/lfs_xet.py"
+  git config --local lfs.customtransfer.hf-xet.path "$(command -v python3)"
+  git config --local lfs.customtransfer.hf-xet.args ".venv/bin/lfs_xet.py"
   git config --local lfs.customtransfer.hf-xet.direction download
   LFS_URL="$(git config -f .lfsconfig lfs.url)"
   git config --local "lfs.$LFS_URL.standalonetransferagent" hf-xet
