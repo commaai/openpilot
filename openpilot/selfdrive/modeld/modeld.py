@@ -7,8 +7,7 @@ import os
 import pickle
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
-from tinygrad.tensor import Tensor
-from tinygrad.nn.compile import load_pickle
+from tinygrad.nn.compile import allocate_inputs, load_pickle
 import usb1
 import struct
 import threading
@@ -189,19 +188,14 @@ class ModelState:
 
     self.input_specs = variant['input_specs']
     self.packed_specs = variant['packed_specs']
-    self.model_device = next(device for _, _, device in self.input_specs.values() if device != 'NPY')
     self.reset_inputs()
     self.parser = Parser()
     self.run_model = variant['run']
 
   def reset_inputs(self) -> None:
-    buffers = {name: np.zeros(shape, dtype=dtype) for name, (shape, dtype, _) in self.input_specs.items()}
-    self.input_queues = {name: Tensor(buffers[name], device=device).realize() for name, (_, _, device) in self.input_specs.items()}
-    packed = buffers['packed_inputs']
-    views = {name: packed[start:start+int(np.prod(shape))*np.dtype(dtype).itemsize].view(dtype).reshape(shape)
-             for name, (start, shape, dtype) in self.packed_specs.items()}
-    self.frame_views = {name: views.pop(name) for name in self.vision_input_names}
-    self.npy = views
+    self.input_queues, views = allocate_inputs(self.input_specs, self.packed_specs)
+    self.frame_views = {name: views[name] for name in self.vision_input_names}
+    self.npy = {name: views[name] for name in self.packed_specs if name not in self.frame_views}
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}

@@ -54,7 +54,6 @@ st[0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z]
 config.json
 compile_commands.json
 compare_runtime*.html
-openpilot/selfdrive/modeld/models/tg_input_devices.json
 
 # build artifacts
 docs/_site/
