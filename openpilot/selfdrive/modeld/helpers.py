@@ -6,7 +6,7 @@ import struct
 import tempfile
 from pathlib import Path
 
-from openpilot.common.file_chunker import get_manifest_path
+from openpilot.common.file_chunker import get_chunk_name, get_manifest_path
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
@@ -58,4 +58,13 @@ def chestnut_present() -> bool:
   return False
 
 def chestnut_compiled() -> bool:
-  return Path(get_manifest_path(modeld_pkl_path(chestnut=True))).is_file()
+  path = modeld_pkl_path(chestnut=True)
+  try:
+    metadata = json.loads(path.with_suffix('.json').read_text())
+    count = int(Path(get_manifest_path(path)).read_text())
+    chunks = [Path(get_chunk_name(path, i, count)) for i in range(count)]
+    return count == len(metadata['chunks']) and count > 0 and all(
+      chunk.stat().st_size == metadata['chunks'][chunk.name] for chunk in chunks
+    )
+  except (OSError, ValueError, KeyError):
+    return False
