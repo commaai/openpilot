@@ -2,7 +2,7 @@
 import os
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR
 from tinygrad.tensor import Tensor
-from tinygrad.nn.compile import allocate_inputs, load_pickle
+from tinygrad_repo.examples.openpilot.helpers import allocate_inputs, load_pickle
 import time
 import pickle
 import codecs

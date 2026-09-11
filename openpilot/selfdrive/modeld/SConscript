@@ -33,7 +33,7 @@ else:
 # tinygrad calls brew which needs a $HOME in the env
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
-compiler = 'python3 -m tinygrad.nn.compile_onnx'
+compiler = 'python3 -m tinygrad_repo.examples.openpilot.compile_onnx'
 
 
 def model_onnx(name):
@@ -74,6 +74,6 @@ compile_and_chunk(pkl, onnx, command)
 
 for cam_w, cam_h in CAMERA_CONFIGS:
   pkl = File(f'models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl').abspath
-  command = (f'{tg_flags} {mac_brew_string} python3 -m tinygrad.nn.compile_warp ' +
+  command = (f'{tg_flags} {mac_brew_string} python3 -m tinygrad_repo.examples.openpilot.compile_warp ' +
              f'{shlex.join(warp_args(cam_w, cam_h, DM_INPUT_SIZE, "luma", border_fill=16))} --output {pkl} --benchmark-runs 1')
   lenv.Command(pkl, tinygrad_files + [Value(command), config_file], command)

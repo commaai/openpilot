@@ -7,7 +7,7 @@ import os
 import pickle
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
-from tinygrad.nn.compile import allocate_inputs, load_pickle
+from tinygrad_repo.examples.openpilot.helpers import allocate_inputs, load_pickle
 import usb1
 import struct
 import threading
