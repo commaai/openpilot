@@ -5,10 +5,10 @@ from collections.abc import Callable
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
+from openpilot.selfdrive.ui.mici.layouts.settings.device.prime import PrimeScroller
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, LABEL_COLOR, COMPLICATION_GREY
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigDialogBase, BigConfirmationDialog
-from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage, QRCodeWidget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
@@ -167,16 +167,13 @@ class PairBigButton(BigButton):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    # TODO: show ad dialog when clicked if not prime
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
       dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
       dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
-    elif ui_state.prime_state.is_paired():
-      dlg = ManagePrimeDialog(ui_state.params.get("DongleId"))
     else:
-      dlg = PairingDialog()
+      dlg = PrimeScroller()
     gui_app.push_widget(dlg)
 
 
