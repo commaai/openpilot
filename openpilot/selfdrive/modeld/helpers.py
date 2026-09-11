@@ -36,6 +36,28 @@ def dump_oob(obj, f):
     tmp.seek(0)
     shutil.copyfileobj(tmp, f)
 
+def validate_oob(f):
+  import pickletools
+
+  file_size = f.seek(0, io.SEEK_END)
+  f.seek(0)
+
+  def read_size():
+    header = f.read(8)
+    if len(header) != 8:
+      raise EOFError("incomplete model buffer header")
+    size = struct.unpack('<q', header)[0]
+    if size < 0 or size > file_size - f.tell():
+      raise EOFError("incomplete model buffer")
+    return size
+
+  opcodes = f.read(read_size())
+  for opcode, _, _ in pickletools.genops(opcodes):
+    if opcode.name == 'NEXT_BUFFER':
+      f.seek(read_size(), io.SEEK_CUR)
+  if f.tell() != file_size:
+    raise ValueError("unexpected model buffer data")
+
 def load_oob(f):
   opcodes = f.read(struct.unpack('<q', f.read(8))[0])
   def buffers():
