@@ -62,6 +62,7 @@ modeld_dir = Dir("#openpilot/selfdrive/modeld").abspath
 compile_modeld_script = [
   File(f"{modeld_dir}/compile_modeld.py"),
   File(f"{modeld_dir}/get_model_metadata.py"),
+  File(f"{modeld_dir}/helpers.py"),
   File("#openpilot/system/camerad/cameras/nv12_info.py"),
   File("#openpilot/common/hardware/hw.py"),
 ]
