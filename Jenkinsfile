@@ -203,7 +203,7 @@ node {
 
     if (env.BRANCH_NAME == '__nightly-chestnut') {
       deviceStage("build nightly-chestnut", "mici-chestnut-ci", [], [
-        step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
+        step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
       ])
     }
 
