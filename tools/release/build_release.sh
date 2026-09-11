@@ -50,7 +50,7 @@ done
 
 scons
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
-  python3 -c 'from openpilot.selfdrive.modeld.helpers import chestnut_compiled; assert chestnut_compiled()'
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 fi
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then

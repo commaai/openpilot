@@ -175,9 +175,7 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
-    path = modeld_pkl_path(chestnut)
-    with path.open('rb') if chestnut else open_file_chunked(path) as f:
-      jits = load_oob(f)
+    jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
     input_devices = jits['input_devices']
     self.model_device = input_devices['model']
     metadata = jits['metadata']

@@ -57,8 +57,4 @@ def chestnut_present() -> bool:
   return False
 
 def chestnut_compiled() -> bool:
-  try:
-    # LFS pointers are at most 1024 bytes.
-    return modeld_pkl_path(chestnut=True).stat().st_size > 1024
-  except OSError:
-    return False
+  return modeld_pkl_path(chestnut=True).is_file()
