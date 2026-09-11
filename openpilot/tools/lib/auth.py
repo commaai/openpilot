@@ -25,6 +25,7 @@ import argparse
 import sys
 import pprint
 import webbrowser
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlencode
@@ -49,7 +50,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
     self.send_response(200)
     self.send_header('Content-type', 'text/plain')
     self.end_headers()
-    self.wfile.write(b'Return to the CLI to continue')
+    self.wfile.write(b'Sign-in received. You can close this tab and return to Cabana or your terminal.')
 
   def log_message(self, format: str, *args: object) -> None:  # noqa: A002  # stdlib override
     pass  # this prevent http server from dumping messages to stdout
@@ -92,6 +93,35 @@ def auth_redirect_link(method, port):
     return 'https://appleid.apple.com/auth/authorize?' + urlencode(params)
   else:
     raise NotImplementedError(f"no redirect implemented for method {method}")
+
+
+def login_for_cabana(method, timeout=180):
+  """Use the CLI's OAuth callback, returning only a status (never credentials)."""
+  try:
+    with ClientRedirectServer(('localhost', 0), ClientRedirectHandler) as server:
+      server.query_params = {}
+      server.timeout = 0.5
+      if not webbrowser.open(auth_redirect_link(method, server.server_port), new=2):
+        return {"error": "Could not open your browser. Check your default browser and try again."}
+      deadline = time.monotonic() + timeout
+      while time.monotonic() < deadline:
+        server.handle_request()
+        params = server.query_params
+        if 'error' in params:
+          return {"error": "Sign-in was declined. Choose a provider to try again."}
+        if 'code' in params:
+          if not params['code'][0] or not params.get('provider', [''])[0]:
+            return {"error": "Invalid sign-in response. Please try again."}
+          response = CommaApi().post('v2/auth/', data={'code': params['code'], 'provider': params['provider']}, timeout=30)
+          token = response.get('access_token')
+          if not isinstance(token, str) or not token:
+            return {"error": "Sign-in did not return an access token. Please try again."}
+          CommaApi(token).get('v1/me', timeout=30)
+          set_token(token)
+          return {"success": True}
+      return {"error": "Sign-in timed out. Choose a provider to try again."}
+  except Exception:
+    return {"error": "Could not complete sign-in. Check your connection and try again."}
 
 
 def login(method):

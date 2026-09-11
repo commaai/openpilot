@@ -207,7 +207,16 @@ def cmd_decompress(args):
   sys.stdout.flush()
 
 
+def cmd_auth(args):
+  from openpilot.tools.lib.auth import login_for_cabana
+  print(json.dumps(login_for_cabana(args.provider)))
+
+
 def cmd_devices(args):
+  from openpilot.tools.lib.auth_config import get_token
+  if not get_token():
+    print(json.dumps({"error": "unauthorized"}))
+    return
   api_call(lambda api: api.get("v1/me/devices/"))
 
 
@@ -240,6 +249,10 @@ def main():
   p_dc = subparsers.add_parser("decompress")
   p_dc.add_argument("path")
   p_dc.set_defaults(func=cmd_decompress)
+
+  p_auth = subparsers.add_parser("auth")
+  p_auth.add_argument("provider", choices=["google", "apple", "github"])
+  p_auth.set_defaults(func=cmd_auth)
 
   p_dev = subparsers.add_parser("devices")
   p_dev.set_defaults(func=cmd_devices)
