@@ -22,6 +22,10 @@ class PrimeType(IntEnum):
   MAGENTA_NEW = 4
   PURPLE = 5
 
+class Provider(str):
+  GOOGLE = "google"
+  GITHUB = "github"
+  APPLE = "apple"
 
 class PrimeState:
   FETCH_INTERVAL = 5.0  # seconds between API calls
@@ -35,6 +39,9 @@ class PrimeState:
     self.prime_type: PrimeType = self._load_initial_state()
     self._prime_trial_available = False
     self._pairing_provider: str | None = os.getenv("PAIRING_PROVIDER") or self._params.get("PairingProvider")
+
+    if self.prime_type > PrimeType.UNPAIRED and self._pairing_provider is None:
+      self._fetch_pairing_provider()
 
     self._running = False
     self._thread = None
@@ -61,24 +68,23 @@ class PrimeState:
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
-        with self._lock:
-          self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
-          fetch_provider = is_paired and self._pairing_provider is None
-        if fetch_provider:
-          self._fetch_pairing_provider(dongle_id, identity_token)
+        self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
-  def _fetch_pairing_provider(self, dongle_id: str, identity_token: str) -> None:
+  def _fetch_pairing_provider(self) -> None:
+    dongle_id = self._params.get("DongleId")
+    if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
+      return
+
     try:
+      identity_token = get_token(dongle_id)
       response = api_get(f"v1/devices/{dongle_id}/owner", timeout=self.API_TIMEOUT, access_token=identity_token, session=self._session)
-      if response.status_code in (200, 404):
-        user_id = (response.json().get("user_id") or "") if response.status_code == 200 else ""
-        provider = user_id.partition("_")[0]
-        with self._lock:
-          if self.prime_type > PrimeType.UNPAIRED:
-            self._pairing_provider = provider if provider in ("github", "google", "apple") else ""
-            self._params.put("PairingProvider", self._pairing_provider)
+      if response.status_code == 200:
+        data = response.json()
+        user_id = data.get("user_id", "")
+        provider = Provider(user_id.partition("_")[0])
+        self.set_provider(provider)
     except Exception as e:
       cloudlog.error(f"Failed to fetch pairing provider: {e}")
 
@@ -92,6 +98,10 @@ class PrimeState:
         self.prime_type = prime_type
         self._params.put("PrimeType", int(prime_type))
         cloudlog.info(f"Prime type updated to {prime_type}")
+
+  def set_provider(self, provider: Provider):
+    with self.lock:
+      self._params.put("PairingProvider", provider)
 
   def _worker_thread(self) -> None:
     drop_realtime()
@@ -123,19 +133,19 @@ class PrimeState:
 
   def get_pairing_provider(self) -> str | None:
     with self._lock:
-      return self._pairing_provider if self.prime_type > PrimeType.UNPAIRED and self._pairing_provider in ("github", "google", "apple") else None
+      return self._pairing_provider
 
   def is_prime(self) -> bool:
     with self._lock:
       return bool(self.prime_type > PrimeType.NONE)
 
-  def can_claim_prime_trial(self) -> bool:
-    with self._lock:
-      return self.prime_type == PrimeType.NONE and self._prime_trial_available
-
   def is_full_prime(self) -> bool:
     with self._lock:
       return self.prime_type > PrimeType.NONE and self.prime_type != PrimeType.LITE
+
+  def can_claim_prime_trial(self) -> bool:
+    with self._lock:
+      return self._prime_trial_available
 
   def is_paired(self) -> bool:
     with self._lock:
