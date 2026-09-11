@@ -55,12 +55,6 @@ def load_pickle(f, *, out_of_band=False):
       yield pb
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
-def dump_oob(obj, f):
-  return dump_pickle(obj, f, out_of_band=True)
-
-def load_oob(f):
-  return load_pickle(f, out_of_band=True)
-
 def chestnut_present() -> bool:
   for d in USB_DEVICES_PATH.glob("*"):
     try:
