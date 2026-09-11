@@ -17,7 +17,7 @@ class TestCabanaAuth(unittest.TestCase):
 
       def callback():
         with urlopen(f'http://localhost:{port}/auth?{query}', timeout=5) as reply:
-          self.assertIn(b'return to Cabana', reply.read())
+          assert b'return to Cabana' in reply.read()
       thread = threading.Thread(target=callback)
       callbacks.append(thread)
       thread.start()
@@ -43,30 +43,30 @@ class TestCabanaAuth(unittest.TestCase):
 
   def test_provider_denial(self):
     result, api, save = self.run_login('error=access_denied')
-    self.assertIn('declined', result['error'])
+    assert 'declined' in result['error']
     api.post.assert_not_called()
     save.assert_not_called()
 
   def test_missing_provider(self):
     result, api, save = self.run_login('code=test-code')
-    self.assertIn('Invalid', result['error'])
+    assert 'Invalid' in result['error']
     api.post.assert_not_called()
     save.assert_not_called()
 
   def test_missing_token(self):
     result, _, save = self.run_login('code=test-code&provider=google', {'unexpected': True})
-    self.assertIn('access token', result['error'])
+    assert 'access token' in result['error']
     save.assert_not_called()
 
   def test_invalid_token_is_not_saved(self):
     result, _, save = self.run_login('code=test-code&provider=google', validation_error=RuntimeError('invalid token'))
-    self.assertIn('Could not complete', result['error'])
+    assert 'Could not complete' in result['error']
     save.assert_not_called()
 
   def test_browser_failure(self):
     with patch('openpilot.tools.lib.auth.webbrowser.open', return_value=False):
-      self.assertIn('browser', login_for_cabana('github')['error'])
+      assert 'browser' in login_for_cabana('github')['error']
 
   def test_timeout(self):
     with patch('openpilot.tools.lib.auth.webbrowser.open', return_value=True):
-      self.assertIn('timed out', login_for_cabana('apple', timeout=0)['error'])
+      assert 'timed out' in login_for_cabana('apple', timeout=0)['error']
