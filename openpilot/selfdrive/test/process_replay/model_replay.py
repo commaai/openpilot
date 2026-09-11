@@ -20,8 +20,8 @@ from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
-TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
-SEGMENT = 4
+TEST_ROUTE = "5beb9b58bd12b691|0000010a--a51155e496"
+SEGMENT = 1
 START_FRAME = 0
 END_FRAME = 60
 
