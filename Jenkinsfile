@@ -9,14 +9,16 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
   throw Exception("Failed after ${maxRetries} retries")
 }
 
-def device(String ip, String step_label, String cmd, boolean tty = false) {
+def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
-    def script = """
+    def ssh_cmd = """
+ssh -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=12 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec setpriv --pdeathsig HUP /usr/bin/bash <<'END'
+
 set -e
 
 export TERM=xterm-256color
 
-shopt -s huponexit # kill all child processes when the shell exits
+trap 'kill 0' HUP
 
 export CI=1
 export PYTHONWARNINGS=error
@@ -26,9 +28,9 @@ export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
-export CI_ARTIFACTS_TOKEN=${tty ? '' : env.CI_ARTIFACTS_TOKEN}
-export GITHUB_COMMENTS_TOKEN=${tty ? '' : env.GITHUB_COMMENTS_TOKEN}
-export AZURE_TOKEN='${tty ? '' : env.AZURE_TOKEN}'
+export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
+export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
+export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread since most require real hardware that can't be shared
 export PYTEST_ADDOPTS="-n0 -s"
 
@@ -67,15 +69,10 @@ export LD_LIBRARY_PATH="\$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/us
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-time ${cmd}
-"""
-    def ssh_cmd = "ssh -o ControlMaster=auto -o ControlPath=/tmp/ssh_control_%C -o ControlPersist=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=12 -o BatchMode=yes -o StrictHostKeyChecking=no -i \$key_file"
-    if (tty) {
-      def command = "exec /usr/bin/bash -c '" + script.replace("'", "'\\''") + "'"
-      ssh_cmd += " -tt 'comma@${ip}' '${command.replace("'", "'\\''")}'"
-    } else {
-      ssh_cmd += " 'comma@${ip}' exec /usr/bin/bash <<'END'\n${script}END"
-    }
+time ( ${cmd} ) &
+wait \$!
+END"""
+
     sh script: ssh_cmd, label: step_label
   }
 }
@@ -115,7 +112,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
               return
             } else {
               timeout(time: cmdTimeout, unit: 'SECONDS') {
-                device(device_ip, name, cmd, args.tty ?: false)
+                device(device_ip, name, cmd)
               }
             }
           }
@@ -215,14 +212,14 @@ node {
     parallel (
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
-          step("build openpilot", "cd openpilot/system/manager && ./build.py", [tty: true]),
+          step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("check dirty", "tools/release/check-dirty.sh"),
           step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py", [timeout: 60]),
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
-          step("build", "cd openpilot/system/manager && ./build.py", [tty: true]),
+          step("build", "cd openpilot/system/manager && ./build.py"),
           step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
           step("test encoder", "./openpilot/system/loggerd/tests/test_encoder.py", [diffPaths: ["openpilot/system/loggerd/"]]),
           step("test manager", "./openpilot/system/manager/test/test_manager.py"),
@@ -230,33 +227,33 @@ node {
       },
       'camerad OX03C10': {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
-          step("build", "cd openpilot/system/manager && ./build.py", [tty: true]),
+          step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "./openpilot/selfdrive/pandad/tests/test_pandad.py"),
           step("test camerad", "./openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
-          step("build", "cd openpilot/system/manager && ./build.py", [tty: true]),
+          step("build", "cd openpilot/system/manager && ./build.py"),
           step("test pandad", "./openpilot/selfdrive/pandad/tests/test_pandad.py"),
           step("test camerad", "./openpilot/system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'sensord': {
         deviceStage("LSM + MMC", "tizi-lsmc", ["UNSAFE=1"], [
-          step("build", "cd openpilot/system/manager && ./build.py", [tty: true]),
+          step("build", "cd openpilot/system/manager && ./build.py"),
           step("test sensord", "./openpilot/system/sensord/tests/test_sensord.py"),
         ])
       },
       'replay': {
         deviceStage("model-replay", "tizi-replay", ["UNSAFE=1"], [
-          step("build", "cd openpilot/system/manager && ./build.py", [tty: true, diffPaths: ["openpilot/selfdrive/modeld/", "tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
+          step("build", "cd openpilot/system/manager && ./build.py", [diffPaths: ["openpilot/selfdrive/modeld/", "tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
           step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py", [diffPaths: ["openpilot/selfdrive/modeld/", "tinygrad_repo", "openpilot/selfdrive/test/process_replay/model_replay.py"]]),
         ])
       },
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
-          step("build openpilot", "cd openpilot/system/manager && ./build.py", [tty: true]),
+          step("build openpilot", "cd openpilot/system/manager && ./build.py"),
           step("test pandad loopback", "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"),
           step("test amp", "./openpilot/common/hardware/comma/tests/test_amplifier.py"),
@@ -264,7 +261,7 @@ node {
       },
       'chestnut': {
         deviceStage("chestnut", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
-          step("build", "./openpilot/selfdrive/test/chestnut.sh", [tty: true]),
+          step("build", "./openpilot/selfdrive/test/chestnut.sh"),
           step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
           step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
           step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
