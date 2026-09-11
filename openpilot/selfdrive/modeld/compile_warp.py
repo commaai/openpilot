@@ -1,10 +1,26 @@
-from collections import namedtuple
-from tinygrad.tensor import Tensor
-from tinygrad.helpers import Context
-from tinygrad.device import Device
+"""Perspective warps for NV12 frames, standalone or fused into a model JIT."""
+import argparse
+from typing import NamedTuple
+import numpy as np
+from tinygrad import Tensor, Device, Context
+from openpilot.selfdrive.modeld.helpers import allocate_inputs, compile_jit, dump_pickle
 
 
-NV12Frame = namedtuple("NV12Frame", ['width', 'height', 'stride', 'y_height', 'uv_height', 'size'])
+class NV12Frame(NamedTuple):
+  width: int
+  height: int
+  stride: int
+  y_height: int
+  uv_height: int
+  size: int
+
+  @property
+  def copy_size(self): return self.stride * (self.y_height + self.uv_height)
+
+
+def parse_frame(value): return NV12Frame(*map(int, value.split(',')))
+
+def parse_size(value): return tuple(map(int, value.lower().split('x')))
 
 
 def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, border_fill_val=None):
@@ -55,6 +71,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   stride_pad = stride - cam_w
 
   def frame_prepare_tinygrad(input_frame, M_inv):
+    M_inv = M_inv.to(Device.DEFAULT).realize()
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
     M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=Device.DEFAULT)
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
@@ -75,6 +92,46 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def _parse_size(s):
-  w, h = s.lower().split('x')
-  return int(w), int(h)
+def make_luma_warp(nv12:NV12Frame, width, height, border_fill=None):
+  def warp(input_frame, M_inv):
+    M_inv = M_inv.to(Device.DEFAULT).realize()
+    return warp_perspective_tinygrad(input_frame[:nv12.height*nv12.stride], M_inv,
+                                    (width, height), (nv12.height, nv12.width), nv12.stride-nv12.width,
+                                    border_fill_val=border_fill).reshape(-1, height*width)
+  return warp
+
+
+def make_warp(frame, output_size, layout='luma', border_fill=None):
+  width, height = output_size
+  if layout == 'luma':
+    return make_luma_warp(NV12Frame(*frame), width, height, border_fill)
+  if layout == 'yuv420':
+    return make_frame_prepare(NV12Frame(*frame), width, height)
+  raise ValueError(f'Unknown warp layout: {layout}')
+
+
+def compile_warp(frame:NV12Frame, output_size, *, layout='luma', border_fill=None, benchmark_runs=20):
+  function = make_warp(frame, output_size, layout, border_fill)
+  specs = {'input_frame': ((frame.size,), np.dtype(np.uint8).str, Device.DEFAULT), 'M_inv': ((3, 3), np.dtype(np.float32).str, 'NPY')}
+  def make_inputs(seed):
+    rng = np.random.default_rng(seed)
+    def initialize(views):
+      views['input_frame'][:] = rng.integers(0, 256, frame.size, dtype=np.uint8)
+      views['M_inv'][:] = rng.standard_normal((3, 3))*8
+    return (), allocate_inputs(specs, {}, initialize)[0]
+  jit = compile_jit(function, make_inputs, benchmark_runs)
+  return {'metadata': {}, 'variants': {'default': {'run': jit, 'input_specs': specs, 'packed_specs': {}}}}
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument('--frame', type=parse_frame, required=True, help='width,height,stride,y_height,uv_height,buffer_size')
+  parser.add_argument('--warp-to', type=parse_size, required=True)
+  parser.add_argument('--layout', choices=['luma', 'yuv420'], default='luma')
+  parser.add_argument('--border-fill', type=int, help='luma outside the frame; omit to clamp coordinates')
+  parser.add_argument('--output', required=True)
+  parser.add_argument('--benchmark-runs', type=int, default=20)
+  args = parser.parse_args()
+  artifact = compile_warp(args.frame, args.warp_to, layout=args.layout, border_fill=args.border_fill, benchmark_runs=args.benchmark_runs)
+  with open(args.output, 'wb') as f:
+    dump_pickle(artifact, f)
