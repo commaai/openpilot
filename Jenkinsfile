@@ -18,7 +18,7 @@ set -e
 
 export TERM=xterm-256color
 
-trap 'kill 0' HUP
+trap 'kill 0' HUP # stop this process group on SSH disconnect
 
 export CI=1
 export PYTHONWARNINGS=error
