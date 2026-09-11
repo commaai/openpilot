@@ -209,7 +209,11 @@ def cmd_decompress(args):
 
 def cmd_auth(args):
   from openpilot.tools.lib.auth import login_for_cabana
-  print(json.dumps(login_for_cabana(args.provider)))
+  # Browser launchers must not inherit the protocol pipes or mix diagnostics into JSON.
+  with os.fdopen(os.dup(sys.stdout.fileno()), 'w') as output, open(os.devnull, 'w') as null:
+    os.dup2(null.fileno(), sys.stdout.fileno())
+    os.dup2(null.fileno(), sys.stderr.fileno())
+    print(json.dumps(login_for_cabana(args.provider)), file=output)
 
 
 def cmd_devices(args):
