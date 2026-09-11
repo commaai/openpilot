@@ -32,8 +32,7 @@ dependencies = [
   "comma-deps-zstd",
   "comma-deps-zeromq",
   "comma-deps-json11",
-  "comma-deps-git-lfs",
-  "comma-deps-git-xet @ git+https://github.com/commaai/dependencies.git@1fa5b439b9c4d17591ad5f15ebe2cbcbca1908b8#subdirectory=git-xet",
+  "comma-deps-git-lfs @ git+https://github.com/commaai/dependencies.git@4e7dabef9c490344e2d203ae67a36ea40496055b#subdirectory=git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
   # Git LFS downloads
