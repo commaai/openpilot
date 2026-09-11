@@ -159,8 +159,13 @@ wheels = [
 
 [[package]]
 name = "comma-deps-git-lfs"
-version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=4e7dabef9c490344e2d203ae67a36ea40496055b#4e7dabef9c490344e2d203ae67a36ea40496055b" }
+version = "3.6.1.post107"
+source = { registry = "https://github.com/haraschax/xet-core/releases/expanded_assets/git-xet-v0.2.2-dev.1" }
+wheels = [
+    { url = "https://github.com/haraschax/xet-core/releases/download/git-xet-v0.2.2-dev.1/comma_deps_git_lfs-3.6.1.post107-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:f53c728435ad3ac51c92147cbe7923268f5585844c44c29050ed0186387d75b0" },
+    { url = "https://github.com/haraschax/xet-core/releases/download/git-xet-v0.2.2-dev.1/comma_deps_git_lfs-3.6.1.post107-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:16541bf8d6b6386b414cb48f4306ad7d99f5652b27f7026b381e290d523d30c0" },
+    { url = "https://github.com/haraschax/xet-core/releases/download/git-xet-v0.2.2-dev.1/comma_deps_git_lfs-3.6.1.post107-py3-none-macosx_11_0_arm64.whl", hash = "sha256:2e08ddcea68690f9d629ef98e862351b7dc6ce29466831b57273638ff2080d2a" },
+]
 
 [[package]]
 name = "comma-deps-imgui"
@@ -647,7 +652,7 @@ requires-dist = [
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
-    { name = "comma-deps-git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=4e7dabef9c490344e2d203ae67a36ea40496055b" },
+    { name = "comma-deps-git-lfs", specifier = "==3.6.1.post107" },
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },
