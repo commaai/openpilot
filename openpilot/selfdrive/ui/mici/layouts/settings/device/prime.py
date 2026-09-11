@@ -1,57 +1,11 @@
-from __future__ import annotations
-import pyray as rl
-import time
-
 from openpilot.common.api import Api
-from openpilot.common.qrcode import make_texture
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import NavScroller
-
-class QRWidget(Widget):
-  def __init__(self, url: str, refresh_interval: int | None = None):
-    super().__init__()
-    self._url = url
-    self._refresh_interval = refresh_interval
-    self._last_pairing_qr_generation = float("-inf")
-
-    self._texture = self._generate_qr_code(url)
-    self.set_rect(rl.Rectangle(0, 0, 170, 170))
-    self._error = Label("QR Code Error", font_size=30, font_weight=FontWeight.BOLD, text_color=rl.RED)
-
-  def _check_qr_refresh(self) -> None:
-    current_time = time.monotonic()
-    if current_time - self._last_pairing_qr_generation >= self._refresh_interval:
-      if self._texture and self._texture.id != 0:
-        rl.unload_texture(self._texture)
-      self._texture = self._generate_qr_code("https://connect.comma.ai/?pair=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGl0eSI6IjAxMjM0NTY3ODlhYmNkZWYiLCJuYmYiOjE3ODkxNDI0MDAsImlhdCI6MTc4OTE0MjQwMCwiZXhwIjoxNzg5MTQ2MDAwLCJwYWlyIjp0cnVlfQ.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn-AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq-wsbKztLW2t7i5uru8vb6_wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t_g4eLj5OXm5-jp6uvs7e7v8PHy8_T19vf4-fr7_P3-_w")
-      self._last_pairing_qr_generation = current_time
-
-  def _generate_qr_code(self, url):
-    try:
-      return make_texture(url, inverted=True)
-    except Exception as e:
-      cloudlog.warning(f"QR code generation failed: {e}")
-      return None
-
-  def _render(self, rect: rl.Rectangle):
-    if self._refresh_interval:
-      self._check_qr_refresh()
-    if not self._texture:
-      self._error.render(rect)
-      return
-    scale = rect.height / self._texture.height
-    pos = rl.Vector2(round(rect.x), round(rect.y))
-    rl.draw_texture_ex(self._texture, pos, 0.0, scale, rl.WHITE)
-
-  def __del__(self):
-    if self._texture and self._texture.id != 0:
-      rl.unload_texture(self._texture)
 
 class PrimeScroller(NavScroller):
   """Dialog for device pairing/prime with QR code."""
@@ -66,11 +20,11 @@ class PrimeScroller(NavScroller):
     self.initial_is_paired = ui_state.prime_state.is_paired()
 
     # pairing components
-    self._pairing_icon = gui_app.texture("icons_mici/offroad_alerts/green_settings.png", 64, 64)
+    self._pairing_icon = gui_app.texture("icons_mici/settings/device/green_settings.png", 64, 64)
     self._pairing_info = GreyBigButton("scan to pair\ndevice", "connect.comma.ai", self._pairing_icon)
 
     # prime management components
-    self._prime_icon = gui_app.texture("icons_mici/offroad_alerts/green_cell.png", 64, 64)
+    self._prime_icon = gui_app.texture("icons_mici/settings/device/green_cell.png", 64, 64)
     self._phone_icon = gui_app.texture("icons_mici/settings/device/phone.png", 85, 64)
     self._prime_adverts = [
       GreyBigButton(
@@ -90,13 +44,16 @@ class PrimeScroller(NavScroller):
 
     if ui_state.prime_state.is_paired():
       self._scroller.add_widgets([
-        QRWidget(self._get_prime_url()),
+        QR(self._get_prime_url),
         *([self._prime_management] if ui_state.prime_state.is_prime() else self._prime_adverts),
       ])
-      if not ui_state.prime_state.is_prime(): self._scroller.add_widget(QRWidget(self._get_prime_url()))
+      if not ui_state.prime_state.is_prime(): self._scroller.add_widget(QR(self._get_prime_url))
     else:
+      self._scroller._pad = 8
+      self._scroller._edge_shadows = False
+      self._scroller._show_scroll_indicator = False
       self._scroller.add_widgets([
-        QRWidget(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL),
+        QR(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL),
         self._pairing_info
       ])
 

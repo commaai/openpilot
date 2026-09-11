@@ -101,9 +101,9 @@ class PrimeState:
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def set_provider(self, provider: Provider):
-    with self.lock:
+    with self._lock:
       self._pairing_provider = provider
-      self._params.put("PairingProvider", provider)
+      self._params.put("PairingProvider", str(provider))
 
   def _worker_thread(self) -> None:
     drop_realtime()
