@@ -61,8 +61,8 @@ def make_input_queues(input_shapes, state_pairs, device, frame_copy_size):
   return input_queues, npy, frame_views
 
 
-def make_warp(nv12, model_w, model_h):
-  frame_prepare = make_frame_prepare(nv12, model_w, model_h)
+def make_warp(nv12, model_w, model_h, layout="yuv420", border_fill=None):
+  frame_prepare = make_frame_prepare(nv12, model_w, model_h, layout, border_fill)
 
   def warp(tfm, big_tfm, frame, big_frame):
     tfm = tfm.to(Device.DEFAULT)
@@ -160,6 +160,8 @@ if __name__ == "__main__":
   from openpilot.selfdrive.modeld.get_model_metadata import make_metadata_dict
   p = argparse.ArgumentParser()
   p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
+  p.add_argument('--warp-layout', choices=['luma', 'yuv420'], default='yuv420')
+  p.add_argument('--warp-border-fill', type=int)
   p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
                  help='camera resolutions WxH (one or more)')
   p.add_argument('--onnx', required=True)
@@ -187,7 +189,7 @@ if __name__ == "__main__":
     frame_copy_size = nv12_copy_size(nv12.stride, nv12.y_height, nv12.uv_height)
     make_model_queues = partial(make_input_queues, input_shapes, state_pairs,
                                 frame_copy_size=frame_copy_size)
-    warp = make_warp(nv12, model_w, model_h)
+    warp = make_warp(nv12, model_w, model_h, args.warp_layout, args.warp_border_fill)
     run_model_jit = TinyJit(make_run_model(warp, model_runner, input_shapes, state_pairs, frame_copy_size), prune=True)
     out['run_model'][(cam_w,cam_h)] = compile_jit(run_model_jit, make_model_queues, args.benchmark_runs)
 

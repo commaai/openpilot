@@ -55,12 +55,17 @@ def frames_to_tensor(frames):
   return in_img1
 
 
-def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
+def make_frame_prepare(nv12: NV12Frame, model_w, model_h, layout="yuv420", border_fill=None):
   cam_w, cam_h, stride, y_height, uv_height, _ = nv12
   uv_offset = stride * y_height
   stride_pad = stride - cam_w
 
   def frame_prepare_tinygrad(input_frame, M_inv):
+    M_inv = M_inv.to(Device.DEFAULT).realize()
+    if layout == "luma":
+      return warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv,
+                                      (model_w, model_h), (cam_h, cam_w), stride_pad,
+                                      border_fill_val=border_fill).reshape(-1, model_h * model_w)
     # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
     M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]], device=Device.DEFAULT)
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
@@ -68,13 +73,13 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
     with Context(SPLIT_REDUCEOP=0):
       y = warp_perspective_tinygrad(input_frame[:cam_h*stride],
                                     M_inv, (model_w, model_h),
-                                    (cam_h, cam_w), stride_pad).realize()
+                                    (cam_h, cam_w), stride_pad, border_fill_val=border_fill).realize()
       u = warp_perspective_tinygrad(uv[:cam_h//2, :cam_w:2].flatten(),
                                     M_inv_uv, (model_w//2, model_h//2),
-                                    (cam_h//2, cam_w//2), 0).realize()
+                                    (cam_h//2, cam_w//2), 0, border_fill_val=border_fill).realize()
       v = warp_perspective_tinygrad(uv[:cam_h//2, 1:cam_w:2].flatten(),
                                     M_inv_uv, (model_w//2, model_h//2),
-                                    (cam_h//2, cam_w//2), 0).realize()
+                                    (cam_h//2, cam_w//2), 0, border_fill_val=border_fill).realize()
     yuv = y.cat(u).cat(v).reshape((model_h * 3 // 2, model_w))
     tensor = frames_to_tensor(yuv)
     return tensor
@@ -86,46 +91,37 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def make_warp_dm(nv12: NV12Frame, dm_w, dm_h):
-  cam_w, cam_h, stride, _, _, _ = nv12
-  stride_pad = stride - cam_w
+def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fill=None):
+  print(f"Compiling {layout} warp for {nv12.width}x{nv12.height} -> {model_w}x{model_h}...")
 
-  def warp_dm(input_frame, M_inv):
-    M_inv = M_inv.to(Device.DEFAULT).realize()
-    return warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv,
-                                     (dm_w, dm_h), (cam_h, cam_w), stride_pad, border_fill_val=16).reshape(-1, dm_h * dm_w) # Y
-  return warp_dm
-
-
-def compile_dm_warp(nv12: NV12Frame, dm_w, dm_h, pkl_path):
-  print(f"Compiling DM warp for {nv12.width}x{nv12.height} -> {dm_w}x{dm_h}...")
-
-  warp_dm_jit = TinyJit(make_warp_dm(nv12, dm_w, dm_h), prune=True)
+  warp_jit = TinyJit(make_frame_prepare(nv12, model_w, model_h, layout, border_fill), prune=True)
 
   for i in range(10):
     frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
     M_inv = Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')
     Device.default.synchronize()
     st = time.perf_counter()
-    warp_dm_jit(frame, M_inv).realize()
+    warp_jit(frame, M_inv).realize()
     mt = time.perf_counter()
     Device.default.synchronize()
     et = time.perf_counter()
     print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
   with open(pkl_path, "wb") as f:
-    pickle.dump(warp_dm_jit, f)
+    pickle.dump(warp_jit, f)
   print(f"  Saved to {pkl_path}")
 
 
 if __name__ == "__main__":
   p = argparse.ArgumentParser()
   p.add_argument('--camera-resolution', type=_parse_size, required=True, help='camera resolution WxH')
-  p.add_argument('--warp-to', type=_parse_size, required=True, help='DM input WxH')
+  p.add_argument('--warp-to', type=_parse_size, required=True, help='output WxH')
+  p.add_argument('--layout', choices=['luma', 'yuv420'], required=True)
+  p.add_argument('--border-fill', type=int, help='fill value outside the frame; omit to clamp coordinates')
   p.add_argument('--output', required=True)
   args = p.parse_args()
 
   cam_w, cam_h = args.camera_resolution
   nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-  dm_w, dm_h = args.warp_to
-  compile_dm_warp(nv12, dm_w, dm_h, args.output)
+  model_w, model_h = args.warp_to
+  compile_warp(nv12, model_w, model_h, args.output, args.layout, args.border_fill)
