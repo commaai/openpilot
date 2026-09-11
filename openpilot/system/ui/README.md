@@ -12,6 +12,7 @@ Quick start:
 * set `MAGIC_DEBUG=1` to show every dropped frames (only on device)
 * set `RECORD=1` to record the screen, output defaults to `output.mp4` but can be set with `RECORD_OUTPUT`
 * set `PRIME_TYPE` to preview pairing/Prime status: `-1` unpaired, `0` paired without Prime, `2` Prime Lite, `1` Prime Full
+* set `PAIRING_PROVIDER` to preview the different states based on connect auth providers `google`, `github` or `apple`
 * https://www.raylib.com/cheatsheet/cheatsheet.html
 * https://electronstudio.github.io/raylib-python-cffi/README.html#quickstart
 
