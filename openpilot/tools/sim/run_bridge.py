@@ -2,12 +2,12 @@
 import argparse
 
 from typing import Any
-from multiprocessing import Queue
 
 from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
+from openpilot.tools.sim.lib.common import SIM_MP_CTX
 
 def create_bridge(dual_camera, high_quality):
-  queue: Any = Queue()
+  queue: Any = SIM_MP_CTX.Queue()
 
   simulator_bridge = MetaDriveBridge(dual_camera, high_quality)
   simulator_process = simulator_bridge.run(queue)

@@ -1,9 +1,10 @@
 import math
+import sys
 import time
 import numpy as np
 
 from collections import namedtuple
-from panda3d.core import Vec3
+from panda3d.core import Vec3, loadPrcFileData
 from multiprocessing.connection import Connection
 
 from metadrive.engine.core.engine_core import EngineCore
@@ -48,10 +49,22 @@ def apply_metadrive_patches(arrive_dest_done=True):
   if not arrive_dest_done:
     MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
+def apply_panda3d_config():
+  if sys.platform != "darwin":
+    return
+
+  # macOS only exposes OpenGL 4.1 through a core profile, and the GLSL metadrive ships needs
+  # at least 3.30. without this panda3d falls back to a 2.1 compatibility context and every
+  # shader fails to compile, leaving the camera feeds black.
+  loadPrcFileData("", "load-display pandagl")
+  loadPrcFileData("", "gl-version 4 1 core")
+
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
+  config = dict(config)
   arrive_dest_done = config.pop("arrive_dest_done", True)
+  apply_panda3d_config()
   apply_metadrive_patches(arrive_dest_done)
 
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
