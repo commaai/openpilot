@@ -1,5 +1,4 @@
 import glob
-import json
 import os
 import shutil
 import shlex
@@ -8,8 +7,8 @@ from SCons.Script import Action, Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks, open_file_chunked
 from openpilot.common.transformations.model import DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, chestnut_present, modeld_pkl_path
-from openpilot.selfdrive.modeld.model_config import CAMERA_CONFIGS, driving_model_args
+from openpilot.selfdrive.modeld.helpers import chestnut_present, modeld_pkl_path
+from openpilot.selfdrive.modeld.model_config import CAMERA_CONFIGS, driving_model_args, warp_args
 
 
 Import('env', 'arch')
@@ -28,29 +27,10 @@ def estimate_pickle_max_size(onnx_size):
 compiler_files = [File(name) for name in ('compile_onnx.py', 'compile_warp.py', 'helpers.py', 'model_config.py')]
 
 if arch == 'comma_arm64':
-  tg_backend = 'QCOM'
-  tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
+  tg_flags = 'DEV=QCOM IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
-  tg_backend = 'METAL' if arch == 'Darwin' else 'CPU'
   # JIT=2 disables graph batching, which produces incorrect outputs after buffers change.
   tg_flags = 'DEV=METAL JIT=2' if arch == 'Darwin' else 'DEV=CPU:LLVM'
-
-tg_devices = { # which device to put jit inputs to at runtime
-  'openpilot.selfdrive.modeld.dmonitoringmodeld': {
-    'default': {'DEV': tg_backend}
-  },
-}
-
-def write_tg_devices(target, source, env):
-  with open(str(target[0]), "w") as f:
-    json.dump(tg_devices, f)
-    f.write("\n")
-
-tg_devices_node = lenv.Command(
-  str(TG_INPUT_DEVICES_PATH),
-  [Value(tg_devices)],
-  write_tg_devices,
-)
 
 # tinygrad calls brew which needs a $HOME in the env
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
@@ -105,35 +85,14 @@ for chestnut in [False, True] if chestnut_present() else [False]:
   command = f'{flags} {mac_brew_string} {taskset}{compiler} {onnx} {pkl} {shlex.join(driving_model_args(frame_skip))} --benchmark-runs 1'
   compile_and_chunk(pkl, onnx, command, size_multiplier=len(CAMERA_CONFIGS), chestnut=chestnut)
 
-modeld_dir = Dir("#openpilot/selfdrive/modeld").abspath
-# get model metadata
-fn = File(f"models/dmonitoring_model").abspath
-script_files = [File(Dir("#openpilot/selfdrive/modeld").File("get_model_metadata.py").abspath)]
-cmd = f'{tg_flags} {mac_brew_string} python3 {Dir("#openpilot/selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
-lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files + [tg_devices_node], cmd)
+onnx = model_onnx('dmonitoring_model')
+pkl = File('models/dmonitoring_model_tinygrad.pkl').abspath
+command = (f'{tg_flags} OPENPILOT_HACKS=1 JIT_BATCH_SIZE=0 {mac_brew_string} {compiler} {onnx} {pkl} ' +
+           '--float32 --device-input input_img --benchmark-runs 1')
+compile_and_chunk(pkl, onnx, command)
 
-dm_w, dm_h = DM_INPUT_SIZE
-compile_dm_warp_script = [File(f"{modeld_dir}/compile_dm_warp.py")]
 for cam_w, cam_h in CAMERA_CONFIGS:
-  dm_pkl_path = File(f"models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
-  cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_dm_warp.py '
-         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} '
-         f'--output {dm_pkl_path}')
-  lenv.Command(dm_pkl_path, tinygrad_files + compile_dm_warp_script + compiler_files + [tg_devices_node], cmd)
-
-def tg_compile(flags, model_name):
-  pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
-  fn = File(f"models/{model_name}").abspath
-  pkl = fn + "_tinygrad.pkl"
-  onnx_path = fn + ".onnx"
-  chunk_targets = get_chunk_targets(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
-  def do_chunk(target, source, env):
-    chunk_file(pkl, chunk_targets)
-  return lenv.Command(
-    chunk_targets,
-    [onnx_path] + tinygrad_files + [Value(chunk_targets), chunker_file, tg_devices_node],
-    [f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
-     Action(do_chunk, "  [CHUNK] $TARGET")],
-  )
-
-tg_compile(tg_flags, 'dmonitoring_model')
+  pkl = File(f'models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl').abspath
+  command = (f'{tg_flags} {mac_brew_string} python3 -m openpilot.selfdrive.modeld.compile_warp ' +
+             f'{shlex.join(warp_args(cam_w, cam_h, DM_INPUT_SIZE, "luma", border_fill=16))} --output {pkl} --benchmark-runs 1')
+  lenv.Command(pkl, tinygrad_files + compiler_files + [Value(command)], command)

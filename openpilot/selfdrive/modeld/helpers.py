@@ -1,5 +1,4 @@
 import io
-import json
 import pickle
 import shutil
 import struct
@@ -15,12 +14,7 @@ from openpilot.common.file_chunker import get_manifest_path
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
-TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 
-
-def get_tg_input_devices(process_name: str, chestnut: bool):
-  with open(TG_INPUT_DEVICES_PATH) as f:
-    return json.load(f)[process_name]['default' if not chestnut else 'chestnut']
 
 def modeld_pkl_path(chestnut: bool):
   prefix = 'big_' if chestnut else ''
