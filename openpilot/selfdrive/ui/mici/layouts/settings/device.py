@@ -148,6 +148,7 @@ class PairBigButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
+    # TODO: show ad dialog when clicked if not prime
     if ui_state.prime_state.is_paired():
       self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")
@@ -167,14 +168,13 @@ class PairBigButton(BigButton):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    if ui_state.prime_state.is_paired():
-      gui_app.push_widget(ManagePrimeDialog(ui_state.params.get("DongleId")))
-      return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
       dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
       dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
+    elif ui_state.prime_state.is_paired():
+      dlg = ManagePrimeDialog(ui_state.params.get("DongleId"))
     else:
       dlg = PairingDialog()
     gui_app.push_widget(dlg)
