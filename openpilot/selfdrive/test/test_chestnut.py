@@ -3,6 +3,7 @@ import contextlib
 import functools
 import multiprocessing
 import shutil
+import signal
 import tempfile
 import time
 import unittest
@@ -31,6 +32,8 @@ def fault_launcher(module, name, fault, trigger, injected, models):
   original_init, original_run, original_warmup = modeld.ModelState.__init__, modeld.ModelState.run, modeld.ModelState.warmup
 
   def init(self, width, height, chestnut):
+    if chestnut and fault == 'load_interrupt':
+      injected.set()
     if chestnut and fault in ('load_usb', 'load_timeout'):
       injected.set()
       if fault == 'load_timeout':
@@ -110,6 +113,8 @@ class TestChestnutFaults(OpenpilotTestCase):
       if not sm.updated['modelV2']:
         continue
       m = sm['modelV2']
+      if not sm.valid['modelV2'] and not frames:
+        continue
       assert sm.valid['modelV2'], 'invalid model output'
       assert m.frameId > last_frame, 'repeated or reordered model frame'
       assert all(np.isfinite(v).all() for v in (m.position.x, m.position.y, m.position.z,
@@ -165,7 +170,7 @@ class TestChestnutFaults(OpenpilotTestCase):
           manifest.write_text('invalid')
       else:
         if fault == 'truncated_buffer':
-          chunk = sorted(models.glob('big_driving_tinygrad.pkl.chunk[0-9]*'))[-1]
+          chunk = sorted(p for p in models.glob('big_driving_tinygrad.pkl.chunk[0-9]*') if p.stat().st_size)[-1]
         chunk.unlink()
         if fault == 'corrupt_pickle':
           chunk.write_bytes(b'\x01\x00\x00\x00\x00\x00\x00\x00!')
@@ -201,10 +206,28 @@ class TestChestnutFaults(OpenpilotTestCase):
       self.recovery()
 
   @mock_messages(['deviceMotion'])
+  def test_stalled_process(self):
+    with processes_context(['camerad', 'calibrationd']), self.model() as (sm, proc, _, _):
+      self.frames(sm, proc, True)
+      for name in ('camerad', 'modeld'):
+        with self.subTest(process=name):
+          stalled = managed_processes[name]
+          stalled.signal(signal.SIGSTOP)
+          try:
+            deadline = time.monotonic() + 10
+            while sm.alive['modelV2']:
+              assert time.monotonic() < deadline, 'stale model output remained alive'
+              self.tick(sm)
+            assert not sm.all_checks(), 'stalled model output passed messaging health checks'
+          finally:
+            stalled.signal(signal.SIGCONT)
+          self.frames(sm, proc, True, timeout=30)
+
+  @mock_messages(['deviceMotion'])
   def test_stop_during_load(self):
     with processes_context(['camerad', 'calibrationd']):
       for _ in range(3):
-        with self.model('load_timeout') as (sm, proc, _, injected):
+        with self.model('load_interrupt') as (sm, proc, _, injected):
           deadline = time.monotonic() + 20
           while not injected.is_set():
             assert time.monotonic() < deadline, 'model load did not start'

@@ -269,7 +269,7 @@ node {
       'chestnut faults': {
         deviceStage("chestnut faults", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
           step("build", "./openpilot/selfdrive/test/chestnut.sh"),
-          step("model fault injection", "python openpilot/selfdrive/test/test_chestnut.py", [timeout: 1200]),
+          step("model fault injection", "./openpilot/selfdrive/test/test_chestnut.py -v", [timeout: 1200]),
         ])
       },
 
