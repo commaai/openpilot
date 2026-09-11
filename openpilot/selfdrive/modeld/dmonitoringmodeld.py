@@ -4,6 +4,7 @@ from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
 from tinygrad.tensor import Tensor
 import time
 import pickle
+import codecs
 import numpy as np
 
 from openpilot.cereal import messaging
@@ -33,7 +34,7 @@ class ModelState:
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
-      self.output_slices = model_metadata['output_slices']
+      self.output_slices = pickle.loads(codecs.decode(model_metadata['metadata']['output_slices'].encode(), 'base64'))
 
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
