@@ -2,11 +2,14 @@ import pyray as rl
 import re
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
+from openpilot.selfdrive.ui.lib.prime_state import PrimeType
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -29,6 +32,7 @@ class AlertData:
   text: str
   severity: int
   visible: bool = False
+  icon: str | None = None
 
 
 class AlertItem(Widget):
@@ -60,6 +64,7 @@ class AlertItem(Widget):
     self._icon_orange = gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", self.ICON_SIZE, self.ICON_SIZE)
     self._icon_red = gui_app.texture("icons_mici/offroad_alerts/red_warning.png", self.ICON_SIZE, self.ICON_SIZE)
     self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", self.ICON_SIZE, self.ICON_SIZE)
+    self._custom_icon = gui_app.texture(alert_data.icon, self.ICON_SIZE, self.ICON_SIZE) if alert_data.icon else None
 
     self._title_label = UnifiedLabel(text="", font_size=32, font_weight=FontWeight.SEMI_BOLD, text_color=self.TEXT_COLOR,
                                      alignment=TextAlignment.LEFT,
@@ -177,7 +182,9 @@ class AlertItem(Widget):
 
     # Draw warning icon on the right side
     # Use green icon for update alerts (severity = -1), red for high severity, orange for low severity
-    if self.alert_data.severity == -1:
+    if self._custom_icon is not None:
+      icon_texture = self._custom_icon
+    elif self.alert_data.severity == -1:
       icon_texture = self._icon_green
     elif self.alert_data.severity > 0:
       icon_texture = self._icon_red
@@ -220,6 +227,10 @@ class MiciOffroadAlerts(Scroller):
   def scrolling(self):
     return self._scroller.scroll_panel.is_touch_valid()
 
+  def set_pairing_callback(self, callback: Callable[[], None]):
+    for alert_item in self._prime_alert_items:
+      alert_item.set_click_callback(callback)
+
   def _build_alerts(self):
     """Build sorted list of alerts from OFFROAD_ALERTS."""
     self.sorted_alerts = []
@@ -243,11 +254,38 @@ class MiciOffroadAlerts(Scroller):
       self.alert_items.append(alert_item)
       self._scroller.add_widget(alert_item)
 
+    self._pairing_alert = AlertData(
+      key="PairDevice",
+      text="Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
+      severity=-1,
+      icon="icons_mici/offroad_alerts/green_settings.png",
+    )
+    self._prime_alert = AlertData(
+      key="UpgradeToPrime",
+      text="Upgrade to prime. Visit connect.comma.ai to subscribe to comma prime.",
+      severity=-1,
+      icon="icons_mici/offroad_alerts/green_cell.png",
+    )
+    self._prime_alert_items = [AlertItem(self._pairing_alert), AlertItem(self._prime_alert)]
+    for alert_item in self._prime_alert_items:
+      self.sorted_alerts.append(alert_item.alert_data)
+      self.alert_items.append(alert_item)
+      self._scroller.add_widget(alert_item)
+    self._refresh_prime_alerts()
+
+  def _refresh_prime_alerts(self):
+    prime_type = ui_state.prime_state.get_type()
+    for alert_item, visible in zip(self._prime_alert_items, (prime_type <= PrimeType.UNPAIRED, prime_type == PrimeType.NONE), strict=True):
+      if alert_item.alert_data.visible != visible:
+        alert_item.alert_data.visible = visible
+        alert_item.update_alert_data(alert_item.alert_data)
+
   def _params_worker(self):
     drop_realtime()
     while True:
-      self._pending_params = ({"UpdaterNewDescription": self.params.get("UpdaterNewDescription")} |
-                              {alert_data.key: self.params.get(alert_data.key) for alert_data in self.sorted_alerts})
+      self._pending_params = ({"UpdaterNewDescription": self.params.get("UpdaterNewDescription"),
+                               "UpdateAvailable": self.params.get("UpdateAvailable")} |
+                              {key: self.params.get(key) for key in OFFROAD_ALERTS})
       time.sleep(REFRESH_INTERVAL)
 
   def _refresh(self, pending_params: dict) -> int:
@@ -280,8 +318,8 @@ class MiciOffroadAlerts(Scroller):
 
     # Handle regular alerts
     for alert_data in self.sorted_alerts:
-      if alert_data.key == "UpdateAvailable":
-        continue  # Skip, already handled above
+      if alert_data.key not in OFFROAD_ALERTS:
+        continue  # Update and pairing alerts are handled separately
 
       text = ""
       alert_json = pending_params[alert_data.key]
@@ -306,10 +344,11 @@ class MiciOffroadAlerts(Scroller):
 
     self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
-    return active_count
+    return active_count + sum(item.alert_data.visible for item in self._prime_alert_items)
 
   def _update_state(self):
     """Periodically refresh alerts."""
+    self._refresh_prime_alerts()
     # Refresh alerts when thread updates params
     pending_params = self._pending_params
     if pending_params is not None:

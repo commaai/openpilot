@@ -28,9 +28,9 @@ class SettingsLayout(NavScroller):
     network_btn = SettingsBigButton("network", "", gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 76, 56))
     network_btn.set_click_callback(lambda: gui_app.push_widget(network_panel))
 
-    device_panel = DeviceLayoutMici()
-    device_btn = SettingsBigButton("device", "", gui_app.texture("icons_mici/settings/device_icon.png", 72, 58))
-    device_btn.set_click_callback(lambda: gui_app.push_widget(device_panel))
+    self._device_panel = DeviceLayoutMici()
+    self._device_button = SettingsBigButton("device", "", gui_app.texture("icons_mici/settings/device_icon.png", 72, 58))
+    self._device_button.set_click_callback(self._open_device)
 
     software_panel = SoftwareLayoutMici()
     software_btn = SettingsBigButton("software", "", gui_app.texture("icons_mici/settings/software.png", 64, 75))
@@ -47,10 +47,36 @@ class SettingsLayout(NavScroller):
     self._scroller.add_widgets([
       toggles_btn,
       network_btn,
-      device_btn,
+      self._device_button,
       software_btn,
       firehose_btn,
       developer_btn,
     ])
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
+
+  def show_pairing(self):
+    gui_app.push_widget(self)
+    # Keep Settings in the back stack without showing its entrance animation.
+    self._y_pos_filter.x = 0.0
+    self.set_visible(lambda: self.enabled or self._device_panel.is_dismissing)
+    self._scroller._layout()
+    offset = (self._device_button.rect.x + self._device_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+    self._scroller.scroll_to(offset, smooth=False)
+    self._open_device()
+    self._device_panel.set_shown_callback(self._on_pairing_shown)
+
+  def _on_pairing_shown(self):
+    self.set_visible(True)
+    self._device_panel.scroll_to_pairing()
+
+  def _open_device(self, highlight_pairing: bool = False):
+    if highlight_pairing:
+      self._device_panel.set_shown_callback(self._device_panel.scroll_to_pairing)
+    gui_app.push_widget(self._device_panel)
+
+  def _update_state(self):
+    super()._update_state()
+    # Also restore Settings if the user dismisses Device before it finishes entering.
+    if self.enabled:
+      self.set_visible(True)

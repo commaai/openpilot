@@ -185,6 +185,8 @@ class DeviceLayoutMici(NavScroller):
     super().__init__()
 
     self._fcc_dialog: MiciFccModal | None = None
+    self._pairing_button = PairBigButton()
+    self._pending_pairing_grow_animation = False
 
     def power_off_callback():
       ui_state.params.put_bool("DoShutdown", True, block=True)
@@ -226,7 +228,7 @@ class DeviceLayoutMici(NavScroller):
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
-      PairBigButton(),
+      self._pairing_button,
       review_training_guide_btn,
       cabin_cam_btn,
       terms_btn,
@@ -235,6 +237,23 @@ class DeviceLayoutMici(NavScroller):
       reboot_btn,
       self._power_off_btn,
     ])
+
+  def scroll_to_pairing(self):
+    self._scroller._layout()
+    offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+    self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
+    self._pending_pairing_grow_animation = True
+
+  def _update_state(self):
+    super()._update_state()
+    if self._pending_pairing_grow_animation and not self._scroller.is_auto_scrolling:
+      self._pending_pairing_grow_animation = False
+      self._pairing_button.trigger_grow_animation()
+
+  def hide_event(self):
+    super().hide_event()
+    self.set_shown_callback(None)
+    self._pending_pairing_grow_animation = False
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
