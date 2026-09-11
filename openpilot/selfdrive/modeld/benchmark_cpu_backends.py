@@ -1,0 +1,599 @@
+"""Compare steady-state CPU inference for openpilot's model in tinygrad and ONNX Runtime.
+
+This intentionally benchmarks the policy ONNX graph only. Camera warping is a separate
+tinygrad JIT in modeld and should be profiled independently when optimizing the complete
+camera-to-model pipeline.
+"""
+
+import argparse
+import base64
+import json
+import math
+import os
+import pathlib
+import pickle
+import platform
+import statistics
+import tempfile
+import threading
+import time
+from collections import defaultdict
+from collections.abc import Callable
+from typing import Any
+
+import numpy as np
+
+
+MODELD_DIR = pathlib.Path(__file__).resolve().parent
+DEFAULT_MODEL = MODELD_DIR / "models" / "driving_supercombo.onnx"
+DEFAULT_CACHE = MODELD_DIR.parents[2] / ".cache" / "tinygrad" / "cache.db"
+
+INPUT_SPECS = {
+  "img": ((1, 12, 128, 256), np.uint8),
+  "big_img": ((1, 12, 128, 256), np.uint8),
+  "features_buffer": ((1, 24, 512), np.float16),
+  "desire_pulse": ((1, 25, 8), np.float16),
+  "traffic_convention": ((1, 2), np.float16),
+  "action_t": ((1, 2), np.float16),
+}
+
+
+class PeakMemorySampler:
+  def __init__(self, enabled: bool):
+    self.enabled = enabled
+    self.baseline = 0
+    self.peak = 0
+    self.final = 0
+    self._stop = threading.Event()
+    self._thread = None
+    self._process = None
+
+  def __enter__(self):
+    if not self.enabled:
+      return self
+    try:
+      import psutil
+    except ImportError as exc:
+      raise RuntimeError("psutil is required for --measure-memory") from exc
+    self._process = psutil.Process()
+    self.baseline = self.peak = self._process.memory_info().rss
+
+    def sample() -> None:
+      while not self._stop.wait(0.001):
+        self.peak = max(self.peak, self._process.memory_info().rss)
+
+    self._thread = threading.Thread(target=sample, name="peak-memory-sampler", daemon=True)
+    self._thread.start()
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    if not self.enabled:
+      return
+    self._stop.set()
+    assert self._thread is not None and self._process is not None
+    self._thread.join()
+    self.final = self._process.memory_info().rss
+    self.peak = max(self.peak, self.final)
+
+  def report(self) -> dict[str, float]:
+    mib = 1024 * 1024
+    return {
+      "baseline_rss_mib": self.baseline / mib,
+      "peak_rss_mib": self.peak / mib,
+      "peak_delta_mib": (self.peak - self.baseline) / mib,
+      "final_rss_mib": self.final / mib,
+    }
+
+
+def percentile(values: list[float], pct: float) -> float:
+  ordered = sorted(values)
+  index = min(len(ordered) - 1, math.ceil(pct * len(ordered)) - 1)
+  return ordered[index]
+
+
+def summarize(name: str, timings: list[float]) -> dict[str, Any]:
+  p50 = statistics.median(timings)
+  return {
+    "backend": name,
+    "runs": len(timings),
+    "min_ms": min(timings),
+    "mean_ms": statistics.fmean(timings),
+    "p50_ms": p50,
+    "p95_ms": percentile(timings, 0.95),
+    "max_ms": max(timings),
+    "fps_from_p50": 1000.0 / p50,
+  }
+
+
+def make_inputs(seed: int) -> dict[str, np.ndarray]:
+  rng = np.random.default_rng(seed)
+  inputs = {}
+  for name, (shape, dtype) in INPUT_SPECS.items():
+    if dtype == np.uint8:
+      inputs[name] = rng.integers(0, 256, size=shape, dtype=dtype)
+    else:
+      inputs[name] = rng.standard_normal(shape).astype(dtype)
+  return inputs
+
+
+def time_runner(run: Callable[[], np.ndarray], warmup: int, runs: int) -> tuple[list[float], np.ndarray]:
+  output = None
+  for _ in range(warmup):
+    output = run()
+
+  timings = []
+  for _ in range(runs):
+    start = time.perf_counter_ns()
+    output = run()
+    timings.append((time.perf_counter_ns() - start) / 1e6)
+
+  assert output is not None
+  return timings, output
+
+
+def make_ort_options(ort, threads: int, profile_prefix: pathlib.Path | None = None):
+  options = ort.SessionOptions()
+  options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+  options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+  options.intra_op_num_threads = threads
+  options.inter_op_num_threads = 1
+  if profile_prefix is not None:
+    options.enable_profiling = True
+    options.profile_file_prefix = str(profile_prefix)
+  return options
+
+
+def prepare_ort_inputs(session, inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+  type_map = {
+    "tensor(uint8)": np.uint8,
+    "tensor(float16)": np.float16,
+    "tensor(float)": np.float32,
+  }
+  session_inputs = {}
+  for item in session.get_inputs():
+    if item.name not in inputs:
+      raise RuntimeError(f"benchmark input {item.name!r} is missing")
+    if item.type not in type_map:
+      raise RuntimeError(f"unsupported ONNX Runtime input type {item.type!r} for {item.name!r}")
+    value = inputs[item.name].astype(type_map[item.type], copy=False)
+    if tuple(item.shape) != value.shape:
+      raise RuntimeError(f"shape mismatch for {item.name}: model has {item.shape}, benchmark has {value.shape}")
+    session_inputs[item.name] = value
+  return session_inputs
+
+
+def summarize_ort_profile(profile_path: pathlib.Path) -> dict[str, Any]:
+  events = json.loads(profile_path.read_text())
+  operator_totals: dict[str, dict[str, float | int]] = defaultdict(lambda: {"duration_us": 0.0, "calls": 0})
+  node_totals: dict[str, dict[str, Any]] = defaultdict(lambda: {"duration_us": 0.0, "calls": 0, "operator": "unknown"})
+  # Chrome trace events use a fixed abbreviated duration field name.
+  for event in events:
+    if event.get("cat") != "Node" or "dur" not in event:  # codespell:ignore dur
+      continue
+    args = event.get("args", {})
+    operator = args.get("op_name", "unknown")
+    node = event.get("name", "unknown")
+    duration = float(event["dur"])  # codespell:ignore dur
+    operator_totals[operator]["duration_us"] += duration
+    operator_totals[operator]["calls"] += 1
+    node_totals[node]["duration_us"] += duration
+    node_totals[node]["calls"] += 1
+    node_totals[node]["operator"] = operator
+
+  total_us = sum(float(value["duration_us"]) for value in operator_totals.values())
+  def ranked(values: dict[str, dict[str, Any]], include_operator: bool) -> list[dict[str, Any]]:
+    rows = []
+    for name, value in values.items():
+      duration_us = float(value["duration_us"])
+      row = {
+        "name": name,
+        "calls": int(value["calls"]),
+        "total_ms": duration_us / 1000.0,
+        "share_pct": 100.0 * duration_us / total_us if total_us else 0.0,
+      }
+      if include_operator:
+        row["operator"] = value["operator"]
+      rows.append(row)
+    return sorted(rows, key=lambda row: row["total_ms"], reverse=True)[:15]
+
+  return {
+    "total_node_ms": total_us / 1000.0,
+    "top_operator_types": ranked(operator_totals, False),
+    "top_nodes": ranked(node_totals, True),
+  }
+
+
+def profile_onnxruntime(ort, model: pathlib.Path, inputs: dict[str, np.ndarray], threads: int,
+                        profile_runs: int) -> dict[str, Any]:
+  with tempfile.TemporaryDirectory() as tmp:
+    options = make_ort_options(ort, threads, pathlib.Path(tmp) / "ort-profile")
+    session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
+    session_inputs = prepare_ort_inputs(session, inputs)
+    for _ in range(profile_runs):
+      session.run(None, session_inputs)
+    profile_path = pathlib.Path(session.end_profiling())
+    return summarize_ort_profile(profile_path)
+
+
+def make_ort_runner(ort, session, session_inputs: dict[str, np.ndarray], io_binding: bool) -> Callable[[], np.ndarray]:
+  if not io_binding:
+    return lambda: session.run(None, session_inputs)[0]
+
+  outputs = session.get_outputs()
+  if len(outputs) != 1 or not all(isinstance(dim, int) for dim in outputs[0].shape):
+    raise RuntimeError("I/O binding benchmark requires exactly one statically shaped output")
+  dtype_map = {"tensor(float16)": np.float16, "tensor(float)": np.float32}
+  if outputs[0].type not in dtype_map:
+    raise RuntimeError(f"unsupported I/O binding output type {outputs[0].type!r}")
+
+  output = np.empty(tuple(outputs[0].shape), dtype=dtype_map[outputs[0].type])
+  binding = session.io_binding()
+  for name, value in session_inputs.items():
+    binding.bind_cpu_input(name, value)
+  binding.bind_ortvalue_output(outputs[0].name, ort.OrtValue.ortvalue_from_numpy(output))
+
+  def run() -> np.ndarray:
+    session.run_with_iobinding(binding)
+    binding.synchronize_outputs()
+    return output
+  return run
+
+
+def benchmark_onnxruntime(model: pathlib.Path, inputs: dict[str, np.ndarray], threads: int,
+                          warmup: int, runs: int, profile_runs: int, measure_memory: bool,
+                          io_binding: bool) -> tuple[dict[str, Any], np.ndarray]:
+  try:
+    import onnxruntime as ort
+  except ImportError as exc:
+    raise RuntimeError("ONNX Runtime is not installed; install the onnxruntime package") from exc
+
+  memory = PeakMemorySampler(measure_memory)
+  with memory:
+    options = make_ort_options(ort, threads)
+    load_start = time.perf_counter()
+    session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
+    load_seconds = time.perf_counter() - load_start
+    session_inputs = prepare_ort_inputs(session, inputs)
+    run = make_ort_runner(ort, session, session_inputs, io_binding)
+    timings, output = time_runner(run, warmup, runs)
+
+  suffix = "-iobinding" if io_binding else ""
+  result = summarize(f"onnxruntime-{threads}t{suffix}", timings)
+  result.update({"load_seconds": load_seconds, "version": ort.__version__})
+  if measure_memory:
+    result["memory"] = memory.report()
+  if profile_runs:
+    result["operator_profile"] = profile_onnxruntime(ort, model, inputs, threads, profile_runs)
+  return result, output.astype(np.float32)
+
+
+def sanitize_tinygrad_environment(device: str) -> None:
+  # Some shells define DEBUG or BEAM as words. tinygrad requires integer values.
+  for name in ("DEBUG", "BEAM"):
+    try:
+      int(os.environ.get(name, "0"))
+    except ValueError:
+      os.environ[name] = "0"
+  os.environ.setdefault("DEBUG", "0")
+  os.environ.setdefault("BEAM", "0")
+  os.environ["DEV"] = device
+  os.environ.setdefault("JIT_BATCH_SIZE", "0")
+  os.environ.setdefault("OPENPILOT_HACKS", "1")
+  os.environ.setdefault("CACHEDB", str(DEFAULT_CACHE))
+
+
+def benchmark_tinygrad(model: pathlib.Path, inputs: dict[str, np.ndarray], device: str,
+                       warmup: int, runs: int, measure_memory: bool) -> tuple[dict[str, Any], np.ndarray]:
+  sanitize_tinygrad_environment(device)
+  try:
+    from tinygrad import Device, Tensor, TinyJit
+    from tinygrad.nn.onnx import OnnxRunner
+  except ImportError as exc:
+    raise RuntimeError("tinygrad is not importable; add the pinned tinygrad_repo to PYTHONPATH") from exc
+
+  memory = PeakMemorySampler(measure_memory)
+  with memory:
+    load_start = time.perf_counter()
+    runner = OnnxRunner(str(model))
+    load_seconds = time.perf_counter() - load_start
+
+    # Match openpilot's compile_modeld path: float16 ONNX inputs use float32 JIT
+    # interfaces, while image tensors retain uint8 storage.
+    tg_inputs = {
+      name: Tensor(value.astype(np.float32) if value.dtype == np.float16 else value, device="NPY").realize()
+      for name, value in inputs.items()
+    }
+
+    @TinyJit(prune=True)
+    def run_model(**kwargs):
+      values = {name: value.to(Device.DEFAULT) for name, value in kwargs.items()}
+      return next(iter(runner(values).values())).cast("float32")
+
+    def run() -> np.ndarray:
+      return run_model(**tg_inputs).numpy()
+
+    # TinyJit captures on the second call and executes the captured graph from the
+    # third call onward, so ensure timing only covers the steady-state graph.
+    timings, output = time_runner(run, max(warmup, 3), runs)
+  result = summarize(f"tinygrad-{device.lower()}", timings)
+  try:
+    import tinygrad
+    version = getattr(tinygrad, "__version__", "pinned-submodule")
+  except Exception:
+    version = "pinned-submodule"
+  result.update({"load_seconds": load_seconds, "version": version})
+  if measure_memory:
+    result["memory"] = memory.report()
+  return result, output
+
+
+def compare_outputs(reference: np.ndarray, candidate: np.ndarray) -> dict[str, float]:
+  reference = reference.astype(np.float32).reshape(-1)
+  candidate = candidate.astype(np.float32).reshape(-1)
+  if reference.shape != candidate.shape:
+    raise RuntimeError(f"output shape mismatch: {reference.shape} != {candidate.shape}")
+
+  delta = np.abs(reference - candidate)
+  denominator = np.maximum(np.abs(reference), 1e-6)
+  cosine_denominator = np.linalg.norm(reference) * np.linalg.norm(candidate)
+  cosine = float(np.dot(reference, candidate) / cosine_denominator) if cosine_denominator else 1.0
+  return {
+    "max_abs": float(delta.max()),
+    "mean_abs": float(delta.mean()),
+    "max_rel": float((delta / denominator).max()),
+    "cosine_similarity": cosine,
+  }
+
+
+def compare_onnxruntime_models(reference_model: pathlib.Path, candidate_model: pathlib.Path,
+                               inputs: dict[str, np.ndarray], threads: int) -> dict[str, float]:
+  try:
+    import onnxruntime as ort
+  except ImportError as exc:
+    raise RuntimeError("ONNX Runtime is required for model comparison") from exc
+  sessions = [
+    ort.InferenceSession(str(model), sess_options=make_ort_options(ort, threads), providers=["CPUExecutionProvider"])
+    for model in (reference_model, candidate_model)
+  ]
+  outputs = [session.run(None, prepare_ort_inputs(session, inputs))[0] for session in sessions]
+  return compare_outputs(outputs[0], outputs[1])
+
+
+def load_output_slices(model_path: pathlib.Path) -> dict[str, slice]:
+  try:
+    import onnx
+  except ImportError as exc:
+    raise RuntimeError("onnx is required for temporal output-head comparison") from exc
+  model = onnx.load(model_path, load_external_data=False)
+  encoded = next((prop.value for prop in model.metadata_props if prop.key == "output_slices"), None)
+  if encoded is None:
+    raise RuntimeError(f"output_slices metadata is missing from {model_path}")
+  return pickle.loads(base64.b64decode(encoded))
+
+
+def compare_onnxruntime_temporal_rollout(reference_model: pathlib.Path, candidate_model: pathlib.Path,
+                                         threads: int, steps: int, seed: int,
+                                         frame_skip: int = 4) -> dict[str, Any]:
+  """Compare immediate FP32 error with error accumulated through recurrent state."""
+  try:
+    import onnxruntime as ort
+  except ImportError as exc:
+    raise RuntimeError("ONNX Runtime is required for temporal comparison") from exc
+
+  sessions = [
+    ort.InferenceSession(str(model), sess_options=make_ort_options(ort, threads), providers=["CPUExecutionProvider"])
+    for model in (reference_model, candidate_model)
+  ]
+  output_slices = load_output_slices(reference_model)
+  hidden_slice = output_slices["hidden_state"]
+  rng = np.random.default_rng(seed)
+
+  img_shape = INPUT_SPECS["img"][0]
+  n_frames = img_shape[1] // 6
+  image_queue_shape = (frame_skip * (n_frames - 1) + 1, 6, *img_shape[2:])
+  img_q = np.zeros(image_queue_shape, dtype=np.uint8)
+  big_img_q = np.zeros_like(img_q)
+  desire_q = np.zeros((frame_skip * INPUT_SPECS["desire_pulse"][0][1], 1, 8), dtype=np.float32)
+  feature_queues = [np.zeros((frame_skip * 24, 1, 512), dtype=np.float32) for _ in sessions]
+  previous_features = [np.zeros((1, 512), dtype=np.float32) for _ in sessions]
+
+  road_frame = rng.integers(0, 256, size=(1, 6, *img_shape[2:]), dtype=np.uint8)
+  wide_frame = rng.integers(0, 256, size=(1, 6, *img_shape[2:]), dtype=np.uint8)
+  head_metrics: dict[str, dict[str, list[dict[str, float]]]] = {
+    name: {"teacher_forced": [], "free_rollout": []} for name in output_slices
+  }
+
+  def shift(queue: np.ndarray, value: np.ndarray) -> None:
+    queue[:-1] = queue[1:]
+    queue[-1:] = value
+
+  for step in range(steps):
+    # Slowly changing frames exercise temporal queues without injecting unrelated
+    # full-frame white noise at every model invocation.
+    for frame in (road_frame, wide_frame):
+      noise = rng.integers(-2, 3, size=frame.shape, dtype=np.int16)
+      frame[:] = np.clip(frame.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+    shift(img_q, road_frame)
+    shift(big_img_q, wide_frame)
+    desire = np.zeros(8, dtype=np.float32)
+    if step in (steps // 3, 2 * steps // 3):
+      desire[(step // max(1, steps // 3)) % 7 + 1] = 1
+    shift(desire_q, desire.reshape(1, 1, -1))
+
+    common_inputs = {
+      "img": img_q[::frame_skip].reshape(img_shape),
+      "big_img": big_img_q[::frame_skip].reshape(img_shape),
+      "desire_pulse": desire_q.reshape(-1, frame_skip, 1, 8).max(axis=1).reshape(INPUT_SPECS["desire_pulse"][0]),
+      "traffic_convention": np.array([[1.0, 0.0]], dtype=np.float32),
+      "action_t": np.array([[0.15, 0.25]], dtype=np.float32),
+    }
+
+    for queue, previous_feature in zip(feature_queues, previous_features, strict=True):
+      shift(queue, previous_feature.reshape(1, 1, -1))
+
+    reference_inputs = {**common_inputs,
+                        "features_buffer": feature_queues[0][::frame_skip].reshape(INPUT_SPECS["features_buffer"][0])}
+    reference_output = sessions[0].run(None, prepare_ort_inputs(sessions[0], reference_inputs))[0].astype(np.float32)
+
+    teacher_inputs = {**common_inputs, "features_buffer": reference_inputs["features_buffer"]}
+    teacher_output = sessions[1].run(None, prepare_ort_inputs(sessions[1], teacher_inputs))[0].astype(np.float32)
+    rollout_inputs = {**common_inputs,
+                      "features_buffer": feature_queues[1][::frame_skip].reshape(INPUT_SPECS["features_buffer"][0])}
+    rollout_output = sessions[1].run(None, prepare_ort_inputs(sessions[1], rollout_inputs))[0].astype(np.float32)
+
+    for name, output_slice in output_slices.items():
+      head_metrics[name]["teacher_forced"].append(compare_outputs(reference_output[:, output_slice],
+                                                                    teacher_output[:, output_slice]))
+      head_metrics[name]["free_rollout"].append(compare_outputs(reference_output[:, output_slice],
+                                                                  rollout_output[:, output_slice]))
+    previous_features[0][:] = reference_output[:, hidden_slice]
+    previous_features[1][:] = rollout_output[:, hidden_slice]
+
+  summary: dict[str, Any] = {}
+  for name, modes in head_metrics.items():
+    summary[name] = {}
+    for mode, values in modes.items():
+      summary[name][mode] = {
+        "worst_cosine": min(value["cosine_similarity"] for value in values),
+        "max_mean_abs": max(value["mean_abs"] for value in values),
+        "max_abs": max(value["max_abs"] for value in values),
+        "final": values[-1],
+      }
+  return {"steps": steps, "frame_skip": frame_skip, "heads": summary}
+
+
+def print_result(result: dict[str, Any]) -> None:
+  message = "".join((
+    f"{result['backend']:24} ",
+    f"p50={result['p50_ms']:8.2f} ms  ",
+    f"p95={result['p95_ms']:8.2f} ms  ",
+    f"mean={result['mean_ms']:8.2f} ms  ",
+    f"rate={result['fps_from_p50']:6.2f} Hz",
+  ))
+  print(message)
+
+
+def main() -> None:
+  parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument("--model", type=pathlib.Path, default=DEFAULT_MODEL)
+  parser.add_argument("--compare-model", type=pathlib.Path,
+                      help="optional second model for same-input ONNX Runtime output comparison")
+  parser.add_argument("--minimum-cosine", type=float, default=0.9999,
+                      help="minimum cosine similarity required with --compare-model")
+  parser.add_argument("--maximum-mean-abs", type=float, default=0.25,
+                      help="maximum mean absolute error permitted with --compare-model")
+  parser.add_argument("--temporal-steps", type=int, default=0,
+                      help="with --compare-model, compare this many recurrent model steps per output head")
+  parser.add_argument("--backend", action="append", choices=("onnxruntime", "tinygrad"),
+                      help="backend to run; may be repeated (default: both)")
+  parser.add_argument("--onnxruntime-threads", type=int, nargs="+", default=[1, 2, 4])
+  parser.add_argument("--tinygrad-device", default="CPU:LLVM")
+  parser.add_argument("--warmup", type=int, default=3)
+  parser.add_argument("--runs", type=int, default=20)
+  parser.add_argument("--profile-runs", type=int, default=0,
+                      help="run a separate profiled ONNX Runtime session this many times")
+  parser.add_argument("--measure-memory", action="store_true",
+                      help="sample process RSS during model load, warmup, and measured runs")
+  parser.add_argument("--onnxruntime-io-binding", action="store_true",
+                      help="reuse pre-bound ONNX Runtime input and output buffers")
+  parser.add_argument("--seed", type=int, default=20260830)
+  parser.add_argument("--json", type=pathlib.Path, help="optional path for machine-readable results")
+  args = parser.parse_args()
+
+  backends = args.backend or ["onnxruntime", "tinygrad"]
+  inputs = make_inputs(args.seed)
+  results: list[dict[str, Any]] = []
+  outputs: dict[str, np.ndarray] = {}
+
+  print(f"model: {args.model}")
+  print(f"host: {platform.platform()} ({os.cpu_count()} logical CPUs)")
+  print(f"warmup: {args.warmup}, measured runs: {args.runs}")
+
+  if "onnxruntime" in backends:
+    for threads in args.onnxruntime_threads:
+      result, output = benchmark_onnxruntime(
+        args.model, inputs, threads, args.warmup, args.runs, args.profile_runs,
+        args.measure_memory, args.onnxruntime_io_binding,
+      )
+      results.append(result)
+      outputs[result["backend"]] = output
+      print_result(result)
+      if memory := result.get("memory"):
+        print("".join((
+          f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, ",
+          f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB",
+        )))
+      if profile := result.get("operator_profile"):
+        print("  top operators: " + ", ".join(
+          f"{item['name']}={item['share_pct']:.1f}%" for item in profile["top_operator_types"][:5]
+        ))
+
+  if "tinygrad" in backends:
+    result, output = benchmark_tinygrad(
+      args.model, inputs, args.tinygrad_device, args.warmup, args.runs, args.measure_memory,
+    )
+    results.append(result)
+    outputs[result["backend"]] = output
+    print_result(result)
+    if memory := result.get("memory"):
+      print("".join((
+        f"  RSS baseline={memory['baseline_rss_mib']:.1f} MiB, ",
+        f"peak={memory['peak_rss_mib']:.1f} MiB, delta={memory['peak_delta_mib']:.1f} MiB",
+      )))
+
+  parity = {}
+  if len(outputs) > 1:
+    reference_name = next(name for name in outputs if name.startswith("onnxruntime"))
+    for name, output in outputs.items():
+      if name != reference_name:
+        parity[f"{reference_name}_vs_{name}"] = compare_outputs(outputs[reference_name], output)
+    print("parity:")
+    for name, metrics in parity.items():
+      print(f"  {name}: {metrics}")
+
+  model_parity = {}
+  temporal_parity = {}
+  if args.compare_model:
+    threads = args.onnxruntime_threads[0]
+    model_parity = compare_onnxruntime_models(args.model, args.compare_model, inputs, threads)
+    print(f"model parity ({args.model.name} vs {args.compare_model.name}, {threads} threads): {model_parity}")
+    if model_parity["cosine_similarity"] < args.minimum_cosine:
+      raise RuntimeError("".join((
+        f"model cosine similarity {model_parity['cosine_similarity']:.8f} is below ",
+        f"{args.minimum_cosine:.8f}",
+      )))
+    if model_parity["mean_abs"] > args.maximum_mean_abs:
+      raise RuntimeError("".join((
+        f"model mean absolute error {model_parity['mean_abs']:.8f} exceeds ",
+        f"{args.maximum_mean_abs:.8f}",
+      )))
+    if args.temporal_steps:
+      temporal_parity = compare_onnxruntime_temporal_rollout(
+        args.model, args.compare_model, threads, args.temporal_steps, args.seed,
+      )
+      print(f"temporal parity ({args.temporal_steps} steps; teacher-forced vs free rollout):")
+      for name, modes in temporal_parity["heads"].items():
+        teacher, rollout = modes["teacher_forced"], modes["free_rollout"]
+        print("".join((
+          f"  {name:24} teacher mean={teacher['max_mean_abs']:.6f} cos={teacher['worst_cosine']:.8f}  ",
+          f"rollout mean={rollout['max_mean_abs']:.6f} cos={rollout['worst_cosine']:.8f}",
+        )))
+
+  report = {
+    "model": str(args.model),
+    "host": platform.platform(),
+    "logical_cpus": os.cpu_count(),
+    "seed": args.seed,
+    "results": results,
+    "parity": parity,
+    "model_parity": model_parity,
+    "temporal_parity": temporal_parity,
+  }
+  if args.json:
+    args.json.parent.mkdir(parents=True, exist_ok=True)
+    args.json.write_text(json.dumps(report, indent=2) + "\n")
+
+
+if __name__ == "__main__":
+  main()
+

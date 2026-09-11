@@ -6,7 +6,10 @@ export SIMULATION="1"
 export SKIP_FW_QUERY="1"
 export FINGERPRINT="HONDA_CIVIC_2022"
 
-export BLOCK="${BLOCK},camerad,loggerd,encoderd,micd,logmessaged,manage_athenad"
+export BLOCK="${BLOCK},camerad,micd,logmessaged,manage_athenad"
+if [[ ! "$CI_SIM_LOGS" ]]; then
+  export BLOCK="${BLOCK},loggerd,encoderd"
+fi
 if [[ "$CI" ]]; then
   # TODO: offscreen UI should work
   export BLOCK="${BLOCK},ui"
@@ -19,3 +22,4 @@ OPENPILOT_DIR=$SCRIPT_DIR/../../
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $OPENPILOT_DIR/system/manager && exec ./manager.py
+

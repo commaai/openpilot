@@ -7,7 +7,7 @@ import time
 from multiprocessing import Pipe, Array
 
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
-from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
+from openpilot.tools.sim.bridge.metadrive.metadrive_process import (METADRIVE_STEER_RATIO, metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
 from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.camerad import W, H
@@ -53,7 +53,6 @@ class MetaDriveWorld(World):
     self.vehicle_last_pos = self.vehicle_state_recv.recv().position # wait for a state message to ensure metadrive is launched
     self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "started"))
 
-    self.steer_ratio = 15
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False
@@ -87,7 +86,10 @@ class MetaDriveWorld(World):
 
       state.velocity = md_vehicle.velocity
       state.bearing = md_vehicle.bearing
-      state.steering_angle = md_vehicle.steering_angle
+      # MetaDrive reports the road-wheel angle, while carState and carControl
+      # use steering-wheel angle. This must invert the conversion applied when
+      # sending controls or the lateral controller receives 8x-low feedback.
+      state.steering_angle = md_vehicle.steering_angle * METADRIVE_STEER_RATIO
       state.gps.from_xy(curr_pos)
       state.valid = True
 
@@ -130,3 +132,4 @@ class MetaDriveWorld(World):
     self.status_q.put(QueueMessage(QueueMessageType.CLOSE_STATUS, reason))
     self.exit_event.set()
     self.metadrive_process.join()
+

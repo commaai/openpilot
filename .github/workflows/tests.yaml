@@ -182,18 +182,73 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v7
+      with:
+        lfs: false
+        submodules: false
+    - name: Fetch model and tinygrad
+      run: |
+        git submodule update --init --depth 1 tinygrad_repo
+        git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
+        git lfs pull --include="openpilot/selfdrive/modeld/models/driving_supercombo.onnx" --exclude=""
     - run: ./tools/op.sh setup
+    - name: Install CPU runtime and MetaDrive
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+        uv pip install onnx onnxruntime opencv-python-headless
+        uv pip install "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@2716f55a9c7b928ce957a497a15c2c19840c08bc"
+    - name: Convert FP32 model
+      run: |
+        python openpilot/selfdrive/modeld/convert_onnx_fp16_to_fp32.py \
+          openpilot/selfdrive/modeld/models/driving_supercombo.onnx \
+          /tmp/driving_supercombo_fp32.onnx
     - name: Build openpilot
       run: scons
-    - name: Driving test
-      timeout-minutes: 2
+    - name: Run one-minute real-time driving test
+      timeout-minutes: 5
       env:
-        # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
+        BLOCK: soundd
+        CI_SIM_LOGS: "1"
         EGL_PLATFORM: surfaceless
-      run: python openpilot/tools/sim/tests/test_metadrive_bridge.py
+        ENCODERD_QCAM_ONLY: "1"
+        METADRIVE_FLAT_TERRAIN_CARD: "1"
+        METADRIVE_MAX_SPEED_KMH: "15"
+        METADRIVE_NO_MSAA: "1"
+        METADRIVE_NO_SHADOWS: "1"
+        METADRIVE_RENDER_SCALE: "0.25"
+        METADRIVE_REPORT_FPS: "1"
+        METADRIVE_SIMPLE_RENDER: "1"
+        METADRIVE_TEST_DURATION: "60"
+        METADRIVE_TRACK_SIZE: "100"
+        MIN_MODEL_RATE: "18"
+        ONNX_CPU_MODEL: /tmp/driving_supercombo_fp32.onnx
+        ONNX_CPU_THREADS: "2"
+        RUN_METADRIVE_TEST: "1"
+        SIM_CAMERA_RESOLUTION: 1928x1208
+        SIM_LOG_SAVE_DIR: ${{ github.workspace }}/sim-artifacts/logs
+        SIM_MANAGER_LOG: ${{ github.workspace }}/sim-artifacts/manager.log
+        SIM_USE_OPENCV_YUV: "1"
+      run: |
+        python -m metadrive.pull_asset
+        mkdir -p sim-artifacts/logs
+        xvfb-run -a -s "-screen 0 1920x1080x24" \
+          python tools/test_runner.py openpilot/tools/sim/tests/test_metadrive_bridge.py -j 1 -s -v
+    - name: Validate log artifacts
+      if: always()
+      run: |
+        grep -E "locationd|modeld|commIssue|Observation" sim-artifacts/manager.log | tail -100 || true
+        find sim-artifacts -type f -printf '%p %k KiB\n' | sort
+        find sim-artifacts/logs -type f | grep -Eq '/(qlog|rlog)(\.zst)?$'
+        find sim-artifacts/logs -type f | grep -Eq '/qcamera\.ts$'
+    - name: Upload simulator artifacts
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: simulator-${{ github.run_id }}
+        path: sim-artifacts
 
   create_ui_report:
     name: Create UI Report
@@ -219,3 +274,4 @@ jobs:
         with:
           name: ui-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: openpilot/selfdrive/ui/tests/diff/report
+

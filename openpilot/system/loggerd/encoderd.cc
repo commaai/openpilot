@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdlib>
 #ifdef __COMMA_HARDWARE__
 #include <exception>
 #include <stdexcept>
@@ -216,7 +217,9 @@ int main(int argc, char* argv[]) {
     ret = util::set_core_affinity({3});
     assert(ret == 0);
   }
-  if (argc > 1) {
+  if (std::getenv("ENCODERD_QCAM_ONLY") != nullptr) {
+    encoderd_thread(qcam_only_cameras_logged);
+  } else if (argc > 1) {
     std::string arg1(argv[1]);
     if (arg1 == "--stream") {
       encoderd_thread(stream_cameras_logged);
@@ -228,3 +231,4 @@ int main(int argc, char* argv[]) {
   }
   return 0;
 }
+
