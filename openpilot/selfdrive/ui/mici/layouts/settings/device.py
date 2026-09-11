@@ -6,11 +6,11 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, LABEL_COLOR, COMPLICATION_GREY
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigDialogBase, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
-from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
+from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage, QRCodeWidget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
@@ -120,31 +120,55 @@ class DeviceInfoLayoutMici(Widget):
     self._serial_number_text_label.render()
 
 
+class ManagePrimeDialog(BigDialogBase):
+  def __init__(self, dongle_id: str | None):
+    super().__init__()
+    url = f"https://connect.comma.ai/{dongle_id}/prime" if dongle_id and dongle_id != UNREGISTERED_DONGLE_ID else "https://connect.comma.ai"
+    self._qr = QRCodeWidget(url, size=gui_app.height - 32)
+    self._description = UnifiedLabel("scan to manage your prime subscription on comma connect", 36,
+                                     font_weight=FontWeight.BOLD, line_height=0.9)
+
+  def _render(self, rect: rl.Rectangle):
+    self._qr.set_position(rect.x + 8, rect.y + 16)
+    self._qr.render()
+
+    label_x = 8 + self._qr.rect.width + 24
+    self._description.set_max_width(int(rect.width - label_x - 16))
+    self._description.set_position(rect.x + label_x, rect.y + 16)
+    self._description.render()
+
+
 class PairBigButton(BigButton):
   def __init__(self):
-    super().__init__("pair", "connect.comma.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
-
-  def _get_label_font_size(self):
-    return 64
+    self._comma_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
+    self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/{provider}.png", 64, 64)
+                           for provider in ("github", "google", "apple")}
+    super().__init__("pair to connect", "connect.comma.ai", self._comma_icon)
 
   def _update_state(self):
     super()._update_state()
 
     if ui_state.prime_state.is_paired():
+      self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")
       if ui_state.prime_state.is_prime():
-        self.set_value("subscribed")
+        self.set_value("prime" if ui_state.prime_state.is_full_prime() else "lite")
       else:
-        self.set_value("upgrade to prime")
+        self.set_value("claim prime trial" if ui_state.prime_state.can_claim_prime_trial() else "upgrade to prime")
     else:
-      self.set_text("pair")
+      self.set_icon(self._comma_icon)
+      self.set_text("pair to connect")
       self.set_value("connect.comma.ai")
+
+    show_prime_offer = ui_state.prime_state.is_paired() and not ui_state.prime_state.is_prime()
+    self._sub_label.set_font_weight(FontWeight.BOLD if show_prime_offer else FontWeight.ROMAN)
+    self._sub_label.set_text_color(LABEL_COLOR if show_prime_offer else COMPLICATION_GREY)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    # TODO: show ad dialog when clicked if not prime
     if ui_state.prime_state.is_paired():
+      gui_app.push_widget(ManagePrimeDialog(ui_state.params.get("DongleId")))
       return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():

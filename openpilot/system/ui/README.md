@@ -11,8 +11,17 @@ Quick start:
 * set `GRID=50` to show a 50-pixel alignment grid overlay
 * set `MAGIC_DEBUG=1` to show every dropped frames (only on device)
 * set `RECORD=1` to record the screen, output defaults to `output.mp4` but can be set with `RECORD_OUTPUT`
+* set `PRIME_TYPE` to preview pairing/Prime status: `-1` unpaired, `0` paired without Prime, `2` Prime Lite, `1` Prime Full
+* set `PAIRING_PROVIDER=github`, `google`, or `apple` to preview the paired account icon without an account lookup
+* with `PRIME_TYPE=0`, set `PRIME_TRIAL_CLAIMED=0` to preview "claim prime trial", or `1` for "upgrade to prime"
 * https://www.raylib.com/cheatsheet/cheatsheet.html
 * https://electronstudio.github.io/raylib-python-cffi/README.html#quickstart
+
+For example, preview a Google account paired without Prime on desktop:
+
+```sh
+PRIME_TYPE=0 PAIRING_PROVIDER=google python -m openpilot.selfdrive.ui.ui
+```
 
 Style guide:
 * All graphical elements should subclass [`Widget`](/openpilot/system/ui/widgets/__init__.py).
