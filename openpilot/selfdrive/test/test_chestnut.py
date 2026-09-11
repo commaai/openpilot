@@ -32,19 +32,32 @@ def fault_launcher(module, name, fault, trigger, injected, models):
 
   original_init, original_run, original_warmup = modeld.ModelState.__init__, modeld.ModelState.run, modeld.ModelState.warmup
 
+  def wait_power():
+    injected.set()
+    if not trigger.wait(45):
+      raise TimeoutError('physical power action was not acknowledged')
+
   def init(self, width, height, chestnut):
+    if chestnut and fault == 'power_load':
+      wait_power()
     if chestnut and fault == 'load_interrupt':
       injected.set()
-    if chestnut and fault in ('load_usb', 'load_timeout'):
+    if chestnut and fault in ('load_usb', 'load_timeout', 'load_memory'):
       injected.set()
+      if fault == 'load_memory':
+        raise MemoryError('injected model allocation failure')
       if fault == 'load_timeout':
         time.sleep(modeld.BIG_MODEL_TIMEOUT + 10)
       raise usb1.USBErrorNoDevice()
     original_init(self, width, height, chestnut)
 
   def warmup(self):
-    if self.chestnut and fault == 'warmup_usb':
+    if self.chestnut and fault == 'power_warmup':
+      wait_power()
+    if self.chestnut and fault in ('warmup_usb', 'warmup_timeout'):
       injected.set()
+      if fault == 'warmup_timeout':
+        time.sleep(modeld.BIG_MODEL_TIMEOUT + 10)
       raise usb1.USBErrorNoDevice()
     return original_warmup(self)
 
@@ -83,6 +96,7 @@ class TestChestnutFaults(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
 
   def setUp(self):
+    super().setUp()
     assert chestnut_present() and chestnut_compiled(), 'Chestnut hardware and compiled big model are required'
     self.params = Params()
     self.params.put('CarParams', get_demo_car_params().to_bytes(), block=True)
@@ -135,7 +149,7 @@ class TestChestnutFaults(OpenpilotTestCase):
   @mock_messages(['deviceMotion'])
   def test_load_failures(self):
     with processes_context(['camerad', 'calibrationd']):
-      for fault in ('load_usb', 'warmup_usb', 'load_timeout'):
+      for fault in ('load_usb', 'warmup_usb', 'load_timeout', 'warmup_timeout', 'load_memory'):
         with self.subTest(fault=fault):
           with self.model(fault) as (sm, proc, _, injected):
             self.frames(sm, proc, False)
@@ -233,17 +247,18 @@ class TestChestnutFaults(OpenpilotTestCase):
   @mock_messages(['deviceMotion'])
   def test_stop_during_load(self):
     with processes_context(['camerad', 'calibrationd']):
-      for _ in range(3):
-        with self.model('load_interrupt') as (sm, proc, _, injected):
-          deadline = time.monotonic() + 20
-          while not injected.is_set():
-            assert time.monotonic() < deadline, 'model load did not start'
-            assert proc.proc.is_alive()
-            self.tick(sm)
-          assert self.params.get_bool('ChestnutLoading')
-        # The normal process stop must reap the loader along with modeld.
-        assert proc.proc is None
-        self.recovery()
+      for attempt in range(1, 4):
+        with self.subTest(attempt=attempt):
+          with self.model('load_interrupt') as (sm, proc, _, injected):
+            deadline = time.monotonic() + 20
+            while not injected.is_set():
+              assert time.monotonic() < deadline, 'model load did not start'
+              assert proc.proc.is_alive()
+              self.tick(sm)
+            assert self.params.get_bool('ChestnutLoading')
+          # The normal process stop must reap the loader along with modeld.
+          assert proc.proc is None
+          self.recovery()
 
 
 if __name__ == '__main__':
