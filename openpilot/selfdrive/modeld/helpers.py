@@ -63,7 +63,8 @@ def load_oob(f):
   def buffers():
     while (h := f.read(8)):
       pb = pickle.PickleBuffer(bytearray(struct.unpack('<q', h)[0]))
-      f.readinto(pb)
+      if f.readinto(pb) != pb.raw().nbytes:
+        raise EOFError("incomplete model buffer")
       yield pb
   return pickle.load(io.BytesIO(opcodes), buffers=buffers())
 
