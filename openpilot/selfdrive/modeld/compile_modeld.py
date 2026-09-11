@@ -329,4 +329,7 @@ if __name__ == "__main__":
 
   with open(args.output, "wb") as f:
     dump_oob(out, f)
+  with open(args.output, "rb") as f:
+    load_oob(f)
+    assert not f.read(1), "unexpected model buffer data"
   print(f"Saved JITs to {args.output} ({os.path.getsize(args.output) / 1e6:.2f} MB)")
