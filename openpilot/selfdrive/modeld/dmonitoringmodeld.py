@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR
 from tinygrad.tensor import Tensor
+from tinygrad_repo.examples.openpilot.helpers import allocate_inputs, load_pickle
 import time
 import pickle
+import codecs
 import numpy as np
 
 from openpilot.cereal import messaging
@@ -14,14 +16,11 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
-PROCESS_NAME = "openpilot.selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
-METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
 
 class ModelState:
@@ -29,24 +28,20 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
-    self.DEV = get_tg_input_devices(PROCESS_NAME, chestnut=False)['DEV']
-    with open(METADATA_PATH, 'rb') as f:
-      model_metadata = pickle.load(f)
-      self.input_shapes = model_metadata['input_shapes']
-      self.output_slices = model_metadata['output_slices']
+    artifact = load_pickle(open_file_chunked(str(MODEL_PKL_PATH)))
+    model_metadata = artifact['metadata']
+    self.input_shapes = model_metadata['input_shapes']
+    self.output_slices = pickle.loads(codecs.decode(model_metadata['metadata']['output_slices'].encode(), 'base64'))
 
-    self.numpy_inputs = {
-      'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
-    }
-
-    self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
-    self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
-    self.frame_buf_params = get_nv12_info(cam_w, cam_h)
-    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
-    self._blob_cache : dict[int, Tensor] = {}
-    self.model_run = pickle.load(open_file_chunked(str(MODEL_PKL_PATH)))
+    model = artifact['variants']['default']
+    self.model_run = model['run']
+    self.tensor_inputs, self.numpy_inputs = allocate_inputs({k: v for k, v in model['input_specs'].items() if k != 'input_img'}, {})
     with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
-      self.image_warp = pickle.load(f)
+      warp = load_pickle(f)['variants']['default']
+    self.image_warp = warp['run']
+    self.frame_shape, self.frame_dtype, self.frame_device = warp['input_specs']['input_frame']
+    self.warp_inputs, self.warp_inputs_np = allocate_inputs({k: v for k, v in warp['input_specs'].items() if k != 'input_frame'}, {})
+    self._blob_cache : dict[int, Tensor] = {}
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -56,10 +51,10 @@ class ModelState:
     ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, self.frame_shape, dtype=np.dtype(self.frame_dtype).name, device=self.frame_device)
 
-    self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
+    self.warp_inputs_np['M_inv'][:] = transform[:]
+    self.tensor_inputs['input_img'] = self.image_warp(input_frame=self._blob_cache[ptr], **self.warp_inputs)
 
     output = self.model_run(**self.tensor_inputs).numpy().flatten()
 
