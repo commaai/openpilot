@@ -108,9 +108,9 @@ void ConsoleUI::initWindows() {
   w[Win::Title] = newwin(1, max_width, 0, 0);
   w[Win::Stats] = newwin(2, max_width - 2 * BORDER_SIZE, 2, BORDER_SIZE);
   w[Win::Timeline] = newwin(4, max_width - 2 * BORDER_SIZE, 5, BORDER_SIZE);
-  w[Win::TimelineDesc] = newwin(1, 100, 10, BORDER_SIZE);
-  w[Win::CarState] = newwin(3, 100, 12, BORDER_SIZE);
-  w[Win::DownloadBar] = newwin(1, 100, 16, BORDER_SIZE);
+  w[Win::TimelineDesc] = newwin(1, max_width - 2 * (BORDER_SIZE - 1), 10, BORDER_SIZE);
+  w[Win::CarState] = newwin(3, max_width - 2 * (BORDER_SIZE - 1), 12, BORDER_SIZE);
+  w[Win::DownloadBar] = newwin(1, max_width - 2 * (BORDER_SIZE - 1), 16, BORDER_SIZE);
   if (int log_height = max_height - 27; log_height > 4) {
     w[Win::LogBorder] = newwin(log_height, max_width - 2 * (BORDER_SIZE - 1), 17, BORDER_SIZE - 1);
     box(w[Win::LogBorder], 0, 0);
