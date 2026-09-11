@@ -26,6 +26,9 @@ def driving_model_args(frame_skip):
   return args
 
 
-def warp_args(width, height, output_size, layout):
-  return ['--frame', ','.join(map(str, frame_config(width, height))),
-          '--warp-to', f'{output_size[0]}x{output_size[1]}', '--layout', layout, '--border-fill', '16']
+def warp_args(width, height, output_size, layout, border_fill=None):
+  args = ['--frame', ','.join(map(str, frame_config(width, height))),
+          '--warp-to', f'{output_size[0]}x{output_size[1]}', '--layout', layout]
+  if border_fill is not None:
+    args += ['--border-fill', str(border_fill)]
+  return args
