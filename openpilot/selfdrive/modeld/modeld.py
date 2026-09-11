@@ -4,6 +4,7 @@ import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
+from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 import usb1
 import struct
@@ -28,7 +29,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, QUEUE_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
@@ -177,7 +178,7 @@ class ModelState:
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
     jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
     input_devices = jits['input_devices']
-    self.model_device = input_devices['model']
+    self.model_device, self.warp_device = input_devices['model'], input_devices['warp']
     metadata = jits['metadata']
     self.input_shapes = metadata['input_shapes']
     self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
@@ -187,9 +188,9 @@ class ModelState:
     self.chestnut = chestnut
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
+    self.frame_size = get_nv12_info(cam_w, cam_h)[3]
+    self._blob_cache: dict[int, Tensor] = {}
     self.parser = Parser()
     self.run_model = jits['run_model'][(cam_w,cam_h)]
 
@@ -199,8 +200,13 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
+    frames = {}
     for key, buf in bufs.items():
-      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
+      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
+      if ptr not in self._blob_cache:
+        self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_size,), dtype='uint8', device=self.warp_device)
+      frames[key] = self._blob_cache[ptr]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
@@ -211,7 +217,7 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
+    outs, = self.run_model(frame=frames['img'], big_frame=frames['big_img'], **{k: self.input_queues[k] for k in QUEUE_INPUTS})
     if after_enqueue is not None:
       after_enqueue()
     model_output = outs.numpy()[0]
@@ -225,13 +231,13 @@ class ModelState:
     return outputs_dict
 
   def warmup(self) -> None:
-    dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
+    dummy_frames = {k: np.zeros(self.frame_size, dtype=np.uint8) for k in self.vision_input_names}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
     self.prev_desire[:] = 0
+    self._blob_cache.clear()
 
 
 def main(demo=False):
