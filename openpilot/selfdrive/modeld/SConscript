@@ -2,13 +2,13 @@ import glob
 import json
 import os
 import shutil
+import shlex
 from SCons.Script import Action, Value
 from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks, open_file_chunked
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
+from openpilot.common.transformations.model import DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, modeld_pkl_path
+from openpilot.selfdrive.modeld.model_config import CAMERA_CONFIGS, driving_model_args, warp_args
 
 
 Import('env', 'arch')
@@ -24,7 +24,7 @@ def estimate_pickle_max_size(onnx_size):
   # the ONNX size. Overestimating only adds an empty trailing chunk.
   return 2.0 * onnx_size + 10 * 1024 * 1024
 
-camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
+config_file = File('#openpilot/selfdrive/modeld/model_config.py')
 
 if arch == 'comma_arm64':
   tg_backend = 'QCOM'
@@ -53,9 +53,7 @@ tg_devices_node = lenv.Command(
 # tinygrad calls brew which needs a $HOME in the env
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
-tinygrad_dir = Dir("#tinygrad_repo").abspath
-compiler = f'python3 -m tinygrad.nn.compile'
-frame_args = ['%d,%d,%d,%d,%d,%d' % (w, h, *get_nv12_info(w, h)) for w, h in camera_configs]
+compiler = 'python3 -m tinygrad.nn.compile_onnx'
 
 
 def model_onnx(name):
@@ -75,21 +73,18 @@ def compile_and_chunk(path, onnx, command, extra_targets=(), size_multiplier=1):
   def do_chunk(target, source, env):
     chunk_file(path, chunks)
   return lenv.Command(chunks + list(extra_targets),
-                     [onnx] + tinygrad_files + [Value(command), Value(chunks), chunker_file, tg_devices_node],
+                     [onnx] + tinygrad_files + [Value(command), Value(chunks), chunker_file, tg_devices_node, config_file],
                      [command, Action(do_chunk, "  [CHUNK] $TARGET")])
 
 
 # The big driving model ships as a precompiled AMD pickle.
-model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 onnx = model_onnx('driving_supercombo')
 pkl = File(modeld_pkl_path(chestnut=False)).abspath
 # CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
 taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
-command = (f'{tg_flags} {mac_brew_string} {taskset}python3 {tinygrad_dir}/examples/openpilot/compile_modeld.py '
-           f'--model-size {model_w}x{model_h} --frames {" ".join(frame_args)} '
-           f'--onnx {onnx} --output {pkl} --frame-skip {frame_skip} --benchmark-runs 1')
-compile_and_chunk(pkl, onnx, command, size_multiplier=len(camera_configs))
+command = f'{tg_flags} {mac_brew_string} {taskset}{compiler} {onnx} {pkl} {shlex.join(driving_model_args(frame_skip))} --benchmark-runs 1'
+compile_and_chunk(pkl, onnx, command, size_multiplier=len(CAMERA_CONFIGS))
 
 onnx = model_onnx('dmonitoring_model')
 pkl = File('models/dmonitoring_model_tinygrad.pkl').abspath
@@ -98,9 +93,8 @@ command = (f'{tg_flags} OPENPILOT_HACKS=1 JIT_BATCH_SIZE=0 {mac_brew_string} {co
            f'--float32 --device-input input_img --metadata-output {metadata} --benchmark-runs 1')
 compile_and_chunk(pkl, onnx, command, [metadata])
 
-for (cam_w, cam_h), frame in zip(camera_configs, frame_args):
-  dm_w, dm_h = DM_INPUT_SIZE
+for cam_w, cam_h in CAMERA_CONFIGS:
   pkl = File(f'models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl').abspath
-  command = (f'{tg_flags} {mac_brew_string} python3 -m tinygrad.nn.warp_compile '
-             f'--frame {frame} --warp-to {dm_w}x{dm_h} --output {pkl} --benchmark-runs 1')
-  lenv.Command(pkl, tinygrad_files + [Value(command), tg_devices_node], command)
+  command = (f'{tg_flags} {mac_brew_string} python3 -m tinygrad.nn.compile_warp '
+             f'{shlex.join(warp_args(cam_w, cam_h, DM_INPUT_SIZE, "luma"))} --output {pkl} --benchmark-runs 1')
+  lenv.Command(pkl, tinygrad_files + [Value(command), tg_devices_node, config_file], command)

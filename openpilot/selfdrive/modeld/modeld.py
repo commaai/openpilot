@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from collections.abc import Callable
 import ctypes
+import codecs
 from functools import cached_property
 import os
+import pickle
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
 from tinygrad.tensor import Tensor
@@ -176,32 +178,30 @@ class ModelState:
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
     jits = load_pickle(open_file_chunked(modeld_pkl_path(chestnut)), out_of_band=True)
-    input_devices = jits['input_devices']
-    self.model_device = input_devices['model']
+    variant = jits['variants'][f'{cam_w}x{cam_h}']
     metadata = jits['metadata']
     self.input_shapes = metadata['input_shapes']
     self.vision_input_names = [k for k in self.input_shapes if 'img' in k]
-    self.output_slices = metadata['output_slices']
+    self.output_slices = pickle.loads(codecs.decode(metadata['metadata']['output_slices'].encode(), 'base64'))
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
 
-    self.input_specs = jits['input_specs'][(cam_w, cam_h)]
-    self.npy_shapes = jits['npy_shapes']
+    self.input_specs = variant['input_specs']
+    self.packed_specs = variant['packed_specs']
+    self.model_device = next(device for _, _, device in self.input_specs.values() if device != 'NPY')
     self.reset_inputs()
     self.parser = Parser()
-    self.run_model = jits['run_model'][(cam_w,cam_h)]
+    self.run_model = variant['run']
 
   def reset_inputs(self) -> None:
     buffers = {name: np.zeros(shape, dtype=dtype) for name, (shape, dtype, _) in self.input_specs.items()}
     self.input_queues = {name: Tensor(buffers[name], device=device).realize() for name, (_, _, device) in self.input_specs.items()}
-    sizes = [int(np.prod(shape)) for shape in self.npy_shapes.values()]
-    packed = buffers['packed_npy_inputs']
-    npy_size = sum(sizes) * np.dtype(np.float32).itemsize
-    self.npy = {name: v.reshape(shape) for (name, shape), v in
-                zip(self.npy_shapes.items(), np.split(packed[:npy_size].view(np.float32), np.cumsum(sizes[:-1])), strict=True)}
-    self.frame_copy_size = (packed.size - npy_size) // 2
-    self.frame_views = {'img': packed[npy_size:npy_size+self.frame_copy_size], 'big_img': packed[npy_size+self.frame_copy_size:]}
+    packed = buffers['packed_inputs']
+    views = {name: packed[start:start+int(np.prod(shape))*np.dtype(dtype).itemsize].view(dtype).reshape(shape)
+             for name, (start, shape, dtype) in self.packed_specs.items()}
+    self.frame_views = {name: views.pop(name) for name in self.vision_input_names}
+    self.npy = views
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -210,32 +210,32 @@ class ModelState:
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for key, buf in bufs.items():
-      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_views[key].size))
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
-    self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+    self.npy['desire'].flat[:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    outs, = self.run_model(**self.input_queues)
+    outs = self.run_model(**self.input_queues)
     if after_enqueue is not None:
       after_enqueue()
     model_output = outs.numpy()[0]
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
-    self.npy['prev_feat'][:] = model_output[self.output_slices['hidden_state']]
+    self.npy['prev_feat'].flat[:] = model_output[self.output_slices['hidden_state']]
 
     if SEND_RAW_PRED:
       outputs_dict['raw_pred'] = model_output.copy()
     return outputs_dict
 
   def warmup(self) -> None:
-    dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
+    dummy_frames = {k: np.zeros_like(v) for k, v in self.frame_views.items()}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
