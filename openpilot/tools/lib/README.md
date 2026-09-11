@@ -11,7 +11,7 @@ r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
 # get a list of paths for the route's rlog files
 print(r.log_paths())
 
-# and road camera (fcamera.hevc) files
+# and road camera (narrow_road.hevc) files
 print(r.camera_paths())
 
 # setup a LogReader to read the route's first rlog

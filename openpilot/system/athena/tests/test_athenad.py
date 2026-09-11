@@ -145,7 +145,7 @@ class TestAthenadMethods(OpenpilotTestCase):
     route = '2021-03-29--13-32-47'
     segments = [0, 1, 2, 3, 11]
 
-    filenames = ['qlog.zst', 'qcamera.ts', 'rlog.zst', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
+    filenames = ['qlog.zst', 'qcamera.ts', 'rlog.zst', 'narrow_road.hevc', 'wide_road.hevc', 'cabin.hevc']
     files = [f'{route}--{s}/{f}' for s in segments for f in filenames]
     for file in files:
       self._create_file(file)
@@ -182,7 +182,7 @@ class TestAthenadMethods(OpenpilotTestCase):
     assert len(resp) == len(expected)
 
   def test_video_clip_hardware_encoder(self, mocker):
-    clip = athenad.VideoClips.Clip("route", "fcamera.hevc", 10, 130, 2, 4, "clip.mp4", 123)
+    clip = athenad.VideoClips.Clip("route", "narrow_road.hevc", 10, 130, 2, 4, "clip.mp4", 123)
     clips = self._video_clips(clip)
     process = mocker.Mock(stdin=None, returncode=0)
     process.poll.return_value = 0
@@ -200,7 +200,7 @@ class TestAthenadMethods(OpenpilotTestCase):
     assert clips.transcode_proc is None
 
   def test_video_clip_hardware_encoder_failure(self, mocker):
-    clip = athenad.VideoClips.Clip("route", "fcamera.hevc", 0, 60, 1, 1, "clip.mp4", 123)
+    clip = athenad.VideoClips.Clip("route", "narrow_road.hevc", 0, 60, 1, 1, "clip.mp4", 123)
     clips = self._video_clips(clip)
     process = mocker.Mock(stdin=None, returncode=1)
     process.poll.return_value = 1
@@ -212,7 +212,7 @@ class TestAthenadMethods(OpenpilotTestCase):
     assert clips.transcode_proc is None
 
   def test_video_clip_software_fallback(self, mocker):
-    clip = athenad.VideoClips.Clip("route", "fcamera.hevc", 10, 30, 3, 2, "clip.mp4", 123)
+    clip = athenad.VideoClips.Clip("route", "narrow_road.hevc", 10, 30, 3, 2, "clip.mp4", 123)
     clips = self._video_clips(clip)
     stdin = mocker.Mock()
     process = mocker.Mock(stdin=stdin, returncode=0)

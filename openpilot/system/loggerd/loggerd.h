@@ -98,21 +98,21 @@ public:
 const EncoderInfo main_road_encoder_info = {
   .publish_name = "narrowRoadEncodeData",
   .thumbnail_name = "thumbnail",
-  .filename = "fcamera.hevc",
+  .filename = "narrow_road.hevc",
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(NarrowRoadEncode),
 };
 
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
-  .filename = "ecamera.hevc",
+  .filename = "wide_road.hevc",
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
 
 const EncoderInfo main_cabin_encoder_info = {
   .publish_name = "cabinEncodeData",
-  .filename = "dcamera.hevc",
+  .filename = "cabin.hevc",
   .record = Params().getBool("RecordFront"),
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(CabinEncode),

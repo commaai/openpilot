@@ -15,9 +15,13 @@ class FileName:
   RLOG = ("rlog.zst", "rlog.bz2")
   QLOG = ("qlog.zst", "qlog.bz2")
   QCAMERA = ('qcamera.ts',)
-  FCAMERA = ('fcamera.hevc',)
-  ECAMERA = ('ecamera.hevc',)
-  DCAMERA = ('dcamera.hevc',)
+  # new names first, old names kept for backwards compatibility with old routes
+  NARROW_ROAD_CAMERA = ('narrow_road.hevc', 'fcamera.hevc')
+  WIDE_ROAD_CAMERA = ('wide_road.hevc', 'ecamera.hevc')
+  CABIN_CAMERA = ('cabin.hevc', 'dcamera.hevc')
+  FCAMERA = NARROW_ROAD_CAMERA  # deprecated
+  ECAMERA = WIDE_ROAD_CAMERA    # deprecated
+  DCAMERA = CABIN_CAMERA        # deprecated
   BOOTLOG = ('bootlog.zst', 'bootlog.bz2')
 
 
@@ -47,17 +51,24 @@ class Route:
     qlog_path_by_seg_num = {s.name.segment_num: s.qlog_path for s in self._segments}
     return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
-  def camera_paths(self):
-    camera_path_by_seg_num = {s.name.segment_num: s.camera_path for s in self._segments}
-    return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+  def narrow_road_camera_paths(self):
+    path_by_seg_num = {s.name.segment_num: s.narrow_road_camera_path for s in self._segments}
+    return [path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
-  def dcamera_paths(self):
-    dcamera_path_by_seg_num = {s.name.segment_num: s.dcamera_path for s in self._segments}
-    return [dcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+  # deprecated alias
+  camera_paths = narrow_road_camera_paths
 
-  def ecamera_paths(self):
-    ecamera_path_by_seg_num = {s.name.segment_num: s.ecamera_path for s in self._segments}
-    return [ecamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+  def cabin_camera_paths(self):
+    path_by_seg_num = {s.name.segment_num: s.cabin_camera_path for s in self._segments}
+    return [path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+
+  def wide_road_camera_paths(self):
+    path_by_seg_num = {s.name.segment_num: s.wide_road_camera_path for s in self._segments}
+    return [path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
+
+  # deprecated aliases
+  dcamera_paths = cabin_camera_paths
+  ecamera_paths = wide_road_camera_paths
 
   def qcamera_paths(self):
     qcamera_path_by_seg_num = {s.name.segment_num: s.qcamera_path for s in self._segments}
@@ -78,9 +89,9 @@ class Route:
           segment_name,
           url if fn in FileName.RLOG else segments[segment_name].log_path,
           url if fn in FileName.QLOG else segments[segment_name].qlog_path,
-          url if fn in FileName.FCAMERA else segments[segment_name].camera_path,
-          url if fn in FileName.DCAMERA else segments[segment_name].dcamera_path,
-          url if fn in FileName.ECAMERA else segments[segment_name].ecamera_path,
+          url if fn in FileName.NARROW_ROAD_CAMERA else segments[segment_name].narrow_road_camera_path,
+          url if fn in FileName.CABIN_CAMERA else segments[segment_name].cabin_camera_path,
+          url if fn in FileName.WIDE_ROAD_CAMERA else segments[segment_name].wide_road_camera_path,
           url if fn in FileName.QCAMERA else segments[segment_name].qcamera_path,
         )
       else:
@@ -88,9 +99,9 @@ class Route:
           segment_name,
           url if fn in FileName.RLOG else None,
           url if fn in FileName.QLOG else None,
-          url if fn in FileName.FCAMERA else None,
-          url if fn in FileName.DCAMERA else None,
-          url if fn in FileName.ECAMERA else None,
+          url if fn in FileName.NARROW_ROAD_CAMERA else None,
+          url if fn in FileName.CABIN_CAMERA else None,
+          url if fn in FileName.WIDE_ROAD_CAMERA else None,
           url if fn in FileName.QCAMERA else None,
         )
 
@@ -138,26 +149,26 @@ class Route:
         qlog_path = None
 
       try:
-        camera_path = next(path for path, filename in files if filename in FileName.FCAMERA)
+        narrow_road_camera_path = next(path for path, filename in files if filename in FileName.NARROW_ROAD_CAMERA)
       except StopIteration:
-        camera_path = None
+        narrow_road_camera_path = None
 
       try:
-        dcamera_path = next(path for path, filename in files if filename in FileName.DCAMERA)
+        cabin_camera_path = next(path for path, filename in files if filename in FileName.CABIN_CAMERA)
       except StopIteration:
-        dcamera_path = None
+        cabin_camera_path = None
 
       try:
-        ecamera_path = next(path for path, filename in files if filename in FileName.ECAMERA)
+        wide_road_camera_path = next(path for path, filename in files if filename in FileName.WIDE_ROAD_CAMERA)
       except StopIteration:
-        ecamera_path = None
+        wide_road_camera_path = None
 
       try:
         qcamera_path = next(path for path, filename in files if filename in FileName.QCAMERA)
       except StopIteration:
         qcamera_path = None
 
-      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
+      segments.append(Segment(segment, log_path, qlog_path, narrow_road_camera_path, cabin_camera_path, wide_road_camera_path, qcamera_path))
 
     if len(segments) == 0:
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
@@ -165,15 +176,28 @@ class Route:
 
 
 class Segment:
-  def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
+  def __init__(self, name, log_path, qlog_path, narrow_road_camera_path, cabin_camera_path, wide_road_camera_path, qcamera_path):
     self._events = None
     self._name = SegmentName(name)
     self.log_path = log_path
     self.qlog_path = qlog_path
-    self.camera_path = camera_path
-    self.dcamera_path = dcamera_path
-    self.ecamera_path = ecamera_path
+    self.narrow_road_camera_path = narrow_road_camera_path
+    self.cabin_camera_path = cabin_camera_path
+    self.wide_road_camera_path = wide_road_camera_path
     self.qcamera_path = qcamera_path
+
+  # deprecated aliases
+  @property
+  def camera_path(self):
+    return self.narrow_road_camera_path
+
+  @property
+  def dcamera_path(self):
+    return self.cabin_camera_path
+
+  @property
+  def ecamera_path(self):
+    return self.wide_road_camera_path
 
   @property
   def name(self):

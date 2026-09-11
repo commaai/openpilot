@@ -179,11 +179,11 @@ void Route::addFileToSegment(int n, const std::string &file) {
     segments_[n].rlog = file;
   } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
     segments_[n].qlog = file;
-  } else if (name == "fcamera.hevc") {
+  } else if (name == "narrow_road.hevc" || name == "fcamera.hevc") {
     segments_[n].narrow_road_cam = file;
-  } else if (name == "dcamera.hevc") {
+  } else if (name == "cabin.hevc" || name == "dcamera.hevc") {
     segments_[n].cabin_cam = file;
-  } else if (name == "ecamera.hevc") {
+  } else if (name == "wide_road.hevc" || name == "ecamera.hevc") {
     segments_[n].wide_road_cam = file;
   } else if (name == "qcamera.ts") {
     segments_[n].qcamera = file;
