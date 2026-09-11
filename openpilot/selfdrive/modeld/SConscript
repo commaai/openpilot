@@ -79,7 +79,7 @@ for chestnut in [False, True] if CHESTNUT else [False]:
   # CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
   taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
   cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_modeld.py '
-        f'--model-size {model_w}x{model_h} '
+        f'--model-size {model_w}x{model_h} --warp-layout yuv420 '
         f'--camera-resolutions {camera_res_args} '
         f'--onnx {File(f"models/{file_prefix}driving_supercombo.onnx").abspath} '
         f'--output {target_pkl_path} --frame-skip {frame_skip}')
@@ -103,7 +103,7 @@ for chestnut in [False, True] if CHESTNUT else [False]:
   actions = Action(do_compile, "  [CHESTNUT] $TARGET") if chestnut else [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
-    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(camera_res_args), Value(chunk_targets), chunker_file],
+    tinygrad_files + compile_modeld_script + driving_onnx_deps + [Value(cmd), Value(chunk_targets), chunker_file],
     actions,
   )
   if chestnut:
@@ -119,7 +119,7 @@ dm_w, dm_h = DM_INPUT_SIZE
 for cam_w, cam_h in camera_configs:
   dm_pkl_path = File(f"models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
   cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_warp.py '
-         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} '
+         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} --layout luma --border-fill 16 '
          f'--output {dm_pkl_path}')
   lenv.Command(dm_pkl_path, tinygrad_files + compile_modeld_script + [tg_devices_node], cmd)
 
