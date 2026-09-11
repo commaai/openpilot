@@ -266,6 +266,12 @@ node {
           step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
         ])
       },
+      'chestnut faults': {
+        deviceStage("chestnut faults", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
+          step("build", "./openpilot/selfdrive/test/chestnut.sh"),
+          step("model fault injection", "python openpilot/selfdrive/test/test_chestnut.py", [timeout: 1200]),
+        ])
+      },
 
     )
     }
