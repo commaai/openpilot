@@ -50,7 +50,7 @@ done
 
 scons
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
-  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
+  python3 -c 'from openpilot.selfdrive.modeld.helpers import chestnut_compiled; assert chestnut_compiled()'
 fi
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
@@ -84,7 +84,7 @@ touch prebuilt
 VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # Add built files to git
 # writing larger objects is faster than compressing them on-device
-git -c core.compression=0 add -f .
+git -c core.compression=0 -c filter.lfs.process='git-lfs filter-process' add -f .
 git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
 
 # Run tests

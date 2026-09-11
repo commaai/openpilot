@@ -62,7 +62,7 @@ compile_modeld_script = [
 model_w, model_h = MEDMODEL_INPUT_SIZE
 frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
 
-# The big driving model ships as precompiled AMD pickle chunks.
+# The big driving model ships as a precompiled AMD pickle.
 target_pkl_path = File(modeld_pkl_path(chestnut=False)).abspath
 driving_onnx_deps = get_existing_chunks(File("models/driving_supercombo.onnx").abspath)
 camera_res_args = ' '.join(f'{cw}x{ch}' for cw, ch in camera_configs)
