@@ -210,19 +210,13 @@ EOF
   git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
   git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
   git config --local filter.lfs.required true
-  git xet install --local --concurrency 8
-  git config --local lfs.customtransfer.xet.direction upload
-  cp tools/lfs_xet.py .venv/bin/lfs_xet.py
-  git config --local lfs.customtransfer.hf-xet.path "$(command -v python3)"
-  git config --local lfs.customtransfer.hf-xet.args ".venv/bin/lfs_xet.py"
-  git config --local lfs.customtransfer.hf-xet.direction download
   LFS_URL="$(git config -f .lfsconfig lfs.url)"
-  git config --local "lfs.$LFS_URL.standalonetransferagent" hf-xet
-  # Older Git LFS versions also apply the standalone download agent to uploads unless it is explicitly disabled.
+  git xet install --local --concurrency 8 --lfs-url "$LFS_URL"
+  # LFS objects live on Hugging Face while the Git remote is GitHub.
   cat > "$(git rev-parse --git-path hooks)/pre-push" <<'EOF'
 #!/bin/sh
 lfs_remote=$(git config -f .lfsconfig lfs.pushurl)
-PATH=".venv/bin:$PATH" exec git -c "lfs.$lfs_remote.standalonetransferagent=" lfs pre-push "${lfs_remote%/info/lfs}" "$2"
+PATH=".venv/bin:$PATH" exec git lfs pre-push "${lfs_remote%/info/lfs}" "$2"
 EOF
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
