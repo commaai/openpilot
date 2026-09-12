@@ -229,16 +229,9 @@ void VideoWidget::createSpeedDropdown() {
 }
 
 void VideoWidget::drawSpeedMenuItems() {
-  // every row declares the same width, so the popup is exactly as wide as the widest one and all the
-  // highlights reach both edges; the label is padded on the right as much as the check column on the left
-  const float indent = ImGui::GetFontSize();
-  float label_width = 0;
-  for (int i = 0; i < (int)std::size(speeds); ++i) {
-    label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i]).c_str()).x);
-  }
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
-    if (radioMenuItem(speedText(speed).c_str(), speed_index_ == i, indent + label_width + indent)) {
+    if (ImGui::MenuItem(speedText(speed).c_str(), nullptr, speed_index_ == i)) {
       speed_index_ = i;
       can->setSpeed(speed);
       speed_text_ = speedText(speed);

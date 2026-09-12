@@ -44,13 +44,13 @@ ChartsWidget::ChartsWidget() {
   connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); }));
   connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { removeTab(index); }));
   connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) {
-    if (ImGui::BeginPopupContextItem()) {
+    if (dropdown::BeginPopupContextItem()) {
       if (ImGui::MenuItem("Close Other Tabs")) {
         tabbar_.moveTab(index, 0);
         tabbar_.setCurrentIndex(0);
         while (tabbar_.count() > 1) removeTab(1);
       }
-      ImGui::EndPopup();
+      dropdown::EndPopup();
     }
   }));
   connections_.push_back(tabbar_.currentChanged.connect([this](int index) {
