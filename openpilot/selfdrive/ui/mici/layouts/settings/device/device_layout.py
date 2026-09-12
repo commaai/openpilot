@@ -8,9 +8,9 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.mici.layouts.settings.device.prime import PrimeScroller
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, LABEL_COLOR, COMPLICATION_GREY
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigDialogBase, BigConfirmationDialog
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
-from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage, QRCodeWidget
+from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
@@ -120,24 +120,6 @@ class DeviceInfoLayoutMici(Widget):
     self._serial_number_text_label.render()
 
 
-class ManagePrimeDialog(BigDialogBase):
-  def __init__(self, dongle_id: str | None):
-    super().__init__()
-    url = f"https://connect.comma.ai/{dongle_id}/prime" if dongle_id and dongle_id != UNREGISTERED_DONGLE_ID else "https://connect.comma.ai"
-    self._qr = QRCodeWidget(url, size=gui_app.height - 32)
-    self._description = UnifiedLabel("scan to manage your prime subscription on comma connect", 36,
-                                     font_weight=FontWeight.BOLD, line_height=0.9)
-
-  def _render(self, rect: rl.Rectangle):
-    self._qr.set_position(rect.x + 8, rect.y + 16)
-    self._qr.render()
-
-    label_x = 8 + self._qr.rect.width + 24
-    self._description.set_max_width(int(rect.width - label_x - 16))
-    self._description.set_position(rect.x + label_x, rect.y + 16)
-    self._description.render()
-
-
 class PairBigButton(BigButton):
   def __init__(self):
     self._comma_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
@@ -167,7 +149,7 @@ class PairBigButton(BigButton):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    dlg: BigDialog | PairingDialog
+    dlg: BigDialog | PrimeScroller
     if not system_time_valid():
       dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):

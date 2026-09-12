@@ -67,6 +67,8 @@ class PrimeState:
         data = response.json()
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)
+        if is_paired and is_paired != self.is_paired():
+          self._fetch_pairing_provider()
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
         self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
     except Exception as e:

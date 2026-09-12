@@ -21,15 +21,16 @@ class PrimeScroller(NavScroller):
 
     # pairing components
     self._pairing_icon = gui_app.texture("icons_mici/settings/device/green_settings.png", 64, 64)
-    self._pairing_info = GreyBigButton("scan to pair\ndevice", "connect.comma.ai", self._pairing_icon)
+    self._pairing_info = GreyBigButton("finish setup", "scan to pair device\nwith connect", self._pairing_icon)
+    self._connect_info = GreyBigButton("", "connect lets you review recent driving footage and bookmark events.")
 
     # prime management components
     self._prime_icon = gui_app.texture("icons_mici/settings/device/green_cell.png", 64, 64)
     self._phone_icon = gui_app.texture("icons_mici/settings/device/phone.png", 85, 64)
     self._prime_adverts = [
       GreyBigButton(
-        "scan to claim\nprime trial" if can_claim_trial else "scan to open\nprime settings",
-        "try it for 30 days" if can_claim_trial else "upgrade to prime",
+        "try prime for\n30 days" if can_claim_trial else "upgrade to prime",
+        "scan to claim trial" if can_claim_trial else "scan to manage\nprime status",
         self._prime_icon
       ),
       GreyBigButton("", "prime adds 24/7 LTE and 1 year of cloud storage in connect.",),
@@ -37,8 +38,8 @@ class PrimeScroller(NavScroller):
       GreyBigButton("", "prime also includes commacare extended device warranty.",),
     ]
     self._prime_management = GreyBigButton(
-      "scan to open\nprime settings",
       f"subscribed {"(full)" if ui_state.prime_state.is_full_prime() else "(lite)" }",
+      "scan to open\nprime settings",
       self._phone_icon
     )
 
@@ -49,12 +50,11 @@ class PrimeScroller(NavScroller):
       ])
       if not ui_state.prime_state.is_prime(): self._scroller.add_widget(QR(self._get_prime_url))
     else:
-      self._scroller._pad = 8
-      self._scroller._edge_shadows = False
       self._scroller._show_scroll_indicator = False
       self._scroller.add_widgets([
         QR(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL),
-        self._pairing_info
+        self._pairing_info,
+        self._connect_info
       ])
 
   def _get_pairing_url(self) -> str:
