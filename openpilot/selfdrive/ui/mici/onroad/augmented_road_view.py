@@ -46,6 +46,7 @@ class BookmarkIcon(Widget):
     super().__init__()
     self._bookmark_callback = bookmark_callback
     self._icon = gui_app.texture("icons_mici/onroad/bookmark.png", 180, 180)
+    self._filled_icon = gui_app.texture("icons_mici/onroad/bookmark_fill.png", 180, 180)
     self._offset_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # State
@@ -124,9 +125,10 @@ class BookmarkIcon(Widget):
   def _render(self, _):
     """Render the bookmark icon."""
     if self._offset_filter.x > 0:
+      icon = self._filled_icon if self._state == BookmarkState.TRIGGERED else self._icon
       icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
-      icon_y = self.rect.y + (self.rect.height - self._icon.height) / 2  # Vertically centered
-      rl.draw_texture_ex(self._icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
+      icon_y = self.rect.y + (self.rect.height - icon.height) / 2  # Vertically centered
+      rl.draw_texture_ex(icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
 
 
 class AugmentedRoadView(CameraView):
