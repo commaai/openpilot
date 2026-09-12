@@ -32,8 +32,10 @@ dependencies = [
   "comma-deps-zstd",
   "comma-deps-zeromq",
   "comma-deps-json11",
-  "comma-deps-git-lfs",
+  "comma-deps-git-lfs==3.6.1.post107",
   "comma-deps-gcc-arm-none-eabi",
+
+  # Git LFS downloads
 
   # athena
   "PyJWT[crypto]",
@@ -148,6 +150,7 @@ unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
 unresolved-attribute = "ignore"  # many from capnp and Cython modules
 
 [tool.uv]
+find-links = ["https://github.com/haraschax/xet-core/releases/expanded_assets/git-xet-v0.2.2-dev.1"]
 python-preference = "only-managed"
 default-groups = ["standalone"]
 override-dependencies = [

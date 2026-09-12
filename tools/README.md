@@ -12,7 +12,7 @@ Follow these instructions for a fully managed setup experience. If you'd like to
 
 **1. Clone openpilot**
 ``` bash
-git clone https://github.com/commaai/openpilot.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/commaai/openpilot.git
 ```
 
 **2. Run the setup script**
@@ -20,6 +20,8 @@ git clone https://github.com/commaai/openpilot.git
 cd openpilot
 tools/op.sh setup
 ```
+
+Setup enables Xet downloads and uploads. Uploads require Hugging Face write credentials in Git's credential helper.
 
 **3. Activate a Python shell**
 Activate a shell with the Python dependencies installed:
@@ -31,6 +33,8 @@ source .venv/bin/activate
 ``` bash
 scons -u
 ```
+
+For standard LFS downloads, run `git -c lfs.https://huggingface.co/commaai/openpilot-lfs.git/info/lfs.standalonetransferagent= lfs pull`.
 
 ## WSL on Windows
 

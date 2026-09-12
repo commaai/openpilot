@@ -210,7 +210,14 @@ EOF
   git config --local filter.lfs.smudge ".venv/bin/git-lfs smudge -- %f"
   git config --local filter.lfs.process ".venv/bin/git-lfs filter-process"
   git config --local filter.lfs.required true
-  printf '#!/bin/sh\nexec .venv/bin/git-lfs pre-push "$@"\n' > "$(git rev-parse --git-path hooks)/pre-push"
+  LFS_URL="$(git config -f .lfsconfig lfs.url)"
+  git xet install --local --concurrency 8 --lfs-url "$LFS_URL"
+  # LFS objects live on Hugging Face while the Git remote is GitHub.
+  cat > "$(git rev-parse --git-path hooks)/pre-push" <<'EOF'
+#!/bin/sh
+lfs_remote=$(git config -f .lfsconfig lfs.pushurl)
+PATH=".venv/bin:$PATH" exec git lfs pre-push "${lfs_remote%/info/lfs}" "$2"
+EOF
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
