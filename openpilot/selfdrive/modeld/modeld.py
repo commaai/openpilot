@@ -5,7 +5,11 @@ from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
+from tinygrad.tensor import Tensor
+from tinygrad.uop.ops import UOp
+from tinygrad.helpers import round_up
 import usb1
+import pickle
 import struct
 import threading
 import time
@@ -28,12 +32,12 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
+from openpilot.selfdrive.modeld.compile_modeld import get_policy_npy_shapes, make_input_queues, nv12_copy_size, MODELD_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.common.hardware.usb import CHESTNUT_USB_IDS
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
@@ -41,6 +45,11 @@ LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
+
+
+def jit_input_view(tensor: Tensor) -> Tensor:
+  # Give each view its own JIT input while retaining the shared packed allocation.
+  return Tensor(UOp.from_buffer(tensor.realize().uop.buffer.ensure_allocated())).reshape(tensor.shape)
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -188,10 +197,23 @@ class ModelState:
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    _, policy_sizes = get_policy_npy_shapes(self.input_shapes)
+    policy_size = sum(policy_sizes) * np.dtype(np.float32).itemsize
+    # Separately compiled kernels require aligned input pointers.
+    frame_offset = round_up(128 + policy_size, 128)
+    self.packed_input_np = np.zeros(frame_offset + 2 * self.frame_copy_size, dtype=np.uint8)
+    self.packed_input = Tensor(self.packed_input_np, device=self.model_device).realize()
+    self.input_queues, self.npy, _ = make_input_queues(
+      self.input_shapes, self.frame_skip, device=self.model_device, packed_input=self.packed_input_np[128:128+policy_size].view(np.float32))
+    self.input_queues['packed_npy_inputs'] = jit_input_view(self.packed_input[128:128+policy_size].bitcast('float32'))
+    self.npy['tfm'], self.npy['big_tfm'] = self.packed_input_np[:72].view(np.float32).reshape(2, 3, 3)
+    self.frame_views = dict(zip(('img', 'big_img'), self.packed_input_np[frame_offset:].reshape(2, self.frame_copy_size), strict=True))
+    self.warp_inputs = (jit_input_view(self.packed_input[frame_offset:].reshape(2, self.frame_copy_size)),
+                        jit_input_view(self.packed_input[:72].bitcast('float32').reshape(2, 3, 3)))
+    with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
+      self.run_warp = pickle.load(f)
     self.parser = Parser()
-    self.run_model = jits['run_model'][(cam_w,cam_h)]
+    self.run_model = jits['run_model']
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -211,6 +233,8 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
+    self.packed_input.assign(Tensor(self.packed_input_np, device='NPY').to(self.model_device)).realize()
+    self.input_queues['warped'] = self.run_warp(*self.warp_inputs)
     outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
     if after_enqueue is not None:
       after_enqueue()
