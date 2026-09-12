@@ -15,8 +15,9 @@ HEREDOC = re.compile(r"<<(-?)\s*('[^']+'|\"[^\"]+\"|\\?[A-Za-z_]\w*)")
 
 
 def commands(text):
-  def scan(i=0, end=""):
+  def scan(i=0, end="", pattern_group=False):
     start, quote, words, expansions, documents = i, False, [], [], []
+    cases = []
     while i < len(text):
       c = text[i]
       if c == "\\":
@@ -56,15 +57,29 @@ def commands(text):
         if c in " \t\r\n;|&()":
           if start < i:
             words.append((text[start:i], start, expansions))
+          if len(words) >= 3 and words[0][0] == "case" and words[-1][0] == "in":
+            cases.append(True)
+            words = []
+          if words and words[0][0] == "esac" and cases:
+            cases.pop()
+            words = []
+          pattern = bool(cases and cases[-1])
           expansions = []
           if c in "\n;|&()":
-            if words and (c != ")" or end):
+            if words and not (pattern or pattern_group) and (c != ")" or end):
               yield words
             words = []
-          if c == end:
+          if c == end and not pattern:
             return i + 1
+          if c == ")" and pattern:
+            cases[-1] = False
+          if cases and (terminator := re.match(r";(?:;&|;|&)", text[i:])):
+            cases[-1] = True
+            i += len(terminator[0]) - 1
           if c == "(":
-            i = yield from scan(i + 1, ")")
+            if pattern and i == start:
+              cases[-1] = False
+            i = yield from scan(i + 1, ")", pattern or pattern_group)
             start = i
             continue
           if c == "\n":

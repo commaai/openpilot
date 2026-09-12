@@ -15,9 +15,9 @@ FAILED=0
 
 function run() {
   shopt -s extglob
-  if [[ $1 == $SKIP || $1 == $RUN ]]; then
-    return 0
-  fi
+  case $1 in
+    $SKIP | $RUN ) return 0 ;;
+  esac
 
   echo -en "$1"
 
