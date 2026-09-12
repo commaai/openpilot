@@ -78,6 +78,9 @@ fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
+  # Reset hooks since releases exclude .venv
+  git config --local core.hooksPath .git/hooks
+  git lfs update --force
   # uploading the larger pack is faster than spending CPU to optimize it
   git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin tmp:$BRANCH
 fi

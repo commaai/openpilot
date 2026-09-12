@@ -89,7 +89,7 @@ git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
 
 # Run tests
 cd $BUILD_DIR
-RELEASE=1 ./openpilot/selfdrive/test/test_onroad.py
+RELEASE=1 ./openpilot/selfdrive/test/test_onroad.py "$@"
 #tools/test_runner.py openpilot/selfdrive/car/tests/test_car_interfaces.py
 
 echo "[-] pushing release T=$SECONDS"
