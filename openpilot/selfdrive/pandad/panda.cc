@@ -9,6 +9,7 @@
 #include "openpilot/cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "panda/board/spi_protocol.h"
 
 const bool PANDAD_MAXOUT = getenv("PANDAD_MAXOUT") != nullptr;
 
@@ -166,9 +167,9 @@ static uint8_t len_to_dlc(uint8_t len) {
 }
 
 void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
-                            std::function<void(uint8_t *, size_t)> write_func) {
+                            std::function<void(uint8_t *, size_t)> write_func, bool spi_v3) {
   int32_t pos = 0;
-  uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
+  uint8_t send_buf[SPI_PROTO_MAX_PAYLOAD];
 
   for (const auto &cmsg : can_data_list) {
     // check if the message is intended for this panda
@@ -181,6 +182,12 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     assert(can_data.size() <= 64);
     assert(can_data.size() == dlc_to_len[data_len_code]);
 
+    uint32_t msg_size = sizeof(can_header) + can_data.size();
+    if (spi_v3 && pos + msg_size > sizeof(send_buf)) {
+      write_func(send_buf, pos);
+      pos = 0;
+    }
+
     can_header header = {};
     header.addr = cmsg.getAddress();
     header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
@@ -190,14 +197,12 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
 
     memcpy(&send_buf[pos], (uint8_t *)&header, sizeof(can_header));
     memcpy(&send_buf[pos + sizeof(can_header)], (uint8_t *)can_data.begin(), can_data.size());
-    uint32_t msg_size = sizeof(can_header) + can_data.size();
-
     // set checksum
     ((can_header *) &send_buf[pos])->checksum = calculate_checksum(&send_buf[pos], msg_size);
 
     pos += msg_size;
 
-    if (pos >= USB_TX_SOFT_LIMIT) {
+    if (!spi_v3 && pos >= USB_TX_SOFT_LIMIT) {
       write_func(send_buf, pos);
       pos = 0;
     }
@@ -210,7 +215,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
 void Panda::can_send(const capnp::List<cereal::CanData>::Reader &can_data_list) {
   pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
     handle->bulk_write(3, data, size, 5);
-  });
+  }, handle->is_protocol_v3());
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
