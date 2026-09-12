@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -26,7 +25,7 @@ function agnos_init {
       sudo reboot
     fi
     while true; do
-      "$DIR/openpilot/common/hardware/comma/updater" "$AGNOS_PY" "$MANIFEST" || true
+      "$DIR/openpilot/common/hardware/comma/updater" "$AGNOS_PY" "$MANIFEST"
     done
   fi
 }
@@ -45,7 +44,8 @@ function launch {
   #    that completed successfully and synced to disk.
 
   if [ -f "${DIR}/.overlay_init" ]; then
-    if find "${DIR}/.git" -newer "${DIR}/.overlay_init" | grep -q '.' 2> /dev/null; then
+    find "${DIR}/.git" -newer "${DIR}/.overlay_init" | grep -q '.' 2> /dev/null
+    if [ $? -eq 0 ]; then
       echo "${DIR} has been modified, skipping overlay update installation"
     else
       if [ -f "${STAGING_ROOT}/finalized/.overlay_consistent" ]; then
@@ -86,12 +86,10 @@ function launch {
   fi
 
   # write tmux scrollback to a file
-  tmux capture-pane -pq -S-1000 > /tmp/launch_log || true
+  tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
   cd openpilot/system/manager
-  # Keep build and manager errors on screen instead of exiting.
-  set +e
   if [ ! -f "$DIR/prebuilt" ]; then
     ./build.py
   fi

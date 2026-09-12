@@ -10,17 +10,15 @@ function retry {
   local max=3 # 3 retries before failure
   local delay=5 # delay between retries, 5 seconds
   while true; do
-    echo "Running command '$*' with retry, attempt $n/$max"
-    if "$@"; then
-      break
-    else
+    echo "Running command '$@' with retry, attempt $n/$max"
+    "$@" && break || {
       if [[ $n -lt $max ]]; then
         ((n++))
-        sleep $delay;
+        sleep "$delay";
       else
         fail "The command has failed after $n attempts."
       fi
-    fi
+    }
   done
 }
 

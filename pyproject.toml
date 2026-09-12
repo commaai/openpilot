@@ -57,7 +57,6 @@ testing = [
   "coverage",   # line coverage
   "ty",         # type checking
   "ruff",       # linting
-  "shellcheck-py",  # shell linting
   "codespell",  # spellcheck
 ]
 

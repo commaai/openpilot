@@ -103,7 +103,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
+  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -112,7 +112,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
-    if [[ -z $(ls "$OPENPILOT_ROOT/$name") ]]; then
+    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
       echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
@@ -149,10 +149,10 @@ function op_before_cmd() {
   op_get_openpilot_dir
   cd "$OPENPILOT_ROOT"
 
-  result="$(op_check_openpilot_dir 2>&1)" || (echo -e "$result" && return 1)
-  result="${result}\n$(op_check_git 2>&1)" || (echo -e "$result" && return 1)
-  result="${result}\n$(op_check_os 2>&1)" || (echo -e "$result" && return 1)
-  result="${result}\n$(op_check_venv 2>&1)" || (echo -e "$result" && return 1)
+  result="$((op_check_openpilot_dir ) 2>&1)" || (echo -e "$result" && return 1)
+  result="${result}\n$(( op_check_git ) 2>&1)" || (echo -e "$result" && return 1)
+  result="${result}\n$(( op_check_os ) 2>&1)" || (echo -e "$result" && return 1)
+  result="${result}\n$(( op_check_venv ) 2>&1)" || (echo -e "$result" && return 1)
 
   op_activate_venv
 
@@ -230,7 +230,6 @@ function op_auth() {
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
-  # shellcheck source=/dev/null
   source "$OPENPILOT_ROOT/.venv/bin/activate" &> /dev/null || true
   set -e
 

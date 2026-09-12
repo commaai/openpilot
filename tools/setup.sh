@@ -72,7 +72,7 @@ function check_dir() {
     echo -e " ↳ [${RED}✗${NC}] Installation destination $OPENPILOT_ROOT already exists!"
 
     # not a valid clone, can't continue
-    if [[ ! -z "$(ls -A "$OPENPILOT_ROOT")" && ! -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
+    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" && ! -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
       echo -e "       $OPENPILOT_ROOT already contains files but does not seems"
       echo -e "       to be a valid openpilot git clone. Choose another location for"
       echo -e "       installing openpilot!\n"
@@ -80,7 +80,7 @@ function check_dir() {
     fi
 
     # already a "valid" openpilot clone, skip cloning again
-    if [[ ! -z "$(ls -A "$OPENPILOT_ROOT")" ]]; then
+    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" ]]; then
       SKIP_GIT_CLONE=1
     fi
 

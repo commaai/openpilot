@@ -29,7 +29,7 @@ if [ -d /data/safe_staging/ ]; then
 fi
 
 CONTINUE_PATH="/data/continue.sh"
-tee $CONTINUE_PATH << EOF
+tee "$CONTINUE_PATH" << EOF
 #!/usr/bin/env bash
 
 sudo abctl --set_success
@@ -54,7 +54,7 @@ done
 
 sleep infinity
 EOF
-chmod +x $CONTINUE_PATH
+chmod +x "$CONTINUE_PATH"
 
 export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
@@ -142,9 +142,7 @@ if [ ! -z "$UNSAFE" ]; then
   echo "trying unsafe checkout"
   set +e
   unsafe_checkout
-  # Keep the call outside an if condition so its subshell still honors set -e.
-  checkout_status=$?
-  if [[ "$checkout_status" -ne 0 ]]; then
+  if [[ "$?" -ne 0 ]]; then
     safe_checkout
   fi
   set -e

@@ -23,7 +23,7 @@ done
 
 # sudo apt install inkscape
 
-while IFS= read -r -d '' svg; do
+for svg in $(find "$DIR" -type f | grep svg$); do
   bunx svgo "$svg" --multipass --pretty --indent 2
 
   # convert to PNG
@@ -38,7 +38,7 @@ while IFS= read -r -d '' svg; do
   inkscape "$svg" --export-filename="$png" "$export_dim"
 
   optipng -o7 -strip all "$png"
-done < <(find "$DIR" -type f -name '*.svg' -print0)
+done
 
 # cleanup bootstrap SVGs
 for id in "${ICON_IDS[@]}"; do

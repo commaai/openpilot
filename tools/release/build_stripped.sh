@@ -9,7 +9,6 @@ if [ -z "$TARGET_DIR" ]; then
 fi
 
 # set git identity
-# shellcheck source=tools/release/identity.sh
 source "$DIR/identity.sh"
 
 echo "[-] Setting up target repo T=$SECONDS"

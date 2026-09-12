@@ -19,16 +19,15 @@ BUILD_BRANCH=release-mici-staging
 
 
 # set git identity
-# shellcheck source=tools/release/identity.sh
 source "$DIR/identity.sh"
 
 echo "[-] Setting up repo T=$SECONDS"
 if ! git -C "$SOURCE_DIR" worktree remove --force "$BUILD_DIR" 2>/dev/null; then
-  rm -rf $BUILD_DIR
+  rm -rf "$BUILD_DIR"
 fi
 git -C "$SOURCE_DIR" worktree prune
 git -C "$SOURCE_DIR" worktree add --detach --no-checkout "$BUILD_DIR"
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 git update-ref -d "refs/heads/$BUILD_BRANCH"
 git symbolic-ref HEAD "refs/heads/$BUILD_BRANCH"
 git read-tree --empty
@@ -39,7 +38,7 @@ cd "$SOURCE_DIR"
 ./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$BUILD_DIR" --
 
 # in the directory
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -89,7 +88,7 @@ git -c core.compression=0 add -f .
 git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
 
 # Run tests
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 RELEASE=1 ./openpilot/selfdrive/test/test_onroad.py "$@"
 #tools/test_runner.py openpilot/selfdrive/car/tests/test_car_interfaces.py
 

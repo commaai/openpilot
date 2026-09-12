@@ -17,4 +17,5 @@ python3 -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd "$OPENPILOT_DIR/system/manager" && exec ./manager.py

@@ -12,4 +12,4 @@ if grep '^#!.*bash' "$@" | grep -v '#!/usr/bin/env bash$'; then
   FAIL=1
 fi
 
-exit $FAIL
+exit "$FAIL"

@@ -11,7 +11,7 @@ BRANCH="master"
 RUNS="20"
 
 COOKIE_JAR=/tmp/cookies
-CRUMB=$(curl -s --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
+CRUMB=$(curl -s --cookie-jar "$COOKIE_JAR" 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
 
 FIRST_LOOP=1
 
@@ -19,7 +19,7 @@ function loop() {
   JENKINS_BRANCH="__jenkins_loop_${BRANCH}_$(date +%s)"
   API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$JENKINS_BRANCH"
 
-  for ((run=0; run<RUNS / 2; run++)); do
+  for run in $(seq 1 $((RUNS / 2))); do
 
     N=2
 
@@ -47,7 +47,7 @@ function loop() {
     for ((i=FIRST_BUILD; i<=LAST_BUILD; i++));
     do
       echo "Starting build $i"
-      curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST "$API_ROUTE/build?delay=0sec"
+      curl -s --output /dev/null --cookie "$COOKIE_JAR" -H "$CRUMB" -X POST "$API_ROUTE/build?delay=0sec"
       sleep 5
     done
     echo ""
@@ -59,7 +59,7 @@ function loop() {
       count=0
       for ((i=FIRST_BUILD; i<=LAST_BUILD; i++));
       do
-        RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" "$API_ROUTE/$i/api/json")
+        RES=$(curl -s -w "\n%{http_code}" --cookie "$COOKIE_JAR" -H "$CRUMB" "$API_ROUTE/$i/api/json")
         HTTP_CODE=$(tail -n1 <<< "$RES")
         JSON=$(sed '$ d' <<< "$RES")
 

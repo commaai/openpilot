@@ -6,6 +6,7 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
+BASE="https://github.com/commaai/openpilot/pull/"
 PR_NUM="$(echo "$1" | grep -o -E '[0-9]+')"
 BRANCH=tmp-pr${PR_NUM}
 

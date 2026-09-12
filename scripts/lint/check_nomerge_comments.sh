@@ -7,4 +7,4 @@ if grep -n '\(#\|//\)\([[:space:]]*\)NOMERGE' "$@"; then
   FAIL=1
 fi
 
-exit $FAIL
+exit "$FAIL"

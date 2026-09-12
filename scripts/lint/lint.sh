@@ -15,11 +15,9 @@ FAILED=0
 
 function run() {
   shopt -s extglob
-  # Test selections are extended glob patterns.
-  # shellcheck disable=SC2254
-  case $1 in
-    $SKIP | $RUN ) return 0 ;;
-  esac
+  if [[ $1 == $SKIP || $1 == $RUN ]]; then
+    return 0
+  fi
 
   echo -en "$1"
 
@@ -39,7 +37,7 @@ function run() {
 
 function run_tests() {
   run "ruff" ruff check openpilot --quiet
-  run "shellcheck" shellcheck "${SHELL_FILES[@]}"
+  run "check_shell" python3 "$DIR/check_shell.py" "${SHELL_FILES[@]}"
   run "check_dependencies" python3 "$DIR/check_dependencies.py"
   run "check_indentation" "$DIR/check_indentation.py" "${PYTHON_FILES[@]}"
   run "check_added_large_files" "$DIR/check_added_large_files.py" --maxkb=120 "${ALL_FILES[@]}"
@@ -52,7 +50,7 @@ function run_tests() {
     run "codespell" codespell "${ALL_FILES[@]}"
   fi
 
-  return $FAILED
+  return "$FAILED"
 }
 
 function help() {
@@ -62,7 +60,7 @@ function help() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
   echo -e "  ${BOLD}ruff${NC}"
-  echo -e "  ${BOLD}shellcheck${NC}"
+  echo -e "  ${BOLD}check_shell${NC}"
   echo -e "  ${BOLD}check_dependencies${NC}"
   echo -e "  ${BOLD}check_indentation${NC}"
   echo -e "  ${BOLD}ty${NC}"
