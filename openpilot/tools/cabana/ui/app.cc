@@ -164,6 +164,7 @@ public:
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigViewportsNoDecoration = true;
+    io.ConfigDockingTransparentPayload = true;
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
     if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
