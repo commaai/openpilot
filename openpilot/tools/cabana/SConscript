@@ -54,6 +54,7 @@ else:
 cabana_ui = ui_env.Program('cabana', ui_objs, LIBS=ui_libs)
 
 if GetOption('extras'):
+  ui_env.Program('tests/test_dropdown', ['tests/test_dropdown.cc'], LIBS=[File(f"{imgui.LIB_DIR}/libimgui.a")])
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
   cabana_core_test_objects = [

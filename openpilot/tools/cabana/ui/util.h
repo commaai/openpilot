@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "tools/cabana/ui/theme.h"
+#include "tools/cabana/ui/dropdown.h"
 #include "tools/cabana/utils/util.h"
 
 struct GLFWwindow;
@@ -45,7 +45,7 @@ template <typename T>
 inline bool comboBox(const char *label, int *index, const T *values, int count) {
   bool changed = false;
   const std::string preview = *index >= 0 && *index < count ? std::to_string(values[*index]) : "";
-  if (ImGui::BeginCombo(label, preview.c_str())) {
+  if (dropdown::BeginCombo(label, preview.c_str())) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
       if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
@@ -55,7 +55,7 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
       if (i == *index) ImGui::SetItemDefaultFocus();
       ImGui::PopID();
     }
-    ImGui::EndCombo();
+    dropdown::EndCombo();
   }
   return changed;
 }
@@ -86,10 +86,6 @@ float iconTextButtonWidth(const char *icon, const std::string &text);
 
 // tooltip for the last item that also shows while the item is disabled
 void disabledItemTooltip(const char *text);
-
-// exclusive menu action: the bullet sits in the check column and the whole row highlights. `width` is the
-// minimum row width, so a narrow popup stays wide enough for every row while the highlight spans the popup.
-bool radioMenuItem(const char *label, bool checked, float width = 0.0f);
 
 // A queued modal popup submitted from whichever call site is nested in the top-most modal. draw() is called
 // both nested in a modal dialog and at the root level; only the level that opened the popup may submit it
