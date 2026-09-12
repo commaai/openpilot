@@ -25,8 +25,7 @@ const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 const float POINT_10_FONT_SIZE = 13.0f;  // 10 pt at 96 dpi
 const float POINT_16_FONT_SIZE = 21.0f;  // 16 pt at 96 dpi
-const float TOOLBAR_MARGIN_Y = 6.0f;  // between the slider and the buttons, which are as tall as the ones in the charts toolbar
-const float TOOLBAR_SEPARATOR_EXTENT = 6.0f;
+constexpr float TOOLBAR_SEPARATOR_EXTENT = 1.0f;
 const float SLIDER_HEIGHT = 15.0f;     // the handle plus a 1 px margin
 
 // Indexed by TimelineType: None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserBookmark
@@ -138,11 +137,11 @@ std::string VideoWidget::whatsThis() const {
          "Pause/Resume: <span style=\"background-color:lightGray;color:gray\">&nbsp;space&nbsp;</span>";
 }
 
-static float toolbarHeight() { return TOOLBAR_MARGIN_Y + ImGui::GetFrameHeight(); }
+static float toolbarHeight() { return ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeight(); }
 
 void VideoWidget::drawPlaybackController() {
   if (!can->liveStreaming())
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + TOOLBAR_MARGIN_Y);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
   const float speed_width = menuButtonWidth("0.05x", true);
 
   const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
@@ -156,11 +155,11 @@ void VideoWidget::drawPlaybackController() {
   if (!can->liveStreaming()) {
     items.push_back(toolbarAction("rewind", icon::REWIND, "Seek backward", []() { can->seekTo(can->currentSec() - 1); }));
   }
-  items.push_back(toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }, true, true));
+  items.push_back(toolbarAction("play", play_icon, play_tooltip, []() { can->pause(!can->isPaused()); }));
   if (can->liveStreaming()) {
-    items.push_back(toolbarAction("skip-end", icon::SKIP_END, "Go live", [this]() { skipToEnd(); }, skip_to_end_enabled_, true));
+    items.push_back(toolbarAction("skip-end", icon::SKIP_END, "Go live", [this]() { skipToEnd(); }, skip_to_end_enabled_));
   } else {
-    items.push_back(toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true));
+    items.push_back(toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }));
   }
   if (slider_ || msgs_received_) {
     // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
@@ -186,20 +185,21 @@ void VideoWidget::drawPlaybackController() {
       const ImVec2 min = ImGui::GetCursorScreenPos();
       ImGui::Dummy(ImVec2(TOOLBAR_SEPARATOR_EXTENT, ImGui::GetFrameHeight()));
       const float x = std::floor(min.x + TOOLBAR_SEPARATOR_EXTENT * 0.5f);
-      ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + 4.0f), ImVec2(x, min.y + ImGui::GetFrameHeight() - 4.0f), ImGui::GetColorU32(ImGuiCol_Separator));
+      const float inset = ImGui::GetStyle().FramePadding.y;
+      ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y + inset), ImVec2(x, min.y + ImGui::GetFrameHeight() - inset),
+                                        ImGui::GetColorU32(ImGuiCol_Separator));
     }};
     item.in_menu = false;
-    item.tight = true;
     return item;
   };
   const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
   if (!can->liveStreaming()) {
     items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
     items.push_back(separator());
-    items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }, true, true));
-    items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, true, speed_width));
+    items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }));
+    items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, speed_width));
     items.push_back(separator());
-    items.push_back(toolbarAction("route_info", icon::INFO_CIRCLE, "View route details", [this]() { showRouteInfo(); }, true, true));
+    items.push_back(toolbarAction("route_info", icon::INFO_CIRCLE, "View route details", [this]() { showRouteInfo(); }));
   }
 
   drawToolbar(items, spacer_index);
@@ -275,16 +275,20 @@ void VideoWidget::createCameraWidget() {
 }
 
 void VideoWidget::drawCameraWidget() {
+  const float toolbar_height = toolbarHeight();
+  // Camera tabs, video and timeline touch; restore the normal gap for the controls.
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   camera_tab_->draw();
 
   // cam_widget_: minimum height MIN_VIDEO_HEIGHT, takes the space left by the slider and the toolbar
   const ImVec2 avail = ImGui::GetContentRegionAvail();
-  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - SLIDER_HEIGHT - toolbarHeight());
+  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - SLIDER_HEIGHT - toolbar_height);
   cam_widget_->draw(ImVec2(avail.x, cam_height), thumbnail_display_time_);
 
   if (!slider_->isSliderDown()) slider_->setCurrentSecond(can->currentSec());
   slider_->draw(thumbnail_display_time_);
   updateSliderThumbnail();
+  ImGui::PopStyleVar();
 }
 
 void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams) {
@@ -364,12 +368,10 @@ float VideoWidget::defaultHeight(float width) const {
 }
 
 void VideoWidget::draw() {
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   if (!can->liveStreaming())
     drawCameraWidget();
 
   drawPlaybackController();
-  ImGui::PopStyleVar();
 
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);

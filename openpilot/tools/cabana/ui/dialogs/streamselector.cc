@@ -18,7 +18,8 @@ void OpenReplayWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Route");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(-250.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Remote Route...") + toolbarButtonWidth("Local Route...") +
+                            ImGui::GetStyle().ItemSpacing.x * 2));
   inputText("##route", &route_, "Enter a route name or browse for a local or remote route");
   ImGui::SameLine();
   if (ImGui::Button("Remote Route...")) {
@@ -134,7 +135,7 @@ void OpenPandaWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Serial");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(-100.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Refresh") + ImGui::GetStyle().ItemSpacing.x));
   if (comboBox("##serial", &serial_index_, serials_)) buildConfigForm();
   ImGui::SameLine();
   if (ImGui::Button("Refresh")) {
@@ -228,10 +229,10 @@ void OpenSocketCanWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Device");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(300.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Refresh") + ImGui::GetStyle().ItemSpacing.x));
   if (comboBox("##device", &device_index_, devices_)) config.device = devices_[device_index_];
   ImGui::SameLine();
-  if (ImGui::Button("Refresh", ImVec2(100.0f, 0.0f))) refreshDevices();
+  if (ImGui::Button("Refresh")) refreshDevices();
 }
 
 std::unique_ptr<AbstractStream> OpenSocketCanWidget::open() {
@@ -289,7 +290,7 @@ void StreamSelector::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("DBC File");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(-90.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Browse...") + ImGui::GetStyle().ItemSpacing.x));
   inputText("##dbc", &dbc_file_, "Choose a DBC file to open", ImGuiInputTextFlags_ReadOnly);
   ImGui::SameLine();
   if (ImGui::Button("Browse...")) {

@@ -19,7 +19,6 @@ const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
 const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
 const double EPSILON = 1e-6;
-constexpr ImVec4 LAYOUT_MARGINS{0, 6, 0, 6};  // left, top, right, bottom
 constexpr int LEGEND_SPACING = 5;
 static inline bool xLessThan(const ImPlotPoint &p, double x) { return p.x < (x - EPSILON); }
 static inline bool isNull(const ImPlotPoint &p) { return p.x == 0 && p.y == 0; }
@@ -135,12 +134,12 @@ void ChartView::manageSignals() {
 
 void ChartView::updateLayout() {
   const ImVec2 grip = ImGui::CalcTextSize(icon::GRIP_HORIZONTAL);
-  const ImVec2 top_left = layout_.rect.Min + ImVec2(LAYOUT_MARGINS.x, LAYOUT_MARGINS.y);
+  const ImVec2 top_left = layout_.rect.Min;
   layout_.move_icon_rect = ImRect(top_left, top_left + grip);
   const ImVec2 btn_size(iconButtonWidth(), iconButtonWidth());
-  const ImVec2 close_min(layout_.rect.Max.x - ImGui::GetStyle().WindowPadding.x - btn_size.x, top_left.y);
+  const ImVec2 close_min(layout_.rect.Max.x - btn_size.x, top_left.y);
   layout_.close_btn_rect = ImRect(close_min, close_min + btn_size);
-  const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemInnerSpacing.x, top_left.y);
+  const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemSpacing.x, top_left.y);
   layout_.manage_btn_rect = ImRect(manage_min, manage_min + btn_size);
 
   ImFont *bold = boldFont();
@@ -149,7 +148,7 @@ void ChartView::updateLayout() {
   const int marker_size = markerSize();
   const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
   const int legend_left = layout_.move_icon_rect.Max.x + LEGEND_SPACING;
-  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - ImGui::GetStyle().ItemInnerSpacing.x, legend_left + 10);
+  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - ImGui::GetStyle().ItemSpacing.x, legend_left + 10);
 
   // layout legend entries left-to-right, wrapping between the move icon and the buttons
   layout_.legend_rects.clear();
@@ -171,8 +170,8 @@ void ChartView::updateLayout() {
 
   // add top space for the legend and signal values
   int adjust_top = (y + row_height) - top_left.y;
-  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y + LAYOUT_MARGINS.y);
-  layout_.header_bottom = layout_.rect.Min.y + adjust_top + LAYOUT_MARGINS.y;
+  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y);
+  layout_.header_bottom = layout_.rect.Min.y + adjust_top + ImGui::GetStyle().ItemSpacing.y;
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -555,8 +554,8 @@ void ChartView::drawStaticLayer() {
 
 void ChartView::drawAxes() {
   ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x, layout_.header_bottom));
-  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - LAYOUT_MARGINS.w, 10.0f);
-  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(LAYOUT_MARGINS.x, AXIS_X_TOP_MARGIN));
+  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - ImGui::GetStyle().ItemSpacing.y, 10.0f);
+  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0.0f, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_PlotBorder, palette().grid);

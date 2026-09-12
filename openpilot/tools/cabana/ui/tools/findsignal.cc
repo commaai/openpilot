@@ -76,12 +76,15 @@ bool FindSignalDlg::draw() {
   }
   searching_ = search_future_.valid();
   if (begin(ImVec2(900, 650))) {
-    float group_w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
-    ImGui::BeginChild("Messages", ImVec2(group_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    const ImGuiStyle &style = ImGui::GetStyle();
+    const float group_w = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) / 2;
+    const float group_h = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeightWithSpacing() * 4 +
+                          style.WindowPadding.y * 2 - style.ItemSpacing.y;
+    ImGui::BeginChild("Messages", ImVec2(group_w, group_h), ImGuiChildFlags_Borders);
     drawMessageGroup();
     ImGui::EndChild();
     ImGui::SameLine();
-    ImGui::BeginChild("Signal", ImVec2(group_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    ImGui::BeginChild("Signal", ImVec2(group_w, group_h), ImGuiChildFlags_Borders);
     drawPropertiesGroup();
     ImGui::EndChild();
     float footer = searched_ ? ImGui::GetTextLineHeightWithSpacing() : 0;
@@ -98,20 +101,21 @@ bool FindSignalDlg::draw() {
 
 void FindSignalDlg::drawMessageGroup() {
   ImGui::BeginDisabled(searching_ || !search_.histories.empty());
+  const float field_x = ImGui::GetCursorPosX() + ImGui::CalcTextSize("Address").x + ImGui::GetStyle().ItemSpacing.x;
   ImGui::TextUnformatted("Messages");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Bus");
-  ImGui::SameLine(80);
+  ImGui::SameLine(field_x);
   ImGui::SetNextItemWidth(-1);
   inputText("##bus", &bus_, "Comma-separated values. Leave blank for all.");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Address");
-  ImGui::SameLine(80);
+  ImGui::SameLine(field_x);
   ImGui::SetNextItemWidth(-1);
   inputText("##address", &address_, "Comma-separated hex values. Leave blank for all.");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Time");
-  ImGui::SameLine(80);
+  ImGui::SameLine(field_x);
   ImGui::SetNextItemWidth(70);
   validatedText("##first_time", &first_time_, validateDouble);
   ImGui::SameLine();
@@ -126,29 +130,30 @@ void FindSignalDlg::drawMessageGroup() {
 
 void FindSignalDlg::drawPropertiesGroup() {
   ImGui::BeginDisabled(searching_ || !search_.histories.empty());
+  const float field_x = ImGui::GetCursorPosX() + ImGui::CalcTextSize("Factor").x + ImGui::GetStyle().ItemSpacing.x;
   ImGui::TextUnformatted("Signal");
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Size");
-  ImGui::SameLine(80);
-  ImGui::SetNextItemWidth(70);
-  if (ImGui::InputInt("##min_size", &min_size_, 1, 10)) min_size_ = std::clamp(min_size_, 1, 64);
+  ImGui::SameLine(field_x);
+  ImGui::SetNextItemWidth(inputIntWidth(2));
+  if (inputInt("##min_size", &min_size_, 1, 10)) min_size_ = std::clamp(min_size_, 1, 64);
   ImGui::SameLine();
   ImGui::TextUnformatted("-");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(70);
-  if (ImGui::InputInt("##max_size", &max_size_, 1, 10)) max_size_ = std::clamp(max_size_, 1, 64);
-  ImGui::SameLine();
+  ImGui::SetNextItemWidth(inputIntWidth(2));
+  if (inputInt("##max_size", &max_size_, 1, 10)) max_size_ = std::clamp(max_size_, 1, 64);
+  ImGui::SetCursorPosX(field_x);
   checkBox("Little Endian", &little_endian_);
   ImGui::SameLine();
   checkBox("Signed", &is_signed_);
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Factor");
-  ImGui::SameLine(80);
+  ImGui::SameLine(field_x);
   ImGui::SetNextItemWidth(100);
   validatedText("##factor", &factor_, validateDouble);
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Offset");
-  ImGui::SameLine(80);
+  ImGui::SameLine(field_x);
   ImGui::SetNextItemWidth(100);
   validatedText("##offset", &offset_, validateDouble);
   ImGui::EndDisabled();
