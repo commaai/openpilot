@@ -148,8 +148,13 @@ void VideoWidget::drawPlaybackController() {
   const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
   const char *play_tooltip = can->isPaused() ? "Play" : "Pause";
   const char *loop_icon = getReplay() && getReplay()->loop() ? icon::REPEAT : icon::REPEAT_1;
-  const std::string time_text = slider_ ? formatTime(can->currentSec(), true) + " / " + formatTime(slider_->maximum() / slider_->factor)
-                                        : formatTime(can->currentSec(), true);
+  const bool timestamps_resolved = can->liveStreaming()
+                                     ? msgs_received_
+                                     : can->beginDateTime() != std::chrono::system_clock::time_point{};
+  const std::string time_text = timestamps_resolved
+                                  ? (slider_ ? formatTime(can->currentSec(), true) + " / " + formatTime(slider_->maximum() / slider_->factor)
+                                             : formatTime(can->currentSec(), true))
+                                  : "--:--.-- / --:--.--";
   const char *time_tooltip = settings.absolute_time ? "Elapsed time" : "Absolute time";
 
   std::vector<ToolbarItem> items;
@@ -162,14 +167,14 @@ void VideoWidget::drawPlaybackController() {
   } else {
     items.push_back(toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }, true, true));
   }
-  if (slider_ || msgs_received_) {
+  if (slider_ || timestamps_resolved) {
     // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
-    pushMonoFont(ImGui::GetFontSize());
+    pushMonoFont(ImGui::GetStyle().FontSizeBase);
     const float time_width = ImGui::CalcTextSize(time_text.c_str()).x;
     popMonoFont();
     items.push_back({time_width,
                      [&]() {
-                       pushMonoFont(ImGui::GetFontSize());
+                       pushMonoFont(ImGui::GetStyle().FontSizeBase);
                        ImGui::AlignTextToFramePadding();
                        ImGui::TextUnformatted(time_text.c_str());
                        popMonoFont();
