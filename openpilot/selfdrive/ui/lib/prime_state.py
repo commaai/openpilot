@@ -10,6 +10,7 @@ from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 
 class PrimeType(IntEnum):
@@ -100,7 +101,12 @@ class PrimeState:
       if prime_type != self.prime_type:
         self.prime_type = prime_type
         self._params.put("PrimeType", int(prime_type))
+        self._update_offroad_alerts()
         cloudlog.info(f"Prime type updated to {prime_type}")
+
+  def _update_offroad_alerts(self):
+    set_offroad_alert("Offroad_Pairing", self.prime_type <= PrimeType.UNPAIRED)
+    set_offroad_alert("Offroad_Prime", self.prime_type == PrimeType.NONE)
 
   def set_provider(self, provider: Provider):
     with self._lock:
@@ -122,6 +128,7 @@ class PrimeState:
   def start(self) -> None:
     if self._thread and self._thread.is_alive():
       return
+    self._update_offroad_alerts()
     self._running = True
     self._thread = threading.Thread(target=self._worker_thread, daemon=True)
     self._thread.start()

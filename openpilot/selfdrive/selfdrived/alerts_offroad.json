@@ -65,5 +65,15 @@
     "text": "Excessive %1 actuation detected on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
     "severity": 1,
     "_comment": "Set extra field to lateral or longitudinal."
+  },
+  "Offroad_Pairing": {
+    "text": "Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
+    "severity": -1,
+    "icon": "icons_mici/settings/device/green_settings.png"
+  },
+  "Offroad_Prime": {
+    "text": "Upgrade to prime. Visit connect.comma.ai to subscribe to comma prime.",
+    "severity": -1,
+    "icon": "icons_mici/settings/device/green_cell.png"
   }
 }

@@ -8,8 +8,6 @@ from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
-from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -228,8 +226,9 @@ class MiciOffroadAlerts(Scroller):
     return self._scroller.scroll_panel.is_touch_valid()
 
   def set_pairing_callback(self, callback: Callable[[], None]):
-    for alert_item in self._prime_alert_items:
-      alert_item.set_click_callback(callback)
+    for alert_item in self.alert_items:
+      if alert_item.alert_data.key in ("Offroad_Pairing", "Offroad_Prime"):
+        alert_item.set_click_callback(callback)
 
   def _build_alerts(self):
     """Build sorted list of alerts from OFFROAD_ALERTS."""
@@ -246,39 +245,13 @@ class MiciOffroadAlerts(Scroller):
     # Add regular alerts sorted by severity
     for key, config in sorted(OFFROAD_ALERTS.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
       severity = config.get("severity", 0)
-      alert_data = AlertData(key=key, text="", severity=severity)
+      alert_data = AlertData(key=key, text="", severity=severity, icon=config.get("icon"))
       self.sorted_alerts.append(alert_data)
 
       # Create alert item widget
       alert_item = AlertItem(alert_data)
       self.alert_items.append(alert_item)
       self._scroller.add_widget(alert_item)
-
-    pairing_alert = AlertData(
-      key="PairDevice",
-      text="Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
-      severity=-1,
-      icon="icons_mici/settings/device/green_settings.png",
-    )
-    prime_alert = AlertData(
-      key="UpgradeToPrime",
-      text="Upgrade to prime. Visit connect.comma.ai to subscribe to comma prime.",
-      severity=-1,
-      icon="icons_mici/settings/device/green_cell.png",
-    )
-    self._prime_alert_items = [AlertItem(pairing_alert), AlertItem(prime_alert)]
-    for alert_item in self._prime_alert_items:
-      self.sorted_alerts.append(alert_item.alert_data)
-      self.alert_items.append(alert_item)
-      self._scroller.add_widget(alert_item)
-    self._refresh_prime_alerts()
-
-  def _refresh_prime_alerts(self):
-    prime_type = ui_state.prime_state.get_type()
-    for alert_item, visible in zip(self._prime_alert_items, (prime_type <= PrimeType.UNPAIRED, prime_type == PrimeType.NONE), strict=True):
-      if alert_item.alert_data.visible != visible:
-        alert_item.alert_data.visible = visible
-        alert_item.update_alert_data(alert_item.alert_data)
 
   def _params_worker(self):
     drop_realtime()
@@ -318,8 +291,8 @@ class MiciOffroadAlerts(Scroller):
 
     # Handle regular alerts
     for alert_data in self.sorted_alerts:
-      if alert_data.key not in OFFROAD_ALERTS:
-        continue  # Update and pairing alerts are handled separately
+      if alert_data.key == "UpdateAvailable":
+        continue  # Skip, already handled above
 
       text = ""
       alert_json = pending_params[alert_data.key]
@@ -340,16 +313,14 @@ class MiciOffroadAlerts(Scroller):
 
     # Update alert items (they reference the same alert_data objects)
     for alert_item in self.alert_items:
-      if alert_item not in self._prime_alert_items:  # Prime alerts update only when their visibility changes
-        alert_item.update_alert_data(alert_item.alert_data)
+      alert_item.update_alert_data(alert_item.alert_data)
 
     self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
-    return active_count + sum(item.alert_data.visible for item in self._prime_alert_items)
+    return active_count
 
   def _update_state(self):
     """Periodically refresh alerts."""
-    self._refresh_prime_alerts()
     # Refresh alerts when thread updates params
     pending_params = self._pending_params
     if pending_params is not None:
