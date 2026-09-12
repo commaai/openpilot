@@ -45,11 +45,7 @@ class NetworkLayoutMici(NavScroller):
       gui_app.push_widget(dlg)
 
     txt_tethering = gui_app.texture("icons_mici/settings/network/tethering.png", 64, 54)
-    self._tethering_password_btn = BigButton(
-      'tethering password',
-      '',
-      txt_tethering,
-    )
+    self._tethering_password_btn = BigButton('tethering password', '', txt_tethering)
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
 
     # ******** Network Metered ********
@@ -64,12 +60,9 @@ class NetworkLayoutMici(NavScroller):
 
     # TODO: signal for current network metered type when changing networks, this is wrong until you press it once
     # TODO: disable when not connected
-    self._network_metered_btn = BigMultiToggle(
-      'network usage',
-      ['default', 'metered', 'unmetered'],
-      select_callback=network_metered_callback,
-      description='Metered prevents large uploads on this Wi-Fi connection. Default uses the network’s detected setting.',
-    )
+    self._network_metered_btn = BigMultiToggle('network usage', ['default', 'metered', 'unmetered'], select_callback=network_metered_callback,
+                                               description='Metered prevents large uploads on this Wi-Fi connection. Default uses the network’s detected ' +
+                                                           'setting.')
     self._network_metered_btn.set_enabled(False)
 
     self._wifi_button = WifiNetworkButton(self._wifi_manager)

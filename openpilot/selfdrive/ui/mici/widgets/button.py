@@ -29,7 +29,7 @@ class ScrollState(Enum):
   POST_SCROLL = 2
 
 
-class DescriptionButton(Widget):
+class BaseButton(Widget):
   def __init__(self, description: str, title: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
     self._shake_start: float | None = None
@@ -59,7 +59,7 @@ class DescriptionButton(Widget):
   def set_position(self, x: float, y: float) -> None:
     super().set_position(x + self._shake_offset, y)
 
-class BigCircleButton(DescriptionButton):
+class BigCircleButton(BaseButton):
   def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0),
                *, description: str = "",
                description_icon: Union[rl.Texture, None] = None, title: str = ""):
@@ -136,7 +136,7 @@ class BigCircleToggle(BigCircleButton):
                        0, 1.0, rl.WHITE)
 
 
-class BigButton(DescriptionButton):
+class BigButton(BaseButton):
   LABEL_HORIZONTAL_PADDING = 40
   LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 

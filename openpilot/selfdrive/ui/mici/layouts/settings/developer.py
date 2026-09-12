@@ -79,13 +79,10 @@ class DeveloperLayoutMici(NavScroller):
     self._lat_maneuver_toggle = BigToggle('lateral maneuver mode', initial_state=ui_state.params.get_bool('LateralManeuverMode'),
                                           toggle_callback=self._on_lat_maneuver_mode,
                                           description='Run lateral maneuvers for testing steering control.')
-    self._alpha_long_toggle = BigToggle(
-      'alpha longitudinal',
-      initial_state=ui_state.params.get_bool('AlphaLongitudinalEnabled'),
-      toggle_callback=self._on_alpha_long_enabled,
-      description='Use alpha openpilot longitudinal control instead of stock ACC. This may disable Automatic Emergency Braking ' +
-      '(AEB).',
-    )
+    self._alpha_long_toggle = BigToggle('alpha longitudinal', initial_state=ui_state.params.get_bool('AlphaLongitudinalEnabled'),
+                                        toggle_callback=self._on_alpha_long_enabled,
+                                        description='Use alpha openpilot longitudinal control instead of stock ACC. This may disable Automatic Emergency ' +
+                                                    'Braking (AEB).')
     self._debug_mode_toggle = BigParamControl('ui debug mode', 'ShowDebugInfo',
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked), gui_app.set_show_fps(checked)),
                                               description="Show touch locations and the UI frame rate.")
