@@ -56,7 +56,7 @@ class TogglesLayoutMici(NavScroller):
       description='Alpha features let the driving model control gas and brakes, including stops for red lights and stop signs. ' +
       'Set speed is an upper bound. Mistakes should be expected. The path shows acceleration and braking intent.',
     )
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric", description='Display speed in km/h instead of mph.')
+    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
     ldw_toggle = BigParamControl(
       'lane departure warnings',
       'IsLdwEnabled',

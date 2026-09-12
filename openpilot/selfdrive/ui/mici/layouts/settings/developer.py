@@ -117,8 +117,9 @@ class DeveloperLayoutMici(NavScroller):
       'ui debug mode',
       'ShowDebugInfo',
       toggle_callback=lambda checked: (gui_app.set_show_touches(checked), gui_app.set_show_fps(checked)),
-      description='Show touch locations and the UI frame rate.',
     )
+
+    self._debug_mode_toggle.set_value("touches & FPS")
 
     self._scroller.add_widgets([
       self._adb_toggle,

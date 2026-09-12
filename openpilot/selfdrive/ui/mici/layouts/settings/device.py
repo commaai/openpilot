@@ -190,7 +190,6 @@ class DeviceLayoutMici(NavScroller):
       gui_app.texture('icons_mici/settings/device/reboot.png', 64, 70),
       reboot_callback,
       exit_on_confirm=False,
-      description='Restart the device. Disengage openpilot first.',
     )
 
     self._power_off_btn = EngagedConfirmationCircleButton(
@@ -199,7 +198,6 @@ class DeviceLayoutMici(NavScroller):
       power_off_callback,
       exit_on_confirm=False,
       red=True,
-      description='Shut down the device. Available when the ignition is off.',
     )
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
@@ -207,7 +205,6 @@ class DeviceLayoutMici(NavScroller):
       'regulatory info',
       '',
       gui_app.texture('icons_mici/settings/device/info.png', 64, 64),
-      description='View regulatory and certification information.',
     )
     regulatory_btn.set_click_callback(self._on_regulatory)
 
@@ -224,7 +221,6 @@ class DeviceLayoutMici(NavScroller):
       'review\ntraining guide',
       '',
       gui_app.texture('icons_mici/settings/device/info.png', 64, 64),
-      description='Review the rules, features, and limitations of openpilot.',
     )
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
@@ -233,7 +229,6 @@ class DeviceLayoutMici(NavScroller):
       'terms &\nconditions',
       '',
       gui_app.texture('icons_mici/settings/device/info.png', 64, 64),
-      description='Review the openpilot terms and conditions.',
     )
     terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
 

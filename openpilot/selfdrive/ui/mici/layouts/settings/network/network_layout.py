@@ -53,7 +53,6 @@ class NetworkLayoutMici(NavScroller):
       'tethering password',
       '',
       txt_tethering,
-      description='Set the password used to connect to the device’s Wi-Fi hotspot.',
     )
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
 

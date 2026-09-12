@@ -81,7 +81,7 @@ class CheckUpdateButton(BigButton):
   def __init__(self):
     self._txt_update_icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 75)
     self._txt_up_to_date_icon = gui_app.texture("icons_mici/settings/device/up_to_date.png", 64, 64)
-    super().__init__("check for update", "", self._txt_update_icon, description='Check for and download available openpilot updates.')
+    super().__init__("check for update", "", self._txt_update_icon)
 
     self._waiting_for_updater_t: float | None = None
     self._hide_value_t: float | None = None
@@ -197,7 +197,6 @@ class InstallUpdateButton(BigButton):
       'install now',
       '',
       gui_app.texture('icons_mici/settings/device/reboot.png', 64, 70),
-      description='Install the downloaded update and restart the device.',
     )
     self.set_visible(lambda: ui_state.is_offroad() and ui_state.params.get_bool("UpdateAvailable"))
 
