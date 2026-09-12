@@ -11,7 +11,6 @@ from functools import partial
 import numpy as np
 
 from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
-from openpilot.selfdrive.modeld.compile_warp import NV12Frame, make_warp, _parse_size
 
 def _patch_tinygrad_fetch_fw():
   import hashlib
@@ -33,7 +32,8 @@ _patch_tinygrad_fetch_fw()
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-
+from tinygrad.helpers import round_up
+from tinygrad.uop.ops import UOp
 
 
 def nv12_copy_size(stride: int, y_height: int, uv_height: int) -> int:
@@ -42,36 +42,33 @@ def nv12_copy_size(stride: int, y_height: int, uv_height: int) -> int:
 
 
 def get_npy_shapes(input_shapes, state_pairs):
-  shapes = {'tfm': (3, 3), 'big_tfm': (3, 3)} | {
-    name: shape for name, (shape, _) in input_shapes.items() if name not in state_pairs and name != 'new_img'}
+  shapes = {name: shape for name, (shape, _) in input_shapes.items() if name not in state_pairs and name != 'new_img'}
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
-def make_input_queues(input_shapes, state_pairs, device, frame_copy_size):
+def input_view(tensor: Tensor) -> Tensor:
+  return Tensor(UOp.from_buffer(tensor._buffer())).reshape(tensor.shape)
+
+
+def make_input_queues(input_shapes, state_pairs, device, frame_copy_size=0):
   shapes, sizes = get_npy_shapes(input_shapes, state_pairs)
-  packed_npy_size = sum(sizes) * np.dtype(np.float32).itemsize
-  packed_input = np.zeros(packed_npy_size + 2 * frame_copy_size, dtype=np.uint8)
-  packed_npy_inputs = packed_input[:packed_npy_size].view(np.float32)
-  frames = packed_input[packed_npy_size:]
-  frame_views = {'img': frames[:frame_copy_size], 'big_img': frames[frame_copy_size:]}
-  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)}
+  policy_size = sum(sizes) * np.dtype(np.float32).itemsize
+  packed_input = np.zeros(round_up(128 + policy_size, 128) + 2 * frame_copy_size, dtype=np.uint8)
+  packed_gpu = Tensor(packed_input, device=device).realize()
+  policy = packed_input[128:128 + policy_size].view(np.float32)
+  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(policy, np.cumsum(sizes[:-1])), strict=True)}
   input_queues = {name: Tensor(np.zeros(shape, dtype=dtype.fmt), device=device).realize()
-                  for name, (shape, dtype) in input_shapes.items() if name in state_pairs}
-  input_queues['packed_npy_inputs'] = Tensor(packed_input, device='NPY').realize()
-  return input_queues, npy, frame_views
+                  for name, (shape, dtype) in input_shapes.items() if name in state_pairs or name == 'new_img'}
+  input_queues['packed_npy_inputs'] = input_view(packed_gpu[128:128 + policy_size].bitcast('float32'))
+  return input_queues, npy, packed_input, packed_gpu
 
 
-def make_run_model(warp, model_runner, input_shapes, state_pairs, frame_copy_size):
+def make_run_model(model_runner, input_shapes, state_pairs):
   shapes, sizes = get_npy_shapes(input_shapes, state_pairs)
-  packed_npy_size = sum(sizes) * np.dtype(np.float32).itemsize
 
-  def run_model(packed_npy_inputs, **state_inputs):
-    packed_input = packed_npy_inputs.to(Device.DEFAULT).realize()
-    packed_npy_inputs = packed_input[:packed_npy_size].bitcast('float32')
+  def run_model(new_img, packed_npy_inputs, **state_inputs):
     inputs = {name: t.reshape(s) for (name, s), t in zip(shapes.items(), packed_npy_inputs.split(sizes), strict=True)}
-    frame = packed_input[packed_npy_size:packed_npy_size + frame_copy_size]
-    big_frame = packed_input[packed_npy_size + frame_copy_size:]
-    inputs['new_img'] = warp(inputs.pop('tfm'), inputs.pop('big_tfm'), frame, big_frame)
+    inputs['new_img'] = new_img
     inputs = {name: value.cast(input_shapes[name][1]) for name, value in inputs.items()}
     outputs = {name: value.contiguous() for name, value in model_runner(inputs | state_inputs).items()}
     Tensor.realize(*outputs.values())
@@ -87,14 +84,15 @@ def compile_jit(jit, make_queues, benchmark_runs):
 
   SEED = 42
   def random_inputs_run(fn, seed, n_runs, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy, frame_views = make_queues(Device.DEFAULT)
+    input_queues, npy, packed_input, packed_gpu = make_queues(Device.DEFAULT)
     rng = np.random.default_rng(seed)
 
     for i in range(n_runs):
       for v in npy.values():
         v[:] = rng.standard_normal(v.shape).astype(v.dtype)
-      for v in frame_views.values():
-        v[:] = rng.integers(0, 256, size=v.shape, dtype=np.uint8)
+      packed_gpu._buffer().copy_from(Tensor(packed_input, device='NPY')._buffer())
+      warped = rng.integers(0, 256, size=input_queues['new_img'].shape, dtype=np.uint8)
+      input_queues['new_img'].assign(Tensor(warped, device=Device.DEFAULT)).realize()
       Device.default.synchronize()
       st = time.perf_counter()
       outs = fn(**input_queues)
@@ -124,7 +122,6 @@ def compile_jit(jit, make_queues, benchmark_runs):
     loaded_jit = load_oob(f)
   random_inputs_run(loaded_jit, SEED, benchmark_runs, test_val, test_buffers, expect_match=True)
   random_inputs_run(loaded_jit, SEED+1, benchmark_runs, test_val, test_buffers, expect_match=False)
-  # Keep the original so per-resolution JITs share model weight buffers in the final pickle.
   return jit
 
 
@@ -139,14 +136,8 @@ def read_file_chunked_to_disk(path):
 
 if __name__ == "__main__":
   from tinygrad.nn.onnx import OnnxRunner
-  from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
   from openpilot.selfdrive.modeld.get_model_metadata import make_metadata_dict
   p = argparse.ArgumentParser()
-  p.add_argument('--model-size', type=_parse_size, required=True, help='model input WxH')
-  p.add_argument('--warp-layout', choices=['luma', 'yuv420'], default='yuv420')
-  p.add_argument('--warp-border-fill', type=int)
-  p.add_argument('--camera-resolutions', type=_parse_size, nargs='+', required=True,
-                 help='camera resolutions WxH (one or more)')
   p.add_argument('--onnx', required=True)
   p.add_argument('--output', required=True)
   p.add_argument('--benchmark-runs', type=int, default=1,
@@ -154,7 +145,6 @@ if __name__ == "__main__":
   args = p.parse_args()
 
   model_path = read_file_chunked_to_disk(args.onnx)
-  model_w, model_h = args.model_size
 
   model_runner = OnnxRunner(model_path)
   input_shapes = {name: (spec.shape, spec.dtype) for name, spec in model_runner.graph_inputs.items()}
@@ -164,17 +154,11 @@ if __name__ == "__main__":
     'input_shapes': input_shapes,
     'state_pairs': state_pairs,
     'input_devices': {'model': Device.DEFAULT},
-    'run_model': {},
   }
 
-  for cam_w, cam_h in args.camera_resolutions:
-    nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
-    frame_copy_size = nv12_copy_size(nv12.stride, nv12.y_height, nv12.uv_height)
-    make_model_queues = partial(make_input_queues, input_shapes, state_pairs,
-                                frame_copy_size=frame_copy_size)
-    warp = make_warp(nv12, model_w, model_h, args.warp_layout, args.warp_border_fill)
-    run_model_jit = TinyJit(make_run_model(warp, model_runner, input_shapes, state_pairs, frame_copy_size), prune=True)
-    out['run_model'][(cam_w,cam_h)] = compile_jit(run_model_jit, make_model_queues, args.benchmark_runs)
+  run_model = make_run_model(model_runner, input_shapes, state_pairs)
+  make_model_queues = partial(make_input_queues, input_shapes, state_pairs)
+  out['run_model'] = compile_jit(TinyJit(run_model, prune=True), make_model_queues, args.benchmark_runs)
 
   with open(args.output, "wb") as f:
     dump_oob(out, f)

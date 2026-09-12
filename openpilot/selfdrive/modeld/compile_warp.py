@@ -61,7 +61,6 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h, layout="yuv420", borde
   stride_pad = stride - cam_w
 
   def frame_prepare_tinygrad(input_frame, M_inv):
-    M_inv = M_inv.to(Device.DEFAULT).realize()
     if layout == "luma":
       return warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv,
                                       (model_w, model_h), (cam_h, cam_w), stride_pad,
@@ -86,19 +85,16 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h, layout="yuv420", borde
   return frame_prepare_tinygrad
 
 
-def make_warp(nv12, model_w, model_h, layout="yuv420", border_fill=None):
+def make_warp(nv12, model_w, model_h, layout="yuv420", border_fill=None, frames=1):
   frame_prepare = make_frame_prepare(nv12, model_w, model_h, layout, border_fill)
 
-  def warp(tfm, big_tfm, frame, big_frame):
-    tfm = tfm.to(Device.DEFAULT)
-    big_tfm = big_tfm.to(Device.DEFAULT)
-    frame = frame.to(Device.DEFAULT)
-    big_frame = big_frame.to(Device.DEFAULT)
-    Tensor.realize(tfm, big_tfm, frame, big_frame)
-
-    warped_frame = frame_prepare(frame, tfm).unsqueeze(0)
-    warped_big_frame = frame_prepare(big_frame, big_tfm).unsqueeze(0)
-    return Tensor.cat(warped_frame, warped_big_frame)
+  def warp(input_frames, transforms):
+    input_frames = input_frames.to(Device.DEFAULT)
+    transforms = transforms.to(Device.DEFAULT)
+    Tensor.realize(input_frames, transforms)
+    if frames == 1:
+      return frame_prepare(input_frames, transforms)
+    return Tensor.stack(*(frame_prepare(input_frames[i], transforms[i]) for i in range(frames)))
 
   return warp
 
@@ -108,14 +104,18 @@ def _parse_size(s):
   return int(w), int(h)
 
 
-def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fill=None):
+def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fill=None,
+                 frames=1, transform_device='NPY', frame_size=None):
   print(f"Compiling {layout} warp for {nv12.width}x{nv12.height} -> {model_w}x{model_h}...")
 
-  warp_jit = TinyJit(make_frame_prepare(nv12, model_w, model_h, layout, border_fill), prune=True)
+  warp_jit = TinyJit(make_warp(nv12, model_w, model_h, layout, border_fill, frames), prune=True)
+  frame_size = nv12.size if frame_size is None else frame_size
+  frame_shape = (frame_size,) if frames == 1 else (frames, frame_size)
+  transform_shape = (3, 3) if frames == 1 else (frames, 3, 3)
 
   for i in range(10):
-    frame = Tensor.randint(nv12.size, low=0, high=256, dtype='uint8').realize()
-    M_inv = Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')
+    frame = Tensor.randint(*frame_shape, low=0, high=256, dtype='uint8').realize()
+    M_inv = Tensor(Tensor.randn(*transform_shape).mul(8).realize().numpy(), device=transform_device)
     Device.default.synchronize()
     st = time.perf_counter()
     warp_jit(frame, M_inv).realize()
@@ -135,10 +135,14 @@ if __name__ == "__main__":
   p.add_argument('--warp-to', type=_parse_size, required=True, help='output WxH')
   p.add_argument('--layout', choices=['luma', 'yuv420'], required=True)
   p.add_argument('--border-fill', type=int, help='fill value outside the frame; omit to clamp coordinates')
+  p.add_argument('--frames', type=int, default=1, help='number of frames to warp together')
+  p.add_argument('--transform-device', default='NPY', help='device holding the input transforms')
+  p.add_argument('--frame-size', type=int, help='input frame size in bytes; default: full NV12 allocation')
   p.add_argument('--output', required=True)
   args = p.parse_args()
 
   cam_w, cam_h = args.camera_resolution
   nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
   model_w, model_h = args.warp_to
-  compile_warp(nv12, model_w, model_h, args.output, args.layout, args.border_fill)
+  compile_warp(nv12, model_w, model_h, args.output, args.layout, args.border_fill,
+               args.frames, args.transform_device, args.frame_size)
