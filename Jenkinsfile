@@ -22,6 +22,7 @@ trap 'kill 0' HUP # stop this process group on SSH disconnect
 
 export CI=1
 export PYTHONWARNINGS=error
+export PYTHONFAULTHANDLER=1
 export COMMA_CACHE=/data/tmp/comma_download_cache
 #export LOGPRINT=debug # this has gotten too spammy...
 export TEST_DIR=${env.TEST_DIR}
