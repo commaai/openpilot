@@ -29,9 +29,18 @@ class ScrollState(Enum):
   POST_SCROLL = 2
 
 
-class BigCircleButton(Widget):
-  def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
+class DescriptionButton(Widget):
+  def __init__(self, description: str, title: str):
     super().__init__()
+    if description:
+      # Dialogs also use buttons; import lazily to avoid a circular import.
+      from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
+      self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description)))
+
+
+class BigCircleButton(DescriptionButton):
+  def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0), *, description: str = "", title: str = ""):
+    super().__init__(description, title)
     self._red = red
     self._icon_offset = icon_offset
 
@@ -73,8 +82,9 @@ class BigCircleButton(Widget):
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: rl.Texture, toggle_callback: Callable | None = None, icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, False, icon_offset=icon_offset)
+  def __init__(self, icon: rl.Texture, toggle_callback: Callable | None = None, icon_offset: tuple[int, int] = (0, 0),
+               *, description: str = "", title: str = ""):
+    super().__init__(icon, False, icon_offset=icon_offset, description=description, title=title)
     self._toggle_callback = toggle_callback
 
     # State
@@ -103,14 +113,14 @@ class BigCircleToggle(BigCircleButton):
                        0, 1.0, rl.WHITE)
 
 
-class BigButton(Widget):
+class BigButton(DescriptionButton):
   LABEL_HORIZONTAL_PADDING = 40
   LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False):
-    super().__init__()
+  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False, *, description: str = ""):
+    super().__init__(description, text)
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
@@ -272,8 +282,8 @@ class BigButton(Widget):
 
 
 class BigToggle(BigButton):
-  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None):
-    super().__init__(text, value, "")
+  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None, *, description: str = ""):
+    super().__init__(text, value, "", description=description)
     self._checked = initial_state
     self._toggle_callback = toggle_callback
 
@@ -308,8 +318,8 @@ class BigToggle(BigButton):
 
 class BigMultiToggle(BigToggle):
   def __init__(self, text: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None):
-    super().__init__(text, "", toggle_callback=toggle_callback)
+               select_callback: Callable | None = None, *, description: str = ""):
+    super().__init__(text, "", toggle_callback=toggle_callback, description=description)
     assert len(options) > 0
     self._options = options
     self._select_callback = select_callback
@@ -374,9 +384,9 @@ class GreyBigButton(BigButton):
 
 class BigMultiParamToggle(BigMultiToggle):
   def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None):
+               select_callback: Callable | None = None, *, description: str = ""):
     assert Params is not None
-    super().__init__(text, options, toggle_callback, select_callback)
+    super().__init__(text, options, toggle_callback, select_callback, description=description)
     self._param = param
 
     self._params = Params()
@@ -392,9 +402,9 @@ class BigMultiParamToggle(BigMultiToggle):
 
 
 class BigParamControl(BigToggle):
-  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None):
+  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None, *, description: str = ""):
     assert Params is not None
-    super().__init__(text, "", toggle_callback=toggle_callback)
+    super().__init__(text, "", toggle_callback=toggle_callback, description=description)
     self.param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self.param, False))
@@ -410,9 +420,9 @@ class BigParamControl(BigToggle):
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
   def __init__(self, icon: rl.Texture, param: str, toggle_callback: Callable | None = None,
-               icon_offset: tuple[int, int] = (0, 0)):
+               icon_offset: tuple[int, int] = (0, 0), *, description: str = "", title: str = ""):
     assert Params is not None
-    super().__init__(icon, toggle_callback, icon_offset=icon_offset)
+    super().__init__(icon, toggle_callback, icon_offset=icon_offset, description=description, title=title)
     self._param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))

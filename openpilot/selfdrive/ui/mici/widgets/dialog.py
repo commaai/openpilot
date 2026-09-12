@@ -4,6 +4,7 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from openpilot.system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.scroller import NavRawScrollPanel
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -35,6 +36,24 @@ class BigDialog(BigDialogBase):
       self._card.rect.width,
       self._card.rect.height,
     ))
+
+
+class SettingDescriptionDialog(NavRawScrollPanel):
+  def __init__(self, title: str, description: str):
+    super().__init__()
+    self._title = UnifiedLabel(title.replace("\n", " "), font_size=36, font_weight=FontWeight.BOLD)
+    self._description = UnifiedLabel(description, font_size=32)
+
+  def _render(self, rect):
+    width = int(rect.width - 2 * PADDING)
+    title_height = self._title.get_content_height(width)
+    description_height = self._description.get_content_height(width)
+    height = title_height + description_height + 3 * PADDING
+    offset = self._scroll_panel.update(rect, height)
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    self._title.render(rl.Rectangle(rect.x + PADDING, rect.y + PADDING + offset, width, title_height))
+    self._description.render(rl.Rectangle(rect.x + PADDING, rect.y + 2 * PADDING + title_height + offset, width, description_height))
+    rl.end_scissor_mode()
 
 
 class BigConfirmationDialog(BigDialogBase):

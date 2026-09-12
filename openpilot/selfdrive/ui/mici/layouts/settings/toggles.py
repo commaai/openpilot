@@ -41,15 +41,48 @@ class TogglesLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
-    self._experimental_btn = BigToggle("experimental mode", initial_state=ui_state.params.get_bool("ExperimentalMode"),
-                                       toggle_callback=self._on_experimental_mode)
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
-    ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled")
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM")
-    record_front = BigParamControl("record & upload cabin camera", "RecordFront", toggle_callback=restart_needed_callback)
-    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
-    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
+    self._personality_toggle = BigMultiParamToggle(
+      'driving personality',
+      'LongitudinalPersonality',
+      ['aggressive', 'standard', 'relaxed'],
+      description='Standard is recommended. Aggressive follows closer and uses gas and brakes more aggressively. Relaxed leaves ' +
+      'more space. On supported cars, use the steering wheel distance button to cycle personalities.',
+    )
+    self._experimental_btn = BigToggle(
+      'experimental mode',
+      initial_state=ui_state.params.get_bool('ExperimentalMode'),
+      toggle_callback=self._on_experimental_mode,
+      description='Alpha features let the driving model control gas and brakes, including stops for red lights and stop signs. ' +
+      'Set speed is an upper bound. Mistakes should be expected. The path shows acceleration and braking intent.',
+    )
+    is_metric_toggle = BigParamControl("use metric units", "IsMetric", description='Display speed in km/h instead of mph.')
+    ldw_toggle = BigParamControl(
+      'lane departure warnings',
+      'IsLdwEnabled',
+      description='Alert when drifting over a detected lane line without a turn signal above 31 mph (50 km/h).',
+    )
+    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description='Monitor the driver even when openpilot is not engaged.')
+    record_front = BigParamControl(
+      'record & upload cabin camera',
+      'RecordFront',
+      toggle_callback=restart_needed_callback,
+      description='Upload cabin camera data to help improve driver monitoring. Changing this setting restarts openpilot if the ' +
+      'car is powered on.',
+    )
+    record_mic = BigParamControl(
+      'record & upload mic audio',
+      'RecordAudio',
+      toggle_callback=restart_needed_callback,
+      description='Record microphone audio while driving and include it in dashcam videos in comma connect. Changing this setting ' +
+      'restarts openpilot if the car is powered on.',
+    )
+    enable_openpilot = BigParamControl(
+      'enable openpilot',
+      'OpenpilotEnabledToggle',
+      toggle_callback=restart_needed_callback,
+      description='Use openpilot for adaptive cruise control and lane keeping assistance. Pay attention at all times. Changing ' +
+      'this setting restarts openpilot if the car is powered on.',
+    )
 
     self._scroller.add_widgets([
       self._personality_toggle,
