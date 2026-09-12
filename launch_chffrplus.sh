@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -25,7 +26,7 @@ function agnos_init {
       sudo reboot
     fi
     while true; do
-      "$DIR/openpilot/common/hardware/comma/updater" "$AGNOS_PY" "$MANIFEST"
+      "$DIR/openpilot/common/hardware/comma/updater" "$AGNOS_PY" "$MANIFEST" || true
     done
   fi
 }
@@ -54,7 +55,7 @@ function launch {
 
           mv "$DIR" /data/safe_staging/old_openpilot
           mv "${STAGING_ROOT}/finalized" "$DIR"
-          cd "$DIR" || exit
+          cd "$DIR"
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset AGNOS_VERSION
@@ -85,10 +86,12 @@ function launch {
   fi
 
   # write tmux scrollback to a file
-  tmux capture-pane -pq -S-1000 > /tmp/launch_log
+  tmux capture-pane -pq -S-1000 > /tmp/launch_log || true
 
   # start manager
-  cd openpilot/system/manager || exit
+  cd openpilot/system/manager
+  # Keep build and manager errors on screen instead of exiting.
+  set +e
   if [ ! -f "$DIR/prebuilt" ]; then
     ./build.py
   fi
