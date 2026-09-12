@@ -21,11 +21,13 @@ void OpenReplayWidget::draw() {
   ImGui::SetNextItemWidth(-250.0f);
   inputText("##route", &route_, "Enter a route name or browse for a local or remote route");
   ImGui::SameLine();
+  ImGui::BeginDisabled(routes_dialog_.isActive());
   if (ImGui::Button("Remote Route...")) {
     routes_dialog_.open(utils::guarded(alive_, [this](bool accepted, const std::string &route) {
       if (accepted) route_ = route;
     }));
   }
+  ImGui::EndDisabled();
   ImGui::SameLine();
   if (ImGui::Button("Local Route...")) {
     FileDialog::getExistingDirectory("Open Local Route", settings.last_route_dir, utils::guarded(alive_, [this](const std::string &dir) {

@@ -21,8 +21,9 @@ const int PERIOD_DAYS[] = {7, 14, 30, 180, -1};
 }  // namespace
 
 void RoutesDialog::open(std::function<void(bool, const std::string &)> on_done) {
+  if (alive_) return;
   on_done_ = std::move(on_done);
-  open_ = true;
+  open_ = false;
   popup_.reset();
   s_ = State{};
   alive_ = std::make_shared<bool>(true);
@@ -40,6 +41,8 @@ void RoutesDialog::fetchDevices() {
 
 void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices, bool success, int error_code) {
   if (success) {
+    s_.login = false;
+    open_ = true;
     s_.devices.clear();
     for (const auto &device : devices) s_.devices.push_back(device.dongle_id);
     s_.devices_loaded = true;
@@ -47,8 +50,9 @@ void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices,
     fetchRoutes();
   } else if (error_code == 401) {
     s_.login = true;
+    open_ = true;
   } else {
-    // the box shows on top of the dialog, which is rejected once the box is dismissed
+    // Initial failures are shown on the calling window without opening the route browser.
     MessageBox::warning("Error", "Network error", "",
                         utils::guarded(alive_, [this]() { finish(false); }));
   }
@@ -95,17 +99,14 @@ void RoutesDialog::finish(bool accepted) {
 
 void RoutesDialog::draw() {
   if (!open_) return;
-  if (!popup_.begin("Remote Routes")) return;
-  setNextDialogWindow(ImVec2(480.0f, 480.0f));
-  if (s_.login) {
-    ImGui::SetNextWindowSizeConstraints(ImVec2(480, 0), ImVec2(480, FLT_MAX));
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-  }
-  const ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings | (s_.login ? ImGuiWindowFlags_AlwaysAutoResize : 0);
-  if (!ImGui::BeginPopupModal("Remote Routes", nullptr, flags)) return;
+  if (!beginDialog("Remote Routes", &popup_, ImVec2(480.0f, 420.0f))) return;
 
   if (s_.login) {
     drawLogin();
+    if (open_) {
+      MessageBox::draw();
+      if (!open_) ImGui::CloseCurrentPopup();
+    }
     ImGui::EndPopup();
     return;
   }
@@ -175,16 +176,20 @@ void RoutesDialog::signIn(const std::string &provider) {
 
 void RoutesDialog::drawLogin() {
   const auto &p = palette();
+  // Keep the footer anchored while longer errors scroll inside the content area.
+  const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+  ImGui::BeginChild("login_content", ImVec2(0, -footer));
   ImGui::Spacing();
   ImGui::Indent(16);
   ImGui::PushFont(boldFont(), 28.0f);
-  ImGui::TextUnformatted(auth_abort_ ? "Finish signing in" : "Open your routes in Cabana");
+  ImGui::TextUnformatted("Open your routes in Cabana");
   ImGui::PopFont();
   ImGui::Spacing();
   ImGui::PushTextWrapPos(ImGui::GetWindowWidth() - 28);
+  const float controls_y = ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() * 2 + ImGui::GetStyle().ItemSpacing.y * 2 + 12;
   if (auth_abort_) {
     ImGui::TextWrapped("Sign in with %s in your browser, then return to Cabana to choose a device and route.", s_.provider.c_str());
-    ImGui::Dummy(ImVec2(0, 8));
+    ImGui::SetCursorPosY(controls_y);
     ImGui::BeginChild("auth_status", ImVec2(-16, 76), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
     const char *status = "Waiting for browser sign-in";
@@ -204,7 +209,8 @@ void RoutesDialog::drawLogin() {
     ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(timeout).x) * 0.5f, 40));
     ImGui::TextDisabled("%s", timeout);
     ImGui::EndChild();
-    ImGui::Dummy(ImVec2(0, 8));
+    // Align the alternate-method button with the last provider button.
+    ImGui::SetCursorPosY(controls_y + 2 * (44 + ImGui::GetStyle().ItemSpacing.y * 2));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8);
     if (ImGui::Button("Choose another method", ImVec2(-16, 44))) {
       *auth_abort_ = true;
@@ -213,7 +219,7 @@ void RoutesDialog::drawLogin() {
     ImGui::PopStyleVar();
   } else {
     ImGui::TextWrapped("Use your comma account to browse recorded drives and open a route for analysis.");
-    ImGui::Dummy(ImVec2(0, 12));
+    ImGui::SetCursorPosY(controls_y);
     const char *providers[] = {"Google", "Apple", "GitHub"};
     const char *methods[] = {"google", "apple", "github"};
     const char *icons[] = {"\xef\x8f\xb0", "\xef\x99\x9b", "\xef\x8f\xad"};
@@ -251,7 +257,7 @@ void RoutesDialog::drawLogin() {
   }
   ImGui::PopTextWrapPos();
   ImGui::Unindent(16);
-  ImGui::Dummy(ImVec2(0, 12));
+  ImGui::EndChild();
   ImGui::Separator();
   ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 92);
   bool rejected = ImGui::Button("Cancel", ImVec2(80, 0)) || dialogEscapePressed();

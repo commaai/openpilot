@@ -15,6 +15,7 @@ public:
   ~RoutesDialog() { if (auth_abort_) *auth_abort_ = true; }
   void open(std::function<void(bool accepted, const std::string &route)> on_done);
   void draw();
+  bool isActive() const { return alive_ != nullptr; }
 
 private:
   void fetchDevices();

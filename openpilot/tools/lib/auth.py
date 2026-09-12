@@ -23,6 +23,7 @@ Examples::
 
 import argparse
 import sys
+import subprocess
 import pprint
 import webbrowser
 import time
@@ -117,9 +118,15 @@ def login_for_cabana(method, timeout=180):
       url = auth_redirect_link(method, server.server_port)
       browser = Future()
 
-      def open_browser(opener=webbrowser.open):
+      def open_browser():
         try:
-          browser.set_result(opener(url, new=2))
+          if sys.platform == 'darwin':
+            # Hand off to Launch Services without an AppleScript browser session.
+            result = subprocess.run(['/usr/bin/open', url], stdin=subprocess.DEVNULL,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+            browser.set_result(result.returncode == 0)
+          else:
+            browser.set_result(webbrowser.open(url, new=2))
         except Exception:
           browser.set_result(False)
 
