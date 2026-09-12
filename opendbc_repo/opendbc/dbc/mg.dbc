@@ -1,0 +1,327 @@
+VERSION "HSCAN2"
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: FVCM GW Diagnostics EPS SCSABS Tester
+
+BO_ 175 GW_HSC2_HCU_FrP00: 8 GW
+ SG_ EPTAccelActuPosHSC2 : 7|8@0+ (0.392157,0) [0|100] "%"  FVCM
+ SG_ EPTAccelActuPosVHSC2 : 43|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ EPTBrkPdlDscrtInptStsHSC2 : 31|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ EPTBrkPdlDscrtInptStsVHSC2 : 16|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ EPTStCmdOn_h1HSC2 : 17|1@0+ (1,0) [0|1] ""  FVCM
+
+BO_ 251 GW_HSC2_ECM_FrP27: 8 GW
+ SG_ ACCStsHSC2 : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ SpdAstMdECMHSC2 : 52|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ SpdAstSysStsECMHSC2 : 18|3@0+ (1,0) [0|7] ""  FVCM
+ SG_ SpdAstSysTrgtSpdHSC2 : 30|15@0+ (0.015625,0) [0|511.984] ""  FVCM
+ SG_ TrgtSpdSrcStsHSC2 : 23|2@0+ (1,0) [0|3] ""  FVCM
+
+BO_ 355 GW_HSC2_SDM_FrP00: 8 GW
+ SG_ AirbagDplHSC2 : 11|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ AirbagDplInvsnHSC2 : 10|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ DrvrSbltAtcHSC2 : 12|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ DrvrSbltAtcVHSC2 : 13|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ SDMRCHSC2 : 1|2@0+ (1,0) [0|3] ""  FVCM
+
+BO_ 359 FVCM_HSC2_FrP02: 8 FVCM
+ SG_ AutoMainBeamLghtReqHSC2 : 15|2@0+ (1,0) [0|3] ""  GW
+ SG_ DistSinceTrgtCamrHSC2 : 7|8@0+ (8.235,-100) [-100|1999.92] "m"  GW
+ SG_ FVCMCalPrgsReqHSC2 : 36|3@0+ (1,0) [0|7] ""  GW
+ SG_ HandOffStrgWhlDetnStaHSC2 : 44|2@0+ (1,0) [0|3] ""  GW
+ SG_ HandOffStrgWhlDetnStaVHSC2 : 45|1@0+ (1,0) [0|1] ""  GW
+ SG_ LDWLKADspCmdHSC2 : 50|3@0+ (1,0) [0|7] ""  GW
+ SG_ LDWLKAHapticWrnngDspCmdHSC2 : 63|2@0+ (1,0) [0|3] ""  GW
+ SG_ LDWLKALVsulznReqHSC2 : 53|3@0+ (1,0) [0|7] ""  GW
+ SG_ LDWLKARVsulznReqHSC2 : 42|3@0+ (1,0) [0|7] ""  GW
+ SG_ LDWSysFltStsHSC2 : 39|3@0+ (1,0) [0|7] ""  GW
+ SG_ SpdAstReqStsCamrHSC2 : 13|2@0+ (1,0) [0|3] ""  GW
+ SG_ TJAICADspCmdHSC2 : 55|2@0+ (1,0) [0|3] ""  GW
+ SG_ TJAICASysFltStsHSC2 : 61|3@0+ (1,0) [0|7] ""  GW,EPS
+ SG_ TJAICASysStsHSC2 : 58|3@0+ (1,0) [0|7] ""  GW,EPS
+ SG_ TrgtSpdReqCamrHSC2 : 22|15@0+ (0.015625,0) [0|511.984] ""  GW
+
+BO_ 404 GW_HSC2_ECM_FrP04: 8 GW
+ SG_ TrEstdGearHSC2 : 3|4@0+ (1,0) [0|15] ""  FVCM
+ SG_ TrEstdGearVHSC2 : 4|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ TrShftLvrPosV_h1HSC2 : 28|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ TrShftLvrPos_h1HSC2 : 27|4@0+ (1,0) [0|15] ""  FVCM
+
+BO_ 438 EHBS_HSC2_FrP00: 8 EHBS
+ SG_ BrkPdlAppdChksmHSC2 : 63|8@0+ (1,0) [0|255] ""  FVCM
+ SG_ IbstrDiagMdAHSC2 : 55|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ RnotPrsStsHSC2 : 53|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ HydBstrCmpstnReqHSC2 : 54|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ BrkPdlAppdRCHSC2 : 51|4@0+ (1,0) [0|15] ""  FVCM
+ SG_ RnotPrsHSC2 : 47|8@0+ (1,0) [0|250] "bar"  FVCM
+ SG_ BrkPdlAppdHSC2 : 10|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ BrkPdlAppdVHSC2 : 9|2@0+ (1,0) [0|3] ""  FVCM
+
+BO_ 485 SAS_HSC2_FrP00: 8 EPS
+ SG_ StrgWhlAngHSC2 : 15|16@0+ (0.0625,-2048) [-2048|2047.88] "degree"  FVCM
+ SG_ StrgWhlAngAlvRCHSC2 : 31|4@0+ (1,0) [0|15] ""  FVCM
+ SG_ StrgWhlAngExtdPVHSC2 : 47|16@0+ (1,0) [0|65535] ""  FVCM
+ SG_ StrgWhlAngGrdHSC2 : 27|12@0+ (1,-2048) [-2048|2046] "degree/s"  FVCM
+ SG_ StrgWhlAngSnsrCalStsHSC2 : 6|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ StrgWhlAngSnsrChksmHSC2 : 63|8@0+ (1,0) [0|255] ""  FVCM
+ SG_ StrgWhlAngSnsrFltHSC2 : 0|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ StrgWhlAngSnsrInidHSC2 : 2|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ StrgWhlAngSnsrMultCapbHSC2 : 1|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ StrgWhlAngVHSC2 : 7|1@0+ (1,0) [0|1] ""  FVCM
+
+BO_ 481 GW_HSC2_FrP04: 7 GW
+ SG_ CCSwStsSwDataIntgty_h2HSC2 : 1|2@0+ (1,0) [0|3] "" FDR
+ SG_ CCSwStsSpdDecSwA_h2HSC2 : 2|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsSpdIncSwA_h2HSC2 : 3|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsSetSwA_h2HSC2 : 4|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsRsmSwA_h2HSC2 : 5|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsOnSwA_h2HSC2 : 6|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsCanclSwA_h2HSC2 : 7|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsPV_h2HSC2 : 15|8@0+ (1,0) [0|255] "" FDR
+ SG_ CCSwStsAlvRC_h2HSC2 : 17|2@0+ (1,0) [0|3] "" FDR
+ SG_ CCSwStsDistDecSwA_h2HSC2 : 18|1@0+ (1,0) [0|1] "" FDR
+ SG_ CCSwStsDistIncSwA_h2HSC2 : 19|1@0+ (1,0) [0|1] "" FDR
+
+BO_ 492 EPS_HSC2_FrP03: 8 EPS
+ SG_ ChLKAAlvRCHSC2 : 7|4@0+ (1,0) [0|15] ""  FVCM
+ SG_ ChLKACtrlStsHSC2 : 54|3@0+ (1,0) [0|7] ""  FVCM
+ SG_ ChLKARespToqHSC2 : 2|11@0+ (0.01,-10.24) [-10.24|10.23] "Nm"  FVCM
+ SG_ ChLKARespToqPVHSC2 : 22|15@0+ (1,0) [0|32767] ""  FVCM
+ SG_ ChLKARespToqVHSC2 : 3|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ DrvrStrgDlvrdToqHSC2 : 34|11@0+ (0.01,-10.24) [-10.24|10.23] "Nm"  FVCM
+ SG_ DrvrStrgDlvrdToqVHSC2 : 55|1@0+ (1,0) [0|1] ""  FVCM
+
+BO_ 509 FVCM_HSC2_FrP03: 8 FVCM
+ SG_ LDWLKAVbnLvlReqHSC2 : 23|2@0+ (1,0) [0|3] ""  GW,EPS
+ SG_ LKAAlvRCHSC2 : 7|4@0+ (1,0) [0|15] ""  EPS
+ SG_ LKADrvrTkovReqHSC2 : 46|1@0+ (1,0) [0|1] ""  GW,EPS
+ SG_ LKAReqToqHSC2 : 2|11@0+ (1,-1024) [-1024|1023] "Nm"  EPS
+ SG_ LKAReqToqPVHSC2 : 21|14@0+ (1,0) [0|16383] ""  EPS
+ SG_ LKAReqToqStsHSC2 : 36|2@0+ (1,0) [0|3] ""  EPS
+ SG_ LKAReqToqVHSC2 : 3|1@0+ (1,0) [0|1] ""  EPS
+ SG_ LKASysFltStsHSC2 : 39|3@0+ (1,0) [0|7] ""  GW,EPS
+ SG_ LKASysStsHSC2 : 34|3@0+ (1,0) [0|7] ""  GW,EPS
+
+BO_ 532 SCS_HSC2_FrP09: 6 SCSABS
+ SG_ BrkPdlDrvrAppdPrsHSC2 : 15|8@0+ (75,0) [0|19125] "kPa"  FVCM
+ SG_ BrkPdlDrvrAppdPrsAlvRCHSC2 : 2|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ BrkPdlDrvrAppdPrsVHSC2 : 0|1@0+ (1,0) [0|1] ""  FVCM
+
+BO_ 572 SCS_HSC2_FrP19: 8 SCSABS
+ SG_ VehSpdAvgHSC2 : 22|15@0+ (0.015625,0) [0|511.984] "km/h"  FVCM,FDR
+ SG_ VehSpdAvgAlvRCHSC2 : 39|4@0+ (1,0) [0|15] ""  FVCM,FDR
+ SG_ VehSpdAvgPVHSC2 : 7|16@0+ (1,0) [0|65535] ""  FVCM,FDR
+ SG_ VehSpdAvgVHSC2 : 23|1@0+ (1,0) [0|1] ""  FVCM,FDR
+
+BO_ 578 RADAR_HSC2_FrP00: 8 FDR
+ SG_ ACCAccReqValHSC2 : 2|11@0+ (0.005,-7.22) [-7.22|3.015] "" SCSABS
+ SG_ ACCSysAlvRlngCtr_SCSHSC2 : 6|4@0+ (1,0) [0|15] "" SCSABS
+ SG_ ACCMinBrkReqStsHSC2 : 7|1@0+ (1,0) [0|1] "" SCSABS
+ SG_ ACCAccReqValTolMaxHSC2 : 22|7@0+ (0.025,0) [0|3.175] "" SCSABS
+ SG_ ACCReqBrkPrfrdHSC2 : 23|1@0+ (1,0) [0|1] "" SCSABS
+ SG_ ACCAccReqStsHSC2 : 29|2@0+ (1,0) [0|3] "" GW,SCSABS
+ SG_ ACCGoReqHSC2 : 30|1@0+ (1,0) [0|1] "" SCSABS
+ SG_ ACCSysFltSts_SCSHSC2 : 42|3@0+ (1,0) [0|7] "" SCSABS
+ SG_ ACCSysSts_RadarHSC2 : 45|3@0+ (1,0) [0|7] "" GW,SCSABS
+ SG_ ChACCShtdwnMdHSC2 : 47|2@0+ (1,0) [0|3] "" SCSABS
+ SG_ ACCAccReqValTolMinHSC2 : 54|7@0+ (0.025,0) [0|3.175] "" SCSABS
+ SG_ ACCSdslReq_RadarHSC2 : 55|1@0+ (1,0) [0|1] "" SCSABS
+ SG_ ACCSysChksm_SCSHSC2 : 63|8@0+ (1,0) [0|255] "" SCSABS
+
+BO_ 582 RADAR_HSC2_FrP02: 8 FDR
+ SG_ ACCDrvrSelTrgtSpd_RadarHSC2 : 6|15@0+ (0.015625,0) [0|511.984] "" GW
+ SG_ ACCObjDet_RadarHSC2 : 7|1@0+ (1,0) [0|1] "" GW
+ SG_ AEBMsgReqHSC2 : 19|4@0+ (1,0) [0|15] "" GW
+ SG_ ACCMsgReqHSC2 : 23|4@0+ (1,0) [0|15] "" GW
+ SG_ ACCDetObjDistLvl_RadarHSC2 : 26|3@0+ (1,0) [0|7] "" GW
+ SG_ ACCDrvrSeldTrgtDistLvl_RadarHSC2 : 29|3@0+ (1,0) [0|7] "" GW
+ SG_ ACCSysCanclReq_RadarHSC2 : 31|2@0+ (1,0) [0|3] "" GW
+ SG_ RdrCalPrgsReqHSC2 : 34|3@0+ (1,0) [0|7] "" GW
+ SG_ ACCGoNotfr_RadarHSC2 : 35|1@0+ (1,0) [0|1] "" GW
+ SG_ ACCSysFltSts_RadarHSC2 : 38|3@0+ (1,0) [0|7] "" GW
+ SG_ ACCDrvrTkovReqHSC2 : 39|1@0+ (1,0) [0|1] "" GW
+ SG_ FCWSysFltSts_RadarHSC2 : 42|3@0+ (1,0) [0|7] "" GW
+ SG_ FCWSnstvtLvl_RadarHSC2 : 45|3@0+ (1,0) [0|7] "" GW
+ SG_ AEBPedtrnDspCmdHSC2 : 47|2@0+ (1,0) [0|3] "" GW
+ SG_ FCWrnngSts_RadarHSC2 : 51|3@0+ (1,0) [0|7] "" GW
+ SG_ FCWDspCmd_RadarHSC2 : 53|2@0+ (1,0) [0|3] "" GW
+ SG_ AEBDspCmd_RadarHSC2 : 55|2@0+ (1,0) [0|3] "" GW
+
+BO_ 588 SCS_HSC2_FrP22: 8 SCSABS
+ SG_ BrkDiscTemStsHSC2 : 6|1@0+ (1,0) [0|1] ""  FDR
+ SG_ BrkPdlDrvrAppdPrsAlvRC_RadarHSC2 : 13|2@0+ (1,0) [0|3] ""  FDR
+ SG_ BrkPdlDrvrAppdPrsV_RadarHSC2 : 7|1@0+ (1,0) [0|1] ""  FDR
+ SG_ BrkPdlDrvrAppdPrs_RadarHSC2 : 23|8@0+ (75,0) [0|19125] "kPa"  FDR
+ SG_ LDrvnWhlRotlDircnHSC2 : 15|2@0+ (1,0) [0|3] ""  FDR,FVCM
+ SG_ RDrvnWhlRotlDircnHSC2 : 2|2@0+ (1,0) [0|3] ""  FDR,FVCM
+ SG_ WhlBrkPrsStsHSC2 : 5|1@0+ (1,0) [0|1] ""  FDR
+ SG_ WhlGndVelDrvnChksm_RadarHSC2 : 63|8@0+ (1,0) [0|255] ""  FDR
+ SG_ WhlGndVelDrvnRC_RadarHSC2 : 11|4@0+ (1,0) [0|15] ""  FDR
+ SG_ WhlGndVelLDrvnV_RadarHSC2 : 3|1@0+ (1,0) [0|1] ""  FDR
+ SG_ WhlGndVelLDrvn_RadarHSC2 : 45|14@0+ (0.03125,0) [0|511.969] "km/h"  FDR
+ SG_ WhlGndVelRDrvnV_RadarHSC2 : 4|1@0+ (1,0) [0|1] ""  FDR
+ SG_ WhlGndVelRDrvn_RadarHSC2 : 29|14@0+ (0.03125,0) [0|511.969] "km/h"  FDR
+
+BO_ 593 SCS_HSC2_FrP24: 8 SCSABS
+ SG_ ChACCAccReqRespHSC2 : 5|3@0+ (1,0) [0|7] ""  FDR
+ SG_ ChACCAEBAlvRlngCtr_RadarHSC2 : 20|4@0+ (1,0) [0|15] ""  FDR
+ SG_ ChACCAEBBrkJerkReqRespHSC2 : 10|3@0+ (1,0) [0|7] ""  FDR
+ SG_ ChACCAEBChksm_RadarHSC2 : 63|8@0+ (1,0) [0|255] ""  FDR
+ SG_ ChACCReqFlrStsHSC2 : 15|2@0+ (1,0) [0|3] ""  FDR
+ SG_ ChAEBDclReqRespHSC2 : 23|3@0+ (1,0) [0|7] ""  FDR
+ SG_ ChAEBHydBrkAstReqRespHSC2 : 2|3@0+ (1,0) [0|7] ""  FDR
+ SG_ ChAEBPrflReqRespHSC2 : 13|3@0+ (1,0) [0|7] ""  FDR
+ SG_ VehSdslStsHSC2 : 7|2@0+ (1,0) [0|3] ""  FDR
+ SG_ VehTrgtLongtAccHSC2 : 31|8@0+ (0.05,-7) [-7|5.75] ""  FDR
+
+BO_ 851 SCS_HSC2_FrP15: 8 SCSABS
+ SG_ VehSpdAvgDrvnHSC2 : 6|15@0+ (0.015625,0) [0|511.984] "km/h"  FVCM
+ SG_ VehSpdAvgDrvnVHSC2 : 7|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ VehSpdAvgNonDrvnHSC2 : 38|15@0+ (0.015625,0) [0|511.984] "km/h"  FVCM
+ SG_ VehSpdAvgNonDrvnVHSC2 : 39|1@0+ (1,0) [0|1] ""  FVCM
+
+BO_ 1130 GW_HSC2_BCM_FrP04: 8 GW
+ SG_ BlinkerBulbLeft : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BlinkerBulbRight : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BlinkerLeft : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BlinkerRight : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BntOpenStsHSC2 : 47|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ DipdBeamLghtOnHSC2 : 13|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ DircnIndLampSwStsHSC2 : 3|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ DrvrDoorOpenStsHSC2 : 1|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ DspMeasSysHSC2 : 44|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ FrtFogLghtOnHSC2 : 14|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ FrtPsngDoorOpenStsHSC2 : 43|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ FrtWiperParkPosAHSC2 : 52|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ FrtWshrPumpAHSC2 : 55|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ KeyDetIndxHSC2 : 51|3@0+ (1,0) [0|7] ""  FVCM
+ SG_ LDircnIndLghtFHSC2 : 10|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ LDircnIOHSC2 : 11|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ LdspcOpenStsHSC2 : 7|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ MainBeamLghtOnHSC2 : 15|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ RDircnIndLghtFHSC2 : 48|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ RDircnIOHSC2 : 9|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ RLDoorOpenStsHSC2 : 41|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ RRDoorOpenStsHSC2 : 5|2@0+ (1,0) [0|3] ""  FVCM
+ SG_ RrFogLghtOnHSC2 : 8|1@0+ (1,0) [0|1] ""  FVCM
+ SG_ VehSideLghtStsHSC2 : 57|2@0+ (1,0) [0|3] ""  FVCM
+
+VAL_ 355 AirbagDplInvsnHSC2 1 "No Airbag Deployed" 0 "Airbag Deployed";
+VAL_ 355 AirbagDplHSC2 1 "True" 0 "False";
+VAL_ 355 DrvrSbltAtcHSC2 1 "True" 0 "False";
+VAL_ 355 DrvrSbltAtcVHSC2 1 "Invalid" 0 "Valid";
+VAL_ 404 TrEstdGearHSC2 15 "Park Gear" 14 "Reverse Gear" 13 "Neutral Gear" 8 "Eighth Gear" 7 "Seventh Gear" 6 "Sixth Gear" 5 "Fifth Gear" 4 "Fourth Gear" 3 "Third Gear" 2 "Second Gear" 1 "First Gear" 0 "Not Supported";
+VAL_ 404 TrEstdGearVHSC2 1 "Invalid" 0 "Valid";
+VAL_ 404 TrShftLvrPos_h1HSC2 15 "Lever Position Unknown" 11 "Forward Range H" 10 "Forward Range G" 9 "Forward Range F" 8 "Forward Range E" 7 "Forward Range D" 6 "Forward Range C" 5 "Forward Range B" 4 "Forward Range A" 3 "Neutral Range" 2 "Reverse Range" 1 "Park Range" 0 "Between Ranges";
+VAL_ 404 TrShftLvrPosV_h1HSC2 1 "Invalid" 0 "Valid";
+VAL_ 438 RnotPrsStsHSC2 2 "Faulty" 1 "Normal" 0 "Init" ;
+VAL_ 438 HydBstrCmpstnReqHSC2 1 "HBC active" 0 "HBC inactive" ;
+VAL_ 438 BrkPdlAppdHSC2 1 "brake pedal applied" 0 "brake pedal not applied" ;
+VAL_ 438 BrkPdlAppdVHSC2 2 "Faulty" 1 "Normal" 0 "Init" ;
+VAL_ 481 CCSwStsSwDataIntgty_h2HSC2 3 "Illegal Range" 2 "Failure Detected" 1 "Data Invalid" 0 "Data Valid";
+VAL_ 481 CCSwStsSpdDecSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsSpdIncSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsSetSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsRsmSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsOnSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsCanclSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsDistDecSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 481 CCSwStsDistIncSwA_h2HSC2 1 "True" 0 "False";
+VAL_ 509 LKAReqToqVHSC2 1 "Invalid" 0 "Valid";
+VAL_ 509 LDWLKAVbnLvlReqHSC2 3 "Level 3" 2 "Level 2" 1 "Level 1" 0 "no request";
+VAL_ 509 LKASysStsHSC2 3 "Override" 2 "Active" 1 "Stand by" 0 "Off";
+VAL_ 509 LKAReqToqStsHSC2 3 "reserved" 2 "reserved" 1 "torque request" 0 "no request";
+VAL_ 509 LKASysFltStsHSC2 3 "service required" 2 "system temporary unavailable" 1 "performance degradation" 0 "no error";
+VAL_ 509 LKADrvrTkovReqHSC2 1 "True" 0 "False";
+VAL_ 578 ACCMinBrkReqStsHSC2 1 "no demand" 0 "demand";
+VAL_ 578 ACCReqBrkPrfrdHSC2 1 "no demand" 0 "demand";
+VAL_ 578 ACCAccReqStsHSC2 1 "ACC Acceleration Request" 0 "No Request";
+VAL_ 578 ACCGoReqHSC2 1 "Request" 0 "No Request";
+VAL_ 578 ACCSysFltSts_SCSHSC2 7 "Reserved" 6 "Reserved" 5 "Reserved" 4 "Reserved" 3 "Service Required" 2 "System Temporary Unvailable" 1 "Performance Degradation" 0 "No Error";
+VAL_ 578 ACCSysSts_RadarHSC2 7 "Reserved" 6 "Standstill Wait" 5 "Standstill Active" 4 "Brake Only" 3 "Override" 2 "Active" 1 "Stand By" 0 "Off";
+VAL_ 578 ChACCShtdwnMdHSC2 3 "immediate off" 2 "initial" 1 "fast off" 0 "soft off";
+VAL_ 578 ACCSdslReq_RadarHSC2 1 "request" 0 "no request";
+VAL_ 582 ACCObjDet_RadarHSC2 1 "TRUE" 0 "FALSE";
+VAL_ 582 AEBMsgReqHSC2 7 "reserved" 6 "Radar Error" 5 "AEB is switched off" 4 "AEB is switched on" 3 "AEB is in error mode" 2 "Active" 1 "unable to active AEB" 0 "No display";
+VAL_ 582 ACCMsgReqHSC2 15 "Reserved" 14 "Reserved" 13 "Reserved" 12 "Reserved" 11 "Reserved" 10 "Reserved" 9 "Radar Error" 8 "depress acceleration pedal or press resume switch to go" 7 "Driver Takeover Request" 6 "ACC is switched off" 5 "ACC is switched on" 4 "ACC is in error mode" 3 "Active" 2 "ACC is cancelled" 1 "unable to active ACC" 0 "No display";
+VAL_ 582 ACCDetObjDistLvl_RadarHSC2 7 "reserved" 6 "reserved" 5 "distance level5" 4 "distance level4" 3 "distance level3" 2 "distance level2" 1 "distance level1" 0 "no gap set";
+VAL_ 582 ACCDrvrSeldTrgtDistLvl_RadarHSC2 7 "reserved" 6 "reserved" 5 "distance level5" 4 "distance level4" 3 "distance level3" 2 "distance level2" 1 "distance level1" 0 "no gap set";
+VAL_ 582 ACCSysCanclReq_RadarHSC2 3 "Reserved" 2 "ACC Condition Dissatisfy" 1 "Manual Cancel" 0 "No Cancel";
+VAL_ 582 RdrCalPrgsReqHSC2 5 "calibration failure" 4 "Calibration Finished, need Adjust" 3 "Calibration Finished, Succesful" 2 "Calibration in progress" 1 "Calibration Started" 0 "no request";
+VAL_ 582 ACCGoNotfr_RadarHSC2 1 "TRUE" 0 "FALSE";
+VAL_ 582 ACCSysFltSts_RadarHSC2 7 "Reserved" 6 "Reserved" 5 "Reserved" 4 "Reserved" 3 "Service Required" 2 "System Temporary Unvailable" 1 "Performance Degradation" 0 "No Error";
+VAL_ 582 ACCDrvrTkovReqHSC2 1 "True" 0 "False";
+VAL_ 582 FCWSysFltSts_RadarHSC2 7 "Reserved" 6 "Reserved" 5 "Reserved" 4 "Reserved" 3 "Service required" 2 "System temporary unvailable" 1 "Performance degradation" 0 "No error";
+VAL_ 582 FCWSnstvtLvl_RadarHSC2 7 "reserved" 6 "reserved" 5 "reserved" 4 "reserved" 3 "level3" 2 "level2" 1 "level1" 0 "Unavailable";
+VAL_ 582 AEBPedtrnDspCmdHSC2 3 "reserved" 2 "on" 1 "off" 0 "unavailable";
+VAL_ 582 FCWrnngSts_RadarHSC2 7 "reserved" 6 "reserved" 5 "reserved" 4 "reserved" 3 "level 3" 2 "level 2" 1 "level 1" 0 "no request";
+VAL_ 582 FCWDspCmd_RadarHSC2 3 "reserved" 2 "on" 1 "off" 0 "unavailable";
+VAL_ 582 AEBDspCmd_RadarHSC2 3 "reserved" 2 "on" 1 "off" 0 "unavailable";
+VAL_ 588 BrkDiscTemStsHSC2 1 "Temperature too high" 0 "Not high" ;
+VAL_ 588 BrkPdlDrvrAppdPrsV_RadarHSC2 1 "Invalid" 0 "Valid" ;
+VAL_ 588 LDrvnWhlRotlDircnHSC2 3 "Initial/Invalid" 2 "Backward" 1 "Forward" 0 "Unknown" ;
+VAL_ 588 RDrvnWhlRotlDircnHSC2 3 "Initial/Invalid" 2 "Backward" 1 "Forward" 0 "Unknown" ;
+VAL_ 588 WhlBrkPrsStsHSC2 1 "No brake force" 0 "Exist brake force" ;
+VAL_ 588 WhlGndVelLDrvnV_RadarHSC2 1 "Invalid" 0 "Valid" ;
+VAL_ 588 WhlGndVelRDrvnV_RadarHSC2 1 "Invalid" 0 "Valid" ;
+VAL_ 593 ChACCAccReqRespHSC2 7 "reserved" 6 "reserved" 4 "pre-condition not satisfied" 3 "control not allowed for error" 2 "lost arbitration" 1 "request honored" 0 "no request" ;
+VAL_ 593 ChACCAEBBrkJerkReqRespHSC2 7 "reserve" 6 "reserve" 4 "pre-condition not satisfied" 3 "control not allowed for error" 2 "lost arbitration" 1 "request honored" 0 "no request" ;
+VAL_ 593 ChACCReqFlrStsHSC2 3 "not defined" 2 "irreversible error" 1 "reversible error" 0 "No error" ;
+VAL_ 593 ChAEBDclReqRespHSC2 7 "reserved" 6 "reserved" 4 "pre-condition not satisfied" 3 "control not allowed for error" 2 "lost arbitration" 1 "request honored" 0 "no request" ;
+VAL_ 593 ChAEBHydBrkAstReqRespHSC2 7 "reserve" 6 "reserve" 4 "pre-condition not satisfied" 3 "control not allowed for error" 2 "lost arbitration" 1 "request honored" 0 "no request" ;
+VAL_ 593 ChAEBPrflReqRespHSC2 7 "reserve" 6 "reserve" 4 "pre-condition not satisfied" 3 "control not allowed for error" 2 "lost arbitration" 1 "request honored" 0 "no request" ;
+VAL_ 593 VehSdslStsHSC2 3 "reserved" 2 "invalid (short unavailability, max 3s)" 1 "standstill" 0 "not standstill" ;
+VAL_ 851 VehSpdAvgDrvnVHSC2 1 "Invalid" 0 "Valid" ;
+VAL_ 851 VehSpdAvgNonDrvnVHSC2 1 "Invalid" 0 "Valid" ;
+VAL_ 1130 BntOpenStsHSC2 3 "Reserved" 2 "Bonnet Switch Disconnect" 1 "Bonnet Open" 0 "Bonnet Closed" ;
+VAL_ 1130 DipdBeamLghtOnHSC2 1 "True" 0 "False" ;
+VAL_ 1130 DircnIndLampSwStsHSC2 3 "reserve" 2 "Right on" 1 "Left on" 0 "off" ;
+VAL_ 1130 DrvrDoorOpenStsHSC2 3 "Driver Door Full Open" 2 "Driver Door Ajar" 1 "Driver Door Open" 0 "Driver Door Closed" ;
+VAL_ 1130 DspMeasSysHSC2 1 "mph" 0 "kph" ;
+VAL_ 1130 FrtFogLghtOnHSC2 1 "True" 0 "False" ;
+VAL_ 1130 FrtPsngDoorOpenStsHSC2 3 "Front Passenger Door Full Open" 2 "Front Passenger Door Ajar" 1 "Front Passenger Door Open" 0 "Front Passenger Door Closed" ;
+VAL_ 1130 FrtWiperParkPosAHSC2 1 "True" 0 "False" ;
+VAL_ 1130 FrtWshrPumpAHSC2 1 "True" 0 "False" ;
+VAL_ 1130 KeyDetIndxHSC2 7 "error" 6 "key 6 is detected" 5 "key 5 is detected" 4 "key 4 is detected" 3 "key 3 is detected" 2 "key 2 is detected" 1 "key 1 is detected" 0 "non key is detected" ;
+VAL_ 1130 LDircnIndLghtFHSC2 1 "True" 0 "False" ;
+VAL_ 1130 LDircnIOHSC2 1 "True" 0 "False" ;
+VAL_ 1130 LdspcOpenStsHSC2 3 "Reserved" 2 "Reserved" 1 "Load Space Open" 0 "Load Space Closed" ;
+VAL_ 1130 MainBeamLghtOnHSC2 1 "True" 0 "False" ;
+VAL_ 1130 RDircnIndLghtFHSC2 1 "True" 0 "False" ;
+VAL_ 1130 RDircnIOHSC2 1 "True" 0 "False" ;
+VAL_ 1130 RLDoorOpenStsHSC2 3 "Rear Left Door Full Open" 2 "Rear Left Door Ajar" 1 "Rear Left Door Open" 0 "Rear Left Door Closed" ;
+VAL_ 1130 RRDoorOpenStsHSC2 3 "Rear Right Door Full Open" 2 "Rear Right Door Ajar" 1 "Rear Right Door Open" 0 "Rear Right Door Closed" ;
+VAL_ 1130 RrFogLghtOnHSC2 1 "True" 0 "False" ;
+VAL_ 1130 VehSideLghtStsHSC2 3 "All side light and license plate light on" 2 "Right side light on only" 1 "Left side light on only" 0 "No side light on " ;

@@ -1,0 +1,5 @@
+Three groups of tests run in CI
+
+backend -- tests that run on each backend
+null -- tests that don't require any backend
+unit -- tests that only run on a single backend in CI

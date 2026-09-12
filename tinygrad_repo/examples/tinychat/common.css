@@ -1,0 +1,130 @@
+/* make it responsive */
+@media(min-width: 852px) {
+  body {
+    font-size: 14px;
+  }
+}
+@media(max-width: 852px) {
+  body {
+    font-size: 12px;
+  }
+}
+
+/* resets */
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+* {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* default */
+body {
+  margin: 0;
+  background-color: var(--primary-bg-color);
+  color: var(--foreground-color);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0em;
+}
+
+hr {
+  width: 92%;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+}
+button:hover {
+}
+button:active {
+}
+
+/* components */
+.container {
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.centered-w-only {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.centered-h-only {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.card {
+  padding: 0;
+}
+
+.card-header {
+  padding: 0.5rem 1rem;
+}
+
+.card-container {
+  width: 96vw;
+  height: 100%;
+  gap: 1rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.clean-a {
+  text-decoration: underline;
+  text-decoration-color: #006fc1;
+  text-decoration-thickness: 2px;
+  color: inherit;
+}
+
+.hover-underline {
+  text-decoration: underline;
+  text-decoration-color: #228039;
+  text-decoration-thickness: 2px;
+  color: inherit;
+}
+
+.flex-horizontal {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vertical-separator {
+  padding: 0 0.5rem;
+}
+
+[x-cloak] {
+  display: none !important;
+}
