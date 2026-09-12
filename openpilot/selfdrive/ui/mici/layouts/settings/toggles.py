@@ -45,22 +45,28 @@ class TogglesLayoutMici(NavScroller):
       'driving personality',
       'LongitudinalPersonality',
       ['aggressive', 'standard', 'relaxed'],
-      description='Standard is recommended. Aggressive follows closer and uses gas and brakes more aggressively. Relaxed leaves ' +
-      'more space. On supported cars, use the steering wheel distance button to cycle personalities.',
+      description='Standard is recommended.\n' +
+                  'Aggressive follows closer, with firmer gas and braking.\n' +
+                  'Relaxed leaves more space.\n' +
+                  'Use the steering wheel distance button on supported cars.',
     )
     self._experimental_btn = BigToggle(
       'experimental mode',
       description_icon=gui_app.texture('icons_mici/experimental_mode.png', 64, 64),
       initial_state=ui_state.params.get_bool('ExperimentalMode'),
       toggle_callback=self._on_experimental_mode,
-      description='Alpha features let the driving model control gas and brakes, including stops for red lights and stop signs. ' +
-      'Set speed is an upper bound. Mistakes should be expected. The path shows acceleration and braking intent.',
+      description='Let the driving model control gas and brakes.\n' +
+                  'Includes stopping for red lights and stop signs.\n' +
+                  'Set speed is a maximum, not a target.\n' +
+                  'These are alpha features. Expect mistakes.\n' +
+                  'The path colors show acceleration and braking.',
     )
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
     ldw_toggle = BigParamControl(
       'lane departure warnings',
       'IsLdwEnabled',
-      description='Alert when drifting over a detected lane line without a turn signal above 31 mph (50 km/h).',
+      description='Warn when you drift across a detected lane line.\n' +
+                  'Only above 31 mph (50 km/h), with no turn signal.',
     )
     always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description='Monitor the driver even when openpilot is not engaged.')
     record_front = BigParamControl(
@@ -68,23 +74,22 @@ class TogglesLayoutMici(NavScroller):
       'RecordFront',
       description_icon=gui_app.texture('icons_mici/settings/device/cameras.png', 64, 64),
       toggle_callback=restart_needed_callback,
-      description='Upload cabin camera data to help improve driver monitoring. Changing this setting restarts openpilot if the ' +
-      'car is powered on.',
+      description='Upload cabin camera data to help improve driver monitoring.',
     )
     record_mic = BigParamControl(
       'record & upload mic audio',
       'RecordAudio',
       description_icon=gui_app.texture('icons_mici/microphone.png', 64, 64),
       toggle_callback=restart_needed_callback,
-      description='Record microphone audio while driving and include it in dashcam videos in comma connect. Changing this setting ' +
-      'restarts openpilot if the car is powered on.',
+      description='Record microphone audio while driving.\n' +
+                  'Audio is included in dashcam videos in comma connect.',
     )
     enable_openpilot = BigParamControl(
       'enable openpilot',
       'OpenpilotEnabledToggle',
       toggle_callback=restart_needed_callback,
-      description='Use openpilot for adaptive cruise control and lane keeping assistance. Pay attention at all times. Changing ' +
-      'this setting restarts openpilot if the car is powered on.',
+      description='Use openpilot for adaptive cruise and lane keeping.\n' +
+                  'Driver assistance only. Pay attention at all times.',
     )
 
     self._scroller.add_widgets([

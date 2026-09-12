@@ -43,8 +43,10 @@ class SettingDescriptionDialog(NavScroller):
   def __init__(self, title: str, description: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
     cards = [GreyBigButton(title, "scroll for details", icon or gui_app.texture("icons_mici/setup/green_info.png", 64, 64))]
-    # Use the card's actual font metrics and padding, preferring sentence boundaries.
-    for sentence in re.split(r"(?<=[.!?])\s+", description.strip()):
+    # Explicit lines are authored cards; otherwise prefer sentence boundaries.
+    paragraphs = description.splitlines() if "\n" in description else re.split(r"(?<=[.!?])\s+", description.strip())
+    # Measure each card so longer text still fits with the actual font and padding.
+    for sentence in paragraphs:
       card = GreyBigButton("", "")
       words: list[str] = []
       for word in sentence.split():

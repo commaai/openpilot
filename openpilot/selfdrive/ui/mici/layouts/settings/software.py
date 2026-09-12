@@ -289,6 +289,7 @@ class SoftwareLayoutMici(NavScroller):
       uninstall_openpilot_callback,
       exit_on_confirm=False,
       description='Remove openpilot from this device. Disengage before uninstalling.',
+      description_icon=gui_app.texture('icons_mici/setup/factory_reset.png', 64, 64),
     )
 
     check_update_btn = CheckUpdateButton()

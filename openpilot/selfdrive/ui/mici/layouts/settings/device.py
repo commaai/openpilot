@@ -1,6 +1,7 @@
 import os
 import pyray as rl
 from collections.abc import Callable
+from typing import Union
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -84,8 +85,9 @@ class EngagedConfirmationCircleButton(BigCircleButton):
 
 class EngagedConfirmationButton(BigButton):
   def __init__(self, text: str, action_text: str, icon: rl.Texture, callback: Callable[[], None],
-               exit_on_confirm: bool = True, red: bool = False, *, description: str = ""):
-    super().__init__(text, "", icon, description=description)
+               exit_on_confirm: bool = True, red: bool = False, *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
+    super().__init__(text, "", icon, description=description, description_icon=description_icon)
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
@@ -182,7 +184,7 @@ class DeviceLayoutMici(NavScroller):
       gui_app.texture('icons_mici/settings/device/lkas.png', 122, 64),
       reset_calibration_callback,
       description='Mount the device within 4° left or right and 5° up or 9° down. openpilot calibrates continuously; resetting is ' +
-      'rarely needed. Resetting clears learned calibration and restarts openpilot.',
+      'rarely needed. Resetting clears learned calibration.',
     )
 
     reboot_btn = EngagedConfirmationCircleButton(
