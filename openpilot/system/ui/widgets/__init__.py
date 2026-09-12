@@ -199,7 +199,7 @@ class Widget(abc.ABC):
 
     if self._long_press_callback is not None and touch_valid:
       for slot, started in enumerate(self._press_started):
-        if started is not None and self.__is_pressed[slot] and time.monotonic() - started >= 0.6:
+        if started is not None and self.__is_pressed[slot] and time.monotonic() - started >= 0.45:
           # Clear tracking before opening help so release cannot activate a toggle or action.
           self._press_started[slot] = None
           self.__is_pressed[slot] = False

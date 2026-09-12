@@ -32,11 +32,32 @@ class ScrollState(Enum):
 class DescriptionButton(Widget):
   def __init__(self, description: str, title: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
+    self._shake_start: float | None = None
     if description:
       # Dialogs also use buttons; import lazily to avoid a circular import.
       from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
       self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
+    else:
+      self.set_long_press_callback(self.trigger_shake)
 
+  def trigger_shake(self):
+    self._shake_start = rl.get_time()
+
+  @property
+  def _shake_offset(self) -> float:
+    SHAKE_DURATION = 0.5
+    SHAKE_AMPLITUDE = 24.0
+    SHAKE_FREQUENCY = 32.0
+    if self._shake_start is None:
+      return 0.0
+    t = rl.get_time() - self._shake_start
+    if t > SHAKE_DURATION:
+      return 0.0
+    decay = 1.0 - t / SHAKE_DURATION
+    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
+
+  def set_position(self, x: float, y: float) -> None:
+    super().set_position(x + self._shake_offset, y)
 
 class BigCircleButton(DescriptionButton):
   def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0),
@@ -133,7 +154,6 @@ class BigButton(DescriptionButton):
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
-    self._shake_start: float | None = None
     self._grow_animation_until: float | None = None
 
     self._rotate_icon_t: float | None = None
@@ -201,27 +221,8 @@ class BigButton(DescriptionButton):
   def get_text(self):
     return self.text
 
-  def trigger_shake(self):
-    self._shake_start = rl.get_time()
-
   def trigger_grow_animation(self, duration: float = 0.65):
     self._grow_animation_until = rl.get_time() + duration
-
-  @property
-  def _shake_offset(self) -> float:
-    SHAKE_DURATION = 0.5
-    SHAKE_AMPLITUDE = 24.0
-    SHAKE_FREQUENCY = 32.0
-    if self._shake_start is None:
-      return 0.0
-    t = rl.get_time() - self._shake_start
-    if t > SHAKE_DURATION:
-      return 0.0
-    decay = 1.0 - t / SHAKE_DURATION
-    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
-
-  def set_position(self, x: float, y: float) -> None:
-    super().set_position(x + self._shake_offset, y)
 
   def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
     if self._grow_animation_until is not None:
