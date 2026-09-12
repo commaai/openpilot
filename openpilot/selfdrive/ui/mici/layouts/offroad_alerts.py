@@ -256,9 +256,8 @@ class MiciOffroadAlerts(Scroller):
   def _params_worker(self):
     drop_realtime()
     while True:
-      self._pending_params = ({"UpdaterNewDescription": self.params.get("UpdaterNewDescription"),
-                               "UpdateAvailable": self.params.get("UpdateAvailable")} |
-                              {key: self.params.get(key) for key in OFFROAD_ALERTS})
+      self._pending_params = ({"UpdaterNewDescription": self.params.get("UpdaterNewDescription")} |
+                              {alert_data.key: self.params.get(alert_data.key) for alert_data in self.sorted_alerts})
       time.sleep(REFRESH_INTERVAL)
 
   def _refresh(self, pending_params: dict) -> int:
