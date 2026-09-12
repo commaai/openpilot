@@ -50,6 +50,7 @@ class TogglesLayoutMici(NavScroller):
     )
     self._experimental_btn = BigToggle(
       'experimental mode',
+      description_icon=gui_app.texture('icons_mici/experimental_mode.png', 64, 64),
       initial_state=ui_state.params.get_bool('ExperimentalMode'),
       toggle_callback=self._on_experimental_mode,
       description='Alpha features let the driving model control gas and brakes, including stops for red lights and stop signs. ' +
@@ -65,6 +66,7 @@ class TogglesLayoutMici(NavScroller):
     record_front = BigParamControl(
       'record & upload cabin camera',
       'RecordFront',
+      description_icon=gui_app.texture('icons_mici/settings/device/cameras.png', 64, 64),
       toggle_callback=restart_needed_callback,
       description='Upload cabin camera data to help improve driver monitoring. Changing this setting restarts openpilot if the ' +
       'car is powered on.',
@@ -72,6 +74,7 @@ class TogglesLayoutMici(NavScroller):
     record_mic = BigParamControl(
       'record & upload mic audio',
       'RecordAudio',
+      description_icon=gui_app.texture('icons_mici/microphone.png', 64, 64),
       toggle_callback=restart_needed_callback,
       description='Record microphone audio while driving and include it in dashcam videos in comma connect. Changing this setting ' +
       'restarts openpilot if the car is powered on.',

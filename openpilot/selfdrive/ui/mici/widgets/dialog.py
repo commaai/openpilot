@@ -1,10 +1,11 @@
 import abc
 import math
+import re
 import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.scroller import NavRawScrollPanel
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -38,22 +39,27 @@ class BigDialog(BigDialogBase):
     ))
 
 
-class SettingDescriptionDialog(NavRawScrollPanel):
-  def __init__(self, title: str, description: str):
+class SettingDescriptionDialog(NavScroller):
+  def __init__(self, title: str, description: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
-    self._title = UnifiedLabel(title.replace("\n", " "), font_size=36, font_weight=FontWeight.BOLD)
-    self._description = UnifiedLabel(description, font_size=32)
-
-  def _render(self, rect):
-    width = int(rect.width - 2 * PADDING)
-    title_height = self._title.get_content_height(width)
-    description_height = self._description.get_content_height(width)
-    height = title_height + description_height + 3 * PADDING
-    offset = self._scroll_panel.update(rect, height)
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-    self._title.render(rl.Rectangle(rect.x + PADDING, rect.y + PADDING + offset, width, title_height))
-    self._description.render(rl.Rectangle(rect.x + PADDING, rect.y + 2 * PADDING + title_height + offset, width, description_height))
-    rl.end_scissor_mode()
+    cards = [GreyBigButton(title, "scroll for details", icon or gui_app.texture("icons_mici/setup/green_info.png", 64, 64))]
+    # Use the card's actual font metrics and padding, preferring sentence boundaries.
+    for sentence in re.split(r"(?<=[.!?])\s+", description.strip()):
+      card = GreyBigButton("", "")
+      words: list[str] = []
+      for word in sentence.split():
+        card.set_value(" ".join([*words, word]))
+        height = card._sub_label.get_content_height(card._subtitle_width_hint())
+        if words and height > card.rect.height - 2 * card.LABEL_VERTICAL_PADDING:
+          card.set_value(" ".join(words))
+          cards.append(card)
+          card = GreyBigButton("", "")
+          words = []
+        words.append(word)
+      if words:
+        card.set_value(" ".join(words))
+        cards.append(card)
+    self._scroller.add_widgets(cards)
 
 
 class BigConfirmationDialog(BigDialogBase):

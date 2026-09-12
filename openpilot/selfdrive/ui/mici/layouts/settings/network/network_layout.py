@@ -77,7 +77,7 @@ class NetworkLayoutMici(NavScroller):
     )
     self._network_metered_btn.set_enabled(False)
 
-    self._wifi_button = WifiNetworkButton(self._wifi_manager, description='Connect to a Wi-Fi network.')
+    self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
     # ******** eSIM ********
@@ -86,7 +86,7 @@ class NetworkLayoutMici(NavScroller):
       self._cellular_manager,
       lambda: not ui_state.prime_state.is_full_prime(),
     )
-    self._esim_button = EsimNetworkButton(self._cellular_manager, description='Manage cellular connectivity and eSIM setup.')
+    self._esim_button = EsimNetworkButton(self._cellular_manager)
     self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))
 
     # ******** Advanced settings ********

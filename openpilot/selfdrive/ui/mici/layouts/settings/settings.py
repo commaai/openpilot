@@ -25,7 +25,6 @@ class SettingsLayout(NavScroller):
       'toggles',
       '',
       gui_app.texture('icons_mici/settings.png', 64, 64),
-      description='Adjust driving features, recording, and display units.',
     )
     toggles_btn.set_click_callback(lambda: gui_app.push_widget(toggles_panel))
 
@@ -34,7 +33,6 @@ class SettingsLayout(NavScroller):
       'network',
       '',
       gui_app.texture('icons_mici/settings/network/wifi_strength_full.png', 76, 56),
-      description='Manage Wi-Fi, cellular connectivity, and tethering.',
     )
     network_btn.set_click_callback(lambda: gui_app.push_widget(network_panel))
 
@@ -43,7 +41,6 @@ class SettingsLayout(NavScroller):
       'device',
       '',
       gui_app.texture('icons_mici/settings/device_icon.png', 72, 58),
-      description='Pair your device, review training, manage calibration, and access power controls.',
     )
     device_btn.set_click_callback(lambda: gui_app.push_widget(device_panel))
 
@@ -52,7 +49,6 @@ class SettingsLayout(NavScroller):
       'software',
       '',
       gui_app.texture('icons_mici/settings/software.png', 64, 75),
-      description='Check for updates, select a branch, or uninstall openpilot.',
     )
     software_btn.set_click_callback(lambda: gui_app.push_widget(software_panel))
 
@@ -61,7 +57,6 @@ class SettingsLayout(NavScroller):
       'developer',
       '',
       gui_app.texture('icons_mici/settings/developer_icon.png', 64, 60),
-      description='Configure remote access and development tools.',
     )
     developer_btn.set_click_callback(lambda: gui_app.push_widget(developer_panel))
 
@@ -70,7 +65,6 @@ class SettingsLayout(NavScroller):
       'firehose',
       '',
       gui_app.texture('icons_mici/settings/firehose.png', 52, 62),
-      description='Upload more driving data to help improve openpilot.',
     )
     firehose_btn.set_click_callback(lambda: gui_app.push_widget(firehose_panel))
 
