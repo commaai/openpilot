@@ -205,7 +205,10 @@ class ModelState:
     self.chestnut = chestnut
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
+    self.source_stride, self.source_y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
+    self.raw_frame_size = nv12_copy_size(self.source_stride, self.source_y_height, uv_height)
+    self.frame_copy_size = cam_w * cam_h * 3 // 2
+    self.frame_shape = (cam_h, cam_w)
     _, policy_sizes = get_policy_npy_shapes(self.input_shapes)
     policy_size = sum(policy_sizes) * np.dtype(np.float32).itemsize
     # Separately compiled kernels require aligned input pointers.
@@ -217,7 +220,7 @@ class ModelState:
       self.input_shapes, self.frame_skip, device=self.model_device, packed_input=self.packed_input_np[128:128+policy_size].view(np.float32))
     self.input_queues['packed_npy_inputs'] = jit_input_view(self.packed_input[128:128+policy_size].bitcast('float32'))
     self.npy['tfm'], self.npy['big_tfm'] = self.packed_input_np[:72].view(np.float32).reshape(2, 3, 3)
-    self.frame_views = dict(zip(('img', 'big_img'), self.packed_input_np[frame_offset:].reshape(2, self.frame_copy_size), strict=True))
+    self.frame_views = dict(zip(('img', 'big_img'), self.packed_input_np[frame_offset:].reshape(2, cam_h * 3 // 2, cam_w), strict=True))
     self.warp_inputs = (jit_input_view(self.packed_input[frame_offset:].reshape(2, self.frame_copy_size)),
                         jit_input_view(self.packed_input[:72].bitcast('float32').reshape(2, 3, 3)))
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
@@ -233,8 +236,11 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
+    h, w = self.frame_shape
     for key, buf in bufs.items():
-      np.copyto(self.frame_views[key], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      src = np.frombuffer(buf.data, dtype=np.uint8, count=self.raw_frame_size).reshape(-1, self.source_stride)
+      np.copyto(self.frame_views[key][:h], src[:h, :w])
+      np.copyto(self.frame_views[key][h:], src[self.source_y_height:self.source_y_height+h//2, :w])
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
@@ -261,7 +267,7 @@ class ModelState:
     return outputs_dict
 
   def warmup(self) -> None:
-    dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
+    dummy_frames = {k: np.zeros(self.raw_frame_size, dtype=np.uint8) for k in self.vision_input_names}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})

@@ -8,7 +8,6 @@ from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.helpers import TG_INPUT_DEVICES_PATH, chestnut_present, modeld_pkl_path
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 
 Import('env', 'arch')
@@ -109,10 +108,9 @@ for chestnut in [False, True] if CHESTNUT else [False]:
 
   for cam_w, cam_h in camera_configs:
     warp_pkl_path = File(f"models/{file_prefix}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
-    stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
     cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_warp.py '
            f'--camera-resolution {cam_w}x{cam_h} --warp-to {model_w}x{model_h} --layout yuv420 '
-           f'--frames 2 --frame-size {stride * (y_height + uv_height)} --transform-device {"AMD" if chestnut else tg_backend} '
+           f'--frames 2 --packed-input --transform-device {"AMD" if chestnut else tg_backend} '
            f'--output {warp_pkl_path}')
     def do_compile_warp(target, source, env, command=cmd):
       return do_compile(target, source, env, command=command, chunks=())
