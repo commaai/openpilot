@@ -1,0 +1,40 @@
+#ifndef TinyGPUDriver_h
+#define TinyGPUDriver_h
+
+#include <Availability.h>
+#include <DriverKit/IOService.iig>
+#include <PCIDriverKit/IOPCIDevice.iig>
+#include <DriverKit/IOMemoryMap.iig>
+#include <DriverKit/IODMACommand.iig>
+
+struct TinyGPUCreateDMAResp
+{
+	IOBufferMemoryDescriptor* sharedBuf;
+	IODMACommand* dmaCmd;
+};
+
+class TinyGPUDriver: public IOService
+{
+public:
+	virtual bool init() override;
+
+	virtual void free() override;
+
+	virtual kern_return_t Start(IOService * provider) override;
+
+	virtual kern_return_t Stop(IOService * provider) override;
+
+	virtual kern_return_t NewUserClient(uint32_t in_type, IOUserClient** out_user_client) override;
+
+	kern_return_t MapBar(uint32_t bar, IOMemoryDescriptor** memory) LOCALONLY;
+	kern_return_t CreateDMA(size_t size, TinyGPUCreateDMAResp* dmaDesc) LOCALONLY;
+	kern_return_t SetupDMA(IOMemoryDescriptor* memory, uint64_t size, IODMACommand** outCmd,
+	                       IOAddressSegment* segments, uint32_t* segCount) LOCALONLY;
+
+	kern_return_t CfgRead(uint32_t off, uint32_t size, uint32_t* val) LOCALONLY;
+	kern_return_t CfgWrite(uint32_t off, uint32_t size, uint32_t val) LOCALONLY;
+	kern_return_t ResetDevice() LOCALONLY;
+	IOPCIDevice* GetPCI() LOCALONLY;
+};
+
+#endif /* TinyGPUDriver_h */
