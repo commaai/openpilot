@@ -24,6 +24,23 @@ namespace {
 
 std::atomic<bool> g_signal_exit{false};
 std::vector<KeyEvent> g_key_events;
+
+// Native resize loops can block glfwPollEvents. Allow refresh events to draw a
+// complete frame, but only while polling, never in the middle of an ImGui frame.
+std::function<void()> g_refresh_frame;
+void windowRefreshCallback(GLFWwindow *) {
+  if (!g_refresh_frame) return;
+  auto refresh = std::exchange(g_refresh_frame, {});
+  refresh();
+  g_refresh_frame = std::move(refresh);
+}
+
+class RefreshDuringEvents {
+public:
+  explicit RefreshDuringEvents(std::function<void()> refresh) { g_refresh_frame = std::move(refresh); }
+  ~RefreshDuringEvents() { g_refresh_frame = {}; }
+};
+
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
@@ -63,6 +80,7 @@ void hookViewportCallbacks() {
   for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
     if (viewport->PlatformHandle == nullptr || viewport == ImGui::GetMainViewport()) continue;
     glfwSetKeyCallback((GLFWwindow *)viewport->PlatformHandle, keyCallback);
+    glfwSetWindowRefreshCallback((GLFWwindow *)viewport->PlatformHandle, windowRefreshCallback);
   }
 }
 
@@ -88,7 +106,7 @@ void paceFrame() {
 }
 
 void renderFrame(GLFWwindow *window, MainWindow *win) {
-  glfwPollEvents();
+  glfwMakeContextCurrent(window);
   deliverPendingFocusLoss();
   utils::drainMainThreadQueue();
 
@@ -115,7 +133,6 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     glfwMakeContextCurrent(backup_context);
   }
   glfwSwapBuffers(window);
-  paceFrame();
 }
 
 class GlfwRuntime {
@@ -172,6 +189,7 @@ public:
       throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
     }
     glfwSetKeyCallback(window, keyCallback);
+    glfwSetWindowRefreshCallback(window, windowRefreshCallback);
     glfwSetWindowFocusCallback(window, windowFocusCallback);
     if (!ImGui_ImplOpenGL3_Init("#version 330")) {
       ImGui_ImplGlfw_Shutdown();
@@ -213,6 +231,10 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
 
     MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
     while (!win.exited()) {
+      {
+        RefreshDuringEvents refresh([&] { renderFrame(glfw.window(), &win); });
+        glfwPollEvents();
+      }
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");
         win.close();
@@ -221,6 +243,7 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
         win.close();
       }
       renderFrame(glfw.window(), &win);
+      paceFrame();
     }
     return 0;
   } catch (const std::exception &e) {
