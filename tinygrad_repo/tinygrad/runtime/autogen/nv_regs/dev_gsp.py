@@ -1,0 +1,10 @@
+ga102 = {
+  'NV_PGSP_FALCON_MAILBOX0': (0x0, 0x110040, {'data': (0, 31)}),
+  'NV_PGSP_FALCON_MAILBOX1': (0x0, 0x110044, {'data': (0, 31)}),
+  'NV_PGSP_FALCON_ENGINE': (0x0, 0x1103c0, {'reset': (0, 0)}),
+  'NV_PGSP_FALCON_ENGINE_RESET_TRUE': 0x00000001,
+  'NV_PGSP_FALCON_ENGINE_RESET_FALSE': 0x00000000,
+  'NV_PGSP_MAILBOX__SIZE_1': 4,
+  'NV_PGSP_QUEUE_HEAD': (0x0, lambda i: (0x110c00+(i)*8), {'address': (0, 31)}),
+  'NV_PGSP_QUEUE_HEAD__SIZE_1': 8,
+}
