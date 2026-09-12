@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Small shell lint: syntax, unquoted expansions, scalar $@ assignments, and read -r.
+"""A minimal shellcheck-like static analysis tool for shell scripts.
 
-This is a lexical check, not shell data-flow analysis. Tests, arithmetic, and
-heredoc bodies are skipped; constants must be quoted too. Bash checks syntax
-without executing scripts. Unused variables and control-flow bugs are out of scope.
+Covers syntax, unquoted expansions, scalar $@ assignments, and read -r.
 """
-import argparse
 import re
+import argparse
 import subprocess
 from pathlib import Path
 

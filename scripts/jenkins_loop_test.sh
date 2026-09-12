@@ -42,9 +42,10 @@ function loop() {
 
     FIRST_BUILD=$(curl -s "$API_ROUTE/api/json" | jq .nextBuildNumber)
     LAST_BUILD=$((FIRST_BUILD+N-1))
+    read -r -a TEST_BUILDS <<< "$(seq -s ' ' "$FIRST_BUILD" "$LAST_BUILD")"
 
     # Start N new builds
-    for ((i=FIRST_BUILD; i<=LAST_BUILD; i++));
+    for i in "${TEST_BUILDS[@]}";
     do
       echo "Starting build $i"
       curl -s --output /dev/null --cookie "$COOKIE_JAR" -H "$CRUMB" -X POST "$API_ROUTE/build?delay=0sec"
@@ -57,7 +58,7 @@ function loop() {
       sleep 30
 
       count=0
-      for ((i=FIRST_BUILD; i<=LAST_BUILD; i++));
+      for i in "${TEST_BUILDS[@]}";
       do
         RES=$(curl -s -w "\n%{http_code}" --cookie "$COOKIE_JAR" -H "$CRUMB" "$API_ROUTE/$i/api/json")
         HTTP_CODE=$(tail -n1 <<< "$RES")

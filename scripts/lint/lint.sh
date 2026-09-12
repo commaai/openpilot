@@ -26,13 +26,19 @@ function run() {
   done
 
   shift 1;
-  if log=$("$@" 2>&1); then
+  CMD=("$@")
+
+  set +e
+  log="$("${CMD[@]}" 2>&1)"
+
+  if [[ $? -eq 0 ]]; then
     echo -e "[${GREEN}✔${NC}]"
   else
     echo -e "[${RED}✗${NC}]"
     echo "$log"
     FAILED=1
   fi
+  set -e
 }
 
 function run_tests() {
@@ -96,10 +102,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -n "$RUN" ]]; then
-  RUN="!(${RUN// /|})"
-fi
-SKIP="@(${SKIP// /|})"
+RUN=$([ -z "$RUN" ] && echo "" || echo "!($(echo "$RUN" | sed 's/ /|/g'))")
+SKIP="@($(echo "$SKIP" | sed 's/ /|/g'))"
 
 ALL_FILES=()
 PYTHON_FILES=()
