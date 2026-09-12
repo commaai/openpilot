@@ -4,7 +4,7 @@ import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
-from tinygrad.device import Device
+from tinygrad.device import Buffer, Device
 from tinygrad.tensor import Tensor
 from tinygrad.uop.ops import UOp
 from tinygrad.helpers import round_up
@@ -202,6 +202,7 @@ class ModelState:
     # Separately compiled kernels require aligned input pointers.
     frame_offset = round_up(128 + policy_size, 128)
     self.packed_input_np = np.zeros(frame_offset + 2 * self.frame_copy_size, dtype=np.uint8)
+    self.packed_input_cpu = Tensor(self.packed_input_np, device='NPY')._buffer()
     self.packed_input = Tensor(self.packed_input_np, device=self.model_device).realize()
     self.input_queues, self.npy, _ = make_input_queues(
       self.input_shapes, self.frame_skip, device=self.model_device, packed_input=self.packed_input_np[128:128+policy_size].view(np.float32))
@@ -233,7 +234,7 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    self.packed_input.assign(Tensor(self.packed_input_np, device='NPY').to(self.model_device)).realize()
+    self.packed_input.uop.buffer.copy_from(self.packed_input_cpu)
     self.input_queues['warped'] = self.run_warp(*self.warp_inputs)
     outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
     if after_enqueue is not None:
@@ -253,8 +254,10 @@ class ModelState:
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, frame_copy_size=self.frame_copy_size)
+    self.packed_input_np[:] = 0
+    for tensor in self.input_queues.values():
+      buf = tensor.uop.buffer
+      buf.copy_from(Buffer('PYTHON', buf.size, buf.dtype, opaque=memoryview(bytearray(buf.nbytes))))
     self.prev_desire[:] = 0
 
 
