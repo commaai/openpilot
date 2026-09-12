@@ -3,3 +3,4 @@ bootstrap_icons.cc
 cabana
 dbc/car_fingerprint_to_dbc.json
 tests/test_cabana
+tests/test_dropdown

@@ -99,21 +99,21 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("New DBC File", shortcut("N").c_str())) newFile();
   if (ImGui::MenuItem("Open DBC File...", shortcut("O").c_str())) openFile();
 
-  if (ImGui::BeginMenu("Manage DBC Files", has_stream)) {
+  if (dropdown::BeginMenu("Manage DBC Files", has_stream)) {
     drawManageDBCsMenu();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
-  if (ImGui::BeginMenu("Open Recent")) {
+  if (dropdown::BeginMenu("Open Recent")) {
     drawRecentFilesMenu();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
   ImGui::Separator();
-  if (ImGui::BeginMenu("Load DBC from commaai/opendbc")) {
+  if (dropdown::BeginMenu("Load DBC from commaai/opendbc")) {
     for (const auto &name : opendbc_names_) {
       if (ImGui::MenuItem(name.c_str())) loadDBCFromOpendbc(name);
     }
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
   if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard();
 
@@ -132,29 +132,6 @@ void MainWindow::drawFileMenu() {
   if (ImGui::MenuItem("Exit", shortcut("Q").c_str())) close();
 }
 
-namespace {
-bool beginTopMenu(const char *label, bool enabled = true) {
-  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetColorU32(ImGuiCol_Header));
-  const bool open = ImGui::BeginMenu(label, enabled);
-  ImGui::PopStyleColor();
-  if (open) {
-    // Erase the popup's rounded top border so it joins the menu bar's separator.
-    const ImGuiStyle &style = ImGui::GetStyle();
-    const ImGuiWindow *w = ImGui::GetCurrentWindow();
-    const float r = style.PopupRounding, b = style.PopupBorderSize;
-    const ImVec2 min = w->Pos, max(w->Pos.x + w->Size.x, w->Pos.y + w->Size.y);
-    const ImU32 bg = ImGui::GetColorU32(ImGuiCol_PopupBg), border = ImGui::GetColorU32(ImGuiCol_Border);
-    ImDrawList *dl = w->DrawList;
-    dl->PushClipRect(min, max, false);  // the window's own clip rect excludes its border
-    dl->AddRectFilled(min, ImVec2(max.x, min.y + r), bg);
-    dl->AddRectFilled(ImVec2(min.x, min.y), ImVec2(min.x + b, min.y + r), border);
-    dl->AddRectFilled(ImVec2(max.x - b, min.y), ImVec2(max.x, min.y + r), border);
-    dl->PopClipRect();
-  }
-  return open;
-}
-}  // namespace
-
 void MainWindow::drawMenuBar() {
   // Avoid a double border with the separator drawn below.
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -166,21 +143,21 @@ void MainWindow::drawMenuBar() {
     const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
   }
-  if (beginTopMenu("File")) {
+  if (dropdown::BeginMenu("File")) {
     drawFileMenu();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
-  if (beginTopMenu("Edit")) {
+  if (dropdown::BeginMenu("Edit")) {
     auto stack = UndoStack::instance();
     const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
     const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
     if (ImGui::MenuItem(undo_text.c_str(), shortcut("Z").c_str(), false, stack->canUndo())) stack->undo();
     if (ImGui::MenuItem(redo_text.c_str(), shortcut("Shift+Z").c_str(), false, stack->canRedo())) stack->redo();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
-  if (beginTopMenu("View")) {
+  if (dropdown::BeginMenu("View")) {
     if (ImGui::MenuItem("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
@@ -191,18 +168,18 @@ void MainWindow::drawMenuBar() {
       video_splitter_ratio_ = -1.0f;
       reset_layout_ = true;
     }
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
-  if (beginTopMenu("Tools", hasStream())) {
+  if (dropdown::BeginMenu("Tools", hasStream())) {
     if (ImGui::MenuItem("Find Similar Bits")) findSimilarBits();
     if (ImGui::MenuItem("Find Signal")) findSignal();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
-  if (beginTopMenu("Help")) {
+  if (dropdown::BeginMenu("Help")) {
     if (ImGui::MenuItem("Help", "F1")) toggleHelp();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
   ImGui::EndMainMenuBar();
 }
@@ -527,7 +504,7 @@ void MainWindow::drawManageDBCsMenu() {
     auto dbc_file = dbc()->findDBCFile(source);
     const std::string title = "Bus " + std::to_string(source) + " (" + (dbc_file ? dbc_file->name() : "No DBCs loaded") + ")";
     ImGui::PushID(source);
-    if (ImGui::BeginMenu(title.c_str())) {
+    if (dropdown::BeginMenu(title.c_str())) {
       if (ImGui::MenuItem("New DBC File")) newFile(ss);
       if (ImGui::MenuItem("Open DBC File...")) openFile(ss);
       if (ImGui::MenuItem("Load DBC from Clipboard")) loadFromClipboard(ss, false);
@@ -542,7 +519,7 @@ void MainWindow::drawManageDBCsMenu() {
         if (ImGui::MenuItem("Remove from This Bus...")) closeFile(ss, {});
         if (ImGui::MenuItem("Remove from All Buses...")) closeFile(dbc_file);
       }
-      ImGui::EndMenu();
+      dropdown::EndMenu();
     }
     ImGui::PopID();
   }

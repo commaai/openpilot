@@ -301,7 +301,7 @@ void MessagesWidget::suppressHighlighted(bool from_suppress_add) {
 }
 
 void MessagesWidget::drawContextMenu() {
-  if (!ImGui::BeginPopup("menu")) return;
+  if (!dropdown::BeginPopup("menu")) return;
   for (int i = 0; i < MessageList::COLUMN_COUNT; ++i) {
     const int column = display_order_[i];
     // can't hide the name column
@@ -316,7 +316,7 @@ void MessagesWidget::drawContextMenu() {
   if (ImGui::MenuItem("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
     list_.showInactiveMessages(!list_.show_inactive_messages);
   }
-  ImGui::EndPopup();
+  dropdown::EndPopup();
 }
 
 void MessagesWidget::setMultiLineBytes(bool multi) {

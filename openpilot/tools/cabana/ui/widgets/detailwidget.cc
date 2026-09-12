@@ -111,13 +111,13 @@ void DetailWidget::drawToolBar() {
 }
 
 void DetailWidget::showTabBarContextMenu(int index) {
-  if (ImGui::BeginPopupContextItem()) {
+  if (dropdown::BeginPopupContextItem()) {
     if (ImGui::MenuItem("Close Other Tabs")) {
       tabbar_.moveTab(index, 0);
       tabbar_.setCurrentIndex(0);
       while (tabbar_.count() > 1) tabbar_.removeTab(1);
     }
-    ImGui::EndPopup();
+    dropdown::EndPopup();
   }
 }
 
