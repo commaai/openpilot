@@ -5,7 +5,6 @@
 
 #include "tools/cabana/core/color.h"
 
-// Match Qt Cabana: its custom dark palette and the standard Fusion light palette.
 struct Palette {
   ImVec4 text, text_disabled, text_selected;
   ImVec4 window;   // the background behind panels and docked windows

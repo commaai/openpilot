@@ -11,8 +11,6 @@ namespace fs = std::filesystem;
 
 namespace {
 
-// Qt Cabana's DarkTheme palette (utils/util.h before the Qt frontend was removed).
-// Frame edges and raised controls match the Fusion rendering of that palette.
 constexpr Palette DARK_PALETTE = {
   .text = rgb(0xbbbbbb), .text_disabled = rgb(0x777777), .text_selected = rgb(0xbbbbbb),
   .window = rgb(0x353535), .surface = rgb(0x3c3f41),
@@ -28,8 +26,6 @@ constexpr Palette DARK_PALETTE = {
   .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
-// Qt Cabana used QStyle::standardPalette() for light mode. These are Fusion's
-// light palette roles; borders and control fills approximate its painted controls.
 constexpr Palette LIGHT_PALETTE = {
   .text = rgb(0x000000), .text_disabled = rgb(0xbebebe), .text_selected = rgb(0xffffff),
   .window = rgb(0xefefef), .surface = rgb(0xffffff),
