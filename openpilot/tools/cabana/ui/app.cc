@@ -7,10 +7,6 @@
 #include <thread>
 #include <utility>
 
-#ifdef __APPLE__
-#include <CoreFoundation/CoreFoundation.h>
-#endif
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -28,23 +24,6 @@ namespace {
 
 std::atomic<bool> g_signal_exit{false};
 std::vector<KeyEvent> g_key_events;
-
-// Native resize loops can block glfwPollEvents. Allow refresh events to draw a
-// complete frame, but only while polling, never in the middle of an ImGui frame.
-std::function<void()> g_refresh_frame;
-void windowRefreshCallback(GLFWwindow *) {
-  if (!g_refresh_frame) return;
-  auto refresh = std::exchange(g_refresh_frame, {});
-  refresh();
-  g_refresh_frame = std::move(refresh);
-}
-
-class RefreshDuringEvents {
-public:
-  explicit RefreshDuringEvents(std::function<void()> refresh) { g_refresh_frame = std::move(refresh); }
-  ~RefreshDuringEvents() { g_refresh_frame = {}; }
-};
-
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
@@ -84,7 +63,6 @@ void hookViewportCallbacks() {
   for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
     if (viewport->PlatformHandle == nullptr || viewport == ImGui::GetMainViewport()) continue;
     glfwSetKeyCallback((GLFWwindow *)viewport->PlatformHandle, keyCallback);
-    glfwSetWindowRefreshCallback((GLFWwindow *)viewport->PlatformHandle, windowRefreshCallback);
   }
 }
 
@@ -92,43 +70,13 @@ void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-double frameInterval() {
-  static double interval = [] {
-    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int hz = (mode != nullptr && mode->refreshRate > 0) ? mode->refreshRate : 60;
-    return 1.0 / hz;
-  }();
-  return interval;
-}
-
-#ifdef __APPLE__
-// Cocoa stays in event tracking even when the resize handle is held still, so
-// refresh events alone cannot animate the UI. This timer runs on the main thread
-// in that mode only, using the same guarded rendering as window refresh events.
-class EventTrackingRenderer {
-public:
-  EventTrackingRenderer() {
-    timer_ = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent(), frameInterval(), 0, 0,
-                                [](CFRunLoopTimerRef, void *) { windowRefreshCallback(nullptr); }, nullptr);
-    if (timer_ == nullptr) throw std::runtime_error("Failed to create event tracking render timer");
-    CFRunLoopAddTimer(CFRunLoopGetMain(), timer_, CFSTR("NSEventTrackingRunLoopMode"));
-  }
-  ~EventTrackingRenderer() {
-    CFRunLoopTimerInvalidate(timer_);
-    CFRelease(timer_);
-  }
-
-  EventTrackingRenderer(const EventTrackingRenderer &) = delete;
-  EventTrackingRenderer &operator=(const EventTrackingRenderer &) = delete;
-
-private:
-  CFRunLoopTimerRef timer_ = nullptr;
-};
-#endif
-
 void paceFrame() {
   using clock = std::chrono::steady_clock;
-  static clock::duration period = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(frameInterval()));
+  static clock::duration period = [] {
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int hz = (mode != nullptr && mode->refreshRate > 0) ? mode->refreshRate : 60;
+    return std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / hz));
+  }();
   static clock::time_point next = clock::now();
   next += period;
   auto now = clock::now();
@@ -140,7 +88,7 @@ void paceFrame() {
 }
 
 void renderFrame(GLFWwindow *window, MainWindow *win) {
-  glfwMakeContextCurrent(window);
+  glfwPollEvents();
   deliverPendingFocusLoss();
   utils::drainMainThreadQueue();
 
@@ -167,6 +115,7 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     glfwMakeContextCurrent(backup_context);
   }
   glfwSwapBuffers(window);
+  paceFrame();
 }
 
 class GlfwRuntime {
@@ -214,7 +163,7 @@ public:
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    io.ConfigViewportsNoDecoration = false;
+    io.ConfigViewportsNoDecoration = true;
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
     if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
@@ -223,7 +172,6 @@ public:
       throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
     }
     glfwSetKeyCallback(window, keyCallback);
-    glfwSetWindowRefreshCallback(window, windowRefreshCallback);
     glfwSetWindowFocusCallback(window, windowFocusCallback);
     if (!ImGui_ImplOpenGL3_Init("#version 330")) {
       ImGui_ImplGlfw_Shutdown();
@@ -264,14 +212,7 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     inistate::applyWindowGeometry(glfw.window());
 
     MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
-#ifdef __APPLE__
-    EventTrackingRenderer tracking_renderer;
-#endif
     while (!win.exited()) {
-      {
-        RefreshDuringEvents refresh([&] { renderFrame(glfw.window(), &win); });
-        glfwPollEvents();
-      }
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");
         win.close();
@@ -280,7 +221,6 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
         win.close();
       }
       renderFrame(glfw.window(), &win);
-      paceFrame();
     }
     return 0;
   } catch (const std::exception &e) {
