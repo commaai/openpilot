@@ -89,13 +89,23 @@ bool clearableInput(const char *label, std::string *s, const char *hint, ImGuiIn
   return changed;
 }
 
+bool selectable(const char *label, bool selected, ImGuiSelectableFlags flags, const ImVec2 &size) {
+  if (selected) {
+    ImGui::PushStyleColor(ImGuiCol_Text, palette().text_selected);
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, palette().header);
+  }
+  const bool clicked = ImGui::Selectable(label, selected, flags, size);
+  if (selected) ImGui::PopStyleColor(2);
+  return clicked;
+}
+
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items) {
   bool changed = false;
   const int count = (int)items.size();
   if (ImGui::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(items[i].c_str(), i == *index) && *index != i) {
+      if (selectable(items[i].c_str(), i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
@@ -241,7 +251,7 @@ void disabledItemTooltip(const char *text) {
 bool radioMenuItem(const char *label, bool checked, float width) {
   const float indent = ImGui::GetFontSize();
   const ImVec2 pos = ImGui::GetCursorScreenPos();
-  const bool clicked = ImGui::Selectable((std::string("##") + label).c_str(), false, ImGuiSelectableFlags_None,
+  const bool clicked = selectable((std::string("##") + label).c_str(), false, ImGuiSelectableFlags_None,
                                          ImVec2(ImMax(width, ImGui::GetContentRegionAvail().x), 0.0f));
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
   ImDrawList *painter = ImGui::GetWindowDrawList();
@@ -328,7 +338,7 @@ int tableHeadersRow() {
 bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlags flags, const ImVec2 &size) {
   ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
   ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
-  const bool clicked = ImGui::Selectable(label, selected, flags, size);
+  const bool clicked = selectable(label, selected, flags, size);
   ImGui::PopStyleColor(2);
   return clicked;
 }

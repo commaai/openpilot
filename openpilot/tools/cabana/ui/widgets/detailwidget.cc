@@ -262,13 +262,15 @@ void DetailWidget::drawTabWidget() {
     const bool selected = tab_widget_index_ == i;
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(selected ? ImGuiCol_Header : ImGuiCol_Button, selected ? 1.0f : 0.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(selected ? ImGuiCol_HeaderActive : ImGuiCol_ButtonHovered));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, selected ? palette().header_active : palette().button_active);
+    ImGui::PushStyleColor(ImGuiCol_Text, selected ? palette().text_selected : palette().text);
     if (i) ImGui::SameLine();
     if (ImGui::Button(labels[i].c_str()) && !selected) {
       tab_widget_index_ = i;
       if (i == 1) history_log_->onShown();
       updateState();
     }
-    ImGui::PopStyleColor(2);
+    ImGui::PopStyleColor(4);
   }
   ImGui::PopStyleVar(2);
   ImGui::EndChild();

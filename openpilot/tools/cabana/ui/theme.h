@@ -5,10 +5,9 @@
 
 #include "tools/cabana/core/color.h"
 
-// Dark colors match the previous Qt Cabana palette.
-// Light colors use commaai/connect lightGrey and lightBlue families (7091050).
+// Match Qt Cabana: its custom dark palette and the standard Fusion light palette.
 struct Palette {
-  ImVec4 text, text_disabled;
+  ImVec4 text, text_disabled, text_selected;
   ImVec4 window;   // the background behind panels and docked windows
   ImVec4 surface;  // panels, popups, table bodies: what content is drawn on
   ImVec4 frame, frame_hovered, frame_active;

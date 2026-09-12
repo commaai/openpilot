@@ -54,7 +54,7 @@ bool SignalSelector::draw() {
     inputText("##msgs_filter", &msgs_combo_filter_, "Select a message...");
     for (int i = 0; i < (int)msgs_combo_.size(); ++i) {
       if (!msgs_combo_filter_.empty() && !utils::containsCI(msgs_combo_[i].text, msgs_combo_filter_)) continue;
-      if (ImGui::Selectable(msgs_combo_[i].text.c_str(), i == msgs_combo_index_)) {
+      if (selectable(msgs_combo_[i].text.c_str(), i == msgs_combo_index_)) {
         msgs_combo_index_ = i;
         updateAvailableList(i);
         ImGui::CloseCurrentPopup();
@@ -107,7 +107,7 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
     const auto &item = list[i];
     ImGui::PushID(i);
     const ImVec2 pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Selectable("##item", i == *current_row)) *current_row = i;
+    if (selectable("##item", i == *current_row)) *current_row = i;
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
       *current_row = i;
       *double_clicked = true;
@@ -117,10 +117,10 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
     float x = pos.x + 5;
     drawColorMarker(dl, ImVec2(x, pos.y), toImU32(item.sig->color));
     x += markerSize() + 4;
-    dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(ImGuiCol_Text), item.sig->name.c_str());
+    dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(i == *current_row ? palette().text_selected : palette().text), item.sig->name.c_str());
     if (show_msg_name) {
       x += ImGui::CalcTextSize(item.sig->name.c_str()).x;
-      dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(ImGuiCol_TextDisabled), msgLabel(item.msg_id).c_str());
+      dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(i == *current_row ? palette().text_selected : palette().text_disabled), msgLabel(item.msg_id).c_str());
     }
     ImGui::PopID();
   }

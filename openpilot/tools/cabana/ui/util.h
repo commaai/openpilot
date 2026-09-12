@@ -38,6 +38,8 @@ bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flag
 // SetNextItemWidth includes the field and clear button. Returns true when text changes.
 bool clearableInput(const char *label, std::string *s, const char *hint = "", ImGuiInputTextCallback validator = nullptr);
 
+bool selectable(const char *label, bool selected, ImGuiSelectableFlags flags = 0, const ImVec2 &size = ImVec2(0, 0));
+
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items);
 
 // numeric items (bus ids, bus speeds) are formatted as they are drawn
@@ -48,7 +50,7 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
   if (ImGui::BeginCombo(label, preview.c_str())) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
+      if (selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
         *index = i;
         changed = true;
       }

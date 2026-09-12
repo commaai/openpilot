@@ -260,7 +260,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
 
   ImRect rect(option_rect.Min.x + h_margin, option_rect.Min.y + v_margin, option_rect.Max.x - h_margin, option_rect.Max.y - v_margin);
   // selection background is painted by the row's Selectable
-  const ImU32 text_color = ImGui::GetColorU32(ImGuiCol_Text);
+  const ImU32 text_color = ImGui::GetColorU32(selected ? palette().text_selected : palette().text);
 
   if (column == 0) {
     if (item->type == SignalModel::Item::Sig) {
@@ -688,7 +688,7 @@ float SignalView::minimumWidth() {
 }
 
 void SignalView::draw() {
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, isDarkTheme() ? palette().surface : ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, palette().surface);
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
     ImGui::EndChild();
     ImGui::PopStyleColor();
@@ -823,7 +823,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   if (!item->children.empty()) {
     const float arrow_size = ImGui::GetFontSize() * 0.7f;
     ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (row_height - arrow_size) * 0.5f),
-                       ImGui::GetColorU32(ImGuiCol_Text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
+                       ImGui::GetColorU32(selected ? palette().text_selected : palette().text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
   }
 
   // every row is measured, the header sizes column 0 to the contents of the whole tree
@@ -936,7 +936,7 @@ bool ValueDescriptionDlg::draw() {
       if (row == current_row_) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImGuiCol_Header));
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted(std::to_string(row + 1).c_str());
+      ImGui::TextColored(row == current_row_ ? palette().text_selected : palette().text, "%d", row + 1);
       ImGui::TableSetColumnIndex(1);
       ImGui::SetNextItemWidth(-FLT_MIN);
       if (valueDescriptionEditor(0, &table_[row].first)) current_row_ = row;
