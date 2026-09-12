@@ -42,31 +42,31 @@ class TogglesLayoutMici(NavScroller):
     super().__init__()
 
     self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
-                                                   description='Standard is recommended.\n' +
-                                                               'Aggressive follows closer, with firmer gas and braking.\n' +
-                                                               'Relaxed leaves more space.\n' +
-                                                               'Use the steering wheel distance button on supported cars.')
-    self._experimental_btn = BigToggle("experimental mode", description_icon=gui_app.texture('icons_mici/experimental_mode.png', 64, 64),
+                                                   description="Standard is recommended.\n" +
+                                                               "Aggressive follows closer, with firmer gas and braking.\n" +
+                                                               "Relaxed leaves more space.\n" +
+                                                               "Use the steering wheel distance button on supported cars.")
+    self._experimental_btn = BigToggle("experimental mode", description_icon=gui_app.texture("icons_mici/experimental_mode.png", 64, 64),
                                        initial_state=ui_state.params.get_bool("ExperimentalMode"), toggle_callback=self._on_experimental_mode,
-                                       description='Let the driving model control gas and brakes.\n' +
-                                                   'Includes stopping for red lights and stop signs.\n' +
-                                                   'Set speed is a maximum, not a target.\n' +
-                                                   'These are alpha features. Expect mistakes.\n' +
-                                                   'The path colors show acceleration and braking.')
+                                       description="Let the driving model control gas and brakes.\n" +
+                                                   "Includes stopping for red lights and stop signs.\n" +
+                                                   "Set speed is a maximum, not a target.\n" +
+                                                   "These are alpha features. Expect mistakes.\n" +
+                                                   "The path colors show acceleration and braking.")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
-                                 description='Warn when you drift across a detected lane line.\n' +
-                                             'Only above 31 mph (50 km/h), with no turn signal.')
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description='Monitor the driver even when openpilot is not engaged.')
+                                 description="Warn when you drift across a detected lane line.\n" +
+                                             "Only above 31 mph (50 km/h), with no turn signal.")
+    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description="Monitor the driver even when openpilot is not engaged.")
     record_front = BigParamControl("record & upload cabin camera", "RecordFront",
-                                   description_icon=gui_app.texture('icons_mici/settings/device/cameras.png', 64, 64),
-                                   toggle_callback=restart_needed_callback, description='Upload cabin camera data to help improve driver monitoring.')
-    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", description_icon=gui_app.texture('icons_mici/microphone.png', 64, 64),
+                                   description_icon=gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
+                                   toggle_callback=restart_needed_callback, description="Upload cabin camera data to help improve driver monitoring.")
+    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", description_icon=gui_app.texture("icons_mici/microphone.png", 64, 64),
                                  toggle_callback=restart_needed_callback,
-                                 description='Record microphone audio while driving.\n' +
-                                             'Audio is included in dashcam videos in comma connect.')
+                                 description="Record microphone audio while driving.\n" +
+                                             "Audio is included in dashcam videos in comma connect.")
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback,
-                                       description='Enable to use openpilot driver assistance.\n' +
+                                       description="Enable to use openpilot driver assistance.\n" +
                                                    "Disable to use your car's stock driver assistance.")
 
     self._scroller.add_widgets([

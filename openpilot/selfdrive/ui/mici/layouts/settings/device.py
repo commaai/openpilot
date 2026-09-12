@@ -180,8 +180,8 @@ class DeviceLayoutMici(NavScroller):
 
     reset_calibration_btn = EngagedConfirmationButton("reset calibration", "reset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
                                                       reset_calibration_callback,
-                                                      description='Mount the device within 4° left or right and 5° up or 9° down. openpilot calibrates ' +
-                                                                  'continuously; resetting is rarely needed. Resetting clears learned calibration.')
+                                                      description="Mount the device within 4° left or right and 5° up or 9° down. openpilot calibrates " +
+                                                                  "continuously; resetting is rarely needed. Resetting clears learned calibration.")
 
     reboot_btn = EngagedConfirmationCircleButton("reboot", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
                                                  reboot_callback, exit_on_confirm=False)
@@ -194,7 +194,7 @@ class DeviceLayoutMici(NavScroller):
     regulatory_btn.set_click_callback(self._on_regulatory)
 
     cabin_cam_btn = BigButton("driver\ncamera preview", "", gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
-                              description='Preview the cabin camera to check driver monitoring visibility. The vehicle must be off.')
+                              description="Preview the cabin camera to check driver monitoring visibility. The vehicle must be off.")
     cabin_cam_btn.set_click_callback(lambda: gui_app.push_widget(CabinCameraDialog()))
     cabin_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 

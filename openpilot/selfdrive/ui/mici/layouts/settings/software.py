@@ -243,7 +243,7 @@ class BranchSelectPage(NavScroller):
 class TargetBranchButton(BigButton):
   def __init__(self, check_update_btn: CheckUpdateButton):
     super().__init__("target branch", ui_state.params.get("UpdaterTargetBranch") or "",
-                     description='Select the software branch to download on the next update check.')
+                     description="Select the software branch to download on the next update check.")
     self._check_update_btn = check_update_btn
     self.set_click_callback(self._on_click)
     self.set_visible(not ui_state.params.get_bool("IsTestedBranch"))
@@ -278,8 +278,8 @@ class SoftwareLayoutMici(NavScroller):
     uninstall_openpilot_btn = EngagedConfirmationButton("uninstall openpilot", "uninstall",
                                                         gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
                                                         uninstall_openpilot_callback, exit_on_confirm=False,
-                                                        description='Remove openpilot from this device.',
-                                                        description_icon=gui_app.texture('icons_mici/setup/factory_reset.png', 64, 64))
+                                                        description="Remove openpilot from this device.",
+                                                        description_icon=gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
     check_update_btn = CheckUpdateButton()
     self._scroller.add_widgets([
