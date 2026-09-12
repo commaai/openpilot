@@ -456,7 +456,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == hovered_sig_) {
-          painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalFillColor(s->color).darker(125)));  // 4/5x brightness
+          painter->AddRectFilled(rect.Min, rect.Max, toImU32(s->color.darker(125)));  // 4/5x brightness
         } else {
           drawSignalCell(painter, rect, index, s);
         }
@@ -526,9 +526,9 @@ void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const B
   if (bottom_notch) band(bottom_notch, rc.Max.y - spacing, rc.Max.y);
 
   auto item = &cellAt(index);
-  CabanaColor color = signalFillColor(sig->color);
+  CabanaColor color = sig->color;
   color.a = item->bg_color.alpha();
-  const ImU32 edge = toImU32(signalFillColor(sig->color).darker(125));
+  const ImU32 edge = toImU32(sig->color.darker(125));
 
   for (const ImRect &clip : region) {
     painter->PushClipRect(clip.Min, clip.Max, true);

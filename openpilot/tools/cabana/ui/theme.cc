@@ -11,16 +11,18 @@ namespace fs = std::filesystem;
 
 namespace {
 
+// Qt Cabana's DarkTheme palette (utils/util.h before the Qt frontend was removed).
+// Frame edges and raised controls match the Fusion rendering of that palette.
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xf8f9f9), .text_disabled = rgb(0xb8c0c4),
-  .window = rgb(0x1d2225), .surface = rgb(0x30373b),
-  .frame = rgb(0x1e2224), .frame_hovered = rgb(0x394044), .frame_active = rgb(0x424a4f),
-  .button = rgb(0x424a4f), .button_hovered = rgb(0x535f64), .button_active = rgb(0x175886),
-  .header = rgb(0x175886), .header_hovered = rgb(0x24455e), .header_active = rgb(0x1c6ea8),
-  .accent = rgb(0x57a9e3),
-  .border = rgb(0x65737a), .separator = rgb(0x4b5559),
-  .tab = rgb(0x272c2f), .tab_hovered = rgb(0x424a4f), .table_header = rgb(0x424a4f),
-  .grid = rgb(0x65737a, 0.45f), .badge = rgb(0x808080),
+  .text = rgb(0xbbbbbb), .text_disabled = rgb(0x777777),
+  .window = rgb(0x353535), .surface = rgb(0x3c3f41),
+  .frame = rgb(0x3c3f41), .frame_hovered = rgb(0x484b4d), .frame_active = rgb(0x505355),
+  .button = rgb(0x484b4d), .button_hovered = rgb(0x535658), .button_active = rgb(0x3c3f41),
+  .header = rgb(0x2f65ca), .header_hovered = rgb(0x414e65), .header_active = rgb(0x2f65ca),
+  .accent = rgb(0x2f65ca),
+  .border = rgb(0x282828), .separator = rgb(0x353535),
+  .tab = rgb(0x353535), .tab_hovered = rgb(0x484b4d), .table_header = rgb(0x484b4d),
+  .grid = rgb(0xbbbbbb, 50.0f / 255.0f), .badge = rgb(0x808080),
 };
 
 constexpr Palette LIGHT_PALETTE = {
@@ -110,7 +112,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_Text] = p.text;
   c[ImGuiCol_TextDisabled] = p.text_disabled;
   c[ImGuiCol_WindowBg] = c[ImGuiCol_ScrollbarBg] = c[ImGuiCol_DockingEmptyBg] = p.window;
-  c[ImGuiCol_MenuBarBg] = p.surface;
+  c[ImGuiCol_MenuBarBg] = g_dark ? p.window : p.surface;
   c[ImGuiCol_TitleBg] = c[ImGuiCol_TitleBgActive] = c[ImGuiCol_TitleBgCollapsed] = p.window;
   c[ImGuiCol_ChildBg] = c[ImGuiCol_PopupBg] = p.surface;
   c[ImGuiCol_Border] = c[ImGuiCol_TableBorderStrong] = p.border;
@@ -121,7 +123,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
   c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
-  c[ImGuiCol_ScrollbarGrab] = p.border;
+  c[ImGuiCol_ScrollbarGrab] = g_dark ? p.button : p.border;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;
   c[ImGuiCol_Header] = p.header;
@@ -138,7 +140,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_TabSelected] = c[ImGuiCol_TabDimmedSelected] = p.surface;
   c[ImGuiCol_TabDimmedSelectedOverline] = none;
   c[ImGuiCol_TableHeaderBg] = p.table_header;
-  c[ImGuiCol_TableRowBgAlt] = g_dark ? ImVec4(1, 1, 1, 0.065f) : ImVec4(0, 0, 0, 0.045f);
+  c[ImGuiCol_TableRowBgAlt] = g_dark ? none : ImVec4(0, 0, 0, 0.045f);
   c[ImGuiCol_PlotLines] = p.text;
   // ImGuiStyle() seeds every slot from the dark theme: set the rest so the light theme does not keep a white caret.
   c[ImGuiCol_InputTextCursor] = c[ImGuiCol_UnsavedMarker] = p.text;
@@ -154,12 +156,6 @@ void applyTheme(int theme) {
 
 bool isDarkTheme() { return g_dark; }
 const Palette &palette() { return *g_palette; }
-
-CabanaColor signalFillColor(const CabanaColor &c) {
-  if (!g_dark) return c;
-  auto [h, s, v] = c.hsv();
-  return CabanaColor::fromHsv(h, std::min(1.0f, s * 1.4f), v * 0.8f, c.a / 255.0f);
-}
 
 ImFont *boldFont() { return g_bold_font; }
 

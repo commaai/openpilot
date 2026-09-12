@@ -5,8 +5,8 @@
 
 #include "tools/cabana/core/color.h"
 
-// Palette source: commaai/connect src/{colors,theme}.js at 7091050.
-// Dark colors follow connect; light colors use its lightGrey and lightBlue families.
+// Dark colors match the previous Qt Cabana palette.
+// Light colors use commaai/connect lightGrey and lightBlue families (7091050).
 struct Palette {
   ImVec4 text, text_disabled;
   ImVec4 window;   // the background behind panels and docked windows
@@ -37,8 +37,6 @@ void loadFonts();
 void applyTheme(int theme);  // Safe to call at runtime.
 bool isDarkTheme();
 const Palette &palette();
-
-CabanaColor signalFillColor(const CabanaColor &c);
 
 ImFont *boldFont();
 void pushMonoFont(float size = 0.0f);
