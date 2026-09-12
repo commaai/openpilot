@@ -29,12 +29,8 @@ class NetworkLayoutMici(NavScroller):
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
-    self._tethering_toggle_btn = BigToggle(
-      'enable tethering',
-      '',
-      toggle_callback=tethering_toggle_callback,
-      description='Share the device’s internet connection through a Wi-Fi hotspot.',
-    )
+    self._tethering_toggle_btn = BigToggle('enable tethering', '', toggle_callback=tethering_toggle_callback,
+                                           description='Share the device’s internet connection through a Wi-Fi hotspot.')
 
     def tethering_password_callback(password: str):
       if password:
@@ -93,11 +89,8 @@ class NetworkLayoutMici(NavScroller):
     self._roaming_btn = BigParamControl("enable roaming", "GsmRoaming", description='Allow cellular data roaming.')
 
     # ******** APN settings ********
-    self._apn_btn = BigButton(
-      'apn settings',
-      'edit',
-      description='Set the access point name required by your cellular carrier. Leave blank for automatic configuration.',
-    )
+    self._apn_btn = BigButton('apn settings', 'edit',
+                              description='Set the access point name required by your cellular carrier. Leave blank for automatic configuration.')
     self._apn_btn.set_click_callback(self._edit_apn)
 
     # ******** Cellular metered toggle ********

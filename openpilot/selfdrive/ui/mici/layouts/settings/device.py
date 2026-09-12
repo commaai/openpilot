@@ -210,12 +210,8 @@ class DeviceLayoutMici(NavScroller):
     )
     regulatory_btn.set_click_callback(self._on_regulatory)
 
-    cabin_cam_btn = BigButton(
-      'driver\ncamera preview',
-      '',
-      gui_app.texture('icons_mici/settings/device/cameras.png', 64, 64),
-      description='Preview the cabin camera to check driver monitoring visibility. The vehicle must be off.',
-    )
+    cabin_cam_btn = BigButton('driver\ncamera preview', '', gui_app.texture('icons_mici/settings/device/cameras.png', 64, 64),
+                              description='Preview the cabin camera to check driver monitoring visibility. The vehicle must be off.')
     cabin_cam_btn.set_click_callback(lambda: gui_app.push_widget(CabinCameraDialog()))
     cabin_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
