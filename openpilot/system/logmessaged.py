@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import zmq
+import time
 from typing import NoReturn
 
-import openpilot.cereal.messaging as messaging
-from openpilot.common.logging_extra import SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
+import openpilot.cereal.messaging as messaging
+from openpilot.common.shm_queue import ShmQueue
 from openpilot.common.swaglog import get_file_handler
+from openpilot.common.logging_extra import SwagLogFileFormatter
 
 
 def main() -> NoReturn:
@@ -13,9 +14,7 @@ def main() -> NoReturn:
   log_handler.setFormatter(SwagLogFileFormatter(None))
   log_level = 20  # logging.INFO
 
-  ctx = zmq.Context.instance()
-  sock = ctx.socket(zmq.PULL)
-  sock.bind(Paths.swaglog_ipc())
+  queue = ShmQueue(Paths.swaglog_ipc())
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')
@@ -23,7 +22,10 @@ def main() -> NoReturn:
 
   try:
     while True:
-      dat = b''.join(sock.recv_multipart())
+      dat = queue.receive()
+      if dat is None:
+        time.sleep(0.1)
+        continue
       level = dat[0]
       record = dat[1:].decode("utf-8")
       if level >= log_level:
@@ -42,9 +44,6 @@ def main() -> NoReturn:
         msg = messaging.new_message(None, valid=True, errorLogMessage=record)
         error_log_message_sock.send(msg.to_bytes())
   finally:
-    sock.close()
-    ctx.term()
-
     # can hit this if interrupted during a rollover
     try:
       log_handler.close()

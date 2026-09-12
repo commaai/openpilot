@@ -6,10 +6,9 @@
 
 #include <cassert>
 #include <limits>
-#include <mutex>
 #include <string>
 
-#include <zmq.h>
+#include "common/shm_queue.h"
 #include <stdarg.h>
 #include "json11/json11.hpp"
 #include "common/version.h"
@@ -17,15 +16,7 @@
 
 class SwaglogState {
 public:
-  SwaglogState() {
-    zctx = zmq_ctx_new();
-    sock = zmq_socket(zctx, ZMQ_PUSH);
-
-    // Timeout on shutdown for messages to be received by the logging process
-    int timeout = 100;
-    zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
-    zmq_connect(sock, Path::swaglog_ipc().c_str());
-
+  SwaglogState() : queue(Path::swaglog_ipc()) {
     // workaround for https://github.com/dropbox/json11/issues/38
     setlocale(LC_NUMERIC, "C");
 
@@ -59,30 +50,30 @@ public:
     ctx_j["version"] = COMMA_VERSION;
     ctx_j["dirty"] = !getenv("CLEAN");
     ctx_j["device"] = Hardware::get_name();
-  }
 
-  ~SwaglogState() {
-    zmq_close(sock);
-    zmq_ctx_destroy(zctx);
   }
 
   void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
-    std::lock_guard lk(lock);
     if (levelnum >= print_level) {
       printf("%s: %s\n", filename, msg);
     }
-    zmq_send(sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
+    queue.send(log_s);
   }
 
-  std::mutex lock;
-  void* zctx = nullptr;
-  void* sock = nullptr;
+  ShmQueue queue;
   int print_level;
   json11::Json::object ctx_j;
 };
 
 bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
 uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
+
+static void truncate_utf8(std::string &text, size_t limit) {
+  if (text.size() <= limit) return;
+  // Back up to the start of any character crossing the new end.
+  while (limit > 0 && (static_cast<unsigned char>(text[limit]) & 0xc0) == 0x80) --limit;
+  text.resize(limit);
+}
 
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
                             char* msg_buf, const json11::Json::object &msg_j={}) {
@@ -97,7 +88,14 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
     {"created", seconds_since_epoch()}
   };
   if (msg_j.empty()) {
-    log_j["msg"] = msg_buf;
+    std::string text = msg_buf;
+    // Allow up to 6x expansion from JSON escaping, plus room for metadata.
+    if (text.size() > 16 * 1024) {
+      truncate_utf8(text, 16 * 1024);
+      text += " [truncated]";
+      log_j["truncated"] = true;
+    }
+    log_j["msg"] = text;
   } else {
     log_j["msg"] = msg_j;
   }

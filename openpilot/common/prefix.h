@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cassert>
+#include <filesystem>
 #include <string>
+#include <system_error>
 
 #include "common/params.h"
 #include "common/util.h"
@@ -35,6 +37,8 @@ public:
     }
     util::check_system(util::string_format("rm -rf %s", Path::comma_home().c_str()));
     util::check_system(util::string_format("rm -rf %s", msgq_path.c_str()));
+    std::error_code ec;
+    std::filesystem::remove_all(Path::swaglog_ipc(), ec);
     unsetenv("OPENPILOT_PREFIX");
   }
 

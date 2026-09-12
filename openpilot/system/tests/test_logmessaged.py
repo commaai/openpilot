@@ -1,55 +1,156 @@
-import glob
 import os
+import sys
+import json
 import time
+import subprocess
+from pathlib import Path
+from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
 
-from openpilot.common.test import OpenpilotTestCase
-import openpilot.cereal.messaging as messaging
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware.hw import Paths
+import openpilot.cereal.messaging as messaging
+from openpilot.common.shm_queue import ShmQueue
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.swaglog import cloudlog, ipchandler
+from openpilot.system.manager.process_config import managed_processes
+
+NATIVE = Path(__file__).resolve().parents[2] / 'common/tests/test_swaglog'
 
 
 class TestLogmessaged(OpenpilotTestCase):
   def setup_method(self):
-    # clear the IPC buffer in case some other tests used cloudlog and filled it
     ipchandler.close()
     ipchandler.connect()
-
-    managed_processes['logmessaged'].start()
-    self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
-    self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
-
-    # ensure sockets are connected
-    time.sleep(0.5)
-    messaging.drain_sock(self.sock)
-    messaging.drain_sock(self.error_sock)
+    self.queue = ShmQueue(Paths.swaglog_ipc())
 
   def teardown_method(self):
-    del self.sock
-    del self.error_sock
     managed_processes['logmessaged'].stop(block=True)
+    ipchandler.close()
 
-  def _get_log_files(self):
-    return list(glob.glob(os.path.join(Paths.swaglog_root(), "swaglog.*")))
+  def wait_for(self, condition):
+    deadline = time.monotonic() + 10
+    while not condition():
+      assert time.monotonic() < deadline, 'timed out waiting for logs'
+      time.sleep(0.01)
 
-  def test_simple_log(self):
-    msgs = [f"abc {i}" for i in range(10)]
-    for m in msgs:
-      cloudlog.error(m)
-    time.sleep(0.5)
-    m = messaging.drain_sock(self.sock)
-    assert len(m) == len(msgs)
-    assert len(self._get_log_files()) >= 1
+  def logsize(self):
+    return sum(p.stat().st_size for p in Path(Paths.swaglog_root()).glob('swaglog.*'))
 
-  def test_big_log(self):
-    n = 10
-    msg = "a"*3*1024*1024
-    for _ in range(n):
-      cloudlog.info(msg)
-    time.sleep(0.5)
+  def test_publication(self):
+    sockets = {s: messaging.sub_sock(s, conflate=False) for s in ('logMessage', 'errorLogMessage')}
+    received = {s: [] for s in sockets}
+    managed_processes['logmessaged'].start()
 
-    msgs = messaging.drain_sock(self.sock)
-    assert len(msgs) == 0
+    def collect():
+      cloudlog.error('hello')  # Retry until both subscribers connect.
+      for service, sock in sockets.items():
+        received[service].extend(json.loads(getattr(m, service))['msg'] for m in messaging.drain_sock(sock))
+      return all('hello' in records for records in received.values())
 
-    logsize = sum([os.path.getsize(f) for f in self._get_log_files()])
-    assert (n*len(msg)) < logsize < (n*(len(msg)+1024))
+    self.wait_for(collect)
+    self.wait_for(lambda: self.logsize() > 0)
+
+  def test_large_logs(self):
+    cloudlog.info('path /tmp/\udcff')  # Surrogateescaped filenames must still serialize.
+    data = self.queue.receive()
+    assert data is not None and json.loads(data[1:])['msg'] == 'path /tmp/\udcff'
+    message = '\n"\\🚘' * (512 * 1024)
+    cloudlog.info(message)
+    subprocess.run([str(NATIVE), '--emit'], input=message.encode(), check=True, timeout=10)
+    records = list(self.queue.ready.iterdir())
+    assert len(records) == 2
+    for path in records:
+      data = path.read_bytes()
+      assert len(data) <= ShmQueue.MAX_MESSAGE_SIZE
+      record = json.loads(data[1:])
+      assert record['truncated'] and record['levelnum'] == data[0]
+      assert record['filename'] and isinstance(record['ctx'], dict)
+      prefix = record['msg'].removesuffix(' [truncated]')
+      assert prefix and message.startswith(prefix)
+    managed_processes['logmessaged'].start()
+    self.wait_for(lambda: any('"truncated"' in p.read_text() for p in Path(Paths.swaglog_root()).glob('swaglog.*')))
+
+  def test_slots(self):
+    with patch.object(ShmQueue, 'MAX_MESSAGE_SIZE', 1):
+      assert not self.queue.send(b'xx')
+    def native_burst():
+      subprocess.run([str(NATIVE), '--emit', '100'], input=b'native', check=True, timeout=30)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+      writers = [pool.submit(native_burst) for _ in range(4)]
+      with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')):
+        for _ in range(100):
+          cloudlog.info('python')
+      for writer in writers:
+        writer.result()
+    assert len(list(self.queue.ready.iterdir())) == len(list(self.queue.slots.iterdir())) <= ShmQueue.SLOT_COUNT
+    messages = []
+    while (data := self.queue.receive()) is not None:
+      messages.append(json.loads(data[1:])['msg'])
+    assert set(messages) == {'python', 'native'}
+    assert not list(self.queue.pending.iterdir())
+    assert not list(self.queue.slots.iterdir())
+
+    # Live claims occupy every slot without allocating thousands of payload files.
+    for slot in range(ShmQueue.SLOT_COUNT):
+      (self.queue.slots / str(slot)).symlink_to(f'{0:020d}-{os.getpid()}-1-{slot}')
+    with patch('os.scandir', side_effect=AssertionError('producer scanned the backlog')), \
+         patch('openpilot.common.shm_queue.random.randrange', return_value=0) as choose:
+      cloudlog.info('full')
+    assert choose.call_count == ShmQueue.CLAIM_ATTEMPTS
+    subprocess.run([str(NATIVE), '--emit'], input=b'full', check=True, timeout=10)
+    assert not list(self.queue.ready.iterdir())
+    assert not list(self.queue.pending.iterdir())
+    for slot in self.queue.slots.iterdir():
+      slot.unlink()
+    cloudlog.info('reused')
+    data = self.queue.receive()
+    assert data is not None
+    assert json.loads(data[1:])['msg'] == 'reused'
+    assert not list(self.queue.slots.iterdir())
+
+  def test_large_context_and_low_space(self):
+    with patch('os.statvfs', return_value=os.statvfs_result((0,) * 10)):
+      assert not self.queue.send(b'no space')
+    assert not list(self.queue.pending.iterdir())
+    assert not list(self.queue.slots.iterdir())
+    with cloudlog.ctx(oversized='"' * ShmQueue.MAX_MESSAGE_SIZE):
+      cloudlog.info('context')
+    subprocess.run([str(NATIVE), '--emit'], input=b'context', check=True, timeout=10,
+                   env=dict(os.environ, MANAGER_DAEMON='"' * (96 * 1024)))
+    assert self.queue.receive() is None
+
+  def test_crashed_writer(self):
+    for crash in ('Path.open', 'os.rename'):
+      with self.subTest(crash=crash):
+        script = f"""
+import os
+from pathlib import Path
+from openpilot.common.swaglog import cloudlog
+{crash} = lambda *args: os._exit(0)
+cloudlog.info('unpublished')
+"""
+        subprocess.run([sys.executable, '-c', script], check=True, timeout=10)
+        assert list(self.queue.slots.iterdir())
+        cloudlog.info('committed')
+        data = self.queue.receive()
+        assert data is not None
+        assert json.loads(data[1:])['msg'] == 'committed'
+        assert self.queue.receive() is None
+        assert not list(self.queue.pending.iterdir())
+        assert not list(self.queue.slots.iterdir())
+
+    # Reader died after releasing a slot but before removing its published file.
+    with patch('openpilot.common.shm_queue.random.randrange', return_value=0):
+      cloudlog.info('old')
+      old = next(self.queue.ready.iterdir())
+      self.queue._release(self.queue.slots / '0', old.name)
+      cloudlog.info('new')
+    data = self.queue.receive()
+    assert data is not None
+    assert json.loads(data[1:])['msg'] == 'old'
+    assert (self.queue.slots / '0').is_symlink()
+    data = self.queue.receive()
+    assert data is not None
+    assert json.loads(data[1:])['msg'] == 'new'
+    assert not list(self.queue.slots.iterdir())

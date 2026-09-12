@@ -1,11 +1,11 @@
 import os
-import platform
-import shutil
 import uuid
+import shutil
+import platform
 
 
-from openpilot.common.params import Params
 from openpilot.common.hardware import PC
+from openpilot.common.params import Params
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 
@@ -54,6 +54,7 @@ class OpenpilotPrefix:
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
+    shutil.rmtree(Paths.swaglog_ipc(), ignore_errors=True)
     if PC:
       shutil.rmtree(Paths.log_root(), ignore_errors=True)
     if not os.environ.get("COMMA_CACHE", False):

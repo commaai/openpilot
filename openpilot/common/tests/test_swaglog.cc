@@ -1,7 +1,10 @@
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <iterator>
 #include <string>
-
-#include <zmq.h>
+#include <filesystem>
+#include <unistd.h>
 
 #include "common/hardware/hw.h"
 #include "common/swaglog.h"
@@ -9,26 +12,25 @@
 #include "json11/json11.hpp"
 
 void test_swaglog() {
+  setenv("OPENPILOT_PREFIX", ("swaglog_test_" + std::to_string(getpid())).c_str(), 1);
   setenv("MANAGER_DAEMON", "swaglog_test", 1);
   setenv("DONGLE_ID", "test_dongle_id", 1);
   setenv("CLEAN", "1", 1);
 
-  void *context = zmq_ctx_new();
-  CHECK(context != nullptr);
-  void *socket = zmq_socket(context, ZMQ_PULL);
-  CHECK(socket != nullptr);
-  int timeout = 5000;
-  CHECK(zmq_setsockopt(socket, ZMQ_RCVTIMEO, &timeout, sizeof(timeout)) == 0);
-  CHECK(zmq_bind(socket, Path::swaglog_ipc().c_str()) == 0);
-
   LOGD("native-cpp-log");
-
-  char buffer[4096] = {};
-  const int size = zmq_recv(socket, buffer, sizeof(buffer), 0);
-  CHECK(size > 1);
+  const std::string root = Path::swaglog_ipc();
+  auto ready = std::filesystem::directory_iterator(root + "/ready");
+  CHECK(ready != end(ready));
+  const auto filename = ready->path();
+  CHECK(++ready == end(ready));
+  std::ifstream file(filename, std::ios::binary);
+  CHECK(file.good());
+  const std::string buffer{std::istreambuf_iterator<char>(file), {}};
+  file.close();
+  CHECK(buffer.size() > 1);
   CHECK(buffer[0] == CLOUDLOG_DEBUG);
   std::string error;
-  const auto message = json11::Json::parse(std::string(buffer + 1, size - 1), error);
+  const auto message = json11::Json::parse(buffer.substr(1), error);
   CHECK(error.empty());
   CHECK(message["levelnum"].int_value() == CLOUDLOG_DEBUG);
   CHECK(message["msg"].string_value() == "native-cpp-log");
@@ -38,10 +40,25 @@ void test_swaglog() {
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
 
-  CHECK(zmq_close(socket) == 0);
-  CHECK(zmq_ctx_destroy(context) == 0);
+  auto slots = std::filesystem::directory_iterator(root + "/slots");
+  CHECK(slots != end(slots));
+  const auto slot = slots->path();
+  CHECK(++slots == end(slots));
+  CHECK(std::filesystem::read_symlink(slot) == filename.filename());
+  CHECK(unlink(filename.c_str()) == 0);
+  CHECK(unlink(slot.c_str()) == 0);
+  CHECK(rmdir((root + "/pending").c_str()) == 0);  // Publishing leaves no partial file.
+  CHECK(rmdir((root + "/ready").c_str()) == 0);
+  CHECK(rmdir((root + "/slots").c_str()) == 0);
+  CHECK(rmdir(root.c_str()) == 0);
 }
 
-int main() {
+int main(int argc, char **argv) {
+  // Used by test_logmessaged.py to exercise the real C++ producer with Python's reader.
+  if (argc >= 2 && std::string(argv[1]) == "--emit") {
+    const std::string message{std::istreambuf_iterator<char>(std::cin), {}};
+    for (int i = 0; i < (argc == 3 ? std::stoi(argv[2]) : 1); ++i) LOGD("%s", message.c_str());
+    return 0;
+  }
   return run_native_test(test_swaglog);
 }

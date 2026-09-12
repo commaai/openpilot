@@ -30,9 +30,10 @@ class NiceOrderedDict(OrderedDict):
     return json_robust_dumps(self)
 
 class SwagFormatter(logging.Formatter):
-  def __init__(self, swaglogger):
+  def __init__(self, swaglogger, max_message_bytes=None):
     logging.Formatter.__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
 
+    self.max_message_bytes = max_message_bytes
     self.swaglogger = swaglogger
     self.host = socket.gethostname()
 
@@ -46,6 +47,12 @@ class SwagFormatter(logging.Formatter):
         record_dict['msg'] = record.getMessage()
       except (ValueError, TypeError):
         record_dict['msg'] = [record.msg]+record.args
+
+    if self.max_message_bytes is not None and isinstance(record_dict['msg'], str):
+      text = record_dict['msg'].encode('utf8', errors='replace')
+      if len(text) > self.max_message_bytes:
+        record_dict['msg'] = text[:self.max_message_bytes].decode('utf8', errors='ignore') + ' [truncated]'
+        record_dict['truncated'] = True
 
     record_dict['ctx'] = self.swaglogger.get_ctx()
 
