@@ -30,7 +30,7 @@ class SettingsLayout(NavScroller):
 
     self._device_panel = DeviceLayoutMici()
     self._device_button = SettingsBigButton("device", "", gui_app.texture("icons_mici/settings/device_icon.png", 72, 58))
-    self._device_button.set_click_callback(self._open_device)
+    self._device_button.set_click_callback(lambda: gui_app.push_widget(self._device_panel))
 
     software_panel = SoftwareLayoutMici()
     software_btn = SettingsBigButton("software", "", gui_app.texture("icons_mici/settings/software.png", 64, 75))
@@ -63,17 +63,12 @@ class SettingsLayout(NavScroller):
     self._scroller._layout()
     offset = (self._device_button.rect.x + self._device_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
     self._scroller.scroll_to(offset, smooth=False)
-    self._open_device()
+    gui_app.push_widget(self._device_panel)
     self._device_panel.set_shown_callback(self._on_pairing_shown)
 
   def _on_pairing_shown(self):
     self.set_visible(True)
     self._device_panel.scroll_to_pairing()
-
-  def _open_device(self, highlight_pairing: bool = False):
-    if highlight_pairing:
-      self._device_panel.set_shown_callback(self._device_panel.scroll_to_pairing)
-    gui_app.push_widget(self._device_panel)
 
   def _update_state(self):
     super()._update_state()

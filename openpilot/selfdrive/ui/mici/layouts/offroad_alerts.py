@@ -254,19 +254,19 @@ class MiciOffroadAlerts(Scroller):
       self.alert_items.append(alert_item)
       self._scroller.add_widget(alert_item)
 
-    self._pairing_alert = AlertData(
+    pairing_alert = AlertData(
       key="PairDevice",
       text="Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
       severity=-1,
-      icon="icons_mici/offroad_alerts/green_settings.png",
+      icon="icons_mici/settings/device/green_settings.png",
     )
-    self._prime_alert = AlertData(
+    prime_alert = AlertData(
       key="UpgradeToPrime",
       text="Upgrade to prime. Visit connect.comma.ai to subscribe to comma prime.",
       severity=-1,
-      icon="icons_mici/offroad_alerts/green_cell.png",
+      icon="icons_mici/settings/device/green_cell.png",
     )
-    self._prime_alert_items = [AlertItem(self._pairing_alert), AlertItem(self._prime_alert)]
+    self._prime_alert_items = [AlertItem(pairing_alert), AlertItem(prime_alert)]
     for alert_item in self._prime_alert_items:
       self.sorted_alerts.append(alert_item.alert_data)
       self.alert_items.append(alert_item)
@@ -340,7 +340,8 @@ class MiciOffroadAlerts(Scroller):
 
     # Update alert items (they reference the same alert_data objects)
     for alert_item in self.alert_items:
-      alert_item.update_alert_data(alert_item.alert_data)
+      if alert_item not in self._prime_alert_items:  # Prime alerts update only when their visibility changes
+        alert_item.update_alert_data(alert_item.alert_data)
 
     self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
