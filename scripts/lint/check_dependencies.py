@@ -24,8 +24,8 @@ def main() -> int:
   """
   failed = False
   for name, value, limit in (
-    ("Direct dependencies (all extras)", direct, 37),
-    ("Total dependencies", len(packages), 65),
+    ("Direct dependencies (all extras)", direct, 38),
+    ("Total dependencies", len(packages), 66),
     ("Venv size (MiB)", size / 1024**2, 550),
   ):
     print(f"{name}: {value:g} (limit: {limit})")

@@ -3,7 +3,7 @@ set -e
 set -x
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-cd $DIR
+cd "$DIR"
 
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
@@ -19,7 +19,8 @@ BUILD_BRANCH=release-mici-staging
 
 
 # set git identity
-source $DIR/identity.sh
+# shellcheck source=tools/release/identity.sh
+source "$DIR/identity.sh"
 
 echo "[-] Setting up repo T=$SECONDS"
 if ! git -C "$SOURCE_DIR" worktree remove --force "$BUILD_DIR" 2>/dev/null; then
@@ -34,7 +35,7 @@ git read-tree --empty
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
-cd $SOURCE_DIR
+cd "$SOURCE_DIR"
 ./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$BUILD_DIR" --
 
 # in the directory

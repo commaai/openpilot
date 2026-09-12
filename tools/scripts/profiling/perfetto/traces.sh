@@ -2,4 +2,4 @@
 
 DEST=tici:/data/openpilot/selfdrive/debug/profiling/perfetto
 
-scp tici:/data/openpilot/selfdrive/debug/profiling/perfetto/trace_* .
+scp "$DEST/trace_*" .

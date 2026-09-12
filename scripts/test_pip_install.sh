@@ -12,6 +12,7 @@ trap 'rm -rf "$TMPDIR"' EXIT
 cd "$TMPDIR"
 
 uv venv --python "$PYTHON_VERSION"
+# shellcheck source=/dev/null
 source .venv/bin/activate
 uv pip install "$PACKAGE"
 python3 - <<'PY'

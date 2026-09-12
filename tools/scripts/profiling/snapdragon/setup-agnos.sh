@@ -2,6 +2,6 @@
 
 # TODO: there's probably a better way to do this
 
-cd SnapdragonProfiler/service
+cd SnapdragonProfiler/service || exit
 mv android real_android
 ln -s agl/ android

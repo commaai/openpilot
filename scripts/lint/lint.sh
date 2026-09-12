@@ -9,12 +9,14 @@ NC='\033[0m'
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$DIR/../../"
-cd $ROOT
+cd "$ROOT"
 
 FAILED=0
 
 function run() {
   shopt -s extglob
+  # Test selections are extended glob patterns.
+  # shellcheck disable=SC2254
   case $1 in
     $SKIP | $RUN ) return 0 ;;
   esac
@@ -26,36 +28,28 @@ function run() {
   done
 
   shift 1;
-  CMD="$@"
-
-  set +e
-  log="$((eval "$CMD" ) 2>&1)"
-
-  if [[ $? -eq 0 ]]; then
+  if log=$("$@" 2>&1); then
     echo -e "[${GREEN}✔${NC}]"
   else
     echo -e "[${RED}✗${NC}]"
     echo "$log"
     FAILED=1
   fi
-  set -e
 }
 
 function run_tests() {
-  ALL_FILES=$1
-  PYTHON_FILES=$2
-
   run "ruff" ruff check openpilot --quiet
-  run "check_dependencies" python3 $DIR/check_dependencies.py
-  run "check_indentation" $DIR/check_indentation.py $PYTHON_FILES
-  run "check_added_large_files" $DIR/check_added_large_files.py --maxkb=120 $ALL_FILES
-  run "check_shebang_scripts_are_executable" $DIR/check_shebang_scripts_are_executable.py $ALL_FILES
-  run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
-  run "check_nomerge_comments" $DIR/check_nomerge_comments.sh $ALL_FILES
+  run "shellcheck" shellcheck "${SHELL_FILES[@]}"
+  run "check_dependencies" python3 "$DIR/check_dependencies.py"
+  run "check_indentation" "$DIR/check_indentation.py" "${PYTHON_FILES[@]}"
+  run "check_added_large_files" "$DIR/check_added_large_files.py" --maxkb=120 "${ALL_FILES[@]}"
+  run "check_shebang_scripts_are_executable" "$DIR/check_shebang_scripts_are_executable.py" "${ALL_FILES[@]}"
+  run "check_shebang_format" "$DIR/check_shebang_format.sh" "${ALL_FILES[@]}"
+  run "check_nomerge_comments" "$DIR/check_nomerge_comments.sh" "${ALL_FILES[@]}"
 
   if [[ -z "$FAST" ]]; then
     run "ty" ty check openpilot
-    run "codespell" codespell $ALL_FILES
+    run "codespell" codespell "${ALL_FILES[@]}"
   fi
 
   return $FAILED
@@ -68,6 +62,7 @@ function help() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
   echo -e "  ${BOLD}ruff${NC}"
+  echo -e "  ${BOLD}shellcheck${NC}"
   echo -e "  ${BOLD}check_dependencies${NC}"
   echo -e "  ${BOLD}check_indentation${NC}"
   echo -e "  ${BOLD}ty${NC}"
@@ -103,16 +98,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-RUN=$([ -z "$RUN" ] && echo "" || echo "!($(echo $RUN | sed 's/ /|/g'))")
-SKIP="@($(echo $SKIP | sed 's/ /|/g'))"
+if [[ -n "$RUN" ]]; then
+  RUN="!(${RUN// /|})"
+fi
+SKIP="@(${SKIP// /|})"
 
-GIT_FILES="$(git ls-files openpilot)"
-ALL_FILES=""
-for f in $GIT_FILES; do
+ALL_FILES=()
+PYTHON_FILES=()
+while IFS= read -r -d '' f; do
   if [[ -f $f ]]; then
-    ALL_FILES+="$f"$'\n'
+    ALL_FILES+=("$f")
+    if [[ $f == *.py ]]; then
+      PYTHON_FILES+=("$f")
+    fi
   fi
-done
-PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
+done < <(git ls-files -z openpilot)
 
-run_tests "$ALL_FILES" "$PYTHON_FILES"
+# Include tooling, launchers, and the extensionless Git hook.
+SHELL_FILES=()
+while IFS= read -r -d '' f; do
+  if [[ -f $f ]]; then
+    SHELL_FILES+=("$f")
+  fi
+done < <(git ls-files -z '*.sh' '*.bash' scripts/post-commit)
+
+run_tests

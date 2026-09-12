@@ -87,16 +87,16 @@ pull_lfs() {
 safe_checkout() {
   # completely clean TEST_DIR
 
-  cd $SOURCE_DIR
+  cd "$SOURCE_DIR"
 
   # cleanup orphaned locks
   find .git -type f -name "*.lock" -exec rm {} +
 
   git reset --hard
-  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
+  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin "$GIT_COMMIT"
   find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-  git reset --hard $GIT_COMMIT
-  git checkout $GIT_COMMIT
+  git reset --hard "$GIT_COMMIT"
+  git checkout "$GIT_COMMIT"
   git clean -xdff
   git submodule sync
   git submodule foreach --recursive "git reset --hard && git clean -xdff"
@@ -106,22 +106,22 @@ safe_checkout() {
   pull_lfs
 
   echo "git checkout done, t=$SECONDS"
-  du -hs $SOURCE_DIR $SOURCE_DIR/.git
+  du -hs "$SOURCE_DIR" "$SOURCE_DIR/.git"
 
-  rsync -a --delete $SOURCE_DIR $TEST_DIR
+  rsync -a --delete "$SOURCE_DIR" "$TEST_DIR"
 }
 
 unsafe_checkout() {( set -e
   # checkout directly in test dir, leave old build products
 
-  cd $TEST_DIR
+  cd "$TEST_DIR"
 
   # cleanup orphaned locks
   find .git -type f -name "*.lock" -exec rm {} +
 
-  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
-  git checkout --force --no-recurse-submodules $GIT_COMMIT
-  git reset --hard $GIT_COMMIT
+  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin "$GIT_COMMIT"
+  git checkout --force --no-recurse-submodules "$GIT_COMMIT"
+  git reset --hard "$GIT_COMMIT"
   git clean -dff
   git submodule sync
   git submodule foreach --recursive "git reset --hard && git clean -df"
@@ -135,14 +135,16 @@ export GIT_PACK_THREADS=8
 
 # set up environment
 if [ ! -d "$SOURCE_DIR" ]; then
-  git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
+  git clone https://github.com/commaai/openpilot.git "$SOURCE_DIR"
 fi
 
 if [ ! -z "$UNSAFE" ]; then
   echo "trying unsafe checkout"
   set +e
   unsafe_checkout
-  if [[ "$?" -ne 0 ]]; then
+  # Keep the call outside an if condition so its subshell still honors set -e.
+  checkout_status=$?
+  if [[ "$checkout_status" -ne 0 ]]; then
     safe_checkout
   fi
   set -e
@@ -152,7 +154,7 @@ else
 fi
 
 # submodule package symlinks for PYTHONPATH imports on device (same as launch_chffrplus.sh)
-cd $TEST_DIR
+cd "$TEST_DIR"
 ln -sfn msgq_repo/msgq msgq
 ln -sfn opendbc_repo/opendbc opendbc
 ln -sfn rednose_repo/rednose rednose

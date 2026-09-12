@@ -106,6 +106,8 @@ function install_python_deps() {
   if ! command -v "uv" > /dev/null 2>&1; then
     echo "installing uv..."
     # TODO: outer retry can be removed once https://github.com/axodotdev/cargo-dist/pull/2311 is merged
+    # The token is expanded by the child shell.
+    # shellcheck disable=SC2016
     retry 3 sh -c 'curl --retry 5 --retry-delay 5 --retry-all-errors -LsSf https://astral.sh/uv/install.sh | UV_GITHUB_TOKEN="${GITHUB_TOKEN:-}" sh'
     UV_BIN="$HOME/.local/bin"
     PATH="$UV_BIN:$PATH"
@@ -117,6 +119,7 @@ function install_python_deps() {
 
   echo "installing python packages..."
   uv sync --frozen --all-extras
+  # shellcheck source=/dev/null
   source .venv/bin/activate
 }
 

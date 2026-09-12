@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Forward all openpilot service ports
-while IFS=' ' read -r name port; do
+while IFS=' ' read -r _name port; do
   adb forward "tcp:${port}" "tcp:${port}" > /dev/null
 done < <(python3 - <<'PY'
 from openpilot.cereal.services import SERVICE_LIST

@@ -19,19 +19,19 @@ function loop() {
   JENKINS_BRANCH="__jenkins_loop_${BRANCH}_$(date +%s)"
   API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$JENKINS_BRANCH"
 
-  for run in $(seq 1 $((RUNS / 2))); do
+  for ((run=0; run<RUNS / 2; run++)); do
 
     N=2
 
     if [[ $FIRST_LOOP ]]; then
       TEMP_DIR=$(mktemp -d)
-      GIT_LFS_SKIP_SMUDGE=1 git clone --quiet -b $BRANCH --depth=1 --no-tags git@github.com:commaai/openpilot $TEMP_DIR
-      git -C $TEMP_DIR checkout --quiet -b $JENKINS_BRANCH
-      echo "TESTING: $(date)" >> $TEMP_DIR/testing_jenkins
-      git -C $TEMP_DIR add testing_jenkins
-      git -C $TEMP_DIR commit --quiet -m "testing"
-      git -C $TEMP_DIR push --quiet -f origin $JENKINS_BRANCH
-      rm -rf $TEMP_DIR
+      GIT_LFS_SKIP_SMUDGE=1 git clone --quiet -b "$BRANCH" --depth=1 --no-tags git@github.com:commaai/openpilot "$TEMP_DIR"
+      git -C "$TEMP_DIR" checkout --quiet -b "$JENKINS_BRANCH"
+      echo "TESTING: $(date)" >> "$TEMP_DIR/testing_jenkins"
+      git -C "$TEMP_DIR" add testing_jenkins
+      git -C "$TEMP_DIR" commit --quiet -m "testing"
+      git -C "$TEMP_DIR" push --quiet -f origin "$JENKINS_BRANCH"
+      rm -rf "$TEMP_DIR"
       FIRST_BUILD=1
       echo ''
       echo 'waiting on Jenkins...'
@@ -40,15 +40,14 @@ function loop() {
       FIRST_LOOP=""
     fi
 
-    FIRST_BUILD=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
+    FIRST_BUILD=$(curl -s "$API_ROUTE/api/json" | jq .nextBuildNumber)
     LAST_BUILD=$((FIRST_BUILD+N-1))
-    TEST_BUILDS=( $(seq $FIRST_BUILD $LAST_BUILD) )
 
     # Start N new builds
-    for i in ${TEST_BUILDS[@]};
+    for ((i=FIRST_BUILD; i<=LAST_BUILD; i++));
     do
       echo "Starting build $i"
-      curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
+      curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST "$API_ROUTE/build?delay=0sec"
       sleep 5
     done
     echo ""
@@ -58,14 +57,14 @@ function loop() {
       sleep 30
 
       count=0
-      for i in ${TEST_BUILDS[@]};
+      for ((i=FIRST_BUILD; i<=LAST_BUILD; i++));
       do
-        RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" $API_ROUTE/$i/api/json)
+        RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" "$API_ROUTE/$i/api/json")
         HTTP_CODE=$(tail -n1 <<< "$RES")
         JSON=$(sed '$ d' <<< "$RES")
 
         if [[ $HTTP_CODE == "200" ]]; then
-          STILL_RUNNING=$(echo $JSON | jq .inProgress)
+          STILL_RUNNING=$(echo "$JSON" | jq .inProgress)
           if [[ $STILL_RUNNING == "true" ]]; then
             echo -e "Build $i: ${YELLOW}still running${NC}"
             continue
@@ -119,11 +118,11 @@ function _looper() {
   echo -e "You are about to start $RUNS Jenkins builds against the $BRANCH branch."
   echo -e "If you expect this to run overnight, ${UNDERLINE}${BOLD}unplug the cold reboot power switch${NC} from the testing closet before."
   echo ""
-  read -p "Press (y/Y) to confirm: " choice
+  read -r -p "Press (y/Y) to confirm: " choice
   if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
     loop
   fi
 
 }
 
-_looper $@
+_looper "$@"

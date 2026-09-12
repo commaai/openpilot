@@ -3,7 +3,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-cd $DIR
+cd "$DIR"
 
 if [ ! -d palanteer ]; then
   git clone https://github.com/dfeneyrou/palanteer
@@ -17,8 +17,8 @@ git pull
 mkdir -p build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+make -j"$(nproc)"
 
 pip install --force-reinstall python/dist/palanteer*.whl
 
-cp bin/palanteer $DIR/viewer
+cp bin/palanteer "$DIR/viewer"
