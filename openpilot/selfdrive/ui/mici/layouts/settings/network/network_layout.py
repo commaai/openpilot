@@ -29,7 +29,7 @@ class NetworkLayoutMici(NavScroller):
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
-    self._tethering_toggle_btn = BigToggle('enable tethering', '', toggle_callback=tethering_toggle_callback,
+    self._tethering_toggle_btn = BigToggle("enable tethering", "", toggle_callback=tethering_toggle_callback,
                                            description='Share the device’s internet connection through a Wi-Fi hotspot.')
 
     def tethering_password_callback(password: str):
@@ -45,7 +45,7 @@ class NetworkLayoutMici(NavScroller):
       gui_app.push_widget(dlg)
 
     txt_tethering = gui_app.texture("icons_mici/settings/network/tethering.png", 64, 54)
-    self._tethering_password_btn = BigButton('tethering password', '', txt_tethering)
+    self._tethering_password_btn = BigButton("tethering password", "", txt_tethering)
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
 
     # ******** Network Metered ********
@@ -60,7 +60,7 @@ class NetworkLayoutMici(NavScroller):
 
     # TODO: signal for current network metered type when changing networks, this is wrong until you press it once
     # TODO: disable when not connected
-    self._network_metered_btn = BigMultiToggle('network usage', ['default', 'metered', 'unmetered'], select_callback=network_metered_callback,
+    self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback,
                                                description='Metered prevents large uploads on this Wi-Fi connection. Default uses the network’s detected ' +
                                                            'setting.')
     self._network_metered_btn.set_enabled(False)
@@ -82,7 +82,7 @@ class NetworkLayoutMici(NavScroller):
     self._roaming_btn = BigParamControl("enable roaming", "GsmRoaming", description='Allow cellular data roaming.')
 
     # ******** APN settings ********
-    self._apn_btn = BigButton('apn settings', 'edit',
+    self._apn_btn = BigButton("apn settings", "edit",
                               description='Set the access point name required by your cellular carrier. Leave blank for automatic configuration.')
     self._apn_btn.set_click_callback(self._edit_apn)
 

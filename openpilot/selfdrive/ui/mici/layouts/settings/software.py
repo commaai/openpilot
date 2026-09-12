@@ -193,7 +193,7 @@ class CheckUpdateButton(BigButton):
 
 class InstallUpdateButton(BigButton):
   def __init__(self):
-    super().__init__('install now', '', gui_app.texture('icons_mici/settings/device/reboot.png', 64, 70))
+    super().__init__("install now", "", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
     self.set_visible(lambda: ui_state.is_offroad() and ui_state.params.get_bool("UpdateAvailable"))
 
   def _update_state(self):
@@ -242,7 +242,7 @@ class BranchSelectPage(NavScroller):
 
 class TargetBranchButton(BigButton):
   def __init__(self, check_update_btn: CheckUpdateButton):
-    super().__init__('target branch', ui_state.params.get('UpdaterTargetBranch') or '',
+    super().__init__("target branch", ui_state.params.get("UpdaterTargetBranch") or "",
                      description='Select the software branch to download on the next update check.')
     self._check_update_btn = check_update_btn
     self.set_click_callback(self._on_click)
@@ -275,8 +275,8 @@ class SoftwareLayoutMici(NavScroller):
     def uninstall_openpilot_callback():
       ui_state.params.put_bool("DoUninstall", True, block=True)
 
-    uninstall_openpilot_btn = EngagedConfirmationButton('uninstall openpilot', 'uninstall',
-                                                        gui_app.texture('icons_mici/settings/device/uninstall.png', 64, 64),
+    uninstall_openpilot_btn = EngagedConfirmationButton("uninstall openpilot", "uninstall",
+                                                        gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
                                                         uninstall_openpilot_callback, exit_on_confirm=False,
                                                         description='Remove openpilot from this device.',
                                                         description_icon=gui_app.texture('icons_mici/setup/factory_reset.png', 64, 64))

@@ -178,31 +178,31 @@ class DeviceLayoutMici(NavScroller):
       params.remove("LiveDelay")
       params.put_bool("OnroadCycleRequested", True, block=True)
 
-    reset_calibration_btn = EngagedConfirmationButton('reset calibration', 'reset', gui_app.texture('icons_mici/settings/device/lkas.png', 122, 64),
+    reset_calibration_btn = EngagedConfirmationButton("reset calibration", "reset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
                                                       reset_calibration_callback,
                                                       description='Mount the device within 4° left or right and 5° up or 9° down. openpilot calibrates ' +
                                                                   'continuously; resetting is rarely needed. Resetting clears learned calibration.')
 
-    reboot_btn = EngagedConfirmationCircleButton('reboot', gui_app.texture('icons_mici/settings/device/reboot.png', 64, 70), reboot_callback,
-                                                 exit_on_confirm=False)
+    reboot_btn = EngagedConfirmationCircleButton("reboot", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+                                                 reboot_callback, exit_on_confirm=False)
 
-    self._power_off_btn = EngagedConfirmationCircleButton('power off', gui_app.texture('icons_mici/settings/device/power.png', 64, 66),
+    self._power_off_btn = EngagedConfirmationCircleButton("power off", gui_app.texture("icons_mici/settings/device/power.png", 64, 66),
                                                           power_off_callback, exit_on_confirm=False, red=True)
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
-    regulatory_btn = BigButton('regulatory info', '', gui_app.texture('icons_mici/settings/device/info.png', 64, 64))
+    regulatory_btn = BigButton("regulatory info", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     regulatory_btn.set_click_callback(self._on_regulatory)
 
-    cabin_cam_btn = BigButton('driver\ncamera preview', '', gui_app.texture('icons_mici/settings/device/cameras.png', 64, 64),
+    cabin_cam_btn = BigButton("driver\ncamera preview", "", gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
                               description='Preview the cabin camera to check driver monitoring visibility. The vehicle must be off.')
     cabin_cam_btn.set_click_callback(lambda: gui_app.push_widget(CabinCameraDialog()))
     cabin_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    review_training_guide_btn = BigButton('review\ntraining guide', '', gui_app.texture('icons_mici/settings/device/info.png', 64, 64))
+    review_training_guide_btn = BigButton("review\ntraining guide", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    terms_btn = BigButton('terms &\nconditions', '', gui_app.texture('icons_mici/settings/device/info.png', 64, 64))
+    terms_btn = BigButton("terms &\nconditions", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
 
     self._scroller.add_widgets([
