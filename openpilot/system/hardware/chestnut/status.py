@@ -4,7 +4,7 @@ from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, is_chestnut_usb_
 from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 
 
-CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging")
+CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut")
 CHESTNUT_POWERED_VOLTAGE = 5000
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.

@@ -12,7 +12,7 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -o ControlMaster=auto -o ControlPath=/tmp/ssh_control_%C -o ControlPersist=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
+ssh -o ControlMaster=auto -o ControlPath=/tmp/ssh_control_%C -o ControlPersist=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=12 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
 
 set -e
 
@@ -169,7 +169,7 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
-  def excludeBranches = ['__nightly', 'devel', 'devel-staging',
+  def excludeBranches = ['__nightly', '__nightly-chestnut', 'devel', 'devel-staging',
                          'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
@@ -199,6 +199,12 @@ node {
           ])
         },
       )
+    }
+
+    if (env.BRANCH_NAME == '__nightly-chestnut') {
+      deviceStage("build nightly-chestnut", "mici-chestnut-ci", [], [
+        step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
+      ])
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
@@ -256,6 +262,8 @@ node {
         deviceStage("chestnut", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
           step("build", "./openpilot/selfdrive/test/chestnut.sh"),
           step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
+          step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
+          step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
         ])
       },
 
