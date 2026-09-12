@@ -1,25 +1,47 @@
-import struct
+import time
 
 import usb1
 
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import SERVICE_LIST
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware.chestnut.i2c import ChestnutI2C
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, get_usb_state, is_chestnut_usb_id
 
 
-def read_chestnut_state(handle, gpu_state=None):
+def read_chestnut_state(handle, gpu_state=None, diagnostics=None, snapshot=False):
   msg = messaging.new_message('chestnutState')
   if gpu_state is not None:
     msg.chestnutState = gpu_state
   state = msg.chestnutState
+  bus = ChestnutI2C(handle)
+  msg.valid = False
   try:
-    raw = handle.controlRead(0xC0, 0xC0, 0, 0, 5, timeout=100)
-    state.supplyVoltage, state.supplyCurrent, state.supplyFault = struct.unpack('<Hh?', bytes(raw))
-    raw = handle.controlRead(0xC0, 0xE4, 0xB450, 0, 1, timeout=100)
-    state.pcieLtssm, = struct.unpack('B', bytes(raw))
+    state.pcieLtssm = bus.read(0xB450)[0]
+    state.supplyFault = not bool(bus.read(0xC650)[0] & 2)
+    shunt = bus.read_u16(1)
+    voltage = bus.read_u16(2)
+    if diagnostics is not None:
+      diagnostics.update(shunt_raw=shunt, voltage_raw=voltage)
+    state.supplyVoltage = (voltage * 125 // 100) & 0xFFFF
+    # Match the firmware's signed division and 16-bit casts.
+    shunt = shunt if shunt < 0x8000 else shunt - 0x10000
+    current = (abs(shunt) * 2500 // 2197) * (1 if shunt >= 0 else -1)
+    state.supplyCurrent = (current + 0x8000) % 0x10000 - 0x8000
     msg.valid = True
-  except (usb1.USBError, struct.error):
-    msg.valid = False
+  except (usb1.USBError, OSError) as e:
+    if diagnostics is not None:
+      diagnostics.update(error=repr(e), register=bus.register, status=bus.status, expected=bus.expected)
+  if diagnostics is not None:
+    diagnostics.update(sensor_valid=msg.valid, pcie=state.pcieLtssm, supply_fault=state.supplyFault)
+  if diagnostics is not None and snapshot:
+    try:
+      diagnostics.update(product=handle.getProduct(), i2c=bus.read(0xC870, 16).hex(),
+                         mux=bus.read(0xC629, 2).hex(), gpio=bus.read(0xC650, 2).hex())
+      if msg.valid:
+        diagnostics['ina'] = {hex(reg): bus.read_u16(reg) for reg in (0, 5, 0xFE, 0xFF)}
+    except (usb1.USBError, OSError) as e:
+      diagnostics['snapshot_error'] = repr(e)
   return msg
 
 
@@ -28,6 +50,8 @@ def chestnut_state_thread(end_event):
   sm = messaging.SubMaster(['chestnutGpuState'])
   with usb1.USBContext() as context:
     handle = None
+    next_diagnostic = 0.
+    previous_valid = None
     try:
       while not end_event.is_set():
         if handle is None:
@@ -41,7 +65,17 @@ def chestnut_state_thread(end_event):
         if handle is not None:
           sm.update(0)
           gpu_valid = sm.alive['chestnutGpuState'] and sm.valid['chestnutGpuState']
-          msg = read_chestnut_state(handle, sm['chestnutGpuState'] if gpu_valid else None)
+          now = time.monotonic()
+          diagnostics = {}
+          snapshot = now >= next_diagnostic
+          msg = read_chestnut_state(handle, sm['chestnutGpuState'] if gpu_valid else None, diagnostics, snapshot)
+          if snapshot or msg.valid != previous_valid:
+            cloudlog.event('chestnut_ina', **diagnostics, elapsed_ms=(time.monotonic() - now) * 1000)
+            next_diagnostic = now + 30.
+          if msg.valid != previous_valid:
+            previous_valid = msg.valid
+            next_diagnostic = 0.
+
           if not msg.valid:
             handle.close()
             handle = None
