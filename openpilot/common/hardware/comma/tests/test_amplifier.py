@@ -20,6 +20,7 @@ class TestAmplifier(OpenpilotTestCase):
     HARDWARE.reset_internal_panda()
     Panda.wait_for_panda(None, 30)
     self.panda = Panda()
+    self.addCleanup(self.panda.close)
 
   def teardown_method(self):
     HARDWARE.reset_internal_panda()
