@@ -4,11 +4,12 @@ import ctypes
 from functools import cached_property, partial
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
+os.environ.setdefault('AMD_USB_POLL_US', '100') # lower latency for chestnut completion waits
 from tinygrad.device import Buffer, Device
 from tinygrad.tensor import Tensor
-from tinygrad.uop.ops import UOp
+from tinygrad.uop.ops import Ops, UOp
 from tinygrad.helpers import disable_gc, round_up
-from tinygrad.engine.jit import _prepare_jit_inputs
+from tinygrad.engine.jit import CapturedJit, _prepare_jit_inputs
 import usb1
 import pickle
 import struct
@@ -54,11 +55,19 @@ def jit_input_view(tensor: Tensor) -> Tensor:
 
 
 def bind_jit(jit, *args, **kwargs):
-  # Input buffers stay fixed, so validate their shapes and devices once at startup.
+  # Bind fixed input addresses to avoid updating kernel arguments every frame.
   buffers, values, names, info = _prepare_jit_inputs(args, kwargs)
   assert jit.captured is not None
   assert names == jit.captured.expected_names and info == jit.captured.expected_input_info
-  return disable_gc()(partial(jit.captured, buffers, values))
+  linear = jit.captured._linear
+  params = {u: buffers[u.arg.slot] for u in linear.toposort(enter_calls=False) if u.op is Ops.PARAM}
+  calls = []
+  for call in linear.src:
+    body = call.src[0]
+    calls.append(body.replace(src=(body.src[0].substitute(params, walk=True),)).call() if body.arg == 'graph'
+                 else call.substitute(params, walk=True))
+  bound = CapturedJit(jit.captured.ret, linear.replace(src=tuple(calls)), [], [])
+  return disable_gc()(partial(bound, [], values))
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
