@@ -51,11 +51,11 @@ class TestPandad(OpenpilotTestCase):
 
   def _flash_bootstub(self, fn):
     self._go_to_dfu()
-    pd = PandaDFU(None)
-    if fn is None:
-      fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
-    with open(fn, "rb") as f:
-      pd.program_bootstub(f.read())
+    with PandaDFU(None) as pd:
+      if fn is None:
+        fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
+      with open(fn, "rb") as f:
+        pd.program_bootstub(f.read())
     HARDWARE.reset_internal_panda()
 
   def test_in_dfu(self):
