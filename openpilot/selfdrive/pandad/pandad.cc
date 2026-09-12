@@ -393,7 +393,7 @@ void pandad_run(Panda *panda) {
     }
 
     // Send out peripheralState at 2Hz
-    if (rk.frame() % 50 == 0) {
+    if (rk.frame() % 50 == 1) {
       send_peripheral_state(panda, &pm);
     }
 

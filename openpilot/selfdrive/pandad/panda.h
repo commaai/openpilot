@@ -92,7 +92,7 @@ protected:
 
   Panda() {}
   void pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
-                         std::function<void(uint8_t *, size_t)> write_func);
+                         std::function<void(uint8_t *, size_t)> write_func, bool spi_v3 = false);
   bool unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_frame> &out_vec);
   uint8_t calculate_checksum(uint8_t *data, uint32_t len);
 };
