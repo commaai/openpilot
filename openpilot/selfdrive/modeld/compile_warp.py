@@ -103,11 +103,11 @@ def _parse_size(s):
 
 
 def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fill=None,
-                 frames=1, frame_size=None, transform_device='NPY'):
+                 frames=1, transform_device='NPY'):
   print(f"Compiling {layout} warp for {nv12.width}x{nv12.height} -> {model_w}x{model_h}...")
 
   warp_jit = TinyJit(make_warp(nv12, model_w, model_h, layout, border_fill, frames), prune=True)
-  frame_shape = (frame_size or nv12.size,) if frames == 1 else (frames, frame_size or nv12.size)
+  frame_shape = (nv12.size,) if frames == 1 else (frames, nv12.size)
   transform_shape = (3, 3) if frames == 1 else (frames, 3, 3)
 
   for i in range(10):
@@ -133,13 +133,16 @@ if __name__ == "__main__":
   p.add_argument('--layout', choices=['luma', 'yuv420'], required=True)
   p.add_argument('--border-fill', type=int, help='fill value outside the frame; omit to clamp coordinates')
   p.add_argument('--frames', type=int, default=1, help='number of frames to warp together')
-  p.add_argument('--frame-size', type=int, help='input bytes per frame; defaults to the full NV12 allocation')
+  p.add_argument('--packed-input', action='store_true', help='NV12 input without row or height padding')
   p.add_argument('--transform-device', default='NPY', help='device holding the input transforms')
   p.add_argument('--output', required=True)
   args = p.parse_args()
 
   cam_w, cam_h = args.camera_resolution
-  nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
+  if args.packed_input:
+    nv12 = NV12Frame(cam_w, cam_h, cam_w, cam_h, cam_h // 2, cam_w * cam_h * 3 // 2)
+  else:
+    nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
   model_w, model_h = args.warp_to
   compile_warp(nv12, model_w, model_h, args.output, args.layout, args.border_fill,
-               args.frames, args.frame_size, args.transform_device)
+               args.frames, args.transform_device)
