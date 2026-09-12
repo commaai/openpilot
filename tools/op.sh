@@ -73,7 +73,7 @@ function op_get_openpilot_dir() {
 
 function op_install_post_commit() {
   op_get_openpilot_dir
-  if [[ ! -d $OPENPILOT_ROOT/.git/hooks/post-commit.d ]]; then
+  if [[ ! -d "$OPENPILOT_ROOT/.git/hooks/post-commit.d" ]]; then
     mkdir "$OPENPILOT_ROOT/.git/hooks/post-commit.d"
     mv "$OPENPILOT_ROOT/.git/hooks/post-commit" "$OPENPILOT_ROOT/.git/hooks/post-commit.d" 2>/dev/null || true
   fi
@@ -103,7 +103,7 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -112,7 +112,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
-    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
+    if [[ -z $(ls "$OPENPILOT_ROOT/$name") ]]; then
       echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
@@ -134,10 +134,10 @@ function op_check_os() {
 
 function op_check_venv() {
   echo "Checking for venv..."
-  if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+  if [[ -f "$OPENPILOT_ROOT/.venv/bin/activate" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
-    echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $OPENPILOT_ROOT. Assuming global env!"
+    echo -e " ↳ [${RED}✗${NC}] Can't activate venv in '$OPENPILOT_ROOT'. Assuming global env!"
   fi
 }
 
@@ -242,18 +242,18 @@ function op_activate_venv() {
 function op_venv() {
   op_before_cmd
 
-  if [[ ! -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
-    echo -e "No venv found in $OPENPILOT_ROOT"
+  if [[ ! -f "$OPENPILOT_ROOT/.venv/bin/activate" ]]; then
+    echo -e "No venv found in '$OPENPILOT_ROOT'"
     return 1
   fi
 
   case $SHELL_NAME in
     "zsh")
       ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
-      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> "$ZSHRC_DIR/.zshrc"
+      echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/bin/activate\"" >> "$ZSHRC_DIR/.zshrc"
       ZDOTDIR=$ZSHRC_DIR zsh ;;
     *)
-      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+      bash --rcfile <(echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/bin/activate\"") ;;
   esac
 }
 
