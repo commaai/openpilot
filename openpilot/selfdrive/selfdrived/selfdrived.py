@@ -567,7 +567,9 @@ class SelfdriveD:
       self.is_metric = self.params.get_bool("IsMetric")
       self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
       self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      # Lateral maneuvers temporarily use chill mode without changing the saved preference.
+      self.experimental_mode = (self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl and
+                                not self.params.get_bool("LateralManeuverMode"))
       self.personality = self.params.get("LongitudinalPersonality", return_default=True)
       time.sleep(0.1)
 
