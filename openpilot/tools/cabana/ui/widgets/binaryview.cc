@@ -367,11 +367,11 @@ void BinaryView::updateState() {
     }
   }
 
-  const bool dark = isDarkTheme();
+  const Palette &p = palette();
   const double max_alpha = 255.0;
-  const double min_alpha_with_signal = dark ? 70.0 : 25.0;  // Base alpha for small flip counts
-  const double min_alpha_no_signal = dark ? 28.0 : 10.0;    // Base alpha for small flip counts for no signal bits
-  const double alpha_gamma = dark ? 0.6 : 1.0;
+  const double min_alpha_with_signal = p.heatmap_signal_alpha;  // Base alpha for small flip counts
+  const double min_alpha_no_signal = p.heatmap_bit_alpha;    // Base alpha for small flip counts for no signal bits
+  const double alpha_gamma = p.heatmap_gamma;
   const double log_factor = 1.0 + 0.2;
   const double log_scaler = max_alpha / log2(log_factor * max_bit_flip_count);
 
@@ -462,7 +462,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
         }
       }
     } else if (item->valid) {
-      if (isDarkTheme()) painter->AddRectFilled(rect.Min, rect.Max, IM_COL32(255, 255, 255, 20));
+      painter->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(palette().bit_background));
       if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
     bool bright = std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();

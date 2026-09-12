@@ -1,5 +1,6 @@
 #include "tools/cabana/ui/theme.h"
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 
@@ -19,9 +20,12 @@ constexpr Palette DARK_PALETTE = {
   .button = rgb(0x484b4d), .button_hovered = rgb(0x535658), .button_active = rgb(0x3c3f41),
   .header = rgb(0x2f65ca), .header_hovered = rgb(0x414e65), .header_active = rgb(0x2f65ca),
   .accent = rgb(0x2f65ca),
-  .border = rgb(0x282828), .separator = rgb(0x353535),
+  .border = rgb(0x282828), .separator = rgb(0x353535), .scrollbar_grab = rgb(0x484b4d),
   .tab = rgb(0x353535), .tab_hovered = rgb(0x484b4d), .table_header = rgb(0x484b4d),
   .grid = rgb(0xbbbbbb, 50.0f / 255.0f), .badge = rgb(0x808080),
+  .bit_background = rgb(0xffffff, 20.0f / 255.0f),
+  .heatmap_signal_alpha = 70.0, .heatmap_bit_alpha = 28.0, .heatmap_gamma = 0.6,
+  .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
 // Qt Cabana used QStyle::standardPalette() for light mode. These are Fusion's
@@ -33,12 +37,14 @@ constexpr Palette LIGHT_PALETTE = {
   .button = rgb(0xefefef), .button_hovered = rgb(0xe7f3fb), .button_active = rgb(0xd4e7f4),
   .header = rgb(0x308cc6), .header_hovered = rgb(0xe7f3fb), .header_active = rgb(0x308cc6),
   .accent = rgb(0x308cc6),
-  .border = rgb(0xb6b6b6), .separator = rgb(0xd0d0d0),
+  .border = rgb(0xb6b6b6), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0xb6b6b6),
   .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .table_header = rgb(0xefefef),
   .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
+  .bit_background = rgb(0xffffff, 0.0f),
+  .heatmap_signal_alpha = 25.0, .heatmap_bit_alpha = 10.0, .heatmap_gamma = 1.0,
+  .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 
-bool g_dark = false;
 const Palette *g_palette = &LIGHT_PALETTE;
 ImFont *g_ui_font = nullptr;
 ImFont *g_bold_font = nullptr;
@@ -85,8 +91,7 @@ void loadFonts() {
 }
 
 void applyTheme(int theme) {
-  g_dark = theme == DARK_THEME;
-  g_palette = g_dark ? &DARK_PALETTE : &LIGHT_PALETTE;
+  g_palette = theme == DARK_THEME ? &DARK_PALETTE : &LIGHT_PALETTE;
   const Palette &p = *g_palette;
   const ImVec4 none(0, 0, 0, 0);
 
@@ -124,7 +129,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
   c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
-  c[ImGuiCol_ScrollbarGrab] = g_dark ? p.button : p.border;
+  c[ImGuiCol_ScrollbarGrab] = p.scrollbar_grab;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;
   c[ImGuiCol_Header] = p.header;
@@ -155,8 +160,13 @@ void applyTheme(int theme) {
   ImPlot::GetStyle().Colors[ImPlotCol_AxisGrid] = p.grid;
 }
 
-bool isDarkTheme() { return g_dark; }
 const Palette &palette() { return *g_palette; }
+
+CabanaColor sparklineColor(const CabanaColor &color) {
+  const Palette &p = palette();
+  auto [h, s, v] = color.hsv();
+  return CabanaColor::fromHsv(h, std::min(1.0f, s * p.sparkline_saturation), v * p.sparkline_value, color.a / 255.0f);
+}
 
 ImFont *boldFont() { return g_bold_font; }
 
