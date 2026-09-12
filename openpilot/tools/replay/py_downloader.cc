@@ -226,6 +226,10 @@ std::string getRouteFiles(const std::string &route) {
   return runPython({"route-files", route});
 }
 
+std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
+  return runPython({"auth", provider}, abort);
+}
+
 std::string getDevices() {
   return runPython({"devices"});
 }

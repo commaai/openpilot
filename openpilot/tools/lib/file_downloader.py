@@ -207,7 +207,20 @@ def cmd_decompress(args):
   sys.stdout.flush()
 
 
+def cmd_auth(args):
+  from openpilot.tools.lib.auth import login_for_cabana
+  # Browser launchers must not inherit the protocol pipes or mix diagnostics into JSON.
+  with os.fdopen(os.dup(sys.stdout.fileno()), 'w') as output, open(os.devnull, 'w') as null:
+    os.dup2(null.fileno(), sys.stdout.fileno())
+    os.dup2(null.fileno(), sys.stderr.fileno())
+    print(json.dumps(login_for_cabana(args.provider)), file=output)
+
+
 def cmd_devices(args):
+  from openpilot.tools.lib.auth_config import get_token
+  if not get_token():
+    print(json.dumps({"error": "unauthorized"}))
+    return
   api_call(lambda api: api.get("v1/me/devices/"))
 
 
@@ -240,6 +253,10 @@ def main():
   p_dc = subparsers.add_parser("decompress")
   p_dc.add_argument("path")
   p_dc.set_defaults(func=cmd_decompress)
+
+  p_auth = subparsers.add_parser("auth")
+  p_auth.add_argument("provider", choices=["google", "apple", "github"])
+  p_auth.set_defaults(func=cmd_auth)
 
   p_dev = subparsers.add_parser("devices")
   p_dev.set_defaults(func=cmd_devices)
