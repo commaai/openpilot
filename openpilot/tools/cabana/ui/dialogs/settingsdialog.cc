@@ -23,7 +23,7 @@ const char *FORM_LABELS[FORM_LABEL_COUNT] = {"Color Theme", "Max Cached Minutes"
 float formLabelWidth() {
   float w = 0.0f;
   for (const char *label : FORM_LABELS) w = std::max(w, ImGui::CalcTextSize(label).x);
-  return w + ImGui::GetStyle().ItemSpacing.x * 2;  // horizontal spacing between label and field
+  return ImGui::GetCursorPosX() + w + ImGui::GetStyle().ItemSpacing.x;
 }
 
 void formRow(FormLabel label, float label_width) {
@@ -34,7 +34,7 @@ void formRow(FormLabel label, float label_width) {
 }
 
 void settingInputInt(const char *id, int *value, int step, int step_fast, int minimum, int maximum) {
-  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
   const float width = ImGui::CalcItemWidth();
   ImGui::PushID(id);
   ImGui::BeginGroup();
@@ -89,7 +89,7 @@ void SettingsDialog::draw() {
 
   checkBox("Enable live stream logging", &log_livestream_);
   ImGui::BeginDisabled(!log_livestream_);
-  ImGui::SetNextItemWidth(-90.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Browse...") + ImGui::GetStyle().ItemSpacing.x));
   inputText("##log_path", &log_path_, "", ImGuiInputTextFlags_ReadOnly);
   ImGui::SameLine();
   if (ImGui::Button("Browse...")) {

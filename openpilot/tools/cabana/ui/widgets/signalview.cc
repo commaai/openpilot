@@ -336,7 +336,7 @@ void SignalView::drawEditor(SignalModel::Item *item) {
   } else if (item->type == SignalModel::Item::Size) {
     int v = item->sig->size;
     if (take_focus) ImGui::SetKeyboardFocusHere();
-    bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
+    bool changed = inputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
     if (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       open_item_ = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
       return;
@@ -492,7 +492,7 @@ void SignalView::drawValueDescriptionDlg() {
 }
 
 static ImVec2 indexButtonsSize(float button) {
-  return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
+  return ImVec2(button * 2 + ImGui::GetStyle().ItemSpacing.x, button);
 }
 
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
@@ -871,7 +871,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
   const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
@@ -913,7 +913,7 @@ bool ValueDescriptionDlg::draw() {
   if (iconButton("add", icon::PLUS_LG, "Add")) {
     table_.emplace_back("", "");
   }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::SameLine();
   ImGui::BeginDisabled(current_row_ == -1);
   if (iconButton("remove", icon::DASH_LG, "Remove") && current_row_ < table_.size()) {
     table_.erase(table_.begin() + current_row_);
