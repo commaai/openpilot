@@ -13,11 +13,11 @@ def read_chestnut_state(handle, gpu_state=None):
     msg.chestnutState = gpu_state
   state = msg.chestnutState
   try:
-    raw = handle.controlRead(0xC0, 0xC0, 0, 0, 5, timeout=100)
-    state.supplyVoltage, state.supplyCurrent, state.supplyFault = struct.unpack('<Hh?', bytes(raw))
+    raw = handle.controlRead(0xC0, 0xC0, 0, 0, 6, timeout=100)
+    state.supplyVoltage, state.supplyCurrent, state.supplyFault, ina_valid = struct.unpack('<Hh??', bytes(raw))
     raw = handle.controlRead(0xC0, 0xE4, 0xB450, 0, 1, timeout=100)
     state.pcieLtssm, = struct.unpack('B', bytes(raw))
-    msg.valid = True
+    msg.valid = ina_valid
   except (usb1.USBError, struct.error):
     msg.valid = False
   return msg
