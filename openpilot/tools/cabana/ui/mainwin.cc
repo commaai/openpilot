@@ -779,10 +779,6 @@ void MainWindow::drawDockspace() {
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
-  // Older layouts hid the center's dock tabs. Reveal them without moving any panels.
-  if (const auto *center = ImGui::FindWindowByName(CENTER_PANEL); center && center->DockNode) {
-    center->DockNode->LocalFlags &= ~ImGuiDockNodeFlags_NoTabBar;
-  }
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
       (!ImGui::FindWindowByName(CHARTS_WINDOW) && !ImGui::FindWindowSettingsByID(ImHashStr(CHARTS_WINDOW)))) {
     // Messages left, route above charts on the right, details in the middle.
