@@ -194,15 +194,19 @@ void RoutesDialog::drawLogin() {
   const float gap = ImGui::GetStyle().ItemSpacing.y;
   const float wrap_x = ImGui::GetWindowWidth() - 28;
   const float text_width = wrap_x - ImGui::GetCursorPosX();
-  const std::string intro = auth_abort_
-    ? "Sign in with " + s_.provider + " in your browser, then return to Cabana to choose a device and route."
-    : "Use your comma account to browse recorded drives and open a route for analysis.";
+  const char *chooser_intro = "Use your comma account to browse recorded drives and open a route for analysis.";
+  const auto waiting_intro = [](const std::string &provider) {
+    return "Sign in with " + provider + " in your browser, then return to Cabana to choose a device and route.";
+  };
+  const std::string intro = auth_abort_ ? waiting_intro(s_.provider) : chooser_intro;
   const char *hint = "Use the comma account paired with your device.";
-  const char *message = s_.auth_error.empty() ? hint : s_.auth_error.c_str();
-  const float intro_height = ImGui::CalcTextSize(intro.c_str(), nullptr, false, text_width).y;
-  const float controls_height = auth_abort_
-    ? 76 + gap + button_options.height
-    : 3 * (button_options.height + 2 * gap) + ImGui::CalcTextSize(message, nullptr, false, text_width).y;
+  // Reserve the same space in every state so the heading and controls never jump.
+  float intro_height = ImGui::CalcTextSize(chooser_intro, nullptr, false, text_width).y;
+  for (const char *provider : providers) {
+    intro_height = std::max(intro_height, ImGui::CalcTextSize(waiting_intro(provider).c_str(), nullptr, false, text_width).y);
+  }
+  const float controls_height = 3 * (button_options.height + 2 * gap) +
+                                ImGui::CalcTextSize(hint, nullptr, false, text_width).y;
   const float content_height = 28 + 2 * gap + intro_height + 2 * gap + 12 + controls_height;
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + std::max(0.0f, (ImGui::GetContentRegionAvail().y - content_height) * 0.5f));
   ImGui::PushFont(boldFont(), 28.0f);
@@ -234,6 +238,7 @@ void RoutesDialog::drawLogin() {
     ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(timeout).x) * 0.5f, 40));
     ImGui::TextUnformatted(timeout);
     ImGui::EndChild();
+    ImGui::SetCursorPosY(controls_y + 2 * (button_options.height + 2 * gap));
     ImGui::SetCursorPosX(buttons_x);
     if (iconTextButton("auth_retry", "", "Choose another method", button_width, button_options)) {
       *auth_abort_ = true;
