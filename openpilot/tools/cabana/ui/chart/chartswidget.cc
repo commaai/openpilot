@@ -551,7 +551,7 @@ void ChartsWidget::handleEvents() {
 
   if (!value_tip_visible_) return;
 
-  // the tip is drawn on the foreground draw list, so the mouse is never "on the tip"
+  // The tip is drawn without an input item, so the mouse is never "on the tip".
   const ImVec2 delta = ImGui::GetIO().MouseDelta;
   if (!any_plot_hovered_ &&
       (delta.x != 0 || delta.y != 0 || !ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))) {
