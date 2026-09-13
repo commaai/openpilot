@@ -253,13 +253,10 @@ void RoutesDialog::drawLogin() {
                          button_width, button_options)) signIn(methods[i]);
       ImGui::Spacing();
     }
-    if (!s_.auth_error.empty()) {
-      ImGui::TextWrapped("%s", s_.auth_error.c_str());
-    } else {
-      const float width = ImGui::GetContentRegionAvail().x - 16;
-      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (width - ImGui::CalcTextSize(hint).x) * 0.5f));
-      ImGui::TextWrapped("%s", hint);
-    }
+    const char *message = s_.auth_error.empty() ? hint : s_.auth_error.c_str();
+    const float width = ImGui::GetContentRegionAvail().x - 16;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (width - ImGui::CalcTextSize(message).x) * 0.5f));
+    ImGui::TextWrapped("%s", message);
   }
   ImGui::PopTextWrapPos();
   ImGui::Unindent(16);
