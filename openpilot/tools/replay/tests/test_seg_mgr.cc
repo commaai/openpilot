@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <thread>
+#include <unistd.h>
 
 #include <capnp/serialize.h>
 
