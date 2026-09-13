@@ -208,10 +208,6 @@ def cmd_decompress(args):
 
 
 def cmd_devices(args):
-  from openpilot.tools.lib.auth_config import get_token
-  if not get_token():
-    print(json.dumps({"error": "unauthorized"}))
-    return
   api_call(lambda api: api.get("v1/me/devices/"))
 
 
