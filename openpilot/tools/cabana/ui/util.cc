@@ -103,17 +103,17 @@ bool selectable(const char *label, bool selected, ImGuiSelectableFlags flags, co
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items) {
   bool changed = false;
   const int count = (int)items.size();
-  if (ImGui::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
+  if (dropdown::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (selectable(items[i].c_str(), i == *index) && *index != i) {
+      if (dropdown::Item(items[i].c_str(), nullptr, i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
       if (i == *index) ImGui::SetItemDefaultFocus();
       ImGui::PopID();
     }
-    ImGui::EndCombo();
+    dropdown::EndCombo();
   }
   return changed;
 }
@@ -246,18 +246,6 @@ bool iconTextButton(const char *id, const char *icon, const std::string &text, f
 
 void disabledItemTooltip(const char *text) {
   if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("%s", text);
-}
-
-bool radioMenuItem(const char *label, bool checked, float width) {
-  const float indent = ImGui::GetFontSize();
-  const ImVec2 pos = ImGui::GetCursorScreenPos();
-  const bool clicked = selectable((std::string("##") + label).c_str(), false, ImGuiSelectableFlags_None,
-                                         ImVec2(ImMax(width, ImGui::GetContentRegionAvail().x), 0.0f));
-  const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
-  ImDrawList *painter = ImGui::GetWindowDrawList();
-  if (checked) ImGui::RenderBullet(painter, ImVec2(pos.x + indent / 2, pos.y + ImGui::GetTextLineHeight() / 2), color);
-  painter->AddText(ImVec2(pos.x + indent, pos.y), color, label);
-  return clicked;
 }
 
 bool PopupOwner::begin(const char *id) {
@@ -510,9 +498,9 @@ ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *lab
   ToolbarItem item{width, [id, text, items, bold, width]() {
     const std::string popup_id = std::string(id) + "_menu";
     menuButton(id, text, popup_id.c_str(), bold, width);
-    if (ImGui::BeginPopup(popup_id.c_str())) {
+    if (dropdown::BeginPopup(popup_id.c_str())) {
       items();
-      ImGui::EndPopup();
+      dropdown::EndPopup();
     }
   }, label};
   item.submenu = std::move(items);
@@ -579,21 +567,21 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
     }
     // the popup opens inward: its right edge is aligned with the button so it stays inside the window
     ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
-    if (ImGui::BeginPopup("toolbar_extension_menu")) {
+    if (dropdown::BeginPopup("toolbar_extension_menu")) {
       for (size_t i = visible; i < items.size(); ++i) {
         if (!items[i].in_menu) continue;
         if (items[i].menu_label.empty()) {
           items[i].draw();
         } else if (items[i].submenu) {
-          if (ImGui::BeginMenu(items[i].menu_label.c_str(), items[i].enabled)) {
+          if (dropdown::BeginMenu(items[i].menu_label.c_str(), items[i].enabled)) {
             items[i].submenu();
-            ImGui::EndMenu();
+            dropdown::EndMenu();
           }
-        } else if (ImGui::MenuItem(items[i].menu_label.c_str(), nullptr, false, items[i].enabled)) {
+        } else if (dropdown::Item(items[i].menu_label.c_str(), nullptr, false, items[i].enabled)) {
           items[i].trigger();
         }
       }
-      ImGui::EndPopup();
+      dropdown::EndPopup();
     }
   }
 }

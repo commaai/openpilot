@@ -375,7 +375,7 @@ void SignalView::drawEditor(SignalModel::Item *item) {
     }
     const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, ImGui::GetID("##editor"));
     if (take_focus) ImGui::SetKeyboardFocusHere();
-    if (ImGui::Combo("##editor", &current, names.data(), names.size())) {
+    if (dropdown::Combo("##editor", &current, names.data(), names.size())) {
       queueCommit(item, items[current].second);
       open_item_ = nullptr;  // commit and close the editor
     }

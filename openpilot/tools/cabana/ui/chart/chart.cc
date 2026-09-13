@@ -49,20 +49,14 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 }
 
 void ChartView::drawMenuActions() {
-  // the current series type is marked with a radio bullet on the left
-  const float indent = ImGui::GetFontSize();
-  float label_width = ImGui::CalcTextSize("Manage Signals").x;
-  for (const char *type : SERIES_TYPE_NAMES) label_width = std::max(label_width, ImGui::CalcTextSize(type).x);
   for (int i = 0; i < (int)std::size(SERIES_TYPE_NAMES); ++i) {
-    if (radioMenuItem(SERIES_TYPE_NAMES[i], i == (int)series_type_, indent + label_width + indent)) {
+    if (dropdown::Item(SERIES_TYPE_NAMES[i], nullptr, i == (int)series_type_)) {
       setSeriesType((SeriesType)i);
     }
   }
   ImGui::Separator();
-  ImGui::Indent(indent);
-  if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
-  ImGui::Unindent(indent);
+  if (dropdown::Item("Manage Signals")) manageSignals();
+  if (dropdown::Item("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
 }
 
 // the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
@@ -72,9 +66,9 @@ void ChartView::createToolButtons() {
 
   ImGui::SetCursorScreenPos(layout_.manage_btn_rect.Min);
   if (iconButton("manage_btn", icon::THREE_DOTS_VERTICAL, "")) ImGui::OpenPopup("manage_menu");
-  if (ImGui::BeginPopup("manage_menu")) {
+  if (dropdown::BeginPopup("manage_menu")) {
     drawMenuActions();
-    ImGui::EndPopup();
+    dropdown::EndPopup();
   }
 
   if (close_clicked) charts_widget_->removeChart(this);
@@ -331,23 +325,19 @@ void ChartView::drawContextMenu() {
     ImGui::OpenPopup("context_menu");
   }
   context_menu_id_ = ImGui::GetID("context_menu");
-  if (ImGui::BeginPopup("context_menu")) {
+  if (dropdown::BeginPopup("context_menu")) {
     drawMenuActions();
-    // the menu holds checkable entries, so every entry keeps the same left margin
-    const float indent = ImGui::GetFontSize();
-    ImGui::Indent(indent);
     ImGui::Separator();
     // the zoom entries come from the toolbar, where they are only visible while zoomed
     if (can->timeRange().has_value()) {
       const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
       const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
-      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
-      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
+      if (dropdown::Item(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
+      if (dropdown::Item(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
       ImGui::Separator();
     }
-    if (ImGui::MenuItem("Close")) charts_widget_->removeChart(this);
-    ImGui::Unindent(indent);
-    ImGui::EndPopup();
+    if (dropdown::Item("Close")) charts_widget_->removeChart(this);
+    dropdown::EndPopup();
   }
 }
 

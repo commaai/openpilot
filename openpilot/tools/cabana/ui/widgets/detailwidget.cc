@@ -86,11 +86,11 @@ void DetailWidget::drawToolBar() {
   const size_t spacer_index = items.size();
   const std::string heatmap_text = "Heatmap: " + (heatmap_live_ ? std::string("Live") : heatmap_all_text_);
   auto heatmap_items = [this]() {
-    if (ImGui::MenuItem("Live", nullptr, heatmap_live_) && !heatmap_live_) {
+    if (dropdown::Item("Live", nullptr, heatmap_live_) && !heatmap_live_) {
       heatmap_live_ = true;
       binary_view_->setHeatmapLiveMode(true);
     }
-    if (ImGui::MenuItem(heatmap_all_text_.c_str(), nullptr, !heatmap_live_) && heatmap_live_) {
+    if (dropdown::Item(heatmap_all_text_.c_str(), nullptr, !heatmap_live_) && heatmap_live_) {
       heatmap_live_ = false;
       binary_view_->setHeatmapLiveMode(false);
     }
@@ -111,13 +111,13 @@ void DetailWidget::drawToolBar() {
 }
 
 void DetailWidget::showTabBarContextMenu(int index) {
-  if (ImGui::BeginPopupContextItem()) {
-    if (ImGui::MenuItem("Close Other Tabs")) {
+  if (dropdown::BeginPopupContextItem()) {
+    if (dropdown::Item("Close Other Tabs")) {
       tabbar_.moveTab(index, 0);
       tabbar_.setCurrentIndex(0);
       while (tabbar_.count() > 1) tabbar_.removeTab(1);
     }
-    ImGui::EndPopup();
+    dropdown::EndPopup();
   }
 }
 

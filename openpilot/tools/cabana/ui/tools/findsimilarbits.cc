@@ -64,7 +64,7 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::TextUnformatted("Equal");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
-    ImGui::Combo("##equal", &equal_, "Yes\0No\0");
+    dropdown::Combo("##equal", &equal_, "Yes\0No\0");
     ImGui::SameLine();
     ImGui::TextUnformatted("Minimum Message Count");
     ImGui::SameLine();

@@ -95,7 +95,7 @@ void RoutesDialog::draw() {
     ImGui::EndDisabled();
   }
   ImGui::SetNextItemWidth(-1.0f);
-  if (ImGui::Combo("##period", &s_.period_index, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
+  if (dropdown::Combo("##period", &s_.period_index, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
 
   bool accepted = false, rejected = false;
   const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;

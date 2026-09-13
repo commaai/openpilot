@@ -167,7 +167,7 @@ void FindSignalDlg::drawFindGroup() {
   ImGui::TextUnformatted("Value");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(90);
-  ImGui::Combo("##compare", &compare_, compare_items, compare_count);
+  dropdown::Combo("##compare", &compare_, compare_items, compare_count);
   ImGui::SameLine();
   ImGui::SetNextItemWidth(80);
   if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
@@ -319,12 +319,12 @@ void FindSignalDlg::setInitialSignals() {
 }
 
 void FindSignalDlg::drawContextMenu(int row) {
-  if (ImGui::BeginPopupContextItem("menu")) {
-    if (ImGui::MenuItem("Create Signal")) {
+  if (dropdown::BeginPopupContextItem("menu")) {
+    if (dropdown::Item("Create Signal")) {
       auto &s = search_.filtered_signals[row];
       UndoStack::instance()->push(new AddSigCommand(s.id, s.sig));
       openMessage(s.id);
     }
-    ImGui::EndPopup();
+    dropdown::EndPopup();
   }
 }

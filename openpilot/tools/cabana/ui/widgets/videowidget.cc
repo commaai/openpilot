@@ -147,8 +147,13 @@ void VideoWidget::drawPlaybackController() {
   const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
   const char *play_tooltip = can->isPaused() ? "Play" : "Pause";
   const char *loop_icon = getReplay() && getReplay()->loop() ? icon::REPEAT : icon::REPEAT_1;
-  const std::string time_text = slider_ ? formatTime(can->currentSec(), true) + " / " + formatTime(slider_->maximum() / slider_->factor)
-                                        : formatTime(can->currentSec(), true);
+  const bool timestamps_resolved = can->liveStreaming()
+                                     ? msgs_received_
+                                     : can->beginDateTime() != std::chrono::system_clock::time_point{};
+  const std::string time_text = timestamps_resolved
+                                  ? (slider_ ? formatTime(can->currentSec(), true) + " / " + formatTime(slider_->maximum() / slider_->factor)
+                                             : formatTime(can->currentSec(), true))
+                                  : "--:--.-- / --:--.--";
   const char *time_tooltip = settings.absolute_time ? "Elapsed time" : "Absolute time";
 
   std::vector<ToolbarItem> items;
@@ -161,14 +166,14 @@ void VideoWidget::drawPlaybackController() {
   } else {
     items.push_back(toolbarAction("fast-forward", icon::FAST_FORWARD, "Seek forward", []() { can->seekTo(can->currentSec() + 1); }));
   }
-  if (slider_ || msgs_received_) {
+  if (slider_ || timestamps_resolved) {
     // a mono font: with proportional digits the time changed width as it ticked and the items after it moved
-    pushMonoFont(ImGui::GetFontSize());
+    pushMonoFont(ImGui::GetStyle().FontSizeBase);
     const float time_width = ImGui::CalcTextSize(time_text.c_str()).x;
     popMonoFont();
     items.push_back({time_width,
                      [&]() {
-                       pushMonoFont(ImGui::GetFontSize());
+                       pushMonoFont(ImGui::GetStyle().FontSizeBase);
                        ImGui::AlignTextToFramePadding();
                        ImGui::TextUnformatted(time_text.c_str());
                        popMonoFont();
@@ -229,16 +234,9 @@ void VideoWidget::createSpeedDropdown() {
 }
 
 void VideoWidget::drawSpeedMenuItems() {
-  // every row declares the same width, so the popup is exactly as wide as the widest one and all the
-  // highlights reach both edges; the label is padded on the right as much as the check column on the left
-  const float indent = ImGui::GetFontSize();
-  float label_width = 0;
-  for (int i = 0; i < (int)std::size(speeds); ++i) {
-    label_width = std::max(label_width, ImGui::CalcTextSize(speedText(speeds[i]).c_str()).x);
-  }
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
-    if (radioMenuItem(speedText(speed).c_str(), speed_index_ == i, indent + label_width + indent)) {
+    if (dropdown::Item(speedText(speed).c_str(), nullptr, speed_index_ == i)) {
       speed_index_ = i;
       can->setSpeed(speed);
       speed_text_ = speedText(speed);
@@ -280,9 +278,9 @@ void VideoWidget::drawCameraWidget() {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
   camera_tab_->draw();
 
-  // cam_widget_: minimum height MIN_VIDEO_HEIGHT, takes the space left by the slider and the toolbar
+  // Reserve the timeline and playback controls even when the native dock is short.
   const ImVec2 avail = ImGui::GetContentRegionAvail();
-  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, avail.y - SLIDER_HEIGHT - toolbar_height);
+  const float cam_height = std::max(1.0f, avail.y - SLIDER_HEIGHT - toolbar_height);
   cam_widget_->draw(ImVec2(avail.x, cam_height), thumbnail_display_time_);
 
   if (!slider_->isSliderDown()) slider_->setCurrentSecond(can->currentSec());

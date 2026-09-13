@@ -60,14 +60,14 @@ void SettingsDialog::draw() {
   static const char *themes[] = {"Light", "Dark"};
   formRow(THEME, label_width);
   int theme_index = theme_ - LIGHT_THEME;
-  if (ImGui::Combo("##theme", &theme_index, themes, IM_ARRAYSIZE(themes))) theme_ = theme_index + LIGHT_THEME;
+  if (dropdown::Combo("##theme", &theme_index, themes, IM_ARRAYSIZE(themes))) theme_ = theme_index + LIGHT_THEME;
   formRow(CACHED_MINUTES, label_width);
   settingInputInt("cached_minutes", &cached_minutes_, 1, 10, MIN_CACHE_MINUTES, MAX_CACHE_MINUTES);
 
   ImGui::SeparatorText("New Signal Settings");
   static const char *directions[] = {"MSB First", "LSB First", "Always Little Endian", "Always Big Endian"};
   formRow(DRAG_DIRECTION, label_width);
-  ImGui::Combo("##drag_direction", &drag_direction_, directions, IM_ARRAYSIZE(directions));
+  dropdown::Combo("##drag_direction", &drag_direction_, directions, IM_ARRAYSIZE(directions));
 
   ImGui::SeparatorText("Chart");
   formRow(CHART_HEIGHT, label_width);
