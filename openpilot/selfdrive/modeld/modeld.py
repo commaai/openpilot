@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 from collections.abc import Callable
+from contextlib import suppress
 import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
+import signal
+import sys
 import threading
 import time
 import numpy as np
@@ -187,10 +190,20 @@ class ModelState:
     self.prev_desire[:] = 0
 
 
+def retry_model(demo):
+  os.environ["MODEL_LOAD_RETRIED"] = "1"
+  signal.signal(signal.SIGUSR2, signal.SIG_IGN)
+  for fd in map(int, os.listdir("/proc/self/fd")):
+    with suppress(OSError):
+      if fd > 2:
+        os.set_inheritable(fd, False)
+  os.execv(sys.executable, [sys.executable, __file__, *(["--demo"] if demo else [])])
+
+
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  CHESTNUT = chestnut_present() and chestnut_compiled()
+  CHESTNUT = (chestnut_present() or bool(os.getenv("MODEL_LOAD_RETRIED"))) and chestnut_compiled()
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
@@ -229,17 +242,17 @@ def main(demo=False):
     big_model = None
     def load_big():
       nonlocal big_model
-      for _ in range(2):
-        try:
-          m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-          m.warmup()
-          big_model = m
-          return
-        except Exception:
-          cloudlog.exception("big model load failed")
+      try:
+        m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
+        m.warmup()
+        big_model = m
+      except Exception:
+        cloudlog.exception("big model load failed")
     loader = threading.Thread(target=load_big, daemon=True)
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
+    if big_model is None and not os.getenv("MODEL_LOAD_RETRIED"):
+      retry_model(demo)
     model = big_model
     params.put_bool("ChestnutActive", model is not None)
 
@@ -252,7 +265,10 @@ def main(demo=False):
   # messaging
   pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutGpuState"] if CHESTNUT else [])
   pm = PubMaster(pub_socks)
-  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
+  retry_services = ["onroadEvents", "selfdriveState", "chestnutState"] if CHESTNUT else []
+  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"]
+                 + retry_services)
+  retry_at_ns = 0
 
   publish_state = PublishState()
   params = Params()
@@ -318,6 +334,18 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
+    if retry_at_ns:
+      if time.monotonic_ns() - retry_at_ns >= BIG_MODEL_TIMEOUT * 1_000_000_000:
+        retry_at_ns = 0
+        params.put_bool("ChestnutLoading", False)
+      elif (all(sm.alive[s] and sm.valid[s] for s in retry_services + ["carState", "carControl"])
+            and sm.logMonoTime["onroadEvents"] > retry_at_ns
+            and any(e.name == log.OnroadEvent.EventName.bigModelLoading for e in sm["onroadEvents"])
+            and sm.logMonoTime["selfdriveState"] > sm.logMonoTime["onroadEvents"]
+            and not sm["selfdriveState"].enabled and sm["carState"].standstill
+            and not sm["carControl"].enabled and sm.logMonoTime["carControl"] > sm.logMonoTime["onroadEvents"]
+            and sm.logMonoTime["chestnutState"] > retry_at_ns and sm["chestnutState"].pcieLtssm == 0x78):
+        retry_model(demo)
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["narrowRoadCameraState"].frameId
@@ -374,6 +402,9 @@ def main(demo=False):
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("ChestnutActive", False)
       model = small_model
+      if not os.getenv("MODEL_LOAD_RETRIED"):
+        retry_at_ns = time.monotonic_ns()
+        params.put_bool("ChestnutLoading", True)
       if chestnut_state is not None:
         chestnut_state.big = False
       run_count = 0
