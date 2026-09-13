@@ -777,8 +777,6 @@ void MainWindow::drawDockspace() {
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
-  const float top_gap = full_screen_ ? 0.0f : ImGui::GetStyle().ItemSpacing.y;
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + top_gap);
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
@@ -879,13 +877,17 @@ void MainWindow::draw() {
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
-  if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+  ImGuiWindowClass center_class;
+  center_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoUndocking;
+  ImGui::SetNextWindowClass(&center_class);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, 0.0f));
+  const bool center_open = beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+  ImGui::PopStyleVar();
+  if (center_open) {
     center_widget_.draw();
     if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }
-    ImGui::EndChild();
   }
   ImGui::End();
   // Submit the same dock windows while loading, so ImGui doesn't collapse their
