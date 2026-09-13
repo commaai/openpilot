@@ -14,6 +14,26 @@ constexpr float ROUNDING = 6.0f;
 constexpr float BORDER = 1.0f;
 constexpr int WINDOW_STYLE_VARS = 3;
 
+class PopupViewportScope {
+public:
+  PopupViewportScope() : main_(ImGui::GetMainViewport()), flags_(main_->Flags) {
+    // Keep detached popups above their owner; reset ownership when docked.
+    ImGuiWindowClass window_class;
+    const ImGuiViewport *owner = ImGui::GetWindowViewport();
+    if (owner != main_) {
+      // Popups ignore NoAutoMerge, so exclude the main viewport during Begin.
+      main_->Flags &= ~ImGuiViewportFlags_CanHostOtherWindows;
+      window_class.ParentViewportId = owner->ID;
+    }
+    ImGui::SetNextWindowClass(&window_class);
+  }
+  ~PopupViewportScope() { main_->Flags = flags_; }
+
+private:
+  ImGuiViewport *main_;
+  ImGuiViewportFlags flags_;
+};
+
 inline void pushStyle() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(PADDING_X, PADDING_Y));
   ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, ROUNDING);
@@ -25,11 +45,36 @@ inline bool finishBegin(bool open) {
   else ImGui::PopStyleVar(WINDOW_STYLE_VARS);
   return open;
 }
+
+inline void PositionBelowItem(const char *id, bool align_right = false) {
+  const ImRect anchor(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+  char name[32];
+  ImFormatString(name, IM_ARRAYSIZE(name), "##Popup_%08x", ImGui::GetID(id));
+  if (ImGuiWindow *popup = ImGui::FindWindowByName(name); popup && popup->WasActive) {
+    // Place like a combo using the owner's current monitor bounds.
+    const auto *viewport = static_cast<ImGuiViewportP *>(ImGui::GetWindowViewport());
+    ImRect bounds = viewport->GetMainRect();
+    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) && viewport->PlatformMonitor >= 0) {
+      const auto &monitor = ImGui::GetPlatformIO().Monitors[viewport->PlatformMonitor];
+      bounds = ImRect(monitor.WorkPos, ImVec2(monitor.WorkPos.x + monitor.WorkSize.x, monitor.WorkPos.y + monitor.WorkSize.y));
+    }
+    bounds.Expand(ImVec2(-ImGui::GetStyle().DisplaySafeAreaPadding.x, -ImGui::GetStyle().DisplaySafeAreaPadding.y));
+    ImGuiDir direction = align_right ? ImGuiDir_Left : ImGuiDir_Down;
+    const ImVec2 pos = ImGui::FindBestWindowPosForPopupEx(anchor.GetBL(), ImGui::CalcWindowNextAutoFitSize(popup),
+                                                       &direction, bounds, anchor, ImGuiPopupPositionPolicy_ComboBox);
+    ImGui::SetNextWindowPos(pos);
+  } else {
+    ImGui::SetNextWindowPos(align_right ? anchor.GetBR() : anchor.GetBL(), ImGuiCond_Always, ImVec2(align_right ? 1.0f : 0.0f, 0));
+  }
+}
+
 inline bool BeginPopup(const char *id, ImGuiWindowFlags flags = 0) {
+  PopupViewportScope viewport_scope;
   pushStyle();
   return finishBegin(ImGui::BeginPopup(id, flags));
 }
 inline bool BeginPopupContextItem(const char *id = nullptr, ImGuiPopupFlags flags = ImGuiPopupFlags_MouseButtonRight) {
+  PopupViewportScope viewport_scope;
   pushStyle();
   return finishBegin(ImGui::BeginPopupContextItem(id, flags));
 }
@@ -39,6 +84,7 @@ inline void EndPopup() {
   ImGui::PopStyleVar(WINDOW_STYLE_VARS);
 }
 inline bool BeginMenu(const char *label, bool enabled = true) {
+  PopupViewportScope viewport_scope;
   pushStyle();
   return finishBegin(ImGui::BeginMenu(label, enabled));
 }
@@ -48,6 +94,7 @@ inline void EndMenu() {
   ImGui::PopStyleVar(WINDOW_STYLE_VARS);
 }
 inline bool BeginCombo(const char *label, const char *preview, ImGuiComboFlags flags = 0) {
+  PopupViewportScope viewport_scope;
   pushStyle();
   return finishBegin(ImGui::BeginCombo(label, preview, flags));
 }
