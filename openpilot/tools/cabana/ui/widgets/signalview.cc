@@ -692,7 +692,8 @@ float SignalView::minimumWidth() {
 
 void SignalView::draw() {
   ImGui::PushStyleColor(ImGuiCol_ChildBg, palette().surface);
-  if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
+  if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders,
+                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     ImGui::EndChild();
     ImGui::PopStyleColor();
     return;
@@ -740,8 +741,8 @@ void SignalView::collapseAll() {
 
 void SignalView::drawTree() {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-  const float min_height = std::max(ImGui::GetContentRegionAvail().y, 300.0f);
-  const bool visible = beginControlChild("tree", ImVec2(0, min_height));
+  // Keep the toolbar fixed; only the signal rows scroll within the remaining space.
+  const bool visible = beginControlChild("tree", ImVec2(0, 0));
   if (visible) {
     DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, rowHeight()};
     // the press that closes an open editor is consumed by the focus change, the index widgets never see it

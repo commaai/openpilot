@@ -227,7 +227,8 @@ void DetailWidget::drawTabWidget() {
     binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     binary_view_->draw();
     ImGui::EndChild();
-    ImGui::BeginChild("signal_view", ImVec2(0, 0));
+    ImGui::BeginChild("signal_view", ImVec2(0, 0), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view_->draw();
     ImGui::EndChild();
