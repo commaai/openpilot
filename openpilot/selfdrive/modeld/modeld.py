@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 from collections.abc import Callable
 import ctypes
-from functools import cached_property, partial
+from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 os.environ.setdefault('AMD_USB_POLL_US', '100') # lower latency for chestnut completion waits
 from tinygrad.device import Buffer, Device
 from tinygrad.tensor import Tensor
-from tinygrad.uop.ops import Ops, UOp
-from tinygrad.helpers import disable_gc, round_up
-from tinygrad.engine.jit import CapturedJit, _prepare_jit_inputs
+from tinygrad.uop.ops import UOp
+from tinygrad.helpers import round_up
 import pickle
 import threading
 import time
@@ -49,22 +48,6 @@ BIG_MODEL_TIMEOUT = 60
 def jit_input_view(tensor: Tensor) -> Tensor:
   # Give each view its own JIT input while retaining the shared packed allocation.
   return Tensor(UOp.from_buffer(tensor.realize().uop.buffer.ensure_allocated())).reshape(tensor.shape)
-
-
-def bind_jit(jit, *args, **kwargs):
-  # Bind fixed input addresses to avoid updating kernel arguments every frame.
-  buffers, values, names, info = _prepare_jit_inputs(args, kwargs)
-  assert jit.captured is not None
-  assert names == jit.captured.expected_names and info == jit.captured.expected_input_info
-  linear = jit.captured._linear
-  params = {u: buffers[u.arg.slot] for u in linear.toposort(enter_calls=False) if u.op is Ops.PARAM}
-  calls = []
-  for call in linear.src:
-    body = call.src[0]
-    calls.append(body.replace(src=(body.src[0].substitute(params, walk=True),)).call() if body.arg == 'graph'
-                 else call.substitute(params, walk=True))
-  bound = CapturedJit(jit.captured.ret, linear.replace(src=tuple(calls)), [], [])
-  return disable_gc()(partial(bound, [], values))
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -186,10 +169,8 @@ class ModelState:
     self.warp_inputs = (jit_input_view(self.packed_input[frame_offset:].reshape(2, self.frame_copy_size)),
                         jit_input_view(self.packed_input[:72].bitcast('float32').reshape(2, 3, 3)))
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
-      warp = pickle.load(f)
-    self.input_queues['warped'] = warp.captured.ret
-    self.run_warp = bind_jit(warp, *self.warp_inputs)
-    self.run_model = bind_jit(jits['run_model'], **{k: self.input_queues[k] for k in MODELD_INPUTS})
+      self.run_warp = pickle.load(f)
+    self.run_model = jits['run_model']
     self.parser = Parser()
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
@@ -214,8 +195,8 @@ class ModelState:
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
     self.packed_input.uop.buffer.copy_from(self.packed_input_cpu)
-    self.run_warp()
-    outs, = self.run_model()
+    self.input_queues['warped'] = self.run_warp(*self.warp_inputs)
+    outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
     if after_enqueue is not None:
       after_enqueue()
     model_output = outs.numpy()[0]
