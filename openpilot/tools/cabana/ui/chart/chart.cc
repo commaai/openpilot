@@ -575,7 +575,8 @@ void ChartView::drawAxes() {
 
     layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
     // ImPlotFlags_NoInputs disables implot's own hover tracking
-    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+    // A popup is a descendant of the chart, but hovering its menu must not hover the plot underneath.
+    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
     if (!drawing_ghost_) {
       // Own plot clicks so custom scrubbing/zooming cannot also move the floating window.
