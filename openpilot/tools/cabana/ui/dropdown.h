@@ -86,7 +86,12 @@ inline void EndPopup() {
 inline bool BeginMenu(const char *label, bool enabled = true) {
   PopupViewportScope viewport_scope;
   pushStyle();
-  return finishBegin(ImGui::BeginMenu(label, enabled));
+  // An open menu keeps its selection color while the pointer is over its label.
+  const bool selected = ImGui::IsPopupOpen(label);
+  if (selected) ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_Header));
+  const bool open = ImGui::BeginMenu(label, enabled);
+  if (selected) ImGui::PopStyleColor();
+  return finishBegin(open);
 }
 inline void EndMenu() {
   ImGui::PopStyleVar();
