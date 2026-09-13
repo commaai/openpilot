@@ -190,17 +190,30 @@ void RoutesDialog::drawLogin() {
   // Keep the footer anchored while longer errors scroll inside the content area.
   const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
   ImGui::BeginChild("login_content", ImVec2(0, -footer));
-  ImGui::Spacing();
   ImGui::Indent(16);
+  const float gap = ImGui::GetStyle().ItemSpacing.y;
+  const float wrap_x = ImGui::GetWindowWidth() - 28;
+  const float text_width = wrap_x - ImGui::GetCursorPosX();
+  const std::string intro = auth_abort_
+    ? "Sign in with " + s_.provider + " in your browser, then return to Cabana to choose a device and route."
+    : "Use your comma account to browse recorded drives and open a route for analysis.";
+  const char *hint = "Use the comma account paired with your device.";
+  const char *message = s_.auth_error.empty() ? hint : s_.auth_error.c_str();
+  const float intro_height = ImGui::CalcTextSize(intro.c_str(), nullptr, false, text_width).y;
+  const float controls_height = auth_abort_
+    ? 76 + gap + button_options.height
+    : 3 * (button_options.height + 2 * gap) + ImGui::CalcTextSize(message, nullptr, false, text_width).y;
+  const float content_height = 28 + 2 * gap + intro_height + 2 * gap + 12 + controls_height;
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + std::max(0.0f, (ImGui::GetContentRegionAvail().y - content_height) * 0.5f));
   ImGui::PushFont(boldFont(), 28.0f);
   ImGui::TextUnformatted("Open your routes in Cabana");
   ImGui::PopFont();
   ImGui::Spacing();
-  ImGui::PushTextWrapPos(ImGui::GetWindowWidth() - 28);
-  const float controls_y = ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() * 2 + ImGui::GetStyle().ItemSpacing.y * 2 + 12;
+  ImGui::PushTextWrapPos(wrap_x);
+  const float controls_y = ImGui::GetCursorPosY() + intro_height + 2 * gap + 12;
   const float buttons_x = ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - 16 - button_width) * 0.5f;
   if (auth_abort_) {
-    ImGui::TextWrapped("Sign in with %s in your browser, then return to Cabana to choose a device and route.", s_.provider.c_str());
+    ImGui::TextWrapped("%s", intro.c_str());
     ImGui::SetCursorPosY(controls_y);
     ImGui::BeginChild("auth_status", ImVec2(-16, 76), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
@@ -221,15 +234,13 @@ void RoutesDialog::drawLogin() {
     ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(timeout).x) * 0.5f, 40));
     ImGui::TextUnformatted(timeout);
     ImGui::EndChild();
-    // Align the alternate-method button with the last provider button.
-    ImGui::SetCursorPosY(controls_y + 2 * (button_options.height + ImGui::GetStyle().ItemSpacing.y * 2));
     ImGui::SetCursorPosX(buttons_x);
     if (iconTextButton("auth_retry", "", "Choose another method", button_width, button_options)) {
       *auth_abort_ = true;
       auth_abort_.reset();
     }
   } else {
-    ImGui::TextWrapped("Use your comma account to browse recorded drives and open a route for analysis.");
+    ImGui::TextWrapped("%s", intro.c_str());
     ImGui::SetCursorPosY(controls_y);
     for (int i = 0; i < 3; ++i) {
       ImGui::SetCursorPosX(buttons_x);
@@ -240,7 +251,6 @@ void RoutesDialog::drawLogin() {
     if (!s_.auth_error.empty()) {
       ImGui::TextWrapped("%s", s_.auth_error.c_str());
     } else {
-      const char *hint = "Use the comma account paired with your device.";
       const float width = ImGui::GetContentRegionAvail().x - 16;
       ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (width - ImGui::CalcTextSize(hint).x) * 0.5f));
       ImGui::TextWrapped("%s", hint);
