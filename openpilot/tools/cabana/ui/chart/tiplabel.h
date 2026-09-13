@@ -35,5 +35,6 @@ private:
   ImRect area_;
   ImVec2 pos_;
   ImVec2 size_;
+  bool compact_ = false;
   bool visible_ = false;
 };
