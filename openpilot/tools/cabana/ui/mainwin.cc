@@ -143,44 +143,69 @@ void MainWindow::drawMenuBar() {
     const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
   }
-  if (dropdown::BeginMenu("File")) {
-    drawFileMenu();
-    dropdown::EndMenu();
+  const auto &style = ImGui::GetStyle();
+  pushMonoFont(style.FontSizeBase);
+  char fps[32];
+  snprintf(fps, sizeof(fps), "%3.0f FPS", ImGui::GetIO().Framerate);
+  const float fps_width = std::max(ImGui::CalcTextSize("999 FPS").x, ImGui::CalcTextSize(fps).x);
+  popMonoFont();
+  const float fps_x = std::max(0.0f, ImGui::GetWindowWidth() - style.WindowPadding.x - fps_width);
+  float menu_width = 0.0f;
+  for (const char *label : {"File", "Edit", "View", "Tools", "Help"}) {
+    menu_width += ImGui::CalcTextSize(label).x + style.ItemSpacing.x;
   }
-
-  if (dropdown::BeginMenu("Edit")) {
-    auto stack = UndoStack::instance();
-    const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
-    const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
-    if (dropdown::Item(undo_text.c_str(), shortcut("Z").c_str(), false, stack->canUndo())) stack->undo();
-    if (dropdown::Item(redo_text.c_str(), shortcut("Shift+Z").c_str(), false, stack->canRedo())) stack->redo();
-    dropdown::EndMenu();
-  }
-
-  if (dropdown::BeginMenu("View")) {
-    if (dropdown::Item("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
-    ImGui::Separator();
-    dropdown::Item(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    dropdown::Item(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
-    dropdown::Item("Charts", nullptr, &charts_visible_);
-    ImGui::Separator();
-    if (dropdown::Item("Reset Window Layout")) {
-      messages_visible_ = video_visible_ = charts_visible_ = true;
-      reset_layout_ = true;
+  const float available = fps_x - ImGui::GetCursorPosX() - style.ItemSpacing.x;
+  const bool compact = menu_width > available;
+  const bool show_menus = !full_screen_ && available >= ImGui::CalcTextSize("Menu").x + style.ItemSpacing.x;
+  if (show_menus && (!compact || dropdown::BeginMenu("Menu"))) {
+    if (dropdown::BeginMenu("File")) {
+      drawFileMenu();
+      dropdown::EndMenu();
     }
-    dropdown::EndMenu();
-  }
 
-  if (dropdown::BeginMenu("Tools", hasStream())) {
-    if (dropdown::Item("Find Similar Bits")) findSimilarBits();
-    if (dropdown::Item("Find Signal")) findSignal();
-    dropdown::EndMenu();
-  }
+    if (dropdown::BeginMenu("Edit")) {
+      auto stack = UndoStack::instance();
+      const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
+      const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
+      if (dropdown::Item(undo_text.c_str(), shortcut("Z").c_str(), false, stack->canUndo())) stack->undo();
+      if (dropdown::Item(redo_text.c_str(), shortcut("Shift+Z").c_str(), false, stack->canRedo())) stack->redo();
+      dropdown::EndMenu();
+    }
 
-  if (dropdown::BeginMenu("Help")) {
-    if (dropdown::Item("Help", "F1")) toggleHelp();
-    dropdown::EndMenu();
+    if (dropdown::BeginMenu("View")) {
+      if (dropdown::Item("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
+      ImGui::Separator();
+      dropdown::Item(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
+      dropdown::Item(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
+      dropdown::Item("Charts", nullptr, &charts_visible_);
+      ImGui::Separator();
+      if (dropdown::Item("Reset Window Layout")) {
+        messages_visible_ = video_visible_ = charts_visible_ = true;
+        reset_layout_ = true;
+      }
+      dropdown::EndMenu();
+    }
+
+    if (dropdown::BeginMenu("Tools", hasStream())) {
+      if (dropdown::Item("Find Similar Bits")) findSimilarBits();
+      if (dropdown::Item("Find Signal")) findSignal();
+      dropdown::EndMenu();
+    }
+
+    if (dropdown::BeginMenu("Help")) {
+      if (dropdown::Item("Help", "F1")) toggleHelp();
+      dropdown::EndMenu();
+    }
+    if (compact) dropdown::EndMenu();
   }
+  pushMonoFont(style.FontSizeBase);
+  const ImVec2 pos = ImGui::GetWindowPos();
+  ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + fps_x, pos.y + (ImGui::GetWindowHeight() - ImGui::GetFontSize()) / 2.0f),
+                                    ImGui::GetColorU32(ImGuiCol_Text), fps);
+  popMonoFont();
+  ImGui::SetCursorPos(ImVec2(fps_x, 0.0f));
+  ImGui::InvisibleButton("fps", ImVec2(fps_width, ImGui::GetWindowHeight()));
+  ImGui::SetItemTooltip("UI rendering rate (frames per second)");
   ImGui::EndMainMenuBar();
 }
 
@@ -718,16 +743,12 @@ void MainWindow::drawStatusBar() {
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
   const float pad = ImGui::GetStyle().WindowPadding.x;
-  pushMonoFont(ImGui::GetStyle().FontSizeBase);
-  const float fps_x = std::max(pad, width - pad - ImGui::CalcTextSize("999 FPS").x);
-  popMonoFont();
-  const float progress_width = std::min(300.0f, std::max(0.0f, fps_x - pad - 20.0f));
-  const float progress_x = fps_x - progress_width - 10.0f;
-  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : fps_x - 10.0f;
+  const float progress_width = std::min(300.0f, std::max(0.0f, width - 2 * pad));
+  const float progress_x = width - pad - progress_width;
+  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : width - pad;
   ImGui::PushClipRect(min, ImVec2(min.x + std::max(pad, message_end), min.y + ImGui::GetWindowHeight()), true);
   ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
-  const float text_y = ImGui::GetCursorPosY();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
   auto &bar = status_bar_;
   if (!bar.message.empty() && (bar.message_until == 0 || ImGui::GetTime() < bar.message_until)) {
@@ -751,12 +772,6 @@ void MainWindow::drawStatusBar() {
     ImGui::PopFont();
     ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
-  ImGui::SameLine(fps_x);
-  ImGui::SetCursorPosY(text_y);
-  pushMonoFont(ImGui::GetStyle().FontSizeBase);
-  ImGui::Text("%3.0f FPS", ImGui::GetIO().Framerate);
-  popMonoFont();
-  ImGui::SetItemTooltip("UI rendering rate (frames per second)");
   ImGui::EndChild();
   ImGui::PopStyleColor();
 }
@@ -801,7 +816,7 @@ void MainWindow::drawDockspace() {
 
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
-  const float status_height = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
+  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
@@ -827,7 +842,7 @@ void MainWindow::drawDockspace() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();
-  drawStatusBar();
+  if (!full_screen_) drawStatusBar();
   ImGui::End();
 }
 
@@ -897,7 +912,7 @@ void MainWindow::draw() {
   } else {
     takeKeyEvents();  // modal dialogs swallow the shortcuts
   }
-  if (!full_screen_) drawMenuBar();
+  drawMenuBar();
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
