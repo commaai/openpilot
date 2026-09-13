@@ -825,7 +825,7 @@ void setNextPanelClass() {
 
 bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  const bool visible = ImGui::Begin(name, open, flags);
+  const bool visible = ImGui::Begin(name, open, flags | ImGuiWindowFlags_NoCollapse);
   ImGui::PopStyleVar();
   return visible;
 }
