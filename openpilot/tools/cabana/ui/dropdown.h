@@ -5,8 +5,6 @@
 
 #include "tools/cabana/ui/theme.h"
 
-// All non-modal floating lists share these metrics, regardless of the spacing of
-// their parent toolbar, table or dialog. Colors come from the active theme.
 namespace dropdown {
 constexpr float PADDING_X = 9.0f;
 constexpr float PADDING_Y = 6.0f;
@@ -22,7 +20,6 @@ inline void pushStyle() {
   ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, BORDER);
 }
 
-// Like ImGui's Begin/End API: only call End when Begin returns true.
 inline bool finishBegin(bool open) {
   if (open) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(SPACING_X, SPACING_Y));
   else ImGui::PopStyleVar(WINDOW_STYLE_VARS);
@@ -60,9 +57,6 @@ inline void EndCombo() {
   ImGui::PopStyleVar(WINDOW_STYLE_VARS);
 }
 
-// Commands, toggles and combo choices use one row renderer. Selection is a
-// checkmark in the trailing column; only hover/navigation highlights the row.
-// ImGui's menu layout also reserves matching columns for shortcuts/submenus.
 inline bool Item(const char *label, const char *shortcut = nullptr, bool selected = false, bool enabled = true) {
   return ImGui::MenuItem(label, shortcut, selected, enabled);
 }
@@ -72,8 +66,6 @@ inline bool Item(const char *label, const char *shortcut, bool *selected, bool e
   return true;
 }
 
-// Keep the closed field in its parent's layout; apply list spacing only after
-// BeginCombo. This matters in table cells with zero vertical ItemSpacing.
 inline bool Combo(const char *label, int *index, const char *const items[], int count) {
   bool changed = false;
   if (BeginCombo(label, *index >= 0 && *index < count ? items[*index] : "")) {
