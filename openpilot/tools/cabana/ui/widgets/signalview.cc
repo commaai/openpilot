@@ -16,7 +16,6 @@
 #include "tools/cabana/ui/icons.h"
 
 namespace {
-constexpr float INDENTATION = 20.0f;
 constexpr float H_MARGIN = 3.0f;
 constexpr float V_MARGIN = 2.0f;
 // signal rows are taller than a frame so the sparklines have room to read
@@ -41,15 +40,17 @@ std::string multiplexIndicator(const cabana::Signal *sig) {
   return sig->type == cabana::Signal::Type::Multiplexor ? std::string(" M ") : " m" + std::to_string(sig->multiplex_value) + " ";
 }
 
-std::string nameText(const SignalModel::Item *item) {
-  return item->type == SignalModel::Item::Sig ? item->sig->name : item->title;
+bool propertyButton(const char *label) {
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0.5f));
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  const bool clicked = ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()));
+  ImGui::PopStyleColor();
+  ImGui::PopStyleVar(2);
+  return clicked;
 }
 
-float rowHeight() {
-  return ImGui::GetFrameHeight();
-}
-
-// only the top level signal rows are taller; the expanded sub-rows keep the default row height
+// Signal rows leave room for the original sparklines and their min/max labels.
 float signalRowHeight() {
   return std::floor((ImGui::GetFrameHeight() + SIGNAL_ROW_EXTRA) * SIGNAL_ROW_SCALE);
 }
@@ -243,18 +244,8 @@ float SignalView::textWidth(const std::string &text, float font_size) {
   return font->CalcTextSizeA(font_size > 0 ? font_size : ImGui::GetFontSize(), FLT_MAX, 0.0f, text.c_str()).x;
 }
 
-float SignalView::nameColumnWidth(const SignalModel::Item *item, float widget_width, const std::string &text) const {
-  float spacing = INDENTATION + COLOR_LABEL_WIDTH + 8;
-  std::string txt = text;
-  if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
-    txt += multiplexIndicator(item->sig);
-    spacing += H_MARGIN * 2;
-  }
-  return std::min<float>(widget_width / 3.0, textWidth(txt) + spacing);
-}
-
 void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const SignalModel::Item *item, int column,
-                           bool selected, const std::string &text, float viewport_x) const {
+                           bool selected, const std::string &text) const {
   const float h_margin = H_MARGIN;
   const float v_margin = V_MARGIN;
 
@@ -279,8 +270,6 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
         drawElidedText(painter, indicator_rect, indicator, IM_COL32_WHITE, false);
         rect.Min.x = indicator_rect.Max.x + h_margin * 2;
       }
-    } else {
-      rect.Min.x = viewport_x + INDENTATION + COLOR_LABEL_WIDTH + h_margin * 3;
     }
 
     // name
@@ -382,11 +371,7 @@ void SignalView::drawEditor(SignalModel::Item *item) {
     combo_focused_ = ImGui::IsItemFocused() || ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
     if (!take_focus && !combo_focused_) open_item_ = nullptr;  // the editor is closed when it loses the focus
   } else if (item->type == SignalModel::Item::Desc) {
-    ImGui::PushStyleColor(ImGuiCol_Header, (ImU32)0);
-    const bool clicked = ImGui::Selectable("##editor", false, 0, ImVec2(0, rowHeight()));
-    ImGui::PopStyleColor();
-    drawElidedText(ImGui::GetWindowDrawList(), ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()), model_.valueText(item),
-                   ImGui::GetColorU32(ImGuiCol_Text), false);
+    const bool clicked = propertyButton((model_.valueText(item) + "###editor").c_str());
     if (clicked || take_focus) {
       desc_dlg_ = std::make_unique<ValueDescriptionDlg>(item->sig->val_desc);
       desc_dlg_->title = item->sig->name;
@@ -401,7 +386,9 @@ void SignalView::drawEditor(SignalModel::Item *item) {
 void SignalView::commitEditor() {
   SignalModel::Item *item = editing_item_;
   std::string text = edit_text_;
+  auto commits = std::move(pending_commits_);
   closeEditor();
+  pending_commits_ = std::move(commits);
   if (item && validateEditor(item, text) == ValidState::Acceptable) {
     queueCommit(item, text);
   }
@@ -410,7 +397,7 @@ void SignalView::commitEditor() {
 void SignalView::closeEditor() {
   editing_item_ = open_item_ = focus_item_ = nullptr;
   editor_active_ = refocus_editor_ = enter_pressed_ = combo_focused_ = false;
-  pending_commit_ = nullptr;  // the items it captured are deleted by the caller
+  pending_commits_.clear();  // the items they captured may have been deleted by the caller
 }
 
 // validate the editor of `item`; mutates `text` like the name validator does (spaces -> '_')
@@ -471,7 +458,7 @@ void SignalView::drawLineEditor(SignalModel::Item *item, ImGuiInputTextCallback 
 }
 
 void SignalView::queueCommit(SignalModel::Item *item, const ItemValue &value) {
-  pending_commit_ = [this, item, value]() { model_.setData(item, value); };
+  pending_commits_.push_back([this, item, value]() { model_.setData(item, value); });
 }
 
 void SignalView::drawValueDescriptionDlg() {
@@ -509,6 +496,7 @@ SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
   // a reset closes the open editors; the items they point at are deleted by refresh()
   connections_.push_back(model_.modelReset.connect([this]() {
     closeEditor();
+    properties_sig_ = nullptr;
     // the visible range is computed while drawing; reset it to the top so the sparklines are ready in the
     // frame that paints them
     if (first_visible_row_ != -1) {
@@ -521,6 +509,7 @@ SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
   // the sig pointers die with the signal
   connections_.push_back(dbc()->signalRemoved.connect([this](const cabana::Signal *sig) {
     if (desc_sig_ == sig) desc_sig_ = nullptr;
+    if (properties_sig_ == sig) properties_sig_ = nullptr;
     if ((editing_item_ && editing_item_->sig == sig) || (open_item_ && open_item_->sig == sig) ||
         (focus_item_ && focus_item_->sig == sig)) closeEditor();
     handleSignalRemoved(sig);
@@ -536,6 +525,9 @@ SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
 std::string SignalView::whatsThis() const {
   return R"(
     <b>Signal view</b><br />
+    Select a signal to highlight its bits. Double-click a signal or choose Edit to open its properties.<br />
+    Drag column dividers to resize. The time-range slider controls the existing sparklines.<br />
+    Shift-click the plot button to add a signal to the previously opened plot.
   )";
 }
 
@@ -550,21 +542,12 @@ void SignalView::rowsChanged() {
   updateState();
 }
 
-void SignalView::rowClicked(SignalModel::Item *item) {
-  if (item->type == SignalModel::Item::Sig || item->type == SignalModel::Item::ExtraInfo) {
-    item->expanded = !item->expanded;
-  }
-}
-
-void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
-  if (int row = model_.signalRow(sig); row != -1) {
-    auto item = model_.root()->children[row];
-    if (expand) {
-      item->expanded = !item->expanded;
-    }
-    scroll_to_sig_ = sig;  // scroll the signal to the top
+void SignalView::selectSignal(const cabana::Signal *sig) {
+  if (model_.signalRow(sig) != -1) {
+    scroll_to_sig_ = sig;
     current_sig_ = sig;
-    current_type_ = SignalModel::Item::Sig;
+    if (properties_sig_ != sig) commitEditor();
+    properties_sig_ = sig;
   }
 }
 
@@ -610,7 +593,6 @@ void SignalView::handleSignalRemoved(const cabana::Signal *sig) {
     auto &children = model_.root()->children;
     if (sig && !children.empty() && current_row_ >= 0) {
       current_sig_ = children[std::min<int>(current_row_, children.size() - 1)]->sig;
-      current_type_ = SignalModel::Item::Sig;
     }
   }
   if (!sig || scroll_to_sig_ == sig) scroll_to_sig_ = nullptr;
@@ -623,7 +605,11 @@ float SignalView::widestValueWidth(const cabana::Signal *sig) {
   float width = 0;
   pushMonoFont(ImGui::GetFontSize());
   for (double raw : {raw_min, raw_max}) {
-    width = std::max(width, textWidth(sig->formatValue(raw * sig->factor + sig->offset)));
+    // An endpoint may map to a short enum (e.g. "Fault"); still reserve the full numeric value and unit.
+    char numeric[128];
+    snprintf(numeric, sizeof(numeric), "%.*f", sig->precision, raw * sig->factor + sig->offset);
+    const std::string value = std::string(numeric) + (sig->unit.empty() ? "" : " " + sig->unit);
+    width = std::max(width, textWidth(value));
   }
   for (const auto &[_, desc] : sig->val_desc) {
     width = std::max(width, textWidth(desc));
@@ -632,7 +618,12 @@ float SignalView::widestValueWidth(const cabana::Signal *sig) {
   return width;
 }
 
+void SignalView::setVisible(bool visible) {
+  if (std::exchange(visible_, visible) != visible && visible) updateState();
+}
+
 void SignalView::updateState(const std::set<MessageId> *msgs) {
+  if (!visible_) return;
   const auto &last_msg = can->lastMessage(model_.msgId());
   if (model_.rowCount() == 0 || (msgs && !msgs->count(model_.msgId())) || last_msg.dat.size() == 0) return;
 
@@ -648,11 +639,11 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
   }
 
   if (first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model_.rowCount()) {
-    const float min_max_width = textWidth("-000.00", MINMAX_FONT) + 5;
-    float available_width = value_column_width_ - button_size_.x;
+    const float min_max_width = textWidth("-000.00", MINMAX_FONT) + 11;
+    float available_width = std::max(1.0f, value_column_width_ - button_size_.x - H_MARGIN * 2);
     float value_width = std::min<float>(max_value_width + min_max_width, available_width / 2);
     ImVec2 size(std::floor(available_width - value_width),
-                std::floor(signalRowHeight() - V_MARGIN * 2));
+                std::floor(signalRowHeight() - ImGui::GetStyle().CellPadding.y * 2 - V_MARGIN * 2));
 
     // the window ends at the playback clock, not at the last message: its timestamp only moves when a
     // message of this id arrives, so a slow message held the sparkline still for several updates and
@@ -675,10 +666,10 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
   }
 }
 
-// the sparkline label, the range slider and the collapse button
+// the sparkline label and range slider
 float SignalView::toolBarRightWidth(const std::string &range_label) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::CalcTextSize(range_label.c_str()).x + style.ItemSpacing.x + SPARKLINE_SLIDER_WIDTH + style.ItemSpacing.x + iconButtonWidth();
+  return ImGui::CalcTextSize(range_label.c_str()).x + style.ItemSpacing.x + SPARKLINE_SLIDER_WIDTH;
 }
 
 // the width at which the tool bar stops squishing: the signal count and the filter box on the left, the
@@ -701,13 +692,18 @@ void SignalView::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(signal_count_lb_.c_str());
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(FILTER_WIDTH);
+  const float filter_width = std::clamp(ImGui::GetContentRegionAvail().x - toolBarRightWidth(sparkline_label_) - ImGui::GetStyle().ItemSpacing.x,
+                                       80.0f, FILTER_WIDTH);
+  ImGui::SetNextItemWidth(filter_width);
   if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
     model_.setFilter(filter_edit_);
   }
 
   // stretch: the sparkline controls sit at the right edge
-  alignRight(toolBarRightWidth(sparkline_label_));
+  const float controls_width = toolBarRightWidth(sparkline_label_);
+  if (ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - ImGui::GetItemRectMax().x > controls_width + ImGui::GetStyle().ItemSpacing.x) {
+    alignRight(controls_width);
+  }
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted(sparkline_label_.c_str());
   ImGui::SameLine();
@@ -716,13 +712,24 @@ void SignalView::draw() {
     setSparklineRange(range);
   }
   ImGui::SetItemTooltip("Sparkline time range");
-  ImGui::SameLine();
-  if (iconButton("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All")) collapseAll();
 
-  drawTree();
-  drawValueDescriptionDlg();
-  // model changes run after the tree is drawn: dbc()->signalUpdated/signalRemoved reorder or delete the rows
-  if (pending_commit_) std::exchange(pending_commit_, nullptr)();
+  if (model_.signalRow(properties_sig_) >= 0) {
+    const float available = std::max(1.0f, ImGui::GetContentRegionAvail().y);
+    const float minimum = std::min(available * 0.4f, ImGui::GetFrameHeightWithSpacing() * 4);
+    const float maximum = std::max(minimum, available - ImGui::GetFrameHeightWithSpacing() * 5);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0, minimum), ImVec2(FLT_MAX, maximum));
+    if (ImGui::BeginChild("signal_rows", ImVec2(0, std::clamp(available * 0.5f, minimum, maximum)),
+                          ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+      drawSignals();
+    }
+    ImGui::EndChild();
+    drawProperties();
+  } else {
+    ImGui::TextDisabled("Select a signal to edit its properties below.");
+    drawSignals();
+  }
+  // Model changes run after both tables are drawn: dbc()->signalUpdated/signalRemoved reorder or delete the rows
+  for (auto &commit : std::exchange(pending_commits_, {})) commit();
   if (pending_action_) std::exchange(pending_action_, nullptr)();
   current_row_ = model_.signalRow(current_sig_);  // used when the row is removed
 
@@ -730,147 +737,131 @@ void SignalView::draw() {
   ImGui::PopStyleColor();
 }
 
-void SignalView::collapseAll() {
-  commitEditor();  // the editor loses the focus, which commits it
-  for (auto item : model_.root()->children) {
-    item->expanded = false;
-    for (auto child : item->children) child->expanded = false;
-  }
-}
-
-void SignalView::drawTree() {
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-  const float min_height = std::max(ImGui::GetContentRegionAvail().y, 300.0f);
-  const bool visible = beginControlChild("tree", ImVec2(0, min_height));
-  if (visible) {
-    DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, rowHeight()};
-    // the press that closes an open editor is consumed by the focus change, the index widgets never see it
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = open_item_ != nullptr;
-
+void SignalView::drawSignals() {
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = open_item_ != nullptr;
+  // Let the table subtract its own vertical scrollbar from the available width.
+  // Forcing inner_width to the outer width clips the last button and adds a horizontal scrollbar.
+  const bool narrow = ImGui::GetContentRegionAvail().x < 420.0f + ImGui::GetStyle().ScrollbarSize;
+  const auto flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
+                     ImGuiTableFlags_PadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp |
+                     (narrow ? ImGuiTableFlags_ScrollX : 0);
+  const cabana::Signal *hovered = nullptr;
+  // Scroll very narrow docks instead of reducing names, sparklines and values to a few pixels.
+  const float inner_width = narrow ? 420.0f : 0.0f;
+  if (ImGui::BeginTable("signals", 2, flags, ImVec2(0, std::max(1.0f, ImGui::GetContentRegionAvail().y)), inner_width)) {
+    ImGui::TableSetupColumn("Signal", ImGuiTableColumnFlags_WidthStretch, 1);
+    ImGui::TableSetupColumn("History / Value", ImGuiTableColumnFlags_WidthStretch, 2);
+    ImGui::TableSetupScrollFreeze(0, 1);
+    ImGui::TableHeadersRow();
     int first_visible = -1, last_visible = -1;
-    auto &children = model_.root()->children;
-    for (int i = 0; i < children.size(); ++i) {
-      ctx.any_visible = false;
-      const bool header_visible = drawItem(children[i], 0, ctx);
-      if (header_visible && first_visible == -1) first_visible = i;
-      if (ctx.any_visible) last_visible = i;
+    float value_width = value_column_width_;
+    for (int i = 0; i < model_.rowCount(); ++i) {
+      auto item = model_.root()->children[i];
+      ImGui::PushID(item->sig);
+      ImGui::TableNextRow(0, signalRowHeight());
+      ImGui::TableSetColumnIndex(0);
+      const ImVec2 pos = ImGui::GetCursorScreenPos();
+      const float cell_height = signalRowHeight() - ImGui::GetStyle().CellPadding.y * 2;
+      const ImRect name_rect(pos, ImVec2(pos.x + ImGui::GetContentRegionAvail().x, pos.y + cell_height));
+      const bool selected = current_sig_ == item->sig;
+      if (selected) {
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_Header));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetStyleColorVec4(ImGuiCol_Header));
+      }
+      if (ImGui::Selectable("##signal", selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap, ImVec2(0, cell_height))) {
+        selectSignal(item->sig);
+      }
+      if (selected) ImGui::PopStyleColor(2);
+      const bool visible = ImGui::IsItemVisible();
+      if (visible) {
+        if (first_visible == -1) first_visible = i;
+        last_visible = i;
+      }
+      if (ImGui::IsItemHovered()) {
+        hovered = item->sig;
+        ImGui::SetItemTooltip("%s", utils::stripHtml(utils::signalToolTip(item->sig)).c_str());
+      }
+      if (scroll_to_sig_ == item->sig) {
+        ImGui::SetScrollHereY();
+        scroll_to_sig_ = nullptr;
+      }
+      if (visible) paintCell(ImGui::GetWindowDrawList(), name_rect, item, 0, selected, item->sig->name);
+      ImGui::TableSetColumnIndex(1);
+      const ImVec2 value_pos = ImGui::GetCursorScreenPos();
+      const ImRect value_rect(value_pos, ImVec2(value_pos.x + ImGui::GetContentRegionAvail().x, value_pos.y + cell_height));
+      value_width = value_rect.GetWidth();
+      if (visible) {
+        paintCell(ImGui::GetWindowDrawList(), value_rect, item, 1, selected, item->sig_val);
+        drawIndexWidget(item, value_rect);
+      }
+      ImGui::PopID();
     }
-    if (first_visible == -1 && last_visible != -1) last_visible = -1;
-    // the rows that just became visible have no sparkline yet
-    bool changed = first_visible != first_visible_row_ || last_visible != last_visible_row_;
+    ImGui::EndTable();
+    const bool changed = first_visible != first_visible_row_ || last_visible != last_visible_row_ || value_width != value_column_width_;
     first_visible_row_ = first_visible;
     last_visible_row_ = last_visible;
-    scroll_to_sig_ = nullptr;
-
-    if (ctx.name_width > 0) name_column_width_ = ctx.name_width;
-    if (ctx.value_column_width > 0 && ctx.value_column_width != value_column_width_) {
-      value_column_width_ = ctx.value_column_width;
-      changed = true;
-    }
+    value_column_width_ = value_width;
     if (changed) updateState();
-
-    // a press on the viewport that hits no row clears the selection and the current index; rowClicked()
-    // does not run
-    if (!ctx.mouse_on_row && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-      current_sig_ = nullptr;
-      current_type_ = SignalModel::Item::Root;
-    }
-
-    if (ctx.hovered_sig != hovered_sig_) {
-      hovered_sig_ = ctx.hovered_sig;
-      highlight(hovered_sig_);
-    }
   }
-  ImGui::EndChild();
-  ImGui::PopStyleVar();
+  const auto highlighted = hovered ? hovered : (model_.signalRow(current_sig_) != -1 ? current_sig_ : nullptr);
+  if (highlighted != hovered_sig_) {
+    hovered_sig_ = highlighted;
+    highlight(highlighted);
+  }
 }
 
-bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) {
-  const bool selected = item->sig == current_sig_ && item->type == current_type_;
-  const float row_height = item->type == SignalModel::Item::Sig ? signalRowHeight() : ctx.row_height;
-  const ImVec2 row_min = ImGui::GetCursorScreenPos();
-  const ImVec2 row_max(row_min.x + ctx.width, row_min.y + row_height);
-  const bool row_visible = ImGui::IsRectVisible(row_min, row_max);
-  ctx.any_visible |= row_visible;
-
-  ImGui::PushID(item);
+void SignalView::drawProperty(SignalModel::Item *item) {
+  ImGui::PushID(item->type);
+  ImGui::TableNextRow();
+  ImGui::TableSetColumnIndex(0);
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted(item->title.c_str());
+  ImGui::TableSetColumnIndex(1);
   ImGui::BeginDisabled(!SignalModel::isEnabled(item));
-  const bool row_clicked = viewSelectable("##row", selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
-  // a press on the branch indicator only toggles the expansion; the current index does not change and
-  // rowClicked() does not run
-  const float branch_x = row_min.x + depth * INDENTATION;
-  const bool on_branch = !item->children.empty() && ImGui::GetMousePos().x >= branch_x &&
-                         ImGui::GetMousePos().x < branch_x + INDENTATION;
-  if (row_clicked && on_branch) {
-    item->expanded = !item->expanded;
-  } else if (row_clicked) {
-    current_sig_ = item->sig;
-    current_type_ = item->type;
-    // the new current item opens its editor. The name column and the non-editable cells (signal rows,
-    // check boxes) have no editor, so a click there only makes the cell current.
-    closeEditor();
-    if (SignalModel::isEditable(item) && ImGui::GetMousePos().x >= row_min.x + name_column_width_) {
-      focus_item_ = open_item_ = item;
+  if (SignalModel::isCheckable(item)) {
+    bool checked = item->type == SignalModel::Item::Endian ? item->sig->is_little_endian : item->sig->is_signed;
+    if (checkBox("##check", &checked)) queueCommit(item, checked);
+  } else if (open_item_ == item) {
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    drawEditor(item);
+  } else {
+    const std::string text = model_.valueText(item);
+    // Match the editor's frame padding and baseline so opening it never shifts the table.
+    if (propertyButton((text + "###value").c_str())) {
+      commitEditor();
+      open_item_ = focus_item_ = item;
     }
-    rowClicked(item);
-  }
-  if (item->type == SignalModel::Item::Sig && item->sig == scroll_to_sig_) {
-    ImGui::SetScrollHereY(0.0f);
-    scroll_to_sig_ = nullptr;
-  }
-  if (ImGui::IsMouseHoveringRect(row_min, row_max)) {
-    ctx.mouse_on_row = true;
-    if (ImGui::IsWindowHovered()) ctx.hovered_sig = item->sig;
-  }
-
-  if (!item->children.empty()) {
-    const float arrow_size = ImGui::GetFontSize() * 0.7f;
-    ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (row_height - arrow_size) * 0.5f),
-                       ImGui::GetColorU32(selected ? palette().text_selected : palette().text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
-  }
-
-  // every row is measured, the header sizes column 0 to the contents of the whole tree
-  const std::string text0 = nameText(item);
-  ctx.name_width = std::max(ctx.name_width, nameColumnWidth(item, ctx.width, text0));
-  const ImRect rect1(ImVec2(row_min.x + name_column_width_, row_min.y), row_max);
-  ctx.value_column_width = rect1.GetWidth();
-
-  // a row outside the viewport is not painted and has no index widget, like a QTreeView row. The row that
-  // holds the open editor is always submitted, so scrolling it out does not drop the edit.
-  const bool editor_open = selected && open_item_ == item;
-  if (row_visible || editor_open) {
-    const ImRect rect0(ImVec2(row_min.x + (depth + 1) * INDENTATION, row_min.y), ImVec2(row_min.x + name_column_width_, row_max.y));
-    paintCell(ctx.draw_list, rect0, item, 0, selected, text0, ctx.viewport_x);
-    if (item->type == SignalModel::Item::Sig && ImGui::IsMouseHoveringRect(ImVec2(row_min.x, row_min.y), rect0.Max) &&
-        ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && ImGui::BeginTooltip()) {
-      ImGui::TextUnformatted(utils::stripHtml(utils::signalToolTip(item->sig)).c_str());
-      ImGui::EndTooltip();
-    }
-
-    if (item->type == SignalModel::Item::Sig) {
-      paintCell(ctx.draw_list, rect1, item, 1, selected, item->sig_val, ctx.viewport_x);
-      drawIndexWidget(item, rect1);
-    } else if (SignalModel::isCheckable(item)) {
-      bool checked = item->type == SignalModel::Item::Endian ? item->sig->is_little_endian : item->sig->is_signed;
-      ImGui::SetCursorScreenPos(ImVec2(rect1.Min.x + H_MARGIN, rect1.Min.y));
-      if (checkBox("##check", &checked)) queueCommit(item, checked);
-    } else if (SignalModel::isEditable(item) && editor_open) {
-      // only the current item gets an editor; the others are painted as text
-      ImGui::SetCursorScreenPos(rect1.Min);
-      ImGui::SetNextItemWidth(rect1.GetWidth());
-      drawEditor(item);
-    } else {
-      paintCell(ctx.draw_list, rect1, item, 1, selected, model_.valueText(item), ctx.viewport_x);
-    }
+    ImGui::SetItemTooltip("Click to edit %s", item->title.c_str());
   }
   ImGui::EndDisabled();
   ImGui::PopID();
-  ImGui::SetCursorScreenPos(ImVec2(row_min.x, row_max.y));
+}
 
-  if (item->expanded) {
-    for (auto child : item->children) drawItem(child, depth + 1, ctx);
+void SignalView::commitProperties() {
+  commitEditor();
+  for (auto &commit : std::exchange(pending_commits_, {})) commit();
+}
+
+void SignalView::drawProperties() {
+  ImGui::Text("Properties: %s", properties_sig_ ? properties_sig_->name.c_str() : "No signal selected");
+  ImGui::SetItemTooltip("Select another signal above to edit it. Drag the divider to resize.");
+  const int row = model_.signalRow(properties_sig_);
+  const bool narrow = ImGui::GetContentRegionAvail().x < 360.0f + ImGui::GetStyle().ScrollbarSize;
+  const auto flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_PadOuterX |
+                     ImGuiTableFlags_ScrollY | (narrow ? ImGuiTableFlags_ScrollX : 0);
+  if (row >= 0 && ImGui::BeginTable("properties", 2, flags, ImVec2(0, std::max(1.0f, ImGui::GetContentRegionAvail().y)), narrow ? 360.0f : 0.0f)) {
+    ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 150);
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+    for (auto child : model_.root()->children[row]->children) {
+      if (child->type == SignalModel::Item::ExtraInfo) {
+        for (auto extra : child->children) drawProperty(extra);
+      } else {
+        drawProperty(child);
+      }
+    }
+    ImGui::EndTable();
   }
-  return row_visible;
+  drawValueDescriptionDlg();
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {

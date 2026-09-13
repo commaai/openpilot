@@ -10,7 +10,6 @@
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/widgets/historylog.h"
 #include "tools/cabana/ui/widgets/signalview.h"
-#include "tools/cabana/ui/widgets/tabbar.h"
 
 // a label that elides its text to the available width
 class ElidedLabel {
@@ -63,16 +62,14 @@ public:
   DetailWidget(ChartsWidget *charts);
   void setMessage(const MessageId &message_id);
   void refresh();
-  void draw();  // tab bar of message ids, toolbar, warning, Messages/Logs tabs
-  std::pair<std::string, std::vector<std::string>> serializeMessageIds() const;
-  void restoreTabs(const std::string &active_msg_id, const std::vector<std::string> &msg_ids);
+  void draw();
+  void setVisible(bool visible);
+  void finishEditing() { signal_view_->commitProperties(); }
   std::vector<std::pair<std::string, ImRect>> helpRects() const;  // HelpOverlay: (whatsThis, rect) of the binary and signal views
 
 private:
   void drawToolBar();
   void drawTabWidget();
-  int findOrAddTab(const MessageId& message_id);
-  void showTabBarContextMenu(int index);
   void editMsg(float parent_width);
   void updateState(const std::set<MessageId> *msgs = nullptr);
 
@@ -81,7 +78,7 @@ private:
   std::string warning_label_;
   ElidedLabel name_label_;
   bool warning_widget_visible_ = false;
-  TabBar tabbar_;
+  bool visible_ = false;
   int tab_widget_index_ = 0;
   bool action_remove_msg_enabled_ = false;
   bool heatmap_live_ = true;
@@ -99,14 +96,25 @@ class CenterWidget {
 public:
   CenterWidget() = default;
   void setChartsWidget(ChartsWidget *charts) { charts_ = charts; }
-  void setMessage(const MessageId &message_id) { ensureDetailWidget()->setMessage(message_id); }
-  DetailWidget* getDetailWidget() { return detail_widget.get(); }
-  DetailWidget* ensureDetailWidget();
+  void setMessage(const MessageId &message_id);
+  std::pair<std::string, std::vector<std::string>> serializeMessageIds() const;
+  void restoreTabs(const std::string &active_msg_id, const std::vector<std::string> &msg_ids);
+  void dockMessages(ImGuiID dock_id);
+  void setDefaultDock(ImGuiID dock_id) { dock_id_ = dock_id; }
   void clear();
-  void draw();  // the welcome widget until a message is selected, then the DetailWidget
+  void draw();
+  std::vector<std::pair<std::string, ImRect>> helpRects() const;
 
 private:
+  struct MessageTab {
+    MessageId id;
+    std::unique_ptr<DetailWidget> detail;
+    bool visible = false;
+    std::string windowName() const;
+  };
   void drawWelcomeWidget();
-  std::unique_ptr<DetailWidget> detail_widget;
+  std::vector<MessageTab> messages_;
+  std::string active_id_, focus_id_;
+  ImGuiID dock_id_ = 0;
   ChartsWidget *charts_ = nullptr;
 };

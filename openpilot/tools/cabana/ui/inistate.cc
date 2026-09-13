@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <sstream>
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -130,6 +131,20 @@ void addSettingsHandler() {
 
 void load() {
   if (settings.ui_state.empty()) settings.ui_state = migrateQtState();
+  if (settings.ui_state.find("SignalProperties_") != std::string::npos) {
+    // The experimental detached editor is now a child of Signals. Rebuild its old
+    // dock layout once, retaining application geometry and table preferences.
+    std::istringstream input(settings.ui_state);
+    std::string line, migrated;
+    bool keep = true;
+    while (std::getline(input, line)) {
+      if (!line.empty() && line.front() == '[') {
+        keep = line.rfind("[Window][", 0) != 0 && line.rfind("[Docking][", 0) != 0;
+      }
+      if (keep) migrated += line + "\n";
+    }
+    settings.ui_state = std::move(migrated);
+  }
   if (!settings.ui_state.empty())
     ImGui::LoadIniSettingsFromMemory(settings.ui_state.data(), settings.ui_state.size());
 

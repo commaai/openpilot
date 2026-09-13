@@ -40,21 +40,13 @@ void ElidedLabel::draw(float width) {
 }
 
 DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
-  tabbar_.setUsesScrollButtons(true);
-  tabbar_.setAutoHide(true);
-  tabbar_.setTabsClosable(true);
-  connections_.push_back(tabbar_.currentChanged.connect([this](int index) {
-    if (index >= 0) setMessage(MessageId::fromString(tabbar_.tabText(index)));
-  }));
-  connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { tabbar_.removeTab(index); }));
-  connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) { showTabBarContextMenu(index); }));
   binary_view_ = std::make_unique<BinaryView>();
   signal_view_ = std::make_unique<SignalView>(charts);
 
   history_log_ = std::make_unique<LogsWidget>();
 
   connections_.push_back(binary_view_->signalHovered.connect([this](const cabana::Signal *s) { signal_view_->signalHovered(s); }));
-  connections_.push_back(binary_view_->signalClicked.connect([this](const cabana::Signal *s) { signal_view_->selectSignal(s, true); }));
+  connections_.push_back(binary_view_->signalClicked.connect([this](const cabana::Signal *s) { signal_view_->selectSignal(s); }));
   connections_.push_back(binary_view_->editSignal.connect([this](const cabana::Signal *origin_s, cabana::Signal &s) { signal_view_->saveSignal(origin_s, s); }));
   connections_.push_back(binary_view_->showChart.connect([this](const MessageId &id, const cabana::Signal *sig, bool show, bool merge) { charts_->showChart(id, sig, show, merge); }));
   connections_.push_back(signal_view_->showChart.connect([this](const MessageId &id, const cabana::Signal *sig, bool show, bool merge) { charts_->showChart(id, sig, show, merge); }));
@@ -110,34 +102,8 @@ void DetailWidget::drawToolBar() {
   drawToolbar(items, spacer_index);
 }
 
-void DetailWidget::showTabBarContextMenu(int index) {
-  if (dropdown::BeginPopupContextItem()) {
-    if (dropdown::Item("Close Other Tabs")) {
-      tabbar_.moveTab(index, 0);
-      tabbar_.setCurrentIndex(0);
-      while (tabbar_.count() > 1) tabbar_.removeTab(1);
-    }
-    dropdown::EndPopup();
-  }
-}
-
-int DetailWidget::findOrAddTab(const MessageId &message_id) {
-  const std::string text = message_id.toString();
-  int index = tabbar_.count() - 1;
-  for (/**/; index >= 0; --index) {
-    if (tabbar_.tabText(index) == text) break;
-  }
-  if (index == -1) {
-    index = tabbar_.addTab(text);
-    tabbar_.setTabToolTip(index, msgName(message_id));
-  }
-  return index;
-}
-
 void DetailWidget::setMessage(const MessageId &message_id) {
   if (std::exchange(msg_id_, message_id) == message_id) return;
-
-  tabbar_.setCurrentIndex(findOrAddTab(message_id));
 
   signal_view_->setMessage(msg_id_);
   binary_view_->setMessage(msg_id_);
@@ -145,22 +111,10 @@ void DetailWidget::setMessage(const MessageId &message_id) {
   refresh();
 }
 
-std::pair<std::string, std::vector<std::string>> DetailWidget::serializeMessageIds() const {
-  std::vector<std::string> msgs;
-  for (int i = 0; i < tabbar_.count(); ++i) msgs.push_back(tabbar_.tabText(i));
-  return std::make_pair(msg_id_.toString(), msgs);
-}
-
-void DetailWidget::restoreTabs(const std::string &active_msg_id, const std::vector<std::string>& msg_ids) {
-  for (const auto& str_id : msg_ids) {
-    MessageId id = MessageId::fromString(str_id);
-    if (dbc()->msg(id) != nullptr)
-      findOrAddTab(id);
-  }
-
-  auto active_id = MessageId::fromString(active_msg_id);
-  if (dbc()->msg(active_id) != nullptr)
-    setMessage(active_id);
+void DetailWidget::setVisible(bool visible) {
+  if (visible_ && !visible) signal_view_->commitProperties();
+  signal_view_->setVisible(visible && tab_widget_index_ == 0);
+  if (std::exchange(visible_, visible) != visible && visible) updateState();
 }
 
 void DetailWidget::refresh() {
@@ -193,12 +147,12 @@ void DetailWidget::refresh() {
 }
 
 void DetailWidget::updateState(const std::set<MessageId> *msgs) {
-  if ((msgs && !msgs->count(msg_id_)))
+  if (!visible_ || (msgs && !msgs->count(msg_id_)))
     return;
 
   if (tab_widget_index_ == 0)
     binary_view_->updateState();
-  else
+  else if (tab_widget_index_ == 2)
     history_log_->updateState();
 }
 
@@ -209,79 +163,53 @@ void DetailWidget::editMsg(float parent_width) {
 }
 
 void DetailWidget::drawTabWidget() {
-  const ImGuiStyle &style = ImGui::GetStyle();
-  const float pad = style.ItemInnerSpacing.x, pill_height = ImGui::GetFrameHeight() + pad * 2;
-  ImGui::BeginChild("tab_widget", ImVec2(0, 0), ImGuiChildFlags_None,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  const ImRect page_rect = ImGui::GetCurrentWindow()->Rect();
-  const float gap = style.WindowPadding.y;
-  ImGui::BeginChild("page", ImVec2(0, std::max(page_rect.GetHeight() - pill_height - gap, 1.0f)),
-                    ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  if (tab_widget_index_ == 0) {
-    // binary_view_ keeps its size hint, signal_view_ takes the rest
-    const float min_height = binary_view_->minimumSizeHint().y;
-    const float avail = ImGui::GetContentRegionAvail().y;
-    const float max_height = std::max(avail - style.ItemSpacing.y - 1.0f, 1.0f);
-    const float height = std::clamp(min_height, 1.0f, max_height);
-    ImGui::BeginChild("binary_view", ImVec2(0, height), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
-    binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
-    binary_view_->draw();
-    ImGui::EndChild();
-    ImGui::BeginChild("signal_view", ImVec2(0, 0));
+  binary_view_rect_ = signal_view_rect_ = ImRect();
+  const int previous_view = tab_widget_index_;
+  if (!ImGui::BeginTabBar("detail_views")) return;
+  if (ImGui::BeginTabItem("Inspect")) {
+    if (std::exchange(tab_widget_index_, 0) != 0) updateState();
+    // Disclosure is not selection: use the app's button feedback only while interacting.
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+    const bool bits_open = ImGui::CollapsingHeader("Bits", ImGuiTreeNodeFlags_DefaultOpen);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+    if (bits_open) {
+      // Reserve the signal toolbar and several rows even with a large CAN FD payload.
+      const float available = ImGui::GetContentRegionAvail().y;
+      const float max_height = std::max(1.0f, available - ImGui::GetFrameHeightWithSpacing() * 6);
+      const float min_height = std::min(max_height, ImGui::GetFrameHeightWithSpacing() * 2);
+      const float initial_height = std::clamp(binary_view_->minimumSizeHint().y, min_height, max_height);
+      ImGui::SetNextWindowSizeConstraints(ImVec2(0, min_height), ImVec2(FLT_MAX, max_height));
+      ImGui::BeginChild("binary_view", ImVec2(0, initial_height), ImGuiChildFlags_ResizeY,
+                        ImGuiWindowFlags_HorizontalScrollbar);
+      binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
+      binary_view_->draw();
+      ImGui::EndChild();
+    }
+    ImGui::BeginChild("signal_view", ImVec2(0, 0), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view_->draw();
     ImGui::EndChild();
-  } else {
-    history_log_->draw();
+    ImGui::EndTabItem();
   }
-  ImGui::EndChild();
-
-  std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Messages", std::string(icon::STOPWATCH) + " Logs"};
-  auto pill_width = [&]() {
-    float w = pad;
-    for (const auto &label : labels) w += ImGui::CalcTextSize(label.c_str()).x + style.FramePadding.x * 2 + pad;
-    return w;
-  };
-  float width = pill_width();
-  if (width > page_rect.GetWidth()) {
-    labels[0] = icon::FILE_EARMARK_RULED;
-    labels[1] = icon::STOPWATCH;
-    width = pill_width();
-  }
-  const ImVec2 size(width, pill_height);
-  const ImVec2 min(std::round(page_rect.GetCenter().x - width * 0.5f), page_rect.Max.y - size.y);
-  ImGui::SetNextWindowPos(min);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(pad, pad));
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_PopupBg));
-  ImGui::BeginChild("page_switch", size, ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(pad, 0.0f));
-  for (int i = 0; i < 2; ++i) {
-    const bool selected = tab_widget_index_ == i;
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(selected ? ImGuiCol_Header : ImGuiCol_Button, selected ? 1.0f : 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(selected ? ImGuiCol_HeaderActive : ImGuiCol_ButtonHovered));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, selected ? palette().header_active : palette().button_active);
-    ImGui::PushStyleColor(ImGuiCol_Text, selected ? palette().text_selected : palette().text);
-    if (i) ImGui::SameLine();
-    if (ImGui::Button(labels[i].c_str()) && !selected) {
-      tab_widget_index_ = i;
-      if (i == 1) history_log_->onShown();
+  if (ImGui::BeginTabItem("Logs")) {
+    if (std::exchange(tab_widget_index_, 2) != 2) {
+      history_log_->onShown();
       updateState();
     }
-    ImGui::PopStyleColor(4);
+    history_log_->draw();
+    ImGui::EndTabItem();
   }
-  ImGui::PopStyleVar(2);
-  ImGui::EndChild();
-  ImGui::PopStyleColor();
-  ImGui::PopStyleVar();
-  ImGui::EndChild();
+  ImGui::EndTabBar();
+  if (previous_view == 0 && tab_widget_index_ != 0) signal_view_->commitProperties();
+  signal_view_->setVisible(tab_widget_index_ == 0);
 }
 
 void DetailWidget::draw() {
-  tabbar_.draw();
-  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_Borders,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   drawToolBar();
 
   if (warning_widget_visible_) {
@@ -291,7 +219,6 @@ void DetailWidget::draw() {
   }
 
   drawTabWidget();
-  ImGui::EndChild();
 
   if (edit_dlg_ && !edit_dlg_->draw()) {
     if (edit_dlg_->accepted()) {
@@ -306,7 +233,7 @@ void DetailWidget::draw() {
 std::vector<std::pair<std::string, ImRect>> DetailWidget::helpRects() const {
   std::vector<std::pair<std::string, ImRect>> rects;
   if (tab_widget_index_ == 0) {
-    rects.emplace_back(binary_view_->whatsThis(), binary_view_rect_);
+    if (binary_view_rect_.GetWidth() > 0) rects.emplace_back(binary_view_->whatsThis(), binary_view_rect_);
     rects.emplace_back(signal_view_->whatsThis(), signal_view_rect_);
   }
   return rects;
@@ -395,24 +322,95 @@ void EditMessageDialog::validateName(const std::string &text) {
   ok_enabled_ = valid;
 }
 
-DetailWidget* CenterWidget::ensureDetailWidget() {
-  if (!detail_widget) {
-    detail_widget = std::make_unique<DetailWidget>(charts_);
+std::string CenterWidget::MessageTab::windowName() const {
+  return id.toString() + " " + msgName(id) + "###Message_" + id.toString();
+}
+
+void CenterWidget::setMessage(const MessageId &id) {
+  auto it = std::find_if(messages_.begin(), messages_.end(), [&](const auto &tab) { return tab.id == id; });
+  if (it == messages_.end()) {
+    auto detail = std::make_unique<DetailWidget>(charts_);
+    detail->setMessage(id);
+    messages_.push_back({id, std::move(detail)});
   }
-  return detail_widget.get();
+  active_id_ = focus_id_ = id.toString();
+}
+
+std::pair<std::string, std::vector<std::string>> CenterWidget::serializeMessageIds() const {
+  std::vector<std::string> ids;
+  for (const auto &tab : messages_) ids.push_back(tab.id.toString());
+  return {active_id_, ids};
+}
+
+void CenterWidget::restoreTabs(const std::string &active, const std::vector<std::string> &ids) {
+  for (const auto &id : ids) {
+    auto message = MessageId::fromString(id);
+    if (dbc()->msg(message)) setMessage(message);
+  }
+  if (!active.empty() && dbc()->msg(MessageId::fromString(active))) setMessage(MessageId::fromString(active));
+}
+
+void CenterWidget::dockMessages(ImGuiID dock_id) {
+  dock_id_ = dock_id;
+  ImGui::DockBuilderDockWindow("Messages###CenterWidget", dock_id);
+  for (const auto &tab : messages_) ImGui::DockBuilderDockWindow(tab.windowName().c_str(), dock_id);
 }
 
 void CenterWidget::clear() {
-  detail_widget.reset();
-  charts_ = nullptr;  // MainWindow recreates the ChartsWidget after startStream
+  messages_.clear();
+  active_id_.clear();
+  focus_id_.clear();
+  charts_ = nullptr;
 }
 
 void CenterWidget::draw() {
-  if (detail_widget) {
-    detail_widget->draw();
-  } else {
-    drawWelcomeWidget();
+  auto prepare = [&]() {
+    ImGuiWindowClass window_class;
+    window_class.DockingAlwaysTabBar = true;
+    window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoWindowMenuButton;
+    window_class.ViewportFlagsOverrideSet = ImGuiViewportFlags_NoAutoMerge;
+    ImGui::SetNextWindowClass(&window_class);
+    ImGui::SetNextWindowDockID(dock_id_, ImGuiCond_FirstUseEver);
+  };
+  if (messages_.empty()) {
+    prepare();
+    if (ImGui::Begin("Messages###CenterWidget", nullptr, ImGuiWindowFlags_NoCollapse)) drawWelcomeWidget();
+    ImGui::End();
+    return;
   }
+  const auto focus = std::exchange(focus_id_, {});
+  for (auto it = messages_.begin(); it != messages_.end();) {
+    prepare();
+    if (it->id.toString() == focus) ImGui::SetNextWindowFocus();
+    bool open = true;
+    it->visible = ImGui::Begin(it->windowName().c_str(), &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    // Migrate layouts saved when the middle panel deliberately hid its tab bar.
+    if (auto *node = ImGui::GetWindowDockNode()) node->LocalFlags &= ~(ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_HiddenTabBar);
+    it->detail->setVisible(it->visible);
+    if (it->visible) {
+      if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) active_id_ = it->id.toString();
+      it->detail->draw();
+    }
+    ImGui::End();
+    if (!open) {
+      it->detail->finishEditing();
+      const bool active = it->id.toString() == active_id_;
+      it = messages_.erase(it);
+      if (active) active_id_ = messages_.empty() ? "" : messages_.front().id.toString();
+    } else {
+      ++it;
+    }
+  }
+}
+
+std::vector<std::pair<std::string, ImRect>> CenterWidget::helpRects() const {
+  std::vector<std::pair<std::string, ImRect>> result;
+  for (const auto &tab : messages_) {
+    if (!tab.visible) continue;
+    auto rects = tab.detail->helpRects();
+    result.insert(result.end(), rects.begin(), rects.end());
+  }
+  return result;
 }
 
 void CenterWidget::drawWelcomeWidget() {

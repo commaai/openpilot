@@ -53,7 +53,6 @@ public:
     bool highlight = false;
     std::string sig_val = "-";
     Sparkline sparkline;
-    bool expanded = false;
     bool chart_opened = false;  // plot_btn checked state
   };
 
@@ -109,10 +108,12 @@ public:
   SignalView(ChartsWidget *charts);
   void setMessage(const MessageId &id);
   void draw();
+  void commitProperties();
+  void setVisible(bool visible);
   static float minimumWidth();
   void signalHovered(const cabana::Signal *sig);  // handler for BinaryView::signalHovered
   void updateChartState();
-  void selectSignal(const cabana::Signal *sig, bool expand = false);
+  void selectSignal(const cabana::Signal *sig);
   bool saveSignal(const cabana::Signal *origin, cabana::Signal &s) { return model_.saveSignal(origin, s); }
   std::string whatsThis() const;
 
@@ -121,7 +122,6 @@ public:
 
 private:
   void rowsChanged();
-  void rowClicked(SignalModel::Item *item);
   static float toolBarRightWidth(const std::string &range_label);
   void updateToolBar();
   void setSparklineRange(int value);
@@ -130,31 +130,18 @@ private:
   void handleSignalRemoved(const cabana::Signal *sig);  // drops the row pointers to a removed signal (nullptr: all)
   void updateState(const std::set<MessageId> *msgs = nullptr);
 
-  struct DrawContext {
-    ImDrawList *draw_list;
-    float viewport_x;
-    float width;
-    float row_height;
-    float name_width = 0;
-    float value_column_width = 0;
-    bool any_visible = false;
-    bool mouse_on_row = false;
-    const cabana::Signal *hovered_sig = nullptr;
-  };
-  void drawTree();
-  bool drawItem(SignalModel::Item *item, int depth, DrawContext &ctx);  // returns whether the row is visible
-  void drawIndexWidget(SignalModel::Item *item, const ImRect &rect);    // the [plot][remove] widget
-  void collapseAll();
+  void drawSignals();
+  void drawProperties();
+  void drawProperty(SignalModel::Item *item);
+  void drawIndexWidget(SignalModel::Item *item, const ImRect &rect);
   static float widestValueWidth(const cabana::Signal *sig);
 
-  // viewport_x: left edge of the tree viewport
   void paintCell(ImDrawList *painter, const ImRect &rect, const SignalModel::Item *item, int column, bool selected,
-                 const std::string &text, float viewport_x) const;
-  float nameColumnWidth(const SignalModel::Item *item, float widget_width, const std::string &text) const;
+                 const std::string &text) const;
   // draws the editor for `item` at the cursor; commits through queueCommit on focus out
   void drawEditor(SignalModel::Item *item);
-  // queues the commit in pending_commit_: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
-  // the rows, so the model is only changed after the tree is drawn (see draw)
+  // queues the commit in pending_commits_: EditSignalCommand fires dbc()->signalUpdated synchronously, which reorders
+  // the rows, so the model is only changed after the tables are drawn (see draw)
   void queueCommit(SignalModel::Item *item, const ItemValue &value);
   void drawValueDescriptionDlg();  // continuation of the ValueDescriptionDlg opened in drawEditor
   static float textWidth(const std::string &text, float font_size = 0);
@@ -165,18 +152,17 @@ private:
   static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
 
   float value_column_width_ = 0;
-  float name_column_width_ = 150;
+  bool visible_ = false;
+  const cabana::Signal *properties_sig_ = nullptr;
   bool editor_open_on_press_ = false;
-  // computed while drawing the tree: the first top-level row whose own row is visible (a signal whose header
-  // is scrolled out but whose children are visible is skipped), and the last top-level row with any visible row
+  // Visible signal rows determine which sparklines need updating.
   int first_visible_row_ = -1;
   int last_visible_row_ = -1;
   const cabana::Signal *current_sig_ = nullptr;
   int current_row_ = -1;                         // row of current_sig_ at the end of the last draw()
-  SignalModel::Item::Type current_type_ = SignalModel::Item::Root;
   const cabana::Signal *scroll_to_sig_ = nullptr;
   const cabana::Signal *hovered_sig_ = nullptr;
-  std::function<void()> pending_action_;  // button clicks that destroy rows run after the tree is drawn
+  std::function<void()> pending_action_;  // button clicks that destroy rows run after the tables are drawn
   std::string sparkline_label_;
   std::string filter_edit_;
   ChartsWidget *charts_;
@@ -187,7 +173,7 @@ private:
   SignalModel::Item *focus_item_ = nullptr;
   // the item whose editor is open; closeEditor() returns the cell to the painted text while the row stays current
   SignalModel::Item *open_item_ = nullptr;
-  std::function<void()> pending_commit_;
+  std::vector<std::function<void()>> pending_commits_;
   SignalModel::Item *editing_item_ = nullptr;  // the open text editor
   std::string edit_text_;
   int edit_int_ = 0;

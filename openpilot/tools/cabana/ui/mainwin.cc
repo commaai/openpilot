@@ -31,7 +31,6 @@
 namespace {
 // dock window ids (the visible titles change, the part after ### is the identity)
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
-constexpr const char *CENTER_PANEL = "Signals###CenterWidget";
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
@@ -655,8 +654,8 @@ void MainWindow::saveSessionState() {
   const auto files = dbc()->nonEmptyDBCFiles();
   if (!files.empty()) settings.recent_dbc_file = files.front()->filename;
 
-  if (auto *detail = center_widget_.getDetailWidget()) {
-    auto [active_id, ids] = detail->serializeMessageIds();
+  {
+    auto [active_id, ids] = center_widget_.serializeMessageIds();
     settings.active_msg_id = active_id;
     settings.selected_msg_ids = ids;
   }
@@ -671,7 +670,7 @@ void MainWindow::restoreSessionState() {
   if (dbc()->nonEmptyDBCFiles().front()->filename != settings.recent_dbc_file) return;
 
   if (!settings.selected_msg_ids.empty()) {
-    center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
+    center_widget_.restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
   }
 
   if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
@@ -793,9 +792,13 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderDockWindow(CHARTS_WINDOW, charts);
     ImGui::DockBuilderDockWindow(MESSAGES_PANEL_ID, left);
     ImGui::DockBuilderDockWindow(VIDEO_PANEL, right);
-    ImGui::DockBuilderDockWindow(CENTER_PANEL, center);
+    center_widget_.dockMessages(center);
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
+  }
+  if (auto *central = ImGui::DockBuilderGetCentralNode(dock_id)) {
+    central->LocalFlags &= ~(ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_HiddenTabBar);
+    center_widget_.setDefaultDock(central->ID);
   }
   // a panel never shrinks past half the width where the signal view's tool bar squishes
   const float min_panel_width = (SignalView::minimumWidth() + (ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().WindowBorderSize) * 2) * 0.5f;
@@ -875,15 +878,10 @@ void MainWindow::draw() {
   if (!full_screen_) drawMenuBar();
   drawDockspace();
 
-  // the central widget has no scrollbars of its own (the views inside scroll)
-  setNextPanelClass();
-  if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    center_widget_.draw();
-    if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
-      for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
-    }
+  center_widget_.draw();
+  if (help_overlay_.visible()) {
+    for (const auto &[text, rect] : center_widget_.helpRects()) help_overlay_.add(text, rect);
   }
-  ImGui::End();
   // Submit the same dock windows while loading, so ImGui doesn't collapse their
   // nodes and then redistribute the layout when the stream's widgets arrive.
   if (messages_visible_) drawMessagesPanel();
