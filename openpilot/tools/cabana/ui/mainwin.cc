@@ -779,6 +779,10 @@ void MainWindow::drawDockspace() {
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
+  // Recover layouts saved before the tabless center stopped accepting other panels.
+  if (const auto *center = ImGui::FindWindowByName(CENTER_PANEL); center && center->DockNode && center->DockNode->Windows.Size > 1) {
+    reset_layout_ = true;
+  }
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
       (!ImGui::FindWindowByName(CHARTS_WINDOW) && !ImGui::FindWindowSettingsByID(ImHashStr(CHARTS_WINDOW)))) {
     // Messages left, route above charts on the right, details in the middle.
@@ -878,7 +882,8 @@ void MainWindow::draw() {
 
   // the central widget has no scrollbars of its own (the views inside scroll)
   ImGuiWindowClass center_class;
-  center_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoUndocking;
+  center_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoUndocking | ImGuiDockNodeFlags_NoDockingOverMe |
+                                         ImGuiDockNodeFlags_NoDockingSplit;
   ImGui::SetNextWindowClass(&center_class);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, 0.0f));
   const bool center_open = beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
