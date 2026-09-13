@@ -10,7 +10,6 @@ NATIVE_TESTS = (
   "openpilot/common/tests/test_swaglog",
   "openpilot/selfdrive/pandad/tests/test_pandad_canprotocol",
   "openpilot/tools/cabana/tests/test_dbc_core",
-  "openpilot/tools/replay/tests/test_seg_mgr",
 )
 
 

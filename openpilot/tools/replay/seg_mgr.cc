@@ -133,7 +133,7 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
         if (attempt.count >= MAX_SEGMENT_LOAD_ATTEMPTS) continue;
         const auto now = std::chrono::steady_clock::now();
         if (attempt.retry_at == std::chrono::steady_clock::time_point::max()) {
-          attempt.retry_at = now + retry_delay_ * attempt.count;
+          attempt.retry_at = now + std::chrono::seconds(attempt.count);
         }
         if (now < attempt.retry_at) {
           next_retry_ = std::min(next_retry_, attempt.retry_at);

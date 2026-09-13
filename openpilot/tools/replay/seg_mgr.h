@@ -22,9 +22,8 @@ public:
     bool isSegmentLoaded(int n) const { return segments.find(n) != segments.end(); }
   };
 
-  SegmentManager(const std::string &route_name, uint32_t flags, const std::string &data_dir = "", bool auto_source = false,
-                 std::chrono::milliseconds retry_delay = std::chrono::seconds(1))
-      : flags_(flags), route_(route_name, data_dir, auto_source), event_data_(std::make_shared<EventData>()), retry_delay_(retry_delay) {}
+  SegmentManager(const std::string &route_name, uint32_t flags, const std::string &data_dir = "", bool auto_source = false)
+      : flags_(flags), route_(route_name, data_dir, auto_source), event_data_(std::make_shared<EventData>()) {}
   ~SegmentManager();
   void stop();
 
@@ -65,6 +64,5 @@ private:
   };
   // Accessed only by the cache management thread.
   std::map<int, LoadAttempt> load_attempts_;
-  const std::chrono::milliseconds retry_delay_;
   std::chrono::steady_clock::time_point next_retry_ = std::chrono::steady_clock::time_point::max();
 };
