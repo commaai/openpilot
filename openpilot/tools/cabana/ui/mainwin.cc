@@ -31,7 +31,7 @@
 namespace {
 // dock window ids (the visible titles change, the part after ### is the identity)
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
-constexpr const char *CENTER_PANEL = "###CenterWidget";
+constexpr const char *CENTER_PANEL = "Signals###CenterWidget";
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
@@ -138,11 +138,6 @@ void MainWindow::drawMenuBar() {
   const bool open = ImGui::BeginMainMenuBar();
   ImGui::PopStyleVar();
   if (!open) return;
-  {
-    const ImVec2 min = ImGui::GetWindowPos();
-    const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
-  }
   if (dropdown::BeginMenu("File")) {
     drawFileMenu();
     dropdown::EndMenu();
@@ -181,6 +176,9 @@ void MainWindow::drawMenuBar() {
     if (dropdown::Item("Help", "F1")) toggleHelp();
     dropdown::EndMenu();
   }
+  const ImVec2 min = ImGui::GetWindowPos();
+  const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
+  ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
   ImGui::EndMainMenuBar();
 }
 
@@ -718,8 +716,16 @@ void MainWindow::drawStatusBar() {
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
   const float pad = ImGui::GetStyle().WindowPadding.x;
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  const float fps_x = std::max(pad, width - pad - ImGui::CalcTextSize("999 FPS").x);
+  popMonoFont();
+  const float progress_width = std::min(300.0f, std::max(0.0f, fps_x - pad - 20.0f));
+  const float progress_x = fps_x - progress_width - 10.0f;
+  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : fps_x - 10.0f;
+  ImGui::PushClipRect(min, ImVec2(min.x + std::max(pad, message_end), min.y + ImGui::GetWindowHeight()), true);
   ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
+  const float text_y = ImGui::GetCursorPosY();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
   auto &bar = status_bar_;
   if (!bar.message.empty() && (bar.message_until == 0 || ImGui::GetTime() < bar.message_until)) {
@@ -728,10 +734,27 @@ void MainWindow::drawStatusBar() {
     bar.message.clear();
     ImGui::TextUnformatted("For help, press F1");
   }
-  if (bar.progress_visible) {
-    ImGui::SameLine(width - pad - 300.0f);
-    ImGui::ProgressBar(bar.progress_value, ImVec2(300.0f, 16.0f), bar.progress_text.c_str());
+  ImGui::PopClipRect();
+  if (bar.progress_visible && progress_width > 0) {
+    const float progress_height = 16.0f;
+    ImGui::PushFont(ImGui::GetFont(), 12.0f);
+    const std::string percentage = std::to_string((int)(bar.progress_value * 100)) + "%";
+    const char *label = bar.progress_text.c_str();
+    const float text_width = progress_width - 2 * ImGui::GetStyle().FramePadding.x;
+    if (ImGui::CalcTextSize(label).x > text_width) label = percentage.c_str();
+    if (ImGui::CalcTextSize(label).x > text_width) label = "";
+    ImGui::SameLine(progress_x);
+    ImGui::SetCursorPosY((ImGui::GetWindowHeight() - progress_height) / 2.0f);
+    ImGui::ProgressBar(bar.progress_value, ImVec2(progress_width, progress_height), label);
+    ImGui::PopFont();
+    ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
+  ImGui::SameLine(fps_x);
+  ImGui::SetCursorPosY(text_y);
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  ImGui::Text("%3.0f FPS", ImGui::GetIO().Framerate);
+  popMonoFont();
+  ImGui::SetItemTooltip("UI rendering rate (frames per second)");
   ImGui::EndChild();
   ImGui::PopStyleColor();
 }
@@ -776,9 +799,7 @@ void MainWindow::drawDockspace() {
 
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
-  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
-  const float top_gap = full_screen_ ? 0.0f : ImGui::GetStyle().ItemSpacing.y;
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + top_gap);
+  const float status_height = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
@@ -796,7 +817,6 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderDockWindow(MESSAGES_PANEL_ID, left);
     ImGui::DockBuilderDockWindow(VIDEO_PANEL, right);
     ImGui::DockBuilderDockWindow(CENTER_PANEL, center);
-    ImGui::DockBuilderGetNode(center)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
@@ -805,7 +825,7 @@ void MainWindow::drawDockspace() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();
-  if (!full_screen_) drawStatusBar();
+  drawStatusBar();
   ImGui::End();
 }
 
@@ -825,7 +845,7 @@ void setNextPanelClass() {
 
 bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  const bool visible = ImGui::Begin(name, open, flags);
+  const bool visible = ImGui::Begin(name, open, flags | ImGuiWindowFlags_NoCollapse);
   ImGui::PopStyleVar();
   return visible;
 }
@@ -853,10 +873,8 @@ void MainWindow::drawVideoPanel() {
   if (video_widget_ && !video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
   } else if (video_widget_) {
-    ImGui::BeginChild("video", ImVec2(0, 0), ImGuiChildFlags_Borders);
     help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
     video_widget_->draw();
-    ImGui::EndChild();
   }
   ImGui::End();
   if (!video_visible_ && floating) video_visible_ = reset_layout_ = true;
@@ -879,13 +897,12 @@ void MainWindow::draw() {
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
+  setNextPanelClass();
   if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-    ImGui::BeginChild("center", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     center_widget_.draw();
     if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }
-    ImGui::EndChild();
   }
   ImGui::End();
   // Submit the same dock windows while loading, so ImGui doesn't collapse their

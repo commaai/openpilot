@@ -18,6 +18,9 @@
 
 namespace {
 
+constexpr const char *AUTH_MODULE = "openpilot.tools.lib.auth";
+constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
+
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
@@ -30,12 +33,12 @@ void reportProgress(const char *line) {
 
 // Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
 // through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
-std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
-  // Build argv for the downloader module
+std::string runPython(const char *module, const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+  // Build argv for the Python module
   std::vector<const char *> argv;
   argv.push_back("python3");
   argv.push_back("-m");
-  argv.push_back("openpilot.tools.lib.file_downloader");
+  argv.push_back(module);
   for (const auto &a : args) {
     argv.push_back(a.c_str());
   }
@@ -215,19 +218,23 @@ std::string download(const std::string &url, bool use_cache, std::atomic<bool> *
   if (!use_cache) {
     args.push_back("--no-cache");
   }
-  return runPython(args, abort);
+  return runPython(DOWNLOADER_MODULE, args, abort);
 }
 
 std::string decompress(const std::string &path, std::atomic<bool> *abort) {
-  return runPython({"decompress", path}, abort);
+  return runPython(DOWNLOADER_MODULE, {"decompress", path}, abort);
 }
 
 std::string getRouteFiles(const std::string &route) {
-  return runPython({"route-files", route});
+  return runPython(DOWNLOADER_MODULE, {"route-files", route});
+}
+
+std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
+  return runPython(AUTH_MODULE, {provider, "--json"}, abort);
 }
 
 std::string getDevices() {
-  return runPython({"devices"});
+  return runPython(DOWNLOADER_MODULE, {"devices"});
 }
 
 std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int64_t end_ms, bool preserved) {
@@ -244,7 +251,7 @@ std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int6
       args.push_back(std::to_string(end_ms));
     }
   }
-  return runPython(args);
+  return runPython(DOWNLOADER_MODULE, args);
 }
 
 }  // namespace PyDownloader

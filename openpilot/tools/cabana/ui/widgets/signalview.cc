@@ -682,17 +682,24 @@ float SignalView::toolBarRightWidth(const std::string &range_label) {
 }
 
 // the width at which the tool bar stops squishing: the signal count and the filter box on the left, the
-// sparkline controls on the right, plus the borders and padding of the view's own child window
+// sparkline controls on the right. Padding is supplied by the message panel.
 float SignalView::minimumWidth() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const float left_width = ImGui::CalcTextSize("Signals: 000").x + style.ItemSpacing.x + FILTER_WIDTH;
   // formatSeconds is mm:ss for every value the range slider allows
-  return left_width + style.ItemSpacing.x + toolBarRightWidth("00:00") + (style.WindowPadding.x + style.ChildBorderSize) * 2;
+  return left_width + style.ItemSpacing.x + toolBarRightWidth("00:00") + style.WindowPadding.x * 2;
+}
+
+float SignalView::minimumHeight() {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::GetFrameHeight() + style.ItemSpacing.y + signalRowHeight() * 3 +
+         (style.WindowPadding.y + style.ChildBorderSize + CONTROL_OUTLINE_PADDING) * 2;
 }
 
 void SignalView::draw() {
   ImGui::PushStyleColor(ImGuiCol_ChildBg, palette().surface);
-  if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
+  if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_None,
+                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     ImGui::EndChild();
     ImGui::PopStyleColor();
     return;
@@ -740,8 +747,8 @@ void SignalView::collapseAll() {
 
 void SignalView::drawTree() {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-  const float min_height = std::max(ImGui::GetContentRegionAvail().y, 300.0f);
-  const bool visible = beginControlChild("tree", ImVec2(0, min_height));
+  // Keep the toolbar fixed; only the signal rows scroll within the remaining space.
+  const bool visible = beginControlChild("tree", ImVec2(0, 0));
   if (visible) {
     DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, rowHeight()};
     // the press that closes an open editor is consumed by the focus change, the index widgets never see it
@@ -878,6 +885,8 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
   if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -892,6 +901,8 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
     pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");
+  ImGui::PopStyleColor();
+  ImGui::PopStyleVar();
   button_size_ = size;
 }
 

@@ -224,23 +224,33 @@ bool iconButton(const char *id, const char *icon, const char *tooltip) {
   return clicked;
 }
 
-float iconTextButtonWidth(const char *icon, const std::string &text) {
+float iconTextButtonWidth(const char *icon, const std::string &text, const IconTextButtonOptions &options) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::CalcTextSize(icon).x + style.ItemInnerSpacing.x + ImGui::CalcTextSize(text.c_str(), nullptr, true).x + style.FramePadding.x * 2;
+  const float gap = *icon ? (options.icon_gap >= 0.0f ? options.icon_gap : style.ItemInnerSpacing.x) : 0.0f;
+  return ImGui::CalcTextSize(icon).x + gap + std::max(ImGui::CalcTextSize(text.c_str(), nullptr, true).x, options.label_width) +
+         style.FramePadding.x * 2;
 }
 
-bool iconTextButton(const char *id, const char *icon, const std::string &text, float width) {
+bool iconTextButton(const char *id, const char *icon, const std::string &text, float width, const IconTextButtonOptions &options) {
   const ImGuiStyle &style = ImGui::GetStyle();
-  if (width <= 0.0f) width = iconTextButtonWidth(icon, text);
-  const bool clicked = ImGui::Button((std::string("###") + id).c_str(), ImVec2(width, 0.0f));
+  const float icon_width = ImGui::CalcTextSize(icon).x;
+  const float gap = *icon ? (options.icon_gap >= 0.0f ? options.icon_gap : style.ItemInnerSpacing.x) : 0.0f;
+  const float text_width = ImGui::CalcTextSize(text.c_str(), nullptr, true).x;
+  const float label_width = std::max(text_width, options.label_width);
+  if (width <= 0.0f) width = icon_width + gap + label_width + style.FramePadding.x * 2;
+  if (options.rounding >= 0.0f) ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, options.rounding);
+  const bool clicked = ImGui::Button((std::string("###") + id).c_str(), ImVec2(width, options.height));
+  if (options.rounding >= 0.0f) ImGui::PopStyleVar();
   const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+  const float top = min.y + (max.y - min.y - ImGui::GetFontSize()) * 0.5f;
+  const float left = min.x + (options.center_content ? std::max(style.FramePadding.x, (max.x - min.x - icon_width - gap - label_width) * 0.5f)
+                                                   : style.FramePadding.x);
+  const float text_left = left + icon_width + gap;
+  const float slack = options.center_content ? 0.0f : std::max(0.0f, (max.x - style.FramePadding.x - text_left - text_width) * 0.5f);
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
   auto *draw_list = ImGui::GetWindowDrawList();
-  draw_list->AddText(ImVec2(min.x + style.FramePadding.x, min.y + style.FramePadding.y), color, icon);
-  // the text is centered between the icon and the right padding
-  const float left = min.x + style.FramePadding.x + ImGui::CalcTextSize(icon).x + style.ItemInnerSpacing.x;
-  const float slack = max.x - style.FramePadding.x - left - ImGui::CalcTextSize(text.c_str(), nullptr, true).x;
-  draw_list->AddText(ImVec2(left + std::max(0.0f, slack * 0.5f), min.y + style.FramePadding.y), color, text.c_str());
+  draw_list->AddText(ImVec2(left, top), color, icon);
+  draw_list->AddText(ImVec2(text_left + slack, top), color, text.c_str());
   return clicked;
 }
 
@@ -565,8 +575,7 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
         (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) {
       ImGui::OpenPopup("toolbar_extension_menu");
     }
-    // the popup opens inward: its right edge is aligned with the button so it stays inside the window
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
+    dropdown::PositionBelowItem("toolbar_extension_menu", true);
     if (dropdown::BeginPopup("toolbar_extension_menu")) {
       for (size_t i = visible; i < items.size(); ++i) {
         if (!items[i].in_menu) continue;
@@ -624,8 +633,7 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
                                                 ImVec2(x + MENU_ARROW_SIZE * 0.5f, baseline),
                                                 ImGui::GetColorU32(ImGuiCol_TextDisabled));
   if (clicked && !popup_open) ImGui::OpenPopup(popup_id);
-  // the menu drops down from below the button, not at the mouse cursor
-  ImGui::SetNextWindowPos(ImVec2(min.x, ImGui::GetItemRectMax().y), ImGuiCond_Always);
+  dropdown::PositionBelowItem(popup_id);
   return clicked;
 }
 
@@ -658,7 +666,7 @@ bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
   const float hx = x0 + (x1 - x0) * t;
   ImDrawList *dl = ImGui::GetWindowDrawList();
   const float groove_y0 = cy - groove_h * 0.5f, groove_y1 = cy + groove_h * 0.5f;
-  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(bb_max.x, groove_y1), u32(palette().separator), groove_h * 0.5f);
+  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(bb_max.x, groove_y1), u32(palette().slider_track), groove_h * 0.5f);
   dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(hx, groove_y1), u32(palette().accent), groove_h * 0.5f);
   drawSliderHandle(dl, ImRect(ImVec2(hx - SLIDER_LENGTH * 0.5f, cy - handle_h * 0.5f),
                               ImVec2(hx + SLIDER_LENGTH * 0.5f, cy + handle_h * 0.5f)));
