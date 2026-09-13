@@ -280,6 +280,8 @@ void DetailWidget::drawTabWidget() {
 
 void DetailWidget::draw() {
   tabbar_.draw();
+  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_Borders,
+                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   drawToolBar();
 
   if (warning_widget_visible_) {
@@ -289,6 +291,7 @@ void DetailWidget::draw() {
   }
 
   drawTabWidget();
+  ImGui::EndChild();
 
   if (edit_dlg_ && !edit_dlg_->draw()) {
     if (edit_dlg_->accepted()) {
