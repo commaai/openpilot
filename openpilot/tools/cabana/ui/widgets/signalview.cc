@@ -260,13 +260,13 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
 
   ImRect rect(option_rect.Min.x + h_margin, option_rect.Min.y + v_margin, option_rect.Max.x - h_margin, option_rect.Max.y - v_margin);
   // selection background is painted by the row's Selectable
-  const ImU32 text_color = ImGui::GetColorU32(ImGuiCol_Text);
+  const ImU32 text_color = ImGui::GetColorU32(selected ? palette().text_selected : palette().text);
 
   if (column == 0) {
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + COLOR_LABEL_WIDTH, rect.Max.y);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(signalFillColor(item->sig->color).darker(item->highlight ? 125 : 0)), ImGui::GetStyle().FrameRounding);
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->sig->color.darker(item->highlight ? 125 : 0)), ImGui::GetStyle().FrameRounding);
       drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
                nullptr, LABEL_FONT);
 
@@ -334,15 +334,18 @@ void SignalView::drawEditor(SignalModel::Item *item) {
 
     drawLineEditor(item, validator, take_focus);
   } else if (item->type == SignalModel::Item::Size) {
-    int v = item->sig->size;
-    if (take_focus) ImGui::SetKeyboardFocusHere();
-    bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
+    if (take_focus) {
+      edit_int_ = item->sig->size;
+      ImGui::SetKeyboardFocusHere();
+    }
+    bool changed = inputInt("##editor", &edit_int_, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
     if (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       open_item_ = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
       return;
     }
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
-      queueCommit(item, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
+      edit_int_ = std::clamp(edit_int_, 1, CAN_MAX_DATA_BYTES);
+      queueCommit(item, edit_int_);
     }
     // Enter, Escape and a click outside close the editor; the step buttons keep it open
     if (ImGui::IsItemDeactivated() && (!ImGui::IsItemHovered() || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
@@ -372,7 +375,7 @@ void SignalView::drawEditor(SignalModel::Item *item) {
     }
     const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, ImGui::GetID("##editor"));
     if (take_focus) ImGui::SetKeyboardFocusHere();
-    if (ImGui::Combo("##editor", &current, names.data(), names.size())) {
+    if (dropdown::Combo("##editor", &current, names.data(), names.size())) {
       queueCommit(item, items[current].second);
       open_item_ = nullptr;  // commit and close the editor
     }
@@ -492,7 +495,7 @@ void SignalView::drawValueDescriptionDlg() {
 }
 
 static ImVec2 indexButtonsSize(float button) {
-  return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
+  return ImVec2(button * 2 + ImGui::GetStyle().ItemSpacing.x, button);
 }
 
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
@@ -688,7 +691,7 @@ float SignalView::minimumWidth() {
 }
 
 void SignalView::draw() {
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, palette().surface);
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
     ImGui::EndChild();
     ImGui::PopStyleColor();
@@ -823,7 +826,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   if (!item->children.empty()) {
     const float arrow_size = ImGui::GetFontSize() * 0.7f;
     ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (row_height - arrow_size) * 0.5f),
-                       ImGui::GetColorU32(ImGuiCol_Text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
+                       ImGui::GetColorU32(selected ? palette().text_selected : palette().text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
   }
 
   // every row is measured, the header sizes column 0 to the contents of the whole tree
@@ -871,7 +874,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
   const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
@@ -910,12 +913,12 @@ bool ValueDescriptionDlg::draw() {
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
-  if (iconButton("add", icon::PLUS_LG, "Add")) {
+  if (stepButton("add", true, "Add")) {
     table_.emplace_back("", "");
   }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::SameLine();
   ImGui::BeginDisabled(current_row_ == -1);
-  if (iconButton("remove", icon::DASH_LG, "Remove") && current_row_ < table_.size()) {
+  if (stepButton("remove", false, "Remove") && current_row_ < table_.size()) {
     table_.erase(table_.begin() + current_row_);
     current_row_ = -1;
   }
@@ -936,7 +939,7 @@ bool ValueDescriptionDlg::draw() {
       if (row == current_row_) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImGuiCol_Header));
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted(std::to_string(row + 1).c_str());
+      ImGui::TextColored(row == current_row_ ? palette().text_selected : palette().text, "%d", row + 1);
       ImGui::TableSetColumnIndex(1);
       ImGui::SetNextItemWidth(-FLT_MIN);
       if (valueDescriptionEditor(0, &table_[row].first)) current_row_ = row;

@@ -15,12 +15,9 @@
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
-const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
 const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
 const double EPSILON = 1e-6;
-constexpr ImVec4 LAYOUT_MARGINS{0, 6, 0, 6};  // left, top, right, bottom
-constexpr int LEGEND_SPACING = 5;
 static inline bool xLessThan(const ImPlotPoint &p, double x) { return p.x < (x - EPSILON); }
 static inline bool isNull(const ImPlotPoint &p) { return p.x == 0 && p.y == 0; }
 
@@ -52,20 +49,14 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 }
 
 void ChartView::drawMenuActions() {
-  // the current series type is marked with a radio bullet on the left
-  const float indent = ImGui::GetFontSize();
-  float label_width = ImGui::CalcTextSize("Manage Signals").x;
-  for (const char *type : SERIES_TYPE_NAMES) label_width = std::max(label_width, ImGui::CalcTextSize(type).x);
   for (int i = 0; i < (int)std::size(SERIES_TYPE_NAMES); ++i) {
-    if (radioMenuItem(SERIES_TYPE_NAMES[i], i == (int)series_type_, indent + label_width + indent)) {
+    if (dropdown::Item(SERIES_TYPE_NAMES[i], nullptr, i == (int)series_type_)) {
       setSeriesType((SeriesType)i);
     }
   }
   ImGui::Separator();
-  ImGui::Indent(indent);
-  if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
-  ImGui::Unindent(indent);
+  if (dropdown::Item("Manage Signals")) manageSignals();
+  if (dropdown::Item("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
 }
 
 // the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
@@ -75,9 +66,9 @@ void ChartView::createToolButtons() {
 
   ImGui::SetCursorScreenPos(layout_.manage_btn_rect.Min);
   if (iconButton("manage_btn", icon::THREE_DOTS_VERTICAL, "")) ImGui::OpenPopup("manage_menu");
-  if (ImGui::BeginPopup("manage_menu")) {
+  if (dropdown::BeginPopup("manage_menu")) {
     drawMenuActions();
-    ImGui::EndPopup();
+    dropdown::EndPopup();
   }
 
   if (close_clicked) charts_widget_->removeChart(this);
@@ -135,27 +126,32 @@ void ChartView::manageSignals() {
 
 void ChartView::updateLayout() {
   const ImVec2 grip = ImGui::CalcTextSize(icon::GRIP_HORIZONTAL);
-  const ImVec2 top_left = layout_.rect.Min + ImVec2(LAYOUT_MARGINS.x, LAYOUT_MARGINS.y);
+  const ImGuiStyle &style = ImGui::GetStyle();
+  // WindowPadding can be zero in a borderless pane or drag preview. Chart
+  // content always uses the shared control gap, independently of its parent.
+  layout_.content_rect = layout_.rect;
+  layout_.content_rect.Expand(-style.ItemSpacing.x);
+  const ImVec2 top_left = layout_.content_rect.Min;
   layout_.move_icon_rect = ImRect(top_left, top_left + grip);
   const ImVec2 btn_size(iconButtonWidth(), iconButtonWidth());
-  const ImVec2 close_min(layout_.rect.Max.x - ImGui::GetStyle().WindowPadding.x - btn_size.x, top_left.y);
+  const ImVec2 close_min(layout_.content_rect.Max.x - btn_size.x, top_left.y);
   layout_.close_btn_rect = ImRect(close_min, close_min + btn_size);
-  const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemInnerSpacing.x, top_left.y);
+  const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemSpacing.x, top_left.y);
   layout_.manage_btn_rect = ImRect(manage_min, manage_min + btn_size);
 
   ImFont *bold = boldFont();
   const float font_size = ImGui::GetFontSize();
   const float fm_height = ImGui::GetTextLineHeight();
   const int marker_size = markerSize();
-  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
-  const int legend_left = layout_.move_icon_rect.Max.x + LEGEND_SPACING;
-  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - ImGui::GetStyle().ItemInnerSpacing.x, legend_left + 10);
+  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + style.ItemInnerSpacing.y;  // + the signal value line
+  const int legend_left = layout_.move_icon_rect.Max.x + style.ItemSpacing.x;
+  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - ImGui::GetStyle().ItemSpacing.x, legend_left + 10);
 
   // layout legend entries left-to-right, wrapping between the move icon and the buttons
   layout_.legend_rects.clear();
   int x = legend_left, y = top_left.y;
   for (auto &s : sigs_) {
-    int w = marker_size + LEGEND_SPACING + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
+    int w = marker_size + style.ItemInnerSpacing.x + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
             ImGui::CalcTextSize(msgLabel(s.msg_id).c_str()).x;
     pushMonoFont(font_size);
     w = std::max(w, (int)std::ceil(ImGui::CalcTextSize("-0.00000e+000").x));
@@ -166,13 +162,11 @@ void ChartView::updateLayout() {
       y += row_height;
     }
     layout_.legend_rects.emplace_back(ImVec2(x, y), ImVec2(x + w, y + std::max<int>(marker_size, fm_height)));
-    x += w + 12;
+    x += w + style.ItemSpacing.x;
   }
 
   // add top space for the legend and signal values
-  int adjust_top = (y + row_height) - top_left.y;
-  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y + LAYOUT_MARGINS.y);
-  layout_.header_bottom = layout_.rect.Min.y + adjust_top + LAYOUT_MARGINS.y;
+  layout_.header_bottom = std::max<float>(y + row_height, layout_.manage_btn_rect.Max.y) + ImGui::GetStyle().ItemSpacing.y;
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -331,23 +325,19 @@ void ChartView::drawContextMenu() {
     ImGui::OpenPopup("context_menu");
   }
   context_menu_id_ = ImGui::GetID("context_menu");
-  if (ImGui::BeginPopup("context_menu")) {
+  if (dropdown::BeginPopup("context_menu")) {
     drawMenuActions();
-    // the menu holds checkable entries, so every entry keeps the same left margin
-    const float indent = ImGui::GetFontSize();
-    ImGui::Indent(indent);
     ImGui::Separator();
     // the zoom entries come from the toolbar, where they are only visible while zoomed
     if (can->timeRange().has_value()) {
       const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
       const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
-      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
-      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
+      if (dropdown::Item(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
+      if (dropdown::Item(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
       ImGui::Separator();
     }
-    if (ImGui::MenuItem("Close")) charts_widget_->removeChart(this);
-    ImGui::Unindent(indent);
-    ImGui::EndPopup();
+    if (dropdown::Item("Close")) charts_widget_->removeChart(this);
+    dropdown::EndPopup();
   }
 }
 
@@ -554,9 +544,9 @@ void ChartView::drawStaticLayer() {
 }
 
 void ChartView::drawAxes() {
-  ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x, layout_.header_bottom));
-  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - LAYOUT_MARGINS.w, 10.0f);
-  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(LAYOUT_MARGINS.x, AXIS_X_TOP_MARGIN));
+  ImGui::SetCursorScreenPos(ImVec2(layout_.content_rect.Min.x, layout_.header_bottom));
+  const float plot_h = std::max(layout_.content_rect.Max.y - layout_.header_bottom, 10.0f);
+  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0.0f, ImGui::GetStyle().ItemInnerSpacing.y));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_PlotBorder, palette().grid);
@@ -568,8 +558,8 @@ void ChartView::drawAxes() {
                             ImPlotFlags_NoBoxSelect | ImPlotFlags_NoInputs | ImPlotFlags_NoFrame;
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
   // reserve room for the right half of the last x tick label
-  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + 5;
-  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
+  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x;
+  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.content_rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min_, x_max_, ImPlotCond_Always);
@@ -624,7 +614,7 @@ void ChartView::drawLegend() {
       drawColorMarker(painter, r.Min, toImU32(s.color));
     }
 
-    float x = r.Min.x + marker_size + LEGEND_SPACING;
+    float x = r.Min.x + marker_size + ImGui::GetStyle().ItemInnerSpacing.x;
     const float text_y = r.GetCenter().y - font_size / 2.0f;
     addTextEllipsis(painter, bold, title_color, ImVec2(x, text_y), r.Max.x, s.sig->name);
     float name_w = std::min(bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x, r.Max.x - x);
@@ -633,7 +623,7 @@ void ChartView::drawLegend() {
     addTextEllipsis(painter, normal, msg_color, ImVec2(x, text_y), r.Max.x, msg);
     if (!s.visible) {  // strike out
       const float y = r.GetCenter().y;
-      painter->AddLine(ImVec2(r.Min.x + marker_size + LEGEND_SPACING, y), ImVec2(std::min(x + ImGui::CalcTextSize(msg.c_str()).x, r.Max.x), y), title_color);
+      painter->AddLine(ImVec2(r.Min.x + marker_size + ImGui::GetStyle().ItemInnerSpacing.x, y), ImVec2(std::min(x + ImGui::CalcTextSize(msg.c_str()).x, r.Max.x), y), title_color);
     }
   }
 }
@@ -730,10 +720,10 @@ void ChartView::drawRubberBandTimeRange() {
   painter->PushClipRect(layout_.rect.Min, layout_.rect.Max);
   for (const auto &pt : {rubber_rect_.GetBL(), rubber_rect_.GetBR()}) {
     std::string sec = formatNumber(secondsAtPoint(pt), 2);
-    ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, AXIS_X_TOP_MARGIN * 2);
+    ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, ImGui::GetStyle().ItemInnerSpacing.y * 2);
     ImVec2 top_left = pt.x == rubber_rect_.Min.x ? ImVec2(pt.x - size.x, pt.y + 2) : ImVec2(pt.x, pt.y + 2);
     painter->AddRectFilled(top_left, top_left + size, badge, ImGui::GetStyle().FrameRounding);
-    painter->AddText(top_left + ImVec2(6, AXIS_X_TOP_MARGIN), white, sec.c_str());
+    painter->AddText(top_left + ImVec2(6, ImGui::GetStyle().ItemInnerSpacing.y), white, sec.c_str());
   }
   painter->PopClipRect();
 }
@@ -745,7 +735,7 @@ void ChartView::drawTimeline() {
 
   std::string time_str = formatNumber(cur_sec_, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
-  ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + AXIS_X_TOP_MARGIN);
+  ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + ImGui::GetStyle().ItemInnerSpacing.y);
   painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, ImGui::GetColorU32(palette().badge), ImGui::GetStyle().FrameRounding);
   painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());
 }

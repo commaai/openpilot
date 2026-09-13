@@ -3,23 +3,23 @@ set -ex
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
+SOURCE_DIR="$(git -C "$DIR" rev-parse --show-toplevel)"
 if [ -z "$TARGET_DIR" ]; then
   TARGET_DIR="$(mktemp -d)"
 fi
 
 # set git identity
-source $DIR/identity.sh
+source "$DIR/identity.sh"
 
 echo "[-] Setting up target repo T=$SECONDS"
 
-rm -rf $TARGET_DIR
-mkdir -p $TARGET_DIR
-cd $TARGET_DIR
-cp -r $SOURCE_DIR/.git $TARGET_DIR
+rm -rf "$TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+cd "$TARGET_DIR"
+cp -r "$SOURCE_DIR/.git" "$TARGET_DIR"
 
 echo "[-] setting up stripped branch sync T=$SECONDS"
-cd $TARGET_DIR
+cd "$TARGET_DIR"
 
 # tmp branch
 git checkout --orphan tmp
@@ -32,20 +32,20 @@ find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
-cd $SOURCE_DIR
+cd "$SOURCE_DIR"
 ./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$TARGET_DIR" --
 
 # in the directory
-cd $TARGET_DIR
+cd "$TARGET_DIR"
 rm -rf .git/modules/
 
 find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 
 # include source commit hash and build date in commit
-GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
-GIT_COMMIT_DATE=$(git --git-dir=$SOURCE_DIR/.git show --no-patch --format='%ct %ci' HEAD)
+GIT_HASH=$(git --git-dir="$SOURCE_DIR/.git" rev-parse HEAD)
+GIT_COMMIT_DATE=$(git --git-dir="$SOURCE_DIR/.git" show --no-patch --format='%ct %ci' HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
-VERSION=$(cat $SOURCE_DIR/openpilot/common/version.h | awk -F\" '{print $2}')
+VERSION=$(cat "$SOURCE_DIR/openpilot/common/version.h" | awk -F\" '{print $2}')
 
 echo -n "$GIT_HASH" > git_src_commit
 echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
@@ -82,7 +82,7 @@ if [ ! -z "$BRANCH" ]; then
   git config --local core.hooksPath .git/hooks
   git lfs update --force
   # uploading the larger pack is faster than spending CPU to optimize it
-  git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin tmp:$BRANCH
+  git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "tmp:$BRANCH"
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"
