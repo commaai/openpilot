@@ -231,7 +231,7 @@ void VideoWidget::createSpeedDropdown() {
 void VideoWidget::drawSpeedMenuItems() {
   for (int i = 0; i < (int)std::size(speeds); ++i) {
     const float speed = speeds[i];
-    if (ImGui::MenuItem(speedText(speed).c_str(), nullptr, speed_index_ == i)) {
+    if (dropdown::Item(speedText(speed).c_str(), nullptr, speed_index_ == i)) {
       speed_index_ = i;
       can->setSpeed(speed);
       speed_text_ = speedText(speed);

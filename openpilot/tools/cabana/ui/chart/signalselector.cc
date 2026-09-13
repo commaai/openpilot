@@ -54,7 +54,7 @@ bool SignalSelector::draw() {
     inputText("##msgs_filter", &msgs_combo_filter_, "Select a message...");
     for (int i = 0; i < (int)msgs_combo_.size(); ++i) {
       if (!msgs_combo_filter_.empty() && !utils::containsCI(msgs_combo_[i].text, msgs_combo_filter_)) continue;
-      if (selectable(msgs_combo_[i].text.c_str(), i == msgs_combo_index_)) {
+      if (dropdown::Item(msgs_combo_[i].text.c_str(), nullptr, i == msgs_combo_index_)) {
         msgs_combo_index_ = i;
         updateAvailableList(i);
         ImGui::CloseCurrentPopup();

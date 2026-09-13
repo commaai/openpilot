@@ -60,6 +60,18 @@ inline void EndCombo() {
   ImGui::PopStyleVar(WINDOW_STYLE_VARS);
 }
 
+// Commands, toggles and combo choices use one row renderer. Selection is a
+// checkmark in the trailing column; only hover/navigation highlights the row.
+// ImGui's menu layout also reserves matching columns for shortcuts/submenus.
+inline bool Item(const char *label, const char *shortcut = nullptr, bool selected = false, bool enabled = true) {
+  return ImGui::MenuItem(label, shortcut, selected, enabled);
+}
+inline bool Item(const char *label, const char *shortcut, bool *selected, bool enabled = true) {
+  if (!Item(label, shortcut, selected && *selected, enabled)) return false;
+  if (selected) *selected = !*selected;
+  return true;
+}
+
 // Keep the closed field in its parent's layout; apply list spacing only after
 // BeginCombo. This matters in table cells with zero vertical ItemSpacing.
 inline bool Combo(const char *label, int *index, const char *const items[], int count) {
@@ -67,7 +79,7 @@ inline bool Combo(const char *label, int *index, const char *const items[], int 
   if (BeginCombo(label, *index >= 0 && *index < count ? items[*index] : "")) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(items[i], i == *index) && i != *index) {
+      if (Item(items[i], nullptr, i == *index) && i != *index) {
         *index = i;
         changed = true;
       }

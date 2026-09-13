@@ -50,7 +50,7 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
   if (dropdown::BeginCombo(label, preview.c_str())) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
+      if (dropdown::Item(std::to_string(values[i]).c_str(), nullptr, i == *index) && *index != i) {
         *index = i;
         changed = true;
       }

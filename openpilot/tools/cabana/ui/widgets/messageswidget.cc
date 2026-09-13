@@ -305,15 +305,15 @@ void MessagesWidget::drawContextMenu() {
   for (int i = 0; i < MessageList::COLUMN_COUNT; ++i) {
     const int column = display_order_[i];
     // can't hide the name column
-    if (ImGui::MenuItem(COLUMN_TITLES[column], nullptr, !hidden_[column], column > 0)) {
+    if (dropdown::Item(COLUMN_TITLES[column], nullptr, !hidden_[column], column > 0)) {
       pending_hidden_.emplace_back(column, !hidden_[column]);
     }
   }
   ImGui::Separator();
-  if (ImGui::MenuItem("Multiline Bytes", nullptr, settings.multiple_lines_hex)) {
+  if (dropdown::Item("Multiline Bytes", nullptr, settings.multiple_lines_hex)) {
     setMultiLineBytes(!settings.multiple_lines_hex);
   }
-  if (ImGui::MenuItem("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
+  if (dropdown::Item("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
     list_.showInactiveMessages(!list_.show_inactive_messages);
   }
   dropdown::EndPopup();

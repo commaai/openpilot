@@ -53,13 +53,13 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
 void ChartView::drawMenuActions() {
   for (int i = 0; i < (int)std::size(SERIES_TYPE_NAMES); ++i) {
-    if (ImGui::MenuItem(SERIES_TYPE_NAMES[i], nullptr, i == (int)series_type_)) {
+    if (dropdown::Item(SERIES_TYPE_NAMES[i], nullptr, i == (int)series_type_)) {
       setSeriesType((SeriesType)i);
     }
   }
   ImGui::Separator();
-  if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
+  if (dropdown::Item("Manage Signals")) manageSignals();
+  if (dropdown::Item("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
 }
 
 // the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
@@ -332,11 +332,11 @@ void ChartView::drawContextMenu() {
     if (can->timeRange().has_value()) {
       const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
       const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
-      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
-      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
+      if (dropdown::Item(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
+      if (dropdown::Item(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
       ImGui::Separator();
     }
-    if (ImGui::MenuItem("Close")) charts_widget_->removeChart(this);
+    if (dropdown::Item("Close")) charts_widget_->removeChart(this);
     dropdown::EndPopup();
   }
 }

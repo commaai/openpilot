@@ -105,7 +105,7 @@ bool comboBox(const char *label, int *index, const std::vector<std::string> &ite
   if (dropdown::BeginCombo(label, *index >= 0 && *index < count ? items[*index].c_str() : "")) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (selectable(items[i].c_str(), i == *index) && *index != i) {
+      if (dropdown::Item(items[i].c_str(), nullptr, i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
@@ -535,7 +535,7 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
             items[i].submenu();
             dropdown::EndMenu();
           }
-        } else if (ImGui::MenuItem(items[i].menu_label.c_str(), nullptr, false, items[i].enabled)) {
+        } else if (dropdown::Item(items[i].menu_label.c_str(), nullptr, false, items[i].enabled)) {
           items[i].trigger();
         }
       }

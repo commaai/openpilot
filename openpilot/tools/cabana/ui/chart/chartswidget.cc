@@ -45,7 +45,7 @@ ChartsWidget::ChartsWidget() {
   connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { removeTab(index); }));
   connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) {
     if (dropdown::BeginPopupContextItem()) {
-      if (ImGui::MenuItem("Close Other Tabs")) {
+      if (dropdown::Item("Close Other Tabs")) {
         tabbar_.moveTab(index, 0);
         tabbar_.setCurrentIndex(0);
         while (tabbar_.count() > 1) removeTab(1);
@@ -182,7 +182,7 @@ void ChartsWidget::drawToolBar() {
   const std::string chart_type_text = std::string("Type:  ") + SERIES_TYPE_NAMES[std::clamp(settings.chart_series_type, 0, type_count - 1)];
   auto chart_type_items = [this]() {
     for (int i = 0; i < type_count; ++i) {
-      if (ImGui::MenuItem(SERIES_TYPE_NAMES[i], nullptr, settings.chart_series_type == i)) {
+      if (dropdown::Item(SERIES_TYPE_NAMES[i], nullptr, settings.chart_series_type == i)) {
         settings.chart_series_type = i;
         settingChanged();
       }
@@ -194,7 +194,7 @@ void ChartsWidget::drawToolBar() {
   if (columns_action_visible_) {
     auto column_items = [this]() {
       for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
-        if (ImGui::MenuItem(std::to_string(i + 1).c_str(), nullptr, column_count_ == i + 1)) setColumnCount(i + 1);
+        if (dropdown::Item(std::to_string(i + 1).c_str(), nullptr, column_count_ == i + 1)) setColumnCount(i + 1);
       }
     };
     items.push_back(toolbarMenu("columns", columns_action_text, "Columns", column_items));

@@ -315,7 +315,7 @@ void FindSignalDlg::setInitialSignals() {
 
 void FindSignalDlg::drawContextMenu(int row) {
   if (dropdown::BeginPopupContextItem("menu")) {
-    if (ImGui::MenuItem("Create Signal")) {
+    if (dropdown::Item("Create Signal")) {
       auto &s = search_.filtered_signals[row];
       UndoStack::instance()->push(new AddSigCommand(s.id, s.sig));
       openMessage(s.id);

@@ -13,6 +13,7 @@ int main() {
   unsigned char *pixels;
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+  float combo_row_height = 0;
   for (int frame = 0; frame < 4; ++frame) {
     ImGui::NewFrame();
     ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -33,8 +34,12 @@ int main() {
     assert(combo_open);
     if (combo_open) {
       assert(ImGui::GetStyle().ItemSpacing.y == dropdown::SPACING_Y);
-      ImGui::Selectable("One", true);
-      ImGui::Selectable("Two");
+      dropdown::Item("One", nullptr, true);
+      combo_row_height = ImGui::GetItemRectSize().y;
+      const float selected_width = ImGui::GetItemRectSize().x;
+      dropdown::Item("Two");
+      assert(ImGui::GetItemRectSize().y == combo_row_height);
+      assert(ImGui::GetItemRectSize().x == selected_width);
       ImGui::CloseCurrentPopup();
       dropdown::EndCombo();
     }
@@ -43,11 +48,18 @@ int main() {
     if (dropdown::BeginPopup("popup")) {
       assert(ImGui::GetStyle().ItemSpacing.y == dropdown::SPACING_Y);
       assert(ImGui::GetCurrentWindow()->WindowPadding.y == dropdown::PADDING_Y);
-      ImGui::MenuItem("An action");
-      ImGui::MenuItem("Checked", nullptr, true);
+      dropdown::Item("An action");
+      assert(ImGui::GetItemRectSize().y == combo_row_height);
+      dropdown::Item("Checked", nullptr, true);
+      assert(ImGui::GetItemRectSize().y == combo_row_height);
+      bool checked = true;
+      dropdown::Item("Disabled toggle", nullptr, &checked, false);
+      assert(checked);
+      assert(ImGui::GetItemRectSize().y == combo_row_height);
       ImGui::OpenPopup("Nested");
       if (dropdown::BeginMenu("Nested")) {
-        ImGui::MenuItem("Nested action");
+        dropdown::Item("Nested action");
+        assert(ImGui::GetItemRectSize().y == combo_row_height);
         dropdown::EndMenu();
       }
       dropdown::EndPopup();
