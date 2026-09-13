@@ -110,6 +110,7 @@ public:
   void setMessage(const MessageId &id);
   void draw();
   static float minimumWidth();
+  static float minimumHeight();
   void signalHovered(const cabana::Signal *sig);  // handler for BinaryView::signalHovered
   void updateChartState();
   void selectSignal(const cabana::Signal *sig, bool expand = false);

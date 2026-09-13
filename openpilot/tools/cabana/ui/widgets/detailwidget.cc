@@ -218,16 +218,17 @@ void DetailWidget::drawTabWidget() {
   ImGui::BeginChild("page", ImVec2(0, std::max(page_rect.GetHeight() - pill_height - gap, 1.0f)),
                     ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   if (tab_widget_index_ == 0) {
-    // binary_view_ keeps its size hint, signal_view_ takes the rest
+    // Reserve the signal toolbar and rows before giving the byte grid its preferred height.
     const float min_height = binary_view_->minimumSizeHint().y;
     const float avail = ImGui::GetContentRegionAvail().y;
-    const float max_height = std::max(avail - style.ItemSpacing.y - 1.0f, 1.0f);
+    const float max_height = std::max(avail - style.ItemSpacing.y - SignalView::minimumHeight(), 1.0f);
     const float height = std::clamp(min_height, 1.0f, max_height);
     ImGui::BeginChild("binary_view", ImVec2(0, height), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
     binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     binary_view_->draw();
     ImGui::EndChild();
-    ImGui::BeginChild("signal_view", ImVec2(0, 0));
+    ImGui::BeginChild("signal_view", ImVec2(0, 0), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view_->draw();
     ImGui::EndChild();
