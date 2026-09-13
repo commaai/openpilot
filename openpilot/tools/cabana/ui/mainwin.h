@@ -26,7 +26,6 @@ public:
   MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
   ~MainWindow();
   void draw();
-  void toggleChartsDocking();
   void close();  // remind unsaved changes, save state, exit
   bool exited() const { return exited_; }
   void showStatusMessage(const std::string &msg, int timeout_ms = 0);

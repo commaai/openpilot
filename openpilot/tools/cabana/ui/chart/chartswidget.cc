@@ -56,7 +56,6 @@ ChartsWidget::ChartsWidget() {
     if (index != -1) updateLayout();
   }));
 
-  setIsDocked(true);
   newTab();
 }
 
@@ -153,10 +152,6 @@ void ChartsWidget::setMaxChartRange(int value) {
   updateState();
 }
 
-void ChartsWidget::setIsDocked(bool docked) {
-  is_docked_ = docked;
-}
-
 void ChartsWidget::drawToolBar() {
   float slider_width = 150.0f;
   const bool is_zoomed = can->timeRange().has_value();
@@ -241,9 +236,6 @@ void ChartsWidget::drawToolBar() {
     }});
   }
   items.push_back(toolbarAction("remove_all_btn", icon::TRASH, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()));
-  const char *dock_btn_icon = is_docked_ ? icon::BOX_ARROW_UP_RIGHT : icon::BOX_ARROW_IN_DOWN_LEFT;
-  const char *dock_label = is_docked_ ? "Float the charts window" : "Dock the charts window";
-  items.push_back(toolbarAction("dock_btn", dock_btn_icon, dock_label, [this]() { toggleChartsDocking(); }));
 
   // the slider shrinks first, the buttons stay pinned to the right edge
   if (slider_index != (size_t)-1) {

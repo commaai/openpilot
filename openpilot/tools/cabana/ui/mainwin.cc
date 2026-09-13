@@ -192,7 +192,6 @@ void MainWindow::createDockWidgets() {
   charts_widget_ = std::make_unique<ChartsWidget>();
   center_widget_.setChartsWidget(charts_widget_.get());
   video_widget_ = std::make_unique<VideoWidget>();
-  widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -578,17 +577,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   }
 }
 
-void MainWindow::toggleChartsDocking() {
-  if (auto *window = ImGui::FindWindowByName(CHARTS_WINDOW)) {
-    if (window->DockId != 0) {
-      ImGui::DockBuilderDockWindow(CHARTS_WINDOW, 0);
-      charts_widget_->setIsDocked(false);
-    } else {
-      reset_layout_ = true;
-    }
-  }
-}
-
 void MainWindow::close() {
   if (closing_) return;
   closing_ = true;
@@ -910,7 +898,6 @@ void MainWindow::draw() {
     setNextPanelClass();
     if (beginPanel(charts_title.c_str(), &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
       if (charts_widget_) {
-        charts_widget_->setIsDocked(ImGui::IsWindowDocked());
         help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
         charts_widget_->draw();
       }

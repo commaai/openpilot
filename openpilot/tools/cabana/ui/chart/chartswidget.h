@@ -78,9 +78,7 @@ public:
 
   void setColumnCount(int n);
   void removeAll();
-  void setIsDocked(bool dock);
 
-  Observable<> toggleChartsDocking;
   Observable<> seriesChanged;
   Observable<double> showTip;
 
@@ -117,7 +115,6 @@ private:
   void drawDragPreview();
 
   LogSlider range_slider_{1000};
-  bool is_docked_ = true;
 
   UndoStack zoom_undo_stack_;
 
