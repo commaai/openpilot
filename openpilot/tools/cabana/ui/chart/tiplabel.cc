@@ -134,7 +134,7 @@ void TipLabel::draw(const ImRect &rect) {
   updateLayout();
   if (!visible_) return;
 
-  ImDrawList *p = ImGui::GetForegroundDrawList();
+  ImDrawList *p = ImGui::GetWindowDrawList();
   p->PushClipRect(area_.Min, area_.Max, true);
   // filled panel with a 1px frame
   p->AddRectFilled(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_PopupBg), ImGui::GetStyle().PopupRounding);

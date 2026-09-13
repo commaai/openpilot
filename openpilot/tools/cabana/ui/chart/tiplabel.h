@@ -20,7 +20,7 @@ public:
   void showText(const ImVec2 &pt, const std::vector<TipLine> &text, const ImRect &rect);
   void hide() { visible_ = false; }
   bool isVisible() const { return visible_; }
-  void draw(const ImRect &rect);  // draws the tip on the foreground draw list; call once per frame
+  void draw(const ImRect &rect);  // call inside the owning chart window, after drawing the plot
 
 private:
   // lays the lines out from origin, drawing them when p is given; returns the size of the text block

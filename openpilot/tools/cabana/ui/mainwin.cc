@@ -156,7 +156,7 @@ void MainWindow::drawMenuBar() {
     if (dropdown::Item("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
     dropdown::Item(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    dropdown::Item(video_dock_title_.empty() ? "Video" : video_dock_title_.c_str(), nullptr, &video_visible_);
+    dropdown::Item(videoPanelTitle(), nullptr, &video_visible_);
     dropdown::Item("Charts", nullptr, &charts_visible_);
     ImGui::Separator();
     if (dropdown::Item("Reset Window Layout")) {
@@ -199,11 +199,15 @@ void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
 
 void MainWindow::updateWindowTitle() {
   std::string title;
-  for (auto f : dbc()->allDBCFiles()) {
+  for (auto f : dbc()->nonEmptyDBCFiles()) {
     if (!title.empty()) title += " | ";
     title += "(" + toString(dbc()->sources(f)) + ") " + f->name();
   }
   if (window_modified_) title += "*";
+  if (hasStream()) {
+    const std::string stream_title = can->liveStreaming() ? videoPanelTitle() : can->routeName();
+    title = title.empty() ? stream_title : stream_title + " \xe2\x80\x94 " + title;
+  }
   if (!title.empty()) title += " \xe2\x80\x94 ";  // em dash separator
   title += "Cabana";
   glfwSetWindowTitle(window_, title.c_str());
@@ -362,12 +366,12 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
     MessageBox::warning("Error", msg);
   }));
   can->start();
+  updateWindowTitle();
 
   loadFile(dbc_file, SOURCE_ALL, [this]() {
     showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
     createDockWidgets();
 
-    video_dock_title_ = can->routeName();
     // Don't overwrite already loaded DBC
     if (!dbc()->nonEmptyDBCCount()) {
       newFile();
@@ -391,7 +395,6 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
 void MainWindow::eventsMerged() {
   const std::string fingerprint = can->carFingerprint();
   if (!can->liveStreaming() && std::exchange(car_fingerprint_, fingerprint) != fingerprint) {
-    video_dock_title_ = "ROUTE: " + can->routeName() + "  FINGERPRINT: " + (car_fingerprint_.empty() ? "Unknown Car" : car_fingerprint_);
     // Don't overwrite already loaded DBC
     auto it = fingerprint_to_dbc_.find(car_fingerprint_);
     if (!dbc()->nonEmptyDBCCount() && it != fingerprint_to_dbc_.end()) {
@@ -866,7 +869,7 @@ void MainWindow::drawMessagesPanel() {
 }
 
 void MainWindow::drawVideoPanel() {
-  const std::string name = (video_dock_title_.empty() ? "Video" : video_dock_title_) + VIDEO_PANEL;
+  const std::string name = std::string(videoPanelTitle()) + VIDEO_PANEL;
   setNextPanelClass();
   const bool video_open = beginPanel(name.c_str(), &video_visible_);
   const bool floating = floatingOut();
