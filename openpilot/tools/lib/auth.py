@@ -22,6 +22,7 @@ Examples::
 """
 
 import argparse
+import json
 import sys
 import subprocess
 import pprint
@@ -146,8 +147,15 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Login to your comma account')
   parser.add_argument('method', default='google', const='google', nargs='?', choices=['google', 'apple', 'github', 'jwt'])
   parser.add_argument('jwt', nargs='?')
+  parser.add_argument('--json', action='store_true', help='Return browser sign-in status as JSON')
 
   args = parser.parse_args()
+  if args.json:
+    if args.method == 'jwt':
+      parser.error('--json requires a browser sign-in provider')
+    print(json.dumps(login(args.method)))
+    sys.exit(0)
+
   if args.method == 'jwt':
     if args.jwt is None:
       print("method JWT selected, but no JWT was provided")

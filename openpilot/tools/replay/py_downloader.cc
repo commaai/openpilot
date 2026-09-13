@@ -30,12 +30,12 @@ void reportProgress(const char *line) {
 
 // Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
 // through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
-std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
-  // Build argv for the downloader module
+std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr, const char *module = "openpilot.tools.lib.file_downloader") {
+  // Build argv for the Python module
   std::vector<const char *> argv;
   argv.push_back("python3");
   argv.push_back("-m");
-  argv.push_back("openpilot.tools.lib.file_downloader");
+  argv.push_back(module);
   for (const auto &a : args) {
     argv.push_back(a.c_str());
   }
@@ -227,7 +227,7 @@ std::string getRouteFiles(const std::string &route) {
 }
 
 std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
-  return runPython({"auth", provider}, abort);
+  return runPython({provider, "--json"}, abort, "openpilot.tools.lib.auth");
 }
 
 std::string getDevices() {
