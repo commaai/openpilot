@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -71,13 +72,13 @@ bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flag
 
 bool clearableInput(const char *label, std::string *s, const char *hint, ImGuiInputTextCallback validator) {
   const float width = ImGui::CalcItemWidth();
-  const float clear_width = iconButtonWidth() + ImGui::GetStyle().ItemInnerSpacing.x;
+  const float clear_width = iconButtonWidth() + ImGui::GetStyle().ItemSpacing.x;
   const bool show_clear = !s->empty() && width >= clear_width + ImGui::GetFrameHeight();
   ImGui::SetNextItemWidth(show_clear ? width - clear_width : width);
   ImGui::BeginGroup();
   bool changed = validatedInput(label, s, validator, hint);
   if (show_clear) {
-    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::SameLine();
     ImGui::PushID(label);
     if (iconButton("clear", icon::X_LG)) {
       s->clear();
@@ -205,11 +206,10 @@ bool squareIconButton(const char *id, const char *icon) {
   ImFontBaked *baked = ImGui::GetFont()->GetFontBaked(size);
   if (const ImFontGlyph *g = baked->FindGlyph((ImWchar)codepoint)) {
     const GlyphInk ink = cachedGlyphInk(g, size, codepoint);
-    // Preserve half-logical-pixel positions on HiDPI displays.
-    const float snap = std::max(1.0f, ImGui::GetIO().DisplayFramebufferScale.x);
-    auto snapped = [snap](float v) { return std::round(v * snap) / snap; };
-    const ImVec2 pos(snapped(r.GetCenter().x - (ink.x0 + ink.x1) * 0.5f), snapped(r.GetCenter().y - (ink.y0 + ink.y1) * 0.5f));
-    // AddText truncates to whole logical pixels, undoing the framebuffer snapping above.
+    // Keep the exact ink center, including half pixels when glyph and button sizes
+    // have different parity. Rounding the origin shifts small icons off center.
+    const ImVec2 pos(r.GetCenter().x - (ink.x0 + ink.x1) * 0.5f, r.GetCenter().y - (ink.y0 + ink.y1) * 0.5f);
+    // AddText truncates the origin, so draw the atlas glyph directly.
     ImGui::GetWindowDrawList()->AddImage(ImGui::GetIO().Fonts->TexRef, ImVec2(pos.x + g->X0, pos.y + g->Y0),
                                          ImVec2(pos.x + g->X1, pos.y + g->Y1), ImVec2(g->U0, g->V0), ImVec2(g->U1, g->V1),
                                          ImGui::GetColorU32(ImGuiCol_Text));
@@ -278,7 +278,8 @@ bool dialogEscapePressed() {
 
 bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, bool accept_enabled,
                    const char *reject_label) {
-  const float button_width = 80.0f;
+  const float button_width = std::max({spacing::DIALOG_BUTTON_MIN_WIDTH, toolbarButtonWidth(accept_label),
+                                       reject_label ? toolbarButtonWidth(reject_label) : 0.0f});
   const int count = reject_label ? 2 : 1;
   const float total = button_width * count + ImGui::GetStyle().ItemSpacing.x * (count - 1);
   const float avail = ImGui::GetContentRegionAvail().x;
@@ -302,6 +303,52 @@ bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, boo
     pressed = true;
   }
   return pressed;
+}
+
+float inputIntWidth(int digits) {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::CalcTextSize(std::string(digits, '0').c_str()).x + style.FramePadding.x * 2 +
+         (ImGui::GetFrameHeight() + style.ItemSpacing.x) * 2;
+}
+
+bool stepButton(const char *id, bool increment, const char *tooltip) {
+  return iconButton(id, increment ? icon::PLUS_LG : icon::DASH_LG, tooltip);
+}
+
+bool inputInt(const char *label, int *value, int step, int step_fast, ImGuiInputTextFlags flags) {
+  if (step <= 0) return ImGui::InputInt(label, value, 0, 0, flags);
+
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
+  const float width = ImGui::CalcItemWidth();
+  ImGui::BeginGroup();
+  ImGui::PushID(label);
+  ImGui::SetNextItemWidth(std::max(1.0f, width - 2 * (iconButtonWidth() + spacing)));
+  bool changed = ImGui::InputInt("##value", value, 0, 0, flags);
+  ImGui::BeginDisabled(flags & ImGuiInputTextFlags_ReadOnly);
+  ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
+  for (bool increment : {false, true}) {
+    ImGui::SameLine(0.0f, spacing);
+    if (stepButton(increment ? "increment" : "decrement", increment)) {
+      const int amount = ImGui::GetIO().KeyCtrl && step_fast > 0 ? step_fast : step;
+      const int next = std::clamp<int64_t>(int64_t(*value) + (increment ? int64_t(amount) : -int64_t(amount)),
+                                          std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+      if (next != *value) {
+        *value = next;
+        changed = true;
+      }
+    }
+  }
+  ImGui::PopItemFlag();
+  ImGui::EndDisabled();
+  const char *label_end = ImGui::FindRenderedTextEnd(label);
+  if (label != label_end) {
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextUnformatted(label, label_end);
+  }
+  ImGui::PopID();
+  ImGui::EndGroup();
+  if (changed) ImGui::MarkItemEdited(ImGui::GetItemID());
+  return changed;
 }
 
 int tableHeadersRow() {
@@ -437,16 +484,16 @@ bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size, ImGuiWin
 
 // tool bar
 
-ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger, bool enabled, bool tight) {
+ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger, bool enabled) {
   return {iconButtonWidth(), [=]() {
     ImGui::BeginDisabled(!enabled);
     if (iconButton(id, icon)) trigger();
     ImGui::EndDisabled();
     disabledItemTooltip(label);
-  }, label, trigger, enabled, true, tight};
+  }, label, trigger, enabled, true};
 }
 
-ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *label, std::function<void()> items, bool bold, bool tight, float width) {
+ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *label, std::function<void()> items, bool bold, float width) {
   if (width <= 0.0f) width = menuButtonWidth(text, bold);
   ToolbarItem item{width, [id, text, items, bold, width]() {
     const std::string popup_id = std::string(id) + "_menu";
@@ -456,7 +503,6 @@ ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *lab
       dropdown::EndPopup();
     }
   }, label};
-  item.tight = tight;
   item.submenu = std::move(items);
   return item;
 }
@@ -465,13 +511,9 @@ float toolbarButtonWidth(const std::string &label) {
   return ImGui::CalcTextSize(label.c_str(), nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2;
 }
 
-static float toolbarSpacing(const ToolbarItem &item) {
-  return item.tight ? ImGui::GetStyle().ItemInnerSpacing.x : ImGui::GetStyle().ItemSpacing.x;
-}
-
 static float toolbarGroupWidth(const std::vector<ToolbarItem> &items, size_t begin, size_t end) {
   float w = 0;
-  for (size_t i = begin; i < end; ++i) w += items[i].width + (i > begin ? toolbarSpacing(items[i]) : 0);
+  for (size_t i = begin; i < end; ++i) w += items[i].width + (i > begin ? ImGui::GetStyle().ItemSpacing.x : 0);
   return w;
 }
 
@@ -500,7 +542,7 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
     const float usable = avail - (extension_width + style.ItemSpacing.x);
     float used = 0;
     for (visible = 0; visible < items.size(); ++visible) {
-      const float w = items[visible].width + (visible ? toolbarSpacing(items[visible]) : 0);
+      const float w = items[visible].width + (visible ? style.ItemSpacing.x : 0);
       if (used + w > usable) break;
       used += w;
     }
@@ -509,7 +551,7 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
   for (size_t i = 0; i < visible; ++i) {
     if (i == 0) ImGui::SetCursorPosX(start_x);
     else if (fits && i == spacer_index) ImGui::SameLine(right_edge - right_width);
-    else ImGui::SameLine(0.0f, toolbarSpacing(items[i]));
+    else ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.x);
     items[i].draw();
   }
 
@@ -545,11 +587,10 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
 }
 
 const float MENU_ARROW_SIZE = 6.0f;     // dropdown arrow on a menu button
-const float MENU_ARROW_SPACING = 5.0f;  // gap between the label and the dropdown arrow
 
 float menuButtonWidth(const std::string &text, bool bold) {
   if (bold) pushBoldFont();
-  const float w = ImGui::CalcTextSize(text.c_str(), nullptr, true).x + MENU_ARROW_SPACING + MENU_ARROW_SIZE +
+  const float w = ImGui::CalcTextSize(text.c_str(), nullptr, true).x + ImGui::GetStyle().ItemInnerSpacing.x + MENU_ARROW_SIZE +
                   ImGui::GetStyle().FramePadding.x * 2;
   if (bold) popBoldFont();
   return w;
@@ -564,7 +605,7 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
   const float text_width = ImGui::CalcTextSize(text.c_str(), nullptr, true).x;
   const float ascent = ImGui::GetFontBaked()->Ascent;
   // the text and the arrow are centered as a group in the button
-  const float padding_x = std::max(style.FramePadding.x, (width - (text_width + MENU_ARROW_SPACING + MENU_ARROW_SIZE)) * 0.5f);
+  const float padding_x = std::max(style.FramePadding.x, (width - (text_width + ImGui::GetStyle().ItemInnerSpacing.x + MENU_ARROW_SIZE)) * 0.5f);
   ImGui::PushStyleColor(ImGuiCol_Button, popup_open ? style.Colors[ImGuiCol_ButtonActive] : style.Colors[ImGuiCol_Button]);
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding_x, style.FramePadding.y));
   ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
@@ -576,7 +617,7 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
   if (bold) popBoldFont();
   // a 6 px arrow right after the text, sitting on the text baseline
   const ImVec2 min = ImGui::GetItemRectMin();
-  const float x = min.x + padding_x + text_width + MENU_ARROW_SPACING;
+  const float x = min.x + padding_x + text_width + ImGui::GetStyle().ItemInnerSpacing.x;
   const float baseline = min.y + style.FramePadding.y + ascent;
   ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(x, baseline - MENU_ARROW_SIZE * 0.5f),
                                                 ImVec2(x + MENU_ARROW_SIZE, baseline - MENU_ARROW_SIZE * 0.5f),

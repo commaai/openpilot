@@ -334,15 +334,18 @@ void SignalView::drawEditor(SignalModel::Item *item) {
 
     drawLineEditor(item, validator, take_focus);
   } else if (item->type == SignalModel::Item::Size) {
-    int v = item->sig->size;
-    if (take_focus) ImGui::SetKeyboardFocusHere();
-    bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
+    if (take_focus) {
+      edit_int_ = item->sig->size;
+      ImGui::SetKeyboardFocusHere();
+    }
+    bool changed = inputInt("##editor", &edit_int_, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
     if (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       open_item_ = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
       return;
     }
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
-      queueCommit(item, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
+      edit_int_ = std::clamp(edit_int_, 1, CAN_MAX_DATA_BYTES);
+      queueCommit(item, edit_int_);
     }
     // Enter, Escape and a click outside close the editor; the step buttons keep it open
     if (ImGui::IsItemDeactivated() && (!ImGui::IsItemHovered() || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
@@ -492,7 +495,7 @@ void SignalView::drawValueDescriptionDlg() {
 }
 
 static ImVec2 indexButtonsSize(float button) {
-  return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
+  return ImVec2(button * 2 + ImGui::GetStyle().ItemSpacing.x, button);
 }
 
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
@@ -871,7 +874,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
   const ImVec2 size = indexButtonsSize(iconButtonWidth());
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
 
@@ -910,12 +913,12 @@ bool ValueDescriptionDlg::draw() {
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
-  if (iconButton("add", icon::PLUS_LG, "Add")) {
+  if (stepButton("add", true, "Add")) {
     table_.emplace_back("", "");
   }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::SameLine();
   ImGui::BeginDisabled(current_row_ == -1);
-  if (iconButton("remove", icon::DASH_LG, "Remove") && current_row_ < table_.size()) {
+  if (stepButton("remove", false, "Remove") && current_row_ < table_.size()) {
     table_.erase(table_.begin() + current_row_);
     current_row_ = -1;
   }

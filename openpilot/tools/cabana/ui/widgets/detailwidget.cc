@@ -102,7 +102,7 @@ void DetailWidget::drawToolBar() {
   const float panel_width = ImGui::GetWindowWidth();
   items.push_back(toolbarAction("edit_msg", icon::PENCIL, "Edit Message", [this, panel_width]() { editMsg(panel_width); }));
   items.push_back(toolbarAction("remove_msg", icon::TRASH, "Remove Message",
-                                [this]() { UndoStack::instance()->push(new RemoveMsgCommand(msg_id_)); }, action_remove_msg_enabled_, true));
+                                [this]() { UndoStack::instance()->push(new RemoveMsgCommand(msg_id_)); }, action_remove_msg_enabled_));
 
   const float right_width = toolbarWidth(items, spacer_index) - style.ItemSpacing.x;
   name_width = std::max(ImGui::CalcTextSize("MMMMMM").x, ImGui::GetContentRegionAvail().x - right_width - style.ItemSpacing.x);
@@ -221,13 +221,12 @@ void DetailWidget::drawTabWidget() {
     // binary_view_ keeps its size hint, signal_view_ takes the rest
     const float min_height = binary_view_->minimumSizeHint().y;
     const float avail = ImGui::GetContentRegionAvail().y;
-    const float max_height = std::max(avail - 6.0f - ImGui::GetStyle().ItemSpacing.y * 2 - 1.0f, 1.0f);
+    const float max_height = std::max(avail - style.ItemSpacing.y - 1.0f, 1.0f);
     const float height = std::clamp(min_height, 1.0f, max_height);
     ImGui::BeginChild("binary_view", ImVec2(0, height), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
     binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     binary_view_->draw();
     ImGui::EndChild();
-    ImGui::Dummy(ImVec2(0.0f, 6.0f));
     ImGui::BeginChild("signal_view", ImVec2(0, 0));
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view_->draw();
@@ -338,7 +337,7 @@ bool EditMessageDialog::draw() {
   setNextDialogWindow(ImVec2(std::clamp(width_, min_width, max_width), 0.0f));
   bool open = true;
   if (ImGui::BeginPopupModal(window_title_.c_str(), &open)) {
-    const float label_width = ImGui::CalcTextSize("Comment").x + ImGui::GetStyle().ItemSpacing.x * 2;
+    const float label_width = ImGui::GetCursorPosX() + ImGui::CalcTextSize("Comment").x + ImGui::GetStyle().ItemSpacing.x;
     auto row = [&](const char *label) {
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted(label);
@@ -356,7 +355,7 @@ bool EditMessageDialog::draw() {
     }
 
     row("Size");
-    if (ImGui::InputInt("##size", &size_spin_)) size_spin_ = std::clamp(size_spin_, 1, CAN_MAX_DATA_BYTES);
+    if (inputInt("##size", &size_spin_)) size_spin_ = std::clamp(size_spin_, 1, CAN_MAX_DATA_BYTES);
 
     row("Node");
     validatedInput("##node", &node_, nameValidator);

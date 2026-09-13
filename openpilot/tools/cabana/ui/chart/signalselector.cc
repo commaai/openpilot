@@ -41,6 +41,7 @@ bool SignalSelector::draw() {
   const float lists_h = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 3;
 
   ImGui::BeginGroup();
+  ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Available Signals");
   // a combo popup with a filter box
   const char *preview = msgs_combo_index_ >= 0 ? msgs_combo_[msgs_combo_index_].text.c_str() : "Select a message...";
@@ -79,6 +80,7 @@ bool SignalSelector::draw() {
 
   ImGui::SameLine();
   ImGui::BeginGroup();
+  ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Selected Signals");
   bool remove_dbl = false;
   drawList("##selected_list", selected_list_, &selected_row_, true, &remove_dbl, ImVec2(column_w, lists_h + ImGui::GetFrameHeightWithSpacing()));

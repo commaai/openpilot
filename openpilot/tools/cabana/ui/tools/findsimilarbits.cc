@@ -30,9 +30,10 @@ void FindSimilarBitsDlg::updateMessages() {
 
 bool FindSimilarBitsDlg::draw() {
   if (begin(ImVec2(700, 500))) {
+    const float field_x = ImGui::GetCursorPosX() + ImGui::CalcTextSize("Find From:").x + ImGui::GetStyle().ItemSpacing.x;
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Find From:");
-    ImGui::SameLine(90);
+    ImGui::SameLine(field_x);
     ImGui::TextUnformatted("Bus");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
@@ -40,20 +41,21 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::SameLine();
     ImGui::SetNextItemWidth(200);
     comboBox("##msg", &msg_index_, msg_names_);
-    ImGui::SameLine();
+    ImGui::SetCursorPosX(field_x);
+    ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Byte Index");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##byte_idx", &byte_idx_, 1, 10)) byte_idx_ = std::clamp(byte_idx_, 0, 63);
+    ImGui::SetNextItemWidth(inputIntWidth(2));
+    if (inputInt("##byte_idx", &byte_idx_, 1, 10)) byte_idx_ = std::clamp(byte_idx_, 0, 63);
     ImGui::SameLine();
     ImGui::TextUnformatted("Bit Index");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##bit_idx", &bit_idx_, 1, 10)) bit_idx_ = std::clamp(bit_idx_, 0, 7);
+    ImGui::SetNextItemWidth(inputIntWidth(1));
+    if (inputInt("##bit_idx", &bit_idx_, 1, 10)) bit_idx_ = std::clamp(bit_idx_, 0, 7);
 
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Find In:");
-    ImGui::SameLine(90);
+    ImGui::SameLine(field_x);
     ImGui::TextUnformatted("Bus");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(60);
@@ -66,8 +68,8 @@ bool FindSimilarBitsDlg::draw() {
     ImGui::SameLine();
     ImGui::TextUnformatted("Minimum Message Count");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(80);
-    if (ImGui::InputInt("##min_msgs", &min_msgs_, 1, 10)) min_msgs_ = std::max(min_msgs_, 0);
+    ImGui::SetNextItemWidth(inputIntWidth(4));
+    if (inputInt("##min_msgs", &min_msgs_, 1, 10)) min_msgs_ = std::max(min_msgs_, 0);
     ImGui::SameLine();
     if (ImGui::Button("Find")) find();
 

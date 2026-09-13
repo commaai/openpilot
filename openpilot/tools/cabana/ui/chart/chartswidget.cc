@@ -15,7 +15,6 @@
 #include "tools/cabana/utils/strings.h"
 
 const int MAX_COLUMN_COUNT = 4;
-const int CHART_SPACING = 4;
 const int START_DRAG_DISTANCE = 10;
 const float MIN_RANGE_SLIDER_WIDTH = 40.0f;
 
@@ -166,12 +165,11 @@ void ChartsWidget::drawToolBar() {
   // the labels are captured by reference, they outlive the draw calls below
   std::vector<ToolbarItem> items;
   items.push_back({iconButtonWidth(), [this]() {
-    if (iconButton("new_plot_btn", icon::PLUS_LG, "New Chart")) newChart();
+    if (stepButton("new_plot_btn", true, "New Chart")) newChart();
   }});
   items.push_back({iconButtonWidth(), [this]() {
     if (iconButton("new_tab_btn", icon::WINDOW_PLUS, "New Tab")) newTab();
   }});
-  items.back().tight = true;
   const std::string title_label = "Charts: " + std::to_string(charts_.size());
   items.push_back({ImGui::CalcTextSize(title_label.c_str()).x, [&title_label]() {
     ImGui::AlignTextToFramePadding();
@@ -231,11 +229,11 @@ void ChartsWidget::drawToolBar() {
     pushMonoFont(ImGui::GetFontSize());
     const float reset_zoom_width = iconTextButtonWidth(icon::ZOOM_OUT, widest + "-" + widest);
     popMonoFont();
-    items.push_back({iconButtonWidth() * 2 + ImGui::GetStyle().ItemInnerSpacing.x, [this]() {
+    items.push_back({iconButtonWidth() * 2 + ImGui::GetStyle().ItemSpacing.x, [this]() {
       ImGui::BeginDisabled(!zoom_undo_stack_.canUndo());
       if (iconButton("undo_zoom", icon::ARROW_COUNTERCLOCKWISE, "Undo Zoom")) zoom_undo_stack_.undo();
       ImGui::EndDisabled();
-      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::SameLine();
       ImGui::BeginDisabled(!zoom_undo_stack_.canRedo());
       if (iconButton("redo_zoom", icon::ARROW_CLOCKWISE, "Redo Zoom")) zoom_undo_stack_.redo();
       ImGui::EndDisabled();
@@ -247,12 +245,11 @@ void ChartsWidget::drawToolBar() {
       if (clicked) zoomReset();
       ImGui::SetItemTooltip("Reset Zoom");
     }});
-    items.back().tight = true;
   }
   items.push_back(toolbarAction("remove_all_btn", icon::TRASH, "Remove all charts", [this]() { removeAll(); }, !charts_.empty()));
   const char *dock_btn_icon = is_docked_ ? icon::BOX_ARROW_UP_RIGHT : icon::BOX_ARROW_IN_DOWN_LEFT;
   const char *dock_label = is_docked_ ? "Float the charts window" : "Dock the charts window";
-  items.push_back(toolbarAction("dock_btn", dock_btn_icon, dock_label, [this]() { toggleChartsDocking(); }, true, true));
+  items.push_back(toolbarAction("dock_btn", dock_btn_icon, dock_label, [this]() { toggleChartsDocking(); }));
 
   // the slider shrinks first, the buttons stay pinned to the right edge
   if (slider_index != (size_t)-1) {
@@ -356,7 +353,7 @@ void ChartsWidget::updateLayout() {
 
   int n = MAX_COLUMN_COUNT;
   for (; n > 1; --n) {
-    if ((n * CHART_MIN_WIDTH + (n - 1) * CHART_SPACING) < container_width) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * ImGui::GetStyle().ItemSpacing.x) < container_width) break;
   }
 
   columns_action_visible_ = n > 1;
@@ -625,14 +622,14 @@ void ChartsContainer::draw() {
   charts_widget_->updateLayout();
 
   const int n = std::max(charts_widget_->current_column_count_, 1);
-  const float spacing = CHART_SPACING;
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
   const float width = (geometry_.GetWidth() - (n - 1) * spacing) / n;
-  const ImVec2 origin = ImGui::GetCursorScreenPos() + ImVec2(0, CHART_SPACING);
+  const ImVec2 origin = ImGui::GetCursorScreenPos();
   auto current_charts = charts_widget_->currentCharts();  // copy: drawing may remove charts
   float bottom = origin.y;
   const bool aligned = ImPlot::BeginAlignedPlots("charts_align", true);
   for (int i = 0; i < current_charts.size(); ++i) {
-    ImVec2 pos = origin + ImVec2((i % n) * (width + spacing), (i / n) * (settings.chart_height + spacing));
+    ImVec2 pos = origin + ImVec2((i % n) * (width + spacing), (i / n) * (settings.chart_height + ImGui::GetStyle().ItemSpacing.y));
     ImGui::SetCursorScreenPos(pos);
     current_charts[i]->draw(width);
     bottom = std::max(bottom, pos.y + settings.chart_height);
@@ -640,15 +637,15 @@ void ChartsContainer::draw() {
   }
   if (aligned) ImPlot::EndAlignedPlots();
   ImGui::SetCursorScreenPos(ImVec2(origin.x, bottom));
-  ImGui::Dummy(ImVec2(geometry_.GetWidth(), CHART_SPACING));
-  geometry_.Max.y = bottom + CHART_SPACING;
+  ImGui::Dummy(ImVec2(geometry_.GetWidth(), ImGui::GetStyle().ItemSpacing.y));
+  geometry_.Max.y = bottom + ImGui::GetStyle().ItemSpacing.y;
   drawDropIndicator();
 }
 
 void ChartsContainer::drawDropIndicator() {
   if (!(drop_indicator_pos_.x == 0 && drop_indicator_pos_.y == 0) && !childAt(drop_indicator_pos_)) {
     ImRect r = geometry_;
-    r.Max.y = r.Min.y + CHART_SPACING;
+    r.Max.y = r.Min.y + ImGui::GetStyle().ItemSpacing.y;
     if (auto insert_after = getDropAfter(drop_indicator_pos_)) {
       float h = r.GetHeight();
       r.Min.y = insert_after->rect().Max.y;

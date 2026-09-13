@@ -103,9 +103,10 @@ void applyTheme(int theme) {
   style.WindowBorderSize = 1.0f;
   style.FrameBorderSize = 1.0f;
   style.TabBorderSize = 1.0f;
-  style.WindowPadding = ImVec2(12.0f, 10.0f);
-  style.FramePadding = ImVec2(9.0f, 5.0f);
-  style.ItemSpacing = ImVec2(10.0f, 8.0f);
+  style.WindowPadding = ImVec2(spacing::CONTROL, spacing::CONTROL);
+  style.FramePadding = ImVec2(spacing::CONTROL, spacing::INNER);
+  style.ItemSpacing = ImVec2(spacing::CONTROL, spacing::CONTROL);
+  style.ItemInnerSpacing = ImVec2(spacing::INNER, spacing::INNER);
   style.CellPadding = ImVec2(6.0f, 4.0f);
   style.ScrollbarSize = 14.0f;
   style.GrabMinSize = 13.0f;
