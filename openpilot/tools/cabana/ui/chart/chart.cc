@@ -504,13 +504,13 @@ void ChartView::draw(float width) {
     updateLayout();
     paint();
     drawContextMenu();
+    // Keep the tip above the plot, but below popup menus and other windows.
+    ImRect visible_rect = charts_widget_->chartVisibleRect(this);
+    visible_rect.ClipWith(ImRect(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y),
+                               ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y)));
+    if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw(visible_rect);
   }
   ImGui::EndChild();
-  // a chart scrolled out of the viewport draws no tip
-  ImRect visible_rect = charts_widget_->chartVisibleRect(this);
-  visible_rect.ClipWith(ImRect(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y),
-                             ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y)));
-  if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw(visible_rect);
   ImGui::PopID();
 }
 
