@@ -727,6 +727,7 @@ void MainWindow::drawStatusBar() {
   ImGui::PushClipRect(min, ImVec2(min.x + std::max(pad, message_end), min.y + ImGui::GetWindowHeight()), true);
   ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
+  const float text_y = ImGui::GetCursorPosY();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
   auto &bar = status_bar_;
   if (!bar.message.empty() && (bar.message_until == 0 || ImGui::GetTime() < bar.message_until)) {
@@ -751,6 +752,7 @@ void MainWindow::drawStatusBar() {
     ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
   ImGui::SameLine(fps_x);
+  ImGui::SetCursorPosY(text_y);
   pushMonoFont(ImGui::GetStyle().FontSizeBase);
   ImGui::Text("%3.0f FPS", ImGui::GetIO().Framerate);
   popMonoFont();
