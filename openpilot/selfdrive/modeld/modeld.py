@@ -4,11 +4,8 @@ import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
-os.environ.setdefault('AMD_USB_POLL_US', '100') # lower latency for chestnut completion waits
-from tinygrad.device import Buffer, Device
+from tinygrad.device import Device
 from tinygrad.tensor import Tensor
-from tinygrad.uop.ops import UOp
-from tinygrad.helpers import round_up
 import pickle
 import threading
 import time
@@ -31,7 +28,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import get_policy_npy_shapes, make_input_queues, nv12_copy_size, MODELD_INPUTS
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues, nv12_copy_size, MODELD_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -43,11 +40,6 @@ LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
-
-
-def jit_input_view(tensor: Tensor) -> Tensor:
-  # Give each view its own JIT input while retaining the shared packed allocation.
-  return Tensor(UOp.from_buffer(tensor.realize().uop.buffer.ensure_allocated())).reshape(tensor.shape)
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -150,24 +142,11 @@ class ModelState:
     self.chestnut = chestnut
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.source_stride, self.source_y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
-    self.raw_frame_size = nv12_copy_size(self.source_stride, self.source_y_height, uv_height)
-    self.frame_copy_size = cam_w * cam_h * 3 // 2
-    self.frame_shape = (cam_h, cam_w)
-    _, policy_sizes = get_policy_npy_shapes(self.input_shapes)
-    policy_size = sum(policy_sizes) * np.dtype(np.float32).itemsize
-    # Separately compiled kernels require aligned input pointers.
-    frame_offset = round_up(128 + policy_size, 128)
-    self.packed_input_np = np.zeros(frame_offset + 2 * self.frame_copy_size, dtype=np.uint8)
-    self.packed_input_cpu = Tensor(self.packed_input_np, device='NPY')._buffer()
-    self.packed_input = Tensor(self.packed_input_np, device=self.model_device).realize()
-    self.input_queues, self.npy, _ = make_input_queues(
-      self.input_shapes, self.frame_skip, device=self.model_device, packed_input=self.packed_input_np[128:128+policy_size].view(np.float32))
-    self.input_queues['packed_npy_inputs'] = jit_input_view(self.packed_input[128:128+policy_size].bitcast('float32'))
-    self.npy['tfm'], self.npy['big_tfm'] = self.packed_input_np[:72].view(np.float32).reshape(2, 3, 3)
-    self.frame_views = dict(zip(('img', 'big_img'), self.packed_input_np[frame_offset:].reshape(2, cam_h * 3 // 2, cam_w), strict=True))
-    self.warp_inputs = (jit_input_view(self.packed_input[frame_offset:].reshape(2, self.frame_copy_size)),
-                        jit_input_view(self.packed_input[:72].bitcast('float32').reshape(2, 3, 3)))
+    self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
+    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
+    self.frames = np.zeros((2, self.frame_copy_size), dtype=np.uint8)
+    self.transforms = np.zeros((2, 3, 3), dtype=np.float32)
+    self.warp_inputs = tuple(Tensor(v, device='NPY').realize() for v in (self.frames, self.transforms))
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
       self.run_warp = pickle.load(f)
     self.run_model = jits['run_model']
@@ -179,11 +158,9 @@ class ModelState:
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
-    h, w = self.frame_shape
-    for key, buf in bufs.items():
-      src = np.frombuffer(buf.data, dtype=np.uint8, count=self.raw_frame_size).reshape(-1, self.source_stride)
-      np.copyto(self.frame_views[key][:h], src[:h, :w])
-      np.copyto(self.frame_views[key][h:], src[self.source_y_height:self.source_y_height+h//2, :w])
+    for i, key in enumerate(('img', 'big_img')):
+      np.copyto(self.frames[i], np.frombuffer(bufs[key].data, dtype=np.uint8, count=self.frame_copy_size))
+      self.transforms[i] = transforms[key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
@@ -191,10 +168,7 @@ class ModelState:
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
-    self.npy['tfm'][:,:] = transforms['img'][:,:]
-    self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
 
-    self.packed_input.uop.buffer.copy_from(self.packed_input_cpu)
     self.input_queues['warped'] = self.run_warp(*self.warp_inputs)
     outs, = self.run_model(**{k: self.input_queues[k] for k in MODELD_INPUTS})
     if after_enqueue is not None:
@@ -210,14 +184,11 @@ class ModelState:
     return outputs_dict
 
   def warmup(self) -> None:
-    dummy_frames = {k: np.zeros(self.raw_frame_size, dtype=np.uint8) for k in self.vision_input_names}
+    dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
-    self.packed_input_np[:] = 0
-    for tensor in self.input_queues.values():
-      buf = tensor.uop.buffer
-      buf.copy_from(Buffer('PYTHON', buf.size, buf.dtype, opaque=memoryview(bytearray(buf.nbytes))))
+    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device)
     self.prev_desire[:] = 0
 
 

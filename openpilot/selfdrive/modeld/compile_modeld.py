@@ -53,7 +53,7 @@ def get_policy_npy_shapes(input_shapes):
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
-def make_input_queues(input_shapes, frame_skip, device, packed_input=None):
+def make_input_queues(input_shapes, frame_skip, device):
   img = input_shapes['img']  # (1, 12, 128, 256)
   fb = input_shapes['features_buffer']  # (1, T-1, ...), past features only; the model appends the current frame's feature
   feat_dim = math.prod(fb[2:])
@@ -62,8 +62,7 @@ def make_input_queues(input_shapes, frame_skip, device, packed_input=None):
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
 
   shapes, sizes = get_policy_npy_shapes(input_shapes)
-  if packed_input is None:
-    packed_input = np.zeros(sum(sizes), dtype=np.float32)
+  packed_input = np.zeros(sum(sizes), dtype=np.float32)
   # views into the packed inputs, to be refilled at runtime
   npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_input, np.cumsum(sizes[:-1])), strict=True)}
   input_queues = {
@@ -72,9 +71,9 @@ def make_input_queues(input_shapes, frame_skip, device, packed_input=None):
     'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
     'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], feat_dim), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    'packed_npy_inputs': Tensor(packed_input, device=device).realize(),
+    'packed_npy_inputs': Tensor(packed_input, device='NPY').realize(),
   }
-  return input_queues, npy, packed_input
+  return input_queues, npy
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -127,13 +126,12 @@ def compile_jit(jit, input_keys, make_queues, benchmark_runs):
 
   SEED = 42
   def random_inputs_run(fn, seed, n_runs, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy, packed_input = make_queues(Device.DEFAULT)
+    input_queues, npy = make_queues(Device.DEFAULT)
     rng = np.random.default_rng(seed)
 
     for i in range(n_runs):
       for v in npy.values():
         v[:] = rng.standard_normal(v.shape).astype(v.dtype)
-      input_queues['packed_npy_inputs'].assign(Tensor(packed_input, device=Device.DEFAULT)).realize()
       warped = rng.integers(0, 256, size=input_queues['warped'].shape, dtype=np.uint8)
       input_queues['warped'].assign(Tensor(warped, device=Device.DEFAULT)).realize()
       Device.default.synchronize()
