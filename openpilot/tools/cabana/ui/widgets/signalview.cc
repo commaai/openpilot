@@ -931,15 +931,11 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   }
   if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nShift-click to add to the previously opened plot");
-  const bool show_remove = current_sig_ == sig ||
-      (ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(ImVec2(ImGui::GetWindowPos().x, rect.Min.y), rect.Max));
-  if (show_remove) {
-    ImGui::SameLine(0.0f, spacing);
-    if (row_button("remove", icon::X_LG) && !editor_open_on_press_) {
-      pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
-    }
-    ImGui::SetItemTooltip("Remove signal");
+  ImGui::SameLine(0.0f, spacing);
+  if (iconButton("remove", icon::X_LG) && !editor_open_on_press_) {
+    pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
   }
+  ImGui::SetItemTooltip("Remove signal");
   ImGui::PopStyleColor();
   ImGui::PopStyleVar();
 }
