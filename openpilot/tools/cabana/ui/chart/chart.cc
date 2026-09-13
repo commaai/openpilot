@@ -577,6 +577,14 @@ void ChartView::drawAxes() {
     // ImPlotFlags_NoInputs disables implot's own hover tracking
     layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
+    if (!drawing_ghost_) {
+      // Own plot clicks so custom scrubbing/zooming cannot also move the floating window.
+      const ImGuiID input_id = ImGui::GetID("plot_input");
+      if (ImGui::ItemAdd(layout_.plot_area, input_id)) {
+        bool hovered, held;
+        ImGui::ButtonBehavior(layout_.plot_area, input_id, &hovered, &held);
+      }
+    }
     handleMousePress();
     handleMouseMove();
     handleMouseRelease();
