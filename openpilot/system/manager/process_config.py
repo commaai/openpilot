@@ -52,6 +52,13 @@ def qcomgps(started: bool, params: Params, CP: car.CarParams) -> bool:
 def always_run(started: bool, params: Params, CP: car.CarParams) -> bool:
   return True
 
+def modeld(started: bool, params: Params, CP: car.CarParams) -> bool:
+  # Missing: unused; True: requested; False: consumed until the next ignition.
+  if started and params.get_bool("ChestnutModelRetry"):
+    params.put_bool("ChestnutModelRetry", False, block=True)
+    return not params.get_bool("ChestnutLoading")
+  return started
+
 def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started
 
@@ -82,7 +89,7 @@ procs = [
   PythonProcess("micd", "openpilot.system.micd", iscar),
   PythonProcess("timed", "openpilot.system.timed", always_run, enabled=not PC),
 
-  PythonProcess("modeld", "openpilot.selfdrive.modeld.modeld", only_onroad),
+  PythonProcess("modeld", "openpilot.selfdrive.modeld.modeld", modeld),
   PythonProcess("dmonitoringmodeld", "openpilot.selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
   PythonProcess("sensord", "openpilot.system.sensord.sensord", only_onroad, enabled=not PC),
