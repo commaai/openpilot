@@ -205,8 +205,8 @@ void MainWindow::updateWindowTitle() {
   }
   if (window_modified_) title += "*";
   if (hasStream()) {
-    if (!title.empty()) title += " \xe2\x80\x94 ";
-    title += can->liveStreaming() ? videoPanelTitle() : can->routeName();
+    const std::string stream_title = can->liveStreaming() ? videoPanelTitle() : can->routeName();
+    title = title.empty() ? stream_title : stream_title + " \xe2\x80\x94 " + title;
   }
   if (!title.empty()) title += " \xe2\x80\x94 ";  // em dash separator
   title += "Cabana";
