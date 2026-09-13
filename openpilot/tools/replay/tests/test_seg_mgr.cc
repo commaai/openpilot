@@ -15,6 +15,8 @@
 using namespace std::chrono_literals;
 
 namespace {
+constexpr auto TEST_RETRY_DELAY = 10ms;
+
 struct RouteFixture {
   RouteFixture() {
     char path[] = "/tmp/replay-segment-test-XXXXXX";
@@ -53,14 +55,15 @@ struct RouteFixture {
 
 template <typename Predicate>
 void waitUntil(Predicate predicate) {
-  auto deadline = std::chrono::steady_clock::now() + 8s;
+  constexpr auto retry_delays = TEST_RETRY_DELAY * MAX_SEGMENT_LOAD_ATTEMPTS * (MAX_SEGMENT_LOAD_ATTEMPTS - 1) / 2;
+  auto deadline = std::chrono::steady_clock::now() + retry_delays + 5s;
   while (!predicate() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(10ms);
   REQUIRE(predicate());
 }
 
 void test_failed_segment_recovers() {
   RouteFixture fixture;
-  SegmentManager manager("5beb9b58bd12b691/0000010a--a51155e496", REPLAY_FLAG_NO_VIPC, fixture.dir.string());
+  SegmentManager manager("5beb9b58bd12b691/0000010a--a51155e496", REPLAY_FLAG_NO_VIPC, fixture.dir.string(), false, TEST_RETRY_DELAY);
   std::atomic<int> failures = 0;
   std::atomic<bool> saw_gap = false;
   manager.setCallback([&]() {
@@ -68,7 +71,7 @@ void test_failed_segment_recovers() {
     if (data->isSegmentLoaded(2) && !data->isSegmentLoaded(1)) saw_gap = true;
   });
   manager.setBenchmarkCallback([&](int n, const std::string &state) {
-    if (n == 1 && state == "load failed" && ++failures == 2) fixture.write(1, true);
+    if (n == 1 && state == "load failed" && ++failures == MAX_SEGMENT_LOAD_ATTEMPTS - 1) fixture.write(1, true);
   });
   REQUIRE(manager.load());
   manager.setCurrentSegment(0);
@@ -76,7 +79,7 @@ void test_failed_segment_recovers() {
   waitUntil([&]() { return manager.getEventData()->isSegmentLoaded(1); });
   manager.stop();
   REQUIRE(saw_gap);
-  REQUIRE(failures == 2);
+  REQUIRE(failures == MAX_SEGMENT_LOAD_ATTEMPTS - 1);
   auto data = manager.getEventData();
   REQUIRE(data->segments.size() == 3);
   REQUIRE(data->events.size() == 3);
@@ -87,18 +90,18 @@ void test_failed_segment_recovers() {
 
 void test_retries_are_bounded() {
   RouteFixture fixture;
-  SegmentManager manager("5beb9b58bd12b691/0000010a--a51155e496", REPLAY_FLAG_NO_VIPC, fixture.dir.string());
+  SegmentManager manager("5beb9b58bd12b691/0000010a--a51155e496", REPLAY_FLAG_NO_VIPC, fixture.dir.string(), false, TEST_RETRY_DELAY);
   std::atomic<int> attempts = 0;
   manager.setBenchmarkCallback([&](int n, const std::string &state) {
     if (n == 1 && state == "loading") ++attempts;
   });
   REQUIRE(manager.load());
   manager.setCurrentSegment(0);
-  waitUntil([&]() { return attempts >= 3; });
+  waitUntil([&]() { return attempts >= MAX_SEGMENT_LOAD_ATTEMPTS; });
   manager.setCurrentSegment(1);
-  std::this_thread::sleep_for(3200ms);
+  std::this_thread::sleep_for(TEST_RETRY_DELAY * MAX_SEGMENT_LOAD_ATTEMPTS + 20ms);
   manager.stop();
-  REQUIRE(attempts == 3);
+  REQUIRE(attempts == MAX_SEGMENT_LOAD_ATTEMPTS);
   REQUIRE(manager.getEventData()->isSegmentLoaded(2));
   REQUIRE(!manager.getEventData()->isSegmentLoaded(1));
 }

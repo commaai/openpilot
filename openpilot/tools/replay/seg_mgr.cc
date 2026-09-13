@@ -128,19 +128,19 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
       auto &segment_ptr = it->second;
       auto &attempt = load_attempts_[it->first];
       if (segment_ptr && segment_ptr->getState() == Segment::LoadState::Failed) {
-        // A failed object must not permanently occupy its cache slot. Retry twice,
-        // after 1 and 2 seconds, while allowing other segments to load meanwhile.
-        if (attempt.count >= 3) continue;
+        // A failed object must not permanently occupy its cache slot. Back off
+        // between retries while allowing other segments to load meanwhile.
+        if (attempt.count >= MAX_SEGMENT_LOAD_ATTEMPTS) continue;
         const auto now = std::chrono::steady_clock::now();
         if (attempt.retry_at == std::chrono::steady_clock::time_point::max()) {
-          attempt.retry_at = now + std::chrono::seconds(attempt.count);
+          attempt.retry_at = now + retry_delay_ * attempt.count;
         }
         if (now < attempt.retry_at) {
           next_retry_ = std::min(next_retry_, attempt.retry_at);
           continue;
         }
         segment_ptr.reset();
-        rWarning("retrying segment %d (attempt %d/3)", it->first, attempt.count + 1);
+        rWarning("retrying segment %d (attempt %d/%d)", it->first, attempt.count + 1, MAX_SEGMENT_LOAD_ATTEMPTS);
       }
       if (!segment_ptr) {
         ++attempt.count;
