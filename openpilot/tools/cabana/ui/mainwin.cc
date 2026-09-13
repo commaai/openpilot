@@ -31,7 +31,7 @@
 namespace {
 // dock window ids (the visible titles change, the part after ### is the identity)
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
-constexpr const char *CENTER_PANEL = "###CenterWidget";
+constexpr const char *CENTER_PANEL = "Signals###CenterWidget";
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
@@ -779,9 +779,9 @@ void MainWindow::drawDockspace() {
   const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
-  // Recover layouts saved before the tabless center stopped accepting other panels.
-  if (const auto *center = ImGui::FindWindowByName(CENTER_PANEL); center && center->DockNode && center->DockNode->Windows.Size > 1) {
-    reset_layout_ = true;
+  // Older layouts hid the center's dock tabs. Reveal them without moving any panels.
+  if (const auto *center = ImGui::FindWindowByName(CENTER_PANEL); center && center->DockNode) {
+    center->DockNode->LocalFlags &= ~ImGuiDockNodeFlags_NoTabBar;
   }
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
       (!ImGui::FindWindowByName(CHARTS_WINDOW) && !ImGui::FindWindowSettingsByID(ImHashStr(CHARTS_WINDOW)))) {
@@ -798,7 +798,6 @@ void MainWindow::drawDockspace() {
     ImGui::DockBuilderDockWindow(MESSAGES_PANEL_ID, left);
     ImGui::DockBuilderDockWindow(VIDEO_PANEL, right);
     ImGui::DockBuilderDockWindow(CENTER_PANEL, center);
-    ImGui::DockBuilderGetNode(center)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
@@ -881,14 +880,8 @@ void MainWindow::draw() {
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
-  ImGuiWindowClass center_class;
-  center_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoUndocking | ImGuiDockNodeFlags_NoDockingOverMe |
-                                         ImGuiDockNodeFlags_NoDockingSplit;
-  ImGui::SetNextWindowClass(&center_class);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetStyle().WindowPadding.x, 0.0f));
-  const bool center_open = beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  ImGui::PopStyleVar();
-  if (center_open) {
+  setNextPanelClass();
+  if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     center_widget_.draw();
     if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);

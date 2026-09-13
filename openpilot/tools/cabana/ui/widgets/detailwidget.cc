@@ -280,8 +280,7 @@ void DetailWidget::drawTabWidget() {
 
 void DetailWidget::draw() {
   tabbar_.draw();
-  // Keep the original bordered, padded content surface below the aligned tabs.
-  ImGui::BeginChild("message_content", ImVec2(0, -ImGui::GetStyle().WindowPadding.y), ImGuiChildFlags_Borders,
+  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_Borders,
                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
   drawToolBar();
 
