@@ -12,30 +12,35 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xf8f9f9), .text_disabled = rgb(0xb8c0c4),
-  .window = rgb(0x1d2225), .surface = rgb(0x30373b),
-  .frame = rgb(0x1e2224), .frame_hovered = rgb(0x394044), .frame_active = rgb(0x424a4f),
-  .button = rgb(0x424a4f), .button_hovered = rgb(0x535f64), .button_active = rgb(0x175886),
-  .header = rgb(0x175886), .header_hovered = rgb(0x24455e), .header_active = rgb(0x1c6ea8),
-  .accent = rgb(0x57a9e3),
-  .border = rgb(0x65737a), .separator = rgb(0x4b5559),
-  .tab = rgb(0x272c2f), .tab_hovered = rgb(0x424a4f), .table_header = rgb(0x424a4f),
-  .grid = rgb(0x65737a, 0.45f), .badge = rgb(0x808080),
+  .text = rgb(0xbbbbbb), .text_disabled = rgb(0x777777), .text_selected = rgb(0xbbbbbb),
+  .window = rgb(0x353535), .surface = rgb(0x3c3f41),
+  .frame = rgb(0x3c3f41), .frame_hovered = rgb(0x484b4d), .frame_active = rgb(0x505355),
+  .button = rgb(0x484b4d), .button_hovered = rgb(0x535658), .button_active = rgb(0x3c3f41),
+  .header = rgb(0x2f65ca), .header_hovered = rgb(0x414e65), .header_active = rgb(0x2f65ca),
+  .accent = rgb(0x2f65ca),
+  .border = rgb(0x282828), .separator = rgb(0x353535), .scrollbar_grab = rgb(0x484b4d),
+  .tab = rgb(0x353535), .tab_hovered = rgb(0x484b4d), .table_header = rgb(0x484b4d),
+  .grid = rgb(0xbbbbbb, 50.0f / 255.0f), .badge = rgb(0x808080),
+  .bit_background = rgb(0xffffff, 20.0f / 255.0f),
+  .heatmap_signal_alpha = 70.0, .heatmap_bit_alpha = 28.0, .heatmap_gamma = 0.6,
+  .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
 constexpr Palette LIGHT_PALETTE = {
-  .text = rgb(0x1e2224), .text_disabled = rgb(0x535f64),
-  .window = rgb(0xeeeff0), .surface = rgb(0xffffff),
-  .frame = rgb(0xf8f9f9), .frame_hovered = rgb(0xeeeff0), .frame_active = rgb(0xddeef9),
-  .button = rgb(0xe3e6e8), .button_hovered = rgb(0xd8dcdf), .button_active = rgb(0xbcddf4),
-  .header = rgb(0xbcddf4), .header_hovered = rgb(0xddeef9), .header_active = rgb(0x9fcbec),
-  .accent = rgb(0x1c6ea8),
-  .border = rgb(0x98a3a9), .separator = rgb(0xcdd3d6),
-  .tab = rgb(0xe3e6e8), .tab_hovered = rgb(0xddeef9), .table_header = rgb(0xd8dcdf),
-  .grid = rgb(0x98a3a9, 0.4f), .badge = rgb(0xa0a0a4),
+  .text = rgb(0x000000), .text_disabled = rgb(0xbebebe), .text_selected = rgb(0xffffff),
+  .window = rgb(0xefefef), .surface = rgb(0xffffff),
+  .frame = rgb(0xffffff), .frame_hovered = rgb(0xf5f9fc), .frame_active = rgb(0xe7f3fb),
+  .button = rgb(0xefefef), .button_hovered = rgb(0xe7f3fb), .button_active = rgb(0xd4e7f4),
+  .header = rgb(0x308cc6), .header_hovered = rgb(0xe7f3fb), .header_active = rgb(0x308cc6),
+  .accent = rgb(0x308cc6),
+  .border = rgb(0xb6b6b6), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0xb6b6b6),
+  .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .table_header = rgb(0xefefef),
+  .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
+  .bit_background = rgb(0xffffff, 0.0f),
+  .heatmap_signal_alpha = 25.0, .heatmap_bit_alpha = 10.0, .heatmap_gamma = 1.0,
+  .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 
-bool g_dark = false;
 const Palette *g_palette = &LIGHT_PALETTE;
 ImFont *g_ui_font = nullptr;
 ImFont *g_bold_font = nullptr;
@@ -82,8 +87,7 @@ void loadFonts() {
 }
 
 void applyTheme(int theme) {
-  g_dark = theme == DARK_THEME;
-  g_palette = g_dark ? &DARK_PALETTE : &LIGHT_PALETTE;
+  g_palette = theme == DARK_THEME ? &DARK_PALETTE : &LIGHT_PALETTE;
   const Palette &p = *g_palette;
   const ImVec4 none(0, 0, 0, 0);
 
@@ -99,9 +103,10 @@ void applyTheme(int theme) {
   style.WindowBorderSize = 1.0f;
   style.FrameBorderSize = 1.0f;
   style.TabBorderSize = 1.0f;
-  style.WindowPadding = ImVec2(12.0f, 10.0f);
-  style.FramePadding = ImVec2(9.0f, 5.0f);
-  style.ItemSpacing = ImVec2(10.0f, 8.0f);
+  style.WindowPadding = ImVec2(spacing::CONTROL, spacing::CONTROL);
+  style.FramePadding = ImVec2(spacing::CONTROL, spacing::INNER);
+  style.ItemSpacing = ImVec2(spacing::CONTROL, spacing::CONTROL);
+  style.ItemInnerSpacing = ImVec2(spacing::INNER, spacing::INNER);
   style.CellPadding = ImVec2(6.0f, 4.0f);
   style.ScrollbarSize = 14.0f;
   style.GrabMinSize = 13.0f;
@@ -110,7 +115,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_Text] = p.text;
   c[ImGuiCol_TextDisabled] = p.text_disabled;
   c[ImGuiCol_WindowBg] = c[ImGuiCol_ScrollbarBg] = c[ImGuiCol_DockingEmptyBg] = p.window;
-  c[ImGuiCol_MenuBarBg] = p.surface;
+  c[ImGuiCol_MenuBarBg] = p.window;
   c[ImGuiCol_TitleBg] = c[ImGuiCol_TitleBgActive] = c[ImGuiCol_TitleBgCollapsed] = p.window;
   c[ImGuiCol_ChildBg] = c[ImGuiCol_PopupBg] = p.surface;
   c[ImGuiCol_Border] = c[ImGuiCol_TableBorderStrong] = p.border;
@@ -121,7 +126,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
   c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
-  c[ImGuiCol_ScrollbarGrab] = p.border;
+  c[ImGuiCol_ScrollbarGrab] = p.scrollbar_grab;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;
   c[ImGuiCol_Header] = p.header;
@@ -138,7 +143,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_TabSelected] = c[ImGuiCol_TabDimmedSelected] = p.surface;
   c[ImGuiCol_TabDimmedSelectedOverline] = none;
   c[ImGuiCol_TableHeaderBg] = p.table_header;
-  c[ImGuiCol_TableRowBgAlt] = g_dark ? ImVec4(1, 1, 1, 0.065f) : ImVec4(0, 0, 0, 0.045f);
+  c[ImGuiCol_TableRowBgAlt] = none;
   c[ImGuiCol_PlotLines] = p.text;
   // ImGuiStyle() seeds every slot from the dark theme: set the rest so the light theme does not keep a white caret.
   c[ImGuiCol_InputTextCursor] = c[ImGuiCol_UnsavedMarker] = p.text;
@@ -152,13 +157,12 @@ void applyTheme(int theme) {
   ImPlot::GetStyle().Colors[ImPlotCol_AxisGrid] = p.grid;
 }
 
-bool isDarkTheme() { return g_dark; }
 const Palette &palette() { return *g_palette; }
 
-CabanaColor signalFillColor(const CabanaColor &c) {
-  if (!g_dark) return c;
-  auto [h, s, v] = c.hsv();
-  return CabanaColor::fromHsv(h, std::min(1.0f, s * 1.4f), v * 0.8f, c.a / 255.0f);
+CabanaColor sparklineColor(const CabanaColor &color) {
+  const Palette &p = palette();
+  auto [h, s, v] = color.hsv();
+  return CabanaColor::fromHsv(h, std::min(1.0f, s * p.sparkline_saturation), v * p.sparkline_value, color.a / 255.0f);
 }
 
 ImFont *boldFont() { return g_bold_font; }
