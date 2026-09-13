@@ -51,7 +51,7 @@ struct RouteFixture {
 };
 
 template <typename Predicate>
-void waitFor(Predicate predicate) {
+void waitUntil(Predicate predicate) {
   auto deadline = std::chrono::steady_clock::now() + 8s;
   while (!predicate() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(10ms);
   REQUIRE(predicate());
@@ -72,7 +72,7 @@ void test_failed_segment_recovers() {
   REQUIRE(manager.load());
   manager.setCurrentSegment(0);
   // Failed loads must not block later segments, even with playback paused.
-  waitFor([&]() { return manager.getEventData()->isSegmentLoaded(1); });
+  waitUntil([&]() { return manager.getEventData()->isSegmentLoaded(1); });
   manager.stop();
   REQUIRE(saw_gap);
   REQUIRE(failures == 2);
@@ -93,7 +93,7 @@ void test_retries_are_bounded() {
   });
   REQUIRE(manager.load());
   manager.setCurrentSegment(0);
-  waitFor([&]() { return attempts >= 3; });
+  waitUntil([&]() { return attempts >= 3; });
   manager.setCurrentSegment(1);
   std::this_thread::sleep_for(3200ms);
   manager.stop();
@@ -107,7 +107,7 @@ void test_stop_during_retry_delay() {
   SegmentManager manager("5beb9b58bd12b691/0000010a--a51155e496", REPLAY_FLAG_NO_VIPC, fixture.dir.string());
   REQUIRE(manager.load());
   manager.setCurrentSegment(0);
-  waitFor([&]() { return manager.getEventData()->isSegmentLoaded(2); });
+  waitUntil([&]() { return manager.getEventData()->isSegmentLoaded(2); });
   auto start = std::chrono::steady_clock::now();
   manager.stop();
   REQUIRE(std::chrono::steady_clock::now() - start < 500ms);
