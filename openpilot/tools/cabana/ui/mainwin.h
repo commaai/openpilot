@@ -45,6 +45,7 @@ public:
 
 private:
   bool hasStream() const { return dynamic_cast<const DummyStream *>(can) == nullptr; }
+  const char *videoPanelTitle() const { return hasStream() && can->liveStreaming() ? "Live Stream" : "Video"; }
   void releaseStream();
   void startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
   void loadStartupStream(const std::string &dbc_file);
@@ -101,7 +102,6 @@ private:
   std::vector<std::string> opendbc_names_;
   enum { MAX_RECENT_FILES = 15 };
   std::string car_fingerprint_;
-  std::string video_dock_title_;
   bool messages_visible_ = true;
   bool video_visible_ = true;
   bool charts_visible_ = true;
