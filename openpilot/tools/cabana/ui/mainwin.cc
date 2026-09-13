@@ -718,6 +718,10 @@ void MainWindow::drawStatusBar() {
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
   const float pad = ImGui::GetStyle().WindowPadding.x;
+  const float progress_width = std::min(300.0f, std::max(0.0f, width - 2 * pad));
+  const float progress_x = width - pad - progress_width;
+  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : width - pad;
+  ImGui::PushClipRect(min, ImVec2(min.x + std::max(pad, message_end), min.y + ImGui::GetWindowHeight()), true);
   ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
@@ -728,9 +732,20 @@ void MainWindow::drawStatusBar() {
     bar.message.clear();
     ImGui::TextUnformatted("For help, press F1");
   }
-  if (bar.progress_visible) {
-    ImGui::SameLine(width - pad - 300.0f);
-    ImGui::ProgressBar(bar.progress_value, ImVec2(300.0f, 16.0f), bar.progress_text.c_str());
+  ImGui::PopClipRect();
+  if (bar.progress_visible && progress_width > 0) {
+    const float progress_height = 16.0f;
+    ImGui::PushFont(ImGui::GetFont(), 12.0f);
+    const std::string percentage = std::to_string((int)(bar.progress_value * 100)) + "%";
+    const char *label = bar.progress_text.c_str();
+    const float text_width = progress_width - 2 * ImGui::GetStyle().FramePadding.x;
+    if (ImGui::CalcTextSize(label).x > text_width) label = percentage.c_str();
+    if (ImGui::CalcTextSize(label).x > text_width) label = "";
+    ImGui::SameLine(progress_x);
+    ImGui::SetCursorPosY((ImGui::GetWindowHeight() - progress_height) / 2.0f);
+    ImGui::ProgressBar(bar.progress_value, ImVec2(progress_width, progress_height), label);
+    ImGui::PopFont();
+    ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
   ImGui::EndChild();
   ImGui::PopStyleColor();
