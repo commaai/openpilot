@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
-from abc import abstractmethod
-from collections.abc import Callable
-import os
 import socket
 import time
-import capnp
 import argparse
 import asyncio
 import contextlib
@@ -18,11 +14,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any
 
+from openpilot.system.webrtc.device.bitrate import LivestreamBitrateController
+from openpilot.system.webrtc.device.bridge import CerealIncomingMessageProxy, CerealOutgoingMessageProxy, DynamicPubMaster
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.cereal import messaging, log
+from openpilot.cereal import log
 
 SESSION_TIMEOUT_SECONDS = 300
 
@@ -43,221 +41,46 @@ def _default_route_ip() -> str | None:
   finally:
     s.close()
 
-class AsyncTaskRunner:
-  def __init__(self):
-    self.task = None
-    self.logger = logging.getLogger("webrtcd")
-
-  def start(self):
-    assert self.task is None
-    self.task = asyncio.create_task(self.run())
-
-  async def stop(self):
-    if self.task is None:
-      return
-    task = self.task
-    self.task = None
-    if task.done():
-      return
-    task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-      await task
-
-  @abstractmethod
-  async def run(self):
-    pass
-
-
-class CerealOutgoingMessageProxy(AsyncTaskRunner):
-  def __init__(self, services: list[str], enabled: bool = True):
-    super().__init__()
-    self.services = list(services)
-    self.sm = messaging.SubMaster(self.services)
-    self.channels = []
-    self._enabled = enabled
-
-  def add_channel(self, channel):
-    self.channels.append(channel)
-
-  def enable(self, enable: bool):
-    self._enabled = enable
-
-  def to_json(self, msg_content: Any):
-    if isinstance(msg_content, capnp._DynamicStructReader):
-      msg_dict = msg_content.to_dict()
-    elif isinstance(msg_content, capnp._DynamicListReader):
-      msg_dict = [self.to_json(msg) for msg in msg_content]
-    elif isinstance(msg_content, bytes):
-      msg_dict = msg_content.decode()
-    else:
-      msg_dict = msg_content
-
-    return msg_dict
-
-  def update(self):
-    # this is blocking in async context...
-    self.sm.update(0)
-    for service, updated in self.sm.updated.items():
-      if not updated:
-        continue
-      msg_dict = self.to_json(self.sm[service])
-      mono_time, valid = self.sm.logMonoTime[service], self.sm.valid[service]
-      outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
-      encoded_msg = json.dumps(outgoing_msg).encode()
-      for channel in self.channels:
-        if not channel.is_open():
-          continue
-        channel.send(encoded_msg)
-
-  async def run(self):
-    while True:
-      if not self._enabled:
-        await asyncio.sleep(0.01)
-        continue
-      try:
-        self.update()
-      except Exception:
-        self.logger.exception("Cereal outgoing proxy failure")
-      await asyncio.sleep(0.01)
-
-
-class CerealIncomingMessageProxy:
-  def __init__(self, pm: messaging.PubMaster):
-    self.pm = pm
-
-  def send(self, message: bytes):
-    msg_json = json.loads(message)
-    msg_type, msg_data = msg_json["type"], msg_json["data"]
-    size = None
-    if not isinstance(msg_data, dict):
-      size = len(msg_data)
-
-    msg = messaging.new_message(msg_type, size=size)
-    setattr(msg, msg_type, msg_data)
-    self.pm.send(msg_type, msg)
-
-
-class DynamicPubMaster(messaging.PubMaster):
-  def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
-    self.lock = asyncio.Lock()
-
-  async def add_services_if_needed(self, services):
-    async with self.lock:
-      for service in services:
-        if service not in self.sock:
-          self.sock[service] = messaging.pub_sock(service)
-
-
-class LivestreamBitrateController(AsyncTaskRunner):
-  bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
-  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
-  sample_interval = 0.2
-  high_level = 0.1 # drop immediately
-  med_level = 0.05 # drop after # of samples
-  low_level = 0 # raise after # of samples
-  down_samples = 5
-  param_name = "LivestreamEncoderBitrate"
-
-  def __init__(self, get_stats: Callable[[], dict[str, Any]], params: Params, enabled: bool = True):
-    super().__init__()
-    self.get_stats = get_stats
-    self.params = params
-
-    self.level = 2
-    self._publish(self.bitrates[self.level])
-    self.prev_stats: tuple[Any, ...] | None = None
-    self.counter = 0
-    self.up_samples = 5 # 1s
-    self._auto = True
-    self._enabled = enabled
-
-  def enable(self, enable: bool):
-    self._enabled = enable
-
-  async def run(self):
-    while True:
-      await asyncio.sleep(self.sample_interval)
-      if not self._enabled:
-        continue
-      if not self._auto:
-        continue
-
-      loss_rate = self._sample()
-      if loss_rate is None:
-        continue
-      if loss_rate >= self.med_level and self.level > 0:
-        self.counter += 1
-        if self.counter >= self.down_samples or loss_rate >= self.high_level:
-          self.level -= 1
-          self.up_samples *= 2 # exponential backoff before raising again
-          self.counter = 0
-          self._publish(self.bitrates[self.level])
-      elif loss_rate <= self.low_level and self.level < len(self.bitrates) - 1:
-        self.counter -= 1
-        if -self.counter >= self.up_samples:
-          self.level += 1
-          self.counter = 0
-          self._publish(self.bitrates[self.level])
-
-  def _sample(self) -> float | None:
-    report = next(iter(self.get_stats().values()), None)
-    if report is None:
-      return None
-
-    current = (report.ssrc, report.fraction_lost, report.packets_lost, report.highest_seq_no, report.jitter, report.lsr, report.dlsr)
-    if self.prev_stats == current:
-      return None
-    self.prev_stats = current
-
-    loss_rate = report.fraction_lost / 256
-    return loss_rate
-
-  def _publish(self, bitrate: float):
-    self.params.put(self.param_name, bitrate)
-
-  def set_quality(self, quality):
-    if quality in self.label_to_bitrate:
-      self._publish(self.label_to_bitrate[quality])
-      self._auto = False
-    elif quality == "auto":
-      self._auto = True
-
 
 class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, body: StreamRequestBody):
-    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     from teleoprtc.builder import WebRTCAnswerBuilder
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
+    self.is_body = "testJoystick" in body.bridge_services_in
+
     builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
-    self.enabled = body.enabled
+    # create video tracks and add to sdp
+    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    self.video_enabled = body.enabled
     self.video_tracks = []
     for camera in body.cameras:
-      track = LiveStreamVideoStreamTrack(camera, self.enabled)
+      track = LiveStreamVideoStreamTrack(camera, self.video_enabled)
       self.video_tracks.append(track)
       builder.add_video_stream(camera, track)
     self.stream = builder.stream()
+    self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.video_enabled)
 
-    self.is_body = "testJoystick" in body.bridge_services_in
-
+    # start proxies
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = body.bridge_services_in
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
-    self.bitrate_controller: LivestreamBitrateController | None = None
     if len(body.bridge_services_in) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.enabled)
-    self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.enabled)
+      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.video_enabled)
 
+    # async tasks helpers
     self.run_task: asyncio.Task | None = None
+    self.background_tasks: list[asyncio.Task] = []
     self._cleanup_lock = asyncio.Lock()
     self._cleanup_done = False
+
+    # logger
     self.logger = logging.getLogger("webrtcd")
     cloudlog.warning(
       "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s",
@@ -293,15 +116,13 @@ class StreamSession:
             if self.bitrate_controller is not None:
               self.bitrate_controller.set_quality(payload["data"]["quality"])
           case "livestreamVideoEnable":
-            enabled = payload["data"]["enabled"]
-            self.enabled = enabled
-            for track in self.video_tracks:
-              track.enable(enabled)
+            video_enabled = payload["data"]["enabled"]
+            self.video_enabled = video_enabled
             if self.outgoing_bridge is not None:
-              self.outgoing_bridge.enable(enabled)
+              self.outgoing_bridge.enable(video_enabled)
             if self.bitrate_controller is not None:
-              self.bitrate_controller.enable(enabled)
-            if not enabled:
+              self.bitrate_controller.enable(video_enabled)
+            if not video_enabled:
               self.params.put("LivestreamRequestKeyframe", True)
           case "clockSync":
             pong = json.dumps({"type": "clockSync", "data": {
@@ -334,8 +155,6 @@ class StreamSession:
 
   async def run(self):
     try:
-      self.params.put("LivestreamRequestKeyframe", True)
-
       # avoid datachannel race by adding messange_handler immediately
       self.stream.set_message_handler(self.message_handler)
 
@@ -346,9 +165,9 @@ class StreamSession:
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)
-          self.outgoing_bridge.start()
+          self.background_tasks.append(asyncio.create_task(self.outgoing_bridge.run()))
       if self.bitrate_controller is not None:
-        self.bitrate_controller.start()
+        self.background_tasks.append(asyncio.create_task(self.bitrate_controller.run()))
 
       with cloudlog.ctx(session_id=self.identifier):
         cloudlog.warning("webrtcd.session.connected")
@@ -371,10 +190,10 @@ class StreamSession:
         return
       self._cleanup_done = True
       self.params.put("LivestreamRequestKeyframe", False)
-      if self.bitrate_controller is not None:
-        await self.bitrate_controller.stop()
-      if self.outgoing_bridge is not None:
-        await self.outgoing_bridge.stop()
+      for task in self.background_tasks:
+        task.cancel()
+      await asyncio.gather(*self.background_tasks, return_exceptions=True)
+      self.background_tasks.clear()
       for track in self.video_tracks:
         track.stop()
       self.video_tracks.clear()
