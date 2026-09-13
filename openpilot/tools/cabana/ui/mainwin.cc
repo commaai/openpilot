@@ -716,12 +716,16 @@ void MainWindow::drawStatusBar() {
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
   const float pad = ImGui::GetStyle().WindowPadding.x;
-  const float progress_width = std::min(300.0f, std::max(0.0f, width - 2 * pad));
-  const float progress_x = width - pad - progress_width;
-  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : width - pad;
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  const float fps_x = std::max(pad, width - pad - ImGui::CalcTextSize("999 FPS").x);
+  popMonoFont();
+  const float progress_width = std::min(300.0f, std::max(0.0f, fps_x - pad - 20.0f));
+  const float progress_x = fps_x - progress_width - 10.0f;
+  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : fps_x - 10.0f;
   ImGui::PushClipRect(min, ImVec2(min.x + std::max(pad, message_end), min.y + ImGui::GetWindowHeight()), true);
   ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
+  const float text_y = ImGui::GetCursorPosY();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
   auto &bar = status_bar_;
   if (!bar.message.empty() && (bar.message_until == 0 || ImGui::GetTime() < bar.message_until)) {
@@ -745,6 +749,12 @@ void MainWindow::drawStatusBar() {
     ImGui::PopFont();
     ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
+  ImGui::SameLine(fps_x);
+  ImGui::SetCursorPosY(text_y);
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  ImGui::Text("%3.0f FPS", ImGui::GetIO().Framerate);
+  popMonoFont();
+  ImGui::SetItemTooltip("UI rendering rate (frames per second)");
   ImGui::EndChild();
   ImGui::PopStyleColor();
 }
@@ -789,7 +799,7 @@ void MainWindow::drawDockspace() {
 
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
-  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
+  const float status_height = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
   if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
@@ -815,7 +825,7 @@ void MainWindow::drawDockspace() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();
-  if (!full_screen_) drawStatusBar();
+  drawStatusBar();
   ImGui::End();
 }
 
