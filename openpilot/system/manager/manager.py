@@ -111,7 +111,8 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates'], poll='deviceState')
+  retry_services = ['onroadEvents', 'selfdriveState', 'carControl', 'carState', 'chestnutState']
+  sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates'] + retry_services, poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
   params.put_bool("IsOffroad", True, block=True)
@@ -119,6 +120,7 @@ def manager_thread() -> None:
 
   started_prev = False
   ignition_prev = False
+  model_retry_at = 0  # 0: unused, positive: pending timestamp, -1: consumed
 
   while True:
     sm.update(1000)
@@ -132,11 +134,33 @@ def manager_thread() -> None:
 
     ignition = any(ps.ignitionLine or ps.ignitionCan for ps in sm['pandaStates'] if ps.pandaType != log.PandaState.PandaType.unknown)
     if ignition and not ignition_prev:
+      model_retry_at = 0
       params.clear_all(ParamKeyFlag.CLEAR_ON_IGNITION_ON)
 
     # update offroad state for services that don't subscribe to deviceState
     if started != started_prev:
       params.put_bool("IsOffroad", not started, block=True)
+
+    modeld = managed_processes['modeld']
+    if (started and modeld.enabled and 'modeld' not in ignore and not modeld.shutting_down
+        and modeld.proc is not None and modeld.proc.is_alive()
+        and params.get_bool('ChestnutLoading') and params.get('ChestnutActive') is False):
+      if model_retry_at == 0:
+        model_retry_at = time.monotonic_ns()
+      if model_retry_at == -1 or time.monotonic_ns() - model_retry_at >= 60_000_000_000:
+        model_retry_at = -1
+        params.put_bool('ChestnutLoading', False, block=True)
+      elif (sm.all_alive(retry_services) and sm.all_valid(retry_services)
+            and sm.logMonoTime['onroadEvents'] > model_retry_at
+            and any(e.name == log.OnroadEvent.EventName.bigModelLoading for e in sm['onroadEvents'])
+            and sm.logMonoTime['selfdriveState'] > sm.logMonoTime['onroadEvents'] and not sm['selfdriveState'].enabled
+            and sm.logMonoTime['carControl'] > sm.logMonoTime['onroadEvents']
+            and not sm['carControl'].enabled and not sm['carControl'].latActive and not sm['carControl'].longActive
+            and sm.logMonoTime['carState'] > model_retry_at and sm['carState'].standstill
+            and sm.logMonoTime['chestnutState'] > model_retry_at and sm['chestnutState'].pcieLtssm == 0x78):
+        model_retry_at = -1
+        modeld.stop()
+        params.remove('ChestnutActive')
 
     started_prev = started
     ignition_prev = ignition
