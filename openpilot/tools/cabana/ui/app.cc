@@ -28,45 +28,11 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
 }
-// imgui releases every mouse button when the window loses focus, which aborts a panel tear-off drag and
-// docks the panel back. X11 keeps delivering the drag through the implicit grab, so hold a focus loss back
-// while a button is down and deliver it after the release (see deliverPendingFocusLoss).
-bool g_focus_loss_pending = false;
-// macOS drops the button on its own when the focus moves, and holding the loss back there swallowed the
-// first click in a popup: the click makes the popup's window key, the main window's loss lands on the
-// release and imgui clears its mouse state before it sees that release
-void windowFocusCallback(GLFWwindow *w, int f) {
-#ifndef __APPLE__
-  if (!f) {
-    g_focus_loss_pending = true;
-    return;
-  }
-#endif
-  g_focus_loss_pending = false;
-  ImGui_ImplGlfw_WindowFocusCallback(w, f);
-}
-void deliverPendingFocusLoss() {
-  if (!g_focus_loss_pending) return;
-  for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
-    auto *window = static_cast<GLFWwindow *>(viewport->PlatformHandle);
-    if (window == nullptr) continue;
-    if (glfwGetWindowAttrib(window, GLFW_FOCUSED)) {
-      g_focus_loss_pending = false;
-      return;
-    }
-    for (int b = GLFW_MOUSE_BUTTON_1; b <= GLFW_MOUSE_BUTTON_LAST; ++b) {
-      if (glfwGetMouseButton(window, b) == GLFW_PRESS) return;
-    }
-  }
-  g_focus_loss_pending = false;
-  ImGui_ImplGlfw_WindowFocusCallback(static_cast<GLFWwindow *>(ImGui::GetMainViewport()->PlatformHandle), GLFW_FALSE);
-}
 
 void hookViewportCallbacks() {
   for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
     if (viewport->PlatformHandle == nullptr || viewport == ImGui::GetMainViewport()) continue;
     glfwSetKeyCallback((GLFWwindow *)viewport->PlatformHandle, keyCallback);
-    glfwSetWindowFocusCallback((GLFWwindow *)viewport->PlatformHandle, windowFocusCallback);
   }
 }
 
@@ -93,7 +59,6 @@ void paceFrame() {
 
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
-  deliverPendingFocusLoss();
   utils::drainMainThreadQueue();
 
   int fb_w = 0, fb_h = 0;
@@ -179,7 +144,6 @@ public:
       throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
     }
     glfwSetKeyCallback(window, keyCallback);
-    glfwSetWindowFocusCallback(window, windowFocusCallback);
     if (!ImGui_ImplOpenGL3_Init("#version 330")) {
       ImGui_ImplGlfw_Shutdown();
       ImPlot::DestroyContext();
