@@ -18,8 +18,8 @@
 
 namespace {
 
-constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
 constexpr const char *AUTH_MODULE = "openpilot.tools.lib.auth";
+constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
 
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
