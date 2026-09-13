@@ -735,6 +735,7 @@ void MainWindow::drawStatusBar() {
   ImGui::PopClipRect();
   if (bar.progress_visible && progress_width > 0) {
     const float progress_height = 16.0f;
+    ImGui::PushFont(ImGui::GetFont(), 12.0f);
     const std::string percentage = std::to_string((int)(bar.progress_value * 100)) + "%";
     const char *label = bar.progress_text.c_str();
     const float text_width = progress_width - 2 * ImGui::GetStyle().FramePadding.x;
@@ -743,6 +744,7 @@ void MainWindow::drawStatusBar() {
     ImGui::SameLine(progress_x);
     ImGui::SetCursorPosY((ImGui::GetWindowHeight() - progress_height) / 2.0f);
     ImGui::ProgressBar(bar.progress_value, ImVec2(progress_width, progress_height), label);
+    ImGui::PopFont();
     ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
   ImGui::EndChild();
