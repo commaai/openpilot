@@ -1,5 +1,6 @@
 #include "tools/cabana/ui/dialogs/routesdialog.h"
 
+#include <algorithm>
 #include <cmath>
 #include <utility>
 #include <thread>
@@ -174,49 +175,79 @@ void RoutesDialog::signIn(const std::string &provider) {
 }
 
 void RoutesDialog::drawLogin() {
-  const auto &style = ImGui::GetStyle();
+  const auto &p = palette();
+  const char *providers[] = {"Google", "Apple", "GitHub"};
+  const char *methods[] = {"google", "apple", "github"};
+  const char *icons[] = {"\xef\x8f\xb0", "\xef\x99\x9b", "\xef\x8f\xad"};
+  IconTextButtonOptions button_options{.height = 44.0f, .rounding = 8.0f, .icon_gap = 16.0f, .center_content = true};
+  float button_width = iconTextButtonWidth("", "Choose another method", button_options);
+  for (int i = 0; i < 3; ++i) {
+    const std::string label = std::string("Sign in with ") + providers[i];
+    button_width = std::max(button_width, iconTextButtonWidth(icons[i], label, button_options));
+    button_options.label_width = std::max(button_options.label_width, ImGui::CalcTextSize(label.c_str()).x);
+  }
+  button_width += ImGui::GetStyle().FramePadding.x * 4;
   // Keep the footer anchored while longer errors scroll inside the content area.
-  const float footer = ImGui::GetFrameHeightWithSpacing() + style.ItemSpacing.y;
+  const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
   ImGui::BeginChild("login_content", ImVec2(0, -footer));
-  pushBoldFont();
+  ImGui::Spacing();
+  ImGui::Indent(16);
+  ImGui::PushFont(boldFont(), 28.0f);
   ImGui::TextUnformatted("Open your routes in Cabana");
-  popBoldFont();
-  ImGui::PushTextWrapPos(0.0f);
-  const float controls_y = ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() * 2 + style.ItemSpacing.y;
-  const float button_width = ImGui::GetContentRegionAvail().x;
+  ImGui::PopFont();
+  ImGui::Spacing();
+  ImGui::PushTextWrapPos(ImGui::GetWindowWidth() - 28);
+  const float controls_y = ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() * 2 + ImGui::GetStyle().ItemSpacing.y * 2 + 12;
+  const float buttons_x = ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - 16 - button_width) * 0.5f;
   if (auth_abort_) {
     ImGui::TextWrapped("Sign in with %s in your browser, then return to Cabana to choose a device and route.", s_.provider.c_str());
     ImGui::SetCursorPosY(controls_y);
+    ImGui::BeginChild("auth_status", ImVec2(-16, 76), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+    const char *status = "Waiting for browser sign-in";
+    const char *timeout = "This request expires after 3 minutes.";
     const float spinner_size = ImGui::GetFontSize();
+    const float status_width = spinner_size + 8 + ImGui::CalcTextSize(status).x;
+    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - status_width) * 0.5f, 16));
     const ImVec2 pos = ImGui::GetCursorScreenPos();
     const float angle = std::fmod(ImGui::GetTime() * 4.0, 2.0 * IM_PI);
     auto *draw_list = ImGui::GetWindowDrawList();
-    draw_list->PathArcTo(ImVec2(pos.x + spinner_size * 0.5f, pos.y + ImGui::GetFrameHeight() * 0.5f),
+    draw_list->PathArcTo(ImVec2(pos.x + spinner_size * 0.5f, pos.y + spinner_size * 0.5f),
                         spinner_size * 0.35f, angle, angle + IM_PI * 1.5f, 24);
-    draw_list->PathStroke(ImGui::GetColorU32(palette().accent), 0, 2.0f);
-    ImGui::AlignTextToFramePadding();
-    ImGui::Dummy(ImVec2(spinner_size, ImGui::GetFrameHeight()));
-    ImGui::SameLine(0, style.ItemInnerSpacing.x);
-    ImGui::TextUnformatted("Waiting for browser sign-in");
-    ImGui::TextUnformatted("This request expires after 3 minutes.");
-    // Keep the alternate method button in the last provider's row.
-    ImGui::SetCursorPosY(controls_y + 2 * ImGui::GetFrameHeightWithSpacing());
-    if (ImGui::Button("Choose another method", ImVec2(button_width, 0))) {
+    draw_list->PathStroke(ImGui::GetColorU32(p.accent), 0, 2.0f);
+    ImGui::Dummy(ImVec2(spinner_size, spinner_size));
+    ImGui::SameLine(0, 8);
+    ImGui::TextUnformatted(status);
+    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(timeout).x) * 0.5f, 40));
+    ImGui::TextUnformatted(timeout);
+    ImGui::EndChild();
+    // Align the alternate-method button with the last provider button.
+    ImGui::SetCursorPosY(controls_y + 2 * (button_options.height + ImGui::GetStyle().ItemSpacing.y * 2));
+    ImGui::SetCursorPosX(buttons_x);
+    if (iconTextButton("auth_retry", "", "Choose another method", button_width, button_options)) {
       *auth_abort_ = true;
       auth_abort_.reset();
     }
   } else {
     ImGui::TextWrapped("Use your comma account to browse recorded drives and open a route for analysis.");
     ImGui::SetCursorPosY(controls_y);
-    const char *providers[] = {"Google", "Apple", "GitHub"};
-    const char *methods[] = {"google", "apple", "github"};
-    const char *icons[] = {"\xef\x8f\xb0", "\xef\x99\x9b", "\xef\x8f\xad"};
     for (int i = 0; i < 3; ++i) {
-      if (iconTextButton(methods[i], icons[i], std::string("Sign in with ") + providers[i], button_width)) signIn(methods[i]);
+      ImGui::SetCursorPosX(buttons_x);
+      if (iconTextButton(methods[i], icons[i], std::string("Sign in with ") + providers[i],
+                         button_width, button_options)) signIn(methods[i]);
+      ImGui::Spacing();
     }
-    ImGui::TextWrapped("%s", s_.auth_error.empty() ? "Use the comma account paired with your device." : s_.auth_error.c_str());
+    if (!s_.auth_error.empty()) {
+      ImGui::TextWrapped("%s", s_.auth_error.c_str());
+    } else {
+      const char *hint = "Use the comma account paired with your device.";
+      const float width = ImGui::GetContentRegionAvail().x - 16;
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (width - ImGui::CalcTextSize(hint).x) * 0.5f));
+      ImGui::TextWrapped("%s", hint);
+    }
   }
   ImGui::PopTextWrapPos();
+  ImGui::Unindent(16);
   ImGui::EndChild();
   ImGui::Separator();
   bool rejected = false;
