@@ -142,8 +142,7 @@ def manager_thread() -> None:
       params.put_bool("IsOffroad", not started, block=True)
 
     modeld = managed_processes['modeld']
-    if (started and modeld.enabled and 'modeld' not in ignore and not modeld.shutting_down
-        and modeld.proc is not None and modeld.proc.is_alive()
+    if (started and not modeld.shutting_down and modeld.proc is not None and modeld.proc.is_alive()
         and params.get_bool('ChestnutLoading') and params.get('ChestnutActive') is False):
       if model_retry_at == 0:
         model_retry_at = time.monotonic_ns()
@@ -154,8 +153,7 @@ def manager_thread() -> None:
             and sm.logMonoTime['onroadEvents'] > model_retry_at
             and any(e.name == log.OnroadEvent.EventName.bigModelLoading for e in sm['onroadEvents'])
             and sm.logMonoTime['selfdriveState'] > sm.logMonoTime['onroadEvents'] and not sm['selfdriveState'].enabled
-            and sm.logMonoTime['carControl'] > sm.logMonoTime['onroadEvents']
-            and not sm['carControl'].enabled and not sm['carControl'].latActive and not sm['carControl'].longActive
+            and sm.logMonoTime['carControl'] > sm.logMonoTime['onroadEvents'] and not sm['carControl'].enabled
             and sm.logMonoTime['carState'] > model_retry_at and sm['carState'].standstill
             and sm.logMonoTime['chestnutState'] > model_retry_at and sm['chestnutState'].pcieLtssm == 0x78):
         model_retry_at = -1
