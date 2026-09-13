@@ -690,6 +690,12 @@ float SignalView::minimumWidth() {
   return left_width + style.ItemSpacing.x + toolBarRightWidth("00:00") + (style.WindowPadding.x + style.ChildBorderSize) * 2;
 }
 
+float SignalView::minimumHeight() {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::GetFrameHeight() + style.ItemSpacing.y + signalRowHeight() * 3 +
+         (style.WindowPadding.y + style.ChildBorderSize + CONTROL_OUTLINE_PADDING) * 2;
+}
+
 void SignalView::draw() {
   ImGui::PushStyleColor(ImGuiCol_ChildBg, palette().surface);
   if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders,
