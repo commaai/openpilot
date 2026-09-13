@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -205,11 +206,10 @@ bool squareIconButton(const char *id, const char *icon) {
   ImFontBaked *baked = ImGui::GetFont()->GetFontBaked(size);
   if (const ImFontGlyph *g = baked->FindGlyph((ImWchar)codepoint)) {
     const GlyphInk ink = cachedGlyphInk(g, size, codepoint);
-    // Preserve half-logical-pixel positions on HiDPI displays.
-    const float snap = std::max(1.0f, ImGui::GetIO().DisplayFramebufferScale.x);
-    auto snapped = [snap](float v) { return std::round(v * snap) / snap; };
-    const ImVec2 pos(snapped(r.GetCenter().x - (ink.x0 + ink.x1) * 0.5f), snapped(r.GetCenter().y - (ink.y0 + ink.y1) * 0.5f));
-    // AddText truncates to whole logical pixels, undoing the framebuffer snapping above.
+    // Keep the exact ink center, including half pixels when glyph and button sizes
+    // have different parity. Rounding the origin shifts small icons off center.
+    const ImVec2 pos(r.GetCenter().x - (ink.x0 + ink.x1) * 0.5f, r.GetCenter().y - (ink.y0 + ink.y1) * 0.5f);
+    // AddText truncates the origin, so draw the atlas glyph directly.
     ImGui::GetWindowDrawList()->AddImage(ImGui::GetIO().Fonts->TexRef, ImVec2(pos.x + g->X0, pos.y + g->Y0),
                                          ImVec2(pos.x + g->X1, pos.y + g->Y1), ImVec2(g->U0, g->V0), ImVec2(g->U1, g->V1),
                                          ImGui::GetColorU32(ImGuiCol_Text));
@@ -323,10 +323,43 @@ float inputIntWidth(int digits) {
          (ImGui::GetFrameHeight() + style.ItemSpacing.x) * 2;
 }
 
+bool stepButton(const char *id, bool increment, const char *tooltip) {
+  return iconButton(id, increment ? icon::PLUS_LG : icon::DASH_LG, tooltip);
+}
+
 bool inputInt(const char *label, int *value, int step, int step_fast, ImGuiInputTextFlags flags) {
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImGui::GetStyle().ItemSpacing);
-  const bool changed = ImGui::InputInt(label, value, step, step_fast, flags);
-  ImGui::PopStyleVar();
+  if (step <= 0) return ImGui::InputInt(label, value, 0, 0, flags);
+
+  const float spacing = ImGui::GetStyle().ItemSpacing.x;
+  const float width = ImGui::CalcItemWidth();
+  ImGui::BeginGroup();
+  ImGui::PushID(label);
+  ImGui::SetNextItemWidth(std::max(1.0f, width - 2 * (iconButtonWidth() + spacing)));
+  bool changed = ImGui::InputInt("##value", value, 0, 0, flags);
+  ImGui::BeginDisabled(flags & ImGuiInputTextFlags_ReadOnly);
+  ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
+  for (bool increment : {false, true}) {
+    ImGui::SameLine(0.0f, spacing);
+    if (stepButton(increment ? "increment" : "decrement", increment)) {
+      const int amount = ImGui::GetIO().KeyCtrl && step_fast > 0 ? step_fast : step;
+      const int next = std::clamp<int64_t>(int64_t(*value) + (increment ? int64_t(amount) : -int64_t(amount)),
+                                          std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+      if (next != *value) {
+        *value = next;
+        changed = true;
+      }
+    }
+  }
+  ImGui::PopItemFlag();
+  ImGui::EndDisabled();
+  const char *label_end = ImGui::FindRenderedTextEnd(label);
+  if (label != label_end) {
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextUnformatted(label, label_end);
+  }
+  ImGui::PopID();
+  ImGui::EndGroup();
+  if (changed) ImGui::MarkItemEdited(ImGui::GetItemID());
   return changed;
 }
 

@@ -34,22 +34,8 @@ void formRow(FormLabel label, float label_width) {
 }
 
 void settingInputInt(const char *id, int *value, int step, int step_fast, int minimum, int maximum) {
-  const float spacing = ImGui::GetStyle().ItemSpacing.x;
-  const float width = ImGui::CalcItemWidth();
-  ImGui::PushID(id);
-  ImGui::BeginGroup();
-  ImGui::SetNextItemWidth(width - 2 * (iconButtonWidth() + spacing));
-  ImGui::InputInt("##value", value, 0);
+  inputInt((std::string("##") + id).c_str(), value, step, step_fast);
   *value = std::clamp(*value, minimum, maximum);
-  const int increment = ImGui::GetIO().KeyCtrl ? step_fast : step;
-  ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
-  ImGui::SameLine(0.0f, spacing);
-  if (iconButton("decrement", icon::DASH_LG)) *value = std::max(minimum, *value - increment);
-  ImGui::SameLine(0.0f, spacing);
-  if (iconButton("increment", icon::PLUS_LG)) *value = std::min(maximum, *value + increment);
-  ImGui::PopItemFlag();
-  ImGui::EndGroup();
-  ImGui::PopID();
 }
 
 }  // namespace

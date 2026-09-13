@@ -83,6 +83,7 @@ inline std::string shortcut(const char *keys) { return std::string(MOD_KEY) + "+
 // Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
 float iconButtonWidth();
+bool stepButton(const char *id, bool increment, const char *tooltip = nullptr);
 bool iconTextButton(const char *id, const char *icon, const std::string &text, float width = 0.0f);
 float iconTextButtonWidth(const char *icon, const std::string &text);
 

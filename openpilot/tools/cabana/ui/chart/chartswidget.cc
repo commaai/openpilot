@@ -165,7 +165,7 @@ void ChartsWidget::drawToolBar() {
   // the labels are captured by reference, they outlive the draw calls below
   std::vector<ToolbarItem> items;
   items.push_back({iconButtonWidth(), [this]() {
-    if (iconButton("new_plot_btn", icon::PLUS_LG, "New Chart")) newChart();
+    if (stepButton("new_plot_btn", true, "New Chart")) newChart();
   }});
   items.push_back({iconButtonWidth(), [this]() {
     if (iconButton("new_tab_btn", icon::WINDOW_PLUS, "New Tab")) newTab();

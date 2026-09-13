@@ -134,10 +134,11 @@ void ChartView::manageSignals() {
 
 void ChartView::updateLayout() {
   const ImVec2 grip = ImGui::CalcTextSize(icon::GRIP_HORIZONTAL);
-  const ImVec2 top_left = layout_.rect.Min;
+  const ImVec2 padding = ImGui::GetStyle().WindowPadding;
+  const ImVec2 top_left = layout_.rect.Min + padding;
   layout_.move_icon_rect = ImRect(top_left, top_left + grip);
   const ImVec2 btn_size(iconButtonWidth(), iconButtonWidth());
-  const ImVec2 close_min(layout_.rect.Max.x - btn_size.x, top_left.y);
+  const ImVec2 close_min(layout_.rect.Max.x - padding.x - btn_size.x, top_left.y);
   layout_.close_btn_rect = ImRect(close_min, close_min + btn_size);
   const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemSpacing.x, top_left.y);
   layout_.manage_btn_rect = ImRect(manage_min, manage_min + btn_size);
@@ -169,9 +170,7 @@ void ChartView::updateLayout() {
   }
 
   // add top space for the legend and signal values
-  int adjust_top = (y + row_height) - top_left.y;
-  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y);
-  layout_.header_bottom = layout_.rect.Min.y + adjust_top + ImGui::GetStyle().ItemSpacing.y;
+  layout_.header_bottom = std::max<float>(y + row_height, layout_.manage_btn_rect.Max.y) + ImGui::GetStyle().ItemSpacing.y;
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -553,8 +552,8 @@ void ChartView::drawStaticLayer() {
 }
 
 void ChartView::drawAxes() {
-  ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x, layout_.header_bottom));
-  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - ImGui::GetStyle().ItemSpacing.y, 10.0f);
+  ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x + ImGui::GetStyle().WindowPadding.x, layout_.header_bottom));
+  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - ImGui::GetStyle().WindowPadding.y, 10.0f);
   ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0.0f, AXIS_X_TOP_MARGIN));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
@@ -568,7 +567,7 @@ void ChartView::drawAxes() {
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
   // reserve room for the right half of the last x tick label
   const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + 5;
-  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
+  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.rect.GetWidth() - 2 * ImGui::GetStyle().WindowPadding.x - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min_, x_max_, ImPlotCond_Always);
