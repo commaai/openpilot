@@ -229,12 +229,14 @@ def main(demo=False):
     big_model = None
     def load_big():
       nonlocal big_model
-      try:
-        m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-        m.warmup()
-        big_model = m
-      except Exception:
-        cloudlog.exception("big model load failed")
+      for _ in range(2):
+        try:
+          m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
+          m.warmup()
+          big_model = m
+          return
+        except Exception:
+          cloudlog.exception("big model load failed")
     loader = threading.Thread(target=load_big, daemon=True)
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
