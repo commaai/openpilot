@@ -718,7 +718,9 @@ void MainWindow::drawStatusBar() {
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
   const float pad = ImGui::GetStyle().WindowPadding.x;
-  const float fps_x = std::max(pad, width - pad - ImGui::CalcTextSize("999.9 FPS").x);
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  const float fps_x = std::max(pad, width - pad - ImGui::CalcTextSize("999 FPS").x);
+  popMonoFont();
   const float progress_width = std::min(300.0f, std::max(0.0f, fps_x - pad - 20.0f));
   const float progress_x = fps_x - progress_width - 10.0f;
   const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : fps_x - 10.0f;
@@ -749,7 +751,9 @@ void MainWindow::drawStatusBar() {
     ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
   ImGui::SameLine(fps_x);
-  ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  ImGui::Text("%3.0f FPS", ImGui::GetIO().Framerate);
+  popMonoFont();
   ImGui::SetItemTooltip("UI rendering rate (frames per second)");
   ImGui::EndChild();
   ImGui::PopStyleColor();
