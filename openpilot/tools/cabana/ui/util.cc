@@ -656,7 +656,7 @@ bool fusionSliderInt(const char *label, int *v, int min, int max, float width) {
   const float hx = x0 + (x1 - x0) * t;
   ImDrawList *dl = ImGui::GetWindowDrawList();
   const float groove_y0 = cy - groove_h * 0.5f, groove_y1 = cy + groove_h * 0.5f;
-  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(bb_max.x, groove_y1), u32(palette().separator), groove_h * 0.5f);
+  dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(bb_max.x, groove_y1), u32(palette().slider_track), groove_h * 0.5f);
   dl->AddRectFilled(ImVec2(bb_min.x, groove_y0), ImVec2(hx, groove_y1), u32(palette().accent), groove_h * 0.5f);
   drawSliderHandle(dl, ImRect(ImVec2(hx - SLIDER_LENGTH * 0.5f, cy - handle_h * 0.5f),
                               ImVec2(hx + SLIDER_LENGTH * 0.5f, cy + handle_h * 0.5f)));
