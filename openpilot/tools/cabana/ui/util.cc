@@ -565,8 +565,7 @@ void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, flo
         (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) {
       ImGui::OpenPopup("toolbar_extension_menu");
     }
-    // the popup opens inward: its right edge is aligned with the button so it stays inside the window
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y), ImGuiCond_Always, ImVec2(1, 0));
+    dropdown::PositionBelowItem("toolbar_extension_menu", true);
     if (dropdown::BeginPopup("toolbar_extension_menu")) {
       for (size_t i = visible; i < items.size(); ++i) {
         if (!items[i].in_menu) continue;
@@ -624,8 +623,7 @@ bool menuButton(const char *id, const std::string &text, const char *popup_id, b
                                                 ImVec2(x + MENU_ARROW_SIZE * 0.5f, baseline),
                                                 ImGui::GetColorU32(ImGuiCol_TextDisabled));
   if (clicked && !popup_open) ImGui::OpenPopup(popup_id);
-  // the menu drops down from below the button, not at the mouse cursor
-  ImGui::SetNextWindowPos(ImVec2(min.x, ImGui::GetItemRectMax().y), ImGuiCond_Always);
+  dropdown::PositionBelowItem(popup_id);
   return clicked;
 }
 
