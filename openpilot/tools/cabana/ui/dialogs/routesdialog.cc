@@ -247,16 +247,19 @@ void RoutesDialog::drawLogin() {
   } else {
     ImGui::TextWrapped("%s", intro.c_str());
     ImGui::SetCursorPosY(controls_y);
+    const char *selected_method = nullptr;
     for (int i = 0; i < 3; ++i) {
       ImGui::SetCursorPosX(buttons_x);
       if (iconTextButton(methods[i], icons[i], std::string("Sign in with ") + providers[i],
-                         button_width, button_options)) signIn(methods[i]);
+                         button_width, button_options)) selected_method = methods[i];
       ImGui::Spacing();
     }
     const char *message = s_.auth_error.empty() ? hint : s_.auth_error.c_str();
     const float width = ImGui::GetContentRegionAvail().x - 16;
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (width - ImGui::CalcTextSize(message).x) * 0.5f));
     ImGui::TextWrapped("%s", message);
+    // Finish drawing this state before signIn clears its error text.
+    if (selected_method) signIn(selected_method);
   }
   ImGui::PopTextWrapPos();
   ImGui::Unindent(16);
