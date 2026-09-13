@@ -165,7 +165,7 @@ void draw() {
     const std::string label = (is_dir ? std::string(icon::FOLDER) : std::string(icon::FILE_EARMARK)) + "  " + name;
     ImGui::PushID(static_cast<int>(i));
     const bool selected = !is_dir && name == s.filename;
-    if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
+    if (selectable(label.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
       const bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
       if (is_dir) {
         if (double_clicked) {

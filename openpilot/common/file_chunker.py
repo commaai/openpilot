@@ -24,6 +24,7 @@ def chunk_file(path, targets):
   manifest_path, *chunk_paths = targets
   actual_num_chunks = max(1, math.ceil(os.path.getsize(path) / CHUNK_SIZE))
   assert len(chunk_paths) >= actual_num_chunks, f"Allowed {len(chunk_paths)} chunks but needs at least {actual_num_chunks}, for path {path}"
+  Path(manifest_path).unlink(missing_ok=True)
   with open(path, 'rb') as f:
     for chunk_path in chunk_paths:
       with open(chunk_path, 'wb') as out:

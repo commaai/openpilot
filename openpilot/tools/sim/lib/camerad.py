@@ -4,6 +4,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcServer
 from openpilot.cereal import messaging
 
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.tools.sim.lib.common import W, H
 
 
@@ -23,17 +24,20 @@ def rgb_to_nv12(rgb):
   g_sub = (g[0::2, 0::2] + g[0::2, 1::2] + g[1::2, 0::2] + g[1::2, 1::2] + 2) >> 2
   b_sub = (b[0::2, 0::2] + b[0::2, 1::2] + b[1::2, 0::2] + b[1::2, 1::2] + 2) >> 2
 
-  # U and V planes
+  # Interleave U and V planes for NV12 format
   u = np.clip((b_sub * 56 - g_sub * 37 - r_sub * 19 + 0x8080) >> 8, 0, 255).astype(np.uint8)
   v = np.clip((r_sub * 56 - g_sub * 47 - b_sub * 9 + 0x8080) >> 8, 0, 255).astype(np.uint8)
+  uv = np.stack((u, v), axis=-1).reshape(h // 2, w)
 
-  # Interleave UV for NV12 format
-  uv = np.empty((h // 2, w), dtype=np.uint8)
-  uv[:, 0::2] = u
-  uv[:, 1::2] = v
+  # Copy the visible image into the aligned NV12 buffer
+  stride, y_height, uv_height, size = get_nv12_info(w, h)
+  nv12 = np.zeros(size, dtype=np.uint8)
+  planes = nv12[:stride * (y_height + uv_height)].reshape(-1, stride)
 
-  return np.concatenate([y.ravel(), uv.ravel()]).tobytes()
+  planes[:h, :w] = y
+  planes[y_height:y_height + h // 2, :w] = uv
 
+  return nv12.tobytes()
 
 class Camerad:
   """Simulates the camerad daemon"""
@@ -44,9 +48,12 @@ class Camerad:
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H)
+    stride, y_height, _, size = get_nv12_info(W, H)
+    buffer_args = (5, W, H, size, stride, stride * y_height)
+
+    self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_NARROW_ROAD, *buffer_args)
     if dual_camera:
-      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, W, H)
+      self.vipc_server.create_buffers_with_sizes(VisionStreamType.VISION_STREAM_WIDE_ROAD, *buffer_args)
 
     self.vipc_server.start_listener()
 
@@ -65,10 +72,9 @@ class Camerad:
     return rgb_to_nv12(rgb)
 
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
-    eof = int(frame_id * 0.05 * 1e9)
-    self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
-
     dat = messaging.new_message(pub_type, valid=True)
+    self.vipc_server.send(yuv_type, yuv, frame_id, dat.logMonoTime, dat.logMonoTime)
+
     msg = {
       "frameId": frame_id,
       "transform": [1.0, 0.0, 0.0,

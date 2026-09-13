@@ -34,3 +34,7 @@ jobs:
     - run: ./tools/op.sh setup
     - name: Push master-ci
       run: BRANCH=__nightly tools/release/build_stripped.sh
+    - name: Push chestnut nightly
+      run: |
+        git lfs pull --exclude=''
+        INCLUDE_BIG_MODEL=1 BRANCH=__nightly-chestnut tools/release/build_stripped.sh

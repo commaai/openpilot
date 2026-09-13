@@ -108,7 +108,7 @@ void RoutesDialog::draw() {
   }
   for (int i = 0; i < static_cast<int>(s_.routes.size()); ++i) {
     ImGui::PushID(i);
-    if (ImGui::Selectable(s_.routes[i].label.c_str(), s_.route_index == i, ImGuiSelectableFlags_AllowDoubleClick)) {
+    if (selectable(s_.routes[i].label.c_str(), s_.route_index == i, ImGuiSelectableFlags_AllowDoubleClick)) {
       s_.route_index = i;
       if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) accepted = true;
     }
