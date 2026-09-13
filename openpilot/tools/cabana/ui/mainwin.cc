@@ -138,11 +138,6 @@ void MainWindow::drawMenuBar() {
   const bool open = ImGui::BeginMainMenuBar();
   ImGui::PopStyleVar();
   if (!open) return;
-  {
-    const ImVec2 min = ImGui::GetWindowPos();
-    const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
-  }
   if (dropdown::BeginMenu("File")) {
     drawFileMenu();
     dropdown::EndMenu();
@@ -181,6 +176,9 @@ void MainWindow::drawMenuBar() {
     if (dropdown::Item("Help", "F1")) toggleHelp();
     dropdown::EndMenu();
   }
+  const ImVec2 min = ImGui::GetWindowPos();
+  const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
+  ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
   ImGui::EndMainMenuBar();
 }
 
