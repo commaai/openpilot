@@ -904,16 +904,18 @@ void MainWindow::drawVideoPanel() {
       }
     }
     // Replay uses a splitter for the gap; live streams use normal item spacing.
-    if (!charts_floating_ && !live) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
     if (video_h > 0.0f) {
       ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
       help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       video_widget_->draw();
       ImGui::EndChild();
+      // The splitter supplies the pane gap; keep normal spacing inside the video child.
+      if (!charts_floating_ && !live) ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y);
     } else {
       video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
     }
     if (!charts_floating_ && !live) {
+      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
       ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, splitter_h));
       const bool splitter_hovered = ImGui::IsItemHovered() && !live, splitter_active = ImGui::IsItemActive() && !live;
       if (splitter_active) {

@@ -38,6 +38,8 @@ bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flag
 // SetNextItemWidth includes the field and clear button. Returns true when text changes.
 bool clearableInput(const char *label, std::string *s, const char *hint = "", ImGuiInputTextCallback validator = nullptr);
 
+bool selectable(const char *label, bool selected, ImGuiSelectableFlags flags = 0, const ImVec2 &size = ImVec2(0, 0));
+
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items);
 
 // numeric items (bus ids, bus speeds) are formatted as they are drawn
@@ -48,7 +50,7 @@ inline bool comboBox(const char *label, int *index, const T *values, int count) 
   if (ImGui::BeginCombo(label, preview.c_str())) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
+      if (selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
@@ -81,6 +83,7 @@ inline std::string shortcut(const char *keys) { return std::string(MOD_KEY) + "+
 // Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
 float iconButtonWidth();
+bool stepButton(const char *id, bool increment, const char *tooltip = nullptr);
 bool iconTextButton(const char *id, const char *icon, const std::string &text, float width = 0.0f);
 float iconTextButtonWidth(const char *icon, const std::string &text);
 
@@ -112,6 +115,12 @@ ImGuiWindow *topPopupWindow();
 // [Cancel] [Accept], right aligned. reject_label = nullptr for an accept-only box. Escape rejects.
 bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, bool accept_enabled = true,
                    const char *reject_label = "Cancel");
+
+// Numeric inputs keep the same external gaps as other button rows. Width includes
+// a readable value plus both step buttons; use for compact fixed-width fields.
+float inputIntWidth(int digits);
+bool inputInt(const char *label, int *value, int step = 1, int step_fast = 100,
+              ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
 
 // horizontal header labels are centered. Returns the column a right click was released on, or -1.
 int tableHeadersRow();
@@ -166,15 +175,14 @@ struct ToolbarItem {
   std::function<void()> trigger;
   bool enabled = true;
   bool in_menu = true;  // false: left out of the ">>" menu (a separator)
-  bool tight = false;   // true: ItemInnerSpacing before it, it belongs to the previous item's group
   std::function<void()> submenu;  // set: the ">>" entry is a submenu with these items instead of an action
 };
 ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger,
-                          bool enabled = true, bool tight = false);
+                          bool enabled = true);
 // A drop-down button that opens `items` in a popup; in the overflow menu they become a submenu.
 // width 0: sized to the text.
 ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *label, std::function<void()> items,
-                        bool bold = false, bool tight = false, float width = 0.0f);
+                        bool bold = false, float width = 0.0f);
 float toolbarButtonWidth(const std::string &label);
 // the width of every item plus the spacing between neighbors and the two groups
 float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);

@@ -100,12 +100,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
   }
 
   size = sz;
-  CabanaColor line_color = color;
-  if (!isDarkTheme()) {
-    auto [h, s, v] = color.hsv();
-    line_color = CabanaColor::fromHsv(h, std::min(1.0f, s * 2.0f), v * 0.7f, color.a / 255.0f);
-  }
-  color_ = toImU32(line_color);
+  color_ = toImU32(sparklineColor(color));
   draw_individual_points_ = draw_individual_points;
   window_end_ = window_end;
   xscale_ = xscale;
