@@ -913,23 +913,34 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
-  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (iconButton("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
+  const bool selected = current_sig_ == sig && current_type_ == SignalModel::Item::Sig;
+  auto row_button = [selected](const char *id, const char *glyph) {
+    if (selected) {
+      ImGui::PushStyleColor(ImGuiCol_Text, palette().text_selected);
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, palette().header_active);
+      ImGui::PushStyleColor(ImGuiCol_ButtonActive, palette().header_active);
+    }
+    const bool clicked = iconButton(id, glyph);
+    if (selected) ImGui::PopStyleColor(3);
+    return clicked;
+  };
+  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, selected ? palette().header_active : ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (row_button("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model_.msgId(), sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
   if (checked) ImGui::PopStyleColor();
-  ImGui::PopStyleColor();  // restore the standard button background for removal
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nShift-click to add to the previously opened plot");
   const bool show_remove = current_sig_ == sig ||
       (ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(ImVec2(ImGui::GetWindowPos().x, rect.Min.y), rect.Max));
   if (show_remove) {
     ImGui::SameLine(0.0f, spacing);
-    if (iconButton("remove", icon::X_LG) && !editor_open_on_press_) {
+    if (row_button("remove", icon::X_LG) && !editor_open_on_press_) {
       pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
     }
     ImGui::SetItemTooltip("Remove signal");
   }
+  ImGui::PopStyleColor();
   ImGui::PopStyleVar();
 }
 
