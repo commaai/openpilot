@@ -507,8 +507,10 @@ void ChartView::draw(float width) {
   }
   ImGui::EndChild();
   // a chart scrolled out of the viewport draws no tip
-  const ImRect visible_rect = charts_widget_->chartVisibleRect(this);
-  if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw();
+  ImRect visible_rect = charts_widget_->chartVisibleRect(this);
+  visible_rect.ClipWith(ImRect(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y),
+                             ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y)));
+  if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw(visible_rect);
   ImGui::PopID();
 }
 

@@ -128,8 +128,9 @@ void TipLabel::updateLayout() {
   visible_ = false;
 }
 
-void TipLabel::draw() {
+void TipLabel::draw(const ImRect &rect) {
   if (!visible_) return;
+  area_ = rect;
   updateLayout();
   if (!visible_) return;
 
