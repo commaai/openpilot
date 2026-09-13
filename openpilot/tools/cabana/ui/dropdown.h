@@ -17,15 +17,11 @@ constexpr int WINDOW_STYLE_VARS = 3;
 class PopupViewportScope {
 public:
   PopupViewportScope() : main_(ImGui::GetMainViewport()), flags_(main_->Flags) {
-    // A popup extending beyond a detached panel must not merge into the main
-    // viewport: that OS window can be behind the panel. Apply this to every
-    // dropdown, including child menus and combos, and reset the class when a
-    // recycled popup is subsequently opened from a docked panel.
+    // Keep detached popups above their owner; reset ownership when docked.
     ImGuiWindowClass window_class;
     const ImGuiViewport *owner = ImGui::GetWindowViewport();
     if (owner != main_) {
-      // NoAutoMerge does not apply to ImGui popups/child menus. Temporarily
-      // exclude the main viewport as a merge target while Begin selects one.
+      // Popups ignore NoAutoMerge, so exclude the main viewport during Begin.
       main_->Flags &= ~ImGuiViewportFlags_CanHostOtherWindows;
       window_class.ParentViewportId = owner->ID;
     }
@@ -55,8 +51,7 @@ inline void PositionBelowItem(const char *id, bool align_right = false) {
   char name[32];
   ImFormatString(name, IM_ARRAYSIZE(name), "##Popup_%08x", ImGui::GetID(id));
   if (ImGuiWindow *popup = ImGui::FindWindowByName(name); popup && popup->WasActive) {
-    // Use the same edge-aware placement as combos, with the current owner's
-    // monitor bounds so moving/redocking a panel cannot leave a stale anchor.
+    // Place like a combo using the owner's current monitor bounds.
     const auto *viewport = static_cast<ImGuiViewportP *>(ImGui::GetWindowViewport());
     ImRect bounds = viewport->GetMainRect();
     if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) && viewport->PlatformMonitor >= 0) {
