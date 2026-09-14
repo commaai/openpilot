@@ -225,9 +225,13 @@ class DeviceLayoutMici(NavScroller):
 
   def _update_state(self):
     super()._update_state()
-    if self._pending_pairing_grow_animation and not self._scroller.is_auto_scrolling:
-      self._pending_pairing_grow_animation = False
-      self._pairing_button.trigger_grow_animation()
+
+    if self._pending_pairing_grow_animation:
+      btn_right = self._pairing_button.rect.x + self._pairing_button.rect.width
+      visible_right = self._rect.x + self._rect.width
+      if btn_right < visible_right + 50:
+        self._pending_pairing_grow_animation = False
+        self._pairing_button.trigger_grow_animation()
 
   def hide_event(self):
     super().hide_event()
