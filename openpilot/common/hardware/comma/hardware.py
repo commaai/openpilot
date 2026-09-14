@@ -8,13 +8,13 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from openpilot.cereal import log
+from openpilot.common.esim.base import WEBBING_ICCID_PREFIX
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.hardware.comma.pins import GPIO
 from openpilot.common.hardware.comma.amplifier import Amplifier
-from openpilot.common.hardware.comma.modem import WEBBING_ICCID_PREFIX
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 
