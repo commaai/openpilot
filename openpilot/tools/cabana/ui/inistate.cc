@@ -107,6 +107,15 @@ std::string migrateQtState() {
   return std::string(buf.c_str());
 }
 
+void migrateDockLayout() {
+  // Show dock tabs hidden by older layouts.
+  if (const auto *center = ImGui::FindWindowSettingsByID(ImHashStr("###CenterWidget"))) {
+    if (auto *node = ImGui::DockBuilderGetNode(center->DockId)) {
+      node->LocalFlags &= ~ImGuiDockNodeFlags_NoTabBar;
+    }
+  }
+}
+
 }  // namespace
 
 void addSettingsHandler() {
@@ -123,6 +132,8 @@ void load() {
   if (settings.ui_state.empty()) settings.ui_state = migrateQtState();
   if (!settings.ui_state.empty())
     ImGui::LoadIniSettingsFromMemory(settings.ui_state.data(), settings.ui_state.size());
+
+  migrateDockLayout();
 }
 
 void applyWindowGeometry(GLFWwindow *window) {

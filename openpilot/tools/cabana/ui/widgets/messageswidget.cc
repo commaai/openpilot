@@ -365,8 +365,8 @@ void MessagesWidget::drawTable() {
   const bool multiple_lines = settings.multiple_lines_hex;
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders |
-                                ImGuiTableFlags_Hideable;
+                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInner |
+                                ImGuiTableFlags_Hideable | ImGuiTableFlags_PadOuterX;
   // with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = bytesCellSize(bytes_section_bytes_, multiple_lines).x;
   const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);

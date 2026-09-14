@@ -84,8 +84,16 @@ inline std::string shortcut(const char *keys) { return std::string(MOD_KEY) + "+
 bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
 float iconButtonWidth();
 bool stepButton(const char *id, bool increment, const char *tooltip = nullptr);
-bool iconTextButton(const char *id, const char *icon, const std::string &text, float width = 0.0f);
-float iconTextButtonWidth(const char *icon, const std::string &text);
+struct IconTextButtonOptions {
+  float height = 0.0f;
+  float rounding = -1.0f;  // Negative uses the theme default.
+  float icon_gap = -1.0f;  // Negative uses the theme default.
+  bool center_content = false;
+  float label_width = 0.0f;  // Shared width aligns labels in a group of centered buttons.
+};
+bool iconTextButton(const char *id, const char *icon, const std::string &text, float width = 0.0f,
+                    const IconTextButtonOptions &options = {});
+float iconTextButtonWidth(const char *icon, const std::string &text, const IconTextButtonOptions &options = {});
 
 // tooltip for the last item that also shows while the item is disabled
 void disabledItemTooltip(const char *text);

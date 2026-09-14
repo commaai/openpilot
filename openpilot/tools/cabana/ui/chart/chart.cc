@@ -504,11 +504,13 @@ void ChartView::draw(float width) {
     updateLayout();
     paint();
     drawContextMenu();
+    // Keep the tip above the plot, but below popup menus and other windows.
+    ImRect visible_rect = charts_widget_->chartVisibleRect(this);
+    visible_rect.ClipWith(ImRect(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y),
+                               ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y)));
+    if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw(visible_rect);
   }
   ImGui::EndChild();
-  // a chart scrolled out of the viewport draws no tip
-  const ImRect visible_rect = charts_widget_->chartVisibleRect(this);
-  if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw();
   ImGui::PopID();
 }
 
@@ -573,8 +575,17 @@ void ChartView::drawAxes() {
 
     layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
     // ImPlotFlags_NoInputs disables implot's own hover tracking
-    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+    // A popup is a descendant of the chart, but hovering its menu must not hover the plot underneath.
+    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
+    if (!drawing_ghost_) {
+      // Own plot clicks so custom scrubbing/zooming cannot also move the floating window.
+      const ImGuiID input_id = ImGui::GetID("plot_input");
+      if (ImGui::ItemAdd(layout_.plot_area, input_id)) {
+        bool hovered, held;
+        ImGui::ButtonBehavior(layout_.plot_area, input_id, &hovered, &held);
+      }
+    }
     handleMousePress();
     handleMouseMove();
     handleMouseRelease();
