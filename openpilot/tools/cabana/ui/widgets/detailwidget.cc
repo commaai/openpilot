@@ -52,6 +52,13 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
   signal_view_ = std::make_unique<SignalView>(charts);
 
   history_log_ = std::make_unique<LogsWidget>();
+  page_tabs_.addTab("Messages");
+  page_tabs_.addTab("Logs");
+  connections_.push_back(page_tabs_.currentChanged.connect([this](int index) {
+    tab_widget_index_ = index;
+    if (index == 1) history_log_->onShown();
+    updateState();
+  }));
 
   connections_.push_back(binary_view_->signalHovered.connect([this](const cabana::Signal *s) { signal_view_->signalHovered(s); }));
   connections_.push_back(binary_view_->signalClicked.connect([this](const cabana::Signal *s) { signal_view_->selectSignal(s, true); }));
@@ -84,13 +91,16 @@ void DetailWidget::drawToolBar() {
   }});
   items.back().in_menu = false;
   const size_t spacer_index = items.size();
-  const std::string heatmap_text = "Heatmap: " + (heatmap_live_ ? std::string("Live") : heatmap_all_text_);
+  const std::string heatmap_text = "Heatmap: " + (!heatmap_visible_ ? std::string("Hidden") : heatmap_live_ ? std::string("Live") : heatmap_all_text_);
   auto heatmap_items = [this]() {
-    if (dropdown::Item("Live", nullptr, heatmap_live_) && !heatmap_live_) {
+    if (dropdown::Item("Hidden", nullptr, !heatmap_visible_)) heatmap_visible_ = false;
+    if (dropdown::Item("Live", nullptr, heatmap_visible_ && heatmap_live_)) {
+      heatmap_visible_ = true;
       heatmap_live_ = true;
       binary_view_->setHeatmapLiveMode(true);
     }
-    if (dropdown::Item(heatmap_all_text_.c_str(), nullptr, !heatmap_live_) && heatmap_live_) {
+    if (dropdown::Item(heatmap_all_text_.c_str(), nullptr, heatmap_visible_ && !heatmap_live_)) {
+      heatmap_visible_ = true;
       heatmap_live_ = false;
       binary_view_->setHeatmapLiveMode(false);
     }
@@ -210,23 +220,18 @@ void DetailWidget::editMsg(float parent_width) {
 
 void DetailWidget::drawTabWidget() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  const float pad = style.ItemInnerSpacing.x, pill_height = ImGui::GetFrameHeight() + pad * 2;
-  ImGui::BeginChild("tab_widget", ImVec2(0, 0), ImGuiChildFlags_None,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  const ImRect page_rect = ImGui::GetCurrentWindow()->Rect();
-  const float gap = style.WindowPadding.y;
-  ImGui::BeginChild("page", ImVec2(0, std::max(page_rect.GetHeight() - pill_height - gap, 1.0f)),
-                    ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+  page_tabs_.draw();
   if (tab_widget_index_ == 0) {
-    // Reserve the signal toolbar and rows before giving the byte grid its preferred height.
-    const float min_height = binary_view_->minimumSizeHint().y;
-    const float avail = ImGui::GetContentRegionAvail().y;
-    const float max_height = std::max(avail - style.ItemSpacing.y - SignalView::minimumHeight(), 1.0f);
-    const float height = std::clamp(min_height, 1.0f, max_height);
-    ImGui::BeginChild("binary_view", ImVec2(0, height), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
-    binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
-    binary_view_->draw();
-    ImGui::EndChild();
+    if (heatmap_visible_) {
+      // Keep most of a short window available for signal rows.
+      const float avail = ImGui::GetContentRegionAvail().y;
+      const float max_height = std::max(avail - style.ItemSpacing.y - SignalView::minimumHeight(), 1.0f);
+      const float height = std::min(binary_view_->minimumSizeHint().y, max_height);
+      ImGui::BeginChild("binary_view", ImVec2(0, std::max(height, 1.0f)), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+      binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
+      binary_view_->draw();
+      ImGui::EndChild();
+    }
     ImGui::BeginChild("signal_view", ImVec2(0, 0), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
@@ -235,48 +240,6 @@ void DetailWidget::drawTabWidget() {
   } else {
     history_log_->draw();
   }
-  ImGui::EndChild();
-
-  std::string labels[] = {std::string(icon::FILE_EARMARK_RULED) + " Messages", std::string(icon::STOPWATCH) + " Logs"};
-  auto pill_width = [&]() {
-    float w = pad;
-    for (const auto &label : labels) w += ImGui::CalcTextSize(label.c_str()).x + style.FramePadding.x * 2 + pad;
-    return w;
-  };
-  float width = pill_width();
-  if (width > page_rect.GetWidth()) {
-    labels[0] = icon::FILE_EARMARK_RULED;
-    labels[1] = icon::STOPWATCH;
-    width = pill_width();
-  }
-  const ImVec2 size(width, pill_height);
-  const ImVec2 min(std::round(page_rect.GetCenter().x - width * 0.5f), page_rect.Max.y - size.y);
-  ImGui::SetNextWindowPos(min);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(pad, pad));
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_PopupBg));
-  ImGui::BeginChild("page_switch", size, ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(pad, 0.0f));
-  for (int i = 0; i < 2; ++i) {
-    const bool selected = tab_widget_index_ == i;
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(selected ? ImGuiCol_Header : ImGuiCol_Button, selected ? 1.0f : 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(selected ? ImGuiCol_HeaderActive : ImGuiCol_ButtonHovered));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, selected ? palette().header_active : palette().button_active);
-    ImGui::PushStyleColor(ImGuiCol_Text, selected ? palette().text_selected : palette().text);
-    if (i) ImGui::SameLine();
-    if (ImGui::Button(labels[i].c_str()) && !selected) {
-      tab_widget_index_ = i;
-      if (i == 1) history_log_->onShown();
-      updateState();
-    }
-    ImGui::PopStyleColor(4);
-  }
-  ImGui::PopStyleVar(2);
-  ImGui::EndChild();
-  ImGui::PopStyleColor();
-  ImGui::PopStyleVar();
-  ImGui::EndChild();
 }
 
 void DetailWidget::draw() {
@@ -307,7 +270,7 @@ void DetailWidget::draw() {
 std::vector<std::pair<std::string, ImRect>> DetailWidget::helpRects() const {
   std::vector<std::pair<std::string, ImRect>> rects;
   if (tab_widget_index_ == 0) {
-    rects.emplace_back(binary_view_->whatsThis(), binary_view_rect_);
+    if (heatmap_visible_) rects.emplace_back(binary_view_->whatsThis(), binary_view_rect_);
     rects.emplace_back(signal_view_->whatsThis(), signal_view_rect_);
   }
   return rects;

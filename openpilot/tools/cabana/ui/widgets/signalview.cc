@@ -244,13 +244,14 @@ float SignalView::textWidth(const std::string &text, float font_size) {
 }
 
 float SignalView::nameColumnWidth(const SignalModel::Item *item, float widget_width, const std::string &text) const {
-  float spacing = INDENTATION + COLOR_LABEL_WIDTH + 8;
+  float spacing = INDENTATION + COLOR_LABEL_WIDTH + H_MARGIN * 4;
   std::string txt = text;
   if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
     txt += multiplexIndicator(item->sig);
     spacing += H_MARGIN * 2;
   }
-  return std::min<float>(widget_width / 3.0, textWidth(txt) + spacing);
+  const float preferred = ImGui::CalcTextSize(txt.c_str()).x + spacing;
+  return std::min(widget_width * (compact_ ? 0.6f : 0.4f), preferred);
 }
 
 void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const SignalModel::Item *item, int column,
@@ -286,7 +287,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
     // name
     if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, false);
   } else if (column == 1) {
-    if (!item->sparkline.isEmpty()) {
+    if (!compact_ && !item->sparkline.isEmpty()) {
       const ImVec2 sparkline_size = item->sparkline.size;
       item->sparkline.draw(painter, rect.Min, selected ? text_color : 0);
       // min-max value
@@ -649,7 +650,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     max_value_width = std::max(max_value_width, widestValueWidth(item->sig));
   }
 
-  if (first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model_.rowCount()) {
+  if (!compact_ && first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model_.rowCount()) {
     const float min_max_width = textWidth("-000.00", MINMAX_FONT) + 5;
     float available_width = value_column_width_ - button_size_.x;
     float value_width = std::min<float>(max_value_width + min_max_width, available_width / 2);
@@ -694,7 +695,7 @@ float SignalView::minimumWidth() {
 
 float SignalView::minimumHeight() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return ImGui::GetFrameHeight() + style.ItemSpacing.y + signalRowHeight() * 3 +
+  return ImGui::GetFrameHeightWithSpacing() + signalRowHeight() * 4 +
          (style.WindowPadding.y + style.ChildBorderSize + CONTROL_OUTLINE_PADDING) * 2;
 }
 
@@ -707,26 +708,37 @@ void SignalView::draw() {
     return;
   }
 
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(signal_count_lb_.c_str());
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(FILTER_WIDTH);
-  if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
-    model_.setFilter(filter_edit_);
-  }
-
-  // stretch: the sparkline controls sit at the right edge
-  alignRight(toolBarRightWidth(sparkline_label_));
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(sparkline_label_.c_str());
-  ImGui::SameLine();
-  int range = settings.sparkline_range;
-  if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, SPARKLINE_SLIDER_WIDTH)) {
-    setSparklineRange(range);
-  }
-  ImGui::SetItemTooltip("Sparkline time range");
-  ImGui::SameLine();
-  if (iconButton("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All")) collapseAll();
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float width = ImGui::GetContentRegionAvail().x;
+  compact_ = width < minimumWidth() - style.WindowPadding.x * 2;
+  const float count_width = ImGui::CalcTextSize(signal_count_lb_.c_str()).x;
+  // The standard overflow button keeps the range and collapse actions reachable on narrow panels.
+  const float filter_width = compact_ ? std::clamp(width - count_width - iconButtonWidth() - style.ItemSpacing.x * 2,
+                                                  1.0f, FILTER_WIDTH) : FILTER_WIDTH;
+  std::vector<ToolbarItem> items;
+  items.push_back({count_width, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(signal_count_lb_.c_str());
+  }});
+  items.back().in_menu = false;
+  items.push_back({filter_width, [this, filter_width]() {
+    ImGui::SetNextItemWidth(filter_width);
+    if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
+      model_.setFilter(filter_edit_);
+    }
+  }});
+  items.push_back({toolBarRightWidth(sparkline_label_) - iconButtonWidth() - style.ItemSpacing.x, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(sparkline_label_.c_str());
+    ImGui::SameLine();
+    int range = settings.sparkline_range;
+    if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, SPARKLINE_SLIDER_WIDTH)) {
+      setSparklineRange(range);
+    }
+    ImGui::SetItemTooltip("Sparkline time range");
+  }});
+  items.push_back(toolbarAction("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All", [this]() { collapseAll(); }));
+  drawToolbar(items, 2);
 
   drawTree();
   drawValueDescriptionDlg();
@@ -759,6 +771,13 @@ void SignalView::drawTree() {
 
     int first_visible = -1, last_visible = -1;
     auto &children = model_.root()->children;
+    // Measure before painting so resizing never leaves the old columns for a frame.
+    auto measure = [&](auto &&self, SignalModel::Item *item) -> void {
+      ctx.name_width = std::max(ctx.name_width, nameColumnWidth(item, ctx.width, nameText(item)));
+      if (item->expanded) for (auto child : item->children) self(self, child);
+    };
+    for (auto item : children) measure(measure, item);
+    if (ctx.name_width > 0) name_column_width_ = ctx.name_width;
     for (int i = 0; i < children.size(); ++i) {
       ctx.any_visible = false;
       const bool header_visible = drawItem(children[i], 0, ctx);
@@ -894,15 +913,26 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
-  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (iconButton("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
+  const bool selected = current_sig_ == sig && current_type_ == SignalModel::Item::Sig;
+  auto row_button = [selected](const char *id, const char *glyph) {
+    if (selected) {
+      ImGui::PushStyleColor(ImGuiCol_Text, palette().text_selected);
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, palette().header_active);
+      ImGui::PushStyleColor(ImGuiCol_ButtonActive, palette().header_active);
+    }
+    const bool clicked = iconButton(id, glyph);
+    if (selected) ImGui::PopStyleColor(3);
+    return clicked;
+  };
+  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, selected ? palette().header_active : ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (row_button("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model_.msgId(), sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
   if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nShift-click to add to the previously opened plot");
   ImGui::SameLine(0.0f, spacing);
-  if (iconButton("remove", icon::X_LG) && !editor_open_on_press_) {
+  if (row_button("remove", icon::X_LG) && !editor_open_on_press_) {
     pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");

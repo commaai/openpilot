@@ -166,6 +166,7 @@ private:
   static ValidState validateEditor(const SignalModel::Item *item, std::string &text);
 
   float value_column_width_ = 0;
+  bool compact_ = false;
   float name_column_width_ = 150;
   bool editor_open_on_press_ = false;
   // computed while drawing the tree: the first top-level row whose own row is visible (a signal whose header
