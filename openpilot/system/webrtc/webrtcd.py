@@ -162,8 +162,6 @@ class DynamicPubMaster(messaging.PubMaster):
 
 
 class LivestreamBitrateController(AsyncTaskRunner):
-  bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
-  label_to_bitrate = { "high": bitrates[2], "med": bitrates[1], "low": bitrates[0]}
   sample_interval = 0.2
   high_level = 0.1 # drop immediately
   med_level = 0.05 # drop after # of samples
@@ -175,6 +173,11 @@ class LivestreamBitrateController(AsyncTaskRunner):
     super().__init__()
     self.get_stats = get_stats
     self.params = params
+
+    high_fps = os.environ.get("CAMERA_720P120") == "1"
+    self.bitrates = ([5_000_000, 10_000_000, 20_000_000] if high_fps else [500_000, 1_500_000, 5_000_000])
+    self.bitrates[2] = int(os.environ.get("STREAM_BITRATE", self.bitrates[2]))
+    self.label_to_bitrate = dict(zip(("low", "med", "high"), self.bitrates, strict=True))
 
     self.level = 2
     self._publish(self.bitrates[self.level])

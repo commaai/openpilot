@@ -102,6 +102,11 @@ void CameraState::set_exposure_rect() {
     std::min((int)(fl_pix / fl_ref * xywh_ref.w), (int)camera.buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
     std::min((int)(fl_pix / fl_ref * xywh_ref.h), (int)camera.buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
   };
+  // Sensor crops can be narrower than the calibrated AE target (e.g. 720p binning).
+  ae_xywh.x = std::clamp(ae_xywh.x, 0, (int)camera.buf.out_img_width - 1);
+  ae_xywh.y = std::clamp(ae_xywh.y, 0, (int)camera.buf.out_img_height - 1);
+  ae_xywh.w = std::clamp(ae_xywh.w, 1, (int)camera.buf.out_img_width - ae_xywh.x);
+  ae_xywh.h = std::clamp(ae_xywh.h, 1, (int)camera.buf.out_img_height - ae_xywh.y);
 }
 
 void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {

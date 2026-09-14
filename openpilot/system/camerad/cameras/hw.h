@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/util.h"
+#include "common/camera120.h"
 #include "openpilot/cereal/gen/cpp/log.capnp.h"
 #include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_server.h"
@@ -37,7 +38,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .focal_len = 1.71,
   .publish_name = "wideRoadCameraState",
   .init_camera_state = &cereal::Event::Builder::initWideRoadCameraState,
-  .enabled = !getenv("DISABLE_WIDE_ROAD"),
+  .enabled = !camera120_enabled() && !getenv("DISABLE_WIDE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
   .vignetting_correction = false,
   .output_type = ISP_IFE_PROCESSED,
@@ -52,7 +53,7 @@ const CameraConfig NARROW_ROAD_CAMERA_CONFIG = {
   .init_camera_state = &cereal::Event::Builder::initNarrowRoadCameraState,
   .enabled = !getenv("DISABLE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
-  .vignetting_correction = true,
+  .vignetting_correction = !camera120_enabled(),
   .output_type = ISP_IFE_PROCESSED,
   .staggered_sof = false,
 };
@@ -63,7 +64,7 @@ const CameraConfig CABIN_CAMERA_CONFIG = {
   .focal_len = 1.71,
   .publish_name = "cabinCameraState",
   .init_camera_state = &cereal::Event::Builder::initCabinCameraState,
-  .enabled = !getenv("DISABLE_DRIVER"),
+  .enabled = !camera120_enabled() && !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
   .output_type = ISP_BPS_PROCESSED,

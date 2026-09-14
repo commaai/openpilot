@@ -4,6 +4,7 @@ import platform
 
 from opendbc.car.structs import car
 from openpilot.common.params import Params
+from openpilot.common.camera120 import camera120_enabled, pinball_camera120, CAMERA120_DISABLED_PROCESSES
 from openpilot.common.hardware import PC, COMMA_HARDWARE
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
@@ -119,5 +120,15 @@ procs = [
   PythonProcess("webrtcd", "openpilot.system.webrtc.webrtcd", only_onroad),
   PythonProcess("joystick", "openpilot.tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
+
+if camera120_enabled():
+  for p in procs:
+    if p.name in CAMERA120_DISABLED_PROCESSES:
+      p.enabled = False
+    # Retain the existing control path only for the pinball interface. A camera
+    # experiment with missing driving models must never engage a real car.
+    if p.name in ("selfdrived", "joystickd", "controlsd", "joystick"):
+      original = p.should_run
+      p.should_run = lambda started, params, CP, original=original: pinball_camera120(CP) and original(started, params, CP)
 
 managed_processes = {p.name: p for p in procs}

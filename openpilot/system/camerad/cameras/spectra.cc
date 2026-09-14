@@ -1046,8 +1046,8 @@ bool SpectraCamera::openSensor() {
   };
 
   // Figure out which sensor we have
-  if (!init_sensor_lambda(new OS04C10) &&
-      !init_sensor_lambda(new OX03C10)) {
+  if (!init_sensor_lambda(new OS04C10(camera120_enabled() && enabled && cc.stream_type == VISION_STREAM_NARROW_ROAD)) &&
+      (camera120_enabled() || !init_sensor_lambda(new OX03C10))) {
     LOGE("** sensor %d FAILED bringup, disabling", cc.camera_num);
     enabled = false;
     return false;
@@ -1184,13 +1184,13 @@ void SpectraCamera::configICP() {
       .format = 0x9,  // RAW MIPI
       .width = sensor->frame_width,
       .height = sensor->frame_height,
-      .fps = 20,
+      .fps = static_cast<uint32_t>(sensor->fps),
     },
     .out_res[0] = (struct cam_icp_res_info){
       .format = 0x3,  // YUV420NV12
       .width = buf.out_img_width,
       .height = buf.out_img_height,
-      .fps = 20,
+      .fps = static_cast<uint32_t>(sensor->fps),
     },
   };
   auto h = device_acquire(m->icp_fd, session_handle, &icp_info);

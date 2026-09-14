@@ -11,6 +11,7 @@ import openpilot.cereal.messaging as messaging
 import openpilot.system.sentry as sentry
 from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag
+from openpilot.common.camera120 import camera120_enabled
 from openpilot.common.text_window import TextWindow
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.manager.helpers import unblock_stdout, save_bootlog
@@ -23,6 +24,8 @@ from openpilot.common.hardware.hw import Paths
 
 
 def manager_init() -> None:
+  if camera120_enabled() and HARDWARE.get_device_type() != "mici":
+    raise RuntimeError("CAMERA_720P120 requires comma four")
   save_bootlog()
 
   build_metadata = get_build_metadata()

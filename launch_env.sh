@@ -20,3 +20,8 @@ if [ -z "$AGNOS_VERSION" ]; then
 fi
 
 export STAGING_ROOT="/data/safe_staging"
+
+# Opt-in camera mode survives reboot without changing the normal onroad lifecycle.
+if [ -f /data/camera720p120 ]; then
+  export CAMERA_720P120="${CAMERA_720P120:-1}"
+fi

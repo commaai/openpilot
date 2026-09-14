@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Narrow camera 720p120 bench</title>
+<style>body{font:16px system-ui;background:#161616;color:#eee;max-width:1280px;margin:24px auto}video{width:100%;background:black}button{padding:12px}pre{white-space:pre-wrap}</style>
+<h1>Narrow road camera · 720p120</h1>
+<p>This experimental receiver requests H.264 Constrained Baseline Level 4.2. Decoded FPS measures the stream; displayed FPS also depends on your screen.</p>
+<button id="connect">Connect</button> <button id="stop">Disconnect</button>
+<video id="video" autoplay muted playsinline></video><pre id="stats">Disconnected</pre>
+<script>
+let pc, timer, previous, presented = 0, channel;
+const video = document.getElementById('video'), stats = document.getElementById('stats');
+if (video.requestVideoFrameCallback) {
+  const count = () => { presented++; video.requestVideoFrameCallback(count); };
+  video.requestVideoFrameCallback(count);
+}
+function stop() { clearInterval(timer); pc?.close(); pc = null; video.srcObject = null; previous = null; }
+document.getElementById('stop').onclick = stop;
+document.getElementById('connect').onclick = async () => {
+  stop();
+  try {
+    pc = new RTCPeerConnection({iceServers: []});
+    pc.ontrack = e => { video.srcObject = new MediaStream([e.track]); };
+    const transceiver = pc.addTransceiver('video', {direction: 'recvonly'});
+    const codecs = RTCRtpReceiver.getCapabilities('video').codecs.filter(c =>
+      c.mimeType.toLowerCase() === 'video/h264' && /profile-level-id=42e0/i.test(c.sdpFmtpLine || ''));
+    if (!codecs.length) throw new Error('This browser does not advertise H.264 Constrained Baseline profile. Try desktop Chrome.');
+    transceiver.setCodecPreferences(codecs);
+    channel = pc.createDataChannel('data');
+    channel.onopen = () => channel.send(JSON.stringify({type:'livestreamSettings', data:{quality:'high'}}));
+    let offer = await pc.createOffer();
+    // Explicit experimental decoder request. Browser decode support is verified by the stats below.
+    offer.sdp = offer.sdp.replace(/profile-level-id=42e0[0-9a-f]{2}/gi, 'profile-level-id=42e02a');
+    await pc.setLocalDescription(offer);
+    if (pc.iceGatheringState !== 'complete') await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('ICE gathering timed out')), 10000);
+      pc.addEventListener('icegatheringstatechange', () => {
+        if (pc.iceGatheringState === 'complete') { clearTimeout(timeout); resolve(); }
+      });
+    });
+    const response = await fetch('/stream', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      sdp:pc.localDescription.sdp, cameras:['road'], enabled:true, bridge_services_in:[], bridge_services_out:[]
+    })});
+    if (!response.ok) throw new Error(await response.text());
+    const answer = await response.json();
+    await pc.setRemoteDescription(answer);
+    timer = setInterval(async () => {
+      if (!pc) return;
+      for (const r of (await pc.getStats()).values()) {
+        if (r.type !== 'inbound-rtp' || r.kind !== 'video') continue;
+        if (previous) {
+          const dt = (r.timestamp - previous.timestamp) / 1000;
+          stats.textContent = JSON.stringify({resolution:`${r.frameWidth}×${r.frameHeight}`,
+            decodedFPS:((r.framesDecoded - previous.framesDecoded)/dt).toFixed(1),
+            displayedFPS:((presented - previous.presented)/dt).toFixed(1),
+            receivedMbps:((r.bytesReceived - previous.bytesReceived)*8/dt/1e6).toFixed(2),
+            framesDropped:r.framesDropped, packetsLost:r.packetsLost, jitter:r.jitter}, null, 2);
+        }
+        previous = {timestamp:r.timestamp, framesDecoded:r.framesDecoded, bytesReceived:r.bytesReceived, presented};
+      }
+    }, 1000);
+  } catch (e) { stop(); stats.textContent = String(e); }
+};
+</script>
+</html>

@@ -2,6 +2,7 @@
 
 #include "system/camerad/sensors/sensor.h"
 #include <media/msm_camsensor_sdk.h>
+#include "system/camerad/sensors/os04c10_720p_registers.h"
 
 namespace {
 
@@ -21,7 +22,7 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 }  // namespace
 
-OS04C10::OS04C10() {
+OS04C10::OS04C10(bool high_fps) {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
   pixel_size_mm = 0.002;
@@ -68,7 +69,44 @@ OS04C10::OS04C10() {
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
 
-  black_level = 48;
+  if (high_fps) {
+    fps = 120;
+    out_scale = 1;
+    pixel_size_mm *= 2;  // sensor-side 2x2 binning, also used by AE geometry
+    frame_width = 1280;
+    frame_height = 720;
+    bits_per_pixel = 10;
+    frame_stride = frame_width * bits_per_pixel / 8;
+    mipi_format = CAM_FORMAT_MIPI_RAW_10;
+    frame_data_type = CSI_RAW10;
+    init_reg_array.assign(std::begin(init_array_os04c10_720p240), std::end(init_array_os04c10_720p240));
+    // Double vendor VTS=786, preserving HTS=535 and all vendor clocks.
+    // Free-run: ignore Panda's unchanged 20 Hz FSIN input. Keep the pad an input.
+    init_reg_array.insert(init_reg_array.end(), {
+      {0x380e, 0x06}, {0x380f, 0x24},
+      {0x3002, 0x22}, {0x3663, 0x22}, {0x3822, 0x04}, {0x3823, 0x08},
+      // Match the existing camera orientation (datasheet: analog bin mirror+flip).
+      {0x3820, 0xb3},
+      // Preserve openpilot's OS04C10 manual white balance. The vendor mode
+      // leaves these at unity, causing a green cast with our color matrix.
+      // Datasheet section 5.7: 0x400 = 1x; B=1.623x, G=1x, R=2.209x.
+      {0x5100, 0x06}, {0x5101, 0x7e},
+      {0x5140, 0x06}, {0x5141, 0x7e},
+      {0x5102, 0x04}, {0x5103, 0x00},
+      {0x5142, 0x04}, {0x5143, 0x00},
+      {0x5104, 0x08}, {0x5105, 0xd6},
+      {0x5144, 0x08}, {0x5145, 0xd6},
+    });
+    exposure_time_max = 1572 - 8;  // linear mode, v2.07 datasheet section 5.6
+    max_ev = exposure_time_max * sensor_analog_gains[analog_gain_max_idx];
+    // Nominal active-row time from the vendor 240 FPS / 786-line mode.
+    // Must be verified against hardware SOF/EOF before using for latency analysis.
+    readout_time_ns = 1'000'000'000ULL * frame_height / (240 * 786);
+  }
+
+  // RAW10 vendor mode programs BLC target 0x4003=0x40. This is 64 RAW10
+  // codes, not the existing RAW12 ISP pedestal divided by four.
+  black_level = high_fps ? 64 : 48;
   color_correct_matrix = {
     0x000000c2, 0x00000fe0, 0x00000fde,
     0x00000fa7, 0x000000d9, 0x00001000,

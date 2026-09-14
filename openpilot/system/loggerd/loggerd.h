@@ -11,6 +11,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "common/camera120.h"
 
 #include "system/loggerd/logger.h"
 
@@ -27,6 +28,7 @@ const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 inline int livestream_width() {
+  if (camera120_enabled()) return 1280;
   switch (Hardware::get_device_type()) {
     case cereal::InitData::DeviceType::TIZI: return 1152;
     case cereal::InitData::DeviceType::MICI: return 1280;
@@ -35,6 +37,7 @@ inline int livestream_width() {
 }
 
 inline int livestream_height() {
+  if (camera120_enabled()) return 720;
   switch (Hardware::get_device_type()) {
     case cereal::InitData::DeviceType::TIZI:
     case cereal::InitData::DeviceType::MICI: return 720;
@@ -64,8 +67,9 @@ struct EncoderSettings {
   }
 
   static EncoderSettings StreamEncoderSettings() {
-    int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : 5'000'000;
-    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate , .gop_size = 5};
+    int _stream_bitrate = getenv("STREAM_BITRATE") ? atoi(getenv("STREAM_BITRATE")) : (camera120_enabled() ? 20'000'000 : 5'000'000);
+    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _stream_bitrate,
+                           .gop_size = camera120_enabled() ? 30 : 5};
   }
 };
 
@@ -125,6 +129,7 @@ const EncoderInfo stream_road_encoder_info = {
   .is_live = true,
   .frame_width = livestream_width(),
   .frame_height = livestream_height(),
+  .fps = camera120_enabled() ? 120 : MAIN_FPS,
   .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamNarrowRoadEncode),
 };
@@ -179,6 +184,7 @@ const LogCameraInfo cabin_camera_info{
 
 const LogCameraInfo stream_road_camera_info{
   .thread_name = "narrow_road_cam_encoder",
+  .fps = camera120_enabled() ? 120 : MAIN_FPS,
   .stream_type = VISION_STREAM_NARROW_ROAD,
   .encoder_infos = {stream_road_encoder_info},
 };

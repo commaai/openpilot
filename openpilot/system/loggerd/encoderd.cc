@@ -120,7 +120,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       if (do_exit) break;
 
       // do rotation if required
-      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+      const int frames_per_seg = SEGMENT_LENGTH * cam_info.fps;
       if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
         for (auto &e : encoders) {
           e->encoder_close();
@@ -178,6 +178,10 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 }
 
 int main(int argc, char* argv[]) {
+  if (camera120_enabled() && (argc != 2 || std::string(argv[1]) != "--stream")) {
+    LOGE("CAMERA_720P120 is a streaming-only bench experiment; use encoderd --stream");
+    return 1;
+  }
 #ifdef __COMMA_HARDWARE__
   if (argc > 1 && std::string(argv[1]) == "--clip") {
     if (argc < 6) {
