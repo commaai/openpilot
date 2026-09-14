@@ -495,7 +495,9 @@ void SignalView::drawValueDescriptionDlg() {
 }
 
 static ImVec2 indexButtonsSize(float button) {
-  return ImVec2(button * 2 + ImGui::GetStyle().ItemSpacing.x, button);
+  const auto &style = ImGui::GetStyle();
+  // Include the value-to-button gap; the extra padding balances the inset icon glyphs.
+  return ImVec2(button * 2 + style.ItemInnerSpacing.x * 2 + style.FramePadding.x, button);
 }
 
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
@@ -750,6 +752,7 @@ void SignalView::drawTree() {
   // Keep the toolbar fixed; only the signal rows scroll within the remaining space.
   const bool visible = beginControlChild("tree", ImVec2(0, 0));
   if (visible) {
+    button_size_ = indexButtonsSize(iconButtonWidth());
     DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, rowHeight()};
     // the press that closes an open editor is consumed by the focus change, the index widgets never see it
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = open_item_ != nullptr;
@@ -881,9 +884,11 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 }
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
-  const float spacing = ImGui::GetStyle().ItemSpacing.x;
-  const ImVec2 size = indexButtonsSize(iconButtonWidth());
-  ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
+  const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+  const float button = iconButtonWidth();
+  // Anchor fixed-size buttons inside the viewport, which excludes the scrollbar.
+  ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - H_MARGIN - button * 2 - spacing,
+                                 rect.Min.y + (rect.GetHeight() - button) * 0.5f));
 
   ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -903,7 +908,6 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   ImGui::SetItemTooltip("Remove signal");
   ImGui::PopStyleColor();
   ImGui::PopStyleVar();
-  button_size_ = size;
 }
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions) {
