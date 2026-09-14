@@ -71,7 +71,7 @@ class PrimeState:
         if is_paired and is_paired != self.is_paired():
           self._fetch_pairing_provider()
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
-        self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
+        self._prime_trial_available  = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
@@ -93,6 +93,7 @@ class PrimeState:
 
   def set_type(self, prime_type: PrimeType) -> None:
     with self._lock:
+      self._update_offroad_alerts()
       if prime_type <= PrimeType.UNPAIRED:
         self._prime_trial_available = False
         # remove provider when unpaired
@@ -101,11 +102,12 @@ class PrimeState:
       if prime_type != self.prime_type:
         self.prime_type = prime_type
         self._params.put("PrimeType", int(prime_type))
-        self._update_offroad_alerts()
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _update_offroad_alerts(self):
-    set_offroad_alert("Offroad_Pairing", self.prime_type <= PrimeType.UNPAIRED)
+    pairing_required = self.prime_type <= PrimeType.UNPAIRED
+    set_offroad_alert("Offroad_Pairing", pairing_required and not self._prime_trial_available)
+    set_offroad_alert("Offroad_Pairing_and_trial", pairing_required and self._prime_trial_available)
     set_offroad_alert("Offroad_Prime", self.prime_type == PrimeType.NONE)
 
   def set_provider(self, provider: Provider):

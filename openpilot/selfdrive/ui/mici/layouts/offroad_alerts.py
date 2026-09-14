@@ -227,7 +227,7 @@ class MiciOffroadAlerts(Scroller):
 
   def set_pairing_callback(self, callback: Callable[[], None]):
     for alert_item in self.alert_items:
-      if alert_item.alert_data.key in ("Offroad_Pairing", "Offroad_Prime"):
+      if alert_item.alert_data.key in ("Offroad_Pairing", "Offroad_Pairing_and_trial", "Offroad_Prime"):
         alert_item.set_click_callback(callback)
 
   def _build_alerts(self):

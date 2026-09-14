@@ -67,7 +67,12 @@
     "_comment": "Set extra field to lateral or longitudinal."
   },
   "Offroad_Pairing": {
-    "text": "Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
+    "text": "Finish setup. Pair your device with comma connect (connect.comma.ai).",
+    "severity": -1,
+    "icon": "icons_mici/settings/device/green_settings.png"
+  },
+  "Offroad_Pairing_and_trial": {
+    "text": "Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your 30-day comma prime trial.",
     "severity": -1,
     "icon": "icons_mici/settings/device/green_settings.png"
   },
