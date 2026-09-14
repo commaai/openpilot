@@ -217,6 +217,11 @@ class DeviceLayoutMici(NavScroller):
       self._power_off_btn,
     ])
 
+  def show_event(self):
+    super().show_event()
+    if not ui_state.prime_state.is_paired():
+      self.set_shown_callback(self._pairing_button.trigger_grow_animation)
+
   def scroll_to_pairing(self):
     self._scroller._layout()
     offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
