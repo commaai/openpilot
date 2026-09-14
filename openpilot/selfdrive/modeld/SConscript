@@ -112,7 +112,7 @@ for chestnut in [False, True] if CHESTNUT else [False]:
     stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
     cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_warp.py '
            f'--camera-resolution {cam_w}x{cam_h} --warp-to {model_w}x{model_h} --layout yuv420 '
-           f'--frames 2 --frame-device NPY --frame-size {stride * (y_height + uv_height)} '
+           f'--frames 2 --transform-device {"AMD" if chestnut else tg_backend} --frame-size {stride * (y_height + uv_height)} '
            f'--output {warp_pkl_path}')
     def do_compile_warp(target, source, env, command=cmd):
       return do_compile(target, source, env, command=command, chunks=())

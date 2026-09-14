@@ -105,7 +105,7 @@ def _parse_size(s):
 
 
 def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fill=None,
-                 frames=1, frame_device=None, frame_size=None):
+                 frames=1, frame_device=None, frame_size=None, transform_device='NPY'):
   print(f"Compiling {layout} warp for {nv12.width}x{nv12.height} -> {model_w}x{model_h}...")
 
   warp_jit = TinyJit(make_warp(nv12, model_w, model_h, layout, border_fill, frames), prune=True)
@@ -115,7 +115,7 @@ def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fil
 
   for i in range(10):
     frame = Tensor(Tensor.randint(*frame_shape, low=0, high=256, dtype='uint8').numpy(), device=frame_device).realize()
-    M_inv = Tensor(Tensor.randn(*transform_shape).mul(8).realize().numpy(), device='NPY')
+    M_inv = Tensor(Tensor.randn(*transform_shape).mul(8).realize().numpy(), device=transform_device)
     Device.default.synchronize()
     st = time.perf_counter()
     warp_jit(frame, M_inv).realize()
@@ -137,6 +137,7 @@ if __name__ == "__main__":
   p.add_argument('--border-fill', type=int, help='fill value outside the frame; omit to clamp coordinates')
   p.add_argument('--frames', type=int, default=1, help='number of frames to warp together')
   p.add_argument('--frame-device', help='device holding the input frames')
+  p.add_argument('--transform-device', default='NPY', help='device holding the input transforms')
   p.add_argument('--frame-size', type=int, help='input frame size in bytes; default: full NV12 allocation')
   p.add_argument('--output', required=True)
   args = p.parse_args()
@@ -145,4 +146,4 @@ if __name__ == "__main__":
   nv12 = NV12Frame(cam_w, cam_h, *get_nv12_info(cam_w, cam_h))
   model_w, model_h = args.warp_to
   compile_warp(nv12, model_w, model_h, args.output, args.layout, args.border_fill,
-               args.frames, args.frame_device, args.frame_size)
+               args.frames, args.frame_device, args.frame_size, args.transform_device)
