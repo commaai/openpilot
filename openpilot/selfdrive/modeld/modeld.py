@@ -6,8 +6,6 @@ import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
 from tinygrad.tensor import Tensor
-from tinygrad.helpers import round_up
-from tinygrad.uop.ops import UOp
 import pickle
 import threading
 import time
@@ -30,7 +28,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import get_policy_npy_shapes, make_input_queues, nv12_copy_size, MODELD_INPUTS
+from openpilot.selfdrive.modeld.compile_modeld import input_view, make_input_queues, nv12_copy_size, MODELD_INPUTS
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -128,10 +126,6 @@ class FrameMeta:
       self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 
-def input_view(tensor: Tensor) -> Tensor:
-  return Tensor(UOp.from_buffer(tensor._buffer())).reshape(tensor.shape)
-
-
 class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
@@ -149,19 +143,12 @@ class ModelState:
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
     self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
-    _, policy_sizes = get_policy_npy_shapes(self.input_shapes)
-    policy_size = sum(policy_sizes) * np.dtype(np.float32).itemsize
-    # Align the independently compiled inputs within one upload.
-    frame_offset = round_up(128 + policy_size, 128)
-    self.packed_input = np.zeros(frame_offset + 2 * self.frame_copy_size, dtype=np.uint8)
-    packed_gpu = Tensor(self.packed_input, device=self.model_device).realize()
+    self.input_queues, self.npy, self.packed_input, packed_gpu = make_input_queues(
+      self.input_shapes, self.frame_skip, self.model_device, self.frame_copy_size)
     self.input_host, self.input_device = Tensor(self.packed_input, device='NPY')._buffer(), packed_gpu._buffer()
-    self.frames = self.packed_input[frame_offset:].reshape(2, self.frame_copy_size)
+    self.frames = self.packed_input[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)
     self.transforms = self.packed_input[:72].view(np.float32).reshape(2, 3, 3)
-    self.input_queues, self.npy = make_input_queues(self.input_shapes, self.frame_skip, device=self.model_device,
-                                                 packed_input=self.packed_input[128:128 + policy_size].view(np.float32))
-    self.input_queues['packed_npy_inputs'] = input_view(packed_gpu[128:128 + policy_size].bitcast('float32'))
-    self.warp_inputs = (input_view(packed_gpu[frame_offset:].reshape(2, self.frame_copy_size)),
+    self.warp_inputs = (input_view(packed_gpu[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)),
                         input_view(packed_gpu[:72].bitcast('float32').reshape(2, 3, 3)))
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
       self.run_warp = pickle.load(f)
@@ -207,8 +194,7 @@ class ModelState:
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
     self.packed_input[:] = 0
     for key in ('img_q', 'big_img_q', 'feat_q', 'desire_q'):
-      tensor = self.input_queues[key]
-      tensor.assign(Tensor.zeros(*tensor.shape, dtype=tensor.dtype, device=self.model_device)).realize()
+      self.input_queues[key].assign(0).realize()
     self.prev_desire[:] = 0
 
 

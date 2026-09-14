@@ -32,6 +32,8 @@ _patch_tinygrad_fetch_fw()
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
+from tinygrad.helpers import round_up
+from tinygrad.uop.ops import UOp
 
 
 MODELD_INPUTS = ['warped', 'img_q', 'big_img_q', 'feat_q', 'desire_q', 'packed_npy_inputs']
@@ -53,7 +55,11 @@ def get_policy_npy_shapes(input_shapes):
   return shapes, [math.prod(s) for s in shapes.values()]
 
 
-def make_input_queues(input_shapes, frame_skip, device, packed_input=None):
+def input_view(tensor: Tensor) -> Tensor:
+  return Tensor(UOp.from_buffer(tensor._buffer())).reshape(tensor.shape)
+
+
+def make_input_queues(input_shapes, frame_skip, device, frame_copy_size=0):
   img = input_shapes['img']  # (1, 12, 128, 256)
   fb = input_shapes['features_buffer']  # (1, T-1, ...), past features only; the model appends the current frame's feature
   feat_dim = math.prod(fb[2:])
@@ -62,19 +68,21 @@ def make_input_queues(input_shapes, frame_skip, device, packed_input=None):
   img_buf_shape = (frame_skip * (n_frames - 1) + 1, 6, img[2], img[3])
 
   shapes, sizes = get_policy_npy_shapes(input_shapes)
-  if packed_input is None:
-    packed_input = np.zeros(sum(sizes), dtype=np.float32)
+  policy_size = sum(sizes) * 4
+  packed_input = np.zeros(round_up(128 + policy_size, 128) + 2 * frame_copy_size, dtype=np.uint8)
+  packed_gpu = Tensor(packed_input, device=device).realize()
+  policy = packed_input[128:128 + policy_size].view(np.float32)
   # views into the packed inputs, to be refilled at runtime
-  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_input, np.cumsum(sizes[:-1])), strict=True)}
+  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(policy, np.cumsum(sizes[:-1])), strict=True)}
   input_queues = {
     'warped': Tensor(np.zeros((2, 6, img[2], img[3]), dtype=np.uint8), device=device).realize(),
     'img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
     'big_img_q': Tensor(np.zeros(img_buf_shape, dtype=np.uint8), device=device).contiguous().realize(),
     'feat_q': Tensor(np.zeros((frame_skip * fb[1], fb[0], feat_dim), dtype=np.float32), device=device).contiguous().realize(),
     'desire_q': Tensor(np.zeros((frame_skip * dp[1], dp[0], dp[2]), dtype=np.float32), device=device).contiguous().realize(),
-    'packed_npy_inputs': Tensor(packed_input, device=device).realize(),
+    'packed_npy_inputs': input_view(packed_gpu[128:128 + policy_size].bitcast('float32')),
   }
-  return input_queues, npy
+  return input_queues, npy, packed_input, packed_gpu
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -97,9 +105,6 @@ def make_run_policy(model_runner, model_metadata, frame_skip):
   model_input_dtypes = {name: spec.dtype for name, spec in model_runner.graph_inputs.items()}
 
   def run_policy(warped, img_q, big_img_q, feat_q, desire_q, packed_npy_inputs):
-    packed_npy_inputs = packed_npy_inputs.to(Device.DEFAULT)
-    Tensor.realize(packed_npy_inputs, warped)
-
     img = shift_and_sample(img_q, warped[0:1], sample_skip_fn)
     big_img = shift_and_sample(big_img_q, warped[1:2], sample_skip_fn)
 
@@ -127,13 +132,13 @@ def compile_jit(jit, input_keys, make_queues, benchmark_runs):
 
   SEED = 42
   def random_inputs_run(fn, seed, n_runs, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy = make_queues(Device.DEFAULT)
+    input_queues, npy, packed_input, packed_gpu = make_queues(Device.DEFAULT)
     rng = np.random.default_rng(seed)
 
     for i in range(n_runs):
       for v in npy.values():
         v[:] = rng.standard_normal(v.shape).astype(v.dtype)
-      input_queues['packed_npy_inputs'].assign(Tensor(np.concatenate([v.reshape(-1) for v in npy.values()]), device=Device.DEFAULT)).realize()
+      packed_gpu._buffer().copy_from(Tensor(packed_input, device='NPY')._buffer())
       warped = rng.integers(0, 256, size=input_queues['warped'].shape, dtype=np.uint8)
       input_queues['warped'].assign(Tensor(warped, device=Device.DEFAULT)).realize()
       Device.default.synchronize()
