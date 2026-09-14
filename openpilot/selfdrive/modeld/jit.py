@@ -27,5 +27,8 @@ def _bind(jit, args, kwargs):
 def link_jits(*stages):
   # Bind fixed buffers once, then group the precompiled kernels into one execution graph.
   calls = tuple(call for jit, args, kwargs in stages for call in _bind(jit, args, kwargs).src)
-  linear = graph_split_rewrite(UOp(Ops.LINEAR, src=calls))
+  linear = UOp(Ops.LINEAR, src=calls)
+  if any(call.src[0].op is Ops.CUSTOM_FUNCTION and call.src[0].arg == 'graph'
+         for jit, _, _ in stages for call in jit.captured._linear.src):
+    linear = graph_split_rewrite(linear)
   return _TinyJit(None, captured=CapturedJit(stages[-1][0].captured.ret, linear, [], []))
