@@ -132,7 +132,7 @@ class ModelState:
     input_devices = jits['input_devices']
     self.model_device = input_devices['model']
     metadata = jits['metadata']
-    self.input_specs = jits['input_specs']
+    self.input_shapes = jits['input_shapes']
     self.state_pairs = jits['state_pairs']
     self.vision_input_names = ('img', 'big_img')
     self.output_slices = metadata['output_slices']
@@ -142,7 +142,7 @@ class ModelState:
 
     self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
     self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_specs, self.state_pairs, device=self.model_device, frame_copy_size=self.frame_copy_size)
+      self.input_shapes, self.state_pairs, device=self.model_device, frame_copy_size=self.frame_copy_size)
     self.parser = Parser()
     self.run_model = jits['run_model'][(cam_w,cam_h)]
 
@@ -182,7 +182,7 @@ class ModelState:
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
     self.input_queues, self.npy, self.frame_views = make_input_queues(
-      self.input_specs, self.state_pairs, device=self.model_device, frame_copy_size=self.frame_copy_size)
+      self.input_shapes, self.state_pairs, device=self.model_device, frame_copy_size=self.frame_copy_size)
     self.prev_desire[:] = 0
 
 
