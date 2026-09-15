@@ -7,6 +7,7 @@ import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Buffer, Device
 from tinygrad.dtype import DType, dtypes
+from tinygrad.engine.jit import TinyJit
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
@@ -155,6 +156,9 @@ class ModelState:
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
       self.run_warp = pickle.load(f)['run']
     self.run_model = jits['run']
+    def update_states(outputs):
+      return Tensor.realize(*(self.input_queues[name].assign(outputs[next_name]) for name, next_name in self.state_pairs.items()))
+    self.update_states = TinyJit(update_states)
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
@@ -195,8 +199,7 @@ class ModelState:
     self.input_device.copy_from(self.input_host)
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     outs = self.run_model(**self.input_queues)
-    for name, next_name in self.state_pairs.items():
-      self.input_queues[name]._buffer().copy_from(outs[next_name]._buffer())
+    self.update_states(outs)
     if after_enqueue is not None:
       after_enqueue()
     model_output = outs['outputs'].numpy()[0]
