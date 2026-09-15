@@ -1,0 +1,15 @@
+import opendbc
+
+env = Environment(
+  CFLAGS=[
+    '-nostdlib',
+    '-fno-builtin',
+    '-std=gnu11',
+    '-Wfatal-errors',
+    '-Wno-pointer-to-int-cast',
+  ],
+  CPPPATH=[".", "../../", "../../board/", opendbc.INCLUDE_PATH],
+)
+
+panda = env.SharedObject("panda.os", "panda.c")
+libpanda = env.SharedLibrary("libpanda.so", [panda])
