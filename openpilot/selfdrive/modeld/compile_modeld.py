@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import atexit
-import math
 import os
 import tempfile
 import time
 import shutil
-from functools import partial
 
 import numpy as np
 
@@ -32,67 +30,35 @@ _patch_tinygrad_fetch_fw()
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
-from tinygrad.helpers import round_up
-from tinygrad.uop.ops import UOp
 
 
-def nv12_copy_size(stride: int, y_height: int, uv_height: int) -> int:
-  # Retain the padded Y and UV plane storage, but skip the trailing kernel/guard allocation.
-  return stride * (y_height + uv_height)
+def make_input_queues(input_shapes, device):
+  return {name: Tensor(np.zeros(shape, dtype=dtype.fmt), device=device).realize() for name, (shape, dtype) in input_shapes.items()}
 
 
-def get_npy_shapes(input_shapes, state_pairs):
-  shapes = {name: shape for name, (shape, _) in input_shapes.items() if name not in state_pairs and name != 'new_img'}
-  return shapes, [math.prod(s) for s in shapes.values()]
-
-
-def input_view(tensor: Tensor) -> Tensor:
-  return Tensor(UOp.from_buffer(tensor._buffer())).reshape(tensor.shape)
-
-
-def make_input_queues(input_shapes, state_pairs, device, frame_copy_size=0):
-  shapes, sizes = get_npy_shapes(input_shapes, state_pairs)
-  policy_size = sum(sizes) * np.dtype(np.float32).itemsize
-  packed_input = np.zeros(round_up(128 + policy_size, 128) + 2 * frame_copy_size, dtype=np.uint8)
-  packed_gpu = Tensor(packed_input, device=device).realize()
-  policy = packed_input[128:128 + policy_size].view(np.float32)
-  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(policy, np.cumsum(sizes[:-1])), strict=True)}
-  input_queues = {name: Tensor(np.zeros(shape, dtype=dtype.fmt), device=device).realize()
-                  for name, (shape, dtype) in input_shapes.items() if name in state_pairs or name == 'new_img'}
-  input_queues['packed_npy_inputs'] = input_view(packed_gpu[128:128 + policy_size].bitcast('float32'))
-  return input_queues, npy, packed_input, packed_gpu
-
-
-def make_run_model(model_runner, input_shapes, state_pairs):
-  shapes, sizes = get_npy_shapes(input_shapes, state_pairs)
-
-  def run_model(new_img, packed_npy_inputs, **state_inputs):
-    inputs = {name: t.reshape(s) for (name, s), t in zip(shapes.items(), packed_npy_inputs.split(sizes), strict=True)}
-    inputs['new_img'] = new_img
-    inputs = {name: value.cast(input_shapes[name][1]) for name, value in inputs.items()}
-    outputs = {name: value.contiguous() for name, value in model_runner(inputs | state_inputs).items()}
+def make_run_model(model_runner, state_pairs):
+  def run_model(**inputs):
+    outputs = {name: value.contiguous() for name, value in model_runner(inputs).items()}
     Tensor.realize(*outputs.values())
     if state_pairs:
-      Tensor.realize(*(state_inputs[name].assign(outputs[next_name]) for name, next_name in state_pairs.items()))
+      Tensor.realize(*(inputs[name].assign(outputs[next_name]) for name, next_name in state_pairs.items()))
     return tuple(value for name, value in outputs.items() if name not in state_pairs.values())
   return run_model
 
 
-def compile_jit(jit, make_queues, benchmark_runs):
+def compile_jit(jit, input_shapes, benchmark_runs):
   if benchmark_runs < 1:
     raise ValueError("benchmark_runs must be at least 1")
 
   SEED = 42
   def random_inputs_run(fn, seed, n_runs, test_val=None, test_buffers=None, expect_match=True):
-    input_queues, npy, packed_input, packed_gpu = make_queues(Device.DEFAULT)
+    input_queues = make_input_queues(input_shapes, Device.DEFAULT)
     rng = np.random.default_rng(seed)
 
     for i in range(n_runs):
-      for v in npy.values():
-        v[:] = rng.standard_normal(v.shape).astype(v.dtype)
-      packed_gpu._buffer().copy_from(Tensor(packed_input, device='NPY')._buffer())
-      warped = rng.integers(0, 256, size=input_queues['new_img'].shape, dtype=np.uint8)
-      input_queues['new_img'].assign(Tensor(warped, device=Device.DEFAULT)).realize()
+      for value in input_queues.values():
+        values = rng.standard_normal(value.shape) if np.issubdtype(np.dtype(value.dtype.fmt), np.floating) else rng.integers(0, 256, value.shape)
+        value.assign(Tensor(values.astype(value.dtype.fmt), device=Device.DEFAULT)).realize()
       Device.default.synchronize()
       st = time.perf_counter()
       outs = fn(**input_queues)
@@ -156,9 +122,8 @@ if __name__ == "__main__":
     'input_devices': {'model': Device.DEFAULT},
   }
 
-  run_model = make_run_model(model_runner, input_shapes, state_pairs)
-  make_model_queues = partial(make_input_queues, input_shapes, state_pairs)
-  out['run_model'] = compile_jit(TinyJit(run_model, prune=True), make_model_queues, args.benchmark_runs)
+  run_model = make_run_model(model_runner, state_pairs)
+  out['run_model'] = compile_jit(TinyJit(run_model, prune=True), input_shapes, args.benchmark_runs)
 
   with open(args.output, "wb") as f:
     dump_oob(out, f)

@@ -6,6 +6,9 @@ import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 from tinygrad.device import Device
 from tinygrad.tensor import Tensor
+from tinygrad.helpers import round_up
+from tinygrad.uop.ops import UOp
+import math
 import pickle
 import threading
 import time
@@ -28,7 +31,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.compile_modeld import input_view, make_input_queues, nv12_copy_size
+from openpilot.selfdrive.modeld.compile_modeld import make_input_queues
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -126,6 +129,10 @@ class FrameMeta:
       self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 
+def input_view(tensor: Tensor) -> Tensor:
+  return Tensor(UOp.from_buffer(tensor._buffer())).reshape(tensor.shape)
+
+
 class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
@@ -142,14 +149,22 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
 
-    self.frame_copy_size = nv12_copy_size(*get_nv12_info(cam_w, cam_h)[:3])
-    self.input_queues, self.npy, self.packed_input, packed_gpu = make_input_queues(
-      self.input_shapes, self.state_pairs, self.model_device, self.frame_copy_size)
+    stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
+    self.frame_copy_size = stride * (y_height + uv_height)
+    self.input_queues = make_input_queues(self.input_shapes, self.model_device)
+    shapes = {'tfm': (2, 3, 3)} | {name: shape for name, (shape, _) in self.input_shapes.items()
+                                   if name not in self.state_pairs and name != 'new_img'}
+    sizes = [round_up(math.prod(shape), 32) for shape in shapes.values()]
+    self.packed_input = np.zeros(sum(sizes) * 4 + 2 * self.frame_copy_size, dtype=np.uint8)
+    packed_gpu = Tensor(self.packed_input, device=self.model_device).realize()
     self.input_host, self.input_device = Tensor(self.packed_input, device='NPY')._buffer(), packed_gpu._buffer()
+    self.npy = {}
+    for (name, shape), host, gpu in zip(shapes.items(), np.split(self.packed_input[:sum(sizes)*4].view(np.float32), np.cumsum(sizes[:-1])),
+                                       packed_gpu[:sum(sizes)*4].bitcast('float32').split(sizes), strict=True):
+      self.npy[name] = host[:math.prod(shape)].reshape(shape)
+      self.input_queues[name] = input_view(gpu[:math.prod(shape)].reshape(shape))
     self.frames = self.packed_input[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)
-    self.transforms = self.packed_input[:72].view(np.float32).reshape(2, 3, 3)
-    self.warp_inputs = (input_view(packed_gpu[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)),
-                        input_view(packed_gpu[:72].bitcast('float32').reshape(2, 3, 3)))
+    self.warp_inputs = (input_view(packed_gpu[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)), self.input_queues.pop('tfm'))
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
       self.run_warp = pickle.load(f)
     self.run_model = jits['run_model']
@@ -163,7 +178,7 @@ class ModelState:
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for i, key in enumerate(('img', 'big_img')):
       np.copyto(self.frames[i], np.frombuffer(bufs[key].data, dtype=np.uint8, count=self.frame_copy_size))
-      self.transforms[i] = transforms[key]
+      self.npy['tfm'][i] = transforms[key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
