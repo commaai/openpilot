@@ -136,7 +136,7 @@ class PairBigButton(BigButton):
       self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")
       if ui_state.prime_state.is_prime():
-        self.set_value("manage prime" if ui_state.prime_state.is_full_prime() else "manage prime lite")
+        self.set_value("prime" if ui_state.prime_state.is_full_prime() else "prime lite")
       else:
         self.set_value("claim prime trial" if ui_state.prime_state.can_claim_prime_trial() else "upgrade to prime")
     else:
