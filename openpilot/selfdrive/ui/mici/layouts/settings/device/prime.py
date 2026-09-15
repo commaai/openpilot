@@ -109,9 +109,10 @@ class PrimeScroller(NavScroller):
         self._manage_prime,
       ])
     else:
-      self._scroller._show_scroll_indicator = False
+      qr = QR(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL)
+      self._scroller.scroll_indicator_start_after = qr
       self._scroller.add_widgets([
-        QR(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL),
+        qr,
         GreyBigButton("finish setup", "scan to pair device\nwith connect",
                       gui_app.texture("icons_mici/settings/device/green_settings.png", 64, 64)),
         GreyBigButton("", "connect lets you review recent driving footage and bookmark events."),
