@@ -22,7 +22,7 @@ class PairingInfoLayout(Widget):
       UnifiedLabel(ui_state.prime_state.get_pairing_account, 32, max_width=340,
                    text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False, scroll=True),
       UnifiedLabel("status", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
-      UnifiedLabel(self._get_prime_status, 28, max_width=304,
+      UnifiedLabel(self._get_prime_status, 32, max_width=304,
                    text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False),
     ]
     self.set_rect(rl.Rectangle(0, 0, 360, 180))
@@ -95,13 +95,16 @@ class PrimeScroller(NavScroller):
     self._params = Params()
     self.initial_is_paired = ui_state.prime_state.is_paired()
 
-    subtitle = ""
+    self._manage_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
+
     if not ui_state.prime_state.is_prime():
       subtitle = "claim prime trial" if ui_state.prime_state.can_claim_prime_trial() else "upgrade to prime"
-    self._manage_prime = BigButton("manage", subtitle, gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
+      self._manage_prime = BigButton("prime", subtitle, icon=self._manage_icon)
+    else:
+      self._manage_prime = BigButton("manage prime", icon=self._manage_icon)
     self._manage_prime.set_click_callback(lambda: gui_app.push_widget(PrimeManagementScroller()))
 
-    if ui_state.prime_state.is_paired():
+    if self.initial_is_paired:
       self._scroller.add_widgets([
         PairingInfoLayout(),
         self._manage_prime,
