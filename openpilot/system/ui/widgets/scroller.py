@@ -146,9 +146,9 @@ class _Scroller(Widget):
 
     # preserve original touch valid callback
     original_touch_valid_callback = item._touch_valid_callback
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and not self._scrolling_to[2]
-                                          and not self.moving_items and (original_touch_valid_callback() if
-                                                                         original_touch_valid_callback else True))
+    item.set_touch_valid_callback(lambda: self._touch_valid() and self.scroll_panel.is_touch_valid()
+                                          and self.enabled and not self._scrolling_to[2] and not self.moving_items
+                                          and (original_touch_valid_callback() if original_touch_valid_callback else True))
 
   def add_widgets(self, items: Sequence[Widget]) -> None:
     for item in items:
@@ -396,6 +396,10 @@ class Scroller(Widget):
     self._scroller = self._child(_Scroller([], **kwargs))
     # pass down enabled to child widget for nav stack
     self._scroller.set_enabled(lambda: self.enabled)
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    self._scroller.set_touch_valid_callback(touch_callback)
 
   def _render(self, _, /):
     self._scroller.render(self._rect)
