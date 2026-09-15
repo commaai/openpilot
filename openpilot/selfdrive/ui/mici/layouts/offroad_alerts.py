@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pyray as rl
 import re
 import threading
