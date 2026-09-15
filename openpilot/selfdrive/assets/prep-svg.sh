@@ -23,8 +23,8 @@ done
 
 # sudo apt install inkscape
 
-for svg in $(find $DIR -type f | grep svg$); do
-  bunx svgo $svg --multipass --pretty --indent 2
+for svg in $(find "$DIR" -type f | grep svg$); do
+  bunx svgo "$svg" --multipass --pretty --indent 2
 
   # convert to PNG
   png="${svg%.svg}.png"

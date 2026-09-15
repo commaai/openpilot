@@ -51,10 +51,11 @@ void SegmentManager::setCurrentSegment(int seg_num) {
 void SegmentManager::manageSegmentCache() {
   while (true) {
     std::unique_lock lock(mutex_);
-    cv_.wait(lock, [this]() { return exit_ || needs_update_; });
+    cv_.wait_until(lock, next_retry_, [this]() { return exit_ || needs_update_; });
     if (exit_) break;
 
     needs_update_ = false;
+    next_retry_ = std::chrono::steady_clock::time_point::max();
     auto cur = segments_.lower_bound(cur_seg_num_);
     if (cur == segments_.end()) continue;
 
@@ -69,8 +70,12 @@ void SegmentManager::manageSegmentCache() {
     bool merged = mergeSegments(begin, end);
 
     // Free segments outside the current range
-    std::for_each(segments_.begin(), begin, [](auto &segment) { segment.second.reset(); });
-    std::for_each(end, segments_.end(), [](auto &segment) { segment.second.reset(); });
+    auto evict = [this](auto &segment) {
+      segment.second.reset();
+      load_attempts_.erase(segment.first);
+    };
+    std::for_each(segments_.begin(), begin, evict);
+    std::for_each(end, segments_.end(), evict);
 
     if (merged && onSegmentMergedCallback_) {
       onSegmentMergedCallback_();  // Notify listener that segments have been merged
@@ -121,7 +126,25 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
   auto tryLoadSegment = [this](auto first, auto last) {
     for (auto it = first; it != last; ++it) {
       auto &segment_ptr = it->second;
+      auto &attempt = load_attempts_[it->first];
+      if (segment_ptr && segment_ptr->getState() == Segment::LoadState::Failed) {
+        // A failed object must not permanently occupy its cache slot. Back off
+        // between retries while allowing other segments to load meanwhile.
+        if (attempt.count >= MAX_SEGMENT_LOAD_ATTEMPTS) continue;
+        const auto now = std::chrono::steady_clock::now();
+        if (attempt.retry_at == std::chrono::steady_clock::time_point::max()) {
+          attempt.retry_at = now + std::chrono::seconds(attempt.count);
+        }
+        if (now < attempt.retry_at) {
+          next_retry_ = std::min(next_retry_, attempt.retry_at);
+          continue;
+        }
+        segment_ptr.reset();
+        rWarning("retrying segment %d (attempt %d/%d)", it->first, attempt.count + 1, MAX_SEGMENT_LOAD_ATTEMPTS);
+      }
       if (!segment_ptr) {
+        ++attempt.count;
+        attempt.retry_at = std::chrono::steady_clock::time_point::max();
         if (onBenchmarkEvent_) {
           onBenchmarkEvent_(it->first, "loading");
         }
