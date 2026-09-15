@@ -72,6 +72,7 @@ def compile_model(onnx_path, pkl_path, flags, chestnut=False):
   def do_compile(target, source, env):
     if os.path.isfile(onnx_path):
       return env.Execute(cmd.format(onnx=onnx_path))
+    # TODO: Remove ONNX chunk reassembly once models are precompiled.
     with tempfile.NamedTemporaryFile(dir=os.path.dirname(onnx_path), suffix='.onnx') as tmp, open_file_chunked(onnx_path) as src:
       shutil.copyfileobj(src, tmp)
       tmp.flush()
