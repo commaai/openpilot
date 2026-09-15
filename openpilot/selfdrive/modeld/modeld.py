@@ -4,7 +4,8 @@ import ctypes
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
-from tinygrad.device import Device
+from tinygrad.device import Buffer, Device
+from tinygrad.dtype import DType, dtypes
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
@@ -129,8 +130,9 @@ class FrameMeta:
       self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 
-def input_view(tensor: Tensor) -> Tensor:
-  return Tensor(UOp.from_buffer(tensor._buffer())).reshape(tensor.shape)
+def input_view(buffer: Buffer, shape: tuple[int, ...], dtype: DType, offset: int) -> Tensor:
+  view = buffer.view(math.prod(shape), dtype, offset).ensure_allocated()
+  return Tensor(UOp.from_buffer(view)).reshape(shape)
 
 
 class ModelState:
@@ -138,13 +140,11 @@ class ModelState:
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
     jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
-    input_devices = jits['input_devices']
-    self.model_device = input_devices['model']
-    metadata = jits['metadata']
+    self.model_device = jits['input_devices']['model']
     self.input_shapes = jits['input_shapes']
     self.state_pairs = jits['state_pairs']
     self.vision_input_names = ('img', 'big_img')
-    self.output_slices = metadata['output_slices']
+    self.output_slices = jits['metadata']['output_slices']
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
@@ -158,30 +158,29 @@ class ModelState:
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
+    # Pack host inputs into one upload to reduce USB transfer overhead for the eGPU.
     self.input_queues = make_input_queues({name: self.input_shapes[name] for name in self.state_pairs}, self.model_device)
     shapes = {'tfm': (2, 3, 3)} | {name: shape for name, (shape, _) in self.input_shapes.items()
                                    if name not in self.state_pairs and name != 'new_img'}
-    sizes = [round_up(math.prod(shape), 32) for shape in shapes.values()]
-    npy_size = sum(sizes) * 4
+    npy_size = sum(round_up(math.prod(shape) * 4, 128) for shape in shapes.values())
     self.packed_input = np.zeros(npy_size + 2 * self.frame_copy_size, dtype=np.uint8)
-    packed_gpu = Tensor(self.packed_input, device=self.model_device).realize()
-    self.input_host, self.input_device = Tensor(self.packed_input, device='NPY')._buffer(), packed_gpu._buffer()
+    self.input_host = Tensor(self.packed_input, device='NPY')._buffer()
+    self.input_device = Tensor(self.packed_input, device=self.model_device)._buffer()
     self.npy = {}
-    host_inputs = np.split(self.packed_input[:npy_size].view(np.float32), np.cumsum(sizes[:-1]))
-    gpu_inputs = packed_gpu[:npy_size].bitcast('float32').split(sizes)
-    for (name, shape), host, gpu in zip(shapes.items(), host_inputs, gpu_inputs, strict=True):
-      self.npy[name] = host[:math.prod(shape)].reshape(shape)
-      self.input_queues[name] = input_view(gpu[:math.prod(shape)].reshape(shape))
-    self.frames = self.packed_input[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)
-    self.warp_inputs = (input_view(packed_gpu[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)), self.input_queues.pop('tfm'))
+    offset = 0
+    for name, shape in shapes.items():
+      self.npy[name] = np.ndarray(shape, dtype=np.float32, buffer=self.packed_input, offset=offset)
+      self.input_queues[name] = input_view(self.input_device, shape, dtypes.float32, offset)
+      offset += round_up(self.npy[name].nbytes, 128)
+    self.frames = self.packed_input[npy_size:].reshape(2, self.frame_copy_size)
+    self.warp_inputs = (input_view(self.input_device, self.frames.shape, dtypes.uint8, npy_size), self.input_queues.pop('tfm'))
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
-    parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
-    return parsed_model_outputs
+    return {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
 
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
-    for i, key in enumerate(('img', 'big_img')):
+    for i, key in enumerate(self.vision_input_names):
       np.copyto(self.frames[i], np.frombuffer(bufs[key].data, dtype=np.uint8, count=self.frame_copy_size))
       self.npy['tfm'][i] = transforms[key]
 

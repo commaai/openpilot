@@ -13,6 +13,21 @@ MODELS_DIR = Path(__file__).resolve().parent / 'models'
 TG_INPUT_DEVICES_PATH = MODELS_DIR / 'tg_input_devices.json'
 
 
+def patch_tinygrad_fetch_fw():
+  import hashlib
+  import zstandard
+  from tinygrad import helpers
+  original_fetch_fw = helpers.fetch_fw
+  def fetch_fw(path, name, sha256):
+    p = Path(f"/lib/firmware/{path}/{name}.zst")
+    if p.is_file():
+      blob = zstandard.ZstdDecompressor().stream_reader(p.read_bytes()).read()
+      if hashlib.sha256(blob).hexdigest() == sha256:
+        return blob
+    return original_fetch_fw(path, name, sha256)
+  helpers.fetch_fw = fetch_fw
+
+
 def get_tg_input_devices(process_name: str, chestnut: bool):
   with open(TG_INPUT_DEVICES_PATH) as f:
     return json.load(f)[process_name]['default' if not chestnut else 'chestnut']

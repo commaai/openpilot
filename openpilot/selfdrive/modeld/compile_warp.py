@@ -2,6 +2,10 @@ import argparse
 import pickle
 import time
 from collections import namedtuple
+
+from openpilot.selfdrive.modeld.helpers import patch_tinygrad_fetch_fw
+patch_tinygrad_fetch_fw()
+
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
@@ -46,13 +50,12 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad,
 def frames_to_tensor(frames):
   H = (frames.shape[0] * 2) // 3
   W = frames.shape[1]
-  in_img1 = Tensor.cat(frames[0:H:2, 0::2],
-                       frames[1:H:2, 0::2],
-                       frames[0:H:2, 1::2],
-                       frames[1:H:2, 1::2],
-                       frames[H:H+H//4].reshape((H//2, W//2)),
-                       frames[H+H//4:H+H//2].reshape((H//2, W//2)), dim=0).reshape((6, H//2, W//2))
-  return in_img1
+  return Tensor.cat(frames[0:H:2, 0::2],
+                    frames[1:H:2, 0::2],
+                    frames[0:H:2, 1::2],
+                    frames[1:H:2, 1::2],
+                    frames[H:H+H//4].reshape((H//2, W//2)),
+                    frames[H+H//4:H+H//2].reshape((H//2, W//2)), dim=0).reshape((6, H//2, W//2))
 
 
 def make_frame_prepare(nv12: NV12Frame, model_w, model_h, layout="yuv420", border_fill=None):
@@ -80,8 +83,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h, layout="yuv420", borde
                                     M_inv_uv, (model_w//2, model_h//2),
                                     (cam_h//2, cam_w//2), 0, border_fill_val=border_fill).realize()
     yuv = y.cat(u).cat(v).reshape((model_h * 3 // 2, model_w))
-    tensor = frames_to_tensor(yuv)
-    return tensor
+    return frames_to_tensor(yuv)
   return frame_prepare_tinygrad
 
 

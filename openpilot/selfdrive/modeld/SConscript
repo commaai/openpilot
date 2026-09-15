@@ -66,7 +66,8 @@ compile_modeld_script = [
   File(f"{modeld_dir}/helpers.py"),
   File("#openpilot/common/hardware/hw.py"),
 ]
-compile_warp_script = [File(f"{modeld_dir}/compile_warp.py"), File("#openpilot/system/camerad/cameras/nv12_info.py")]
+compile_warp_script = [File(f"{modeld_dir}/compile_warp.py"), File(f"{modeld_dir}/helpers.py"),
+                       File("#openpilot/system/camerad/cameras/nv12_info.py")]
 model_w, model_h = MEDMODEL_INPUT_SIZE
 
 for chestnut in [False, True] if CHESTNUT else [False]:

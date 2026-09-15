@@ -8,24 +8,8 @@ import shutil
 
 import numpy as np
 
-from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob
-
-def _patch_tinygrad_fetch_fw():
-  import hashlib
-  import pathlib
-  import zstandard
-  from tinygrad import helpers
-  _orig = helpers.fetch_fw
-  def fetch_fw(path, name, sha256):
-    p = pathlib.Path(f"/lib/firmware/{path}/{name}.zst")
-    if p.is_file():
-      blob = zstandard.ZstdDecompressor().stream_reader(p.read_bytes()).read()
-      if hashlib.sha256(blob).hexdigest() == sha256:
-        return blob
-    return _orig(path, name, sha256)
-  helpers.fetch_fw = fetch_fw
-_patch_tinygrad_fetch_fw()
-
+from openpilot.selfdrive.modeld.helpers import dump_oob, load_oob, patch_tinygrad_fetch_fw
+patch_tinygrad_fetch_fw()
 
 from tinygrad.tensor import Tensor
 from tinygrad.device import Device
@@ -68,8 +52,8 @@ def compile_jit(jit, input_shapes, benchmark_runs):
       print(f"  [{i+1}/{n_runs}] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
       if i == 0:
-        val = [np.copy(v.numpy()) for v in outs]
-        buffers = [np.copy(v.numpy().copy()) for v in input_queues.values()]
+        val = [v.numpy() for v in outs]
+        buffers = [v.numpy() for v in input_queues.values()]
 
     if test_val is not None:
       match = all(np.array_equal(a, b) for a, b in zip(val, test_val, strict=True))
