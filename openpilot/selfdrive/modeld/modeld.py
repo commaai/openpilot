@@ -223,7 +223,7 @@ def main(demo=False):
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
-  params.put_bool("ChestnutLoading", CHESTNUT)
+  params.put_bool("ChestnutLoading", CHESTNUT or params.get_bool("ChestnutLoading"))
   params.remove("ChestnutActive")
 
   config_realtime_process(7, 54)
@@ -273,13 +273,15 @@ def main(demo=False):
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
   if model is None:
     model = small_model
-  params.put_bool("ChestnutLoading", False)
+  retry_at = time.monotonic_ns() if CHESTNUT and not model.chestnut and params.get("ChestnutModelRetry") is None else 0
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # messaging
   pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutGpuState"] if CHESTNUT else [])
   pm = PubMaster(pub_socks)
-  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
+  retry_services = ["onroadEvents", "selfdriveState", "chestnutState"] if CHESTNUT else []
+  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState",
+                  "carControl", "lateralDelay"] + retry_services)
 
   publish_state = PublishState()
   params = Params()
@@ -345,6 +347,19 @@ def main(demo=False):
       meta_extra = meta_main
 
     sm.update(0)
+    if retry_at and params.get_bool("ChestnutLoading") and params.get("ChestnutModelRetry") is None:
+      if time.monotonic_ns() - retry_at >= 60_000_000_000:
+        params.put_bool("ChestnutModelRetry", False, block=True)
+        params.put_bool("ChestnutLoading", False, block=True)
+      elif (sm.all_alive(retry_services + ['carState', 'carControl']) and sm.all_valid(retry_services + ['carState', 'carControl'])
+            and sm.logMonoTime['onroadEvents'] > retry_at
+            and any(e.name == log.OnroadEvent.EventName.bigModelLoading for e in sm['onroadEvents'])
+            and sm.logMonoTime['selfdriveState'] > sm.logMonoTime['onroadEvents'] and not sm['selfdriveState'].enabled
+            and sm.logMonoTime['carControl'] > sm.logMonoTime['onroadEvents'] and not sm['carControl'].enabled
+            and sm.logMonoTime['carState'] > retry_at and sm['carState'].standstill
+            and sm.logMonoTime['chestnutState'] > retry_at and sm['chestnutState'].pcieLtssm == 0x78):
+        params.put_bool("ChestnutModelRetry", True, block=True)
+
     desire = DH.desire
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["narrowRoadCameraState"].frameId
@@ -395,11 +410,14 @@ def main(demo=False):
                        run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutGpuState'].frequency) == 0)
       model_output = model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None)
     except Exception:
-      if not params.get_bool("ChestnutActive"):
+      if not model.chestnut:
         raise
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("ChestnutActive", False)
+      if params.get("ChestnutModelRetry") is None:
+        retry_at = time.monotonic_ns()
+        params.put_bool("ChestnutLoading", True)
       model = small_model
       if chestnut_state is not None:
         chestnut_state.big = False
@@ -433,6 +451,8 @@ def main(demo=False):
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
+      if run_count == 1 and not retry_at:
+        params.put_bool("ChestnutLoading", False)
     last_vipc_frame_id = meta_main.frame_id
 
 if __name__ == "__main__":
