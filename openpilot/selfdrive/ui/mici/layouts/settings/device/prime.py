@@ -131,6 +131,11 @@ class PrimeScroller(NavScroller):
     if not self.initial_is_paired and ui_state.prime_state.is_paired() and not self.is_dismissing:
       self.dismiss()
 
+  def show_event(self):
+    super().show_event()
+    if not ui_state.prime_state.is_prime():
+      self.set_shown_callback(self._manage_prime.trigger_grow_animation)
+
 
 if __name__ == "__main__":
   gui_app.init_window("pairing device")
