@@ -136,17 +136,13 @@ class PairBigButton(BigButton):
       self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")
       if ui_state.prime_state.is_prime():
-        self.set_value("prime" if ui_state.prime_state.is_full_prime() else "lite")
+        self.set_value("manage prime" if ui_state.prime_state.is_full_prime() else "manage prime lite")
       else:
         self.set_value("claim prime trial" if ui_state.prime_state.can_claim_prime_trial() else "upgrade to prime")
     else:
       self.set_icon(self._comma_icon)
       self.set_text("pair to connect")
       self.set_value("connect.comma.ai")
-
-    show_prime_offer = ui_state.prime_state.is_paired() and not ui_state.prime_state.is_prime()
-    self._sub_label.set_font_weight(FontWeight.BOLD if show_prime_offer else FontWeight.ROMAN)
-    self._sub_label.set_text_color(LABEL_COLOR if show_prime_offer else COMPLICATION_GREY)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)

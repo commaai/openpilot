@@ -39,10 +39,12 @@ class PrimeState:
     self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
     self._prime_trial_available = False
+    self._commacare = False
     pairing_provider = os.getenv("PAIRING_PROVIDER") or self._params.get("PairingProvider")
     self._pairing_provider: Provider | None = Provider(pairing_provider) if pairing_provider is not None else None
+    self._pairing_email: str | None = self._params.get("PairingEmail")
 
-    if self.prime_type > PrimeType.UNPAIRED and self._pairing_provider is None:
+    if self.prime_type > PrimeType.UNPAIRED:
       self._fetch_pairing_provider()
 
     self._running = False
@@ -72,6 +74,7 @@ class PrimeState:
         if is_paired and is_paired != self.is_paired():
           self._fetch_pairing_provider()
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
+        self.set_commacare(bool(data.get("commacare", False)))
         self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
@@ -88,7 +91,8 @@ class PrimeState:
         data = response.json()
         user_id = data.get("user_id", "")
         provider = Provider(user_id.partition("_")[0])
-        self.set_provider(provider)
+        email = data.get("email")
+        self.set_provider(provider, email)
     except Exception as e:
       cloudlog.error(f"Failed to fetch pairing provider: {e}")
 
@@ -97,9 +101,12 @@ class PrimeState:
       self._update_offroad_alerts()
       if prime_type <= PrimeType.UNPAIRED:
         self._prime_trial_available = False
+        self._commacare = False
         # remove provider when unpaired
         self._pairing_provider = None
+        self._pairing_email = None
         self._params.remove("PairingProvider")
+        self._params.remove("PairingEmail")
       if prime_type != self.prime_type:
         self.prime_type = prime_type
         self._params.put("PrimeType", int(prime_type))
@@ -111,10 +118,16 @@ class PrimeState:
     set_offroad_alert("Offroad_Pairing_and_trial", pairing_required and self._prime_trial_available)
     set_offroad_alert("Offroad_Prime", self.prime_type == PrimeType.NONE)
 
-  def set_provider(self, provider: Provider):
+  def set_provider(self, provider: Provider, email: str | None):
     with self._lock:
       self._pairing_provider = provider
       self._params.put("PairingProvider", str(provider))
+      self._pairing_email = email
+      self._params.put("PairingEmail", email)
+
+  def set_commacare(self, has_commacare: bool):
+    with self._lock:
+      self._commacare = has_commacare
 
   def _worker_thread(self) -> None:
     drop_realtime()
@@ -149,6 +162,10 @@ class PrimeState:
     with self._lock:
       return self._pairing_provider
 
+  def get_pairing_account(self) -> str:
+    with self._lock:
+      return self._pairing_email or (f"{self._pairing_provider} account" if self._pairing_provider else "unknown")
+
   def is_prime(self) -> bool:
     with self._lock:
       return bool(self.prime_type > PrimeType.NONE)
@@ -160,6 +177,10 @@ class PrimeState:
   def can_claim_prime_trial(self) -> bool:
     with self._lock:
       return self._prime_trial_available
+
+  def has_commacare(self) -> bool:
+    with self._lock:
+      return self._commacare
 
   def is_paired(self) -> bool:
     with self._lock:
