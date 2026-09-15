@@ -96,7 +96,6 @@ class PrimeScroller(NavScroller):
     self.initial_is_paired = ui_state.prime_state.is_paired()
 
     self._manage_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
-
     if not ui_state.prime_state.is_prime():
       subtitle = "claim prime trial" if ui_state.prime_state.can_claim_prime_trial() else "upgrade to prime"
       self._manage_prime = BigButton("prime", subtitle, icon=self._manage_icon)
