@@ -105,7 +105,7 @@ def _parse_size(s):
 
 
 def compile_warp(nv12: NV12Frame, model_w, model_h, pkl_path, layout, border_fill=None,
-                 frames=1, transform_device='NPY', frame_size=None):
+                 frames=1, transform_device=None, frame_size=None):
   print(f"Compiling {layout} warp for {nv12.width}x{nv12.height} -> {model_w}x{model_h}...")
 
   warp_jit = TinyJit(make_warp(nv12, model_w, model_h, layout, border_fill, frames), prune=True)
@@ -136,7 +136,7 @@ if __name__ == "__main__":
   p.add_argument('--layout', choices=['luma', 'yuv420'], required=True)
   p.add_argument('--border-fill', type=int, help='fill value outside the frame; omit to clamp coordinates')
   p.add_argument('--frames', type=int, default=1, help='number of frames to warp together')
-  p.add_argument('--transform-device', default='NPY', help='device holding the input transforms')
+  p.add_argument('--transform-device', help='device holding the input transforms; default: compute device')
   p.add_argument('--frame-size', type=int, help='input frame size in bytes; default: full NV12 allocation')
   p.add_argument('--output', required=True)
   args = p.parse_args()

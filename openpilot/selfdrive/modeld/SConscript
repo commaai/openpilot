@@ -110,7 +110,7 @@ for chestnut in [False, True] if CHESTNUT else [False]:
     stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
     cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 {modeld_dir}/compile_warp.py '
            f'--camera-resolution {cam_w}x{cam_h} --warp-to {model_w}x{model_h} --layout yuv420 '
-           f'--frames 2 --transform-device {"AMD" if chestnut else tg_backend} --frame-size {stride * (y_height + uv_height)} '
+           f'--frames 2 --frame-size {stride * (y_height + uv_height)} '
            f'--output {warp_pkl_path}')
     def do_compile_warp(target, source, env, command=cmd):
       return do_compile(target, source, env, command=command, chunks=())
@@ -129,7 +129,7 @@ dm_w, dm_h = DM_INPUT_SIZE
 for cam_w, cam_h in camera_configs:
   dm_pkl_path = File(f"models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
   cmd = (f'{tg_flags} {mac_brew_string} python3 {modeld_dir}/compile_warp.py '
-         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} --layout luma --border-fill 16 '
+         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} --layout luma --border-fill 16 --transform-device NPY '
          f'--output {dm_pkl_path}')
   lenv.Command(dm_pkl_path, tinygrad_files + compile_warp_script + [tg_devices_node], cmd)
 

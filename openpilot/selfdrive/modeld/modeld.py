@@ -151,16 +151,18 @@ class ModelState:
 
     stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
     self.frame_copy_size = stride * (y_height + uv_height)
-    self.input_queues = make_input_queues(self.input_shapes, self.model_device)
+    self.input_queues = make_input_queues({name: self.input_shapes[name] for name in self.state_pairs}, self.model_device)
     shapes = {'tfm': (2, 3, 3)} | {name: shape for name, (shape, _) in self.input_shapes.items()
                                    if name not in self.state_pairs and name != 'new_img'}
     sizes = [round_up(math.prod(shape), 32) for shape in shapes.values()]
-    self.packed_input = np.zeros(sum(sizes) * 4 + 2 * self.frame_copy_size, dtype=np.uint8)
+    npy_size = sum(sizes) * 4
+    self.packed_input = np.zeros(npy_size + 2 * self.frame_copy_size, dtype=np.uint8)
     packed_gpu = Tensor(self.packed_input, device=self.model_device).realize()
     self.input_host, self.input_device = Tensor(self.packed_input, device='NPY')._buffer(), packed_gpu._buffer()
     self.npy = {}
-    for (name, shape), host, gpu in zip(shapes.items(), np.split(self.packed_input[:sum(sizes)*4].view(np.float32), np.cumsum(sizes[:-1])),
-                                       packed_gpu[:sum(sizes)*4].bitcast('float32').split(sizes), strict=True):
+    host_inputs = np.split(self.packed_input[:npy_size].view(np.float32), np.cumsum(sizes[:-1]))
+    gpu_inputs = packed_gpu[:npy_size].bitcast('float32').split(sizes)
+    for (name, shape), host, gpu in zip(shapes.items(), host_inputs, gpu_inputs, strict=True):
       self.npy[name] = host[:math.prod(shape)].reshape(shape)
       self.input_queues[name] = input_view(gpu[:math.prod(shape)].reshape(shape))
     self.frames = self.packed_input[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)
