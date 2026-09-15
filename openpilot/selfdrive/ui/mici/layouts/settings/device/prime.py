@@ -70,6 +70,7 @@ class PrimeScroller(NavScroller):
   def _get_prime_url(self) -> str:
     if dongle_id := self._params.get("DongleId"):
       return f"https://connect.comma.ai/{dongle_id}/prime"
+    return "https://connect.comma.ai"
 
   def _update_state(self):
     super()._update_state()

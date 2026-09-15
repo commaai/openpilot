@@ -25,6 +25,8 @@ class QR(Widget):
     self._error = Label("QR Code Error", font_size=30, font_weight=FontWeight.BOLD, text_color=rl.RED)
 
   def _check_qr_refresh(self) -> None:
+    if self._refresh_interval is None:
+      return
     current_time = time.monotonic()
     if current_time - self._last_pairing_qr_generation >= self._refresh_interval:
       if self._texture and self._texture.id != 0:

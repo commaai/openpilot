@@ -39,7 +39,8 @@ class PrimeState:
     self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
     self._prime_trial_available = False
-    self._pairing_provider: Provider | None = os.getenv("PAIRING_PROVIDER") or self._params.get("PairingProvider")
+    pairing_provider = os.getenv("PAIRING_PROVIDER") or self._params.get("PairingProvider")
+    self._pairing_provider: Provider | None = Provider(pairing_provider) if pairing_provider is not None else None
 
     if self.prime_type > PrimeType.UNPAIRED and self._pairing_provider is None:
       self._fetch_pairing_provider()
