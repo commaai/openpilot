@@ -1,8 +1,10 @@
 import glob
 import os
+import shutil
+import tempfile
 import time
 from SCons.Script import Action, Value
-from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks
+from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks, open_file_chunked
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.helpers import chestnut_present, modeld_pkl_path
@@ -41,7 +43,7 @@ if CHESTNUT:
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 warp_deps = [File("#openpilot/system/camerad/cameras/nv12_info.py")]
-compiler = 'python3 -m examples.openpilot'
+compiler = Dir('#tinygrad_repo/examples/openpilot').abspath
 # CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
 taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
 
@@ -65,13 +67,22 @@ def chestnut_action(command, pkl=None, chunks=()):
 def compile_model(onnx_path, pkl_path, flags, chestnut=False):
   onnx_path, target_pkl_path = File(onnx_path).abspath, File(pkl_path).abspath
   onnx_deps = get_existing_chunks(onnx_path)
-  cmd = (f'{flags} {mac_brew_string} {taskset}{compiler}.compile_onnx '
-         f'--onnx {onnx_path} --output {target_pkl_path}')
+  cmd = (f'{flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_onnx.py" '
+         f'"{{onnx}}" "{target_pkl_path}" --device-input "*" --out-of-band --benchmark-runs 1')
+  def do_compile(target, source, env):
+    if os.path.isfile(onnx_path):
+      return env.Execute(cmd.format(onnx=onnx_path))
+    # TODO: Remove ONNX chunk reassembly once models are precompiled.
+    with tempfile.NamedTemporaryFile(dir=os.path.dirname(onnx_path), suffix='.onnx') as tmp, open_file_chunked(onnx_path) as src:
+      shutil.copyfileobj(src, tmp)
+      tmp.flush()
+      return env.Execute(cmd.format(onnx=tmp.name))
+  compile_action = Action(do_compile, "  [ONNX] $TARGET")
   onnx_sizes_sum = sum(os.path.getsize(f) for f in onnx_deps)
   chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
-  actions = chestnut_action(cmd, target_pkl_path, chunk_targets) if chestnut else [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
+  actions = chestnut_action(compile_action, target_pkl_path, chunk_targets) if chestnut else [compile_action, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
     tinygrad_files + onnx_deps + [Value(cmd), Value(chunk_targets), chunker_file],
@@ -89,9 +100,9 @@ for chestnut in [False, True] if CHESTNUT else [False]:
   for cam_w, cam_h in camera_configs:
     warp_pkl_path = File(f"models/{file_prefix}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
     stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
-    cmd = (f'{cmd_flags} {mac_brew_string} {taskset}{compiler}.compile_warp '
-           f'--camera-resolution {cam_w}x{cam_h} --warp-to {model_w}x{model_h} --layout yuv420 '
-           f'--frames 2 --stride {stride} --uv-offset {stride * y_height} --frame-size {stride * (y_height + uv_height)} '
+    cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_warp.py" '
+           f'--frame {cam_w},{cam_h},{stride},{y_height},{uv_height},{stride * (y_height + uv_height)} '
+           f'--warp-to {model_w}x{model_h} --layout yuv420 --frames 2 '
            f'--output {warp_pkl_path}')
     action = chestnut_action(cmd) if chestnut else cmd
     node = lenv.Command(warp_pkl_path, tinygrad_files + warp_deps + [Value(cmd)], action)
@@ -101,8 +112,8 @@ for chestnut in [False, True] if CHESTNUT else [False]:
 dm_w, dm_h = DM_INPUT_SIZE
 for cam_w, cam_h in camera_configs:
   dm_pkl_path = File(f"models/dm_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
-  stride, y_height, _, frame_size = get_nv12_info(cam_w, cam_h)
-  cmd = (f'{tg_flags} {mac_brew_string} {compiler}.compile_warp '
-         f'--camera-resolution {cam_w}x{cam_h} --warp-to {dm_w}x{dm_h} --layout luma --border-fill 16 --transform-device NPY '
-         f'--stride {stride} --uv-offset {stride * y_height} --frame-size {frame_size} --output {dm_pkl_path}')
+  stride, y_height, uv_height, frame_size = get_nv12_info(cam_w, cam_h)
+  cmd = (f'{tg_flags} {mac_brew_string} python3 "{compiler}/compile_warp.py" '
+         f'--frame {cam_w},{cam_h},{stride},{y_height},{uv_height},{frame_size} --warp-to {dm_w}x{dm_h} '
+         f'--layout luma --border-fill 16 --transform-device NPY --output {dm_pkl_path}')
   lenv.Command(dm_pkl_path, tinygrad_files + warp_deps + [Value(cmd)], cmd)

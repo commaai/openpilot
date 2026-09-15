@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from collections.abc import Callable
+import base64
 import ctypes
 from functools import cached_property
 import os
@@ -139,11 +140,11 @@ class ModelState:
 
   def __init__(self, cam_w: int, cam_h: int, chestnut: bool):
     jits = load_oob(open_file_chunked(modeld_pkl_path(chestnut)))
-    self.model_device = jits['input_devices']['model']
-    self.input_shapes = jits['input_shapes']
-    self.state_pairs = jits['state_pairs']
+    self.model_device = jits['input_specs']['new_img'][2]
+    self.input_shapes = {name: (shape, np.dtype(dtype)) for name, (shape, dtype, _) in jits['input_specs'].items()}
+    self.state_pairs = {name: f'next_{name}' for name in self.input_shapes if f'next_{name}' in jits['metadata']['output_shapes']}
     self.vision_input_names = ('img', 'big_img')
-    self.output_slices = jits['metadata']['output_slices']
+    self.output_slices = pickle.loads(base64.b64decode(jits['metadata']['metadata']['output_slices']))
 
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.chestnut = chestnut
@@ -152,13 +153,14 @@ class ModelState:
     self.frame_copy_size = stride * (y_height + uv_height)
     self.pack_inputs()
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
-      self.run_warp = pickle.load(f)
-    self.run_model = jits['run_model']
+      self.run_warp = pickle.load(f)['run']
+    self.run_model = jits['run']
+    self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
     # Pack host inputs into one upload to reduce USB transfer overhead for the eGPU.
-    self.input_queues = {name: Tensor(np.zeros(shape, dtype=dtype.fmt), device=self.model_device).realize()
+    self.input_queues = {name: Tensor(np.zeros(shape, dtype=dtype), device=self.model_device).realize()
                          for name, (shape, dtype) in self.input_shapes.items() if name in self.state_pairs}
     shapes = {'tfm': (2, 3, 3)} | {name: shape for name, (shape, _) in self.input_shapes.items()
                                    if name not in self.state_pairs and name != 'new_img'}
@@ -173,7 +175,7 @@ class ModelState:
       self.input_queues[name] = input_view(self.input_device, shape, dtypes.float32, offset)
       offset += round_up(self.npy[name].nbytes, 128)
     self.frames = self.packed_input[npy_size:].reshape(2, self.frame_copy_size)
-    self.warp_inputs = (input_view(self.input_device, self.frames.shape, dtypes.uint8, npy_size), self.input_queues.pop('tfm'))
+    self.warp_inputs = {'input_frame': input_view(self.input_device, self.frames.shape, dtypes.uint8, npy_size), 'M_inv': self.input_queues.pop('tfm')}
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     return {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -192,11 +194,13 @@ class ModelState:
     self.npy['action_t'][:] = inputs['action_t']
 
     self.input_device.copy_from(self.input_host)
-    self.input_queues['new_img'] = self.run_warp(*self.warp_inputs)
-    outs, = self.run_model(**self.input_queues)
+    self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
+    self.run_model(output_buffers=self.outputs, **self.input_queues)
+    for name, next_name in self.state_pairs.items():
+      self.input_queues[name], self.outputs[next_name] = self.outputs[next_name], self.input_queues[name]
     if after_enqueue is not None:
       after_enqueue()
-    model_output = outs.numpy()[0]
+    model_output = self.outputs['outputs'].numpy()[0]
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
