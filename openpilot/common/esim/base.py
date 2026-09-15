@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+WEBBING_ICCID_PREFIX = "8985235"
+
 
 class LPAError(RuntimeError):
   pass
@@ -19,7 +21,7 @@ class Profile:
 
   @property
   def is_comma(self) -> bool:
-    return self.provider == 'Webbing' and self.iccid.startswith('8985235')
+    return self.provider == 'Webbing' and self.iccid.startswith(WEBBING_ICCID_PREFIX)
 
   @property
   def display_name(self) -> str:
