@@ -109,7 +109,7 @@ class PairingDialog(NavScroller):
     self._params = Params()
     self._last_pairing_qr_generation = float("-inf")
     self._qr = QR(self._get_pairing_url())
-    self._scroller._show_scroll_indicator = False
+    self._scroller.scroll_indicator_start_after = self._qr
     self._scroller.add_widgets([
       self._qr,
       GreyBigButton("finish setup", "scan to pair device\nwith connect",
