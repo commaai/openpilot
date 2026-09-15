@@ -115,7 +115,7 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
 
 def get_input_layout(input_specs, state_pairs):
   specs = {'tfm': ((3, 3), dtypes.float32), 'big_tfm': ((3, 3), dtypes.float32)} | {
-    name: spec for name, spec in input_specs.items() if name not in state_pairs and name != 'warped'}
+    name: spec for name, spec in input_specs.items() if name not in state_pairs and name != 'new_img'}
   layout, offset = {}, 0
   for name, (shape, dtype) in specs.items():
     offset = round_up(offset, dtype.itemsize)
@@ -164,7 +164,7 @@ def make_run_model(warp, model_runner, input_specs, state_pairs, frame_copy_size
               for name, (offset, size, shape, dtype) in layout.items()}
     frame = packed_input[packed_npy_size:packed_npy_size + frame_copy_size]
     big_frame = packed_input[packed_npy_size + frame_copy_size:]
-    inputs['warped'] = warp(inputs.pop('tfm'), inputs.pop('big_tfm'), frame, big_frame)
+    inputs['new_img'] = warp(inputs.pop('tfm'), inputs.pop('big_tfm'), frame, big_frame)
     outputs = {name: value.contiguous() for name, value in model_runner(inputs | state_inputs).items()}
     Tensor.realize(*outputs.values())
     if state_pairs:
