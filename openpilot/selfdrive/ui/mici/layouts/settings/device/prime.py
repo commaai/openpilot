@@ -48,7 +48,8 @@ class PrimeScroller(NavScroller):
         QR(self._get_prime_url),
         *([self._prime_management] if ui_state.prime_state.is_prime() else self._prime_adverts),
       ])
-      if not ui_state.prime_state.is_prime(): self._scroller.add_widget(QR(self._get_prime_url))
+      if not ui_state.prime_state.is_prime():
+        self._scroller.add_widget(QR(self._get_prime_url))
     else:
       self._scroller._show_scroll_indicator = False
       self._scroller.add_widgets([
