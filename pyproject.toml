@@ -97,6 +97,7 @@ build-backend = "hatchling.build"
 packages = [
   "openpilot",
 ]
+dev-mode-dirs = [".", "msgq_repo"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -155,7 +156,7 @@ override-dependencies = [
 ]
 
 [tool.uv.sources]
-msgq-ipc = { path = "msgq_repo", editable = true }
+msgq-ipc = { path = "msgq_repo", package = false }
 opendbc = { path = "opendbc_repo", editable = true }
 pandacan = { path = "panda", editable = true }
 rednose = { path = "rednose_repo", editable = true }
