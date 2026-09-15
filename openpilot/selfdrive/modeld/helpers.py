@@ -21,7 +21,7 @@ def patch_tinygrad_fetch_fw():
       if hashlib.sha256(blob).hexdigest() == sha256:
         return blob
     return original_fetch_fw(path, name, sha256)
-  helpers.fetch_fw = fetch_fw  # ty: ignore[invalid-assignment]
+  helpers.fetch_fw = fetch_fw
 
 
 def modeld_pkl_path(chestnut: bool):

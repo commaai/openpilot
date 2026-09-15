@@ -12,6 +12,7 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 Import('env', 'arch')
 chunker_file = File("#openpilot/common/file_chunker.py")
 lenv = env.Clone()
+lenv.PrependENVPath('PYTHONPATH', Dir('#tinygrad_repo').abspath)
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
@@ -25,10 +26,8 @@ def estimate_pickle_max_size(onnx_size):
 camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
 
 if arch == 'comma_arm64':
-  tg_backend = 'QCOM'
-  tg_flags = f'DEV={tg_backend} IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
+  tg_flags = 'DEV=QCOM IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
-  tg_backend = 'METAL' if arch == 'Darwin' else 'CPU'
   # JIT=2 disables graph batching, which produces incorrect outputs after buffers change.
   tg_flags = 'DEV=METAL JIT=2' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
