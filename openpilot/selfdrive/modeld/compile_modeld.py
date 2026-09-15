@@ -31,8 +31,7 @@ _patch_tinygrad_fetch_fw()
 
 
 from tinygrad.tensor import Tensor
-from tinygrad.dtype import dtypes
-from tinygrad.helpers import Context, round_up
+from tinygrad.helpers import Context
 from tinygrad.device import Device
 from tinygrad.engine.jit import TinyJit
 
@@ -113,25 +112,20 @@ def make_frame_prepare(nv12: NV12Frame, model_w, model_h):
   return frame_prepare_tinygrad
 
 
-def get_input_layout(input_specs, state_pairs):
-  specs = {'tfm': ((3, 3), dtypes.float32), 'big_tfm': ((3, 3), dtypes.float32)} | {
-    name: spec for name, spec in input_specs.items() if name not in state_pairs and name != 'new_img'}
-  layout, offset = {}, 0
-  for name, (shape, dtype) in specs.items():
-    offset = round_up(offset, dtype.itemsize)
-    size = math.prod(shape) * dtype.itemsize
-    layout[name] = (offset, size, shape, dtype)
-    offset += size
-  return layout, offset
+def get_npy_shapes(input_specs, state_pairs):
+  shapes = {'tfm': (3, 3), 'big_tfm': (3, 3)} | {
+    name: shape for name, (shape, _) in input_specs.items() if name not in state_pairs and name != 'new_img'}
+  return shapes, [math.prod(s) for s in shapes.values()]
 
 
 def make_input_queues(input_specs, state_pairs, device, frame_copy_size):
-  layout, packed_npy_size = get_input_layout(input_specs, state_pairs)
+  shapes, sizes = get_npy_shapes(input_specs, state_pairs)
+  packed_npy_size = sum(sizes) * np.dtype(np.float32).itemsize
   packed_input = np.zeros(packed_npy_size + 2 * frame_copy_size, dtype=np.uint8)
+  packed_npy_inputs = packed_input[:packed_npy_size].view(np.float32)
   frames = packed_input[packed_npy_size:]
   frame_views = {'img': frames[:frame_copy_size], 'big_img': frames[frame_copy_size:]}
-  npy = {name: packed_input[offset:offset+size].view(dtype.fmt).reshape(shape)
-         for name, (offset, size, shape, dtype) in layout.items()}
+  npy = {k: v.reshape(s) for (k, s), v in zip(shapes.items(), np.split(packed_npy_inputs, np.cumsum(sizes[:-1])), strict=True)}
   input_queues = {name: Tensor(np.zeros(shape, dtype=dtype.fmt), device=device).realize()
                   for name, (shape, dtype) in input_specs.items() if name in state_pairs}
   input_queues['packed_npy_inputs'] = Tensor(packed_input, device='NPY').realize()
@@ -156,15 +150,17 @@ def make_warp(nv12, model_w, model_h):
 
 
 def make_run_model(warp, model_runner, input_specs, state_pairs, frame_copy_size):
-  layout, packed_npy_size = get_input_layout(input_specs, state_pairs)
+  shapes, sizes = get_npy_shapes(input_specs, state_pairs)
+  packed_npy_size = sum(sizes) * np.dtype(np.float32).itemsize
 
   def run_model(packed_npy_inputs, **state_inputs):
     packed_input = packed_npy_inputs.to(Device.DEFAULT).realize()
-    inputs = {name: packed_input[offset:offset+size].bitcast(dtype).reshape(shape)
-              for name, (offset, size, shape, dtype) in layout.items()}
+    packed_npy_inputs = packed_input[:packed_npy_size].bitcast('float32')
+    inputs = {name: t.reshape(s) for (name, s), t in zip(shapes.items(), packed_npy_inputs.split(sizes), strict=True)}
     frame = packed_input[packed_npy_size:packed_npy_size + frame_copy_size]
     big_frame = packed_input[packed_npy_size + frame_copy_size:]
     inputs['new_img'] = warp(inputs.pop('tfm'), inputs.pop('big_tfm'), frame, big_frame)
+    inputs = {name: value.cast(input_specs[name][1]) for name, value in inputs.items()}
     outputs = {name: value.contiguous() for name, value in model_runner(inputs | state_inputs).items()}
     Tensor.realize(*outputs.values())
     if state_pairs:
