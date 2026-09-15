@@ -244,13 +244,14 @@ float SignalView::textWidth(const std::string &text, float font_size) {
 }
 
 float SignalView::nameColumnWidth(const SignalModel::Item *item, float widget_width, const std::string &text) const {
-  float spacing = INDENTATION + COLOR_LABEL_WIDTH + 8;
+  float spacing = INDENTATION + COLOR_LABEL_WIDTH + H_MARGIN * 4;
   std::string txt = text;
   if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
     txt += multiplexIndicator(item->sig);
     spacing += H_MARGIN * 2;
   }
-  return std::min<float>(widget_width / 3.0, textWidth(txt) + spacing);
+  const float preferred = ImGui::CalcTextSize(txt.c_str()).x + spacing;
+  return std::min(widget_width * (compact_ ? 0.6f : 0.4f), preferred);
 }
 
 void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const SignalModel::Item *item, int column,
@@ -260,13 +261,13 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
 
   ImRect rect(option_rect.Min.x + h_margin, option_rect.Min.y + v_margin, option_rect.Max.x - h_margin, option_rect.Max.y - v_margin);
   // selection background is painted by the row's Selectable
-  const ImU32 text_color = ImGui::GetColorU32(ImGuiCol_Text);
+  const ImU32 text_color = ImGui::GetColorU32(selected ? palette().text_selected : palette().text);
 
   if (column == 0) {
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + COLOR_LABEL_WIDTH, rect.Max.y);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(signalFillColor(item->sig->color).darker(item->highlight ? 125 : 0)), ImGui::GetStyle().FrameRounding);
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->sig->color.darker(item->highlight ? 125 : 0)), ImGui::GetStyle().FrameRounding);
       drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
                nullptr, LABEL_FONT);
 
@@ -286,7 +287,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
     // name
     if (rect.GetWidth() > 0) drawElidedText(painter, rect, text, text_color, false);
   } else if (column == 1) {
-    if (!item->sparkline.isEmpty()) {
+    if (!compact_ && !item->sparkline.isEmpty()) {
       const ImVec2 sparkline_size = item->sparkline.size;
       item->sparkline.draw(painter, rect.Min, selected ? text_color : 0);
       // min-max value
@@ -334,15 +335,18 @@ void SignalView::drawEditor(SignalModel::Item *item) {
 
     drawLineEditor(item, validator, take_focus);
   } else if (item->type == SignalModel::Item::Size) {
-    int v = item->sig->size;
-    if (take_focus) ImGui::SetKeyboardFocusHere();
-    bool changed = ImGui::InputInt("##editor", &v, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
+    if (take_focus) {
+      edit_int_ = item->sig->size;
+      ImGui::SetKeyboardFocusHere();
+    }
+    bool changed = inputInt("##editor", &edit_int_, 1, 100, ImGuiInputTextFlags_AutoSelectAll);
     if (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
       open_item_ = nullptr;  // InputInt already reverted the value; only the commit has to be skipped
       return;
     }
     if (ImGui::IsItemDeactivatedAfterEdit() || (changed && !ImGui::IsItemActive())) {
-      queueCommit(item, std::clamp(v, 1, CAN_MAX_DATA_BYTES));
+      edit_int_ = std::clamp(edit_int_, 1, CAN_MAX_DATA_BYTES);
+      queueCommit(item, edit_int_);
     }
     // Enter, Escape and a click outside close the editor; the step buttons keep it open
     if (ImGui::IsItemDeactivated() && (!ImGui::IsItemHovered() || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
@@ -372,7 +376,7 @@ void SignalView::drawEditor(SignalModel::Item *item) {
     }
     const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, ImGui::GetID("##editor"));
     if (take_focus) ImGui::SetKeyboardFocusHere();
-    if (ImGui::Combo("##editor", &current, names.data(), names.size())) {
+    if (dropdown::Combo("##editor", &current, names.data(), names.size())) {
       queueCommit(item, items[current].second);
       open_item_ = nullptr;  // commit and close the editor
     }
@@ -492,7 +496,9 @@ void SignalView::drawValueDescriptionDlg() {
 }
 
 static ImVec2 indexButtonsSize(float button) {
-  return ImVec2(button * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2, button);
+  const auto &style = ImGui::GetStyle();
+  // Include the value-to-button gap; the extra padding balances the inset icon glyphs.
+  return ImVec2(button * 2 + style.ItemInnerSpacing.x * 2 + style.FramePadding.x, button);
 }
 
 SignalView::SignalView(ChartsWidget *charts) : charts_(charts) {
@@ -644,7 +650,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     max_value_width = std::max(max_value_width, widestValueWidth(item->sig));
   }
 
-  if (first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model_.rowCount()) {
+  if (!compact_ && first_visible_row_ != -1 && last_visible_row_ != -1 && last_visible_row_ < model_.rowCount()) {
     const float min_max_width = textWidth("-000.00", MINMAX_FONT) + 5;
     float available_width = value_column_width_ - button_size_.x;
     float value_width = std::min<float>(max_value_width + min_max_width, available_width / 2);
@@ -679,42 +685,60 @@ float SignalView::toolBarRightWidth(const std::string &range_label) {
 }
 
 // the width at which the tool bar stops squishing: the signal count and the filter box on the left, the
-// sparkline controls on the right, plus the borders and padding of the view's own child window
+// sparkline controls on the right. Padding is supplied by the message panel.
 float SignalView::minimumWidth() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const float left_width = ImGui::CalcTextSize("Signals: 000").x + style.ItemSpacing.x + FILTER_WIDTH;
   // formatSeconds is mm:ss for every value the range slider allows
-  return left_width + style.ItemSpacing.x + toolBarRightWidth("00:00") + (style.WindowPadding.x + style.ChildBorderSize) * 2;
+  return left_width + style.ItemSpacing.x + toolBarRightWidth("00:00") + style.WindowPadding.x * 2;
+}
+
+float SignalView::minimumHeight() {
+  const ImGuiStyle &style = ImGui::GetStyle();
+  return ImGui::GetFrameHeightWithSpacing() + signalRowHeight() * 4 +
+         (style.WindowPadding.y + style.ChildBorderSize + CONTROL_OUTLINE_PADDING) * 2;
 }
 
 void SignalView::draw() {
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
-  if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, palette().surface);
+  if (!ImGui::BeginChild("SignalView", ImVec2(0, 0), ImGuiChildFlags_None,
+                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     ImGui::EndChild();
     ImGui::PopStyleColor();
     return;
   }
 
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(signal_count_lb_.c_str());
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(FILTER_WIDTH);
-  if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
-    model_.setFilter(filter_edit_);
-  }
-
-  // stretch: the sparkline controls sit at the right edge
-  alignRight(toolBarRightWidth(sparkline_label_));
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted(sparkline_label_.c_str());
-  ImGui::SameLine();
-  int range = settings.sparkline_range;
-  if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, SPARKLINE_SLIDER_WIDTH)) {
-    setSparklineRange(range);
-  }
-  ImGui::SetItemTooltip("Sparkline time range");
-  ImGui::SameLine();
-  if (iconButton("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All")) collapseAll();
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float width = ImGui::GetContentRegionAvail().x;
+  compact_ = width < minimumWidth() - style.WindowPadding.x * 2;
+  const float count_width = ImGui::CalcTextSize(signal_count_lb_.c_str()).x;
+  // The standard overflow button keeps the range and collapse actions reachable on narrow panels.
+  const float filter_width = compact_ ? std::clamp(width - count_width - iconButtonWidth() - style.ItemSpacing.x * 2,
+                                                  1.0f, FILTER_WIDTH) : FILTER_WIDTH;
+  std::vector<ToolbarItem> items;
+  items.push_back({count_width, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(signal_count_lb_.c_str());
+  }});
+  items.back().in_menu = false;
+  items.push_back({filter_width, [this, filter_width]() {
+    ImGui::SetNextItemWidth(filter_width);
+    if (clearableInput("##filter_edit", &filter_edit_, "Filter Signal", nonWhitespaceValidator)) {
+      model_.setFilter(filter_edit_);
+    }
+  }});
+  items.push_back({toolBarRightWidth(sparkline_label_) - iconButtonWidth() - style.ItemSpacing.x, [this]() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(sparkline_label_.c_str());
+    ImGui::SameLine();
+    int range = settings.sparkline_range;
+    if (fusionSliderInt("##sparkline_range_slider", &range, 1, SPARKLINE_RANGE_MAX, SPARKLINE_SLIDER_WIDTH)) {
+      setSparklineRange(range);
+    }
+    ImGui::SetItemTooltip("Sparkline time range");
+  }});
+  items.push_back(toolbarAction("collapse_all", icon::ARROWS_COLLAPSE, "Collapse All", [this]() { collapseAll(); }));
+  drawToolbar(items, 2);
 
   drawTree();
   drawValueDescriptionDlg();
@@ -737,15 +761,23 @@ void SignalView::collapseAll() {
 
 void SignalView::drawTree() {
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-  const float min_height = std::max(ImGui::GetContentRegionAvail().y, 300.0f);
-  const bool visible = beginControlChild("tree", ImVec2(0, min_height));
+  // Keep the toolbar fixed; only the signal rows scroll within the remaining space.
+  const bool visible = beginControlChild("tree", ImVec2(0, 0));
   if (visible) {
+    button_size_ = indexButtonsSize(iconButtonWidth());
     DrawContext ctx{ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos().x, ImGui::GetContentRegionAvail().x, rowHeight()};
     // the press that closes an open editor is consumed by the focus change, the index widgets never see it
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) editor_open_on_press_ = open_item_ != nullptr;
 
     int first_visible = -1, last_visible = -1;
     auto &children = model_.root()->children;
+    // Measure before painting so resizing never leaves the old columns for a frame.
+    auto measure = [&](auto &&self, SignalModel::Item *item) -> void {
+      ctx.name_width = std::max(ctx.name_width, nameColumnWidth(item, ctx.width, nameText(item)));
+      if (item->expanded) for (auto child : item->children) self(self, child);
+    };
+    for (auto item : children) measure(measure, item);
+    if (ctx.name_width > 0) name_column_width_ = ctx.name_width;
     for (int i = 0; i < children.size(); ++i) {
       ctx.any_visible = false;
       const bool header_visible = drawItem(children[i], 0, ctx);
@@ -823,7 +855,7 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
   if (!item->children.empty()) {
     const float arrow_size = ImGui::GetFontSize() * 0.7f;
     ImGui::RenderArrow(ctx.draw_list, ImVec2(row_min.x + depth * INDENTATION + 4.0f, row_min.y + (row_height - arrow_size) * 0.5f),
-                       ImGui::GetColorU32(ImGuiCol_Text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
+                       ImGui::GetColorU32(selected ? palette().text_selected : palette().text), item->expanded ? ImGuiDir_Down : ImGuiDir_Right, 0.7f);
   }
 
   // every row is measured, the header sizes column 0 to the contents of the whole tree
@@ -872,24 +904,40 @@ bool SignalView::drawItem(SignalModel::Item *item, int depth, DrawContext &ctx) 
 
 void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-  const ImVec2 size = indexButtonsSize(iconButtonWidth());
-  ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - size.x, rect.Min.y + (rect.GetHeight() - size.y) * 0.5f));
+  const float button = iconButtonWidth();
+  // Anchor fixed-size buttons inside the viewport, which excludes the scrollbar.
+  ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - H_MARGIN - button * 2 - spacing,
+                                 rect.Min.y + (rect.GetHeight() - button) * 0.5f));
 
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
-  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (iconButton("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
+  const bool selected = current_sig_ == sig && current_type_ == SignalModel::Item::Sig;
+  auto row_button = [selected](const char *id, const char *glyph) {
+    if (selected) {
+      ImGui::PushStyleColor(ImGuiCol_Text, palette().text_selected);
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, palette().header_active);
+      ImGui::PushStyleColor(ImGuiCol_ButtonActive, palette().header_active);
+    }
+    const bool clicked = iconButton(id, glyph);
+    if (selected) ImGui::PopStyleColor(3);
+    return clicked;
+  };
+  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, selected ? palette().header_active : ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+  if (row_button("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model_.msgId(), sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
   if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nShift-click to add to the previously opened plot");
   ImGui::SameLine(0.0f, spacing);
-  if (iconButton("remove", icon::X_LG) && !editor_open_on_press_) {
+  if (row_button("remove", icon::X_LG) && !editor_open_on_press_) {
     pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");
-  button_size_ = size;
+  ImGui::PopStyleColor();
+  ImGui::PopStyleVar();
 }
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions) {
@@ -910,12 +958,12 @@ bool ValueDescriptionDlg::draw() {
   if (!ImGui::BeginPopupModal(popup_id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) return ImGui::IsPopupOpen(popup_id.c_str());
 
   bool closing = false;
-  if (iconButton("add", icon::PLUS_LG, "Add")) {
+  if (stepButton("add", true, "Add")) {
     table_.emplace_back("", "");
   }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::SameLine();
   ImGui::BeginDisabled(current_row_ == -1);
-  if (iconButton("remove", icon::DASH_LG, "Remove") && current_row_ < table_.size()) {
+  if (stepButton("remove", false, "Remove") && current_row_ < table_.size()) {
     table_.erase(table_.begin() + current_row_);
     current_row_ = -1;
   }
@@ -936,7 +984,7 @@ bool ValueDescriptionDlg::draw() {
       if (row == current_row_) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImGuiCol_Header));
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted(std::to_string(row + 1).c_str());
+      ImGui::TextColored(row == current_row_ ? palette().text_selected : palette().text, "%d", row + 1);
       ImGui::TableSetColumnIndex(1);
       ImGui::SetNextItemWidth(-FLT_MIN);
       if (valueDescriptionEditor(0, &table_[row].first)) current_row_ = row;
