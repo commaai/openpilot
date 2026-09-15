@@ -78,7 +78,7 @@
   },
   "Offroad_Prime": {
     "text": "Upgrade to prime. Visit connect.comma.ai to subscribe to comma prime.",
-    "severity": -1,
+    "severity": -2,
     "icon": "icons_mici/settings/device/green_cell.png"
   }
 }

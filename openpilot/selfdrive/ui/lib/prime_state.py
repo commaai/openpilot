@@ -72,7 +72,7 @@ class PrimeState:
         if is_paired and is_paired != self.is_paired():
           self._fetch_pairing_provider()
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
-        self._prime_trial_available  = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
+        self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
