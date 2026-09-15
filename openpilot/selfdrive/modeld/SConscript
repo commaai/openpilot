@@ -40,10 +40,8 @@ if CHESTNUT:
 # tinygrad calls brew which needs a $HOME in the env
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
-modeld_dir = Dir("#openpilot/selfdrive/modeld").abspath
-compile_script = [File(f"{modeld_dir}/helpers.py"), File("#openpilot/common/hardware/hw.py")]
-warp_deps = compile_script + [File("#openpilot/system/camerad/cameras/nv12_info.py")]
-compiler = f'python3 {modeld_dir}/helpers.py examples.openpilot'
+warp_deps = [File("#openpilot/system/camerad/cameras/nv12_info.py")]
+compiler = 'python3 -m examples.openpilot'
 # CPU 7 is isolated with isolcpus on AGNOS, so explicitly pin the compiler to it.
 taskset = 'taskset -c 7 ' if arch == 'comma_arm64' else ''
 
@@ -76,7 +74,7 @@ def compile_model(onnx_path, pkl_path, flags, chestnut=False):
   actions = chestnut_action(cmd, target_pkl_path, chunk_targets) if chestnut else [cmd, Action(do_chunk, "  [CHUNK] $TARGET")]
   node = lenv.Command(
     chunk_targets,
-    tinygrad_files + compile_script + onnx_deps + [Value(cmd), Value(chunk_targets), chunker_file],
+    tinygrad_files + onnx_deps + [Value(cmd), Value(chunk_targets), chunker_file],
     actions,
   )
   if chestnut:

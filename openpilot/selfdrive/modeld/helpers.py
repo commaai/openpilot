@@ -9,21 +9,6 @@ from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
 
 
-def patch_tinygrad_fetch_fw():
-  import hashlib
-  import zstandard
-  from tinygrad import helpers
-  original_fetch_fw = helpers.fetch_fw
-  def fetch_fw(path, name, sha256):
-    p = Path(f"/lib/firmware/{path}/{name}.zst")
-    if p.is_file():
-      blob = zstandard.ZstdDecompressor().stream_reader(p.read_bytes()).read()
-      if hashlib.sha256(blob).hexdigest() == sha256:
-        return blob
-    return original_fetch_fw(path, name, sha256)
-  helpers.fetch_fw = fetch_fw
-
-
 def modeld_pkl_path(chestnut: bool):
   prefix = 'big_' if chestnut else ''
   return MODELS_DIR / f'{prefix}driving_tinygrad.pkl'
@@ -51,10 +36,3 @@ def chestnut_present() -> bool:
 
 def chestnut_compiled() -> bool:
   return Path(get_manifest_path(modeld_pkl_path(chestnut=True))).is_file()
-
-
-if __name__ == "__main__":
-  import runpy
-  import sys
-  patch_tinygrad_fetch_fw()
-  runpy.run_module(sys.argv.pop(1), run_name="__main__")
