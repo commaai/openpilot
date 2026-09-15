@@ -66,7 +66,7 @@ class PrimeManagementScroller(NavScroller):
         self._prime_icon
       ),
       GreyBigButton("", "prime adds 24/7 LTE and 1 year of cloud storage in comma connect.",),
-      GreyBigButton("", "prime lets you view live video and GPS location remotely in comma connect.",),
+      GreyBigButton("", "prime lets you access live video and GPS location remotely in comma connect.",),
       GreyBigButton("", "prime also includes commacare extended device warranty.",),
     ]
     self._prime_management = [
