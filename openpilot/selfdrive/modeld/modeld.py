@@ -151,6 +151,13 @@ class ModelState:
 
     stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
     self.frame_copy_size = stride * (y_height + uv_height)
+    self.pack_inputs()
+    with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
+      self.run_warp = pickle.load(f)
+    self.run_model = jits['run_model']
+    self.parser = Parser()
+
+  def pack_inputs(self) -> None:
     self.input_queues = make_input_queues({name: self.input_shapes[name] for name in self.state_pairs}, self.model_device)
     shapes = {'tfm': (2, 3, 3)} | {name: shape for name, (shape, _) in self.input_shapes.items()
                                    if name not in self.state_pairs and name != 'new_img'}
@@ -167,10 +174,6 @@ class ModelState:
       self.input_queues[name] = input_view(gpu[:math.prod(shape)].reshape(shape))
     self.frames = self.packed_input[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)
     self.warp_inputs = (input_view(packed_gpu[-2 * self.frame_copy_size:].reshape(2, self.frame_copy_size)), self.input_queues.pop('tfm'))
-    with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
-      self.run_warp = pickle.load(f)
-    self.run_model = jits['run_model']
-    self.parser = Parser()
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
