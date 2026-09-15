@@ -71,8 +71,8 @@
     "severity": -1,
     "icon": "icons_mici/settings/device/green_settings.png"
   },
-  "Offroad_Pairing_and_trial": {
-    "text": "Finish setup. Pair your device with comma connect (connect.comma.ai) and claim your 30-day comma prime trial.",
+  "Offroad_Prime_Trial": {
+    "text": "Claim prime trial. Visit connect.comma.ai to claim your free 30-day prime trial for this device.",
     "severity": -1,
     "icon": "icons_mici/settings/device/green_settings.png"
   },

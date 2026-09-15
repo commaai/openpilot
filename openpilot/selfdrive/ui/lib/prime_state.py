@@ -76,6 +76,7 @@ class PrimeState:
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
         self.set_commacare(bool(data.get("commacare", False)))
         self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
+        self._update_offroad_alerts()
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
@@ -98,7 +99,6 @@ class PrimeState:
 
   def set_type(self, prime_type: PrimeType) -> None:
     with self._lock:
-      self._update_offroad_alerts()
       if prime_type <= PrimeType.UNPAIRED:
         self._prime_trial_available = False
         self._commacare = False
@@ -114,9 +114,9 @@ class PrimeState:
 
   def _update_offroad_alerts(self):
     pairing_required = self.prime_type <= PrimeType.UNPAIRED
-    set_offroad_alert("Offroad_Pairing", pairing_required and not self._prime_trial_available)
-    set_offroad_alert("Offroad_Pairing_and_trial", pairing_required and self._prime_trial_available)
-    set_offroad_alert("Offroad_Prime", self.prime_type == PrimeType.NONE)
+    set_offroad_alert("Offroad_Pairing", pairing_required)
+    set_offroad_alert("Offroad_Prime_Trial", self._prime_trial_available)
+    set_offroad_alert("Offroad_Prime", self.prime_type == PrimeType.NONE and not self._prime_trial_available)
 
   def set_provider(self, provider: Provider, email: str | None):
     with self._lock:
