@@ -15,7 +15,7 @@ from openpilot.system.ui.widgets.scroller import NavScroller
 class PairingInfoLayout(Widget):
   def __init__(self):
     super().__init__()
-    self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 24, 29)
+    self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 27, 32)
     subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
     self._labels = [
       UnifiedLabel("paired with", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
@@ -36,13 +36,13 @@ class PairingInfoLayout(Widget):
   def _render(self, _):
     show_commacare = ui_state.prime_state.has_commacare()
     for label, y_offset in zip(self._labels, (-10, 68 - 25, 114 - 30, 161 - 25), strict=True):
-      badge_offset = self._commacare_badge.width + 12 if show_commacare and label is self._labels[3] else 0
+      badge_offset = self._commacare_badge.width + 14 if show_commacare and label is self._labels[3] else 0
       label.set_position(self._rect.x + 20 + badge_offset, self._rect.y + y_offset)
       label.render()
 
     if show_commacare:
       label = self._labels[3]
-      badge_pos = rl.Vector2(self._rect.x + 20, label.rect.y + (label.rect.height - self._commacare_badge.height) / 2)
+      badge_pos = rl.Vector2(self._rect.x + 20, label.rect.y + (label.rect.height - self._commacare_badge.height) / 2 + 4)
       rl.draw_texture_v(self._commacare_badge, badge_pos, rl.WHITE)
 
 
