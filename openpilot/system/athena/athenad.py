@@ -542,7 +542,7 @@ class VideoClips:
             continue
           with os.scandir(entry.path) as files:
             for camera in files:
-              if camera.is_file() and camera.name.endswith("camera.hevc"):
+              if camera.is_file() and camera.name.endswith(".hevc"):
                 cameras.setdefault(camera.name, []).append(int(segment))
     except OSError:
       return {}
@@ -566,7 +566,7 @@ class VideoClips:
     route_name = route_match.group("log_id")
     camera = clip["camera"]
     filename = clip["filename"]
-    assert camera == os.path.basename(camera) and camera.endswith("camera.hevc"), "invalid camera filename"
+    assert camera == os.path.basename(camera) and camera.endswith(".hevc"), "invalid camera filename"
     assert filename == os.path.basename(filename), "invalid filename"
     with self.lock:
       self.clips[filename] = self.Clip(route_name, camera, source_start_time, source_end_time, clip["bitrate"], clip["speedup"],
