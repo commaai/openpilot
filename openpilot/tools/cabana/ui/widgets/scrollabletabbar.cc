@@ -9,7 +9,7 @@
 namespace {
 float scrollButtonsWidth() {
   const ImGuiStyle &style = ImGui::GetStyle();
-  return style.ItemSpacing.x + ImGui::GetFrameHeight() * 2.0f + style.ItemInnerSpacing.x;
+  return (ImGui::GetFrameHeight() + style.ItemSpacing.x) * 2.0f;
 }
 
 void drawScrollButtons(ImGuiTabBar *tab_bar) {
@@ -22,7 +22,7 @@ void drawScrollButtons(ImGuiTabBar *tab_bar) {
   ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
   for (int i = 0; i < 2; ++i) {
     const bool left = i == 0;
-    ImGui::SetCursorScreenPos(ImVec2(start_x + i * (size + style.ItemInnerSpacing.x), tab_bar->BarRect.Min.y));
+    ImGui::SetCursorScreenPos(ImVec2(start_x + i * (size + style.ItemSpacing.x), tab_bar->BarRect.Min.y));
     ImGui::BeginDisabled(left ? tab_bar->ScrollingTarget <= 0.0f : tab_bar->ScrollingTarget >= max_scroll);
     if (ImGui::Button(left ? "###scroll_left" : "###scroll_right", ImVec2(size, size))) {
       const float step = (left ? -4.0f : 4.0f) * ImGui::GetFontSize();
