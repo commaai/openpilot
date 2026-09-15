@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, get_tg_input_devices
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, load_oob
 from tinygrad.tensor import Tensor
 import time
 import pickle
@@ -18,10 +18,8 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
-PROCESS_NAME = "openpilot.selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
-METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
 
 class ModelState:
@@ -29,11 +27,10 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
-    self.DEV = get_tg_input_devices(PROCESS_NAME, chestnut=False)['DEV']
-    with open(METADATA_PATH, 'rb') as f:
-      model_metadata = pickle.load(f)
-      self.input_shapes = model_metadata['input_shapes']
-      self.output_slices = model_metadata['output_slices']
+    jits = load_oob(open_file_chunked(MODEL_PKL_PATH))
+    self.DEV = jits['input_devices']['model']
+    self.input_shapes = jits['metadata']['input_shapes']
+    self.output_slices = jits['metadata']['output_slices']
 
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
@@ -42,9 +39,10 @@ class ModelState:
     self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
     self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
     self.frame_buf_params = get_nv12_info(cam_w, cam_h)
-    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+    self.tensor_inputs = {k: Tensor(v, device=self.DEV).realize() for k,v in self.numpy_inputs.items()}
+    self.calib_host = Tensor(self.numpy_inputs['calib'], device='NPY')._buffer()
     self._blob_cache : dict[int, Tensor] = {}
-    self.model_run = pickle.load(open_file_chunked(str(MODEL_PKL_PATH)))
+    self.model_run = jits['run_model']
     with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
       self.image_warp = pickle.load(f)
 
@@ -52,6 +50,7 @@ class ModelState:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
+    self.tensor_inputs['calib']._buffer().copy_from(self.calib_host)
 
     ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
@@ -61,7 +60,8 @@ class ModelState:
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
 
-    output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    output, = self.model_run(**self.tensor_inputs)
+    output = output.numpy().astype(np.float32).reshape(-1)
 
     t2 = time.perf_counter()
     return output, t2 - t1
