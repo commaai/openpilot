@@ -8,7 +8,7 @@ from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.mici.layouts.settings.device.prime import PrimeScroller
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, LABEL_COLOR, COMPLICATION_GREY
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
@@ -223,11 +223,11 @@ class DeviceLayoutMici(NavScroller):
     if not ui_state.prime_state.is_paired():
       self.set_shown_callback(self._pairing_button.trigger_grow_animation)
 
-  def scroll_to_pairing(self):
+  def scroll_to_pairing(self, smooth: bool = True):
     self._scroller._layout()
     offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-    self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
-    self._pending_pairing_grow_animation = True
+    self._scroller.scroll_to(offset, smooth=smooth, block_interrupt=smooth, block_widget_interaction=smooth)
+    self._pending_pairing_grow_animation = smooth
 
   def _update_state(self):
     super()._update_state()

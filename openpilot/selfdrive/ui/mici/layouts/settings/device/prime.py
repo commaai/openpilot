@@ -94,6 +94,7 @@ class PrimeScroller(NavScroller):
     super().__init__()
     self._params = Params()
     self.initial_is_paired = ui_state.prime_state.is_paired()
+    self._pending_prime_grow_animation = False
 
     self._manage_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
     if not ui_state.prime_state.is_prime():
@@ -131,10 +132,28 @@ class PrimeScroller(NavScroller):
     if not self.initial_is_paired and ui_state.prime_state.is_paired() and not self.is_dismissing:
       self.dismiss()
 
+    if self._pending_prime_grow_animation:
+      btn_right = self._manage_prime.rect.x + self._manage_prime.rect.width
+      visible_right = self._rect.x + self._rect.width
+      if btn_right < visible_right + 50:
+        self._pending_prime_grow_animation = False
+        self._manage_prime.trigger_grow_animation()
+
+  def _scroll_to_prime(self):
+    self._scroller._layout()
+    offset = (self._manage_prime.rect.x + self._manage_prime.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+    self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
+    self._pending_prime_grow_animation = True
+
   def show_event(self):
     super().show_event()
-    if not ui_state.prime_state.is_prime():
-      self.set_shown_callback(self._manage_prime.trigger_grow_animation)
+    if self.initial_is_paired and not ui_state.prime_state.is_prime():
+      self.set_shown_callback(self._scroll_to_prime)
+
+  def hide_event(self):
+    super().hide_event()
+    self.set_shown_callback(None)
+    self._pending_prime_grow_animation = False
 
 
 if __name__ == "__main__":
