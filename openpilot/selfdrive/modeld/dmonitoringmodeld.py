@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import base64
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, load_oob
 from tinygrad.tensor import Tensor
 import time
@@ -28,9 +29,9 @@ class ModelState:
 
   def __init__(self, cam_w: int, cam_h: int):
     jits = load_oob(open_file_chunked(MODEL_PKL_PATH))
-    self.DEV = jits['input_devices']['model']
+    self.DEV = jits['input_specs']['input_img'][2]
     self.input_shapes = jits['metadata']['input_shapes']
-    self.output_slices = jits['metadata']['output_slices']
+    self.output_slices = pickle.loads(base64.b64decode(jits['metadata']['metadata']['output_slices']))
 
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
@@ -42,9 +43,10 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device=self.DEV).realize() for k,v in self.numpy_inputs.items()}
     self.calib_host = Tensor(self.numpy_inputs['calib'], device='NPY')._buffer()
     self._blob_cache : dict[int, Tensor] = {}
-    self.model_run = jits['run_model']
+    self.model_run = jits['run']
+    self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
     with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
-      self.image_warp = pickle.load(f)
+      self.image_warp = pickle.load(f)['run']
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -58,10 +60,10 @@ class ModelState:
       self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform'])
+    self.tensor_inputs['input_img'] = self.image_warp(input_frame=self._blob_cache[ptr], M_inv=self.warp_inputs['transform'])
 
-    output, = self.model_run(**self.tensor_inputs)
-    output = output.numpy().astype(np.float32).reshape(-1)
+    self.model_run(output_buffers=self.outputs, **self.tensor_inputs)
+    output = self.outputs['outputs'].numpy().astype(np.float32).reshape(-1)
 
     t2 = time.perf_counter()
     return output, t2 - t1
