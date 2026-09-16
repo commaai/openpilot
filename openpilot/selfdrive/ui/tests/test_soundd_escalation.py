@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from openpilot.cereal import log, messaging
-from openpilot.selfdrive.ui.soundd import (ALERT_RAMP_TIME, CRITICAL_ESCALATION_TIME, CRITICAL_ESCALATION_VOLUME,
+from openpilot.selfdrive.ui.soundd import (ALERT_RAMP_TIME, CRITICAL_ESCALATION_TIME,
                                          SELFDRIVE_STATE_TIMEOUT, Soundd)
 
 AudibleAlert = log.SelfdriveState.AudibleAlert
@@ -25,11 +25,12 @@ class AlertState:
 
 
 @pytest.mark.parametrize('sound', [AudibleAlert.warningImmediate, AudibleAlert.warningSoft])
-def test_critical_escalation_and_ramp(mocker, sound):
+@pytest.mark.parametrize('starting_volume', [.1, .5, 1.])
+def test_critical_escalation_at_full_volume(mocker, sound, starting_volume):
   clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
   sd = Soundd()
   sm = AlertState(sound)
-  sd.current_volume = 1.
+  sd.current_volume = starting_volume
   sd.get_audible_alert(sm)
   clock.return_value = CRITICAL_ESCALATION_TIME - .01
   sd.get_audible_alert(sm)
@@ -37,20 +38,16 @@ def test_critical_escalation_and_ramp(mocker, sound):
   clock.return_value = CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
   assert sd.current_alert == -sound
-  initial_volume = sd.current_volume
-  assert 0 < initial_volume < .8
-  reference_rms = np.sqrt(np.mean(sd.loaded_sounds[AudibleAlert.warningImmediate] ** 2))
-  new_rms = np.sqrt(np.mean(sd.loaded_sounds[-sound] ** 2))
-  assert initial_volume * new_rms == pytest.approx(CRITICAL_ESCALATION_VOLUME * reference_rms)
-  np.testing.assert_allclose(sd.get_sound_data(100), sd.loaded_sounds[-sound][:100] * initial_volume)
+  assert sd.current_volume == 1.
+  np.testing.assert_allclose(sd.get_sound_data(100), sd.loaded_sounds[-sound][:100])
 
-  # Repeated state updates must not restart the clip or the ramp.
-  clock.return_value += ALERT_RAMP_TIME / 2
+  # Repeated updates must keep full volume without restarting the clip.
+  clock.return_value += .1
   sd.get_audible_alert(sm)
   sd.update_volume()
   assert sd.current_sound_frame == 100
-  assert sd.current_volume == pytest.approx((initial_volume + 1.) / 2)
-  clock.return_value += ALERT_RAMP_TIME / 2
+  assert sd.current_volume == 1.
+  clock.return_value += ALERT_RAMP_TIME
   sd.update_volume()
   assert sd.current_volume == 1.
 

@@ -19,8 +19,7 @@ SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
-CRITICAL_ESCALATION_TIME = 4 # seconds of continuous red alert before escalation
-CRITICAL_ESCALATION_VOLUME = 0.8 # initial level relative to the configured reference
+CRITICAL_ESCALATION_TIME = 8 # seconds of continuous red alert before escalation
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
@@ -36,12 +35,12 @@ AudibleAlert = log.SelfdriveState.AudibleAlert
 AlertStatus = log.SelfdriveState.AlertStatus
 
 
-# Base sound -> (escalation file, loudness reference). Negative base IDs are
+# Base sound -> escalation file. Negative base IDs are
 # soundd-local playback keys, leaving event sound attribution unchanged.
-# When available, change warningSoft to ("critical_max.wav", AudibleAlert.warningSoft).
+# When available, change warningSoft to "critical_max.wav".
 escalation_sounds = {
-  AudibleAlert.warningImmediate: ("dm_critical_max.wav", AudibleAlert.warningImmediate),
-  AudibleAlert.warningSoft: ("dm_critical_max.wav", AudibleAlert.warningImmediate),
+  AudibleAlert.warningImmediate: "dm_critical_max.wav",
+  AudibleAlert.warningSoft: "dm_critical_max.wav",
 }
 
 sound_list: dict[int, tuple[str, int | None, float]] = {
@@ -58,7 +57,7 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 
   AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("dm_critical.wav", None, MAX_VOLUME),
-  **{-sound: (filename, None, MAX_VOLUME) for sound, (filename, _) in escalation_sounds.items()},
+  **{-sound: (filename, None, MAX_VOLUME) for sound, filename in escalation_sounds.items()},
 }
 
 def check_selfdrive_timeout_alert(sm):
@@ -101,12 +100,6 @@ class Soundd:
 
         length = wavefile.getnframes()
         self.loaded_sounds[sound] = np.frombuffer(wavefile.readframes(length), dtype=np.int16).astype(np.float32) / (2**16/2)
-
-    self.escalation_start_gains = {}
-    for sound, (_, reference) in escalation_sounds.items():
-      reference_rms = np.sqrt(np.mean(self.loaded_sounds[reference] ** 2))
-      escalated_rms = np.sqrt(np.mean(self.loaded_sounds[-sound] ** 2))
-      self.escalation_start_gains[-sound] = CRITICAL_ESCALATION_VOLUME * min(1., float(reference_rms / max(escalated_rms, 1e-9)))
 
   def get_sound_data(self, frames): # get "frames" worth of data from the current alert sound, looping when required
 
@@ -152,9 +145,9 @@ class Soundd:
       return
     self.pending_stop = False
     if self.current_alert != new_alert and (new_alert != AudibleAlert.none or current_alert_played_once):
-      if new_alert == AudibleAlert.warningImmediate or new_alert in self.escalation_start_gains:
-        if new_alert in self.escalation_start_gains:
-          self.current_volume *= self.escalation_start_gains[new_alert]
+      if -new_alert in escalation_sounds:
+        self.current_volume = MAX_VOLUME
+      elif new_alert == AudibleAlert.warningImmediate:
         self.ramp_start_volume = self.current_volume
         self.ramp_start_time = time.monotonic()
       self.current_alert = new_alert
@@ -185,7 +178,9 @@ class Soundd:
     self.update_alert(new_alert)
 
   def update_volume(self):
-    if self.current_alert == AudibleAlert.warningImmediate or self.current_alert in self.escalation_start_gains:
+    if -self.current_alert in escalation_sounds:
+      self.current_volume = MAX_VOLUME
+    elif self.current_alert == AudibleAlert.warningImmediate:
       elapsed = time.monotonic() - self.ramp_start_time
       ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
       self.current_volume = max(self.current_volume, ramp_vol)
