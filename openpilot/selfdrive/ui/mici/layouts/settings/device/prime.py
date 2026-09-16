@@ -145,6 +145,11 @@ class PrimeScroller(NavScroller):
     self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
     self._pending_prime_grow_animation = True
 
+  def show_event(self):
+    super().show_event()
+    if ui_state.prime_state.is_paired() and not ui_state.prime_state.is_prime():
+      self.set_shown_callback(self._manage_prime.trigger_grow_animation)
+
   def hide_event(self):
     super().hide_event()
     self.set_shown_callback(None)
