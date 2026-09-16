@@ -68,7 +68,9 @@ class SettingsLayout(NavScroller):
       self.set_visible(True)
       self._device_panel._y_pos_filter.x = 0.0
       self._device_panel.set_shown_callback(lambda: self._device_panel.scroll_to_pairing(smooth=False))
-      gui_app.push_widget(PrimeScroller())
+      prime_panel = PrimeScroller()
+      prime_panel.set_shown_callback(prime_panel.scroll_to_prime)
+      gui_app.push_widget(prime_panel)
     else:
       self._device_panel.set_shown_callback(self._on_pairing_shown)
 
