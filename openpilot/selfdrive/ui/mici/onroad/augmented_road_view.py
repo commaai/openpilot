@@ -14,7 +14,7 @@ from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
@@ -38,7 +38,7 @@ CAM_Y_OFFSET = 20
 
 
 class BookmarkIcon(Widget):
-  PEEK_THRESHOLD = 50  # If icon peeks out this much, snap it fully visible
+  PEEK_THRESHOLD = 150  # Pull distance required to arm the bookmark
   FULL_VISIBLE_OFFSET = 200  # How far onscreen when fully visible
   HIDDEN_OFFSET = -50  # How far offscreen when hidden
 
@@ -48,6 +48,7 @@ class BookmarkIcon(Widget):
     self._icon = gui_app.texture("icons_mici/onroad/bookmark.png", 180, 180)
     self._filled_icon = gui_app.texture("icons_mici/onroad/bookmark_fill.png", 180, 180)
     self._offset_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._active_alpha = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # State
     self._interacting = False
@@ -67,9 +68,12 @@ class BookmarkIcon(Widget):
     return interacting
 
   def _update_state(self):
+    swipe_offset = self._swipe_start_x - self._swipe_current_x
+    armed = self._state == BookmarkState.DRAGGING and swipe_offset > self.PEEK_THRESHOLD
     if self._state == BookmarkState.DRAGGING:
-      # Allow pulling past activated position with rubber band effect
-      swipe_offset = self._swipe_start_x - self._swipe_current_x
+      # Snap to the released position when armed, while allowing further dragging or cancellation.
+      if armed:
+        swipe_offset += self.FULL_VISIBLE_OFFSET - self.PEEK_THRESHOLD
       swipe_offset = min(swipe_offset, self.FULL_VISIBLE_OFFSET + 50)
       self._offset_filter.update(swipe_offset)
 
@@ -86,6 +90,8 @@ class BookmarkIcon(Widget):
       if self._offset_filter.x < 1e-3:
         self._interacting = False
 
+    self._active_alpha.update(float(armed or self._state == BookmarkState.TRIGGERED))
+
   def _handle_mouse_event(self, mouse_event: MouseEvent):
     if not ui_state.started:
       return
@@ -96,7 +102,8 @@ class BookmarkIcon(Widget):
       self._swipe_current_x = mouse_event.pos.x
       self._is_swiping = True
       self._is_swiping_left = False
-      self._state = BookmarkState.DRAGGING
+      if self._state != BookmarkState.TRIGGERED:
+        self._state = BookmarkState.DRAGGING
 
     elif mouse_event.left_down and self._is_swiping:
       self._swipe_current_x = mouse_event.pos.x
@@ -106,7 +113,7 @@ class BookmarkIcon(Widget):
         self._interacting = True
 
     elif mouse_event.left_released:
-      if self._is_swiping:
+      if self._is_swiping and self._state == BookmarkState.DRAGGING:
         swipe_distance = self._swipe_start_x - self._swipe_current_x
 
         # If peeking past threshold, transition to animating to fully visible and bookmark
@@ -118,17 +125,19 @@ class BookmarkIcon(Widget):
           # Otherwise, transition back to hidden
           self._state = BookmarkState.HIDDEN
 
-        # Reset swipe state
-        self._is_swiping = False
-        self._is_swiping_left = False
+      # Reset swipe state
+      self._is_swiping = False
+      self._is_swiping_left = False
 
   def _render(self, _):
     """Render the bookmark icon."""
     if self._offset_filter.x > 0:
-      icon = self._filled_icon if self._state == BookmarkState.TRIGGERED else self._icon
       icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
-      icon_y = self.rect.y + (self.rect.height - icon.height) / 2  # Vertically centered
-      rl.draw_texture_ex(icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
+      icon_y = self.rect.y + (self.rect.height - self._icon.height) / 2  # Vertically centered
+      position = rl.Vector2(icon_x, icon_y)
+      active_alpha = round(255 * self._active_alpha.x)
+      for icon, alpha in ((self._icon, 255 - active_alpha), (self._filled_icon, active_alpha)):
+        rl.draw_texture_ex(icon, position, 0.0, 1.0, rl.Color(255, 255, 255, alpha))
 
 
 class AugmentedRoadView(CameraView):
