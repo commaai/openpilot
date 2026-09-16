@@ -1,0 +1,19 @@
+#!/bin/sh
+# Wi-Fi must lose to ethernet (metric 100) and beat cellular (metric 1000), matching NetworkManager's default Wi-Fi metric
+"${UDHCPC_DEFAULT_SCRIPT:-/etc/udhcpc/default.script}" "$1" || exit $?
+
+case "$1" in
+  bound|renew)
+    prefix=$(busybox ip -4 route show dev "$interface" proto kernel scope link |
+      busybox awk -v ip="$ip" '$1 != "default" { for (i = 1; i < NF; i++) if ($i == "src" && $(i + 1) == ip) { print $1; exit } }')
+    if [ -n "$prefix" ]; then
+      busybox ip -4 route del "$prefix" dev "$interface"
+      busybox ip -4 route add "$prefix" dev "$interface" proto kernel scope link src "$ip" metric 600
+    fi
+    if [ -n "$router" ]; then
+      [ ".$subnet" = .255.255.255.255 ] && onlink=onlink || onlink=
+      busybox ip -4 route flush exact 0.0.0.0/0 dev "$interface"
+      busybox ip -4 route add default via "${router%% *}" dev "$interface" $onlink metric 600
+    fi
+    ;;
+esac
