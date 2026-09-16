@@ -124,8 +124,9 @@ class _Scroller(Widget):
     # FIXME: the padding correction doesn't seem correct
     scroll_offset = self.scroll_panel.get_offset() - pos
     viewport_size = self._rect.width if self._horizontal else self._rect.height
-    min_offset = min(0.0, viewport_size - self._content_size)
-    scroll_offset = max(min_offset, min(0.0, scroll_offset))
+    if viewport_size:
+      min_offset = min(0.0, viewport_size - self._content_size)
+      scroll_offset = max(min_offset, min(0.0, scroll_offset))
     if smooth:
       self._scrolling_to_filter.x = self.scroll_panel.get_offset()
       self._scrolling_to = scroll_offset, block_interrupt, block_widget_interaction
