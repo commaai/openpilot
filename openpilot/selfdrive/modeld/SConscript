@@ -1,10 +1,8 @@
 import glob
 import os
-import shutil
-import tempfile
 import time
 from SCons.Script import Action, Value
-from openpilot.common.file_chunker import chunk_file, get_chunk_targets, get_existing_chunks, open_file_chunked
+from openpilot.common.file_chunker import chunk_file, get_chunk_targets
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.helpers import chestnut_present
@@ -61,32 +59,21 @@ def chestnut_action(command):
     return env.Execute(command)
   return Action(do_compile, "  [CHESTNUT] $TARGET")
 
-def compile_model(onnx_path, pkl_path, flags):
+def compile_model(onnx_path, pkl_path):
   onnx_path, target_pkl_path = File(onnx_path).abspath, File(pkl_path).abspath
-  onnx_deps = get_existing_chunks(onnx_path)
-  cmd = (f'{flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_onnx.py" '
-         f'"{{onnx}}" "{target_pkl_path}" --device-input "*" --out-of-band --benchmark-runs 1')
-  def do_compile(target, source, env):
-    if os.path.isfile(onnx_path):
-      return env.Execute(cmd.format(onnx=onnx_path))
-    # TODO: Remove ONNX chunk reassembly once models are precompiled.
-    with tempfile.NamedTemporaryFile(dir=os.path.dirname(onnx_path), suffix='.onnx') as tmp, open_file_chunked(onnx_path) as src:
-      shutil.copyfileobj(src, tmp)
-      tmp.flush()
-      return env.Execute(cmd.format(onnx=tmp.name))
-  compile_action = Action(do_compile, "  [ONNX] $TARGET")
-  onnx_sizes_sum = sum(os.path.getsize(f) for f in onnx_deps)
-  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(onnx_sizes_sum))
+  cmd = (f'{tg_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_onnx.py" '
+         f'"{onnx_path}" "{target_pkl_path}" --device-input "*" --out-of-band --benchmark-runs 1')
+  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(os.path.getsize(onnx_path)))
   def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
     chunk_file(pkl, chunks)
   lenv.Command(
     chunk_targets,
-    tinygrad_files + onnx_deps + [Value(cmd), Value(chunk_targets), chunker_file],
-    [compile_action, Action(do_chunk, "  [CHUNK] $TARGET")],
+    tinygrad_files + [onnx_path, Value(cmd), Value(chunk_targets), chunker_file],
+    [Action(cmd, "  [ONNX] $TARGET"), Action(do_chunk, "  [CHUNK] $TARGET")],
   )
 
-compile_model('models/dmonitoring_model.onnx', 'models/dmonitoring_model_tinygrad.pkl', tg_flags)
-compile_model('models/driving_supercombo.onnx', 'models/driving_tinygrad.pkl', tg_flags)
+compile_model('models/dmonitoring_model.onnx', 'models/dmonitoring_model_tinygrad.pkl')
+compile_model('models/driving_supercombo.onnx', 'models/driving_tinygrad.pkl')
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
 for chestnut in [False, True] if CHESTNUT else [False]:
