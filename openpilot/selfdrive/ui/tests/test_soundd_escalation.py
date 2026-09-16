@@ -3,7 +3,7 @@ import pytest
 
 from openpilot.cereal import log, messaging
 from openpilot.selfdrive.ui.soundd import (ALERT_RAMP_TIME, CRITICAL_ESCALATION_TIME,
-                                         SELFDRIVE_STATE_TIMEOUT, Soundd)
+                                         SELFDRIVE_STATE_TIMEOUT, ESCALATION_ALERTS, MaxAlert, Soundd)
 
 AudibleAlert = log.SelfdriveState.AudibleAlert
 
@@ -37,9 +37,9 @@ def test_critical_escalation_at_full_volume(mocker, sound, starting_volume):
   assert sd.current_alert == sound
   clock.return_value = CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == -sound
+  assert sd.current_alert == ESCALATION_ALERTS[sound]
   assert sd.current_volume == 1.
-  np.testing.assert_allclose(sd.get_sound_data(100), sd.loaded_sounds[-sound][:100])
+  np.testing.assert_allclose(sd.get_sound_data(100), sd.loaded_sounds[ESCALATION_ALERTS[sound]][:100])
 
   # Repeated updates must keep full volume without restarting the clip.
   clock.return_value += .1
@@ -79,7 +79,7 @@ def test_escalation_resets_after_interruption(mocker, interrupt):
   sd.get_audible_alert(sm)
   clock.return_value = CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == -AudibleAlert.warningImmediate
+  assert sd.current_alert == MaxAlert.driver
   clock.return_value = CRITICAL_ESCALATION_TIME + 1.
   if interrupt == 'clear':
     sm.state.alertStatus = 'normal'
@@ -92,7 +92,7 @@ def test_escalation_resets_after_interruption(mocker, interrupt):
     sm.state.alertSound = AudibleAlert.warningSoft
   sd.get_audible_alert(sm)
   assert sd.critical_start_time is None
-  assert sd.current_alert != -AudibleAlert.warningImmediate
+  assert sd.current_alert != MaxAlert.driver
   sm = AlertState()
   restart_time = CRITICAL_ESCALATION_TIME + 2.
   clock.return_value = restart_time
@@ -102,7 +102,7 @@ def test_escalation_resets_after_interruption(mocker, interrupt):
   assert sd.current_alert == AudibleAlert.warningImmediate
   clock.return_value = restart_time + CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == -AudibleAlert.warningImmediate
+  assert sd.current_alert == MaxAlert.driver
 
 
 def test_continuous_red_alert_changes_keep_timer(mocker):
@@ -116,7 +116,7 @@ def test_continuous_red_alert_changes_keep_timer(mocker):
   sd.get_audible_alert(sm)
   clock.return_value = CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == -AudibleAlert.warningSoft
+  assert sd.current_alert == MaxAlert.critical
 
 
 def test_timeout_escalation_and_recovery(mocker):
@@ -130,7 +130,7 @@ def test_timeout_escalation_and_recovery(mocker):
   assert sd.current_alert == AudibleAlert.warningImmediate
   clock.return_value += CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == -AudibleAlert.warningImmediate
+  assert sd.current_alert == MaxAlert.driver
   # The existing timeout window still ends, even without a new message.
   clock.return_value = SELFDRIVE_STATE_TIMEOUT + 10
   sd.get_audible_alert(sm)

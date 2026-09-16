@@ -1,4 +1,5 @@
 import math
+from enum import IntEnum
 import numpy as np
 import time
 import wave
@@ -35,12 +36,15 @@ AudibleAlert = log.SelfdriveState.AudibleAlert
 AlertStatus = log.SelfdriveState.AlertStatus
 
 
-# Base sound -> escalation file. Negative base IDs are
-# soundd-local playback keys, leaving event sound attribution unchanged.
-# When available, change warningSoft to "critical_max.wav".
-escalation_sounds = {
-  AudibleAlert.warningImmediate: "dm_critical_max.wav",
-  AudibleAlert.warningSoft: "dm_critical_max.wav",
+class MaxAlert(IntEnum):
+  # Local playback IDs; these are never sent in selfdriveState.
+  driver = -1
+  critical = -2
+
+
+ESCALATION_ALERTS = {
+  AudibleAlert.warningImmediate: MaxAlert.driver,
+  AudibleAlert.warningSoft: MaxAlert.critical,
 }
 
 sound_list: dict[int, tuple[str, int | None, float]] = {
@@ -57,7 +61,8 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 
   AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("dm_critical.wav", None, MAX_VOLUME),
-  **{-sound: (filename, None, MAX_VOLUME) for sound, filename in escalation_sounds.items()},
+  MaxAlert.driver: ("dm_critical_max.wav", None, MAX_VOLUME),
+  MaxAlert.critical: ("dm_critical_max.wav", None, MAX_VOLUME),  # Replace with critical_max.wav when available.
 }
 
 def check_selfdrive_timeout_alert(sm):
@@ -90,8 +95,7 @@ class Soundd:
     self.loaded_sounds: dict[int, np.ndarray] = {}
 
     # Load all sounds
-    for sound in sound_list:
-      filename, play_count, volume = sound_list[sound]
+    for sound, (filename, _, _) in sound_list.items():
 
       with wave.open(BASEDIR + "/openpilot/selfdrive/assets/sounds/" + filename, 'r') as wavefile:
         assert wavefile.getnchannels() == 1
@@ -145,7 +149,7 @@ class Soundd:
       return
     self.pending_stop = False
     if self.current_alert != new_alert and (new_alert != AudibleAlert.none or current_alert_played_once):
-      if -new_alert in escalation_sounds:
+      if new_alert in ESCALATION_ALERTS.values():
         self.current_volume = MAX_VOLUME
       elif new_alert == AudibleAlert.warningImmediate:
         self.ramp_start_volume = self.current_volume
@@ -170,15 +174,15 @@ class Soundd:
     if critical:
       if self.critical_start_time is None:
         self.critical_start_time = now
-      if now - self.critical_start_time >= CRITICAL_ESCALATION_TIME and new_alert in escalation_sounds:
-        new_alert = -new_alert
+      if now - self.critical_start_time >= CRITICAL_ESCALATION_TIME:
+        new_alert = ESCALATION_ALERTS.get(new_alert, new_alert)
     else:
       self.critical_start_time = None
 
     self.update_alert(new_alert)
 
   def update_volume(self):
-    if -self.current_alert in escalation_sounds:
+    if self.current_alert in ESCALATION_ALERTS.values():
       self.current_volume = MAX_VOLUME
     elif self.current_alert == AudibleAlert.warningImmediate:
       elapsed = time.monotonic() - self.ramp_start_time
