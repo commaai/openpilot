@@ -67,11 +67,11 @@ class ChunkStream(io.RawIOBase):
 
 def open_file_chunked(path):
   manifest_path = get_manifest_path(path)
-  if os.path.isfile(manifest_path):
+  if os.path.isfile(path):
+    paths = [path]
+  elif os.path.isfile(manifest_path):
     num_chunks = int(Path(manifest_path).read_text().strip())
     paths = [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
-  elif os.path.isfile(path):
-    paths = [path]
   else:
     raise FileNotFoundError(path)
   return io.BufferedReader(ChunkStream(paths))

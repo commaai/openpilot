@@ -35,4 +35,5 @@ def chestnut_present() -> bool:
   return False
 
 def chestnut_compiled() -> bool:
-  return Path(get_manifest_path(modeld_pkl_path(chestnut=True))).is_file()
+  path = modeld_pkl_path(chestnut=True)
+  return path.is_file() or Path(get_manifest_path(path)).is_file()
