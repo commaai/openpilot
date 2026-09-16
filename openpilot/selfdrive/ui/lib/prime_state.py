@@ -155,6 +155,8 @@ class PrimeState:
 
   def get_pairing_account(self) -> str:
     with self._lock:
+      if self._pairing_provider in (Provider.APPLE, Provider.GITHUB):
+        return f"{self._pairing_provider} account"
       return self._pairing_email or (f"{self._pairing_provider} account" if self._pairing_provider else "unknown")
 
   def is_prime(self) -> bool:
