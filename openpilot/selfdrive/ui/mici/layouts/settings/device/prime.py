@@ -148,8 +148,8 @@ class PrimeScroller(NavScroller):
 
   def show_event(self):
     super().show_event()
-    if ui_state.prime_state.is_paired() and not ui_state.prime_state.is_prime():
-      self.set_shown_callback(self.scroll_to_prime)
+    if self._shown_callback is None and ui_state.prime_state.is_paired() and not ui_state.prime_state.is_prime():
+      self.set_shown_callback(self._manage_prime.trigger_grow_animation)
 
   def hide_event(self):
     super().hide_event()
