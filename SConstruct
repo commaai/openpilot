@@ -342,6 +342,8 @@ AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
 def check_build_product_size(target, source, env):
   limit = 50 * 1024 * 1024  # GitHub max size
   for t in target:
+    if str(t).endswith('.pkl'):  # chunked during release packaging
+      continue
     if hasattr(t, 'isfile') and t.isfile() and (size := os.path.getsize(t.abspath)) > limit:
       raise SCons.Errors.UserError(f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the {limit / (1024 * 1024):.1f} MiB limit")
 if not GetOption('extras'):

@@ -32,14 +32,6 @@ def chunk_file(path, targets):
   Path(manifest_path).write_text(str(len(chunk_paths)))
   os.remove(path)
 
-def get_existing_chunks(path):
-  if os.path.isfile(path):
-    return [path]
-  if os.path.isfile(manifest := get_manifest_path(path)):
-    num_chunks = int(Path(manifest).read_text().strip())
-    return _chunk_paths(path, num_chunks)
-  raise FileNotFoundError(path)
-
 class ChunkStream(io.RawIOBase):
   def __init__(self, paths):
     self._paths = iter(paths)
@@ -67,11 +59,11 @@ class ChunkStream(io.RawIOBase):
 
 def open_file_chunked(path):
   manifest_path = get_manifest_path(path)
-  if os.path.isfile(manifest_path):
+  if os.path.isfile(path):
+    paths = [path]
+  elif os.path.isfile(manifest_path):
     num_chunks = int(Path(manifest_path).read_text().strip())
     paths = [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
-  elif os.path.isfile(path):
-    paths = [path]
   else:
     raise FileNotFoundError(path)
   return io.BufferedReader(ChunkStream(paths))
