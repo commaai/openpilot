@@ -9,7 +9,7 @@ from opendbc.car.structs import car
 from openpilot.cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET
+from openpilot.selfdrive.selfdrived.events import Alert, EVENTS, ET, NormalPermanentAlert
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
@@ -25,6 +25,20 @@ for event_types in EVENTS.values():
 
 
 class TestAlerts(OpenpilotTestCase):
+
+  def test_user_bookmark_alert(self):
+    callback = EVENTS[log.OnroadEvent.EventName.userBookmark][ET.PERMANENT]
+    os.environ.pop('PRIME_TYPE', None)
+    for prime_type in (None, -2, -1, 0, 1):
+      if prime_type is not None:
+        Params().put('PrimeType', prime_type)
+      paired = prime_type is not None and prime_type >= 0
+      alert = callback(self.CP, self.CS, self.sm, False, 0, 0)
+      assert isinstance(alert, NormalPermanentAlert)
+      assert alert.alert_text_1 == "Bookmark Saved"
+      assert alert.alert_text_2 == ("" if paired else "pair to connect to view")
+      assert alert.duration == 150
+      assert alert.alert_status == log.SelfdriveState.AlertStatus.normal
 
   @classmethod
   def setup_class(cls):
