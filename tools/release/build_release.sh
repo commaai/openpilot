@@ -48,11 +48,7 @@ for policy in /sys/devices/system/cpu/cpufreq/policy*; do
   echo "$hardware_max" | sudo tee "$policy/scaling_max_freq" >/dev/null
 done
 
-find openpilot/selfdrive/modeld/models -name '*.pkl' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 scons
-if [ -n "$INCLUDE_BIG_MODEL" ]; then
-  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
-fi
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
@@ -60,6 +56,11 @@ if [ -z "$PANDA_DEBUG_BUILD" ]; then
 else
   # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
   scons panda/
+fi
+
+find openpilot/selfdrive/modeld/models -name '*.pkl' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
+if [ -n "$INCLUDE_BIG_MODEL" ]; then
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
 fi
 
 # Ensure no submodules in release

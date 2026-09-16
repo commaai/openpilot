@@ -2,7 +2,6 @@ import glob
 import os
 import time
 from SCons.Script import Action, Value
-from openpilot.common.file_chunker import chunk_file, get_chunk_targets
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
 from openpilot.selfdrive.modeld.helpers import chestnut_present
@@ -10,18 +9,12 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 
 Import('env', 'arch')
-chunker_file = File("#openpilot/common/file_chunker.py")
 lenv = env.Clone()
 lenv.PrependENVPath('PYTHONPATH', Dir('#tinygrad_repo').abspath)
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
-
-def estimate_pickle_max_size(onnx_size):
-  # QCOM programs for models with spatial recurrent features can approach 2x
-  # the ONNX size. Overestimating only adds an empty trailing chunk.
-  return 2.0 * onnx_size + 10 * 1024 * 1024
 
 camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
 
@@ -63,13 +56,10 @@ def compile_model(onnx_path, pkl_path):
   onnx_path, target_pkl_path = File(onnx_path).abspath, File(pkl_path).abspath
   cmd = (f'{tg_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_onnx.py" '
          f'"{onnx_path}" "{target_pkl_path}" --device-input "*" --out-of-band --benchmark-runs 1')
-  chunk_targets = get_chunk_targets(target_pkl_path, estimate_pickle_max_size(os.path.getsize(onnx_path)))
-  def do_chunk(target, source, env, pkl=target_pkl_path, chunks=chunk_targets):
-    chunk_file(pkl, chunks)
   lenv.Command(
-    chunk_targets,
-    tinygrad_files + [onnx_path, Value(cmd), Value(chunk_targets), chunker_file],
-    [Action(cmd, "  [ONNX] $TARGET"), Action(do_chunk, "  [CHUNK] $TARGET")],
+    target_pkl_path,
+    tinygrad_files + [onnx_path, Value(cmd)],
+    Action(cmd, "  [ONNX] $TARGET"),
   )
 
 compile_model('models/dmonitoring_model.onnx', 'models/dmonitoring_model_tinygrad.pkl')
