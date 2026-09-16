@@ -156,6 +156,9 @@ class ModelState:
       self.run_warp = pickle.load(f)['run']
     self.run_model = jits['run']
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
+    for name, next_name in self.state_pairs.items():
+      state = self.input_queues[name]
+      self.outputs[next_name] = input_view(state._buffer(), state.shape, state.dtype, 0)
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
@@ -196,8 +199,6 @@ class ModelState:
     self.input_device.copy_from(self.input_host)
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     self.run_model(output_buffers=self.outputs, **self.input_queues)
-    for name, next_name in self.state_pairs.items():
-      self.input_queues[name], self.outputs[next_name] = self.outputs[next_name], self.input_queues[name]
     if after_enqueue is not None:
       after_enqueue()
     model_output = self.outputs['outputs'].numpy()[0]
