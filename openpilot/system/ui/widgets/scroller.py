@@ -121,11 +121,10 @@ class _Scroller(Widget):
     if abs(pos) < 1:
       return
 
+    # FIXME: the padding correction doesn't seem correct
     scroll_offset = self.scroll_panel.get_offset() - pos
-    visible_items = [item for item in self._items if item.is_visible]
     viewport_size = self._rect.width if self._horizontal else self._rect.height
-    min_offset = min(0.0, viewport_size - self._get_content_size(visible_items))
-    # Keep programmatic scrolling in bounds so edge targets do not bounce back.
+    min_offset = min(0.0, viewport_size - self._content_size)
     scroll_offset = max(min_offset, min(0.0, scroll_offset))
     if smooth:
       self._scrolling_to_filter.x = self.scroll_panel.get_offset()
@@ -267,13 +266,13 @@ class _Scroller(Widget):
 
     return target_x, target_y
 
-  def _get_content_size(self, visible_items: list[Widget]) -> float:
-    size = sum(item.rect.width if self._horizontal else item.rect.height for item in visible_items)
-    return size + self._spacing * max(0, len(visible_items) - 1) + self._pad * 2
-
   def _layout(self):
     self._visible_items = [item for item in self._items if item.is_visible]
-    self._content_size = self._get_content_size(self._visible_items)
+
+    self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
+    self._content_size += self._spacing * (len(self._visible_items) - 1)
+    self._content_size += self._pad * 2
+
     self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
 
     self._item_pos_filter.update(self._scroll_offset)
