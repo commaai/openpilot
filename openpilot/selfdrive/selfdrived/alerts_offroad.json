@@ -17,8 +17,32 @@
     "severity": 1,
     "_comment": "Set extra field to the failed reason."
   },
-  "Offroad_NeosUpdate": {
-    "text": "An update to your device's operating system is downloading in the background. You will be prompted to update when it's ready to install.",
+  "Offroad_ChestnutBranch": {
+    "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
+    "severity": -1
+  },
+  "Offroad_ChestnutNotDetected": {
+    "text": "Chestnut not detected. Check USB and 12V connections.",
+    "severity": 0
+  },
+  "Offroad_ChestnutOverheated": {
+    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
+    "severity": 0
+  },
+  "Offroad_ChestnutPcieUnavailable": {
+    "text": "%1",
+    "severity": 0
+  },
+  "Offroad_ChestnutUncompiled": {
+    "text": "Chestnut model not compiled. Keep ignition on and reboot the comma.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUpdateFailed": {
+    "text": "Chestnut update failed. Check the USB cable.",
+    "severity": 0
+  },
+  "Offroad_ChestnutUsbSlow": {
+    "text": "Chestnut USB link is slow. Check the USB cable. The current speed is %1.",
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {

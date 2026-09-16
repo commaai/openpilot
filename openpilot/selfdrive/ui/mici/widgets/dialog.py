@@ -1,9 +1,11 @@
 import abc
 import math
+import re
 import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from openpilot.system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -35,6 +37,31 @@ class BigDialog(BigDialogBase):
       self._card.rect.width,
       self._card.rect.height,
     ))
+
+
+class SettingDescriptionDialog(NavScroller):
+  def __init__(self, title: str, description: str, icon: Union[rl.Texture, None] = None):
+    super().__init__()
+    cards = [GreyBigButton(title, "scroll for details", icon or gui_app.texture("icons_mici/setup/green_info.png", 64, 64))]
+    # Explicit lines are authored cards; otherwise prefer sentence boundaries.
+    paragraphs = description.splitlines() if "\n" in description else re.split(r"(?<=[.!?])\s+", description.strip())
+    # Measure each card so longer text still fits with the actual font and padding.
+    for sentence in paragraphs:
+      card = GreyBigButton("", "")
+      words: list[str] = []
+      for word in sentence.split():
+        card.set_value(" ".join([*words, word]))
+        height = card._sub_label.get_content_height(card._subtitle_width_hint())
+        if words and height > card.rect.height - 2 * card.LABEL_VERTICAL_PADDING:
+          card.set_value(" ".join(words))
+          cards.append(card)
+          card = GreyBigButton("", "")
+          words = []
+        words.append(word)
+      if words:
+        card.set_value(" ".join(words))
+        cards.append(card)
+    self._scroller.add_widgets(cards)
 
 
 class BigConfirmationDialog(BigDialogBase):
@@ -76,14 +103,15 @@ class BigInputDialog(BigDialogBase):
                default_text: str = "",
                minimum_length: int = 1,
                confirm_callback: Callable[[str], None] | None = None,
-               auto_return_to_letters: str = ""):
+               auto_return_to_letters: str = "",
+               text_validator: Callable[[str], bool] | None = None):
     super().__init__()
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
     self._keyboard = MiciKeyboard(auto_return_to_letters=auto_return_to_letters)
     self._keyboard.set_text(default_text)
     self._keyboard.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
-    self._minimum_length = minimum_length
+    self._text_valid = lambda text: len(text) >= minimum_length and (text_validator is None or text_validator(text))
 
     self._backspace_held_time: float | None = None
 
@@ -100,7 +128,8 @@ class BigInputDialog(BigDialogBase):
 
     def confirm_callback_wrapper():
       text = self._keyboard.text()
-      self.dismiss((lambda: confirm_callback(text)) if confirm_callback else None)
+      if self._text_valid(text):
+        self.dismiss((lambda: confirm_callback(text)) if confirm_callback else None)
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
@@ -185,7 +214,7 @@ class BigInputDialog(BigDialogBase):
                                                self._rect.width - (text_field_rect.x + text_field_rect.width), self._top_left_button_rect.height)
 
     # draw enter button
-    self._enter_img_alpha.update(255 if len(text) >= self._minimum_length else 0)
+    self._enter_img_alpha.update(255 if self._text_valid(text) else 0)
     color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
     rl.draw_texture_ex(self._enter_img, rl.Vector2(self._rect.x + PADDING / 2, self._rect.y), 0.0, 1.0, color)
     color = rl.Color(255, 255, 255, 255 - int(self._enter_img_alpha.x))

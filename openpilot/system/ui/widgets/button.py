@@ -3,7 +3,7 @@ from enum import IntEnum
 
 import pyray as rl
 
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import Label
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -86,7 +86,7 @@ class Button(Widget):
                font_weight: FontWeight = FontWeight.MEDIUM,
                button_style: ButtonStyle = ButtonStyle.NORMAL,
                border_radius: int = 10,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+               text_alignment: int = TextAlignment.CENTER,
                text_padding: int = 20,
                icon=None,
                elide_right: bool = False,
@@ -139,7 +139,7 @@ class ButtonRadio(Button):
                icon,
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+               text_alignment: int = TextAlignment.LEFT,
                border_radius: int = 10,
                text_padding: int = 20,
                ):

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <condition_variable>
 #include <map>
 #include <mutex>
@@ -9,6 +10,7 @@
 #include "tools/replay/route.h"
 
 constexpr int MIN_SEGMENTS_CACHE = 5;
+constexpr int MAX_SEGMENT_LOAD_ATTEMPTS = 3;  // Includes the initial load.
 
 using SegmentMap = std::map<int, std::shared_ptr<Segment>>;
 
@@ -23,6 +25,7 @@ public:
   SegmentManager(const std::string &route_name, uint32_t flags, const std::string &data_dir = "", bool auto_source = false)
       : flags_(flags), route_(route_name, data_dir, auto_source), event_data_(std::make_shared<EventData>()) {}
   ~SegmentManager();
+  void stop();
 
   bool load();
   void setCurrentSegment(int seg_num);
@@ -55,4 +58,11 @@ private:
   std::function<void()> onSegmentMergedCallback_ = nullptr;
   std::function<void(int, const std::string&)> onBenchmarkEvent_ = nullptr;
   std::set<int> merged_segments_;
+  struct LoadAttempt {
+    int count = 0;
+    std::chrono::steady_clock::time_point retry_at = std::chrono::steady_clock::time_point::max();
+  };
+  // Accessed only by the cache management thread.
+  std::map<int, LoadAttempt> load_attempts_;
+  std::chrono::steady_clock::time_point next_retry_ = std::chrono::steady_clock::time_point::max();
 };

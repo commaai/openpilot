@@ -36,7 +36,7 @@ SSH_PORT=2222
 while ss -tln | grep -q ":${SSH_PORT} "; do
   SSH_PORT=$((SSH_PORT + 1))
 done
-adb forward tcp:${SSH_PORT} tcp:22
+adb forward tcp:"${SSH_PORT}" tcp:22
 
 # SSH!
-ssh comma@localhost -p ${SSH_PORT} "$@"
+ssh comma@localhost -p "${SSH_PORT}" "$@"

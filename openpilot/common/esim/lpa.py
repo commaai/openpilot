@@ -613,7 +613,7 @@ def parse_lpa_activation_code(activation_code: str) -> tuple[str, str]:
   if not activation_code.startswith("LPA:"):
     raise ValueError("Invalid activation code format")
   parts = activation_code[4:].split("$")
-  if len(parts) != 3:
+  if len(parts) != 3 or not all(parts):
     raise ValueError("Invalid activation code format")
   return parts[1], parts[2]
 

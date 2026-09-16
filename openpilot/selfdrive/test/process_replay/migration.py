@@ -149,7 +149,7 @@ def migrate_drivingModelData(msgs):
   add_ops = []
   for _, msg in msgs:
     dmd = messaging.new_message('drivingModelData', valid=msg.valid, logMonoTime=msg.logMonoTime)
-    for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "action"]:
+    for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "big", "action"]:
       setattr(dmd.drivingModelData, field, getattr(msg.modelV2, field))
     for meta_field in ["laneChangeState", "laneChangeState"]:
       setattr(dmd.drivingModelData.meta, meta_field, getattr(msg.modelV2.meta, meta_field))

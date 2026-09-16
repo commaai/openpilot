@@ -23,9 +23,9 @@ def post_stream_request(body: StreamRequestBody) -> dict:
     ret["time"] = (t_end - t_start) * 1000
     return ret
   except requests.ConnectTimeout as e:
-    raise Exception("webrtc took too long to respond.") from e
+    raise Exception("device took too long to respond.") from e
   except requests.ConnectionError as e:
-    raise Exception("webrtc server on device is not running.") from e
+    raise Exception("turn car ignition off to use livestreaming.") from e
 
 
 def wait_for_webrtcd(max_retries: float = 10) -> None:
@@ -37,4 +37,4 @@ def wait_for_webrtcd(max_retries: float = 10) -> None:
     except requests.ConnectionError:
       attempts += 1
       time.sleep(0.5)
-  raise TimeoutError("webrtcd did not initialize in time.")
+  raise TimeoutError("livestreaming service did not initialize in time.")

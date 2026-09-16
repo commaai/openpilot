@@ -5,6 +5,7 @@ import logging
 import os
 import select
 import signal
+import string
 import struct
 import subprocess
 import tempfile
@@ -354,7 +355,7 @@ class Modem:
       imei = ""
 
     iccid = (self._atv("AT+QCCID", "+QCCID:") or "").rstrip("F")
-    if not iccid.isdigit():
+    if not all(c in string.hexdigits for c in iccid):
       iccid = ""
 
     imsi = first_line("AT+CIMI")

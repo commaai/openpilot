@@ -1,12 +1,13 @@
-from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
+from openpilot.selfdrive.ui.mici.layouts.settings.network import EsimNetworkButton, WifiNetworkButton
+from openpilot.selfdrive.ui.mici.layouts.settings.network.esim_ui import EsimUI
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
+from openpilot.system.ui.widgets.scroller import NavScroller
 
 
 class NetworkLayoutMici(NavScroller):
@@ -28,7 +29,8 @@ class NetworkLayoutMici(NavScroller):
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
-    self._tethering_toggle_btn = BigToggle("enable tethering", "", toggle_callback=tethering_toggle_callback)
+    self._tethering_toggle_btn = BigToggle("enable tethering", "", toggle_callback=tethering_toggle_callback,
+                                           description="Share the device’s internet connection through a Wi-Fi hotspot.")
 
     def tethering_password_callback(password: str):
       if password:
@@ -58,26 +60,39 @@ class NetworkLayoutMici(NavScroller):
 
     # TODO: signal for current network metered type when changing networks, this is wrong until you press it once
     # TODO: disable when not connected
-    self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback)
+    self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback,
+                                               description="Metered prevents large uploads on this Wi-Fi connection. Default uses the network’s detected " +
+                                                           "setting.")
     self._network_metered_btn.set_enabled(False)
 
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
+    # ******** eSIM ********
+    self._cellular_manager = CellularManager()
+    self._esim_ui = EsimUI(
+      self._cellular_manager,
+      lambda: not ui_state.prime_state.is_full_prime(),
+    )
+    self._esim_button = EsimNetworkButton(self._cellular_manager)
+    self._esim_button.set_click_callback(lambda: gui_app.push_widget(self._esim_ui))
+
     # ******** Advanced settings ********
     # ******** Roaming toggle ********
-    self._roaming_btn = BigParamControl("enable roaming", "GsmRoaming")
+    self._roaming_btn = BigParamControl("enable roaming", "GsmRoaming", description="Allow cellular data roaming.")
 
     # ******** APN settings ********
-    self._apn_btn = BigButton("apn settings", "edit")
+    self._apn_btn = BigButton("apn settings", "edit",
+                              description="Set the access point name required by your cellular carrier. Leave blank for automatic configuration.")
     self._apn_btn.set_click_callback(self._edit_apn)
 
     # ******** Cellular metered toggle ********
-    self._cellular_metered_btn = BigParamControl("cellular metered", "GsmMetered")
+    self._cellular_metered_btn = BigParamControl("cellular metered", "GsmMetered", description="Prevent large uploads over the cellular connection.")
 
     # Main scroller ----------------------------------
     self._scroller.add_widgets([
       self._wifi_button,
+      self._esim_button,
       self._network_metered_btn,
       self._tethering_toggle_btn,
       self._tethering_password_btn,
@@ -91,8 +106,7 @@ class NetworkLayoutMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
-    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = not ui_state.prime_state.is_full_prime()
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)
@@ -102,14 +116,16 @@ class NetworkLayoutMici(NavScroller):
     super().show_event()
     self._wifi_manager.set_active(True)
 
-    # Process wifi callbacks while at any point in the nav stack
+    # Process wifi and esim callbacks while at any point in the nav stack
     gui_app.add_nav_stack_tick(self._wifi_manager.process_callbacks)
+    gui_app.add_nav_stack_tick(self._cellular_manager.process_callbacks)
 
   def hide_event(self):
     super().hide_event()
     self._wifi_manager.set_active(False)
 
     gui_app.remove_nav_stack_tick(self._wifi_manager.process_callbacks)
+    gui_app.remove_nav_stack_tick(self._cellular_manager.process_callbacks)
 
   def _edit_apn(self):
     def update_apn(apn: str):

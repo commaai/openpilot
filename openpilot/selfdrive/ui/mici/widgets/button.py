@@ -6,7 +6,7 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
 
 if TYPE_CHECKING:
@@ -29,9 +29,41 @@ class ScrollState(Enum):
   POST_SCROLL = 2
 
 
-class BigCircleButton(Widget):
-  def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
+class BaseButton(Widget):
+  def __init__(self, description: str, title: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
+    self._shake_start: float | None = None
+    if description:
+      # Dialogs also use buttons; import lazily to avoid a circular import.
+      from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
+      self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
+    else:
+      self.set_long_press_callback(self.trigger_shake)
+
+  def trigger_shake(self):
+    self._shake_start = rl.get_time()
+
+  @property
+  def _shake_offset(self) -> float:
+    SHAKE_DURATION = 0.5
+    SHAKE_AMPLITUDE = 24.0
+    SHAKE_FREQUENCY = 32.0
+    if self._shake_start is None:
+      return 0.0
+    t = rl.get_time() - self._shake_start
+    if t > SHAKE_DURATION:
+      return 0.0
+    decay = 1.0 - t / SHAKE_DURATION
+    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
+
+  def set_position(self, x: float, y: float) -> None:
+    super().set_position(x + self._shake_offset, y)
+
+class BigCircleButton(BaseButton):
+  def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0),
+               *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None, title: str = ""):
+    super().__init__(description, title, description_icon or icon)
     self._red = red
     self._icon_offset = icon_offset
 
@@ -73,8 +105,9 @@ class BigCircleButton(Widget):
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: rl.Texture, toggle_callback: Callable | None = None, icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, False, icon_offset=icon_offset)
+  def __init__(self, icon: rl.Texture, toggle_callback: Callable | None = None, icon_offset: tuple[int, int] = (0, 0),
+               *, description: str = "", description_icon: Union[rl.Texture, None] = None, title: str = ""):
+    super().__init__(icon, False, icon_offset=icon_offset, description=description, description_icon=description_icon, title=title)
     self._toggle_callback = toggle_callback
 
     # State
@@ -103,14 +136,16 @@ class BigCircleToggle(BigCircleButton):
                        0, 1.0, rl.WHITE)
 
 
-class BigButton(Widget):
+class BigButton(BaseButton):
   LABEL_HORIZONTAL_PADDING = 40
   LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False):
-    super().__init__()
+  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False,
+               *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
+    super().__init__(description, text, description_icon or icon or None)
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
@@ -119,16 +154,15 @@ class BigButton(Widget):
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
-    self._shake_start: float | None = None
     self._grow_animation_until: float | None = None
 
     self._rotate_icon_t: float | None = None
 
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, scroll=scroll,
+                               text_color=LABEL_COLOR, alignment_vertical=TextAlignmentVertical.BOTTOM, scroll=scroll,
                                line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
-                                   text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                                   text_color=COMPLICATION_GREY, alignment_vertical=TextAlignmentVertical.BOTTOM)
     self._update_label_layout()
 
     self._load_images()
@@ -149,10 +183,14 @@ class BigButton(Widget):
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
 
-  def _width_hint(self) -> int:
-    # Single line if scrolling, so hide behind icon if exists
-    icon_size = self._txt_icon.width if self._txt_icon and self._scroll and self.value else 0
+  def _title_width_hint(self) -> int:
+    # A value moves the title to the top, where it shares space with the icon
+    icon_size = self._txt_icon.width if self._txt_icon and self.value else 0
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
+
+  def _subtitle_width_hint(self) -> int:
+    # Bottom aligned, so it sits below the icon
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
@@ -163,9 +201,9 @@ class BigButton(Widget):
   def _update_label_layout(self):
     self._label.set_font_size(self._get_label_font_size())
     if self.value:
-      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+      self._label.set_alignment_vertical(TextAlignmentVertical.TOP)
     else:
-      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+      self._label.set_alignment_vertical(TextAlignmentVertical.BOTTOM)
 
   def set_text(self, text: str):
     self.text = text
@@ -183,27 +221,8 @@ class BigButton(Widget):
   def get_text(self):
     return self.text
 
-  def trigger_shake(self):
-    self._shake_start = rl.get_time()
-
   def trigger_grow_animation(self, duration: float = 0.65):
     self._grow_animation_until = rl.get_time() + duration
-
-  @property
-  def _shake_offset(self) -> float:
-    SHAKE_DURATION = 0.5
-    SHAKE_AMPLITUDE = 24.0
-    SHAKE_FREQUENCY = 32.0
-    if self._shake_start is None:
-      return 0.0
-    t = rl.get_time() - self._shake_start
-    if t > SHAKE_DURATION:
-      return 0.0
-    decay = 1.0 - t / SHAKE_DURATION
-    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
-
-  def set_position(self, x: float, y: float) -> None:
-    super().set_position(x + self._shake_offset, y)
 
   def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
     if self._grow_animation_until is not None:
@@ -228,14 +247,14 @@ class BigButton(Widget):
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._width_hint(),
+    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._title_width_hint(),
                               self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      label_y = btn_y + self.LABEL_VERTICAL_PADDING + self._label.get_content_height(self._width_hint())
+      label_y = label_rect.y + self._label.get_content_height(int(label_rect.width))
       sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
-      sub_label_rect = rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height)
+      sub_label_rect = rl.Rectangle(label_x, label_y, self._subtitle_width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
@@ -268,8 +287,10 @@ class BigButton(Widget):
 
 
 class BigToggle(BigButton):
-  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None):
-    super().__init__(text, value, "")
+  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None,
+               *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
+    super().__init__(text, value, "", description=description, description_icon=description_icon)
     self._checked = initial_state
     self._toggle_callback = toggle_callback
 
@@ -304,16 +325,13 @@ class BigToggle(BigButton):
 
 class BigMultiToggle(BigToggle):
   def __init__(self, text: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None):
-    super().__init__(text, "", toggle_callback=toggle_callback)
+               select_callback: Callable | None = None, *, description: str = "", description_icon: Union[rl.Texture, None] = None):
+    super().__init__(text, "", toggle_callback=toggle_callback, description=description, description_icon=description_icon)
     assert len(options) > 0
     self._options = options
     self._select_callback = select_callback
 
     self.set_value(self._options[0])
-
-  def _width_hint(self) -> int:
-    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
@@ -355,16 +373,13 @@ class GreyBigButton(BigButton):
     self._sub_label.set_font_size(36)
     self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
     self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
-    self._sub_label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE if not self._label.text else
-                                           rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._sub_label.set_alignment_vertical(TextAlignmentVertical.MIDDLE if not self._label.text else
+                                           TextAlignmentVertical.BOTTOM)
     self._sub_label.set_line_height(0.95)
 
   @property
   def LABEL_VERTICAL_PADDING(self):
     return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
-
-  def _width_hint(self) -> int:
-    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _get_label_font_size(self):
     return 36
@@ -376,9 +391,9 @@ class GreyBigButton(BigButton):
 
 class BigMultiParamToggle(BigMultiToggle):
   def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None):
+               select_callback: Callable | None = None, *, description: str = "", description_icon: Union[rl.Texture, None] = None):
     assert Params is not None
-    super().__init__(text, options, toggle_callback, select_callback)
+    super().__init__(text, options, toggle_callback, select_callback, description=description, description_icon=description_icon)
     self._param = param
 
     self._params = Params()
@@ -394,9 +409,10 @@ class BigMultiParamToggle(BigMultiToggle):
 
 
 class BigParamControl(BigToggle):
-  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None):
+  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None, *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
     assert Params is not None
-    super().__init__(text, "", toggle_callback=toggle_callback)
+    super().__init__(text, "", toggle_callback=toggle_callback, description=description, description_icon=description_icon)
     self.param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self.param, False))
@@ -412,9 +428,9 @@ class BigParamControl(BigToggle):
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
   def __init__(self, icon: rl.Texture, param: str, toggle_callback: Callable | None = None,
-               icon_offset: tuple[int, int] = (0, 0)):
+               icon_offset: tuple[int, int] = (0, 0), *, description: str = "", description_icon: Union[rl.Texture, None] = None, title: str = ""):
     assert Params is not None
-    super().__init__(icon, toggle_callback, icon_offset=icon_offset)
+    super().__init__(icon, toggle_callback, icon_offset=icon_offset, description=description, description_icon=description_icon, title=title)
     self._param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))

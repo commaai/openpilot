@@ -63,6 +63,7 @@ def fill_driving_model_data(msg: capnp._DynamicStructBuilder, modelv2_send: capn
   driving_model_data.frameIdExtra = modelV2.frameIdExtra
   driving_model_data.frameDropPerc = modelV2.frameDropPerc
   driving_model_data.modelExecutionTime = modelV2.modelExecutionTime
+  driving_model_data.big = modelV2.big
   driving_model_data.action = modelV2.action
   driving_model_data.meta.laneChangeState = modelV2.meta.laneChangeState
   driving_model_data.meta.laneChangeDirection = modelV2.meta.laneChangeDirection
