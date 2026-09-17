@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict, deque
-import threading
 import time
 import unittest
 import numpy as np
@@ -17,7 +16,6 @@ from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.hardware.comma.power_monitor import get_power
-from openpilot.system.hardware.chestnut.monitoring import chestnut_state_thread
 from openpilot.selfdrive.modeld.helpers import chestnut_present
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
@@ -26,27 +24,6 @@ SAMPLE_TIME = 2       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
 MICI = HARDWARE.get_device_type() == "mici"
 CHESTNUT = chestnut_present()
-
-class Chestnut:
-  HW_TYPE_CUATRO = Panda.HW_TYPE_CUATRO
-
-  def __init__(self):
-    self.sm = messaging.SubMaster(['chestnutState'])
-    for _ in range(10):
-      self.sm.update(1000)
-      if self.sm.valid['chestnutState']:
-        break
-    else:
-      raise RuntimeError("timed out waiting for Chestnut")
-
-  def get_type(self):
-    return self.HW_TYPE_CUATRO
-
-  def health(self):
-    self.sm.update(0)
-    s = self.sm['chestnutState']
-    return {'voltage': s.supplyVoltage, 'current': s.supplyCurrent}
-
 
 @dataclass
 class Proc:
@@ -61,14 +38,13 @@ class Proc:
     return '+'.join(self.procs)
 
 
+# MICI readings exclude the separately powered Chestnut GPU.
 PROCS = [
   Proc(['camerad'], 0.85 if MICI else 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
-  Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
+  Proc(['modeld'], 0.45 if MICI and CHESTNUT else 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
 ]
-if CHESTNUT:
-  PROCS = [Proc(['camerad', 'modeld'], 10., msgs=['modelV2'])]
 
 
 class TestPowerDraw(OpenpilotTestCase):
@@ -77,13 +53,7 @@ class TestPowerDraw(OpenpilotTestCase):
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     self.panda = None
-    if CHESTNUT:
-      end_event = threading.Event()
-      thread = threading.Thread(target=chestnut_state_thread, args=(end_event,))
-      thread.start()
-      self.addCleanup(lambda: (end_event.set(), thread.join()))
-      self.panda = Chestnut()
-    elif MICI:
+    if MICI:
       HARDWARE.reset_internal_panda()
       self.addCleanup(HARDWARE.reset_internal_panda)
       Panda.wait_for_panda(None, 30)
@@ -102,8 +72,6 @@ class TestPowerDraw(OpenpilotTestCase):
     return np.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
 
   def valid_power_draw(self, proc, used):
-    if CHESTNUT:
-      return used >= proc.power
     return np.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
 
   def tabulate_msg_counts(self, msgs_and_power):
@@ -142,7 +110,7 @@ class TestPowerDraw(OpenpilotTestCase):
 
   @mock_messages(['deviceMotion'])
   def test_camera_procs(self, subtests):
-    baseline = 0. if CHESTNUT else get_power(panda=self.panda)
+    baseline = get_power(panda=self.panda)
 
     prev = baseline
     used = {}
