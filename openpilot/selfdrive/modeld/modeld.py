@@ -39,6 +39,7 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
+WORLD_MODEL = bool(os.getenv('WORLDMODEL_DIR'))
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
@@ -224,7 +225,7 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  CHESTNUT = chestnut_present() and chestnut_compiled()
+  CHESTNUT = not WORLD_MODEL and chestnut_present() and chestnut_compiled()
   if CHESTNUT:
     os.environ['HCQDEV_WAIT_TIMEOUT_MS'] = '3000'
   params = Params()
@@ -284,7 +285,8 @@ def main(demo=False):
   # messaging
   pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutGpuState"] if CHESTNUT else [])
   pm = PubMaster(pub_socks)
-  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
+  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"] +
+                (["worldModelPlan"] if WORLD_MODEL else []))
 
   publish_state = PublishState()
   params = Params()
@@ -414,6 +416,20 @@ def main(demo=False):
     model_execution_time = mt2 - mt1
 
     if model_output is not None:
+      worldmodel_active = False
+      if WORLD_MODEL and sm.all_checks(['worldModelPlan']):
+        world_plan = sm['worldModelPlan']
+        plan_age = time.monotonic() - world_plan.timestampEof / 1e9
+        if 0 <= plan_age < 2 / SERVICE_LIST['worldModelPlan'].frequency:
+          plan_output = {'plan': np.array(world_plan.plan, dtype=np.float32)[None]}
+          model.parser.parse_mdn('plan', plan_output, in_N=0, out_N=0, out_shape=(ModelConstants.IDX_N, ModelConstants.PLAN_WIDTH))
+          model_output.update(plan_output)
+          model_output.pop('action', None)
+          action_delay = .5 / SERVICE_LIST['worldModelPlan'].frequency
+          lat_action_t = lat_delay + plan_age + action_delay
+          long_action_t = long_delay + plan_age + action_delay
+          worldmodel_active = True
+
       modelv2_send = messaging.new_message('modelV2')
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
@@ -423,7 +439,7 @@ def main(demo=False):
       fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
                      frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, extrinsics_calibration_seen)
-      modelv2_send.modelV2.big = model.chestnut
+      modelv2_send.modelV2.big = model.chestnut or worldmodel_active
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
