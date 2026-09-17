@@ -39,7 +39,6 @@ class BaseButton(Widget):
       self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
 
   def enable_long_press_shake(self):
-    # Opt-in so a slow press outside settings (e.g. setup) still clicks
     if self._long_press_callback is None:
       self.set_long_press_callback(self.trigger_shake)
 

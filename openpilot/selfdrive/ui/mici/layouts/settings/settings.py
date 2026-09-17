@@ -1,6 +1,6 @@
 from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BaseButton, BigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network.network_layout import NetworkLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici
@@ -52,11 +52,5 @@ class SettingsLayout(NavScroller):
       firehose_btn,
       developer_btn,
     ])
-
-    # Settings without a description shake on long press, top level buttons don't
-    for panel in (toggles_panel, network_panel, device_panel, software_panel, developer_panel):
-      for item in panel._scroller.items:
-        if isinstance(item, BaseButton):
-          item.enable_long_press_shake()
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
