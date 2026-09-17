@@ -10,7 +10,6 @@ from opendbc.car.structs import car
 import openpilot.cereal.messaging as messaging
 from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
 from openpilot.common.hardware import HARDWARE
@@ -242,11 +241,6 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
     branch = "replay"
 
   return StartupAlert("WARNING: This branch is not tested", branch, alert_status=AlertStatus.userPrompt)
-
-def user_bookmark_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  prime_type = os.getenv("PRIME_TYPE") or Params().get("PrimeType")
-  paired = prime_type is not None and int(prime_type) >= 0
-  return NormalPermanentAlert("Bookmark Saved", "" if paired else "pair to connect to view", duration=1.5)
 
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
@@ -1013,7 +1007,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.userBookmark: {
-    ET.PERMANENT: user_bookmark_alert,
+    ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", "", duration=1.5),
+  },
+
+  EventName.userBookmarkNotPaired: {
+    ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", "pair to connect to view", duration=1.5),
   },
 }
 
