@@ -37,8 +37,6 @@ class BaseButton(Widget):
       # Dialogs also use buttons; import lazily to avoid a circular import.
       from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
       self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
-    else:
-      self.set_long_press_callback(self.trigger_shake)
 
   def trigger_shake(self):
     self._shake_start = rl.get_time()
@@ -109,6 +107,8 @@ class BigCircleToggle(BigCircleButton):
                *, description: str = "", description_icon: Union[rl.Texture, None] = None, title: str = ""):
     super().__init__(icon, False, icon_offset=icon_offset, description=description, description_icon=description_icon, title=title)
     self._toggle_callback = toggle_callback
+    if not description:
+      self.set_long_press_callback(self.trigger_shake)
 
     # State
     self._checked = False
@@ -293,6 +293,8 @@ class BigToggle(BigButton):
     super().__init__(text, value, "", description=description, description_icon=description_icon)
     self._checked = initial_state
     self._toggle_callback = toggle_callback
+    if not description:
+      self.set_long_press_callback(self.trigger_shake)
 
   def _load_images(self):
     super()._load_images()
