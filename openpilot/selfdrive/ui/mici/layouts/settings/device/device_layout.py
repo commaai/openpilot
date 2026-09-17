@@ -124,14 +124,17 @@ class DeviceInfoLayoutMici(Widget):
 
 class PairBigButton(BigButton):
   def __init__(self):
+    self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 27, 32)
     self._comma_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
-    self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/{provider}.png", 64, 64)
+    self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/paired_{provider}.png", 64, 64)
                            for provider in ("github", "google", "apple")}
     super().__init__("pair to connect", "connect.comma.ai", self._comma_icon)
 
   def _update_state(self):
     super()._update_state()
 
+    self._value_icon = (self._commacare_badge if ui_state.prime_state.is_paired() and ui_state.prime_state.is_prime()
+                       and ui_state.prime_state.has_commacare() else None)
     if ui_state.prime_state.is_paired():
       self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")

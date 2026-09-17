@@ -16,14 +16,16 @@ class PairingInfoLayout(Widget):
   def __init__(self):
     super().__init__()
     self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 27, 32)
-    subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
+    self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/{provider}.png", 32, 32)
+                           for provider in ("github", "google", "apple")}
+    self._subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
     self._labels = [
-      UnifiedLabel("paired with", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
-      UnifiedLabel(ui_state.prime_state.get_pairing_account, 32, max_width=340,
-                   text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False, scroll=True),
+      UnifiedLabel("account", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
+      UnifiedLabel(ui_state.prime_state.get_pairing_account, 36, max_width=340,
+                   text_color=self._subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False, scroll=True),
       UnifiedLabel("status", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
-      UnifiedLabel(self._get_prime_status, 32, max_width=304,
-                   text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False),
+      UnifiedLabel(self._get_prime_status, 36, max_width=304,
+                   text_color=self._subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False),
     ]
     self.set_rect(rl.Rectangle(0, 0, 360, 180))
 
@@ -35,10 +37,24 @@ class PairingInfoLayout(Widget):
 
   def _render(self, _):
     show_commacare = ui_state.prime_state.has_commacare()
-    for label, y_offset in zip(self._labels, (-10, 68 - 25, 114 - 30, 161 - 25), strict=True):
-      badge_offset = self._commacare_badge.width + 14 if show_commacare and label is self._labels[3] else 0
+    provider_icon = self._provider_icons.get(ui_state.prime_state.get_pairing_provider())
+    for label, y_offset in zip(self._labels, (-10, 68 - 27, 114 - 30, 161 - 25), strict=True):
+      badge_offset = 0
+      # provider icon offset
+      if label is self._labels[1]:
+        badge_offset = provider_icon.width + 14 if provider_icon else 0
+        label.set_max_width(340 - badge_offset)
+      # commacare offset
+      if label is self._labels[3]:
+        badge_offset = self._commacare_badge.width + 14 if show_commacare else 0
+
       label.set_position(self._rect.x + 20 + badge_offset, self._rect.y + y_offset)
       label.render()
+
+    if provider_icon:
+      label = self._labels[1]
+      icon_pos = rl.Vector2(self._rect.x + 20, label.rect.y + (label.rect.height - provider_icon.height) / 2)
+      rl.draw_texture_v(provider_icon, icon_pos, self._subheader_color)
 
     if show_commacare:
       label = self._labels[3]
