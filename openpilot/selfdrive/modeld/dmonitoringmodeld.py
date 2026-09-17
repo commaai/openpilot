@@ -16,7 +16,6 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
-from openpilot.common.file_chunker import open_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -28,7 +27,8 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
-    jits = load_oob(open_file_chunked(MODEL_PKL_PATH))
+    with open(MODEL_PKL_PATH, 'rb') as f:
+      jits = load_oob(f)
     self.DEV = jits['input_specs']['input_img'][2]
     self.input_shapes = jits['metadata']['input_shapes']
     self.output_slices = pickle.loads(base64.b64decode(jits['metadata']['metadata']['output_slices']))

@@ -20,7 +20,7 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
-release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
+release = not os.path.exists(File('#.gitmodules').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -312,8 +312,6 @@ def count_scons_nodes(nodes):
     if node in seen:
       continue
     seen.add(node)
-    if hasattr(node, 'has_builder') and node.has_builder():
-      build_product_nodes.add(node)
     executor = node.get_executor()
     if executor is not None:
       stack += executor.get_all_prerequisites() + executor.get_all_children()
@@ -322,7 +320,6 @@ def count_scons_nodes(nodes):
 
 progress_interval = 5
 progress_count = 0
-build_product_nodes = set()
 progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
 
 def progress_function(node):
@@ -338,13 +335,3 @@ def progress_function(node):
 
 Progress(progress_function, interval=progress_interval)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
-
-def check_build_product_size(target, source, env):
-  limit = 50 * 1024 * 1024  # GitHub max size
-  for t in target:
-    if str(t).endswith('.pkl'):  # chunked during release packaging
-      continue
-    if hasattr(t, 'isfile') and t.isfile() and (size := os.path.getsize(t.abspath)) > limit:
-      raise SCons.Errors.UserError(f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the {limit / (1024 * 1024):.1f} MiB limit")
-if not GetOption('extras'):
-  AddPostAction(list(build_product_nodes), Action(check_build_product_size, None))

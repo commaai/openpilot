@@ -3,7 +3,6 @@ import pickle
 import struct
 from pathlib import Path
 
-from openpilot.common.file_chunker import get_manifest_path
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
@@ -36,5 +35,5 @@ def chestnut_present() -> bool:
 
 def chestnut_compiled() -> bool:
   path = modeld_pkl_path(chestnut=True)
-  return (path.is_file() or Path(get_manifest_path(path)).is_file()) and all(
+  return path.is_file() and all(
     (MODELS_DIR / f'big_driving_warp_{size}_tinygrad.pkl').is_file() for size in ('1344x760', '1928x1208'))

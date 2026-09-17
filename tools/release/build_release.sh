@@ -39,6 +39,7 @@ cd "$SOURCE_DIR"
 
 # in the directory
 cd "$BUILD_DIR"
+source "$SOURCE_DIR/tools/release/setup_lfs.sh"
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -58,9 +59,8 @@ else
   scons panda/
 fi
 
-find openpilot/selfdrive/modeld/models -name '*.pkl' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
-  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 fi
 
 # Ensure no submodules in release
@@ -88,6 +88,7 @@ VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # writing larger objects is faster than compressing them on-device
 git -c core.compression=0 add -f .
 git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
+source "$SOURCE_DIR/tools/release/check_file_sizes.sh"
 
 # Run tests
 cd "$BUILD_DIR"
@@ -100,6 +101,7 @@ for branch in ${RELEASE_BRANCH//,/ }; do
   REFS+=("$BUILD_BRANCH:$branch")
 done
 # uploading the larger pack is faster than spending CPU to optimize it
-git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
+# The big model is already published to LFS by the source branch.
+GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
 
 echo "[-] done T=$SECONDS"
