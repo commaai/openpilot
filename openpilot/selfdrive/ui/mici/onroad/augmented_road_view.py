@@ -38,7 +38,7 @@ CAM_Y_OFFSET = 20
 
 
 class BookmarkIcon(Widget):
-  PEEK_THRESHOLD = 150  # Pull distance required to arm the bookmark
+  PEEK_THRESHOLD = 150 # If icon peeks out this much, snap it fully visible
   FULL_VISIBLE_OFFSET = 200  # How far onscreen when fully visible
   HIDDEN_OFFSET = -50  # How far offscreen when hidden
 
