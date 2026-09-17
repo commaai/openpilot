@@ -4,9 +4,15 @@ from pathlib import Path
 CHESTNUT_FW_VERSION = "ed4e39b7"
 CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 CHESTNUT_ROM_USB_IDS = ((0x174C, 0x2464), (0x174C, 0x2463))
+CHESTNUT_USB_PRODUCT = f"custom {CHESTNUT_FW_VERSION}-CLEAN"
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
 TYPEC_CC_ORIENTATION_PATH = Path("/sys/class/power_supply/usb/typec_cc_orientation")
 PRIMARY_USB_CONTROLLER = "a600000.ssusb"
+
+
+def is_chestnut_usb_id(vendor_id: int, product_id: int, include_bootloader: bool = False) -> bool:
+  ids = CHESTNUT_USB_IDS + CHESTNUT_ROM_USB_IDS if include_bootloader else CHESTNUT_USB_IDS
+  return (vendor_id, product_id) in ids
 
 
 def get_usb_topology() -> set[str]:
@@ -81,7 +87,7 @@ def set_usb_state(device_state, devices: list[dict]) -> None:
     entry.linkErrorCount = device["linkErrorCount"]
     entry.usb3Lane = device.get("usb3Lane", "unknown")
 
-    if (entry.vendorId, entry.productId) in CHESTNUT_USB_IDS:
+    if is_chestnut_usb_id(entry.vendorId, entry.productId):
       chestnut_present = True
 
   device_state.chestnutPresent = chestnut_present

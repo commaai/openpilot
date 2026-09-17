@@ -13,7 +13,7 @@ import pyray as rl
 from openpilot.cereal import log
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets import DialogResult, Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
@@ -67,17 +67,17 @@ class Setup(Widget):
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
 
-    self._low_voltage_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+    self._low_voltage_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, TextAlignment.LEFT,
                                           text_color=rl.Color(255, 89, 79, 255), text_padding=20)
     self._low_voltage_body_label = Label("Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE,
-                                         text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+                                         text_alignment=TextAlignment.LEFT, text_padding=20)
     self._low_voltage_continue_button = Button("Continue", self._low_voltage_continue_button_callback)
     self._low_voltage_poweroff_button = Button("Power Off", HARDWARE.shutdown)
 
     self._getting_started_button = Button("", self._getting_started_button_callback, button_style=ButtonStyle.PRIMARY, border_radius=0)
-    self._getting_started_title_label = Label("Getting Started", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._getting_started_title_label = Label("Getting Started", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT, text_padding=20)
     self._getting_started_body_label = Label("Before we get on the road, let's finish installation and cover some details.",
-                                             BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+                                             BODY_FONT_SIZE, text_alignment=TextAlignment.LEFT, text_padding=20)
 
     self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
@@ -85,32 +85,32 @@ class Setup(Widget):
                                                       button_style=ButtonStyle.PRIMARY)
     self._software_selection_continue_button.set_enabled(False)
     self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
-    self._software_selection_title_label = Label("Choose Software to Use", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+    self._software_selection_title_label = Label("Choose Software to Use", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT,
                                                  text_padding=20)
 
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
-    self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
-    self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
-    self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT, text_padding=20)
+    self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, TextAlignment.LEFT, text_padding=20)
+    self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=TextAlignment.LEFT, text_padding=20)
 
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
     self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
                                                  button_style=ButtonStyle.PRIMARY)
     self._network_setup_continue_button.set_enabled(False)
-    self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT, text_padding=20)
 
     self._custom_software_warning_continue_button = Button("Scroll to continue", self._custom_software_warning_continue_button_callback,
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
-    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, TextAlignment.LEFT,
                                                       text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
     self._yellow_warning_icon = gui_app.texture("icons/yellow_warning.png", int(68 * FONT_SCALE), int(68 * FONT_SCALE))
     self._custom_software_warning_body_labels = [
-      Label(text, 68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-            text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+      Label(text, 68, text_alignment=TextAlignment.LEFT,
+            text_alignment_vertical=TextAlignmentVertical.TOP,
             text_padding=60, icon=self._yellow_warning_icon if has_icon else None)
       for text, has_icon in [
         ("Use caution when installing third-party software.", False),

@@ -101,6 +101,10 @@ class PrimeState:
     with self._lock:
       return bool(self.prime_type > PrimeType.NONE)
 
+  def is_full_prime(self) -> bool:
+    with self._lock:
+      return self.prime_type > PrimeType.NONE and self.prime_type != PrimeType.LITE
+
   def is_paired(self) -> bool:
     with self._lock:
       return self.prime_type > PrimeType.UNPAIRED

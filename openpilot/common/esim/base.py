@@ -21,6 +21,13 @@ class Profile:
   def is_comma(self) -> bool:
     return self.provider == 'Webbing' and self.iccid.startswith('8985235')
 
+  @property
+  def display_name(self) -> str:
+    if self.is_comma:
+      return "comma prime"
+    name = self.nickname or self.provider or "<unnamed>"
+    return f"{name} (...{self.iccid[-4:]})"
+
 
 class LPABase(ABC):
   @abstractmethod

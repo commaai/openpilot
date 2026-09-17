@@ -12,16 +12,17 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -o ControlMaster=auto -o ControlPath=/tmp/ssh_control_%C -o ControlPersist=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
+ssh -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=12 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec setpriv --pdeathsig HUP /usr/bin/bash <<'END'
 
 set -e
 
 export TERM=xterm-256color
 
-shopt -s huponexit # kill all child processes when the shell exits
+trap 'kill 0' HUP # stop this process group on SSH disconnect
 
 export CI=1
 export PYTHONWARNINGS=error
+export PYTHONFAULTHANDLER=1
 export COMMA_CACHE=/data/tmp/comma_download_cache
 #export LOGPRINT=debug # this has gotten too spammy...
 export TEST_DIR=${env.TEST_DIR}
@@ -69,7 +70,8 @@ export LD_LIBRARY_PATH="\$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/us
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-time ${cmd}
+time ( ${cmd} ) &
+wait \$!
 END"""
 
     sh script: ssh_cmd, label: step_label
@@ -169,7 +171,7 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
-  def excludeBranches = ['__nightly', 'devel', 'devel-staging',
+  def excludeBranches = ['__nightly', '__nightly-chestnut', 'devel', 'devel-staging',
                          'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
@@ -199,6 +201,12 @@ node {
           ])
         },
       )
+    }
+
+    if (env.BRANCH_NAME == '__nightly-chestnut') {
+      deviceStage("build nightly-chestnut", "mici-chestnut-ci", [], [
+        step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
+      ])
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
@@ -250,6 +258,14 @@ node {
           step("test pandad loopback", "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"),
           step("test amp", "./openpilot/common/hardware/comma/tests/test_amplifier.py"),
+        ])
+      },
+      'chestnut': {
+        deviceStage("chestnut", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
+          step("build", "./openpilot/selfdrive/test/chestnut.sh"),
+          step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
+          step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
+          step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
         ])
       },
 
