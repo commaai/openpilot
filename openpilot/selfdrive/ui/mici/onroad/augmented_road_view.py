@@ -49,6 +49,8 @@ class BookmarkIcon(Widget):
     self._filled_icon = gui_app.texture("icons_mici/onroad/bookmark_fill.png", 180, 180)
     self._offset_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._active_alpha = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._outgoing_scale = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
+    self._outgoing_opacity = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
 
     # State
     self._interacting = False
@@ -58,6 +60,7 @@ class BookmarkIcon(Widget):
     self._is_swiping = False
     self._is_swiping_left: bool = False
     self._triggered_time: float = 0.0
+    self._outgoing: tuple[float, float] | None = None  # Offset, fill alpha
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
@@ -68,6 +71,10 @@ class BookmarkIcon(Widget):
     return interacting
 
   def _update_state(self):
+    self._outgoing_scale.update(0.5)
+    if self._outgoing_opacity.update(0.0) < 0.01:
+      self._outgoing = None
+
     swipe_offset = self._swipe_start_x - self._swipe_current_x
     armed = self._state == BookmarkState.DRAGGING and swipe_offset > self.PEEK_THRESHOLD
     if self._state == BookmarkState.DRAGGING:
@@ -102,8 +109,6 @@ class BookmarkIcon(Widget):
       self._swipe_current_x = mouse_event.pos.x
       self._is_swiping = True
       self._is_swiping_left = False
-      if self._state != BookmarkState.TRIGGERED:
-        self._state = BookmarkState.DRAGGING
 
     elif mouse_event.left_down and self._is_swiping:
       self._swipe_current_x = mouse_event.pos.x
@@ -111,6 +116,16 @@ class BookmarkIcon(Widget):
       self._is_swiping_left = swipe_offset > 0
       if self._is_swiping_left:
         self._interacting = True
+        if self._state != BookmarkState.DRAGGING:
+          # Keep the old icon animating independently while the new pull starts immediately.
+          if self._offset_filter.x > 0:
+            self._outgoing = (self._offset_filter.x, self._active_alpha.x)
+            self._outgoing_scale.x = 1.0
+            self._outgoing_opacity.x = 1.0
+          self._offset_filter.x = self.HIDDEN_OFFSET
+          self._offset_filter.velocity.x = 0.0
+          self._active_alpha.x = 0.0
+          self._state = BookmarkState.DRAGGING
 
     elif mouse_event.left_released:
       if self._is_swiping and self._state == BookmarkState.DRAGGING:
@@ -130,14 +145,20 @@ class BookmarkIcon(Widget):
       self._is_swiping_left = False
 
   def _render(self, _):
-    """Render the bookmark icon."""
+    """Render the outgoing bookmark behind the current pull."""
+    if self._outgoing is not None:
+      self._draw_icon(*self._outgoing, scale=self._outgoing_scale.x, opacity=self._outgoing_opacity.x)
+
     if self._offset_filter.x > 0:
-      icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
-      icon_y = self.rect.y + (self.rect.height - self._icon.height) / 2  # Vertically centered
-      position = rl.Vector2(icon_x, icon_y)
-      active_alpha = round(255 * self._active_alpha.x)
-      for icon, alpha in ((self._icon, 255 - active_alpha), (self._filled_icon, active_alpha)):
-        rl.draw_texture_ex(icon, position, 0.0, 1.0, rl.Color(255, 255, 255, alpha))
+      self._draw_icon(self._offset_filter.x, self._active_alpha.x)
+
+  def _draw_icon(self, offset: float, active_alpha: float, scale: float = 1.0, opacity: float = 1.0):
+    icon_x = self.rect.x + self.rect.width - round(offset)
+    icon_x += self._icon.width * (1.0 - scale) / 2
+    icon_y = self.rect.y + (self.rect.height - self._icon.height * scale) / 2
+    position = rl.Vector2(icon_x, icon_y)
+    for icon, alpha in ((self._icon, 1.0 - active_alpha), (self._filled_icon, active_alpha)):
+      rl.draw_texture_ex(icon, position, 0.0, scale, rl.Color(255, 255, 255, round(255 * alpha * opacity)))
 
 
 class AugmentedRoadView(CameraView):
