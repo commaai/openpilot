@@ -1,7 +1,7 @@
-"""Sound-independent policy for sustained audible critical alerts.
+"""Sound-independent policy for sustained visible critical alerts.
 
 Call on every soundd tick, including clear/silent states. Eligibility comes
-from severity, visibility and whether a sound is assigned, never its identity.
+from severity and visibility, never from the assigned sound or silence.
 Changing the starting sound or alert identity does not restart the timer.
 """
 from dataclasses import dataclass

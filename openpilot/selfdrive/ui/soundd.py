@@ -151,8 +151,7 @@ class Soundd:
     if sm.updated['selfdriveState'] or now - sm.recv_time['selfdriveState'] <= SELFDRIVE_STATE_TIMEOUT:
       max_alert = max_alert_for_type(ss.alertType)
       new_alert = ss.alertSound.raw
-      critical = (ss.alertStatus == AlertStatus.critical and ss.alertSize != log.SelfdriveState.AlertSize.none and
-                  new_alert != AudibleAlert.none)
+      critical = ss.alertStatus == AlertStatus.critical and ss.alertSize != log.SelfdriveState.AlertSize.none
     elif check_selfdrive_timeout_alert(sm):
       max_alert = MaxAlert.critical
       new_alert = AudibleAlert.warningImmediate

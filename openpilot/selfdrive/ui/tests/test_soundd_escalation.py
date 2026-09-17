@@ -54,12 +54,11 @@ def test_critical_escalation_at_full_volume(mocker, sound, starting_volume):
 
 
 @pytest.mark.parametrize('status,size,sound', [
-  ('critical', 'full', AudibleAlert.none),
   ('userPrompt', 'full', AudibleAlert.warningSoft),
   ('normal', 'full', AudibleAlert.warningImmediate),
   ('critical', 'none', AudibleAlert.warningImmediate),
 ])
-def test_only_visible_audible_red_alerts_escalate(mocker, status, size, sound):
+def test_only_visible_red_alerts_escalate(mocker, status, size, sound):
   clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
   sd = Soundd()
   sm = AlertState(sound)
@@ -72,7 +71,7 @@ def test_only_visible_audible_red_alerts_escalate(mocker, status, size, sound):
   assert sd.critical_escalation.started_at is None
 
 
-@pytest.mark.parametrize('interrupt', ['clear', 'silent', 'orange'])
+@pytest.mark.parametrize('interrupt', ['clear', 'orange'])
 def test_escalation_resets_after_interruption(mocker, interrupt):
   clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
   sd = Soundd()
@@ -85,8 +84,6 @@ def test_escalation_resets_after_interruption(mocker, interrupt):
   if interrupt == 'clear':
     sm.state.alertStatus = 'normal'
     sm.state.alertSize = 'none'
-    sm.state.alertSound = AudibleAlert.none
-  elif interrupt == 'silent':
     sm.state.alertSound = AudibleAlert.none
   else:
     sm.state.alertStatus = 'userPrompt'
@@ -166,7 +163,7 @@ def test_original_immediate_ramp(mocker):
   ('', MaxAlert.critical),
 ])
 @pytest.mark.parametrize('sound', [AudibleAlert.warningImmediate, AudibleAlert.warningSoft, AudibleAlert.prompt,
-                                  AudibleAlert.promptDistracted, AudibleAlert.preAlert, AudibleAlert.engage])
+                                  AudibleAlert.promptDistracted, AudibleAlert.preAlert, AudibleAlert.engage, AudibleAlert.none])
 def test_escalation_independent_of_starting_sound(mocker, event, expected, sound):
   clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
   sd = Soundd()
@@ -199,4 +196,20 @@ def test_reassigning_base_sound_does_not_restart_max(mocker):
   sd.get_audible_alert(sm)
   assert sd.current_alert == MaxAlert.driver
   assert sd.current_sound_frame == 100
+  assert sd.current_volume == 1.
+
+
+@pytest.mark.parametrize('switch_at', [4., 9.])
+def test_silent_red_keeps_escalation_timer(mocker, switch_at):
+  clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
+  sd = Soundd()
+  sm = AlertState()
+  sd.get_audible_alert(sm)
+  clock.return_value = switch_at
+  sm.state.alertSound = AudibleAlert.none
+  sd.get_audible_alert(sm)
+  assert sd.critical_escalation.started_at == 0.
+  clock.return_value = max(switch_at, CRITICAL_ESCALATION_TIME)
+  sd.get_audible_alert(sm)
+  assert sd.current_alert == MaxAlert.driver
   assert sd.current_volume == 1.

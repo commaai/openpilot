@@ -28,8 +28,8 @@ Change the `MaxAlert.critical` file in `soundd.py` when `critical_max.wav` is re
 
 `openpilot/selfdrive/ui/critical_alert.py` owns the timer and max-family routing.
 It has no dependency on event definitions, original sound assignments or audio
-files. `soundd` supplies eligibility: critical status, visible alert, and a
-non-silent assigned sound. Ineligible ticks reset the timer. Continuous eligible
+files. `soundd` supplies eligibility: critical status and a visible alert.
+Initially silent alerts also escalate; silence does not reset the timer. Ineligible ticks reset the timer. Continuous eligible
 ticks preserve it even when the event or starting sound changes.
 
 After eight seconds, playback uses the current event's max family at 100%.

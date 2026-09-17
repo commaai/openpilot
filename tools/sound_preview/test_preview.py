@@ -27,4 +27,6 @@ def test_initial_sound_and_silent_pcm(alert, filename):
   with wave.open(io.BytesIO(base64.b64decode(result['audio']))) as wav:
     assert wav.getnframes() / wav.getframerate() == 9
     pcm = np.frombuffer(wav.readframes(wav.getnframes()), dtype='<i2')
-  assert bool(np.any(pcm)) == (filename != 'silence')
+  assert bool(np.any(pcm[:8 * 48000])) == (filename != 'silence')
+  assert np.any(pcm[8 * 48000:])
+  assert result['firstMax'] == 8.
