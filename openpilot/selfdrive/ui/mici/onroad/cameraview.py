@@ -152,7 +152,7 @@ class CameraView(Widget):
 
   def _offroad_transition(self):
     # Drain queued SubSocket messages to prevent old frames from showing when going
-    # onroad. Qt had a separate thread which drains the VisionIpcClient SubSocket for us.
+    # onroad.
     if self.client and self.client.is_connected():
       while self.client.recv(timeout_ms=0) is not None:
         pass

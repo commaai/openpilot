@@ -52,7 +52,7 @@ class HtmlElement:
   font_weight: FontWeight
   margin_top: int
   margin_bottom: int
-  line_height: float = 0.9  # matches Qt visually, unsure why not default 1.2
+  line_height: float = 0.9  # tuned for the UI's typography
   indent_level: int = 0
 
 
@@ -72,7 +72,7 @@ class HtmlRenderer(Widget):
     self._cached_height: float | None = None
     self._cached_width: int = -1
 
-    # Base paragraph size (Qt stylesheet default is 48px in offroad alerts)
+    # Base paragraph size used by offroad alerts.
     base_p_size = int(text_size.get(ElementType.P, 48))
 
     # Untagged text defaults to <p>

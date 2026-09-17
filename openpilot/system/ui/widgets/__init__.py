@@ -69,7 +69,7 @@ class Widget(abc.ABC):
       self._update_layout_rects()
 
   def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
-    """Can be used like size hint in QT"""
+    """Can be used like a size hint."""
     self._parent_rect = parent_rect
 
   @property

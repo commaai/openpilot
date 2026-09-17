@@ -32,7 +32,7 @@ core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/lives
 if arch != "Darwin":
   core_srcs += ['streams/socketcanstream.cc']
 
-# imgui frontend (tools/cabana/ui), no Qt
+# imgui frontend (tools/cabana/ui)
 ui_env = env.Clone()
 ui_env['CPPPATH'] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 ui_env['LIBPATH'] += [imgui.MESA_DIR, libusb.LIB_DIR]
@@ -65,7 +65,6 @@ if GetOption('extras'):
     cabana_core_test_env.Object('tests/cabana_core_util', 'utils/util.cc'),
     cabana_core_test_env.Object('tests/cabana_core_icons', bootstrap_icons_src),
     cabana_core_test_env.Object('tests/cabana_core_routes', 'routes.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
   ]
   cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[replay_lib, common])
 

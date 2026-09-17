@@ -21,7 +21,7 @@ struct MainWindowState {
 extern MainWindowState main_window;
 
 void addSettingsHandler();                    // register the [Cabana] ini section
-void load();                                  // migrate Qt state if needed, then LoadIniSettingsFromMemory
+void load();                                  // LoadIniSettingsFromMemory
 void applyWindowGeometry(GLFWwindow *window); // glfw pos/size/maximize from main_window
 std::string save();                           // SaveIniSettingsToMemory (caller fills main_window first)
 

@@ -160,7 +160,7 @@ private:
   void drawValueDescriptionDlg();  // continuation of the ValueDescriptionDlg opened in drawEditor
   static float textWidth(const std::string &text, float font_size = 0);
   void closeEditor();
-  void commitEditor();  // Qt commits an open editor on focus out
+  void commitEditor();  // Commit an open editor when focus moves away.
   // only an Acceptable value is committed
   void drawLineEditor(SignalModel::Item *item, ImGuiInputTextCallback validator, bool take_focus);
   static ValidState validateEditor(const SignalModel::Item *item, std::string &text);

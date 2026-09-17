@@ -305,7 +305,7 @@ std::string bootstrapSvg(const std::string &id) {
 int num_decimals(double num) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%g", num);
-  const char *dot = strpbrk(buf, ".,");  // Qt sets LC_ALL from the environment so the decimal mark may be a comma
+  const char *dot = strpbrk(buf, ".,");  // The decimal mark may be a comma when LC_ALL is set.
   return dot ? (int)strlen(dot + 1) : 0;
 }
 

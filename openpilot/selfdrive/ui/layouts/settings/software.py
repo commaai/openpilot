@@ -146,7 +146,7 @@ class SoftwareLayout(Widget):
       self._install_btn.action_item.set_text(tr("INSTALL"))
       self._install_btn.action_item.set_value(new_desc)
       self._install_btn.set_description(new_release_notes)
-      # Enable install button for testing (like Qt showEvent)
+      # Enable install button for testing when the view is shown.
       self._install_btn.action_item.set_enabled(True)
     else:
       self._install_btn.set_visible(False)
