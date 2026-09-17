@@ -199,7 +199,7 @@ class SelfdriveD:
 
     # Check for user bookmark press
     if self.sm.updated['userBookmark']:
-      prime_type = os.getenv("PRIME_TYPE") or self.params.get("PrimeType")
+      prime_type = self.params.get("PrimeType")
       paired = prime_type is not None and int(prime_type) >= 0
       self.events.add(EventName.userBookmark if paired else EventName.userBookmarkNotPaired)
 
