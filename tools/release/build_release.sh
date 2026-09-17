@@ -101,6 +101,7 @@ for branch in ${RELEASE_BRANCH//,/ }; do
   REFS+=("$BUILD_BRANCH:$branch")
 done
 # uploading the larger pack is faster than spending CPU to optimize it
-git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
+# The big model is already published to LFS by the source branch.
+GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
 
 echo "[-] done T=$SECONDS"

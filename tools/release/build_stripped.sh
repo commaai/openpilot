@@ -72,7 +72,8 @@ source "$SOURCE_DIR/tools/release/check_file_sizes.sh"
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
   # uploading the larger pack is faster than spending CPU to optimize it
-  git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "tmp:$BRANCH"
+  # The big model is already published to LFS by the source branch.
+  GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "tmp:$BRANCH"
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"
