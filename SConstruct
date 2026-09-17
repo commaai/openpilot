@@ -20,7 +20,7 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
-release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
+release = not os.path.exists(File('#.gitmodules').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
