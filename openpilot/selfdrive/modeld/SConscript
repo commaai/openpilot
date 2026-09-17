@@ -35,7 +35,7 @@ mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
 warp_deps = [File("#openpilot/system/camerad/cameras/nv12_info.py")]
 compiler = Dir('#tinygrad_repo/examples/openpilot').abspath
-# include isolated CPU 7
+# build on all cores
 taskset = 'taskset -c 0-7 ' if arch == 'comma_arm64' else ''
 
 def chestnut_action(command):
