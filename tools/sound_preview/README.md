@@ -23,3 +23,23 @@ These checks do not validate camera/event generation, the actual preview publish
 hardware loudness, or microphone-driven ambient volume changes.
 
 Change the `MaxAlert.critical` file in `soundd.py` when `critical_max.wav` is ready.
+
+## Escalation contract
+
+`openpilot/selfdrive/ui/critical_alert.py` owns the timer and max-family routing.
+It has no dependency on event definitions, original sound assignments or audio
+files. `soundd` supplies eligibility: critical status, visible alert, and a
+non-silent assigned sound. Ineligible ticks reset the timer. Continuous eligible
+ticks preserve it even when the event or starting sound changes.
+
+After eight seconds, playback uses the current event's max family at 100%.
+DM event identities (driverDistracted, driverUnresponsive and the camera preview)
+select the driver family; other, missing and new identities select the generic
+family. Routing is isolated in `max_alert_for_type`; changing an event identity
+can change its family but cannot disable escalation. Actual files remain in
+`soundd.sound_list`. Both families currently use `dm_critical_max.wav`.
+
+Publishers must provide `alertStatus`, `alertSize`, `alertSound` and, for DM
+routing, `alertType`. Severity must not be inferred from the original sound.
+The reassignment presets are synthetic tests of this contract, not current
+openpilot event assignments.

@@ -115,6 +115,7 @@ class BaseCabinCameraDialog(Widget):
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None:
       sound, status, size = ALERTS.get(str(dm_state.alertLevel), (AudibleAlert.none, AlertStatus.normal, AlertSize.none))
+      msg.selfdriveState.alertType = "driverMonitoringPreview"
       msg.selfdriveState.alertSound = sound
       msg.selfdriveState.alertStatus = status
       msg.selfdriveState.alertSize = size

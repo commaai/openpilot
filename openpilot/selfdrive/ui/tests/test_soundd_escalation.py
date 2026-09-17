@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 
 from openpilot.cereal import log, messaging
-from openpilot.selfdrive.ui.soundd import (ALERT_RAMP_TIME, CRITICAL_ESCALATION_TIME,
-                                         SELFDRIVE_STATE_TIMEOUT, ESCALATION_ALERTS, MaxAlert, Soundd)
+from openpilot.selfdrive.ui.critical_alert import CRITICAL_ESCALATION_TIME, MaxAlert
+from openpilot.selfdrive.ui.soundd import ALERT_RAMP_TIME, SELFDRIVE_STATE_TIMEOUT, Soundd
 
 AudibleAlert = log.SelfdriveState.AudibleAlert
 
@@ -12,6 +12,7 @@ class AlertState:
   """A selfdrive state input without sockets or an audio device."""
   def __init__(self, sound=AudibleAlert.warningImmediate):
     self.state = messaging.new_message('selfdriveState').selfdriveState
+    self.state.alertType = 'driverDistracted3/permanent'
     self.state.alertStatus = 'critical'
     self.state.alertSize = 'full'
     self.state.alertSound = sound
@@ -37,9 +38,9 @@ def test_critical_escalation_at_full_volume(mocker, sound, starting_volume):
   assert sd.current_alert == sound
   clock.return_value = CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == ESCALATION_ALERTS[sound]
+  assert sd.current_alert == MaxAlert.driver
   assert sd.current_volume == 1.
-  np.testing.assert_allclose(sd.get_sound_data(100), sd.loaded_sounds[ESCALATION_ALERTS[sound]][:100])
+  np.testing.assert_allclose(sd.get_sound_data(100), sd.loaded_sounds[MaxAlert.driver][:100])
 
   # Repeated updates must keep full volume without restarting the clip.
   clock.return_value += .1
@@ -68,7 +69,7 @@ def test_only_visible_audible_red_alerts_escalate(mocker, status, size, sound):
   clock.return_value = 20.
   sd.get_audible_alert(sm)
   assert sd.current_alert == sound
-  assert sd.critical_start_time is None
+  assert sd.critical_escalation.started_at is None
 
 
 @pytest.mark.parametrize('interrupt', ['clear', 'silent', 'orange'])
@@ -91,7 +92,7 @@ def test_escalation_resets_after_interruption(mocker, interrupt):
     sm.state.alertStatus = 'userPrompt'
     sm.state.alertSound = AudibleAlert.warningSoft
   sd.get_audible_alert(sm)
-  assert sd.critical_start_time is None
+  assert sd.critical_escalation.started_at is None
   assert sd.current_alert != MaxAlert.driver
   sm = AlertState()
   restart_time = CRITICAL_ESCALATION_TIME + 2.
@@ -130,12 +131,12 @@ def test_timeout_escalation_and_recovery(mocker):
   assert sd.current_alert == AudibleAlert.warningImmediate
   clock.return_value += CRITICAL_ESCALATION_TIME
   sd.get_audible_alert(sm)
-  assert sd.current_alert == MaxAlert.driver
+  assert sd.current_alert == MaxAlert.critical
   # The existing timeout window still ends, even without a new message.
   clock.return_value = SELFDRIVE_STATE_TIMEOUT + 10
   sd.get_audible_alert(sm)
   assert sd.current_alert == AudibleAlert.none
-  assert sd.critical_start_time is None
+  assert sd.critical_escalation.started_at is None
   sm.updated['selfdriveState'] = True
   sm.state.alertStatus = 'critical'
   sm.state.alertSound = AudibleAlert.warningImmediate
@@ -153,4 +154,49 @@ def test_original_immediate_ramp(mocker):
   assert sd.current_volume == pytest.approx(.6)
   clock.return_value = ALERT_RAMP_TIME
   sd.update_volume()
+  assert sd.current_volume == 1.
+
+
+@pytest.mark.parametrize('event,expected', [
+  ('driverDistracted3/permanent', MaxAlert.driver),
+  ('driverUnresponsive3/permanent', MaxAlert.driver),
+  ('driverMonitoringPreview', MaxAlert.driver),
+  ('canError/immediateDisable', MaxAlert.critical),
+  ('futureAlert/warning', MaxAlert.critical),
+  ('', MaxAlert.critical),
+])
+@pytest.mark.parametrize('sound', [AudibleAlert.warningImmediate, AudibleAlert.warningSoft, AudibleAlert.prompt,
+                                  AudibleAlert.promptDistracted, AudibleAlert.preAlert, AudibleAlert.engage])
+def test_escalation_independent_of_starting_sound(mocker, event, expected, sound):
+  clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
+  sd = Soundd()
+  sm = AlertState(sound)
+  sm.state.alertType = event
+  sd.get_audible_alert(sm)
+  clock.return_value = CRITICAL_ESCALATION_TIME - .01
+  sd.get_audible_alert(sm)
+  assert sd.current_alert == sound
+  clock.return_value = CRITICAL_ESCALATION_TIME
+  sd.get_audible_alert(sm)
+  assert sd.current_alert == expected
+  assert sd.current_volume == 1.
+
+
+def test_reassigning_base_sound_does_not_restart_max(mocker):
+  clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=0.)
+  sd = Soundd()
+  sm = AlertState()
+  sd.get_audible_alert(sm)
+  clock.return_value = 4.
+  sm.state.alertSound = AudibleAlert.prompt
+  sd.get_audible_alert(sm)
+  clock.return_value = 8.
+  sd.get_audible_alert(sm)
+  assert sd.current_alert == MaxAlert.driver
+  sd.get_sound_data(100)
+  clock.return_value = 9.
+  sm.state.alertSound = AudibleAlert.warningSoft
+  sd.get_audible_alert(sm)
+  assert sd.current_alert == MaxAlert.driver
+  assert sd.current_sound_frame == 100
   assert sd.current_volume == 1.

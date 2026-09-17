@@ -14,7 +14,8 @@ from unittest.mock import patch
 import numpy as np
 
 from openpilot.cereal import log, messaging
-from openpilot.selfdrive.ui.soundd import SAMPLE_RATE, ESCALATION_ALERTS, Soundd, sound_list
+from openpilot.selfdrive.ui.soundd import SAMPLE_RATE, Soundd, sound_list
+from openpilot.selfdrive.ui.critical_alert import MaxAlert
 
 # Representative event inputs from events.py, plus the UI timeout/preview paths.
 # State delivery is simulated; selection, escalation, volume and PCM generation
@@ -31,6 +32,8 @@ ALERTS = {
   'stock_aeb': ('Stock AEB, silent', 'BRAKE!', 'Stock AEB: Risk of Collision', 'critical', 'full', 'none'),
   'preview': ('Camera preview, fixed', 'DISENGAGE IMMEDIATELY', 'Driver Distracted · preview', 'critical', 'full', 'warningImmediate'),
   'old_preview': ('Camera preview, old metadata', 'Sound only', 'Old preview omitted severity and size', 'normal', 'none', 'warningImmediate'),
+  'dm_reassigned': ('DM reassigned to critical.wav', 'DISENGAGE IMMEDIATELY', 'Synthetic reassignment test', 'critical', 'full', 'warningSoft'),
+  'fault_reassigned': ('Fault reassigned to warning.wav', 'TAKE CONTROL IMMEDIATELY', 'Synthetic reassignment test', 'critical', 'full', 'prompt'),
   'clear': ('No alert', 'No active alert', 'Timer resets', 'normal', 'none', 'none'),
   'timeout': ('System unresponsive', 'TAKE CONTROL IMMEDIATELY', 'System Unresponsive', 'critical', 'full', 'warningImmediate'),
 }
@@ -41,7 +44,8 @@ def scenario(label, phases, expected, note=''):
           'expected': expected, 'note': note}
 
 SCENARIOS = {
-  **{name: scenario(ALERTS[name][0], [(name, 12)], 8.) for name in ['distracted', 'unresponsive', 'fcw', 'fault', 'preview']},
+  **{name: scenario(ALERTS[name][0], [(name, 12)], 8.)
+     for name in ['distracted', 'unresponsive', 'fcw', 'fault', 'preview', 'dm_reassigned', 'fault_reassigned']},
   'aeb': scenario('Silent AEB', [('aeb', 12)], None, 'Red with no assigned sound stays silent.'),
   'stock_aeb': scenario('Silent stock AEB', [('stock_aeb', 12)], None),
   'orange': scenario('Orange warning held', [('soft_orange', 12)], None, 'critical.wav alone does not mean a red alert.'),
@@ -96,6 +100,8 @@ def simulate(phases, starting_volume=.2, include_audio=True):
       phase_start = frame / 20
       for _ in range(count):
         now = frame / 20
+        sm.state.alertType = {'distracted': 'driverDistracted3/permanent', 'unresponsive': 'driverUnresponsive3/permanent',
+                              'preview': 'driverMonitoringPreview', 'dm_reassigned': 'driverDistracted3/permanent'}.get(alert, alert)
         sm.state.alertSound = getattr(log.SelfdriveState.AudibleAlert, sound)
         sm.state.alertStatus = status
         sm.state.alertSize = size
@@ -109,13 +115,13 @@ def simulate(phases, starting_volume=.2, include_audio=True):
         sd.get_audible_alert(sm)
         sd.update_volume()
         filename = sound_list[sd.current_alert][0] if sd.current_alert else 'silence'
-        red_time = 0 if sd.critical_start_time is None else now - sd.critical_start_time
+        red_time = 0 if sd.critical_escalation.started_at is None else now - sd.critical_escalation.started_at
         visible = status
         if alert == 'timeout':
           visible = 'critical' if 5 < now - phase_start < 15 else 'normal'
         trace.append({'time': now, 'label': label, 'title': title, 'subtitle': subtitle, 'status': visible,
                       'sound': filename, 'volume': sd.current_volume, 'redTime': red_time,
-                      'escalated': sd.current_alert in ESCALATION_ALERTS.values()})
+                      'escalated': sd.current_alert in MaxAlert})
         # Exercise real looping and stop behavior even when no WAV is requested.
         pcm = sd.get_sound_data(SAMPLE_RATE // 20)
         if include_audio:

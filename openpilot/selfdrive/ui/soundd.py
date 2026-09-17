@@ -1,5 +1,4 @@
 import math
-from enum import IntEnum
 import numpy as np
 import time
 import wave
@@ -14,13 +13,13 @@ from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
 from openpilot.common.hardware import HARDWARE
+from openpilot.selfdrive.ui.critical_alert import CriticalAlertEscalation, MaxAlert, max_alert_for_type
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
-CRITICAL_ESCALATION_TIME = 8 # seconds of continuous red alert before escalation
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
@@ -35,17 +34,6 @@ if HARDWARE.get_device_type() == "tizi":
 AudibleAlert = log.SelfdriveState.AudibleAlert
 AlertStatus = log.SelfdriveState.AlertStatus
 
-
-class MaxAlert(IntEnum):
-  # Local playback IDs; these are never sent in selfdriveState.
-  driver = -1
-  critical = -2
-
-
-ESCALATION_ALERTS = {
-  AudibleAlert.warningImmediate: MaxAlert.driver,
-  AudibleAlert.warningSoft: MaxAlert.critical,
-}
 
 sound_list: dict[int, tuple[str, int | None, float]] = {
   # AudibleAlert, file name, play count (none for infinite)
@@ -86,7 +74,7 @@ class Soundd:
     self.ramp_start_volume = MIN_VOLUME
     self.ramp_start_time = 0.
 
-    self.critical_start_time: float | None = None
+    self.critical_escalation = CriticalAlertEscalation()
     self.pending_stop = False
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
@@ -149,7 +137,7 @@ class Soundd:
       return
     self.pending_stop = False
     if self.current_alert != new_alert and (new_alert != AudibleAlert.none or current_alert_played_once):
-      if new_alert in ESCALATION_ALERTS.values():
+      if new_alert in MaxAlert:
         self.current_volume = MAX_VOLUME
       elif new_alert == AudibleAlert.warningImmediate:
         self.ramp_start_volume = self.current_volume
@@ -161,28 +149,24 @@ class Soundd:
     now = time.monotonic()
     ss = sm['selfdriveState']
     if sm.updated['selfdriveState'] or now - sm.recv_time['selfdriveState'] <= SELFDRIVE_STATE_TIMEOUT:
+      max_alert = max_alert_for_type(ss.alertType)
       new_alert = ss.alertSound.raw
       critical = (ss.alertStatus == AlertStatus.critical and ss.alertSize != log.SelfdriveState.AlertSize.none and
                   new_alert != AudibleAlert.none)
     elif check_selfdrive_timeout_alert(sm):
+      max_alert = MaxAlert.critical
       new_alert = AudibleAlert.warningImmediate
       critical = True
     else:
+      max_alert = MaxAlert.critical
       new_alert = AudibleAlert.none
       critical = False
 
-    if critical:
-      if self.critical_start_time is None:
-        self.critical_start_time = now
-      if now - self.critical_start_time >= CRITICAL_ESCALATION_TIME:
-        new_alert = ESCALATION_ALERTS.get(new_alert, new_alert)
-    else:
-      self.critical_start_time = None
-
-    self.update_alert(new_alert)
+    escalated = self.critical_escalation.update(now, critical, max_alert)
+    self.update_alert(new_alert if escalated is None else escalated)
 
   def update_volume(self):
-    if self.current_alert in ESCALATION_ALERTS.values():
+    if self.current_alert in MaxAlert:
       self.current_volume = MAX_VOLUME
     elif self.current_alert == AudibleAlert.warningImmediate:
       elapsed = time.monotonic() - self.ramp_start_time
