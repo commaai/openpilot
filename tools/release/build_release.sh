@@ -39,6 +39,7 @@ cd "$SOURCE_DIR"
 
 # in the directory
 cd "$BUILD_DIR"
+source "$SOURCE_DIR/tools/release/setup_lfs.sh"
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -58,9 +59,8 @@ else
   scons panda/
 fi
 
-find openpilot/selfdrive/modeld/models -name '*.pkl' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
-  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 fi
 
 # Ensure no submodules in release
