@@ -37,7 +37,9 @@ class BaseButton(Widget):
       # Dialogs also use buttons; import lazily to avoid a circular import.
       from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
       self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
-    else:
+
+  def enable_long_press_shake(self):
+    if self._long_press_callback is None:
       self.set_long_press_callback(self.trigger_shake)
 
   def trigger_shake(self):

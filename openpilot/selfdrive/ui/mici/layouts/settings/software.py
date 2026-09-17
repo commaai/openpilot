@@ -14,6 +14,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import NavScroller
+from openpilot.selfdrive.ui.mici.layouts.settings.panel import SettingsPanel
 
 UPDATER_TIMEOUT = 10.0  # seconds to wait for updater to respond
 
@@ -268,7 +269,7 @@ class TargetBranchButton(BigButton):
     self._check_update_btn.check_for_update()
 
 
-class SoftwareLayoutMici(NavScroller):
+class SoftwareLayoutMici(SettingsPanel):
   def __init__(self):
     super().__init__()
 
@@ -282,7 +283,7 @@ class SoftwareLayoutMici(NavScroller):
                                                         description_icon=gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
     check_update_btn = CheckUpdateButton()
-    self._scroller.add_widgets([
+    self.add_widgets([
       SoftwareInfoLayoutMici(),
       check_update_btn,
       InstallUpdateButton(),

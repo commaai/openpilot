@@ -3,6 +3,7 @@ from collections.abc import Callable
 from openpilot.cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
+from openpilot.selfdrive.ui.mici.layouts.settings.panel import SettingsPanel
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle, BigToggle, GreyBigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
 from openpilot.system.ui.lib.application import gui_app
@@ -37,7 +38,7 @@ class ExperimentalModeConfirmPage(NavScroller):
     ])
 
 
-class TogglesLayoutMici(NavScroller):
+class TogglesLayoutMici(SettingsPanel):
   def __init__(self):
     super().__init__()
 
@@ -69,7 +70,7 @@ class TogglesLayoutMici(NavScroller):
                                        description="Enable to use openpilot driver assistance.\n" +
                                                    "Disable to use your car's stock driver assistance.")
 
-    self._scroller.add_widgets([
+    self.add_widgets([
       self._personality_toggle,
       self._experimental_btn,
       is_metric_toggle,

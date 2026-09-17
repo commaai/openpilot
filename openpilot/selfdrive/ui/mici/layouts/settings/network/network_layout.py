@@ -7,10 +7,10 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.cellular_manager import CellularManager
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
-from openpilot.system.ui.widgets.scroller import NavScroller
+from openpilot.selfdrive.ui.mici.layouts.settings.panel import SettingsPanel
 
 
-class NetworkLayoutMici(NavScroller):
+class NetworkLayoutMici(SettingsPanel):
   def __init__(self):
     super().__init__()
 
@@ -90,7 +90,7 @@ class NetworkLayoutMici(NavScroller):
     self._cellular_metered_btn = BigParamControl("cellular metered", "GsmMetered", description="Prevent large uploads over the cellular connection.")
 
     # Main scroller ----------------------------------
-    self._scroller.add_widgets([
+    self.add_widgets([
       self._wifi_button,
       self._esim_button,
       self._network_metered_btn,

@@ -7,6 +7,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
+from openpilot.selfdrive.ui.mici.layouts.settings.panel import SettingsPanel
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
@@ -158,7 +159,7 @@ class PairBigButton(BigButton):
     gui_app.push_widget(dlg)
 
 
-class DeviceLayoutMici(NavScroller):
+class DeviceLayoutMici(SettingsPanel):
   def __init__(self):
     super().__init__()
 
@@ -205,7 +206,7 @@ class DeviceLayoutMici(NavScroller):
     terms_btn = BigButton("terms &\nconditions", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
 
-    self._scroller.add_widgets([
+    self.add_widgets([
       DeviceInfoLayoutMici(),
       PairBigButton(),
       review_training_guide_btn,

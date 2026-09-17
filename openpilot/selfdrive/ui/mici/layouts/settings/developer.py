@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavScroller
+from openpilot.selfdrive.ui.mici.layouts.settings.panel import SettingsPanel
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl, GreyBigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationCircleButton
 from openpilot.system.ui.lib.application import gui_app
@@ -27,7 +28,7 @@ class AlphaLongConfirmPage(NavScroller):
     ])
 
 
-class DeveloperLayoutMici(NavScroller):
+class DeveloperLayoutMici(SettingsPanel):
   def __init__(self):
     super().__init__()
     self._ssh_fetcher = SshKeyFetcher(ui_state.params)
@@ -87,7 +88,7 @@ class DeveloperLayoutMici(NavScroller):
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked), gui_app.set_show_fps(checked)),
                                               description="Show touch locations and the UI frame rate.")
 
-    self._scroller.add_widgets([
+    self.add_widgets([
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys_btn,
