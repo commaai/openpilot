@@ -3,6 +3,7 @@ import os
 import base64
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, load_oob
 from tinygrad.tensor import Tensor
+from tinygrad.engine.realize import lower_and_compile
 import time
 import pickle
 import numpy as np
@@ -47,6 +48,8 @@ class ModelState:
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
     with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
       self.image_warp = pickle.load(f)['run']
+    for jit in (self.model_run, self.image_warp):
+      jit.captured._linear = lower_and_compile(jit.captured._linear)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
