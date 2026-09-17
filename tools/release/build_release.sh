@@ -88,6 +88,7 @@ VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # writing larger objects is faster than compressing them on-device
 git -c core.compression=0 add -f .
 git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
+source "$SOURCE_DIR/tools/release/check_file_sizes.sh"
 
 # Run tests
 cd "$BUILD_DIR"

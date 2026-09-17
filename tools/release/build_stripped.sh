@@ -67,14 +67,7 @@ if [ -z "$INCLUDE_BIG_MODEL" ] && [ -n "$(git lfs ls-files)" ]; then
   exit 1
 fi
 
-# ensure files are within GitHub's limit
-BIG_FILES="$(git ls-tree -rl HEAD | awk '$4 > 95 * 1024 * 1024 {print $5}')"
-if [ ! -z "$BIG_FILES" ]; then
-  printf '\n\n\n'
-  echo "Found files exceeding GitHub's 100MB limit:"
-  echo "$BIG_FILES"
-  exit 1
-fi
+source "$SOURCE_DIR/tools/release/check_file_sizes.sh"
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
