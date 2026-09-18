@@ -31,8 +31,8 @@ ImU32 cellTextColor(bool selected, bool inactive) {
   return ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
 }
 
-void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive) {
-  drawElidedText(dl, rect, text, cellTextColor(selected, inactive));
+void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive, bool align_right) {
+  drawElidedText(dl, rect, text, cellTextColor(selected, inactive), align_right);
 }
 
 void drawBytesCell(ImDrawList *dl, const ImRect &rect, const std::vector<uint8_t> &bytes, const std::vector<CabanaColor> *colors,
