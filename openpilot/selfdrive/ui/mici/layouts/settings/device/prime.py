@@ -61,7 +61,6 @@ class PrimeManagementScroller(NavScroller):
 
     can_claim_trial = ui_state.prime_state.can_claim_prime_trial()
 
-    # prime management components
     self._prime_icon = gui_app.texture("icons_mici/settings/device/green_cell.png", 64, 64)
     self._phone_icon = gui_app.texture("icons_mici/settings/device/phone.png", 85, 64)
     self._prime_adverts = [
