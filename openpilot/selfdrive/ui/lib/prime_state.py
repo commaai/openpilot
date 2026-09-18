@@ -43,9 +43,6 @@ class PrimeState:
     self._pairing_provider: Provider | None = Provider(pairing_provider) if pairing_provider is not None else None
     self._pairing_email: str | None = self._params.get("PairingEmail")
 
-    if self.prime_type > PrimeType.UNPAIRED:
-      self._fetch_pairing_provider()
-
     self._running = False
     self._thread = None
 
@@ -68,13 +65,16 @@ class PrimeState:
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token, session=self._session)
       if response.status_code == 200:
         data = response.json()
+
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)
-        if is_paired and is_paired != self.is_paired():
-          self._fetch_pairing_provider()
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
-        self.set_commacare(bool(data.get("commacare", False)))
-        self._prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
+
+        prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
+        self.set_prime_trial_available(prime_trial_available)
+
+        commacare = data.get("commacare", False)
+        self.set_commacare(commacare)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
@@ -97,14 +97,6 @@ class PrimeState:
 
   def set_type(self, prime_type: PrimeType) -> None:
     with self._lock:
-      if prime_type <= PrimeType.UNPAIRED:
-        self._prime_trial_available = False
-        self._commacare = False
-        # remove provider when unpaired
-        self._pairing_provider = None
-        self._pairing_email = None
-        self._params.remove("PairingProvider")
-        self._params.remove("PairingEmail")
       if prime_type != self.prime_type:
         self.prime_type = prime_type
         self._params.put("PrimeType", int(prime_type))
@@ -112,14 +104,33 @@ class PrimeState:
 
   def set_provider(self, provider: Provider, email: str | None):
     with self._lock:
-      self._pairing_provider = provider
-      self._params.put("PairingProvider", str(provider))
-      self._pairing_email = email
-      self._params.put("PairingEmail", email)
+      if self.prime_type <= PrimeType.UNPAIRED:
+        self._pairing_provider = None
+        self._params.remove("PairingProvider")
+      else:
+        self._pairing_provider = provider
+        self._params.put("PairingProvider", str(provider))
+
+      if self.prime_type <= PrimeType.UNPAIRED or not email:
+        self._pairing_email = None
+        self._params.remove("PairingEmail")
+      else:
+        self._pairing_email = email
+        self._params.put("PairingEmail", email)
 
   def set_commacare(self, has_commacare: bool):
     with self._lock:
-      self._commacare = has_commacare
+      if self.prime_type <= PrimeType.UNPAIRED:
+        self._commacare = False
+      else:
+        self._commacare = has_commacare
+
+  def set_prime_trial_available(self, prime_trail_available: bool):
+    with self._lock:
+      if self.prime_type <= PrimeType.UNPAIRED:
+        self._prime_trial_available = False
+      else:
+        self._prime_trial_available = prime_trail_available
 
   def _worker_thread(self) -> None:
     drop_realtime()
@@ -127,6 +138,7 @@ class PrimeState:
     while self._running:
       if not ui_state.started and device._awake:
         self._fetch_prime_status()
+        self._fetch_pairing_provider()
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:
@@ -157,7 +169,7 @@ class PrimeState:
     with self._lock:
       if not self._pairing_provider:
         return "unknown"
-      elif self._pairing_provider is Provider.GITHUB or not self._pairing_email:
+      elif self._pairing_provider == Provider.GITHUB or not self._pairing_email:
         return f"{self._pairing_provider} account"
       return self._pairing_email
 
