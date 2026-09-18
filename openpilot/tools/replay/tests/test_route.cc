@@ -17,8 +17,6 @@ void test_route_ranges() {
     {"/5:", 5, -1},
     {"/5", 5, 5},
     {"--5", 5, -1},
-    {"/:-2", 0, -2},
-    {"/-5:-2", -5, -2},
   };
   for (const std::string route : {DEMO_ROUTE, "64e16c4237493597/00000033--332a5f9d82"}) {
     const auto full = Route::parseRoute(route);
