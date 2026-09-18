@@ -2,6 +2,7 @@ import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.following_distance import STOP_DISTANCE, get_T_FOLLOW
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -120,6 +121,31 @@ class HudRenderer(Widget):
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
 
+    self._txt_lead_car = gui_app.texture('icons_mici/longitudinal/car.png', 34, 27, keep_aspect_ratio=False)
+    self._txt_lead_car_green = gui_app.texture('icons_mici/longitudinal/car_green.png', 62, 55, keep_aspect_ratio=False)
+    self._lead_car_white_filter = FirstOrderFilter(0.35, 0.1, 1 / gui_app.target_fps)
+    self._lead_car_green_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+
+    # White assets exclude the colored variants' glow padding.
+    self._distance_icon_parts = [
+      (gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False), x, y)
+      for name, x, y, width, height in (
+        ('distance_1', 26, 119, 32, 7),
+        ('distance_2', 22, 132, 40, 9),
+        ('distance_3', 18, 147, 48, 11),
+      )
+    ]
+    self._distance_green_parts = [
+      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
+      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
+    ]
+    self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._longitudinal_icon_opacity = 0.0
+    self._longitudinal_icon_visible = False
+    # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
+    self._longitudinal_icon_fade = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._reset_distance_highlight()
+
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
     self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
     self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 9, 44)
@@ -136,6 +162,9 @@ class HudRenderer(Widget):
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
     self._show_wheel_critical = critical
+
+  def set_longitudinal_icon_visible(self, visible: bool) -> None:
+    self._longitudinal_icon_visible = visible
 
   def set_can_draw_top_icons(self, can_draw_top_icons: bool):
     """Set whether to draw the top part of the HUD."""
@@ -188,6 +217,90 @@ class HudRenderer(Widget):
     self._draw_model_source(rect)
 
     self._draw_steering_wheel(rect)
+
+    # The combined indicator is only visible while engaged.
+    self._longitudinal_icon_opacity = self._longitudinal_icon_fade.update(float(self._longitudinal_icon_visible))
+    if ui_state.sm.recv_frame['selfdriveState'] >= ui_state.started_frame and ui_state.sm['selfdriveState'].enabled:
+      icon_rect = rl.Rectangle(rect.x + 4, rect.y, rect.width, rect.height)
+      self._draw_lead_car(icon_rect)
+      self._draw_distance_bars(icon_rect)
+    else:
+      self._reset_distance_highlight()
+      self._lead_car_white_filter.x = 0.35
+      self._lead_car_green_filter.x = 0.0
+
+  def _reset_distance_highlight(self) -> None:
+    self._distance_personality = None
+    self._personality_highlight_time = -math.inf
+    self._distance_highlight_filter.x = 0.0
+    self._maintaining_distance = False
+
+  def _distance_highlight_alpha(self, personality: int, maintaining_distance: bool, now: float) -> float:
+    if self._distance_personality is not None and personality != self._distance_personality:
+      self._personality_highlight_time = now
+    self._distance_personality = personality
+    # Match the set-speed HUD's persistence and fade, including policy transitions.
+    highlighted = maintaining_distance or now - self._personality_highlight_time < SET_SPEED_PERSISTENCE
+    return self._distance_highlight_filter.update(float(highlighted))
+
+  def _at_following_distance(self, personality) -> bool:
+    sm = ui_state.sm
+    lead = sm['radarState'].leadOne
+    valid = all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
+                for s in ('radarState', 'carState'))
+    if not valid or not lead.present:
+      self._maintaining_distance = False
+      return False
+
+    # At matched speeds, the MPC's braking-distance terms cancel out.
+    speed = sm['carState'].vEgo
+    if not all(math.isfinite(value) for value in (speed, lead.dRel, lead.vRel)) or lead.dRel <= 0:
+      self._maintaining_distance = False
+      return False
+    target = STOP_DISTANCE + get_T_FOLLOW(personality) * max(0.0, speed)
+    if self._distance_personality != personality.raw:
+      self._maintaining_distance = False
+    # UI-only tolerance: enter within 10% (at least 2 m) and 0.5 m/s.
+    # A wider exit band prevents noise near the boundary from flashing the bar.
+    distance_tolerance = max(3.0, target * 0.15) if self._maintaining_distance else max(2.0, target * 0.10)
+    speed_tolerance = 0.75 if self._maintaining_distance else 0.5
+    self._maintaining_distance = abs(lead.dRel - target) <= distance_tolerance and abs(lead.vRel) <= speed_tolerance
+    return self._maintaining_distance
+
+  def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
+    sm = ui_state.sm
+    personality = sm['selfdriveState'].personality
+    if personality == log.LongitudinalPersonality.aggressive:
+      lit_bars = 1
+    elif personality == log.LongitudinalPersonality.relaxed:
+      lit_bars = 3
+    else:
+      lit_bars = 2
+    maintaining_distance = self._at_following_distance(personality)
+    green_alpha = self._distance_highlight_alpha(personality.raw, maintaining_distance, rl.get_time())
+    for index, (texture, x, y) in enumerate(self._distance_icon_parts):
+      highlighted = index == lit_bars - 1
+      alpha = 1.0 - green_alpha if highlighted else (1.0 if index < lit_bars else 0.35)
+      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
+      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
+      if highlighted and green_alpha > 0:
+        green, gx, gy = self._distance_green_parts[index]
+        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy), 0.0, 1.0,
+                           rl.Color(255, 255, 255, round(255 * green_alpha * self._longitudinal_icon_opacity)))
+
+  def _draw_lead_car(self, rect: rl.Rectangle) -> None:
+    sm = ui_state.sm
+    plan = sm['longitudinalPlan']
+    has_lead = (sm.valid['longitudinalPlan'] and sm.alive['longitudinalPlan'] and
+                sm.recv_frame['longitudinalPlan'] >= ui_state.started_frame and plan.hasLead)
+    green = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
+    white_alpha = self._lead_car_white_filter.update(0.0 if green else (1.0 if has_lead else 0.35))
+    green_alpha = self._lead_car_green_filter.update(float(green))
+    # Match the distance bar crossfade; the green asset has 14 px of glow padding.
+    for texture, x, y, alpha in ((self._txt_lead_car, 25, 86, white_alpha),
+                                 (self._txt_lead_car_green, 11, 72, green_alpha)):
+      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
+      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
