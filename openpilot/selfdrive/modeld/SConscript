@@ -55,7 +55,7 @@ def chestnut_action(command):
 def compile_model(onnx_path, pkl_path):
   onnx_path, target_pkl_path = File(onnx_path).abspath, File(pkl_path).abspath
   cmd = (f'{tg_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_onnx.py" '
-         f'"{onnx_path}" "{target_pkl_path}" --out-of-band --retargetable --benchmark-runs 1')
+         f'"{onnx_path}" "{target_pkl_path}" --out-of-band --benchmark-runs 1')
   lenv.Command(
     target_pkl_path,
     tinygrad_files + [onnx_path, Value(cmd)],
@@ -74,7 +74,7 @@ for chestnut in [False, True] if CHESTNUT else [False]:
     cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_warp.py" '
            f'--frame {cam_w},{cam_h},{stride},{y_height},{uv_height},{stride * (y_height + uv_height)} '
            f'--warp-to {model_w}x{model_h} --layout yuv420 --frames 2 '
-           f'--output {warp_pkl_path} --retargetable')
+           f'--output {warp_pkl_path}')
     action = chestnut_action(cmd) if chestnut else cmd
     node = lenv.Command(warp_pkl_path, tinygrad_files + warp_deps + [Value(cmd)], action)
     if chestnut:
@@ -86,5 +86,5 @@ for cam_w, cam_h in camera_configs:
   stride, y_height, uv_height, frame_size = get_nv12_info(cam_w, cam_h)
   cmd = (f'{tg_flags} {mac_brew_string} python3 "{compiler}/compile_warp.py" '
          f'--frame {cam_w},{cam_h},{stride},{y_height},{uv_height},{frame_size} --warp-to {dm_w}x{dm_h} '
-         f'--layout luma --border-fill 16 --transform-device NPY --output {dm_pkl_path} --retargetable')
+         f'--layout luma --border-fill 16 --transform-device NPY --output {dm_pkl_path}')
   lenv.Command(dm_pkl_path, tinygrad_files + warp_deps + [Value(cmd)], cmd)

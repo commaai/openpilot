@@ -156,8 +156,7 @@ class ModelState:
     with open(MODELS_DIR / f'{"big_" if chestnut else ""}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl', 'rb') as f:
       self.run_warp = pickle.load(f)['run']
     self.run_model = jits['run']
-    for jit in (self.run_model, self.run_warp):
-      jit.captured._linear = lower_and_compile(jit.captured._linear)
+    self.run_model.captured._linear = lower_and_compile(self.run_model.captured._linear)
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
     for name, next_name in self.state_pairs.items():
       state = self.input_queues[name]
