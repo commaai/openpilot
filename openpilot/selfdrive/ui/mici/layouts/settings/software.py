@@ -42,11 +42,11 @@ class SoftwareInfoLayoutMici(Widget):
     subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
     max_width = int(self._rect.width - 20)
     self._version_label = UnifiedLabel("version", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._version_text_label = UnifiedLabel("", 32, max_width=max_width, text_color=subheader_color,
+    self._version_text_label = UnifiedLabel("", 36, max_width=max_width, text_color=subheader_color,
                                             font_weight=FontWeight.ROMAN, wrap_text=False)
 
     self._branch_label = UnifiedLabel("branch", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._branch_text_label = UnifiedLabel("", 32, max_width=max_width, text_color=subheader_color,
+    self._branch_text_label = UnifiedLabel("", 36, max_width=max_width, text_color=subheader_color,
                                            font_weight=FontWeight.ROMAN, wrap_text=False, scroll=True)
 
   def _update_state(self):
