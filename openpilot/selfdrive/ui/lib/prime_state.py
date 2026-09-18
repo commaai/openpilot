@@ -181,16 +181,16 @@ class PrimeState:
       return self.prime_type > PrimeType.UNPAIRED
 
   def can_claim_prime_trial(self) -> bool:
-      with self._lock:
-        return self._prime_trial_available
+    with self._lock:
+      return self._prime_trial_available
 
   def has_commacare(self) -> bool:
     with self._lock:
       return self._commacare
 
   def get_pairing_provider(self) -> str | None:
-      with self._lock:
-        return self._pairing_provider
+    with self._lock:
+      return self._pairing_provider
 
   def get_pairing_account(self) -> str:
     with self._lock:
