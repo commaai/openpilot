@@ -55,7 +55,7 @@ def chestnut_action(command):
 def compile_model(onnx_path, pkl_path):
   onnx_path, target_pkl_path = File(onnx_path).abspath, File(pkl_path).abspath
   cmd = (f'{tg_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_onnx.py" '
-         f'"{onnx_path}" "{target_pkl_path}" --device-input "*" --out-of-band --benchmark-runs 1')
+         f'"{onnx_path}" "{target_pkl_path}" --out-of-band --benchmark-runs 1')
   lenv.Command(
     target_pkl_path,
     tinygrad_files + [onnx_path, Value(cmd)],
