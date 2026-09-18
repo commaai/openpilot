@@ -1,5 +1,6 @@
 import os
 import pyray as rl
+import time
 from collections.abc import Callable
 from typing import Union
 
@@ -106,9 +107,11 @@ class PairingDialog(NavScroller):
   def __init__(self):
     super().__init__()
     self._params = Params()
+    self._last_pairing_qr_generation = float("-inf")
+    self._qr = QR(self._get_pairing_url())
     self._scroller._show_scroll_indicator = False
     self._scroller.add_widgets([
-      QR(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL),
+      self._qr,
       GreyBigButton("finish setup", "scan to pair device\nwith connect",
                     gui_app.texture("icons_mici/settings/device/green_settings.png", 64, 64)),
       GreyBigButton("", "connect lets you review recent driving footage and bookmark events."),
@@ -122,6 +125,14 @@ class PairingDialog(NavScroller):
       cloudlog.warning(f"Failed to get pairing token: {e}")
       token = ""
     return f"https://connect.comma.ai/?pair={token}"
+
+  def _render(self, rect: rl.Rectangle):
+    current_time = time.monotonic()
+    if current_time - self._last_pairing_qr_generation >= self.QR_REFRESH_INTERVAL:
+      self._qr._url = self._get_pairing_url()
+      self._qr._generate_qr_code()
+      self._last_pairing_qr_generation = current_time
+    super()._render(rect)
 
   def _update_state(self):
     super()._update_state()
