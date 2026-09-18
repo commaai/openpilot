@@ -27,20 +27,6 @@ inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
 inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
 const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);
 
-CabanaColor limitColorLuminance(const CabanaColor &color, float max_luminance) {
-  // Scale linear RGB together to keep the color within the white-text contrast budget.
-  auto linear = [](float c) { return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f); };
-  const float r = linear(color.r / 255.0f), g = linear(color.g / 255.0f), b = linear(color.b / 255.0f);
-  const float luminance = 0.2126f * r + 0.7152f * g + 0.0722f * b;
-  const float scale = luminance > max_luminance ? max_luminance / luminance : 1.0f;
-  auto channel = [scale](float c) {
-    c *= scale;
-    const float srgb = c <= 0.0031308f ? 12.92f * c : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
-    return static_cast<uint8_t>(std::clamp(srgb * 255.0f, 0.0f, 255.0f));
-  };
-  return {channel(r), channel(g), channel(b), color.a};
-}
-
 // JetBrains Mono ships no bold variant, so emulate one by drawing the glyphs again a fraction of a
 // pixel to the right. Keeps the monospace advance, unlike switching to the proportional bold face.
 void drawBoldText(ImDrawList *p, const ImRect &r, const char *text, ImU32 col, ImFont *font, float font_size) {
@@ -496,12 +482,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
-      // Share the same hue and saturation across themes, tuning luminance rather
-      // than changing text color as activity rises. White text targets at least 5:1.
-      const auto hsv = item->bg_color.hsv();
-      auto color = CabanaColor::fromHsv(hsv.hue, std::min(hsv.saturation, 0.30f), 0.86f, item->bg_color.alphaF());
-      if (palette().text.x > 0.5f) color = limitColorLuminance(color, 0.16f);  // 1.05 / (0.16 + 0.05) = 5
-      painter->AddRectFilled(rect.Min, rect.Max, toImU32(color));
+      painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
   } else if (isSelected(index)) {
     painter->AddRectFilled(rect.Min, rect.Max, resize_sig_ ? toImU32(resize_sig_->color) : paletteHighlight());
@@ -512,7 +493,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
         drawSignalCell(painter, rect, index, s);
       }
       // Hover covers the entire signal, including bits shared with another definition.
-      if (hovered) painter->AddRectFilled(rect.Min, rect.Max, toImU32(limitColorLuminance(hovered_sig_->color, 0.18f)));
+      if (hovered) painter->AddRectFilled(rect.Min, rect.Max, toImU32(hovered_sig_->color.darker(125)));
     } else if (item->valid) {
       if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
@@ -525,17 +506,6 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
     fillBDiagPattern(painter, rect, DARK_GRAY);
   }
 
-  // PR #38962: soften the background behind digits while preserving signal hues.
-  // Hover and selection retain their existing white text.
-  const bool light_text = palette().text.x > 0.5f || pen == IM_COL32_WHITE;
-  // Hover already has a contrast-safe background; avoid dimming it a second time.
-  // The dark byte palette already meets its target; a second black wash would hide activity.
-  const bool dark_byte = index.column == HEX_COLUMN && palette().text.x > 0.5f;
-  if (!dark_byte && !(hovered && !hasSelection())) {
-    // Preserve the approved lavender byte palette and richer signal colors in light mode.
-    const int white_alpha = item->sigs.empty() ? 40 : 20;
-    painter->AddRectFilled(rect.Min, rect.Max, light_text ? IM_COL32(0, 0, 0, 115) : IM_COL32(255, 255, 255, white_alpha));
-  }
   if (item->valid) {
     if (index.column == HEX_COLUMN) {
       drawBoldText(painter, rect, utils::hexByte(item->val), pen, font, font_size);
@@ -560,11 +530,8 @@ bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const caban
 void BinaryView::drawSignalOutline(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index,
                                    const cabana::Signal *sig) const {
   // Definition boundaries remain visible even at zero activity. Keep them above the
-  // contrast wash and grid, at the same fixed position before and during hover.
-  const bool dark = palette().text.x > 0.5f;
-  const CabanaColor edge_color = dark && sig == hovered_sig_ ? sig->color.lighter(150)
-                                : dark ? sig->color : sig->color.darker(125);
-  const ImU32 edge = toImU32(edge_color);
+  // fills and grid, at the same fixed position before and during hover.
+  const ImU32 edge = toImU32(sig->color.darker(125));
   const bool left = !hasSignal(index, -1, 0, sig);
   const bool right = !hasSignal(index, 1, 0, sig);
   const bool top = !hasSignal(index, 0, -1, sig);
