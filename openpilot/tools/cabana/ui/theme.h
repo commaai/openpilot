@@ -15,7 +15,7 @@ struct Palette {
   ImVec4 accent;
   ImVec4 border, separator, scrollbar_grab;
   ImVec4 slider_track;
-  ImVec4 tab, tab_hovered, table_header;
+  ImVec4 tab, tab_hovered, tab_selected, table_header;
   ImVec4 grid;
   ImVec4 badge;  // the fill behind the time labels drawn over a chart
   ImVec4 bit_background;  // overlay beneath heatmap bits without a signal
