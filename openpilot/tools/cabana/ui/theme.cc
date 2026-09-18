@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xdddddd), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xdddddd),
+  .text = rgb(0xffffff), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xffffff),
   .window = rgb(0x353535), .surface = rgb(0x2b2c2d),
   .frame = rgb(0x2b2c2d), .frame_hovered = rgb(0x363738), .frame_active = rgb(0x434445),
   .button = rgb(0x3f4041), .button_hovered = rgb(0x525354), .button_active = rgb(0x303132),
