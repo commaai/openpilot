@@ -506,7 +506,9 @@ void MessagesWidget::drawRow(int row) {
     if (column == MessageList::DATA && seen) {
       drawBytesCell(ImGui::GetWindowDrawList(), rect, m.dat, &m.colors, selected, inactive, multiple_lines);
     } else {
-      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive);
+      const bool align_right = seen && (column == MessageList::SOURCE || column == MessageList::COUNT ||
+                                        (column == MessageList::FREQ && m.freq > 0));
+      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive, align_right);
     }
     // the Selectable already sized its cell
     if (!row_item) ImGui::Dummy(ImVec2(width, row_height));
