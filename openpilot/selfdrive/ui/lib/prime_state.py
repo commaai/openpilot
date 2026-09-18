@@ -107,14 +107,14 @@ class PrimeState:
       if self.prime_type <= PrimeType.UNPAIRED:
         self._pairing_provider = None
         self._params.remove("PairingProvider")
-      else:
+      elif self._pairing_provider != provider:
         self._pairing_provider = provider
         self._params.put("PairingProvider", str(provider))
 
       if self.prime_type <= PrimeType.UNPAIRED or not email:
         self._pairing_email = None
         self._params.remove("PairingEmail")
-      else:
+      elif self._pairing_email != email:
         self._pairing_email = email
         self._params.put("PairingEmail", email)
 
