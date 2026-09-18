@@ -2,7 +2,6 @@ import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.following_distance import STOP_DISTANCE, get_T_FOLLOW
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -262,39 +261,14 @@ class HudRenderer(Widget):
     self._distance_personality = None
     self._personality_highlight_time = -math.inf
     self._distance_highlight_filter.x = 0.0
-    self._maintaining_distance = False
 
-  def _distance_highlight_alpha(self, personality: int, maintaining_distance: bool, now: float) -> float:
+  def _distance_highlight_alpha(self, personality: int, now: float) -> float:
     if self._distance_personality is not None and personality != self._distance_personality:
       self._personality_highlight_time = now
     self._distance_personality = personality
-    # Match the set-speed HUD's persistence and fade, including policy transitions.
-    highlighted = maintaining_distance or now - self._personality_highlight_time < SET_SPEED_PERSISTENCE
+    # Match the set-speed HUD's persistence and fade for personality changes.
+    highlighted = now - self._personality_highlight_time < SET_SPEED_PERSISTENCE
     return self._distance_highlight_filter.update(float(highlighted))
-
-  def _at_following_distance(self, personality) -> bool:
-    sm = ui_state.sm
-    lead = sm['radarState'].leadOne
-    valid = all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
-                for s in ('radarState', 'carState'))
-    if not valid or not lead.present:
-      self._maintaining_distance = False
-      return False
-
-    # At matched speeds, the MPC's braking-distance terms cancel out.
-    speed = sm['carState'].vEgo
-    if not all(math.isfinite(value) for value in (speed, lead.dRel, lead.vRel)) or lead.dRel <= 0:
-      self._maintaining_distance = False
-      return False
-    target = STOP_DISTANCE + get_T_FOLLOW(personality) * max(0.0, speed)
-    if self._distance_personality != personality.raw:
-      self._maintaining_distance = False
-    # UI-only tolerance: enter within 10% (at least 2 m) and 0.5 m/s.
-    # A wider exit band prevents noise near the boundary from flashing the bar.
-    distance_tolerance = max(3.0, target * 0.15) if self._maintaining_distance else max(2.0, target * 0.10)
-    speed_tolerance = 0.75 if self._maintaining_distance else 0.5
-    self._maintaining_distance = abs(lead.dRel - target) <= distance_tolerance and abs(lead.vRel) <= speed_tolerance
-    return self._maintaining_distance
 
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
@@ -305,8 +279,7 @@ class HudRenderer(Widget):
       lit_bars = 3
     else:
       lit_bars = 2
-    maintaining_distance = self._at_following_distance(personality)
-    green_alpha = self._distance_highlight_alpha(personality.raw, maintaining_distance, rl.get_time())
+    green_alpha = self._distance_highlight_alpha(personality.raw, rl.get_time())
     orange_alpha = self._braking_orange_alpha()
     for index, (texture, x, y) in enumerate(self._distance_icon_parts):
       highlighted = index == lit_bars - 1
