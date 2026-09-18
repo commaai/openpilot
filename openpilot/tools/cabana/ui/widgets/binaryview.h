@@ -9,6 +9,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "tools/cabana/core/heatmap.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -81,7 +82,8 @@ private:
   bool heatmap_live_mode_ = true;
   struct BitFlipTracker {
     std::optional<std::pair<double, double>> time_range;
-    std::vector<std::array<uint32_t, 8>> flip_counts;
+    HeatmapCounts counts;
+    bool valid = false;
   } bit_flip_tracker_;
 
   BinaryIndex anchor_index_;

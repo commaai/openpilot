@@ -1,4 +1,5 @@
 import pyray as rl
+import time
 
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
@@ -64,7 +65,7 @@ class PrimeManagementScroller(NavScroller):
     self._prime_icon = gui_app.texture("icons_mici/settings/device/green_cell.png", 64, 64)
     self._phone_icon = gui_app.texture("icons_mici/settings/device/phone.png", 85, 64)
     self._prime_adverts = [
-      QR(self._get_prime_url),
+      QR(self._get_prime_url()),
       GreyBigButton(
         "try prime for\n30 days" if can_claim_trial else "upgrade to prime",
         "scan to claim trial" if can_claim_trial else "scan to manage\nprime status",
@@ -75,7 +76,7 @@ class PrimeManagementScroller(NavScroller):
       GreyBigButton("", "prime also includes commacare extended device warranty.",),
     ]
     self._prime_management = [
-      QR(self._get_prime_url),
+      QR(self._get_prime_url()),
       GreyBigButton(
         "manage prime",
         "scan to open\ndevice prime settings",
@@ -99,6 +100,7 @@ class PrimeScroller(NavScroller):
     super().__init__()
     self._params = Params()
     self.initial_is_paired = ui_state.prime_state.is_paired()
+    self._last_pairing_qr_generation = float("-inf")
 
     self._manage_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
     if not ui_state.prime_state.is_prime():
@@ -114,9 +116,10 @@ class PrimeScroller(NavScroller):
         self._manage_prime,
       ])
     else:
+      self._qr = QR(self._get_pairing_url())
       self._scroller._show_scroll_indicator = False
       self._scroller.add_widgets([
-        QR(self._get_pairing_url, refresh_interval=self.QR_REFRESH_INTERVAL),
+        self._qr,
         GreyBigButton("finish setup", "scan to pair device\nwith connect",
                       gui_app.texture("icons_mici/settings/device/green_settings.png", 64, 64)),
         GreyBigButton("", "connect lets you review recent driving footage and bookmark events."),
@@ -130,6 +133,22 @@ class PrimeScroller(NavScroller):
       cloudlog.warning(f"Failed to get pairing token: {e}")
       token = ""
     return f"https://connect.comma.ai/?pair={token}"
+
+  def _update_layout_rects(self):
+    super()._update_layout_rects()
+    if not self.initial_is_paired:
+      self._qr.set_rect(rl.Rectangle(self._qr.rect.x, self._qr.rect.y, self._rect.height, self._rect.height))
+
+  def _render(self, rect: rl.Rectangle):
+    if not self.initial_is_paired:
+      current_time = time.monotonic()
+      if current_time - self._last_pairing_qr_generation >= self.QR_REFRESH_INTERVAL:
+        self._qr._url = self._get_pairing_url()
+        if self._qr._texture and self._qr._texture.id != 0:
+          rl.unload_texture(self._qr._texture)
+        self._qr._texture = self._qr._generate_qr_code()
+        self._last_pairing_qr_generation = current_time
+    super()._render(rect)
 
   def _update_state(self):
     super()._update_state()

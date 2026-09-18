@@ -1,4 +1,4 @@
-import io
+import mmap
 import pickle
 import struct
 from pathlib import Path
@@ -13,14 +13,18 @@ def modeld_pkl_path(chestnut: bool):
   return MODELS_DIR / f'{prefix}driving_tinygrad.pkl'
 
 def load_oob(f):
-  opcodes = f.read(struct.unpack('<q', f.read(8))[0])
+  data = memoryview(mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_COPY))
+  opcode_size = struct.unpack_from('<q', data)[0]
   def buffers():
-    while (h := f.read(8)):
-      pb = pickle.PickleBuffer(bytearray(struct.unpack('<q', h)[0]))
-      if f.readinto(pb) != pb.raw().nbytes:
+    offset = 8 + opcode_size
+    while offset < len(data):
+      size = struct.unpack_from('<q', data, offset)[0]
+      offset += 8
+      if offset + size > len(data):
         raise EOFError("incomplete model buffer")
-      yield pb
-  return pickle.load(io.BytesIO(opcodes), buffers=buffers())
+      yield pickle.PickleBuffer(data[offset:offset + size])
+      offset += size
+  return pickle.loads(data[8:8 + opcode_size], buffers=buffers())
 
 def chestnut_present() -> bool:
   for d in USB_DEVICES_PATH.glob("*"):
