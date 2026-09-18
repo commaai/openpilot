@@ -69,6 +69,8 @@ class PrimeState:
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
+        if not is_paired:
+          self.set_provider(None, None)
 
         prime_trial_available = data.get("trial_claimed") is False and data.get("eligible_features", {}).get("prime", False)
         self.set_prime_trial_available(prime_trial_available)
@@ -102,21 +104,26 @@ class PrimeState:
         self._params.put("PrimeType", int(prime_type))
         cloudlog.info(f"Prime type updated to {prime_type}")
 
-  def set_provider(self, provider: Provider, email: str | None):
+  def set_provider(self, provider: Provider | None, email: str | None):
     with self._lock:
       if self.prime_type <= PrimeType.UNPAIRED:
-        self._pairing_provider = None
-        self._params.remove("PairingProvider")
-      elif self._pairing_provider != provider:
-        self._pairing_provider = provider
-        self._params.put("PairingProvider", str(provider))
+        provider = None
+        email = None
+      email = email or None # if data.get(email) returns "" instead of None
 
-      if self.prime_type <= PrimeType.UNPAIRED or not email:
-        self._pairing_email = None
-        self._params.remove("PairingEmail")
-      elif self._pairing_email != email:
+      if self._pairing_provider != provider:
+        self._pairing_provider = provider
+        if provider is None:
+          self._params.remove("PairingProvider")
+        else:
+          self._params.put("PairingProvider", str(provider))
+
+      if self._pairing_email != email:
         self._pairing_email = email
-        self._params.put("PairingEmail", email)
+        if email is None:
+          self._params.remove("PairingEmail")
+        else:
+          self._params.put("PairingEmail", email)
 
   def set_commacare(self, has_commacare: bool):
     with self._lock:
