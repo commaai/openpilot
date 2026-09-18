@@ -10,6 +10,7 @@
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/util.h"
+#include "tools/cabana/ui/widgets/binarysignals.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
@@ -215,33 +216,44 @@ void BinaryView::refresh() {
   hovered_sig_ = nullptr;
   bit_flip_tracker_ = {};
   cells_.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id_)) {
-    row_count_ = dbc_msg->size;
-    cells_.resize(row_count_ * COLUMN_COUNT);
-    for (auto sig : dbc_msg->getSignals()) {
-      for (int j = 0; j < sig->size; ++j) {
-        int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
-        int idx = COLUMN_COUNT * (pos / 8) + pos % 8;
-        if (idx >= cells_.size()) {
-          fprintf(stderr, "signal %s out of bounds.start_bit: %d size: %d\n", sig->name.c_str(), sig->start_bit, sig->size);
-          break;
-        }
-        if (j == 0) sig->is_little_endian ? cells_[idx].is_lsb = true : cells_[idx].is_msb = true;
-        if (j == sig->size - 1) sig->is_little_endian ? cells_[idx].is_msb = true : cells_[idx].is_lsb = true;
-
-        auto &sigs = cells_[idx].sigs;
-        sigs.push_back(sig);
-        if (sigs.size() > 1) {
-          std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) { return l->size > r->size; });
-        }
-      }
-    }
-  } else {
-    row_count_ = can->lastMessage(msg_id_).dat.size();
-    cells_.resize(row_count_ * COLUMN_COUNT);
-  }
+  visible_signals_.clear();
+  const auto *msg = dbc()->msg(msg_id_);
+  row_count_ = msg ? msg->size : can->lastMessage(msg_id_).dat.size();
+  cells_.resize(row_count_ * COLUMN_COUNT);
   updateState();
   if (under_mouse_) highlightPosition(last_mouse_pos_);
+}
+
+void BinaryView::updateSignals() {
+  const auto &data = can->lastMessage(msg_id_).dat;
+  auto signals = binaryViewSignals(dbc()->msg(msg_id_), data.data(), data.size());
+  if (signals == visible_signals_) return;
+  visible_signals_ = std::move(signals);
+
+  // A branch switch invalidates the old hover and any in-progress resize.
+  selection_.clear();
+  anchor_index_ = {};
+  resize_sig_ = nullptr;
+  highlight(nullptr);
+  for (auto &cell : cells_) {
+    cell.sigs.clear();
+    cell.is_msb = cell.is_lsb = false;
+  }
+  for (auto sig : visible_signals_) {
+    for (int j = 0; j < sig->size; ++j) {
+      int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
+      int idx = COLUMN_COUNT * (pos / 8) + pos % 8;
+      if (idx < 0 || idx >= cells_.size()) break;
+      if (j == 0) sig->is_little_endian ? cells_[idx].is_lsb = true : cells_[idx].is_msb = true;
+      if (j == sig->size - 1) sig->is_little_endian ? cells_[idx].is_msb = true : cells_[idx].is_lsb = true;
+      cells_[idx].sigs.push_back(sig);
+    }
+  }
+  for (auto &cell : cells_) {
+    std::stable_sort(cell.sigs.begin(), cell.sigs.end(), [](auto l, auto r) { return l->size > r->size; });
+  }
+  if (under_mouse_) highlightPosition(last_mouse_pos_);
+  signalsChanged();
 }
 
 
@@ -373,6 +385,7 @@ void BinaryView::updateState() {
   }
 
   for (auto &cell : cells_) cell.valid = false;
+  updateSignals();
 
   auto &bit_flips = heatmap_live_mode_ ? last_msg.bit_flip_counts : bitFlipChanges(binary.size());
   uint32_t max_bit_flip_count = 1;  // 1 to avoid division by zero

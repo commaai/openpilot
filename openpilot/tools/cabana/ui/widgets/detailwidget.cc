@@ -61,6 +61,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
     updateState();
   }));
 
+  connections_.push_back(binary_view_->signalsChanged.connect([this]() { refresh(); }));
   connections_.push_back(binary_view_->signalHovered.connect([this](const cabana::Signal *s) { signal_view_->signalHovered(s); }));
   connections_.push_back(binary_view_->signalClicked.connect([this](const cabana::Signal *s) { signal_view_->selectSignal(s, true); }));
   connections_.push_back(binary_view_->editSignal.connect([this](const cabana::Signal *origin_s, cabana::Signal &s) { signal_view_->saveSignal(origin_s, s); }));

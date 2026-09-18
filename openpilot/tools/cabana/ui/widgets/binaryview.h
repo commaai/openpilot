@@ -40,6 +40,7 @@ public:
   std::string whatsThis() const;
 
   Observable<const cabana::Signal *> signalClicked;
+  Observable<> signalsChanged;
   Observable<const cabana::Signal *> signalHovered;
   Observable<const cabana::Signal *, cabana::Signal &> editSignal;
   Observable<const MessageId &, const cabana::Signal *, bool, bool> showChart;
@@ -54,6 +55,7 @@ private:
     bool valid = false;
   };
 
+  void updateSignals();
   void refresh();  // rebuilds the grid from the DBC message
   void setCell(int row, int col, uint8_t val, const CabanaColor &color);
   const std::vector<std::array<uint32_t, 8>> &bitFlipChanges(size_t msg_size);
@@ -78,6 +80,7 @@ private:
 
   MessageId msg_id_;
   std::vector<Cell> cells_;
+  std::vector<const cabana::Signal *> visible_signals_;
   int row_count_ = 0;
   bool heatmap_live_mode_ = true;
   struct BitFlipTracker {
