@@ -38,10 +38,10 @@ class PrimeState:
     self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
     self._prime_trial_available = False
-    self._commacare = False
     pairing_provider = os.getenv("PAIRING_PROVIDER") or self._params.get("PairingProvider")
     self._pairing_provider: Provider | None = Provider(pairing_provider) if pairing_provider is not None else None
     self._pairing_email: str | None = self._params.get("PairingEmail")
+    self._commacare = False
 
     self._running = False
     self._thread = None
@@ -168,18 +168,6 @@ class PrimeState:
     with self._lock:
       return self.prime_type
 
-  def get_pairing_provider(self) -> str | None:
-    with self._lock:
-      return self._pairing_provider
-
-  def get_pairing_account(self) -> str:
-    with self._lock:
-      if not self._pairing_provider:
-        return "unknown"
-      elif self._pairing_provider == Provider.GITHUB or not self._pairing_email:
-        return f"{self._pairing_provider} account"
-      return self._pairing_email
-
   def is_prime(self) -> bool:
     with self._lock:
       return bool(self.prime_type > PrimeType.NONE)
@@ -188,17 +176,29 @@ class PrimeState:
     with self._lock:
       return self.prime_type > PrimeType.NONE and self.prime_type != PrimeType.LITE
 
-  def can_claim_prime_trial(self) -> bool:
+  def is_paired(self) -> bool:
     with self._lock:
-      return self._prime_trial_available
+      return self.prime_type > PrimeType.UNPAIRED
+
+  def can_claim_prime_trial(self) -> bool:
+      with self._lock:
+        return self._prime_trial_available
 
   def has_commacare(self) -> bool:
     with self._lock:
       return self._commacare
 
-  def is_paired(self) -> bool:
+  def get_pairing_provider(self) -> str | None:
+      with self._lock:
+        return self._pairing_provider
+
+  def get_pairing_account(self) -> str:
     with self._lock:
-      return self.prime_type > PrimeType.UNPAIRED
+      if not self._pairing_provider:
+        return "unknown"
+      elif self._pairing_provider == Provider.GITHUB or not self._pairing_email:
+        return f"{self._pairing_provider} account"
+      return self._pairing_email
 
   def __del__(self):
     self.stop()
