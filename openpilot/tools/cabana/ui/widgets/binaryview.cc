@@ -10,12 +10,14 @@
 #include "tools/cabana/commands.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/util.h"
+#include "tools/cabana/ui/widgets/binarysignals.h"
 #include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
 namespace {
 
 const int CELL_HEIGHT = 36;
+const float CELL_FONT_SIZE = UI_FONT_SIZE + 2.0f;
 const float SMALL_FONT_SIZE = 10.0f;  // Inter needs 10 px for a 7 px cap height
 const int VERTICAL_HEADER_WIDTH = 30;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
@@ -56,6 +58,13 @@ void fillBDiagPattern(ImDrawList *p, const ImRect &r, ImU32 col) {
 }  // namespace
 
 BinaryView::BinaryView() {
+  heatmap_live_mode_ = can->liveStreaming();
+  connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) {
+    if (events.count(msg_id_)) {
+      bit_flip_tracker_.valid = false;
+      if (!heatmap_live_mode_) updateState();
+    }
+  }));
   connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
   connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
 }
@@ -63,6 +72,8 @@ BinaryView::BinaryView() {
 std::string BinaryView::whatsThis() const {
   return R"(
     <b>Binary View</b><br/>
+    All / selected range: brighter bits and bytes changed more often; uncolored cells did not change.<br/>
+    Live: accumulated bit flips and fading byte changes during playback.<br/>
     <span style="color:gray">Shortcuts</span><br />
     Delete Signal:
       <span style="background-color:lightGray;color:gray">&nbsp;x&nbsp;</span>,
@@ -113,9 +124,9 @@ void BinaryView::addShortcuts() {
 }
 
 ImVec2 BinaryView::minimumSizeHint() const {
-  // widest fixed-font glyph plus the header margins
-  pushMonoFont();
-  const float min_section_size = ImGui::CalcTextSize("W").x + 8.0f;
+  // Match the enlarged hex font when reserving space for narrow panels.
+  pushMonoFont(CELL_FONT_SIZE);
+  const float min_section_size = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
   popMonoFont();
   return {(min_section_size + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
           static_cast<float>(CELL_HEIGHT * std::min(row_count_, 10) + 2)};
@@ -205,33 +216,44 @@ void BinaryView::refresh() {
   hovered_sig_ = nullptr;
   bit_flip_tracker_ = {};
   cells_.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id_)) {
-    row_count_ = dbc_msg->size;
-    cells_.resize(row_count_ * COLUMN_COUNT);
-    for (auto sig : dbc_msg->getSignals()) {
-      for (int j = 0; j < sig->size; ++j) {
-        int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
-        int idx = COLUMN_COUNT * (pos / 8) + pos % 8;
-        if (idx >= cells_.size()) {
-          fprintf(stderr, "signal %s out of bounds.start_bit: %d size: %d\n", sig->name.c_str(), sig->start_bit, sig->size);
-          break;
-        }
-        if (j == 0) sig->is_little_endian ? cells_[idx].is_lsb = true : cells_[idx].is_msb = true;
-        if (j == sig->size - 1) sig->is_little_endian ? cells_[idx].is_msb = true : cells_[idx].is_lsb = true;
-
-        auto &sigs = cells_[idx].sigs;
-        sigs.push_back(sig);
-        if (sigs.size() > 1) {
-          std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) { return l->size > r->size; });
-        }
-      }
-    }
-  } else {
-    row_count_ = can->lastMessage(msg_id_).dat.size();
-    cells_.resize(row_count_ * COLUMN_COUNT);
-  }
+  visible_signals_.clear();
+  const auto *msg = dbc()->msg(msg_id_);
+  row_count_ = msg ? msg->size : can->lastMessage(msg_id_).dat.size();
+  cells_.resize(row_count_ * COLUMN_COUNT);
   updateState();
   if (under_mouse_) highlightPosition(last_mouse_pos_);
+}
+
+void BinaryView::updateSignals() {
+  const auto &data = can->lastMessage(msg_id_).dat;
+  auto signals = binaryViewSignals(dbc()->msg(msg_id_), data.data(), data.size());
+  if (signals == visible_signals_) return;
+  visible_signals_ = std::move(signals);
+
+  // A branch switch invalidates the old hover and any in-progress resize.
+  selection_.clear();
+  anchor_index_ = {};
+  resize_sig_ = nullptr;
+  highlight(nullptr);
+  for (auto &cell : cells_) {
+    cell.sigs.clear();
+    cell.is_msb = cell.is_lsb = false;
+  }
+  for (auto sig : visible_signals_) {
+    for (int j = 0; j < sig->size; ++j) {
+      int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
+      int idx = COLUMN_COUNT * (pos / 8) + pos % 8;
+      if (idx < 0 || idx >= cells_.size()) break;
+      if (j == 0) sig->is_little_endian ? cells_[idx].is_lsb = true : cells_[idx].is_msb = true;
+      if (j == sig->size - 1) sig->is_little_endian ? cells_[idx].is_msb = true : cells_[idx].is_lsb = true;
+      cells_[idx].sigs.push_back(sig);
+    }
+  }
+  for (auto &cell : cells_) {
+    std::stable_sort(cell.sigs.begin(), cell.sigs.end(), [](auto l, auto r) { return l->size > r->size; });
+  }
+  if (under_mouse_) highlightPosition(last_mouse_pos_);
+  signalsChanged();
 }
 
 
@@ -297,17 +319,20 @@ void BinaryView::draw() {
 
   const int rows = row_count_;
   // Keep hex bytes readable in narrow panels by scrolling instead of shrinking further.
+  pushMonoFont(CELL_FONT_SIZE);
   const float min_column_width = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
+  popMonoFont();
   const float width = std::max(ImGui::GetContentRegionAvail().x, VERTICAL_HEADER_WIDTH + min_column_width * COLUMN_COUNT);
   column_width_ = std::max(min_column_width, (width - VERTICAL_HEADER_WIDTH) / COLUMN_COUNT);
   grid_pos_ = ImGui::GetCursorScreenPos();
   ImGui::InvisibleButton("##binary_view", ImVec2(std::max(width, 1.0f), std::max(static_cast<float>(rows * CELL_HEIGHT), 1.0f)));
   ImDrawList *painter = ImGui::GetWindowDrawList();
+  painter->AddRectFilled(grid_pos_, ImVec2(grid_pos_.x + width, grid_pos_.y + rows * CELL_HEIGHT), paletteBase());
 
   for (int row = 0; row < rows; ++row) {
     const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + VERTICAL_HEADER_WIDTH, grid_pos_.y + (row + 1) * CELL_HEIGHT);
     painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));  // plain header background
-    drawText(painter, r, std::to_string(row).c_str(), ImGui::GetColorU32(ImGuiCol_Text));
+    drawText(painter, r, std::to_string(row).c_str(), paletteText(true));
   }
   for (int row = 0; row < rows; ++row) {
     for (int column = 0; column < COLUMN_COUNT; ++column) {
@@ -359,6 +384,9 @@ void BinaryView::updateState() {
     cells_.resize(row_count_ * COLUMN_COUNT);
   }
 
+  for (auto &cell : cells_) cell.valid = false;
+  updateSignals();
+
   auto &bit_flips = heatmap_live_mode_ ? last_msg.bit_flip_counts : bitFlipChanges(binary.size());
   uint32_t max_bit_flip_count = 1;  // 1 to avoid division by zero
   for (const auto &row : bit_flips) {
@@ -367,13 +395,15 @@ void BinaryView::updateState() {
     }
   }
 
-  const Palette &p = palette();
+  uint32_t max_byte_flip_count = 1;
+  for (auto count : bit_flip_tracker_.counts.bytes) max_byte_flip_count = std::max(max_byte_flip_count, count);
+
+  // Use the same logarithmic intensity mapping in both themes.
   const double max_alpha = 255.0;
-  const double min_alpha_with_signal = p.heatmap_signal_alpha;  // Base alpha for small flip counts
-  const double min_alpha_no_signal = p.heatmap_bit_alpha;    // Base alpha for small flip counts for no signal bits
-  const double alpha_gamma = p.heatmap_gamma;
+  const double min_alpha_with_signal = 25.0;  // Base alpha for small flip counts
+  const double min_alpha_no_signal = 10.0;    // Base alpha for small flip counts for no signal bits
   const double log_factor = 1.0 + 0.2;
-  const double log_scaler = max_alpha / log2(log_factor * max_bit_flip_count);
+  const double log_scaler = max_alpha / log2(1.0 + log_factor * max_bit_flip_count);
 
   for (size_t i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
@@ -384,7 +414,6 @@ void BinaryView::updateState() {
       uint32_t flip_count = bit_flips[i][j];
       if (flip_count > 0) {
         double normalized_alpha = log2(1.0 + flip_count * log_factor) * log_scaler;
-        normalized_alpha = max_alpha * std::pow(std::clamp(normalized_alpha / max_alpha, 0.0, 1.0), alpha_gamma);
         double min_alpha = item.sigs.empty() ? min_alpha_no_signal : min_alpha_with_signal;
         alpha = std::clamp(normalized_alpha, min_alpha, max_alpha);
       }
@@ -393,38 +422,27 @@ void BinaryView::updateState() {
       color.a = static_cast<uint8_t>(alpha);
       setCell(i, j, bit_val, color);
     }
-    setCell(i, HEX_COLUMN, binary[i], last_msg.colors[i]);
+    auto byte_color = last_msg.colors[i];
+    if (!heatmap_live_mode_) {
+      const auto count = bit_flip_tracker_.counts.bytes[i];
+      const double intensity = std::log2(1.0 + count * log_factor) / std::log2(1.0 + max_byte_flip_count * log_factor);
+      byte_color = CabanaColor(102, 86, 169, static_cast<uint8_t>(max_alpha * intensity));
+    }
+    setCell(i, HEX_COLUMN, binary[i], byte_color);
   }
 }
 
 const std::vector<std::array<uint32_t, 8>> &BinaryView::bitFlipChanges(size_t msg_size) {
   auto time_range = can->timeRange();
-  if (bit_flip_tracker_.time_range == time_range && !bit_flip_tracker_.flip_counts.empty())
-    return bit_flip_tracker_.flip_counts;
+  if (bit_flip_tracker_.valid && bit_flip_tracker_.time_range == time_range &&
+      bit_flip_tracker_.counts.bits.size() == msg_size) return bit_flip_tracker_.counts.bits;
 
   bit_flip_tracker_.time_range = time_range;
-  bit_flip_tracker_.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
-
+  bit_flip_tracker_.counts = HeatmapCounts(msg_size);
   auto [first, last] = can->eventsInRange(msg_id_, time_range);
-  if (std::distance(first, last) <= 1) return bit_flip_tracker_.flip_counts;
-
-  std::vector<uint8_t> prev_values((*first)->dat, (*first)->dat + (*first)->size);
-  for (auto it = std::next(first); it != last; ++it) {
-    const CanEvent *event = *it;
-    int size = std::min<int>(msg_size, event->size);
-    for (int i = 0; i < size; ++i) {
-      const uint8_t diff = event->dat[i] ^ prev_values[i];
-      if (!diff) continue;
-
-      auto &bit_flips = bit_flip_tracker_.flip_counts[i];
-      for (int bit = 0; bit < 8; ++bit) {
-        if (diff & (1u << bit)) ++bit_flips[7 - bit];
-      }
-      prev_values[i] = event->dat[i];
-    }
-  }
-
-  return bit_flip_tracker_.flip_counts;
+  for (auto it = first; it != last; ++it) bit_flip_tracker_.counts.add((*it)->dat, (*it)->size);
+  bit_flip_tracker_.valid = true;
+  return bit_flip_tracker_.counts.bits;
 }
 
 bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const {
@@ -438,12 +456,12 @@ bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const caban
 void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const {
   auto item = &cellAt(index);
   ImFont *font = ImGui::GetFont();
-  float font_size = ImGui::GetFontSize();
-  ImU32 pen = paletteText(is_message_active_);
+  float font_size = CELL_FONT_SIZE;
+  ImU32 pen = paletteText(true);
 
   if (index.column == HEX_COLUMN) {
     if (item->valid) {
-      pushMonoFont();
+      pushMonoFont(CELL_FONT_SIZE);
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
@@ -451,7 +469,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
     }
   } else if (isSelected(index)) {
     painter->AddRectFilled(rect.Min, rect.Max, resize_sig_ ? toImU32(resize_sig_->color) : paletteHighlight());
-    if (resize_sig_) pen = IM_COL32_WHITE;
+    pen = IM_COL32_WHITE;
   } else if (!hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), resize_sig_) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
@@ -462,7 +480,6 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
         }
       }
     } else if (item->valid) {
-      painter->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(palette().bit_background));
       if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
     bool bright = std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
