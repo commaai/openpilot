@@ -80,7 +80,6 @@ class PrimeState:
 
         commacare = data.get("commacare", False)
         self.set_commacare(commacare)
-        self._update_pairing_alert()
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
