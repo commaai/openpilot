@@ -142,6 +142,7 @@ class HudRenderer(Widget):
     self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._longitudinal_icon_opacity = 0.0
     self._longitudinal_icon_visible = False
+    self._accel_override_alpha = 1.0
     # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
     self._longitudinal_icon_fade = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
     self._reset_distance_highlight()
@@ -221,6 +222,7 @@ class HudRenderer(Widget):
     # The combined indicator is only visible while engaged.
     self._longitudinal_icon_opacity = self._longitudinal_icon_fade.update(float(self._longitudinal_icon_visible))
     if ui_state.sm.recv_frame['selfdriveState'] >= ui_state.started_frame and ui_state.sm['selfdriveState'].enabled:
+      self._accel_override_alpha = self._acceleration_override_opacity()
       icon_rect = rl.Rectangle(rect.x + 4, rect.y, rect.width, rect.height)
       self._draw_lead_car(icon_rect)
       self._draw_distance_bars(icon_rect)
@@ -228,6 +230,14 @@ class HudRenderer(Widget):
       self._reset_distance_highlight()
       self._lead_car_white_filter.x = 0.35
       self._lead_car_green_filter.x = 0.0
+
+  def _acceleration_override_opacity(self) -> float:
+    sm = ui_state.sm
+    overriding = (sm.valid['onroadEvents'] and sm.alive['onroadEvents'] and
+                  sm.recv_frame['onroadEvents'] >= ui_state.started_frame and
+                  any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
+    # Reuse the GPU-loading pulse; color transitions remain independent.
+    return 0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)) if overriding else 1.0
 
   def _reset_distance_highlight(self) -> None:
     self._distance_personality = None
@@ -281,12 +291,14 @@ class HudRenderer(Widget):
     for index, (texture, x, y) in enumerate(self._distance_icon_parts):
       highlighted = index == lit_bars - 1
       alpha = 1.0 - green_alpha if highlighted else (1.0 if index < lit_bars else 0.35)
+      if index < lit_bars:
+        alpha *= self._accel_override_alpha
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
       if highlighted and green_alpha > 0:
         green, gx, gy = self._distance_green_parts[index]
         rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * green_alpha * self._longitudinal_icon_opacity)))
+                           rl.Color(255, 255, 255, round(255 * green_alpha * self._longitudinal_icon_opacity * self._accel_override_alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
@@ -296,10 +308,11 @@ class HudRenderer(Widget):
     green = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_alpha = self._lead_car_white_filter.update(0.0 if green else (1.0 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
+    override_alpha = self._accel_override_alpha if has_lead else 1.0
     # Match the distance bar crossfade; the green asset has 14 px of glow padding.
     for texture, x, y, alpha in ((self._txt_lead_car, 25, 86, white_alpha),
                                  (self._txt_lead_car_green, 11, 72, green_alpha)):
-      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
+      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
