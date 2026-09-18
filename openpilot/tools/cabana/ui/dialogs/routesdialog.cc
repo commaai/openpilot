@@ -1,0 +1,274 @@
+#include "tools/cabana/ui/dialogs/routesdialog.h"
+
+#include <algorithm>
+#include <cmath>
+#include <utility>
+#include <thread>
+
+#include "json11/json11.hpp"
+#include "tools/replay/py_downloader.h"
+#include "tools/cabana/ui/theme.h"
+
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "tools/cabana/ui/dialogs/messagebox.h"
+#include "tools/cabana/ui/util.h"
+#include "tools/cabana/utils/util.h"
+
+namespace {
+const char *PERIOD_NAMES[] = {"Last week", "Last 2 weeks", "Last month", "Last 6 months", "Preserved"};
+const int PERIOD_DAYS[] = {7, 14, 30, 180, -1};
+}  // namespace
+
+void RoutesDialog::open(std::function<void(bool, const std::string &)> on_done) {
+  if (alive_) return;
+  on_done_ = std::move(on_done);
+  open_ = false;
+  popup_.reset();
+  s_ = State{};
+  alive_ = std::make_shared<bool>(true);
+
+  fetchDevices();
+}
+
+void RoutesDialog::fetchDevices() {
+  routes::fetchDevices([this, alive = std::weak_ptr<bool>(alive_)](std::vector<routes::DeviceInfo> devices, bool success, int error_code) {
+    utils::runOnMainThread(utils::guarded(alive.lock(), [this, devices = std::move(devices), success, error_code]() {
+      setDeviceList(devices, success, error_code);
+    }));
+  });
+}
+
+void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices, bool success, int error_code) {
+  if (success) {
+    s_.login = false;
+    open_ = true;
+    s_.devices.clear();
+    for (const auto &device : devices) s_.devices.push_back(device.dongle_id);
+    s_.devices_loaded = true;
+    s_.device_index = 0;
+    fetchRoutes();
+  } else if (error_code == 401) {
+    s_.login = true;
+    open_ = true;
+  } else {
+    // Initial failures are shown on the calling window without opening the route browser.
+    MessageBox::warning("Error", "Network error", "",
+                        utils::guarded(alive_, [this]() { finish(false); }));
+  }
+}
+
+void RoutesDialog::fetchRoutes() {
+  if (!s_.devices_loaded || s_.devices.empty()) return;
+
+  s_.routes.clear();
+  s_.route_index = -1;
+  s_.empty_text = "Loading...";
+
+  const int request_id = ++s_.fetch_id;
+  auto on_routes = [this, alive = std::weak_ptr<bool>(alive_), request_id](std::vector<routes::RouteInfo> list, bool success, int) {
+    utils::runOnMainThread(utils::guarded(alive.lock(), [this, list = std::move(list), success, request_id]() {
+      if (s_.fetch_id == request_id) setRouteList(list, success);
+    }));
+  };
+  routes::fetchRoutes(s_.devices[s_.device_index], PERIOD_DAYS[s_.period_index], std::move(on_routes));
+}
+
+void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool success) {
+  if (success) {
+    for (const auto &route : list) {
+      const int mins = static_cast<int>((route.end_ms - route.start_ms) / 60000);
+      s_.routes.push_back({routes::formatUnixMs(route.start_ms) + "    " + std::to_string(mins) + " min", route.name});
+    }
+    if (!s_.routes.empty()) s_.route_index = 0;
+  } else {
+    MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.", "",
+                        utils::guarded(alive_, [this]() { finish(false); }));
+  }
+  s_.empty_text = "No items";
+}
+
+void RoutesDialog::finish(bool accepted) {
+  if (auth_abort_) *auth_abort_ = true;
+  auth_abort_.reset();
+  alive_.reset();
+  open_ = false;
+  auto on_done = std::move(on_done_);
+  if (on_done) on_done(accepted, accepted && s_.route_index >= 0 ? s_.routes[s_.route_index].name : "");
+}
+
+void RoutesDialog::draw() {
+  if (!open_) return;
+  if (!beginDialog("Remote Routes", &popup_, ImVec2(480.0f, 420.0f))) return;
+
+  if (s_.login) {
+    drawLogin();
+    if (open_) {
+      MessageBox::draw();
+      if (!open_) ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+    return;
+  }
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Device");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(-1.0f);
+  if (s_.devices_loaded) {
+    if (comboBox("##device", &s_.device_index, s_.devices)) fetchRoutes();
+  } else {
+    int idx = 0;
+    ImGui::BeginDisabled();
+    comboBox("##device", &idx, {"Loading..."});
+    ImGui::EndDisabled();
+  }
+  ImGui::SetNextItemWidth(-1.0f);
+  if (dropdown::Combo("##period", &s_.period_index, PERIOD_NAMES, IM_ARRAYSIZE(PERIOD_NAMES))) fetchRoutes();
+
+  bool accepted = false, rejected = false;
+  const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+  ImGui::BeginChild("routes", ImVec2(0, -footer), ImGuiChildFlags_Borders);
+  if (s_.routes.empty()) {
+    const ImVec2 size = ImGui::CalcTextSize(s_.empty_text.c_str());
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    ImGui::SetCursorPos(ImVec2((avail.x - size.x) * 0.5f, (avail.y - size.y) * 0.5f));
+    ImGui::TextUnformatted(s_.empty_text.c_str());
+  }
+  for (int i = 0; i < static_cast<int>(s_.routes.size()); ++i) {
+    ImGui::PushID(i);
+    if (selectable(s_.routes[i].label.c_str(), s_.route_index == i, ImGuiSelectableFlags_AllowDoubleClick)) {
+      s_.route_index = i;
+      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) accepted = true;
+    }
+    ImGui::PopID();
+  }
+  ImGui::EndChild();
+
+  dialogButtons("OK", &accepted, &rejected);
+  MessageBox::draw();
+  if (accepted || rejected || !open_) ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+  if (accepted || rejected) finish(accepted);
+}
+
+void RoutesDialog::signIn(const std::string &provider) {
+  s_.provider = provider == "google" ? "Google" : provider == "apple" ? "Apple" : "GitHub";
+  s_.auth_error.clear();
+  auth_abort_ = std::make_shared<std::atomic<bool>>(false);
+  std::thread([this, alive = std::weak_ptr<bool>(alive_), abort = auth_abort_, provider]() {
+    const std::string result = PyDownloader::authenticate(provider, abort.get());
+    utils::runOnMainThread(utils::guarded(alive.lock(), [this, abort, result]() {
+      if (*abort) return;
+      auth_abort_.reset();
+      std::string error;
+      auto status = json11::Json::parse(result, error);
+      if (status["success"].bool_value()) {
+        s_.login = false;
+        fetchDevices();
+      } else {
+        s_.auth_error = status["error"].string_value();
+        if (s_.auth_error.empty()) s_.auth_error = "Could not start sign-in. Please try again.";
+      }
+    }));
+  }).detach();
+}
+
+void RoutesDialog::drawLogin() {
+  const auto &p = palette();
+  const char *providers[] = {"Google", "Apple", "GitHub"};
+  const char *methods[] = {"google", "apple", "github"};
+  const char *icons[] = {"\xef\x8f\xb0", "\xef\x99\x9b", "\xef\x8f\xad"};
+  IconTextButtonOptions button_options{.height = 44.0f, .rounding = 8.0f, .icon_gap = 16.0f, .center_content = true};
+  float button_width = iconTextButtonWidth("", "Choose another method", button_options);
+  for (int i = 0; i < 3; ++i) {
+    const std::string label = std::string("Sign in with ") + providers[i];
+    button_width = std::max(button_width, iconTextButtonWidth(icons[i], label, button_options));
+    button_options.label_width = std::max(button_options.label_width, ImGui::CalcTextSize(label.c_str()).x);
+  }
+  button_width += ImGui::GetStyle().FramePadding.x * 4;
+  // Keep the footer anchored while longer errors scroll inside the content area.
+  const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+  ImGui::BeginChild("login_content", ImVec2(0, -footer));
+  ImGui::Indent(16);
+  const float gap = ImGui::GetStyle().ItemSpacing.y;
+  const float wrap_x = ImGui::GetWindowWidth() - 28;
+  const float text_width = wrap_x - ImGui::GetCursorPosX();
+  const char *chooser_intro = "Use your comma account to browse recorded drives and open a route for analysis.";
+  const auto waiting_intro = [](const std::string &provider) {
+    return "Sign in with " + provider + " in your browser, then return to Cabana to choose a device and route.";
+  };
+  const std::string intro = auth_abort_ ? waiting_intro(s_.provider) : chooser_intro;
+  const char *hint = "Use the comma account paired with your device.";
+  // Reserve the same space in every state so the heading and controls never jump.
+  float intro_height = ImGui::CalcTextSize(chooser_intro, nullptr, false, text_width).y;
+  for (const char *provider : providers) {
+    intro_height = std::max(intro_height, ImGui::CalcTextSize(waiting_intro(provider).c_str(), nullptr, false, text_width).y);
+  }
+  const float controls_height = 3 * (button_options.height + 2 * gap) +
+                                ImGui::CalcTextSize(hint, nullptr, false, text_width).y;
+  const float content_height = 28 + 2 * gap + intro_height + 2 * gap + 12 + controls_height;
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + std::max(0.0f, (ImGui::GetContentRegionAvail().y - content_height) * 0.5f));
+  ImGui::PushFont(boldFont(), 28.0f);
+  ImGui::TextUnformatted("Open your routes in Cabana");
+  ImGui::PopFont();
+  ImGui::Spacing();
+  ImGui::PushTextWrapPos(wrap_x);
+  const float controls_y = ImGui::GetCursorPosY() + intro_height + 2 * gap + 12;
+  const float buttons_x = ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - 16 - button_width) * 0.5f;
+  if (auth_abort_) {
+    ImGui::TextWrapped("%s", intro.c_str());
+    ImGui::SetCursorPosY(controls_y);
+    ImGui::BeginChild("auth_status", ImVec2(-16, 76), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+    const char *status = "Waiting for browser sign-in";
+    const char *timeout = "This request expires after 3 minutes.";
+    const float spinner_size = ImGui::GetFontSize();
+    const float status_width = spinner_size + 8 + ImGui::CalcTextSize(status).x;
+    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - status_width) * 0.5f, 16));
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float angle = std::fmod(ImGui::GetTime() * 4.0, 2.0 * IM_PI);
+    auto *draw_list = ImGui::GetWindowDrawList();
+    draw_list->PathArcTo(ImVec2(pos.x + spinner_size * 0.5f, pos.y + spinner_size * 0.5f),
+                        spinner_size * 0.35f, angle, angle + IM_PI * 1.5f, 24);
+    draw_list->PathStroke(ImGui::GetColorU32(p.accent), 0, 2.0f);
+    ImGui::Dummy(ImVec2(spinner_size, spinner_size));
+    ImGui::SameLine(0, 8);
+    ImGui::TextUnformatted(status);
+    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - ImGui::CalcTextSize(timeout).x) * 0.5f, 40));
+    ImGui::TextUnformatted(timeout);
+    ImGui::EndChild();
+    ImGui::SetCursorPosY(controls_y + 2 * (button_options.height + 2 * gap));
+    ImGui::SetCursorPosX(buttons_x);
+    if (iconTextButton("auth_retry", "", "Choose another method", button_width, button_options)) {
+      *auth_abort_ = true;
+      auth_abort_.reset();
+    }
+  } else {
+    ImGui::TextWrapped("%s", intro.c_str());
+    ImGui::SetCursorPosY(controls_y);
+    const char *selected_method = nullptr;
+    for (int i = 0; i < 3; ++i) {
+      ImGui::SetCursorPosX(buttons_x);
+      if (iconTextButton(methods[i], icons[i], std::string("Sign in with ") + providers[i],
+                         button_width, button_options)) selected_method = methods[i];
+      ImGui::Spacing();
+    }
+    const char *message = s_.auth_error.empty() ? hint : s_.auth_error.c_str();
+    const float width = ImGui::GetContentRegionAvail().x - 16;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (width - ImGui::CalcTextSize(message).x) * 0.5f));
+    ImGui::TextWrapped("%s", message);
+    // Finish drawing this state before signIn clears its error text.
+    if (selected_method) signIn(selected_method);
+  }
+  ImGui::PopTextWrapPos();
+  ImGui::Unindent(16);
+  ImGui::EndChild();
+  ImGui::Separator();
+  bool rejected = false;
+  dialogButtons("Cancel", &rejected, nullptr, true, nullptr);
+  if (rejected || dialogEscapePressed()) {
+    ImGui::CloseCurrentPopup();
+    finish(false);
+  }
+}
