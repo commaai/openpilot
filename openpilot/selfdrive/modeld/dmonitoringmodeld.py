@@ -27,8 +27,7 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cam_w: int, cam_h: int):
-    with open(MODEL_PKL_PATH, 'rb') as f:
-      jits = load_oob(f)
+    jits = load_oob(MODEL_PKL_PATH)
     self.DEV = jits['input_specs']['input_img'][2]
     self.input_shapes = jits['metadata']['input_shapes']
     self.output_slices = pickle.loads(base64.b64decode(jits['metadata']['metadata']['output_slices']))
