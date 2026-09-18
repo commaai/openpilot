@@ -22,8 +22,7 @@ constexpr Palette DARK_PALETTE = {
   .slider_track = rgb(0x7b7b7b),
   .tab = rgb(0x2c2c2c), .tab_hovered = rgb(0x444647), .tab_selected = rgb(0x393a3b), .table_header = rgb(0x3f4041),
   .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x808080),
-  .bit_background = rgb(0xffffff, 20.0f / 255.0f),
-  .heatmap_signal_alpha = 70.0, .heatmap_bit_alpha = 28.0, .heatmap_gamma = 0.6,
+  .heatmap_base = rgb(0x191919), .heatmap_text = rgb(0xffffff), .heatmap_text_disabled = rgb(0x7f7f7f), .heatmap_highlight = rgb(0x2a82da),
   .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
@@ -38,8 +37,7 @@ constexpr Palette LIGHT_PALETTE = {
   .slider_track = rgb(0xd0d0d0),
   .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .tab_selected = rgb(0xffffff), .table_header = rgb(0xefefef),
   .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
-  .bit_background = rgb(0xffffff, 0.0f),
-  .heatmap_signal_alpha = 25.0, .heatmap_bit_alpha = 10.0, .heatmap_gamma = 1.0,
+  .heatmap_base = rgb(0xffffff), .heatmap_text = rgb(0x000000), .heatmap_text_disabled = rgb(0xbebebe), .heatmap_highlight = rgb(0x308cc6),
   .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 
