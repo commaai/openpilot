@@ -223,11 +223,11 @@ class DeviceLayoutMici(NavScroller):
     self.set_shown_callback(None)
     self._pending_pairing_grow_animation = False
 
-  def scroll_to_pairing(self, smooth: bool = True):
+  def scroll_to_pairing(self):
     self._scroller._layout()
     offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-    self._scroller.scroll_to(offset, smooth=smooth, block_interrupt=smooth, block_widget_interaction=smooth)
-    self._pending_pairing_grow_animation = smooth
+    self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
+    self._pending_pairing_grow_animation = True
 
   def _on_regulatory(self):
     if not self._fcc_dialog:

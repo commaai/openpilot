@@ -72,9 +72,3 @@ class SettingsLayout(NavScroller):
   def _on_pairing_shown(self):
     self.set_visible(True)
     self._device_panel.scroll_to_pairing()
-
-  def _update_state(self):
-    super()._update_state()
-    # Also restore Settings if the user dismisses Device before it finishes entering.
-    if self.enabled:
-      self.set_visible(True)
