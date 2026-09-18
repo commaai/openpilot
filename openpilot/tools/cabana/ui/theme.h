@@ -18,8 +18,6 @@ struct Palette {
   ImVec4 tab, tab_hovered, tab_selected, table_header;
   ImVec4 grid;
   ImVec4 badge;  // the fill behind the time labels drawn over a chart
-  ImVec4 bit_background;  // overlay beneath heatmap bits without a signal
-  double heatmap_signal_alpha, heatmap_bit_alpha, heatmap_gamma;
   float sparkline_saturation, sparkline_value;  // HSV multipliers for signal colors
 };
 

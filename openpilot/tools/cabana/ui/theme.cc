@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xdddddd), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xdddddd),
+  .text = rgb(0xffffff), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xffffff),
   .window = rgb(0x353535), .surface = rgb(0x2b2c2d),
   .frame = rgb(0x2b2c2d), .frame_hovered = rgb(0x363738), .frame_active = rgb(0x434445),
   .button = rgb(0x3f4041), .button_hovered = rgb(0x525354), .button_active = rgb(0x303132),
@@ -22,8 +22,6 @@ constexpr Palette DARK_PALETTE = {
   .slider_track = rgb(0x7b7b7b),
   .tab = rgb(0x2c2c2c), .tab_hovered = rgb(0x444647), .tab_selected = rgb(0x393a3b), .table_header = rgb(0x3f4041),
   .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x808080),
-  .bit_background = rgb(0xffffff, 20.0f / 255.0f),
-  .heatmap_signal_alpha = 70.0, .heatmap_bit_alpha = 28.0, .heatmap_gamma = 0.6,
   .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
@@ -38,8 +36,6 @@ constexpr Palette LIGHT_PALETTE = {
   .slider_track = rgb(0xd0d0d0),
   .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .tab_selected = rgb(0xffffff), .table_header = rgb(0xefefef),
   .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
-  .bit_background = rgb(0xffffff, 0.0f),
-  .heatmap_signal_alpha = 25.0, .heatmap_bit_alpha = 10.0, .heatmap_gamma = 1.0,
   .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 

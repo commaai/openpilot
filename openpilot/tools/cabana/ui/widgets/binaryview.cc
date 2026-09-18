@@ -16,6 +16,7 @@
 namespace {
 
 const int CELL_HEIGHT = 36;
+const float CELL_FONT_SIZE = UI_FONT_SIZE + 2.0f;
 const float SMALL_FONT_SIZE = 10.0f;  // Inter needs 10 px for a 7 px cap height
 const int VERTICAL_HEADER_WIDTH = 30;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
@@ -122,9 +123,9 @@ void BinaryView::addShortcuts() {
 }
 
 ImVec2 BinaryView::minimumSizeHint() const {
-  // widest fixed-font glyph plus the header margins
-  pushMonoFont();
-  const float min_section_size = ImGui::CalcTextSize("W").x + 8.0f;
+  // Match the enlarged hex font when reserving space for narrow panels.
+  pushMonoFont(CELL_FONT_SIZE);
+  const float min_section_size = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
   popMonoFont();
   return {(min_section_size + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
           static_cast<float>(CELL_HEIGHT * std::min(row_count_, 10) + 2)};
@@ -306,17 +307,20 @@ void BinaryView::draw() {
 
   const int rows = row_count_;
   // Keep hex bytes readable in narrow panels by scrolling instead of shrinking further.
+  pushMonoFont(CELL_FONT_SIZE);
   const float min_column_width = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
+  popMonoFont();
   const float width = std::max(ImGui::GetContentRegionAvail().x, VERTICAL_HEADER_WIDTH + min_column_width * COLUMN_COUNT);
   column_width_ = std::max(min_column_width, (width - VERTICAL_HEADER_WIDTH) / COLUMN_COUNT);
   grid_pos_ = ImGui::GetCursorScreenPos();
   ImGui::InvisibleButton("##binary_view", ImVec2(std::max(width, 1.0f), std::max(static_cast<float>(rows * CELL_HEIGHT), 1.0f)));
   ImDrawList *painter = ImGui::GetWindowDrawList();
+  painter->AddRectFilled(grid_pos_, ImVec2(grid_pos_.x + width, grid_pos_.y + rows * CELL_HEIGHT), paletteBase());
 
   for (int row = 0; row < rows; ++row) {
     const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + VERTICAL_HEADER_WIDTH, grid_pos_.y + (row + 1) * CELL_HEIGHT);
     painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));  // plain header background
-    drawText(painter, r, std::to_string(row).c_str(), ImGui::GetColorU32(ImGuiCol_Text));
+    drawText(painter, r, std::to_string(row).c_str(), paletteText(true));
   }
   for (int row = 0; row < rows; ++row) {
     for (int column = 0; column < COLUMN_COUNT; ++column) {
@@ -381,11 +385,10 @@ void BinaryView::updateState() {
   uint32_t max_byte_flip_count = 1;
   for (auto count : bit_flip_tracker_.counts.bytes) max_byte_flip_count = std::max(max_byte_flip_count, count);
 
-  const Palette &p = palette();
+  // Use the same logarithmic intensity mapping in both themes.
   const double max_alpha = 255.0;
-  const double min_alpha_with_signal = p.heatmap_signal_alpha;  // Base alpha for small flip counts
-  const double min_alpha_no_signal = p.heatmap_bit_alpha;    // Base alpha for small flip counts for no signal bits
-  const double alpha_gamma = p.heatmap_gamma;
+  const double min_alpha_with_signal = 25.0;  // Base alpha for small flip counts
+  const double min_alpha_no_signal = 10.0;    // Base alpha for small flip counts for no signal bits
   const double log_factor = 1.0 + 0.2;
   const double log_scaler = max_alpha / log2(1.0 + log_factor * max_bit_flip_count);
 
@@ -398,7 +401,6 @@ void BinaryView::updateState() {
       uint32_t flip_count = bit_flips[i][j];
       if (flip_count > 0) {
         double normalized_alpha = log2(1.0 + flip_count * log_factor) * log_scaler;
-        normalized_alpha = max_alpha * std::pow(std::clamp(normalized_alpha / max_alpha, 0.0, 1.0), alpha_gamma);
         double min_alpha = item.sigs.empty() ? min_alpha_no_signal : min_alpha_with_signal;
         alpha = std::clamp(normalized_alpha, min_alpha, max_alpha);
       }
@@ -411,7 +413,7 @@ void BinaryView::updateState() {
     if (!heatmap_live_mode_) {
       const auto count = bit_flip_tracker_.counts.bytes[i];
       const double intensity = std::log2(1.0 + count * log_factor) / std::log2(1.0 + max_byte_flip_count * log_factor);
-      byte_color = CabanaColor(102, 86, 169, static_cast<uint8_t>(max_alpha * std::pow(intensity, alpha_gamma)));
+      byte_color = CabanaColor(102, 86, 169, static_cast<uint8_t>(max_alpha * intensity));
     }
     setCell(i, HEX_COLUMN, binary[i], byte_color);
   }
@@ -441,12 +443,12 @@ bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const caban
 void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const {
   auto item = &cellAt(index);
   ImFont *font = ImGui::GetFont();
-  float font_size = ImGui::GetFontSize();
-  ImU32 pen = paletteText(is_message_active_);
+  float font_size = CELL_FONT_SIZE;
+  ImU32 pen = paletteText(true);
 
   if (index.column == HEX_COLUMN) {
     if (item->valid) {
-      pushMonoFont();
+      pushMonoFont(CELL_FONT_SIZE);
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
@@ -454,7 +456,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
     }
   } else if (isSelected(index)) {
     painter->AddRectFilled(rect.Min, rect.Max, resize_sig_ ? toImU32(resize_sig_->color) : paletteHighlight());
-    if (resize_sig_) pen = IM_COL32_WHITE;
+    pen = IM_COL32_WHITE;
   } else if (!hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), resize_sig_) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
@@ -465,7 +467,6 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
         }
       }
     } else if (item->valid) {
-      painter->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(palette().bit_background));
       if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
     }
     bool bright = std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
