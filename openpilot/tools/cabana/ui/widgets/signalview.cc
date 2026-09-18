@@ -924,12 +924,22 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
     if (selected) ImGui::PopStyleColor(3);
     return clicked;
   };
-  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, selected ? palette().header_active : ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (row_button("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
+  // Keep the plotted state visible even on a selected row, and distinguish hover from selection.
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, checked ? 1.0f : 0.0f);
+  ImGui::PushStyleColor(ImGuiCol_Button, checked ? palette().button : ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, palette().button_hovered);
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, palette().button_active);
+  ImGui::PushStyleColor(ImGuiCol_Border, ImLerp(palette().button, palette().text, 0.45f));
+  const ImVec2 button_min = ImGui::GetCursorScreenPos();
+  const bool hovered = ImGui::IsWindowHovered() &&
+                       ImGui::IsMouseHoveringRect(button_min, ImVec2(button_min.x + button, button_min.y + button));
+  ImGui::PushStyleColor(ImGuiCol_Text, selected && !checked && !hovered ? palette().text_selected : palette().text);
+  if (iconButton("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model_.msgId(), sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
-  if (checked) ImGui::PopStyleColor();
+  ImGui::PopStyleColor(5);
+  ImGui::PopStyleVar();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nShift-click to add to the previously opened plot");
   ImGui::SameLine(0.0f, spacing);
   if (row_button("remove", icon::X_LG) && !editor_open_on_press_) {
