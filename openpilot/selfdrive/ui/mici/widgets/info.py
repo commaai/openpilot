@@ -26,6 +26,6 @@ class InfoLayoutMici(Widget):
     self.title2.set_position(self._rect.x + 20, self._rect.y + 114 - 30)
     self.subtext2.set_position(self._rect.x + 20, self._rect.y + 161 - 25)
 
-  def _render(self, _):
+  def _render(self, rect: rl.Rectangle):
     for widget in [self.title1, self.subtext1, self.title2, self.subtext2]:
       widget.render()

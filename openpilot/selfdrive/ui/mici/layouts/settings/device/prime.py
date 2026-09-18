@@ -41,7 +41,7 @@ class PairingInfoLayout(InfoLayoutMici):
     self.subtext2.set_position(self.subtext2.rect.x + commacare_offset, self.subtext2.rect.y)
     self.subtext2.set_max_width(int(self._rect.width - commacare_offset - (40 if self._show_commacare else 20)))
 
-  def _render(self, rect):
+  def _render(self, rect: rl.Rectangle):
     super()._render(rect)
 
     if self._provider_icon:
