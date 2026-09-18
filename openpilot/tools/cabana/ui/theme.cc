@@ -12,18 +12,16 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xbbbbbb), .text_disabled = rgb(0x777777), .text_selected = rgb(0xbbbbbb),
-  .window = rgb(0x353535), .surface = rgb(0x3c3f41),
-  .frame = rgb(0x3c3f41), .frame_hovered = rgb(0x484b4d), .frame_active = rgb(0x505355),
-  .button = rgb(0x484b4d), .button_hovered = rgb(0x535658), .button_active = rgb(0x3c3f41),
-  .header = rgb(0x2f65ca), .header_hovered = rgb(0x414e65), .header_active = rgb(0x2f65ca),
-  .accent = rgb(0x2f65ca),
-  .border = rgb(0x282828), .separator = rgb(0x353535), .scrollbar_grab = rgb(0x484b4d),
-  .slider_track = rgb(0x777777),
-  .tab = rgb(0x353535), .tab_hovered = rgb(0x484b4d), .table_header = rgb(0x484b4d),
-  .grid = rgb(0xbbbbbb, 50.0f / 255.0f), .badge = rgb(0x808080),
-  .bit_background = rgb(0xffffff, 20.0f / 255.0f),
-  .heatmap_signal_alpha = 70.0, .heatmap_bit_alpha = 28.0, .heatmap_gamma = 0.6,
+  .text = rgb(0xffffff), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xffffff),
+  .window = rgb(0x353535), .surface = rgb(0x2b2c2d),
+  .frame = rgb(0x2b2c2d), .frame_hovered = rgb(0x363738), .frame_active = rgb(0x434445),
+  .button = rgb(0x3f4041), .button_hovered = rgb(0x525354), .button_active = rgb(0x303132),
+  .header = rgb(0x2d74d2), .header_hovered = rgb(0x323944), .header_active = rgb(0x2d74d2),
+  .accent = rgb(0x2d74d2),
+  .border = rgb(0x606060), .separator = rgb(0x353535), .scrollbar_grab = rgb(0x4c4e4f),
+  .slider_track = rgb(0x7b7b7b),
+  .tab = rgb(0x2c2c2c), .tab_hovered = rgb(0x444647), .tab_selected = rgb(0x393a3b), .table_header = rgb(0x3f4041),
+  .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x808080),
   .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
@@ -36,10 +34,8 @@ constexpr Palette LIGHT_PALETTE = {
   .accent = rgb(0x308cc6),
   .border = rgb(0xb6b6b6), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0xb6b6b6),
   .slider_track = rgb(0xd0d0d0),
-  .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .table_header = rgb(0xefefef),
+  .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .tab_selected = rgb(0xffffff), .table_header = rgb(0xefefef),
   .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
-  .bit_background = rgb(0xffffff, 0.0f),
-  .heatmap_signal_alpha = 25.0, .heatmap_bit_alpha = 10.0, .heatmap_gamma = 1.0,
   .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 
@@ -142,7 +138,7 @@ void applyTheme(int theme) {
   c[ImGuiCol_TextSelectedBg] = alpha(p.accent, 0.35f);
   c[ImGuiCol_Tab] = c[ImGuiCol_TabDimmed] = p.tab;
   c[ImGuiCol_TabHovered] = p.tab_hovered;
-  c[ImGuiCol_TabSelected] = c[ImGuiCol_TabDimmedSelected] = p.surface;
+  c[ImGuiCol_TabSelected] = c[ImGuiCol_TabDimmedSelected] = p.tab_selected;
   c[ImGuiCol_TabDimmedSelectedOverline] = none;
   c[ImGuiCol_TableHeaderBg] = p.table_header;
   c[ImGuiCol_TableRowBgAlt] = none;

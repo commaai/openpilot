@@ -1,8 +1,7 @@
-import mmap
-import pickle
-import struct
+import sys
 from pathlib import Path
 
+from openpilot.common.hardware import AGNOS
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
@@ -12,19 +11,12 @@ def modeld_pkl_path(chestnut: bool):
   prefix = 'big_' if chestnut else ''
   return MODELS_DIR / f'{prefix}driving_tinygrad.pkl'
 
-def load_oob(f):
-  data = memoryview(mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_COPY))
-  opcode_size = struct.unpack_from('<q', data)[0]
-  def buffers():
-    offset = 8 + opcode_size
-    while offset < len(data):
-      size = struct.unpack_from('<q', data, offset)[0]
-      offset += 8
-      if offset + size > len(data):
-        raise EOFError("incomplete model buffer")
-      yield pickle.PickleBuffer(data[offset:offset + size])
-      offset += size
-  return pickle.loads(data[8:8 + opcode_size], buffers=buffers())
+def load_oob(path, chestnut=False):
+  from tinygrad import Context
+  device = 'USB+AMD:LLVM' if chestnut else 'QCOM' if AGNOS else 'METAL' if sys.platform == 'darwin' else 'CPU:LLVM'
+  with Context(DEV=device):
+    from tinygrad_repo.examples.openpilot.helpers import load_pickle
+    return load_pickle(path, out_of_band=True)
 
 def chestnut_present() -> bool:
   for d in USB_DEVICES_PATH.glob("*"):

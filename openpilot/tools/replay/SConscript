@@ -14,3 +14,5 @@ replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEW
 Export('replay_lib')
 replay_libs = [replay_lib] + ffmpeg_libs + ['ncurses'] + base_libs
 replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
+if GetOption('extras'):
+  replay_env.Program("tests/test_route", ["tests/test_route.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
