@@ -67,7 +67,7 @@
     "_comment": "Set extra field to lateral or longitudinal."
   },
   "Offroad_Pairing": {
-    "text": "Finish setup. Pair your device with comma connect to view your drives.",
+    "text": "Finish setup. Pair your device with comma connect to view recent drives and bookmarked routes.",
     "severity": -2,
     "icon": "icons_mici/settings/device/green_settings.png"
   }
