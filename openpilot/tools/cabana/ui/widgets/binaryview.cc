@@ -21,9 +21,9 @@ const float SMALL_FONT_SIZE = 10.0f;  // Inter needs 10 px for a 7 px cap height
 const int VERTICAL_HEADER_WIDTH = 30;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
 
-inline ImU32 paletteHighlight() { return ImGui::GetColorU32(palette().heatmap_highlight); }
-inline ImU32 paletteBase() { return ImGui::GetColorU32(palette().heatmap_base); }
-inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? palette().heatmap_text : palette().heatmap_text_disabled); }
+inline ImU32 paletteHighlight() { return ImGui::GetColorU32(ImGuiCol_Header); }
+inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
+inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
 const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);
 
 // JetBrains Mono ships no bold variant, so emulate one by drawing the glyphs again a fraction of a
