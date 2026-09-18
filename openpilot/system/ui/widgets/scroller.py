@@ -365,11 +365,13 @@ class _Scroller(Widget):
 
     # Draw scroll indicator on top of edge shadows
     if self._show_scroll_indicator and len(self._visible_items) > 0:
-      start_after = self.scroll_indicator_start_after
       viewport = self._rect
-      if start_after is not None and rl.check_collision_recs(start_after.rect, self._rect):
-        offset = min(viewport.width, max(0.0, start_after.rect.x + start_after.rect.width + self._spacing - viewport.x))
-        viewport = rl.Rectangle(viewport.x + offset, viewport.y, viewport.width - offset, viewport.height)
+      if self.scroll_indicator_start_after is not None:
+        offset = min(self._rect.width, max(0.0, self.scroll_indicator_start_after.rect.x
+                                           + self.scroll_indicator_start_after.rect.width
+                                           + self._spacing - self._rect.x))
+        viewport = rl.Rectangle(self._rect.x + offset, self._rect.y, self._rect.width - offset, self._rect.height)
+
       self._scroll_indicator.update(self._scroll_offset, self._content_size, viewport)
       self._scroll_indicator.render()
 
