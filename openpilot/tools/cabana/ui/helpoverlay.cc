@@ -181,7 +181,10 @@ void HelpOverlay::draw() {
       float x = min.x + 8.0f;
       for (const auto &r : line) {
         const float w = run_width(r);
-        const ImU32 color = r.color ? r.color : ImGui::GetColorU32(ImGuiCol_Text);
+        const auto background = fromImVec4(r.chip ? palette().button : palette().surface);
+        const auto source = r.color ? fromImVec4(ImGui::ColorConvertU32ToFloat4(r.color)) : fromImVec4(palette().text);
+        const ImU32 color = toImU32(cabana::contrast::foreground(source, background,
+                                                              r.swatch ? cabana::contrast::GRAPHIC : cabana::contrast::TEXT));
         if (r.swatch) {
           dl->AddRectFilled(ImVec2(x + 2, y + 3), ImVec2(x + font_size - 2, y + font_size - 1), color);
         } else {

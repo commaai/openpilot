@@ -12,6 +12,7 @@
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
 #include "tools/cabana/core/heatmap.h"
+#include "tools/cabana/core/heatmapcolors.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
 #include "tools/cabana/ui/qtstate.h"
@@ -436,7 +437,62 @@ void test_heatmap_counts() {
   REQUIRE(HeatmapCounts(0).bits.empty());
 }
 
+void test_heatmap_contrast() {
+  using namespace cabana::heatmap;
+  const CabanaColor black{0, 0, 0}, white{255, 255, 255};
+  auto contrast = [](const CabanaColor &a, const CabanaColor &b) {
+    const double l = luminance(a), r = luminance(b);
+    return (std::max(l, r) + 0.05) / (std::min(l, r) + 0.05);
+  };
+  REQUIRE(contrast(black, white) == 21.0);
+  REQUIRE(std::abs(luminance({255, 0, 0}) - 0.2126) < 1e-9);
+
+  // Cover generated hues, the palette's saturation/value extremes, every activity
+  // level, and both gradient endpoints. Stale data uses the same foreground.
+  for (bool dark : {false, true}) {
+    const CabanaColor base = dark ? CabanaColor(43, 44, 45) : white;
+    const CabanaColor text = dark ? white : black;
+    for (int bit = 0; bit < 64; ++bit) {
+      for (float saturation : {0.25f, 0.5f}) {
+        for (float value : {0.75f, 1.0f}) {
+          auto color = CabanaColor::fromHsv(std::fmod(19.0f * bit / 64.0f, 1.0f), saturation, value);
+          const auto edge = outlineColor(color, dark, false);
+          const auto highlight = highlightFill(color);
+          REQUIRE(contrast(white, highlight) >= 4.5);
+          REQUIRE(contrast(edge, highlight) >= 3.0);
+          REQUIRE(contrast(edge, base) >= 3.0);
+          for (int activity = 0; activity < 256; ++activity) {
+            color.a = activity;
+            auto fill = bitFill(color, base, dark, true);
+            REQUIRE(contrast(text, fill) >= 4.5);
+            REQUIRE(contrast(edge, fill) >= 3.0);
+            color.a = static_cast<uint8_t>(activity * (dark ? 0.72f : 0.90f));
+            REQUIRE(contrast(text, bitFill(color, base, dark, true)) >= 4.5);
+          }
+          // Adjacent signals can have unrelated colors or be selected. Test the
+          // worst allowed luminance endpoints, not just this signal's own fill.
+          const auto darkest_light = highlightFill(black);
+          const auto brightest_dark = textBackground(white, true);
+          REQUIRE(contrast(edge, dark ? brightest_dark : darkest_light) >= 3.0);
+        }
+      }
+    }
+    for (int hue = 0; hue < 360; ++hue) {
+      for (int activity = 0; activity < 256; ++activity) {
+        auto color = CabanaColor::fromHsv(hue / 360.0f, 0.5f, 0.8f, activity / 255.0f);
+        REQUIRE(contrast(text, byteFill(color, base, dark)) >= 5.0);
+        REQUIRE(contrast(text, bitFill(color, base, dark, false)) >= 4.5);
+      }
+    }
+    REQUIRE(contrast(text, textBackground({128, 128, 128}, dark)) >= 4.5);
+  }
+  for (const auto &color : {black, white, CabanaColor(48, 140, 198), CabanaColor(255, 255, 191)}) {
+    REQUIRE(contrast(white, highlightFill(color)) >= 4.5);  // new and resized selections
+  }
+}
+
 void test_cabana_core() {
+  test_heatmap_contrast();
   test_heatmap_counts();
   test_pixel_envelope();
   test_format_seconds();

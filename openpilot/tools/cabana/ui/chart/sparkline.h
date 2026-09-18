@@ -26,7 +26,7 @@ private:
 
   std::vector<Point> points_;
   std::vector<ImVec2> render_points_;
-  ImU32 color_ = 0;
+  CabanaColor color_;
   double window_end_ = 0;  // the time the polyline was built for, so draw() can scroll it on from there
   double xscale_ = 0;
   bool draw_individual_points_ = false;

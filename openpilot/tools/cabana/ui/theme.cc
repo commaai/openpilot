@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "implot.h"
+#include "tools/cabana/core/heatmapcolors.h"
 #include "tools/cabana/core/settings.h"
 
 namespace fs = std::filesystem;
@@ -12,30 +13,30 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xffffff), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xffffff),
+  .text = rgb(0xffffff), .text_disabled = rgb(0xcccccc), .text_selected = rgb(0xffffff),
   .window = rgb(0x353535), .surface = rgb(0x2b2c2d),
   .frame = rgb(0x2b2c2d), .frame_hovered = rgb(0x363738), .frame_active = rgb(0x434445),
   .button = rgb(0x3f4041), .button_hovered = rgb(0x525354), .button_active = rgb(0x303132),
-  .header = rgb(0x2d74d2), .header_hovered = rgb(0x323944), .header_active = rgb(0x2d74d2),
-  .accent = rgb(0x2d74d2),
-  .border = rgb(0x606060), .separator = rgb(0x353535), .scrollbar_grab = rgb(0x4c4e4f),
-  .slider_track = rgb(0x7b7b7b),
+  .header = rgb(0x2d74d2), .header_hovered = rgb(0x323944), .header_active = rgb(0x434445),
+  .accent = rgb(0x90bfff),
+  .border = rgb(0xaaaaaa), .separator = rgb(0x353535), .scrollbar_grab = rgb(0xaaaaaa),
+  .slider_track = rgb(0xaaaaaa),
   .tab = rgb(0x2c2c2c), .tab_hovered = rgb(0x444647), .tab_selected = rgb(0x393a3b), .table_header = rgb(0x3f4041),
-  .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x808080),
+  .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x626262),
   .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
 constexpr Palette LIGHT_PALETTE = {
-  .text = rgb(0x000000), .text_disabled = rgb(0xbebebe), .text_selected = rgb(0xffffff),
+  .text = rgb(0x000000), .text_disabled = rgb(0x595959), .text_selected = rgb(0xffffff),
   .window = rgb(0xefefef), .surface = rgb(0xffffff),
   .frame = rgb(0xffffff), .frame_hovered = rgb(0xf5f9fc), .frame_active = rgb(0xe7f3fb),
   .button = rgb(0xefefef), .button_hovered = rgb(0xe7f3fb), .button_active = rgb(0xd4e7f4),
-  .header = rgb(0x308cc6), .header_hovered = rgb(0xe7f3fb), .header_active = rgb(0x308cc6),
-  .accent = rgb(0x308cc6),
-  .border = rgb(0xb6b6b6), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0xb6b6b6),
-  .slider_track = rgb(0xd0d0d0),
+  .header = rgb(0x226a99), .header_hovered = rgb(0xe7f3fb), .header_active = rgb(0xd4e7f4),
+  .accent = rgb(0x226a99),
+  .border = rgb(0x747474), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0x747474),
+  .slider_track = rgb(0x747474),
   .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .tab_selected = rgb(0xffffff), .table_header = rgb(0xefefef),
-  .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
+  .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0x626262),
   .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 
@@ -123,7 +124,8 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgHovered] = p.frame_hovered;
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
-  c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
+  c[ImGuiCol_ButtonHovered] = p.button_hovered;
+  c[ImGuiCol_SliderGrab] = p.accent;
   c[ImGuiCol_ScrollbarGrab] = p.scrollbar_grab;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;
@@ -157,10 +159,28 @@ void applyTheme(int theme) {
 
 const Palette &palette() { return *g_palette; }
 
+CabanaColor byteColor(const CabanaColor &color) {
+  return cabana::heatmap::byteFill(color, fromImVec4(palette().surface), palette().text.x > 0.5f);
+}
+
+CabanaColor signalFill(const CabanaColor &color, bool defined) {
+  return cabana::heatmap::bitFill(color, fromImVec4(palette().surface), palette().text.x > 0.5f, defined);
+}
+
+CabanaColor signalHighlight(const CabanaColor &color) { return cabana::heatmap::highlightFill(color); }
+
+CabanaColor signalOutline(const CabanaColor &color, bool hovered) {
+  return cabana::heatmap::outlineColor(color, palette().text.x > 0.5f, hovered);
+}
+
+CabanaColor graphicColor(const CabanaColor &color, const ImVec4 &background) {
+  return cabana::contrast::foreground(color, fromImVec4(background), cabana::contrast::GRAPHIC);
+}
+
 CabanaColor sparklineColor(const CabanaColor &color) {
   const Palette &p = palette();
   auto [h, s, v] = color.hsv();
-  return CabanaColor::fromHsv(h, std::min(1.0f, s * p.sparkline_saturation), v * p.sparkline_value, color.a / 255.0f);
+  return graphicColor(CabanaColor::fromHsv(h, std::min(1.0f, s * p.sparkline_saturation), v * p.sparkline_value));
 }
 
 ImFont *boldFont() { return g_bold_font; }
