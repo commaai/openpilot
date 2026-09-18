@@ -11,6 +11,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.cereal import log
+from opendbc.car.structs import car
 
 EventName = log.OnroadEvent.EventName
 
@@ -123,8 +124,10 @@ class HudRenderer(Widget):
 
     self._txt_lead_car = gui_app.texture('icons_mici/longitudinal/car.png', 34, 27, keep_aspect_ratio=False)
     self._txt_lead_car_green = gui_app.texture('icons_mici/longitudinal/car_green.png', 62, 55, keep_aspect_ratio=False)
+    self._txt_lead_car_orange = gui_app.texture('icons_mici/longitudinal/car_orange.png', 62, 55, keep_aspect_ratio=False)
     self._lead_car_white_filter = FirstOrderFilter(0.35, 0.1, 1 / gui_app.target_fps)
     self._lead_car_green_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._lead_car_orange_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # White assets exclude the colored variants' glow padding.
     self._distance_icon_parts = [
@@ -140,6 +143,11 @@ class HudRenderer(Widget):
       for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
     ]
     self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._distance_orange_parts = [
+      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_orange.png', width, height, keep_aspect_ratio=False), x, y)
+      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
+    ]
+    self._braking_utilization_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._longitudinal_icon_opacity = 0.0
     self._longitudinal_icon_visible = False
     self._accel_override_alpha = 1.0
@@ -230,6 +238,17 @@ class HudRenderer(Widget):
       self._reset_distance_highlight()
       self._lead_car_white_filter.x = 0.35
       self._lead_car_green_filter.x = 0.0
+      self._lead_car_orange_filter.x = 0.0
+      self._braking_utilization_filter.x = 0.0
+
+  def _braking_orange_alpha(self) -> float:
+    sm = ui_state.sm
+    valid = all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
+                for s in ('controlsState', 'carControl'))
+    utilization = sm['controlsState'].brakingUtilization if valid and sm['carControl'].longActive else 0.0
+    utilization = max(0.0, min(1.0, utilization)) if math.isfinite(utilization) else 0.0
+    # Match TorqueBar: filter utilization, then blend from 75% to 100%.
+    return max(0.0, self._braking_utilization_filter.update(utilization) - 0.75) * 4.0
 
   def _acceleration_override_opacity(self) -> float:
     sm = ui_state.sm
@@ -288,32 +307,44 @@ class HudRenderer(Widget):
       lit_bars = 2
     maintaining_distance = self._at_following_distance(personality)
     green_alpha = self._distance_highlight_alpha(personality.raw, maintaining_distance, rl.get_time())
+    orange_alpha = self._braking_orange_alpha()
     for index, (texture, x, y) in enumerate(self._distance_icon_parts):
       highlighted = index == lit_bars - 1
       alpha = 1.0 - green_alpha if highlighted else (1.0 if index < lit_bars else 0.35)
       if index < lit_bars:
-        alpha *= self._accel_override_alpha
+        alpha *= self._accel_override_alpha * (1.0 - orange_alpha)
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
       if highlighted and green_alpha > 0:
         green, gx, gy = self._distance_green_parts[index]
         rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * green_alpha * self._longitudinal_icon_opacity * self._accel_override_alpha)))
+                           rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
+                                                        self._longitudinal_icon_opacity * self._accel_override_alpha)))
+      if index < lit_bars and orange_alpha > 0:
+        orange, ox, oy = self._distance_orange_parts[index]
+        rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy), 0.0, 1.0,
+                           rl.Color(255, 255, 255, round(255 * orange_alpha * self._longitudinal_icon_opacity * self._accel_override_alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
     plan = sm['longitudinalPlan']
     has_lead = (sm.valid['longitudinalPlan'] and sm.alive['longitudinalPlan'] and
                 sm.recv_frame['longitudinalPlan'] >= ui_state.started_frame and plan.hasLead)
-    green = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
-    white_alpha = self._lead_car_white_filter.update(0.0 if green else (1.0 if has_lead else 0.35))
+    fcw = (sm.valid['selfdriveState'] and sm.alive['selfdriveState'] and
+           sm.recv_frame['selfdriveState'] >= ui_state.started_frame and
+           sm['selfdriveState'].alertHudVisual == car.CarControl.HUDControl.VisualAlert.fcw)
+    green = not fcw and has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
+    white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (1.0 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
+    orange_alpha = self._lead_car_orange_filter.update(float(fcw))
     override_alpha = self._accel_override_alpha if has_lead else 1.0
     # Match the distance bar crossfade; the green asset has 14 px of glow padding.
     for texture, x, y, alpha in ((self._txt_lead_car, 25, 86, white_alpha),
                                  (self._txt_lead_car_green, 11, 72, green_alpha)):
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
+    rl.draw_texture_ex(self._txt_lead_car_orange, rl.Vector2(rect.x + 11, rect.y + 72), 0.0, 1.0,
+                       rl.Color(255, 255, 255, round(255 * orange_alpha * self._longitudinal_icon_opacity * override_alpha)))
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:

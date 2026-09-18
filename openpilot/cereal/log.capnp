@@ -867,6 +867,8 @@ struct SelfdriveState {
 }
 
 struct ControlsState @0x97ff69c53601abf1 {
+  # Fraction of the configured longitudinal controller braking command limit, not physical brake capacity.
+  brakingUtilization @67 :Float32;
   longitudinalPlanMonoTime @28 :UInt64;
   lateralPlanMonoTime @50 :UInt64;
 

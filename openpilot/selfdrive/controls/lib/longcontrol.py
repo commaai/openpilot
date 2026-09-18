@@ -42,6 +42,7 @@ class LongControl:
     self.pid = PIDController(0.0, (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              rate=1 / DT_CTRL)
     self.last_output_accel = 0.0
+    self.braking_utilization = 0.0
 
   def reset(self):
     self.pid.reset()
@@ -71,4 +72,5 @@ class LongControl:
                                      feedforward=a_target)
 
     self.last_output_accel = np.clip(output_accel, accel_limits[0], accel_limits[1])
+    self.braking_utilization = float(np.clip(self.last_output_accel / accel_limits[0], 0.0, 1.0)) if active and accel_limits[0] < 0 else 0.0
     return self.last_output_accel
