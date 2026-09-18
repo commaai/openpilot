@@ -909,35 +909,36 @@ void SignalView::drawIndexWidget(SignalModel::Item *item, const ImRect &rect) {
   ImGui::SetCursorScreenPos(ImVec2(rect.Max.x - H_MARGIN - button * 2 - spacing,
                                  rect.Min.y + (rect.GetHeight() - button) * 0.5f));
 
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   const auto sig = item->sig;
   const bool checked = item->chart_opened;
   const bool selected = current_sig_ == sig && current_type_ == SignalModel::Item::Sig;
-  auto row_button = [selected](const char *id, const char *glyph) {
-    if (selected) {
-      ImGui::PushStyleColor(ImGuiCol_Text, palette().text_selected);
-      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, palette().header_active);
-      ImGui::PushStyleColor(ImGuiCol_ButtonActive, palette().header_active);
-    }
+  auto row_button = [selected, button](const char *id, const char *glyph, bool plotted = false) {
+    const auto &p = palette();
+    const ImVec2 button_min = ImGui::GetCursorScreenPos();
+    const bool hovered = ImGui::IsWindowHovered() &&
+                         ImGui::IsMouseHoveringRect(button_min, ImVec2(button_min.x + button, button_min.y + button));
+    // Both actions use neutral hover fills, including on selected rows. The plot keeps its outline.
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, plotted ? 1.0f : 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_Button, plotted ? p.button : ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, settings.theme == LIGHT_THEME ? ImLerp(p.button, p.text, 0.12f) : p.button_hovered);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, settings.theme == LIGHT_THEME ? ImLerp(p.button, p.text, 0.20f) : p.button_active);
+    ImGui::PushStyleColor(ImGuiCol_Border, ImLerp(p.button, p.text, 0.45f));
+    ImGui::PushStyleColor(ImGuiCol_Text, selected && !plotted && !hovered ? p.text_selected : p.text);
     const bool clicked = iconButton(id, glyph);
-    if (selected) ImGui::PopStyleColor(3);
+    ImGui::PopStyleColor(5);
+    ImGui::PopStyleVar();
     return clicked;
   };
-  if (checked) ImGui::PushStyleColor(ImGuiCol_Button, selected ? palette().header_active : ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-  if (row_button("plot", icon::GRAPH_UP) && !editor_open_on_press_) {
+  if (row_button("plot", icon::GRAPH_UP, checked) && !editor_open_on_press_) {
     item->chart_opened = !checked;
     showChart(model_.msgId(), sig, item->chart_opened, ImGui::GetIO().KeyShift);
   }
-  if (checked) ImGui::PopStyleColor();
   ImGui::SetItemTooltip("%s", checked ? "Close Plot" : "Show Plot\nShift-click to add to the previously opened plot");
   ImGui::SameLine(0.0f, spacing);
   if (row_button("remove", icon::X_LG) && !editor_open_on_press_) {
     pending_action_ = [this, sig]() { UndoStack::instance()->push(new RemoveSigCommand(model_.msgId(), sig)); };
   }
   ImGui::SetItemTooltip("Remove signal");
-  ImGui::PopStyleColor();
-  ImGui::PopStyleVar();
 }
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions) {
