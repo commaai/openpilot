@@ -57,7 +57,7 @@ class SettingsLayout(NavScroller):
 
   def show_pairing(self):
     gui_app.push_widget(self)
-    # Keep Settings in the back stack without showing its entrance animation.
+    # add settings in the back stack without showing its entrance animation.
     self._y_pos_filter.x = 0.0
     self.set_visible(lambda: self.enabled or self._device_panel.is_dismissing)
     self.set_shown_callback(self._scroll_to_device)

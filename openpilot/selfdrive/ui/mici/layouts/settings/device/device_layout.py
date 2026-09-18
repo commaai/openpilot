@@ -204,20 +204,8 @@ class DeviceLayoutMici(NavScroller):
       self._power_off_btn,
     ])
 
-  def show_event(self):
-    super().show_event()
-    if not ui_state.prime_state.is_paired():
-      self.set_shown_callback(self._pairing_button.trigger_grow_animation)
-
-  def scroll_to_pairing(self, smooth: bool = True):
-    self._scroller._layout()
-    offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-    self._scroller.scroll_to(offset, smooth=smooth, block_interrupt=smooth, block_widget_interaction=smooth)
-    self._pending_pairing_grow_animation = smooth
-
   def _update_state(self):
     super()._update_state()
-
     if self._pending_pairing_grow_animation:
       btn_right = self._pairing_button.rect.x + self._pairing_button.rect.width
       visible_right = self._rect.x + self._rect.width
@@ -225,10 +213,21 @@ class DeviceLayoutMici(NavScroller):
         self._pending_pairing_grow_animation = False
         self._pairing_button.trigger_grow_animation()
 
+  def show_event(self):
+    super().show_event()
+    if not ui_state.prime_state.is_paired():
+      self.set_shown_callback(self._pairing_button.trigger_grow_animation)
+
   def hide_event(self):
     super().hide_event()
     self.set_shown_callback(None)
     self._pending_pairing_grow_animation = False
+
+  def scroll_to_pairing(self, smooth: bool = True):
+    self._scroller._layout()
+    offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+    self._scroller.scroll_to(offset, smooth=smooth, block_interrupt=smooth, block_widget_interaction=smooth)
+    self._pending_pairing_grow_animation = smooth
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
