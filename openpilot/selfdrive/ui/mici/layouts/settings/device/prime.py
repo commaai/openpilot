@@ -38,7 +38,7 @@ class PairingInfoLayout(Widget):
   def _render(self, _):
     show_commacare = ui_state.prime_state.has_commacare()
     provider_icon = self._provider_icons.get(ui_state.prime_state.get_pairing_provider())
-    for label, y_offset in zip(self._labels, (-10, 68 - 27, 114 - 30, 161 - 25), strict=True):
+    for label, y_offset in zip(self._labels, (-10, 68 - 25, 114 - 30, 161 - 25), strict=True):
       badge_offset = 0
       # provider icon offset
       if label is self._labels[1]:
