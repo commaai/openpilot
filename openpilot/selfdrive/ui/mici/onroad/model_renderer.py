@@ -1,10 +1,11 @@
 import colorsys
 import numpy as np
 import pyray as rl
-from openpilot.cereal import messaging
+from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
+from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
@@ -16,6 +17,13 @@ from openpilot.system.ui.widgets import Widget
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
+
+# Road-plane footprint in meters; shared by both lead markers.
+LEAD_BAR_WIDTH = 1.8
+LEAD_BAR_DEPTH = 6.0
+LEAD_BAR_REAR_GAP = 0.2
+LEAD_BAR_MIN_HEIGHT = 7.0
+LEAD_BAR_MAX_HEIGHT = 14.0
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -44,9 +52,27 @@ class ModelPoints:
 
 @dataclass
 class LeadVehicle:
-  glow: list[tuple[float, float]] = field(default_factory=list)
-  chevron: list[tuple[float, float]] = field(default_factory=list)
-  fill_alpha: int = 0
+  points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
+  distance: float = 0.0
+  opacity: float = 0.9
+
+
+@dataclass
+class VisionLeadPosition:
+  present: bool = False
+  dRel: float = 0.0
+  yRel: float = 0.0
+  radar: bool = False
+  radarTrackId: int = -1
+
+
+@dataclass
+class LeadBarSmoothing:
+  identity: tuple
+  distance: float
+  lateral: float
+  lateral_filter: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False))
+  heading_filter: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False))
 
 
 class ModelRenderer(Widget):
@@ -59,6 +85,7 @@ class ModelRenderer(Widget):
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
+    self._lead_bar_smoothing = [None, None]
     self._path_offset_z = HEIGHT_INIT[0]
 
     # Initialize ModelPoints objects
@@ -102,6 +129,7 @@ class ModelRenderer(Widget):
     # Check if data is up-to-date
     if (sm.recv_frame["extrinsicsCalibration"] < ui_state.started_frame or
         sm.recv_frame["modelV2"] < ui_state.started_frame):
+      self._lead_bar_smoothing = [None, None]
       return
 
     # Set up clipping region
@@ -119,9 +147,15 @@ class ModelRenderer(Widget):
       self._longitudinal_control = sm['carParams'].openpilotLongitudinalControl
 
     model = sm['modelV2']
-    radar_state = sm['radarState'] if sm.valid['radarState'] else None
+    radar_fresh = sm.valid['radarState'] and sm.alive['radarState'] and sm.recv_frame['radarState'] >= ui_state.started_frame
+    radar_state = sm['radarState'] if radar_fresh else None
     lead_one = radar_state.leadOne if radar_state else None
-    render_lead_indicator = self._longitudinal_control and radar_state is not None
+    use_vision = self._use_vision_leads(sm)
+    render_lead_indicator = (self._longitudinal_control and (use_vision or radar_state is not None) and
+                             sm.valid['modelV2'] and sm.alive['modelV2'])
+    if not render_lead_indicator:
+      self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
+      self._lead_bar_smoothing = [None, None]
 
     # Update model data when needed
     model_updated = sm.updated['modelV2']
@@ -131,20 +165,24 @@ class ModelRenderer(Widget):
 
       path_x_array = self._path.raw_points[:, 0]
       if path_x_array.size == 0:
+        self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
+        self._lead_bar_smoothing = [None, None]
         return
 
       self._update_model(lead_one, path_x_array)
-      if render_lead_indicator:
-        self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
+
+    # Advance visual filters at the UI frame rate, including between model updates.
+    if render_lead_indicator:
+      self._update_leads(radar_state, self._path.raw_points[:, 0], model.leadsV3 if use_vision else None)
 
     # Draw elements (hide when disengaged)
     if ui_state.status != UIStatus.DISENGAGED:
       self._draw_lane_lines()
       self._draw_path(sm)
 
-    # if render_lead_indicator and radar_state:
-    #   self._draw_lead_indicator()
+      if render_lead_indicator:
+        self._draw_lead_indicator()
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
@@ -160,21 +198,126 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.array(model.roadEdgeStds, dtype=np.float32)
     self._acceleration_x = np.array(model.acceleration.x, dtype=np.float32)
 
-  def _update_leads(self, radar_state, path_x_array):
-    """Update positions of lead vehicles"""
+  @staticmethod
+  def _use_vision_leads(sm):
+    # Match the car icon's green target, before its visual color crossfade.
+    plan = sm['longitudinalPlan']
+    has_lead = (sm.valid['longitudinalPlan'] and sm.alive['longitudinalPlan'] and
+                sm.recv_frame['longitudinalPlan'] >= ui_state.started_frame and plan.hasLead)
+    fcw = (sm.valid['selfdriveState'] and sm.alive['selfdriveState'] and
+           sm.recv_frame['selfdriveState'] >= ui_state.started_frame and
+           sm['selfdriveState'].alertHudVisual == car.CarControl.HUDControl.VisualAlert.fcw)
+    return not fcw and has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
+
+  def _update_leads(self, radar_state, path_x_array, vision_leads=None):
+    """Place road-plane bars immediately behind the detected vehicles."""
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
-    leads = [radar_state.leadOne, radar_state.leadTwo]
+    if vision_leads is None:
+      leads = (radar_state.leadOne, radar_state.leadTwo)
+    else:
+      leads = [VisionLeadPosition(), VisionLeadPosition()]
+      for i, vision in enumerate(vision_leads):
+        if i >= 2:
+          break
+        if vision.prob > 0.5 and len(vision.x) and len(vision.y):
+          # Use the same coordinate conversion as radard's vision-only lead.
+          leads[i] = VisionLeadPosition(True, vision.x[0] - RADAR_TO_CAMERA, -vision.y[0])
+    first = leads[0]
+    for i, lead in enumerate(leads):
+      if not lead.present:
+        self._lead_bar_smoothing[i] = None
+        continue
+      # Radar's two solutions can describe the same vehicle.
+      if i == 1 and first.present and abs(lead.dRel - first.dRel) < 3.0 and abs(lead.yRel - first.yRel) < 1.0:
+        self._lead_bar_smoothing[i] = None
+        continue
+      identity = (vision_leads is not None, lead.radar, lead.radarTrackId)
+      smoothing = self._lead_bar_smoothing[i]
+      # Vision has no persistent track ID. Large position discontinuities also
+      # reset the display rather than sweeping between unrelated vehicles.
+      if (smoothing is None or smoothing.identity != identity or
+          abs(lead.yRel - smoothing.lateral) > 3.0 or abs(lead.dRel - smoothing.distance) > 10.0):
+        smoothing = LeadBarSmoothing(identity, lead.dRel, lead.yRel)
+      smoothing.distance, smoothing.lateral = lead.dRel, lead.yRel
+      points = self._project_lead_bar(lead.dRel, lead.yRel, path_x_array, smoothing)
+      self._lead_bar_smoothing[i] = smoothing if points.size else None
+      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.9 if i == 0 else 0.65)
 
-    for i, lead_data in enumerate(leads):
-      if lead_data and lead_data.present:
-        d_rel, y_rel, v_rel = lead_data.dRel, lead_data.yRel, lead_data.vRel
-        idx = self._get_path_length_idx(path_x_array, d_rel)
+  def _project_lead_bar(self, distance, lateral, path_x_array, smoothing=None):
+    """Project all four corners using the path's road height and camera calibration."""
+    empty = np.empty((0, 2), dtype=np.float32)
+    if (len(path_x_array) == 0 or not np.isfinite(self._path.raw_points).all() or
+        not np.isfinite([distance, lateral]).all() or np.any(np.diff(path_x_array) < 0) or
+        distance <= LEAD_BAR_REAR_GAP + 0.1 or distance > MAX_DRAW_DISTANCE):
+      return empty
 
-        # Get z-coordinate from path at the lead vehicle position
-        z = self._path.raw_points[idx, 2] if idx < len(self._path.raw_points) else 0.0
-        point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
-        if point:
-          self._lead_vehicles[i] = self._update_lead_vehicle(d_rel, v_rel, point, self._rect)
+    # Stopped model trajectories can repeat x positions or end before the lead.
+    # Reuse the last road height beyond the trajectory, as the existing lead projection did.
+    path_x_array, indices = np.unique(path_x_array, return_index=True)
+    path = self._path.raw_points[indices]
+
+    # Follow the local road direction, but center on the radar lead rather than the path.
+    sample_x = np.clip([distance - 1.0, distance + 1.0], path_x_array[0], path_x_array[-1])
+    sample_y = np.interp(sample_x, path_x_array, path[:, 1])
+    heading = np.arctan2(sample_y[1] - sample_y[0], sample_x[1] - sample_x[0])
+    if smoothing is not None:
+      lateral = smoothing.lateral_filter.update(lateral)
+      heading = smoothing.heading_filter.update(heading)
+    forward = np.array([np.cos(heading), np.sin(heading)])
+    sideways = np.array([-forward[1], forward[0]])
+    center = np.array([distance, -lateral])  # Radar lateral is left-positive; model lateral is right-positive.
+    # Change the footprint on the road, never the projected screen coordinates.
+    # Keep the near edge away from the camera even when a distant bar needs
+    # a longer footprint to remain readable.
+    max_depth = (distance - LEAD_BAR_REAR_GAP) * 0.9
+
+    def project_depth(depth):
+      corners = np.array([
+        center - forward * behind + sideways * side
+        for behind, side in ((LEAD_BAR_REAR_GAP, -LEAD_BAR_WIDTH / 2),
+                             (LEAD_BAR_REAR_GAP, LEAD_BAR_WIDTH / 2),
+                             (LEAD_BAR_REAR_GAP + depth, LEAD_BAR_WIDTH / 2),
+                             (LEAD_BAR_REAR_GAP + depth, -LEAD_BAR_WIDTH / 2))
+      ])
+      if np.any(corners[:, 0] < 0.1):
+        return empty
+      heights = np.interp(corners[:, 0], path_x_array, path[:, 2]) + self._path_offset_z
+      projected = self._car_space_transform @ np.column_stack((corners, heights)).T
+      if not np.isfinite(projected).all() or np.any(projected[2] <= 1e-3):
+        return empty
+      return (projected[:2] / projected[2]).T.astype(np.float32)
+
+    depth = min(LEAD_BAR_DEPTH, max_depth)
+    points = project_depth(depth)
+    if not points.size:
+      return empty
+    height = np.ptp(points[:, 1])
+    target = np.clip(height, LEAD_BAR_MIN_HEIGHT, LEAD_BAR_MAX_HEIGHT)
+    if height == target:
+      return points
+
+    low, high = (0.0, depth) if height > target else (depth, max_depth)
+    best_error = abs(height - target)
+    # Solve for road-space length with the far edge anchored beside the lead.
+    # If the road geometry makes the target unreachable, retain the closest
+    # valid projection rather than distorting the polygon to force a pixel size.
+    for _ in range(20):
+      depth = (low + high) / 2
+      candidate = project_depth(depth)
+      if not candidate.size:
+        high = depth
+        continue
+      height = np.ptp(candidate[:, 1])
+      error = abs(height - target)
+      if error < best_error:
+        points, best_error = candidate, error
+      if error < 1e-5:
+        break
+      if height < target:
+        low = depth
+      else:
+        high = depth
+    return points
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
@@ -259,30 +402,6 @@ class ModelRenderer(Widget):
     self._exp_gradient.colors = segment_colors
     self._exp_gradient.stops = gradient_stops
 
-  def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
-    speed_buff, lead_buff = 10.0, 40.0
-
-    # Calculate fill alpha
-    fill_alpha = 0
-    if d_rel < lead_buff:
-      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
-      if v_rel < 0:
-        fill_alpha += 255 * (-1 * (v_rel / speed_buff))
-      fill_alpha = min(fill_alpha, 255)
-
-    # Calculate size and position
-    sz = np.clip((25 * 30) / (d_rel / 3 + 30), 15.0, 30.0) * 1
-    x = np.clip(point[0], 0.0, rect.width - sz / 2)
-    y = min(point[1], rect.height - sz * 0.6)
-
-    g_xo = sz / 5
-    g_yo = sz / 10
-
-    glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
-    chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
-
-    return LeadVehicle(glow=glow, chevron=chevron, fill_alpha=int(fill_alpha))
-
   def _get_ll_color(self, prob: float, adjacent: bool, left: bool):
     alpha = np.clip(prob, 0.0, 0.7)
     if adjacent:
@@ -359,14 +478,51 @@ class ModelRenderer(Widget):
       else:
         draw_polygon(self._rect, path_pts, gradient=gradient)
 
-  def _draw_lead_indicator(self):
-    # Draw lead vehicles if available
-    for lead in self._lead_vehicles:
-      if not lead.glow or not lead.chevron:
+  def _draw_legacy_lead_indicators(self, radar_state):
+    """Original mici chevrons, enabled alongside the bars for comparison."""
+    path_x = self._path.raw_points[:, 0]
+    for lead in (radar_state.leadOne, radar_state.leadTwo):
+      if not lead.present:
         continue
+      idx = self._get_path_length_idx(path_x, lead.dRel)
+      z = self._path.raw_points[idx, 2]
+      point = self._map_to_screen(lead.dRel, -lead.yRel, z + self._path_offset_z)
+      if point is not None:
+        self._draw_legacy_lead(lead.dRel, lead.vRel, point, self._rect)
 
-      rl.draw_triangle_fan(lead.glow, len(lead.glow), rl.Color(218, 202, 37, 255))
-      rl.draw_triangle_fan(lead.chevron, len(lead.chevron), rl.Color(201, 34, 49, lead.fill_alpha))
+  def _draw_legacy_lead(self, d_rel, v_rel, point, rect):
+    speed_buff, lead_buff = 10.0, 40.0
+
+    # Calculate fill alpha
+    fill_alpha = 0
+    if d_rel < lead_buff:
+      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
+      if v_rel < 0:
+        fill_alpha += 255 * (-1 * (v_rel / speed_buff))
+      fill_alpha = min(fill_alpha, 255)
+
+    # Calculate size and position
+    sz = np.clip((25 * 30) / (d_rel / 3 + 30), 15.0, 30.0) * 1
+    x = np.clip(point[0], 0.0, rect.width - sz / 2)
+    y = min(point[1], rect.height - sz * 0.6)
+
+    g_xo = sz / 5
+    g_yo = sz / 10
+
+    glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
+    chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
+
+    glow = [(px + rect.x, py + rect.y) for px, py in glow]
+    chevron = [(px + rect.x, py + rect.y) for px, py in chevron]
+    rl.draw_triangle_fan(glow, len(glow), rl.Color(218, 202, 37, 255))
+    rl.draw_triangle_fan(chevron, len(chevron), rl.Color(201, 34, 49, int(fill_alpha)))
+
+  def _draw_lead_indicator(self):
+    offset = np.array([self._rect.x, self._rect.y], dtype=np.float32)
+    # Draw farther markers first; scissoring clips offscreen corners without pinning them to an edge.
+    for lead in sorted(self._lead_vehicles, key=lambda lead: lead.distance, reverse=True):
+      if lead.points.size:
+        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * lead.opacity)))
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:
