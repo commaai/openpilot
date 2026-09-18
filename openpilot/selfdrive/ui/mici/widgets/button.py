@@ -150,7 +150,6 @@ class BigButton(BaseButton):
     self.text = text
     self.value = value
     self._txt_icon = icon
-    self._value_icon: rl.Texture | None = None
     self._scroll = scroll
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
@@ -242,6 +241,9 @@ class BigButton(BaseButton):
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     return txt_bg, btn_x, btn_y, scale
 
+  def _draw_subtitle(self, rect: rl.Rectangle):
+    self._sub_label.render(rect)
+
   def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
     label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
@@ -256,13 +258,7 @@ class BigButton(BaseButton):
       label_y = label_rect.y + self._label.get_content_height(int(label_rect.width))
       sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
       sub_label_rect = rl.Rectangle(label_x, label_y, self._subtitle_width_hint(), sub_label_height)
-      if self._value_icon:
-        icon_pos = rl.Vector2(label_x, btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - self._value_icon.height)
-        rl.draw_texture_v(self._value_icon, icon_pos, rl.WHITE)
-        icon_offset = self._value_icon.width + 14
-        sub_label_rect.x += icon_offset
-        sub_label_rect.width -= icon_offset
-      self._sub_label.render(sub_label_rect)
+      self._draw_subtitle(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
     if self._txt_icon:

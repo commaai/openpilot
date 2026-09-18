@@ -99,6 +99,7 @@ class DeviceInfoLayoutMici(InfoLayoutMici):
 class PairBigButton(BigButton):
   def __init__(self):
     self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 27, 32)
+    self._show_commacare = False
     self._comma_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
     self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/paired_{provider}.png", 64, 64)
                            for provider in ("github", "google", "apple")}
@@ -107,8 +108,8 @@ class PairBigButton(BigButton):
   def _update_state(self):
     super()._update_state()
 
-    self._value_icon = (self._commacare_badge if ui_state.prime_state.is_paired() and ui_state.prime_state.is_prime()
-                       and ui_state.prime_state.has_commacare() else None)
+    self._show_commacare = (ui_state.prime_state.is_paired() and ui_state.prime_state.is_prime()
+                            and ui_state.prime_state.has_commacare())
     if ui_state.prime_state.is_paired():
       self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")
@@ -120,6 +121,14 @@ class PairBigButton(BigButton):
       self.set_icon(self._comma_icon)
       self.set_text("pair to connect")
       self.set_value("connect.comma.ai")
+
+  def _draw_subtitle(self, rect: rl.Rectangle):
+    if self._show_commacare:
+      y = rect.y + rect.height - self._commacare_badge.height
+      rl.draw_texture_v(self._commacare_badge, rl.Vector2(rect.x, y), rl.WHITE)
+      offset = self._commacare_badge.width + 14
+      rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
+    super()._draw_subtitle(rect)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
