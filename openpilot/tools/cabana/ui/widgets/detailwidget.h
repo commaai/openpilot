@@ -75,6 +75,7 @@ private:
   void showTabBarContextMenu(int index);
   void editMsg(float parent_width);
   void updateState(const std::set<MessageId> *msgs = nullptr);
+  void updateWarnings();
 
   MessageId msg_id_;
   const char *warning_icon_ = nullptr;
