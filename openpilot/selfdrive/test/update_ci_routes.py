@@ -51,7 +51,7 @@ def sync_to_ci_public(route: str) -> bool:
       f"{DEST.BASE_URL}{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
-      "--exclude-pattern=*/dcamera.hevc",
+      "--exclude-pattern=*/cabin.hevc",
     ]
 
     try:

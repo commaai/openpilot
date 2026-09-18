@@ -314,10 +314,10 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     camera_paths = route.qcamera_paths() if use_qcam else route.camera_paths()
     frame_queue = FrameQueue(camera_paths, start, end, fps=FRAMERATE, use_qcam=use_qcam)
 
-    ecamera_paths = route.ecamera_paths() if not use_qcam else []
+    wide_road_camera_paths = route.wide_road_camera_paths() if not use_qcam else []
     wide_frame_queue: FrameQueue | None = None
-    if any(p for p in ecamera_paths[seg_start:seg_end] if p):
-      wide_frame_queue = FrameQueue(ecamera_paths, start, end, fps=FRAMERATE)
+    if any(p for p in wide_road_camera_paths[seg_start:seg_end] if p):
+      wide_frame_queue = FrameQueue(wide_road_camera_paths, start, end, fps=FRAMERATE)
 
     vipc = VisionIpcServer("camerad")
     vipc.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 4, frame_queue.frame_w, frame_queue.frame_h)
