@@ -121,7 +121,7 @@ class PrimeScroller(NavScroller):
       ])
     else:
       self._qr = QR(self._get_pairing_url())
-      self._scroller._show_scroll_indicator = False
+      self._scroller.scroll_indicator_start_after = self._qr
       self._scroller.add_widgets([
         self._qr,
         GreyBigButton("finish setup", "scan QR code or visit connect.comma.ai",
