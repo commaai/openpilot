@@ -253,6 +253,7 @@ void BinaryView::updateSignals() {
     std::stable_sort(cell.sigs.begin(), cell.sigs.end(), [](auto l, auto r) { return l->size > r->size; });
   }
   if (under_mouse_) highlightPosition(last_mouse_pos_);
+  signalsChanged();
 }
 
 

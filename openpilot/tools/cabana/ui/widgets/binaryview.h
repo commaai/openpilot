@@ -40,6 +40,7 @@ public:
   std::string whatsThis() const;
 
   Observable<const cabana::Signal *> signalClicked;
+  Observable<> signalsChanged;
   Observable<const cabana::Signal *> signalHovered;
   Observable<const cabana::Signal *, cabana::Signal &> editSignal;
   Observable<const MessageId &, const cabana::Signal *, bool, bool> showChart;
