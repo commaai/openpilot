@@ -90,6 +90,11 @@ class PrimeManagementScroller(NavScroller):
       return f"https://connect.comma.ai/{dongle_id}/prime"
     return "https://connect.comma.ai"
 
+  def _update_state(self):
+    super()._update_state()
+    if not ui_state.prime_state.is_paired():
+      self.dismiss()
+
 
 class PrimeScroller(NavScroller):
   """Pairing flow or paired account information with access to prime management."""
@@ -152,7 +157,7 @@ class PrimeScroller(NavScroller):
 
   def _update_state(self):
     super()._update_state()
-    if not self.initial_is_paired and ui_state.prime_state.is_paired() and not self.is_dismissing:
+    if self.initial_is_paired != ui_state.prime_state.is_paired() and gui_app.get_active_widget() is self:
       self.dismiss()
 
 
