@@ -6,6 +6,7 @@ from opendbc.car.structs import car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.following_distance import STOP_DISTANCE
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
@@ -17,6 +18,7 @@ from openpilot.system.ui.widgets import Widget
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
+PATH_HALF_WIDTH = 0.9
 
 # Road-plane footprint in meters; shared by both lead markers.
 LEAD_BAR_WIDTH = 1.8
@@ -24,6 +26,10 @@ LEAD_BAR_DEPTH = 6.0
 LEAD_BAR_REAR_GAP = 0.2
 LEAD_BAR_MIN_HEIGHT = 7.0
 LEAD_BAR_MAX_HEIGHT = 14.0
+STOP_BAR_SPEED = 0.3
+STOP_BAR_HOLD = 1.0
+STOP_BAR_SEPARATION_ENTER = 3.0
+STOP_BAR_SEPARATION_EXIT = 2.0
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -86,6 +92,8 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._lead_bar_smoothing = [None, None]
+    self._stop_position_filter = None
+    self._stop_bar_points = np.empty((0, 2), dtype=np.float32)
     self._path_offset_z = HEIGHT_INIT[0]
 
     # Initialize ModelPoints objects
@@ -130,6 +138,7 @@ class ModelRenderer(Widget):
     if (sm.recv_frame["extrinsicsCalibration"] < ui_state.started_frame or
         sm.recv_frame["modelV2"] < ui_state.started_frame):
       self._lead_bar_smoothing = [None, None]
+      self._stop_position_filter = None
       return
 
     # Set up clipping region
@@ -167,6 +176,7 @@ class ModelRenderer(Widget):
       if path_x_array.size == 0:
         self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
         self._lead_bar_smoothing = [None, None]
+        self._stop_position_filter = None
         return
 
       self._update_model(lead_one, path_x_array)
@@ -176,6 +186,10 @@ class ModelRenderer(Widget):
     if render_lead_indicator:
       self._update_leads(radar_state, self._path.raw_points[:, 0], model.leadsV3 if use_vision else None)
 
+    stop_valid = (self._longitudinal_control and ui_state.status != UIStatus.DISENGAGED and
+                  sm.valid['modelV2'] and sm.alive['modelV2'] and (use_vision or radar_fresh))
+    self._update_stop_bar(model if stop_valid else None, radar_state, use_vision)
+
     # Draw elements (hide when disengaged)
     if ui_state.status != UIStatus.DISENGAGED:
       self._draw_lane_lines()
@@ -183,6 +197,9 @@ class ModelRenderer(Widget):
 
       if render_lead_indicator:
         self._draw_lead_indicator()
+      if self._stop_bar_points.size:
+        offset = np.array([rect.x, rect.y], dtype=np.float32)
+        draw_polygon(rect, self._stop_bar_points + offset, rl.Color(255, 255, 255, round(255 * 0.9)))
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
@@ -243,12 +260,117 @@ class ModelRenderer(Widget):
       self._lead_bar_smoothing[i] = smoothing if points.size else None
       self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.9 if i == 0 else 0.65)
 
-  def _project_lead_bar(self, distance, lateral, path_x_array, smoothing=None):
+  @staticmethod
+  def _model_draw_distance(path_x_array):
+    return float(np.clip(path_x_array[-1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE))
+
+  @staticmethod
+  def _predicted_stop(model):
+    """Find a sustained model stop and its time in the current ego frame."""
+    if model is None:
+      return None
+    times, speeds = np.asarray(model.velocity.t), np.asarray(model.velocity.x)
+    pt = np.asarray(model.position.t)
+    x, y = np.asarray(model.position.x), np.asarray(model.position.y)
+    if (len(times) < 2 or len(speeds) != len(times) or len(pt) < 2 or len(x) != len(pt) or len(y) != len(pt) or
+        not all(np.isfinite(a).all() for a in (times, speeds, pt, x, y)) or
+        np.any(np.diff(times) <= 0) or np.any(np.diff(pt) <= 0) or np.any(np.diff(x) < 0)):
+      return None
+    for i in np.flatnonzero(np.abs(speeds) < STOP_BAR_SPEED):
+      end = np.searchsorted(times, times[i] + STOP_BAR_HOLD)
+      if end >= len(times) or np.any(np.abs(speeds[i:end + 1]) >= STOP_BAR_SPEED):
+        continue
+      if not pt[0] <= times[i] <= pt[-1]:
+        continue
+      point = np.array([np.interp(times[i], pt, x), np.interp(times[i], pt, y)])
+      return (point, float(times[i])) if 0.3 < point[0] <= MAX_DRAW_DISTANCE else None
+    return None
+
+  @staticmethod
+  def _lead_following_stop_boundary(model, radar_state, use_vision, stop_time):
+    """Nearest predicted lead position at our stop time, minus standstill gap.
+
+    This is a display heuristic, not attribution of why the model is stopping.
+    Lead positions stay in the current ego frame; do not subtract ego travel.
+    """
+    positions = []
+    if use_vision:
+      for i, lead in enumerate(model.leadsV3):
+        if i >= 2:
+          break
+        if lead.prob <= 0.5:
+          continue
+        times, speeds = np.asarray(lead.t), np.asarray(lead.v)
+        if (len(times) < 2 or len(speeds) != len(times) or not len(lead.x) or
+            not np.isfinite(lead.x[0]) or not np.isfinite(times).all() or not np.isfinite(speeds).all() or
+            np.any(np.diff(times) <= 0) or times[0] != 0 or not 0 <= stop_time <= times[-1]):
+          return None
+        # Integrate absolute lead speed from its current position so the result
+        # is expressed in the same current-ego frame as the predicted ego stop.
+        samples = np.r_[times[times < stop_time], stop_time]
+        velocity = np.maximum(0.0, np.interp(samples, times, speeds))
+        travel = float(np.sum((velocity[:-1] + velocity[1:]) * np.diff(samples) / 2))
+        positions.append(lead.x[0] - RADAR_TO_CAMERA + travel)
+    elif radar_state is not None:
+      for lead in (radar_state.leadOne, radar_state.leadTwo):
+        if not lead.present:
+          continue
+        if not np.isfinite([lead.dRel, lead.vLead, lead.aLeadK, lead.aLeadTau]).all() or lead.dRel <= 0:
+          return None
+        # Match the MPC's decaying-acceleration assumption, without allowing
+        # a braking lead to reverse when extrapolating its future location.
+        times = np.linspace(0.0, stop_time, 101)
+        dt = np.diff(times)
+        accel = lead.aLeadK * np.exp(-max(0.0, lead.aLeadTau) * times ** 2 / 2)
+        velocity = np.maximum(0.0, max(0.0, lead.vLead) + np.r_[0.0, np.cumsum((accel[:-1] + accel[1:]) * dt / 2)])
+        positions.append(lead.dRel + float(np.sum((velocity[:-1] + velocity[1:]) * dt / 2)))
+    else:
+      return None
+    return min(positions) - STOP_DISTANCE if positions else np.inf
+
+  def _update_stop_bar(self, model, radar_state=None, use_vision=False):
+    self._stop_bar_points = np.empty((0, 2), dtype=np.float32)
+    stop = self._predicted_stop(model)
+    if stop is None:
+      self._stop_position_filter = None
+      return
+    point, stop_time = stop
+    boundary = self._lead_following_stop_boundary(model, radar_state, use_vision, stop_time)
+    separation = STOP_BAR_SEPARATION_EXIT if self._stop_position_filter is not None else STOP_BAR_SEPARATION_ENTER
+    if boundary is None or boundary - point[0] <= separation:
+      self._stop_position_filter = None
+      return
+    if self._stop_position_filter is None:
+      self._stop_position_filter = FirstOrderFilter(point, 0.1, 1 / gui_app.target_fps)
+    point = self._stop_position_filter.update(point)
+    self._stop_bar_points = self._project_lead_bar(
+      point[0], -point[1], self._path.raw_points[:, 0], rear_gap=0.0,
+      width=4 * PATH_HALF_WIDTH, lane_boundaries=self._stop_bar_boundaries(point[0]))
+
+  def _stop_bar_boundaries(self, distance):
+    """Use the inner lane lines, or the road edges rendered green in their place."""
+    boundaries = []
+    for side in range(2):
+      if self._lane_line_probs[side + 1] >= 0.25:
+        points = self._lane_lines[side + 1].raw_points
+      elif 1.0 - self._road_edge_stds[side] >= 0.25:
+        points = self._road_edges[side].raw_points
+      else:
+        return None
+      if (len(points) < 2 or not np.isfinite(points).all() or np.any(np.diff(points[:, 0]) <= 0) or
+          not points[0, 0] <= distance <= points[-1, 0]):
+        return None
+      boundaries.append(points)
+    left, right = [np.interp(distance, points[:, 0], points[:, 1]) for points in boundaries]
+    return boundaries if left < right else None
+
+  def _project_lead_bar(self, distance, lateral, path_x_array, smoothing=None, rear_gap=LEAD_BAR_REAR_GAP,
+                        width=LEAD_BAR_WIDTH, lane_boundaries=None):
     """Project all four corners using the path's road height and camera calibration."""
     empty = np.empty((0, 2), dtype=np.float32)
     if (len(path_x_array) == 0 or not np.isfinite(self._path.raw_points).all() or
         not np.isfinite([distance, lateral]).all() or np.any(np.diff(path_x_array) < 0) or
-        distance <= LEAD_BAR_REAR_GAP + 0.1 or distance > MAX_DRAW_DISTANCE):
+        distance <= rear_gap + 0.1 or distance > MAX_DRAW_DISTANCE):
       return empty
 
     # Stopped model trajectories can repeat x positions or end before the lead.
@@ -269,19 +391,29 @@ class ModelRenderer(Widget):
     # Change the footprint on the road, never the projected screen coordinates.
     # Keep the near edge away from the camera even when a distant bar needs
     # a longer footprint to remain readable.
-    max_depth = (distance - LEAD_BAR_REAR_GAP) * 0.9
+    max_depth = (distance - rear_gap) * 0.9
 
     def project_depth(depth):
       corners = np.array([
         center - forward * behind + sideways * side
-        for behind, side in ((LEAD_BAR_REAR_GAP, -LEAD_BAR_WIDTH / 2),
-                             (LEAD_BAR_REAR_GAP, LEAD_BAR_WIDTH / 2),
-                             (LEAD_BAR_REAR_GAP + depth, LEAD_BAR_WIDTH / 2),
-                             (LEAD_BAR_REAR_GAP + depth, -LEAD_BAR_WIDTH / 2))
+        for behind, side in ((rear_gap, -width / 2),
+                             (rear_gap, width / 2),
+                             (rear_gap + depth, width / 2),
+                             (rear_gap + depth, -width / 2))
       ])
       if np.any(corners[:, 0] < 0.1):
         return empty
       heights = np.interp(corners[:, 0], path_x_array, path[:, 2]) + self._path_offset_z
+      if lane_boundaries is not None:
+        # Sample both ends on the actual drawn boundaries, including their
+        # road heights, so the bar spans the lane through the camera projection.
+        sides = (lane_boundaries[0], lane_boundaries[1], lane_boundaries[1], lane_boundaries[0])
+        if all(edge[0, 0] <= corner[0] <= edge[-1, 0] for corner, edge in zip(corners, sides, strict=True)):
+          for i, edge in enumerate(sides):
+            corners[i, 1] = np.interp(corners[i, 0], edge[:, 0], edge[:, 1])
+            heights[i] = np.interp(corners[i, 0], edge[:, 0], edge[:, 2])
+          if corners[0, 1] >= corners[1, 1] or corners[3, 1] >= corners[2, 1]:
+            return empty
       projected = self._car_space_transform @ np.column_stack((corners, heights)).T
       if not np.isfinite(projected).all() or np.any(projected[2] <= 1e-3):
         return empty
@@ -321,7 +453,7 @@ class ModelRenderer(Widget):
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
-    max_distance = np.clip(path_x_array[-1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE)
+    max_distance = self._model_draw_distance(path_x_array)
     max_idx = self._get_path_length_idx(self._lane_lines[0].raw_points[:, 0], max_distance)
 
     # Update lane lines using raw points
@@ -351,7 +483,7 @@ class ModelRenderer(Widget):
       high_pass_acceleration = self._acceleration_x_filter.x - self._acceleration_x_filter2.x
       y_off = np.interp(high_pass_acceleration, [-1, 0, 1], [0.9 * 2, 0.9, 0.9 / 2])
     else:
-      y_off = 0.9
+      y_off = PATH_HALF_WIDTH
 
     max_idx = self._get_path_length_idx(path_x_array, max_distance)
     self._path.projected_points = self._map_line_to_polygon(

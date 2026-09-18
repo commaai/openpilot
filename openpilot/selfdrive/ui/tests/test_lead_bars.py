@@ -18,6 +18,11 @@ class TestLeadBars(unittest.TestCase):
     self.renderer._car_space_transform = np.array([[240, 500, 0], [100, 0, 500], [1, 0, 0]], dtype=np.float32)
     self.renderer._rect = rl.Rectangle(13, 17, 480, 240)
     self.renderer._lead_bar_smoothing = [None, None]
+    self.renderer._stop_position_filter = None
+    self.renderer._lane_lines = [ModelPoints() for _ in range(4)]
+    self.renderer._road_edges = [ModelPoints() for _ in range(2)]
+    self.renderer._lane_line_probs = np.zeros(4)
+    self.renderer._road_edge_stds = np.ones(2)
     self.x = x
 
   def project(self, distance=20, lateral=0):
@@ -122,6 +127,88 @@ class TestLeadBars(unittest.TestCase):
     self.assertTrue(all(lead.points.size == 0 for lead in self.renderer._lead_vehicles))
     self.renderer._update_leads(radar, self.x)
     np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(20, 3))
+
+  @staticmethod
+  def stop_model(speeds):
+    return SimpleNamespace(velocity=SimpleNamespace(t=[0, 1, 2, 3, 4], x=speeds),
+                           position=SimpleNamespace(t=[0, 1, 2, 3, 4], x=[0, 10, 18, 20, 20], y=[0, 0, 1, 2, 2]))
+
+  def test_predicted_stop_requires_sustained_slow_speed(self):
+    point, time = self.renderer._predicted_stop(self.stop_model([10, 8, 2, 0, 0]))
+    np.testing.assert_allclose(point, [20, 2])
+    self.assertEqual(time, 3)
+    for speeds in ([10, 8, 2, 1, 1], [10, 0, 8, 8, 8], [10, 8, 2, 1, 0], [10, float('nan'), 2, 0, 0]):
+      self.assertIsNone(self.renderer._predicted_stop(self.stop_model(speeds)))
+
+  @staticmethod
+  def radar_leads(distance=None, speed=0):
+    lead = SimpleNamespace(present=distance is not None, dRel=distance, vLead=speed, aLeadK=0, aLeadTau=1.5)
+    return SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
+
+  def test_stop_distinct_from_lead_and_hysteresis(self):
+    model = self.stop_model([10, 8, 2, 0, 0])
+    # A stationary lead at 26 m explains our stop at 20 m.
+    self.renderer._update_stop_bar(model, self.radar_leads(26))
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+    # The same lead driving onward no longer explains our planned stop.
+    self.renderer._update_stop_bar(model, self.radar_leads(26, 5))
+    self.assertGreater(self.renderer._stop_bar_points.size, 0)
+    self.renderer._update_stop_bar(model, self.radar_leads(28.5))
+    self.assertGreater(self.renderer._stop_bar_points.size, 0)
+    self.renderer._update_stop_bar(model, self.radar_leads(27.5))
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+    self.renderer._update_stop_bar(model, self.radar_leads(28.5))
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+    radar = self.radar_leads(60)
+    radar.leadTwo = self.radar_leads(26).leadOne
+    self.renderer._update_stop_bar(model, radar)
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+
+  def test_stop_vision_lead_prediction(self):
+    model = self.stop_model([10, 8, 2, 0, 0])
+    lead = SimpleNamespace(prob=0.9, t=[0, 2, 4], x=[27.52, 27.52, 27.52], v=[0, 0, 0])
+    model.leadsV3 = [lead]
+    self.renderer._update_stop_bar(model, use_vision=True)
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+    lead.v = [5, 5, 5]
+    self.renderer._update_stop_bar(model, use_vision=True)
+    self.assertGreater(self.renderer._stop_bar_points.size, 0)
+    lead.v = []
+    self.renderer._update_stop_bar(model, use_vision=True)
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+
+  def test_stop_projection_and_reset(self):
+    model = self.stop_model([10, 8, 2, 0, 0])
+    self.renderer._update_stop_bar(model, self.radar_leads())
+    expected = self.renderer._project_lead_bar(20, -2, self.x, rear_gap=0, width=3.6)
+    np.testing.assert_allclose(self.renderer._stop_bar_points, expected)
+    self.renderer._update_stop_bar(None)
+    self.assertIsNone(self.renderer._stop_position_filter)
+    self.assertEqual(self.renderer._stop_bar_points.size, 0)
+    model.position.x = [0, 10, 28, 30, 30]
+    self.renderer._update_stop_bar(model, self.radar_leads())
+    np.testing.assert_allclose(self.renderer._stop_position_filter.x, [30, 2])
+
+  def test_stop_bar_fits_boundaries_and_falls_back(self):
+    def edge(y):
+      return ModelPoints(np.column_stack((self.x, self.x * 0 + y, self.x * 0 + 1.2)).astype(np.float32))
+    self.renderer._lane_lines[1:3] = [edge(-2), edge(2)]
+    self.renderer._lane_line_probs[1:3] = 0.9
+    boundaries = self.renderer._stop_bar_boundaries(20)
+    self.assertIsNotNone(boundaries)
+    points = self.renderer._project_lead_bar(20, -1, self.x, rear_gap=0, width=3.6, lane_boundaries=boundaries)
+    # Invert the test camera to verify the bar touches both boundaries even
+    # when the predicted stopping path is off-center within the lane.
+    x = 600 / (points[:, 1] - 100)
+    y = (points[:, 0] - 240) * x / 500
+    np.testing.assert_allclose(y, [-2, 2, 2, -2], atol=1e-4)
+    self.renderer._lane_line_probs[:] = 0
+    self.assertIsNone(self.renderer._stop_bar_boundaries(20))
+    self.renderer._road_edges = [edge(-1.5), edge(1.5)]
+    self.renderer._road_edge_stds[:] = 0.1
+    self.assertIsNotNone(self.renderer._stop_bar_boundaries(20))
+    self.renderer._road_edge_stds[1] = 1
+    self.assertIsNone(self.renderer._stop_bar_boundaries(20))
 
   def test_two_leads_duplicates_and_disappearance(self):
     first = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
