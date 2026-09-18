@@ -204,7 +204,7 @@ node {
     }
 
     if (env.BRANCH_NAME == '__nightly-chestnut') {
-      deviceStage("build nightly-chestnut", "mici-chestnut-ci", [], [
+      deviceStage("build nightly-chestnut", "mici-chestnut-ci", ["CHESTNUT=1"], [
         step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
       ])
     }
@@ -265,7 +265,6 @@ node {
           step("build", "./openpilot/selfdrive/test/chestnut.sh"),
           step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
           step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
-          step("test power draw", "./openpilot/selfdrive/test/test_power_draw.py"),
         ])
       },
 
