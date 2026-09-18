@@ -52,7 +52,7 @@ class TestWidgetLeaks(OpenpilotTestCase):
     # mici dialogs
     from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
     from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog as MiciCabinCameraDialog
-    from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
+    from openpilot.selfdrive.ui.mici.layouts.settings.device import PairingDialog as MiciPairingDialog
     from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
     from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
 

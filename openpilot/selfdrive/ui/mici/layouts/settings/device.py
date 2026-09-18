@@ -1,16 +1,19 @@
 import os
 import pyray as rl
+import time
 from collections.abc import Callable
 from typing import Union
 
+from openpilot.common.api import Api
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, GreyBigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
-from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
+from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.system.ui.lib.application import gui_app, MousePos
@@ -94,6 +97,53 @@ class DeviceInfoLayoutMici(InfoLayoutMici):
   def __init__(self):
     params = Params()
     super().__init__("device ID", params.get("DongleId") or 'N/A', "serial", params.get("HardwareSerial") or 'N/A', width=380)
+
+
+class PairingDialog(NavScroller):
+  """Pair the device with comma connect."""
+
+  QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
+
+  def __init__(self):
+    super().__init__()
+    self._params = Params()
+    self._last_pairing_qr_generation = float("-inf")
+    self._qr = QR(self._get_pairing_url())
+    self._scroller._show_scroll_indicator = False
+    self._scroller.add_widgets([
+      self._qr,
+      GreyBigButton("finish setup", "scan to pair device\nwith connect",
+                    gui_app.texture("icons_mici/settings/device/green_settings.png", 64, 64)),
+      GreyBigButton("", "connect lets you review recent driving footage and bookmark events."),
+    ])
+
+  def _get_pairing_url(self) -> str:
+    try:
+      dongle_id = self._params.get("DongleId") or ""
+      token = Api(dongle_id).get_token({'pair': True})
+    except Exception as e:
+      cloudlog.warning(f"Failed to get pairing token: {e}")
+      token = ""
+    return f"https://connect.comma.ai/?pair={token}"
+
+  def _update_layout_rects(self):
+    super()._update_layout_rects()
+    self._qr.set_rect(rl.Rectangle(self._qr.rect.x, self._qr.rect.y, self._rect.height, self._rect.height))
+
+  def _render(self, rect: rl.Rectangle):
+    current_time = time.monotonic()
+    if current_time - self._last_pairing_qr_generation >= self.QR_REFRESH_INTERVAL:
+      self._qr._url = self._get_pairing_url()
+      if self._qr._texture and self._qr._texture.id != 0:
+        rl.unload_texture(self._qr._texture)
+      self._qr._texture = self._qr._generate_qr_code()
+      self._last_pairing_qr_generation = current_time
+    super()._render(rect)
+
+  def _update_state(self):
+    super()._update_state()
+    if ui_state.prime_state.is_paired() and not self.is_dismissing:
+      self.dismiss()
 
 
 class PairBigButton(BigButton):
