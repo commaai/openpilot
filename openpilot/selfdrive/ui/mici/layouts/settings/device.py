@@ -7,16 +7,15 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
+from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, MousePos
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -91,35 +90,10 @@ class EngagedConfirmationButton(BigButton):
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
-class DeviceInfoLayoutMici(Widget):
+class DeviceInfoLayoutMici(InfoLayoutMici):
   def __init__(self):
-    super().__init__()
-
-    self.set_rect(rl.Rectangle(0, 0, 360, 180))
-
     params = Params()
-    subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
-    max_width = int(self._rect.width - 20)
-    self._dongle_id_label = UnifiedLabel("device ID", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._dongle_id_text_label = UnifiedLabel(params.get("DongleId") or 'N/A', 36, max_width=max_width, text_color=subheader_color,
-                                              font_weight=FontWeight.ROMAN, wrap_text=False)
-
-    self._serial_number_label = UnifiedLabel("serial", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._serial_number_text_label = UnifiedLabel(params.get("HardwareSerial") or 'N/A', 36, max_width=max_width, text_color=subheader_color,
-                                                  font_weight=FontWeight.ROMAN, wrap_text=False)
-
-  def _render(self, _):
-    self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
-    self._dongle_id_label.render()
-
-    self._dongle_id_text_label.set_position(self._rect.x + 20, self._rect.y + 68 - 25)
-    self._dongle_id_text_label.render()
-
-    self._serial_number_label.set_position(self._rect.x + 20, self._rect.y + 114 - 30)
-    self._serial_number_label.render()
-
-    self._serial_number_text_label.set_position(self._rect.x + 20, self._rect.y + 161 - 25)
-    self._serial_number_text_label.render()
+    super().__init__("device ID", params.get("DongleId") or 'N/A', "serial", params.get("HardwareSerial") or 'N/A', width=380)
 
 
 class PairBigButton(BigButton):
