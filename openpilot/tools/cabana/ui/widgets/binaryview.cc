@@ -488,7 +488,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
   }
 
   const auto text = fromImVec4(ImGui::ColorConvertU32ToFloat4(pen));
-  const ImU32 pattern = toImU32(cabana::contrast::foreground({128, 128, 128}, text));
+  const ImU32 pattern = toImU32(contrastColor({128, 128, 128}, text));
   if (item->sigs.size() > 1) {
     fillDense7Pattern(painter, rect, pattern);
   } else if (!item->valid) {

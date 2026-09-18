@@ -267,7 +267,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + COLOR_LABEL_WIDTH, rect.Max.y);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->highlight ? signalHighlight(item->sig->color) : cabana::contrast::foreground(item->sig->color, {0, 0, 0})), ImGui::GetStyle().FrameRounding);
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->highlight ? signalHighlight(item->sig->color) : contrastColor(item->sig->color, {0, 0, 0})), ImGui::GetStyle().FrameRounding);
       drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
                nullptr, LABEL_FONT);
 

@@ -593,7 +593,7 @@ void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeli
   const ImU32 pen = IM_COL32_WHITE;
   // Opaque backing keeps alert text readable over every camera frame.
   const auto source = fromImVec4(ImGui::ColorConvertU32ToFloat4(timeline_colors[int(alert.type)]));
-  const ImU32 color = toImU32(cabana::contrast::foreground(source, fromImVec4(palette().text_selected)));
+  const ImU32 color = toImU32(contrastColor(source, fromImVec4(palette().text_selected)));
   std::string text = alert.text1;
   if (!alert.text2.empty()) text += "\n" + alert.text2;
 

@@ -5,7 +5,6 @@
 #include <filesystem>
 
 #include "implot.h"
-#include "tools/cabana/core/heatmapcolors.h"
 #include "tools/cabana/core/settings.h"
 
 namespace fs = std::filesystem;
@@ -66,6 +65,36 @@ ImFont *addFont(const fs::path &path, float size) {
   ImFont *font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path.c_str(), size, &cfg);
   if (font != nullptr) addIconFont(size, font);
   return font;
+}
+
+double linearChannel(double value) {
+  value /= 255.0;
+  return value <= 0.04045 ? value / 12.92 : std::pow((value + 0.055) / 1.055, 2.4);
+}
+
+double luminance(const CabanaColor &color) {
+  return 0.2126 * linearChannel(color.r) + 0.7152 * linearChannel(color.g) + 0.0722 * linearChannel(color.b);
+}
+
+// Directed rounding preserves the luminance bound in 8-bit sRGB.
+CabanaColor boundLuminance(const CabanaColor &color, double bound, bool minimum) {
+  const double current = luminance(color);
+  if (minimum ? current >= bound : current <= bound) return color;
+  auto channel = [&](uint8_t value) {
+    double c = linearChannel(value);
+    c = minimum ? c + (1.0 - c) * (bound - current) / (1.0 - current) : c * bound / current;
+    const double srgb = c <= 0.0031308 ? 12.92 * c : 1.055 * std::pow(c, 1.0 / 2.4) - 0.055;
+    const double scaled = std::clamp(srgb * 255.0, 0.0, 255.0);
+    return static_cast<uint8_t>(minimum ? std::ceil(scaled) : std::floor(scaled));
+  };
+  return {channel(color.r), channel(color.g), channel(color.b), color.a};
+}
+
+CabanaColor composite(const CabanaColor &color, const CabanaColor &base) {
+  auto channel = [&](int foreground, int background) {
+    return static_cast<uint8_t>(std::lround((foreground * color.a + background * (255 - color.a)) / 255.0));
+  };
+  return {channel(color.r, base.r), channel(color.g, base.g), channel(color.b, base.b)};
 }
 
 ImVec4 alpha(ImVec4 c, float a) { return ImVec4(c.x, c.y, c.z, a); }
@@ -159,22 +188,46 @@ void applyTheme(int theme) {
 
 const Palette &palette() { return *g_palette; }
 
+CabanaColor contrastColor(CabanaColor color, const CabanaColor &background, double target) {
+  color.a = 255;
+  const double value = luminance(color), base = luminance(background);
+  if ((std::max(value, base) + 0.05) / (std::min(value, base) + 0.05) >= target) return color;
+  const bool lighter = base < 0.179;
+  const double bound = lighter ? target * (base + 0.05) - 0.05 : (base + 0.05) / target - 0.05;
+  return boundLuminance(color, std::clamp(bound, 0.0, 1.0), lighter);
+}
+
 CabanaColor byteColor(const CabanaColor &color) {
-  return cabana::heatmap::byteFill(color, fromImVec4(palette().surface), palette().text.x > 0.5f);
+  const bool dark = palette().text.x > 0.5f;
+  const auto [h, s, v] = color.hsv();
+  auto fill = CabanaColor::fromHsv(h, std::min(s, 0.30f), 0.86f, color.alphaF());
+  if (dark) fill = boundLuminance(fill, 0.16, false);  // 5:1 with white text
+  fill = composite(fill, fromImVec4(palette().surface));
+  return dark ? fill : composite({255, 255, 255, 40}, fill);
 }
 
 CabanaColor signalFill(const CabanaColor &color, bool defined) {
-  return cabana::heatmap::bitFill(color, fromImVec4(palette().surface), palette().text.x > 0.5f, defined);
+  const bool dark = palette().text.x > 0.5f;
+  auto fill = composite(color, fromImVec4(palette().surface));
+  fill = composite(dark ? CabanaColor(0, 0, 0, 115) : CabanaColor(255, 255, 255, defined ? 20 : 40), fill);
+  return boundLuminance(fill, 0.18, !dark);  // 4.5:1 with the theme's text
 }
 
-CabanaColor signalHighlight(const CabanaColor &color) { return cabana::heatmap::highlightFill(color); }
+CabanaColor signalHighlight(CabanaColor color) {
+  color.a = 255;
+  return boundLuminance(boundLuminance(color, 0.175, true), 0.18, false);
+}
 
-CabanaColor signalOutline(const CabanaColor &color, bool hovered) {
-  return cabana::heatmap::outlineColor(color, palette().text.x > 0.5f, hovered);
+CabanaColor signalOutline(CabanaColor color, bool hovered) {
+  const bool dark = palette().text.x > 0.5f;
+  if (dark && hovered) color = color.lighter(150);
+  color.a = 255;
+  // 3:1 against normal and highlighted fills, including neighboring signals.
+  return dark ? boundLuminance(color, 0.67, true) : boundLuminance(color, 0.02, false);
 }
 
 CabanaColor graphicColor(const CabanaColor &color, const ImVec4 &background) {
-  return cabana::contrast::foreground(color, fromImVec4(background), cabana::contrast::GRAPHIC);
+  return contrastColor(color, fromImVec4(background), 3.0);
 }
 
 CabanaColor sparklineColor(const CabanaColor &color) {

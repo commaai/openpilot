@@ -108,7 +108,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
 
 void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos, ImU32 color) const {
   if (render_points_.empty()) return;
-  // Resolve the theme at draw time, including when replay is paused.
+  // Pick up theme changes while paused.
   if (color == 0) color = toImU32(sparklineColor(color_));
 
   // update() only runs when a message of this id arrives, so a slow message would hold the sparkline

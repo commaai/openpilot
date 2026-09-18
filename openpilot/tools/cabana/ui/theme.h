@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "tools/cabana/core/colorcontrast.h"
+#include "tools/cabana/core/color.h"
 
 struct Palette {
   ImVec4 text, text_disabled, text_selected;
@@ -48,11 +48,11 @@ constexpr float UI_FONT_SIZE = 16.0f;
 void loadFonts();
 void applyTheme(int theme);  // Safe to call at runtime.
 const Palette &palette();
-// Semantic color roles shared by heatmaps, message bytes, signal labels and plots.
+CabanaColor contrastColor(CabanaColor color, const CabanaColor &background, double target = 4.5);
 CabanaColor byteColor(const CabanaColor &color);
 CabanaColor signalFill(const CabanaColor &color, bool defined = true);
-CabanaColor signalHighlight(const CabanaColor &color);
-CabanaColor signalOutline(const CabanaColor &color, bool hovered = false);
+CabanaColor signalHighlight(CabanaColor color);
+CabanaColor signalOutline(CabanaColor color, bool hovered = false);
 CabanaColor graphicColor(const CabanaColor &color, const ImVec4 &background = palette().surface);
 CabanaColor sparklineColor(const CabanaColor &color);
 
