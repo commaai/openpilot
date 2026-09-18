@@ -28,7 +28,7 @@ ImU32 cellTextColor(bool selected, bool inactive) {
     const ImU32 text = ImGui::GetColorU32(palette().text_selected);
     return text;
   }
-  return ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
+  return ImGui::GetColorU32(inactive ? palette().text_inactive : palette().text);
 }
 
 void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive, bool align_right) {

@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xffffff), .text_disabled = rgb(0xcccccc), .text_selected = rgb(0xffffff),
+  .text = rgb(0xffffff), .text_disabled = rgb(0xcccccc), .text_inactive = rgb(0xa4a4a4), .text_selected = rgb(0xffffff),
   .window = rgb(0x353535), .surface = rgb(0x2b2c2d),
   .frame = rgb(0x2b2c2d), .frame_hovered = rgb(0x363738), .frame_active = rgb(0x434445),
   .button = rgb(0x3f4041), .button_hovered = rgb(0x525354), .button_active = rgb(0x303132),
@@ -26,7 +26,7 @@ constexpr Palette DARK_PALETTE = {
 };
 
 constexpr Palette LIGHT_PALETTE = {
-  .text = rgb(0x000000), .text_disabled = rgb(0x595959), .text_selected = rgb(0xffffff),
+  .text = rgb(0x000000), .text_disabled = rgb(0x595959), .text_inactive = rgb(0x595959), .text_selected = rgb(0xffffff),
   .window = rgb(0xefefef), .surface = rgb(0xffffff),
   .frame = rgb(0xffffff), .frame_hovered = rgb(0xf5f9fc), .frame_active = rgb(0xe7f3fb),
   .button = rgb(0xefefef), .button_hovered = rgb(0xe7f3fb), .button_active = rgb(0xd4e7f4),

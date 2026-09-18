@@ -6,7 +6,7 @@
 #include "tools/cabana/core/color.h"
 
 struct Palette {
-  ImVec4 text, text_disabled, text_selected;
+  ImVec4 text, text_disabled, text_inactive, text_selected;
   ImVec4 window;   // the background behind panels and docked windows
   ImVec4 surface;  // panels, popups, table bodies: what content is drawn on
   ImVec4 frame, frame_hovered, frame_active;
