@@ -7,7 +7,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
-from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
+from openpilot.selfdrive.ui.mici.widgets.info import InfoPanel
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
@@ -88,6 +88,12 @@ class EngagedConfirmationButton(BigButton):
                description_icon: Union[rl.Texture, None] = None):
     super().__init__(text, "", icon, description=description, description_icon=description_icon)
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
+
+
+class DeviceInfoLayoutMici(InfoPanel):
+  def __init__(self):
+    params = Params()
+    super().__init__(("device ID", "serial"), (params.get("DongleId") or 'N/A', params.get("HardwareSerial") or 'N/A'), width=380)
 
 
 class PairBigButton(BigButton):
@@ -173,9 +179,8 @@ class DeviceLayoutMici(NavScroller):
     terms_btn = BigButton("terms &\nconditions", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
 
-    params = Params()
     self._scroller.add_widgets([
-      InfoLayoutMici(("device ID", "serial"), (params.get("DongleId") or 'N/A', params.get("HardwareSerial") or 'N/A'), width=380),
+      DeviceInfoLayoutMici(),
       PairBigButton(),
       review_training_guide_btn,
       cabin_cam_btn,
