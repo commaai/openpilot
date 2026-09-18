@@ -44,6 +44,8 @@ class PrimeState:
     self._pairing_email: str | None = self._params.get("PairingEmail")
     self._commacare = False
 
+    set_offroad_alert("Offroad_Pairing", self.prime_type <= PrimeType.UNPAIRED)
+
     self._running = False
     self._thread = None
 
@@ -105,9 +107,7 @@ class PrimeState:
         self.prime_type = prime_type
         self._params.put("PrimeType", int(prime_type))
         cloudlog.info(f"Prime type updated to {prime_type}")
-
-  def _update_pairing_alert(self):
-    set_offroad_alert("Offroad_Pairing", not self.is_paired())
+        set_offroad_alert("Offroad_Pairing", self.prime_type <= PrimeType.UNPAIRED)
 
   def set_provider(self, provider: Provider | None, email: str | None):
     with self._lock:
@@ -160,7 +160,6 @@ class PrimeState:
   def start(self) -> None:
     if self._thread and self._thread.is_alive():
       return
-    self._update_pairing_alert()
     self._running = True
     self._thread = threading.Thread(target=self._worker_thread, daemon=True)
     self._thread.start()
