@@ -72,7 +72,8 @@ function install_linux_deps() {
   fi
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
-    "${SUDO[@]}" tee /etc/udev/rules.d/11-openpilot.rules > /dev/null <<-EOF
+    local udev_rules
+    udev_rules=$(cat <<-EOF
 	# Panda Jungle devices
 	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
 	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
@@ -89,11 +90,17 @@ function install_linux_deps() {
 	# comma devices over ADB
 	SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
 	EOF
+    )
 
-    # delete the old ones
-    "${SUDO[@]}" rm -f /etc/udev/rules.d/11-panda.rules /etc/udev/rules.d/12-panda_jungle.rules /etc/udev/rules.d/50-comma-adb.rules
+    if ! cmp -s /etc/udev/rules.d/11-openpilot.rules <<< "$udev_rules" ||
+       [[ -e /etc/udev/rules.d/11-panda.rules || -e /etc/udev/rules.d/12-panda_jungle.rules || -e /etc/udev/rules.d/50-comma-adb.rules ]]; then
+      "${SUDO[@]}" tee /etc/udev/rules.d/11-openpilot.rules > /dev/null <<< "$udev_rules"
 
-    "${SUDO[@]}" udevadm control --reload-rules && "${SUDO[@]}" udevadm trigger || true
+      # delete the old ones
+      "${SUDO[@]}" rm -f /etc/udev/rules.d/11-panda.rules /etc/udev/rules.d/12-panda_jungle.rules /etc/udev/rules.d/50-comma-adb.rules
+
+      "${SUDO[@]}" udevadm control --reload-rules && "${SUDO[@]}" udevadm trigger || true
+    fi
   fi
 }
 
