@@ -96,3 +96,29 @@ cabana
 ## Additional Information
 
 For more information, see the [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)
+
+## Cereal replay plots
+
+Open a route and choose **View → Cereal Signals** to search numeric cereal fields.
+Double-click a field to create a chart, hold Shift while double-clicking to overlay
+the first chart, or drag the field onto an existing CAN or cereal chart. Playback,
+zoom, chart splitting, and session restoration use the existing Cabana controls.
+Enum values display their schema labels. The chart menu can remove cereal series.
+
+Cereal data is decoded on the replay worker and retained with the segment cache.
+This initial integration covers replay browsing and plotting. PlotJuggler layout
+import and custom transforms, cereal live streaming, map/log panes, and the
+PlotJuggler CLI migration are still pending; PlotJuggler remains available.
+
+Build and run the focused checks from the repository root:
+
+```bash
+scons -j4 openpilot/tools/cabana/_cabana_ui openpilot/tools/cabana/tests/test_cereal_extractor openpilot/tools/cabana/tests/test_cabana
+openpilot/tools/cabana/tests/test_cereal_extractor
+openpilot/tools/cabana/tests/test_cabana
+python -m unittest openpilot.tools.cabana.tests.test_cereal_replay
+```
+
+The GUI smoke test uses Xvfb, generated route data, and an isolated settings
+directory. It checks mixed CAN/cereal overlays and cereal-only replay without a
+DBC, renders a frame, verifies saved chart selection, and checks clean shutdown.

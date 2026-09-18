@@ -28,15 +28,14 @@ MINIMUM_PLOTJUGGLER_VERSION = (3, 5, 2)
 MAX_STREAMING_BUFFER_SIZE = 1000
 
 
-def print_jotpluggler_banner():
+def print_cabana_banner():
   purple = "\033[95m" if sys.stdout.isatty() else ""
   reset = "\033[0m" if purple else ""
   print(f"{purple}+-------------------------------------------------------------+{reset}")
-  print(f"{purple}|{reset} JotPluggler is the future! Try it like this:                {purple}|{reset}")
-  print(f"{purple}|{reset}   ./openpilot/tools/jotpluggler/jotpluggler --demo --layout tuning    {purple}|{reset}")
+  print(f"{purple}|{reset} PlotJuggler functionality is now merged into Cabana!         {purple}|{reset}")
+  print(f"{purple}|{reset}   ./openpilot/tools/cabana/cabana --demo --layout tuning     {purple}|{reset}")
   print(f"{purple}|{reset}                                                             {purple}|{reset}")
-  print(f"{purple}|{reset} PlotJuggler will be deleted soon.                           {purple}|{reset}")
-  print(f"{purple}|{reset} Missing a feature? Open an issue or post in #dev-openpilot. {purple}|{reset}")
+  print(f"{purple}|{reset} PlotJuggler is deprecated and will be deleted.              {purple}|{reset}")
   print(f"{purple}+-------------------------------------------------------------+{reset}")
 
 
@@ -137,19 +136,35 @@ if __name__ == "__main__":
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--no-migration", action="store_true", help="Do not perform log migration")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
+  parser.add_argument("--legacy", action="store_true", help="Run legacy PlotJuggler executable instead of Cabana")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
   parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
 
   if len(sys.argv) == 1:
-    print_jotpluggler_banner()
+    print_cabana_banner()
     print()
     parser.print_help()
     sys.exit()
   args = parser.parse_args()
 
-  print_jotpluggler_banner()
+  print_cabana_banner()
   print()
+
+  if not args.legacy and not args.install:
+    cabana_bin = os.path.join(BASEDIR, "openpilot", "tools", "cabana", "cabana")
+    cmd = [cabana_bin]
+    if args.demo:
+      cmd.append("--demo")
+    if args.layout:
+      cmd.extend(["--layout", args.layout])
+    if args.stream:
+      cmd.append("--stream")
+    if args.dbc:
+      cmd.extend(["--dbc", args.dbc])
+    if args.route_or_segment_name:
+      cmd.append(args.route_or_segment_name.strip())
+    os.execv(cabana_bin, cmd)
 
   if args.install:
     install()

@@ -19,6 +19,7 @@
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
 #include "tools/cabana/ui/inistate.h"
+#include "tools/cabana/ui/layout_manager.h"
 #include "tools/cabana/ui/threadpool.h"
 #include "tools/cabana/ui/tools/findsignal.h"
 #include "tools/cabana/ui/tools/findsimilarbits.h"
@@ -36,7 +37,8 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &layout)
+    : window_(window), startup_layout_(layout) {
   can = &dummy_;
   video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
   messages_visible_ = inistate::main_window.messages_visible;
@@ -148,7 +150,15 @@ void MainWindow::drawMenuBar() {
     ImGui::EndMenu();
   }
 
+  if (ImGui::BeginMenu("Layout")) {
+    drawLayoutMenu();
+    ImGui::EndMenu();
+  }
+
   if (ImGui::BeginMenu("View")) {
+    if (charts_widget_) ImGui::MenuItem("Cereal Signals", nullptr, &charts_widget_->cereal_browser_visible);
+    if (map_widget_) ImGui::MenuItem("Map", nullptr, &map_widget_->visible);
+    if (log_widget_) ImGui::MenuItem("Logs", nullptr, &log_widget_->visible);
     if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
     ImGui::Separator();
     ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
@@ -174,6 +184,54 @@ void MainWindow::drawMenuBar() {
   ImGui::EndMainMenuBar();
 }
 
+void MainWindow::drawLayoutMenu() {
+  if (ImGui::BeginMenu("Presets")) {
+    for (const auto &preset : cabana::LayoutManager::availablePresets()) {
+      if (ImGui::MenuItem(preset.c_str())) {
+        loadLayoutPreset(preset);
+      }
+    }
+    ImGui::EndMenu();
+  }
+  ImGui::Separator();
+  if (ImGui::MenuItem("Load Layout...")) {
+    loadLayoutPrompt();
+  }
+  if (ImGui::MenuItem("Save Layout...")) {
+    saveLayoutPrompt();
+  }
+}
+
+void MainWindow::loadLayoutPreset(const std::string &name) {
+  if (charts_widget_) {
+    charts_widget_->loadLayoutFile(cabana::LayoutManager::presetPath(name));
+    showStatusMessage("Loaded layout preset: " + name, 2000);
+  }
+}
+
+void MainWindow::loadLayoutPrompt() {
+  FileDialog::getOpenFileName("Open Layout", "", ".json", [this](const std::string &fn) {
+    if (!fn.empty() && charts_widget_) {
+      charts_widget_->loadLayoutFile(fn);
+      showStatusMessage("Loaded layout: " + fn, 2000);
+    }
+  });
+}
+
+void MainWindow::saveLayoutPrompt() {
+  FileDialog::getSaveFileName("Save Layout", "layout.json", ".json", [this](const std::string &fn) {
+    if (!fn.empty() && charts_widget_) {
+      cabana::Layout layout = charts_widget_->captureLayout();
+      layout.name = std::filesystem::path(fn).stem().string();
+      if (cabana::LayoutManager::saveLayout(layout, fn)) {
+        showStatusMessage("Saved layout: " + fn, 2000);
+      } else {
+        MessageBox::warning("Save Layout", "Failed to write layout: " + fn);
+      }
+    }
+  });
+}
+
 void MainWindow::createDockWidgets() {
   widget_connections_.clear();
   messages_widget_ = std::make_unique<MessagesWidget>();
@@ -184,6 +242,9 @@ void MainWindow::createDockWidgets() {
   video_widget_ = std::make_unique<VideoWidget>();
   widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
   widget_connections_.push_back(charts_widget_->showTip.connect([this](double sec) { video_widget_->showThumbnail(sec); }));
+
+  map_widget_ = std::make_unique<cabana::MapWidget>();
+  log_widget_ = std::make_unique<cabana::LogWidget>();
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -368,6 +429,11 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
     }
 
     stream_connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &) { eventsMerged(); }));
+    stream_connections_.push_back(can->cerealEventsMerged.connect([this]() {
+      wait_dlg_.open = false;
+      wait_dlg_.connection.disconnect();
+      eventsMerged();
+    }));
 
     if (hasStream()) {
       wait_dlg_.text = can->liveStreaming() ? "Waiting for the live stream to start..." : "Loading segment data...";
@@ -663,16 +729,25 @@ void MainWindow::saveSessionState() {
 }
 
 void MainWindow::restoreSessionState() {
-  if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
+  if (!startup_layout_.empty() && charts_widget_ != nullptr) {
+    std::filesystem::path p = startup_layout_;
+    if (!std::filesystem::exists(p)) {
+      p = cabana::LayoutManager::presetPath(startup_layout_);
+    }
+    charts_widget_->loadLayoutFile(p);
+    startup_layout_.clear();
+    return;
+  }
 
-  if (dbc()->nonEmptyDBCFiles().front()->filename != settings.recent_dbc_file) return;
+  const bool same_dbc = !settings.recent_dbc_file.empty() && dbc()->nonEmptyDBCCount() > 0 &&
+                        dbc()->nonEmptyDBCFiles().front()->filename == settings.recent_dbc_file;
 
-  if (!settings.selected_msg_ids.empty()) {
+  if (same_dbc && !settings.selected_msg_ids.empty()) {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
   }
 
   if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
-    charts_widget_->restoreChartsFromIds(settings.active_charts);
+    charts_widget_->restoreChartsFromIds(settings.active_charts, same_dbc);
   }
 }
 
@@ -913,6 +988,9 @@ void MainWindow::draw() {
     it = (*it)->draw() ? it + 1 : tool_dialogs_.erase(it);
   }
 
+  if (charts_widget_) charts_widget_->drawCerealBrowser();
+  if (map_widget_) map_widget_->draw();
+  if (log_widget_) log_widget_->draw();
   stream_selector_.draw();
   settings_dialog_.draw();
   drawWaitDialog();

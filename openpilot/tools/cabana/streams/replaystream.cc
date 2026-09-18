@@ -25,7 +25,20 @@ ReplayStream::~ReplayStream() {
 // frames when it ran on the main thread. Only the sorted insert and the merged signal need the main thread.
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
+  const auto snapshot = cereal_series.snapshot();
+  std::vector<int> loaded_segments;
   for (const auto &[n, seg] : event_data->segments) {
+    loaded_segments.push_back(n);
+    if (!snapshot.segments.count(n)) {
+      cabana::CerealSeriesMap series;
+      for (const Event &e : seg->log->events) {
+        if (e.which != cereal::Event::Which::CAN && e.which != cereal::Event::Which::SENDCAN) {
+          capnp::FlatArrayMessageReader reader(e.data);
+          cabana::extractCerealEvent(reader.getRoot<cereal::Event>(), series);
+        }
+      }
+      cereal_series.replaceSegment(n, std::move(series));
+    }
     if (!processed_segments.count(n)) {
       processed_segments.insert(n);
 
@@ -46,11 +59,12 @@ void ReplayStream::mergeSegments() {
       postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
     }
   }
+  cereal_series.retainSegments(loaded_segments);
+  postToMainThread([this]() { cerealEventsMerged(); });
 }
 
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {
-  replay.reset(new Replay(route, {"can", "narrowRoadEncodeIdx", "cabinEncodeIdx", "wideRoadEncodeIdx", "carParams"},
-                          {}, nullptr, replay_flags, data_dir, auto_source));
+  replay.reset(new Replay(route, {}, {}, nullptr, replay_flags | REPLAY_FLAG_ALL_SERVICES, data_dir, auto_source));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
 
@@ -89,7 +103,6 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
-  static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = toSeconds(event->mono_time);
     capnp::FlatArrayMessageReader reader(event->data);
@@ -102,9 +115,13 @@ bool ReplayStream::eventFilter(const Event *event) {
   }
 
   double ts = millis_since_boot();
-  if ((ts - prev_update_ts) > (1000.0 / STREAM_UPDATE_FPS)) {
-    requestUpdateLastMessages();
-    prev_update_ts = ts;
+  if ((ts - prev_update_ts_) > (1000.0 / STREAM_UPDATE_FPS)) {
+    const double seconds = toSeconds(event->mono_time);
+    postToMainThread([this, seconds]() {
+      current_sec_ = seconds;
+      updateLastMessages();
+    });
+    prev_update_ts_ = ts;
   }
   return true;
 }

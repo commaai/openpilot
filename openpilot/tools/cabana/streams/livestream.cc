@@ -83,6 +83,9 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
     for (const auto &c : event.getCan()) {
       received_events_.push_back(newEvent(mono_time, c));
     }
+  } else {
+    std::lock_guard lk(cereal_lock_);
+    cabana::extractCerealEvent(event, live_cereal_series_);
   }
 }
 
@@ -96,6 +99,12 @@ void LiveStream::updateLastMessages() {
     uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;
     lastest_event_ts = std::max(lastest_event_ts, last_received_ts);
     received_events_.clear();
+  }
+  {
+    std::lock_guard lk(cereal_lock_);
+    if (!live_cereal_series_.empty()) {
+      cereal_series.replaceSegment(0, live_cereal_series_);
+    }
   }
   if (!all_events_.empty()) {
     begin_event_ts = all_events_.front()->mono_time;

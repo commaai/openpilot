@@ -11,6 +11,7 @@
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chart.h"
 #include "tools/cabana/ui/icons.h"
+#include "tools/cabana/ui/layout_manager.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
@@ -36,7 +37,19 @@ ChartsWidget::ChartsWidget() {
   display_range_ = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range_);
   range_slider_.setValue(max_chart_range_);
 
-  connections_.push_back(dbc()->fileChanged.connect([this]() { removeAll(); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() {
+    std::vector<ChartView *> charts;
+    for (const auto &chart : charts_) charts.push_back(chart.get());
+    for (auto *chart : charts) chart->removeIf([](const auto &s) { return s.sig != nullptr; });
+  }));
+  connections_.push_back(can->cerealEventsMerged.connect([this]() {
+    std::vector<std::future<void>> futures;
+    for (const auto &chart : charts_) {
+      futures.push_back(ThreadPool::instance().run([ptr = chart.get()]() { ptr->updateCerealSeries(); }));
+    }
+    for (auto &future : futures) future.get();
+    updateState();
+  }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
   connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
@@ -77,6 +90,7 @@ std::string ChartsWidget::whatsThis() const {
 void ChartsWidget::newTab() {
   static int tab_unique_id = 0;
   int idx = tabbar_.addTab("");
+  tab_names_[tab_unique_id] = "Tab " + std::to_string(idx + 1);
   tabbar_.setTabData(idx, tab_unique_id++);
   tabbar_.setCurrentIndex(idx);
   updateTabBar();
@@ -88,6 +102,7 @@ void ChartsWidget::removeTab(int index) {
     removeChart(c);
   }
   tab_charts_.erase(id);
+  tab_names_.erase(id);
   tabbar_.removeTab(index);
   updateTabBar();
 }
@@ -95,7 +110,7 @@ void ChartsWidget::removeTab(int index) {
 void ChartsWidget::updateTabBar() {
   for (int i = 0; i < tabbar_.count(); ++i) {
     const auto &charts_in_tab = tab_charts_[tabbar_.tabData(i)];
-    tabbar_.setTabText(i, "Tab " + std::to_string(i + 1) + " (" + std::to_string((int)charts_in_tab.size()) + ")");
+    tabbar_.setTabText(i, tab_names_[tabbar_.tabData(i)] + " (" + std::to_string((int)charts_in_tab.size()) + ")");
   }
 }
 
@@ -142,6 +157,18 @@ void ChartsWidget::updateState() {
     double max_sec = std::min(display_range_.first + max_chart_range_, can->maxSeconds());
     display_range_.first = std::max(can->minSeconds(), max_sec - max_chart_range_);
     display_range_.second = display_range_.first + max_chart_range_;
+  } else if (!can->isPaused()) {
+    const double window_len = time_range->second - time_range->first;
+    if (window_len > 0.05) {
+      const double pos = (cur_sec - time_range->first) / window_len;
+      if (pos > 0.85 || pos < 0.0) {
+        double new_min = std::max(can->minSeconds(), cur_sec - window_len * 0.7);
+        double new_max = std::min(can->maxSeconds(), new_min + window_len);
+        if (new_max - new_min >= window_len * 0.95) {
+          can->setTimeRange(std::make_pair(new_min, new_max));
+        }
+      }
+    }
   }
 
   const auto &range = time_range ? *time_range : display_range_;
@@ -208,6 +235,25 @@ void ChartsWidget::drawToolBar() {
       }
     }});
   }
+
+  const std::string layout_btn_text = std::string("Layout:  ") + (current_layout_name_.empty() ? "None" : current_layout_name_);
+  items.push_back({menuButtonWidth(layout_btn_text), [this, &layout_btn_text]() {
+    menuButton("layout_preset", layout_btn_text, "layout_preset_menu");
+    if (ImGui::BeginPopup("layout_preset_menu")) {
+      for (const auto &preset : cabana::LayoutManager::availablePresets()) {
+        if (ImGui::MenuItem(preset.c_str(), nullptr, current_layout_name_ == preset)) {
+          loadLayoutFile(cabana::LayoutManager::presetPath(preset));
+        }
+      }
+      ImGui::EndPopup();
+    }
+  }});
+
+  items.push_back({toolbarButtonWidth(icon::LIST), [this]() {
+    if (toolButton("cereal_browser_btn", icon::LIST, "Browse Cereal Signals")) {
+      cereal_browser_visible = !cereal_browser_visible;
+    }
+  }});
 
   // the spacer right aligns the rest
   const size_t spacer_index = items.size();
@@ -300,6 +346,52 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
   }
 }
 
+void ChartsWidget::showCerealChart(const std::string &path, bool merge) {
+  for (const auto &chart : charts_) if (chart->hasCerealSignal(path)) return;
+  auto *chart = merge && !currentCharts().empty() ? currentCharts().front() : createChart();
+  chart->addCerealSignal(path);
+  updateState();
+}
+
+void ChartsWidget::drawCerealBrowser() {
+  if (!cereal_browser_visible) return;
+  ImGui::SetNextWindowSize(ImVec2(450, 550), ImGuiCond_FirstUseEver);
+  if (ImGui::Begin("Cereal Signals", &cereal_browser_visible)) {
+    cereal_filter_.Draw("Search");
+    ImGui::TextWrapped("Double-click to plot. Shift + double-click overlays the first chart. Drag a signal onto a chart to overlay it.");
+    auto snapshot = can->cereal_series.snapshot();
+    if (snapshot.revision != cereal_revision_) {
+      std::set<std::string> paths;
+      for (const auto &[segment, series] : snapshot.segments) {
+        for (const auto &[path, values] : *series) paths.insert(path);
+      }
+      cereal_paths_.assign(paths.begin(), paths.end());
+      cereal_revision_ = snapshot.revision;
+    }
+    if (cereal_paths_.empty()) ImGui::TextUnformatted("No cereal samples loaded.");
+    std::vector<const std::string *> filtered;
+    for (const auto &path : cereal_paths_) if (cereal_filter_.PassFilter(path.c_str())) filtered.push_back(&path);
+    ImGui::BeginChild("Series");
+    ImGuiListClipper clipper;
+    clipper.Begin(filtered.size());
+    while (clipper.Step()) {
+      for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+        const auto &path = *filtered[i];
+        if (ImGui::Selectable(path.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick) && ImGui::IsMouseDoubleClicked(0)) {
+          showCerealChart(path, ImGui::GetIO().KeyShift);
+        }
+        if (ImGui::BeginDragDropSource()) {
+          ImGui::SetDragDropPayload("CABANA_CEREAL", path.c_str(), path.size() + 1);
+          ImGui::TextUnformatted(path.c_str());
+          ImGui::EndDragDropSource();
+        }
+      }
+    }
+    ImGui::EndChild();
+  }
+  ImGui::End();
+}
+
 void ChartsWidget::splitChart(ChartView *src_chart) {
   if (src_chart->signals().size() > 1) {
     auto it = std::find_if(charts_.begin(), charts_.end(), [src_chart](auto &c) { return c.get() == src_chart; });
@@ -317,7 +409,7 @@ std::vector<std::string> ChartsWidget::serializeChartIds() const {
     std::string ids;
     for (const auto &s : c->signals()) {
       if (!ids.empty()) ids += ',';
-      ids += s.msg_id.toString() + "|" + s.sig->name;
+      ids += s.sig ? s.msg_id.toString() + "|" + s.sig->name : "cereal|" + s.cereal_path;
     }
     chart_ids.push_back(ids);
   }
@@ -325,10 +417,15 @@ std::vector<std::string> ChartsWidget::serializeChartIds() const {
   return chart_ids;
 }
 
-void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids) {
+void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids, bool restore_can) {
   for (const auto &chart_id : chart_ids) {
     int index = 0;
     for (const auto &part : utils::split(chart_id, ',')) {
+      if (part.rfind("cereal|", 0) == 0) {
+        showCerealChart(part.substr(7), index++ > 0);
+        continue;
+      }
+      if (!restore_can) continue;
       const size_t sep = part.find('|');
       if (sep == std::string::npos) continue;
       MessageId msg_id = MessageId::fromString(part.substr(0, sep));
@@ -336,6 +433,90 @@ void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_id
         if (auto *sig = msg->sig(part.substr(sep + 1)))
           showChart(msg_id, sig, true, index++ > 0);
     }
+  }
+}
+
+cabana::Layout ChartsWidget::captureLayout() const {
+  cabana::Layout layout;
+  layout.name = current_layout_name_;
+  layout.current_tab_index = tabbar_.currentIndex();
+  for (int i = 0; i < tabbar_.count(); ++i) {
+    cabana::LayoutTab tab;
+    const int id = tabbar_.tabData(i);
+    tab.name = tab_names_.at(id);
+    auto found = tab_charts_.find(id);
+    if (found != tab_charts_.end()) for (const auto *chart : found->second) {
+      cabana::LayoutPane pane;
+      pane.title = chart->title();
+      pane.y_limits = chart->yLimits();
+      pane.series_type = static_cast<int>(chart->seriesType());
+      for (const auto &signal : chart->signals()) {
+        cabana::LayoutCurve curve;
+        curve.name = signal.name();
+        if (signal.sig) curve.can_id = signal.msg_id.toString();
+        char color[8];
+        snprintf(color, sizeof(color), "#%02x%02x%02x", signal.color.r, signal.color.g, signal.color.b);
+        curve.color_hex = color;
+        curve.visible = signal.visible;
+        curve.custom_python = signal.custom_python;
+        curve.derivative = signal.derivative;
+        curve.derivative_dt = signal.derivative_dt;
+        curve.scale = signal.scale;
+        curve.offset = signal.offset;
+        pane.curves.push_back(std::move(curve));
+      }
+      tab.panes.push_back(std::move(pane));
+    }
+    layout.tabs.push_back(std::move(tab));
+  }
+  return layout;
+}
+
+void ChartsWidget::loadLayoutFile(const std::filesystem::path &path) {
+  try {
+    const cabana::Layout layout = cabana::LayoutManager::loadLayout(path);
+    // Validate CAN references before discarding the current workspace.
+    for (const auto &tab : layout.tabs) for (const auto &pane : tab.panes) for (const auto &curve : pane.curves) {
+      if (curve.can_id.empty()) continue;
+      auto *message = dbc()->msg(MessageId::fromString(curve.can_id));
+      if (!message || !message->sig(curve.name)) throw std::runtime_error("Missing CAN signal " + curve.can_id + "|" + curve.name);
+    }
+    removeAll();
+    tab_names_.clear();
+    while (tabbar_.count() > 0) {
+      tabbar_.removeTab(0);
+    }
+    tab_charts_.clear();
+
+    for (size_t t = 0; t < layout.tabs.size(); ++t) {
+      const auto &tab = layout.tabs[t];
+      newTab();
+      tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = tab.name;
+
+      for (const auto &pane : tab.panes) {
+        if (!pane.kind.empty()) continue;
+        auto c = createChart(currentCharts().size());
+        c->setSeriesType(static_cast<SeriesType>(pane.series_type));
+        if (!pane.title.empty() && pane.title != "...") {
+          c->setTitle(pane.title);
+        }
+        if (pane.y_limits.has_value()) {
+          c->setYLimits(pane.y_limits->first, pane.y_limits->second);
+        }
+        for (const auto &curve : pane.curves) {
+          c->addLayoutCurve(curve);
+        }
+      }
+    }
+
+    if (tabbar_.count() > 0) {
+      tabbar_.setCurrentIndex(std::clamp(layout.current_tab_index, 0, tabbar_.count() - 1));
+    }
+    current_layout_name_ = layout.name;
+    updateLayout();
+    updateTabBar();
+  } catch (const std::exception &err) {
+    fprintf(stderr, "Failed to load layout %s: %s\n", path.c_str(), err.what());
   }
 }
 

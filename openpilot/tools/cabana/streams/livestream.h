@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/streams/cereal_extractor.h"
 
 class LiveStream : public AbstractStream {
 public:
@@ -38,6 +39,8 @@ private:
   std::thread stream_thread, update_thread;
   std::atomic<bool> update_pending_ = false;
   std::vector<const CanEvent *> received_events_;
+  cabana::CerealSeriesMap live_cereal_series_;
+  std::mutex cereal_lock_;
 
   std::chrono::system_clock::time_point begin_date_time;
   uint64_t begin_event_ts = 0;

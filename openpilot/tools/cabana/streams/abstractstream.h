@@ -15,6 +15,7 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "tools/cabana/core/can_data.h"
+#include "tools/cabana/streams/cereal_extractor.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
@@ -65,6 +66,9 @@ public:
   Observable<const MessageEventsMap &> eventsMerged;
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
+
+  cabana::CerealSeriesStore cereal_series;
+  Observable<> cerealEventsMerged;  // invoked on the main thread
 
   SourceSet sources;
 

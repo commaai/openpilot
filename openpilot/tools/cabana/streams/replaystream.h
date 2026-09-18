@@ -39,5 +39,6 @@ private:
   std::unique_ptr<Replay> replay = nullptr;
   Connection settings_connection_;
   std::set<int> processed_segments;
+  double prev_update_ts_ = 0;
   std::unique_ptr<OpenpilotPrefix> op_prefix;
 };

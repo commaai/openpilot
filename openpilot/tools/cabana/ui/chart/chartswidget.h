@@ -12,6 +12,7 @@
 #include "imgui_internal.h"
 
 #include "tools/cabana/ui/chart/signalselector.h"
+#include "tools/cabana/ui/layout_manager.h"
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -70,14 +71,22 @@ public:
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
   void draw();  // content only; MainWindow wraps it in a child region or the floating window
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
+  void showCerealChart(const std::string &path, bool merge = false);
+  void drawCerealBrowser();
+  bool cereal_browser_visible = false;
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
   std::vector<std::string> serializeChartIds() const;
-  void restoreChartsFromIds(const std::vector<std::string> &chart_ids);
+  void restoreChartsFromIds(const std::vector<std::string> &chart_ids, bool restore_can = true);
+  void loadLayoutFile(const std::filesystem::path &path);
+  cabana::Layout captureLayout() const;
+  const std::string &currentLayoutName() const { return current_layout_name_; }
   std::string whatsThis() const;
 
   void setColumnCount(int n);
   void removeAll();
   void setIsDocked(bool dock);
+
+  std::string current_layout_name_;
 
   Observable<> toggleChartsDocking;
   Observable<> seriesChanged;
@@ -115,6 +124,9 @@ private:
   void execSignalSelector(std::unique_ptr<SignalSelector> dlg, ChartView *owner, std::function<void(SignalSelector &)> accepted);
   void drawDragPreview();
 
+  ImGuiTextFilter cereal_filter_;
+  uint64_t cereal_revision_ = UINT64_MAX;
+  std::vector<std::string> cereal_paths_;
   LogSlider range_slider_{1000};
   bool is_docked_ = true;
   bool float_window_init_ = false;  // the floating window geometry is set once, right after undocking
@@ -124,6 +136,7 @@ private:
   std::vector<std::unique_ptr<ChartView>> charts_;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts_;
   TabBar tabbar_;
+  std::unordered_map<int, std::string> tab_names_;
   ChartsContainer charts_container_{this};
   ImGuiWindow *charts_scroll_ = nullptr;  // the scroll area child window
   ImRect charts_scroll_viewport_;

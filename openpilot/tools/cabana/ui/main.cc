@@ -37,6 +37,8 @@ struct CabanaArgs {
   std::string data_dir;
   std::string dbc;
   std::string route;
+  std::string layout;
+  std::string stream;
 };
 
 void printUsage(const char *argv0) {
@@ -48,6 +50,8 @@ void printUsage(const char *argv0) {
           "Options:\n"
           "  --help                    show this help\n"
           "  --demo                    use a demo route instead of providing your own\n"
+          "  --layout <name|file>      load predefined layout or layout json file on startup\n"
+          "  --stream [ip-address]     read stream from specified ip (default: 127.0.0.1)\n"
           "  --auto                    Auto load the route from the best available source (no video):\n"
           "                            internal, openpilotci, comma_api, car_segments, testing_closet\n"
           "  --qcam                    load qcamera\n"
@@ -85,6 +89,14 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       return 0;
     } else if (std::strcmp(a, "--demo") == 0) {
       args.demo = true;
+    } else if (std::strcmp(a, "--layout") == 0) {
+      if (!takeValue(argc, argv, i, args.layout)) return 1;
+    } else if (std::strcmp(a, "--stream") == 0) {
+      if (i + 1 < argc && argv[i + 1][0] != '-') {
+        takeValue(argc, argv, i, args.stream);
+      } else {
+        args.stream = "127.0.0.1";
+      }
     } else if (std::strcmp(a, "--auto") == 0) {
       args.auto_source = true;
     } else if (std::strcmp(a, "--qcam") == 0) {
@@ -149,6 +161,10 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<AbstractStream> stream;
   StreamLoader stream_loader;
 
+  if (!args.stream.empty() && args.zmq.empty()) {
+    args.zmq = args.stream;
+  }
+
   if (args.msgq) {
     stream = std::make_unique<DeviceStream>();
   } else if (!args.zmq.empty()) {
@@ -198,5 +214,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, args.layout);
 }

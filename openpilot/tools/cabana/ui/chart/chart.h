@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -13,6 +14,8 @@
 #include "tools/cabana/ui/chart/tiplabel.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/ui/custom_eval.h"
+#include "tools/cabana/ui/layout_manager.h"
 #include "tools/cabana/utils/util.h"
 
 enum class SeriesType {
@@ -31,6 +34,21 @@ public:
   struct SigItem {
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
+    std::string cereal_path;
+    std::string custom_name;
+    std::optional<cabana::CustomPythonSeries> custom_python;
+    bool derivative = false;
+    double derivative_dt = 0.0;
+    double scale = 1.0;
+    double offset = 0.0;
+    std::map<uint16_t, std::string> enum_names;
+    const std::string &name() const {
+      if (!custom_name.empty()) return custom_name;
+      return sig ? sig->name : cereal_path;
+    }
+    std::string unit() const { return sig ? sig->unit : ""; }
+    std::string formatValue(double value, bool with_unit = true) const;
+
     CabanaColor color;
     bool visible = true;
     std::vector<ImPlotPoint> vals;
@@ -43,10 +61,20 @@ public:
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
+  void addCerealSignal(const std::string &path, const std::string &color_hex = "");
+  void addCustomCurve(const std::string &name, const cabana::CustomPythonSeries &spec, const std::string &color_hex = "");
+  void addLayoutCurve(const cabana::LayoutCurve &curve);
+  void setYLimits(double min, double max) { custom_y_limits_ = std::make_pair(min, max); updateAxisY(); }
+  const std::optional<std::pair<double, double>> &yLimits() const { return custom_y_limits_; }
+  void setTitle(const std::string &title) { custom_title_ = title; }
+  const std::string &title() const { return custom_title_; }
+  bool hasCerealSignal(const std::string &path) const;
+  void updateCerealSeries();
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type) { series_type_ = type; }
+  SeriesType seriesType() const { return series_type_; }
   void showTip(double sec);
   void hideTip();
   void draw(float width);  // one chart of settings.chart_height
@@ -60,6 +88,7 @@ public:
   const std::vector<SigItem> &signals() const { return sigs_; }
   const ImRect &rect() const { return layout_.rect; }  // the whole chart widget, screen coordinates
   bool plotHovered() const { return layout_.plot_hovered; }
+  bool isEnumPlot() const;
   double secondsAtPoint(const ImVec2 &pt) const {
     return x_min_ + (pt.x - layout_.plot_area.Min.x) * (x_max_ - x_min_) / std::max(layout_.plot_area.GetWidth(), 1.0f);
   }
@@ -69,7 +98,7 @@ private:
 
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
-  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.sig && s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
   void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
@@ -122,6 +151,8 @@ private:
   int y_tick_count_ = 3;
   int y_precision_ = 0;
   std::string y_unit_;
+  std::optional<std::pair<double, double>> custom_y_limits_;
+  std::string custom_title_;
   // interaction
   enum class MouseMode { None, Rubber, Scrub };
   MouseMode mouse_mode_ = MouseMode::None;

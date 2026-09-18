@@ -26,7 +26,7 @@ def build_bootstrap_icons_src(target, source, env):
 bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_icons.SVG_PATH), build_bootstrap_icons_src)
 
 # sources shared by the imgui frontend and the core test
-core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
+core_srcs = ['streams/cereal_extractor.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
              'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc']
 if arch != "Darwin":
@@ -54,6 +54,10 @@ else:
 cabana_ui = ui_env.Program('_cabana_ui', ui_objs, LIBS=ui_libs)
 
 if GetOption('extras'):
+  layout_test_sources = [s for s in ui_env.Flatten(ui_objs) if s != ui_env.File('ui/main.cc')]
+  ui_env.Program('tests/test_layout_roundtrip', layout_test_sources + ['tests/test_layout_roundtrip.cc'], LIBS=ui_libs)
+  env.Program('tests/test_cereal_extractor', ['tests/test_cereal_extractor.cc', 'streams/cereal_extractor.cc'],
+              LIBS=[cereal, 'capnp', 'kj', 'pthread'])
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
   cabana_core_test_objects = [

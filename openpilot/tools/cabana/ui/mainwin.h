@@ -17,13 +17,16 @@
 #include "tools/cabana/ui/chart/chartswidget.h"
 #include "tools/cabana/ui/widgets/detailwidget.h"
 #include "tools/cabana/ui/widgets/messageswidget.h"
+#include "tools/cabana/ui/widgets/log_widget.h"
+#include "tools/cabana/ui/widgets/map_widget.h"
 #include "tools/cabana/ui/widgets/videowidget.h"
 
 struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
+             const std::string &dbc_file, const std::string &layout = "");
   ~MainWindow();
   void draw();
   void toggleChartsDocking();
@@ -78,6 +81,10 @@ private:
   void handleShortcuts();
   void drawMenuBar();
   void drawFileMenu();
+  void drawLayoutMenu();
+  void loadLayoutPreset(const std::string &name);
+  void loadLayoutPrompt();
+  void saveLayoutPrompt();
   void drawManageDBCsMenu();
   void drawRecentFilesMenu();
   void drawDockspace();
@@ -95,6 +102,9 @@ private:
   CenterWidget center_widget_;
   std::unique_ptr<VideoWidget> video_widget_;
   std::unique_ptr<ChartsWidget> charts_widget_;
+  std::unique_ptr<cabana::MapWidget> map_widget_;
+  std::unique_ptr<cabana::LogWidget> log_widget_;
+  std::string startup_layout_;
   StreamSelector stream_selector_;
   SettingsDialog settings_dialog_;
   HelpOverlay help_overlay_;
