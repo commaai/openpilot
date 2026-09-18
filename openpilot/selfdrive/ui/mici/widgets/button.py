@@ -5,7 +5,7 @@ from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import DO_ZOOM
+from openpilot.system.ui.widgets.scroller import DO_ZOOM, NavScroller
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
 
@@ -38,10 +38,6 @@ class BaseButton(Widget):
       from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
       self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
 
-  def enable_long_press_shake(self):
-    if self._long_press_callback is None:
-      self.set_long_press_callback(self.trigger_shake)
-
   def trigger_shake(self):
     self._shake_start = rl.get_time()
 
@@ -60,6 +56,16 @@ class BaseButton(Widget):
 
   def set_position(self, x: float, y: float) -> None:
     super().set_position(x + self._shake_offset, y)
+
+
+class SettingsPanel(NavScroller):
+  def add_widgets(self, items: list[Widget]) -> None:
+    # Settings without a description shake on long press
+    for item in items:
+      if isinstance(item, BaseButton) and item._long_press_callback is None:
+        item.set_long_press_callback(item.trigger_shake)
+    self._scroller.add_widgets(items)
+
 
 class BigCircleButton(BaseButton):
   def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0),
