@@ -161,6 +161,14 @@ def step(String name, String cmd, Map args = [:]) {
   return [name, cmd, args]
 }
 
+def chestnutStage(String name = "chestnut") {
+  deviceStage(name, "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
+    step("build", "./openpilot/selfdrive/test/chestnut.sh"),
+    step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
+    step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
+  ])
+}
+
 node {
   env.CI = "1"
   env.PYTHONWARNINGS = "error"
@@ -170,6 +178,36 @@ node {
 
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
+
+  if (env.JOB_BASE_NAME == 'chestnut-stresstest') {
+    sh 'git fetch --no-tags origin nightly-chestnut'
+    env.GIT_COMMIT = sh(script: 'git show FETCH_HEAD:git_src_commit', returnStdout: true).trim()
+    if (!(env.GIT_COMMIT ==~ /[0-9a-f]{40}/)) {
+      error("invalid nightly-chestnut source commit")
+    }
+    def results = []
+    try {
+      timeout(time: 12, unit: 'HOURS') {
+        for (int run = 1; run <= 100; run++) {
+          results << "run ${run}: INCOMPLETE"
+          try {
+            chestnutStage("chestnut ${run}/100")
+            results[run - 1] = "run ${run}: PASS"
+          } catch (hudson.AbortException e) {
+            results[run - 1] = "run ${run}: FAIL"
+            echo e.toString()
+          }
+        }
+      }
+    } finally {
+      writeFile file: 'chestnut_stress_report.txt', text: "commit: ${env.GIT_COMMIT}\ncompleted: ${results.count { !it.endsWith('INCOMPLETE') }}/100\n" + results.join('\n') + '\n'
+      archiveArtifacts artifacts: 'chestnut_stress_report.txt'
+    }
+    if (results.any { !it.endsWith('PASS') }) {
+      error("chestnut stress test failed")
+    }
+    return
+  }
 
   def excludeBranches = ['__nightly', '__nightly-chestnut', 'devel', 'devel-staging',
                          'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
@@ -261,11 +299,7 @@ node {
         ])
       },
       'chestnut': {
-        deviceStage("chestnut", "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
-          step("build", "./openpilot/selfdrive/test/chestnut.sh"),
-          step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
-          step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
-        ])
+        chestnutStage()
       },
 
     )
