@@ -37,9 +37,9 @@ class PairingInfoLayout(InfoLayoutMici):
     provider_offset = self._provider_icon.width + 14 if self._provider_icon else 0
     commacare_offset = self._commacare_badge.width + 14 if self._show_commacare else 0
     self.subtext1.set_position(self.subtext1.rect.x + provider_offset, self.subtext1.rect.y)
-    self.subtext1.set_max_width(int(self._rect.width - 20 - provider_offset))
+    self.subtext1.set_max_width(int(self._rect.width - provider_offset - (40 if self._provider_icon else 20)))
     self.subtext2.set_position(self.subtext2.rect.x + commacare_offset, self.subtext2.rect.y)
-    self.subtext2.set_max_width(int(self._rect.width - 20 - commacare_offset))
+    self.subtext2.set_max_width(int(self._rect.width - commacare_offset - (40 if self._show_commacare else 20)))
 
   def _render(self, rect):
     super()._render(rect)
@@ -71,8 +71,8 @@ class PrimeManagementScroller(NavScroller):
         "scan to claim trial" if can_claim_trial else "scan to manage\nprime status",
         self._prime_icon
       ),
-      GreyBigButton("", "prime adds 24/7 LTE and 1 year of cloud storage in comma connect.",),
-      GreyBigButton("", "prime lets you access live video and GPS location remotely in comma connect.",),
+      GreyBigButton("", "prime adds 24/7 LTE to device and 1 year of cloud storage in connect.",),
+      GreyBigButton("", "prime lets you view live video and GPS location remotely in connect.",),
       GreyBigButton("", "prime also includes commacare extended device warranty.",),
     ]
     self._prime_management = [
