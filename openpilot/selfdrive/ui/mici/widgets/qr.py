@@ -13,8 +13,7 @@ class QR(Widget):
     super().__init__()
     self._url = url
 
-    self._texture = None
-    self._generate_qr_code()
+    self._texture = self._generate_qr_code()
     modules = self._texture.width // 10 if self._texture else 1
     size = 170 if 170 / modules >= MIN_PIXELS_PER_MODULE else 240
 
@@ -22,13 +21,11 @@ class QR(Widget):
     self._error = Label("QR Code Error", font_size=30, font_weight=FontWeight.BOLD, text_color=rl.RED)
 
   def _generate_qr_code(self):
-    if self._texture and self._texture.id != 0:
-      rl.unload_texture(self._texture)
     try:
-      self._texture = make_texture(self._url, inverted=True)
+      return make_texture(self._url, inverted=True)
     except Exception as e:
       cloudlog.warning(f"QR code generation failed: {e}")
-      self._texture = None
+      return None
 
   def _render(self, rect: rl.Rectangle):
     if not self._texture:
