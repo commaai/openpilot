@@ -34,7 +34,7 @@ class UpdaterState(IntEnum):
 
 class SoftwareInfoLayoutMici(InfoLayoutMici):
   def __init__(self):
-    super().__init__(("version", "branch"), scroll=(False, True))
+    super().__init__("version", "", "branch", "")
 
   def _update_state(self):
     super()._update_state()
@@ -42,11 +42,11 @@ class SoftwareInfoLayoutMici(InfoLayoutMici):
     desc = _split_description(ui_state.params.get("UpdaterCurrentDescription") or "")
     if desc is not None:
       version, branch, commit, date = desc
-      self.set_value(0, f"{version} ({date})")
-      self.set_value(1, f"{branch} ({commit})")
+      self.subtext1.set_text(f"{version} ({date})")
+      self.subtext2.set_text(f"{branch} ({commit})")
     else:
-      self.set_value(0, ui_state.params.get("Version") or "N/A")
-      self.set_value(1, ui_state.params.get("GitBranch") or "N/A")
+      self.subtext1.set_text(ui_state.params.get("Version") or "N/A")
+      self.subtext2.set_text(ui_state.params.get("GitBranch") or "N/A")
 
 
 class CheckUpdateButton(BigButton):

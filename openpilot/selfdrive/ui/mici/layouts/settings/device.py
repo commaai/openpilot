@@ -7,7 +7,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
-from openpilot.selfdrive.ui.mici.widgets.info import InfoPanel
+from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
@@ -90,10 +90,10 @@ class EngagedConfirmationButton(BigButton):
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
-class DeviceInfoLayoutMici(InfoPanel):
+class DeviceInfoLayoutMici(InfoLayoutMici):
   def __init__(self):
     params = Params()
-    super().__init__(("device ID", "serial"), (params.get("DongleId") or 'N/A', params.get("HardwareSerial") or 'N/A'), width=380)
+    super().__init__("device ID", params.get("DongleId") or 'N/A', "serial", params.get("HardwareSerial") or 'N/A', width=380)
 
 
 class PairBigButton(BigButton):
