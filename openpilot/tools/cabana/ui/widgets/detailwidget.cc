@@ -48,6 +48,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
   }));
   connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { tabbar_.removeTab(index); }));
   connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) { showTabBarContextMenu(index); }));
+  heatmap_live_ = can->liveStreaming();
   binary_view_ = std::make_unique<BinaryView>();
   signal_view_ = std::make_unique<SignalView>(charts);
 
@@ -74,8 +75,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
     char text[64];
     if (range) snprintf(text, sizeof(text), "%.3f - %.3f", range->first, range->second);
     heatmap_all_text_ = range ? text : "All";
-    const bool live = !range;
-    if (std::exchange(heatmap_live_, live) != live) binary_view_->setHeatmapLiveMode(live);
+    heatmap_live_ = !range && can->liveStreaming();
+    binary_view_->setHeatmapLiveMode(heatmap_live_);
   }));
 }
 

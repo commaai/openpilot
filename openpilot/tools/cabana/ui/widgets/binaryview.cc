@@ -56,6 +56,13 @@ void fillBDiagPattern(ImDrawList *p, const ImRect &r, ImU32 col) {
 }  // namespace
 
 BinaryView::BinaryView() {
+  heatmap_live_mode_ = can->liveStreaming();
+  connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) {
+    if (events.count(msg_id_)) {
+      bit_flip_tracker_.valid = false;
+      if (!heatmap_live_mode_) updateState();
+    }
+  }));
   connections_.push_back(dbc()->fileChanged.connect([this]() { refresh(); }));
   connections_.push_back(UndoStack::instance()->indexChanged.connect([this]() { refresh(); }));
 }
@@ -63,6 +70,8 @@ BinaryView::BinaryView() {
 std::string BinaryView::whatsThis() const {
   return R"(
     <b>Binary View</b><br/>
+    All / selected range: brighter bits and bytes changed more often; uncolored cells did not change.<br/>
+    Live: accumulated bit flips and fading byte changes during playback.<br/>
     <span style="color:gray">Shortcuts</span><br />
     Delete Signal:
       <span style="background-color:lightGray;color:gray">&nbsp;x&nbsp;</span>,
@@ -359,6 +368,8 @@ void BinaryView::updateState() {
     cells_.resize(row_count_ * COLUMN_COUNT);
   }
 
+  for (auto &cell : cells_) cell.valid = false;
+
   auto &bit_flips = heatmap_live_mode_ ? last_msg.bit_flip_counts : bitFlipChanges(binary.size());
   uint32_t max_bit_flip_count = 1;  // 1 to avoid division by zero
   for (const auto &row : bit_flips) {
@@ -367,13 +378,16 @@ void BinaryView::updateState() {
     }
   }
 
+  uint32_t max_byte_flip_count = 1;
+  for (auto count : bit_flip_tracker_.counts.bytes) max_byte_flip_count = std::max(max_byte_flip_count, count);
+
   const Palette &p = palette();
   const double max_alpha = 255.0;
   const double min_alpha_with_signal = p.heatmap_signal_alpha;  // Base alpha for small flip counts
   const double min_alpha_no_signal = p.heatmap_bit_alpha;    // Base alpha for small flip counts for no signal bits
   const double alpha_gamma = p.heatmap_gamma;
   const double log_factor = 1.0 + 0.2;
-  const double log_scaler = max_alpha / log2(log_factor * max_bit_flip_count);
+  const double log_scaler = max_alpha / log2(1.0 + log_factor * max_bit_flip_count);
 
   for (size_t i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
@@ -393,38 +407,27 @@ void BinaryView::updateState() {
       color.a = static_cast<uint8_t>(alpha);
       setCell(i, j, bit_val, color);
     }
-    setCell(i, HEX_COLUMN, binary[i], last_msg.colors[i]);
+    auto byte_color = last_msg.colors[i];
+    if (!heatmap_live_mode_) {
+      const auto count = bit_flip_tracker_.counts.bytes[i];
+      const double intensity = std::log2(1.0 + count * log_factor) / std::log2(1.0 + max_byte_flip_count * log_factor);
+      byte_color = CabanaColor(102, 86, 169, static_cast<uint8_t>(max_alpha * std::pow(intensity, alpha_gamma)));
+    }
+    setCell(i, HEX_COLUMN, binary[i], byte_color);
   }
 }
 
 const std::vector<std::array<uint32_t, 8>> &BinaryView::bitFlipChanges(size_t msg_size) {
   auto time_range = can->timeRange();
-  if (bit_flip_tracker_.time_range == time_range && !bit_flip_tracker_.flip_counts.empty())
-    return bit_flip_tracker_.flip_counts;
+  if (bit_flip_tracker_.valid && bit_flip_tracker_.time_range == time_range &&
+      bit_flip_tracker_.counts.bits.size() == msg_size) return bit_flip_tracker_.counts.bits;
 
   bit_flip_tracker_.time_range = time_range;
-  bit_flip_tracker_.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
-
+  bit_flip_tracker_.counts = HeatmapCounts(msg_size);
   auto [first, last] = can->eventsInRange(msg_id_, time_range);
-  if (std::distance(first, last) <= 1) return bit_flip_tracker_.flip_counts;
-
-  std::vector<uint8_t> prev_values((*first)->dat, (*first)->dat + (*first)->size);
-  for (auto it = std::next(first); it != last; ++it) {
-    const CanEvent *event = *it;
-    int size = std::min<int>(msg_size, event->size);
-    for (int i = 0; i < size; ++i) {
-      const uint8_t diff = event->dat[i] ^ prev_values[i];
-      if (!diff) continue;
-
-      auto &bit_flips = bit_flip_tracker_.flip_counts[i];
-      for (int bit = 0; bit < 8; ++bit) {
-        if (diff & (1u << bit)) ++bit_flips[7 - bit];
-      }
-      prev_values[i] = event->dat[i];
-    }
-  }
-
-  return bit_flip_tracker_.flip_counts;
+  for (auto it = first; it != last; ++it) bit_flip_tracker_.counts.add((*it)->dat, (*it)->size);
+  bit_flip_tracker_.valid = true;
+  return bit_flip_tracker_.counts.bits;
 }
 
 bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const {
