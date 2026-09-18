@@ -4,30 +4,26 @@ from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import NavScroller
 
 
-class PairingInfoLayout(Widget):
+class PairingInfoLayout(InfoLayoutMici):
   def __init__(self):
-    super().__init__()
+    super().__init__("account", "", "status", "")
     self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 27, 32)
     self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/{provider}.png", 32, 32)
                            for provider in ("github", "google", "apple")}
-    self._subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
-    self._labels = [
-      UnifiedLabel("account", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
-      UnifiedLabel(ui_state.prime_state.get_pairing_account, 36, max_width=340,
-                   text_color=self._subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False, scroll=True),
-      UnifiedLabel("status", 48, max_width=340, font_weight=FontWeight.DISPLAY, wrap_text=False),
-      UnifiedLabel(self._get_prime_status, 36, max_width=304,
-                   text_color=self._subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False),
-    ]
-    self.set_rect(rl.Rectangle(0, 0, 360, 180))
+
+  def _update_state(self):
+    super()._update_state()
+    self.subtext1.set_text(ui_state.prime_state.get_pairing_account())
+    self.subtext2.set_text(self._get_prime_status())
+    self._provider_icon = self._provider_icons.get(ui_state.prime_state.get_pairing_provider())
+    self._show_commacare = ui_state.prime_state.has_commacare()
 
   @staticmethod
   def _get_prime_status() -> str:
@@ -35,31 +31,24 @@ class PairingInfoLayout(Widget):
       return "prime" if ui_state.prime_state.is_full_prime() else "prime lite"
     return "not subscribed"
 
-  def _render(self, _):
-    show_commacare = ui_state.prime_state.has_commacare()
-    provider_icon = self._provider_icons.get(ui_state.prime_state.get_pairing_provider())
-    for label, y_offset in zip(self._labels, (-10, 68 - 25, 114 - 30, 161 - 25), strict=True):
-      badge_offset = 0
-      # provider icon offset
-      if label is self._labels[1]:
-        badge_offset = provider_icon.width + 14 if provider_icon else 0
-        label.set_max_width(340 - badge_offset)
-      # commacare offset
-      if label is self._labels[3]:
-        badge_offset = self._commacare_badge.width + 14 if show_commacare else 0
+  def _layout(self):
+    super()._layout()
+    provider_offset = self._provider_icon.width + 14 if self._provider_icon else 0
+    commacare_offset = self._commacare_badge.width + 14 if self._show_commacare else 0
+    self.subtext1.set_position(self.subtext1.rect.x + provider_offset, self.subtext1.rect.y)
+    self.subtext1.set_max_width(int(self._rect.width - 20 - provider_offset))
+    self.subtext2.set_position(self.subtext2.rect.x + commacare_offset, self.subtext2.rect.y)
+    self.subtext2.set_max_width(int(self._rect.width - 20 - commacare_offset))
 
-      label.set_position(self._rect.x + 20 + badge_offset, self._rect.y + y_offset)
-      label.render()
+  def _render(self, rect):
+    super()._render(rect)
 
-    if provider_icon:
-      label = self._labels[1]
-      icon_pos = rl.Vector2(self._rect.x + 20, label.rect.y + (label.rect.height - provider_icon.height) / 2)
-      rl.draw_texture_v(provider_icon, icon_pos, self._subheader_color)
-
-    if show_commacare:
-      label = self._labels[3]
-      badge_pos = rl.Vector2(self._rect.x + 20, label.rect.y + (label.rect.height - self._commacare_badge.height) / 2 + 4)
-      rl.draw_texture_v(self._commacare_badge, badge_pos, rl.WHITE)
+    if self._provider_icon:
+      icon_pos = rl.Vector2(self._rect.x + 20, self.subtext1.rect.y + (self.subtext1.rect.height - self._provider_icon.height) / 2)
+      rl.draw_texture_v(self._provider_icon, icon_pos, self._subheader_color)
+    if self._show_commacare:
+      icon_pos = rl.Vector2(self._rect.x + 20, self.subtext2.rect.y + (self.subtext2.rect.height - self._commacare_badge.height) / 2 + 4)
+      rl.draw_texture_v(self._commacare_badge, icon_pos, rl.WHITE)
 
 
 class PrimeManagementScroller(NavScroller):
