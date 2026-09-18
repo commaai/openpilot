@@ -495,7 +495,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
   // Soften the heatmap behind the text without changing signal hues or text colors.
   // Use the theme's active text for inactive cells too; hover and selection use white.
   const bool light_text = palette().text.x > 0.5f || pen == IM_COL32_WHITE;
-  painter->AddRectFilled(rect.Min, rect.Max, light_text ? IM_COL32(0, 0, 0, 115) : IM_COL32(255, 255, 255, 100));
+  painter->AddRectFilled(rect.Min, rect.Max, light_text ? IM_COL32(0, 0, 0, 115) : IM_COL32(255, 255, 255, 40));
 
   if (item->valid) {
     if (index.column == HEX_COLUMN) {
