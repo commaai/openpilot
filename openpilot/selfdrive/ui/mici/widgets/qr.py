@@ -6,18 +6,15 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import Label
 from openpilot.common.qrcode import make_texture
 
-MIN_PIXELS_PER_MODULE = 3
 
 class QR(Widget):
-  def __init__(self, url: str):
+  def __init__(self, url: str, width: int = 170):
     super().__init__()
     self._url = url
 
     self._texture = self._generate_qr_code()
-    modules = self._texture.width // 10 if self._texture else 1
-    size = 170 if 170 / modules >= MIN_PIXELS_PER_MODULE else 240
 
-    self.set_rect(rl.Rectangle(0, 0, size, size))
+    self.set_rect(rl.Rectangle(0, 0, width, width))
     self._error = Label("QR Code Error", font_size=30, font_weight=FontWeight.BOLD, text_color=rl.RED)
 
   def _generate_qr_code(self):

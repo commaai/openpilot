@@ -126,11 +126,17 @@ class PairingDialog(NavScroller):
       token = ""
     return f"https://connect.comma.ai/?pair={token}"
 
+  def _update_layout_rects(self):
+    super()._update_layout_rects()
+    self._qr.set_rect(rl.Rectangle(self._qr.rect.x, self._qr.rect.y, self._rect.height, self._rect.height))
+
   def _render(self, rect: rl.Rectangle):
     current_time = time.monotonic()
     if current_time - self._last_pairing_qr_generation >= self.QR_REFRESH_INTERVAL:
       self._qr._url = self._get_pairing_url()
-      self._qr._generate_qr_code()
+      if self._qr._texture and self._qr._texture.id != 0:
+        rl.unload_texture(self._qr._texture)
+      self._qr._texture = self._qr._generate_qr_code()
       self._last_pairing_qr_generation = current_time
     super()._render(rect)
 
