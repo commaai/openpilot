@@ -247,14 +247,16 @@ class ModelRenderer(Widget):
     """Project all four corners using the path's road height and camera calibration."""
     empty = np.empty((0, 2), dtype=np.float32)
     if (len(path_x_array) == 0 or not np.isfinite(self._path.raw_points).all() or
-        not np.isfinite([distance, lateral]).all() or np.any(np.diff(path_x_array) < 0) or
+        not np.isfinite([distance, lateral]).all() or
         distance <= LEAD_BAR_REAR_GAP + 0.1 or distance > MAX_DRAW_DISTANCE):
       return empty
 
-    # Stopped model trajectories can repeat x positions or end before the lead.
-    # Reuse the last road height beyond the trajectory, as the existing lead projection did.
-    path_x_array, indices = np.unique(path_x_array, return_index=True)
-    path = self._path.raw_points[indices]
+    # Near standstill, predictions can repeat or retreat slightly in x. Keep
+    # forward-progressing samples in trajectory order for road interpolation.
+    # Beyond that usable path, retain the last road height as before.
+    forward_samples = np.r_[True, path_x_array[1:] > np.maximum.accumulate(path_x_array)[:-1]]
+    path_x_array = path_x_array[forward_samples]
+    path = self._path.raw_points[forward_samples]
 
     # Follow the local road direction, but center on the radar lead rather than the path.
     sample_x = np.clip([distance - 1.0, distance + 1.0], path_x_array[0], path_x_array[-1])
@@ -289,6 +291,15 @@ class ModelRenderer(Widget):
 
     depth = min(LEAD_BAR_DEPTH, max_depth)
     points = project_depth(depth)
+    if not points.size and project_depth(0.0).size:
+      # The anchor can still be visible when the initial long footprint crosses
+      # the camera plane. Find a valid shorter footprint before sizing it.
+      for _ in range(20):
+        max_depth = depth
+        depth *= 0.5
+        points = project_depth(depth)
+        if points.size:
+          break
     if not points.size:
       return empty
     height = np.ptp(points[:, 1])

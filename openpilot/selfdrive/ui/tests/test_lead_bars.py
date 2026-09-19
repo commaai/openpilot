@@ -79,6 +79,28 @@ class TestLeadBars(unittest.TestCase):
     self.assertEqual(points.shape, (4, 2))
     self.assertTrue(np.isfinite(points).all())
 
+  def test_backward_path_samples_do_not_hide_lead(self):
+    expected = self.project(6)
+    self.renderer._path.raw_points[-1, 0] = self.x[-2] - 0.001
+    points = self.renderer._project_lead_bar(6, 0, self.renderer._path.raw_points[:, 0])
+    np.testing.assert_allclose(points, expected)
+    # A stopped trajectory can also retreat after a short forward portion.
+    self.renderer._path.raw_points = np.array([[0, 0, 0], [1, 0, 0], [0.999, 0.5, 0.5]], dtype=np.float32)
+    points = self.renderer._project_lead_bar(6, 0, self.renderer._path.raw_points[:, 0])
+    np.testing.assert_allclose(points, expected)
+
+  def test_close_lead_shortens_before_camera_plane(self):
+    # The lead anchor is in front of the camera, but the initial long bar's
+    # near edge is behind it. The shorter projected bar must remain visible.
+    self.renderer._car_space_transform[2] = [1, 0, -1]
+    points = self.project(6)
+    self.assertEqual(points.shape, (4, 2))
+    self.assertTrue(np.isfinite(points).all())
+    self.assertAlmostEqual(float(np.ptp(points[:, 1])), 14, places=3)
+    self.assertAlmostEqual(float(points[:, 1].min()), (100 * 5.8 + 600) / (5.8 - 1.2), places=3)
+    # Do not rescue a lead whose anchor is itself behind the camera.
+    self.assertEqual(self.project(1).size, 0)
+
   def test_smoothing_and_lead_change(self):
     lead = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
     radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
