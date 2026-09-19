@@ -15,7 +15,6 @@ consume GNSS), so it is dead-reckoned by pose deltas and anchored with the GNSS
 heading via a complementary filter whenever the car moves fast enough for the
 GNSS heading to be trustworthy.
 """
-import json
 import math
 import time
 
@@ -64,11 +63,10 @@ class ParkNavEstimator:
 
 
 def get_destination(params: Params) -> tuple[float, float] | None:
-  raw = params.get("ParkingDestination")
-  if raw is None:
+  dest = params.get("ParkingDestination")
+  if dest is None:
     return None
   try:
-    dest = json.loads(raw)
     return float(dest["latitude"]), float(dest["longitude"])
   except Exception:
     cloudlog.exception("bad ParkingDestination param")
@@ -111,9 +109,9 @@ def update_pose(state: ParkNavEstimator, sm, calibrator: PoseCalibrator) -> None
 
 
 def update_gps(state: ParkNavEstimator, sm, destination: tuple[float, float] | None) -> None:
-  if not sm.updated['gpsLocation'] or not sm.valid['gpsLocation']:
+  if not sm.updated['gpsLocationExternal'] or not sm.valid['gpsLocationExternal']:
     return
-  gps = sm['gpsLocation']
+  gps = sm['gpsLocationExternal']
   t = time.monotonic()
 
   if gps.hasFix and destination is not None:
@@ -164,7 +162,7 @@ def main():
   calibrator = PoseCalibrator()
   state = ParkNavEstimator()
 
-  sm = messaging.SubMaster(['gpsLocation', 'deviceMotion', 'extrinsicsCalibration'], poll='deviceMotion')
+  sm = messaging.SubMaster(['gpsLocationExternal', 'deviceMotion', 'extrinsicsCalibration'], poll='deviceMotion')
   pm = messaging.PubMaster(['parkNavSignal'])
 
   frame = 0
