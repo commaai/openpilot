@@ -22,10 +22,8 @@ const float SMALL_FONT_SIZE = 10.0f;  // Inter needs 10 px for a 7 px cap height
 const int GRID_COLUMN_COUNT = BinaryView::COLUMN_COUNT + 1;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
 
-inline ImU32 paletteHighlight() { return ImGui::GetColorU32(ImGuiCol_Header); }
 inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
-inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
-const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);
+inline ImU32 paletteText() { return ImGui::GetColorU32(ImGuiCol_Text); }
 
 // JetBrains Mono ships no bold variant, so emulate one by drawing the glyphs again a fraction of a
 // pixel to the right. Keeps the monospace advance, unlike switching to the proportional bold face.
@@ -333,7 +331,7 @@ void BinaryView::draw() {
 
   for (int row = 0; row < rows; ++row) {
     const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + IM_ROUND(column_width_), grid_pos_.y + (row + 1) * CELL_HEIGHT);
-    drawText(painter, r, std::to_string(row).c_str(), paletteText(true), nullptr, CELL_FONT_SIZE);
+    drawText(painter, r, std::to_string(row).c_str(), paletteText(), nullptr, CELL_FONT_SIZE);
   }
   for (int row = 0; row < rows; ++row) {
     for (int column = 0; column < COLUMN_COUNT; ++column) {
@@ -473,7 +471,7 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
   auto item = &cellAt(index);
   ImFont *font = ImGui::GetFont();
   float font_size = CELL_FONT_SIZE;
-  ImU32 pen = paletteText(true);
+  ImU32 pen = paletteText();
   const bool hovered = hovered_sig_ && std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
 
   if (index.column == HEX_COLUMN) {
@@ -482,10 +480,10 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
-      painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
+      painter->AddRectFilled(rect.Min, rect.Max, toImU32(byteColor(item->bg_color)));
     }
   } else if (isSelected(index)) {
-    painter->AddRectFilled(rect.Min, rect.Max, resize_sig_ ? toImU32(resize_sig_->color) : paletteHighlight());
+    painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalHighlight(resize_sig_ ? resize_sig_->color : fromImVec4(palette().header))));
     pen = IM_COL32_WHITE;
   } else if (!hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), resize_sig_) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
@@ -493,17 +491,19 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
         drawSignalCell(painter, rect, index, s);
       }
       // Hover covers the entire signal, including bits shared with another definition.
-      if (hovered) painter->AddRectFilled(rect.Min, rect.Max, toImU32(hovered_sig_->color.darker(125)));
+      if (hovered) painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalHighlight(hovered_sig_->color)));
     } else if (item->valid) {
-      if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
+      if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalFill(item->bg_color, false)));
     }
-    pen = hovered ? IM_COL32_WHITE : paletteText(is_message_active_);
+    pen = hovered ? IM_COL32_WHITE : paletteText();
   }
 
+  const auto text = fromImVec4(ImGui::ColorConvertU32ToFloat4(pen));
+  const ImU32 pattern = toImU32(contrastColor({128, 128, 128}, text));
   if (item->sigs.size() > 1) {
-    fillDense7Pattern(painter, rect, DARK_GRAY);
+    fillDense7Pattern(painter, rect, pattern);
   } else if (!item->valid) {
-    fillBDiagPattern(painter, rect, DARK_GRAY);
+    fillBDiagPattern(painter, rect, pattern);
   }
 
   if (item->valid) {
@@ -531,7 +531,7 @@ void BinaryView::drawSignalOutline(ImDrawList *painter, const ImRect &rect, cons
                                    const cabana::Signal *sig) const {
   // Definition boundaries remain visible even at zero activity. Keep them above the
   // fills and grid, at the same fixed position before and during hover.
-  const ImU32 edge = toImU32(sig->color.darker(125));
+  const ImU32 edge = toImU32(signalOutline(sig->color, sig == hovered_sig_));
   const bool left = !hasSignal(index, -1, 0, sig);
   const bool right = !hasSignal(index, 1, 0, sig);
   const bool top = !hasSignal(index, 0, -1, sig);
@@ -551,5 +551,5 @@ void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const B
   painter->AddRectFilled(rect.Min, rect.Max, paletteBase());
   CabanaColor top = color;
   top.a = static_cast<uint8_t>(color.a * (palette().text.x > 0.5f ? 0.72f : 0.90f));
-  painter->AddRectFilledMultiColor(rect.Min, rect.Max, toImU32(top), toImU32(top), toImU32(color), toImU32(color));
+  painter->AddRectFilledMultiColor(rect.Min, rect.Max, toImU32(signalFill(top)), toImU32(signalFill(top)), toImU32(signalFill(color)), toImU32(signalFill(color)));
 }
