@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import os
 import re
@@ -19,6 +20,7 @@ from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.hardware import COMMA_HARDWARE
+from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.system.manager.process_config import managed_processes
@@ -130,12 +132,17 @@ class TestLoggerd(OpenpilotTestCase):
     managed_processes["encoderd"].start()
     assert pm.wait_for_readers_to_update("narrowRoadCameraState", timeout=5)
 
+    record_audio = Params().get_bool("RecordAudio")
+    if record_audio:
+      assert pm.wait_for_readers_to_update("rawAudioData", timeout=5)
     fps = 20
+    start_time = time.monotonic_ns()
     for n in range(1, int(num_segs * segment_length * fps) + 1):
+      timestamp = start_time + n * 1_000_000_000 // fps
       # send video
       for stream_type, frame_spec, state in streams:
         dat = np.empty(frame_spec[2], dtype=np.uint8)
-        vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n / fps, n / fps)
+        vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, timestamp, timestamp)
 
         camera_state = messaging.new_message(state)
         frame = getattr(camera_state, state)
@@ -144,9 +151,12 @@ class TestLoggerd(OpenpilotTestCase):
 
       # send audio
       msg = messaging.new_message('rawAudioData')
-      msg.rawAudioData.data = bytes(800 * 2) # 800 samples of int16
-      msg.rawAudioData.sampleRate = 16000
+      msg.logMonoTime = timestamp
+      msg.rawAudioData.data = bytes(SAMPLE_BUFFER * 2)  # 50ms of mono int16 audio
+      msg.rawAudioData.sampleRate = SAMPLE_RATE
       pm.send('rawAudioData', msg)
+      if record_audio:
+        assert pm.wait_for_readers_to_update('rawAudioData', timeout=5)
 
       for _, _, state in streams:
         assert pm.wait_for_readers_to_update(state, timeout=5, dt=0.001)
@@ -325,6 +335,23 @@ class TestLoggerd(OpenpilotTestCase):
     cabin_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'dcamera.hevc'))
     assert cabin_hevc_exists == record_front
 
+  def _assert_audio_packets_match(self, qcamera, audio):
+    encoded = subprocess.check_output([
+      'ffmpeg', '-v', 'error', '-i', str(qcamera), '-map', '0:a:0', '-c:a', 'copy', '-f', 'adts', 'pipe:1',
+    ])
+    packets = []
+    offset = 0
+    while offset < len(encoded):
+      header = encoded[offset:offset + 7]
+      assert header[0] == 0xff and header[1] & 0xf6 == 0xf0
+      size = ((header[3] & 3) << 11) | (header[4] << 3) | (header[5] >> 5)
+      header_size = 7 if header[1] & 1 else 9
+      assert size > header_size
+      packets.append(encoded[offset + header_size:offset + size])
+      offset += size
+    assert offset == len(encoded)
+    assert packets == [bytes(packet.data) for packet in audio]
+
   @parameterized.expand([True, False])
   def test_record_audio(self, record_audio):
     params = Params()
@@ -333,9 +360,83 @@ class TestLoggerd(OpenpilotTestCase):
     self._publish_camera_and_audio_messages()
 
     qcamera_ts_path = os.path.join(self._get_latest_log_dir(), 'qcamera.ts')
-    ffprobe_cmd = f"ffprobe -i {qcamera_ts_path} -show_streams -select_streams a -loglevel error"
-    has_audio_stream = subprocess.run(ffprobe_cmd, shell=True, capture_output=True).stdout.strip() != b''
-    assert has_audio_stream == record_audio
+    streams = json.loads(subprocess.check_output([
+      "ffprobe", "-i", qcamera_ts_path, "-show_streams", "-select_streams", "a", "-loglevel", "error", "-of", "json",
+    ]))["streams"]
+    assert bool(streams) == record_audio
+    if record_audio:
+      assert len(streams) == 1
+      assert streams[0]["codec_name"] == "aac"
+      assert int(streams[0]["sample_rate"]) == SAMPLE_RATE
+      assert streams[0]["channels"] == 1
 
-    raw_audio_in_rlog = any(m.which() == 'rawAudioData' for m in LogReader(os.path.join(self._get_latest_log_dir(), 'rlog.zst')))
-    assert raw_audio_in_rlog == record_audio
+    messages = list(LogReader(os.path.join(self._get_latest_log_dir(), 'rlog.zst')))
+    assert not any(message.which() == 'rawAudioData' for message in messages)
+    audio = [message.audioEncodeData for message in messages if message.which() == 'audioEncodeData']
+    assert bool(audio) == record_audio
+    if record_audio:
+      assert all(packet.sampleRate == SAMPLE_RATE and packet.header and packet.data for packet in audio)
+      assert sum(packet.samples - packet.discardStart - packet.discardEnd for packet in audio) == 5 * SAMPLE_RATE
+      self._assert_audio_packets_match(qcamera_ts_path, audio)
+    assert not any(message.which() in ('rawAudioData', 'audioEncodeData')
+                   for message in LogReader(os.path.join(self._get_latest_log_dir(), 'qlog.zst')))
+
+  def test_audio_without_video(self):
+    Params().put_bool("RecordAudio", True, block=True)
+    pm = messaging.PubMaster(["rawAudioData"])
+    managed_processes["loggerd"].start()
+    assert pm.wait_for_readers_to_update("rawAudioData", timeout=5)
+    sample_count = 23 * SAMPLE_BUFFER  # exercise a final partial AAC frame
+    samples = (3000 * np.sin(2 * np.pi * 12000 * np.arange(sample_count) / SAMPLE_RATE)).astype(np.int16)
+    start_time = time.monotonic_ns()
+    for start in range(0, sample_count, SAMPLE_BUFFER):
+      message = messaging.new_message('rawAudioData', valid=True)
+      message.logMonoTime = start_time + start * 1_000_000_000 // SAMPLE_RATE
+      message.rawAudioData.sampleRate = SAMPLE_RATE
+      message.rawAudioData.data = samples[start:start + SAMPLE_BUFFER].tobytes()
+      pm.send('rawAudioData', message)
+      assert pm.wait_for_readers_to_update('rawAudioData', timeout=5)
+    managed_processes["loggerd"].stop()
+
+    messages = list(LogReader(os.path.join(self._get_latest_log_dir(), 'rlog.zst')))
+    audio = [message.audioEncodeData for message in messages if message.which() == 'audioEncodeData']
+    assert not any(message.which() == 'rawAudioData' for message in messages)
+    assert sum(packet.samples - packet.discardStart - packet.discardEnd for packet in audio) == sample_count
+    assert audio[0].discardStart > 0 and audio[-1].discardEnd > 0
+    assert all(packet.segmentNum == 0 and packet.header == audio[0].header for packet in audio)
+
+    # Reconstruct ADTS from AudioSpecificConfig to prove the logged packets decode independently.
+    encoded = bytearray()
+    for packet in audio:
+      config = int.from_bytes(packet.header[:2], 'big')
+      profile = (config >> 11) - 1
+      frequency_index = (config >> 7) & 15
+      channels = (config >> 3) & 15
+      size = len(packet.data) + 7
+      encoded.extend(bytes([0xff, 0xf1, (profile << 6) | (frequency_index << 2) | (channels >> 2),
+                            ((channels & 3) << 6) | (size >> 11), (size >> 3) & 255, ((size & 7) << 5) | 31, 0xfc]))
+      encoded.extend(packet.data)
+    frames = json.loads(subprocess.check_output([
+      'ffprobe', '-v', 'error', '-f', 'aac', '-i', 'pipe:0', '-show_frames', '-show_entries',
+      'frame=nb_samples,sample_rate,channels', '-of', 'json',
+    ], input=encoded))["frames"]
+    assert sum(frame['nb_samples'] for frame in frames) == sum(packet.samples for packet in audio)
+    assert all(frame['channels'] == 1 for frame in frames)
+
+  def test_audio_rotation(self):
+    Params().put_bool("RecordAudio", True, block=True)
+    self._publish_camera_and_audio_messages(num_segs=3, segment_length=5)
+    route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
+    total_samples = 0
+    for segment in range(3):
+      path = Path(f"{route_path}--{segment}")
+      audio = [message.audioEncodeData for message in LogReader(str(path / 'rlog.zst')) if message.which() == 'audioEncodeData']
+      assert audio and all(packet.segmentNum == segment for packet in audio)
+      assert audio[0].discardStart > 0
+      total_samples += sum(packet.samples - packet.discardStart - packet.discardEnd for packet in audio)
+      streams = json.loads(subprocess.check_output([
+        'ffprobe', '-v', 'error', '-select_streams', 'a', '-show_streams', '-of', 'json', str(path / 'qcamera.ts'),
+      ]))["streams"]
+      assert len(streams) == 1 and int(streams[0]['sample_rate']) == SAMPLE_RATE
+      self._assert_audio_packets_match(path / 'qcamera.ts', audio)
+    assert total_samples == 15 * SAMPLE_RATE

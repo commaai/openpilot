@@ -2514,6 +2514,18 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
+# One mono AAC-LC packet; each segment starts a fresh encoder/decoder.
+# Event.logMonoTime is the presentation time before discardStart is applied.
+struct AudioEncodeData {
+  data @0 :Data;
+  header @1 :Data;  # MPEG-4 AudioSpecificConfig
+  sampleRate @2 :UInt32;
+  samples @3 :UInt32;  # decoded samples in this packet
+  segmentNum @4 :UInt32;
+  discardStart @5 :UInt32;  # encoder priming samples
+  discardEnd @6 :UInt32;  # final padding samples
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2588,6 +2600,7 @@ struct Event {
     # microphone data
     soundPressure @103 :SoundPressure;
     rawAudioData @147 :AudioData;
+    audioEncodeData @154 :AudioEncodeData;
 
     # systems stuff
     operatingSystemLog @20 :OperatingSystemLogEntry;

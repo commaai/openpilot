@@ -9,10 +9,10 @@ from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 RATE = 10
-FFT_SAMPLES = 1600 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
-SAMPLE_RATE = 16000
-SAMPLE_BUFFER = 800  # 50ms
+SAMPLE_RATE = 48000
+SAMPLE_BUFFER = SAMPLE_RATE // 20  # 50ms
+FFT_SAMPLES = SAMPLE_RATE // RATE  # 100ms
 
 
 def patch_sounddevice(sd):

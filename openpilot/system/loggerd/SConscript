@@ -3,7 +3,7 @@ Import('env', 'arch', 'messaging', 'common', 'visionipc', 'ffmpeg_libs')
 libs = [common, messaging, visionipc] + ffmpeg_libs + ['pthread', 'm', 'zstd']
 frameworks = []
 
-src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
+src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'audio_encoder.cc', 'encoder/encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch == "comma_arm64":
   src += ['clip_encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/v4l_decoder.cc']
 else:
