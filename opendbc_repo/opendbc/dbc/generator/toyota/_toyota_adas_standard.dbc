@@ -1,0 +1,56 @@
+BO_ 466 PCM_CRUISE: 8 XXX
+ SG_ GAS_RELEASED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRUISE_ACTIVE : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_BRAKING : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_NET : 23|16@0- (0.0009765625,0) [-20|20] "m/s^2" XXX
+ SG_ NEUTRAL_FORCE : 39|16@0- (2,0) [-65536|65534] "N" XXX
+ SG_ CRUISE_STATE : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CANCEL_REQ : 49|1@1+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 643 PRE_COLLISION: 7 DSU
+ SG_ _COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X00 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ FORCE : 23|16@0- (2,0) [0|255] "N" XXX
+ SG_ SET_ME_X002 : 33|8@0+ (1,0) [0|3] "" XXX
+ SG_ BRAKE_STATUS : 39|3@0+ (1,0) [0|255] "" XXX
+ SG_ STATE : 36|3@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X003 : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ PRECOLLISION_ACTIVE : 41|1@0+ (1,0) [0|255] "" XXX
+ SG_ CHECKSUM : 55|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 705 GAS_PEDAL: 8 XXX
+ SG_ GAS_RELEASED : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ ETQLVSC : 15|16@0- (0.03125,0) [0|0] "Nm" XXX
+ SG_ ETQREAL : 31|16@0- (0.03125,0) [0|0] "Nm" SCS
+ SG_ ETQISC : 47|8@0+ (1,-192) [0|0] "Nm" XXX
+ SG_ GAS_PEDAL : 55|8@0+ (0.5,0) [0|0] "%" DS1,FCM
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|0] "" DS1,FCM
+
+BO_ 740 STEERING_LKA: 5 XXX
+ SG_ LKA_STATE : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ STEER_REQUEST : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 6|6@0+ (1,0) [0|63] "" XXX
+ SG_ SET_ME_1 : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEER_TORQUE_CMD : 15|16@0- (1,0) [0|65535] "" XXX
+ SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 836 PRE_COLLISION_2: 8 DSU
+ SG_ DSS1GDRV : 7|10@0- (0.1,0) [0|0] "m/s^2" Vector__XXX
+ SG_ PCSALM : 17|1@0+ (1,0) [0|0] "" FCM
+ SG_ IBTRGR : 27|1@0+ (1,0) [0|0] "" FCM
+ SG_ PBATRGR : 30|2@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ PREFILL : 33|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ AVSTRGR : 36|1@0+ (1,0) [0|0] "" SCS
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|0] "" XXX
+
+CM_ SG_ 466 NEUTRAL_FORCE "force in newtons the engine/electric motors are applying without any acceleration commands or user input";
+CM_ SG_ 466 ACC_BRAKING "whether brakes are being actuated from ACC command";
+CM_ SG_ 466 ACCEL_NET "net negative acceleration (braking) applied by the system if on flat ground";
+CM_ SG_ 466 CRUISE_STATE "Active state is 8, if standstill is requested will switch to state 11(3 sec timer), after timer is elapsed will switch into state 7(standstill). If plus button was pressed - status 9, minus button pressed - status 10";
+CM_ SG_ 643 _COUNTER "only used on cars that use this msg for cruise control";
+CM_ SG_ 643 BRAKE_STATUS "only used on cars that use this msg for cruise control";
+CM_ SG_ 643 PRECOLLISION_ACTIVE "set 0.5s before any braking";
+
+VAL_ 466 CRUISE_STATE 11 "timer_3sec" 10 "adaptive click down" 9 "adaptive click up" 8 "adaptive engaged" 7 "standstill" 6 "non-adaptive click up" 5 "non-adaptive click down" 4 "non-adaptive hold down" 3 "non-adaptive hold up" 2 "non-adaptive being engaged" 1 "non-adaptive engaged" 0 "off";
+VAL_ 643 STATE 0 "normal" 1 "adaptive_cruise_control" 3 "emergency_braking";
