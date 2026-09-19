@@ -21,9 +21,6 @@ fi
 
 export STAGING_ROOT="/data/safe_staging"
 
-# Pinball shares its CAN fingerprint with COMMA_BODY.
-export FINGERPRINT=COMMA_PINBALL
-
 # Opt-in camera mode survives reboot without changing the normal onroad lifecycle.
 if [ -f /data/camera720p60 ] || [ -f /data/camera720p120 ]; then
   export CAMERA_720P60="${CAMERA_720P60:-${CAMERA_720P120:-1}}"

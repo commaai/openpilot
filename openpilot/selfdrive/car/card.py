@@ -83,13 +83,12 @@ class Car:
     is_release = self.params.get_bool("IsReleaseBranch")
 
     if CI is None:
-      # An explicitly selected pinball controller can initialize on a silent bus.
-      if os.environ.get("FINGERPRINT") != "COMMA_PINBALL":
-        print("Waiting for CAN messages...")
-        while True:
-          can = messaging.recv_one_retry(self.can_sock)
-          if len(can.can) > 0:
-            break
+      # wait for one pandaState and one CAN packet
+      print("Waiting for CAN messages...")
+      while True:
+        can = messaging.recv_one_retry(self.can_sock)
+        if len(can.can) > 0:
+          break
 
       alpha_long_allowed = self.params.get_bool("AlphaLongitudinalEnabled")
 
