@@ -162,9 +162,9 @@ class SwagLogger(logging.Logger):
     if args:
       evt['args'] = args
     evt.update(kwargs)
-    if 'error' in kwargs:
+    if kwargs.get('error'):
       self.error(evt)
-    elif 'debug' in kwargs:
+    elif kwargs.get('debug'):
       self.debug(evt)
     else:
       self.info(evt)
