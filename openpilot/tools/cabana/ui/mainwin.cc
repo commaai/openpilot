@@ -991,8 +991,32 @@ void MainWindow::drawDetailsPanel() {
     if (detail) {
       center_widget_.draw();
     } else {
-      ImGui::TextDisabled("No CAN message selected");
-      ImGui::TextWrapped("Select a CAN message to inspect its bits, signals, and history.");
+      const auto &style = ImGui::GetStyle();
+      const ImVec2 origin = ImGui::GetCursorScreenPos();
+      const ImVec2 avail = ImGui::GetContentRegionAvail();
+      const float padding = style.WindowPadding.x * 2;
+      const float text_width = std::max(1.0f, std::min(avail.x - padding * 2, ImGui::GetFontSize() * 32));
+      const char *heading = "No CAN message selected";
+      const char *description = "Select a CAN message to inspect its bits, signals, and history.";
+      pushBoldFont();
+      const ImVec2 heading_size = ImGui::CalcTextSize(heading, nullptr, false, text_width);
+      popBoldFont();
+      const ImVec2 description_size = ImGui::CalcTextSize(description, nullptr, false, text_width);
+      const float height = heading_size.y + description_size.y + ImGui::GetFrameHeight() + style.ItemSpacing.y * 2;
+      float y = origin.y + std::max(padding, (avail.y - height) * 0.5f);
+      auto text = [&](const char *value, const ImVec2 &size) {
+        ImGui::SetCursorScreenPos(ImVec2(origin.x + std::max(0.0f, (avail.x - size.x) * 0.5f), y));
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + text_width);
+        ImGui::TextUnformatted(value);
+        ImGui::PopTextWrapPos();
+        y += size.y + style.ItemSpacing.y;
+      };
+      pushBoldFont();
+      text(heading, heading_size);
+      popBoldFont();
+      text(description, description_size);
+      const float button_width = ImGui::CalcTextSize("Browse CAN").x + style.FramePadding.x * 2;
+      ImGui::SetCursorScreenPos(ImVec2(origin.x + std::max(0.0f, (avail.x - button_width) * 0.5f), y));
       if (ImGui::Button("Browse CAN")) {
         messages_visible_ = true;
         selectPanelTab(MESSAGES_PANEL_ID);
