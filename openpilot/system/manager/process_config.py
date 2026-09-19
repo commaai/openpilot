@@ -43,6 +43,9 @@ def long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
 def lat_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and params.get_bool("LateralManeuverMode")
 
+def parknav(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and params.get_bool("ParkingNavEnabled")
+
 def not_long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not params.get_bool("LongitudinalManeuverMode")
 
@@ -107,6 +110,7 @@ procs = [
   PythonProcess("plannerd", "openpilot.selfdrive.controls.plannerd", not_long_maneuver),
   PythonProcess("maneuversd", "openpilot.tools.longitudinal_maneuvers.maneuversd", long_maneuver),
   PythonProcess("lateral_maneuversd", "openpilot.tools.lateral_maneuvers.lateral_maneuversd", lat_maneuver),
+  PythonProcess("parknavd", "openpilot.system.parknav.parknavd", parknav),
   PythonProcess("radard", "openpilot.selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "openpilot.system.hardware.hardwared", always_run),
   PythonProcess("modem", "openpilot.common.hardware.comma.modem", always_run, enabled=COMMA_HARDWARE),

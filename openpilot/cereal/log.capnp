@@ -1435,6 +1435,25 @@ struct DeviceMotion @0xc24ca2b57206b44d {
   }
 }
 
+struct ParkNavSignal {
+  # all values relative to the vehicle heading in the local NED frame.
+  # NOTE: positive values mean the target is to the RIGHT (NED yaw is clockwise from north).
+
+  # Yaw to the destination relative to the vehicle heading [rad], [-pi, pi].
+  relBearing @0 :Float32;
+
+  # Lateral offset of the destination from the vehicle heading [m], positive = right.
+  lateralOffset @1 :Float32;
+
+  # Distance to the destination along the vehicle heading [m].
+  forwardDist @2 :Float32;
+
+  # Distance to the destination [m].
+  totalDist @3 :Float32;
+
+  valid @4 :Bool;
+}
+
 struct ProcLog {
   cpuTimes @0 :List(CPUTimes);
   mem @1 :Mem;
