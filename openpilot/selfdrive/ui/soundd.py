@@ -127,6 +127,8 @@ class Soundd:
   def __init__(self):
     self.load_sounds()
     self.livestream = LivestreamPlayback()
+    self.usb_stream = None
+    self.usb_retry_at = 0.0
 
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
@@ -187,9 +189,56 @@ class Soundd:
       cloudlog.warning(f"soundd stream over/underflow: {status}")
     alert_active = self.current_alert != AudibleAlert.none
     alerts = self.get_sound_data(frames)
-    voice = self.livestream.render(frames)
-    # Alerts take priority over remote speech; never attenuate an alert.
+    # Use the same gain/limiter on either output; only one consumes speech.
+    voice = self.livestream.render(frames) if self.usb_stream is None else 0
     data_out[:frames, 0] = alerts if alert_active else voice
+
+  def usb_callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
+    if status:
+      cloudlog.warning(f"USB speech stream over/underflow: {status}")
+    if self.usb_stream is None:
+      data_out.fill(0)
+      return
+    voice = self.livestream.render(frames)
+    # Give driving alerts priority, even when speech uses USB.
+    data_out[:] = voice[:, None] if self.current_alert == AudibleAlert.none else 0
+
+  def update_usb_stream(self, sd):
+    if self.usb_stream is not None:
+      try:
+        if self.usb_stream.active:
+          return
+      except Exception:
+        pass
+      try:
+        self.usb_stream.close()
+      except Exception:
+        cloudlog.exception("Closing USB speech stream failed")
+      self.usb_stream = None
+      self.livestream.clear()
+    if time.monotonic() < self.usb_retry_at:
+      return
+    self.usb_retry_at = time.monotonic() + 3
+    stream = None
+    try:
+      # Select USB explicitly; callback handles fallback to the built-in output.
+      devices = sd.query_devices()
+      device = next((i for i, d in enumerate(devices) if 'usb' in d['name'].lower() and d['max_output_channels'] > 0), None)
+      if device is None:
+        return
+      channels = min(2, devices[device]['max_output_channels'])
+      stream = sd.OutputStream(device=device, channels=channels, samplerate=SAMPLE_RATE,
+                               dtype='float32', callback=self.usb_callback, blocksize=SAMPLE_BUFFER)
+      stream.start()
+      self.usb_stream = stream
+      cloudlog.info(f"USB speech stream started: {device=} {channels=}")
+    except Exception:
+      if stream is not None:
+        try:
+          stream.close()
+        except Exception:
+          pass
+      cloudlog.exception("USB speech unavailable; retrying without interrupting alerts")
 
   def update_alert(self, new_alert):
     current_alert_played_once = self.current_alert == AudibleAlert.none or self.current_sound_frame >= len(self.loaded_sounds[self.current_alert])
@@ -245,6 +294,7 @@ class Soundd:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         sm.update(0)
+        self.update_usb_stream(sd)
         for _ in range(16):
           msg = messaging.recv_one_or_none(livestream)
           if msg is None:
