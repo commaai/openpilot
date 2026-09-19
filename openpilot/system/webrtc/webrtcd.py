@@ -19,6 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any
 
+from openpilot.common.camera120 import camera120_enabled
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
@@ -174,7 +175,7 @@ class LivestreamBitrateController(AsyncTaskRunner):
     self.get_stats = get_stats
     self.params = params
 
-    high_fps = os.environ.get("CAMERA_720P120") == "1"
+    high_fps = camera120_enabled()
     self.bitrates = ([5_000_000, 10_000_000, 20_000_000] if high_fps else [500_000, 1_500_000, 5_000_000])
     self.bitrates[2] = int(os.environ.get("STREAM_BITRATE", self.bitrates[2]))
     self.label_to_bitrate = dict(zip(("low", "med", "high"), self.bitrates, strict=True))
@@ -351,13 +352,13 @@ class StreamSession:
     try:
       self.params.put("LivestreamRequestKeyframe", True)
 
-      # avoid datachannel race by adding messange_handler immediately
+      # Input can arrive before wait_for_connection returns.
+      if self.incoming_bridge is not None:
+        await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
       self.stream.set_message_handler(self.message_handler)
 
       await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
       if self.stream.has_messaging_channel():
-        if self.incoming_bridge is not None:
-          await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
         if self.outgoing_bridge is not None:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge.add_channel(channel)

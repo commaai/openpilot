@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from enum import IntEnum
 
+from openpilot.common.camera120 import CAMERA_FPS, camera120_enabled
+
 
 # TODO: this should be automatically determined using the capnp schema
 class QueueSize(IntEnum):
@@ -93,8 +95,16 @@ _services: dict[str, tuple] = {
   "livestreamCabinEncodeData": (False, 20., None, QueueSize.MEDIUM),
   "customReservedRawData0": (True, 0.),
 }
+# Only the narrow camera and its live encoder run in the opt-in pinball mode.
+_CAMERA_SERVICES = {"narrowRoadCameraState", "livestreamNarrowRoadEncodeIdx", "livestreamNarrowRoadEncodeData"}
+_BASE_SERVICES = {name: Service(*vals) for name, vals in _services.items()}
 SERVICE_LIST = {name: Service(*vals) for
                 idx, (name, vals) in enumerate(_services.items())}
+
+if camera120_enabled():
+  for name in _CAMERA_SERVICES:
+    SERVICE_LIST[name].frequency = CAMERA_FPS
+  SERVICE_LIST["narrowRoadCameraState"].decimation = CAMERA_FPS
 
 
 def build_header():
@@ -103,15 +113,19 @@ def build_header():
   h += "#ifndef __SERVICES_H\n"
   h += "#define __SERVICES_H\n"
 
+  h += '#include "common/camera120.h"\n'
   h += "#include <map>\n"
   h += "#include <string>\n"
 
   h += "struct service { std::string name; bool should_log; float frequency; int decimation; size_t queue_size; };\n"
   h += "static std::map<std::string, service> services = {\n"
-  for k, v in SERVICE_LIST.items():
+  for k, v in _BASE_SERVICES.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
-    h += f'  {{ "{k}", {{"{k}", {should_log}, {v.frequency:f}, {decimation:d}, {v.queue_size:d}}}}},\n'
+    # Select at process startup, never bake the build machine's environment into services.h.
+    frequency = f"camera120_enabled() ? CAMERA_FPS : {v.frequency:f}f" if k in _CAMERA_SERVICES else f"{v.frequency:f}"
+    decimation = f"camera120_enabled() ? CAMERA_FPS : {decimation}" if k == "narrowRoadCameraState" else str(decimation)
+    h += f'  {{ "{k}", {{"{k}", {should_log}, {frequency}, {decimation}, {v.queue_size:d}}}}},\n'
   h += "};\n"
 
   h += "#endif\n"

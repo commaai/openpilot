@@ -179,7 +179,7 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 
 int main(int argc, char* argv[]) {
   if (camera120_enabled() && (argc != 2 || std::string(argv[1]) != "--stream")) {
-    LOGE("CAMERA_720P120 is a streaming-only bench experiment; use encoderd --stream");
+    LOGE("CAMERA_720P60 is a streaming-only bench experiment; use encoderd --stream");
     return 1;
   }
 #ifdef __COMMA_HARDWARE__

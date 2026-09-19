@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Narrow camera 720p120 bench</title>
+<title>Narrow camera 720p60 bench</title>
 <style>body{font:16px system-ui;background:#161616;color:#eee;max-width:1280px;margin:24px auto}video{width:100%;background:black}button{padding:12px}pre{white-space:pre-wrap}</style>
-<h1>Narrow road camera · 720p120</h1>
-<p>This experimental receiver requests H.264 Constrained Baseline Level 4.2. Decoded FPS measures the stream; displayed FPS also depends on your screen.</p>
+<h1>Narrow road camera · 720p60</h1>
+<p>This experimental receiver requests H.264 Constrained Baseline Level 3.2. Decoded FPS measures the stream; displayed FPS also depends on your screen.</p>
 <button id="connect">Connect</button> <button id="stop">Disconnect</button>
 <video id="video" autoplay muted playsinline></video><pre id="stats">Disconnected</pre>
 <script>
@@ -30,7 +30,7 @@ document.getElementById('connect').onclick = async () => {
     channel.onopen = () => channel.send(JSON.stringify({type:'livestreamSettings', data:{quality:'high'}}));
     let offer = await pc.createOffer();
     // Explicit experimental decoder request. Browser decode support is verified by the stats below.
-    offer.sdp = offer.sdp.replace(/profile-level-id=42e0[0-9a-f]{2}/gi, 'profile-level-id=42e02a');
+    offer.sdp = offer.sdp.replace(/profile-level-id=42e0[0-9a-f]{2}/gi, 'profile-level-id=42e020');
     await pc.setLocalDescription(offer);
     if (pc.iceGatheringState !== 'complete') await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('ICE gathering timed out')), 10000);

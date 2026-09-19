@@ -25,7 +25,7 @@ from openpilot.common.hardware.hw import Paths
 
 def manager_init() -> None:
   if camera120_enabled() and HARDWARE.get_device_type() != "mici":
-    raise RuntimeError("CAMERA_720P120 requires comma four")
+    raise RuntimeError("CAMERA_720P60 requires comma four")
   save_bootlog()
 
   build_metadata = get_build_metadata()

@@ -1,8 +1,12 @@
 import os
 
 
+# Keep the legacy module/flag compatible with existing device startup and clients.
+CAMERA_FPS = 60
+
+
 def camera120_enabled() -> bool:
-  return os.environ.get("CAMERA_720P120") == "1"
+  return os.environ.get("CAMERA_720P60", os.environ.get("CAMERA_720P120")) == "1"
 
 
 def pinball_camera120(CP) -> bool:

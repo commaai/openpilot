@@ -2,7 +2,7 @@
 
 // OS04CR4DEV217_AE02.ovd: DP_1280x720_Bin2_AHBIN_LINEAR_MIPI0728Mbps_240FPS_10BIT_FOURLANE.
 // Preserve the complete vendor sequence, excluding stream on/off (owned by camerad).
-// 120 FPS overrides are applied separately, before stream-on.
+// 60 FPS overrides are applied separately, before stream-on.
 const i2c_random_wr_payload init_array_os04c10_720p240[] = {
   {0x0103, 0x01},
   {0x0301, 0x84},

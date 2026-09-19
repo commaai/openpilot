@@ -1,5 +1,7 @@
 #include <cmath>
 
+#include "common/camera120.h"
+
 #include "system/camerad/sensors/sensor.h"
 #include <media/msm_camsensor_sdk.h>
 #include "system/camerad/sensors/os04c10_720p_registers.h"
@@ -70,7 +72,7 @@ OS04C10::OS04C10(bool high_fps) {
   target_grey_factor = 0.01;
 
   if (high_fps) {
-    fps = 120;
+    fps = CAMERA_FPS;
     out_scale = 1;
     pixel_size_mm *= 2;  // sensor-side 2x2 binning, also used by AE geometry
     frame_width = 1280;
@@ -80,10 +82,10 @@ OS04C10::OS04C10(bool high_fps) {
     mipi_format = CAM_FORMAT_MIPI_RAW_10;
     frame_data_type = CSI_RAW10;
     init_reg_array.assign(std::begin(init_array_os04c10_720p240), std::end(init_array_os04c10_720p240));
-    // Double vendor VTS=786, preserving HTS=535 and all vendor clocks.
+    // Quadruple vendor VTS=786, preserving HTS=535 and all vendor clocks.
     // Free-run: ignore Panda's unchanged 20 Hz FSIN input. Keep the pad an input.
     init_reg_array.insert(init_reg_array.end(), {
-      {0x380e, 0x06}, {0x380f, 0x24},
+      {0x380e, 0x0c}, {0x380f, 0x48},
       {0x3002, 0x22}, {0x3663, 0x22}, {0x3822, 0x04}, {0x3823, 0x08},
       // Match the existing camera orientation (datasheet: analog bin mirror+flip).
       {0x3820, 0xb3},
@@ -97,7 +99,7 @@ OS04C10::OS04C10(bool high_fps) {
       {0x5104, 0x08}, {0x5105, 0xd6},
       {0x5144, 0x08}, {0x5145, 0xd6},
     });
-    exposure_time_max = 1572 - 8;  // linear mode, v2.07 datasheet section 5.6
+    exposure_time_max = 3144 - 8;  // linear mode, v2.07 datasheet section 5.6
     max_ev = exposure_time_max * sensor_analog_gains[analog_gain_max_idx];
     // Nominal active-row time from the vendor 240 FPS / 786-line mode.
     // Must be verified against hardware SOF/EOF before using for latency analysis.

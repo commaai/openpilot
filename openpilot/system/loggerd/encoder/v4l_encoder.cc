@@ -255,9 +255,9 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
       struct v4l2_control ctrls[] = {
         { .id = V4L2_CID_MPEG_VIDEO_H264_PROFILE, .value = encoder_info.fps > 30 ?
           V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_BASELINE : V4L2_MPEG_VIDEO_H264_PROFILE_HIGH},
-        // 720p120 is 432000 macroblocks/s, requiring Level 4.2.
+        // 720p60 is 216000 macroblocks/s, requiring Level 3.2.
         { .id = V4L2_CID_MPEG_VIDEO_H264_LEVEL, .value = encoder_info.fps > 30 ?
-          V4L2_MPEG_VIDEO_H264_LEVEL_4_2 : V4L2_MPEG_VIDEO_H264_LEVEL_3_1},
+          V4L2_MPEG_VIDEO_H264_LEVEL_3_2 : V4L2_MPEG_VIDEO_H264_LEVEL_3_1},
         { .id = V4L2_CID_MPEG_VIDEO_H264_ENTROPY_MODE, .value = encoder_info.fps > 30 ?
           V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CAVLC : V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC},
         { .id = V4L2_CID_MPEG_VIDC_VIDEO_H264_CABAC_MODEL, .value = V4L2_CID_MPEG_VIDC_VIDEO_H264_CABAC_MODEL_0},

@@ -1,5 +1,4 @@
 import asyncio
-import os
 from dataclasses import dataclass
 import struct
 import time
@@ -8,6 +7,7 @@ from teleoprtc.tracks import TiciVideoStreamTrack
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import DT_MDL
+from openpilot.common.camera120 import CAMERA_FPS, camera120_enabled
 from openpilot.common.params import Params
 
 
@@ -39,9 +39,13 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   }
 
   def __init__(self, camera_type: str, video_enabled: bool = True):
-    self.high_fps = os.environ.get("CAMERA_720P120") == "1"
-    self.h264_profile_level_id = "42e02a" if self.high_fps else None  # Constrained Baseline profile, Level 4.2
-    super().__init__(camera_type, 1 / 120 if self.high_fps else DT_MDL)
+    self.high_fps = camera120_enabled()
+    # CVO specifies clockwise quarter-turns: 3 means 90 degrees counterclockwise.
+    # Keep the sensor and H.264 pixels unchanged; the receiver applies rotation.
+    self.video_orientation = 3 if self.high_fps else 0
+    self.h264_profile_level_id = "42e020" if self.high_fps else None  # Constrained Baseline profile, Level 3.2
+    self.h264_allow_lower_level = self.high_fps
+    super().__init__(camera_type, 1 / CAMERA_FPS if self.high_fps else DT_MDL)
 
     self._sock = self._make_sock(camera_type)
     self._pts = 0

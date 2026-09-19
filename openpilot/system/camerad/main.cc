@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]) {
   if (camera120_enabled() && Hardware::get_device_type() != cereal::InitData::DeviceType::MICI) {
-    fprintf(stderr, "CAMERA_720P120 requires comma four (MICI)\n");
+    fprintf(stderr, "CAMERA_720P60 requires comma four (MICI)\n");
     return 1;
   }
   // doesn't need RT priority since we're using isolcpus

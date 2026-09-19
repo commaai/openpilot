@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the narrow-camera 720p120 bench and its browser receiver; Ctrl-C stops it."""
+"""Run the narrow-camera 720p60 bench and its browser receiver; Ctrl-C stops it."""
 import argparse
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -70,7 +70,7 @@ def main():
 
   server = ThreadingHTTPServer(("0.0.0.0", args.port), Handler)
   server.daemon_threads = True
-  env = dict(os.environ, CAMERA_720P120="1", PYTHONPATH=str(ROOT))
+  env = dict(os.environ, CAMERA_720P60="1", PYTHONPATH=str(ROOT))
   env.pop("DISABLE_ROAD", None)
   children = []
   old_bitrate = Params().get("LivestreamEncoderBitrate")
@@ -115,8 +115,8 @@ def main():
             fps = (len(rows) - 1) * 1e9 / (rows[-1][1] - rows[0][1])
             missing = sum(max(0, b[0] - a[0] - 1) for a, b in zip(rows, rows[1:], strict=False))
             print(f"{name}: {fps:.2f} FPS, {missing} missing frames", flush=True)
-            if now - started > 10 and (not 114 <= fps <= 126 or missing):
-              raise RuntimeError(f"{name} did not sustain 120 FPS without frame loss")
+            if now - started > 10 and (not 57 <= fps <= 63 or missing):
+              raise RuntimeError(f"{name} did not sustain 60 FPS without frame loss")
           samples[name] = []
         report_time = now
       # Abort when any reported CPU/GPU/memory temperature reaches 85 C.
