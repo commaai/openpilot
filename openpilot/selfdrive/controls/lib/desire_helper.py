@@ -1,78 +1,41 @@
+import time
+
 from openpilot.cereal import log
-from openpilot.common.constants import CV
-from openpilot.common.realtime import DT_MDL
 
-LaneChangeState = log.LaneChangeState
-LaneChangeDirection = log.LaneChangeDirection
+TURN_PULSE_INTERVAL = 1.0  # seconds between normal-sized turn pulses
 
-LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
-LANE_CHANGE_TIME_MAX = 10.
-LANE_CHANGE_START_TIME = 0.5
 
 class DesireHelper:
   def __init__(self):
-    self.lane_change_state = LaneChangeState.off
-    self.lane_change_direction = LaneChangeDirection.none
-    self.lane_change_timer = 0.0
-    self.prev_one_blinker = False
+    # Turn requests are not lane changes; keep lane-change UI/control metadata off.
+    self.lane_change_state = log.LaneChangeState.off
+    self.lane_change_direction = log.LaneChangeDirection.none
+    self.desire = log.Desire.none
+    self.last_pulse_time = None
+    self.last_turn = log.Desire.none
+
+  def update(self, carstate, lateral_active):
+    previous_desire = self.desire
     self.desire = log.Desire.none
 
-  @staticmethod
-  def get_lane_change_direction(CS):
-    return LaneChangeDirection.left if CS.leftBlinker else LaneChangeDirection.right
+    if not lateral_active or carstate.leftBlinker == carstate.rightBlinker:
+      self.last_pulse_time = None
+      self.last_turn = log.Desire.none
+      return
+    blindspot_detected = carstate.leftBlindspot if carstate.leftBlinker else carstate.rightBlindspot
+    if blindspot_detected:
+      self.last_pulse_time = None
+      self.last_turn = log.Desire.none
+      return
 
-  def update(self, carstate, lateral_active, lane_change_prob):
-    v_ego = carstate.vEgo
-    one_blinker = carstate.leftBlinker != carstate.rightBlinker
-    below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
-
-    if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
-      self.lane_change_state = LaneChangeState.off
-      self.lane_change_direction = LaneChangeDirection.none
-      self.lane_change_timer = 0.0
-    else:
-      if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
-        self.lane_change_state = LaneChangeState.preLaneChange
-        self.lane_change_timer = 0.0
-        # Initialize lane change direction to prevent UI alert flicker
-        self.lane_change_direction = self.get_lane_change_direction(carstate)
-
-      elif self.lane_change_state == LaneChangeState.preLaneChange:
-        # Update lane change direction
-        self.lane_change_direction = self.get_lane_change_direction(carstate)
-
-        torque_applied = carstate.steeringPressed and \
-                         ((carstate.steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
-                          (carstate.steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
-
-        blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
-                              (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
-
-        if not one_blinker or below_lane_change_speed:
-          self.lane_change_state = LaneChangeState.off
-          self.lane_change_direction = LaneChangeDirection.none
-          self.lane_change_timer = 0.0
-        elif torque_applied and not blindspot_detected:
-          self.lane_change_state = LaneChangeState.laneChangeStarting
-          self.lane_change_timer = 0.0
-
-      elif self.lane_change_state == LaneChangeState.laneChangeStarting:
-        self.lane_change_timer += DT_MDL
-
-        if lane_change_prob < 0.02 and self.lane_change_timer >= LANE_CHANGE_START_TIME:
-          self.lane_change_timer = 0.0
-          if one_blinker:
-            self.lane_change_state = LaneChangeState.preLaneChange
-            self.lane_change_direction = self.get_lane_change_direction(carstate)
-          else:
-            self.lane_change_state = LaneChangeState.off
-            self.lane_change_direction = LaneChangeDirection.none
-
-    self.prev_one_blinker = one_blinker and lateral_active
-
-    self.desire = log.Desire.none
-    if self.lane_change_state == LaneChangeState.laneChangeStarting:
-      if self.lane_change_direction == LaneChangeDirection.left:
-        self.desire = log.Desire.turnLeft
-      elif self.lane_change_direction == LaneChangeDirection.right:
-        self.desire = log.Desire.turnRight
+    turn = log.Desire.turnLeft if carstate.leftBlinker else log.Desire.turnRight
+    # Even after a delayed update, provide a low sample to re-arm modeld's edge detector.
+    if previous_desire == turn:
+      return
+    now = time.monotonic()
+    if self.last_pulse_time is None or turn != self.last_turn or now - self.last_pulse_time >= TURN_PULSE_INTERVAL:
+      # One update high, then none until the next pulse. modeld still receives
+      # only 0/1 inputs. Stopping pulses does not cancel the model's maneuver.
+      self.desire = turn
+      self.last_pulse_time = now
+      self.last_turn = turn
