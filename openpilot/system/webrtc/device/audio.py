@@ -8,6 +8,8 @@ import queue
 import random
 import time
 
+import numpy as np
+
 from openpilot.cereal import messaging
 from openpilot.system.micd import SAMPLE_RATE as MIC_RATE
 
@@ -18,6 +20,7 @@ from teleoprtc.stream import RTCSessionDescription, WebRTCAnswerStream
 
 RATE = 48000
 SAMPLES = 960  # 20 ms, mono signed 16-bit PCM
+MICROPHONE_GAIN = 8.0  # +18 dB for device audio heard in Connect
 
 
 class OpusCodec:
@@ -142,6 +145,10 @@ class LivestreamAudio:
       pcm = bytes(self.capture_pending[:size])
       del self.capture_pending[:size]
       timestamp = (self.timestamp_base + round(self.capture_time * RATE)) & 0xFFFFFFFF
+      # Boost only the livestream copy, leaving micd's ambient measurement unchanged.
+      # Soft limiting keeps loud peaks in range without int16 wraparound.
+      samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768
+      pcm = (np.tanh(samples * MICROPHONE_GAIN) * 32767).astype(np.int16).tobytes()
       self.track.send_frame(codec.encode(pcm), FrameInfo(timestamp))
       self.capture_time += 0.02
 

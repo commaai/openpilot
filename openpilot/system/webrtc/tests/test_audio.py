@@ -104,3 +104,26 @@ def test_audio_routes_through_micd_and_soundd(mocker):
     audio.on_error.assert_not_called()
 
   asyncio.run(exercise())
+
+
+def test_capture_gain_preserves_quiet_speech_and_limits_peaks(mocker):
+  from types import SimpleNamespace
+  from openpilot.system.webrtc.device.audio import LivestreamAudio, MIC_RATE
+  from openpilot.cereal import messaging
+  track = mocker.Mock()
+  audio = LivestreamAudio(track, mocker.Mock())
+  audio.enable(True)
+  codec = SimpleNamespace(encoder_samples=MIC_RATE // 50, encode=mocker.Mock(return_value=b'opus'))
+  for value in (0, 128, -128, 32767, -32768):
+    msg = messaging.new_message('rawAudioData')
+    msg.rawAudioData.sampleRate = MIC_RATE
+    msg.rawAudioData.data = np.full(codec.encoder_samples, value, dtype=np.int16).tobytes()
+    audio.send_capture(msg, codec)
+    output = np.frombuffer(codec.encode.call_args.args[0], dtype=np.int16).astype(np.float32)
+    assert np.max(np.abs(output)) <= 32767
+    if abs(value) == 128:
+      np.testing.assert_allclose(output, value * 8, rtol=0.002)
+    elif value:
+      assert np.all(np.sign(output) == np.sign(value))
+    else:
+      assert not output.any()

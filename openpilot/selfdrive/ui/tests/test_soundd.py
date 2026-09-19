@@ -47,7 +47,7 @@ class TestLivestreamPlayback:
     playback = LivestreamPlayback()
     msg = self.message()
     playback.enqueue(msg)
-    np.testing.assert_allclose(playback.render(480), 0.25)
+    np.testing.assert_allclose(playback.render(480), np.tanh(1.0))
     empty = self.message(frames=0)
     playback.enqueue(empty)
     assert not playback.render(480).any()
@@ -63,7 +63,7 @@ class TestLivestreamPlayback:
       playback.enqueue(self.message(value=4096))
     for _ in range(6):
       playback.enqueue(self.message(value=8192))
-    np.testing.assert_allclose(playback.render(960 * 6), 0.25)
+    np.testing.assert_allclose(playback.render(960 * 6), np.tanh(1.0))
     assert not playback.render(960).any()
 
   def test_alerts_take_priority_over_voice(self, mocker):
@@ -76,8 +76,25 @@ class TestLivestreamPlayback:
     output = np.empty((960, 1), dtype=np.float32)
     sound.livestream.enqueue(self.message())
     sound.callback(output, 960, None, None)
-    np.testing.assert_allclose(output, 0.25)
+    np.testing.assert_allclose(output, np.tanh(1.0))
     sound.current_alert = AudibleAlert.engage
     sound.livestream.enqueue(self.message())
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, 0.5)
+
+
+  def test_voice_gain_preserves_quiet_speech_and_limits_peaks(self):
+    import numpy as np
+    from openpilot.selfdrive.ui.soundd import LivestreamPlayback
+    playback = LivestreamPlayback()
+    for value in (0, 128, -128, 32767, -32768):
+      playback.enqueue(self.message(value=value))
+      output = playback.render(960)
+      assert np.isfinite(output).all()
+      assert np.max(np.abs(output)) <= 1.0
+      if abs(value) == 128:
+        np.testing.assert_allclose(output, value / 32768 * 4, rtol=0.001)
+      elif value:
+        assert np.all(np.sign(output) == np.sign(value))
+      else:
+        assert not output.any()
