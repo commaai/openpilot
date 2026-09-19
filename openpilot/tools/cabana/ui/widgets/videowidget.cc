@@ -268,7 +268,7 @@ void VideoWidget::drawVideo() {
   const float camera_width = std::max(1.0f, ImGui::GetContentRegionAvail().x - iconButtonWidth() - ImGui::GetStyle().ItemSpacing.x);
   const int current = camera_tab_->currentIndex();
   ImGui::SetNextItemWidth(camera_width);
-  if (dropdown::BeginCombo("##camera", current >= 0 ? camera_tab_->tabText(current).c_str() : "No camera")) {
+  if (dropdown::BeginCombo("##camera_selector", current >= 0 ? camera_tab_->tabText(current).c_str() : "No camera")) {
     for (int i = 0; i < camera_tab_->count(); ++i) {
       if (dropdown::Item(camera_tab_->tabText(i).c_str(), nullptr, current == i)) camera_tab_->setCurrentIndex(i);
     }
@@ -278,7 +278,7 @@ void VideoWidget::drawVideo() {
   if (iconButton("crop_video", settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO, "Crop to fill")) cropVideoClicked();
   cam_widget_->setCrop(settings.crop_video);
   const ImVec2 avail = ImGui::GetContentRegionAvail();
-  cam_widget_->draw(ImVec2(avail.x, std::max(1.0f, avail.y)), thumbnail_display_time_);
+  cam_widget_->draw(ImVec2(avail.x, std::max(1.0f, avail.y)));
 }
 
 void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams) {
@@ -376,6 +376,9 @@ void VideoWidget::drawPlayback() {
     if (!slider_->isSliderDown()) slider_->setCurrentSecond(can->currentSec());
     slider_->draw(thumbnail_display_time_);
     updateSliderThumbnail();
+    if (thumbnail_display_time_ >= 0) {
+      cam_widget_->drawThumbnail(ImGui::GetForegroundDrawList(), thumbnail_display_time_, slider_->rect());
+    }
   }
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);
@@ -518,17 +521,12 @@ void StreamCameraView::collectThumbnails() {
   }
 }
 
-void StreamCameraView::draw(const ImVec2 &size, double thumbnail_time) {
+void StreamCameraView::draw(const ImVec2 &size) {
   collectThumbnails();
   CameraWidget::draw(size);
 
   ImDrawList *p = ImGui::GetWindowDrawList();
-  bool scrubbing = false;
-  if (thumbnail_time >= 0) {
-    scrubbing = can->isPaused();
-    scrubbing ? drawScrubThumbnail(p, thumbnail_time) : drawThumbnail(p, thumbnail_time);
-  }
-  if (auto alert = getReplay()->findAlertAtTime(scrubbing ? thumbnail_time : can->currentSec())) {
+  if (auto alert = getReplay()->findAlertAtTime(can->currentSec())) {
     drawAlert(p, rect(), *alert, ImGui::GetFontSize(), ImGui::GetStyle().ChildRounding);
   }
 
@@ -553,27 +551,20 @@ const RgbImage *StreamCameraView::thumbnailAt(double sec) {
   return &it->second;
 }
 
-void StreamCameraView::drawScrubThumbnail(ImDrawList *p, double sec) {
-  p->AddRectFilled(rect().Min, rect().Max, IM_COL32(0, 0, 0, 255), ImGui::GetStyle().ChildRounding);
+void StreamCameraView::drawThumbnail(ImDrawList *p, double sec, const ImRect &timeline) {
+  collectThumbnails();
   if (const RgbImage *image = thumbnailAt(sec)) {
-    const VideoPlacement placement = videoPlacement(rect(), (float)image->width / image->height, crop());
-    drawVideoFrame(p, big_thumbnail_texture_.ref(), rect(), placement);
-    drawTime(p, rect(), sec);
-  }
-}
-
-void StreamCameraView::drawThumbnail(ImDrawList *p, double sec) {
-  if (const RgbImage *image = thumbnailAt(sec)) {
-    // AddImage scales the stored image to the thumbnail height, keeping the aspect ratio
-    const int h = MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2;
-    const int w = std::max(1, (int)std::lround((double)image->width * h / image->height));
+    const float h = MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2;
+    const float w = std::max(1.0f, h * image->width / image->height);
     auto [min_sec, max_sec] = displayedTimeRange();
-    int pos = (sec - min_sec) * width() / (max_sec - min_sec);
-    const int max_x = (int)width() - w - THUMBNAIL_MARGIN + 1;
-    int x = std::clamp(pos - w / 2, THUMBNAIL_MARGIN, std::max(THUMBNAIL_MARGIN, max_x));
-    int y = height() - h - THUMBNAIL_MARGIN;
-
-    ImRect thumb_rect(ImVec2(rect().Min.x + x, rect().Min.y + y), ImVec2(rect().Min.x + x + w, rect().Min.y + y + h));
+    const float pos = timeline.Min.x + (sec - min_sec) * timeline.GetWidth() / std::max(0.001, max_sec - min_sec);
+    const ImGuiViewport *viewport = ImGui::GetWindowViewport();
+    const float left = viewport->WorkPos.x + THUMBNAIL_MARGIN;
+    const float right = viewport->WorkPos.x + viewport->WorkSize.x - w - THUMBNAIL_MARGIN;
+    const float x = std::clamp(pos - w / 2, left, std::max(left, right));
+    const float y = std::max(viewport->WorkPos.y + THUMBNAIL_MARGIN,
+                             timeline.Min.y - h - ImGui::GetTextLineHeightWithSpacing());
+    ImRect thumb_rect(ImVec2(x, y), ImVec2(x + w, y + h));
     p->AddImageRounded(big_thumbnail_texture_.ref(), thumb_rect.Min, thumb_rect.Max, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_WHITE, ImGui::GetStyle().FrameRounding);
     p->AddRect(thumb_rect.Min, thumb_rect.Max, IM_COL32_WHITE, ImGui::GetStyle().FrameRounding, 0, 2.0f);
     // look up the alert at the hovered time, the thumbnail frame itself can be seconds away

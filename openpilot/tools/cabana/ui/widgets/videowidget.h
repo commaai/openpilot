@@ -59,7 +59,8 @@ class StreamCameraView : public CameraWidget {
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type);
   ~StreamCameraView();
-  void draw(const ImVec2 &size, double thumbnail_time);  // thumbnail_time < 0: no thumbnail
+  void draw(const ImVec2 &size);
+  void drawThumbnail(ImDrawList *p, double sec, const ImRect &timeline);
   void parseQLog(std::shared_ptr<LogReader> qlog);  // decodes the thumbnails on the thread pool
 
 private:
@@ -71,8 +72,6 @@ private:
   // the first thumbnail at or after sec, uploaded to big_thumbnail_texture_; nullptr when there is none
   const RgbImage *thumbnailAt(double sec);
   void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size, float rounding);
-  void drawThumbnail(ImDrawList *p, double sec);
-  void drawScrubThumbnail(ImDrawList *p, double sec);
   void drawTime(ImDrawList *p, const ImRect &rect, double seconds);
 
   std::map<uint64_t, RgbImage> big_thumbnails_;

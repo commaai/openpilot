@@ -622,13 +622,42 @@ void ChartsContainer::draw() {
   auto current_charts = charts_widget_->currentCharts();  // copy: drawing may remove charts
   float bottom = origin.y;
   if (current_charts.empty()) {
-    ImGui::Spacing();
+    const auto &style = ImGui::GetStyle();
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    const float padding = style.WindowPadding.x * 2;
+    const float text_width = std::max(1.0f, std::min(avail.x - padding * 2, ImGui::GetFontSize() * 32));
+    const char *title = "Plot CAN signals and openpilot fields";
+    const char *description = "Select a CAN message to inspect its bits and plot signals. Double-click an openpilot field to chart logged data.";
     pushBoldFont();
-    ImGui::TextWrapped("Plot CAN signals and openpilot fields");
+    const ImVec2 title_size = ImGui::CalcTextSize(title, nullptr, false, text_width);
     popBoldFont();
-    ImGui::TextWrapped("Select a CAN message to inspect its bits and plot signals. Double-click an openpilot field to chart logged data.");
+    const ImVec2 description_size = ImGui::CalcTextSize(description, nullptr, false, text_width);
+    const float browse_width = ImGui::CalcTextSize("Browse openpilot").x + style.FramePadding.x * 2;
+    const float presets_width = ImGui::CalcTextSize("Presets").x + style.FramePadding.x * 2;
+    const float buttons_width = browse_width + style.ItemSpacing.x + presets_width;
+    const bool stacked = buttons_width > text_width;
+    const float height = title_size.y + description_size.y + ImGui::GetFrameHeight() * (stacked ? 2 : 1) +
+                         style.ItemSpacing.y * (stacked ? 3 : 2);
+    float y = origin.y + std::max(padding, (avail.y - height) * 0.5f);
+    auto text = [&](const char *value, const ImVec2 &size) {
+      ImGui::SetCursorScreenPos(ImVec2(origin.x + std::max(0.0f, (avail.x - size.x) * 0.5f), y));
+      ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + text_width);
+      ImGui::TextUnformatted(value);
+      ImGui::PopTextWrapPos();
+      y += size.y + style.ItemSpacing.y;
+    };
+    pushBoldFont();
+    text(title, title_size);
+    popBoldFont();
+    text(description, description_size);
+    ImGui::SetCursorScreenPos(ImVec2(origin.x + std::max(0.0f, (avail.x - (stacked ? browse_width : buttons_width)) * 0.5f), y));
     if (ImGui::Button("Browse openpilot")) charts_widget_->showLogMessages();
-    ImGui::SameLine();
+    if (stacked) {
+      ImGui::SetCursorScreenPos(ImVec2(origin.x + std::max(0.0f, (avail.x - presets_width) * 0.5f),
+                                     y + ImGui::GetFrameHeightWithSpacing()));
+    } else {
+      ImGui::SameLine();
+    }
     if (ImGui::Button("Presets")) ImGui::OpenPopup("empty_presets");
     if (dropdown::BeginPopup("empty_presets")) {
       charts_widget_->drawPresetsMenu();
