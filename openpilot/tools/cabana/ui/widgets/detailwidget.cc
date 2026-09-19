@@ -397,7 +397,7 @@ void CenterWidget::drawWelcomeWidget() {
     ImGui::SetCursorPos(ImVec2(origin.x + (avail.x - size.x) * 0.5f, y));
     ImGui::TextUnformatted(text);
   };
-  ImGui::PushStyleColor(ImGuiCol_Text, colorRgb(169, 169, 169));
+  ImGui::PushStyleColor(ImGuiCol_Text, palette().text_disabled);
   float y = origin.y + avail.y * 0.5f - 90.0f;
   pushLargeFont();
   centered("CABANA", y);

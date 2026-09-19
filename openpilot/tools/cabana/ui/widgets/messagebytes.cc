@@ -26,9 +26,9 @@ ImVec2 bytesCellSize(int n, bool multiple_lines) {
 ImU32 cellTextColor(bool selected, bool inactive) {
   if (selected) {
     const ImU32 text = ImGui::GetColorU32(palette().text_selected);
-    return inactive ? withAlpha(text, 100) : text;
+    return text;
   }
-  return ImGui::GetColorU32(inactive ? ImGuiCol_TextDisabled : ImGuiCol_Text);
+  return ImGui::GetColorU32(inactive ? palette().text_inactive : palette().text);
 }
 
 void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive, bool align_right) {
@@ -48,14 +48,11 @@ void drawBytesCell(ImDrawList *dl, const ImRect &rect, const std::vector<uint8_t
     const ImVec2 min(rect.Min.x + column * byte_size.x, rect.Min.y + row * byte_size.y);
     const ImRect r(min, ImVec2(min.x + byte_size.x, min.y + byte_size.y));
 
-    // a colored unselected byte keeps text_pen, like the other cells of the row
     ImU32 pen = text_pen;
     if (colors && i < (int)colors->size() && (*colors)[i].alpha() > 0) {
-      if (selected) {
-        pen = ImGui::GetColorU32(ImGuiCol_Text);
-        dl->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));
-      }
-      dl->AddRectFilled(r.Min, r.Max, toImU32((*colors)[i]));
+      // Activity backgrounds use the theme's text, including stale values.
+      pen = ImGui::GetColorU32(ImGuiCol_Text);
+      dl->AddRectFilled(r.Min, r.Max, toImU32(byteColor((*colors)[i])));
     }
     drawText(dl, r, utils::hexByte(bytes[i]), pen, font, font_size);
   }

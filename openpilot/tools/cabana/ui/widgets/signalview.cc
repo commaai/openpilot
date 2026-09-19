@@ -267,7 +267,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
     if (item->type == SignalModel::Item::Sig) {
       // color label
       ImRect icon_rect(rect.Min.x, rect.Min.y, rect.Min.x + COLOR_LABEL_WIDTH, rect.Max.y);
-      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->sig->color.darker(item->highlight ? 125 : 0)), ImGui::GetStyle().FrameRounding);
+      painter->AddRectFilled(icon_rect.Min, icon_rect.Max, toImU32(item->highlight ? signalHighlight(item->sig->color) : contrastColor(item->sig->color, {0, 0, 0})), ImGui::GetStyle().FrameRounding);
       drawText(painter, icon_rect, std::to_string(item->row() + 1).c_str(), item->highlight ? IM_COL32_WHITE : IM_COL32_BLACK,
                nullptr, LABEL_FONT);
 
@@ -276,7 +276,7 @@ void SignalView::paintCell(ImDrawList *painter, const ImRect &option_rect, const
       if (item->sig->type != cabana::Signal::Type::Normal) {
         const std::string indicator = multiplexIndicator(item->sig);
         ImRect indicator_rect(rect.Min.x, rect.Min.y, rect.Min.x + ImGui::CalcTextSize(indicator.c_str()).x, rect.Max.y);
-        painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, IM_COL32(160, 160, 164, 255), ImGui::GetStyle().FrameRounding);
+        painter->AddRectFilled(indicator_rect.Min, indicator_rect.Max, ImGui::GetColorU32(palette().badge), ImGui::GetStyle().FrameRounding);
         drawElidedText(painter, indicator_rect, indicator, IM_COL32_WHITE, false);
         rect.Min.x = indicator_rect.Max.x + h_margin * 2;
       }
