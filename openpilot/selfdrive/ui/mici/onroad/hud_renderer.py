@@ -121,9 +121,9 @@ class HudRenderer(Widget):
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
 
-    self._txt_lead_car = gui_app.texture('icons_mici/longitudinal/car.png', 34, 27, keep_aspect_ratio=False)
-    self._txt_lead_car_green = gui_app.texture('icons_mici/longitudinal/car_green.png', 62, 55, keep_aspect_ratio=False)
-    self._txt_lead_car_orange = gui_app.texture('icons_mici/longitudinal/car_orange.png', 62, 55, keep_aspect_ratio=False)
+    self._txt_lead_car = gui_app.texture('icons_mici/longitudinal/car.png')
+    self._txt_lead_car_green = gui_app.texture('icons_mici/longitudinal/car_green.png')
+    self._txt_lead_car_orange = gui_app.texture('icons_mici/longitudinal/car_orange.png')
     self._lead_car_white_filter = FirstOrderFilter(0.35, 0.1, 1 / gui_app.target_fps)
     self._lead_car_green_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._lead_car_orange_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -254,8 +254,9 @@ class HudRenderer(Widget):
     overriding = (sm.valid['onroadEvents'] and sm.alive['onroadEvents'] and
                   sm.recv_frame['onroadEvents'] >= ui_state.started_frame and
                   any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
-    # Reuse the GPU-loading pulse; color transitions remain independent.
-    return 0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)) if overriding else 1.0
+    # Match the torque bar's steady 35% foreground during override, while
+    # retaining the longitudinal indicator's independent policy/warning colors.
+    return 0.35 if overriding else 1.0
 
   def _reset_distance_highlight(self) -> None:
     self._distance_personality = None
@@ -270,32 +271,38 @@ class HudRenderer(Widget):
     highlighted = now - self._personality_highlight_time < SET_SPEED_PERSISTENCE
     return self._distance_highlight_filter.update(float(highlighted))
 
+  @staticmethod
+  def _longitudinal_layout(personality):
+    # Figma positions before the shared 4 px rightward offset. Smaller gaps
+    # replace the upper bars with a larger car, leaving the wider lower bars.
+    if personality == log.LongitudinalPersonality.aggressive:
+      return (18, 95, 48, 38), 2, -8
+    if personality == log.LongitudinalPersonality.relaxed:
+      return (25, 86, 34, 27), 0, 0
+    return (21, 89, 42, 34), 1, -3
+
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
     personality = sm['selfdriveState'].personality
-    if personality == log.LongitudinalPersonality.aggressive:
-      lit_bars = 1
-    elif personality == log.LongitudinalPersonality.relaxed:
-      lit_bars = 3
-    else:
-      lit_bars = 2
+    _, first_bar, y_offset = self._longitudinal_layout(personality)
     green_alpha = self._distance_highlight_alpha(personality.raw, rl.get_time())
     orange_alpha = self._braking_orange_alpha()
     for index, (texture, x, y) in enumerate(self._distance_icon_parts):
-      highlighted = index == lit_bars - 1
-      alpha = 1.0 - green_alpha if highlighted else (1.0 if index < lit_bars else 0.35)
-      if index < lit_bars:
-        alpha *= self._accel_override_alpha * (1.0 - orange_alpha)
+      if index < first_bar:
+        continue
+      highlighted = index == 2
+      alpha = 0.9 * (1.0 - green_alpha if highlighted else 1.0)
+      alpha *= self._accel_override_alpha * (1.0 - orange_alpha)
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
-      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
+      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
       if highlighted and green_alpha > 0:
         green, gx, gy = self._distance_green_parts[index]
-        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy), 0.0, 1.0,
+        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
                                                         self._longitudinal_icon_opacity * self._accel_override_alpha)))
-      if index < lit_bars and orange_alpha > 0:
+      if orange_alpha > 0:
         orange, ox, oy = self._distance_orange_parts[index]
-        rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy), 0.0, 1.0,
+        rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy + y_offset), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * orange_alpha * self._longitudinal_icon_opacity * self._accel_override_alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
@@ -307,17 +314,23 @@ class HudRenderer(Widget):
            sm.recv_frame['selfdriveState'] >= ui_state.started_frame and
            sm['selfdriveState'].alertHudVisual == car.CarControl.HUDControl.VisualAlert.fcw)
     green = not fcw and has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
-    white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (1.0 if has_lead else 0.35))
+    white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (0.9 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
     override_alpha = self._accel_override_alpha if has_lead else 1.0
-    # Match the distance bar crossfade; the green asset has 14 px of glow padding.
-    for texture, x, y, alpha in ((self._txt_lead_car, 25, 86, white_alpha),
-                                 (self._txt_lead_car_green, 11, 72, green_alpha)):
+    (x, y, width, height), _, _ = self._longitudinal_layout(sm['selfdriveState'].personality)
+    # The new 128x101 car has 28 source pixels of glow on every side in
+    # the 184x157 colored exports. Scale that padding with the car so color
+    # crossfades never change its apparent silhouette or placement.
+    pad_x, pad_y = 28 * width / 128, 28 * height / 101
+    white_rect = rl.Rectangle(rect.x + x, rect.y + y, width, height)
+    glow_rect = rl.Rectangle(rect.x + x - pad_x, rect.y + y - pad_y, width + 2 * pad_x, height + 2 * pad_y)
+    for texture, destination, alpha in ((self._txt_lead_car, white_rect, white_alpha),
+                                         (self._txt_lead_car_green, glow_rect, green_alpha),
+                                         (self._txt_lead_car_orange, glow_rect, orange_alpha)):
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
-      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
-    rl.draw_texture_ex(self._txt_lead_car_orange, rl.Vector2(rect.x + 11, rect.y + 72), 0.0, 1.0,
-                       rl.Color(255, 255, 255, round(255 * orange_alpha * self._longitudinal_icon_opacity * override_alpha)))
+      source = rl.Rectangle(0, 0, texture.width, texture.height)
+      rl.draw_texture_pro(texture, source, destination, rl.Vector2(0, 0), 0.0, color)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
