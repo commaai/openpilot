@@ -208,8 +208,10 @@ CabanaColor byteColor(const CabanaColor &color) {
 
 CabanaColor signalFill(const CabanaColor &color, bool defined) {
   const bool dark = palette().text.x > 0.5f;
+  // Constrain the full-strength color before blending to preserve the activity ramp.
+  if (defined) return composite(boundLuminance(color, 0.18, !dark), fromImVec4(palette().surface));
   auto fill = composite(color, fromImVec4(palette().surface));
-  fill = composite(dark ? CabanaColor(0, 0, 0, 115) : CabanaColor(255, 255, 255, defined ? 20 : 40), fill);
+  fill = composite(dark ? CabanaColor(0, 0, 0, 115) : CabanaColor(255, 255, 255, 40), fill);
   return boundLuminance(fill, 0.18, !dark);  // 4.5:1 with the theme's text
 }
 
