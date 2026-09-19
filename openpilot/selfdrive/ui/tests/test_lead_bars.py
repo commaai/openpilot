@@ -47,12 +47,12 @@ class TestLeadBars(unittest.TestCase):
     for distance in (6, 10, 20, 40, 70, 100):
       points = self.project(distance)
       height = np.ptp(points[:, 1])
-      self.assertGreaterEqual(height, 7 - 1e-4)
-      self.assertLessEqual(height, 14 + 1e-4)
+      self.assertGreaterEqual(height, 6 - 1e-4)
+      self.assertLessEqual(height, 12 + 1e-4)
       # The far edge stays anchored to its calibrated road position.
       self.assertAlmostEqual(float(points[:, 1].min()), 100 + 600 / (distance - 0.2), places=4)
-    self.assertAlmostEqual(float(np.ptp(self.project(10)[:, 1])), 14, places=4)
-    self.assertAlmostEqual(float(np.ptp(self.project(100)[:, 1])), 7, places=4)
+    self.assertAlmostEqual(float(np.ptp(self.project(10)[:, 1])), 12, places=4)
+    self.assertAlmostEqual(float(np.ptp(self.project(100)[:, 1])), 6, places=4)
 
   def test_height_adjustment_preserves_road_projection(self):
     # Undo the test camera projection onto its flat road. A true road-space
@@ -96,7 +96,7 @@ class TestLeadBars(unittest.TestCase):
     points = self.project(6)
     self.assertEqual(points.shape, (4, 2))
     self.assertTrue(np.isfinite(points).all())
-    self.assertAlmostEqual(float(np.ptp(points[:, 1])), 14, places=3)
+    self.assertAlmostEqual(float(np.ptp(points[:, 1])), 12, places=3)
     self.assertAlmostEqual(float(points[:, 1].min()), (100 * 5.8 + 600) / (5.8 - 1.2), places=3)
     # Do not rescue a lead whose anchor is itself behind the camera.
     self.assertEqual(self.project(1).size, 0)
@@ -158,8 +158,8 @@ class TestLeadBars(unittest.TestCase):
       self.renderer._draw_lead_indicator()
       self.assertEqual(draw.call_count, 2)
       np.testing.assert_allclose(draw.call_args_list[0].args[1], self.renderer._lead_vehicles[1].points + [13, 17])
-      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.65))
-      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.9))
+      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.4))
+      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.8))
     first.present = second.present = False
     self.renderer._update_leads(radar, self.x)
     self.assertTrue(all(lead.points.size == 0 for lead in self.renderer._lead_vehicles))

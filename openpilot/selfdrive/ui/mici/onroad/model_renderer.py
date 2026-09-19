@@ -22,8 +22,8 @@ MAX_DRAW_DISTANCE = 100.0
 LEAD_BAR_WIDTH = 1.8
 LEAD_BAR_DEPTH = 6.0
 LEAD_BAR_REAR_GAP = 0.2
-LEAD_BAR_MIN_HEIGHT = 7.0
-LEAD_BAR_MAX_HEIGHT = 14.0
+LEAD_BAR_MIN_HEIGHT = 6.0
+LEAD_BAR_MAX_HEIGHT = 12.0
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -54,7 +54,7 @@ class ModelPoints:
 class LeadVehicle:
   points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
   distance: float = 0.0
-  opacity: float = 0.9
+  opacity: float = 0.8
 
 
 @dataclass
@@ -241,7 +241,7 @@ class ModelRenderer(Widget):
       smoothing.distance, smoothing.lateral = lead.dRel, lead.yRel
       points = self._project_lead_bar(lead.dRel, lead.yRel, path_x_array, smoothing)
       self._lead_bar_smoothing[i] = smoothing if points.size else None
-      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.9 if i == 0 else 0.65)
+      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.8 if i == 0 else 0.4)
 
   def _project_lead_bar(self, distance, lateral, path_x_array, smoothing=None):
     """Project all four corners using the path's road height and camera calibration."""
