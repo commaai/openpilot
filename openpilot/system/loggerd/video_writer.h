@@ -9,20 +9,19 @@ extern "C" {
 }
 
 #include "openpilot/cereal/messaging/messaging.h"
+#include "system/loggerd/audio_encoder.h"
 
 class VideoWriter {
 public:
   VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec);
   void set_metadata(const char *key, const char *value);
   void write(uint8_t *data, int len, long long timestamp, bool codecconfig, bool keyframe);
-  void write_audio(uint8_t *data, int len, long long timestamp, int sample_rate);
+  void write_audio(const AVPacket *packet, const AVCodecContext *codec);
 
   ~VideoWriter();
 
 private:
-  void initialize_audio(int sample_rate);
-  void encode_and_write_audio_frame(AVFrame* frame);
-  void process_remaining_audio();
+  void flush_audio();
 
   std::string vid_path, lock_path;
   FILE *of = nullptr;
@@ -31,13 +30,10 @@ private:
   AVFormatContext *ofmt_ctx;
   AVStream *out_stream;
 
-  bool audio_initialized = false;
   bool header_written = false;
   AVStream *audio_stream = nullptr;
-  AVCodecContext *audio_codec_ctx = nullptr;
-  AVFrame *audio_frame = nullptr;
-  uint64_t audio_pts = 0;
-  std::deque<float> audio_buffer;
+  std::deque<AudioPacket> audio_packets;
+  AVRational audio_time_base;
 
   bool remuxing;
 };

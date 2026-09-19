@@ -15,6 +15,7 @@ ExitHandler do_exit;
 
 struct LoggerdState {
   LoggerState logger;
+  std::unique_ptr<AudioEncoder> audio_encoder;
   std::atomic<double> last_camera_seen_tms{0.0};
   std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
   int max_waiting = 0;
@@ -22,6 +23,7 @@ struct LoggerdState {
 };
 
 void logger_rotate(LoggerdState *s) {
+  s->audio_encoder.reset();  // drain delayed AAC packets into the segment being closed
   bool ret =s->logger.next();
   assert(ret);
   s->ready_to_rotate = 0;
@@ -63,7 +65,19 @@ struct RemoteEncoder {
   bool marked_ready_to_rotate = false;
   bool seen_first_packet = false;
   bool audio_initialized = false;
+  std::deque<std::pair<int, AudioPacket>> pending_audio;
 };
+
+void flush_audio(RemoteEncoder &encoder, const AVCodecContext *codec, int segment) {
+  if (!encoder.writer || encoder.current_segment != segment) return;
+  encoder.writer->write_audio(nullptr, codec);
+  encoder.audio_initialized = true;
+  while (!encoder.pending_audio.empty()) {
+    auto &[packet_segment, packet] = encoder.pending_audio.front();
+    if (packet_segment == segment) encoder.writer->write_audio(packet.get(), codec);
+    encoder.pending_audio.pop_front();
+  }
+}
 
 size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEncoder &re, const EncoderInfo &encoder_info) {
   auto edata = (event.*(encoder_info.get_encode_data_func))();
@@ -146,6 +160,9 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       }
       re.current_segment = s->logger.segment();
       re.marked_ready_to_rotate = false;
+      if (encoder_info.include_audio && s->audio_encoder) {
+        flush_audio(re, s->audio_encoder->context(), s->logger.segment());
+      }
     }
     if (re.audio_initialized || !encoder_info.include_audio) {
       // we are in this segment now, process any queued messages before this one
@@ -296,20 +313,44 @@ void loggerd_thread() {
           auto event = cmsg.getRoot<cereal::Event>();
           auto audio_data = event.getRawAudioData().getData();
           auto sample_rate = event.getRawAudioData().getSampleRate();
-          for (auto* encoder : encoders_with_audio) {
-            if (encoder && encoder->writer) {
-              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime() / 1000, sample_rate);
-              encoder->audio_initialized = true;
-            }
+          if (!s.audio_encoder) {
+            s.audio_encoder = std::make_unique<AudioEncoder>(sample_rate,
+              [&](const AVPacket *packet, const AVCodecContext *codec, int discard_start, int discard_end) {
+                MessageBuilder builder;
+                auto evt = builder.initEvent();
+                evt.setLogMonoTime(av_rescale_q(packet->pts, codec->time_base, (AVRational){1, 1000000000}));
+                auto audio = evt.initAudioEncodeData();
+                audio.setData(kj::arrayPtr(packet->data, packet->size));
+                audio.setHeader(kj::arrayPtr(codec->extradata, codec->extradata_size));
+                audio.setSampleRate(codec->sample_rate);
+                audio.setSamples(packet->duration);
+                audio.setSegmentNum(s.logger.segment());
+                audio.setDiscardStart(discard_start);
+                audio.setDiscardEnd(discard_end);
+                auto bytes = builder.toBytes();
+                s.logger.write(bytes, false);
+                bytes_count += bytes.size();
+                for (auto *encoder : encoders_with_audio) {
+                  encoder->pending_audio.emplace_back(s.logger.segment(), AudioPacket(av_packet_clone(packet)));
+                  // At most ten seconds while waiting for this segment's video writer.
+                  if (encoder->pending_audio.size() > 10 * codec->sample_rate / codec->frame_size) {
+                    encoder->pending_audio.pop_front();
+                  }
+                  flush_audio(*encoder, codec, s.logger.segment());
+                }
+              });
           }
+          s.audio_encoder->write(audio_data.begin(), audio_data.size(), event.getLogMonoTime());
         }
 
         if (service.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
         } else {
-          s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
-          bytes_count += msg->getSize();
+          if (!service.record_audio) {
+            s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+            bytes_count += msg->getSize();
+          }
           delete msg;
         }
 
@@ -329,6 +370,7 @@ void loggerd_thread() {
     }
   }
 
+  s.audio_encoder.reset();
   LOGW("closing logger");
   s.logger.setExitSignal(do_exit.signal);
 
