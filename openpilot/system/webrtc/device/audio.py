@@ -10,6 +10,7 @@ import time
 
 import numpy as np
 
+from openpilot.common.voice_eq import VoiceEQ
 from openpilot.cereal import messaging
 from openpilot.system.micd import SAMPLE_RATE as MIC_RATE
 
@@ -95,6 +96,7 @@ class LivestreamAudio:
     self.task = None
     self.closed = False
     self.timestamp_base = random.randint(0, 0xFFFFFFFF)
+    self.capture_eq = VoiceEQ(MIC_RATE)
     self.capture_pending = bytearray()
     self.capture_time = None
     self.last_capture_time = None
@@ -115,6 +117,7 @@ class LivestreamAudio:
   def enable(self, enabled):
     self.enabled = bool(enabled)
     if not self.enabled:
+      self.capture_eq.reset()
       self.capture_pending.clear()
       self.capture_time = None
       self.last_capture_time = None
@@ -131,11 +134,12 @@ class LivestreamAudio:
       return
     if time.monotonic_ns() - msg.logMonoTime > 200_000_000:
       return
-    # rawAudioData contains 50 ms at 16 kHz; Opus uses 20 ms frames.
+    # rawAudioData contains 50 ms at 48 kHz; Opus uses 20 ms frames.
     # Anchor timestamps to capture time so mute/unmute and dropped samples
     # preserve the RTP timeline instead of slowing the receiver's clock.
     start = msg.logMonoTime / 1e9 - len(audio.data) / (MIC_RATE * 2)
     if self.capture_time is None or self.last_capture_time is None or abs(start - self.last_capture_time) > 0.02:
+      self.capture_eq.reset()
       self.capture_pending.clear()
       self.capture_time = start
     self.last_capture_time = start + len(audio.data) / (MIC_RATE * 2)
@@ -148,7 +152,7 @@ class LivestreamAudio:
       # Boost only the livestream copy, leaving micd's ambient measurement unchanged.
       # Soft limiting keeps loud peaks in range without int16 wraparound.
       samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768
-      pcm = (np.tanh(samples * MICROPHONE_GAIN) * 32767).astype(np.int16).tobytes()
+      pcm = (np.tanh(self.capture_eq.process(samples) * MICROPHONE_GAIN) * 32767).astype(np.int16).tobytes()
       self.track.send_frame(codec.encode(pcm), FrameInfo(timestamp))
       self.capture_time += 0.02
 

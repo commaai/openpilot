@@ -7,6 +7,7 @@ import wave
 
 from openpilot.cereal import log, messaging
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.voice_eq import VoiceEQ
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.utils import retry
@@ -64,6 +65,8 @@ def check_selfdrive_timeout_alert(sm):
 class LivestreamPlayback:
   """Bounded, expiring PCM queue shared by soundd's main/audio threads."""
   def __init__(self):
+    self.eq = VoiceEQ(SAMPLE_RATE)
+    self.last_audio_time = 0
     self.queue = queue.Queue(maxsize=6)
     self.pending = np.empty(0, dtype=np.float32)
     self.pending_time = 0
@@ -71,6 +74,8 @@ class LivestreamPlayback:
     self.playing_generation = 0
 
   def clear(self):
+    self.eq.reset()
+    self.last_audio_time = 0
     self.generation += 1
     while True:
       try:
@@ -88,7 +93,10 @@ class LivestreamPlayback:
     if time.monotonic_ns() - msg.logMonoTime > 200_000_000:
       return
     pcm = np.frombuffer(audio.data, dtype=np.int16).astype(np.float32) / 32768
-    pcm = np.tanh(pcm * LIVESTREAM_GAIN)
+    if msg.logMonoTime - self.last_audio_time > 200_000_000:
+      self.eq.reset()
+    self.last_audio_time = msg.logMonoTime
+    pcm = np.tanh(self.eq.process(pcm) * LIVESTREAM_GAIN)
     for offset in range(0, len(pcm), SAMPLE_BUFFER):
       item = (msg.logMonoTime, pcm[offset:offset + SAMPLE_BUFFER])
       try:

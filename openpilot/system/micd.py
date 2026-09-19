@@ -9,10 +9,10 @@ from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 RATE = 10
-FFT_SAMPLES = 1600 # 100ms
+FFT_SAMPLES = 4800 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
-SAMPLE_RATE = 16000
-SAMPLE_BUFFER = 800  # 50ms
+SAMPLE_RATE = 48000 # preserve speech above 10 kHz for livestream EQ
+SAMPLE_BUFFER = 2400  # 50ms
 
 
 def patch_sounddevice(sd):

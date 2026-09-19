@@ -61,6 +61,7 @@ class TestLivestreamPlayback:
     playback = LivestreamPlayback()
     for _ in range(10):
       playback.enqueue(self.message(value=4096))
+    playback.eq.reset()
     for _ in range(6):
       playback.enqueue(self.message(value=8192))
     np.testing.assert_allclose(playback.render(960 * 6), np.tanh(1.0))
@@ -94,6 +95,7 @@ class TestLivestreamPlayback:
     from openpilot.selfdrive.ui.soundd import LivestreamPlayback
     playback = LivestreamPlayback()
     for value in (0, 128, -128, 32767, -32768):
+      playback.clear()
       playback.enqueue(self.message(value=value))
       output = playback.render(960)
       assert np.isfinite(output).all()

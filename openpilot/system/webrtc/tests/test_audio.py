@@ -86,7 +86,7 @@ def test_audio_routes_through_micd_and_soundd(mocker):
     audio.enable(True)
     msg = messaging.new_message('rawAudioData')
     msg.rawAudioData.sampleRate = MIC_RATE
-    msg.rawAudioData.data = bytes(800 * 2)
+    msg.rawAudioData.data = bytes(MIC_RATE // 20 * 2)
     recv.side_effect = [msg, None, None, None, None, None, None, None, None, None, None, None]
     codec = OpusCodec()
     try:
@@ -115,6 +115,7 @@ def test_capture_gain_preserves_quiet_speech_and_limits_peaks(mocker):
   audio.enable(True)
   codec = SimpleNamespace(encoder_samples=MIC_RATE // 50, encode=mocker.Mock(return_value=b'opus'))
   for value in (0, 128, -128, 32767, -32768):
+    audio.capture_eq.reset()
     msg = messaging.new_message('rawAudioData')
     msg.rawAudioData.sampleRate = MIC_RATE
     msg.rawAudioData.data = np.full(codec.encoder_samples, value, dtype=np.int16).tobytes()
