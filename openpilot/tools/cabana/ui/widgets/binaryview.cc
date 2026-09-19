@@ -541,8 +541,7 @@ void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const B
 
   auto item = &cellAt(index);
   CabanaColor color = sig->color;
-  color.a = item->bg_color.alpha();
-  if (palette().text.x > 0.5f) color.a = 96 + color.a * (255 - 96) / 255;
+  color.a = 96 + item->bg_color.alpha() * (255 - 96) / 255;
   const ImU32 edge = toImU32(signalOutline(sig->color));
 
   for (const ImRect &clip : region) {
