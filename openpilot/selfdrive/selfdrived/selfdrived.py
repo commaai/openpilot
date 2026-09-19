@@ -12,7 +12,7 @@ from msgq.visionipc import VisionIpcClient
 
 
 from openpilot.common.params import Params
-from openpilot.common.camera120 import pinball_camera120, CAMERA120_UNUSED_SERVICES
+from openpilot.common.camera120 import camera120_enabled, CAMERA120_UNUSED_SERVICES
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
@@ -61,7 +61,7 @@ class SelfdriveD:
     else:
       self.CP = CP
 
-    self.pinball_camera120 = pinball_camera120(self.CP)
+    self.camera120 = camera120_enabled()
     self.car_events = CarEvents(self.CP)
 
     self.pose_calibrator = PoseCalibrator()
@@ -85,7 +85,7 @@ class SelfdriveD:
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
     ignore = self.sensor_packets + self.gps_packets + ['alertDebug', 'lateralManeuverPlan']
-    if self.pinball_camera120:
+    if self.camera120:
       ignore += list(CAMERA120_UNUSED_SERVICES)
     if SIMULATION:
       ignore += ['cabinCameraState', 'managerState']
@@ -275,7 +275,7 @@ class SelfdriveD:
 
     # Handle calibration status
     cal_status = self.sm['extrinsicsCalibration'].calStatus
-    if not self.pinball_camera120 and cal_status != log.ExtrinsicsCalibration.Status.calibrated:
+    if not self.camera120 and cal_status != log.ExtrinsicsCalibration.Status.calibrated:
       if cal_status == log.ExtrinsicsCalibration.Status.uncalibrated:
         self.events.add(EventName.calibrationIncomplete)
       elif cal_status == log.ExtrinsicsCalibration.Status.recalibrating:
