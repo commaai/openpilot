@@ -359,14 +359,8 @@ void BinaryView::draw() {
   if (ImGui::IsItemDeactivated()) handleMouseRelease(mouse);
 
   if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
-    if (auto index = indexAt(mouse); index.isValid()) {
-      const auto &signals = cellAt(index).sigs;
-      std::string tip = signals.empty() ? "" : utils::stripHtml(utils::signalToolTip(signals.back()));
-      if (!is_message_active_) {
-        if (!tip.empty()) tip += "\n";
-        tip += "No recent message; showing the last received value.";
-      }
-      if (!tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+    if (auto index = indexAt(mouse); index.isValid() && !cellAt(index).sigs.empty()) {
+      ImGui::SetTooltip("%s", utils::stripHtml(utils::signalToolTip(cellAt(index).sigs.back())).c_str());
     }
   }
 
