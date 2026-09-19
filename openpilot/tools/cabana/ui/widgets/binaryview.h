@@ -76,6 +76,7 @@ private:
 
   void paintCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const;
   bool hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const;
+  void drawSignalOutline(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
   void drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
 
   MessageId msg_id_;
