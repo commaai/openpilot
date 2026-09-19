@@ -11,6 +11,7 @@
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/dbc/dbcfile.h"
+#include "tools/cabana/core/heatmap.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/routes.h"
 #include "tools/cabana/ui/qtstate.h"
@@ -413,7 +414,30 @@ void test_pixel_envelope() {
   REQUIRE(chart::pixelEnvelope(points.begin(), points.begin(), 0, 1, 10).empty());
 }
 
+void test_heatmap_counts() {
+  HeatmapCounts counts(3);
+  for (int value = 0; value < 256; ++value) {
+    const uint8_t data[] = {static_cast<uint8_t>(value), 42, static_cast<uint8_t>(value / 16)};
+    counts.add(data, sizeof(data));
+  }
+  REQUIRE(counts.bytes == std::vector<uint32_t>({255, 0, 15}));
+  REQUIRE(counts.bits[0] == std::array<uint32_t, 8>({1, 3, 7, 15, 31, 63, 127, 255}));
+  REQUIRE(counts.bits[1] == std::array<uint32_t, 8>{});
+
+  // Every range starts with a baseline, without a transition from outside it.
+  HeatmapCounts range(3);
+  const uint8_t first[] = {255, 42, 15};
+  range.add(first, 3);
+  REQUIRE(range.bytes == std::vector<uint32_t>({0, 0, 0}));
+  const uint8_t short_data[] = {0};
+  range.add(short_data, 1);
+  range.add(first, 3);
+  REQUIRE(range.bytes == std::vector<uint32_t>({2, 0, 0}));
+  REQUIRE(HeatmapCounts(0).bits.empty());
+}
+
 void test_cabana_core() {
+  test_heatmap_counts();
   test_pixel_envelope();
   test_format_seconds();
   test_to_hex();
