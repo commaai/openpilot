@@ -552,7 +552,5 @@ void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const B
   CabanaColor color = sig->color;
   color.a = 96 + cellAt(index).bg_color.alpha() * (255 - 96) / 255;
   painter->AddRectFilled(rect.Min, rect.Max, paletteBase());
-  CabanaColor top = color;
-  top.a = static_cast<uint8_t>(color.a * (palette().text.x > 0.5f ? 0.72f : 0.90f));
-  painter->AddRectFilledMultiColor(rect.Min, rect.Max, toImU32(signalFill(top)), toImU32(signalFill(top)), toImU32(signalFill(color)), toImU32(signalFill(color)));
+  painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalFill(color)));
 }
