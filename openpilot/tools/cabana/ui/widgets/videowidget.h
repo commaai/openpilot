@@ -83,9 +83,10 @@ private:
 class VideoWidget {
 public:
   VideoWidget();
-  void draw(bool fill = false);  // content only; MainWindow puts it in the shared playback pane
-  float sizeHintHeight() const;
-  float defaultHeight(float width) const;
+  void drawVideo();
+  void drawPlayback();
+  void clearThumbnail() { thumbnail_display_time_ = -1; }
+  float playbackHeight() const;
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
   // vipc thread started and stopped
   void setVisible(bool visible);
@@ -97,7 +98,6 @@ private:
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
   void createCameraWidget();
-  void drawCameraWidget();
   void drawPlaybackController();
   void skipToEnd();
   void toggleTimeDisplay();
@@ -112,7 +112,6 @@ private:
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
-  bool force_fill_ = false;
   bool msgs_received_ = false;  // live-stream timestamps resolve when the first messages arrive
   double thumbnail_display_time_ = -1;
   std::unique_ptr<Slider> slider_;

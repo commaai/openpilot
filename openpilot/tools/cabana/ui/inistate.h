@@ -19,6 +19,7 @@ struct MainWindowState {
   bool log_messages_visible = true;
   bool charts_visible = true;
   bool video_visible = true;
+  bool playback_visible = true;
 };
 
 extern MainWindowState main_window;

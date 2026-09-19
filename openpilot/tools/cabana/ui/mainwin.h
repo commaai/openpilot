@@ -45,7 +45,6 @@ public:
 
 private:
   bool hasStream() const { return dynamic_cast<const DummyStream *>(can) == nullptr; }
-  const char *videoPanelTitle() const { return hasStream() && can->liveStreaming() ? "Live Stream" : "Video"; }
   void releaseStream();
   void startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file);
   void loadStartupStream(const std::string &dbc_file);
@@ -88,6 +87,8 @@ private:
   void drawVideoPanel();
   void drawDetailsPanel();
   void showMessage(const MessageId &id);
+  void drawPlaybackBar();
+  void drawPanelToggles();
   void drawStatusBar();
   void drawWaitDialog();
 
@@ -113,6 +114,7 @@ private:
   bool log_messages_visible_ = true;
   bool charts_visible_ = true;
   bool video_visible_ = true;
+  bool playback_visible_ = true;
   bool reset_layout_ = false;
   bool full_screen_ = false;
 #ifndef __APPLE__

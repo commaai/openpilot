@@ -123,7 +123,7 @@ VideoWidget::VideoWidget() {
 
 std::string VideoWidget::whatsThis() const {
   // one <br /> separated line per legend row, with the same entries and colors
-  return "<b>Video</b><br />\n"
+  return "<b>Playback</b><br />\n"
          "<span style=\"color:gray\">Timeline color</span><br />\n" +
          colorName(timeline_colors[(int)TimelineType::None]) + " Disengaged&nbsp;&nbsp;&nbsp;" +
          colorName(timeline_colors[(int)TimelineType::Engaged]) + " Engaged<br />\n" +
@@ -135,11 +135,7 @@ std::string VideoWidget::whatsThis() const {
          "Pause/Resume: <span style=\"background-color:lightGray;color:gray\">&nbsp;space&nbsp;</span>";
 }
 
-static float toolbarHeight() { return ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeight(); }
-
 void VideoWidget::drawPlaybackController() {
-  if (!can->liveStreaming())
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
   const float speed_width = menuButtonWidth("0.05x", true);
 
   const char *play_icon = can->isPaused() ? icon::PLAY : icon::PAUSE;
@@ -195,10 +191,7 @@ void VideoWidget::drawPlaybackController() {
     item.in_menu = false;
     return item;
   };
-  const char *aspect_ratio_icon = settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO;
   if (!can->liveStreaming()) {
-    if (!force_fill_) items.push_back(toolbarAction("crop_video", aspect_ratio_icon, "Crop to fill", [this]() { cropVideoClicked(); }));
-    items.push_back(separator());
     items.push_back(toolbarAction("loop", loop_icon, "Loop playback", [this]() { loopPlaybackClicked(); }));
     items.push_back(toolbarMenu("speed_btn", speed_text_, "Speed", [this]() { drawSpeedMenuItems(); }, true, speed_width));
     items.push_back(separator());
@@ -270,21 +263,22 @@ void VideoWidget::createCameraWidget() {
   }
 }
 
-void VideoWidget::drawCameraWidget() {
-  const float toolbar_height = toolbarHeight();
-  // Camera tabs, video and timeline touch; restore the normal gap for the controls.
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-  camera_tab_->draw();
-
-  // Reserve the timeline and playback controls even when the native dock is short.
+void VideoWidget::drawVideo() {
+  if (!cam_widget_) return;
+  const float camera_width = std::max(1.0f, ImGui::GetContentRegionAvail().x - iconButtonWidth() - ImGui::GetStyle().ItemSpacing.x);
+  const int current = camera_tab_->currentIndex();
+  ImGui::SetNextItemWidth(camera_width);
+  if (dropdown::BeginCombo("##camera", current >= 0 ? camera_tab_->tabText(current).c_str() : "No camera")) {
+    for (int i = 0; i < camera_tab_->count(); ++i) {
+      if (dropdown::Item(camera_tab_->tabText(i).c_str(), nullptr, current == i)) camera_tab_->setCurrentIndex(i);
+    }
+    dropdown::EndCombo();
+  }
+  ImGui::SameLine();
+  if (iconButton("crop_video", settings.crop_video ? icon::ASPECT_RATIO_FILL : icon::ASPECT_RATIO, "Crop to fill")) cropVideoClicked();
+  cam_widget_->setCrop(settings.crop_video);
   const ImVec2 avail = ImGui::GetContentRegionAvail();
-  const float cam_height = std::max(1.0f, avail.y - SLIDER_HEIGHT - toolbar_height);
-  cam_widget_->draw(ImVec2(avail.x, cam_height), thumbnail_display_time_);
-
-  if (!slider_->isSliderDown()) slider_->setCurrentSecond(can->currentSec());
-  slider_->draw(thumbnail_display_time_);
-  updateSliderThumbnail();
-  ImGui::PopStyleVar();
+  cam_widget_->draw(ImVec2(avail.x, std::max(1.0f, avail.y)), thumbnail_display_time_);
 }
 
 void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams) {
@@ -350,27 +344,39 @@ void VideoWidget::updateSliderThumbnail() {
   }
 }
 
-float VideoWidget::sizeHintHeight() const {
-  // the camera minimum height plus the slider and the toolbar
-  return MIN_VIDEO_HEIGHT + SLIDER_HEIGHT + toolbarHeight();
+float VideoWidget::playbackHeight() const {
+  const auto &style = ImGui::GetStyle();
+  const float timeline = slider_ ? ImGui::GetTextLineHeight() + SLIDER_HEIGHT + style.ItemSpacing.y * 2 : 0;
+  return ImGui::GetFrameHeight() + timeline + style.WindowPadding.y * 2;
 }
 
-// Keep the pane's default proportions stable as frames arrive or cameras change.
-float VideoWidget::defaultHeight(float width) const {
-  if (!cam_widget_) return ImGui::GetFrameHeight();  // live streams have no camera or slider
-  const float cam_height = std::max((float)MIN_VIDEO_HEIGHT, width / DEFAULT_CAMERA_ASPECT_RATIO);
-  const float tab_height = camera_tab_->count() >= 2 ? ImGui::GetFrameHeight() : 0.0f;
-  return cam_height + tab_height + SLIDER_HEIGHT + toolbarHeight();
-}
-
-void VideoWidget::draw(bool fill) {
-  force_fill_ = fill;
-  if (cam_widget_) cam_widget_->setCrop(fill || settings.crop_video);
-  if (!can->liveStreaming())
-    drawCameraWidget();
-
+void VideoWidget::drawPlayback() {
   drawPlaybackController();
-
+  if (slider_) {
+    // A shared ruler keeps time navigation independent of the camera's visibility.
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    const float width = std::max(1.0f, ImGui::GetContentRegionAvail().x);
+    const double min = slider_->minimum() / Slider::factor;
+    const double max = slider_->maximum() / Slider::factor;
+    const double span = std::max(max - min, 0.001);
+    pushMonoFont();
+    const float label_spacing = ImGui::CalcTextSize(formatTime(min, true).c_str()).x + ImGui::GetStyle().ItemSpacing.x * 4;
+    const double raw_step = span / std::max(1.0f, width / label_spacing);
+    const double magnitude = std::pow(10.0, std::floor(std::log10(raw_step)));
+    const double step = (raw_step <= magnitude ? 1 : raw_step <= 2 * magnitude ? 2 : raw_step <= 5 * magnitude ? 5 : 10) * magnitude;
+    for (double sec = std::ceil(min / step) * step; sec <= max; sec += step) {
+      const std::string label = formatTime(sec, step < 1.0);
+      const float label_width = ImGui::CalcTextSize(label.c_str()).x;
+      const float tick_x = width * (sec - min) / span;
+      const float x = std::clamp(tick_x - label_width * 0.5f, 0.0f, std::max(0.0f, width - label_width));
+      ImGui::GetWindowDrawList()->AddText(ImVec2(origin.x + x, origin.y), ImGui::GetColorU32(ImGuiCol_TextDisabled), label.c_str());
+    }
+    popMonoFont();
+    ImGui::Dummy(ImVec2(width, ImGui::GetTextLineHeight()));
+    if (!slider_->isSliderDown()) slider_->setCurrentSecond(can->currentSec());
+    slider_->draw(thumbnail_display_time_);
+    updateSliderThumbnail();
+  }
   for (auto it = route_info_dlgs_.begin(); it != route_info_dlgs_.end();) {
     it = (*it)->draw() ? it + 1 : route_info_dlgs_.erase(it);
   }
