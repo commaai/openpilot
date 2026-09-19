@@ -73,6 +73,6 @@ class DesireHelper:
     self.desire = log.Desire.none
     if self.lane_change_state == LaneChangeState.laneChangeStarting:
       if self.lane_change_direction == LaneChangeDirection.left:
-        self.desire = log.Desire.laneChangeLeft
+        self.desire = log.Desire.turnLeft
       elif self.lane_change_direction == LaneChangeDirection.right:
-        self.desire = log.Desire.laneChangeRight
+        self.desire = log.Desire.turnRight
