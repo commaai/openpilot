@@ -229,11 +229,11 @@ class StreamSession:
 
   def __init__(self, body: StreamRequestBody):
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from teleoprtc.builder import WebRTCAnswerBuilder
+    from openpilot.system.webrtc.device.audio import AudioAnswerBuilder
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
-    builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
+    builder = AudioAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
     self.enabled = body.enabled
     self.video_tracks = []
@@ -292,6 +292,9 @@ class StreamSession:
           case "livestreamSettings":
             if self.bitrate_controller is not None:
               self.bitrate_controller.set_quality(payload["data"]["quality"])
+          case "livestreamAudioEnable":
+            if self.stream.audio is not None:
+              self.stream.audio.enable(payload["data"]["enabled"] is True and self.enabled)
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
             self.enabled = enabled
@@ -302,6 +305,8 @@ class StreamSession:
             if self.bitrate_controller is not None:
               self.bitrate_controller.enable(enabled)
             if not enabled:
+              if self.stream.audio is not None:
+                self.stream.audio.enable(False)
               self.params.put("LivestreamRequestKeyframe", True)
           case "clockSync":
             pong = json.dumps({"type": "clockSync", "data": {
@@ -591,9 +596,9 @@ async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio
 
 def prewarm_stream_session_imports() -> None:
   from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-  from teleoprtc.builder import WebRTCAnswerBuilder
+  from openpilot.system.webrtc.device.audio import AudioAnswerBuilder
   assert LiveStreamVideoStreamTrack
-  assert WebRTCAnswerBuilder
+  assert AudioAnswerBuilder
 
 
 def webrtcd_thread(host: str, port: int):
