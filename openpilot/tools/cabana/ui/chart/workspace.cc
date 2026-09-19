@@ -94,7 +94,7 @@ void ChartsWidget::drawPresetsMenu() {
     }
     std::sort(presets_.begin(), presets_.end());
   }
-  for (const auto &path : presets_) if (ImGui::MenuItem(path.stem().c_str())) openLayout(path.string());
+  for (const auto &path : presets_) if (dropdown::Item(path.stem().c_str())) openLayout(path.string());
 }
 
 ChartsWidget::LayoutStatus ChartsWidget::openLayout(const std::string &path, bool defer_missing_can) {

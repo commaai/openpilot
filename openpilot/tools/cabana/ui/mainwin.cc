@@ -164,7 +164,7 @@ void MainWindow::drawMenuBar() {
     dropdown::Item("openpilot Messages", nullptr, &log_messages_visible_);
     dropdown::Item("Charts", nullptr, &charts_visible_);
     dropdown::Item("CAN Details", nullptr, &details_visible_);
-    dropdown::Item("Playback", nullptr, &video_visible_);
+    dropdown::Item(videoPanelTitle(), nullptr, &video_visible_);
     ImGui::Separator();
     if (dropdown::Item("Reset Window Layout")) {
       messages_visible_ = log_messages_visible_ = charts_visible_ = video_visible_ = true;
@@ -913,8 +913,9 @@ void MainWindow::drawLogMessagesPanel() {
 }
 
 void MainWindow::drawChartsPanel() {
+  const std::string title = "Charts: " + std::to_string(charts_widget_ ? charts_widget_->chartCount() : 0) + "###ChartsPanel";
   setNextPanelClass();
-  if (beginPanel(CHARTS_PANEL, &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+  if (beginPanel(title.c_str(), &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     if (charts_widget_) {
       help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
       charts_widget_->draw();

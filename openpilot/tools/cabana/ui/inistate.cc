@@ -47,7 +47,6 @@ void readLine(ImGuiContext *, ImGuiSettingsHandler *, void *entry, const char *l
     state->details_visible = flag != 0;
   } else if (sscanf(line, "MessagesVisible=%d", &flag) == 1) {
     state->messages_visible = flag != 0;
-  } else if (sscanf(line, "ChartsVisible=%d", &flag) == 1) {
   } else if (sscanf(line, "VideoVisible=%d", &flag) == 1) {
     state->video_visible = flag != 0;
   }
@@ -63,7 +62,6 @@ void writeAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuffer *bu
   buf->appendf("VideoSplitterRatio=%.4f\n", main_window.video_splitter_ratio);
   buf->appendf("WorkspaceVersion=%d\n", main_window.workspace_version);
   buf->appendf("LogMessagesVisible=%d\n", main_window.log_messages_visible ? 1 : 0);
-  buf->appendf("ChartsVisible=%d\n", main_window.charts_visible ? 1 : 0);
   buf->appendf("DetailsVisible=%d\n", main_window.details_visible ? 1 : 0);
   buf->appendf("MessagesVisible=%d\n", main_window.messages_visible ? 1 : 0);
   buf->appendf("VideoVisible=%d\n", main_window.video_visible ? 1 : 0);

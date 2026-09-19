@@ -484,7 +484,6 @@ void ChartView::drawContextMenu() {
       !ImGui::IsAnyItemActive() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
     ImGui::OpenPopup("context_menu");
   }
-  context_menu_id_ = ImGui::GetID("context_menu");
   if (dropdown::BeginPopup("context_menu")) {
     drawMenuActions();
     ImGui::Separator();

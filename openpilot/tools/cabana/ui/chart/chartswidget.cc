@@ -197,27 +197,27 @@ void ChartsWidget::drawToolBar() {
   }
 
   items.push_back(toolbarMenu("chart_functions", "Functions", "Functions", [this]() {
-    if (ImGui::MenuItem("New Function...")) openFunctionEditor();
+    if (dropdown::Item("New Function...")) openFunctionEditor();
     if (!equations_.empty()) ImGui::Separator();
     for (const auto &equation : equations_) {
       ImGui::PushID(equation.name.c_str());
-      if (ImGui::MenuItem(equation.name.c_str())) openFunctionEditor(&equation);
+      if (dropdown::Item(equation.name.c_str())) openFunctionEditor(&equation);
       ImGui::PopID();
     }
   }));
   items.push_back(toolbarMenu("chart_workspace", "Layout", "Layout", [this]() {
-    if (ImGui::MenuItem("Save Layout...", nullptr, false, !charts_.empty() || !equations_.empty())) saveLayout();
-    if (ImGui::MenuItem("Open Layout...")) loadLayout();
-    if (beginSubMenu("openpilot Presets")) {
+    if (dropdown::Item("Save Layout...", nullptr, false, !charts_.empty() || !equations_.empty())) saveLayout();
+    if (dropdown::Item("Open Layout...")) loadLayout();
+    if (dropdown::BeginMenu("openpilot Presets")) {
       drawPresetsMenu();
-      ImGui::EndMenu();
+      dropdown::EndMenu();
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Export Visible Data to CSV...", nullptr, false, !currentCharts().empty())) exportCsv();
+    if (dropdown::Item("Export Visible Data to CSV...", nullptr, false, !currentCharts().empty())) exportCsv();
   }));
   items.push_back(toolbarMenu("chart_navigation", "View", "View", [this]() {
-    if (ImGui::MenuItem("Fit Loaded Data", nullptr, false, !charts_.empty())) fitTimeRange();
-    if (ImGui::MenuItem("Follow Playback", nullptr, !can->timeRange().has_value())) zoomReset();
+    if (dropdown::Item("Fit Loaded Data", nullptr, false, !charts_.empty())) fitTimeRange();
+    if (dropdown::Item("Follow Playback", nullptr, !can->timeRange().has_value())) zoomReset();
     ImGui::Separator();
     ImGui::TextDisabled("Drag to zoom · Shift-drag to scrub");
     ImGui::TextDisabled("%s-drag to pan · %s-wheel to zoom", MOD_KEY, MOD_KEY);
@@ -630,9 +630,9 @@ void ChartsContainer::draw() {
     if (ImGui::Button("Browse openpilot")) charts_widget_->showLogMessages();
     ImGui::SameLine();
     if (ImGui::Button("Presets")) ImGui::OpenPopup("empty_presets");
-    if (ImGui::BeginPopup("empty_presets")) {
+    if (dropdown::BeginPopup("empty_presets")) {
       charts_widget_->drawPresetsMenu();
-      ImGui::EndPopup();
+      dropdown::EndPopup();
     }
     bottom = ImGui::GetCursorScreenPos().y;
   }

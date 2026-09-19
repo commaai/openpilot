@@ -368,7 +368,6 @@ void VideoWidget::draw(bool fill) {
   if (cam_widget_) cam_widget_->setCrop(fill || settings.crop_video);
   if (!can->liveStreaming())
     drawCameraWidget();
-  ImGui::PopStyleVar();
 
   drawPlaybackController();
 
