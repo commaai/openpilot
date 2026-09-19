@@ -85,3 +85,31 @@ class TestStreamSession(OpenpilotTestCase):
     response = self.loop.run_until_complete(handle_get_stream(ServerState(), b"{}", "text/plain"))
 
     assert response == (415, b'{"error": "unsupported media type"}', "application/json; charset=utf-8")
+
+
+
+def test_cleanup_survives_cancelled_session(mocker):
+  from openpilot.system.webrtc.webrtcd import StreamSession
+
+  async def exercise():
+    session = StreamSession.__new__(StreamSession)
+    session._cleanup_task = None
+    started = asyncio.Event()
+    finished = asyncio.Event()
+    async def cleanup():
+      started.set()
+      await finished.wait()
+    session._cleanup_resources = mocker.AsyncMock(side_effect=cleanup)
+    first = asyncio.create_task(session.post_run_cleanup())
+    await started.wait()
+    first.cancel()
+    try:
+      await first
+    except asyncio.CancelledError:
+      pass
+    assert not session._cleanup_task.cancelled()
+    finished.set()
+    await session.post_run_cleanup()
+    session._cleanup_resources.assert_awaited_once()
+
+  asyncio.run(exercise())

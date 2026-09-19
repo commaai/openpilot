@@ -1,4 +1,5 @@
 import math
+import queue
 import numpy as np
 import time
 import wave
@@ -15,7 +16,7 @@ from openpilot.system import micd
 from openpilot.common.hardware import HARDWARE
 
 SAMPLE_RATE = 48000
-SAMPLE_BUFFER = 4096 # (approx 100ms)
+SAMPLE_BUFFER = 960 # 20 ms, also used for livestream voice playback
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
@@ -59,9 +60,71 @@ def check_selfdrive_timeout_alert(sm):
   return False
 
 
+class LivestreamPlayback:
+  """Bounded, expiring PCM queue shared by soundd's main/audio threads."""
+  def __init__(self):
+    self.queue = queue.Queue(maxsize=6)
+    self.pending = np.empty(0, dtype=np.float32)
+    self.pending_time = 0
+    self.generation = 0
+    self.playing_generation = 0
+
+  def clear(self):
+    self.generation += 1
+    while True:
+      try:
+        self.queue.get_nowait()
+      except queue.Empty:
+        break
+
+  def enqueue(self, msg):
+    audio = msg.livestreamAudio
+    if not msg.valid or audio.sampleRate != SAMPLE_RATE or len(audio.data) % 2 or len(audio.data) > SAMPLE_RATE * 2 * 0.12:
+      return
+    if not audio.data:
+      self.clear()
+      return
+    if time.monotonic_ns() - msg.logMonoTime > 200_000_000:
+      return
+    pcm = np.frombuffer(audio.data, dtype=np.int16).astype(np.float32) / 32768
+    for offset in range(0, len(pcm), SAMPLE_BUFFER):
+      item = (msg.logMonoTime, pcm[offset:offset + SAMPLE_BUFFER])
+      try:
+        self.queue.put_nowait(item)
+      except queue.Full:
+        try:
+          self.queue.get_nowait()
+        except queue.Empty:
+          pass
+        self.queue.put_nowait(item)
+
+  def render(self, frames):
+    result = np.zeros(frames, dtype=np.float32)
+    if self.playing_generation != self.generation:
+      self.pending = np.empty(0, dtype=np.float32)
+      self.playing_generation = self.generation
+    written = 0
+    while written < frames:
+      if time.monotonic_ns() - self.pending_time > 200_000_000:
+        self.pending = np.empty(0, dtype=np.float32)
+      if not self.pending.size:
+        try:
+          self.pending_time, self.pending = self.queue.get_nowait()
+        except queue.Empty:
+          break
+        if time.monotonic_ns() - self.pending_time > 200_000_000:
+          continue
+      count = min(frames - written, self.pending.size)
+      result[written:written + count] = self.pending[:count]
+      self.pending = self.pending[count:]
+      written += count
+    return result
+
+
 class Soundd:
   def __init__(self):
     self.load_sounds()
+    self.livestream = LivestreamPlayback()
 
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
@@ -120,7 +183,11 @@ class Soundd:
   def callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
     if status:
       cloudlog.warning(f"soundd stream over/underflow: {status}")
-    data_out[:frames, 0] = self.get_sound_data(frames)
+    alert_active = self.current_alert != AudibleAlert.none
+    alerts = self.get_sound_data(frames)
+    voice = self.livestream.render(frames)
+    # Alerts take priority over remote speech; never attenuate an alert.
+    data_out[:frames, 0] = alerts if alert_active else voice
 
   def update_alert(self, new_alert):
     current_alert_played_once = self.current_alert == AudibleAlert.none or self.current_sound_frame >= len(self.loaded_sounds[self.current_alert])
@@ -168,6 +235,7 @@ class Soundd:
     micd.patch_sounddevice(sd)
 
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
+    livestream = messaging.sub_sock('livestreamAudio')
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
@@ -175,6 +243,11 @@ class Soundd:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         sm.update(0)
+        for _ in range(16):
+          msg = messaging.recv_one_or_none(livestream)
+          if msg is None:
+            break
+          self.livestream.enqueue(msg)
 
         # freeze volume during alerts to avoid mic feedback increasing volume
         if sm.updated['soundPressure']:

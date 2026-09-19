@@ -6,6 +6,10 @@ import ctypes.util
 import logging
 import queue
 import random
+import time
+
+from openpilot.cereal import messaging
+from openpilot.system.micd import SAMPLE_RATE as MIC_RATE
 
 from libdatachannel import (Description, FrameInfo, OpusRtpPacketizer, OpusRtpDepacketizer,
                             RtcpReceivingSession, RtcpSrReporter, RtpPacketizationConfig)
@@ -17,7 +21,8 @@ SAMPLES = 960  # 20 ms, mono signed 16-bit PCM
 
 
 class OpusCodec:
-  def __init__(self):
+  def __init__(self, encoder_rate=RATE):
+    self.encoder_samples = encoder_rate // 50
     self.lib = ctypes.CDLL(ctypes.util.find_library("opus") or "libopus.so.0")
     pointer = ctypes.c_void_p
     integer = ctypes.c_int
@@ -34,7 +39,7 @@ class OpusCodec:
     self.encoder = None
     self.decoder = None
     error = integer()
-    self.encoder = self.lib.opus_encoder_create(RATE, 1, 2048, ctypes.byref(error))  # OPUS_APPLICATION_VOIP
+    self.encoder = self.lib.opus_encoder_create(encoder_rate, 1, 2048, ctypes.byref(error))  # OPUS_APPLICATION_VOIP
     if error.value or not self.encoder:
       self.close()
       raise RuntimeError(f"Opus encoder: {error.value}")
@@ -44,10 +49,10 @@ class OpusCodec:
       raise RuntimeError(f"Opus decoder: {error.value}")
 
   def encode(self, pcm: bytes) -> bytes:
-    if len(pcm) != SAMPLES * 2:
+    if len(pcm) != self.encoder_samples * 2:
       raise ValueError("Expected 20 ms of mono PCM")
     output = ctypes.create_string_buffer(4000)
-    size = self.lib.opus_encode(self.encoder, pcm, SAMPLES, output, len(output))
+    size = self.lib.opus_encode(self.encoder, pcm, self.encoder_samples, output, len(output))
     if size < 0:
       raise ValueError(f"Opus encode: {size}")
     return output.raw[:size]
@@ -83,96 +88,110 @@ class LivestreamAudio:
     self.track = track
     self.on_error = on_error
     self.enabled = False
-    self.capture = queue.Queue(maxsize=3)
     self.received = queue.Queue(maxsize=6)
-    self.playback = queue.Queue(maxsize=6)
     self.task = None
     self.closed = False
-    self.timestamp = random.randint(0, 0xFFFFFFFF)
+    self.timestamp_base = random.randint(0, 0xFFFFFFFF)
+    self.capture_pending = bytearray()
+    self.capture_time = None
+    self.last_capture_time = None
+    self.last_received_timestamp = None
     track.on_frame(self.on_frame)
 
-  def on_frame(self, packet, _info):
-    if not self.closed and len(packet) <= 4000:
-      put_latest(self.received, bytes(packet))
+  def on_frame(self, packet, info):
+    if self.closed or len(packet) > 4000:
+      return
+    timestamp = info.timestamp
+    if self.last_received_timestamp is not None:
+      delta = (timestamp - self.last_received_timestamp) & 0xFFFFFFFF
+      if delta == 0 or delta >= 0x80000000:
+        return  # Do not replay duplicate or out-of-order voice packets.
+    self.last_received_timestamp = timestamp
+    put_latest(self.received, (time.monotonic_ns(), bytes(packet)))
 
   def enable(self, enabled):
     self.enabled = bool(enabled)
+    if not self.enabled:
+      self.capture_pending.clear()
+      self.capture_time = None
+      self.last_capture_time = None
 
   def start(self):
-    self.task = asyncio.create_task(self.run())
+    if self.task is None:
+      self.task = asyncio.create_task(self.run())
+
+  def send_capture(self, msg, codec):
+    if not self.enabled or not self.track.is_open():
+      return
+    audio = msg.rawAudioData
+    if audio.sampleRate != MIC_RATE or not audio.data or len(audio.data) % 2:
+      return
+    if time.monotonic_ns() - msg.logMonoTime > 200_000_000:
+      return
+    # rawAudioData contains 50 ms at 16 kHz; Opus uses 20 ms frames.
+    # Anchor timestamps to capture time so mute/unmute and dropped samples
+    # preserve the RTP timeline instead of slowing the receiver's clock.
+    start = msg.logMonoTime / 1e9 - len(audio.data) / (MIC_RATE * 2)
+    if self.capture_time is None or self.last_capture_time is None or abs(start - self.last_capture_time) > 0.02:
+      self.capture_pending.clear()
+      self.capture_time = start
+    self.last_capture_time = start + len(audio.data) / (MIC_RATE * 2)
+    self.capture_pending.extend(audio.data)
+    size = codec.encoder_samples * 2
+    while len(self.capture_pending) >= size:
+      pcm = bytes(self.capture_pending[:size])
+      del self.capture_pending[:size]
+      timestamp = (self.timestamp_base + round(self.capture_time * RATE)) & 0xFFFFFFFF
+      self.track.send_frame(codec.encode(pcm), FrameInfo(timestamp))
+      self.capture_time += 0.02
 
   async def run(self):
-    import sounddevice as sd
     codec = None
-    mic = None
+    microphone = None
     speaker = None
-    pending = bytearray()
-
-    def capture(data, frames, _time, _status):
-      if self.enabled and frames == SAMPLES:
-        put_latest(self.capture, bytes(data))
-
-    def playback(data, _frames, _time, _status):
-      while len(pending) < len(data):
-        try:
-          pending.extend(self.playback.get_nowait())
-        except queue.Empty:
-          break
-      count = min(len(data), len(pending))
-      data[:count] = bytes(pending[:count])
-      data[count:] = bytes(len(data) - count)
-      del pending[:count]
-
     try:
-      codec = OpusCodec()
-      # PortAudio opens lazily: prewarm does not capture or play any audio.
+      codec = OpusCodec(encoder_rate=MIC_RATE)
+      microphone = messaging.sub_sock("rawAudioData")
+      speaker = messaging.PubMaster(["livestreamAudio"])
       while not self.closed:
-        if self.enabled and mic is None:
-          mic = await asyncio.to_thread(sd.RawInputStream, samplerate=RATE, channels=1, dtype="int16", blocksize=SAMPLES, callback=capture)
-          await asyncio.to_thread(mic.start)
-        elif not self.enabled and mic is not None:
-          await asyncio.to_thread(mic.close)
-          mic = None
-          while not self.capture.empty():
-            self.capture.get_nowait()
-        for _ in range(3):
-          try:
-            pcm = self.capture.get_nowait()
-          except queue.Empty:
+        for _ in range(8):
+          msg = messaging.recv_one_or_none(microphone)
+          if msg is None:
             break
-          if self.enabled and self.track.is_open():
-            self.track.send_frame(codec.encode(pcm), FrameInfo(self.timestamp))
-            self.timestamp = (self.timestamp + SAMPLES) & 0xFFFFFFFF
+          self.send_capture(msg, codec)
         for _ in range(6):
           try:
-            packet = self.received.get_nowait()
+            received_at, packet = self.received.get_nowait()
           except queue.Empty:
             break
+          if time.monotonic_ns() - received_at > 200_000_000:
+            continue
           try:
             pcm = codec.decode(packet)
           except ValueError:
             continue
-          if speaker is None:
-            speaker = await asyncio.to_thread(sd.RawOutputStream, samplerate=RATE, channels=1, dtype="int16", blocksize=SAMPLES, callback=playback)
-            await asyncio.to_thread(speaker.start)
-          put_latest(self.playback, pcm)
+          msg = messaging.new_message("livestreamAudio", valid=True)
+          msg.livestreamAudio.sampleRate = RATE
+          msg.livestreamAudio.data = pcm
+          speaker.send("livestreamAudio", msg)
         await asyncio.sleep(0.005)
     except Exception:
       logging.getLogger("webrtcd").exception("Livestream audio failed")
       self.on_error()
     finally:
-      for device in (mic, speaker):
-        if device is not None:
-          await asyncio.to_thread(device.close)
+      if speaker is not None:
+        # Flush soundd's short playback queue on disconnect.
+        msg = messaging.new_message("livestreamAudio", valid=True)
+        msg.livestreamAudio.sampleRate = RATE
+        speaker.send("livestreamAudio", msg)
       if codec is not None:
         codec.close()
 
   async def stop(self):
     self.closed = True
-    self.enabled = False
-    # Let in-flight PortAudio opens finish before closing their handles.
+    self.enable(False)
     if self.task is not None:
-      await self.task
+      await asyncio.shield(self.task)
       self.task = None
 
 
