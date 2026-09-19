@@ -32,8 +32,9 @@ PARKNAV_FREQ = 4.
 PUB_DIVISOR = int(20. / PARKNAV_FREQ)
 
 MAX_HEADING_STD = 0.15       # rad
-MAX_BEARING_ACCURACY = 20.   # deg
+MAX_BEARING_ACCURACY = 5.    # deg
 MAX_FIX_AGE = 5.0            # s
+ARRIVAL_RADIUS = 5.         # m
 MAX_NAV_DIST = 500.          # m
 
 MIN_GPS_HEADING_SPEED = 1.5  # m/s
@@ -52,15 +53,13 @@ class ParkNavEstimator:
   def __init__(self):
     self.yaw = 0.                  # corrected NED yaw [rad]
     self.yaw_initialized = False
+    self.heading_anchored = False
     self.raw_yaw_prev = 0.         # uncorrected kalman yaw of the previous update
     self.yaw_valid = False
 
     self.pos_ned = np.zeros(2)     # [north, east] meters relative to the destination
     self.last_t: float | None = None
 
-    self.gps_bearing = 0.          # rad, NED
-    self.gps_bearing_t: float | None = None
-    self.gps_speed = 0.            # m/s at the last fix
     self.last_fix_t: float | None = None
 
 
@@ -79,25 +78,18 @@ def get_destination(params: Params) -> tuple[float, float] | None:
 def update_pose(state: ParkNavEstimator, sm, calibrator: PoseCalibrator) -> None:
   """Update yaw (dead reckoning + GNSS anchoring) and position (velocity integration)."""
   if not calibrator.calib_valid:
+    state.yaw_valid = False
+    state.last_t = None
     return
   t = time.monotonic()
 
   dm = sm['deviceMotion']
   pose = calibrator.build_calibrated_pose(Pose.from_device_motion(dm))
 
-  ned_from_calib = rot_from_euler(pose.orientation.xyz)
-  v_ned = ned_from_calib @ pose.velocity.xyz
-  speed = float(np.linalg.norm(v_ned[:2]))
-  if state.last_t is not None and speed > MIN_INTEGRATION_SPEED:
-    dt = min(max(t - state.last_t, 0.), MAX_INTEGRATION_DT)
-    if dt > 0:
-      state.pos_ned += v_ned[:2] * dt
-  state.last_t = t
-
   # heading: dead-reckon the corrected yaw by the kalman pose delta
   raw_yaw = float(pose.orientation.yaw)
-  yaw_std = float(pose.orientation.yaw_std)
-  state.yaw_valid = dm.orientationNED.valid and yaw_std < MAX_HEADING_STD and not math.isnan(raw_yaw)
+  yaw_std = float(dm.orientationNED.zStd)
+  state.yaw_valid = dm.orientationNED.valid and 0. <= yaw_std < MAX_HEADING_STD and math.isfinite(raw_yaw)
   if state.yaw_valid:
     if state.yaw_initialized:
       state.yaw = wrap_angle(state.yaw + wrap_angle(raw_yaw - state.raw_yaw_prev))
@@ -106,9 +98,16 @@ def update_pose(state: ParkNavEstimator, sm, calibrator: PoseCalibrator) -> None
       state.yaw_initialized = True
     state.raw_yaw_prev = raw_yaw
 
-    bearing_fresh = state.gps_bearing_t is not None and (t - state.gps_bearing_t) < MAX_FIX_AGE
-    if bearing_fresh and state.yaw_initialized and abs(state.gps_speed) > MIN_GPS_HEADING_SPEED:
-      state.yaw = wrap_angle(state.yaw + GPS_YAW_CORRECTION_GAIN * wrap_angle(state.gps_bearing - state.yaw))
+  # Rotate velocity with the same absolute heading used for the target bearing.
+  orientation = pose.orientation.xyz.copy()
+  orientation[2] = state.yaw
+  v_ned = rot_from_euler(orientation) @ pose.velocity.xyz
+  speed = float(np.linalg.norm(v_ned[:2]))
+  if state.yaw_valid and state.heading_anchored and state.last_t is not None and speed > MIN_INTEGRATION_SPEED:
+    dt = min(max(t - state.last_t, 0.), MAX_INTEGRATION_DT)
+    if dt > 0:
+      state.pos_ned += v_ned[:2] * dt
+  state.last_t = t
 
 
 def update_gps(state: ParkNavEstimator, sm, destination: tuple[float, float] | None) -> None:
@@ -121,25 +120,33 @@ def update_gps(state: ParkNavEstimator, sm, destination: tuple[float, float] | N
     state.pos_ned = np.array(geodetic_to_local_ned(gps.latitude, gps.longitude, *destination))
     state.last_fix_t = t
 
-  if gps.hasFix and gps.bearingAccuracyDeg < MAX_BEARING_ACCURACY and abs(gps.speed) > MIN_GPS_HEADING_SPEED:
-    state.gps_bearing = math.radians(gps.bearingDeg)
-    state.gps_speed = gps.speed
-    state.gps_bearing_t = t
+  if gps.hasFix and 0. <= gps.bearingAccuracyDeg < MAX_BEARING_ACCURACY and math.isfinite(gps.bearingDeg) and abs(gps.speed) > MIN_GPS_HEADING_SPEED:
+    gps_bearing = math.radians(gps.bearingDeg)
+    if state.yaw_initialized and state.yaw_valid:
+      # Consume each course measurement once. The first fixes the arbitrary NED origin.
+      if state.heading_anchored:
+        state.yaw = wrap_angle(state.yaw + GPS_YAW_CORRECTION_GAIN * wrap_angle(gps_bearing - state.yaw))
+      else:
+        state.yaw = wrap_angle(gps_bearing)
+        state.heading_anchored = True
 
 
-def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None) -> messaging.EventBuilder | None:
+def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None):
   """Build the parkNavSignal message; None means don't publish (no destination)."""
   if destination is None:
     return None
 
   now = time.monotonic()
   fix_fresh = state.last_fix_t is not None and (now - state.last_fix_t) < MAX_FIX_AGE
-  bearing_valid = state.yaw_initialized and state.yaw_valid
+  bearing_valid = state.heading_anchored and state.yaw_valid
 
   total_dist = float(np.linalg.norm(state.pos_ned))
   bearing_to_target = math.atan2(-state.pos_ned[1], -state.pos_ned[0])
   rel_bearing = wrap_angle(bearing_to_target - state.yaw)
-  valid = fix_fresh and bearing_valid and total_dist < MAX_NAV_DIST
+  arrived = total_dist <= ARRIVAL_RADIUS
+  if arrived:
+    rel_bearing = 0.
+  valid = fix_fresh and bearing_valid and ARRIVAL_RADIUS < total_dist < MAX_NAV_DIST
 
   msg = messaging.new_message('parkNavSignal')
   sig = msg.parkNavSignal
