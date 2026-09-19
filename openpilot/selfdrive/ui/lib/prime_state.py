@@ -1,11 +1,15 @@
 from enum import IntEnum
 import os
+import requests
 import threading
 import time
 
+from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
+from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 
@@ -32,7 +36,7 @@ class PrimeState:
   def __init__(self):
     self._params = Params()
     self._lock = threading.Lock()
-    self._session = None
+    self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
     self._prime_trial_available = False
     pairing_provider = os.getenv("PAIRING_PROVIDER") or self._params.get("PairingProvider")
@@ -55,9 +59,6 @@ class PrimeState:
     return PrimeType.UNKNOWN
 
   def _fetch_prime_status(self) -> None:
-    from openpilot.common.api import api_get
-    from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-    from openpilot.selfdrive.ui.lib.api_helpers import get_token
     dongle_id = self._params.get("DongleId")
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
       return
@@ -83,9 +84,6 @@ class PrimeState:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
   def _fetch_pairing_provider(self) -> None:
-    from openpilot.common.api import api_get
-    from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-    from openpilot.selfdrive.ui.lib.api_helpers import get_token
     dongle_id = self._params.get("DongleId")
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
       return
@@ -146,8 +144,6 @@ class PrimeState:
         self._prime_trial_available = prime_trail_available
 
   def _worker_thread(self) -> None:
-    import requests
-    self._session = requests.Session()
     drop_realtime()
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:

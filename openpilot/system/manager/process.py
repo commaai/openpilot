@@ -19,12 +19,6 @@ from openpilot.common.swaglog import cloudlog
 
 def launcher(proc: str, name: str) -> None:
   try:
-    # Import and initialize the UI on the same big core used for rendering.
-    if name == "ui" and os.path.exists("/AGNOS"):
-      try:
-        os.sched_setaffinity(0, {5})
-      except OSError:
-        pass
     # import the process
     mod = importlib.import_module(proc)
 
@@ -242,43 +236,3 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params: Par
     p.start()
 
   return running
-
-
-class EarlyUIHandle:
-  @property
-  def pid(self):
-    try:
-      with open('/run/openpilot-early-ui.pid') as f:
-        return int(f.read())
-    except (OSError, ValueError):
-      return None
-
-  def is_alive(self):
-    pid = self.pid
-    if pid is None:
-      return False
-    try:
-      with open(f'/proc/{pid}/cmdline', 'rb') as f:
-        return b'openpilot/selfdrive/ui/ui.py' in f.read()
-    except OSError:
-      return False
-
-  @property
-  def exitcode(self):
-    return None if self.is_alive() else 1
-
-
-class EarlyUIProcess(PythonProcess):
-  def start(self):
-    if self.proc is None:
-      self.proc = EarlyUIHandle()
-    if not self.proc.is_alive():
-      subprocess.run(['sudo', 'systemctl', 'start', 'openpilot-early-ui.service'], check=True)
-    self.shutting_down = False
-
-  def stop(self, retry=True, block=True, sig=None):
-    if self.proc is not None:
-      subprocess.run(['sudo', 'systemctl', 'stop', 'openpilot-early-ui.service'], check=True)
-      self.proc = None
-    self.shutting_down = False
-    return 0
