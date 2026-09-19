@@ -2,6 +2,8 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+boot_stage() { read boot_t _ < /proc/uptime; printf '%s %s\n' "$boot_t" "$1" >> /tmp/boot-stages; }
+boot_stage launcher_enter
 source "$DIR/launch_env.sh"
 
 function agnos_init {
@@ -80,11 +82,13 @@ function launch {
   ln -sfn teleoprtc_repo/teleoprtc teleoprtc
   ln -sfn tinygrad_repo/tinygrad tinygrad
 
+  boot_stage launcher_links_done
   # hardware specific init
   if [ -f /AGNOS ]; then
     agnos_init
   fi
 
+  boot_stage launcher_hardware_done
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
@@ -93,6 +97,7 @@ function launch {
   if [ ! -f "$DIR/prebuilt" ]; then
     ./build.py
   fi
+  boot_stage launcher_manager
   ./manager.py
 
   # if broken, keep on screen error

@@ -3,16 +3,53 @@ import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts
-from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
-from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
+from openpilot.common.version import terms_version, training_version
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app
 
 
 ONROAD_DELAY = 2.5  # seconds
+
+
+class DeferredRoadView(Widget):
+  """Keep layout/input geometry available while deferring camera/GL setup."""
+  def __init__(self, factory):
+    super().__init__()
+    self._factory = factory
+    self._view = None
+    self._view_click = None
+
+  def prepare(self):
+    if self._view is None:
+      self._view = self._factory()
+      self._view.set_rect(self.rect)
+      self._view.set_click_callback(self._view_click)
+      self._view.show_event()
+
+  def set_click_callback(self, callback):
+    self._view_click = callback
+    if self._view is not None:
+      self._view.set_click_callback(callback)
+
+  def is_swiping_left(self):
+    return self._view is not None and self._view.is_swiping_left()
+
+  def _render(self, rect):
+    self.prepare()
+    self._view.set_enabled(self.enabled)
+    self._view.set_parent_rect(self._parent_rect)
+    self._view.set_touch_valid_callback(self._touch_valid_callback)
+    return self._view.render(rect)
+
+  def show_event(self):
+    if self._view is not None:
+      self._view.show_event()
+
+  def hide_event(self):
+    if self._view is not None:
+      self._view.hide_event()
 
 
 class MiciMainLayout(Scroller):
@@ -30,8 +67,16 @@ class MiciMainLayout(Scroller):
     self._home_layout = MiciHomeLayout()
     self._alerts_layout = MiciOffroadAlerts()
     self._settings_layout = SettingsLayout()
-    self._car_onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
-    self._body_onroad_layout = BodyLayout()
+    def car_view():
+      from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
+      return AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
+
+    def body_view():
+      from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
+      return BodyLayout()
+
+    self._car_onroad_layout = DeferredRoadView(car_view)
+    self._body_onroad_layout = DeferredRoadView(body_view)
 
     # Initialize widget rects
     for widget in (self._home_layout, self._alerts_layout, self._settings_layout,
@@ -57,8 +102,11 @@ class MiciMainLayout(Scroller):
     gui_app.push_widget(self)
 
     # Start onboarding if terms or training not completed, make sure to push after self
-    self._onboarding_window = OnboardingWindow(lambda: gui_app.pop_widgets_to(self))
-    if not self._onboarding_window.completed:
+    self._onboarding_window = None
+    if (ui_state.params.get("HasAcceptedTerms") != terms_version or
+        ui_state.params.get("CompletedTrainingVersion") != training_version):
+      from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
+      self._onboarding_window = OnboardingWindow(lambda: gui_app.pop_widgets_to(self))
       gui_app.push_widget(self._onboarding_window)
 
     # initialize correct onroad layout
@@ -105,6 +153,10 @@ class MiciMainLayout(Scroller):
     super()._render(self._rect)
 
   def _handle_transitions(self):
+    # Prepare the driving views just after the home screen's first frame.
+    if gui_app.frame > 0:
+      self._car_onroad_layout.prepare()
+      self._body_onroad_layout.prepare()
     # Don't pop if onboarding
     if gui_app.widget_in_stack(self._onboarding_window):
       return

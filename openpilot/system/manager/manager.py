@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
-import datetime
 import os
+import time
+_boot_manager_enter = time.monotonic()
+# Only accelerate startup; restore the manager affinity before starting workers.
+_boot_affinity = None
+if os.path.exists('/AGNOS'):
+  try:
+    _boot_affinity = os.sched_getaffinity(0)
+    os.sched_setaffinity(0, {4})
+  except OSError:
+    _boot_affinity = None
+import datetime
 import signal
 import sys
 import time
@@ -21,7 +31,14 @@ from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
 
 
+
+def boot_stage(stage):
+  with open('/tmp/boot-stages', 'a') as f:
+    f.write(f'{time.monotonic():.6f} {stage}\n')
+
 def manager_init() -> None:
+  boot_stage(f"manager_import_started {_boot_manager_enter:.6f}")
+  boot_stage("manager_init")
   save_bootlog()
 
   build_metadata = get_build_metadata()
@@ -115,6 +132,12 @@ def manager_thread() -> None:
   pm = messaging.PubMaster(['managerState'])
 
   params.put_bool("IsOffroad", True, block=True)
+  # Let the UI finish startup before background Python imports compete with it.
+  if os.getenv("AGNOS_BOOT_UI_PRIORITY") == "1" and "ui" not in ignore:
+    ui_ready = messaging.sub_sock('uiDebug', timeout=3000)
+    managed_processes['ui'].start()
+    messaging.recv_one(ui_ready)
+    del ui_ready
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   started_prev = False
@@ -175,6 +198,9 @@ def manager_thread() -> None:
 
 def main() -> None:
   manager_init()
+  boot_stage("manager_init_done")
+  if _boot_affinity is not None:
+    os.sched_setaffinity(0, _boot_affinity)
   if os.getenv("PREPAREONLY") is not None:
     return
 

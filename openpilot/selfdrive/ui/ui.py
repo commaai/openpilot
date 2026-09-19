@@ -6,24 +6,32 @@ from openpilot.cereal import messaging
 from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.selfdrive.ui.layouts.main import MainLayout
-from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 BIG_UI = gui_app.big_ui()
 
 
+
+def boot_stage(stage):
+  with open('/tmp/boot-stages', 'a') as f:
+    f.write(f'{time.monotonic():.6f} {stage}\n')
+
 def main():
+  boot_stage("ui_imported")
   cores = {5, }
   # above plannerd and radard
-  config_realtime_process(0, Priority.CTRL_HIGH)
+  config_realtime_process(5 if COMMA_HARDWARE else 0, Priority.CTRL_HIGH)
 
   gui_app.init_window("UI")
+  boot_stage("ui_window_ready")
   if BIG_UI:
+    from openpilot.selfdrive.ui.layouts.main import MainLayout
     MainLayout()
   else:
+    from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
     MiciMainLayout()
 
+  boot_stage('ui_layout_ready')
   pm = messaging.PubMaster(['uiDebug'])
   for should_render, frame_time, cpu_time in gui_app.render():
     extra_start = time.monotonic()

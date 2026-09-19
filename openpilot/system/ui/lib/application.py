@@ -679,6 +679,9 @@ class GuiApplication:
           self._draw_grid()
 
         rl.end_drawing()
+        if self._frame == 0:
+          with open(f"/tmp/boot-first-frame-{os.getpid()}", "w") as boot_marker:
+            boot_marker.write(f"{time.monotonic():.6f}\n")
 
         if RECORD:
           image = rl.load_image_from_texture(self._render_texture.texture)

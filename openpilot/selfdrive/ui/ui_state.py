@@ -133,7 +133,8 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
-    self.prime_state.start()  # start thread after manager forks ui
+    if gui_app.frame > 0:
+      self.prime_state.start()  # network imports start after the first frame
     if self._params_thread is None:
       self._params_thread = threading.Thread(target=self._params_refresh_worker, daemon=True)
       self._params_thread.start()
