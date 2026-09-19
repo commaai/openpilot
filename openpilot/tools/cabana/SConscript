@@ -1,11 +1,13 @@
 import os
 import sys
 import sysconfig
+from pathlib import Path
 
 import bootstrap_icons
 import imgui
 import libusb
 from openpilot.common.basedir import BASEDIR
+from opendbc.dbc.generator.generator import generate_all
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib', 'ffmpeg_libs')
 
@@ -20,6 +22,13 @@ python_defines = [
   ('CABANA_PYTHON_HOME', r'\"' + sys.base_prefix + r'\"'),
   ('CABANA_ANALYSIS_DIR', r'\"' + env.Dir('analysis').abspath + r'\"'),
 ]
+
+dbc_dir = Path(env.Dir("#opendbc_repo/opendbc/dbc").abspath)
+generated_dbcs = env.Command(
+  [str(dbc_dir / (name + '.dbc')) for name in sorted(generate_all())],
+  sorted(str(path) for path in (dbc_dir / 'generator').rglob('*') if path.suffix in ('.py', '.dbc')),
+  'python3 -m opendbc.dbc.generator.generator',
+)
 
 # embed the bootstrap icons SVG into the binary
 def build_bootstrap_icons_src(target, source, env):
@@ -65,6 +74,7 @@ if arch == "Darwin":
 else:
   ui_libs += ['GL', 'dl']
 cabana_ui = ui_env.Program('cabana', ui_objs, LIBS=ui_libs)
+ui_env.Requires(cabana_ui, generated_dbcs)
 
 if GetOption('extras'):
   cabana_core_test_env = env.Clone()
@@ -88,7 +98,8 @@ if GetOption('extras'):
   ]
   if arch == "Darwin":
     cabana_core_test_env.Append(FRAMEWORKS=['CoreFoundation'])
-  cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[File(python_library), replay_lib, common, cereal, messaging])
+  cabana_core_test = cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[File(python_library), replay_lib, common, cereal, messaging])
+  cabana_core_test_env.Requires(cabana_core_test, generated_dbcs)
 
 output_json_file = 'openpilot/tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = ui_env.Command('#' + output_json_file,
