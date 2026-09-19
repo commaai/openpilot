@@ -13,6 +13,7 @@ from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
 from openpilot.common.hardware import HARDWARE
+from openpilot.selfdrive.ui.critical_alert import CriticalAlertEscalation, MaxAlert, max_alert_for_type
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
@@ -31,6 +32,7 @@ if HARDWARE.get_device_type() == "tizi":
   VOLUME_BASE = 10
 
 AudibleAlert = log.SelfdriveState.AudibleAlert
+AlertStatus = log.SelfdriveState.AlertStatus
 
 
 sound_list: dict[int, tuple[str, int | None, float]] = {
@@ -47,6 +49,8 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 
   AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("dm_critical.wav", None, MAX_VOLUME),
+  MaxAlert.driver: ("dm_critical_max.wav", None, MAX_VOLUME),
+  MaxAlert.critical: ("dm_critical_max.wav", None, MAX_VOLUME),  # Replace with critical_max.wav when available.
 }
 
 def check_selfdrive_timeout_alert(sm):
@@ -70,7 +74,7 @@ class Soundd:
     self.ramp_start_volume = MIN_VOLUME
     self.ramp_start_time = 0.
 
-    self.selfdrive_timeout_alert = False
+    self.critical_escalation = CriticalAlertEscalation()
     self.pending_stop = False
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
@@ -79,8 +83,7 @@ class Soundd:
     self.loaded_sounds: dict[int, np.ndarray] = {}
 
     # Load all sounds
-    for sound in sound_list:
-      filename, play_count, volume = sound_list[sound]
+    for sound, (filename, _, _) in sound_list.items():
 
       with wave.open(BASEDIR + "/openpilot/selfdrive/assets/sounds/" + filename, 'r') as wavefile:
         assert wavefile.getnchannels() == 1
@@ -134,22 +137,40 @@ class Soundd:
       return
     self.pending_stop = False
     if self.current_alert != new_alert and (new_alert != AudibleAlert.none or current_alert_played_once):
-      if new_alert == AudibleAlert.warningImmediate:
+      if new_alert in MaxAlert:
+        self.current_volume = MAX_VOLUME
+      elif new_alert == AudibleAlert.warningImmediate:
         self.ramp_start_volume = self.current_volume
         self.ramp_start_time = time.monotonic()
       self.current_alert = new_alert
       self.current_sound_frame = 0
 
   def get_audible_alert(self, sm):
-    if sm.updated['selfdriveState']:
-      new_alert = sm['selfdriveState'].alertSound.raw
-      self.update_alert(new_alert)
+    now = time.monotonic()
+    ss = sm['selfdriveState']
+    if sm.updated['selfdriveState'] or now - sm.recv_time['selfdriveState'] <= SELFDRIVE_STATE_TIMEOUT:
+      max_alert = max_alert_for_type(ss.alertType)
+      new_alert = ss.alertSound.raw
+      critical = ss.alertStatus == AlertStatus.critical and ss.alertSize != log.SelfdriveState.AlertSize.none
     elif check_selfdrive_timeout_alert(sm):
-      self.update_alert(AudibleAlert.warningImmediate)
-      self.selfdrive_timeout_alert = True
-    elif self.selfdrive_timeout_alert:
-      self.update_alert(AudibleAlert.none)
-      self.selfdrive_timeout_alert = False
+      max_alert = MaxAlert.critical
+      new_alert = AudibleAlert.warningImmediate
+      critical = True
+    else:
+      max_alert = MaxAlert.critical
+      new_alert = AudibleAlert.none
+      critical = False
+
+    escalated = self.critical_escalation.update(now, critical, max_alert)
+    self.update_alert(new_alert if escalated is None else escalated)
+
+  def update_volume(self):
+    if self.current_alert in MaxAlert:
+      self.current_volume = MAX_VOLUME
+    elif self.current_alert == AudibleAlert.warningImmediate:
+      elapsed = time.monotonic() - self.ramp_start_time
+      ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
+      self.current_volume = max(self.current_volume, ramp_vol)
 
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
@@ -184,11 +205,7 @@ class Soundd:
 
         self.get_audible_alert(sm)
 
-        # Ramp up immediate warning sound over 4s
-        if self.current_alert == AudibleAlert.warningImmediate:
-          elapsed = time.monotonic() - self.ramp_start_time
-          ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
-          self.current_volume = max(self.current_volume, ramp_vol)
+        self.update_volume()
 
         rk.keep_time()
 

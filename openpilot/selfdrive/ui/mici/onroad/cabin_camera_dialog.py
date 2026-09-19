@@ -100,19 +100,25 @@ class BaseCabinCameraDialog(Widget):
     return
 
   def _publish_alert_sound(self, dm_state):
-    """Publish selfdriveState with only alertSound field set"""
+    """Publish preview alert metadata so soundd can apply normal escalation."""
     if self._pm is None:
       return
 
     AudibleAlert = log.SelfdriveState.AudibleAlert
-    ALERT_SOUNDS = {
-      'one': AudibleAlert.preAlert,
-      'two': AudibleAlert.promptDistracted,
-      'three': AudibleAlert.warningImmediate,
+    AlertStatus = log.SelfdriveState.AlertStatus
+    AlertSize = log.SelfdriveState.AlertSize
+    ALERTS = {
+      'one': (AudibleAlert.preAlert, AlertStatus.normal, AlertSize.small),
+      'two': (AudibleAlert.promptDistracted, AlertStatus.userPrompt, AlertSize.mid),
+      'three': (AudibleAlert.warningImmediate, AlertStatus.critical, AlertSize.full),
     }
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None:
-      msg.selfdriveState.alertSound = ALERT_SOUNDS.get(str(dm_state.alertLevel), AudibleAlert.none)
+      sound, status, size = ALERTS.get(str(dm_state.alertLevel), (AudibleAlert.none, AlertStatus.normal, AlertSize.none))
+      msg.selfdriveState.alertType = "driverMonitoringPreview"
+      msg.selfdriveState.alertSound = sound
+      msg.selfdriveState.alertStatus = status
+      msg.selfdriveState.alertSize = size
     self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
