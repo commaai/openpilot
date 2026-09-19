@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import pyray as rl
 
-from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer, ModelPoints
+from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer, ModelPoints, LeadVehicle
 
 
 class TestLeadBars(unittest.TestCase):
@@ -18,6 +18,7 @@ class TestLeadBars(unittest.TestCase):
     self.renderer._car_space_transform = np.array([[240, 500, 0], [100, 0, 500], [1, 0, 0]], dtype=np.float32)
     self.renderer._rect = rl.Rectangle(13, 17, 480, 240)
     self.renderer._lead_bar_smoothing = [None, None]
+    self.renderer._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self.x = x
 
   def project(self, distance=20, lateral=0):
@@ -27,10 +28,13 @@ class TestLeadBars(unittest.TestCase):
     near, far = self.project(20), self.project(40)
     self.assertEqual(near.shape, (4, 2))
     self.assertGreater(np.ptp(near[:, 0]), np.ptp(far[:, 0]))
-    self.assertGreater(np.ptp(near[:, 1]), np.ptp(far[:, 1]))
-    self.assertGreater(abs(near[2, 0] - near[3, 0]), abs(near[1, 0] - near[0, 0]))
-    # All corners lie on the road on our side of the vehicle's rear bumper.
-    self.assertTrue(np.all(near[:, 1] > 100 + 500 * 1.2 / 20))
+    self.assertGreaterEqual(np.ptp(near[:, 1]) + 1e-4, np.ptp(far[:, 1]))
+    bottom = near[np.isclose(near[:, 1], near[:, 1].max())]
+    top = near[np.isclose(near[:, 1], near[:, 1].min())]
+    self.assertGreater(np.ptp(bottom[:, 0]), np.ptp(top[:, 0]))
+    # The former top edge is now the bottom anchor; the footprint recedes.
+    self.assertAlmostEqual(float(near[:, 1].max()), 100 + 600 / 20, places=4)
+    self.assertLess(float(near[:, 1].min()), float(near[:, 1].max()))
 
   def test_lateral_position_and_road_slope(self):
     center = self.project()
@@ -43,29 +47,38 @@ class TestLeadBars(unittest.TestCase):
     self.assertFalse(np.allclose(curved, center))
     self.assertFalse(np.isclose(curved[0, 1], curved[1, 1]))
 
-  def test_screen_height_limits(self):
+  def test_bounded_extension_and_unlimited_near_height(self):
     for distance in (6, 10, 20, 40, 70, 100):
       points = self.project(distance)
-      height = np.ptp(points[:, 1])
-      self.assertGreaterEqual(height, 6 - 1e-4)
-      self.assertLessEqual(height, 12 + 1e-4)
-      # The far edge stays anchored to its calibrated road position.
-      self.assertAlmostEqual(float(points[:, 1].min()), 100 + 600 / (distance - 0.2), places=4)
-    self.assertAlmostEqual(float(np.ptp(self.project(10)[:, 1])), 12, places=4)
-    self.assertAlmostEqual(float(np.ptp(self.project(100)[:, 1])), 6, places=4)
+      anchor = distance
+      max_height = 600 / anchor - 600 / (anchor + 5.5)
+      self.assertGreaterEqual(float(np.ptp(points[:, 1])), min(6, max_height) - 1e-4)
+      x = 600 / (points[:, 1] - 100)
+      length = float(np.ptp(x))
+      self.assertGreaterEqual(length, 2.75 - 1e-3)
+      self.assertLessEqual(length, 5.5 + 1e-3)
+      if max_height < 6:
+        self.assertAlmostEqual(length, 5.5, places=3)
+      self.assertAlmostEqual(float(points[:, 1].max()), 100 + 600 / (distance), places=4)
+    # Nearby leads retain their actual wheelbase length, even above 12 pixels.
+    for distance in (6, 10, 14):
+      points = self.project(distance)
+      x = 600 / (points[:, 1] - 100)
+      self.assertAlmostEqual(float(np.ptp(x)), 2.75, places=3)
+    self.assertGreater(float(np.ptp(self.project(6)[:, 1])), 12)
 
-  def test_height_adjustment_preserves_road_projection(self):
+  def test_footprint_preserves_road_projection(self):
     # Undo the test camera projection onto its flat road. A true road-space
-    # rectangle retains its 1.8 m width at both ends, even at the height limits.
+    # rectangle retains its 1.8 m width at both ends at every distance.
     for distance in (6, 10, 40, 100):
       points = self.project(distance, lateral=2)
       x = 600 / (points[:, 1] - 100)
       y = (points[:, 0] - 240) * x / 500
-      self.assertAlmostEqual(float(y[1] - y[0]), 1.8, places=4)
-      self.assertAlmostEqual(float(y[2] - y[3]), 1.8, places=4)
-      np.testing.assert_allclose(y[[0, 1]], y[[3, 2]], atol=1e-4)
-      self.assertAlmostEqual(float(x[0]), distance - 0.2, places=3)
-      self.assertLess(x[2], x[0])
+      self.assertAlmostEqual(float(np.ptp(y)), 1.8, places=4)
+      self.assertAlmostEqual(float(x.min()), distance, places=3)
+      np.testing.assert_allclose(y, [-2.9, -1.1, -1.1, -2.9], atol=1e-4)
+      self.assertAlmostEqual(float(x[0]), float(x[1]), places=4)
+      self.assertAlmostEqual(float(x[2]), float(x[3]), places=4)
 
   def test_invalid_and_behind_camera(self):
     for distance, lateral in ((0, 0), (-5, 0), (101, 0), (float('nan'), 0), (20, float('inf'))):
@@ -89,15 +102,14 @@ class TestLeadBars(unittest.TestCase):
     points = self.renderer._project_lead_bar(6, 0, self.renderer._path.raw_points[:, 0])
     np.testing.assert_allclose(points, expected)
 
-  def test_close_lead_shortens_before_camera_plane(self):
-    # The lead anchor is in front of the camera, but the initial long bar's
-    # near edge is behind it. The shorter projected bar must remain visible.
+  def test_close_lead_with_tilted_camera(self):
+    # The footprint recedes from a visible anchor with a tilted camera.
     self.renderer._car_space_transform[2] = [1, 0, -1]
     points = self.project(6)
     self.assertEqual(points.shape, (4, 2))
     self.assertTrue(np.isfinite(points).all())
-    self.assertAlmostEqual(float(np.ptp(points[:, 1])), 12, places=3)
-    self.assertAlmostEqual(float(points[:, 1].min()), (100 * 5.8 + 600) / (5.8 - 1.2), places=3)
+    self.assertGreater(float(np.ptp(points[:, 1])), 0)
+    self.assertAlmostEqual(float(points[:, 1].max()), (100 * 6 + 600) / (6 - 1.2), places=3)
     # Do not rescue a lead whose anchor is itself behind the camera.
     self.assertEqual(self.project(1).size, 0)
 
@@ -105,7 +117,7 @@ class TestLeadBars(unittest.TestCase):
     lead = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
     radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
     self.renderer._update_leads(radar, self.x)
-    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project())
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(21.52))
     lead.yRel, lead.dRel = 1, 22
     self.renderer._path.raw_points[:, 1] = self.x * 0.1
     self.renderer._update_leads(radar, self.x)
@@ -117,16 +129,16 @@ class TestLeadBars(unittest.TestCase):
     self.assertEqual(self.renderer._lead_vehicles[0].distance, 22)
     for _ in range(100):
       self.renderer._update_leads(radar, self.x)
-    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(22, 1), atol=1e-3)
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(23.52, 1), atol=1e-3)
     lead.radarTrackId, lead.yRel = 2, -1
     self.renderer._update_leads(radar, self.x)
-    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(22, -1))
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(23.52, -1))
     lead.present = False
     self.renderer._update_leads(radar, self.x)
     self.assertIsNone(self.renderer._lead_bar_smoothing[0])
     lead.present, lead.yRel = True, 2
     self.renderer._update_leads(radar, self.x)
-    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(22, 2))
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(23.52, 2))
 
   def test_vision_positions_and_source_switch(self):
     lead = SimpleNamespace(present=True, dRel=20, yRel=3, radar=False, radarTrackId=-1)
@@ -135,15 +147,73 @@ class TestLeadBars(unittest.TestCase):
     vision = [SimpleNamespace(prob=0.9, x=[31.52], y=[1.0]),
               SimpleNamespace(prob=0.8, x=[51.52], y=[-2.0])]
     self.renderer._update_leads(radar, self.x, vision)
-    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(30, -1))
-    np.testing.assert_allclose(self.renderer._lead_vehicles[1].points, self.project(50, 2))
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(31.52, -1))
+    np.testing.assert_allclose(self.renderer._lead_vehicles[1].points, self.project(51.52, 2))
     # Missing vision detections disappear instead of falling back to radar.
     vision[0].prob = 0.1
     vision[1].x = []
     self.renderer._update_leads(radar, self.x, vision)
+    for _ in range(100):
+      self.renderer._update_leads(radar, self.x, vision)
     self.assertTrue(all(lead.points.size == 0 for lead in self.renderer._lead_vehicles))
     self.renderer._update_leads(radar, self.x)
-    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(20, 3))
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, self.project(21.52, 3))
+
+  def test_radar_and_vision_share_camera_anchor(self):
+    radar = SimpleNamespace(leadOne=SimpleNamespace(present=True, dRel=6, yRel=1, radar=True, radarTrackId=5),
+                            leadTwo=SimpleNamespace(present=False))
+    self.renderer._update_leads(radar, self.x)
+    radar_points = self.renderer._lead_vehicles[0].points.copy()
+    vision = [SimpleNamespace(prob=0.9, x=[7.52], y=[-1])]
+    self.renderer._update_leads(radar, self.x, vision)
+    np.testing.assert_allclose(self.renderer._lead_vehicles[0].points, radar_points)
+    self.assertAlmostEqual(float(radar_points[:, 1].max()), 100 + 600 / 7.52, places=4)
+
+  def test_visibility_fades_and_recovers(self):
+    lead = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
+    radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
+    self.renderer._update_leads(radar, self.x)
+    first = self.renderer._lead_vehicles[0].visibility.x
+    self.assertGreater(first, 0)
+    self.assertLess(first, 1)
+    self.renderer._update_leads(radar, self.x)
+    full = self.renderer._lead_vehicles[0].visibility.x
+    self.assertGreater(full, first)
+    points = self.renderer._lead_vehicles[0].points.copy()
+    lead.present = False
+    self.renderer._update_leads(radar, self.x)
+    faded = self.renderer._lead_vehicles[0].visibility.x
+    self.assertGreater(faded, 0)
+    self.assertLess(faded, full)
+    np.testing.assert_array_equal(self.renderer._lead_vehicles[0].points, points)
+    lead.present = True
+    self.renderer._update_leads(radar, self.x)
+    self.assertGreater(self.renderer._lead_vehicles[0].visibility.x, faded)
+    for _ in range(100):
+      self.renderer._update_leads(None, self.x)
+    self.assertEqual(self.renderer._lead_vehicles[0].visibility.x, 0)
+    self.assertEqual(self.renderer._lead_vehicles[0].points.size, 0)
+
+  def test_policy_opacity_crossfade(self):
+    lead = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
+    radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
+    vision = [SimpleNamespace(prob=0.9, x=[21.52], y=[0])]
+    self.renderer._update_leads(radar, self.x)
+    self.assertEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.65)
+    self.renderer._update_leads(radar, self.x, vision)
+    opacity = self.renderer._lead_vehicles[0].opacity_filter.x
+    self.assertGreater(opacity, 0.65)
+    self.assertLess(opacity, 0.8)
+    for _ in range(100):
+      self.renderer._update_leads(radar, self.x, vision)
+    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.8, places=5)
+    self.renderer._update_leads(radar, self.x)
+    opacity = self.renderer._lead_vehicles[0].opacity_filter.x
+    self.assertGreater(opacity, 0.65)
+    self.assertLess(opacity, 0.8)
+    for _ in range(100):
+      self.renderer._update_leads(radar, self.x)
+    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.65, places=5)
 
   def test_two_leads_duplicates_and_disappearance(self):
     first = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
@@ -158,10 +228,12 @@ class TestLeadBars(unittest.TestCase):
       self.renderer._draw_lead_indicator()
       self.assertEqual(draw.call_count, 2)
       np.testing.assert_allclose(draw.call_args_list[0].args[1], self.renderer._lead_vehicles[1].points + [13, 17])
-      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.4))
-      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.8))
+      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.65 * self.renderer._lead_vehicles[1].visibility.x))
+      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.65 * self.renderer._lead_vehicles[0].visibility.x))
     first.present = second.present = False
     self.renderer._update_leads(radar, self.x)
+    for _ in range(100):
+      self.renderer._update_leads(radar, self.x)
     self.assertTrue(all(lead.points.size == 0 for lead in self.renderer._lead_vehicles))
 
 
