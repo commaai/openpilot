@@ -31,7 +31,7 @@ PARKNAV_FREQ = 4.
 PUB_DIVISOR = int(20. / PARKNAV_FREQ)
 
 MAX_HEADING_STD = 0.15       # rad
-MAX_BEARING_ACCURACY = 5.    # deg
+MAX_BEARING_ACCURACY = 10.   # deg
 MAX_FIX_AGE = 5.0            # s
 ARRIVAL_RADIUS = 5.         # m
 MAX_NAV_DIST = 500.          # m
@@ -174,7 +174,10 @@ def main():
       calibrator.feed_extrinsics_calibration(sm['extrinsicsCalibration'])
 
     update_pose(state, sm, calibrator)
-    destination = get_destination(params)
+
+    nav_enabled = params.get_bool("ParkingNavEnabled")
+    destination = get_destination(params) if nav_enabled else None
+
     update_gps(state, sm, destination)
 
     if frame % PUB_DIVISOR != 0:
