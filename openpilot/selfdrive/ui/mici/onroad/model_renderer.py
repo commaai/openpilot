@@ -10,6 +10,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
+from openpilot.selfdrive.ui.mici.onroad.stop_bar import HeldStopBar
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
@@ -88,6 +89,7 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._lead_bar_smoothing = [None, None]
+    self._stop_bar = HeldStopBar()
     self._path_offset_z = HEIGHT_INIT[0]
 
     # Initialize ModelPoints objects
@@ -133,6 +135,7 @@ class ModelRenderer(Widget):
         sm.recv_frame["modelV2"] < ui_state.started_frame):
       self._lead_bar_smoothing = [None, None]
       self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
+      self._stop_bar.reset()
       return
 
     # Set up clipping region
@@ -170,6 +173,7 @@ class ModelRenderer(Widget):
       if path_x_array.size == 0:
         self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
         self._lead_bar_smoothing = [None, None]
+        self._stop_bar.reset()
         return
 
       self._update_model(lead_one, path_x_array)
@@ -179,6 +183,15 @@ class ModelRenderer(Widget):
     if render_lead_indicator:
       self._update_leads(radar_state, self._path.raw_points[:, 0], model.leadsV3 if use_vision else None)
 
+    stop_valid = (render_lead_indicator and self._experimental_mode and
+                  all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
+                      for s in ('carState', 'selfdriveState')))
+    self._stop_bar.update(model, sm['carState'].vEgo, sm['carState'].yawRate,
+                          sm.logMonoTime['carState'] * 1e-9, sm.logMonoTime['modelV2'] * 1e-9, enabled=stop_valid)
+    self._stop_bar.project(self._car_space_transform, self._path_offset_z,
+                           [line.raw_points for line in self._lane_lines], self._lane_line_probs,
+                           [edge.raw_points for edge in self._road_edges], self._road_edge_stds)
+
     # Draw elements (hide when disengaged)
     if ui_state.status != UIStatus.DISENGAGED:
       self._draw_lane_lines()
@@ -186,6 +199,9 @@ class ModelRenderer(Widget):
 
       if render_lead_indicator:
         self._draw_lead_indicator()
+      if self._stop_bar.points.size:
+        offset = np.array([rect.x, rect.y], dtype=np.float32)
+        draw_polygon(rect, self._stop_bar.points + offset, rl.Color(255, 255, 255, round(255 * 0.9)))
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
