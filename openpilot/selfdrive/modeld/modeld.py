@@ -32,7 +32,8 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.modeld.park_nav import NavDesireInjector
+from openpilot.selfdrive.modeld.park_nav import NAV_MAX_SPEED, NavDesireInjector
+from openpilot.selfdrive.modeld.path_curvature import curvature_from_path
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
@@ -48,7 +49,8 @@ BIG_MODEL_TIMEOUT = 60
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
-                          lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
+                          lat_action_t: float, long_action_t: float, v_ego: float,
+                          desire=log.Desire.none) -> log.ModelDataV2.Action:
   if 'action' not in model_output:
     plan = model_output['plan'][0]
     desired_accel = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
@@ -63,6 +65,14 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   else:
     desired_accel = model_output['action'][0,1]
     desired_curvature = model_output['action'][0,0] / (max(1.0, v_ego))**2
+
+  # During low-speed turn requests, steer toward the nearby predicted path.
+  # The original action remains the fallback; controlsd still applies steering limits.
+  if MIN_LAT_CONTROL_SPEED < v_ego < NAV_MAX_SPEED and desire in (log.Desire.turnLeft, log.Desire.turnRight):
+    path_curvature = curvature_from_path(model_output['plan'][0, :, Plan.POSITION])
+    if path_curvature is not None:
+      desired_curvature = path_curvature
+
   stop = should_stop(v_ego, desired_accel)
   desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
   if v_ego > MIN_LAT_CONTROL_SPEED:
@@ -427,7 +437,7 @@ def main(demo=False):
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
-      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
+      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego, desire)
       prev_action = action
       fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
