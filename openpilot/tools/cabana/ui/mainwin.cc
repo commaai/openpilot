@@ -141,8 +141,10 @@ void MainWindow::drawFileMenu() {
 void MainWindow::drawMenuBar() {
   // Avoid a double border with the separator drawn below.
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  const ImVec2 padding = ImGui::GetStyle().FramePadding;
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.x, padding.y * 1.75f));
   const bool open = ImGui::BeginMainMenuBar();
-  ImGui::PopStyleVar();
+  ImGui::PopStyleVar(2);
   if (!open) return;
   if (dropdown::BeginMenu("File")) {
     drawFileMenu();
