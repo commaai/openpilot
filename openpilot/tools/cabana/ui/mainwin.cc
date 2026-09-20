@@ -146,6 +146,9 @@ void MainWindow::drawMenuBar() {
   const bool open = ImGui::BeginMainMenuBar();
   ImGui::PopStyleVar(2);
   if (!open) return;
+  // Menu items extend their hit area by half ItemSpacing; cover the full bar height.
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+                      ImVec2(ImGui::GetStyle().ItemSpacing.x, ImGui::GetWindowHeight() - ImGui::GetTextLineHeight()));
   if (dropdown::BeginMenu("File")) {
     drawFileMenu();
     dropdown::EndMenu();
@@ -188,6 +191,7 @@ void MainWindow::drawMenuBar() {
     if (dropdown::Item("Help", "F1")) toggleHelp();
     dropdown::EndMenu();
   }
+  ImGui::PopStyleVar();
   drawPanelToggles();
   const ImVec2 min = ImGui::GetWindowPos();
   const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
