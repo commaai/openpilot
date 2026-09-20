@@ -1,5 +1,4 @@
 import numpy as np
-from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.realtime import DT_CTRL, DT_MDL
 
 MIN_SPEED = 1.0
@@ -9,10 +8,8 @@ CAR_ROTATION_RADIUS = 0.0
 MAX_CURVATURE = 0.2
 MIN_STABLE_DELAY = 0.3
 
-# EU guidelines
-MAX_LATERAL_JERK = 5.0  # m/s^3
-MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
-
+# Experimental limit: 3x the original 5 m/s^3.
+MAX_LATERAL_JERK = 15.0  # m/s^3
 
 def should_stop(v_ego: float, a_target: float) -> bool:
   return bool(v_ego < 0.3 and a_target < 0.1)
@@ -25,20 +22,13 @@ def smooth_value(val, prev_val, tau, dt=DT_MDL):
   alpha = 1 - np.exp(-dt/tau) if tau > 0 else 1
   return alpha * val + (1 - alpha) * prev_val
 
-def clip_curvature(v_ego, prev_curvature, new_curvature, roll) -> tuple[float, bool]:
-  # Limit lateral jerk and acceleration; no fixed curvature cap.
+def clip_curvature(v_ego, prev_curvature, new_curvature) -> tuple[float, bool]:
+  # Limit lateral jerk only; no fixed curvature or lateral-acceleration cap.
   v_ego = max(v_ego, MIN_SPEED)
-  max_curvature_rate = MAX_LATERAL_JERK / (v_ego ** 2)  # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
-  new_curvature = np.clip(new_curvature,
-                          prev_curvature - max_curvature_rate * DT_CTRL,
-                          prev_curvature + max_curvature_rate * DT_CTRL)
-
-  roll_compensation = roll * ACCELERATION_DUE_TO_GRAVITY
-  max_lat_accel = MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
-  min_lat_accel = -MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
-  new_curvature, limited_accel = clamp(new_curvature, min_lat_accel / v_ego ** 2, max_lat_accel / v_ego ** 2)
-
-  return float(new_curvature), limited_accel
+  max_curvature_rate = MAX_LATERAL_JERK / (v_ego ** 2)  # Approximation at constant speed.
+  return clamp(new_curvature,
+               prev_curvature - max_curvature_rate * DT_CTRL,
+               prev_curvature + max_curvature_rate * DT_CTRL)
 
 
 def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL):
