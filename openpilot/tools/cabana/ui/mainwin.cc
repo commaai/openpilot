@@ -744,8 +744,6 @@ void MainWindow::drawPanelToggles() {
   for (const auto &toggle : toggles) width += ImGui::CalcTextSize(toggle.label).x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x;
   const float x = ImGui::GetWindowWidth() - width;
   if (x <= ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x) return;  // View menu remains available on narrow windows.
-  const ImVec2 padding = ImGui::GetStyle().FramePadding;
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.x, padding.y * 0.5f));
   ImGui::SetCursorPosX(x);
   for (const auto &toggle : toggles) {
     ImGui::SetCursorPosY((ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f);
@@ -759,7 +757,6 @@ void MainWindow::drawPanelToggles() {
     ImGui::EndDisabled();
     ImGui::SetItemTooltip("%s", toggle.tip);
   }
-  ImGui::PopStyleVar();
 }
 
 void MainWindow::drawPlaybackBar() {
