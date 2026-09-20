@@ -742,8 +742,11 @@ void MainWindow::drawPanelToggles() {
   for (const auto &toggle : toggles) width += ImGui::CalcTextSize(toggle.label).x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x;
   const float x = ImGui::GetWindowWidth() - width;
   if (x <= ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x) return;  // View menu remains available on narrow windows.
-  ImGui::SetCursorPos(ImVec2(x, (ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f));
+  const ImVec2 padding = ImGui::GetStyle().FramePadding;
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.x, padding.y * 0.5f));
+  ImGui::SetCursorPosX(x);
   for (const auto &toggle : toggles) {
+    ImGui::SetCursorPosY((ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f);
     const bool enabled = toggle.visible != &video_visible_ || !hasStream() || !can->liveStreaming();
     const bool selected = enabled && (toggle.visible ? *toggle.visible : messages_visible_ || log_messages_visible_);
     ImGui::BeginDisabled(!enabled);
@@ -754,6 +757,7 @@ void MainWindow::drawPanelToggles() {
     ImGui::EndDisabled();
     ImGui::SetItemTooltip("%s", toggle.tip);
   }
+  ImGui::PopStyleVar();
 }
 
 void MainWindow::drawPlaybackBar() {
