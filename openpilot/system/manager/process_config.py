@@ -25,11 +25,19 @@ def logging(started: bool, params: Params, CP: car.CarParams) -> bool:
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
 
+def gps_relayed(params: Params) -> bool:
+  """GPS comes from another comma on the network, so the local receiver stays off:
+  msgq allows one publisher per endpoint and the bridge takes that slot."""
+  return bool((params.get("GpsSource") or "").strip())
+
 def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox, block=True)
-  return started and use_ublox
+  return started and use_ublox and not gps_relayed(params)
+
+def gpsbridge(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return gps_relayed(params) or params.get_bool("GpsPublish")
 
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and params.get_bool("JoystickDebugMode")
@@ -102,6 +110,7 @@ procs = [
   PythonProcess("deleter", "openpilot.system.loggerd.deleter", always_run),
   PythonProcess("dmonitoringd", "openpilot.selfdrive.monitoring.dmonitoringd", driverview, enabled=(WEBCAM or not PC)),
   PythonProcess("qcomgpsd", "openpilot.system.qcomgpsd.qcomgpsd", qcomgps, enabled=COMMA_HARDWARE),
+  PythonProcess("gpsbridge", "openpilot.system.gpsbridge.gpsbridge", gpsbridge, enabled=COMMA_HARDWARE),
   PythonProcess("pandad", "openpilot.selfdrive.pandad.pandad", always_run),
   PythonProcess("paramsd", "openpilot.selfdrive.locationd.paramsd", only_onroad),
   PythonProcess("lagd", "openpilot.selfdrive.locationd.lagd", only_onroad),
