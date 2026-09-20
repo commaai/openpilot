@@ -13,6 +13,7 @@ FFT_SAMPLES = 4800 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 48000 # preserve speech above 10 kHz for livestream EQ
 SAMPLE_BUFFER = 2400  # 50ms
+VOICE_GAIN = 4.0  # +12 dB on transmitted audio only
 
 
 def patch_sounddevice(sd):
@@ -85,7 +86,9 @@ class Mic:
     Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
     msg = messaging.new_message('rawAudioData', valid=True)
-    audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
+    # Boost voices in the transmitted copy, with soft limiting for loud peaks.
+    # Ambient SPL below must continue to use the original microphone samples.
+    audio_data_int_16 = (np.tanh(indata[:, 0] * VOICE_GAIN) * 32767).astype(np.int16)
     msg.rawAudioData.data = audio_data_int_16.tobytes()
     msg.rawAudioData.sampleRate = SAMPLE_RATE
     self.pm.send('rawAudioData', msg)
