@@ -234,15 +234,30 @@ void DetailWidget::drawTabWidget() {
   if (tab_widget_index_ == 0) {
     if (heatmap_visible_) {
       // Allow the heatmap to grow while reserving room for signal rows.
+      const float handle_height = ImGui::GetFontSize();
       const float avail = ImGui::GetContentRegionAvail().y;
-      const float max_height = std::max(avail - style.ItemSpacing.y - SignalView::minimumHeight(), 1.0f);
-      const float height = std::min(binary_view_->minimumSizeHint().y, max_height);
-      ImGui::SetNextWindowSizeConstraints(ImVec2(0, std::min(ImGui::GetFrameHeight(), max_height)),
-                                         ImVec2(FLT_MAX, max_height));
-      ImGui::BeginChild("binary_view", ImVec2(0, std::max(height, 1.0f)), ImGuiChildFlags_ResizeY, ImGuiWindowFlags_HorizontalScrollbar);
+      const float max_height = std::max(avail - handle_height - style.ItemSpacing.y * 2 - SignalView::minimumHeight(), 1.0f);
+      const float min_height = std::min(ImGui::GetFrameHeight(), max_height);
+      const float height = std::clamp(heatmap_height_ < 0 ? binary_view_->minimumSizeHint().y : heatmap_height_, min_height, max_height);
+      ImGui::BeginChild("binary_view", ImVec2(0, height), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
       binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
       binary_view_->draw();
       ImGui::EndChild();
+
+      // A dedicated grab area makes resizing discoverable without covering the last byte row.
+      ImGui::InvisibleButton("##heatmap_resize", ImVec2(std::max(ImGui::GetContentRegionAvail().x, 1.0f), handle_height));
+      const bool hovered = ImGui::IsItemHovered();
+      const bool active = ImGui::IsItemActive();
+      if (hovered || active) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+      if (hovered) ImGui::SetTooltip("Drag to resize heatmap");
+      if (active) heatmap_height_ = std::clamp(height + ImGui::GetIO().MouseDelta.y, min_height, max_height);
+      const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+      const ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+      const float half_width = std::min(handle_height * 1.5f, (max.x - min.x) * 0.5f);
+      auto *painter = ImGui::GetWindowDrawList();
+      painter->AddLine(ImVec2(min.x, center.y), ImVec2(max.x, center.y), ImGui::GetColorU32(ImGuiCol_Border));
+      painter->AddRectFilled(ImVec2(center.x - half_width, center.y - 2.0f), ImVec2(center.x + half_width, center.y + 2.0f),
+                             ImGui::GetColorU32(active ? ImGuiCol_SliderGrabActive : hovered ? ImGuiCol_SliderGrab : ImGuiCol_TextDisabled), 2.0f);
     }
     const float signal_height = std::max(ImGui::GetContentRegionAvail().y, SignalView::minimumHeight());
     ImGui::BeginChild("signal_view", ImVec2(0, signal_height), ImGuiChildFlags_None,
