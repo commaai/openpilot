@@ -2,7 +2,9 @@
 import numpy as np
 from functools import cache
 import threading
+import time
 
+from openpilot.common.simple_echo import SimpleEchoCanceller
 from openpilot.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.utils import retry
@@ -56,6 +58,8 @@ class Mic:
     self.rk = Ratekeeper(RATE)
     self.pm = messaging.PubMaster(['soundPressure', 'rawAudioData'])
 
+    self.echo = SimpleEchoCanceller()
+    self.speaker_reference = None
     self.measurements = np.empty(0)
 
     self.sound_pressure = 0
@@ -78,17 +82,32 @@ class Mic:
     self.pm.send('soundPressure', msg)
     self.rk.keep_time()
 
-  def callback(self, indata, frames, time, status):
+  def callback(self, indata, frames, timing, status):
     """
     Using amplitude measurements, calculate an uncalibrated sound pressure and sound pressure level.
     Then apply A-weighting to the raw amplitudes and run the same calculations again.
 
     Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
+    # Keep the reference socket on the capture thread; never block audio on IPC.
+    if self.speaker_reference is None:
+      self.speaker_reference = messaging.sub_sock('livestreamAudio')
+    for _ in range(24):
+      reference = messaging.recv_one_or_none(self.speaker_reference)
+      if reference is None:
+        break
+      audio = reference.livestreamAudio
+      if not reference.valid or audio.sampleRate != SAMPLE_RATE or len(audio.data) % 2 or len(audio.data) > SAMPLE_RATE * 2 * 0.12:
+        continue
+      if not audio.data:
+        self.echo.reset()
+      elif time.monotonic_ns() - reference.logMonoTime < 200_000_000:
+        self.echo.push(np.frombuffer(audio.data, dtype=np.int16).astype(np.float32) / 32768, reference.logMonoTime / 1e9)
+    cleaned = self.echo.process(indata[:, 0], time.monotonic())
     msg = messaging.new_message('rawAudioData', valid=True)
     # Boost voices in the transmitted copy, with soft limiting for loud peaks.
     # Ambient SPL below must continue to use the original microphone samples.
-    audio_data_int_16 = (np.tanh(indata[:, 0] * VOICE_GAIN) * 32767).astype(np.int16)
+    audio_data_int_16 = (np.tanh(cleaned * VOICE_GAIN) * 32767).astype(np.int16)
     msg.rawAudioData.data = audio_data_int_16.tobytes()
     msg.rawAudioData.sampleRate = SAMPLE_RATE
     self.pm.send('rawAudioData', msg)
