@@ -41,30 +41,34 @@ class TestLivestreamPlayback:
     msg.livestreamAudio.data = np.full(frames, value, dtype=np.int16).tobytes()
     return msg
 
+  def prime(self, playback, value=8192):
+    for _ in range(15):
+      playback.enqueue(self.message(value=value, frames=480))
+
   def test_playback_expires_and_flushes(self, mocker):
     import numpy as np
     from openpilot.selfdrive.ui.soundd import LivestreamPlayback
     playback = LivestreamPlayback()
     msg = self.message()
-    playback.enqueue(msg)
+    self.prime(playback)
     np.testing.assert_allclose(playback.render(480), 0.25)
     empty = self.message(frames=0)
     playback.enqueue(empty)
     assert not playback.render(480).any()
-    playback.enqueue(msg)
-    mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic_ns', return_value=msg.logMonoTime + 300_000_000)
+    self.prime(playback)
+    mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic_ns', return_value=msg.logMonoTime + 500_000_000)
     assert not playback.render(960).any()
 
   def test_backlog_is_bounded(self):
     import numpy as np
     from openpilot.selfdrive.ui.soundd import LivestreamPlayback
     playback = LivestreamPlayback()
-    for _ in range(10):
+    for _ in range(40):
       playback.enqueue(self.message(value=4096))
     playback.eq.reset()
-    for _ in range(6):
+    for _ in range(35):
       playback.enqueue(self.message(value=8192))
-    np.testing.assert_allclose(playback.render(960 * 6), 0.25)
+    np.testing.assert_allclose(playback.render(480 * 35), 0.25)
     assert not playback.render(960).any()
 
   def test_alerts_take_priority_over_voice(self, mocker):
@@ -76,14 +80,14 @@ class TestLivestreamPlayback:
     sound.current_volume = 1.0
     output = np.empty((960, 1), dtype=np.float32)
     sound.usb_stream = mocker.Mock()
-    sound.livestream.enqueue(self.message())
+    self.prime(sound.livestream)
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, 0)  # USB owns speech while connected
     usb_output = np.empty((960, 2), dtype=np.float32)
     sound.usb_callback(usb_output, 960, None, None)
     np.testing.assert_allclose(usb_output, 0.25)
     sound.current_alert = AudibleAlert.engage
-    sound.livestream.enqueue(self.message())
+    self.prime(sound.livestream)
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, 0.5)
     sound.usb_callback(usb_output, 960, None, None)
@@ -96,7 +100,7 @@ class TestLivestreamPlayback:
     playback = LivestreamPlayback()
     for value in (0, 128, -128, 32767, -32768):
       playback.clear()
-      playback.enqueue(self.message(value=value))
+      self.prime(playback, value=value)
       output = playback.render(960)
       assert np.isfinite(output).all()
       assert np.max(np.abs(output)) <= 1.0
@@ -147,14 +151,14 @@ class TestLivestreamPlayback:
     factory = mocker.patch('openpilot.selfdrive.ui.soundd.USBSpeaker')
     sound.update_usb_stream()
     factory.assert_not_called()
-    sound.livestream.enqueue(self.message())
+    self.prime(sound.livestream)
     output = np.empty((960, 1), dtype=np.float32)
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, 0.25)
     sound.usb_stream = mocker.Mock(active=False)
     sound.update_usb_stream()
     assert sound.usb_stream is None
-    sound.livestream.enqueue(self.message())
+    self.prime(sound.livestream)
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, 0.25)
 
@@ -178,30 +182,31 @@ def test_speaker_test_tone_is_bounded_and_alerts_still_override(mocker):
 
 
 
-def test_speech_buffer_bridges_short_packet_jitter_and_reprimes(mocker):
+def test_speech_buffer_holds_150ms_and_bridges_jitter(mocker):
   import numpy as np
   from openpilot.selfdrive.ui.soundd import LivestreamPlayback
   playback = LivestreamPlayback()
   clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic_ns', return_value=1_000_000_000)
   def feed():
-    msg = TestLivestreamPlayback.message(frames=960)
+    msg = TestLivestreamPlayback.message(frames=480)
     msg.logMonoTime = clock.return_value
     playback.enqueue(msg)
+  for _ in range(14):
+    feed()
+    assert not playback.render(480).any()
+    clock.return_value += 10_000_000
   feed()
-  assert not playback.render(960).any()  # wait for the small startup buffer
-  clock.return_value += 20_000_000
+  np.testing.assert_allclose(playback.render(480), 0.25)
+  # No arrivals for the next 140 ms: buffered audio must remain playable.
+  for _ in range(14):
+    clock.return_value += 10_000_000
+    np.testing.assert_allclose(playback.render(480), 0.25)
+  assert not playback.render(480).any()
+  for _ in range(14):
+    feed()
+    assert not playback.render(480).any()
+    clock.return_value += 10_000_000
   feed()
-  np.testing.assert_allclose(playback.render(960), 0.25)
-  # Next packet is late; the reserved packet bridges that interval.
-  clock.return_value += 20_000_000
-  np.testing.assert_allclose(playback.render(960), 0.25)
-  clock.return_value += 10_000_000
-  feed()
-  np.testing.assert_allclose(playback.render(960), 0.25)
-  assert not playback.render(960).any()  # actual starvation requires rebuffering
-  feed()
-  assert not playback.render(960).any()
-  feed()
-  np.testing.assert_allclose(playback.render(960), 0.25)
+  np.testing.assert_allclose(playback.render(480), 0.25)
   playback.clear()
-  assert not playback.render(960).any()
+  assert not playback.render(480).any()

@@ -9,15 +9,15 @@ def reference_audio():
   return np.random.default_rng(12).normal(0, 0.06, 48000).astype(np.float32)
 
 
+@pytest.mark.parametrize('delay', [6577, 13777])
 @pytest.mark.parametrize('polarity', [-1, 1])
-def test_delayed_echo_is_removed_with_nearby_voice_preserved(polarity):
+def test_delayed_echo_is_removed_with_nearby_voice_preserved(polarity, delay):
   source = reference_audio()
   rendered = VoiceEQ(48000).process(source)
   echo = SimpleEchoCanceller()
   for offset in range(0, 48000, 960):
     echo.push(source[offset:offset + 960], 10 + offset / 48000)
-  # 137 ms of output/capture delay, including a non-decimated sample offset.
-  delay = 6577
+  # Cover both short delay and 150 ms buffering plus acoustic/capture delay.
   start = 40000
   mic = rendered[start - delay:start - delay + 2400] * 0.4 * polarity
   near = np.random.default_rng(13).normal(0, 0.005, len(mic)).astype(np.float32)

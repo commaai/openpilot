@@ -20,6 +20,10 @@ from openpilot.common.hardware import HARDWARE
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 960 # 20 ms, also used for livestream voice playback
+SPEECH_CHUNK = 480  # 10 ms chunks allow a 150 ms startup buffer
+SPEECH_BUFFER_PACKETS = 15
+SPEECH_QUEUE_PACKETS = 35  # 350 ms maximum backlog
+SPEECH_MAX_AGE_NS = 450_000_000
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
@@ -68,7 +72,7 @@ class LivestreamPlayback:
   def __init__(self):
     self.eq = VoiceEQ(SAMPLE_RATE)
     self.last_audio_time = 0
-    self.queue = queue.Queue(maxsize=6)
+    self.queue = queue.Queue(maxsize=SPEECH_QUEUE_PACKETS)
     self.pending = np.empty(0, dtype=np.float32)
     self.pending_time = 0
     self.generation = 0
@@ -99,8 +103,8 @@ class LivestreamPlayback:
       self.eq.reset()
     self.last_audio_time = msg.logMonoTime
     pcm = np.clip(self.eq.process(pcm), -1.0, 1.0)
-    for offset in range(0, len(pcm), SAMPLE_BUFFER):
-      item = (msg.logMonoTime, pcm[offset:offset + SAMPLE_BUFFER])
+    for offset in range(0, len(pcm), SPEECH_CHUNK):
+      item = (msg.logMonoTime, pcm[offset:offset + SPEECH_CHUNK])
       try:
         self.queue.put_nowait(item)
       except queue.Full:
@@ -116,15 +120,15 @@ class LivestreamPlayback:
       self.pending = np.empty(0, dtype=np.float32)
       self.playing_generation = self.generation
       self.buffering = True
-    # Hold two 20 ms packets on startup/recovery, rather than alternating
-    # individual late packets with silence. Stale audio still expires below.
+    # Prime 150 ms on startup/recovery to absorb packet arrival jitter.
+    # Playback expiry includes this intentional delay.
     if self.buffering:
-      if self.queue.qsize() < 2:
+      if self.queue.qsize() < SPEECH_BUFFER_PACKETS:
         return result
       self.buffering = False
     written = 0
     while written < frames:
-      if time.monotonic_ns() - self.pending_time > 200_000_000:
+      if time.monotonic_ns() - self.pending_time > SPEECH_MAX_AGE_NS:
         self.pending = np.empty(0, dtype=np.float32)
       if not self.pending.size:
         try:
@@ -132,7 +136,7 @@ class LivestreamPlayback:
         except queue.Empty:
           self.buffering = True
           break
-        if time.monotonic_ns() - self.pending_time > 200_000_000:
+        if time.monotonic_ns() - self.pending_time > SPEECH_MAX_AGE_NS:
           continue
       count = min(frames - written, self.pending.size)
       result[written:written + count] = self.pending[:count]

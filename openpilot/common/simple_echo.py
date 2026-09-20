@@ -10,7 +10,7 @@ from openpilot.common.voice_eq import VoiceEQ
 
 class SimpleEchoCanceller:
   RATE = 48000
-  MAX_DELAY = 0.35
+  MAX_DELAY = 0.5  # Includes the 150 ms speech playback buffer.
 
   def __init__(self):
     self.eq = VoiceEQ(self.RATE)
