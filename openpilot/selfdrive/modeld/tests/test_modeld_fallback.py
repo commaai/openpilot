@@ -43,7 +43,8 @@ class TestModeldFallback(unittest.TestCase):
     params.remove.side_effect = lambda key: values.pop(key, None)
     params.get_bool.side_effect = lambda key: values.get(key, False)
     pm = Mock()
-    pm.send.side_effect = lambda name, msg: published[name].append(msg.as_reader())
+    pm.send.side_effect = lambda name, msg: published[name].append(
+      modeld.messaging.log_from_bytes(msg) if isinstance(msg, bytes) else msg.as_reader())
 
     class Model:
       vision_input_names = ('img', 'big_img')
@@ -68,6 +69,18 @@ class TestModeldFallback(unittest.TestCase):
           output[name + '_stds'] = np.ones((1, width))
         return output
 
+    class Primary:
+      chestnut = True
+      vision_input_names = Model.vision_input_names
+
+      def __init__(self, width, height, cleanup):
+        self.model = Model(width, height, True)
+        self.worker = models[True].worker = Mock()
+        cleanup.callback(self.worker.close)
+
+      def run(self, bufs, transforms, inputs, send_state, deadline):
+        return self.model.run(bufs, transforms, inputs), [modeld.messaging.new_message('chestnutGpuState').to_bytes()] if send_state else []
+
     def fill_model(msg, output, action, state, frame, extra_frame, camera_frame, drops, eof, execution_time, valid):
       self.assertEqual(output['frame'], frame)
       msg.valid = valid
@@ -84,6 +97,7 @@ class TestModeldFallback(unittest.TestCase):
     replacements: dict[str, Any] = {
       'chestnut_present': Mock(return_value=chestnut), 'chestnut_compiled': Mock(return_value=True),
       'VisionIpcClient': vipc, 'ModelState': Model, 'ChestnutGpuState': Mock(),
+      'BigModelProcess': Primary,
       'Params': Mock(return_value=params), 'PubMaster': Mock(return_value=pm), 'SubMaster': Mock(return_value=sm),
       'get_demo_car_params': Mock(return_value=SimpleNamespace(brand='mock', longitudinalActuatorDelay=0.2)),
       'fill_model_msg': fill_model, 'config_realtime_process': Mock(), 'cloudlog': Mock(),
@@ -111,6 +125,9 @@ class TestModeldFallback(unittest.TestCase):
     self.assertFalse(values['ChestnutLoading'])
     if chestnut:
       models[False].warmup.assert_called_once_with()
+      models[True].worker.close.assert_called_once_with()
+      self.assertEqual(models[True].worker.stop.call_count, int(fail_frame is not None))
+      self.assertTrue(published['chestnutGpuState'])
       self.assertEqual(values['ChestnutActive'], fail_frame is None)
     else:
       self.assertNotIn(True, models)
