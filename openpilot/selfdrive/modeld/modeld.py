@@ -69,7 +69,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   # During low-speed turn requests, steer toward the nearby predicted path.
   # The original action remains the fallback; controlsd still applies steering limits.
   if MIN_LAT_CONTROL_SPEED < v_ego < NAV_MAX_SPEED and desire in (log.Desire.turnLeft, log.Desire.turnRight):
-    path_curvature = curvature_from_path(model_output['plan'][0, :, Plan.POSITION])
+    path_curvature = curvature_from_path(model_output['plan'][0, :, Plan.POSITION], v_ego)
     if path_curvature is not None:
       desired_curvature = path_curvature
 

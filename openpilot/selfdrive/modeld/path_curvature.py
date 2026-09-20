@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import numpy as np
 
-PATH_LOOKAHEAD_METERS = 5.0
+PATH_LOOKAHEAD_GAIN = 1.0
+PATH_LOOKAHEAD_MIN = 2.0
+PATH_LOOKAHEAD_MAX = 5.0
 
 
-def curvature_from_path(positions: np.ndarray) -> float | None:
-  """Aim up to 5 meters along the path, or at its end if it is shorter.
+def curvature_from_path(positions: np.ndarray, v_ego: float) -> float | None:
+  """Aim along the path at a speed-scaled lookahead, or at its end if it is shorter.
 
   Coordinates are x forward, y right. Return None if the path cannot supply a
   usable forward target. This is a pure-pursuit steering target, not local path curvature.
   """
+  lookahead = min(PATH_LOOKAHEAD_MAX, max(PATH_LOOKAHEAD_MIN, PATH_LOOKAHEAD_GAIN * v_ego))
   points = np.asarray(positions)
   if points.ndim != 2 or points.shape[0] < 2 or points.shape[1] < 2:
     return None
@@ -22,8 +25,8 @@ def curvature_from_path(positions: np.ndarray) -> float | None:
   target = points[-1, :2]
   for point in points[:, :2]:
     segment_length = float(np.linalg.norm(point - previous))
-    if segment_length > 0 and distance + segment_length >= PATH_LOOKAHEAD_METERS:
-      fraction = (PATH_LOOKAHEAD_METERS - distance) / segment_length
+    if segment_length > 0 and distance + segment_length >= lookahead:
+      fraction = (lookahead - distance) / segment_length
       target = previous + fraction * (point - previous)
       break
     distance += segment_length
