@@ -34,9 +34,12 @@ def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox, block=True)
-  return started and use_ublox and not gps_relayed(params)
+  # A device whose job is supplying GPS to another one sits parked and offroad, so
+  # it needs the receiver running regardless of ignition.
+  return (started or params.get_bool("GpsPublish")) and use_ublox and not gps_relayed(params)
 
 def gpsbridge(started: bool, params: Params, CP: car.CarParams) -> bool:
+  # Ignores `started` on purpose: the relay has to be up while parked.
   return gps_relayed(params) or params.get_bool("GpsPublish")
 
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
