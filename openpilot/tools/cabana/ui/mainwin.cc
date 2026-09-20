@@ -31,16 +31,16 @@
 namespace {
 // dock window ids (the visible titles change, the part after ### is the identity)
 constexpr const char *VIDEO_PANEL = "###VideoPanel";
-constexpr const char *CENTER_PANEL = "###CenterWidget";
+constexpr const char *CENTER_PANEL = "Signals###CenterWidget";
 constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
                        const std::string &dbc_file) : window_(window) {
   can = &dummy_;
-  video_splitter_ratio_ = inistate::main_window.video_splitter_ratio;
   messages_visible_ = inistate::main_window.messages_visible;
   video_visible_ = inistate::main_window.video_visible;
+  charts_visible_ = inistate::main_window.charts_visible;
   loadFingerprints();
   std::error_code ec;
   for (const auto &entry : std::filesystem::directory_iterator(OPENDBC_FILE_PATH, ec)) {
@@ -91,87 +91,94 @@ void MainWindow::loadFingerprints() {
 
 void MainWindow::drawFileMenu() {
   const bool has_stream = hasStream();
-  if (ImGui::MenuItem("Open Stream...")) selectAndOpenStream();
-  if (ImGui::MenuItem("Close stream", nullptr, false, has_stream)) closeStream();
-  if (ImGui::MenuItem("Export to CSV...", nullptr, false, has_stream)) exportToCSV();
+  if (dropdown::Item("Open Stream...")) selectAndOpenStream();
+  if (dropdown::Item("Close Stream", nullptr, false, has_stream)) closeStream();
+  if (dropdown::Item("Export to CSV...", nullptr, false, has_stream)) exportToCSV();
   ImGui::Separator();
 
-  if (ImGui::MenuItem("New DBC File", "Ctrl+N")) newFile();
-  if (ImGui::MenuItem("Open DBC File...", "Ctrl+O")) openFile();
+  if (dropdown::Item("New DBC File", shortcut("N").c_str())) newFile();
+  if (dropdown::Item("Open DBC File...", shortcut("O").c_str())) openFile();
 
-  if (ImGui::BeginMenu("Manage DBC Files", has_stream)) {
+  if (dropdown::BeginMenu("Manage DBC Files", has_stream)) {
     drawManageDBCsMenu();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
-  if (ImGui::BeginMenu("Open Recent")) {
+  if (dropdown::BeginMenu("Open Recent")) {
     drawRecentFilesMenu();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
   ImGui::Separator();
-  if (ImGui::BeginMenu("Load DBC from commaai/opendbc")) {
+  if (dropdown::BeginMenu("Load DBC from commaai/opendbc")) {
     for (const auto &name : opendbc_names_) {
-      if (ImGui::MenuItem(name.c_str())) loadDBCFromOpendbc(name);
+      if (dropdown::Item(name.c_str())) loadDBCFromOpendbc(name);
     }
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
-  if (ImGui::MenuItem("Load DBC From Clipboard")) loadFromClipboard();
+  if (dropdown::Item("Load DBC from Clipboard")) loadFromClipboard();
 
   ImGui::Separator();
   const int cnt = dbc()->nonEmptyDBCCount();
   const std::string save_text = cnt > 1 ? "Save " + std::to_string(cnt) + " DBCs..." : "Save DBC...";
-  if (ImGui::MenuItem(save_text.c_str(), "Ctrl+S", false, cnt > 0)) save();
-  if (ImGui::MenuItem("Save DBC As...", "Ctrl+Shift+S", false, cnt == 1)) saveAs();
+  if (dropdown::Item(save_text.c_str(), shortcut("S").c_str(), false, cnt > 0)) save();
+  if (dropdown::Item("Save DBC As...", shortcut("Shift+S").c_str(), false, cnt == 1)) saveAs();
   // TODO: Support clipboard for multiple files
-  if (ImGui::MenuItem("Copy DBC To Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
+  if (dropdown::Item("Copy DBC to Clipboard", nullptr, false, cnt == 1)) saveToClipboard();
 
   ImGui::Separator();
-  if (ImGui::MenuItem("Settings...")) openSettings();
+  if (dropdown::Item("Settings...")) openSettings();
 
   ImGui::Separator();
-  if (ImGui::MenuItem("Exit", "Ctrl+Q")) close();
+  if (dropdown::Item("Exit", shortcut("Q").c_str())) close();
 }
 
 void MainWindow::drawMenuBar() {
-  if (!ImGui::BeginMainMenuBar()) return;
-  if (ImGui::BeginMenu("File")) {
+  // Avoid a double border with the separator drawn below.
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  const bool open = ImGui::BeginMainMenuBar();
+  ImGui::PopStyleVar();
+  if (!open) return;
+  if (dropdown::BeginMenu("File")) {
     drawFileMenu();
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Edit")) {
+  if (dropdown::BeginMenu("Edit")) {
     auto stack = UndoStack::instance();
     const std::string undo_text = stack->canUndo() ? "Undo " + stack->undoText() : "Undo";
     const std::string redo_text = stack->canRedo() ? "Redo " + stack->redoText() : "Redo";
-    if (ImGui::MenuItem(undo_text.c_str(), "Ctrl+Z", false, stack->canUndo())) stack->undo();
-    if (ImGui::MenuItem(redo_text.c_str(), "Ctrl+Shift+Z", false, stack->canRedo())) stack->redo();
-    ImGui::EndMenu();
+    if (dropdown::Item(undo_text.c_str(), shortcut("Z").c_str(), false, stack->canUndo())) stack->undo();
+    if (dropdown::Item(redo_text.c_str(), shortcut("Shift+Z").c_str(), false, stack->canRedo())) stack->redo();
+    dropdown::EndMenu();
   }
 
-  if (ImGui::BeginMenu("View")) {
-    if (ImGui::MenuItem("Full Screen", "Ctrl+F11")) toggleFullScreen();
+  if (dropdown::BeginMenu("View")) {
+    if (dropdown::Item("Full Screen", shortcut("F11").c_str())) toggleFullScreen();
     ImGui::Separator();
-    ImGui::MenuItem(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
-    ImGui::MenuItem(video_dock_title_.empty() ? "##video_dock" : video_dock_title_.c_str(), nullptr, &video_visible_);
+    dropdown::Item(messages_widget_ ? messages_widget_->title().c_str() : "MESSAGES", nullptr, &messages_visible_);
+    dropdown::Item(videoPanelTitle(), nullptr, &video_visible_);
+    dropdown::Item("Charts", nullptr, &charts_visible_);
     ImGui::Separator();
-    if (ImGui::MenuItem("Reset Window Layout")) {
-      messages_visible_ = video_visible_ = true;
-      video_splitter_ratio_ = -1.0f;
+    if (dropdown::Item("Reset Window Layout")) {
+      messages_visible_ = video_visible_ = charts_visible_ = true;
       reset_layout_ = true;
     }
-    ImGui::EndMenu();
+    dropdown::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Tools", hasStream())) {
-    if (ImGui::MenuItem("Find Similar Bits")) findSimilarBits();
-    if (ImGui::MenuItem("Find Signal")) findSignal();
-    ImGui::EndMenu();
+  if (dropdown::BeginMenu("Tools", hasStream())) {
+    if (dropdown::Item("Find Similar Bits")) findSimilarBits();
+    if (dropdown::Item("Find Signal")) findSignal();
+    dropdown::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Help")) {
-    if (ImGui::MenuItem("Help", "F1")) toggleHelp();
-    ImGui::EndMenu();
+  if (dropdown::BeginMenu("Help")) {
+    if (dropdown::Item("Help", "F1")) toggleHelp();
+    dropdown::EndMenu();
   }
+  const ImVec2 min = ImGui::GetWindowPos();
+  const ImVec2 max(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
+  ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x, max.y - 1.0f), max, ImGui::GetColorU32(ImGuiCol_Border));
   ImGui::EndMainMenuBar();
 }
 
@@ -183,8 +190,6 @@ void MainWindow::createDockWidgets() {
   charts_widget_ = std::make_unique<ChartsWidget>();
   center_widget_.setChartsWidget(charts_widget_.get());
   video_widget_ = std::make_unique<VideoWidget>();
-  widget_connections_.push_back(charts_widget_->toggleChartsDocking.connect([this]() { toggleChartsDocking(); }));
-  widget_connections_.push_back(charts_widget_->showTip.connect([this](double sec) { video_widget_->showThumbnail(sec); }));
 }
 
 void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
@@ -194,11 +199,15 @@ void MainWindow::showStatusMessage(const std::string &msg, int timeout_ms) {
 
 void MainWindow::updateWindowTitle() {
   std::string title;
-  for (auto f : dbc()->allDBCFiles()) {
+  for (auto f : dbc()->nonEmptyDBCFiles()) {
     if (!title.empty()) title += " | ";
     title += "(" + toString(dbc()->sources(f)) + ") " + f->name();
   }
   if (window_modified_) title += "*";
+  if (hasStream()) {
+    const std::string stream_title = can->liveStreaming() ? videoPanelTitle() : can->routeName();
+    title = title.empty() ? stream_title : stream_title + " \xe2\x80\x94 " + title;
+  }
   if (!title.empty()) title += " \xe2\x80\x94 ";  // em dash separator
   title += "Cabana";
   glfwSetWindowTitle(window_, title.c_str());
@@ -252,7 +261,7 @@ void MainWindow::closeStream() {
   if (dbc()->nonEmptyDBCCount() > 0) {
     dbc()->fileChanged();
   }
-  showStatusMessage("stream closed");
+  showStatusMessage("Stream closed");
 }
 
 void MainWindow::exportToCSV() {
@@ -284,7 +293,7 @@ void MainWindow::loadFile(const std::string &fn, SourceSet s, std::function<void
       std::string error;
       if (dbc()->open(s, fn, &error)) {
         updateRecentFiles(fn);
-        showStatusMessage("DBC File " + fn + " loaded", 2000);
+        showStatusMessage("DBC file " + fn + " loaded", 2000);
         if (then) then();
       } else {
         MessageBox::warning("Failed to load DBC file", "Failed to parse DBC file " + fn, error, then);
@@ -302,11 +311,11 @@ void MainWindow::loadDBCFromOpendbc(const std::string &name) {
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   std::string text;
   if (!utils::getClipboardText(&text)) {
-    MessageBox::warning("Load From Clipboard", "No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland).");
+    MessageBox::warning("Load from Clipboard", "No clipboard tool found. Install xclip (X11) or wl-clipboard (Wayland).");
     return;
   }
   if (text.empty()) {
-    MessageBox::warning("Load From Clipboard", "Clipboard is empty.");
+    MessageBox::warning("Load from Clipboard", "Clipboard is empty.");
     return;
   }
 
@@ -314,9 +323,9 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
     std::string error;
     bool ret = dbc()->open(s, std::string(""), text, &error);
     if (ret && dbc()->nonEmptyDBCCount() > 0) {
-      MessageBox::information("Load From Clipboard", "DBC Successfully Loaded!");
+      MessageBox::information("Load from Clipboard", "DBC loaded successfully.");
     } else {
-      MessageBox::warning("Failed to load DBC from clipboard", "Make sure that you paste the text with correct format.", error);
+      MessageBox::warning("Failed to load DBC from clipboard", "Make sure the clipboard contains correctly formatted DBC text.", error);
     }
   });
 }
@@ -357,12 +366,12 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
     MessageBox::warning("Error", msg);
   }));
   can->start();
+  updateWindowTitle();
 
   loadFile(dbc_file, SOURCE_ALL, [this]() {
     showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
     createDockWidgets();
 
-    video_dock_title_ = can->routeName();
     // Don't overwrite already loaded DBC
     if (!dbc()->nonEmptyDBCCount()) {
       newFile();
@@ -386,7 +395,6 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
 void MainWindow::eventsMerged() {
   const std::string fingerprint = can->carFingerprint();
   if (!can->liveStreaming() && std::exchange(car_fingerprint_, fingerprint) != fingerprint) {
-    video_dock_title_ = "ROUTE: " + can->routeName() + "  FINGERPRINT: " + (car_fingerprint_.empty() ? "Unknown Car" : car_fingerprint_);
     // Don't overwrite already loaded DBC
     auto it = fingerprint_to_dbc_.find(car_fingerprint_);
     if (!dbc()->nonEmptyDBCCount() && it != fingerprint_to_dbc_.end()) {
@@ -481,9 +489,9 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
 
 void MainWindow::copyToClipboard(const std::string &text) {
   if (utils::setClipboardText(text)) {
-    MessageBox::information("Copy To Clipboard", "DBC Successfully copied!");
+    MessageBox::information("Copy to Clipboard", "DBC copied successfully.");
   } else {
-    MessageBox::warning("Copy To Clipboard", "Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland).");
+    MessageBox::warning("Copy to Clipboard", "Failed to copy DBC to clipboard. Install xclip (X11) or wl-clipboard (Wayland).");
   }
 }
 
@@ -496,22 +504,22 @@ void MainWindow::drawManageDBCsMenu() {
     auto dbc_file = dbc()->findDBCFile(source);
     const std::string title = "Bus " + std::to_string(source) + " (" + (dbc_file ? dbc_file->name() : "No DBCs loaded") + ")";
     ImGui::PushID(source);
-    if (ImGui::BeginMenu(title.c_str())) {
-      if (ImGui::MenuItem("New DBC File...")) newFile(ss);
-      if (ImGui::MenuItem("Open DBC File...")) openFile(ss);
-      if (ImGui::MenuItem("Load DBC From Clipboard...")) loadFromClipboard(ss, false);
+    if (dropdown::BeginMenu(title.c_str())) {
+      if (dropdown::Item("New DBC File")) newFile(ss);
+      if (dropdown::Item("Open DBC File...")) openFile(ss);
+      if (dropdown::Item("Load DBC from Clipboard")) loadFromClipboard(ss, false);
 
       // Show sub-menu for each dbc for this source.
       if (dbc_file) {
         ImGui::Separator();
-        ImGui::MenuItem((dbc_file->name() + " (" + toString(dbc()->sources(dbc_file)) + ")").c_str(), nullptr, false, false);
-        if (ImGui::MenuItem("Save...")) saveFile(dbc_file);
-        if (ImGui::MenuItem("Save As...")) saveFileAs(dbc_file);
-        if (ImGui::MenuItem("Copy to Clipboard...")) saveFileToClipboard(dbc_file);
-        if (ImGui::MenuItem("Remove from this bus...")) closeFile(ss, {});
-        if (ImGui::MenuItem("Remove from all buses...")) closeFile(dbc_file);
+        dropdown::Item((dbc_file->name() + " (" + toString(dbc()->sources(dbc_file)) + ")").c_str(), nullptr, false, false);
+        if (dropdown::Item("Save...")) saveFile(dbc_file);
+        if (dropdown::Item("Save As...")) saveFileAs(dbc_file);
+        if (dropdown::Item("Copy to Clipboard")) saveFileToClipboard(dbc_file);
+        if (dropdown::Item("Remove from This Bus...")) closeFile(ss, {});
+        if (dropdown::Item("Remove from All Buses...")) closeFile(dbc_file);
       }
-      ImGui::EndMenu();
+      dropdown::EndMenu();
     }
     ImGui::PopID();
   }
@@ -529,14 +537,14 @@ void MainWindow::updateRecentFiles(const std::string &fn) {
 void MainWindow::drawRecentFilesMenu() {
   int num_recent_files = std::min<int>(settings.recent_files.size(), MAX_RECENT_FILES);
   if (!num_recent_files) {
-    ImGui::MenuItem("No Recent Files", nullptr, false, false);
+    dropdown::Item("No Recent Files", nullptr, false, false);
     return;
   }
 
   for (int i = 0; i < num_recent_files; ++i) {
     std::string text = std::to_string(i + 1) + " " + std::filesystem::path(settings.recent_files[i]).filename().string();
     ImGui::PushID(i);
-    if (ImGui::MenuItem(text.c_str())) loadFile(settings.recent_files[i]);
+    if (dropdown::Item(text.c_str())) loadFile(settings.recent_files[i]);
     ImGui::PopID();
   }
 }
@@ -547,7 +555,7 @@ void MainWindow::remindSaveChanges(std::function<void()> then) {
     if (then) then();
     return;
   }
-  std::string text = "You have unsaved changes. Press ok to save them, cancel to discard.";
+  std::string text = "You have unsaved changes. Select OK to save them or Cancel to discard them.";
   MessageBox::question("Unsaved Changes", text, [this, then](bool ok) {
     if (ok) {
       save([this, then]() { remindSaveChanges(then); });
@@ -568,11 +576,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   } else {
     status_bar_.progress_visible = false;
   }
-}
-
-void MainWindow::toggleChartsDocking() {
-  charts_floating_ = !charts_floating_;
-  charts_widget_->setIsDocked(!charts_floating_);
 }
 
 void MainWindow::close() {
@@ -596,9 +599,9 @@ void MainWindow::finishClose() {
     glfwGetWindowSize(window_, &state.size[0], &state.size[1]);
   }
   state.has_geometry = state.size[0] > 0 && state.size[1] > 0;
-  state.video_splitter_ratio = video_splitter_ratio_;
   state.messages_visible = messages_visible_;
   state.video_visible = video_visible_;
+  state.charts_visible = charts_visible_;
   settings.ui_state = inistate::save();
 
   saveSessionState();
@@ -710,24 +713,51 @@ void MainWindow::handleShortcuts() {
 void MainWindow::drawStatusBar() {
   ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_MenuBarBg]);
   ImGui::BeginChild("status_bar", ImVec2(0, ImGui::GetFrameHeight()), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+  const ImVec2 min = ImGui::GetWindowPos();
+  ImGui::GetWindowDrawList()->AddRectFilled(min, ImVec2(min.x + ImGui::GetWindowWidth(), min.y + 1.0f), ImGui::GetColorU32(ImGuiCol_Border));
   // a borderless child gets no WindowPadding, so both ends sit flush against the edge and clip. Inset by
   // WindowPadding.x, which lines the text up with the content of the docked panels above (the messages table).
   const float width = ImGui::GetContentRegionAvail().x;
   const float pad = ImGui::GetStyle().WindowPadding.x;
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  const float fps_x = std::max(pad, width - pad - ImGui::CalcTextSize("999 FPS").x);
+  popMonoFont();
+  const float progress_width = std::min(300.0f, std::max(0.0f, fps_x - pad - 20.0f));
+  const float progress_x = fps_x - progress_width - 10.0f;
+  const float message_end = status_bar_.progress_visible ? progress_x - ImGui::GetStyle().ItemSpacing.x : fps_x - 10.0f;
+  ImGui::PushClipRect(min, ImVec2(min.x + std::max(pad, message_end), min.y + ImGui::GetWindowHeight()), true);
   ImGui::SetCursorPosX(pad);
   ImGui::AlignTextToFramePadding();
+  const float text_y = ImGui::GetCursorPosY();
   // a temporary message hides the normal widgets, permanent widgets stay on the right
   auto &bar = status_bar_;
   if (!bar.message.empty() && (bar.message_until == 0 || ImGui::GetTime() < bar.message_until)) {
     ImGui::TextUnformatted(bar.message.c_str());
   } else {
     bar.message.clear();
-    ImGui::TextUnformatted("For Help, Press F1");
+    ImGui::TextUnformatted("For help, press F1");
   }
-  if (bar.progress_visible) {
-    ImGui::SameLine(width - pad - 300.0f);
-    ImGui::ProgressBar(bar.progress_value, ImVec2(300.0f, 16.0f), bar.progress_text.c_str());
+  ImGui::PopClipRect();
+  if (bar.progress_visible && progress_width > 0) {
+    const float progress_height = 16.0f;
+    ImGui::PushFont(ImGui::GetFont(), 12.0f);
+    const std::string percentage = std::to_string((int)(bar.progress_value * 100)) + "%";
+    const char *label = bar.progress_text.c_str();
+    const float text_width = progress_width - 2 * ImGui::GetStyle().FramePadding.x;
+    if (ImGui::CalcTextSize(label).x > text_width) label = percentage.c_str();
+    if (ImGui::CalcTextSize(label).x > text_width) label = "";
+    ImGui::SameLine(progress_x);
+    ImGui::SetCursorPosY((ImGui::GetWindowHeight() - progress_height) / 2.0f);
+    ImGui::ProgressBar(bar.progress_value, ImVec2(progress_width, progress_height), label);
+    ImGui::PopFont();
+    ImGui::SetItemTooltip("%s", bar.progress_text.c_str());
   }
+  ImGui::SameLine(fps_x);
+  ImGui::SetCursorPosY(text_y);
+  pushMonoFont(ImGui::GetStyle().FontSizeBase);
+  ImGui::Text("%3.0f FPS", ImGui::GetIO().Framerate);
+  popMonoFont();
+  ImGui::SetItemTooltip("UI rendering rate (frames per second)");
   ImGui::EndChild();
   ImGui::PopStyleColor();
 }
@@ -755,8 +785,10 @@ void MainWindow::drawWaitDialog() {
 
 void MainWindow::drawDockspace() {
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->WorkPos);
-  ImGui::SetNextWindowSize(viewport->WorkSize);
+  // Use the menu bar's current-frame reservation, including on the first frame.
+  const ImRect work_rect = static_cast<const ImGuiViewportP *>(viewport)->GetBuildWorkRect();
+  ImGui::SetNextWindowPos(work_rect.Min);
+  ImGui::SetNextWindowSize(work_rect.GetSize());
   ImGui::SetNextWindowViewport(viewport->ID);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -770,21 +802,24 @@ void MainWindow::drawDockspace() {
 
   // the status bar sits below the dockspace: reserve its height plus the item spacing between the two,
   // otherwise the host window is a few pixels taller than the viewport and scrolls
-  const float status_height = full_screen_ ? 0.0f : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
+  const float status_height = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y;
   const ImVec2 dock_size(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - status_height);
   const ImGuiID dock_id = ImGui::GetID("cabana_dockspace");
-  if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr) {
-    // messages left, video (with charts) right, center widget in the middle
+  if (reset_layout_ || ImGui::DockBuilderGetNode(dock_id) == nullptr ||
+      (!ImGui::FindWindowByName(CHARTS_WINDOW) && !ImGui::FindWindowSettingsByID(ImHashStr(CHARTS_WINDOW)))) {
+    // Messages left, route above charts on the right, details in the middle.
     ImGui::DockBuilderRemoveNode(dock_id);
     ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderSetNodePos(dock_id, ImGui::GetCursorScreenPos());
     ImGui::DockBuilderSetNodeSize(dock_id, dock_size);
-    ImGuiID center = dock_id, left = 0, right = 0;
+    ImGuiID center = dock_id, left = 0, right = 0, charts = 0;
     ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.28f, &left, &center);
     ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.4f, &right, &center);
+    ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.55f, &charts, &right);
+    ImGui::DockBuilderDockWindow(CHARTS_WINDOW, charts);
     ImGui::DockBuilderDockWindow(MESSAGES_PANEL_ID, left);
     ImGui::DockBuilderDockWindow(VIDEO_PANEL, right);
     ImGui::DockBuilderDockWindow(CENTER_PANEL, center);
-    ImGui::DockBuilderGetNode(center)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
     ImGui::DockBuilderFinish(dock_id);
     reset_layout_ = false;
   }
@@ -793,7 +828,7 @@ void MainWindow::drawDockspace() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(min_panel_width, ImGui::GetStyle().WindowMinSize.y));
   ImGui::DockSpace(dock_id, dock_size);
   ImGui::PopStyleVar();
-  if (!full_screen_) drawStatusBar();
+  drawStatusBar();
   ImGui::End();
 }
 
@@ -810,14 +845,23 @@ void setNextPanelClass() {
   window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoWindowMenuButton;
   ImGui::SetNextWindowClass(&window_class);
 }
+
+bool beginPanel(const char *name, bool *open, ImGuiWindowFlags flags = 0) {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  const bool visible = ImGui::Begin(name, open, flags | ImGuiWindowFlags_NoCollapse);
+  ImGui::PopStyleVar();
+  return visible;
+}
 }  // namespace
 
 void MainWindow::drawMessagesPanel() {
-  const std::string name = messages_widget_->title() + MESSAGES_PANEL_ID;
+  const std::string name = (messages_widget_ ? messages_widget_->title() : "MESSAGES") + std::string(MESSAGES_PANEL_ID);
   setNextPanelClass();
-  if (ImGui::Begin(name.c_str(), &messages_visible_)) {
-    help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-    messages_widget_->draw();
+  if (beginPanel(name.c_str(), &messages_visible_)) {
+    if (messages_widget_) {
+      help_overlay_.add(messages_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+      messages_widget_->draw();
+    }
   }
   const bool floating = floatingOut();
   ImGui::End();
@@ -825,52 +869,15 @@ void MainWindow::drawMessagesPanel() {
 }
 
 void MainWindow::drawVideoPanel() {
-  const std::string name = video_dock_title_ + VIDEO_PANEL;
+  const std::string name = std::string(videoPanelTitle()) + VIDEO_PANEL;
   setNextPanelClass();
-  const bool video_open = ImGui::Begin(name.c_str(), &video_visible_);
+  const bool video_open = beginPanel(name.c_str(), &video_visible_);
   const bool floating = floatingOut();
-  if (!video_open) {
+  if (video_widget_ && !video_open) {
     video_widget_->setVisible(false);  // the dock is collapsed or tabbed behind another one, like hideEvent
-  } else {
-    const ImVec2 avail = ImGui::GetContentRegionAvail();
-    const bool live = can->liveStreaming();
-    // the bordered child pads its content, so the heights the widget asks for grow by the padding
-    const float video_padding = ImGui::GetStyle().WindowPadding.y * 2.0f;
-    // the camera is as wide as the child's content region, not the panel
-    const float default_h = video_widget_->defaultHeight(avail.x - ImGui::GetStyle().WindowPadding.x * 2.0f) + video_padding;
-    const float video_hint = video_splitter_ratio_ >= 0.0f ? avail.y * video_splitter_ratio_ : default_h;
-    float video_h = charts_floating_ ? avail.y : std::clamp(video_hint, 0.0f, avail.y - 1.0f);
-    if (live) video_h = default_h;  // display video at minimum size.
-    // dragging below half of the minimum size collapses the video, it never shrinks below it otherwise
-    if (!charts_floating_ && !live) {
-      const float min_h = std::min(video_widget_->sizeHintHeight() + video_padding, avail.y - 1.0f);
-      video_h = video_h < min_h / 2 ? 0.0f : std::max(video_h, min_h);
-    }
-    if (video_h > 0.0f) {
-      ImGui::BeginChild("video", ImVec2(0, video_h), ImGuiChildFlags_Borders);
-      help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      video_widget_->draw();
-      ImGui::EndChild();
-    } else {
-      video_widget_->setVisible(false);  // the splitter collapsed the video: stop the vipc thread
-    }
-    if (!charts_floating_) {
-      // the gap between the video and the charts is the same as the padding at the sides
-      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-      ImGui::InvisibleButton("##splitter", ImVec2(-1.0f, ImGui::GetStyle().WindowPadding.x));
-      if (ImGui::IsItemActive() && !live) {
-        // the size of the video is the position of the handle inside the splitter
-        const float top = ImGui::GetWindowPos().y + ImGui::GetCursorStartPos().y;
-        video_splitter_ratio_ = std::clamp((ImGui::GetMousePos().y - top) / avail.y, 0.0f, 1.0f);
-      }
-      if (ImGui::IsItemHovered() && !live) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-      // the chart list scrolls in its own child, the container itself never scrolls
-      ImGui::BeginChild("charts", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-      ImGui::PopStyleVar();
-      help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
-      charts_widget_->draw();
-      ImGui::EndChild();
-    }
+  } else if (video_widget_) {
+    help_overlay_.add(video_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+    video_widget_->draw();
   }
   ImGui::End();
   if (!video_visible_ && floating) video_visible_ = reset_layout_ = true;
@@ -893,23 +900,29 @@ void MainWindow::draw() {
   drawDockspace();
 
   // the central widget has no scrollbars of its own (the views inside scroll)
-  if (ImGui::Begin(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+  setNextPanelClass();
+  if (beginPanel(CENTER_PANEL, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     center_widget_.draw();
     if (auto *detail = center_widget_.getDetailWidget(); detail && help_overlay_.visible()) {
       for (const auto &[text, rect] : detail->helpRects()) help_overlay_.add(text, rect);
     }
   }
   ImGui::End();
-  if (messages_widget_ && messages_visible_) drawMessagesPanel();
+  // Submit the same dock windows while loading, so ImGui doesn't collapse their
+  // nodes and then redistribute the layout when the stream's widgets arrive.
+  if (messages_visible_) drawMessagesPanel();
   if (video_widget_ && !video_visible_) video_widget_->setVisible(false);
-  if (video_widget_ && video_visible_) drawVideoPanel();
-  if (charts_widget_ && charts_floating_) {
-    bool open = true;
-    ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize, ImGuiCond_Appearing);
-    setNextWindowFloatsOut();
-    if (ImGui::Begin(CHARTS_WINDOW, &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) charts_widget_->draw();
+  if (video_visible_) drawVideoPanel();
+  if (charts_visible_) {
+    const std::string charts_title = "Charts: " + std::to_string(charts_widget_ ? charts_widget_->chartCount() : 0) + "###ChartsWindow";
+    setNextPanelClass();
+    if (beginPanel(charts_title.c_str(), &charts_visible_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+      if (charts_widget_) {
+        help_overlay_.add(charts_widget_->whatsThis(), ImGui::GetCurrentWindow()->Rect());
+        charts_widget_->draw();
+      }
+    }
     ImGui::End();
-    if (!open) toggleChartsDocking();
   }
   for (auto it = tool_dialogs_.begin(); it != tool_dialogs_.end();) {
     it = (*it)->draw() ? it + 1 : tool_dialogs_.erase(it);

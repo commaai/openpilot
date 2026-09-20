@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import math
 import time
@@ -39,16 +41,13 @@ class AlertsPill(Widget):
     self.set_rect(rl.Rectangle(0, 0, 104, 52))
 
     self._pill_bg_txt = gui_app.texture("icons_mici/alerts_pill.png", 104, 52)
-    self._icon_red = gui_app.texture("icons_mici/offroad_alerts/red_warning.png", 36, 36)
-    self._icon_orange = gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", 36, 36)
-    self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 36, 36)
     self._alert_count_callback: Callable[[], int] | None = None
-    self._max_severity_callback: Callable[[], int | None] | None = None
+    self._alert_icon_callback: Callable[[], rl.Texture | None] | None = None
 
   def set_alert_count_callback(self, callback: Callable[[], int] | None,
-                               severity_callback: Callable[[], int | None] | None = None):
+                               icon_callback: Callable[[], rl.Texture | None] | None = None):
     self._alert_count_callback = callback
-    self._max_severity_callback = severity_callback
+    self._alert_icon_callback = icon_callback
 
   def _render(self, _):
     alert_count = self._alert_count_callback() if self._alert_count_callback else 0
@@ -56,17 +55,12 @@ class AlertsPill(Widget):
       pill_w, pill_h = self._pill_bg_txt.width, self._pill_bg_txt.height
       rl.draw_texture_ex(self._pill_bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, rl.WHITE)
 
-      severity = self._max_severity_callback() if self._max_severity_callback else None
-      if severity == -1:
-        warning_txt = self._icon_green
-      elif severity is not None and severity > 0:
-        warning_txt = self._icon_red
-      else:
-        warning_txt = self._icon_orange
-
-      warn_x = self.rect.x + self.ICON_OFFSET
-      warn_y = self.rect.y + (pill_h - warning_txt.height) / 2
-      rl.draw_texture_ex(warning_txt, rl.Vector2(warn_x, warn_y), 0.0, 1.0, rl.WHITE)
+      warning_txt = self._alert_icon_callback() if self._alert_icon_callback else None
+      if warning_txt is not None:
+        scale = 36 / max(warning_txt.width, warning_txt.height)
+        warn_x = self.rect.x + self.ICON_OFFSET
+        warn_y = self.rect.y + (pill_h - warning_txt.height * scale) / 2
+        rl.draw_texture_ex(warning_txt, rl.Vector2(warn_x, warn_y), 0.0, scale, rl.WHITE)
 
       count_rect = rl.Rectangle(self.rect.x + self.COUNT_OFFSET, self.rect.y, pill_w - self.COUNT_OFFSET, pill_h)
       gui_label(count_rect, str(alert_count), font_size=36,
@@ -77,21 +71,21 @@ class AlertsPill(Widget):
 class NetworkIcon(Widget):
   def __init__(self):
     super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, 54, 44))  # max size of all icons
+    self.set_rect(rl.Rectangle(0, 0, 60, 47))  # max size of all icons
     self._net_type = NetworkType.none
     self._net_strength = 0
 
-    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 50, 44)
-    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 50, 37)
-    self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 50, 37)
-    self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 50, 37)
-    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 50, 37)
+    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 54, 47)
+    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 54, 40)
+    self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 54, 40)
+    self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 54, 40)
+    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 54, 40)
 
-    self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 54, 36)
-    self._cell_low_txt = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 54, 36)
-    self._cell_medium_txt = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 54, 36)
-    self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 54, 36)
-    self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 54, 36)
+    self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 60, 40)
+    self._cell_low_txt = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 60, 40)
+    self._cell_medium_txt = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 60, 40)
+    self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 60, 40)
+    self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 60, 40)
 
   def _update_state(self):
     device_state = ui_state.sm['deviceState']
@@ -141,7 +135,7 @@ class MiciHomeLayout(Widget):
 
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._usb_icon = IconWidget("icons_mici/usb.png", (62, 40))
-    self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (68, 40))
+    self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (54, 40))
     self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40))
     self._chestnut_failed_icon = IconWidget("icons_mici/chestnut_orange.png", (68, 40))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
@@ -187,11 +181,11 @@ class MiciHomeLayout(Widget):
 
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
                     alert_count_callback: Callable[[], int] | None = None,
-                    max_severity_callback: Callable[[], int | None] | None = None):
+                    alert_icon_callback: Callable[[], rl.Texture | None] | None = None):
     self._on_settings_click = on_settings
     self._on_alerts_click = on_alerts
     self._alert_count_callback = alert_count_callback
-    self._alerts_pill.set_alert_count_callback(alert_count_callback, max_severity_callback)
+    self._alerts_pill.set_alert_count_callback(alert_count_callback, alert_icon_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:

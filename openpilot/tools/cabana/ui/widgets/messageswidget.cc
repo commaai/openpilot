@@ -23,11 +23,12 @@ namespace {
 const char *COLUMN_TITLES[MessageList::COLUMN_COUNT] = {"Name", "Bus", "ID", "Node", "Freq", "Count", "Bytes"};
 constexpr float DEFAULT_SECTION_SIZE = 100.0f;
 
-// surrounding whitespace is ignored; no sign, no 0x prefix
+// surrounding whitespace is ignored; no sign, optional 0x prefix for hex
 unsigned int toUInt(const std::string &s, bool *ok, int base) {
   const char *b = s.data(), *e = b + s.size();
   while (b < e && std::isspace((unsigned char)*b)) ++b;
   while (e > b && std::isspace((unsigned char)e[-1])) --e;
+  if (base == 16 && e - b >= 2 && b[0] == '0' && (b[1] == 'x' || b[1] == 'X')) b += 2;
   unsigned int v = 0;
   auto [p, ec] = std::from_chars(b, e, v, base);
   *ok = b < e && p == e && ec == std::errc();
@@ -231,35 +232,39 @@ std::string MessagesWidget::whatsThis() const {
   return R"(
     <b>Message View</b><br/>
     <span style="color:gray">Byte color</span><br />
-    <span style="color:gray;">&#9632; </span> constant changing<br />
+    <span style="color:gray;">&#9632; </span> constantly changing<br />
     <span style="color:blue;">&#9632; </span> increasing<br />
     <span style="color:red;">&#9632; </span> decreasing<br />
     <span style="color:gray">Shortcuts</span><br />
-    Horizontal Scrolling: <span style="background-color:lightGray;color:gray">&nbsp;shift+wheel&nbsp;</span>
+    Horizontal Scrolling: <span style="background-color:lightGray;color:gray">&nbsp;Shift+Wheel&nbsp;</span>
   )";
 }
 
 void MessagesWidget::drawToolBar() {
-  ImGui::Dummy(ImVec2(0, std::max(0.0f, 9 - ImGui::GetStyle().ItemSpacing.y)));
-  if (ImGui::Button("Suppress Highlighted")) suppressHighlighted(true);
-  ImGui::SameLine();
-  ImGui::BeginDisabled(!suppress_clear_enabled_);
-  const std::string clear_label = suppress_clear_text_ + "##suppress_clear";
-  if (ImGui::Button(clear_label.c_str())) suppressHighlighted(false);
-  ImGui::EndDisabled();
-  disabledItemTooltip("Clear suppressed");
-
   const ImGuiStyle &style = ImGui::GetStyle();
-  const float checkbox_width = ImGui::CalcTextSize("Suppress Signals").x + ImGui::GetFrameHeight() + style.ItemInnerSpacing.x;
-  const float view_button_width = ImGui::CalcTextSize(icon::THREE_DOTS).x + style.FramePadding.x * 2;
-  alignRight(checkbox_width + style.ItemSpacing.x + view_button_width);
+  // Reserve space for View so it remains accessible when other controls overflow.
+  const std::string clear_label = suppress_clear_text_ + "##suppress_clear";
+  std::vector<ToolbarItem> items;
+  items.push_back({toolbarButtonWidth("Suppress Highlighted"), [this]() {
+    if (ImGui::Button("Suppress Highlighted")) suppressHighlighted(true);
+  }, "Suppress Highlighted", [this]() { suppressHighlighted(true); }});
+  items.push_back({toolbarButtonWidth(suppress_clear_text_), [this, &clear_label]() {
+    ImGui::BeginDisabled(!suppress_clear_enabled_);
+    if (ImGui::Button(clear_label.c_str())) suppressHighlighted(false);
+    ImGui::EndDisabled();
+    disabledItemTooltip("Clear suppressed");
+  }, suppress_clear_text_, [this]() { suppressHighlighted(false); }, suppress_clear_enabled_});
+  const size_t spacer_index = items.size();
+  items.push_back({ImGui::CalcTextSize("Suppress Signals").x + CHECKBOX_SIZE + style.ItemInnerSpacing.x, []() {
+    bool suppress_defined_signals = settings.suppress_defined_signals;
+    if (checkBox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
+    ImGui::SetItemTooltip("Suppress defined signals");
+  }});
 
-  bool suppress_defined_signals = settings.suppress_defined_signals;
-  if (checkBox("Suppress Signals", &suppress_defined_signals)) can->suppressDefinedSignals(suppress_defined_signals);
-  ImGui::SetItemTooltip("Suppress defined signals");
+  const float reserved = iconButtonWidth() + style.ItemSpacing.x;
+  drawToolbar(items, spacer_index, std::max(0.0f, ImGui::GetContentRegionAvail().x - reserved));
   ImGui::SameLine();
-
-  if (toolButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
+  if (iconButton("view_btn", icon::THREE_DOTS, "View...")) ImGui::OpenPopup("menu");
 }
 
 void MessagesWidget::updateTitle() {
@@ -297,22 +302,22 @@ void MessagesWidget::suppressHighlighted(bool from_suppress_add) {
 }
 
 void MessagesWidget::drawContextMenu() {
-  if (!ImGui::BeginPopup("menu")) return;
+  if (!dropdown::BeginPopup("menu")) return;
   for (int i = 0; i < MessageList::COLUMN_COUNT; ++i) {
     const int column = display_order_[i];
     // can't hide the name column
-    if (ImGui::MenuItem(COLUMN_TITLES[column], nullptr, !hidden_[column], column > 0)) {
+    if (dropdown::Item(COLUMN_TITLES[column], nullptr, !hidden_[column], column > 0)) {
       pending_hidden_.emplace_back(column, !hidden_[column]);
     }
   }
   ImGui::Separator();
-  if (ImGui::MenuItem("Multi-Line bytes", nullptr, settings.multiple_lines_hex)) {
+  if (dropdown::Item("Multiline Bytes", nullptr, settings.multiple_lines_hex)) {
     setMultiLineBytes(!settings.multiple_lines_hex);
   }
-  if (ImGui::MenuItem("Show inactive messages", nullptr, list_.show_inactive_messages)) {
+  if (dropdown::Item("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
     list_.showInactiveMessages(!list_.show_inactive_messages);
   }
-  ImGui::EndPopup();
+  dropdown::EndPopup();
 }
 
 void MessagesWidget::setMultiLineBytes(bool multi) {
@@ -361,8 +366,8 @@ void MessagesWidget::drawTable() {
   const bool multiple_lines = settings.multiple_lines_hex;
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders |
-                                ImGuiTableFlags_Hideable;
+                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInner |
+                                ImGuiTableFlags_Hideable | ImGuiTableFlags_PadOuterX;
   // with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = bytesCellSize(bytes_section_bytes_, multiple_lines).x;
   const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);
@@ -430,12 +435,11 @@ void MessagesWidget::drawHeader() {
   }
 
   // the filter editors under the header
-  const float clear_width = ImGui::CalcTextSize(icon::X).x + ImGui::GetStyle().FramePadding.x * 2;
   ImGui::TableNextRow();
   for (int i = 0; i < MessageList::COLUMN_COUNT; i++) {
     if (!ImGui::TableSetColumnIndex(i)) continue;
     ImGui::PushID(i);
-    ImGui::SetNextItemWidth(filters_[i].empty() ? -FLT_MIN : std::max(1.0f, ImGui::GetContentRegionAvail().x - clear_width));
+    ImGui::SetNextItemWidth(-FLT_MIN);
     const std::string placeholder = std::string("Filter ") + COLUMN_TITLES[i];
     if (clearableInput("##filter", &filters_[i], placeholder.c_str())) {
       std::map<int, std::string> filters;
@@ -502,7 +506,9 @@ void MessagesWidget::drawRow(int row) {
     if (column == MessageList::DATA && seen) {
       drawBytesCell(ImGui::GetWindowDrawList(), rect, m.dat, &m.colors, selected, inactive, multiple_lines);
     } else {
-      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive);
+      const bool align_right = seen && (column == MessageList::SOURCE || column == MessageList::COUNT ||
+                                        (column == MessageList::FREQ && m.freq > 0));
+      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive, align_right);
     }
     // the Selectable already sized its cell
     if (!row_item) ImGui::Dummy(ImVec2(width, row_height));

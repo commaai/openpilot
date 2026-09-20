@@ -37,6 +37,7 @@ public:
   Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
          uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "", bool auto_source = false);
   ~Replay();
+  void stop();
   bool load();
   RouteLoadError lastRouteError() const { return route().lastError(); }
   void start(int seconds = 0) { seekTo(min_seconds_ + seconds, false); }
@@ -107,6 +108,7 @@ private:
   double min_seconds_ = 0;
   double max_seconds_ = 0;
   SubMaster *sm_ = nullptr;
+  std::vector<const char *> active_services_;
   std::unique_ptr<PubMaster> pm_;
   std::vector<const char*> sockets_;
   std::unique_ptr<CameraServer> camera_server_;

@@ -18,16 +18,19 @@ void OpenReplayWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Route");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(-250.0f);
-  inputText("##route", &route_, "Enter route name or browse for local/remote route");
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Remote Route...") + toolbarButtonWidth("Local Route...") +
+                            ImGui::GetStyle().ItemSpacing.x * 2));
+  inputText("##route", &route_, "Enter a route name or browse for a local or remote route");
   ImGui::SameLine();
-  if (ImGui::Button("Remote route...")) {
+  ImGui::BeginDisabled(routes_dialog_.isActive());
+  if (ImGui::Button("Remote Route...")) {
     routes_dialog_.open(utils::guarded(alive_, [this](bool accepted, const std::string &route) {
       if (accepted) route_ = route;
     }));
   }
+  ImGui::EndDisabled();
   ImGui::SameLine();
-  if (ImGui::Button("Local route...")) {
+  if (ImGui::Button("Local Route...")) {
     FileDialog::getExistingDirectory("Open Local Route", settings.last_route_dir, utils::guarded(alive_, [this](const std::string &dir) {
       if (!dir.empty()) {
         route_ = dir;
@@ -128,13 +131,13 @@ void OpenPandaWidget::buildConfigForm() {
 void OpenPandaWidget::draw() {
   if (already_connected_) {
     ImGui::Text("Already connected to %s.", can->routeName().c_str());
-    ImGui::TextUnformatted("Close the current connection via [File menu -> Close Stream] before connecting to another Panda.");
+    ImGui::TextUnformatted("Select File > Close Stream before connecting to another panda.");
     return;
   }
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Serial");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(-100.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Refresh") + ImGui::GetStyle().ItemSpacing.x));
   if (comboBox("##serial", &serial_index_, serials_)) buildConfigForm();
   ImGui::SameLine();
   if (ImGui::Button("Refresh")) {
@@ -193,7 +196,7 @@ void OpenDeviceWidget::draw() {
   ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
-  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device Ip Address", ipValidator);
+  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device IP address", ipValidator);
   ImGui::EndDisabled();
 }
 
@@ -228,10 +231,10 @@ void OpenSocketCanWidget::draw() {
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Device");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(300.0f);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Refresh") + ImGui::GetStyle().ItemSpacing.x));
   if (comboBox("##device", &device_index_, devices_)) config.device = devices_[device_index_];
   ImGui::SameLine();
-  if (ImGui::Button("Refresh", ImVec2(100.0f, 0.0f))) refreshDevices();
+  if (ImGui::Button("Refresh")) refreshDevices();
 }
 
 std::unique_ptr<AbstractStream> OpenSocketCanWidget::open() {
@@ -263,7 +266,7 @@ void StreamSelector::open(Callback on_done) {
 
 void StreamSelector::draw() {
   if (!open_) return;
-  if (!beginDialog("Open stream", &popup_, ImVec2(768.0f, 0.0f))) return;
+  if (!beginDialog("Open Stream", &popup_, ImVec2(768.0f, 0.0f))) return;
 
   AbstractOpenStreamWidget *current = nullptr;
   const ImVec4 pane = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
@@ -287,10 +290,10 @@ void StreamSelector::draw() {
   first_frame_ = false;
 
   ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted("dbc File");
+  ImGui::TextUnformatted("DBC File");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(-90.0f);
-  inputText("##dbc", &dbc_file_, "Choose a dbc file to open", ImGuiInputTextFlags_ReadOnly);
+  ImGui::SetNextItemWidth(-(toolbarButtonWidth("Browse...") + ImGui::GetStyle().ItemSpacing.x));
+  inputText("##dbc", &dbc_file_, "Choose a DBC file to open", ImGuiInputTextFlags_ReadOnly);
   ImGui::SameLine();
   if (ImGui::Button("Browse...")) {
     FileDialog::getOpenFileName("Open File", settings.last_dir, ".dbc", [this](const std::string &fn) {

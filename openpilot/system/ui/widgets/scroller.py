@@ -97,6 +97,7 @@ class _Scroller(Widget):
     self._scroll_enabled: bool | Callable[[], bool] = True
 
     self._show_scroll_indicator = scroll_indicator and self._horizontal
+    self.scroll_indicator_start_after: Widget | None = None
     self._scroll_indicator = ScrollIndicator()
     self._edge_shadows = edge_shadows and self._horizontal
 
@@ -146,9 +147,9 @@ class _Scroller(Widget):
 
     # preserve original touch valid callback
     original_touch_valid_callback = item._touch_valid_callback
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and not self._scrolling_to[2]
-                                          and not self.moving_items and (original_touch_valid_callback() if
-                                                                         original_touch_valid_callback else True))
+    item.set_touch_valid_callback(lambda: self._touch_valid() and self.scroll_panel.is_touch_valid()
+                                          and self.enabled and not self._scrolling_to[2] and not self.moving_items
+                                          and (original_touch_valid_callback() if original_touch_valid_callback else True))
 
   def add_widgets(self, items: Sequence[Widget]) -> None:
     for item in items:
@@ -364,7 +365,14 @@ class _Scroller(Widget):
 
     # Draw scroll indicator on top of edge shadows
     if self._show_scroll_indicator and len(self._visible_items) > 0:
-      self._scroll_indicator.update(self._scroll_offset, self._content_size, self._rect)
+      viewport = self._rect
+      if self.scroll_indicator_start_after is not None:
+        offset = min(self._rect.width, max(0.0, self.scroll_indicator_start_after.rect.x
+                                           + self.scroll_indicator_start_after.rect.width
+                                           + self._spacing - self._rect.x))
+        viewport = rl.Rectangle(self._rect.x + offset, self._rect.y, self._rect.width - offset, self._rect.height)
+
+      self._scroll_indicator.update(self._scroll_offset, self._content_size, viewport)
       self._scroll_indicator.render()
 
   def show_event(self):
@@ -396,6 +404,10 @@ class Scroller(Widget):
     self._scroller = self._child(_Scroller([], **kwargs))
     # pass down enabled to child widget for nav stack
     self._scroller.set_enabled(lambda: self.enabled)
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    self._scroller.set_touch_valid_callback(touch_callback)
 
   def _render(self, _, /):
     self._scroller.render(self._rect)

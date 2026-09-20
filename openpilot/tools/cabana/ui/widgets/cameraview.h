@@ -18,6 +18,9 @@
 #include "tools/cabana/core/observable.h"
 #include "msgq/visionipc/visionipc_client.h"
 
+// OS04C10 output, also used by its 1344x760 downscaled video.
+constexpr float DEFAULT_CAMERA_ASPECT_RATIO = 2688.0f / 1520.0f;
+
 // Center-crop the source to fill the destination without stretching.
 inline ImVec2 videoFillUv(const ImVec2 &size, float aspect_ratio) {
   const float ratio = size.x / size.y / aspect_ratio;
@@ -46,6 +49,8 @@ inline VideoPlacement videoPlacement(const ImRect &rect, float source_aspect_rat
   }
   return placement;
 }
+
+void drawVideoFrame(ImDrawList *draw_list, ImTextureRef texture, const ImRect &rect, const VideoPlacement &placement);
 
 // tightly packed RGBA pixels
 struct RgbImage {

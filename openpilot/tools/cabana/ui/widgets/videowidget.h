@@ -70,7 +70,7 @@ private:
   void collectThumbnails();  // moves the decoded thumbnails in once a parseQLog task is done
   // the first thumbnail at or after sec, uploaded to big_thumbnail_texture_; nullptr when there is none
   const RgbImage *thumbnailAt(double sec);
-  void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size);
+  void drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size, float rounding);
   void drawThumbnail(ImDrawList *p, double sec);
   void drawScrubThumbnail(ImDrawList *p, double sec);
   void drawTime(ImDrawList *p, const ImRect &rect, double seconds);
@@ -89,10 +89,10 @@ public:
   // MainWindow calls this every frame with the video dock visibility, so the camera widget gets its
   // vipc thread started and stopped
   void setVisible(bool visible);
-  void showThumbnail(double seconds);
   std::string whatsThis() const;
 
 private:
+  void showThumbnail(double seconds);
   void updateSliderThumbnail();  // the thumbnail follows the mouse over the slider
   std::string formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
@@ -102,7 +102,6 @@ private:
   void skipToEnd();
   void toggleTimeDisplay();
   void createSpeedDropdown();
-  void drawSpeedDropdown(float width);
   void drawSpeedMenuItems();
   void loopPlaybackClicked();
   void cropVideoClicked();
@@ -113,7 +112,7 @@ private:
   std::string speed_text_;
   int speed_index_ = -1;  // checked entry of the speed menu
   bool skip_to_end_enabled_ = true;
-  bool msgs_received_ = false;  // the time is blank until the live stream delivers its first messages
+  bool msgs_received_ = false;  // live-stream timestamps resolve when the first messages arrive
   double thumbnail_display_time_ = -1;
   std::unique_ptr<Slider> slider_;
   std::unique_ptr<TabBar> camera_tab_;
