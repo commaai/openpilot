@@ -18,6 +18,10 @@ class VoiceEQ:
     bell = lowpass(600) - lowpass(200)
     bell /= np.sum(bell * np.cos(2 * np.pi * 400 / sample_rate * n))
     self.kernel = impulse + (10 ** (-4 / 20) - 1) * bell
+    vocal_dip = lowpass(1400) - lowpass(700)
+    response = np.cos(2 * np.pi * 1000 / sample_rate * n)
+    vocal_dip /= np.sum(vocal_dip * response)
+    self.kernel += (10 ** (-3 / 20) - np.sum(self.kernel * response)) * vocal_dip
     if sample_rate > 20000:
       self.kernel += (10 ** (2 / 20) - 1) * (impulse - lowpass(10000))
     self.history = None

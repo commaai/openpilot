@@ -73,6 +73,7 @@ class LivestreamPlayback:
     self.pending_time = 0
     self.generation = 0
     self.playing_generation = 0
+    self.buffering = True
 
   def clear(self):
     self.eq.reset()
@@ -114,6 +115,13 @@ class LivestreamPlayback:
     if self.playing_generation != self.generation:
       self.pending = np.empty(0, dtype=np.float32)
       self.playing_generation = self.generation
+      self.buffering = True
+    # Hold two 20 ms packets on startup/recovery, rather than alternating
+    # individual late packets with silence. Stale audio still expires below.
+    if self.buffering:
+      if self.queue.qsize() < 2:
+        return result
+      self.buffering = False
     written = 0
     while written < frames:
       if time.monotonic_ns() - self.pending_time > 200_000_000:
@@ -122,6 +130,7 @@ class LivestreamPlayback:
         try:
           self.pending_time, self.pending = self.queue.get_nowait()
         except queue.Empty:
+          self.buffering = True
           break
         if time.monotonic_ns() - self.pending_time > 200_000_000:
           continue
@@ -319,7 +328,7 @@ class Soundd:
     diagnostic_at = time.monotonic() + 5
 
     with self.get_stream(sd) as stream:
-      rk = Ratekeeper(20)
+      rk = Ratekeeper(100)
 
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:

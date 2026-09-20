@@ -34,7 +34,7 @@ class TestSoundd(OpenpilotTestCase):
 
 class TestLivestreamPlayback:
   @staticmethod
-  def message(value=8192, frames=960):
+  def message(value=8192, frames=1920):
     import numpy as np
     msg = messaging.new_message('livestreamAudio', valid=True)
     msg.livestreamAudio.sampleRate = 48000
@@ -175,3 +175,33 @@ def test_speaker_test_tone_is_bounded_and_alerts_still_override(mocker):
   for _ in range(148):
     sound.usb_callback(output, 960, None, None)
   assert sound.test_tone_frame is None
+
+
+
+def test_speech_buffer_bridges_short_packet_jitter_and_reprimes(mocker):
+  import numpy as np
+  from openpilot.selfdrive.ui.soundd import LivestreamPlayback
+  playback = LivestreamPlayback()
+  clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic_ns', return_value=1_000_000_000)
+  def feed():
+    msg = TestLivestreamPlayback.message(frames=960)
+    msg.logMonoTime = clock.return_value
+    playback.enqueue(msg)
+  feed()
+  assert not playback.render(960).any()  # wait for the small startup buffer
+  clock.return_value += 20_000_000
+  feed()
+  np.testing.assert_allclose(playback.render(960), 0.25)
+  # Next packet is late; the reserved packet bridges that interval.
+  clock.return_value += 20_000_000
+  np.testing.assert_allclose(playback.render(960), 0.25)
+  clock.return_value += 10_000_000
+  feed()
+  np.testing.assert_allclose(playback.render(960), 0.25)
+  assert not playback.render(960).any()  # actual starvation requires rebuffering
+  feed()
+  assert not playback.render(960).any()
+  feed()
+  np.testing.assert_allclose(playback.render(960), 0.25)
+  playback.clear()
+  assert not playback.render(960).any()

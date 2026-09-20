@@ -6,7 +6,7 @@ from openpilot.common.voice_eq import VoiceEQ
 
 @pytest.mark.parametrize('rate', [16000, 48000])
 def test_voice_eq_frequency_response(rate):
-  for frequency, expected in [(400, -4), (3000, 0)] + ([(14000, 2)] if rate == 48000 else []):
+  for frequency, expected in [(400, -4), (1000, -3), (3000, 0)] + ([(14000, 2)] if rate == 48000 else []):
     eq = VoiceEQ(rate)
     signal = np.sin(2 * np.pi * frequency * np.arange(rate) / rate)
     filtered = np.concatenate([eq.process(chunk) for chunk in np.array_split(signal, 50)])
