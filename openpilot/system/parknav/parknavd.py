@@ -15,7 +15,6 @@ consume GNSS), so it is dead-reckoned by pose deltas and anchored with the GNSS
 heading via a complementary filter whenever the car moves fast enough for the
 GNSS heading to be trustworthy.
 """
-import json
 import math
 import time
 
@@ -32,7 +31,7 @@ PARKNAV_FREQ = 4.
 PUB_DIVISOR = int(20. / PARKNAV_FREQ)
 
 MAX_HEADING_STD = 0.15       # rad
-MAX_BEARING_ACCURACY = 5.    # deg
+MAX_BEARING_ACCURACY = 10.   # deg
 MAX_FIX_AGE = 5.0            # s
 ARRIVAL_RADIUS = 5.         # m
 MAX_NAV_DIST = 500.          # m
@@ -64,11 +63,10 @@ class ParkNavEstimator:
 
 
 def get_destination(params: Params) -> tuple[float, float] | None:
-  raw = params.get("ParkingDestination")
-  if raw is None:
+  dest = params.get("ParkingDestination")
+  if dest is None:
     return None
   try:
-    dest = json.loads(raw)
     return float(dest["latitude"]), float(dest["longitude"])
   except Exception:
     cloudlog.exception("bad ParkingDestination param")
@@ -111,9 +109,9 @@ def update_pose(state: ParkNavEstimator, sm, calibrator: PoseCalibrator) -> None
 
 
 def update_gps(state: ParkNavEstimator, sm, destination: tuple[float, float] | None) -> None:
-  if not sm.updated['gpsLocation'] or not sm.valid['gpsLocation']:
+  if not sm.updated['gpsLocationExternal'] or not sm.valid['gpsLocationExternal']:
     return
-  gps = sm['gpsLocation']
+  gps = sm['gpsLocationExternal']
   t = time.monotonic()
 
   if gps.hasFix and destination is not None:
@@ -146,7 +144,7 @@ def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None
   arrived = total_dist <= ARRIVAL_RADIUS
   if arrived:
     rel_bearing = 0.
-  valid = fix_fresh and bearing_valid and ARRIVAL_RADIUS < total_dist < MAX_NAV_DIST
+  valid = fix_fresh and bearing_valid and total_dist < MAX_NAV_DIST
 
   msg = messaging.new_message('parkNavSignal')
   sig = msg.parkNavSignal
@@ -164,7 +162,7 @@ def main():
   calibrator = PoseCalibrator()
   state = ParkNavEstimator()
 
-  sm = messaging.SubMaster(['gpsLocation', 'deviceMotion', 'extrinsicsCalibration'], poll='deviceMotion')
+  sm = messaging.SubMaster(['gpsLocationExternal', 'deviceMotion', 'extrinsicsCalibration'], poll='deviceMotion')
   pm = messaging.PubMaster(['parkNavSignal'])
 
   frame = 0
@@ -176,7 +174,10 @@ def main():
       calibrator.feed_extrinsics_calibration(sm['extrinsicsCalibration'])
 
     update_pose(state, sm, calibrator)
-    destination = get_destination(params)
+
+    nav_enabled = params.get_bool("ParkingNavEnabled")
+    destination = get_destination(params) if nav_enabled else None
+
     update_gps(state, sm, destination)
 
     if frame % PUB_DIVISOR != 0:

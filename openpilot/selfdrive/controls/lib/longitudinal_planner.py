@@ -22,6 +22,8 @@ A_CRUISE_MIN = -1.2
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
+PARK_NAV_STOP_DECEL = 1.0
+PARK_NAV_STOP_BUFFER = 2.0
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -81,6 +83,10 @@ class LongitudinalPlanner:
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
     if sm['controlsState'].forceDecel:
       v_cruise = 0.0
+
+    if sm.alive['parkNavSignal'] and sm['parkNavSignal'].valid:
+      d = max(sm['parkNavSignal'].totalDist - PARK_NAV_STOP_BUFFER, 0.0)
+      v_cruise = min(v_cruise, math.sqrt(2.0 * PARK_NAV_STOP_DECEL * d))
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
 
