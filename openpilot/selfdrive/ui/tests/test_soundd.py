@@ -113,37 +113,40 @@ class TestLivestreamPlayback:
     mocker.patch.object(Soundd, 'load_sounds')
     clock = mocker.patch('openpilot.selfdrive.ui.soundd.time.monotonic', return_value=10)
     sound = Soundd()
-    sd = mocker.Mock()
-    sd.query_devices.return_value = [{'name': 'built-in', 'max_output_channels': 1},
-                                    {'name': 'USB2.0 Device', 'max_output_channels': 2}]
-    sd.OutputStream.return_value.start.side_effect = RuntimeError('unplugged')
-    sound.update_usb_stream(sd)
-    assert sound.usb_stream is None
-    sd.OutputStream.return_value.close.assert_called_once()
-    sound.update_usb_stream(sd)
-    assert sd.OutputStream.call_count == 1
+    discover = mocker.patch('openpilot.selfdrive.ui.soundd.find_usb_output', return_value=None)
+    factory = mocker.patch('openpilot.selfdrive.ui.soundd.USBSpeaker')
+    sound.update_usb_stream()
+    factory.assert_not_called()
+    # A speaker connected after startup must be discovered on the next retry.
+    discover.return_value = 'plughw:2,0'
     clock.return_value += 3
-    sd.OutputStream.return_value.start.side_effect = None
-    sound.update_usb_stream(sd)
-    assert sound.usb_stream is sd.OutputStream.return_value
-    assert sd.OutputStream.call_args.kwargs['device'] == 1
-    assert sd.OutputStream.call_args.kwargs['channels'] == 2
+    factory.return_value.start.side_effect = RuntimeError('unplugged')
+    sound.update_usb_stream()
+    assert sound.usb_stream is None
+    factory.return_value.close.assert_called_once()
+    sound.update_usb_stream()
+    assert factory.call_count == 1
+    clock.return_value += 3
+    factory.return_value.start.side_effect = None
+    sound.update_usb_stream()
+    assert sound.usb_stream is factory.return_value
+    assert factory.call_args.args[0] == 'plughw:2,0'
 
   def test_missing_usb_uses_builtin_with_same_gain(self, mocker):
     import numpy as np
     from openpilot.selfdrive.ui.soundd import Soundd
     mocker.patch.object(Soundd, 'load_sounds')
     sound = Soundd()
-    sd = mocker.Mock()
-    sd.query_devices.return_value = [{'name': 'built-in', 'max_output_channels': 1}]
-    sound.update_usb_stream(sd)
-    sd.OutputStream.assert_not_called()
+    mocker.patch('openpilot.selfdrive.ui.soundd.find_usb_output', return_value=None)
+    factory = mocker.patch('openpilot.selfdrive.ui.soundd.USBSpeaker')
+    sound.update_usb_stream()
+    factory.assert_not_called()
     sound.livestream.enqueue(self.message())
     output = np.empty((960, 1), dtype=np.float32)
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, np.tanh(1.0))
     sound.usb_stream = mocker.Mock(active=False)
-    sound.update_usb_stream(sd)
+    sound.update_usb_stream()
     assert sound.usb_stream is None
     sound.livestream.enqueue(self.message())
     sound.callback(output, 960, None, None)

@@ -13,6 +13,7 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.selfdrive.ui.usb_speaker import USBSpeaker, find_usb_output
 from openpilot.system import micd
 from openpilot.common.hardware import HARDWARE
 
@@ -211,7 +212,7 @@ class Soundd:
     # Give driving alerts priority, even when speech uses USB.
     data_out[:] = voice[:, None] if self.current_alert == AudibleAlert.none else 0
 
-  def update_usb_stream(self, sd):
+  def update_usb_stream(self):
     if self.usb_stream is not None:
       try:
         if self.usb_stream.active:
@@ -229,17 +230,14 @@ class Soundd:
     self.usb_retry_at = time.monotonic() + 3
     stream = None
     try:
-      # Select USB explicitly; callback handles fallback to the built-in output.
-      devices = sd.query_devices()
-      device = next((i for i, d in enumerate(devices) if 'usb' in d['name'].lower() and d['max_output_channels'] > 0), None)
+      # Read the live ALSA device list; PortAudio only enumerates at startup.
+      device = find_usb_output()
       if device is None:
         return
-      channels = min(2, devices[device]['max_output_channels'])
-      stream = sd.OutputStream(device=device, channels=channels, samplerate=SAMPLE_RATE,
-                               dtype='float32', callback=self.usb_callback, blocksize=SAMPLE_BUFFER)
+      stream = USBSpeaker(device, self.usb_callback)
       stream.start()
       self.usb_stream = stream
-      cloudlog.info(f"USB speech stream started: {device=} {channels=}")
+      cloudlog.info(f"USB speech stream started: {device=}")
     except Exception:
       if stream is not None:
         try:
@@ -302,7 +300,7 @@ class Soundd:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         sm.update(0)
-        self.update_usb_stream(sd)
+        self.update_usb_stream()
         for _ in range(16):
           msg = messaging.recv_one_or_none(livestream)
           if msg is None:
