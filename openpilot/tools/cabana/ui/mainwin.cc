@@ -742,12 +742,12 @@ void MainWindow::drawPanelToggles() {
   for (const auto &toggle : toggles) width += ImGui::CalcTextSize(toggle.label).x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x;
   const float x = ImGui::GetWindowWidth() - width;
   if (x <= ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x) return;  // View menu remains available on narrow windows.
-  ImGui::SetCursorPosX(x);
+  ImGui::SetCursorPos(ImVec2(x, (ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f));
   for (const auto &toggle : toggles) {
     const bool enabled = toggle.visible != &video_visible_ || !hasStream() || !can->liveStreaming();
     const bool selected = enabled && (toggle.visible ? *toggle.visible : messages_visible_ || log_messages_visible_);
     ImGui::BeginDisabled(!enabled);
-    if (ImGui::MenuItem(toggle.label, nullptr, selected)) {
+    if (ImGui::Button(toggle.label)) {
       if (toggle.visible) *toggle.visible = !selected;
       else messages_visible_ = log_messages_visible_ = !selected;
     }
