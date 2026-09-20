@@ -19,7 +19,6 @@ from openpilot.common.hardware import HARDWARE
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 960 # 20 ms, also used for livestream voice playback
-LIVESTREAM_GAIN = 4.0 # +12 dB for remote speech, independent of alert volume
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp to max volume for warningImmediate
@@ -97,7 +96,7 @@ class LivestreamPlayback:
     if msg.logMonoTime - self.last_audio_time > 200_000_000:
       self.eq.reset()
     self.last_audio_time = msg.logMonoTime
-    pcm = np.tanh(self.eq.process(pcm) * LIVESTREAM_GAIN)
+    pcm = np.clip(self.eq.process(pcm), -1.0, 1.0)
     for offset in range(0, len(pcm), SAMPLE_BUFFER):
       item = (msg.logMonoTime, pcm[offset:offset + SAMPLE_BUFFER])
       try:
