@@ -233,16 +233,19 @@ void DetailWidget::drawTabWidget() {
   page_tabs_.draw();
   if (tab_widget_index_ == 0) {
     if (heatmap_visible_) {
-      // Keep most of a short window available for signal rows.
+      // Allow the heatmap to grow while reserving room for signal rows.
       const float avail = ImGui::GetContentRegionAvail().y;
       const float max_height = std::max(avail - style.ItemSpacing.y - SignalView::minimumHeight(), 1.0f);
       const float height = std::min(binary_view_->minimumSizeHint().y, max_height);
-      ImGui::BeginChild("binary_view", ImVec2(0, std::max(height, 1.0f)), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+      ImGui::SetNextWindowSizeConstraints(ImVec2(0, std::min(ImGui::GetFrameHeight(), max_height)),
+                                         ImVec2(FLT_MAX, max_height));
+      ImGui::BeginChild("binary_view", ImVec2(0, std::max(height, 1.0f)), ImGuiChildFlags_ResizeY, ImGuiWindowFlags_HorizontalScrollbar);
       binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
       binary_view_->draw();
       ImGui::EndChild();
     }
-    ImGui::BeginChild("signal_view", ImVec2(0, 0), ImGuiChildFlags_None,
+    const float signal_height = std::max(ImGui::GetContentRegionAvail().y, SignalView::minimumHeight());
+    ImGui::BeginChild("signal_view", ImVec2(0, signal_height), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view_->draw();
@@ -254,8 +257,7 @@ void DetailWidget::drawTabWidget() {
 
 void DetailWidget::draw() {
   tabbar_.draw();
-  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
   drawToolBar();
 
   if (warning_widget_visible_) {
