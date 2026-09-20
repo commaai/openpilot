@@ -137,6 +137,7 @@ class Soundd:
     self.load_sounds()
     self.livestream = LivestreamPlayback()
     self.usb_stream = None
+    self.usb_device = None
     self.usb_retry_at = 0.0
 
     self.current_alert = AudibleAlert.none
@@ -215,7 +216,7 @@ class Soundd:
   def update_usb_stream(self):
     if self.usb_stream is not None:
       try:
-        if self.usb_stream.active:
+        if self.usb_stream.active and find_usb_output() == self.usb_device:
           return
       except Exception:
         pass
@@ -237,6 +238,7 @@ class Soundd:
       stream = USBSpeaker(device, self.usb_callback)
       stream.start()
       self.usb_stream = stream
+      self.usb_device = device
       cloudlog.info(f"USB speech stream started: {device=}")
     except Exception:
       if stream is not None:

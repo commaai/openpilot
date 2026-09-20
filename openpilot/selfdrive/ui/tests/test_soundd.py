@@ -131,6 +131,12 @@ class TestLivestreamPlayback:
     sound.update_usb_stream()
     assert sound.usb_stream is factory.return_value
     assert factory.call_args.args[0] == 'plughw:2,0'
+    # A disappeared device must be closed even if the backend still says active.
+    factory.return_value.active = True
+    discover.return_value = None
+    sound.update_usb_stream()
+    assert sound.usb_stream is None
+    assert factory.return_value.close.call_count == 2
 
   def test_missing_usb_uses_builtin_with_same_gain(self, mocker):
     import numpy as np
