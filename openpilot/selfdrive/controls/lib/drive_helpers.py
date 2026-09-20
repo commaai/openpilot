@@ -5,7 +5,7 @@ from openpilot.common.realtime import DT_CTRL, DT_MDL
 MIN_SPEED = 1.0
 CONTROL_N = 17
 CAR_ROTATION_RADIUS = 0.0
-# This is a turn radius smaller than most cars can achieve
+# PID output bound for LatControlCurvature (not used by torque-controlled cars).
 MAX_CURVATURE = 0.2
 MIN_STABLE_DELAY = 0.3
 
@@ -26,7 +26,7 @@ def smooth_value(val, prev_val, tau, dt=DT_MDL):
   return alpha * val + (1 - alpha) * prev_val
 
 def clip_curvature(v_ego, prev_curvature, new_curvature, roll) -> tuple[float, bool]:
-  # This function respects ISO lateral jerk and acceleration limits + a max curvature
+  # Limit lateral jerk and acceleration; no fixed curvature cap.
   v_ego = max(v_ego, MIN_SPEED)
   max_curvature_rate = MAX_LATERAL_JERK / (v_ego ** 2)  # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
   new_curvature = np.clip(new_curvature,
@@ -38,8 +38,7 @@ def clip_curvature(v_ego, prev_curvature, new_curvature, roll) -> tuple[float, b
   min_lat_accel = -MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
   new_curvature, limited_accel = clamp(new_curvature, min_lat_accel / v_ego ** 2, max_lat_accel / v_ego ** 2)
 
-  new_curvature, limited_max_curv = clamp(new_curvature, -MAX_CURVATURE, MAX_CURVATURE)
-  return float(new_curvature), limited_accel or limited_max_curv
+  return float(new_curvature), limited_accel
 
 
 def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL):

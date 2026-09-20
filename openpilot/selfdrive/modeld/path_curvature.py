@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import numpy as np
 
-PATH_LOOKAHEAD_METERS = 3.0
+PATH_LOOKAHEAD_METERS = 5.0
 
 
 def curvature_from_path(positions: np.ndarray) -> float | None:
-  """Aim at a point 3 meters along the path, starting at the vehicle origin.
+  """Aim up to 5 meters along the path, or at its end if it is shorter.
 
   Coordinates are x forward, y right. Return None if the path cannot supply a
   usable forward target. This is a pure-pursuit steering target, not local path curvature.
@@ -19,15 +19,18 @@ def curvature_from_path(positions: np.ndarray) -> float | None:
 
   previous = np.zeros(2)
   distance = 0.0
+  target = points[-1, :2]
   for point in points[:, :2]:
     segment_length = float(np.linalg.norm(point - previous))
     if segment_length > 0 and distance + segment_length >= PATH_LOOKAHEAD_METERS:
       fraction = (PATH_LOOKAHEAD_METERS - distance) / segment_length
-      x, y = previous + fraction * (point - previous)
-      if x <= 0:
-        return None
-      return float(2 * y / (x * x + y * y))
+      target = previous + fraction * (point - previous)
+      break
     distance += segment_length
     previous = point
 
-  return None
+  x, y = target
+  target_distance_squared = float(x * x + y * y)
+  if x <= 0 or target_distance_squared < 1e-6:
+    return None
+  return float(2 * y / target_distance_squared)
