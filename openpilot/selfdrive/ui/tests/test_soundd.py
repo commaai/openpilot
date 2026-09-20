@@ -157,3 +157,21 @@ class TestLivestreamPlayback:
     sound.livestream.enqueue(self.message())
     sound.callback(output, 960, None, None)
     np.testing.assert_allclose(output, 0.25)
+
+
+def test_speaker_test_tone_is_bounded_and_alerts_still_override(mocker):
+  import numpy as np
+  from openpilot.selfdrive.ui.soundd import Soundd
+  mocker.patch.object(Soundd, 'load_sounds')
+  sound = Soundd()
+  sound.usb_stream = mocker.Mock()
+  output = np.empty((960, 2), dtype=np.float32)
+  sound.request_test_sound()
+  sound.usb_callback(output, 960, None, None)
+  assert 0 < np.max(np.abs(output)) <= 0.12
+  sound.current_alert = AudibleAlert.warningImmediate
+  sound.usb_callback(output, 960, None, None)
+  assert not output.any()
+  for _ in range(148):
+    sound.usb_callback(output, 960, None, None)
+  assert sound.test_tone_frame is None

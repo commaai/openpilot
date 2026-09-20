@@ -1,5 +1,6 @@
 import math
 import queue
+import signal
 import numpy as np
 import time
 import wave
@@ -138,6 +139,9 @@ class Soundd:
     self.usb_stream = None
     self.usb_device = None
     self.usb_retry_at = 0.0
+    self.test_tone_frame = None
+    self.voice_input_peak = 0.0
+    self.voice_output_peak = 0.0
 
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
@@ -199,7 +203,7 @@ class Soundd:
     alert_active = self.current_alert != AudibleAlert.none
     alerts = self.get_sound_data(frames)
     # Use the same gain/limiter on either output; only one consumes speech.
-    voice = self.livestream.render(frames) if self.usb_stream is None else 0
+    voice = self.render_voice(frames) if self.usb_stream is None else 0
     data_out[:frames, 0] = alerts if alert_active else voice
 
   def usb_callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
@@ -208,9 +212,26 @@ class Soundd:
     if self.usb_stream is None:
       data_out.fill(0)
       return
-    voice = self.livestream.render(frames)
+    voice = self.render_voice(frames)
     # Give driving alerts priority, even when speech uses USB.
     data_out[:] = voice[:, None] if self.current_alert == AudibleAlert.none else 0
+
+  def request_test_sound(self, *_):
+    # SIGUSR1 provides a local diagnostic without taking over a WebRTC session.
+    self.test_tone_frame = 0
+
+  def render_voice(self, frames):
+    voice = self.livestream.render(frames)
+    if self.test_tone_frame is not None:
+      position = np.arange(frames) + self.test_tone_frame
+      t = position / SAMPLE_RATE
+      envelope = np.clip(np.minimum((t % 1) / 0.02, (0.32 - t % 1) / 0.02), 0, 1)
+      voice = (0.12 * envelope * np.sin(2 * np.pi * 660 * t)).astype(np.float32)
+      self.test_tone_frame += frames
+      if self.test_tone_frame >= SAMPLE_RATE * 3:
+        self.test_tone_frame = None
+    self.voice_output_peak = max(self.voice_output_peak, float(np.max(np.abs(voice))))
+    return voice
 
   def update_usb_stream(self):
     if self.usb_stream is not None:
@@ -294,6 +315,8 @@ class Soundd:
 
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
     livestream = messaging.sub_sock('livestreamAudio')
+    signal.signal(signal.SIGUSR1, self.request_test_sound)
+    diagnostic_at = time.monotonic() + 5
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
@@ -307,6 +330,9 @@ class Soundd:
           if msg is None:
             break
           self.livestream.enqueue(msg)
+          if msg.livestreamAudio.data and len(msg.livestreamAudio.data) % 2 == 0:
+            samples = np.frombuffer(msg.livestreamAudio.data, dtype=np.int16).astype(np.float32) / 32768
+            self.voice_input_peak = max(self.voice_input_peak, float(np.max(np.abs(samples))))
 
         # freeze volume during alerts to avoid mic feedback increasing volume
         if sm.updated['soundPressure']:
@@ -322,6 +348,11 @@ class Soundd:
           ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
           self.current_volume = max(self.current_volume, ramp_vol)
 
+        if time.monotonic() >= diagnostic_at:
+          cloudlog.info(f"Speech output: input_peak={self.voice_input_peak:.4f} output_peak={self.voice_output_peak:.4f} "
+                        + f"usb={self.usb_stream is not None} alert={self.current_alert}")
+          self.voice_input_peak = self.voice_output_peak = 0.0
+          diagnostic_at = time.monotonic() + 5
         rk.keep_time()
 
         assert stream.active
