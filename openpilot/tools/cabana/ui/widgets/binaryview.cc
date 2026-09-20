@@ -348,8 +348,8 @@ void BinaryView::draw() {
     const float x = std::clamp(grid_pos_.x + IM_ROUND(column * column_width_), grid_pos_.x + 0.5f, right - 0.5f);
     painter->AddLine(ImVec2(x, grid_pos_.y), ImVec2(x, bottom), grid_color);
   }
-  for (int row = 0; row <= rows; ++row) {
-    const float y = grid_pos_.y + row * CELL_HEIGHT;
+  for (int row = 0; rows > 0 && row <= rows; ++row) {
+    const float y = std::clamp(grid_pos_.y + row * CELL_HEIGHT, grid_pos_.y + 0.5f, bottom - 0.5f);
     painter->AddLine(ImVec2(grid_pos_.x, y), ImVec2(right, y), grid_color);
   }
 
