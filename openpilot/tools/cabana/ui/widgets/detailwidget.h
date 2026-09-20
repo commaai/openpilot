@@ -88,6 +88,7 @@ private:
   bool action_remove_msg_enabled_ = false;
   bool heatmap_live_ = true;
   bool heatmap_visible_ = true;
+  float heatmap_height_ = -1.0f;
   std::string heatmap_all_text_ = "All";
   ImRect binary_view_rect_, signal_view_rect_;  // child window rects of the last drawTabWidget
   std::unique_ptr<LogsWidget> history_log_;
