@@ -277,6 +277,8 @@ def main(demo=False):
     params.put_bool("ChestnutActive", model is not None)
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
+  if CHESTNUT:
+    small_model.warmup()
   if model is None:
     model = small_model
   params.put_bool("ChestnutLoading", False)
