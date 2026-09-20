@@ -1452,6 +1452,8 @@ struct ParkNavSignal {
   totalDist @3 :Float32;
 
   valid @4 :Bool;
+
+  arrived @5 :Bool;
 }
 
 struct ProcLog {

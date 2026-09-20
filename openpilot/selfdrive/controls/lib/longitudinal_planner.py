@@ -85,8 +85,11 @@ class LongitudinalPlanner:
       v_cruise = 0.0
 
     if sm.alive['parkNavSignal'] and sm['parkNavSignal'].valid:
-      d = max(sm['parkNavSignal'].totalDist - PARK_NAV_STOP_BUFFER, 0.0)
-      v_cruise = min(v_cruise, math.sqrt(2.0 * PARK_NAV_STOP_DECEL * d))
+      if sm['parkNavSignal'].arrived:
+        v_cruise = 0.0
+      else:
+        d = max(sm['parkNavSignal'].totalDist - PARK_NAV_STOP_BUFFER, 0.0)
+        v_cruise = min(v_cruise, math.sqrt(2.0 * PARK_NAV_STOP_DECEL * d))
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
 

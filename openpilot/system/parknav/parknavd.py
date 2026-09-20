@@ -60,6 +60,8 @@ class ParkNavEstimator:
     self.last_t: float | None = None
 
     self.last_fix_t: float | None = None
+    self.arrived = False
+    self.last_destination: tuple[float, float] | None = None
 
 
 def get_destination(params: Params) -> tuple[float, float] | None:
@@ -134,6 +136,10 @@ def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None
   if destination is None:
     return None
 
+  if destination != state.last_destination:
+    state.arrived = False
+    state.last_destination = destination
+
   now = time.monotonic()
   fix_fresh = state.last_fix_t is not None and (now - state.last_fix_t) < MAX_FIX_AGE
   bearing_valid = state.heading_anchored and state.yaw_valid
@@ -141,7 +147,9 @@ def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None
   total_dist = float(np.linalg.norm(state.pos_ned))
   bearing_to_target = math.atan2(-state.pos_ned[1], -state.pos_ned[0])
   rel_bearing = wrap_angle(bearing_to_target - state.yaw)
-  arrived = total_dist <= ARRIVAL_RADIUS
+  if fix_fresh and total_dist <= ARRIVAL_RADIUS:
+    state.arrived = True
+  arrived = state.arrived
   if arrived:
     rel_bearing = 0.
   valid = fix_fresh and bearing_valid and total_dist < MAX_NAV_DIST
@@ -152,6 +160,7 @@ def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None
   sig.lateralOffset = total_dist * math.sin(rel_bearing)
   sig.forwardDist = total_dist * math.cos(rel_bearing)
   sig.totalDist = total_dist
+  sig.arrived = arrived
   sig.valid = valid
   return msg
 
