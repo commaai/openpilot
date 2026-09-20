@@ -144,7 +144,7 @@ def make_signal(state: ParkNavEstimator, destination: tuple[float, float] | None
   arrived = total_dist <= ARRIVAL_RADIUS
   if arrived:
     rel_bearing = 0.
-  valid = fix_fresh and bearing_valid and ARRIVAL_RADIUS < total_dist < MAX_NAV_DIST
+  valid = fix_fresh and bearing_valid and total_dist < MAX_NAV_DIST
 
   msg = messaging.new_message('parkNavSignal')
   sig = msg.parkNavSignal
