@@ -9,6 +9,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "tools/cabana/core/heatmap.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -39,6 +40,7 @@ public:
   std::string whatsThis() const;
 
   Observable<const cabana::Signal *> signalClicked;
+  Observable<> signalsChanged;
   Observable<const cabana::Signal *> signalHovered;
   Observable<const cabana::Signal *, cabana::Signal &> editSignal;
   Observable<const MessageId &, const cabana::Signal *, bool, bool> showChart;
@@ -53,6 +55,7 @@ private:
     bool valid = false;
   };
 
+  void updateSignals();
   void refresh();  // rebuilds the grid from the DBC message
   void setCell(int row, int col, uint8_t val, const CabanaColor &color);
   const std::vector<std::array<uint32_t, 8>> &bitFlipChanges(size_t msg_size);
@@ -73,15 +76,18 @@ private:
 
   void paintCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const;
   bool hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const;
+  void drawSignalOutline(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
   void drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const;
 
   MessageId msg_id_;
   std::vector<Cell> cells_;
+  std::vector<const cabana::Signal *> visible_signals_;
   int row_count_ = 0;
   bool heatmap_live_mode_ = true;
   struct BitFlipTracker {
     std::optional<std::pair<double, double>> time_range;
-    std::vector<std::array<uint32_t, 8>> flip_counts;
+    HeatmapCounts counts;
+    bool valid = false;
   } bit_flip_tracker_;
 
   BinaryIndex anchor_index_;
