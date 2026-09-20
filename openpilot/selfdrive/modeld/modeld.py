@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from collections.abc import Callable
+from contextlib import ExitStack
 import base64
 import ctypes
 from functools import cached_property
@@ -12,9 +13,10 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
 import math
+import multiprocessing as mp
 import pickle
-import threading
 import time
+from types import SimpleNamespace
 import numpy as np
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
@@ -37,6 +39,7 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.helpers import MODELS_DIR, chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob
+from openpilot.selfdrive.modeld.inference_process import InferenceProcess
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
@@ -44,6 +47,7 @@ LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 BIG_MODEL_TIMEOUT = 60
+INFERENCE_TIMEOUT = 0.15
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -76,8 +80,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
 class ChestnutGpuState:
   # GPU metrics require modeld's GPU context
-  def __init__(self, pm: PubMaster, big: bool):
-    self.pm = pm
+  def __init__(self, big: bool):
     self.big = big
     self.valid = True
     self.sends = 0
@@ -88,7 +91,7 @@ class ChestnutGpuState:
     smu = Device["AMD"].iface.dev_impl.smu
     return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True, timeout=100)
 
-  def send(self) -> None:
+  def get_msg(self):
     msg = messaging.new_message('chestnutGpuState')
     state = msg.chestnutGpuState
     self.sends += 1
@@ -117,7 +120,7 @@ class ChestnutGpuState:
         setattr(state, k, v)
 
     msg.valid = not self.big or (self.valid and bool(self.metrics))
-    self.pm.send('chestnutGpuState', msg)
+    return msg
 
 
 class FrameMeta:
@@ -222,7 +225,46 @@ class ModelState:
     self.prev_desire[:] = 0
 
 
+class _BigModel:
+  def __init__(self, width, height, frames):
+    self.model = ModelState(width, height, True)
+    self.model.warmup()
+    self.bufs = {name: SimpleNamespace(data=frame) for name, frame in
+                 zip(self.model.vision_input_names, np.frombuffer(frames, dtype=np.uint8).reshape(2, -1), strict=True)}
+    self.state = ChestnutGpuState(True)
+    # The supervisor must be able to preempt a worker stuck in a device wait.
+    config_realtime_process(7, 53)
+
+  def __call__(self, transforms, inputs, send_state):
+    messages = []
+    callback = (lambda: messages.append(self.state.get_msg().to_bytes())) if send_state else None
+    output = self.model.run(self.bufs, transforms, inputs, callback)
+    return output, messages
+
+
+class BigModelProcess:
+  chestnut = True
+  vision_input_names = ('img', 'big_img')
+
+  def __init__(self, width, height, cleanup=None):
+    stride, y_height, uv_height, _ = get_nv12_info(width, height)
+    self.frame_size = stride * (y_height + uv_height)
+    self.shared_frames = mp.get_context('spawn').RawArray('B', 2 * self.frame_size)
+    self.frames = np.frombuffer(self.shared_frames, dtype=np.uint8).reshape(2, -1)
+    self.worker = InferenceProcess(_BigModel, (width, height, self.shared_frames), startup_timeout=BIG_MODEL_TIMEOUT, cleanup=cleanup)
+
+  def run(self, bufs, transforms, inputs, send_state, deadline):
+    for name, frame in zip(self.vision_input_names, self.frames, strict=True):
+      np.copyto(frame, np.frombuffer(bufs[name].data, dtype=np.uint8, count=self.frame_size))
+    return self.worker.call(transforms, inputs, send_state, timeout=deadline - time.monotonic())
+
+
 def main(demo=False):
+  with ExitStack() as cleanup:
+    modeld_thread(demo, cleanup)
+
+
+def modeld_thread(demo, cleanup):
   cloudlog.warning("modeld init")
 
   CHESTNUT = chestnut_present() and chestnut_compiled()
@@ -232,7 +274,8 @@ def main(demo=False):
   params.put_bool("ChestnutLoading", CHESTNUT)
   params.remove("ChestnutActive")
 
-  config_realtime_process(7, 54)
+  if not CHESTNUT:
+    config_realtime_process(7, 54)
 
   # visionipc clients
   while True:
@@ -261,24 +304,20 @@ def main(demo=False):
   cloudlog.warning("loading model")
   model = None
   if CHESTNUT:
-    big_model = None
-    def load_big():
-      nonlocal big_model
-      try:
-        m = ModelState(vipc_client_main.width, vipc_client_main.height, True)
-        m.warmup()
-        big_model = m
-      except Exception:
-        cloudlog.exception("big model load failed")
-    loader = threading.Thread(target=load_big, daemon=True)
-    loader.start()
-    loader.join(BIG_MODEL_TIMEOUT)
-    model = big_model
+    try:
+      model = BigModelProcess(vipc_client_main.width, vipc_client_main.height, cleanup=cleanup)
+    except Exception:
+      cloudlog.exception("big model load failed")
     params.put_bool("ChestnutActive", model is not None)
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
+  if CHESTNUT:
+    small_model.warmup()
   if model is None:
     model = small_model
+  # Spawn and initialize device threads before entering realtime scheduling.
+  if CHESTNUT:
+    config_realtime_process(7, 54)
   params.put_bool("ChestnutLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
@@ -289,7 +328,7 @@ def main(demo=False):
 
   publish_state = PublishState()
   params = Params()
-  chestnut_state = ChestnutGpuState(pm, model.chestnut) if CHESTNUT else None
+  chestnut_state = ChestnutGpuState(model.chestnut) if CHESTNUT else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -399,13 +438,23 @@ def main(demo=False):
     try:
       send_chestnut = (chestnut_state is not None and
                        run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutGpuState'].frequency) == 0)
-      model_output = model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None)
+      if isinstance(model, BigModelProcess):
+        # Bound each in-flight request, including the first one. Camera EOF
+        # timestamps remain untouched (also when replaying recorded frames).
+        model_output, gpu_messages = model.run(bufs, transforms, inputs, send_chestnut, time.monotonic() + INFERENCE_TIMEOUT)
+        for gpu_message in gpu_messages:
+          pm.send('chestnutGpuState', gpu_message)
+      else:
+        callback = (lambda: pm.send('chestnutGpuState', chestnut_state.get_msg())) if send_chestnut else None
+        model_output = model.run(bufs, transforms, inputs, callback)
     except Exception:
       if not params.get_bool("ChestnutActive"):
         raise
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("ChestnutActive", False)
+      if isinstance(model, BigModelProcess):
+        model.worker.stop()
       model = small_model
       if chestnut_state is not None:
         chestnut_state.big = False
