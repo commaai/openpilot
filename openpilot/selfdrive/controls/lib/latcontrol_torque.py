@@ -32,6 +32,11 @@ JERK_GAIN = 0.3
 LAT_ACCEL_REQUEST_BUFFER_SECONDS = 1.0
 VERSION = 1
 
+# Driver-initiated left blinker kick: open-loop fixed torque that bypasses the
+# curvature loop entirely. Positive torque is left. Fraction of steer_max.
+BLINKER_KICK_SECONDS = 4.0
+BLINKER_KICK_TORQUE = 0.5
+
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI, dt):
     super().__init__(CP, CI, dt)
@@ -45,6 +50,14 @@ class LatControlTorque(LatControl):
     self.lat_accel_request_buffer = deque([0.] * self.lat_accel_request_buffer_len , maxlen=self.lat_accel_request_buffer_len)
     self.lookahead_frames = int(JERK_LOOKAHEAD_SECONDS / self.dt)
     self.jerk_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * LP_FILTER_CUTOFF_HZ), self.dt)
+    self.blinker_kick_frames = int(BLINKER_KICK_SECONDS / self.dt)
+    self.blinker_kick_frames_left = 0
+    self.prev_left_blinker = False
+
+  def reset(self):
+    super().reset()
+    self.blinker_kick_frames_left = 0
+    self.prev_left_blinker = False
 
   def update_torque_parameters(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -63,6 +76,15 @@ class LatControlTorque(LatControl):
     measurement = measured_curvature * CS.vEgo ** 2
     future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
     self.lat_accel_request_buffer.append(future_desired_lateral_accel)
+
+    # Latch the kick on the rising edge of the driver's left blinker. It runs for the
+    # full duration regardless of the blinker afterwards, but the driver taking the
+    # wheel or lateral going inactive aborts it.
+    if active and CS.leftBlinker and not self.prev_left_blinker:
+      self.blinker_kick_frames_left = self.blinker_kick_frames
+    self.prev_left_blinker = CS.leftBlinker
+    if not active or CS.steeringPressed:
+      self.blinker_kick_frames_left = 0
 
     roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
     curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
@@ -105,4 +127,15 @@ class LatControlTorque(LatControl):
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
-    return -output_torque, 0.0, pid_log
+    steer = -output_torque
+
+    if self.blinker_kick_frames_left > 0:
+      self.blinker_kick_frames_left -= 1
+      steer = BLINKER_KICK_TORQUE
+      # the closed loop is not driving the wheel right now, so don't let it wind up
+      self.pid.reset()
+      pid_log.active = True
+      pid_log.output = float(steer)
+      pid_log.saturated = False
+
+    return float(np.clip(steer, -self.steer_max, self.steer_max)), 0.0, pid_log
