@@ -19,13 +19,11 @@ namespace {
 const int CELL_HEIGHT = 36;
 const float CELL_FONT_SIZE = UI_FONT_SIZE + 2.0f;
 const float SMALL_FONT_SIZE = 10.0f;  // Inter needs 10 px for a 7 px cap height
-const int VERTICAL_HEADER_WIDTH = 30;
+const int GRID_COLUMN_COUNT = BinaryView::COLUMN_COUNT + 1;
 inline int get_bit_pos(const BinaryIndex &index) { return flipBitPos(index.row * 8 + index.column); }
 
-inline ImU32 paletteHighlight() { return ImGui::GetColorU32(ImGuiCol_Header); }
 inline ImU32 paletteBase() { return ImGui::GetColorU32(ImGuiCol_ChildBg); }
-inline ImU32 paletteText(bool active) { return ImGui::GetColorU32(active ? ImGuiCol_Text : ImGuiCol_TextDisabled); }
-const ImU32 DARK_GRAY = IM_COL32(128, 128, 128, 255);
+inline ImU32 paletteText() { return ImGui::GetColorU32(ImGuiCol_Text); }
 
 // JetBrains Mono ships no bold variant, so emulate one by drawing the glyphs again a fraction of a
 // pixel to the right. Keeps the monospace advance, unlike switching to the proportional bold face.
@@ -128,7 +126,7 @@ ImVec2 BinaryView::minimumSizeHint() const {
   pushMonoFont(CELL_FONT_SIZE);
   const float min_section_size = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
   popMonoFont();
-  return {(min_section_size + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
+  return {min_section_size * GRID_COLUMN_COUNT + 2,
           static_cast<float>(CELL_HEIGHT * std::min(row_count_, 10) + 2)};
 }
 
@@ -175,6 +173,8 @@ void BinaryView::highlightPosition(const ImVec2 &pos) {
     auto item = &cellAt(index);
     const cabana::Signal *sig = item->sigs.empty() ? nullptr : item->sigs.back();
     highlight(sig);
+  } else {
+    highlight(nullptr);
   }
 }
 
@@ -294,18 +294,18 @@ std::tuple<int, int, bool> BinaryView::getSelection(BinaryIndex index) {
 }
 
 BinaryIndex BinaryView::indexAt(const ImVec2 &pos) const {
-  if (column_width_ <= 0 || pos.x < grid_pos_.x + VERTICAL_HEADER_WIDTH || pos.y < grid_pos_.y) return {};
-  int column = static_cast<int>((pos.x - grid_pos_.x - VERTICAL_HEADER_WIDTH) / column_width_);
+  if (column_width_ <= 0 || pos.x < grid_pos_.x + IM_ROUND(column_width_) || pos.y < grid_pos_.y) return {};
+  int column = 0;
+  while (column < COLUMN_COUNT && pos.x >= grid_pos_.x + IM_ROUND((column + 2) * column_width_)) ++column;
   int row = static_cast<int>((pos.y - grid_pos_.y) / CELL_HEIGHT);
   if (column >= COLUMN_COUNT || row >= row_count_) return {};
   return {row, column};
 }
 
 ImRect BinaryView::visualRect(const BinaryIndex &index) const {
-  // sections are integral: round the edges so neighboring cells share them exactly and the cells are
-  // painted edge to edge with no grid line between them
-  const float x0 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND(index.column * column_width_);
-  const float x1 = grid_pos_.x + VERTICAL_HEADER_WIDTH + IM_ROUND((index.column + 1) * column_width_);
+  // Round shared edges consistently across the byte index, bits, and hex column.
+  const float x0 = grid_pos_.x + IM_ROUND((index.column + 1) * column_width_);
+  const float x1 = grid_pos_.x + IM_ROUND((index.column + 2) * column_width_);
   const float y = grid_pos_.y + index.row * CELL_HEIGHT;
   return ImRect(x0, y, x1, y + CELL_HEIGHT);
 }
@@ -322,22 +322,44 @@ void BinaryView::draw() {
   pushMonoFont(CELL_FONT_SIZE);
   const float min_column_width = std::ceil(ImGui::CalcTextSize("FF").x) + 10.0f;
   popMonoFont();
-  const float width = std::max(ImGui::GetContentRegionAvail().x, VERTICAL_HEADER_WIDTH + min_column_width * COLUMN_COUNT);
-  column_width_ = std::max(min_column_width, (width - VERTICAL_HEADER_WIDTH) / COLUMN_COUNT);
+  const float width = std::max(ImGui::GetContentRegionAvail().x, min_column_width * GRID_COLUMN_COUNT);
+  column_width_ = std::max(min_column_width, width / GRID_COLUMN_COUNT);
   grid_pos_ = ImGui::GetCursorScreenPos();
   ImGui::InvisibleButton("##binary_view", ImVec2(std::max(width, 1.0f), std::max(static_cast<float>(rows * CELL_HEIGHT), 1.0f)));
   ImDrawList *painter = ImGui::GetWindowDrawList();
   painter->AddRectFilled(grid_pos_, ImVec2(grid_pos_.x + width, grid_pos_.y + rows * CELL_HEIGHT), paletteBase());
 
   for (int row = 0; row < rows; ++row) {
-    const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + VERTICAL_HEADER_WIDTH, grid_pos_.y + (row + 1) * CELL_HEIGHT);
-    painter->AddRectFilled(r.Min, r.Max, ImGui::GetColorU32(ImGuiCol_WindowBg));  // plain header background
-    drawText(painter, r, std::to_string(row).c_str(), paletteText(true));
+    const ImRect r(grid_pos_.x, grid_pos_.y + row * CELL_HEIGHT, grid_pos_.x + IM_ROUND(column_width_), grid_pos_.y + (row + 1) * CELL_HEIGHT);
+    drawText(painter, r, std::to_string(row).c_str(), paletteText(), nullptr, CELL_FONT_SIZE);
   }
   for (int row = 0; row < rows; ++row) {
     for (int column = 0; column < COLUMN_COUNT; ++column) {
       const BinaryIndex index = {row, column};
       paintCell(painter, visualRect(index), index);
+    }
+  }
+
+  // One consistent grid over every cell; hover never changes its geometry.
+  const ImU32 grid_color = ImGui::GetColorU32(ImGuiCol_Border, 0.35f);
+  const float right = grid_pos_.x + IM_ROUND(GRID_COLUMN_COUNT * column_width_);
+  const float bottom = grid_pos_.y + rows * CELL_HEIGHT;
+  for (int column = 0; column <= GRID_COLUMN_COUNT; ++column) {
+    const float x = std::clamp(grid_pos_.x + IM_ROUND(column * column_width_), grid_pos_.x + 0.5f, right - 0.5f);
+    painter->AddLine(ImVec2(x, grid_pos_.y), ImVec2(x, bottom), grid_color);
+  }
+  for (int row = 0; rows > 0 && row <= rows; ++row) {
+    const float y = std::clamp(grid_pos_.y + row * CELL_HEIGHT, grid_pos_.y + 0.5f, bottom - 0.5f);
+    painter->AddLine(ImVec2(grid_pos_.x, y), ImVec2(right, y), grid_color);
+  }
+
+  // Signal definitions are a separate layer from heatmap activity.
+  for (int row = 0; row < rows; ++row) {
+    for (int column = 0; column < HEX_COLUMN; ++column) {
+      const BinaryIndex index{row, column};
+      for (const auto *sig : cellAt(index).sigs) {
+        if (!hasSelection() || sig != resize_sig_) drawSignalOutline(painter, visualRect(index), index, sig);
+      }
     }
   }
 
@@ -445,19 +467,12 @@ const std::vector<std::array<uint32_t, 8>> &BinaryView::bitFlipChanges(size_t ms
   return bit_flip_tracker_.counts.bits;
 }
 
-bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const {
-  if (!index.isValid()) return false;
-  int idx = (index.row + dy) * COLUMN_COUNT + index.column + dx;
-  if (idx < 0 || idx >= (int)cells_.size()) return false;
-  auto &s = cells_[idx].sigs;
-  return std::find(s.begin(), s.end(), sig) != s.end();
-}
-
 void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index) const {
   auto item = &cellAt(index);
   ImFont *font = ImGui::GetFont();
   float font_size = CELL_FONT_SIZE;
-  ImU32 pen = paletteText(true);
+  ImU32 pen = paletteText();
+  const bool hovered = hovered_sig_ && std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
 
   if (index.column == HEX_COLUMN) {
     if (item->valid) {
@@ -465,32 +480,32 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
       font = ImGui::GetFont();
       font_size = ImGui::GetFontSize();
       popMonoFont();
-      painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
+      painter->AddRectFilled(rect.Min, rect.Max, toImU32(byteColor(item->bg_color)));
     }
   } else if (isSelected(index)) {
-    painter->AddRectFilled(rect.Min, rect.Max, resize_sig_ ? toImU32(resize_sig_->color) : paletteHighlight());
+    painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalHighlight(resize_sig_ ? resize_sig_->color : fromImVec4(palette().header))));
     pen = IM_COL32_WHITE;
   } else if (!hasSelection() || std::find(item->sigs.begin(), item->sigs.end(), resize_sig_) == item->sigs.end()) {  // not resizing
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
-        if (s == hovered_sig_) {
-          painter->AddRectFilled(rect.Min, rect.Max, toImU32(s->color.darker(125)));  // 4/5x brightness
-        } else {
-          drawSignalCell(painter, rect, index, s);
-        }
+        drawSignalCell(painter, rect, index, s);
       }
+      // Hover covers the entire signal, including bits shared with another definition.
+      if (hovered) painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalHighlight(hovered_sig_->color)));
     } else if (item->valid) {
-      if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(item->bg_color));
+      if (item->bg_color.alpha() > 0) painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalFill(item->bg_color, false)));
     }
-    bool bright = std::find(item->sigs.begin(), item->sigs.end(), hovered_sig_) != item->sigs.end();
-    pen = bright ? IM_COL32_WHITE : paletteText(is_message_active_);
+    pen = hovered ? IM_COL32_WHITE : paletteText();
   }
 
+  const auto text = fromImVec4(ImGui::ColorConvertU32ToFloat4(pen));
+  const ImU32 pattern = toImU32(contrastColor({128, 128, 128}, text));
   if (item->sigs.size() > 1) {
-    fillDense7Pattern(painter, rect, DARK_GRAY);
+    fillDense7Pattern(painter, rect, pattern);
   } else if (!item->valid) {
-    fillBDiagPattern(painter, rect, DARK_GRAY);
+    fillBDiagPattern(painter, rect, pattern);
   }
+
   if (item->valid) {
     if (index.column == HEX_COLUMN) {
       drawBoldText(painter, rect, utils::hexByte(item->val), pen, font, font_size);
@@ -504,64 +519,38 @@ void BinaryView::paintCell(ImDrawList *painter, const ImRect &rect, const Binary
   }
 }
 
-// Draw border on edge of signal
-void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const {
-  bool draw_left = !hasSignal(index, -1, 0, sig);
-  bool draw_top = !hasSignal(index, 0, -1, sig);
-  bool draw_right = !hasSignal(index, 1, 0, sig);
-  bool draw_bottom = !hasSignal(index, 0, 1, sig);
+bool BinaryView::hasSignal(const BinaryIndex &index, int dx, int dy, const cabana::Signal *sig) const {
+  const int row = index.row + dy;
+  const int column = index.column + dx;
+  if (row < 0 || row >= row_count_ || column < 0 || column >= HEX_COLUMN) return false;
+  const auto &signals = cellAt({row, column}).sigs;
+  return std::find(signals.begin(), signals.end(), sig) != signals.end();
+}
 
-  const int spacing = 2;
-  ImRect rc(rect.Min.x + draw_left * 3, rect.Min.y + draw_top * spacing, rect.Max.x - draw_right * 3, rect.Max.y - draw_bottom * spacing);
-  std::vector<ImRect> subtract;
-  if (!draw_top) {
-    if (!draw_left && !hasSignal(index, -1, -1, sig)) {
-      subtract.emplace_back(rc.Min.x, rc.Min.y, rc.Min.x + 3, rc.Min.y + spacing);
-    } else if (!draw_right && !hasSignal(index, 1, -1, sig)) {
-      subtract.emplace_back(rc.Max.x - 3, rc.Min.y, rc.Max.x, rc.Min.y + spacing);
-    }
-  }
-  if (!draw_bottom) {
-    if (!draw_left && !hasSignal(index, -1, 1, sig)) {
-      subtract.emplace_back(rc.Min.x, rc.Max.y - spacing, rc.Min.x + 3, rc.Max.y);
-    } else if (!draw_right && !hasSignal(index, 1, 1, sig)) {
-      subtract.emplace_back(rc.Max.x - 3, rc.Max.y - spacing, rc.Max.x, rc.Max.y);
-    }
-  }
-  // rc split into horizontal bands with the notch corners removed: at most one notch in the top band and
-  // one in the bottom band
-  const ImRect *top_notch = !subtract.empty() && subtract.front().Min.y == rc.Min.y ? &subtract.front() : nullptr;
-  const ImRect *bottom_notch = !subtract.empty() && subtract.back().Min.y != rc.Min.y ? &subtract.back() : nullptr;
-  std::vector<ImRect> region;
-  auto band = [&](const ImRect *notch, float y0, float y1) {
-    const float x0 = notch && notch->Min.x == rc.Min.x ? notch->Max.x : rc.Min.x;
-    const float x1 = notch && notch->Min.x != rc.Min.x ? notch->Min.x : rc.Max.x;
-    if (x1 > x0 && y1 > y0) region.emplace_back(x0, y0, x1, y1);
+void BinaryView::drawSignalOutline(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index,
+                                   const cabana::Signal *sig) const {
+  // Definition boundaries remain visible even at zero activity. Keep them above the
+  // fills and grid, at the same fixed position before and during hover.
+  const ImU32 edge = toImU32(signalOutline(sig->color, sig == hovered_sig_));
+  const bool left = !hasSignal(index, -1, 0, sig);
+  const bool right = !hasSignal(index, 1, 0, sig);
+  const bool top = !hasSignal(index, 0, -1, sig);
+  const bool bottom = !hasSignal(index, 0, 1, sig);
+  // Extend one pixel into adjacent cells to join inward corners.
+  auto offset = [&](bool boundary, int dx, int dy) {
+    return boundary ? 1.0f : hasSignal(index, dx, dy, sig) ? -1.0f : 0.0f;
   };
-  if (top_notch) band(top_notch, rc.Min.y, rc.Min.y + spacing);
-  band(nullptr, rc.Min.y + (top_notch ? spacing : 0), rc.Max.y - (bottom_notch ? spacing : 0));
-  if (bottom_notch) band(bottom_notch, rc.Max.y - spacing, rc.Max.y);
+  const ImVec2 min = rect.Min, max = rect.Max;
+  if (left) painter->AddLine(ImVec2(min.x + 1, min.y + offset(top, -1, -1)), ImVec2(min.x + 1, max.y - offset(bottom, -1, 1)), edge);
+  if (right) painter->AddLine(ImVec2(max.x - 1, min.y + offset(top, 1, -1)), ImVec2(max.x - 1, max.y - offset(bottom, 1, 1)), edge);
+  if (top) painter->AddLine(ImVec2(min.x + offset(left, -1, -1), min.y + 1), ImVec2(max.x - offset(right, 1, -1), min.y + 1), edge);
+  if (bottom) painter->AddLine(ImVec2(min.x + offset(left, -1, 1), max.y - 1), ImVec2(max.x - offset(right, 1, 1), max.y - 1), edge);
+}
 
-  auto item = &cellAt(index);
+// Signal intensity and hover share the same full-cell geometry.
+void BinaryView::drawSignalCell(ImDrawList *painter, const ImRect &rect, const BinaryIndex &index, const cabana::Signal *sig) const {
   CabanaColor color = sig->color;
-  color.a = item->bg_color.alpha();
-  const ImU32 edge = toImU32(sig->color.darker(125));
-
-  for (const ImRect &clip : region) {
-    painter->PushClipRect(clip.Min, clip.Max, true);
-    // mix the signal color with the background to fade it
-    painter->AddRectFilled(rc.Min, rc.Max, paletteBase());
-    painter->AddRectFilled(rc.Min, rc.Max, toImU32(color));
-
-    if (draw_left) painter->AddLine(ImVec2(rc.Min.x + 0.5f, rc.Min.y), ImVec2(rc.Min.x + 0.5f, rc.Max.y), edge, 1.0f);
-    if (draw_right) painter->AddLine(ImVec2(rc.Max.x - 0.5f, rc.Min.y), ImVec2(rc.Max.x - 0.5f, rc.Max.y), edge, 1.0f);
-    if (draw_bottom) painter->AddLine(ImVec2(rc.Min.x, rc.Max.y - 0.5f), ImVec2(rc.Max.x, rc.Max.y - 0.5f), edge, 1.0f);
-    if (draw_top) painter->AddLine(ImVec2(rc.Min.x, rc.Min.y + 0.5f), ImVec2(rc.Max.x, rc.Min.y + 0.5f), edge, 1.0f);
-
-    // fill gaps inside corners: the 2px stroke is clipped to the region, only the half outside the notch is painted
-    for (auto &r : subtract) {
-      painter->AddRect(r.Min, r.Max, edge, 0.0f, 0, 2.0f);
-    }
-    painter->PopClipRect();
-  }
+  color.a = 96 + cellAt(index).bg_color.alpha() * (255 - 96) / 255;
+  painter->AddRectFilled(rect.Min, rect.Max, paletteBase());
+  painter->AddRectFilled(rect.Min, rect.Max, toImU32(signalFill(color)));
 }

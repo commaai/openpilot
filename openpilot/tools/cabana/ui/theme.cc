@@ -12,30 +12,30 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr Palette DARK_PALETTE = {
-  .text = rgb(0xffffff), .text_disabled = rgb(0x7b7b7b), .text_selected = rgb(0xffffff),
+  .text = rgb(0xffffff), .text_disabled = rgb(0xcccccc), .text_inactive = rgb(0xa4a4a4), .text_selected = rgb(0xffffff),
   .window = rgb(0x353535), .surface = rgb(0x2b2c2d),
   .frame = rgb(0x2b2c2d), .frame_hovered = rgb(0x363738), .frame_active = rgb(0x434445),
   .button = rgb(0x3f4041), .button_hovered = rgb(0x525354), .button_active = rgb(0x303132),
-  .header = rgb(0x2d74d2), .header_hovered = rgb(0x323944), .header_active = rgb(0x2d74d2),
-  .accent = rgb(0x2d74d2),
-  .border = rgb(0x606060), .separator = rgb(0x353535), .scrollbar_grab = rgb(0x4c4e4f),
-  .slider_track = rgb(0x7b7b7b),
+  .header = rgb(0x2d74d2), .header_hovered = rgb(0x323944), .header_active = rgb(0x434445),
+  .accent = rgb(0x90bfff),
+  .border = rgb(0xaaaaaa), .separator = rgb(0x353535), .scrollbar_grab = rgb(0xaaaaaa),
+  .slider_track = rgb(0xaaaaaa),
   .tab = rgb(0x2c2c2c), .tab_hovered = rgb(0x444647), .tab_selected = rgb(0x393a3b), .table_header = rgb(0x3f4041),
-  .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x808080),
+  .grid = rgb(0xdddddd, 50.0f / 255.0f), .badge = rgb(0x626262),
   .sparkline_saturation = 1.0f, .sparkline_value = 1.0f,
 };
 
 constexpr Palette LIGHT_PALETTE = {
-  .text = rgb(0x000000), .text_disabled = rgb(0xbebebe), .text_selected = rgb(0xffffff),
+  .text = rgb(0x000000), .text_disabled = rgb(0x595959), .text_inactive = rgb(0x595959), .text_selected = rgb(0xffffff),
   .window = rgb(0xefefef), .surface = rgb(0xffffff),
   .frame = rgb(0xffffff), .frame_hovered = rgb(0xf5f9fc), .frame_active = rgb(0xe7f3fb),
   .button = rgb(0xefefef), .button_hovered = rgb(0xe7f3fb), .button_active = rgb(0xd4e7f4),
-  .header = rgb(0x308cc6), .header_hovered = rgb(0xe7f3fb), .header_active = rgb(0x308cc6),
-  .accent = rgb(0x308cc6),
-  .border = rgb(0xb6b6b6), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0xb6b6b6),
-  .slider_track = rgb(0xd0d0d0),
+  .header = rgb(0x226a99), .header_hovered = rgb(0xe7f3fb), .header_active = rgb(0xd4e7f4),
+  .accent = rgb(0x226a99),
+  .border = rgb(0x747474), .separator = rgb(0xd0d0d0), .scrollbar_grab = rgb(0x747474),
+  .slider_track = rgb(0x747474),
   .tab = rgb(0xe5e5e5), .tab_hovered = rgb(0xefefef), .tab_selected = rgb(0xffffff), .table_header = rgb(0xefefef),
-  .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0xa0a0a4),
+  .grid = rgb(0x000000, 50.0f / 255.0f), .badge = rgb(0x626262),
   .sparkline_saturation = 2.0f, .sparkline_value = 0.7f,
 };
 
@@ -65,6 +65,36 @@ ImFont *addFont(const fs::path &path, float size) {
   ImFont *font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path.c_str(), size, &cfg);
   if (font != nullptr) addIconFont(size, font);
   return font;
+}
+
+double linearChannel(double value) {
+  value /= 255.0;
+  return value <= 0.04045 ? value / 12.92 : std::pow((value + 0.055) / 1.055, 2.4);
+}
+
+double luminance(const CabanaColor &color) {
+  return 0.2126 * linearChannel(color.r) + 0.7152 * linearChannel(color.g) + 0.0722 * linearChannel(color.b);
+}
+
+// Directed rounding preserves the luminance bound in 8-bit sRGB.
+CabanaColor boundLuminance(const CabanaColor &color, double bound, bool minimum) {
+  const double current = luminance(color);
+  if (minimum ? current >= bound : current <= bound) return color;
+  auto channel = [&](uint8_t value) {
+    double c = linearChannel(value);
+    c = minimum ? c + (1.0 - c) * (bound - current) / (1.0 - current) : c * bound / current;
+    const double srgb = c <= 0.0031308 ? 12.92 * c : 1.055 * std::pow(c, 1.0 / 2.4) - 0.055;
+    const double scaled = std::clamp(srgb * 255.0, 0.0, 255.0);
+    return static_cast<uint8_t>(minimum ? std::ceil(scaled) : std::floor(scaled));
+  };
+  return {channel(color.r), channel(color.g), channel(color.b), color.a};
+}
+
+CabanaColor composite(const CabanaColor &color, const CabanaColor &base) {
+  auto channel = [&](int foreground, int background) {
+    return static_cast<uint8_t>(std::lround((foreground * color.a + background * (255 - color.a)) / 255.0));
+  };
+  return {channel(color.r, base.r), channel(color.g, base.g), channel(color.b, base.b)};
 }
 
 ImVec4 alpha(ImVec4 c, float a) { return ImVec4(c.x, c.y, c.z, a); }
@@ -123,7 +153,8 @@ void applyTheme(int theme) {
   c[ImGuiCol_FrameBgHovered] = p.frame_hovered;
   c[ImGuiCol_FrameBgActive] = p.frame_active;
   c[ImGuiCol_Button] = p.button;
-  c[ImGuiCol_ButtonHovered] = c[ImGuiCol_SliderGrab] = p.button_hovered;
+  c[ImGuiCol_ButtonHovered] = p.button_hovered;
+  c[ImGuiCol_SliderGrab] = p.accent;
   c[ImGuiCol_ScrollbarGrab] = p.scrollbar_grab;
   c[ImGuiCol_ScrollbarGrabHovered] = p.text_disabled;
   c[ImGuiCol_ButtonActive] = p.button_active;
@@ -157,10 +188,54 @@ void applyTheme(int theme) {
 
 const Palette &palette() { return *g_palette; }
 
+CabanaColor contrastColor(CabanaColor color, const CabanaColor &background, double target) {
+  color.a = 255;
+  const double value = luminance(color), base = luminance(background);
+  if ((std::max(value, base) + 0.05) / (std::min(value, base) + 0.05) >= target) return color;
+  const bool lighter = base < 0.179;
+  const double bound = lighter ? target * (base + 0.05) - 0.05 : (base + 0.05) / target - 0.05;
+  return boundLuminance(color, std::clamp(bound, 0.0, 1.0), lighter);
+}
+
+CabanaColor byteColor(const CabanaColor &color) {
+  const bool dark = palette().text.x > 0.5f;
+  const auto [h, s, v] = color.hsv();
+  auto fill = CabanaColor::fromHsv(h, std::min(s, 0.30f), 0.86f, color.alphaF());
+  if (dark) fill = boundLuminance(fill, 0.16, false);  // 5:1 with white text
+  fill = composite(fill, fromImVec4(palette().surface));
+  return dark ? fill : composite({255, 255, 255, 40}, fill);
+}
+
+CabanaColor signalFill(const CabanaColor &color, bool defined) {
+  const bool dark = palette().text.x > 0.5f;
+  // Constrain the full-strength color before blending to preserve the activity ramp.
+  if (defined) return composite(boundLuminance(color, 0.18, !dark), fromImVec4(palette().surface));
+  auto fill = composite(color, fromImVec4(palette().surface));
+  fill = composite(dark ? CabanaColor(0, 0, 0, 115) : CabanaColor(255, 255, 255, 40), fill);
+  return boundLuminance(fill, 0.18, !dark);  // 4.5:1 with the theme's text
+}
+
+CabanaColor signalHighlight(CabanaColor color) {
+  color.a = 255;
+  return boundLuminance(boundLuminance(color, 0.175, true), 0.18, false);
+}
+
+CabanaColor signalOutline(CabanaColor color, bool hovered) {
+  const bool dark = palette().text.x > 0.5f;
+  if (dark && hovered) color = color.lighter(150);
+  color.a = 255;
+  // 3:1 against normal and highlighted fills, including neighboring signals.
+  return dark ? boundLuminance(color, 0.67, true) : boundLuminance(color, 0.02, false);
+}
+
+CabanaColor graphicColor(const CabanaColor &color, const ImVec4 &background) {
+  return contrastColor(color, fromImVec4(background), 3.0);
+}
+
 CabanaColor sparklineColor(const CabanaColor &color) {
   const Palette &p = palette();
   auto [h, s, v] = color.hsv();
-  return CabanaColor::fromHsv(h, std::min(1.0f, s * p.sparkline_saturation), v * p.sparkline_value, color.a / 255.0f);
+  return graphicColor(CabanaColor::fromHsv(h, std::min(1.0f, s * p.sparkline_saturation), v * p.sparkline_value));
 }
 
 ImFont *boldFont() { return g_bold_font; }

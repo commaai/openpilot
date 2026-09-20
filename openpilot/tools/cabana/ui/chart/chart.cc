@@ -475,7 +475,7 @@ void ChartView::showTip(double sec) {
       std::string name = s.sig->name;
       std::string min = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
       std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
-      text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .value = value, .min = min, .max = max});
+      text_list.push_back({.has_marker = true, .marker = toImU32(graphicColor(s.color)), .name = name, .value = value, .min = min, .max = max});
     }
   }
   if (x < 0) {
@@ -620,9 +620,9 @@ void ChartView::drawLegend() {
     ImGui::PopID();
 
     if (series_type_ == SeriesType::Scatter) {
-      painter->AddCircleFilled(r.Min + ImVec2(marker_size / 2.0f, 2.0f + marker_size / 2.0f), marker_size / 2.0f, toImU32(s.color));
+      painter->AddCircleFilled(r.Min + ImVec2(marker_size / 2.0f, 2.0f + marker_size / 2.0f), marker_size / 2.0f, toImU32(graphicColor(s.color)));
     } else {
-      drawColorMarker(painter, r.Min, toImU32(s.color));
+      drawColorMarker(painter, r.Min, toImU32(graphicColor(s.color)));
     }
 
     float x = r.Min.x + marker_size + ImGui::GetStyle().ItemInnerSpacing.x;
@@ -655,7 +655,7 @@ void ChartView::drawSeries() {
 
     const std::string label = "##sig" + std::to_string(i);
     ImPlotSpec spec;
-    spec.LineColor = toImVec4(s.color);
+    spec.LineColor = toImVec4(graphicColor(s.color));
     spec.Stride = sizeof(ImPlotPoint);
     if (series_type_ == SeriesType::Scatter) {
       float radius = std::clamp(pixels_per_point / 2.0, 2.0, 8.0) / 2.0;
@@ -682,7 +682,7 @@ void ChartView::drawSeries() {
       // show points when zoomed in enough
       if ((num_points == 1 || pixels_per_point > 20) && first != last) {
         ImPlotSpec dots;
-        dots.LineColor = toImVec4(s.color);
+        dots.LineColor = toImVec4(graphicColor(s.color));
         dots.Stride = sizeof(ImPlotPoint);
         dots.Marker = ImPlotMarker_Circle;
         dots.MarkerSize = 4;
@@ -700,12 +700,12 @@ void ChartView::drawForeground() {
   for (auto &s : sigs_) {
     if (!isNull(s.track_pt) && s.visible) {
       ImVec2 pos(xPos(s.track_pt.x), yPos(s.track_pt.y));
-      painter->AddCircleFilled(pos, 5.5f, toImU32(s.color.darker(125)));
+      painter->AddCircleFilled(pos, 5.5f, toImU32(graphicColor(s.color)));
       track_line_x = std::max(track_line_x, pos.x);
     }
   }
   if (track_line_x > 0) {
-    const ImU32 dark_gray = IM_COL32(0x80, 0x80, 0x80, 0xff);
+    const ImU32 dark_gray = ImGui::GetColorU32(palette().text_disabled);
     for (float y = layout_.plot_area.Min.y; y < layout_.plot_area.Max.y; y += 8) {
       painter->AddLine(ImVec2(track_line_x, y), ImVec2(track_line_x, std::min(y + 4, layout_.plot_area.Max.y)), dark_gray, 1.0f);
     }

@@ -100,7 +100,7 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
   }
 
   size = sz;
-  color_ = toImU32(sparklineColor(color));
+  color_ = color;
   draw_individual_points_ = draw_individual_points;
   window_end_ = window_end;
   xscale_ = xscale;
@@ -108,7 +108,8 @@ void Sparkline::render(const CabanaColor &color, int range, ImVec2 sz, double wi
 
 void Sparkline::draw(ImDrawList *draw_list, ImVec2 pos, ImU32 color) const {
   if (render_points_.empty()) return;
-  if (color == 0) color = color_;
+  // Pick up theme changes while paused.
+  if (color == 0) color = toImU32(sparklineColor(color_));
 
   // update() only runs when a message of this id arrives, so a slow message would hold the sparkline
   // still for many frames and then move it in one step. scroll the rendered polyline by the time that
