@@ -15,8 +15,19 @@ KEYBOARD_COLUMN_PADDING = 33
 KEYBOARD_ROW_PADDING = {0: 44, 1: 33, 2: 44}  # TODO: 2 should be 116 with extra control keys added in
 
 KEY_TOUCH_AREA_OFFSET = 10  # px
-KEY_DRAG_HYSTERESIS = 5  # px
 KEY_MIN_ANIMATION_TIME = 0.075  # s
+
+CAPS_DOUBLE_TAP_WINDOW = 0.3
+CAPS_RETURN_DELAY = 0.7
+# Frozen touch offsets from the nominal glyph centers, in native screen pixels.
+KEY_TOUCH_OFFSETS = {
+  'q': (-36.5, 8.0), 'w': (-14.0, 14.5), 'e': (-4.0, 6.0), 'r': (3.0, 11.0), 't': (-4.0, 12.0),
+  'y': (0.5, 16.0), 'u': (-1.0, 11.0), 'i': (1.0, 6.0), 'o': (6.0, 8.0), 'p': (38.0, 12.0),
+  'a': (-34.0, 4.0), 's': (11.056, 15.5), 'd': (3.111, 18.0), 'f': (9.667, 15.0), 'g': (4.222, 20.0),
+  'h': (8.778, 15.0), 'j': (-8.167, 12.5), 'k': (6.889, 20.0), 'l': (3.444, 15.0),
+  'z': (11.0, 26.5), 'x': (0.0, 22.5), 'c': (2.0, 23.0), 'v': (-1.0, 18.0), 'b': (2.0, 22.0), 'n': (2.5, 20.5), 'm': (-7.0, 15.0),
+}
+ROW_TOUCH_OFFSETS = ((-1.0, 9.0), (8.111, 18.0), (0.0, 22.0))
 
 DEBUG = False
 ANIMATION_SCALE = 0.65
@@ -107,6 +118,27 @@ class SmallKey(Key):
     self._size_filter.update(size * (NUMBER_LAYER_SWITCH_FONT_SIZE / CHAR_FONT_SIZE))
 
 
+class NumberKey(SmallKey):
+  def __init__(self):
+    super().__init__('123')
+    self._caps_icon = gui_app.texture('icons_mici/settings/keyboard/caps_lower.png', 38, 33)
+
+  def _render(self, rect):
+    size = self._get_font_size()
+    text_width = measure_text_cached(self._font, self.char, size).x
+    icon_scale = size * 0.75 / self._caps_icon.height
+    icon_width = self._caps_icon.width * icon_scale
+    gap = size / 8
+    center_x = rect.x + rect.width / 2
+    original_x = self._rect.x
+    self._rect.x -= (gap + icon_width) / 2
+    super()._render(rect)
+    self._rect.x = original_x
+    rl.draw_texture_ex(self._caps_icon, (center_x + (text_width + gap - icon_width) / 2,
+                                       rect.y + (rect.height - self._caps_icon.height * icon_scale) / 2),
+                       0, icon_scale, self._color)
+
+
 class IconKey(Key):
   def __init__(self, icon: str, vertical_align: str = "center", char: str = "", icon_size: tuple[int, int] = (38, 38)):
     super().__init__(char)
@@ -159,12 +191,12 @@ class MiciKeyboard(Widget):
     special_chars = [
       "1234567890",
       "-/:;()$&@\"",
-      "~.,?!'#%",
+      ".,?!'",
     ]
     super_special_chars = [
-      "1234567890",
-      "`[]{}^*+=_",
-      "\\|<>¥€£•",
+      "[]{}#%^*+=",
+      "_\\|~<>€£¥•",
+      ".,?!'",
     ]
 
     self._lower_keys = [[Key(char) for char in row] for row in lower_chars]
@@ -176,23 +208,26 @@ class MiciKeyboard(Widget):
     self._space_key = IconKey("icons_mici/settings/keyboard/space.png", char=" ", vertical_align="bottom", icon_size=(43, 14))
     self._caps_key = IconKey("icons_mici/settings/keyboard/caps_lower.png", icon_size=(38, 33))
     # these two are in different places on some layouts
-    self._123_key, self._123_key2 = SmallKey("123"), SmallKey("123")
+    self._123_key, self._123_key2 = NumberKey(), SmallKey("123")
     self._abc_key = SmallKey("abc")
     self._super_special_key = SmallKey("#+=")
 
-    # insert control keys
     for keys in (self._lower_keys, self._upper_keys):
-      keys[2].insert(0, self._caps_key)
-      keys[2].append(self._123_key)
+      keys[2].insert(0, self._123_key)
+      keys[2].append(self._space_key)
 
-    for keys in (self._lower_keys, self._upper_keys, self._special_keys, self._super_special_keys):
-      keys[1].append(self._space_key)
+    self._symbol_keys = {key for keys in (self._special_keys, self._super_special_keys) for row in keys for key in row}
+    for keys, switch in ((self._special_keys, self._super_special_key), (self._super_special_keys, self._123_key2)):
+      keys[2][0:0] = [self._abc_key, self._caps_key, switch]
 
-    for keys in (self._special_keys, self._super_special_keys):
-      keys[2].append(self._abc_key)
-
-    self._special_keys[2].insert(0, self._super_special_key)
-    self._super_special_keys[2].insert(0, self._123_key2)
+    self._layer_targets = {self._123_key: self._special_keys, self._123_key2: self._special_keys,
+                           self._abc_key: self._lower_keys, self._super_special_key: self._super_special_keys}
+    self._slide_origin = None
+    self._slide_return_control = None
+    self._selection_pos = MousePos(0, 0)
+    self._caps_return_at = None
+    self._caps_last_tap_at = None
+    self._caps_quick_tap = False
 
     # set initial keys
     self._current_keys: list[list[Key]] = []
@@ -241,79 +276,126 @@ class MiciKeyboard(Widget):
   def text(self) -> str:
     return self._text
 
+  @property
+  def _hit_rect(self):
+    return rl.Rectangle(self.rect.x, self.rect.y + self.rect.height - self.get_keyboard_height(),
+                        self.rect.width, self.get_keyboard_height())
+
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
-    keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height
+    super()._handle_mouse_event(mouse_event)
     if mouse_event.left_pressed:
-      if mouse_event.pos.y > keyboard_pos_y:
-        self._dragging_on_keyboard = True
+      self._restore_slide_layer()
+      self._closest_key = (None, float('inf'))
+      self._selected_key_t = self._unselect_key_t = None
+      self._dragging_on_keyboard = True
     elif mouse_event.left_released:
       self._dragging_on_keyboard = False
 
     if mouse_event.left_down and self._dragging_on_keyboard:
+      self._selection_pos = mouse_event.pos
       self._closest_key = self._get_closest_key()
       if self._selected_key_t is None:
         self._selected_key_t = rl.get_time()
-
-      # unselect key temporarily if mouse goes above keyboard
-      if mouse_event.pos.y <= keyboard_pos_y:
+      if mouse_event.pos.y < self._hit_rect.y:
         self._closest_key = (None, float('inf'))
 
-    if DEBUG:
-      print('HANDLE MOUSE EVENT', mouse_event, self._closest_key[0].char if self._closest_key[0] else 'None')
+    if mouse_event.left_pressed:
+      key = self._closest_key[0]
+      self._caps_quick_tap = (key is self._caps_key and self._caps_last_tap_at is not None and
+                              rl.get_time() - self._caps_last_tap_at <= CAPS_DOUBLE_TAP_WINDOW)
+      if key is self._caps_key and self._caps_return_at is not None:
+        self._caps_return_at = rl.get_time() + CAPS_RETURN_DELAY
+      elif key is not self._caps_key:
+        self._caps_return_at = self._caps_last_tap_at = None
+      if key in self._layer_targets:
+        self._slide_origin = (self._current_keys, self._caps_state)
+        self._activate_layer_control(key)
+        self._closest_key = self._get_closest_key()
+        self._slide_return_control = self._closest_key[0]
+    if mouse_event.left_released and (not self.is_pressed or not rl.check_collision_point_rec(mouse_event.pos, self._hit_rect)):
+      self._restore_slide_layer()
+
+  def touch_center(self, key, row):
+    offset = (0.0, KEY_TOUCH_AREA_OFFSET)
+    if len(key.char) == 1:
+      offset = ROW_TOUCH_OFFSETS[row] if key in self._symbol_keys or key is self._space_key else KEY_TOUCH_OFFSETS[key.char.lower()]
+    return (key.original_position.x + offset[0],
+            self.rect.y + key.original_position.y - KEY_TOUCH_AREA_OFFSET + offset[1])
 
   def _get_closest_key(self) -> tuple[Key | None, float]:
-    closest_key: tuple[Key | None, float] = (None, float('inf'))
-    for row in self._current_keys:
+    closest = (None, float('inf'))
+    for row_index, row in enumerate(self._current_keys):
       for key in row:
-        mouse_pos = gui_app.last_mouse_event.pos
-        # approximate distance for comparison is accurate enough
-        # use local y coords so parent widget offset (e.g. during NavWidget animate-in) doesn't affect hit testing
-        dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
-        if dist < closest_key[1]:
-          if self._closest_key[0] is None or key is self._closest_key[0] or dist < self._closest_key[1] - KEY_DRAG_HYSTERESIS:
-            closest_key = (key, dist)
-    return closest_key
+        center_x, center_y = self.touch_center(key, row_index)
+        distance = (center_x - self._selection_pos.x) ** 2 + (center_y - self._selection_pos.y) ** 2
+        if distance < closest[1]:
+          closest = (key, distance)
+    return closest
 
-  def _set_uppercase(self, cycle: bool):
-    self._set_keys(self._upper_keys if cycle else self._lower_keys)
-    if not cycle:
-      self._caps_state = CapsState.LOWER
-      self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lower.png", icon_size=(38, 33))
+  def _set_caps_state(self, state):
+    self._caps_state = state
+    size = (39, 38) if state == CapsState.LOCK else (38, 33)
+    self._caps_key.set_icon(f'icons_mici/settings/keyboard/caps_{state.name.lower()}.png', icon_size=size)
+
+  def _show_letters(self):
+    self._set_keys(self._lower_keys if self._caps_state == CapsState.LOWER else self._upper_keys)
+
+  def _activate_layer_control(self, key):
+    if key is self._abc_key:
+      self._show_letters()
     else:
-      if self._caps_state == CapsState.LOWER:
-        self._caps_state = CapsState.UPPER
-        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_upper.png", icon_size=(38, 33))
-      elif self._caps_state == CapsState.UPPER:
-        self._caps_state = CapsState.LOCK
-        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png", icon_size=(39, 38))
-      else:
-        self._set_uppercase(False)
+      self._set_keys(self._layer_targets[key])
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if self._closest_key[0] is not None:
-      if self._closest_key[0] == self._caps_key:
-        self._set_uppercase(True)
-      elif self._closest_key[0] in (self._123_key, self._123_key2):
-        self._set_keys(self._special_keys)
-      elif self._closest_key[0] == self._abc_key:
-        self._set_uppercase(False)
-      elif self._closest_key[0] == self._super_special_key:
-        self._set_keys(self._super_special_keys)
+    super()._handle_mouse_release(mouse_pos)
+    key = self._closest_key[0]
+    if key is None:
+      self._restore_slide_layer()
+      return
+    if key is self._caps_key:
+      state = CapsState.LOCK if self._caps_state == CapsState.UPPER and self._caps_quick_tap else (
+        CapsState.UPPER if self._caps_state == CapsState.LOWER else CapsState.LOWER)
+      self._set_caps_state(state)
+      if self._slide_origin is not None:
+        if self._slide_origin[0] in (self._lower_keys, self._upper_keys):
+          self._show_letters()
+          self._closest_key = (None, float('inf'))
+        self._slide_origin = self._slide_return_control = None
       else:
-        self._text += self._closest_key[0].char
+        self._caps_last_tap_at = rl.get_time()
+        self._caps_return_at = rl.get_time() + CAPS_RETURN_DELAY
+    elif key in self._layer_targets:
+      # Touch-down already opened the initial page; other controls navigate on release.
+      if self._slide_origin is not None and key is not self._slide_return_control:
+        self._activate_layer_control(key)
+        self._closest_key = self._get_closest_key()
+      self._slide_origin = self._slide_return_control = None
+    else:
+      self._text += key.char
+      if self._caps_state == CapsState.UPPER:
+        self._set_caps_state(CapsState.LOWER)
+        self._show_letters()
+      if key.char in self._auto_return_to_letters and self._current_keys in (self._special_keys, self._super_special_keys):
+        self._set_caps_state(CapsState.LOWER)
+        self._show_letters()
+      self._restore_slide_layer()
 
-        # Reset caps state
-        if self._caps_state == CapsState.UPPER:
-          self._set_uppercase(False)
+    now = rl.get_time()
+    self._unselect_key_t = now + KEY_MIN_ANIMATION_TIME if now - (self._selected_key_t or now) < KEY_MIN_ANIMATION_TIME else now
 
-        # Switch back to letters after common URL delimiters
-        if self._closest_key[0].char in self._auto_return_to_letters and self._current_keys in (self._special_keys, self._super_special_keys):
-          self._set_uppercase(False)
+  def _restore_slide_layer(self):
+    if self._slide_origin is not None:
+      keys, caps_state = self._slide_origin
+      self._slide_origin = self._slide_return_control = None
+      self._set_caps_state(caps_state)
+      self._set_keys(keys)
+      self._closest_key = (None, float('inf'))
+      self._selected_key_t = self._unselect_key_t = None
 
-    # ensure minimum selected animation time
-    key_selected_dt = rl.get_time() - (self._selected_key_t or 0)
-    cur_t = rl.get_time()
-    self._unselect_key_t = cur_t + KEY_MIN_ANIMATION_TIME if (key_selected_dt < KEY_MIN_ANIMATION_TIME) else cur_t
+  def hide_event(self):
+    super().hide_event()
+    self._caps_return_at = self._caps_last_tap_at = None
+    self._restore_slide_layer()
 
   def backspace(self):
     if self._text:
@@ -323,6 +405,17 @@ class MiciKeyboard(Widget):
     self._text += ' '
 
   def _update_state(self):
+    super()._update_state()
+    if not self.enabled or not self.is_visible:
+      self._caps_return_at = self._caps_last_tap_at = None
+      self._restore_slide_layer()
+    elif (self._caps_return_at is not None and not self.is_pressed and rl.get_time() >= self._caps_return_at and
+          not any(event.slot == 0 and event.left_pressed for event in gui_app.mouse_events)):
+      self._caps_return_at = None
+      self._show_letters()
+      self._closest_key = (None, float('inf'))
+      self._selected_key_t = self._unselect_key_t = None
+
     # update selected key filter
     self._selected_key_filter.update(self._closest_key[0] is not None)
 
