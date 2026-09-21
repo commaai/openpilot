@@ -21,10 +21,10 @@ MAX_DRAW_DISTANCE = 100.0
 
 # Road-plane footprint in meters; shared by both lead markers.
 LEAD_BAR_WIDTH = 1.8
-# Mean wheelbase of Camry (111.2 in), Civic (107.7 in), and RAV4 (105.9 in).
-LEAD_BAR_DEPTH = 2.75
-LEAD_BAR_MAX_DEPTH = 2 * LEAD_BAR_DEPTH
-LEAD_BAR_MIN_HEIGHT = 6.0
+# Rounded mean overall length of 2025 Corolla, RAV4, CR-V, Civic, and Camry.
+LEAD_BAR_DEPTH = 4.7
+LEAD_BAR_MAX_DEPTH = 6.0
+LEAD_BAR_MIN_HEIGHT = 8.0
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -57,7 +57,7 @@ class LeadVehicle:
   distance: float = 0.0
   opacity: float = 0.8
   visibility: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
-  opacity_filter: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.65, 0.1, 1 / gui_app.target_fps, initialized=False))
+  opacity_filter: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.5, 0.1, 1 / gui_app.target_fps, initialized=False))
 
 
 @dataclass
@@ -265,7 +265,7 @@ class ModelRenderer(Widget):
       camera_distance = lead.dRel + RADAR_TO_CAMERA
       points = self._project_lead_bar(camera_distance, lead.yRel, path_x_array, smoothing)
       self._lead_bar_smoothing[i] = smoothing if points.size else None
-      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.8 if vision_leads is not None and i == 0 else 0.65)
+      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.8 if vision_leads is not None and i == 0 else 0.5)
 
     # Run once per UI frame, matching the HUD color crossfade's 0.1 s filter.
     # Retain the last visible polygon briefly when detection disappears.

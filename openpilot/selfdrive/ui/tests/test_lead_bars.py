@@ -51,20 +51,20 @@ class TestLeadBars(unittest.TestCase):
     for distance in (6, 10, 20, 40, 70, 100):
       points = self.project(distance)
       anchor = distance
-      max_height = 600 / anchor - 600 / (anchor + 5.5)
-      self.assertGreaterEqual(float(np.ptp(points[:, 1])), min(6, max_height) - 1e-4)
+      max_height = 600 / anchor - 600 / (anchor + 6.0)
+      self.assertGreaterEqual(float(np.ptp(points[:, 1])), min(8, max_height) - 1e-4)
       x = 600 / (points[:, 1] - 100)
       length = float(np.ptp(x))
-      self.assertGreaterEqual(length, 2.75 - 1e-3)
-      self.assertLessEqual(length, 5.5 + 1e-3)
-      if max_height < 6:
-        self.assertAlmostEqual(length, 5.5, places=3)
+      self.assertGreaterEqual(length, 4.7 - 1e-3)
+      self.assertLessEqual(length, 6.0 + 1e-3)
+      if max_height < 8:
+        self.assertAlmostEqual(length, 6.0, places=3)
       self.assertAlmostEqual(float(points[:, 1].max()), 100 + 600 / (distance), places=4)
-    # Nearby leads retain their actual wheelbase length, even above 12 pixels.
-    for distance in (6, 10, 14):
+    # Nearby leads retain their full vehicle length, even above 12 pixels.
+    for distance in (6, 10, 12):
       points = self.project(distance)
       x = 600 / (points[:, 1] - 100)
-      self.assertAlmostEqual(float(np.ptp(x)), 2.75, places=3)
+      self.assertAlmostEqual(float(np.ptp(x)), 4.7, places=3)
     self.assertGreater(float(np.ptp(self.project(6)[:, 1])), 12)
 
   def test_footprint_preserves_road_projection(self):
@@ -199,21 +199,21 @@ class TestLeadBars(unittest.TestCase):
     radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
     vision = [SimpleNamespace(prob=0.9, x=[21.52], y=[0])]
     self.renderer._update_leads(radar, self.x)
-    self.assertEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.65)
+    self.assertEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.5)
     self.renderer._update_leads(radar, self.x, vision)
     opacity = self.renderer._lead_vehicles[0].opacity_filter.x
-    self.assertGreater(opacity, 0.65)
+    self.assertGreater(opacity, 0.5)
     self.assertLess(opacity, 0.8)
     for _ in range(100):
       self.renderer._update_leads(radar, self.x, vision)
     self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.8, places=5)
     self.renderer._update_leads(radar, self.x)
     opacity = self.renderer._lead_vehicles[0].opacity_filter.x
-    self.assertGreater(opacity, 0.65)
+    self.assertGreater(opacity, 0.5)
     self.assertLess(opacity, 0.8)
     for _ in range(100):
       self.renderer._update_leads(radar, self.x)
-    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.65, places=5)
+    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.5, places=5)
 
   def test_two_leads_duplicates_and_disappearance(self):
     first = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
@@ -228,8 +228,8 @@ class TestLeadBars(unittest.TestCase):
       self.renderer._draw_lead_indicator()
       self.assertEqual(draw.call_count, 2)
       np.testing.assert_allclose(draw.call_args_list[0].args[1], self.renderer._lead_vehicles[1].points + [13, 17])
-      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.65 * self.renderer._lead_vehicles[1].visibility.x))
-      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.65 * self.renderer._lead_vehicles[0].visibility.x))
+      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.5 * self.renderer._lead_vehicles[1].visibility.x))
+      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.5 * self.renderer._lead_vehicles[0].visibility.x))
     first.present = second.present = False
     self.renderer._update_leads(radar, self.x)
     for _ in range(100):
