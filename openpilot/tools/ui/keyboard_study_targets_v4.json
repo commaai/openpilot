@@ -1,0 +1,38 @@
+{
+  "version": "robust_static_v4",
+  "accepted": true,
+  "target_adjustments": {
+    "l": [
+      8,
+      0
+    ],
+    "w": [
+      -12.0,
+      0.0
+    ],
+    "o": [
+      8.0,
+      0.0
+    ],
+    "j": [
+      -8.0,
+      0.0
+    ],
+    "c": [
+      4.0,
+      0.0
+    ],
+    "m": [
+      0.0,
+      -8.0
+    ]
+  },
+  "held_out": {
+    "taps": 1707,
+    "before_errors": 109,
+    "after_errors": 107,
+    "fixes": 3,
+    "regressions": 1
+  },
+  "status": "deployed_experiment"
+}

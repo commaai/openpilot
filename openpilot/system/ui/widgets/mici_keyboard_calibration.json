@@ -1,0 +1,343 @@
+{
+  "version": "hackathon_static_v1",
+  "point": "last_down_event",
+  "metric": "squared_euclidean",
+  "method": "per-key median dx/dy from nominal glyph anchor; case pooled; unseen characters use row medians; controls retain stock centers",
+  "labels": "next prompt character only while entered text is an exact prefix; target must be visible; include incorrect commits",
+  "quality": "keyboard_study_quality rapid out-of-prompt burst exclusion",
+  "training_taps": 1395,
+  "sources": [
+    {
+      "session": "39bed4bd8e7a4fe28d3c93c3ced9b0bb",
+      "sha256": "fa5d6dddc113d5f6d97af47a2651751a28e42f21a45908b0790f80f1a295dfd0"
+    },
+    {
+      "session": "70ef0de26d824815a47b8baf50aa5f3c",
+      "sha256": "0df38afa57badaf1d08dc2e61dfafbe12339a554d144656264f6b5a5e63446ec"
+    },
+    {
+      "session": "7e009162d95d4980acb93e7ed305da85",
+      "sha256": "1086c463ec863144b26b5c3edc93ab22166a528b4fd583ee9fea2f7d60170160"
+    },
+    {
+      "session": "866404870a9447579bd1c6a05e7be44e",
+      "sha256": "0a806dae1b670e1792da292e5067f75bf5ba1e792b023225371862b841dcb12e"
+    },
+    {
+      "session": "896e5ec285664ac6a9baa3bc7db7e8a5",
+      "sha256": "dadd368d2dc24c110282145b3926e4340c633b0a8ce8186eb4609e7f6839edd5"
+    },
+    {
+      "session": "907d4b55f1b74c95a44557c144496793",
+      "sha256": "641a4ee20d0f3ed12d71fd10fed1c30615b9169d441fc80fa5c45f78e5e69b08"
+    },
+    {
+      "session": "9984e941b8f24659b297c64b9c51d088",
+      "sha256": "3048880f9df0c27b76b803977ba31188ac51ebbe3c8074299cf1f3a6b9dd0943"
+    },
+    {
+      "session": "b4419770b3db4012a507e26cad502171",
+      "sha256": "5c87b7eaecf167017a5f23e37fc4273e4369355795c68149ded658833c2f8310"
+    },
+    {
+      "session": "b6474b843f114bf7a962140f239b4553",
+      "sha256": "6eb3c2eb73b77bead70ba153eb987e76d24324f0ef43a4e6aacfa5bb84551de3"
+    },
+    {
+      "session": "ca23426036314b838dfb49e16759024f",
+      "sha256": "78942bacee3cc55f8f921ee939d146a3885a4cbb7cd9856a3458a54c4598a53f"
+    }
+  ],
+  "rows": {
+    "0": {
+      "offset": [
+        -1.0,
+        9.0
+      ],
+      "taps": 629,
+      "sessions": 10
+    },
+    "1": {
+      "offset": [
+        8.111114501953125,
+        18.0
+      ],
+      "taps": 491,
+      "sessions": 10
+    },
+    "2": {
+      "offset": [
+        0.0,
+        22.0
+      ],
+      "taps": 275,
+      "sessions": 10
+    }
+  },
+  "keys": {
+    " ": {
+      "offset": [
+        33.0,
+        22.0
+      ],
+      "taps": 163,
+      "sessions": 10
+    },
+    "!": {
+      "offset": [
+        -1.0,
+        17.0
+      ],
+      "taps": 10,
+      "sessions": 10
+    },
+    ".": {
+      "offset": [
+        -2.0,
+        28.0
+      ],
+      "taps": 21,
+      "sessions": 10
+    },
+    "2": {
+      "offset": [
+        3.5,
+        8.0
+      ],
+      "taps": 10,
+      "sessions": 10
+    },
+    "4": {
+      "offset": [
+        4.0,
+        9.5
+      ],
+      "taps": 10,
+      "sessions": 10
+    },
+    "7": {
+      "offset": [
+        -3.5,
+        3.5
+      ],
+      "taps": 10,
+      "sessions": 10
+    },
+    "_": {
+      "offset": [
+        -7.600006103515625,
+        16.0
+      ],
+      "taps": 13,
+      "sessions": 10
+    },
+    "a": {
+      "offset": [
+        -34.0,
+        4.0
+      ],
+      "taps": 50,
+      "sessions": 10
+    },
+    "b": {
+      "offset": [
+        2.0,
+        22.0
+      ],
+      "taps": 29,
+      "sessions": 10
+    },
+    "c": {
+      "offset": [
+        -2.0,
+        23.0
+      ],
+      "taps": 41,
+      "sessions": 10
+    },
+    "d": {
+      "offset": [
+        3.111114501953125,
+        18.0
+      ],
+      "taps": 31,
+      "sessions": 10
+    },
+    "e": {
+      "offset": [
+        -4.0,
+        6.0
+      ],
+      "taps": 112,
+      "sessions": 10
+    },
+    "f": {
+      "offset": [
+        9.666671752929688,
+        15.0
+      ],
+      "taps": 21,
+      "sessions": 10
+    },
+    "g": {
+      "offset": [
+        4.22222900390625,
+        20.0
+      ],
+      "taps": 19,
+      "sessions": 10
+    },
+    "h": {
+      "offset": [
+        8.77777099609375,
+        15.0
+      ],
+      "taps": 47,
+      "sessions": 10
+    },
+    "i": {
+      "offset": [
+        1.0,
+        6.0
+      ],
+      "taps": 80,
+      "sessions": 10
+    },
+    "j": {
+      "offset": [
+        -0.166656494140625,
+        12.5
+      ],
+      "taps": 24,
+      "sessions": 10
+    },
+    "k": {
+      "offset": [
+        6.888885498046875,
+        20.0
+      ],
+      "taps": 21,
+      "sessions": 10
+    },
+    "l": {
+      "offset": [
+        -4.5555419921875,
+        15.0
+      ],
+      "taps": 80,
+      "sessions": 10
+    },
+    "m": {
+      "offset": [
+        -7.0,
+        23.0
+      ],
+      "taps": 61,
+      "sessions": 10
+    },
+    "n": {
+      "offset": [
+        2.5,
+        20.5
+      ],
+      "taps": 30,
+      "sessions": 10
+    },
+    "o": {
+      "offset": [
+        -2.0,
+        8.0
+      ],
+      "taps": 133,
+      "sessions": 10
+    },
+    "p": {
+      "offset": [
+        38.0,
+        12.0
+      ],
+      "taps": 45,
+      "sessions": 10
+    },
+    "q": {
+      "offset": [
+        -36.5,
+        8.0
+      ],
+      "taps": 20,
+      "sessions": 10
+    },
+    "r": {
+      "offset": [
+        3.0,
+        11.0
+      ],
+      "taps": 75,
+      "sessions": 10
+    },
+    "s": {
+      "offset": [
+        11.055557250976562,
+        15.5
+      ],
+      "taps": 22,
+      "sessions": 10
+    },
+    "t": {
+      "offset": [
+        -4.0,
+        12.0
+      ],
+      "taps": 41,
+      "sessions": 10
+    },
+    "u": {
+      "offset": [
+        -1.0,
+        11.0
+      ],
+      "taps": 49,
+      "sessions": 10
+    },
+    "v": {
+      "offset": [
+        -1.0,
+        18.0
+      ],
+      "taps": 41,
+      "sessions": 10
+    },
+    "w": {
+      "offset": [
+        -2.0,
+        14.5
+      ],
+      "taps": 24,
+      "sessions": 10
+    },
+    "x": {
+      "offset": [
+        0.0,
+        22.5
+      ],
+      "taps": 22,
+      "sessions": 10
+    },
+    "y": {
+      "offset": [
+        0.5,
+        16.0
+      ],
+      "taps": 20,
+      "sessions": 10
+    },
+    "z": {
+      "offset": [
+        11.0,
+        26.5
+      ],
+      "taps": 20,
+      "sessions": 10
+    }
+  }
+}
