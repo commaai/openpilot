@@ -68,6 +68,142 @@ class TestLongitudinalIndicator(unittest.TestCase):
         self.hud._draw_distance_bars(self.rect)
       self.assertEqual([(call.args[1].x, call.args[1].y) for call in draw.call_args_list], expected)
 
+  def test_dynamic_layout_selection_and_live_transition(self):
+    for personality, count in ((log.LongitudinalPersonality.aggressive, 1),
+                               (log.LongitudinalPersonality.standard, 2),
+                               (log.LongitudinalPersonality.relaxed, 3)):
+      self.hud._update_longitudinal_layout(personality, 100)
+      self.assertEqual([fade.x for fade in self.hud._layout_filters], [float(i == count) for i in (1, 2, 3)])
+    with patch.object(self.hud, '_lead_distance_bar_count', return_value=1):
+      self.hud._update_longitudinal_layout(log.LongitudinalPersonality.relaxed, 102)
+      self.assertEqual(self.hud._layout_filters[2].x, 1)
+      self.hud._update_longitudinal_layout(log.LongitudinalPersonality.relaxed, 103)
+      self.assertGreater(self.hud._layout_filters[0].x, 0)
+      self.assertLess(self.hud._layout_filters[0].x, 1)
+      self.assertAlmostEqual(sum(fade.x for fade in self.hud._layout_filters), 1)
+      for _ in range(100):
+        self.hud._update_longitudinal_layout(log.LongitudinalPersonality.relaxed, 104)
+      self.assertAlmostEqual(self.hud._layout_filters[0].x, 1, places=5)
+    with patch.object(self.hud, '_lead_distance_bar_count', return_value=0):
+      for _ in range(100):
+        self.hud._update_longitudinal_layout(log.LongitudinalPersonality.relaxed, 105)
+      self.assertAlmostEqual(self.hud._layout_filters[2].x, 1, places=5)
+    # A rapid new button press snaps even during a live transition.
+    self.hud._update_longitudinal_layout(log.LongitudinalPersonality.standard, 105.1)
+    self.assertEqual([fade.x for fade in self.hud._layout_filters], [0, 1, 0])
+
+  def test_dynamic_bar_assets_and_car_alignment(self):
+    self.hud._distance_icon_parts = [('w0', 26, 119), ('w1', 22, 132), ('w2', 18, 147)]
+    self.hud._distance_green_parts = [('g0', 12, 105), ('g1', 8, 118), ('g2', 4, 133)]
+    for personality, count, expected_positions in (
+        (log.LongitudinalPersonality.aggressive, 1, [(18, 139)]),
+        (log.LongitudinalPersonality.standard, 2, [(22, 129), (18, 144)]),
+        (log.LongitudinalPersonality.relaxed, 3, [(26, 119), (22, 132), (18, 147)])):
+      self.sm['selfdriveState'].personality = personality
+      self.hud._update_longitudinal_layout(personality, 100)
+      with patch.object(self.hud, '_distance_highlight_alpha', return_value=1), \
+           patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as bars, \
+           patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as car:
+        self.hud._draw_distance_bars(self.rect)
+        self.hud._draw_lead_car(self.rect)
+      whites = [call for call in bars.call_args_list if call.args[0].startswith('w')]
+      self.assertEqual([(call.args[1].x, call.args[1].y) for call in whites], expected_positions)
+      greens = [call for call in bars.call_args_list if call.args[0].startswith('g')]
+      self.assertEqual(len(greens), 1)
+      self.assertEqual(greens[0].args[0], 'g2')
+      self.assertEqual(greens[0].args[4].a, 255)
+      white, glow = (car.call_args_list[i].args[2] for i in (0, 1))
+      self.assertEqual((white.x, white.y, white.width, white.height), self.hud._longitudinal_layout(count)[0])
+      self.assertAlmostEqual(glow.x + glow.width * 28 / 184, white.x, places=4)
+      self.assertAlmostEqual(glow.y + glow.height * 28 / 157, white.y, places=4)
+
+  def test_bars_move_as_single_assets_during_layout_transition(self):
+    self.hud._distance_icon_parts = [('w0', 26, 119), ('w1', 22, 132), ('w2', 18, 147)]
+    for fade, weight in zip(self.hud._layout_filters, (0.5, 0, 0.5), strict=True):
+      fade.x = weight
+    with patch.object(self.hud, '_distance_highlight_alpha', return_value=0), \
+         patch.object(self.hud, '_lead_distance_bar_count', return_value=0), \
+         patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as draw:
+      self.hud._draw_distance_bars(self.rect)
+    self.assertEqual([call.args[0] for call in draw.call_args_list], ['w0', 'w1', 'w2'])
+    self.assertEqual([(call.args[1].x, call.args[1].y) for call in draw.call_args_list],
+                     [(26, 115), (22, 128), (18, 143)])
+    # The retained bottom bar stays fully visible; entering bars fade in.
+    self.assertEqual([call.args[4].a for call in draw.call_args_list],
+                     [round(255 * 0.35 * 0.5), round(255 * 0.35 * 0.5), round(255 * 0.35)])
+    self.assertTrue(all(call.args[3] == 1.0 for call in draw.call_args_list))
+
+  def test_following_distance_tolerance_and_reset(self):
+    personality = self.sm['selfdriveState'].personality
+    lead = self.sm['radarState'].leadOne
+    lead.dRel, lead.vRel = 35, 0
+    self.assertTrue(self.hud._at_following_distance(personality))
+    lead.dRel, lead.vRel = 31.2, 0.7
+    self.assertTrue(self.hud._at_following_distance(personality))
+    lead.vRel = 0.8
+    self.assertFalse(self.hud._at_following_distance(personality))
+    lead.vRel = 0
+    self.assertFalse(self.hud._at_following_distance(personality))
+    lead.dRel = 35
+    self.assertTrue(self.hud._at_following_distance(personality))
+    lead.present = False
+    self.assertFalse(self.hud._at_following_distance(personality))
+    lead.present = True
+    self.sm['longitudinalPlan'].hasLead = False
+    self.assertFalse(self.hud._at_following_distance(personality))
+    self.sm['longitudinalPlan'].hasLead = True
+    lead.vRel = float('nan')
+    self.assertFalse(self.hud._at_following_distance(personality))
+    lead.vRel = 0
+    self.assertTrue(self.hud._at_following_distance(personality))
+    self.sm['selfdriveState'].personality = log.LongitudinalPersonality.aggressive
+    self.assertFalse(self.hud._at_following_distance(self.sm['selfdriveState'].personality))
+    self.hud._reset_distance_highlight()
+    self.assertFalse(self.hud._maintaining_distance)
+    self.assertEqual(self.hud._following_distance_filter.x, 0)
+
+  def test_following_distance_colors_lowest_live_bar(self):
+    self.hud._distance_icon_parts = [('w0', 26, 119), ('w1', 22, 132), ('w2', 18, 147)]
+    self.hud._distance_green_parts = [('g0', 12, 105), ('g1', 8, 118), ('g2', 4, 133)]
+    lead = self.sm['radarState'].leadOne
+    lead.dRel, lead.vRel = 35, 0
+    with patch.object(self.hud, '_distance_highlight_alpha', return_value=0), \
+         patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as draw:
+      for _ in range(100):
+        self.hud._draw_distance_bars(self.rect)
+      colors = {call.args[0]: call.args[4].a for call in draw.call_args_list[-4:]}
+      self.assertEqual(colors['g1'], 255)
+      self.assertEqual(colors['w1'], 0)
+      self.assertAlmostEqual(colors['w0'], round(255 * 0.9), delta=1)
+      # A lead pulling away fades green out rather than flickering off.
+      lead.vRel = 2
+      self.hud._draw_distance_bars(self.rect)
+      self.assertGreater(self.hud._following_distance_filter.x, 0)
+      self.assertLess(self.hud._following_distance_filter.x, 1)
+      for _ in range(100):
+        self.hud._draw_distance_bars(self.rect)
+      self.assertAlmostEqual(self.hud._following_distance_filter.x, 0, places=5)
+
+  def test_green_never_confirms_a_farther_band(self):
+    self.hud._distance_icon_parts = [('w0', 26, 119), ('w1', 22, 132), ('w2', 18, 147)]
+    self.hud._distance_green_parts = [('g0', 12, 105), ('g1', 8, 118), ('g2', 4, 133)]
+    lead = self.sm['radarState'].leadOne
+    for personality, target in ((log.LongitudinalPersonality.aggressive, 31),
+                                (log.LongitudinalPersonality.standard, 35),
+                                (log.LongitudinalPersonality.relaxed, 41)):
+      self.sm['selfdriveState'].personality = personality
+      lead.dRel, lead.vRel = target, 0
+      self.assertTrue(self.hud._at_following_distance(self.sm['selfdriveState'].personality))
+      self.hud._following_distance_filter.x = 1
+      # Even a small overshoot must not light the next band's lowest bar.
+      lead.dRel = target + 0.1
+      self.assertFalse(self.hud._at_following_distance(self.sm['selfdriveState'].personality))
+      with patch.object(self.hud, '_distance_highlight_alpha', return_value=0), \
+           patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as draw:
+        self.hud._draw_distance_bars(self.rect)
+      self.assertFalse(any(call.args[0].startswith('g') for call in draw.call_args_list))
+      self.assertEqual(self.hud._following_distance_filter.x, 0)
+
   def test_car_green_tracks_policy_not_gap(self):
     for distance in (10, 35, 80):
       self.sm['radarState'].leadOne.dRel = distance
