@@ -18,7 +18,12 @@ public:
   void draw();
 
 private:
-  std::vector<std::pair<std::string, ImRect>> texts_;
+  struct Entry {
+    std::string text;
+    ImRect rect;
+    ImGuiViewport *viewport;
+  };
+  std::vector<Entry> texts_;
   bool visible_ = false;
   int opened_frame_ = -1;
 };

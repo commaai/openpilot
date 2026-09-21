@@ -16,10 +16,12 @@ bool RouteInfoDlg::draw() {
   static const char *headers[] = {"", "rlog", "narrow road", "wide road", "driver", "qlog", "qcam"};
   auto yn = [](const std::string &s) { return s.empty() ? "--" : "Yes"; };
   const auto &segments = replay_->route().segments();
-  // minimum size: header + min(rowCount, 13) rows
+  // minimum size: fingerprint, header, and min(rowCount, 13) rows
   float row_h = ImGui::GetTextLineHeightWithSpacing();
-  float min_h = row_h * (std::min((int)segments.size(), 13) + 1) + ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().WindowPadding.y * 2;
+  float min_h = row_h * (std::min((int)segments.size(), 13) + 2) + ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().WindowPadding.y * 2;
   if (begin(ImVec2(520, min_h))) {
+    const std::string fingerprint = replay_->carFingerprint();
+    ImGui::TextWrapped("Fingerprint: %s", fingerprint.empty() ? "Unknown" : fingerprint.c_str());
     const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit;
     if (ImGui::BeginTable("table", 7, flags, ImVec2(0, 0))) {
       ImGui::TableSetupScrollFreeze(0, 1);

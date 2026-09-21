@@ -199,7 +199,9 @@ class SelfdriveD:
 
     # Check for user bookmark press
     if self.sm.updated['userBookmark']:
-      self.events.add(EventName.userBookmark)
+      prime_type = self.params.get("PrimeType")
+      paired = prime_type is not None and int(prime_type) >= 0
+      self.events.add(EventName.userBookmark if paired else EventName.userBookmarkNotPaired)
 
     # Don't add any more events while in dashcam mode
     if self.CP.passive:
@@ -398,11 +400,12 @@ class SelfdriveD:
       self.logged_comm_issue = None
 
     if not self.CP.notCar and not big_model_settling:  # localization has nothing to work with during the load
-      if not self.sm['deviceMotion'].posenetOK:
+      # the defaults of a message that was never received are not a localizer failure
+      if self.sm.seen['deviceMotion'] and not self.sm['deviceMotion'].posenetOK:
         self.events.add(EventName.posenetInvalid)
-      if not self.sm['deviceMotion'].inputsOK:
+      if self.sm.seen['deviceMotion'] and not self.sm['deviceMotion'].inputsOK:
         self.events.add(EventName.locationdTemporaryError)
-      if (not self.sm['vehicleParameters'].valid and cal_status == log.ExtrinsicsCalibration.Status.calibrated and
+      if (self.sm.seen['vehicleParameters'] and not self.sm['vehicleParameters'].valid and cal_status == log.ExtrinsicsCalibration.Status.calibrated and
           not TESTING_CLOSET and (not SIMULATION or REPLAY)):
         self.events.add(EventName.paramsdTemporaryError)
 

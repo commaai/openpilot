@@ -1,8 +1,10 @@
 #include "tools/cabana/ui/app.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <stdexcept>
+#include <thread>
 #include <utility>
 
 #include "imgui.h"
@@ -26,36 +28,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   if (action == GLFW_PRESS) g_key_events.push_back({key, mods});
 }
-// imgui releases every mouse button when the window loses focus, which aborts a panel tear-off drag and
-// docks the panel back. X11 keeps delivering the drag through the implicit grab, so hold a focus loss back
-// while a button is down and deliver it after the release (see deliverPendingFocusLoss).
-GLFWwindow *g_focus_lost_window = nullptr;
-// macOS drops the button on its own when the focus moves, and holding the loss back there swallowed the
-// first click in a popup: the click makes the popup's window key, the main window's loss lands on the
-// release and imgui clears its mouse state before it sees that release
-void windowFocusCallback(GLFWwindow *w, int f) {
-#ifdef __APPLE__
-  ImGui_ImplGlfw_WindowFocusCallback(w, f);
-#else
-  if (f) {
-    g_focus_lost_window = nullptr;
-    ImGui_ImplGlfw_WindowFocusCallback(w, f);
-  } else {
-    g_focus_lost_window = w;
-  }
-#endif
-}
-bool anyMouseButtonDown(GLFWwindow *w) {
-  for (int b = GLFW_MOUSE_BUTTON_1; b <= GLFW_MOUSE_BUTTON_LAST; ++b) {
-    if (glfwGetMouseButton(w, b) == GLFW_PRESS) return true;
-  }
-  return false;
-}
-void deliverPendingFocusLoss() {
-  if (g_focus_lost_window == nullptr || anyMouseButtonDown(g_focus_lost_window)) return;
-  ImGui_ImplGlfw_WindowFocusCallback(g_focus_lost_window, GLFW_FALSE);
-  g_focus_lost_window = nullptr;
-}
 
 void hookViewportCallbacks() {
   for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
@@ -68,11 +40,25 @@ void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-// vsync paces the loop: glfwSwapBuffers blocks until the next refresh. Throttling on top of that beats
-// against the refresh rate and makes the camera view stutter.
+void paceFrame() {
+  using clock = std::chrono::steady_clock;
+  static clock::duration period = [] {
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int hz = (mode != nullptr && mode->refreshRate > 0) ? mode->refreshRate : 60;
+    return std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / hz));
+  }();
+  static clock::time_point next = clock::now();
+  next += period;
+  auto now = clock::now();
+  if (next < now) {
+    next = now;  // fell behind (slow frame or hidden window): don't try to catch up
+    return;
+  }
+  std::this_thread::sleep_until(next);
+}
+
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
-  deliverPendingFocusLoss();
   utils::drainMainThreadQueue();
 
   int fb_w = 0, fb_h = 0;
@@ -98,6 +84,7 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     glfwMakeContextCurrent(backup_context);
   }
   glfwSwapBuffers(window);
+  paceFrame();
 }
 
 class GlfwRuntime {
@@ -114,13 +101,15 @@ public:
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
+    // Restore geometry and render the initial layout before mapping the window.
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     window_ = glfwCreateWindow(1600, 900, "Cabana", nullptr, nullptr);
     if (window_ == nullptr) {
       glfwTerminate();
       throw std::runtime_error("glfwCreateWindow failed");
     }
     glfwMakeContextCurrent(window_);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
   }
 
   ~GlfwRuntime() {
@@ -145,7 +134,8 @@ public:
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    io.ConfigViewportsNoDecoration = false;
+    io.ConfigViewportsNoDecoration = true;
+    io.ConfigDockingTransparentPayload = true;
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
     if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
@@ -154,7 +144,6 @@ public:
       throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
     }
     glfwSetKeyCallback(window, keyCallback);
-    glfwSetWindowFocusCallback(window, windowFocusCallback);
     if (!ImGui_ImplOpenGL3_Init("#version 330")) {
       ImGui_ImplGlfw_Shutdown();
       ImPlot::DestroyContext();
@@ -194,6 +183,8 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     inistate::applyWindowGeometry(glfw.window());
 
     MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
+    renderFrame(glfw.window(), &win);
+    glfwShowWindow(glfw.window());
     while (!win.exited()) {
       if (g_signal_exit.exchange(false)) {
         printf("\nexiting...\n");

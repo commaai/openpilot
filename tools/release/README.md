@@ -21,8 +21,8 @@
   - [ ] update from new release -> previous release
   - [ ] fresh install with `openpilot-test.comma.ai`
   - [ ] drive on fresh install
-  - [ ] no submodules or LFS
-  - [ ] check sentry, MTBF, etc.
+  - [ ] no submodules; only the Chestnut big driving model uses LFS
+  - [ ] check MTBF, etc.
   - [ ] stress test passes in production
 - [ ] publish the blog post
 - [ ] `git reset --hard origin/release-mici-staging`

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <condition_variable>
+#include <exception>
 #include <functional>
 #include <future>
 #include <memory>
@@ -36,7 +37,7 @@ public:
       stop_ = true;
     }
     cv_.notify_all();
-    for (auto &t : threads_) t.join();
+    for (auto &thread : threads_) thread.join();
   }
 
 private:
@@ -76,6 +77,11 @@ inline void parallelFor(size_t n, const std::function<void(size_t begin, size_t 
   for (; begin < n; begin += chunk) {
     futures.push_back(ThreadPool::instance().run([&fn, begin, end = std::min(begin + chunk, n)]() { fn(begin, end); }));
   }
-  fn(0, std::min(chunk, n));
-  for (auto &f : futures) f.get();
+  // All tasks must finish before captures can go out of scope, even if one fails.
+  std::exception_ptr error;
+  try { fn(0, std::min(chunk, n)); } catch (...) { error = std::current_exception(); }
+  for (auto &f : futures) {
+    try { f.get(); } catch (...) { if (!error) error = std::current_exception(); }
+  }
+  if (error) std::rethrow_exception(error);
 }

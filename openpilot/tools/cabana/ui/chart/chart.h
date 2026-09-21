@@ -106,6 +106,7 @@ private:
   // layout
   struct Layout {
     ImRect rect;  // the whole chart widget, screen coordinates
+    ImRect content_rect;  // the same inset on all four sides, including during a drag
     ImRect plot_area;
     ImRect move_icon_rect;
     ImRect close_btn_rect;
@@ -120,7 +121,7 @@ private:
   double y_min_ = 0;
   double y_max_ = 1;
   int y_tick_count_ = 3;
-  int y_precision_ = 0;
+  int y_precision_ = 1;
   std::string y_unit_;
   // interaction
   enum class MouseMode { None, Rubber, Scrub };

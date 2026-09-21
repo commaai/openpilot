@@ -4,21 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "imgui.h"
-#include "imgui_internal.h"
-
-#include "tools/cabana/core/color.h"
+#include "tools/cabana/ui/dropdown.h"
 #include "tools/cabana/utils/util.h"
 
 struct GLFWwindow;
-
-inline ImVec4 colorRgb(int r, int g, int b, float alpha = 1.0f) {
-  return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
-}
-
-inline ImU32 toImU32(const CabanaColor &c) { return IM_COL32(c.r, c.g, c.b, c.a); }
-inline ImVec4 toImVec4(const CabanaColor &c) { return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f); }
-inline ImU32 withAlpha(ImU32 c, int alpha) { return (c & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT); }
 
 // the dock window identity of the messages panel (the visible title changes, the part after ### is the id)
 constexpr const char *MESSAGES_PANEL_ID = "###MessagesPanel";
@@ -42,8 +31,14 @@ inline bool inputText(const char *label, std::string *s, const char *hint = "", 
 
 bool inputTextMultiline(const char *label, std::string *s, const ImVec2 &size, ImGuiInputTextFlags flags = 0);
 
-// an input with a trailing clear button once it holds text; true when the text changed
+constexpr float CONTROL_OUTLINE_PADDING = 1.0f;
+// Always pair with ImGui::EndChild(), even when false is returned.
+bool beginControlChild(const char *id, const ImVec2 &size, ImGuiWindowFlags flags = 0);
+
+// SetNextItemWidth includes the field and clear button. Returns true when text changes.
 bool clearableInput(const char *label, std::string *s, const char *hint = "", ImGuiInputTextCallback validator = nullptr);
+
+bool selectable(const char *label, bool selected, ImGuiSelectableFlags flags = 0, const ImVec2 &size = ImVec2(0, 0));
 
 bool comboBox(const char *label, int *index, const std::vector<std::string> &items);
 
@@ -52,17 +47,17 @@ template <typename T>
 inline bool comboBox(const char *label, int *index, const T *values, int count) {
   bool changed = false;
   const std::string preview = *index >= 0 && *index < count ? std::to_string(values[*index]) : "";
-  if (ImGui::BeginCombo(label, preview.c_str())) {
+  if (dropdown::BeginCombo(label, preview.c_str())) {
     for (int i = 0; i < count; ++i) {
       ImGui::PushID(i);
-      if (ImGui::Selectable(std::to_string(values[i]).c_str(), i == *index) && *index != i) {
+      if (dropdown::Item(std::to_string(values[i]).c_str(), nullptr, i == *index) && *index != i) {
         *index = i;
         changed = true;
       }
       if (i == *index) ImGui::SetItemDefaultFocus();
       ImGui::PopID();
     }
-    ImGui::EndCombo();
+    dropdown::EndCombo();
   }
   return changed;
 }
@@ -78,15 +73,30 @@ int doubleValidator(ImGuiInputTextCallbackData *data);
 int ipValidator(ImGuiInputTextCallbackData *data);
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 
-// auto-raise icon button with a tooltip
-bool toolButton(const char *id, const char *icon, const char *tooltip = nullptr, const char *text = nullptr);
+#ifdef __APPLE__
+constexpr const char *MOD_KEY = "Cmd";
+#else
+constexpr const char *MOD_KEY = "Ctrl";
+#endif
+inline std::string shortcut(const char *keys) { return std::string(MOD_KEY) + "+" + keys; }
+
+// Use ItemInnerSpacing between related buttons and ItemSpacing between groups.
+bool iconButton(const char *id, const char *icon, const char *tooltip = nullptr);
+float iconButtonWidth();
+bool stepButton(const char *id, bool increment, const char *tooltip = nullptr);
+struct IconTextButtonOptions {
+  float height = 0.0f;
+  float rounding = -1.0f;  // Negative uses the theme default.
+  float icon_gap = -1.0f;  // Negative uses the theme default.
+  bool center_content = false;
+  float label_width = 0.0f;  // Shared width aligns labels in a group of centered buttons.
+};
+bool iconTextButton(const char *id, const char *icon, const std::string &text, float width = 0.0f,
+                    const IconTextButtonOptions &options = {});
+float iconTextButtonWidth(const char *icon, const std::string &text, const IconTextButtonOptions &options = {});
 
 // tooltip for the last item that also shows while the item is disabled
 void disabledItemTooltip(const char *text);
-
-// exclusive menu action: the bullet sits in the check column and the whole row highlights. `width` is the
-// minimum row width, so a narrow popup stays wide enough for every row while the highlight spans the popup.
-bool radioMenuItem(const char *label, bool checked, float width = 0.0f);
 
 // A queued modal popup submitted from whichever call site is nested in the top-most modal. draw() is called
 // both nested in a modal dialog and at the root level; only the level that opened the popup may submit it
@@ -110,6 +120,12 @@ ImGuiWindow *topPopupWindow();
 bool dialogButtons(const char *accept_label, bool *accepted, bool *rejected, bool accept_enabled = true,
                    const char *reject_label = "Cancel");
 
+// Numeric inputs keep the same external gaps as other button rows. Width includes
+// a readable value plus both step buttons; use for compact fixed-width fields.
+float inputIntWidth(int digits);
+bool inputInt(const char *label, int *value, int step = 1, int step_fast = 100,
+              ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
+
 // horizontal header labels are centered. Returns the column a right click was released on, or -1.
 int tableHeadersRow();
 
@@ -121,6 +137,7 @@ bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlags flags
 // a 16px box vertically centered in the frame height so rows keep their layout; ImGui::Checkbox draws a
 // frame height (22 px) square.
 bool checkBox(const char *label, bool *v);
+constexpr float CHECKBOX_SIZE = 16.0f;
 
 // the next items on the line are right aligned as a block `width` wide
 void alignRight(float width);
@@ -133,14 +150,6 @@ void drawElidedText(ImDrawList *dl, const ImRect &rect, const std::string &text,
 // the colored square in front of a signal name: a text line minus 4 px, drawn 2 px below `pos`
 float markerSize();
 void drawColorMarker(ImDrawList *dl, const ImVec2 &pos, ImU32 col);
-
-void loadFonts();
-void applyTheme(int theme);  // safe to call at runtime
-bool isDarkTheme();  // the theme applyTheme() resolved
-CabanaColor signalFillColor(const CabanaColor &c);
-
-ImU32 highlightedTextColor();
-ImU32 paletteBrightText();
 
 // the next window is a real OS window instead of being drawn inside the main one
 void setNextWindowFloatsOut();
@@ -158,8 +167,6 @@ void setNextDialogWindow(const ImVec2 &size);
 // centered modal dialog. false when the popup is not submitted this frame.
 bool beginDialog(const char *id, PopupOwner *owner, const ImVec2 &size, ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize);
 
-const float TOOLBAR_ITEM_SPACING = 1.0f;
-const float TOOLBAR_BUTTON_PADDING = 4.0f;  // auto raise button horizontal margin
 const float SLIDER_LENGTH = 13.0f;
 const float SLIDER_THICKNESS = 13.0f;
 
@@ -172,31 +179,26 @@ struct ToolbarItem {
   std::function<void()> trigger;
   bool enabled = true;
   bool in_menu = true;  // false: left out of the ">>" menu (a separator)
+  std::function<void()> submenu;  // set: the ">>" entry is a submenu with these items instead of an action
 };
-void beginToolbar();  // item spacing and button padding of a tool bar, until endToolbar()
-void endToolbar();
+ToolbarItem toolbarAction(const char *id, const char *icon, const char *label, std::function<void()> trigger,
+                          bool enabled = true);
+// A drop-down button that opens `items` in a popup; in the overflow menu they become a submenu.
+// width 0: sized to the text.
+ToolbarItem toolbarMenu(const char *id, const std::string &text, const char *label, std::function<void()> items,
+                        bool bold = false, float width = 0.0f);
 float toolbarButtonWidth(const std::string &label);
 // the width of every item plus the spacing between neighbors and the two groups
 float toolbarWidth(const std::vector<ToolbarItem> &items, size_t spacer_index);
 // items before spacer_index sit at the left, the rest are right aligned; the overflow goes into the ">>" menu
-void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index);
+// width < 0 uses the available content width.
+void drawToolbar(const std::vector<ToolbarItem> &items, size_t spacer_index, float width = -1.0f);
 
-// an auto-raise button that opens `popup_id` below itself, with a dropdown arrow after the text. width 0:
-// sized to the text, otherwise the arrow sits at the right edge
+// Opens `popup_id` below the button on press. width 0:
+// sized to the text, otherwise the text and the arrow are centered in the button
 float menuButtonWidth(const std::string &text, bool bold = false);
 bool menuButton(const char *id, const std::string &text, const char *popup_id, bool bold = false, float width = 0.0f);
 
-// a 13x13 handle filled with a subtle vertical gradient and a mid grey outline
 void drawSliderHandle(ImDrawList *p, const ImRect &r);
 
-// full width groove, filled left of the handle, 13x13 handle (style.cc)
 bool fusionSliderInt(const char *label, int *v, int min, int max, float width);
-
-ImFont *boldFont();
-ImFont *monoFont();
-void pushMonoFont(float size = 0.0f);  // 0: the size the font was loaded at
-void popMonoFont();
-void pushBoldFont();
-void popBoldFont();
-void pushLargeFont();
-void popLargeFont();

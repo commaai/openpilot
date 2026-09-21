@@ -128,6 +128,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
     userBookmark @95;
+    userBookmarkNotPaired @104;
     excessiveActuation @96;
     bigModelLoading @100;
     bigModelFailed @102;
@@ -2234,6 +2235,7 @@ struct DriverMonitoringState {
       pose @0: Bool;
       eye @1: Bool;
       phone @2: Bool;
+      sleep @3: Bool;
     }
 
     struct Pose {
@@ -2594,6 +2596,7 @@ struct Event {
     clocks @35 :Clocks;
     deviceState @6 :DeviceState;
     chestnutState @152 :ChestnutState;
+    chestnutGpuState @153 :ChestnutState;
     logMessage @18 :Text;
     errorLogMessage @85 :Text;
 

@@ -3,7 +3,7 @@ set -e
 set -x
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-cd $DIR
+cd "$DIR"
 
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
@@ -19,26 +19,27 @@ BUILD_BRANCH=release-mici-staging
 
 
 # set git identity
-source $DIR/identity.sh
+source "$DIR/identity.sh"
 
 echo "[-] Setting up repo T=$SECONDS"
 if ! git -C "$SOURCE_DIR" worktree remove --force "$BUILD_DIR" 2>/dev/null; then
-  rm -rf $BUILD_DIR
+  rm -rf "$BUILD_DIR"
 fi
 git -C "$SOURCE_DIR" worktree prune
 git -C "$SOURCE_DIR" worktree add --detach --no-checkout "$BUILD_DIR"
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 git update-ref -d "refs/heads/$BUILD_BRANCH"
 git symbolic-ref HEAD "refs/heads/$BUILD_BRANCH"
 git read-tree --empty
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
-cd $SOURCE_DIR
+cd "$SOURCE_DIR"
 ./tools/release/release_files.py | xargs -0 cp -pR --parents -t "$BUILD_DIR" --
 
 # in the directory
-cd $BUILD_DIR
+cd "$BUILD_DIR"
+source "$SOURCE_DIR/tools/release/setup_lfs.sh"
 
 # use the full CPU available for speeding up the build.
 # openpilot resets the CPU frequencies when test_onroad.py runs below.
@@ -49,9 +50,6 @@ for policy in /sys/devices/system/cpu/cpufreq/policy*; do
 done
 
 scons
-if [ -n "$INCLUDE_BIG_MODEL" ]; then
-  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
-fi
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
@@ -59,6 +57,10 @@ if [ -z "$PANDA_DEBUG_BUILD" ]; then
 else
   # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
   scons panda/
+fi
+
+if [ -n "$INCLUDE_BIG_MODEL" ]; then
+  test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 fi
 
 # Ensure no submodules in release
@@ -86,10 +88,11 @@ VERSION=$(cat openpilot/common/version.h | awk -F[\"-]  '{print $2}')
 # writing larger objects is faster than compressing them on-device
 git -c core.compression=0 add -f .
 git -c core.compression=0 -c gc.auto=0 commit -m "openpilot v$VERSION"
+source "$SOURCE_DIR/tools/release/check_file_sizes.sh"
 
 # Run tests
-cd $BUILD_DIR
-RELEASE=1 ./openpilot/selfdrive/test/test_onroad.py
+cd "$BUILD_DIR"
+RELEASE=1 ./openpilot/selfdrive/test/test_onroad.py "$@"
 #tools/test_runner.py openpilot/selfdrive/car/tests/test_car_interfaces.py
 
 echo "[-] pushing release T=$SECONDS"
@@ -98,6 +101,7 @@ for branch in ${RELEASE_BRANCH//,/ }; do
   REFS+=("$BUILD_BRANCH:$branch")
 done
 # uploading the larger pack is faster than spending CPU to optimize it
-git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
+# The big model is already published to LFS by the source branch.
+GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
 
 echo "[-] done T=$SECONDS"

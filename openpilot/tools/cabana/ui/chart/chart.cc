@@ -6,20 +6,18 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
-#include <random>
 
 #include "tools/cabana/core/settings.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chartswidget.h"
+#include "tools/cabana/ui/chart/downsample.h"
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
 
-const int AXIS_X_TOP_MARGIN = 4;
 const int X_TICK_COUNT = 5;
 const double MIN_ZOOM_SECONDS = 0.01;  // 10ms
 const double EPSILON = 1e-6;
-constexpr ImVec4 LAYOUT_MARGINS{8, 6, 8, 6};  // left, top, right, bottom
 static inline bool xLessThan(const ImPlotPoint &p, double x) { return p.x < (x - EPSILON); }
 static inline bool isNull(const ImPlotPoint &p) { return p.x == 0 && p.y == 0; }
 
@@ -51,32 +49,26 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 }
 
 void ChartView::drawMenuActions() {
-  // the current series type is marked with a radio bullet on the left
-  const float indent = ImGui::GetFontSize();
-  float label_width = ImGui::CalcTextSize("Manage Signals").x;
-  for (const char *type : SERIES_TYPE_NAMES) label_width = std::max(label_width, ImGui::CalcTextSize(type).x);
   for (int i = 0; i < (int)std::size(SERIES_TYPE_NAMES); ++i) {
-    if (radioMenuItem(SERIES_TYPE_NAMES[i], i == (int)series_type_, indent + label_width + indent)) {
+    if (dropdown::Item(SERIES_TYPE_NAMES[i], nullptr, i == (int)series_type_)) {
       setSeriesType((SeriesType)i);
     }
   }
   ImGui::Separator();
-  ImGui::Indent(indent);
-  if (ImGui::MenuItem("Manage Signals")) manageSignals();
-  if (ImGui::MenuItem("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
-  ImGui::Unindent(indent);
+  if (dropdown::Item("Manage Signals")) manageSignals();
+  if (dropdown::Item("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
 }
 
 // the buttons and their menus are drawn every frame, at the rects updateLayout() placed them at
 void ChartView::createToolButtons() {
   ImGui::SetCursorScreenPos(layout_.close_btn_rect.Min);
-  bool close_clicked = toolButton("close_btn", icon::X, "Remove Chart");
+  bool close_clicked = iconButton("close_btn", icon::X_LG, "Remove Chart");
 
   ImGui::SetCursorScreenPos(layout_.manage_btn_rect.Min);
-  if (toolButton("manage_btn", icon::LIST, "")) ImGui::OpenPopup("manage_menu");
-  if (ImGui::BeginPopup("manage_menu")) {
+  if (iconButton("manage_btn", icon::THREE_DOTS_VERTICAL, "")) ImGui::OpenPopup("manage_menu");
+  if (dropdown::BeginPopup("manage_menu")) {
     drawMenuActions();
-    ImGui::EndPopup();
+    dropdown::EndPopup();
   }
 
   if (close_clicked) charts_widget_->removeChart(this);
@@ -134,43 +126,47 @@ void ChartView::manageSignals() {
 
 void ChartView::updateLayout() {
   const ImVec2 grip = ImGui::CalcTextSize(icon::GRIP_HORIZONTAL);
-  const ImVec2 top_left = layout_.rect.Min + ImVec2(LAYOUT_MARGINS.x, LAYOUT_MARGINS.y);
+  const ImGuiStyle &style = ImGui::GetStyle();
+  // WindowPadding can be zero in a borderless pane or drag preview. Chart
+  // content always uses the shared control gap, independently of its parent.
+  layout_.content_rect = layout_.rect;
+  layout_.content_rect.Expand(-style.ItemSpacing.x);
+  const ImVec2 top_left = layout_.content_rect.Min;
   layout_.move_icon_rect = ImRect(top_left, top_left + grip);
-  const ImVec2 pad = ImGui::GetStyle().FramePadding * 2;
-  const ImVec2 close_size = ImGui::CalcTextSize(icon::X) + pad;
-  const ImVec2 manage_size = ImGui::CalcTextSize(icon::LIST) + pad;
-  const ImVec2 close_min(layout_.rect.Max.x - LAYOUT_MARGINS.z - close_size.x, top_left.y);
-  layout_.close_btn_rect = ImRect(close_min, close_min + close_size);
-  const ImVec2 manage_min(close_min.x - manage_size.x - ImGui::GetStyle().ItemSpacing.x, top_left.y);
-  layout_.manage_btn_rect = ImRect(manage_min, manage_min + manage_size);
+  const ImVec2 btn_size(iconButtonWidth(), iconButtonWidth());
+  const ImVec2 close_min(layout_.content_rect.Max.x - btn_size.x, top_left.y);
+  layout_.close_btn_rect = ImRect(close_min, close_min + btn_size);
+  const ImVec2 manage_min(close_min.x - btn_size.x - ImGui::GetStyle().ItemSpacing.x, top_left.y);
+  layout_.manage_btn_rect = ImRect(manage_min, manage_min + btn_size);
 
   ImFont *bold = boldFont();
   const float font_size = ImGui::GetFontSize();
   const float fm_height = ImGui::GetTextLineHeight();
   const int marker_size = markerSize();
-  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + 3;  // + the signal value line
-  const int legend_left = layout_.move_icon_rect.Max.x + LAYOUT_MARGINS.x;
-  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - LAYOUT_MARGINS.z, legend_left + 10);
+  const int row_height = std::max<int>(marker_size, fm_height) + fm_height + style.ItemInnerSpacing.y;  // + the signal value line
+  const int legend_left = layout_.move_icon_rect.Max.x + style.ItemSpacing.x;
+  const int legend_right = std::max<int>(layout_.manage_btn_rect.Min.x - ImGui::GetStyle().ItemSpacing.x, legend_left + 10);
 
   // layout legend entries left-to-right, wrapping between the move icon and the buttons
   layout_.legend_rects.clear();
   int x = legend_left, y = top_left.y;
   for (auto &s : sigs_) {
-    int w = marker_size + 5 + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
+    int w = marker_size + style.ItemInnerSpacing.x + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
             ImGui::CalcTextSize(msgLabel(s.msg_id).c_str()).x;
+    pushMonoFont(font_size);
+    w = std::max(w, (int)std::ceil(ImGui::CalcTextSize("-0.00000e+000").x));
+    popMonoFont();
     w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
     if (x + w > legend_right && x > legend_left) {
       x = legend_left;
       y += row_height;
     }
     layout_.legend_rects.emplace_back(ImVec2(x, y), ImVec2(x + w, y + std::max<int>(marker_size, fm_height)));
-    x += w + 12;
+    x += w + style.ItemSpacing.x;
   }
 
   // add top space for the legend and signal values
-  int adjust_top = (y + row_height) - top_left.y;
-  adjust_top = std::max<int>(adjust_top, layout_.manage_btn_rect.Max.y - layout_.rect.Min.y + LAYOUT_MARGINS.y);
-  layout_.header_bottom = layout_.rect.Min.y + adjust_top + LAYOUT_MARGINS.y;
+  layout_.header_bottom = std::max<float>(y + row_height, layout_.manage_btn_rect.Max.y) + ImGui::GetStyle().ItemSpacing.y;
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -262,13 +258,14 @@ void ChartView::updateAxisY() {
     auto [first, last] = visibleRange(s.vals);
     s.min = std::numeric_limits<double>::max();
     s.max = std::numeric_limits<double>::lowest();
+    if (first == last) continue;
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
         if (it->y < s.min) s.min = it->y;
         if (it->y > s.max) s.max = it->y;
       }
     } else {
-      std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last));
+      std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last) - 1);
     }
     min = std::min(min, s.min);
     max = std::max(max, s.max);
@@ -278,7 +275,8 @@ void ChartView::updateAxisY() {
 
   y_unit_ = unit;
 
-  double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
+  const double magnitude = std::max(std::abs(min), std::abs(max));
+  double delta = max - min <= magnitude * 1e-9 ? (magnitude > 0 ? magnitude * 0.05 : 1) : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, 3);
   if (min_y != y_min_ || max_y != y_max_) {
     y_min_ = min_y;
@@ -327,23 +325,19 @@ void ChartView::drawContextMenu() {
     ImGui::OpenPopup("context_menu");
   }
   context_menu_id_ = ImGui::GetID("context_menu");
-  if (ImGui::BeginPopup("context_menu")) {
+  if (dropdown::BeginPopup("context_menu")) {
     drawMenuActions();
-    // the menu holds checkable entries, so every entry keeps the same left margin
-    const float indent = ImGui::GetFontSize();
-    ImGui::Indent(indent);
     ImGui::Separator();
     // the zoom entries come from the toolbar, where they are only visible while zoomed
     if (can->timeRange().has_value()) {
       const std::string undo_text = std::string(icon::ARROW_COUNTERCLOCKWISE) + " Undo Zoom";
       const std::string redo_text = std::string(icon::ARROW_CLOCKWISE) + " Redo Zoom";
-      if (ImGui::MenuItem(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
-      if (ImGui::MenuItem(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
+      if (dropdown::Item(undo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canUndo())) charts_widget_->zoom_undo_stack_.undo();
+      if (dropdown::Item(redo_text.c_str(), nullptr, false, charts_widget_->zoom_undo_stack_.canRedo())) charts_widget_->zoom_undo_stack_.redo();
       ImGui::Separator();
     }
-    if (ImGui::MenuItem("Close")) charts_widget_->removeChart(this);
-    ImGui::Unindent(indent);
-    ImGui::EndPopup();
+    if (dropdown::Item("Close")) charts_widget_->removeChart(this);
+    dropdown::EndPopup();
   }
 }
 
@@ -412,10 +406,10 @@ void ChartView::handleMouseRelease() {
     // Prevent zooming/seeking past the end of the route
     double min = std::clamp(secondsAtPoint(rubber_rect_.Min), can->minSeconds(), can->maxSeconds());
     double max = std::clamp(secondsAtPoint(rubber_rect_.Max), can->minSeconds(), can->maxSeconds());
-    if (rubber_rect_.GetWidth() <= 0) {
-      // no rubber dragged, seek to mouse position
+    if (rubber_rect_.GetWidth() <= 10) {
+      // Small movements are still clicks; use the same threshold as drag-to-zoom.
       can->seekTo(std::clamp(secondsAtPoint(press_pos_), can->minSeconds(), can->maxSeconds()));
-    } else if (rubber_rect_.GetWidth() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
+    } else if ((max - min) > MIN_ZOOM_SECONDS) {
       charts_widget_->zoom_undo_stack_.push(new ZoomCommand({min, max}));
     }
     rubber_rect_ = ImRect();
@@ -434,8 +428,8 @@ void ChartView::handleMouseRelease() {
 
 void ChartView::takeSignalsFrom(ChartView *source) {
   for (auto &s : source->sigs_) {
+    s.color = uniqueColor(s.color);
     sigs_.push_back(std::move(s));
-    sigs_.back().color = uniqueColor(sigs_.back().color, sigs_.back().sig);
   }
   source->sigs_.clear();
   updateAxisY();
@@ -478,17 +472,17 @@ void ChartView::showTip(double sec) {
         s.track_pt = *pt;
         x = std::max(x, xPos(pt->x));
       }
-      std::string name = sigs_.size() > 1 ? s.sig->name + ": " : "";
+      std::string name = s.sig->name;
       std::string min = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
       std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
-      text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .bold = value, .rest = " (" + min + ", " + max + ")"});
+      text_list.push_back({.has_marker = true, .marker = toImU32(graphicColor(s.color)), .name = name, .value = value, .min = min, .max = max});
     }
   }
   if (x < 0) {
     x = tooltip_x_;
   }
   ImVec2 pt(x, layout_.plot_area.Min.y);
-  text_list.insert(text_list.begin(), TipLine{.name = formatNumber(secondsAtPoint({x, 0}), 3)});
+  text_list.insert(text_list.begin(), TipLine{.name = formatNumber(sec, 2) + " s"});
   tip_label_.showText(pt, text_list, visible_rect);
 }
 
@@ -510,11 +504,13 @@ void ChartView::draw(float width) {
     updateLayout();
     paint();
     drawContextMenu();
+    // Keep the tip above the plot, but below popup menus and other windows.
+    ImRect visible_rect = charts_widget_->chartVisibleRect(this);
+    visible_rect.ClipWith(ImRect(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y),
+                               ImVec2(layout_.rect.Max.x, layout_.plot_area.Max.y)));
+    if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw(visible_rect);
   }
   ImGui::EndChild();
-  // a chart scrolled out of the viewport draws no tip
-  const ImRect visible_rect = charts_widget_->chartVisibleRect(this);
-  if (!drawing_ghost_ && visible_rect.GetWidth() > 0 && visible_rect.GetHeight() > 0) tip_label_.draw();
   ImGui::PopID();
 }
 
@@ -531,13 +527,13 @@ void ChartView::paint() {
   drawStaticLayer();
 
   if (can_drop_) {
-    ImGui::GetWindowDrawList()->AddRect(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_Header), 0.0f, 0, 4.0f);
+    ImGui::GetWindowDrawList()->AddRect(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_Header), ImGui::GetStyle().ChildRounding, 0, 4.0f);
   }
 }
 
 void ChartView::drawStaticLayer() {
   ImDrawList *painter = ImGui::GetWindowDrawList();
-  painter->AddRectFilled(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_ChildBg));
+  painter->AddRectFilled(layout_.rect.Min, layout_.rect.Max, ImGui::GetColorU32(ImGuiCol_ChildBg), ImGui::GetStyle().ChildRounding);
   ImGui::SetCursorScreenPos(layout_.move_icon_rect.Min);
   ImGui::InvisibleButton("grip", layout_.move_icon_rect.GetSize());
   if (ImGui::IsItemActivated()) charts_widget_->startChartDrag(this, ImGui::GetMousePos());
@@ -550,34 +546,22 @@ void ChartView::drawStaticLayer() {
 }
 
 void ChartView::drawAxes() {
-  ImGui::SetCursorScreenPos(ImVec2(layout_.rect.Min.x, layout_.header_bottom));
-  const float plot_h = std::max(layout_.rect.Max.y - layout_.header_bottom - LAYOUT_MARGINS.w, 10.0f);
-  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(LAYOUT_MARGINS.x, AXIS_X_TOP_MARGIN));
+  ImGui::SetCursorScreenPos(ImVec2(layout_.content_rect.Min.x, layout_.header_bottom));
+  const float plot_h = std::max(layout_.content_rect.Max.y - layout_.header_bottom, 10.0f);
+  ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0.0f, ImGui::GetStyle().ItemInnerSpacing.y));
   ImPlot::PushStyleColor(ImPlotCol_PlotBg, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_FrameBg, ImVec4(0, 0, 0, 0));
-  // every tick is a 1 px line in the text color at alpha 50, the edge ticks close the box, no tick marks.
-  // that alpha washes out on the dark base, so the dark theme draws opaque guides in a mid gray instead.
-  const bool dark = isDarkTheme();
-  ImVec4 grid_color;
-  if (dark) {
-    grid_color = colorRgb(DarkTheme::light.r, DarkTheme::light.g, DarkTheme::light.b);
-  } else {
-    grid_color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-    grid_color.w = 50.0f / 255.0f;
-  }
-  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, grid_color);
-  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, grid_color);
+  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, palette().grid);
   ImPlot::PushStyleColor(ImPlotCol_AxisTick, ImVec4(0, 0, 0, 0));
   ImPlot::PushStyleColor(ImPlotCol_AxisText, ImGui::GetStyleColorVec4(ImGuiCol_Text));
   ImPlot::PushStyleVar(ImPlotStyleVar_MajorTickLen, ImVec2(0, 0));
-  // MajorGridSize is the per-axis line thickness; thicker guides read better on the dark base
-  ImPlot::PushStyleVar(ImPlotStyleVar_MajorGridSize, dark ? ImVec2(2.0f, 2.0f) : ImVec2(1.0f, 1.0f));
+  ImPlot::PushStyleVar(ImPlotStyleVar_MajorGridSize, ImVec2(1.0f, 1.0f));
   const ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText |
                             ImPlotFlags_NoBoxSelect | ImPlotFlags_NoInputs | ImPlotFlags_NoFrame;
   const ImPlotAxisFlags axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight | ImPlotAxisFlags_NoSideSwitch | ImPlotAxisFlags_Lock;
   // reserve room for the right half of the last x tick label
-  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + 5;
-  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
+  const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x;
+  if (ImPlot::BeginPlot("##plot", ImVec2(layout_.content_rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min_, x_max_, ImPlotCond_Always);
@@ -591,15 +575,24 @@ void ChartView::drawAxes() {
 
     layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
     // ImPlotFlags_NoInputs disables implot's own hover tracking
-    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+    // A popup is a descendant of the chart, but hovering its menu must not hover the plot underneath.
+    layout_.plot_hovered = layout_.plot_area.Contains(ImGui::GetMousePos()) && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
     drawSeries();
+    if (!drawing_ghost_) {
+      // Own plot clicks so custom scrubbing/zooming cannot also move the floating window.
+      const ImGuiID input_id = ImGui::GetID("plot_input");
+      if (ImGui::ItemAdd(layout_.plot_area, input_id)) {
+        bool hovered, held;
+        ImGui::ButtonBehavior(layout_.plot_area, input_id, &hovered, &held);
+      }
+    }
     handleMousePress();
     handleMouseMove();
     handleMouseRelease();
     drawForeground();
     ImPlot::EndPlot();
   }
-  ImPlot::PopStyleColor(6);
+  ImPlot::PopStyleColor(5);
   ImPlot::PopStyleVar(3);
 }
 
@@ -627,12 +620,12 @@ void ChartView::drawLegend() {
     ImGui::PopID();
 
     if (series_type_ == SeriesType::Scatter) {
-      painter->AddCircleFilled(r.Min + ImVec2(marker_size / 2.0f, 2.0f + marker_size / 2.0f), marker_size / 2.0f, toImU32(s.color));
+      painter->AddCircleFilled(r.Min + ImVec2(marker_size / 2.0f, 2.0f + marker_size / 2.0f), marker_size / 2.0f, toImU32(graphicColor(s.color)));
     } else {
-      drawColorMarker(painter, r.Min, toImU32(s.color));
+      drawColorMarker(painter, r.Min, toImU32(graphicColor(s.color)));
     }
 
-    float x = r.Min.x + marker_size + 5;
+    float x = r.Min.x + marker_size + ImGui::GetStyle().ItemInnerSpacing.x;
     const float text_y = r.GetCenter().y - font_size / 2.0f;
     addTextEllipsis(painter, bold, title_color, ImVec2(x, text_y), r.Max.x, s.sig->name);
     float name_w = std::min(bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x, r.Max.x - x);
@@ -641,7 +634,7 @@ void ChartView::drawLegend() {
     addTextEllipsis(painter, normal, msg_color, ImVec2(x, text_y), r.Max.x, msg);
     if (!s.visible) {  // strike out
       const float y = r.GetCenter().y;
-      painter->AddLine(ImVec2(r.Min.x + marker_size + 5, y), ImVec2(std::min(x + ImGui::CalcTextSize(msg.c_str()).x, r.Max.x), y), title_color);
+      painter->AddLine(ImVec2(r.Min.x + marker_size + ImGui::GetStyle().ItemInnerSpacing.x, y), ImVec2(std::min(x + ImGui::CalcTextSize(msg.c_str()).x, r.Max.x), y), title_color);
     }
   }
 }
@@ -662,7 +655,7 @@ void ChartView::drawSeries() {
 
     const std::string label = "##sig" + std::to_string(i);
     ImPlotSpec spec;
-    spec.LineColor = toImVec4(s.color);
+    spec.LineColor = toImVec4(graphicColor(s.color));
     spec.Stride = sizeof(ImPlotPoint);
     if (series_type_ == SeriesType::Scatter) {
       float radius = std::clamp(pixels_per_point / 2.0, 2.0, 8.0) / 2.0;
@@ -678,12 +671,18 @@ void ChartView::drawSeries() {
       if (begin == end) continue;
 
       spec.LineWeight = 2;
-      ImPlot::PlotLine(label.c_str(), &begin->x, &begin->y, end - begin, spec);
+      const int pixels = std::max(1, (int)layout_.plot_area.GetWidth());
+      if (end - begin > pixels * 4) {
+        const auto envelope = chart::pixelEnvelope(begin, end, x_min_, x_max_, pixels);
+        ImPlot::PlotLine(label.c_str(), &envelope.front().x, &envelope.front().y, envelope.size(), spec);
+      } else {
+        ImPlot::PlotLine(label.c_str(), &begin->x, &begin->y, end - begin, spec);
+      }
 
       // show points when zoomed in enough
       if ((num_points == 1 || pixels_per_point > 20) && first != last) {
         ImPlotSpec dots;
-        dots.LineColor = toImVec4(s.color);
+        dots.LineColor = toImVec4(graphicColor(s.color));
         dots.Stride = sizeof(ImPlotPoint);
         dots.Marker = ImPlotMarker_Circle;
         dots.MarkerSize = 4;
@@ -701,12 +700,12 @@ void ChartView::drawForeground() {
   for (auto &s : sigs_) {
     if (!isNull(s.track_pt) && s.visible) {
       ImVec2 pos(xPos(s.track_pt.x), yPos(s.track_pt.y));
-      painter->AddCircleFilled(pos, 5.5f, toImU32(s.color.darker(125)));
+      painter->AddCircleFilled(pos, 5.5f, toImU32(graphicColor(s.color)));
       track_line_x = std::max(track_line_x, pos.x);
     }
   }
   if (track_line_x > 0) {
-    const ImU32 dark_gray = IM_COL32(0x80, 0x80, 0x80, 0xff);
+    const ImU32 dark_gray = ImGui::GetColorU32(palette().text_disabled);
     for (float y = layout_.plot_area.Min.y; y < layout_.plot_area.Max.y; y += 8) {
       painter->AddLine(ImVec2(track_line_x, y), ImVec2(track_line_x, std::min(y + 4, layout_.plot_area.Max.y)), dark_gray, 1.0f);
     }
@@ -722,20 +721,20 @@ void ChartView::drawRubberBandTimeRange() {
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   // ImGuiCol_Header is translucent, so the 1px selection outline is drawn at full alpha
   const ImU32 highlight = withAlpha(ImGui::GetColorU32(ImGuiCol_Header), 255);
-  painter->AddRectFilled(rubber_rect_.Min, rubber_rect_.Max, withAlpha(highlight, 50));
-  painter->AddRect(rubber_rect_.Min, rubber_rect_.Max, highlight);
+  painter->AddRectFilled(rubber_rect_.Min, rubber_rect_.Max, withAlpha(highlight, 50), ImGui::GetStyle().FrameRounding);
+  painter->AddRect(rubber_rect_.Min, rubber_rect_.Max, highlight, ImGui::GetStyle().FrameRounding);
 
   // time labels at the bottom corners (below the plot, so clip to the widget instead of the plot)
   const ImU32 white = IM_COL32_WHITE;
-  const ImU32 gray = IM_COL32(0xa0, 0xa0, 0xa4, 0xff);
+  const ImU32 badge = ImGui::GetColorU32(palette().badge);
   painter = ImGui::GetWindowDrawList();
   painter->PushClipRect(layout_.rect.Min, layout_.rect.Max);
   for (const auto &pt : {rubber_rect_.GetBL(), rubber_rect_.GetBR()}) {
     std::string sec = formatNumber(secondsAtPoint(pt), 2);
-    ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, AXIS_X_TOP_MARGIN * 2);
+    ImVec2 size = ImGui::CalcTextSize(sec.c_str()) + ImVec2(12, ImGui::GetStyle().ItemInnerSpacing.y * 2);
     ImVec2 top_left = pt.x == rubber_rect_.Min.x ? ImVec2(pt.x - size.x, pt.y + 2) : ImVec2(pt.x, pt.y + 2);
-    painter->AddRectFilled(top_left, top_left + size, gray);
-    painter->AddText(top_left + ImVec2(6, AXIS_X_TOP_MARGIN), white, sec.c_str());
+    painter->AddRectFilled(top_left, top_left + size, badge, ImGui::GetStyle().FrameRounding);
+    painter->AddText(top_left + ImVec2(6, ImGui::GetStyle().ItemInnerSpacing.y), white, sec.c_str());
   }
   painter->PopClipRect();
 }
@@ -747,13 +746,13 @@ void ChartView::drawTimeline() {
 
   std::string time_str = formatNumber(cur_sec_, 2);
   ImVec2 time_str_size = ImGui::CalcTextSize(time_str.c_str()) + ImVec2(8, 2);
-  ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + AXIS_X_TOP_MARGIN);
-  const bool dark = isDarkTheme();
-  painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, dark ? IM_COL32(0x80, 0x80, 0x80, 0xff) : IM_COL32(0xa0, 0xa0, 0xa4, 0xff), 3.0f);
+  ImVec2 time_str_pos(x - time_str_size.x / 2.0f, layout_.plot_area.Max.y + ImGui::GetStyle().ItemInnerSpacing.y);
+  painter->AddRectFilled(time_str_pos, time_str_pos + time_str_size, ImGui::GetColorU32(palette().badge), ImGui::GetStyle().FrameRounding);
   painter->AddText(time_str_pos + ImVec2(4, 1), IM_COL32_WHITE, time_str.c_str());
 }
 
 void ChartView::drawSignalValue() {
+  pushMonoFont(ImGui::GetFontSize());
   ImDrawList *painter = ImGui::GetWindowDrawList();
   const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
   for (int i = 0; i < sigs_.size() && i < layout_.legend_rects.size(); ++i) {
@@ -764,27 +763,35 @@ void ChartView::drawSignalValue() {
     ImRect value_rect(value_min, value_min + layout_.legend_rects[i].GetSize());
     float w = ImGui::CalcTextSize(value.c_str()).x;
     if (w <= value_rect.GetWidth()) {
-      painter->AddText(ImVec2(value_rect.GetCenter().x - w / 2, value_rect.Min.y), color, value.c_str());
+      painter->AddText(value_rect.Min, color, value.c_str());
     } else {
       addTextEllipsis(painter, ImGui::GetFont(), color, value_rect.Min, value_rect.Max.x, value);
     }
   }
+  popMonoFont();
 }
 
 CabanaColor ChartView::uniqueColor(CabanaColor color, const cabana::Signal *exclude) const {
-  for (auto &s : sigs_) {
-    if (s.sig != exclude && std::abs(color.hsv().hue - s.color.hsv().hue) < 0.1) {
-      // use different color to distinguish it from others.
-      auto last_color = sigs_.back().color;
-      static thread_local std::mt19937 rng{std::random_device{}()};
-      std::uniform_int_distribution<int> sat(35, 99);
-      std::uniform_int_distribution<int> val(85, 99);
-      color = CabanaColor::fromHsv(std::fmod(last_color.hsv().hue + 60 / 360.0, 1.0),
-                                   sat(rng) / 100.0,
-                                   val(rng) / 100.0,
-                                   color.a / 255.0f);
-      break;
+  auto separation = [&](float hue) {
+    float distance = 1.0f;
+    for (const auto &s : sigs_) {
+      if (exclude && s.sig == exclude) continue;
+      const float delta = std::abs(hue - s.color.hsv().hue);
+      distance = std::min(distance, std::min(delta, 1.0f - delta));
+    }
+    return distance;
+  };
+  const float original_hue = color.hsv().hue;
+  if (separation(original_hue) >= 0.1f) return color;
+
+  float best_hue = original_hue, best_distance = -1;
+  for (int i = 0; i < 36; ++i) {
+    const float hue = std::fmod(original_hue + i / 36.0f, 1.0f);
+    const float distance = separation(hue);
+    if (distance > best_distance) {
+      best_hue = hue;
+      best_distance = distance;
     }
   }
-  return color;
+  return CabanaColor::fromHsv(best_hue, 0.8f, 0.9f, color.a / 255.0f);
 }

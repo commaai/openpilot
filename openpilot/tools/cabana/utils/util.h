@@ -60,20 +60,6 @@ ValidState validateIpAddress(const std::string &input);
 // C-locale floating-point
 ValidState validateDouble(const std::string &input);
 
-struct DarkTheme {
-  static constexpr CabanaColor window{0x35, 0x35, 0x35};
-  static constexpr CabanaColor window_text{0xff, 0xff, 0xff};
-  static constexpr CabanaColor base{0x19, 0x19, 0x19};
-  static constexpr CabanaColor tooltip_text{0xff, 0xff, 0xff};
-  static constexpr CabanaColor text{0xff, 0xff, 0xff};
-  static constexpr CabanaColor button{0x35, 0x35, 0x35};
-  static constexpr CabanaColor highlight{0x2a, 0x82, 0xda};
-  static constexpr CabanaColor bright_text{0xff, 0xff, 0xff};
-  static constexpr CabanaColor disabled_text{0x7f, 0x7f, 0x7f};
-  static constexpr CabanaColor light{0x50, 0x50, 0x50};
-  static constexpr CabanaColor dark{0x23, 0x23, 0x23};
-};
-
 namespace utils {
 
 bool isMainThread();
