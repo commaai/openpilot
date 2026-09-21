@@ -2,6 +2,7 @@ import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.following_distance import STOP_DISTANCE, get_T_FOLLOW
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -259,50 +260,63 @@ class HudRenderer(Widget):
     return 0.35 if overriding else 1.0
 
   def _reset_distance_highlight(self) -> None:
+    self._distance_fill_filters = [FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for _ in range(3)]
     self._distance_personality = None
     self._personality_highlight_time = -math.inf
     self._distance_highlight_filter.x = 0.0
 
   def _distance_highlight_alpha(self, personality: int, now: float) -> float:
-    if self._distance_personality is not None and personality != self._distance_personality:
+    if personality != self._distance_personality:
       self._personality_highlight_time = now
     self._distance_personality = personality
-    # Match the set-speed HUD's persistence and fade for personality changes.
+    # Show on engagement (after reset) and personality changes using the existing HUD timing.
     highlighted = now - self._personality_highlight_time < SET_SPEED_PERSISTENCE
     return self._distance_highlight_filter.update(float(highlighted))
 
   @staticmethod
-  def _longitudinal_layout(personality):
-    # Figma positions before the shared 4 px rightward offset. Smaller gaps
-    # replace the upper bars with a larger car, leaving the wider lower bars.
-    if personality == log.LongitudinalPersonality.aggressive:
-      return (18, 95, 48, 38), 2, -8
-    if personality == log.LongitudinalPersonality.relaxed:
-      return (25, 86, 34, 27), 0, 0
-    return (21, 89, 42, 34), 1, -3
+  def _lead_distance_bar_count() -> int:
+    sm = ui_state.sm
+    if not all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
+               for s in ('longitudinalPlan', 'radarState', 'carState')):
+      return 0
+    lead = sm['radarState'].leadOne
+    speed = sm['carState'].vEgo
+    if not sm['longitudinalPlan'].hasLead or not lead.present or not math.isfinite(lead.dRel) or not math.isfinite(speed) or lead.dRel <= 0:
+      return 0
+    # Steady-state following gaps, not braking-distance or collision-risk estimates.
+    for count, personality in enumerate((log.LongitudinalPersonality.aggressive,
+                                         log.LongitudinalPersonality.standard,
+                                         log.LongitudinalPersonality.relaxed), start=1):
+      if lead.dRel <= STOP_DISTANCE + max(0.0, speed) * get_T_FOLLOW(personality):
+        return count
+    return 0
 
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
     personality = sm['selfdriveState'].personality
-    _, first_bar, y_offset = self._longitudinal_layout(personality)
-    green_alpha = self._distance_highlight_alpha(personality.raw, rl.get_time())
+    highlight_alpha = self._distance_highlight_alpha(personality.raw, rl.get_time())
+    last_active = {log.LongitudinalPersonality.aggressive: 0,
+                   log.LongitudinalPersonality.standard: 1,
+                   log.LongitudinalPersonality.relaxed: 2}[personality.raw]
     orange_alpha = self._braking_orange_alpha()
+    bar_count = self._lead_distance_bar_count()
     for index, (texture, x, y) in enumerate(self._distance_icon_parts):
-      if index < first_bar:
-        continue
-      highlighted = index == 2
-      alpha = 0.9 * (1.0 - green_alpha if highlighted else 1.0)
-      alpha *= self._accel_override_alpha * (1.0 - orange_alpha)
+      green_alpha = highlight_alpha if index == last_active else 0.0
+      live_alpha = self._distance_fill_filters[index].update(float(index < bar_count))
+      # The temporary personality display takes precedence over live distance.
+      white_alpha = live_alpha * (1.0 - highlight_alpha) + (highlight_alpha if index < last_active else 0.0)
+      alpha = 0.35 * (1.0 - white_alpha - green_alpha) + 0.9 * white_alpha * self._accel_override_alpha
+      alpha *= 1.0 - orange_alpha
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
-      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
-      if highlighted and green_alpha > 0:
+      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
+      if green_alpha > 0:
         green, gx, gy = self._distance_green_parts[index]
-        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
+        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
                                                         self._longitudinal_icon_opacity * self._accel_override_alpha)))
       if orange_alpha > 0:
         orange, ox, oy = self._distance_orange_parts[index]
-        rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy + y_offset), 0.0, 1.0,
+        rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * orange_alpha * self._longitudinal_icon_opacity * self._accel_override_alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
@@ -318,7 +332,7 @@ class HudRenderer(Widget):
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
     override_alpha = self._accel_override_alpha if has_lead else 1.0
-    (x, y, width, height), _, _ = self._longitudinal_layout(sm['selfdriveState'].personality)
+    x, y, width, height = 25, 86, 34, 27
     # The new 128x101 car has 28 source pixels of glow on every side in
     # the 184x157 colored exports. Scale that padding with the car so color
     # crossfades never change its apparent silhouette or placement.
