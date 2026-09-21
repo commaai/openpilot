@@ -185,8 +185,6 @@ class MiciKeyboard(Widget):
     for keys in (self._lower_keys, self._upper_keys):
       keys[2].insert(0, self._caps_key)
       keys[2].append(self._123_key)
-
-    for keys in (self._lower_keys, self._upper_keys):
       keys[1].append(self._space_key)
 
     for keys in (self._special_keys, self._super_special_keys):
@@ -195,16 +193,9 @@ class MiciKeyboard(Widget):
     self._special_keys[2].insert(0, self._super_special_key)
     self._super_special_keys[2].insert(0, self._123_key2)
 
-    self._layer_targets = {
-      self._123_key: self._special_keys,
-      self._123_key2: self._special_keys,
-      self._abc_key: self._lower_keys,
-      self._super_special_key: self._super_special_keys,
-    }
     self._slide_origin: list[list[Key]] | None = None
     self._slide_return_control: Key | None = None
     self._caps_last_tap_at: float | None = None
-    self._caps_quick_tap = False
 
     # set initial keys
     self._current_keys: list[list[Key]] = []
@@ -277,13 +268,12 @@ class MiciKeyboard(Widget):
 
     if mouse_event.left_pressed and self._dragging_on_keyboard:
       key = self._closest_key[0]
-      self._caps_quick_tap = (key is self._caps_key and self._caps_last_tap_at is not None and
-                              rl.get_time() - self._caps_last_tap_at <= CAPS_DOUBLE_TAP_WINDOW)
-      if key is not self._caps_key:
+      if key is not self._caps_key or (self._caps_last_tap_at is not None and
+                                      rl.get_time() - self._caps_last_tap_at > CAPS_DOUBLE_TAP_WINDOW):
         self._caps_last_tap_at = None
-      if key in self._layer_targets:
-        self._slide_origin = self._current_keys
-        self._activate_layer_control(key)
+      previous_keys = self._current_keys
+      if self._switch_layer(key):
+        self._slide_origin = previous_keys
         self._closest_key = (None, float('inf'))
         self._closest_key = self._get_closest_key()
         self._slide_return_control = self._closest_key[0]
@@ -310,43 +300,43 @@ class MiciKeyboard(Widget):
     size = (39, 38) if state == CapsState.LOCK else (38, 33)
     self._caps_key.set_icon(f"icons_mici/settings/keyboard/caps_{state.name.lower()}.png", icon_size=size)
 
-  def _show_letters(self):
-    self._set_keys(self._lower_keys if self._caps_state == CapsState.LOWER else self._upper_keys)
+    if self._current_keys in (self._lower_keys, self._upper_keys):
+      self._set_keys(self._lower_keys if state == CapsState.LOWER else self._upper_keys)
 
-  def _activate_layer_control(self, key: Key):
-    if key is self._abc_key:
+  def _switch_layer(self, key: Key | None) -> bool:
+    if key in (self._123_key, self._123_key2):
+      self._set_keys(self._special_keys)
+    elif key is self._abc_key:
       self._set_caps_state(CapsState.LOWER)
-    self._set_keys(self._layer_targets[key])
+      self._set_keys(self._lower_keys)
+    elif key is self._super_special_key:
+      self._set_keys(self._super_special_keys)
+    else:
+      return False
+    return True
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
     key = self._closest_key[0]
     if key is not None:
       if key is self._caps_key:
-        state = CapsState.LOCK if self._caps_state == CapsState.UPPER and self._caps_quick_tap else (
+        state = CapsState.LOCK if self._caps_state == CapsState.UPPER and self._caps_last_tap_at is not None else (
           CapsState.UPPER if self._caps_state == CapsState.LOWER else CapsState.LOWER)
         self._set_caps_state(state)
         self._caps_last_tap_at = rl.get_time()
-        if self._current_keys in (self._lower_keys, self._upper_keys):
-          self._show_letters()
-      elif key in self._layer_targets:
-        # The initial control opens on touch-down. Other controls only switch on release.
-        if self._slide_origin is None or key is not self._slide_return_control:
-          self._activate_layer_control(key)
-      else:
+      # The initial control already opened its page; other controls switch on release.
+      elif key is not self._slide_return_control and not self._switch_layer(key):
         self._text += key.char
         if self._caps_state == CapsState.UPPER:
           self._set_caps_state(CapsState.LOWER)
-          if self._current_keys in (self._lower_keys, self._upper_keys):
-            self._show_letters()
 
         if key.char in self._auto_return_to_letters and self._current_keys in (self._special_keys, self._super_special_keys):
           self._set_caps_state(CapsState.LOWER)
-          self._show_letters()
+          self._set_keys(self._lower_keys)
 
         if self._slide_origin is not None:
           if self._slide_origin in (self._lower_keys, self._upper_keys):
-            self._show_letters()
+            self._set_keys(self._lower_keys if self._caps_state == CapsState.LOWER else self._upper_keys)
           else:
             self._set_keys(self._slide_origin)
 
