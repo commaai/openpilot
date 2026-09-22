@@ -2,7 +2,6 @@ import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.following_distance import STOP_DISTANCE, get_T_FOLLOW
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -125,6 +124,18 @@ class HudRenderer(Widget):
     self._txt_lead_car = gui_app.texture('icons_mici/longitudinal/car.png')
     self._txt_lead_car_green = gui_app.texture('icons_mici/longitudinal/car_green.png')
     self._txt_lead_car_orange = gui_app.texture('icons_mici/longitudinal/car_orange.png')
+    # Match font filtering for smooth minification during car resizing.
+    for texture in (self._txt_lead_car, self._txt_lead_car_green, self._txt_lead_car_orange):
+      rl.gen_texture_mipmaps(texture)
+      rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
+    self._car_triangle_parts = [
+      (gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False), x, y)
+      for name, x, y, width, height in (
+        ('car_tri', 33, 137, 18, 11),
+        ('car_tri_green', 21, 125, 42, 35),
+        ('car_tri_orange', 21, 125, 42, 35),
+      )
+    ]
     self._lead_car_white_filter = FirstOrderFilter(0.35, 0.1, 1 / gui_app.target_fps)
     self._lead_car_green_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._lead_car_orange_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -142,7 +153,6 @@ class HudRenderer(Widget):
       (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
       for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
     ]
-    self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._distance_orange_parts = [
       (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_orange.png', width, height, keep_aspect_ratio=False), x, y)
       for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
@@ -261,29 +271,17 @@ class HudRenderer(Widget):
     return 0.35 if overriding else 1.0
 
   def _reset_distance_highlight(self) -> None:
-    self._distance_fill_filters = [FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for _ in range(3)]
-    self._maintaining_distance = False
-    self._following_personality = None
-    self._following_distance_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._triangle_presence_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self._layout_personality = None
     self._layout_highlight_time = -math.inf
-    self._layout_filters = [FirstOrderFilter(float(i == 2), 0.1, 1 / gui_app.target_fps) for i in range(3)]
-    self._distance_personality = None
-    self._personality_highlight_time = -math.inf
-    self._distance_highlight_filter.x = 0.0
-
-  def _distance_highlight_alpha(self, personality: int, now: float) -> float:
-    if personality != self._distance_personality:
-      self._personality_highlight_time = now
-    self._distance_personality = personality
-    # Show on engagement (after reset) and personality changes using the existing HUD timing.
-    highlighted = now - self._personality_highlight_time < SET_SPEED_PERSISTENCE
-    return self._distance_highlight_filter.update(float(highlighted))
+    self._layout_filters = [FirstOrderFilter(float(i == 0), 0.1, 1 / gui_app.target_fps) for i in range(4)]
 
   @staticmethod
   def _longitudinal_layout(count):
-    # Original Figma placements, before the shared 4 px rightward offset.
-    return {1: ((18, 95, 48, 38), -8),
+    # Original personality placements, plus a centered car-only resting layout.
+    # Coordinates precede the shared 4 px rightward offset.
+    return {0: ((16, 96, 52, 41), -16),
+            1: ((18, 95, 48, 38), -8),
             2: ((21, 89, 42, 34), -3),
             3: ((25, 86, 34, 27), 0)}[count]
 
@@ -291,88 +289,33 @@ class HudRenderer(Widget):
     selected = {log.LongitudinalPersonality.aggressive: 1,
                 log.LongitudinalPersonality.standard: 2,
                 log.LongitudinalPersonality.relaxed: 3}[personality]
-    changed = personality != self._layout_personality
-    if changed:
+    first = self._layout_personality is None
+    if personality != self._layout_personality:
       self._layout_personality = personality
       self._layout_highlight_time = now
-    target = selected if now - self._layout_highlight_time < SET_SPEED_PERSISTENCE else (self._lead_distance_bar_count() or 3)
-    for count, fade in enumerate(self._layout_filters, start=1):
-      if changed:
-        fade.x = float(count == target)  # Immediate feedback for button presses.
+    target = selected if now - self._layout_highlight_time < SET_SPEED_PERSISTENCE else 0
+    for count, fade in enumerate(self._layout_filters):
+      if first:
+        fade.x = float(count == target)
       else:
         fade.update(float(count == target))
 
-  @staticmethod
-  def _lead_distance_bar_count() -> int:
-    sm = ui_state.sm
-    if not all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
-               for s in ('longitudinalPlan', 'radarState', 'carState')):
-      return 0
-    lead = sm['radarState'].leadOne
-    speed = sm['carState'].vEgo
-    if not sm['longitudinalPlan'].hasLead or not lead.present or not math.isfinite(lead.dRel) or not math.isfinite(speed) or lead.dRel <= 0:
-      return 0
-    # Steady-state following gaps, not braking-distance or collision-risk estimates.
-    for count, personality in enumerate((log.LongitudinalPersonality.aggressive,
-                                         log.LongitudinalPersonality.standard,
-                                         log.LongitudinalPersonality.relaxed), start=1):
-      if lead.dRel <= STOP_DISTANCE + max(0.0, speed) * get_T_FOLLOW(personality):
-        return count
-    return 0
-
-  def _at_following_distance(self, personality) -> bool:
-    sm = ui_state.sm
-    if self._following_personality != personality.raw:
-      self._maintaining_distance = False
-    self._following_personality = personality.raw
-    valid = all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
-                for s in ('radarState', 'carState', 'longitudinalPlan'))
-    lead = sm['radarState'].leadOne
-    speed = sm['carState'].vEgo
-    if (not valid or not sm['longitudinalPlan'].hasLead or not lead.present or
-        not all(math.isfinite(value) for value in (speed, lead.dRel, lead.vRel)) or lead.dRel <= 0):
-      self._maintaining_distance = False
-      return False
-    # At matched speeds the MPC braking-distance terms cancel out.
-    target = STOP_DISTANCE + get_T_FOLLOW(personality) * max(0.0, speed)
-    # Allow small close-side variation, but never call an oversized gap correct.
-    distance_tolerance = max(3.0, target * 0.15) if self._maintaining_distance else max(2.0, target * 0.10)
-    speed_tolerance = 0.75 if self._maintaining_distance else 0.5
-    self._maintaining_distance = 0.0 <= target - lead.dRel <= distance_tolerance and abs(lead.vRel) <= speed_tolerance
-    return self._maintaining_distance
-
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
-    sm = ui_state.sm
-    personality = sm['selfdriveState'].personality
-    highlight_alpha = self._distance_highlight_alpha(personality.raw, rl.get_time())
-    last_active = {log.LongitudinalPersonality.aggressive: 0,
-                   log.LongitudinalPersonality.standard: 1,
-                   log.LongitudinalPersonality.relaxed: 2}[personality.raw]
     orange_alpha = self._braking_orange_alpha()
-    bar_count = self._lead_distance_bar_count()
-    matching_band = bar_count == last_active + 1
-    maintaining = self._at_following_distance(personality)
-    if not matching_band:
-      # Do not carry a fading green confirmation into a different distance band.
-      self._maintaining_distance = False
-      self._following_distance_filter.x = 0.0
-    following_alpha = self._following_distance_filter.update(float(maintaining and matching_band))
-    live_alphas = [fade.update(float(i < bar_count)) for i, fade in enumerate(self._distance_fill_filters)]
     # Move each physical asset once, rather than crossfading copies of whole layouts.
     y_offset = sum(self._longitudinal_layout(count)[1] * fade.x
-                   for count, fade in enumerate(self._layout_filters, start=1))
+                   for count, fade in enumerate(self._layout_filters))
     for asset_index, (texture, x, y) in enumerate(self._distance_icon_parts):
       visibility = white_alpha = green_alpha = 0.0
-      for count, layout_filter in enumerate(self._layout_filters, start=1):
+      for count, layout_filter in enumerate(self._layout_filters):
         index = asset_index - (3 - count)
         if index < 0:
           continue
         weight = layout_filter.x
         visibility += weight
-        live_alpha = live_alphas[index] * (1.0 - highlight_alpha)
-        following_green = live_alpha * following_alpha if matching_band and index == last_active else 0.0
-        green_alpha += weight * ((highlight_alpha if index == last_active else 0.0) + following_green)
-        white_alpha += weight * (live_alpha - following_green + (highlight_alpha if index < last_active else 0.0))
+        # Every selected bar is lit; the lowest visible one is green.
+        green_alpha += weight if index == count - 1 else 0.0
+        white_alpha += weight if index < count - 1 else 0.0
       if visibility < 1e-5:
         continue
       alpha = 0.35 * (visibility - white_alpha - green_alpha) + 0.9 * white_alpha * self._accel_override_alpha
@@ -404,11 +347,18 @@ class HudRenderer(Widget):
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
     override_alpha = self._accel_override_alpha if has_lead else 1.0
     x, y, width, height = (sum(self._longitudinal_layout(count)[0][axis] * fade.x
-                              for count, fade in enumerate(self._layout_filters, start=1)) for axis in range(4))
-    # The new 128x101 car has 28 source pixels of glow on every side in
-    # the 184x157 colored exports. Scale that padding with the car so color
-    # crossfades never change its apparent silhouette or placement.
-    pad_x, pad_y = 28 * width / 128, 28 * height / 101
+                              for count, fade in enumerate(self._layout_filters)) for axis in range(4))
+    # Figma's colored exports have a 68x54 car core and 28 px glow padding.
+    # Keep the resting export at exactly 94x83; align the other layouts to their white core.
+    resting_alpha = self._layout_filters[0].x
+    triangle_presence = self._triangle_presence_filter.update(float(has_lead or fcw))
+    # Half the triangle's 11 px height keeps the resting silhouette centered.
+    triangle_travel = 5.5 * (1.0 - triangle_presence)
+    y += resting_alpha * triangle_travel
+    pad_x = sum((21 if count == 0 else 28 * self._longitudinal_layout(count)[0][2] / 68) * fade.x
+                for count, fade in enumerate(self._layout_filters))
+    pad_y = sum((21 if count == 0 else 28 * self._longitudinal_layout(count)[0][3] / 54) * fade.x
+                for count, fade in enumerate(self._layout_filters))
     white_rect = rl.Rectangle(rect.x + x, rect.y + y, width, height)
     glow_rect = rl.Rectangle(rect.x + x - pad_x, rect.y + y - pad_y, width + 2 * pad_x, height + 2 * pad_y)
     for texture, destination, alpha in ((self._txt_lead_car, white_rect, white_alpha),
@@ -417,6 +367,14 @@ class HudRenderer(Widget):
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
       source = rl.Rectangle(0, 0, texture.width, texture.height)
       rl.draw_texture_pro(texture, source, destination, rl.Vector2(0, 0), 0.0, color)
+
+    # Resting triangle shares the car's filtered colors and override dimming.
+    # Its opacity is complementary to the outgoing personality layouts.
+    if resting_alpha * triangle_presence > 1e-5:
+      for (texture, tx, ty), alpha in zip(self._car_triangle_parts, (white_alpha, green_alpha, orange_alpha), strict=True):
+        rl.draw_texture_ex(texture, rl.Vector2(rect.x + tx, rect.y + ty - triangle_travel), 0.0, 1.0,
+                           rl.Color(255, 255, 255, round(255 * alpha * resting_alpha * triangle_presence *
+                                                        self._longitudinal_icon_opacity * override_alpha)))
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
