@@ -149,10 +149,6 @@ class HudRenderer(Widget):
         ('distance_3', 18, 147, 48, 11),
       )
     ]
-    self._distance_green_parts = [
-      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
-      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
-    ]
     self._distance_orange_parts = [
       (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_orange.png', width, height, keep_aspect_ratio=False), x, y)
       for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
@@ -294,27 +290,19 @@ class HudRenderer(Widget):
     y_offset = sum(self._longitudinal_layout(count)[1] * fade.x
                    for count, fade in enumerate(self._layout_filters))
     for asset_index, (texture, x, y) in enumerate(self._distance_icon_parts):
-      visibility = white_alpha = green_alpha = 0.0
+      visibility = 0.0
       for count, layout_filter in enumerate(self._layout_filters):
         index = asset_index - (3 - count)
         if index < 0:
           continue
         weight = layout_filter.x
         visibility += weight
-        # Every selected bar is lit; the lowest visible one is green.
-        green_alpha += weight if index == count - 1 else 0.0
-        white_alpha += weight if index < count - 1 else 0.0
       if visibility < 1e-5:
         continue
-      alpha = 0.35 * (visibility - white_alpha - green_alpha) + 0.9 * white_alpha
+      alpha = 0.9 * visibility
       alpha *= 1.0 - orange_alpha
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
-      if green_alpha > 0:
-        green, gx, gy = self._distance_green_parts[asset_index]
-        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
-                                                        self._longitudinal_icon_opacity)))
       if orange_alpha > 0:
         orange, ox, oy = self._distance_orange_parts[asset_index]
         rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy + y_offset), 0.0, 1.0,

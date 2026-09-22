@@ -86,11 +86,9 @@ class TestLongitudinalIndicator(unittest.TestCase):
       whites = [c for c in bars.call_args_list if c.args[0].startswith('w')]
       greens = [c for c in bars.call_args_list if c.args[0].startswith('g')]
       self.assertEqual([(c.args[1].x, c.args[1].y) for c in whites], expected[count])
-      self.assertEqual(len(greens), int(count > 0))
+      self.assertEqual(len(greens), 0)
       if count:
-        self.assertEqual(greens[0].args[0], 'g2')
-        self.assertEqual(greens[0].args[4].a, 255)
-        self.assertEqual([c.args[4].a for c in whites], [round(255 * 0.9)] * (count - 1) + [0])
+        self.assertEqual([c.args[4].a for c in whites], [round(255 * 0.9)] * count)
       white, glow = (car.call_args_list[i].args[2] for i in (0, 1))
       self.assertEqual((white.x, white.y, white.width, white.height), self.hud._longitudinal_layout(count)[0])
       if count == 0:
@@ -108,10 +106,10 @@ class TestLongitudinalIndicator(unittest.TestCase):
          patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as car:
       self.hud._draw_distance_bars(self.rect)
       self.hud._draw_lead_car(self.rect)
-    self.assertEqual([c.args[0] for c in bars.call_args_list], ['w0', 'w1', 'w2', 'g2', 'tri', 'tri_green', 'tri_orange'])
+    self.assertEqual([c.args[0] for c in bars.call_args_list], ['w0', 'w1', 'w2', 'tri', 'tri_green', 'tri_orange'])
     self.assertEqual([c.args[1].y for c in bars.call_args_list[:3]], [111, 124, 139])
     self.assertTrue(all(c.args[3] == 1 for c in bars.call_args_list))
-    self.assertEqual(bars.call_args_list[3].args[4].a, round(255 * 0.5))
+    self.assertEqual(bars.call_args_list[2].args[4].a, round(255 * 0.9 * 0.5))
     white = car.call_args_list[0].args[2]
     self.assertEqual((white.x, white.y, white.width, white.height), (20.5, 91, 43, 34))
 
