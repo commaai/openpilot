@@ -245,7 +245,7 @@ class Car:
     self.state_publish(CS, RD)
 
     initialized = (not any(e.name == EventName.selfdriveInitializing for e in self.sm['onroadEvents']) and
-                   self.sm.seen['onroadEvents'])
+                   self.sm.seen['onroadEvents'] and self.sm.seen['carControl'])
     if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])
 
