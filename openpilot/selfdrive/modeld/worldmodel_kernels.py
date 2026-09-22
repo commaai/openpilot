@@ -1,4 +1,5 @@
-from functools import cache
+from functools import cache, partial
+import math
 from tinygrad import Tensor, Device, UOp, dtypes
 from tinygrad.uop.ops import Ops, KernelInfo
 from tinygrad.renderer import Estimates
@@ -154,3 +155,242 @@ def _kernel(c, a, b, scale_a, scale_b, bias):
 def fp8_linear(x, weight, scale, weight_scale, bias):
   out = Tensor.empty(x.shape[0], weight.shape[0], dtype=dtypes.bfloat16, device=x.device)
   return out.custom_kernel(x, weight, scale.reshape(1), weight_scale.reshape(1), bias, fxn=_kernel)[0]
+
+
+@cache
+def _attention_program(seq, total, start_frame, device):
+  name = f'worldmodel_attention_{seq}_{total}_{start_frame}'
+  stride, area = 72, 64 * 72
+  lines = [
+    f'@lds = internal addrspace(3) global [{2 * area} x i16] undef, align 16',
+    'declare i32 @llvm.amdgcn.workgroup.id.x()',
+    'declare i32 @llvm.amdgcn.workgroup.id.y()',
+    'declare i32 @llvm.amdgcn.workitem.id.x()',
+    'declare i32 @llvm.amdgcn.ds.swizzle(i32, i32)',
+    'declare void @llvm.amdgcn.s.barrier()',
+    'declare float @llvm.maxnum.f32(float, float)',
+    'declare float @llvm.exp2.f32(float)',
+    'declare <8 x float> @llvm.amdgcn.wmma.f32.16x16x16.bf16.v8f32.v8bf16(<8 x i16>, <8 x i16>, <8 x float>)',
+    f'define amdgpu_kernel void @{name}(ptr addrspace(1) %o, ptr addrspace(1) %q, ptr addrspace(1) %k, ptr addrspace(1) %v) #0 {{',
+    'entry:',
+    '%block = call i32 @llvm.amdgcn.workgroup.id.x()',
+    '%head = call i32 @llvm.amdgcn.workgroup.id.y()',
+    '%tid = call i32 @llvm.amdgcn.workitem.id.x()',
+    '%lane = and i32 %tid, 31',
+    '%wave = lshr i32 %tid, 5',
+    '%lm = and i32 %lane, 15',
+    '%half = lshr i32 %lane, 4',
+    '%kh = shl i32 %half, 3',
+    '%khalf = shl i32 %half, 2',
+    '%qm0 = shl i32 %block, 6',
+    '%qm1 = shl i32 %wave, 4',
+    '%qm2 = add i32 %qm0, %qm1',
+    '%qm = add i32 %qm2, %lm',
+    f'%qbase = mul i32 %head, {seq * 64}',
+    '%qrow = mul i32 %qm, 64',
+    '%qoff0 = add i32 %qbase, %qrow',
+    '%qoff = add i32 %qoff0, %khalf',
+    f'%kvbase = mul i32 %head, {total * 64}',
+    '%frame = lshr i32 %block, 1',
+    f'%frame_end = add i32 %frame, {start_frame + 1}',
+    '%kend = shl i32 %frame_end, 7',
+    '%loadrow = lshr i32 %tid, 3',
+    '%loadcol0 = and i32 %tid, 7',
+    '%loadcol = shl i32 %loadcol0, 3',
+    '%outrow0 = add i32 %qm2, %kh',
+    '%outrow1 = mul i32 %outrow0, 64',
+    '%outoff0 = add i32 %qbase, %outrow1',
+    '%outoff = add i32 %outoff0, %lm',
+    '%pm0 = add i32 %qm1, %kh',
+    f'%pbase0 = mul i32 %pm0, {stride}',
+    '%pbase = add i32 %pbase0, %lm',
+  ]
+  emit = lines.append
+
+  def fragment(key, pointer, space):
+    emit(f'%{key}lo = load <4 x i16>, ptr addrspace({space}) {pointer}, align 8')
+    emit(f'%{key}ptr = getelementptr i16, ptr addrspace({space}) {pointer}, i32 8')
+    emit(f'%{key}hi = load <4 x i16>, ptr addrspace({space}) %{key}ptr, align 8')
+    emit(f'%{key} = shufflevector <4 x i16> %{key}lo, <4 x i16> %{key}hi, ' +
+         '<8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7>')
+
+  for ik in range(4):
+    emit(f'%qi{ik} = add i32 %qoff, {ik * 16}')
+    emit(f'%qp{ik} = getelementptr i16, ptr addrspace(1) %q, i32 %qi{ik}')
+    fragment(f'qv{ik}', f'%qp{ik}', 1)
+
+  def bf16(key, value):
+    emit(f'%{key}bits = bitcast float {value} to i32')
+    emit(f'%{key}top = lshr i32 %{key}bits, 16')
+    emit(f'%{key}odd = and i32 %{key}top, 1')
+    emit(f'%{key}rnd0 = add i32 %{key}bits, 32767')
+    emit(f'%{key}rnd = add i32 %{key}rnd0, %{key}odd')
+    emit(f'%{key}tr = lshr i32 %{key}rnd, 16')
+    emit(f'%{key}bf = trunc i32 %{key}tr to i16')
+    return f'%{key}bf'
+
+  def reduce_max(key, val):
+    for delta in (8, 4, 2, 1):
+      n = f'{key}_{delta}'
+      emit(f'%{n}bits = bitcast float {val} to i32')
+      emit(f'%{n}sh = call i32 @llvm.amdgcn.ds.swizzle(i32 %{n}bits, i32 {31 | delta << 10})')
+      emit(f'%{n}f = bitcast i32 %{n}sh to float')
+      emit(f'%{n} = call float @llvm.maxnum.f32(float {val}, float %{n}f)')
+      val = f'%{n}'
+    return val
+
+  def shuffle(key, value, mask):
+    emit(f'%{key}bits = bitcast float {value} to i32')
+    emit(f'%{key}sh = call i32 @llvm.amdgcn.ds.swizzle(i32 %{key}bits, i32 {mask})')
+    emit(f'%{key} = bitcast i32 %{key}sh to float')
+    return f'%{key}'
+
+  # Find row maxima, sum exponentials, then round normalized probabilities to BF16 for PV.
+  # Match the original softmax's ordered sums of four and PV's separate WMMA tile accumulation.
+  emit('br label %pass1')
+  for phase in (1, 2, 3):
+    tag = f't{phase}'
+    emit(f'pass{phase}:')
+    emit(f'%{tag}kk = phi i32 [0, %' + ('entry' if phase == 1 else f'between{phase - 1}') + f'], [%{tag}next, %pass{phase}]')
+    if phase == 1:
+      for e in range(8):
+        emit(f'%m{e} = phi float [0xFFF0000000000000, %entry], [%mnew{e}, %pass1]')
+    elif phase == 2:
+      for e in range(8):
+        emit(f'%l{e} = phi float [0.0, %between1], [%lnew{e}, %pass2]')
+    else:
+      for n in range(4):
+        emit(f'%acc{n} = phi <8 x float> [zeroinitializer, %between2], [%pv3_{n}, %pass3]')
+
+    emit(f'%{tag}kr0 = add i32 %{tag}kk, %loadrow')
+    emit(f'%{tag}kr1 = mul i32 %{tag}kr0, 64')
+    emit(f'%{tag}kb = add i32 %kvbase, %{tag}kr1')
+    emit(f'%{tag}ki = add i32 %{tag}kb, %loadcol')
+    emit(f'%{tag}ls0 = mul i32 %loadrow, {stride}')
+    emit(f'%{tag}ls = add i32 %{tag}ls0, %loadcol')
+    for r in range(4):
+      emit(f'%{tag}kgi{r} = add i32 %{tag}ki, {r * 16 * 64}')
+      emit(f'%{tag}kgp{r} = getelementptr i16, ptr addrspace(1) %k, i32 %{tag}kgi{r}')
+      emit(f'%{tag}kgv{r} = load <8 x i16>, ptr addrspace(1) %{tag}kgp{r}, align 16')
+      emit(f'%{tag}kli{r} = add i32 %{tag}ls, {r * 16 * stride + area}')
+      emit(f'%{tag}klp{r} = getelementptr i16, ptr addrspace(3) @lds, i32 %{tag}kli{r}')
+      emit(f'store <8 x i16> %{tag}kgv{r}, ptr addrspace(3) %{tag}klp{r}, align 16')
+    emit('call void @llvm.amdgcn.s.barrier()')
+    emit(f'%{tag}kn0 = mul i32 %lm, {stride}')
+    emit(f'%{tag}kn = add i32 %{tag}kn0, %khalf')
+    for ik in range(4):
+      for n in range(4):
+        key = f'{tag}qk{ik}_{n}'
+        emit(f'%{key}idx = add i32 %{tag}kn, {area + n * 16 * stride + ik * 16}')
+        emit(f'%{key}ptr = getelementptr i16, ptr addrspace(3) @lds, i32 %{key}idx')
+        fragment(f'{key}kv', f'%{key}ptr', 3)
+        prev = 'zeroinitializer' if ik == 0 else f'%{tag}qk{ik - 1}_{n}'
+        emit(f'%{key} = call <8 x float> @llvm.amdgcn.wmma.f32.16x16x16.bf16.v8f32.v8bf16(' +
+             f'<8 x i16> %qv{ik}, <8 x i16> %{key}kv, <8 x float> {prev})')
+    emit('call void @llvm.amdgcn.s.barrier()')
+    for e in range(8):
+      for n in range(4):
+        key = f'{tag}s{e}_{n}'
+        emit(f'%{key}raw = extractelement <8 x float> %{tag}qk3_{n}, i32 {e}')
+        emit(f'%{key} = fmul float %{key}raw, 0.125')
+      if phase == 1:
+        val = f'%{tag}s{e}_0'
+        for n in range(1, 4):
+          emit(f'%max{e}_{n} = call float @llvm.maxnum.f32(float {val}, float %{tag}s{e}_{n})')
+          val = f'%max{e}_{n}'
+        maximum = reduce_max(f'maxwave{e}', val)
+        emit(f'%mnew{e} = call float @llvm.maxnum.f32(float %m{e}, float {maximum})')
+        continue
+      for n in range(4):
+        key = f'{tag}p{e}_{n}'
+        emit(f'%{key}diff = fsub float %{tag}s{e}_{n}, %mnew{e}')
+        emit(f'%{key}log = fmul float %{key}diff, 0x3FF7154760000000')
+        emit(f'%{key}exp = call float @llvm.exp2.f32(float %{key}log)')
+        if phase == 3:
+          emit(f'%{key}prob = fdiv nsz arcp contract afn float %{key}exp, %lnew{e}')
+          prob = bf16(key, f'%{key}prob')
+          emit(f'%{key}idx = add i32 %pbase, {e * stride + n * 16}')
+          emit(f'%{key}ptr = getelementptr i16, ptr addrspace(3) @lds, i32 %{key}idx')
+          emit(f'store i16 {prob}, ptr addrspace(3) %{key}ptr, align 2')
+      if phase == 2:
+        val = f'%l{e}'
+        for n in range(4):
+          parts = [shuffle(f'quad{e}_{n}_{j}', f'%{tag}p{e}_{n}exp', 28 | (j << 5)) for j in range(4)]
+          total_sum = parts[0]
+          for j in range(1, 4):
+            emit(f'%qsum{e}_{n}_{j} = fadd float {total_sum}, {parts[j]}')
+            total_sum = f'%qsum{e}_{n}_{j}'
+          for j in range(4):
+            part = shuffle(f'part{e}_{n}_{j}', total_sum, 16 | (j * 4 << 5))
+            key = f'lnew{e}' if n == j == 3 else f'ordered{e}_{n}_{j}'
+            emit(f'%{key} = fadd float {val}, {part}')
+            val = f'%{key}'
+    if phase == 3:
+      for r in range(4):
+        emit(f'%vi{r} = add i32 %t3ki, {r * 16 * 64}')
+        emit(f'%vp{r} = getelementptr i16, ptr addrspace(1) %v, i32 %vi{r}')
+        emit(f'%vv{r} = load <8 x i16>, ptr addrspace(1) %vp{r}, align 16')
+        for e in range(8):
+          key = f'vt{r}_{e}'
+          emit(f'%{key}col = add i32 %loadcol, {e}')
+          emit(f'%{key}off0 = mul i32 %{key}col, {stride}')
+          emit(f'%{key}off1 = add i32 %{key}off0, %loadrow')
+          emit(f'%{key}off = add i32 %{key}off1, {area + r * 16}')
+          emit(f'%{key}ptr = getelementptr i16, ptr addrspace(3) @lds, i32 %{key}off')
+          emit(f'%{key}val = extractelement <8 x i16> %vv{r}, i32 {e}')
+          emit(f'store i16 %{key}val, ptr addrspace(3) %{key}ptr, align 2')
+      emit('call void @llvm.amdgcn.s.barrier()')
+      emit('%pmrow = add i32 %qm1, %lm')
+      emit(f'%pmoff0 = mul i32 %pmrow, {stride}')
+      emit('%pmoff = add i32 %pmoff0, %khalf')
+      for ik in range(4):
+        emit(f'%pi{ik} = add i32 %pmoff, {ik * 16}')
+        emit(f'%pp{ik} = getelementptr i16, ptr addrspace(3) @lds, i32 %pi{ik}')
+        fragment(f'pfrag{ik}', f'%pp{ik}', 3)
+        for n in range(4):
+          key = f'pv{ik}_{n}'
+          emit(f'%{key}idx = add i32 %t3kn, {area + n * 16 * stride + ik * 16}')
+          emit(f'%{key}ptr = getelementptr i16, ptr addrspace(3) @lds, i32 %{key}idx')
+          fragment(f'{key}val', f'%{key}ptr', 3)
+          prev = f'%acc{n}' if ik == 0 else f'%pv{ik - 1}_{n}'
+          emit(f'%{key}dot = call <8 x float> @llvm.amdgcn.wmma.f32.16x16x16.bf16.v8f32.v8bf16(' +
+               f'<8 x i16> %pfrag{ik}, <8 x i16> %{key}val, <8 x float> zeroinitializer)')
+          emit(f'%{key} = fadd <8 x float> {prev}, %{key}dot')
+    emit('call void @llvm.amdgcn.s.barrier()')
+    emit(f'%{tag}next = add i32 %{tag}kk, 64')
+    emit(f'%{tag}more = icmp ult i32 %{tag}next, %kend')
+    emit(f'br i1 %{tag}more, label %pass{phase}, label %' + (f'between{phase}' if phase < 3 else 'exit'))
+    if phase < 3:
+      emit(f'between{phase}:')
+      emit(f'br label %pass{phase + 1}')
+  emit('exit:')
+  for n in range(4):
+    for e in range(8):
+      key = f'out{n}_{e}'
+      emit(f'%{key}val = extractelement <8 x float> %pv3_{n}, i32 {e}')
+      result = bf16(key, f'%{key}val')
+      emit(f'%{key}idx = add i32 %outoff, {n * 16 + e * 64}')
+      emit(f'%{key}ptr = getelementptr i16, ptr addrspace(1) %o, i32 %{key}idx')
+      emit(f'store i16 {result}, ptr addrspace(1) %{key}ptr, align 2')
+  lines += ['ret void', '}', 'attributes #0 = { nounwind "amdgpu-flat-work-group-size"="128,128" "no-trapping-math"="true" }']
+  src = '\n'.join(lines)
+  return name, src, Device[device].renderer.compiler.compile_cached(src)
+
+
+def _attention_kernel(out, q, k, v, start_frame):
+  heads, seq, dim = q.shape
+  total = k.shape[1]
+  assert dim == 64 and seq % 128 == total % 128 == 0 and total == seq + start_frame * 128
+  name, src, lib = _attention_program(seq, total, start_frame, q.device)
+  flops = 8 * heads * dim * sum(128 * (128 * (start_frame + i + 1)) for i in range(seq // 128))
+  sink = UOp.sink(out.base, q.base, k.base, v.base, UOp.special(seq // 64, 'gidx0'),
+                  UOp.special(heads, 'gidx1'), UOp.special(128, 'lidx0'),
+                  arg=KernelInfo(name=name, estimates=Estimates(ops=flops, mem=sum(math.prod(a.shape) for a in (q, k, v, out)) * 2)))
+  return UOp(Ops.PROGRAM, src=(sink, UOp(Ops.LINEAR, src=(*sink.src, sink)), UOp(Ops.SOURCE, arg=src), UOp(Ops.BINARY, arg=lib)))
+
+
+def block_causal_attention(q, k, v, start_frame):
+  batch, heads, seq, dim = q.shape
+  out = Tensor.empty(batch * heads, seq, dim, dtype=dtypes.bfloat16, device=q.device)
+  return out.custom_kernel(q.reshape(batch * heads, seq, dim), k.reshape(batch * heads, -1, dim), v.reshape(batch * heads, -1, dim),
+                          fxn=partial(_attention_kernel, start_frame=start_frame))[0].reshape(batch, heads, seq, dim)

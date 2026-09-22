@@ -130,7 +130,7 @@ class WorldModel:
     return self.linear(x.float().gelu().cast(x.dtype), name + ".c_proj")
 
   def attention(self, x, name, layer, start_frame):
-    from tinygrad import dtypes
+    from tinygrad import Device, dtypes
 
     batch, seq, width = x.shape
     heads = self.config["transformer"]["n_head"]
@@ -147,16 +147,24 @@ class WorldModel:
       else:
         k, v = (self.kv_cache[layer, i].cat(a.cast(dtypes.fp8e4m3), dim=2) for i, a in enumerate((k, v)))
       k, v = (a.cast(x.dtype).contiguous().realize() for a in (k, v))
-    chunks = []
-    # All spatial tokens in a frame attend to that frame and every earlier frame.
-    query_chunk = 32 if self.kv_cache is not None and start_frame == 0 else self.spatial
-    for start in range(0, seq, query_chunk):
-      end = start + query_chunk
-      kv_end = (start_frame + start // self.spatial + 1) * self.spatial
-      scores = q[:, :, start:end].matmul(k[:, :, :kv_end].transpose(-1, -2), dtype=dtypes.float32)
-      probs = (scores / math.sqrt(width // heads)).softmax(-1).cast(x.dtype)
-      chunks.append(probs.matmul(v[:, :, :kv_end], dtype=dtypes.float32).cast(x.dtype).realize())
-    y = chunks[0].cat(*chunks[1:], dim=2).transpose(1, 2).reshape(batch, seq, width)
+    # Cache prefill retains its original reduction schedule.
+    if (start_frame > 0 and self.spatial == 128 and width // heads == 64 and x.dtype == dtypes.bfloat16 and
+        getattr(Device[x.device], "arch", "") in {"gfx1200", "gfx1201"}):
+      from openpilot.selfdrive.modeld.worldmodel_kernels import block_causal_attention
+
+      y = block_causal_attention(q, k, v, start_frame).realize()
+    else:
+      chunks = []
+      # All spatial tokens in a frame attend to that frame and every earlier frame.
+      query_chunk = 32 if self.kv_cache is not None and start_frame == 0 else self.spatial
+      for start in range(0, seq, query_chunk):
+        end = start + query_chunk
+        kv_end = (start_frame + start // self.spatial + 1) * self.spatial
+        scores = q[:, :, start:end].matmul(k[:, :, :kv_end].transpose(-1, -2), dtype=dtypes.float32)
+        probs = (scores / math.sqrt(width // heads)).softmax(-1).cast(x.dtype)
+        chunks.append(probs.matmul(v[:, :, :kv_end], dtype=dtypes.float32).cast(x.dtype).realize())
+      y = chunks[0].cat(*chunks[1:], dim=2)
+    y = y.transpose(1, 2).reshape(batch, seq, width)
     return self.linear(y, name + ".c_proj")
 
   def __call__(self, x, t, augments_pos_ref_augment, ref_augment_from_augments_euler, pose_mask, fidx,
