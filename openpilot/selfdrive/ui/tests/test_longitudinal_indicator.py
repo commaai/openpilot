@@ -150,12 +150,12 @@ class TestLongitudinalIndicator(unittest.TestCase):
     for distance in (10, 35, 80):
       self.sm['radarState'].leadOne.dRel = distance
       self.hud._draw_lead_car(self.rect)
-      self.assertEqual(self.hud._lead_car_green_filter.x, 1)
+      self.assertEqual(self.hud._lead_car_green_filter.x, 0)
     self.sm['longitudinalPlan'].longitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource.lead0
     for _ in range(100):
       self.hud._draw_lead_car(self.rect)
-    self.assertAlmostEqual(self.hud._lead_car_green_filter.x, 0, places=5)
-    self.assertAlmostEqual(self.hud._lead_car_white_filter.x, 0.9, places=5)
+    self.assertAlmostEqual(self.hud._lead_car_green_filter.x, 1, places=5)
+    self.assertAlmostEqual(self.hud._lead_car_white_filter.x, 0, places=5)
 
 
 if __name__ == '__main__':

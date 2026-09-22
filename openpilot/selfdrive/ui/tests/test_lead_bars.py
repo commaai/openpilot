@@ -199,21 +199,21 @@ class TestLeadBars(unittest.TestCase):
     radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
     vision = [SimpleNamespace(prob=0.9, x=[21.52], y=[0])]
     self.renderer._update_leads(radar, self.x)
-    self.assertEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.5)
+    self.assertEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.8)
     self.renderer._update_leads(radar, self.x, vision)
     opacity = self.renderer._lead_vehicles[0].opacity_filter.x
     self.assertGreater(opacity, 0.5)
     self.assertLess(opacity, 0.8)
     for _ in range(100):
       self.renderer._update_leads(radar, self.x, vision)
-    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.8, places=5)
+    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.5, places=5)
     self.renderer._update_leads(radar, self.x)
     opacity = self.renderer._lead_vehicles[0].opacity_filter.x
     self.assertGreater(opacity, 0.5)
     self.assertLess(opacity, 0.8)
     for _ in range(100):
       self.renderer._update_leads(radar, self.x)
-    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.5, places=5)
+    self.assertAlmostEqual(self.renderer._lead_vehicles[0].opacity_filter.x, 0.8, places=5)
 
   def test_two_leads_duplicates_and_disappearance(self):
     first = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
@@ -229,7 +229,7 @@ class TestLeadBars(unittest.TestCase):
       self.assertEqual(draw.call_count, 2)
       np.testing.assert_allclose(draw.call_args_list[0].args[1], self.renderer._lead_vehicles[1].points + [13, 17])
       self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.5 * self.renderer._lead_vehicles[1].visibility.x))
-      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.5 * self.renderer._lead_vehicles[0].visibility.x))
+      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.8 * self.renderer._lead_vehicles[0].visibility.x))
     first.present = second.present = False
     self.renderer._update_leads(radar, self.x)
     for _ in range(100):

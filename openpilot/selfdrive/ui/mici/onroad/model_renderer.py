@@ -203,7 +203,7 @@ class ModelRenderer(Widget):
 
   @staticmethod
   def _use_vision_leads(sm):
-    # Match the car icon's green target, before its visual color crossfade.
+    # Select lead positions by policy, independently of the HUD color mapping.
     plan = sm['longitudinalPlan']
     has_lead = (sm.valid['longitudinalPlan'] and sm.alive['longitudinalPlan'] and
                 sm.recv_frame['longitudinalPlan'] >= ui_state.started_frame and plan.hasLead)
@@ -249,7 +249,7 @@ class ModelRenderer(Widget):
       camera_distance = lead.dRel + RADAR_TO_CAMERA
       points = self._project_lead_bar(camera_distance, lead.yRel, path_x_array, smoothing)
       self._lead_bar_smoothing[i] = smoothing if points.size else None
-      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.8 if vision_leads is not None and i == 0 else 0.5)
+      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.8 if vision_leads is None and i == 0 else 0.5)
 
     # Run once per UI frame, matching the HUD color crossfade's 0.1 s filter.
     # Retain the last visible polygon briefly when detection disappears.

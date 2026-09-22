@@ -317,7 +317,7 @@ class HudRenderer(Widget):
     fcw = (sm.valid['selfdriveState'] and sm.alive['selfdriveState'] and
            sm.recv_frame['selfdriveState'] >= ui_state.started_frame and
            sm['selfdriveState'].alertHudVisual == car.CarControl.HUDControl.VisualAlert.fcw)
-    green = not fcw and has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
+    green = not fcw and has_lead and plan.longitudinalPlanSource != log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (0.9 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
