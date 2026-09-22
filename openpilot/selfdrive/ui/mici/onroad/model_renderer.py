@@ -19,7 +19,7 @@ MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 
 # Road-plane footprint in meters; shared by both lead markers.
-LEAD_BAR_OPACITY = 0.65
+LEAD_BAR_OPACITY = 0.8
 LEAD_BAR_WIDTH = 1.8
 # Rounded mean overall length of 2025 Corolla, RAV4, CR-V, Civic, and Camry.
 LEAD_BAR_DEPTH = 4.7
