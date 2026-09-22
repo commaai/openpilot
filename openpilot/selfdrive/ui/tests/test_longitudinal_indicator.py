@@ -23,6 +23,7 @@ class TestLongitudinalIndicator(unittest.TestCase):
     state.personality = log.LongitudinalPersonality.standard
     self.sm = FakeSM({
       'selfdriveState': state,
+      'onroadEvents': [],
       'longitudinalPlan': SimpleNamespace(hasLead=True, longitudinalPlanSource=log.LongitudinalPlan.LongitudinalPlanSource.e2e),
       'carState': SimpleNamespace(vEgo=20),
       'radarState': SimpleNamespace(leadOne=SimpleNamespace(present=True, dRel=0, vRel=0)),
@@ -145,6 +146,22 @@ class TestLongitudinalIndicator(unittest.TestCase):
         with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as draw:
           self.hud._draw_lead_car(self.rect)
         self.assertEqual([c.args[5].a for c in draw.call_args_list], [round(255 * 0.9), 0, 0])
+
+  def test_override_pulses_only_triangle_and_ignores_stale_events(self):
+    import math
+    self.sm['onroadEvents'] = [SimpleNamespace(name=log.OnroadEvent.EventName.gasPressedOverride)]
+    for now, opacity in ((0, 0.35), (math.pi / 6, 1.0)):
+      with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.get_time', return_value=now), \
+           patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as triangle, \
+           patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as car_draw:
+        self.hud._draw_lead_car(self.rect)
+      self.assertEqual([c.args[4].a for c in triangle.call_args_list], [0, 0, round(255 * opacity)])
+      self.assertEqual([c.args[5].a for c in car_draw.call_args_list], [round(255 * 0.9), 0, 0])
+    self.sm.alive['onroadEvents'] = False
+    with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.get_time', side_effect=AssertionError('No stale pulse')), \
+         patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as triangle:
+      self.hud._draw_lead_car(self.rect)
+    self.assertEqual([c.args[4].a for c in triangle.call_args_list], [round(255 * 0.9), 0, 0])
 
   def test_car_green_tracks_policy_not_gap(self):
     for distance in (10, 35, 80):

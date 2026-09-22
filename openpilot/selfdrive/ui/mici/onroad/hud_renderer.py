@@ -344,7 +344,15 @@ class HudRenderer(Widget):
     # Resting triangle shares the car's filtered colors.
     # Its opacity is complementary to the outgoing personality layouts.
     if resting_alpha > 1e-5:
-      for (texture, tx, ty), alpha in zip(self._car_triangle_parts, (white_alpha, green_alpha, orange_alpha), strict=True):
+      triangle_alphas = (white_alpha, green_alpha, orange_alpha)
+      overriding = (sm.valid['onroadEvents'] and sm.alive['onroadEvents'] and
+                    sm.recv_frame['onroadEvents'] >= ui_state.started_frame and
+                    any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
+      if overriding and not fcw:
+        # Match the GPU-loading pulse; FCW retains its steady orange warning.
+        pulse = 0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0))
+        triangle_alphas = (0.0, 0.0, pulse)
+      for (texture, tx, ty), alpha in zip(self._car_triangle_parts, triangle_alphas, strict=True):
         rl.draw_texture_ex(texture, rl.Vector2(rect.x + tx, rect.y + ty), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * alpha * resting_alpha *
                                                         self._longitudinal_icon_opacity)))
