@@ -1,8 +1,10 @@
 import math
+import time
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
+from openpilot.selfdrive.ui.mici.onroad.alert_renderer import TURN_SIGNAL_BLINK_PERIOD
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -145,11 +147,6 @@ class HudRenderer(Widget):
       (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
       for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
     ]
-    self._distance_orange_parts = [
-      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_orange.png', width, height, keep_aspect_ratio=False), x, y)
-      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
-    ]
-    self._braking_utilization_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._longitudinal_icon_opacity = 0.0
     self._longitudinal_icon_visible = False
     # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
@@ -240,18 +237,10 @@ class HudRenderer(Widget):
       self._lead_car_white_filter.x = 0.35
       self._lead_car_green_filter.x = 0.0
       self._lead_car_orange_filter.x = 0.0
-      self._braking_utilization_filter.x = 0.0
-
-  def _braking_orange_alpha(self) -> float:
-    sm = ui_state.sm
-    valid = all(sm.valid[s] and sm.alive[s] and sm.recv_frame[s] >= ui_state.started_frame
-                for s in ('controlsState', 'carControl'))
-    utilization = sm['controlsState'].brakingUtilization if valid and sm['carControl'].longActive else 0.0
-    utilization = max(0.0, min(1.0, utilization)) if math.isfinite(utilization) else 0.0
-    # Match TorqueBar: filter utilization, then blend from 75% to 100%.
-    return max(0.0, self._braking_utilization_filter.update(utilization) - 0.75) * 4.0
 
   def _reset_longitudinal_layout(self) -> None:
+    self._distance_override_timer = None
+    self._distance_override_filter = FirstOrderFilter(1.0, 0.3, 1 / gui_app.target_fps)
     self._distance_highlight_time = -math.inf
     self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._layout_personality = None
@@ -281,8 +270,27 @@ class HudRenderer(Widget):
       else:
         fade.update(float(count == selected))
 
+  def _distance_override_opacity(self) -> float:
+    sm = ui_state.sm
+    overriding = (sm.valid['onroadEvents'] and sm.alive['onroadEvents'] and
+                  sm.recv_frame['onroadEvents'] >= ui_state.started_frame and
+                  any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
+    if not overriding:
+      self._distance_override_timer = None
+      self._distance_override_filter.x = 1.0
+      return 1.0
+    # Match the turn-signal heartbeat: overshoot to 2, decay toward 0.2,
+    # and clamp to 1 for the bright portion of each pulse.
+    now = time.monotonic()
+    if self._distance_override_timer is None or now - self._distance_override_timer > TURN_SIGNAL_BLINK_PERIOD:
+      self._distance_override_timer = now
+      self._distance_override_filter.x = 2.0
+    else:
+      self._distance_override_filter.update(0.2)
+    return min(self._distance_override_filter.x, 1.0)
+
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
-    orange_alpha = self._braking_orange_alpha()
+    override_alpha = self._distance_override_opacity()
     # Move each physical asset once, rather than crossfading copies of whole layouts.
     y_offset = sum(self._longitudinal_layout(count)[1] * fade.x
                    for count, fade in enumerate(self._layout_filters, start=1))
@@ -299,19 +307,13 @@ class HudRenderer(Widget):
       if visibility < 1e-5:
         continue
       alpha = 0.9 * (visibility - green_alpha)
-      alpha *= 1.0 - orange_alpha
-      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
+      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
       if green_alpha > 0:
         green, gx, gy = self._distance_green_parts[asset_index]
         rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
-                                                        self._longitudinal_icon_opacity)))
-      if orange_alpha > 0:
-        orange, ox, oy = self._distance_orange_parts[asset_index]
-        rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy + y_offset), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * orange_alpha * visibility *
-                                                        self._longitudinal_icon_opacity)))
+                           rl.Color(255, 255, 255, round(255 * green_alpha *
+                                                        self._longitudinal_icon_opacity * override_alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm

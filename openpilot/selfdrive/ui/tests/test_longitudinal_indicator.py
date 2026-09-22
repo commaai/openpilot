@@ -41,7 +41,6 @@ class TestLongitudinalIndicator(unittest.TestCase):
     patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.ui_state', SimpleNamespace(sm=self.sm, started_frame=1)).start()
     patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex').start()
     patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro').start()
-    patch.object(self.hud, '_braking_orange_alpha', return_value=0).start()
 
   def test_persistent_selection_and_smooth_repeated_toggles(self):
     aggressive, standard, relaxed = (log.LongitudinalPersonality.aggressive,
@@ -146,6 +145,44 @@ class TestLongitudinalIndicator(unittest.TestCase):
         self.hud._update_longitudinal_layout(log.LongitudinalPersonality.standard if count != 2 else log.LongitudinalPersonality.relaxed)
       self.assertEqual(self.hud._distance_highlight_time, 105)
       self.assertGreater(self.hud._distance_highlight_filter.x, 0)
+
+  def test_override_uses_turn_signal_heartbeat_and_rejects_stale_events(self):
+    from openpilot.selfdrive.ui.mici.onroad.alert_renderer import TURN_SIGNAL_BLINK_PERIOD
+    self.sm['onroadEvents'] = [SimpleNamespace(name=log.OnroadEvent.EventName.gasPressedOverride)]
+    with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.time.monotonic', return_value=10):
+      self.assertEqual(self.hud._distance_override_opacity(), 1)
+    expected = 2.0
+    with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.time.monotonic', return_value=10.5):
+      for _ in range(30):
+        expected += self.hud._distance_override_filter.alpha * (0.2 - expected)
+        self.assertAlmostEqual(self.hud._distance_override_opacity(), min(expected, 1))
+    self.assertLess(expected, 1)
+    with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.time.monotonic', return_value=10 + TURN_SIGNAL_BLINK_PERIOD + 0.01):
+      self.assertEqual(self.hud._distance_override_opacity(), 1)
+    for field, invalid in (('valid', False), ('alive', False), ('recv_frame', 0)):
+      values = getattr(self.sm, field)
+      previous = values['onroadEvents']
+      values['onroadEvents'] = invalid
+      self.assertEqual(self.hud._distance_override_opacity(), 1)
+      self.assertIsNone(self.hud._distance_override_timer)
+      values['onroadEvents'] = previous
+    self.sm['onroadEvents'] = []
+    self.assertEqual(self.hud._distance_override_opacity(), 1)
+
+  def test_override_dims_white_and_green_bars_without_changing_car(self):
+    self.hud._distance_icon_parts = [('w0', 26, 119), ('w1', 22, 132), ('w2', 18, 147)]
+    self.hud._distance_green_parts = [('g0', 12, 105), ('g1', 8, 118), ('g2', 4, 133)]
+    for i, fade in enumerate(self.hud._layout_filters):
+      fade.x = float(i == 2)
+    self.hud._distance_highlight_filter.x = 1
+    with patch.object(self.hud, '_distance_override_opacity', return_value=0.4), \
+         patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as bars, \
+         patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as car_draw:
+      self.hud._draw_distance_bars(self.rect)
+      self.hud._draw_lead_car(self.rect)
+    alphas = {call.args[0]: call.args[4].a for call in bars.call_args_list}
+    self.assertEqual(alphas, {'w0': 0, 'g0': round(255 * 0.4), 'w1': round(255 * 0.9 * 0.4), 'w2': round(255 * 0.9 * 0.4)})
+    self.assertEqual([call.args[5].a for call in car_draw.call_args_list], [0, 255, 0])
 
   def test_car_green_tracks_policy_not_gap(self):
     for distance in (10, 35, 80):
