@@ -212,6 +212,7 @@ EOF
   git config --local filter.lfs.required true
   printf '#!/bin/sh\nexec .venv/bin/git-lfs pre-push "$@"\n' > "$(git rev-parse --git-path hooks)/pre-push"
   chmod +x "$(git rev-parse --git-path hooks)/pre-push"
+  "$OPENPILOT_ROOT/tools/release/setup_git_xet.sh" || true
   if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     return 1

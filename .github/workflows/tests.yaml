@@ -45,7 +45,9 @@ jobs:
       with:
         timeout_minutes: 2
         max_attempts: 3
-        command: git lfs pull
+        command: |
+          tools/release/setup_git_xet.sh install
+          git lfs pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR tools/release/build_stripped.sh
