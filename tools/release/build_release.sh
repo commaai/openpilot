@@ -61,6 +61,8 @@ fi
 
 if [ -n "$INCLUDE_BIG_MODEL" ]; then
   test -f openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
+  test -f openpilot/selfdrive/modeld/models/big_driving_warp_1344x760_tinygrad.pkl
+  test -f openpilot/selfdrive/modeld/models/big_driving_warp_1928x1208_tinygrad.pkl
 fi
 
 # Ensure no submodules in release
