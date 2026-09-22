@@ -156,7 +156,7 @@ def compile_model(directory: Path, output: Path):
   temporary = output.with_suffix(output.suffix + '.tmp')
   dump_pickle(artifact, temporary)
   temporary.replace(output)
-  np.savez(output.with_suffix('.reference.npz'), inputs=inputs, action_t=action_t,
+  np.savez(output.with_suffix('.reference.npz'), inputs=inputs, action_t=action_t, allow_pickle=False,
            **{name: np.stack([r[name] for r in reference]) for name in reference[0]})
   print(f'Compiled {output}: {output.stat().st_size:,} bytes in {time.monotonic() - start:.2f} s', flush=True)
 
