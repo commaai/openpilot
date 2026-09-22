@@ -229,24 +229,18 @@ def _attention_program(seq, total, start_frame, device):
     emit(f'%{key}bf = trunc i32 %{key}tr to i16')
     return f'%{key}bf'
 
-  def reduce_max(key, val):
+  def reduce(key, val, kind):
     for delta in (8, 4, 2, 1):
       n = f'{key}_{delta}'
       emit(f'%{n}bits = bitcast float {val} to i32')
       emit(f'%{n}sh = call i32 @llvm.amdgcn.ds.swizzle(i32 %{n}bits, i32 {31 | delta << 10})')
       emit(f'%{n}f = bitcast i32 %{n}sh to float')
-      emit(f'%{n} = call float @llvm.maxnum.f32(float {val}, float %{n}f)')
+      emit(f'%{n} = ' + (f'call float @llvm.maxnum.f32(float {val}, float %{n}f)' if kind == 'max' else f'fadd float {val}, %{n}f'))
       val = f'%{n}'
     return val
 
-  def shuffle(key, value, mask):
-    emit(f'%{key}bits = bitcast float {value} to i32')
-    emit(f'%{key}sh = call i32 @llvm.amdgcn.ds.swizzle(i32 %{key}bits, i32 {mask})')
-    emit(f'%{key} = bitcast i32 %{key}sh to float')
-    return f'%{key}'
-
   # Find row maxima, sum exponentials, then round normalized probabilities to BF16 for PV.
-  # Match the original softmax's ordered sums of four and PV's separate WMMA tile accumulation.
+  # Preserve the context-9 softmax's per-lane sums and 32-lane reduction order.
   emit('br label %pass1')
   for phase in (1, 2, 3):
     tag = f't{phase}'
@@ -257,7 +251,8 @@ def _attention_program(seq, total, start_frame, device):
         emit(f'%m{e} = phi float [0xFFF0000000000000, %entry], [%mnew{e}, %pass1]')
     elif phase == 2:
       for e in range(8):
-        emit(f'%l{e} = phi float [0.0, %between1], [%lnew{e}, %pass2]')
+        for n in range(2):
+          emit(f'%l{e}_{n} = phi float [0.0, %between1], [%lnew{e}_{n}, %pass2]')
     else:
       for n in range(4):
         emit(f'%acc{n} = phi <8 x float> [zeroinitializer, %between2], [%pv3_{n}, %pass3]')
@@ -287,7 +282,8 @@ def _attention_program(seq, total, start_frame, device):
         prev = 'zeroinitializer' if ik == 0 else f'%{tag}qk{ik - 1}_{n}'
         emit(f'%{key} = call <8 x float> @llvm.amdgcn.wmma.f32.16x16x16.bf16.v8f32.v8bf16(' +
              f'<8 x i16> %qv{ik}, <8 x i16> %{key}kv, <8 x float> {prev})')
-    emit('call void @llvm.amdgcn.s.barrier()')
+    if phase == 3:
+      emit('call void @llvm.amdgcn.s.barrier()')
     for e in range(8):
       for n in range(4):
         key = f'{tag}s{e}_{n}'
@@ -298,33 +294,23 @@ def _attention_program(seq, total, start_frame, device):
         for n in range(1, 4):
           emit(f'%max{e}_{n} = call float @llvm.maxnum.f32(float {val}, float %{tag}s{e}_{n})')
           val = f'%max{e}_{n}'
-        maximum = reduce_max(f'maxwave{e}', val)
-        emit(f'%mnew{e} = call float @llvm.maxnum.f32(float %m{e}, float {maximum})')
+        emit(f'%mnew{e} = call float @llvm.maxnum.f32(float %m{e}, float {val})')
         continue
       for n in range(4):
         key = f'{tag}p{e}_{n}'
-        emit(f'%{key}diff = fsub float %{tag}s{e}_{n}, %mnew{e}')
+        emit(f'%{key}diff = fsub float %{tag}s{e}_{n}, %maxwave{e}_1')
         emit(f'%{key}log = fmul float %{key}diff, 0x3FF7154760000000')
         emit(f'%{key}exp = call float @llvm.exp2.f32(float %{key}log)')
         if phase == 3:
-          emit(f'%{key}prob = fdiv nsz arcp contract afn float %{key}exp, %lnew{e}')
+          emit(f'%{key}prob = fmul float %{key}exp, %inv{e}')
           prob = bf16(key, f'%{key}prob')
           emit(f'%{key}idx = add i32 %pbase, {e * stride + n * 16}')
           emit(f'%{key}ptr = getelementptr i16, ptr addrspace(3) @lds, i32 %{key}idx')
           emit(f'store i16 {prob}, ptr addrspace(3) %{key}ptr, align 2')
       if phase == 2:
-        val = f'%l{e}'
-        for n in range(4):
-          parts = [shuffle(f'quad{e}_{n}_{j}', f'%{tag}p{e}_{n}exp', 28 | (j << 5)) for j in range(4)]
-          total_sum = parts[0]
-          for j in range(1, 4):
-            emit(f'%qsum{e}_{n}_{j} = fadd float {total_sum}, {parts[j]}')
-            total_sum = f'%qsum{e}_{n}_{j}'
-          for j in range(4):
-            part = shuffle(f'part{e}_{n}_{j}', total_sum, 16 | (j * 4 << 5))
-            key = f'lnew{e}' if n == j == 3 else f'ordered{e}_{n}_{j}'
-            emit(f'%{key} = fadd float {val}, {part}')
-            val = f'%{key}'
+        for n in range(2):
+          emit(f'%lhalf{e}_{n} = fadd float %l{e}_{n}, %{tag}p{e}_{n}exp')
+          emit(f'%lnew{e}_{n} = fadd float %lhalf{e}_{n}, %{tag}p{e}_{n + 2}exp')
     if phase == 3:
       for r in range(4):
         emit(f'%vi{r} = add i32 %t3ki, {r * 16 * 64}')
@@ -362,6 +348,14 @@ def _attention_program(seq, total, start_frame, device):
     emit(f'br i1 %{tag}more, label %pass{phase}, label %' + (f'between{phase}' if phase < 3 else 'exit'))
     if phase < 3:
       emit(f'between{phase}:')
+      if phase == 1:
+        for e in range(8):
+          reduce(f'maxwave{e}', f'%mnew{e}', 'max')
+      if phase == 2:
+        for e in range(8):
+          emit(f'%lsum{e} = fadd float %lnew{e}_0, %lnew{e}_1')
+          total_sum = reduce(f'sumwave{e}', f'%lsum{e}', 'sum')
+          emit(f'%inv{e} = fdiv fast float 1.0, {total_sum}')
       emit(f'br label %pass{phase + 1}')
   emit('exit:')
   for n in range(4):

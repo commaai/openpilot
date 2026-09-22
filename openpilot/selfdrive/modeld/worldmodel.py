@@ -29,7 +29,7 @@ def load_weights(path, layers, return_plan):
   weights = {}
   for name, value in state.items():
     # Typed views let custom kernels use the packed allocation without copying weights.
-    view = Tensor(UOp.from_buffer(data.uop.buffer.view(value.numel(), value.dtype, offsets[name])))
+    view = Tensor(UOp.from_buffer(data.uop.buffer.view(int(value.numel()), value.dtype, offsets[name])))
     weights[name] = view.reshape(value.shape)
   return weights
 
@@ -69,13 +69,14 @@ class WorldModel:
   def linear(self, x, name):
     from tinygrad import Device, Tensor, dtypes
 
-    # Materialize boundaries so concatenations and separate matmuls don't hide WMMA patterns.
-    x = x.contiguous().realize()
+    # Let GELU fuse into reduction and quantization; materialize other matmul inputs.
+    if not name.endswith(".mlp.c_proj"):
+      x = x.contiguous().realize()
     weight = self.w[name + ".weight"]
     if weight.dtype == dtypes.fp8e4m3:
       scale = (x.float().abs().max().clamp(min_=1e-12) / 448.0).realize()
       quantized = (x.float() / scale).clamp(-448, 448).cast(weight.dtype).realize()
-      if (x.ndim == 3 and x.shape[:2] in {(1, 640), (1, 1280)} and name.startswith("blocks.") and
+      if (x.ndim == 3 and x.shape[0] == 1 and x.shape[1] % 128 == 0 and name.startswith(("blocks.", "plan_head.blocks.")) and
           getattr(Device[x.device], "arch", "") in {"gfx1200", "gfx1201"}):
         from openpilot.selfdrive.modeld.worldmodel_kernels import fp8_linear
 
@@ -88,7 +89,7 @@ class WorldModel:
         out = out.custom_kernel(quantized.reshape(128, 9216), weight.T, scale,
                                 self.w[name + ".weight_scale"], self.w[name + ".bias"], fxn=fp8_mlp_projection)[0]
         return out.reshape(1, 128, 2304).realize()
-      out = quantized.matmul(weight.T, dtype=dtypes.float32) * (scale * self.w[name + ".weight_scale"])
+      out = quantized.float().matmul(weight.float().T, dtype=dtypes.float32) * (scale * self.w[name + ".weight_scale"])
     else:
       out = x.matmul(weight.T, dtype=dtypes.float32)
     if (bias := self.w.get(name + ".bias")) is not None:
@@ -114,7 +115,14 @@ class WorldModel:
     return y if name is None else y * self.w[name + ".weight"]
 
   def embed(self, x, name, discrete=False):
-    x = self.w[name + ".mlp.0.weight"][x] if discrete else self.linear(x, name + ".mlp.0")
+    from tinygrad import dtypes
+
+    if discrete:
+      x = self.w[name + ".mlp.0.weight"][x]
+      if x.dtype == dtypes.fp8e4m3:
+        x = (x.float() * self.w[name + ".mlp.0.weight_scale"]).cast(dtypes.bfloat16)
+    else:
+      x = self.linear(x, name + ".mlp.0")
     x = self.linear(x.float().silu().cast(x.dtype), name + ".mlp.2")
     x = x.float().silu().cast(x.dtype)
     return self.linear(x, name + ".to_t6.1"), None
@@ -129,17 +137,17 @@ class WorldModel:
     x = self.linear(x, name + ".c_fc")
     return self.linear(x.float().gelu().cast(x.dtype), name + ".c_proj")
 
-  def attention(self, x, name, layer, start_frame):
+  def attention(self, x, name, layer, start_frame, last_frame=False):
     from tinygrad import Device, dtypes
 
     batch, seq, width = x.shape
-    heads = self.config["transformer"]["n_head"]
+    heads = self.config["plan_head" if name.startswith("plan_head.") else "transformer"]["n_head"]
     qkv = self.linear(x, name + ".c_attn").reshape(batch, seq, 3, heads, width // heads)
     q, k, v = (qkv[:, :, i] for i in range(3))
     q, k = self.norm(q, name + ".q_norm"), self.norm(k, name + ".k_norm")
     q, k, v = (a.transpose(1, 2) for a in (q, k, v))
     q, k, v = (a.contiguous().realize() for a in (q, k, v))
-    if self.kv_cache is not None:
+    if self.kv_cache is not None and not name.startswith("plan_head."):
       if start_frame == 0:
         self.kv_cache[layer, 0].assign(k.cast(dtypes.fp8e4m3)).realize()
         self.kv_cache[layer, 1].assign(v.cast(dtypes.fp8e4m3)).realize()
@@ -147,28 +155,29 @@ class WorldModel:
       else:
         k, v = (self.kv_cache[layer, i].cat(a.cast(dtypes.fp8e4m3), dim=2) for i, a in enumerate((k, v)))
       k, v = (a.cast(x.dtype).contiguous().realize() for a in (k, v))
-    # Cache prefill retains its original reduction schedule.
-    if (start_frame > 0 and self.spatial == 128 and width // heads == 64 and x.dtype == dtypes.bfloat16 and
+    query_start = seq - self.spatial if last_frame else 0
+    if (self.kv_cache is None and self.spatial == 128 and width // heads == 64 and x.dtype == dtypes.bfloat16 and
         getattr(Device[x.device], "arch", "") in {"gfx1200", "gfx1201"}):
       from openpilot.selfdrive.modeld.worldmodel_kernels import block_causal_attention
 
-      y = block_causal_attention(q, k, v, start_frame).realize()
+      query = q[:, :, query_start:].contiguous().realize()
+      y = block_causal_attention(query, k, v, start_frame + query_start // self.spatial).realize()
     else:
       chunks = []
       # All spatial tokens in a frame attend to that frame and every earlier frame.
       query_chunk = 32 if self.kv_cache is not None and start_frame == 0 else self.spatial
-      for start in range(0, seq, query_chunk):
+      for start in range(query_start, seq, query_chunk):
         end = start + query_chunk
         kv_end = (start_frame + start // self.spatial + 1) * self.spatial
         scores = q[:, :, start:end].matmul(k[:, :, :kv_end].transpose(-1, -2), dtype=dtypes.float32)
         probs = (scores / math.sqrt(width // heads)).softmax(-1).cast(x.dtype)
         chunks.append(probs.matmul(v[:, :, :kv_end], dtype=dtypes.float32).cast(x.dtype).realize())
       y = chunks[0].cat(*chunks[1:], dim=2)
-    y = y.transpose(1, 2).reshape(batch, seq, width)
+    y = y.transpose(1, 2).reshape(batch, seq - query_start, width)
     return self.linear(y, name + ".c_proj")
 
   def __call__(self, x, t, augments_pos_ref_augment, ref_augment_from_augments_euler, pose_mask, fidx,
-               start_frame=0, return_plan=None):
+               start_frame=0, return_plan=None, action_t=None):
     from tinygrad import Tensor
 
     batch, frames, channels, height, width = x.shape
@@ -190,19 +199,43 @@ class WorldModel:
     t6.realize()
     for i in range(self.layers):
       name = f"blocks.{i}"
+      last_frame = self.kv_cache is None and i == self.layers - 1 and not self.config.get("plan_head_transformer", False)
       shift_a, scale_a, gate_a, shift_m, scale_m, gate_m = (
         self.w[name + ".scale_shift_table"][:, start_frame:start_frame + frames] + t6.reshape(batch, frames, 6, -1)
       ).chunk(6, dim=2)
-      attn = self.attention(self.modulate(self.norm(x), shift_a, scale_a), name + ".attn", i, start_frame)
+      attn = self.attention(self.modulate(self.norm(x), shift_a, scale_a), name + ".attn", i, start_frame, last_frame=last_frame)
+      if last_frame:
+        x = x[:, -self.spatial:]
+        gate_a, shift_m, scale_m, gate_m = (v[:, -1:] for v in (gate_a, shift_m, scale_m, gate_m))
       x = (x + self.gate(attn, gate_a)).realize()
       x = (x + self.gate(self.mlp(self.modulate(self.norm(x), shift_m, scale_m), name + ".mlp"), gate_m)).realize()
     outputs = {}
     if (self.return_plan if return_plan is None else return_plan):
-      plan = x[:, -1]
-      for i in range(self.config["plan_head"]["n_layer"]):
-        name = f"plan_head.mlps.{i}"
-        plan = plan + self.mlp(self.norm(plan, name + ".layer_norm", layernorm=True), name)
-      outputs["plan"] = self.linear(plan, "plan_head.head") * self.w["plan_head.scale_layer.scale"]
+      if self.config.get("plan_head_transformer", False):
+        outputs = self.transformer_plan(x, action_t)
+      else:
+        plan = x[:, -1].float()
+        for i in range(self.config["plan_head"]["n_layer"]):
+          name = f"plan_head.mlps.{i}"
+          plan = plan + self.mlp(self.norm(plan, name + ".layer_norm", layernorm=True), name)
+        outputs["plan"] = self.linear(plan, "plan_head.head") * self.w["plan_head.scale_layer.scale"]
     if outputs:
       Tensor.realize(*outputs.values())
     return outputs
+
+  def transformer_plan(self, x, action_t):
+    config = self.config["plan_head"]
+    assert config["norm"] == "RMSNorm" and config["prenorm"] and config["qk_norm"]
+    assert config["attention_mask"] == "BLOCKWISE_LOWER_TRIANGLE" and config["attention_mask_mini_block_size"] == self.spatial
+    x = (x + self.linear(action_t.cast(x.dtype), "plan_head.action_t_encoder")[:, None]).realize()
+    for i in range(config["n_layer"]):
+      name = f"plan_head.blocks.{i}"
+      last_frame = i == config["n_layer"] - 1
+      attn = self.attention(self.norm(x, name + ".attn.layer_norm"), name + ".attn", i, 0, last_frame=last_frame)
+      if last_frame:
+        x = x[:, -self.spatial:]
+      x = (x + attn).realize()
+      x = (x + self.mlp(self.norm(x, name + ".mlp.layer_norm"), name + ".mlp")).realize()
+    x = x[:, -1].float()
+    return {"plan": self.linear(x, "plan_head.head") * self.w["plan_head.scale_layer.scale"],
+            "action": self.linear(x, "plan_head.action_head") * self.w["plan_head.action_scale.scale"]}

@@ -4,6 +4,8 @@
 # git add --renormalize .
 *.onnx filter=lfs diff=lfs merge=lfs -text
 openpilot/selfdrive/modeld/models/big_*_tinygrad.pkl filter=lfs diff=lfs merge=lfs -text
+openpilot/selfdrive/modeld/models/worldmodel/*.safetensors filter=lfs diff=lfs merge=lfs -text
+openpilot/selfdrive/modeld/models/worldmodel/*.pkl filter=lfs diff=lfs merge=lfs -text
 *.svg filter=lfs diff=lfs merge=lfs -text
 *.png filter=lfs diff=lfs merge=lfs -text
 *.gif filter=lfs diff=lfs merge=lfs -text

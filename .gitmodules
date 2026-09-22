@@ -16,4 +16,4 @@
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/commaai/tinygrad.git
-  branch = master
+  branch = codex/worldmodel-context9-4fps

@@ -1006,6 +1006,8 @@ struct WorldModelPlan {
   timestampEof @1 :UInt64;
   modelExecutionTime @2 :Float32;
   plan @3 :List(Float32);
+  action @4 :List(Float32);
+  actionT @5 :List(Float32);
 }
 
 struct DrivingModelData {

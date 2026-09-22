@@ -1,0 +1,2821 @@
+{
+  "activation_checkpoint": {
+    "debug": false,
+    "determinism_check": "default",
+    "preserve_rng_state": true
+  },
+  "checkpoint": {
+    "allow_partial_initial_load": false,
+    "async_mode": "async",
+    "checkpoint_id_format": "",
+    "create_seed_checkpoint": false,
+    "enable": true,
+    "enable_first_step_checkpoint": true,
+    "exclude_from_loading": [
+      "optimizer",
+      "lr_scheduler",
+      "dataloader",
+      "train_state"
+    ],
+    "export_dtype": "float32",
+    "export_torch_package": true,
+    "folder": "mkv://data-gen.comma.life:3080/reporterv2/checkpoint/68a03682-c802-4638-a4f7-c04707a8a579",
+    "initial_load_in_hf": false,
+    "initial_load_in_hf_quantized": false,
+    "initial_load_model_only": true,
+    "initial_load_path": null,
+    "interval": 1920,
+    "keep_latest_k": 0,
+    "last_save_in_hf": false,
+    "last_save_model_only": false,
+    "load_only": false,
+    "load_step": -1,
+    "torch_package_async": true,
+    "torch_package_max_concurrent": 1,
+    "torch_package_recipe": "torchtitan.experiments.worldmodel.torchpackage_checkpoint:WorldModelTrainingTorchPackageRecipe",
+    "torch_package_recipe_state_file": "_torchpackage_model_config.pt",
+    "torch_package_structured_log_dir": "/tmp/torchtitan_train/worldmodel_torchpackage_checkpoint",
+    "torch_package_wait_on_close": true
+  },
+  "codedir": "/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx",
+  "comm": {
+    "init_timeout_seconds": 300,
+    "mode": "default",
+    "save_traces_file_prefix": "rank_",
+    "save_traces_folder": "comm_traces",
+    "trace_buf_size": 20000,
+    "train_timeout_seconds": 100
+  },
+  "compile": {
+    "backend": "inductor",
+    "components": [
+      "model",
+      "loss"
+    ],
+    "enable": true
+  },
+  "dataloader": {
+    "action_targets": true,
+    "base_dir": "http://data-ssd.comma.life/runner/training_2026_02",
+    "compressor_model": "c04337f8-b83f-4e34-b07a-5f7396978d67",
+    "context_size_frames": 9,
+    "dataset": "/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826.txt",
+    "dataset_path": null,
+    "feature_dir": null,
+    "fill_once": false,
+    "fps": 5,
+    "future_size_frames": 0,
+    "image_size": [
+      128,
+      256
+    ],
+    "in_channels": 32,
+    "inference_prefill_frames": 8,
+    "latent_size": [
+      16,
+      32
+    ],
+    "limit": null,
+    "max_future_frames": 50,
+    "min_mixing": 0.5,
+    "mock_data": false,
+    "mock_segment_batch_size": 8,
+    "nan_engaged_plans": false,
+    "num_readers": 4,
+    "num_writers": 2,
+    "shuffle_size": 25000,
+    "split": "train",
+    "train_skip": 40,
+    "val_skip": 800
+  },
+  "debug": {
+    "batch_invariant": false,
+    "detect_anomaly": false,
+    "deterministic": false,
+    "deterministic_warn_only": false,
+    "enable_structured_logging": true,
+    "moe_force_load_balance": false,
+    "print_config": false,
+    "save_config_file": null,
+    "seed": 0,
+    "spmd_typechecking": false
+  },
+  "dump_folder": "/tmp/torchtitan_train",
+  "enable_rollout_report": false,
+  "fake_timesteps_prob": 0.5,
+  "float8": {
+    "emulate": false,
+    "enable": true
+  },
+  "hf_assets_path": ".",
+  "loss": {
+    "action_loss_weight": 0.01,
+    "plan_loss_weight": 0.1
+  },
+  "lr_scheduler": {
+    "decay_ratio": 0.1,
+    "decay_type": "cosine",
+    "min_lr_factor": 0.0,
+    "total_steps": 15360,
+    "warmup_steps": 1024
+  },
+  "metrics": {
+    "disable_color_printing": false,
+    "enable_reporterv2": true,
+    "enable_tensorboard": false,
+    "enable_wandb": false,
+    "log_freq": 16,
+    "save_for_all_ranks": false,
+    "save_freq": 512,
+    "save_tb_folder": "tb"
+  },
+  "model": {
+    "augments_pos_ref_augment_embedder": {
+      "mlp_in": {
+        "bias": true,
+        "in_features": 3,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "mlp_out": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t2": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 4608,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t6": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 13824,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "blocks": [
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      },
+      {
+        "attn": {
+          "c_attn": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 6912,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        },
+        "mlp": {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 9216,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 9216,
+            "out_features": 2304,
+            "param_init": null,
+            "precompute_float8_dynamic_scale_for_fsdp": true,
+            "sharding_config": null
+          }
+        }
+      }
+    ],
+    "compressor_mean": 0.001418,
+    "compressor_std": 0.112629,
+    "experimental_pose_only_xy": false,
+    "fidx_embedder": {
+      "mlp_in": {
+        "bias": true,
+        "in_features": 50,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "mlp_out": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t2": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 4608,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t6": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 13824,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "final_layer": {
+      "linear": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 128,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "in_channels": 32,
+    "input_size": [
+      9,
+      16,
+      32
+    ],
+    "out_channels": 32,
+    "param_init": null,
+    "patch_size": [
+      1,
+      2,
+      2
+    ],
+    "plan_head": {
+      "act": "GELU",
+      "attention_impl": "FLEX",
+      "attention_mask": "BLOCKWISE_LOWER_TRIANGLE",
+      "attention_mask_mini_block_size": 128,
+      "attn_pdrop": 0.0,
+      "biased_linears": true,
+      "block_size": 1152,
+      "mlp_mult": 3.5555555555555554,
+      "mlp_multiple_of": 1,
+      "n_embd": 2304,
+      "n_head": 36,
+      "n_layer": 3,
+      "norm": "RMSNorm",
+      "prenorm": true,
+      "qk_norm": true,
+      "resid_pdrop": 0.0
+    },
+    "plan_head_action": false,
+    "plan_head_linears": {
+      "blocks": [
+        {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 8192,
+            "param_init": null,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 8192,
+            "out_features": 2304,
+            "param_init": null,
+            "sharding_config": null
+          }
+        },
+        {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 8192,
+            "param_init": null,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 8192,
+            "out_features": 2304,
+            "param_init": null,
+            "sharding_config": null
+          }
+        },
+        {
+          "c_fc": {
+            "bias": true,
+            "in_features": 2304,
+            "out_features": 8192,
+            "param_init": null,
+            "sharding_config": null
+          },
+          "c_proj": {
+            "bias": true,
+            "in_features": 8192,
+            "out_features": 2304,
+            "param_init": null,
+            "sharding_config": null
+          }
+        }
+      ],
+      "head": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 990,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "plan_head_transformer": true,
+    "pose_mask_embedder": {
+      "mlp_in": {
+        "bias": true,
+        "in_features": 2,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "mlp_out": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t2": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 4608,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t6": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 13824,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "pose_size": 6,
+    "ref_augment_from_augments_euler_embedder": {
+      "mlp_in": {
+        "bias": true,
+        "in_features": 3,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "mlp_out": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t2": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 4608,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t6": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 13824,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "sharding_config": null,
+    "t_embedder": {
+      "mlp_in": {
+        "bias": true,
+        "in_features": 256,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "mlp_out": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t2": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 4608,
+        "param_init": null,
+        "sharding_config": null
+      },
+      "to_t6": {
+        "bias": true,
+        "in_features": 2304,
+        "out_features": 13824,
+        "param_init": null,
+        "sharding_config": null
+      }
+    },
+    "time_factor": 1.0,
+    "transformer": {
+      "act": "GELU",
+      "attention_impl": "FLEX",
+      "attention_mask": "BLOCKWISE_LOWER_TRIANGLE",
+      "attention_mask_mini_block_size": 128,
+      "attn_pdrop": 0.0,
+      "biased_linears": true,
+      "block_size": 1152,
+      "mlp_mult": 4,
+      "mlp_multiple_of": 256,
+      "n_embd": 2304,
+      "n_head": 36,
+      "n_layer": 56,
+      "norm": "RMSNorm",
+      "prenorm": false,
+      "qk_norm": true,
+      "resid_pdrop": 0.0
+    },
+    "x_embedder": {
+      "linear": {
+        "bias": false,
+        "in_features": 128,
+        "out_features": 2304,
+        "param_init": null,
+        "sharding_config": null
+      }
+    }
+  },
+  "model_spec": {
+    "flavor": "base",
+    "name": "worldmodel"
+  },
+  "no_noise_prefill_frames_prob": 0.5,
+  "noise_scheduler_steps": 10,
+  "optimizer": {
+    "implementation": "fused_opt_states_bf16",
+    "param_groups": [
+      {
+        "optimizer_kwargs": {
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "lr": 0.0002,
+          "weight_decay": 0.01
+        },
+        "optimizer_name": "AdamW",
+        "pattern": ".*"
+      }
+    ]
+  },
+  "override": {
+    "imports": []
+  },
+  "parallelism": {
+    "context_parallel_degree": 1,
+    "context_parallel_load_balancer": "headtail",
+    "data_parallel_replicate_degree": 4,
+    "data_parallel_shard_degree": 8,
+    "enable_async_tensor_parallel": false,
+    "enable_fsdp_symm_mem": false,
+    "enable_sequence_parallel": false,
+    "expert_parallel_degree": 1,
+    "fsdp_reshard_after_forward": "default",
+    "module_fqns_per_model_part": null,
+    "pipeline_parallel_degree": 1,
+    "pipeline_parallel_first_stage_less_layers": 1,
+    "pipeline_parallel_last_stage_less_layers": 1,
+    "pipeline_parallel_layers_per_stage": null,
+    "pipeline_parallel_microbatch_size": 1,
+    "pipeline_parallel_schedule": "1F1B",
+    "pipeline_parallel_schedule_csv": "",
+    "spmd_backend": "default",
+    "tensor_parallel_degree": 1
+  },
+  "pose_dropout": 1.0,
+  "prefill_noise_prob": 0.0,
+  "profiler": {
+    "enable_memory_snapshot": false,
+    "enable_profiling": false,
+    "memory_snapshot_max_entries": 1000000,
+    "profile_freq": 10,
+    "profiler_active": 1,
+    "profiler_repeat": null,
+    "profiler_skip_first": null,
+    "profiler_skip_first_wait": null,
+    "profiler_warmup": 3,
+    "save_memory_snapshot_folder": "profiling/memory_snapshot",
+    "save_traces_folder": "profiling/traces",
+    "trace_post_processor": null
+  },
+  "reporterv2_host": "mkv://data-gen.comma.life:3080/reporterv2",
+  "reports": [
+    [
+      "<class 'xx.release_tests.driving.analyse_driving.AnalyseDriving'>",
+      "report_name='analyse_driving_rl' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826_test_2k.txt' output_dir=None save_tmp=True read_only=False shuffle=False limit=10000 use_virtual_webgl=False format=<ReportFormat.FILE: 'FILE'> miniray=JobConfig(priority=1, job_name='analyse_driving_rl', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') plan_only=False filter=DataFilterConfig(min_hist=100, max_hist=-60, max_fidx=1000) rollout=RolloutConfig[RawVideoEnvConfig, RldrivingAgentConfig](type='RawVideoRL', nowindow=False, debug=False, debug_render=False, save_observation_keys=[], output_dir=None, rerun=False, env=RawVideoEnvConfig(debug_window_size=(512, 512), ep=EpisodeConfig(segment='', depth_type=<DepthType.EASYDEPTH: 'EASYDEPTH'>, pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02', feature_dir=None, input_paths={}), physics=PhysicsConfig(type=<PhysicsModelType.BICYCLE: 'BICYCLE'>, bicycle_model_config=BicycleModelConfig(vehicle_platform='HONDA_CIVIC'), ml_model_config=MLPhysicsModelConfig(platform='TOYOTA_COROLLA_TSS2', eid='effd03d9-472d-44a1-910a-6d49a41eb63f/50', y_range=[-3.0, 3.0], vocab_size=1024, temperature=0.5, use_gt_features=False, platform_vec_size=256, platform_map_path='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/arena/envs/lib/physics_models/assets/platform_map.txt', lateral_tuning_type=<LateralTuningType.AUTO: 'AUTO'>, lateral_tuning_params={}, lateral_initial_state_params={})), start=None, end=None, env='xx.arena.envs.rawvideo_env.RawVideoEnv', get_imgs=True, allow_resets=True, zero_desire=True, fps=20, allow_lat=True, allow_long=False, min_hist=40, compressor_model=None, compressor_decoder_model=None, compressor_mode=<CompressorMode.NONE: 'NONE'>, quantized_compressor_latents=False, yolo_model=False, lpips_model=False, sharpness_metric=True, future_observation_range_seconds=None, with_gt=False), agent=RldrivingAgentConfig(supercombo='default_supercombo', worldmodel=None, worldmodel_context_frames=9, worldmodel_package_key='model.{dtype}.torchpackage', worldmodel_compile=True, worldmodel_return_features=False, worldmodel_full_features=False, worldmodel_return_latents=False, worldmodel_policy=None, worldmodel_policy_package_key='model.onnx', restrict_outputs=None, exclude_outputs=['imgs'], use_allow_throttle=False, action_t=None, model_trained_fps=5, use_worldmodel_as_agent=False, desired_curv_smooth_seconds=0.0, desired_accel_smooth_seconds=0.0))",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1,
+        1920,
+        3840,
+        5760,
+        7680,
+        9600,
+        11520,
+        13440,
+        15360
+      ],
+      [
+        "model.fp8.torchpackage",
+        "model.fp8_nvfp4.torchpackage"
+      ]
+    ],
+    [
+      "<class 'xx.release_tests.driving.analyse_lat.AnalyseLat'>",
+      "report_name='analyse_lat_mlsim_no_noise' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826_test_2k.txt' output_dir=None save_tmp=True read_only=False shuffle=False limit=10000 use_virtual_webgl=False format=<ReportFormat.FILE: 'FILE'> miniray=JobConfig(priority=1, job_name='analyse_lat_mlsim_no_noise', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') filter=DataFilterConfig(min_hist=100, max_hist=-60, max_fidx=1200) rollout=RolloutConfig[TinySimEnvConfig, RldrivingAgentConfig](type='TinySimRL', nowindow=False, debug=False, debug_render=False, save_observation_keys=[], output_dir=None, rerun=False, env=TinySimEnvConfig(debug_window_size=(512, 512), ep=EpisodeConfig(segment='', depth_type=<DepthType.EASYDEPTH: 'EASYDEPTH'>, pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02', feature_dir=None, input_paths={}), physics=PhysicsConfig(type=<PhysicsModelType.BICYCLE: 'BICYCLE'>, bicycle_model_config=BicycleModelConfig(vehicle_platform='HONDA_CIVIC'), ml_model_config=MLPhysicsModelConfig(platform='TOYOTA_COROLLA_TSS2', eid='effd03d9-472d-44a1-910a-6d49a41eb63f/50', y_range=[-3.0, 3.0], vocab_size=1024, temperature=0.5, use_gt_features=False, platform_vec_size=256, platform_map_path='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/arena/envs/lib/physics_models/assets/platform_map.txt', lateral_tuning_type=<LateralTuningType.AUTO: 'AUTO'>, lateral_tuning_params={}, lateral_initial_state_params={})), start=None, end=None, env='xx.arena.envs.tinysim_env.TinySimEnv', get_imgs=True, allow_resets=True, zero_desire=False, fps=20, allow_lat=True, allow_long=False, min_hist=40, compressor_model=None, compressor_decoder_model=None, compressor_mode=<CompressorMode.NONE: 'NONE'>, quantized_compressor_latents=False, yolo_model=False, lpips_model=False, sharpness_metric=True, future_observation_range_seconds=None, noise_model=<Noise.NONE: 'NONE'>, photo_noise_model=<PhotoNoise.NONE: 'NONE'>, augment_mode=<AugmentMode.DEPTH: 'DEPTH'>, inpaint_mode=<InpaintMode.NONE: 'NONE'>, initial_speed=None, allow_any_frame=False, lat_lag_override=None, lat_action_bias_override=None, max_x_error=4.0, max_y_error=3.0, max_yaw_error=0.2, reset_every=None, avoid_hood=False, cache_granularity=1), agent=RldrivingAgentConfig(supercombo='default_supercombo', worldmodel=None, worldmodel_context_frames=9, worldmodel_package_key='model.{dtype}.torchpackage', worldmodel_compile=True, worldmodel_return_features=False, worldmodel_full_features=False, worldmodel_return_latents=False, worldmodel_policy=None, worldmodel_policy_package_key='model.onnx', restrict_outputs=None, exclude_outputs=['imgs'], use_allow_throttle=False, action_t=None, model_trained_fps=5, use_worldmodel_as_agent=False, desired_curv_smooth_seconds=0.0, desired_accel_smooth_seconds=0.0))",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1,
+        1920,
+        3840,
+        5760,
+        7680,
+        9600,
+        11520,
+        13440,
+        15360
+      ],
+      [
+        "model.fp8.torchpackage",
+        "model.fp8_nvfp4.torchpackage"
+      ]
+    ],
+    [
+      "<class 'xx.release_tests.driving.analyse_scenarios.analyse_cones.AnalyseCones'>",
+      "report_name='analyse_cones' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260218_test_50k.txt' output_dir=None save_tmp=True read_only=False shuffle=False limit=51000 use_virtual_webgl=False format=<ReportFormat.FILE: 'FILE'> miniray=JobConfig(priority=1, job_name='analyse_cones', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') scenario_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/cones.txt' curate=False rollout=RolloutConfig[RawVideoEnvConfig, RldrivingAgentConfig](type='RawVideoRL', nowindow=False, debug=False, debug_render=True, save_observation_keys=['debug_rendered'], output_dir=None, rerun=False, env=RawVideoEnvConfig(debug_window_size=(512, 512), ep=EpisodeConfig(segment='', depth_type=<DepthType.EASYDEPTH: 'EASYDEPTH'>, pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02', feature_dir=None, input_paths={}), physics=PhysicsConfig(type=<PhysicsModelType.BICYCLE: 'BICYCLE'>, bicycle_model_config=BicycleModelConfig(vehicle_platform='HONDA_CIVIC'), ml_model_config=MLPhysicsModelConfig(platform='TOYOTA_COROLLA_TSS2', eid='effd03d9-472d-44a1-910a-6d49a41eb63f/50', y_range=[-3.0, 3.0], vocab_size=1024, temperature=0.5, use_gt_features=False, platform_vec_size=256, platform_map_path='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/arena/envs/lib/physics_models/assets/platform_map.txt', lateral_tuning_type=<LateralTuningType.AUTO: 'AUTO'>, lateral_tuning_params={}, lateral_initial_state_params={})), start=None, end=None, env='xx.release_tests.driving.analyse_scenarios.analyse_cones.AnalyseConesEnv', get_imgs=True, allow_resets=True, zero_desire=True, fps=20, allow_lat=True, allow_long=False, min_hist=40, compressor_model=None, compressor_decoder_model=None, compressor_mode=<CompressorMode.NONE: 'NONE'>, quantized_compressor_latents=False, yolo_model=False, lpips_model=False, sharpness_metric=True, future_observation_range_seconds=None, with_gt=True), agent=RldrivingAgentConfig(supercombo='default_supercombo', worldmodel=None, worldmodel_context_frames=9, worldmodel_package_key='model.{dtype}.torchpackage', worldmodel_compile=True, worldmodel_return_features=False, worldmodel_full_features=False, worldmodel_return_latents=False, worldmodel_policy=None, worldmodel_policy_package_key='model.onnx', restrict_outputs=None, exclude_outputs=['vision_features', 'state', 'imgs'], use_allow_throttle=False, action_t=None, model_trained_fps=5, use_worldmodel_as_agent=False, desired_curv_smooth_seconds=0.0, desired_accel_smooth_seconds=0.0))",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1,
+        1920,
+        3840,
+        5760,
+        7680,
+        9600,
+        11520,
+        13440,
+        15360
+      ],
+      [
+        "model.fp8.torchpackage",
+        "model.fp8_nvfp4.torchpackage"
+      ]
+    ],
+    [
+      "<class 'xx.release_tests.driving.analyse_lights.AnalyseLights'>",
+      "report_name='analyse_lights' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826_test_2k.txt' output_dir=None save_tmp=True read_only=False shuffle=False limit=10000 use_virtual_webgl=False format=<ReportFormat.FILE: 'FILE'> miniray=JobConfig(priority=1, job_name='analyse_lights', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') scenario_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/lights.txt' curate=False rollout=RolloutConfig[RawVideoEnvConfig, RldrivingAgentConfig](type='RawVideoRL', nowindow=False, debug=False, debug_render=True, save_observation_keys=['debug_rendered'], output_dir=None, rerun=False, env=RawVideoEnvConfig(debug_window_size=(512, 512), ep=EpisodeConfig(segment='', depth_type=<DepthType.EASYDEPTH: 'EASYDEPTH'>, pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02', feature_dir=None, input_paths={}), physics=PhysicsConfig(type=<PhysicsModelType.BICYCLE: 'BICYCLE'>, bicycle_model_config=BicycleModelConfig(vehicle_platform='HONDA_CIVIC'), ml_model_config=MLPhysicsModelConfig(platform='TOYOTA_COROLLA_TSS2', eid='effd03d9-472d-44a1-910a-6d49a41eb63f/50', y_range=[-3.0, 3.0], vocab_size=1024, temperature=0.5, use_gt_features=False, platform_vec_size=256, platform_map_path='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/arena/envs/lib/physics_models/assets/platform_map.txt', lateral_tuning_type=<LateralTuningType.AUTO: 'AUTO'>, lateral_tuning_params={}, lateral_initial_state_params={})), start=None, end=None, env='xx.arena.envs.rawvideo_env.RawVideoEnv', get_imgs=True, allow_resets=True, zero_desire=True, fps=20, allow_lat=True, allow_long=False, min_hist=40, compressor_model=None, compressor_decoder_model=None, compressor_mode=<CompressorMode.NONE: 'NONE'>, quantized_compressor_latents=False, yolo_model=False, lpips_model=False, sharpness_metric=True, future_observation_range_seconds=None, with_gt=False), agent=RldrivingAgentConfig(supercombo='default_supercombo', worldmodel=None, worldmodel_context_frames=9, worldmodel_package_key='model.{dtype}.torchpackage', worldmodel_compile=True, worldmodel_return_features=False, worldmodel_full_features=False, worldmodel_return_latents=False, worldmodel_policy=None, worldmodel_policy_package_key='model.onnx', restrict_outputs=None, exclude_outputs=['imgs'], use_allow_throttle=False, action_t=1.0, model_trained_fps=5, use_worldmodel_as_agent=False, desired_curv_smooth_seconds=0.0, desired_accel_smooth_seconds=0.0))",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1,
+        1920,
+        3840,
+        5760,
+        7680,
+        9600,
+        11520,
+        13440,
+        15360
+      ],
+      [
+        "model.fp8.torchpackage",
+        "model.fp8_nvfp4.torchpackage"
+      ]
+    ],
+    [
+      "<class 'xx.release_tests.driving.analyse_scenarios.analyse_stop.AnalyseStop'>",
+      "report_name='analyse_stop' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826_test_2k.txt' output_dir=None save_tmp=True read_only=False shuffle=False limit=10000 use_virtual_webgl=False format=<ReportFormat.FILE: 'FILE'> miniray=JobConfig(priority=1, job_name='analyse_stop', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') scenario_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/stop_signs.txt' curate=False rollout=RolloutConfig[RawVideoEnvConfig, RldrivingAgentConfig](type='RawVideoRL', nowindow=False, debug=False, debug_render=True, save_observation_keys=['debug_rendered'], output_dir=None, rerun=False, env=RawVideoEnvConfig(debug_window_size=(512, 512), ep=EpisodeConfig(segment='', depth_type=<DepthType.EASYDEPTH: 'EASYDEPTH'>, pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02', feature_dir=None, input_paths={}), physics=PhysicsConfig(type=<PhysicsModelType.BICYCLE: 'BICYCLE'>, bicycle_model_config=BicycleModelConfig(vehicle_platform='HONDA_CIVIC'), ml_model_config=MLPhysicsModelConfig(platform='TOYOTA_COROLLA_TSS2', eid='effd03d9-472d-44a1-910a-6d49a41eb63f/50', y_range=[-3.0, 3.0], vocab_size=1024, temperature=0.5, use_gt_features=False, platform_vec_size=256, platform_map_path='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/arena/envs/lib/physics_models/assets/platform_map.txt', lateral_tuning_type=<LateralTuningType.AUTO: 'AUTO'>, lateral_tuning_params={}, lateral_initial_state_params={})), start=None, end=None, env='xx.arena.envs.rawvideo_env.RawVideoEnv', get_imgs=True, allow_resets=True, zero_desire=True, fps=20, allow_lat=True, allow_long=False, min_hist=40, compressor_model=None, compressor_decoder_model=None, compressor_mode=<CompressorMode.NONE: 'NONE'>, quantized_compressor_latents=False, yolo_model=False, lpips_model=False, sharpness_metric=True, future_observation_range_seconds=None, with_gt=False), agent=RldrivingAgentConfig(supercombo='default_supercombo', worldmodel=None, worldmodel_context_frames=9, worldmodel_package_key='model.{dtype}.torchpackage', worldmodel_compile=True, worldmodel_return_features=False, worldmodel_full_features=False, worldmodel_return_latents=False, worldmodel_policy=None, worldmodel_policy_package_key='model.onnx', restrict_outputs=None, exclude_outputs=['imgs'], use_allow_throttle=False, action_t=None, model_trained_fps=5, use_worldmodel_as_agent=False, desired_curv_smooth_seconds=0.0, desired_accel_smooth_seconds=0.0))",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1,
+        1920,
+        3840,
+        5760,
+        7680,
+        9600,
+        11520,
+        13440,
+        15360
+      ],
+      [
+        "model.fp8.torchpackage",
+        "model.fp8_nvfp4.torchpackage"
+      ]
+    ],
+    [
+      "<class 'xx.release_tests.driving.analyse_scenarios.analyse_hard_brake.AnalyseBraking'>",
+      "report_name='analyse_hard_brake' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826_test_2k.txt' output_dir=None save_tmp=True read_only=False shuffle=False limit=10000 use_virtual_webgl=False format=<ReportFormat.FILE: 'FILE'> miniray=JobConfig(priority=1, job_name='analyse_hard_brake', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') scenario_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/hard_braking.txt' curate=False rollout=RolloutConfig[RawVideoEnvConfig, RldrivingAgentConfig](type='RawVideoRL', nowindow=False, debug=False, debug_render=True, save_observation_keys=['debug_rendered'], output_dir=None, rerun=False, env=RawVideoEnvConfig(debug_window_size=(512, 512), ep=EpisodeConfig(segment='', depth_type=<DepthType.EASYDEPTH: 'EASYDEPTH'>, pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02', feature_dir=None, input_paths={}), physics=PhysicsConfig(type=<PhysicsModelType.BICYCLE: 'BICYCLE'>, bicycle_model_config=BicycleModelConfig(vehicle_platform='HONDA_CIVIC'), ml_model_config=MLPhysicsModelConfig(platform='TOYOTA_COROLLA_TSS2', eid='effd03d9-472d-44a1-910a-6d49a41eb63f/50', y_range=[-3.0, 3.0], vocab_size=1024, temperature=0.5, use_gt_features=False, platform_vec_size=256, platform_map_path='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/arena/envs/lib/physics_models/assets/platform_map.txt', lateral_tuning_type=<LateralTuningType.AUTO: 'AUTO'>, lateral_tuning_params={}, lateral_initial_state_params={})), start=None, end=None, env='xx.arena.envs.rawvideo_env.RawVideoEnv', get_imgs=True, allow_resets=True, zero_desire=True, fps=20, allow_lat=True, allow_long=False, min_hist=40, compressor_model=None, compressor_decoder_model=None, compressor_mode=<CompressorMode.NONE: 'NONE'>, quantized_compressor_latents=False, yolo_model=False, lpips_model=False, sharpness_metric=True, future_observation_range_seconds=None, with_gt=False), agent=RldrivingAgentConfig(supercombo='default_supercombo', worldmodel=None, worldmodel_context_frames=9, worldmodel_package_key='model.{dtype}.torchpackage', worldmodel_compile=True, worldmodel_return_features=False, worldmodel_full_features=False, worldmodel_return_latents=False, worldmodel_policy=None, worldmodel_policy_package_key='model.onnx', restrict_outputs=None, exclude_outputs=['imgs'], use_allow_throttle=False, action_t=None, model_trained_fps=5, use_worldmodel_as_agent=False, desired_curv_smooth_seconds=0.0, desired_accel_smooth_seconds=0.0))",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1,
+        1920,
+        3840,
+        5760,
+        7680,
+        9600,
+        11520,
+        13440,
+        15360
+      ],
+      [
+        "model.fp8.torchpackage",
+        "model.fp8_nvfp4.torchpackage"
+      ]
+    ],
+    [
+      "<class 'xx.release_tests.driving.analyse_dataset.AnalyseDataset'>",
+      "report_name='analyse_dataset_path' route_list='/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260218_test_5k_tagged.txt' output_dir=None save_tmp=False read_only=False shuffle=False limit=10000 use_virtual_webgl=False format=<ReportFormat.HTML: 'HTML'> miniray=JobConfig(priority=1, job_name='analyse_dataset_path', queue_name='remote_v3', redis_host='redis.comma.internal', codedir=None, use_local_codedir=False, limits=Limits(cpu_threads=1, memory=1.0, small_gpu_memory=0.0, big_gpu_memory=0.0, timeout_seconds=60, triton=True, node_whitelist=None), env={}, queue_timeout=259200, job_group='') dataset_type=<DatasetType.DRIVING: 'DRIVING'> pipeline_dir='http://data-ssd.comma.life/runner/training_2026_02'",
+      "<function policy_report_config at 0x7e4c02f1d080>",
+      [
+        1
+      ],
+      []
+    ]
+  ],
+  "tokenizer": {
+    "compressor_in_channels": "auto",
+    "compressor_model": "c04337f8-b83f-4e34-b07a-5f7396978d67"
+  },
+  "trainer": "worldmodel",
+  "training": {
+    "dtype": "float32",
+    "enable_cpu_offload": false,
+    "gc_debug": false,
+    "gc_freq": 50,
+    "global_batch_size": 1024,
+    "local_batch_size": 16,
+    "max_norm": 1.0,
+    "mixed_precision_param": "bfloat16",
+    "mixed_precision_reduce": "float32",
+    "seq_len": 1152,
+    "steps": 15360
+  },
+  "training_id": "68a03682-c802-4638-a4f7-c04707a8a579",
+  "validator": {
+    "dataloader": {
+      "action_targets": true,
+      "base_dir": "http://data-ssd.comma.life/runner/training_2026_02",
+      "compressor_model": "c04337f8-b83f-4e34-b07a-5f7396978d67",
+      "context_size_frames": 9,
+      "dataset": "/code.nfs/branches/caches/tinytower-haraschax_2026-09-20_10-20-29/xx/comma_data/lists/train_10m_20260826.txt",
+      "dataset_path": null,
+      "feature_dir": null,
+      "fill_once": true,
+      "fps": 5,
+      "future_size_frames": 0,
+      "image_size": [
+        128,
+        256
+      ],
+      "in_channels": 32,
+      "inference_prefill_frames": 8,
+      "latent_size": [
+        16,
+        32
+      ],
+      "limit": null,
+      "max_future_frames": 50,
+      "min_mixing": 0.5,
+      "mock_data": false,
+      "mock_segment_batch_size": 8,
+      "nan_engaged_plans": false,
+      "num_readers": 4,
+      "num_writers": 2,
+      "shuffle_size": 50000,
+      "split": "val",
+      "train_skip": 40,
+      "val_skip": 800
+    },
+    "enable": true,
+    "fake_timesteps_prob": 0.0,
+    "freq": 512,
+    "no_noise_prefill_frames_prob": 0.0,
+    "noise_scheduler_steps": 10,
+    "pose_dropout": 1.0,
+    "steps": 8
+  },
+  "openpilot_export": {
+    "format": "context9_fp8",
+    "rldriving": "58e4f1d2-6827-495e-bc3d-6138883170f0/12864",
+    "backbone": "68a03682-c802-4638-a4f7-c04707a8a579/15360",
+    "encoder": "c04337f8-b83f-4e34-b07a-5f7396978d67/-1",
+    "fps": 5,
+    "live_frames": 9,
+    "prefix_frames": 0,
+    "actor_prefix": "actor",
+    "action_conditioned": true,
+    "matrix_weights": {
+      "worldmodel": "float8_e4m3fn",
+      "encoder": "int8"
+    }
+  }
+}

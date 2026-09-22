@@ -6,6 +6,7 @@ from opendbc.car.structs import car
 from openpilot.common.params import Params
 from openpilot.common.hardware import PC, COMMA_HARDWARE
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from openpilot.selfdrive.modeld.helpers import WORLDMODEL_DIR
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -83,7 +84,7 @@ procs = [
   PythonProcess("timed", "openpilot.system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "openpilot.selfdrive.modeld.modeld", only_onroad),
-  PythonProcess("worldmodeld", "openpilot.selfdrive.modeld.worldmodeld", only_onroad, enabled=bool(os.getenv("WORLDMODEL_DIR"))),
+  PythonProcess("worldmodeld", "openpilot.selfdrive.modeld.worldmodeld", only_onroad, enabled=bool(WORLDMODEL_DIR)),
   PythonProcess("dmonitoringmodeld", "openpilot.selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
   PythonProcess("sensord", "openpilot.system.sensord.sensord", only_onroad, enabled=not PC),

@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -5,6 +6,7 @@ from openpilot.common.hardware import AGNOS
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
+WORLDMODEL_DIR = os.getenv('WORLDMODEL_DIR', str(MODELS_DIR / 'worldmodel'))
 
 
 def modeld_pkl_path(chestnut: bool):
