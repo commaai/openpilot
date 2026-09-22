@@ -19,6 +19,7 @@ MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 
 # Road-plane footprint in meters; shared by both lead markers.
+LEAD_BAR_OPACITY = 0.65
 LEAD_BAR_WIDTH = 1.8
 # Rounded mean overall length of 2025 Corolla, RAV4, CR-V, Civic, and Camry.
 LEAD_BAR_DEPTH = 4.7
@@ -54,9 +55,7 @@ class ModelPoints:
 class LeadVehicle:
   points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
   distance: float = 0.0
-  opacity: float = 0.8
   visibility: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
-  opacity_filter: FirstOrderFilter = field(default_factory=lambda: FirstOrderFilter(0.5, 0.1, 1 / gui_app.target_fps, initialized=False))
 
 
 @dataclass
@@ -249,24 +248,19 @@ class ModelRenderer(Widget):
       camera_distance = lead.dRel + RADAR_TO_CAMERA
       points = self._project_lead_bar(camera_distance, lead.yRel, path_x_array, smoothing)
       self._lead_bar_smoothing[i] = smoothing if points.size else None
-      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel, 0.8 if vision_leads is None and i == 0 else 0.5)
+      self._lead_vehicles[i] = LeadVehicle(points, lead.dRel)
 
     # Run once per UI frame, matching the HUD color crossfade's 0.1 s filter.
     # Retain the last visible polygon briefly when detection disappears.
     for i, current in enumerate(self._lead_vehicles):
       visible = bool(current.points.size)
       current.visibility = previous[i].visibility
-      current.opacity_filter = previous[i].opacity_filter
-      if visible:
-        current.opacity_filter.update(current.opacity)
       alpha = current.visibility.update(float(visible))
-      if not visible and round(255 * current.opacity_filter.x * alpha) > 0:
+      if not visible and round(255 * LEAD_BAR_OPACITY * alpha) > 0:
         current.points = previous[i].points
         current.distance = previous[i].distance
-        current.opacity = previous[i].opacity
       elif not visible:
         current.visibility.x = 0.0
-        current.opacity_filter.initialized = False
 
   def _project_lead_bar(self, distance, lateral, path_x_array, smoothing=None):
     """Project a camera-relative lead footprint with its rear edge at the lead."""
@@ -550,7 +544,7 @@ class ModelRenderer(Widget):
     # Draw farther markers first; scissoring clips offscreen corners without pinning them to an edge.
     for lead in sorted(self._lead_vehicles, key=lambda lead: lead.distance, reverse=True):
       if lead.points.size:
-        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * lead.opacity_filter.x * lead.visibility.x)))
+        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * LEAD_BAR_OPACITY * lead.visibility.x)))
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:

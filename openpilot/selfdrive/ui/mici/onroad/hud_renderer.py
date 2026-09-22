@@ -128,14 +128,6 @@ class HudRenderer(Widget):
     for texture in (self._txt_lead_car, self._txt_lead_car_green, self._txt_lead_car_orange):
       rl.gen_texture_mipmaps(texture)
       rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
-    self._car_triangle_parts = [
-      (gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False), x, y)
-      for name, x, y, width, height in (
-        ('car_tri', 33, 137, 18, 11),
-        ('car_tri_green', 21, 125, 42, 35),
-        ('car_tri_orange', 21, 125, 42, 35),
-      )
-    ]
     self._lead_car_white_filter = FirstOrderFilter(0.35, 0.1, 1 / gui_app.target_fps)
     self._lead_car_green_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._lead_car_orange_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -264,7 +256,7 @@ class HudRenderer(Widget):
   def _longitudinal_layout(count):
     # Original personality placements, plus a centered car-only resting layout.
     # Coordinates precede the shared 4 px rightward offset.
-    return {0: ((16, 96, 52, 41), -16),
+    return {0: ((16, 100, 52, 41), -16),
             1: ((18, 95, 48, 38), -8),
             2: ((21, 89, 42, 34), -3),
             3: ((25, 86, 34, 27), 0)}[count]
@@ -317,7 +309,7 @@ class HudRenderer(Widget):
     fcw = (sm.valid['selfdriveState'] and sm.alive['selfdriveState'] and
            sm.recv_frame['selfdriveState'] >= ui_state.started_frame and
            sm['selfdriveState'].alertHudVisual == car.CarControl.HUDControl.VisualAlert.fcw)
-    green = not fcw and has_lead and plan.longitudinalPlanSource != log.LongitudinalPlan.LongitudinalPlanSource.e2e
+    green = not fcw and has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (0.9 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
@@ -340,22 +332,6 @@ class HudRenderer(Widget):
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       source = rl.Rectangle(0, 0, texture.width, texture.height)
       rl.draw_texture_pro(texture, source, destination, rl.Vector2(0, 0), 0.0, color)
-
-    # Resting triangle shares the car's filtered colors.
-    # Its opacity is complementary to the outgoing personality layouts.
-    if resting_alpha > 1e-5:
-      triangle_alphas = (white_alpha, green_alpha, orange_alpha)
-      overriding = (sm.valid['onroadEvents'] and sm.alive['onroadEvents'] and
-                    sm.recv_frame['onroadEvents'] >= ui_state.started_frame and
-                    any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
-      if overriding and not fcw:
-        # Match the GPU-loading pulse; FCW retains its steady orange warning.
-        pulse = 0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0))
-        triangle_alphas = (0.0, 0.0, pulse)
-      for (texture, tx, ty), alpha in zip(self._car_triangle_parts, triangle_alphas, strict=True):
-        rl.draw_texture_ex(texture, rl.Vector2(rect.x + tx, rect.y + ty), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * alpha * resting_alpha *
-                                                        self._longitudinal_icon_opacity)))
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
