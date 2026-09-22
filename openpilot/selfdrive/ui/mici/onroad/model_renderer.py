@@ -87,6 +87,7 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._lead_bar_smoothing = [None, None]
+    self._rear_lead_bar = ui_state.lead_bar_style
     self._path_offset_z = HEIGHT_INIT[0]
 
     # Initialize ModelPoints objects
@@ -124,6 +125,7 @@ class ModelRenderer(Widget):
 
   def _render(self, rect: rl.Rectangle):
     sm = ui_state.sm
+    self._rear_lead_bar = ui_state.lead_bar_style
 
     self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
@@ -256,7 +258,7 @@ class ModelRenderer(Widget):
       visible = bool(current.points.size)
       current.visibility = previous[i].visibility
       alpha = current.visibility.update(float(visible))
-      if not visible and round(255 * LEAD_BAR_OPACITY * alpha) > 0:
+      if not visible and round(255 * self._lead_bar_opacity * alpha) > 0:
         current.points = previous[i].points
         current.distance = previous[i].distance
       elif not visible:
@@ -289,12 +291,16 @@ class ModelRenderer(Widget):
     center = np.array([distance, -lateral])  # Radar lateral is left-positive; model lateral is right-positive.
     def project_depth(depth):
       corners = np.array([
-        center + forward * along + sideways * side
+        center + forward * (-0.2 - along if self._rear_lead_bar else along) + sideways * side
         for along, side in ((depth, -LEAD_BAR_WIDTH / 2),
                             (depth, LEAD_BAR_WIDTH / 2),
                             (0.0, LEAD_BAR_WIDTH / 2),
                             (0.0, -LEAD_BAR_WIDTH / 2))
       ])
+      if self._rear_lead_bar:
+        # Extending toward the camera reverses winding. Keep the triangles
+        # front-facing so the renderer does not cull the rear bar.
+        corners = corners[::-1]
       if np.any(corners[:, 0] < 0.1):
         return empty
       heights = np.interp(corners[:, 0], path_x_array, path[:, 2]) + self._path_offset_z
@@ -302,6 +308,9 @@ class ModelRenderer(Widget):
       if not np.isfinite(projected).all() or np.any(projected[2] <= 1e-3):
         return empty
       return (projected[:2] / projected[2]).T.astype(np.float32)
+
+    if self._rear_lead_bar:
+      return self._size_rear_lead_bar(project_depth, distance)
 
     points = project_depth(LEAD_BAR_DEPTH)
     if not points.size:
@@ -322,6 +331,49 @@ class ModelRenderer(Widget):
       if candidate_height <= target:
         return points
     for _ in range(24):
+      depth = (low + high) / 2
+      candidate = project_depth(depth)
+      if not candidate.size:
+        high = depth
+        continue
+      height = np.ptp(candidate[:, 1])
+      error = abs(height - target)
+      if error < best_error:
+        points, best_error = candidate, error
+      if error < 1e-5:
+        break
+      if height < target:
+        low = depth
+      else:
+        high = depth
+    return points
+
+  @staticmethod
+  def _size_rear_lead_bar(project_depth, distance):
+    # Original bar extends toward the camera, with a 0.2 m gap behind the lead.
+    max_depth = (distance - 0.2) * 0.9
+    if max_depth <= 0:
+      return np.empty((0, 2), dtype=np.float32)
+    depth = min(6.0, max_depth)
+    points = project_depth(depth)
+    if not points.size and project_depth(0.0).size:
+      for _ in range(20):
+        max_depth = depth
+        depth *= 0.5
+        points = project_depth(depth)
+        if points.size:
+          break
+    if not points.size:
+      return points
+    height = np.ptp(points[:, 1])
+    target = np.clip(height, 6.0, 12.0)
+    if height == target:
+      return points
+    low, high = (0.0, depth) if height > target else (depth, max_depth)
+    best_error = abs(height - target)
+    # Adjust road-space length, preserving calibrated perspective. Keep the
+    # closest valid result if unusual road geometry makes the target unreachable.
+    for _ in range(20):
       depth = (low + high) / 2
       candidate = project_depth(depth)
       if not candidate.size:
@@ -537,6 +589,10 @@ class ModelRenderer(Widget):
     rl.draw_triangle_fan(glow, len(glow), rl.Color(218, 202, 37, 255))
     rl.draw_triangle_fan(chevron, len(chevron), rl.Color(201, 34, 49, int(fill_alpha)))
 
+  @property
+  def _lead_bar_opacity(self):
+    return 0.9 if self._rear_lead_bar else LEAD_BAR_OPACITY
+
   def _draw_lead_indicator(self):
     if self._rect.width <= 0 or self._rect.height <= 0:
       return
@@ -544,7 +600,7 @@ class ModelRenderer(Widget):
     # Draw farther markers first; scissoring clips offscreen corners without pinning them to an edge.
     for lead in sorted(self._lead_vehicles, key=lambda lead: lead.distance, reverse=True):
       if lead.points.size:
-        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * LEAD_BAR_OPACITY * lead.visibility.x)))
+        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * self._lead_bar_opacity * lead.visibility.x)))
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:

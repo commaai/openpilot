@@ -6,11 +6,13 @@ import numpy as np
 import pyray as rl
 
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer, ModelPoints, LeadVehicle
+from openpilot.system.ui.lib.shader_polygon import triangulate
 
 
 class TestLeadBars(unittest.TestCase):
   def setUp(self):
     self.renderer = ModelRenderer.__new__(ModelRenderer)
+    self.renderer._rear_lead_bar = False
     x = np.linspace(0, 100, 101)
     self.renderer._path = ModelPoints(np.column_stack((x, x * 0, x * 0)).astype(np.float32))
     self.renderer._path_offset_z = 1.2
@@ -23,6 +25,44 @@ class TestLeadBars(unittest.TestCase):
 
   def project(self, distance=20, lateral=0):
     return self.renderer._project_lead_bar(distance, lateral, self.x)
+
+  def test_rear_bar_height_and_anchor(self):
+    self.renderer._rear_lead_bar = True
+    for distance in (1, 3, 6, 10, 20, 40, 70, 100):
+      points = self.project(distance)
+      self.assertEqual(points.shape, (4, 2))
+      self.assertGreaterEqual(np.ptp(points[:, 1]), 6 - 1e-3)
+      self.assertLessEqual(np.ptp(points[:, 1]), 12 + 1e-3)
+      # Far edge is behind the lead, and the rest extends toward the camera.
+      self.assertAlmostEqual(float(points[:, 1].min()), 100 + 600 / (distance - 0.2), places=3)
+      x = 600 / (points[:, 1] - 100)
+      self.assertTrue(np.all(x < distance))
+      y = (points[:, 0] - 240) * x / 500
+      self.assertAlmostEqual(float(np.ptp(y)), 1.8, places=3)
+    self.assertEqual(self.project(0.15).size, 0)
+
+  def test_style_switch_restores_footprint(self):
+    footprint = self.project()
+    self.renderer._rear_lead_bar = True
+    self.assertFalse(np.allclose(self.project(), footprint))
+    self.renderer._rear_lead_bar = False
+    np.testing.assert_allclose(self.project(), footprint)
+
+  def test_both_styles_keep_front_facing_triangles(self):
+    def triangle_areas(points):
+      strip = np.asarray(triangulate(points))
+      triangles = strip[[[0, 1, 2], [2, 1, 3]]]
+      a = triangles[:, 1] - triangles[:, 0]
+      b = triangles[:, 2] - triangles[:, 0]
+      return a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]
+
+    expected_sign = np.sign(triangle_areas(self.project()))
+    for rear_bar in (False, True):
+      self.renderer._rear_lead_bar = rear_bar
+      for curvature in (0, 0.002, -0.002):
+        self.renderer._path.raw_points[:, 1] = self.x ** 2 * curvature
+        for distance in (3, 10, 40, 100):
+          np.testing.assert_array_equal(np.sign(triangle_areas(self.project(distance))), expected_sign)
 
   def test_perspective_size_and_taper(self):
     near, far = self.project(20), self.project(40)
@@ -198,11 +238,13 @@ class TestLeadBars(unittest.TestCase):
     lead = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
     radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
     vision = [SimpleNamespace(prob=0.9, x=[21.52], y=[0])]
-    for source in (None, vision, None):
-      self.renderer._update_leads(radar, self.x, source)
-      with patch('openpilot.selfdrive.ui.mici.onroad.model_renderer.draw_polygon') as draw:
-        self.renderer._draw_lead_indicator()
-      self.assertEqual(draw.call_args.args[2].a, round(255 * 0.8 * self.renderer._lead_vehicles[0].visibility.x))
+    for rear_bar, opacity in ((False, 0.8), (True, 0.9)):
+      self.renderer._rear_lead_bar = rear_bar
+      for source in (None, vision, None):
+        self.renderer._update_leads(radar, self.x, source)
+        with patch('openpilot.selfdrive.ui.mici.onroad.model_renderer.draw_polygon') as draw:
+          self.renderer._draw_lead_indicator()
+        self.assertEqual(draw.call_args.args[2].a, round(255 * opacity * self.renderer._lead_vehicles[0].visibility.x))
 
   def test_two_leads_duplicates_and_disappearance(self):
     first = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)

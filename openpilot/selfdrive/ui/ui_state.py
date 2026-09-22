@@ -84,6 +84,7 @@ class UIState:
     # Core state variables
     self.is_metric: bool = self.params.get_bool("IsMetric")
     self.is_release = self.params.get_bool("IsReleaseBranch")
+    self.lead_bar_style: bool = self.params.get_bool("LeadBarStyle")
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.experimental_mode_confirmed: bool = self.params.get_bool("ExperimentalModeConfirmed")
@@ -244,6 +245,7 @@ class UIState:
 
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
     self.is_metric = self.params.get_bool("IsMetric")
+    self.lead_bar_style = self.params.get_bool("LeadBarStyle")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
     self.experimental_mode_confirmed = self.params.get_bool("ExperimentalModeConfirmed")
