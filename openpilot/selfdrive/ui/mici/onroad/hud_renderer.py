@@ -141,6 +141,10 @@ class HudRenderer(Widget):
         ('distance_3', 18, 147, 48, 11),
       )
     ]
+    self._distance_green_parts = [
+      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
+      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
+    ]
     self._distance_orange_parts = [
       (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_orange.png', width, height, keep_aspect_ratio=False), x, y)
       for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
@@ -150,7 +154,7 @@ class HudRenderer(Widget):
     self._longitudinal_icon_visible = False
     # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
     self._longitudinal_icon_fade = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    self._reset_distance_highlight()
+    self._reset_longitudinal_layout()
 
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
     self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
@@ -227,12 +231,12 @@ class HudRenderer(Widget):
     # The combined indicator is only visible while engaged.
     self._longitudinal_icon_opacity = self._longitudinal_icon_fade.update(float(self._longitudinal_icon_visible))
     if ui_state.sm.recv_frame['selfdriveState'] >= ui_state.started_frame and ui_state.sm['selfdriveState'].enabled:
-      self._update_longitudinal_layout(ui_state.sm['selfdriveState'].personality.raw, rl.get_time())
+      self._update_longitudinal_layout(ui_state.sm['selfdriveState'].personality.raw)
       icon_rect = rl.Rectangle(rect.x + 4, rect.y, rect.width, rect.height)
       self._draw_lead_car(icon_rect)
       self._draw_distance_bars(icon_rect)
     else:
-      self._reset_distance_highlight()
+      self._reset_longitudinal_layout()
       self._lead_car_white_filter.x = 0.35
       self._lead_car_green_filter.x = 0.0
       self._lead_car_orange_filter.x = 0.0
@@ -247,54 +251,62 @@ class HudRenderer(Widget):
     # Match TorqueBar: filter utilization, then blend from 75% to 100%.
     return max(0.0, self._braking_utilization_filter.update(utilization) - 0.75) * 4.0
 
-  def _reset_distance_highlight(self) -> None:
+  def _reset_longitudinal_layout(self) -> None:
+    self._distance_highlight_time = -math.inf
+    self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._layout_personality = None
-    self._layout_highlight_time = -math.inf
-    self._layout_filters = [FirstOrderFilter(float(i == 0), 0.1, 1 / gui_app.target_fps) for i in range(4)]
+    self._layout_filters = [FirstOrderFilter(float(i == 0), 0.1, 1 / gui_app.target_fps) for i in range(3)]
 
   @staticmethod
   def _longitudinal_layout(count):
-    # Original personality placements, plus a centered car-only resting layout.
+    # Persistent personality layouts.
     # Coordinates precede the shared 4 px rightward offset.
-    return {0: ((16, 100, 52, 41), -16),
-            1: ((18, 95, 48, 38), -8),
+    return {1: ((18, 95, 48, 38), -8),
             2: ((21, 89, 42, 34), -3),
             3: ((25, 86, 34, 27), 0)}[count]
 
-  def _update_longitudinal_layout(self, personality, now):
+  def _update_longitudinal_layout(self, personality):
     selected = {log.LongitudinalPersonality.aggressive: 1,
                 log.LongitudinalPersonality.standard: 2,
                 log.LongitudinalPersonality.relaxed: 3}[personality]
     first = self._layout_personality is None
+    now = rl.get_time()
     if personality != self._layout_personality:
-      self._layout_personality = personality
-      self._layout_highlight_time = now
-    target = selected if now - self._layout_highlight_time < SET_SPEED_PERSISTENCE else 0
-    for count, fade in enumerate(self._layout_filters):
+      self._distance_highlight_time = now
+    self._distance_highlight_filter.update(float(now - self._distance_highlight_time < SET_SPEED_PERSISTENCE))
+    self._layout_personality = personality
+    for count, fade in enumerate(self._layout_filters, start=1):
       if first:
-        fade.x = float(count == target)
+        fade.x = float(count == selected)
       else:
-        fade.update(float(count == target))
+        fade.update(float(count == selected))
 
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
     orange_alpha = self._braking_orange_alpha()
     # Move each physical asset once, rather than crossfading copies of whole layouts.
     y_offset = sum(self._longitudinal_layout(count)[1] * fade.x
-                   for count, fade in enumerate(self._layout_filters))
+                   for count, fade in enumerate(self._layout_filters, start=1))
     for asset_index, (texture, x, y) in enumerate(self._distance_icon_parts):
-      visibility = 0.0
-      for count, layout_filter in enumerate(self._layout_filters):
+      visibility = green_alpha = 0.0
+      for count, layout_filter in enumerate(self._layout_filters, start=1):
         index = asset_index - (3 - count)
         if index < 0:
           continue
         weight = layout_filter.x
         visibility += weight
+        if index == 0:
+          green_alpha += weight * self._distance_highlight_filter.x
       if visibility < 1e-5:
         continue
-      alpha = 0.9 * visibility
+      alpha = 0.9 * (visibility - green_alpha)
       alpha *= 1.0 - orange_alpha
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
+      if green_alpha > 0:
+        green, gx, gy = self._distance_green_parts[asset_index]
+        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
+                           rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
+                                                        self._longitudinal_icon_opacity)))
       if orange_alpha > 0:
         orange, ox, oy = self._distance_orange_parts[asset_index]
         rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy + y_offset), 0.0, 1.0,
@@ -314,21 +326,14 @@ class HudRenderer(Widget):
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
     x, y, width, height = (sum(self._longitudinal_layout(count)[0][axis] * fade.x
-                              for count, fade in enumerate(self._layout_filters)) for axis in range(4))
+                              for count, fade in enumerate(self._layout_filters, start=1)) for axis in range(4))
     # Figma's colored exports have a 68x54 car core and 28 px glow padding.
-    # Keep the resting export at exactly 94x83; align the other layouts to their white core.
-    resting_alpha = self._layout_filters[0].x
-    pad_x = sum((21 if count == 0 else 28 * self._longitudinal_layout(count)[0][2] / 68) * fade.x
-                for count, fade in enumerate(self._layout_filters))
-    pad_y = sum((21 if count == 0 else 28 * self._longitudinal_layout(count)[0][3] / 54) * fade.x
-                for count, fade in enumerate(self._layout_filters))
+    pad_x, pad_y = 28 * width / 68, 28 * height / 54
     white_rect = rl.Rectangle(rect.x + x, rect.y + y, width, height)
     glow_rect = rl.Rectangle(rect.x + x - pad_x, rect.y + y - pad_y, width + 2 * pad_x, height + 2 * pad_y)
-    # Personality display is plain white; blend back to lead colors on collapse.
-    car_white_alpha = 0.9 * (1.0 - resting_alpha) + white_alpha * resting_alpha
-    for texture, destination, alpha in ((self._txt_lead_car, white_rect, car_white_alpha),
-                                         (self._txt_lead_car_green, glow_rect, green_alpha * resting_alpha),
-                                         (self._txt_lead_car_orange, glow_rect, orange_alpha * resting_alpha)):
+    for texture, destination, alpha in ((self._txt_lead_car, white_rect, white_alpha),
+                                         (self._txt_lead_car_green, glow_rect, green_alpha),
+                                         (self._txt_lead_car_orange, glow_rect, orange_alpha)):
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       source = rl.Rectangle(0, 0, texture.width, texture.height)
       rl.draw_texture_pro(texture, source, destination, rl.Vector2(0, 0), 0.0, color)
