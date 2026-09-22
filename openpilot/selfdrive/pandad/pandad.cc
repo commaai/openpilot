@@ -388,6 +388,13 @@ void pandad_run(Panda *panda) {
       if (sm.updated("deviceState")) {
         is_onroad = sm["deviceState"].getDeviceState().getStarted();
       }
+      if (panda->hw_type == cereal::PandaState::PandaType::CUATRO) {
+        // Request clocks before PCM starts, and let Panda expire the lease if we exit.
+        const auto playback = util::read_file("/proc/asound/card0/pcm0p/sub0/status");
+        const auto capture = util::read_file("/proc/asound/card0/pcm0c/sub0/status");
+        panda->set_audio_enabled(!playback.empty() && playback != "closed\n",
+                                 !capture.empty() && capture != "closed\n");
+      }
       process_panda_state(panda, &pm, engaged, is_onroad, spoofing_started);
       panda_safety.configureSafetyMode(is_onroad);
     }

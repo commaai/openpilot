@@ -70,6 +70,10 @@ cereal::PandaState::PandaType Panda::get_hw_type() {
   return (cereal::PandaState::PandaType)(hw_query[0]);
 }
 
+void Panda::set_audio_enabled(bool playback, bool capture) {
+  handle->control_write(0xb3, unsigned(playback) | (unsigned(capture) << 1), 0);
+}
+
 void Panda::set_fan_speed(uint16_t fan_speed) {
   handle->control_write(0xb1, fan_speed, 0);
 }
