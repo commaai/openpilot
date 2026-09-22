@@ -60,7 +60,7 @@ export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
   if [ -n "${CHESTNUT:-}" ]
   then
-    git lfs pull --exclude=''
+    GIT_LFS_FORCE_PROGRESS=1 git lfs pull --exclude=''
     return
   fi
 

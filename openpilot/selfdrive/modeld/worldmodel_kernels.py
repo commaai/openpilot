@@ -8,6 +8,7 @@ from tinygrad.renderer import Estimates
 @cache
 def _program(M, N, K, device):
   name = f'worldmodel_fp8_linear_{M}_{N}_{K}'
+  prefetch = M > 128 and max(N, K) >= 6912
   # Eight waves share 128 x 128 x 64 tiles; padding spreads LDS reads across memory banks.
   stride = 72
   size = 128 * stride
@@ -57,28 +58,45 @@ def _program(M, N, K, device):
     '%load_bi = add i32 %load_bb, %load_col',
     f'%lds_row = mul i32 %load_row, {stride}',
     '%lds_off = add i32 %lds_row, %load_col',
-    'br label %loop',
-    'loop:',
-    '%kk = phi i32 [0, %entry], [%next, %loop]',
   ]
 
   def emit(s):
     lines.append(s)
 
+  def load_tile(tag, offset):
+    for ab in ['a', 'b']:
+      emit(f'%{tag}g{ab} = add i32 %load_{ab}i, {offset}')
+      for r in range(2):
+        emit(f'%{tag}gi{ab}{r} = add i32 %{tag}g{ab}, {r * 64 * K}')
+        emit(f'%{tag}gp{ab}{r} = getelementptr i8, ptr addrspace(1) %{ab}, i32 %{tag}gi{ab}{r}')
+        emit(f'%{tag}gv{ab}{r} = load <4 x i32>, ptr addrspace(1) %{tag}gp{ab}{r}, align 16')
+
+  if prefetch:
+    load_tile('init_', '0')
+  emit('br label %loop')
+  emit('loop:')
+  emit('%kk = phi i32 [0, %entry], [%next, %loop]')
+  if prefetch:
+    for ab in ['a', 'b']:
+      for r in range(2):
+        emit(f'%gv{ab}{r} = phi <4 x i32> [%init_gv{ab}{r}, %entry], [%next_gv{ab}{r}, %loop]')
   for tm in range(4):
     for tn in range(2):
       t = f'{tm}_{tn}'
       emit(f'%acc{t} = phi <8 x float> [zeroinitializer, %entry], [%f3_{t}, %loop]')
+  if not prefetch:
+    load_tile('', '%kk')
   for ab in ['a', 'b']:
-    emit(f'%g{ab} = add i32 %load_{ab}i, %kk')
     for r in range(2):
-      emit(f'%gi{ab}{r} = add i32 %g{ab}, {r * 64 * K}')
-      emit(f'%gp{ab}{r} = getelementptr i8, ptr addrspace(1) %{ab}, i32 %gi{ab}{r}')
-      emit(f'%gv{ab}{r} = load <4 x i32>, ptr addrspace(1) %gp{ab}{r}, align 16')
       emit(f'%li{ab}{r} = add i32 %lds_off, {r * 64 * stride + (size if ab == "b" else 0)}')
       emit(f'%lp{ab}{r} = getelementptr i8, ptr addrspace(3) @lds, i32 %li{ab}{r}')
       emit(f'store <4 x i32> %gv{ab}{r}, ptr addrspace(3) %lp{ab}{r}, align 8')
   emit('call void @llvm.amdgcn.s.barrier()')
+  if prefetch:
+    emit('%next = add i32 %kk, 64')
+    emit(f'%continue = icmp ult i32 %next, {K}')
+    emit('%next_k = select i1 %continue, i32 %next, i32 0')
+    load_tile('next_', '%next_k')
   for ik in range(4):
     for ab, nt in [('a', 4), ('b', 2)]:
       for t in range(nt):
@@ -94,8 +112,9 @@ def _program(M, N, K, device):
           f'<2 x i32> %sva{ik}_{tm}, <2 x i32> %svb{ik}_{tn}, <8 x float> {prev})'
         )
   emit('call void @llvm.amdgcn.s.barrier()')
-  emit('%next = add i32 %kk, 64')
-  emit(f'%continue = icmp ult i32 %next, {K}')
+  if not prefetch:
+    emit('%next = add i32 %kk, 64')
+    emit(f'%continue = icmp ult i32 %next, {K}')
   emit('br i1 %continue, label %loop, label %exit')
   emit('exit:')
   emit('%row_0 = add i32 %m_base, %wm64')
@@ -173,8 +192,9 @@ def _attention_program(seq, total, start_frame, device):
     'declare <8 x float> @llvm.amdgcn.wmma.f32.16x16x16.bf16.v8f32.v8bf16(<8 x i16>, <8 x i16>, <8 x float>)',
     f'define amdgpu_kernel void @{name}(ptr addrspace(1) %o, ptr addrspace(1) %q, ptr addrspace(1) %k, ptr addrspace(1) %v) #0 {{',
     'entry:',
-    '%block = call i32 @llvm.amdgcn.workgroup.id.x()',
-    '%head = call i32 @llvm.amdgcn.workgroup.id.y()',
+    '%tile = call i32 @llvm.amdgcn.workgroup.id.y()',
+    '%head = call i32 @llvm.amdgcn.workgroup.id.x()',
+    f'%block = sub i32 {seq // 64 - 1}, %tile',
     '%tid = call i32 @llvm.amdgcn.workitem.id.x()',
     '%lane = and i32 %tid, 31',
     '%wave = lshr i32 %tid, 5',
@@ -377,8 +397,8 @@ def _attention_kernel(out, q, k, v, start_frame):
   assert dim == 64 and seq % 128 == total % 128 == 0 and total == seq + start_frame * 128
   name, src, lib = _attention_program(seq, total, start_frame, q.device)
   flops = 8 * heads * dim * sum(128 * (128 * (start_frame + i + 1)) for i in range(seq // 128))
-  sink = UOp.sink(out.base, q.base, k.base, v.base, UOp.special(seq // 64, 'gidx0'),
-                  UOp.special(heads, 'gidx1'), UOp.special(128, 'lidx0'),
+  sink = UOp.sink(out.base, q.base, k.base, v.base, UOp.special(heads, 'gidx0'),
+                  UOp.special(seq // 64, 'gidx1'), UOp.special(128, 'lidx0'),
                   arg=KernelInfo(name=name, estimates=Estimates(ops=flops, mem=sum(math.prod(a.shape) for a in (q, k, v, out)) * 2)))
   return UOp(Ops.PROGRAM, src=(sink, UOp(Ops.LINEAR, src=(*sink.src, sink)), UOp(Ops.SOURCE, arg=src), UOp(Ops.BINARY, arg=lib)))
 

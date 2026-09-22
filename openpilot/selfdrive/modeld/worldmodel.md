@@ -8,7 +8,7 @@ no separate target actor.
 
 `models/worldmodel/model.pkl` contains FP8 E4M3 matrix weights, the INT8 encoder,
 higher-precision small parameters, compiled GPU kernels, and Linux ARM64/x86-64
-host programs. Its size is 3,993,156,695 bytes (3.99 GB / 3.72 GiB). The artifact
+host programs. Its size is 3,993,169,911 bytes (3.99 GB / 3.72 GiB). The artifact
 is stored in Git LFS and targets the USB AMD gfx1200 GPU. `hparams.json` and the
 PKL metadata pin the checkpoints and training input contract.
 
@@ -73,7 +73,9 @@ prediction time grid is unchanged.
 
 History advances at the trained 5 Hz, spanning 1.6 seconds. The fused attention
 kernel preserves frame causality, softmax reduction order, BF16 probability
-rounding, and FP32 accumulation order. It produces bitwise-identical outputs
+rounding, and FP32 accumulation order. Longer attention tiles run first, and
+large FP8 projections prefetch their next tile. GELU fuses into the activation
+reduction and quantization. These produce bitwise-identical outputs
 to the unfused quantized implementation on the synthetic validation sequence.
 
 ## Offline compilation
@@ -119,10 +121,13 @@ action delays with image history held constant changes both predictions;
 restoring the delays reproduces the original outputs exactly. Python garbage
 collection is disabled in the publisher to avoid pauses during inference.
 
-At 100 W, 160 fresh-process predictions measured 196.25 ms median, 198.08 ms
-p95 and 201.09 ms maximum, with one 200 ms deadline missed. These timings
-exclude camera preprocessing; reliable 5 Hz is not yet established. The PKL
-compiled in 159.84 seconds and loaded in 13.39 seconds without compiler calls.
+At 100 W, 640 fresh-process predictions over 128 seconds measured 194.85 ms
+median, 195.65 ms p95 and 198.41 ms maximum, with zero 200 ms deadlines missed.
+Every output matched the reference, including after a history reset. The unfused
+checkpoint measured 214.34 ms median and 216.45 ms maximum over 64 frames on
+the same GPU at 100 W. These timings exclude camera preprocessing and
+concurrent openpilot operation. The PKL compiled in 161.67 seconds and loaded
+in 13.61 seconds without compiler calls.
 
 The previous checkpoint's 4 Hz Chestnut results and the older planner's 5 Hz
 results do not validate this artifact. This checkpoint must pass the dedicated
