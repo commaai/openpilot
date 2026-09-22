@@ -408,6 +408,7 @@ def main(demo=False):
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")
       params.put_bool("ChestnutActive", False)
+      Device["NPY"].pending.pop(Device["AMD"], None)
       model = small_model
       if chestnut_state is not None:
         chestnut_state.big = False
