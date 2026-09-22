@@ -22,7 +22,7 @@ dependencies = [
 
   # core
   "scons",
-  "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
+  "pycapnp @ git+https://github.com/capnproto/pycapnp.git@a0cb5cdf0673481f2f9850541f4d42b89698c476",
   "numpy >=2.0",
 
   # vendored native dependencies
