@@ -19,7 +19,6 @@ MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 
 # Road-plane footprint in meters; shared by both lead markers.
-LEAD_BAR_OPACITY = 0.8
 LEAD_BAR_WIDTH = 1.8
 # Rounded mean overall length of 2025 Corolla, RAV4, CR-V, Civic, and Camry.
 LEAD_BAR_DEPTH = 4.7
@@ -258,7 +257,7 @@ class ModelRenderer(Widget):
       visible = bool(current.points.size)
       current.visibility = previous[i].visibility
       alpha = current.visibility.update(float(visible))
-      if not visible and round(255 * self._lead_bar_opacity * alpha) > 0:
+      if not visible and round(255 * self._lead_bar_opacity(previous[i].points) * alpha) > 0:
         current.points = previous[i].points
         current.distance = previous[i].distance
       elif not visible:
@@ -589,9 +588,14 @@ class ModelRenderer(Widget):
     rl.draw_triangle_fan(glow, len(glow), rl.Color(218, 202, 37, 255))
     rl.draw_triangle_fan(chevron, len(chevron), rl.Color(201, 34, 49, int(fill_alpha)))
 
-  @property
-  def _lead_bar_opacity(self):
-    return 0.9 if self._rear_lead_bar else LEAD_BAR_OPACITY
+  def _lead_bar_opacity(self, points):
+    if not points.size:
+      return 0.0
+    if self._rear_lead_bar:
+      return 0.9
+    # Use the projected height before clipping, matching footprint sizing.
+    # Small footprints need more contrast; large nearby ones can be subtler.
+    return float(np.interp(np.ptp(points[:, 1]), [8.0, 24.0], [0.9, 0.65]))
 
   def _draw_lead_indicator(self):
     if self._rect.width <= 0 or self._rect.height <= 0:
@@ -600,7 +604,8 @@ class ModelRenderer(Widget):
     # Draw farther markers first; scissoring clips offscreen corners without pinning them to an edge.
     for lead in sorted(self._lead_vehicles, key=lambda lead: lead.distance, reverse=True):
       if lead.points.size:
-        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * self._lead_bar_opacity * lead.visibility.x)))
+        opacity = self._lead_bar_opacity(lead.points) * lead.visibility.x
+        draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * opacity)))
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:

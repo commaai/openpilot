@@ -238,13 +238,28 @@ class TestLeadBars(unittest.TestCase):
     lead = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
     radar = SimpleNamespace(leadOne=lead, leadTwo=SimpleNamespace(present=False))
     vision = [SimpleNamespace(prob=0.9, x=[21.52], y=[0])]
-    for rear_bar, opacity in ((False, 0.8), (True, 0.9)):
+    for rear_bar, opacity in ((False, 0.9), (True, 0.9)):
       self.renderer._rear_lead_bar = rear_bar
       for source in (None, vision, None):
         self.renderer._update_leads(radar, self.x, source)
         with patch('openpilot.selfdrive.ui.mici.onroad.model_renderer.draw_polygon') as draw:
           self.renderer._draw_lead_indicator()
         self.assertEqual(draw.call_args.args[2].a, round(255 * opacity * self.renderer._lead_vehicles[0].visibility.x))
+
+  def test_opacity_follows_projected_height_and_preserves_fade(self):
+    for rear_bar in (False, True):
+      self.renderer._rear_lead_bar = rear_bar
+      for height, opacity in ((4, 0.9), (8, 0.9), (16, 0.775), (24, 0.65), (48, 0.65)):
+        points = np.array([[0, 0], [10, 0], [10, height], [0, height]], dtype=np.float32)
+        for distance in (5, 80):
+          lead = LeadVehicle(points + [100, 200], distance)
+          self.renderer._lead_vehicles = [lead]
+          for visibility in (1.0, 0.5):
+            lead.visibility.x = visibility
+            with patch('openpilot.selfdrive.ui.mici.onroad.model_renderer.draw_polygon') as draw:
+              self.renderer._draw_lead_indicator()
+            expected = 0.9 if rear_bar else opacity
+            self.assertEqual(draw.call_args.args[2].a, round(255 * expected * visibility))
 
   def test_two_leads_duplicates_and_disappearance(self):
     first = SimpleNamespace(present=True, dRel=20, yRel=0, radar=True, radarTrackId=1)
@@ -259,8 +274,8 @@ class TestLeadBars(unittest.TestCase):
       self.renderer._draw_lead_indicator()
       self.assertEqual(draw.call_count, 2)
       np.testing.assert_allclose(draw.call_args_list[0].args[1], self.renderer._lead_vehicles[1].points + [13, 17])
-      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.8 * self.renderer._lead_vehicles[1].visibility.x))
-      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.8 * self.renderer._lead_vehicles[0].visibility.x))
+      self.assertEqual(draw.call_args_list[0].args[2].a, round(255 * 0.9 * self.renderer._lead_vehicles[1].visibility.x))
+      self.assertEqual(draw.call_args_list[1].args[2].a, round(255 * 0.9 * self.renderer._lead_vehicles[0].visibility.x))
     first.present = second.present = False
     self.renderer._update_leads(radar, self.x)
     for _ in range(100):
