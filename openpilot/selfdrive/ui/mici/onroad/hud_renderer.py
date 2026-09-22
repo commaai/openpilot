@@ -160,7 +160,6 @@ class HudRenderer(Widget):
     self._braking_utilization_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._longitudinal_icon_opacity = 0.0
     self._longitudinal_icon_visible = False
-    self._accel_override_alpha = 1.0
     # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
     self._longitudinal_icon_fade = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
     self._reset_distance_highlight()
@@ -240,7 +239,6 @@ class HudRenderer(Widget):
     # The combined indicator is only visible while engaged.
     self._longitudinal_icon_opacity = self._longitudinal_icon_fade.update(float(self._longitudinal_icon_visible))
     if ui_state.sm.recv_frame['selfdriveState'] >= ui_state.started_frame and ui_state.sm['selfdriveState'].enabled:
-      self._accel_override_alpha = self._acceleration_override_opacity()
       self._update_longitudinal_layout(ui_state.sm['selfdriveState'].personality.raw, rl.get_time())
       icon_rect = rl.Rectangle(rect.x + 4, rect.y, rect.width, rect.height)
       self._draw_lead_car(icon_rect)
@@ -261,17 +259,7 @@ class HudRenderer(Widget):
     # Match TorqueBar: filter utilization, then blend from 75% to 100%.
     return max(0.0, self._braking_utilization_filter.update(utilization) - 0.75) * 4.0
 
-  def _acceleration_override_opacity(self) -> float:
-    sm = ui_state.sm
-    overriding = (sm.valid['onroadEvents'] and sm.alive['onroadEvents'] and
-                  sm.recv_frame['onroadEvents'] >= ui_state.started_frame and
-                  any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
-    # Match the torque bar's steady 35% foreground during override, while
-    # retaining the longitudinal indicator's independent policy/warning colors.
-    return 0.35 if overriding else 1.0
-
   def _reset_distance_highlight(self) -> None:
-    self._triangle_presence_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self._layout_personality = None
     self._layout_highlight_time = -math.inf
     self._layout_filters = [FirstOrderFilter(float(i == 0), 0.1, 1 / gui_app.target_fps) for i in range(4)]
@@ -318,7 +306,7 @@ class HudRenderer(Widget):
         white_alpha += weight if index < count - 1 else 0.0
       if visibility < 1e-5:
         continue
-      alpha = 0.35 * (visibility - white_alpha - green_alpha) + 0.9 * white_alpha * self._accel_override_alpha
+      alpha = 0.35 * (visibility - white_alpha - green_alpha) + 0.9 * white_alpha
       alpha *= 1.0 - orange_alpha
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
@@ -326,12 +314,12 @@ class HudRenderer(Widget):
         green, gx, gy = self._distance_green_parts[asset_index]
         rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * green_alpha * (1.0 - orange_alpha) *
-                                                        self._longitudinal_icon_opacity * self._accel_override_alpha)))
+                                                        self._longitudinal_icon_opacity)))
       if orange_alpha > 0:
         orange, ox, oy = self._distance_orange_parts[asset_index]
         rl.draw_texture_ex(orange, rl.Vector2(rect.x + ox, rect.y + oy + y_offset), 0.0, 1.0,
                            rl.Color(255, 255, 255, round(255 * orange_alpha * visibility *
-                                                        self._longitudinal_icon_opacity * self._accel_override_alpha)))
+                                                        self._longitudinal_icon_opacity)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
@@ -345,36 +333,33 @@ class HudRenderer(Widget):
     white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (0.9 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
-    override_alpha = self._accel_override_alpha if has_lead else 1.0
     x, y, width, height = (sum(self._longitudinal_layout(count)[0][axis] * fade.x
                               for count, fade in enumerate(self._layout_filters)) for axis in range(4))
     # Figma's colored exports have a 68x54 car core and 28 px glow padding.
     # Keep the resting export at exactly 94x83; align the other layouts to their white core.
     resting_alpha = self._layout_filters[0].x
-    triangle_presence = self._triangle_presence_filter.update(float(has_lead or fcw))
-    # Half the triangle's 11 px height keeps the resting silhouette centered.
-    triangle_travel = 5.5 * (1.0 - triangle_presence)
-    y += resting_alpha * triangle_travel
     pad_x = sum((21 if count == 0 else 28 * self._longitudinal_layout(count)[0][2] / 68) * fade.x
                 for count, fade in enumerate(self._layout_filters))
     pad_y = sum((21 if count == 0 else 28 * self._longitudinal_layout(count)[0][3] / 54) * fade.x
                 for count, fade in enumerate(self._layout_filters))
     white_rect = rl.Rectangle(rect.x + x, rect.y + y, width, height)
     glow_rect = rl.Rectangle(rect.x + x - pad_x, rect.y + y - pad_y, width + 2 * pad_x, height + 2 * pad_y)
-    for texture, destination, alpha in ((self._txt_lead_car, white_rect, white_alpha),
-                                         (self._txt_lead_car_green, glow_rect, green_alpha),
-                                         (self._txt_lead_car_orange, glow_rect, orange_alpha)):
-      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
+    # Personality display is plain white; blend back to lead colors on collapse.
+    car_white_alpha = 0.9 * (1.0 - resting_alpha) + white_alpha * resting_alpha
+    for texture, destination, alpha in ((self._txt_lead_car, white_rect, car_white_alpha),
+                                         (self._txt_lead_car_green, glow_rect, green_alpha * resting_alpha),
+                                         (self._txt_lead_car_orange, glow_rect, orange_alpha * resting_alpha)):
+      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
       source = rl.Rectangle(0, 0, texture.width, texture.height)
       rl.draw_texture_pro(texture, source, destination, rl.Vector2(0, 0), 0.0, color)
 
-    # Resting triangle shares the car's filtered colors and override dimming.
+    # Resting triangle shares the car's filtered colors.
     # Its opacity is complementary to the outgoing personality layouts.
-    if resting_alpha * triangle_presence > 1e-5:
+    if resting_alpha > 1e-5:
       for (texture, tx, ty), alpha in zip(self._car_triangle_parts, (white_alpha, green_alpha, orange_alpha), strict=True):
-        rl.draw_texture_ex(texture, rl.Vector2(rect.x + tx, rect.y + ty - triangle_travel), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * alpha * resting_alpha * triangle_presence *
-                                                        self._longitudinal_icon_opacity * override_alpha)))
+        rl.draw_texture_ex(texture, rl.Vector2(rect.x + tx, rect.y + ty), 0.0, 1.0,
+                           rl.Color(255, 255, 255, round(255 * alpha * resting_alpha *
+                                                        self._longitudinal_icon_opacity)))
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:

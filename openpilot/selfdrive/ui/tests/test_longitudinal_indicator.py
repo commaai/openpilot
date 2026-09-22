@@ -31,7 +31,7 @@ class TestLongitudinalIndicator(unittest.TestCase):
     for name in ('_lead_car_white_filter', '_lead_car_green_filter', '_lead_car_orange_filter'):
       setattr(self.hud, name, FirstOrderFilter(0, 0.1, 1 / 60, initialized=False))
     self.hud._reset_distance_highlight()
-    self.hud._longitudinal_icon_opacity = self.hud._accel_override_alpha = 1.0
+    self.hud._longitudinal_icon_opacity = 1.0
     self.hud._txt_lead_car = SimpleNamespace(width=128, height=101)
     self.hud._txt_lead_car_green = self.hud._txt_lead_car_orange = SimpleNamespace(width=124, height=110)
     self.hud._car_triangle_parts = [('tri', 33, 137), ('tri_green', 21, 125), ('tri_orange', 21, 125)]
@@ -121,46 +121,32 @@ class TestLongitudinalIndicator(unittest.TestCase):
       for i, f in enumerate(self.hud._layout_filters):
         f.x = resting if i == 0 else (1 - resting if i == 3 else 0)
       for state in ('no_lead', 'radar', 'vision', 'fcw'):
-        self.hud._triangle_presence_filter.x = float(state != 'no_lead')
-        self.hud._triangle_presence_filter.initialized = True
         self.sm['longitudinalPlan'].hasLead = state != 'no_lead'
         self.sm['longitudinalPlan'].longitudinalPlanSource = (log.LongitudinalPlan.LongitudinalPlanSource.e2e if state == 'vision'
                                                             else log.LongitudinalPlan.LongitudinalPlanSource.lead0)
         self.sm['selfdriveState'].alertHudVisual = (car.CarControl.HUDControl.VisualAlert.fcw if state == 'fcw'
                                                   else car.CarControl.HUDControl.VisualAlert.none)
         with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as triangle, \
-             patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as car_draw:
+             patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro'):
           self.hud._draw_lead_car(self.rect)
-        self.assertEqual(triangle.call_count, 3 if resting and state != 'no_lead' else 0)
+        self.assertEqual(triangle.call_count, 3 if resting else 0)
         for index, call in enumerate(triangle.call_args_list):
-          self.assertAlmostEqual(call.args[4].a, car_draw.call_args_list[index].args[5].a * resting, delta=1)
+          filters = (self.hud._lead_car_white_filter, self.hud._lead_car_green_filter, self.hud._lead_car_orange_filter)
+          self.assertEqual(call.args[4].a, round(255 * filters[index].x * resting))
           self.assertEqual((call.args[1].x, call.args[1].y), (33, 137) if index == 0 else (21, 125))
 
-  def test_triangle_slides_out_and_car_recenters_without_lead(self):
-    self.hud._triangle_presence_filter.x = 1.0
-    self.hud._triangle_presence_filter.initialized = True
-    self.sm['longitudinalPlan'].hasLead = False
-    with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_ex') as triangle, \
-         patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as car_draw:
-      self.hud._draw_lead_car(self.rect)
-      self.assertGreater(car_draw.call_args_list[0].args[2].y, 96)
-      self.assertLess(car_draw.call_args_list[0].args[2].y, 101.5)
-      self.assertLess(triangle.call_args_list[0].args[1].y, 137)
-      for _ in range(100):
-        self.hud._draw_lead_car(self.rect)
-      triangle.reset_mock()
-      self.hud._draw_lead_car(self.rect)
-      self.assertEqual(triangle.call_count, 0)
-      self.assertAlmostEqual(car_draw.call_args_list[-3].args[2].y, 101.5, places=4)
-      self.sm['longitudinalPlan'].hasLead = True
-      self.hud._draw_lead_car(self.rect)
-      self.assertEqual(triangle.call_count, 3)
-      self.assertGreater(car_draw.call_args_list[-3].args[2].y, 96)
-      self.assertLess(car_draw.call_args_list[-3].args[2].y, 101.5)
-      for _ in range(100):
-        self.hud._draw_lead_car(self.rect)
-      self.assertAlmostEqual(car_draw.call_args_list[-3].args[2].y, 96, places=4)
-      self.assertAlmostEqual(triangle.call_args_list[-3].args[1].y, 137, places=4)
+  def test_personality_car_is_white_for_all_lead_states(self):
+    from opendbc.car.structs import car
+    for count in (1, 2, 3):
+      for i, fade in enumerate(self.hud._layout_filters):
+        fade.x = float(i == count)
+      for has_lead, fcw in ((False, False), (True, False), (True, True)):
+        self.sm['longitudinalPlan'].hasLead = has_lead
+        self.sm['selfdriveState'].alertHudVisual = (car.CarControl.HUDControl.VisualAlert.fcw if fcw
+                                                  else car.CarControl.HUDControl.VisualAlert.none)
+        with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.draw_texture_pro') as draw:
+          self.hud._draw_lead_car(self.rect)
+        self.assertEqual([c.args[5].a for c in draw.call_args_list], [round(255 * 0.9), 0, 0])
 
   def test_car_green_tracks_policy_not_gap(self):
     for distance in (10, 35, 80):
@@ -172,19 +158,6 @@ class TestLongitudinalIndicator(unittest.TestCase):
       self.hud._draw_lead_car(self.rect)
     self.assertAlmostEqual(self.hud._lead_car_green_filter.x, 0, places=5)
     self.assertAlmostEqual(self.hud._lead_car_white_filter.x, 0.9, places=5)
-
-  def test_acceleration_override_is_steady_dim(self):
-    self.sm['onroadEvents'] = [SimpleNamespace(name=log.OnroadEvent.EventName.gasPressedOverride)]
-    self.sm.valid['onroadEvents'] = self.sm.alive['onroadEvents'] = True
-    self.sm.recv_frame['onroadEvents'] = 1
-    with patch('openpilot.selfdrive.ui.mici.onroad.hud_renderer.rl.get_time', side_effect=AssertionError('No pulse clock')):
-      self.assertEqual(self.hud._acceleration_override_opacity(), 0.35)
-      self.assertEqual(self.hud._acceleration_override_opacity(), 0.35)
-      self.sm['onroadEvents'] = []
-      self.assertEqual(self.hud._acceleration_override_opacity(), 1.0)
-    self.sm['onroadEvents'] = [SimpleNamespace(name=log.OnroadEvent.EventName.gasPressedOverride)]
-    self.sm.valid['onroadEvents'] = False
-    self.assertEqual(self.hud._acceleration_override_opacity(), 1.0)
 
 
 if __name__ == '__main__':
