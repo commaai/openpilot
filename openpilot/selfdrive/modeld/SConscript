@@ -1,10 +1,8 @@
 import glob
 import os
-import time
 from SCons.Script import Action, Value
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
-from openpilot.selfdrive.modeld.helpers import chestnut_present
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 
@@ -24,12 +22,6 @@ else:
   # JIT=2 disables graph batching, which produces incorrect outputs after buffers change.
   tg_flags = 'DEV=METAL JIT=2' if arch == 'Darwin' else 'DEV=CPU:LLVM'
 
-CHESTNUT = chestnut_present()
-if CHESTNUT:
-  chestnut_tg_flags = 'DEBUG=1 DEV=USB+AMD:LLVM FRAME_DEV=CPU FLOAT16=1 JIT_BATCH_SIZE=0 GMMU=0 TC_OPT=2 TC_MIN_GLOBALS=32'
-  # the USB+AMD GPU takes an exclusive flock; serialize all targets that touch it
-  chestnut_lock = File("models/.chestnut.lock").abspath
-
 # tinygrad calls brew which needs a $HOME in the env
 mac_brew_string = f'HOME={os.path.expanduser("~")}' if arch == 'Darwin' else ''
 
@@ -37,20 +29,6 @@ warp_deps = [File("#openpilot/system/camerad/cameras/nv12_info.py")]
 compiler = Dir('#tinygrad_repo/examples/openpilot').abspath
 # build on all cores
 taskset = 'taskset -c 0-7 ' if arch == 'comma_arm64' else ''
-
-def chestnut_action(command):
-  def do_compile(target, source, env):
-    from openpilot.system.hardware.chestnut.flash import link_up
-    # chestnut can enumerate before its PCIe link is up due to varying 12V power behavior across cars
-    for _ in range(10):
-      if link_up():
-        break
-      time.sleep(1)
-    else:
-      print("Chestnut not ready, skipping warp build")
-      return
-    return env.Execute(command)
-  return Action(do_compile, "  [CHESTNUT] $TARGET")
 
 def compile_model(onnx_path, pkl_path):
   onnx_path, target_pkl_path = File(onnx_path).abspath, File(pkl_path).abspath
@@ -66,19 +44,14 @@ compile_model('models/dmonitoring_model.onnx', 'models/dmonitoring_model_tinygra
 compile_model('models/driving_supercombo.onnx', 'models/driving_tinygrad.pkl')
 
 model_w, model_h = MEDMODEL_INPUT_SIZE
-for chestnut in [False, True] if CHESTNUT else [False]:
-  file_prefix, cmd_flags = ('big_', chestnut_tg_flags) if chestnut else ('', tg_flags)
-  for cam_w, cam_h in camera_configs:
-    warp_pkl_path = File(f"models/{file_prefix}driving_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
-    stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
-    cmd = (f'{cmd_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_warp.py" '
-           f'--frame {cam_w},{cam_h},{stride},{y_height},{uv_height},{stride * (y_height + uv_height)} '
-           f'--warp-to {model_w}x{model_h} --layout yuv420 --frames 2 '
-           f'--output {warp_pkl_path}')
-    action = chestnut_action(cmd) if chestnut else cmd
-    node = lenv.Command(warp_pkl_path, tinygrad_files + warp_deps + [Value(cmd)], action)
-    if chestnut:
-      lenv.SideEffect(chestnut_lock, node)
+for cam_w, cam_h in camera_configs:
+  warp_pkl_path = File(f"models/driving_warp_{cam_w}x{cam_h}_tinygrad.pkl").abspath
+  stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
+  cmd = (f'{tg_flags} {mac_brew_string} {taskset}python3 "{compiler}/compile_warp.py" '
+         f'--frame {cam_w},{cam_h},{stride},{y_height},{uv_height},{stride * (y_height + uv_height)} '
+         f'--warp-to {model_w}x{model_h} --layout yuv420 --frames 2 '
+         f'--output {warp_pkl_path}')
+  lenv.Command(warp_pkl_path, tinygrad_files + warp_deps + [Value(cmd)], cmd)
 
 dm_w, dm_h = DM_INPUT_SIZE
 for cam_w, cam_h in camera_configs:
