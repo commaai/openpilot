@@ -108,6 +108,7 @@ class WorldModel:
       y = y - y.mean(-1, keepdim=True)
     y = y * (y.square().mean(-1, keepdim=True) + 1e-5).rsqrt()
     if layernorm:
+      assert name is not None
       return (y * self.w[name + ".weight"].float() + self.w[name + ".bias"].float()).cast(x.dtype)
     y = y.cast(x.dtype)
     return y if name is None else y * self.w[name + ".weight"]
