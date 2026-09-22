@@ -104,9 +104,10 @@ reference file is not deployed. Rebuild when changing the model or tinygrad.
 
 ## Validation and hardware limits
 
-Chestnut CI runs the existing stock-model replay and camera tests with
-`WORLDMODEL_DIR=`. It then explicitly enables the worldmodel for
-`openpilot/selfdrive/test/test_worldmodel.py` on the same MICI GPU device.
+Chestnut CI first enables the worldmodel for
+`openpilot/selfdrive/test/test_worldmodel.py` on the MICI GPU device.
+It then runs the existing stock-model replay and camera tests with
+`WORLDMODEL_DIR=`.
 That test starts `worldmodeld` with the real cameras and ordinary model,
 waits for valid worldmodel output to be consumed by `modeld`, and checks
 25 seconds of 5 Hz plans, finite plan/action values, freshness, inference

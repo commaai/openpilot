@@ -165,9 +165,9 @@ def step(String name, String cmd, Map args = [:]) {
 def chestnutStage(String name = "chestnut") {
   deviceStage(name, "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
     step("build", "./openpilot/selfdrive/test/chestnut.sh"),
+    step("worldmodel onroad tests", 'WORLDMODEL_DIR="$PWD/openpilot/selfdrive/modeld/models/worldmodel" python openpilot/selfdrive/test/test_worldmodel.py', [timeout: 180]),
     step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
     step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
-    step("worldmodel onroad tests", 'WORLDMODEL_DIR="$PWD/openpilot/selfdrive/modeld/models/worldmodel" python openpilot/selfdrive/test/test_worldmodel.py', [timeout: 180]),
   ])
 }
 
