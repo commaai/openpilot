@@ -16,7 +16,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient
 from opendbc.car.structs import car
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
@@ -87,6 +87,7 @@ def main():
   directory = Path(WORLDMODEL_DIR)
   with Context(DEV='USB+AMD:LLVM', TC_OPT=2, TC_MIN_GLOBALS=32, JIT_BATCH_SIZE=0):
     runner = WorldModelRunner(directory)
+    set_core_affinity([6])
     pm = messaging.PubMaster(['worldModelPlan'])
     sm = messaging.SubMaster(['deviceState', 'narrowRoadCameraState', 'extrinsicsCalibration', 'lateralDelay'])
     CP = messaging.log_from_bytes(Params().get('CarParams', block=True), car.CarParams)
