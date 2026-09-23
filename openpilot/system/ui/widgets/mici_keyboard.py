@@ -356,7 +356,7 @@ class MiciKeyboard(Widget):
           try:
             rl.draw_circle_gradient(rl.Vector2(key_x + key.rect.width / 2, key_y + key.rect.height / 2),
                                     SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
-          except TypeError:  # AGNOS updater compatibility for raylib 5
+          except (TypeError, RuntimeError):  # AGNOS updater compatibility for raylib 5
             rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
                                     SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
