@@ -18,9 +18,13 @@ CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 
-# Road-plane bar width in meters; shared by both lead markers.
+# Lead-bar geometry and visibility targets, shared by both markers.
 LEAD_BAR_OPACITY = 0.9
-LEAD_BAR_WIDTH = 1.8
+LEAD_BAR_WIDTH = 1.8  # meters
+LEAD_BAR_GAP = 0.2  # meters behind the lead
+LEAD_BAR_MIN_AREA = 80.0  # projected pixels squared
+LEAD_BAR_MAX_LENGTH = 12.0  # projected front-to-back center separation in pixels
+LEAD_BAR_HEADING_WINDOW = 12.0  # meters of lane geometry used to estimate direction
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -273,24 +277,20 @@ class ModelRenderer(Widget):
     path_x_array = path_x_array[forward_samples]
     path = self._path.raw_points[forward_samples]
 
-    # Follow the local road direction, but center on the radar lead rather than the path.
-    sample_x = np.clip([distance - 1.0, distance + 1.0], path_x_array[0], path_x_array[-1])
-    sample_y = np.interp(sample_x, path_x_array, path[:, 1])
-    heading = np.arctan2(sample_y[1] - sample_y[0], sample_x[1] - sample_x[0])
+    heading = self._lead_bar_heading(distance)
     if smoothing is not None:
       lateral = smoothing.lateral_filter.update(lateral)
       heading = smoothing.heading_filter.update(heading)
+    center = np.array([distance, -lateral])  # Lead lateral is left-positive; model lateral is right-positive.
+
     forward = np.array([np.cos(heading), np.sin(heading)])
-    sideways = np.array([-forward[1], forward[0]])
-    center = np.array([distance, -lateral])  # Radar lateral is left-positive; model lateral is right-positive.
+    sideways = np.array([-forward[1], forward[0]]) * (LEAD_BAR_WIDTH / 2)
+    far = center - forward * LEAD_BAR_GAP
+
     def project_depth(depth):
-      corners = np.array([
-        center + forward * (-0.2 - along) + sideways * side
-        for along, side in ((0.0, -LEAD_BAR_WIDTH / 2),
-                            (0.0, LEAD_BAR_WIDTH / 2),
-                            (depth, LEAD_BAR_WIDTH / 2),
-                            (depth, -LEAD_BAR_WIDTH / 2))
-      ])
+      near = far - forward * depth
+      # Front-facing order for the existing triangle-strip renderer.
+      corners = np.array([far + sideways, near + sideways, near - sideways, far - sideways])
       if np.any(corners[:, 0] < 0.1):
         return empty
       heights = np.interp(corners[:, 0], path_x_array, path[:, 2]) + self._path_offset_z
@@ -301,10 +301,42 @@ class ModelRenderer(Widget):
 
     return self._size_lead_bar(project_depth, distance)
 
+  def _lead_bar_heading(self, distance: float) -> float:
+    headings, weights = [], []
+    for index in (1, 2):
+      probability = self._lane_line_probs[index]
+      points = self._lane_lines[index].raw_points
+      if probability < 0.6 or len(points) < 2 or not np.isfinite(points).all():
+        continue
+      forward = np.r_[True, points[1:, 0] > np.maximum.accumulate(points[:, 0])[:-1]]
+      points = points[forward]
+      # Avoid extrapolation and the noisy final 2 m of lane predictions.
+      end = points[-1, 0] - 2
+      if not points[0, 0] <= distance <= end or end - points[0, 0] < LEAD_BAR_HEADING_WINDOW / 2:
+        continue
+      start = max(points[0, 0], min(distance - LEAD_BAR_HEADING_WINDOW / 2, end - LEAD_BAR_HEADING_WINDOW))
+      stop = min(start + LEAD_BAR_HEADING_WINDOW, end)
+      ys = np.interp([start, stop], points[:, 0], points[:, 1])
+      headings.append(np.arctan2(ys[1] - ys[0], stop - start))
+      weights.append(probability)
+    # The existing heading filter eases back to straight ahead without lanes.
+    return float(np.average(headings, weights=weights)) if headings else 0.0
+
+  @staticmethod
+  def _lead_bar_size(points: np.ndarray) -> tuple[float, float]:
+    # Measure the polygon itself, not its axis-aligned bounding box. Translation
+    # improves numerical precision when the marker is far from the screen origin.
+    polygon = points.astype(np.float64) - points[0]
+    area = abs(np.dot(polygon[:, 0], np.roll(polygon[:, 1], 1)) -
+               np.dot(polygon[:, 1], np.roll(polygon[:, 0], 1))) / 2
+    far_center = (polygon[0] + polygon[-1]) / 2
+    near_center = (polygon[1] + polygon[2]) / 2
+    return float(area), float(np.linalg.norm(near_center - far_center))
+
   @staticmethod
   def _size_lead_bar(project_depth, distance):
-    # Original bar extends toward the camera, with a 0.2 m gap behind the lead.
-    max_depth = (distance - 0.2) * 0.9
+    # Keep road-space expansion in front of the camera.
+    max_depth = (distance - LEAD_BAR_GAP) * 0.9
     if max_depth <= 0:
       return np.empty((0, 2), dtype=np.float32)
     depth = min(6.0, max_depth)
@@ -318,27 +350,32 @@ class ModelRenderer(Widget):
           break
     if not points.size:
       return points
-    height = np.ptp(points[:, 1])
-    target = np.clip(height, 6.0, 12.0)
-    if height == target:
+    area, length = ModelRenderer._lead_bar_size(points)
+    shrink = length > LEAD_BAR_MAX_LENGTH
+    if not shrink and area >= LEAD_BAR_MIN_AREA:
       return points
-    low, high = (0.0, depth) if height > target else (depth, max_depth)
-    best_error = abs(height - target)
-    # Adjust road-space length, preserving calibrated perspective. Keep the
-    # closest valid result if unusual road geometry makes the target unreachable.
+
+    def size_ratio(candidate):
+      area, length = ModelRenderer._lead_bar_size(candidate)
+      # Expansion stops at either sufficient area or the length cap. A nearly
+      # edge-on bar may stay below the area target rather than becoming a streak.
+      return length / LEAD_BAR_MAX_LENGTH if shrink else max(area / LEAD_BAR_MIN_AREA, length / LEAD_BAR_MAX_LENGTH)
+
+    low, high = (0.0, depth) if shrink else (depth, max_depth)
+    best_error = abs(size_ratio(points) - 1)
     for _ in range(20):
       depth = (low + high) / 2
       candidate = project_depth(depth)
       if not candidate.size:
         high = depth
         continue
-      height = np.ptp(candidate[:, 1])
-      error = abs(height - target)
+      ratio = size_ratio(candidate)
+      error = abs(ratio - 1)
       if error < best_error:
         points, best_error = candidate, error
       if error < 1e-5:
         break
-      if height < target:
+      if ratio < 1:
         low = depth
       else:
         high = depth
