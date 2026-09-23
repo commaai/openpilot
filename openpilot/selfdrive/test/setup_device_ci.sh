@@ -60,27 +60,30 @@ export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
   if [ -n "${CHESTNUT:-}" ]
   then
-    git lfs pull --exclude=''
+    GIT_LFS_FORCE_PROGRESS=1 git lfs pull --exclude=''
     return
   fi
 
-  # Keep the precompiled big model as a pointer on devices without Chestnut.
-  LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl"
+  # Keep GPU models as pointers on devices without Chestnut.
+  GPU_MODELS=(openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl openpilot/selfdrive/modeld/models/worldmodel/model.pkl)
+  LFS_EXCLUDE=$(IFS=,; echo "${GPU_MODELS[*]}")
 
   git config --local lfs.fetchexclude "$LFS_EXCLUDE"
   git lfs pull --exclude="$LFS_EXCLUDE"
-  if git cat-file -e "HEAD:$LFS_EXCLUDE"; then
-    rm -f "$LFS_EXCLUDE"
-    git checkout -- "$LFS_EXCLUDE"
+  for model in "${GPU_MODELS[@]}"; do
+    if git cat-file -e "HEAD:$model"; then
+      rm -f "$model"
+      git checkout -- "$model"
 
-    # `git lfs prune` retains objects referenced by HEAD, even when excluded.
-    # Remove this one explicitly so safe checkout doesn't rsync it either.
-    oid=$(git show "HEAD:$LFS_EXCLUDE" | sed -n 's/^oid sha256://p')
-    lfs_objects=$(git lfs env | sed -n 's/^LocalMediaDir=//p')
-    if [[ "$oid" =~ ^[0-9a-f]{64}$ && -n "$lfs_objects" ]]; then
-      rm -f "$lfs_objects/${oid:0:2}/${oid:2:2}/$oid"
+      # `git lfs prune` retains objects referenced by HEAD, even when excluded.
+      # Remove these explicitly so safe checkout doesn't rsync them either.
+      oid=$(git show "HEAD:$model" | sed -n 's/^oid sha256://p')
+      lfs_objects=$(git lfs env | sed -n 's/^LocalMediaDir=//p')
+      if [[ "$oid" =~ ^[0-9a-f]{64}$ && -n "$lfs_objects" ]]; then
+        rm -f "$lfs_objects/${oid:0:2}/${oid:2:2}/$oid"
+      fi
     fi
-  fi
+  done
 }
 
 safe_checkout() {

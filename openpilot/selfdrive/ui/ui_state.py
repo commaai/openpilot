@@ -13,7 +13,7 @@ from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.common.hardware.usb import TYPEC_CC_ORIENTATION_PATH, get_usb_state, is_chestnut_usb_id, read_int
-from openpilot.selfdrive.modeld.helpers import chestnut_compiled
+from openpilot.selfdrive.modeld.helpers import WORLDMODEL_DIR, chestnut_compiled
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
 PARAM_UPDATE_TIME = 1 / 5.0
@@ -222,6 +222,15 @@ class UIState:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
       self.chestnut_state = ChestnutState.UNCOMPILED
+    elif WORLDMODEL_DIR:
+      if not detected or (model_seen and not self.sm.alive["modelV2"]):
+        self.chestnut_state = ChestnutState.FAILED
+      elif model_seen and self.sm.valid["modelV2"] and self.sm["modelV2"].big:
+        self.chestnut_state = ChestnutState.ACTIVE
+      elif self.chestnut_state in (ChestnutState.ACTIVE, ChestnutState.FAILED) or time.monotonic() - self.started_time > 60:
+        self.chestnut_state = ChestnutState.FAILED
+      else:
+        self.chestnut_state = ChestnutState.LOADING
     elif self.chestnut_state == ChestnutState.FAILED or not detected or (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big)):
       self.chestnut_state = ChestnutState.FAILED
     elif self.chestnut_loading or not model_seen:

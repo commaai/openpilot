@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -5,6 +6,7 @@ from openpilot.common.hardware import AGNOS
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
+WORLDMODEL_DIR = os.getenv('WORLDMODEL_DIR', str(MODELS_DIR / 'worldmodel') if (MODELS_DIR / 'worldmodel/model.pkl').is_file() else '')
 
 
 def modeld_pkl_path(chestnut: bool):
@@ -30,6 +32,8 @@ def chestnut_present() -> bool:
   return False
 
 def chestnut_compiled() -> bool:
+  if WORLDMODEL_DIR:
+    return (Path(WORLDMODEL_DIR) / 'model.pkl').is_file()
   path = modeld_pkl_path(chestnut=True)
   return path.is_file() and all(
     (MODELS_DIR / f'big_driving_warp_{size}_tinygrad.pkl').is_file() for size in ('1344x760', '1928x1208'))

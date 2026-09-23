@@ -1,0 +1,177 @@
+# Context-9 transformer policy at 5 Hz
+
+This branch runs actor `58e4f1d2-6827-495e-bc3d-6138883170f0/12864`, the latest
+complete checkpoint available on 2026-09-22. Its frozen backbone is
+`68a03682-c802-4638-a4f7-c04707a8a579/15360`; the image encoder is
+`c04337f8-b83f-4e34-b07a-5f7396978d67/-1`. This run uses `actor` weights and has
+no separate target actor.
+
+`models/worldmodel/model.pkl` contains FP8 E4M3 matrix weights, the INT8 encoder,
+higher-precision small parameters, compiled GPU kernels, and Linux ARM64/x86-64
+host programs. Its size is 3,993,212,217 bytes (3.99 GB / 3.72 GiB). The artifact
+is stored in Git LFS and targets the USB AMD gfx1200 GPU. `hparams.json` and the
+PKL metadata pin the checkpoints and training input contract.
+
+## Setup
+
+From the repository root:
+
+```bash
+git submodule update --init --recursive
+git lfs pull
+```
+
+The planner starts onroad by default and reserves the USB GPU. The ordinary
+model continues on the device's standard backend, supplying lanes, leads,
+metadata and odometry at 20 Hz. Its plan and action remain the fallback during
+loading, history warmup, and whenever the worldmodel message is invalid or
+stale. Valid worldmodel predictions automatically control the plan and action;
+this is not a shadow-only configuration.
+
+`WORLDMODEL_DIR=/absolute/path/to/compiled-model` selects another compatible
+artifact directory. Set `WORLDMODEL_DIR=` in the manager environment to disable
+the worldmodel. Run the publisher alone with:
+
+```bash
+python -m openpilot.selfdrive.modeld.worldmodeld
+```
+
+Loading uploads the weight arena in 32 MiB chunks using a precompiled transfer
+program. Startup also links and warms the inference kernels, then clears the
+history. The device does not require source weights, ONNX, Clang, or LLVM.
+The GPU architecture and pinned tinygrad revision must match the offline build.
+
+## Model and control integration
+
+Each input combines narrow and wide RGB images at 256 x 128. The encoder adds
+one latent to a nine-frame history. All nine frames pass through the 56-block
+backbone and a three-block transformer policy head. There is no noise prefix,
+image decoder, diffusion loop, or cross-window KV cache.
+
+The policy head uses BF16 residuals, RMSNorm, Q/K normalization, and frame-causal
+attention. Every frame sees its own spatial tokens and earlier frames. The full
+backbone output is retained. Only the final policy block discards earlier query
+outputs, while retaining all keys and values. Large policy matrices use the
+native FP8 kernels; final output projections and scales compute in FP32.
+
+The head consumes two `action_t` values. The publisher combines vehicle lateral
+and longitudinal delays, output smoothing, camera age, the previous measured
+inference duration, and the 100 ms half-period. It publishes the conditioned
+990-value plan, four-value action distribution, and conditioning times.
+`modeld` parses the learned action, converts lateral acceleration to curvature,
+and applies the existing output smoothing and stop logic. It retains plan-based
+action derivation for older artifacts without an action output.
+
+The publisher takes every fourth 20 Hz camera frame. Service health checks use
+the 5 Hz service frequency. Stale-plan expiry is 450 ms: the existing 50 ms
+camera-delivery budget plus two 200 ms periods for inference and holding the
+result until its replacement. A camera gap over 400 ms or a camera restart
+resets history; nine new observations are required for validity. `modeld`
+receives the latest worldmodel output after running the small model, so a plan
+arriving during that inference is available for the freshness check. The
+prediction time grid is unchanged.
+
+History advances at the trained 5 Hz, spanning 1.6 seconds. The fused attention
+kernel preserves frame causality, softmax reduction order, BF16 probability
+rounding, and FP32 accumulation order. Longer attention tiles run first, and
+attention prefetches the next key tile. Large FP8 projections prefetch their
+next tile; QKV and MLP-up projections dispatch neighboring row tiles together.
+GELU fuses into the activation
+reduction and quantization. These produce bitwise-identical outputs
+to the unfused quantized implementation on the synthetic validation sequence.
+
+## Offline compilation
+
+Export the source bundle with xx's `ml_tools/openpilot_compile/compile_worldmodel.py`:
+
+```bash
+python ml_tools/openpilot_compile/compile_worldmodel.py \
+  --rldriving 58e4f1d2-6827-495e-bc3d-6138883170f0/12864 \
+  --output /absolute/path/to/context9-export
+```
+
+With this branch, its pinned tinygrad, and the target USB GPU on the build host:
+
+```bash
+python -m openpilot.selfdrive.modeld.compile_worldmodel \
+  /absolute/path/to/context9-export \
+  openpilot/selfdrive/modeld/models/worldmodel/model.pkl
+```
+
+The host needs Clang and LLVM with RDNA4 support. Compilation uses
+`TC_OPT=2 TC_MIN_GLOBALS=32 JIT_BATCH_SIZE=0` and cross-compiles host programs
+for ARM64. A neighboring `model.reference.npz` contains 32 synthetic images and
+varying action delays, with outputs for cold and repeating histories. This
+reference file is not deployed. Rebuild when changing the model or tinygrad.
+
+The compiler applies the gfx1200 schedules in `worldmodel_kernel_opts.json`.
+They were selected offline with BEAM=2 and paired GPU timing, rejecting
+candidates that changed the checked outputs or lost to the heuristic. RMSNorm
+also searches schedules that process more rows without changing its reduction.
+The compiler uses one process so these schedules apply consistently; it reports
+the number of distinct schedules used. The deployed PKL does not run BEAM.
+The pinned tinygrad measures device execution separately from USB submission
+and compares BEAM's winner with the original heuristic before caching it.
+
+## Validation and hardware limits
+
+Chestnut CI first enables the worldmodel for
+`openpilot/selfdrive/test/test_worldmodel.py` on the MICI GPU device.
+It then runs the existing stock-model replay and camera tests with
+`WORLDMODEL_DIR=`.
+That test starts `worldmodeld` with the real cameras and ordinary model,
+waits for valid worldmodel output to be consumed by `modeld`, and checks
+25 seconds of 5 Hz plans, finite plan/action values, freshness, inference
+deadlines, and continued worldmodel use. Any worldmodel compiler call fails
+the test. Non-Chestnut jobs disable the worldmodel and skip its LFS download.
+
+Offline validation compares 64 predictions across cold and repeating histories.
+Every plan and learned action matches the unfused implementation bit for bit.
+A fresh process runs with compilation disabled, checks the 100 W power cap,
+and verifies the outputs against the compiler reference. Changing the two
+action delays with image history held constant changes both predictions;
+restoring the delays reproduces the original outputs exactly. Python garbage
+collection is disabled in the publisher to avoid pauses during inference.
+
+At 100 W, 640 fresh-process predictions paced at 5 Hz measured 179.35 ms
+median, 180.20 ms p95 and 182.06 ms maximum, with zero 200 ms deadlines missed.
+The 128 predictions checked against the reference matched bit for bit, including
+after a history reset. The previous artifact measured 194.60 ms median and
+198.80 ms maximum over 320 frames in the same benchmark. These inference
+timings exclude camera preprocessing and concurrent openpilot operation.
+
+A separate 160-frame synthetic NV12 benchmark including both camera image
+transforms measured 178.08 ms median, 178.62 ms p95 and 179.16 ms maximum;
+image preparation alone took 2.52 ms median. Different image inputs account for
+the lower inference time in this test. Its previous-artifact baseline was
+193.60 ms median. The PKL compiled in 162.42 seconds and loaded in 13.44 seconds
+without compiler calls. These are workstation measurements, not onroad cadence.
+
+A 200-frame replay of real narrow/wide camera images from CI route
+`98395b7c5b27882e|0000002b--2686b5a2d0/1`, sampled at 5 Hz with varying
+synthetic action delays, matched the previous artifact's plan and action bits
+throughout, including a history reset. Prepared-image inference fell from
+192.49 ms to 177.34 ms median, with 178.79 ms p95 and 180.49 ms maximum.
+
+The previous checkpoint's 4 Hz Chestnut results and the older planner's 5 Hz
+results do not validate this artifact. This checkpoint must pass the dedicated
+Chestnut test at its configured 5 Hz before its timing is considered verified.
+Quantization and learned action timing also require driving-data validation.
+
+The planner defaults `AM_POWER_LIMIT` to 100 W and uses automatic GPU clocks.
+An explicit environment setting overrides the cap. The test setup has one
+100 W, 12 V supply for both the GPU and bridge. The previous model lost PCIe
+routing during repeated tests at caps of 111 W and above. Short passes at higher
+caps were not reliable. Power delivery is the leading reset hypothesis, but
+voltage droop was not measured.
+
+The pinned commaai/tinygrad fork checks USB errors and transfer lengths, bounds
+completion waits, and rejects further work after failure. It also fixes shifted
+history assignment so overlapping GPU waves cannot overwrite data still being
+read. These fixes do not prevent hardware PCIe resets.
+
+The x86-64 timing measurements use prepared images and exclude camera
+preprocessing and concurrent openpilot operation. Chestnut CI covers the real
+camera/model pipeline; sustained reliability, full onroad system load, and
+driving behavior still require validation. Start with parked-car integration
+testing with controls disengaged.

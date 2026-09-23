@@ -64,6 +64,7 @@ fi
 if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
 fi
+export WORLDMODEL_DIR=
 
 export LD_LIBRARY_PATH="\$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr/local/lib:\${LD_LIBRARY_PATH:-}"
 
@@ -164,6 +165,7 @@ def step(String name, String cmd, Map args = [:]) {
 def chestnutStage(String name = "chestnut") {
   deviceStage(name, "mici-chestnut-ci", ["UNSAFE=1", "CHESTNUT=1"], [
     step("build", "./openpilot/selfdrive/test/chestnut.sh"),
+    step("worldmodel onroad tests", 'WORLDMODEL_DIR="$PWD/openpilot/selfdrive/modeld/models/worldmodel" python openpilot/selfdrive/test/test_worldmodel.py', [timeout: 180]),
     step("model replay", "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"),
     step("onroad tests", "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad", [timeout: 120]),
   ])

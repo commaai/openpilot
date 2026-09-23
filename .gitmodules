@@ -15,5 +15,5 @@
   url = ../../commaai/teleoprtc
 [submodule "tinygrad"]
   path = tinygrad_repo
-  url = https://github.com/tinygrad/tinygrad.git
-  branch = master
+  url = https://github.com/commaai/tinygrad.git
+  branch = codex/worldmodel-context9-4fps

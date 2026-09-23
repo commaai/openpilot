@@ -1,0 +1,29 @@
+{
+  "arch": "gfx1200",
+  "kernels": {
+    "2c0a4cbe409c8381b329ec2f11f7623a0ebd5e9167a36b900fd0d1620b3cc12c": {"name":"r_1152_16_144","opts":[["SPLIT",1,[16,"GROUP_REDUCE",true]],["SPLIT",0,[3,"UPCAST"]]]},
+    "ddcdc860b3f47df8d6d0e69a4fa5c377b548fea3bd8310d01de990524d09eef5": {"name":"E_144_48_8_16_3","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",0,[2,"LOCAL"]],["SPLIT",1,[3,"UPCAST"]],["SPLIT",0,[2,"UPCAST"]],["SPLIT",0,[8,"LOCAL"]]]},
+    "9db9e4c870340aee0f71549134d9c141d2831396a753f50d5296808722485b42": {"name":"r_192_16_864","opts":[["SPLIT",1,[32,"GROUP_REDUCE",true]],["SPLIT",2,[4,"UNROLL"]],["SPLIT",2,[4,"GROUP_REDUCE"]],["SPLIT",1,[2,"UNROLL"]],["SPLIT",3,[3,"GROUP_REDUCE"]]]},
+    "33a815a45c4bd1bcbf3a4812b1f77b57a2309ea03cdaaa767ca848e5831677da": {"name":"E_27648_32_3","opts":[["SPLIT",0,[16,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",0,[4,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",1,[2,"UPCAST"]]]},
+    "6c0522c92e83d64d4d6887bcee46ea278f5f9d23c8261dc524400873c0145892": {"name":"E_36_48_8_16_4_3","opts":[["SPLIT",2,[0,"LOCAL"]],["SPLIT",1,[4,"UPCAST"]],["SPLIT",1,[4,"UPCAST"]],["SPLIT",1,[3,"UPCAST"]]]},
+    "f4f9288902c96b021bf3b9ee480a1c9f826a8cb00f5196e1a5f343ae99362164": {"name":"E_36_48_8_16_4_3","opts":[["SPLIT",2,[0,"LOCAL"]],["SPLIT",0,[2,"UPCAST"]],["SPLIT",1,[4,"UPCAST"]],["SPLIT",1,[4,"UPCAST"]],["SPLIT",1,[8,"LOCAL"]],["SWAP",0,1]]},
+    "d28eedbfc92725de569b0c1569c32f8abc5fede6a8a6580baaca493690dacf4f": {"name":"E_36_144_8_16_4","opts":[["SPLIT",2,[16,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",1,[2,"LOCAL"]],["SPLIT",1,[2,"UPCAST"]],["SPLIT",1,[4,"LOCAL"]]]},
+    "e15b2cd640a8bbd90e40dc7f79429154383a836fde59742005bfd0ea850e89f6": {"name":"E_576_9_2_4_16_4","opts":[["SPLIT",2,[0,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",0,[8,"LOCAL"]],["SPLIT",2,[4,"UPCAST"]],["SPLIT",1,[3,"UPCAST"]],["SPLIT",0,[3,"UPCAST"]]]},
+    "4280edcd701478286cda21a7a17758401b904a26001c5c2480ed84b90ddc6bc9": {"name":"E_144_36_8_16_4","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",1,[16,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]]]},
+    "077594833c99e51d966f3c93124d3482f45ea1ca70338dfa1a5d35191188b3d6": {"name":"E_144_48_8_16_3","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",1,[2,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",1,[2,"UPCAST"]],["SPLIT",1,[3,"LOCAL"]],["SPLIT",1,[2,"LOCAL"]]]},
+    "484305e4211c5e9779faf63239eaa16f0c3f4941ce3b416fc78b5bbe12438119": {"name":"r_24_16_8_16_6_9_4","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",4,[4,"GROUP_REDUCE"]],["SPLIT",1,[2,"LOCAL"]]]},
+    "b06fee8bbfa49ab7eba6bb3c2e0f43d92ac97a8aefc4277dd103e67daa308550": {"name":"E_110592_32_3","opts":[["SPLIT",0,[16,"LOCAL"]],["SPLIT",0,[2,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]]]},
+    "8be0006e3b8515e07923cf98d16308119003cc235a72e1850e09cfa3e0f36037": {"name":"E_48_48_8_16_3_3","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",0,[2,"LOCAL"]],["SPLIT",0,[4,"LOCAL"]]]},
+    "48676a51e46c46e2f2217506479d6e2c1720fe76c90f5b14026f51e67fe92ae5": {"name":"r_24_16_8_16_6_32","opts":[["SPLIT",1,[0,"LOCAL"]],["SPLIT",3,[4,"UNROLL"]],["SPLIT",3,[2,"GROUP_REDUCE"]],["SPLIT",4,[2,"UNROLL"]]]},
+    "376a76ed9c211bcfeea00bc0a2acb842fafaa6b80b2b18619819621c818f9b39": {"name":"E_98304_32_3","opts":[["SPLIT",0,[16,"LOCAL"]],["SPLIT",0,[8,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",1,[2,"UPCAST"]]]},
+    "8aa3fe890e78506d99fd2ffdd071bf801c0fb5defdbfeb4509136f4a61c36b32": {"name":"E_9_128_4_16_4","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",1,[2,"LOCAL"]],["SPLIT",1,[4,"UPCAST"]]]},
+    "26a1f620a66c8b41ecd53b98893a41c64353e28c296fe7c11cda524cf9f69660": {"name":"E_64_9_2_4_16_4","opts":[["SPLIT",2,[0,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",2,[2,"UPCAST"]],["SPLIT",0,[4,"LOCAL"]]]},
+    "2b7c9e4aa059bb50f918043eadbfb12a291b6c9267a88414b22af99e79090307": {"name":"r_128_16_144","opts":[["SPLIT",1,[32,"GROUP_REDUCE",true]],["SPLIT",2,[3,"GROUP_REDUCE"]],["SPLIT",3,[4,"UNROLL"]],["SPLIT",3,[2,"UNROLL"]]]},
+    "41b2006d86314c01c3650ff6a02780cf2010dc5b25e7dcaca35aed4c8b6d9455": {"name":"r_16_8","opts":[["SPLIT",0,[16,"GROUP_REDUCE",true]],["SPLIT",0,[2,"UNROLL"]],["SPLIT",1,[0,"UNROLL"]]]},
+    "cc7bd17bb3c859aab432fcb462af6162d749fdd0caf67bc1971ab4c5127f268a": {"name":"E_3072_32_3","opts":[["SPLIT",0,[32,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]]]},
+    "d431ab3460aac610ef6b1b190eb0bd7ef9c709d6f5f3312914cb80bbeb8f43ac": {"name":"E_4_48_8_16_3_4","opts":[["SPLIT",1,[16,"LOCAL"]],["SPLIT",0,[4,"LOCAL"]],["SPLIT",1,[4,"UPCAST"]],["SPLIT",0,[2,"UPCAST"]]]},
+    "8d9fa112020bee1549bf225a33e5664c08cd5eace2ad75f53fa20d26610d0284": {"name":"r_128_16_512","opts":[["SPLIT",1,[32,"GROUP_REDUCE",true]],["SPLIT",2,[8,"GROUP_REDUCE"]],["SPLIT",3,[4,"UNROLL"]],["SPLIT",1,[2,"UNROLL"]]]},
+    "0355cba1391c68a2cb095969f0778d23d8034698b427ccc719143587e936bbfa": {"name":"E_8192_32_4","opts":[["SPLIT",0,[32,"LOCAL"]],["SPLIT",0,[4,"UPCAST"]],["SPLIT",0,[2,"UPCAST"]]]},
+    "e7c434f7aac68391de6c4da42b2901d9f3edea4e49bbc3aa119eb5f65cb24cad": {"name":"E_3072_32_3","opts":[["SPLIT",0,[32,"LOCAL"]],["SPLIT",0,[3,"UPCAST"]]]}
+  }
+}

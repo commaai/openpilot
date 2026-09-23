@@ -1001,6 +1001,15 @@ struct ControlsState @0x97ff69c53601abf1 {
   }
 }
 
+struct WorldModelPlan {
+  frameId @0 :UInt32;
+  timestampEof @1 :UInt64;
+  modelExecutionTime @2 :Float32;
+  plan @3 :List(Float32);
+  action @4 :List(Float32);
+  actionT @5 :List(Float32);
+}
+
 struct DrivingModelData {
   frameId @0 :UInt32;
   frameIdExtra @1 :UInt32;
@@ -2570,6 +2579,7 @@ struct Event {
     deviceMotion @129 :DeviceMotion;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
+    worldModelPlan @154 :WorldModelPlan;
     driverStateV2 @92 :DriverStateV2;
 
     # camera stuff, each camera state has a matching encode idx
