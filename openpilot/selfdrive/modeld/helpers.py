@@ -32,6 +32,8 @@ def chestnut_present() -> bool:
   return False
 
 def chestnut_compiled() -> bool:
+  if WORLDMODEL_DIR:
+    return (Path(WORLDMODEL_DIR) / 'model.pkl').is_file()
   path = modeld_pkl_path(chestnut=True)
   return path.is_file() and all(
     (MODELS_DIR / f'big_driving_warp_{size}_tinygrad.pkl').is_file() for size in ('1344x760', '1928x1208'))
