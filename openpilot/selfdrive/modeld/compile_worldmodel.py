@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from contextlib import contextmanager
 from dataclasses import replace
 import gc
 import json
@@ -13,14 +14,43 @@ import time
 import numpy as np
 from tinygrad import Context, Device, Tensor, TinyJit, dtypes
 from tinygrad.codegen import to_program
+from tinygrad.codegen.opt import Opt, OptOps
 from tinygrad.helpers import Target
 from tinygrad.nn.onnx import OnnxRunner
 from tinygrad.renderer.cstyle import ClangRenderer
-from tinygrad.uop.ops import Ops
+from tinygrad.uop.ops import AxisType, Ops
 from tinygrad_repo.examples.openpilot.helpers import dump_pickle
 
 from openpilot.selfdrive.modeld.worldmodel import WorldModel, load_weights
 from openpilot.selfdrive.modeld.worldmodel_pkl import UPLOAD_CHUNK_SIZE
+
+
+@contextmanager
+def kernel_optimizations():
+  import tinygrad.codegen as codegen
+
+  config = json.loads(Path(__file__).with_name('worldmodel_kernel_opts.json').read_text())
+  schedules = config['kernels'] if Device[Device.DEFAULT].arch == config['arch'] else {}
+  original, applied = codegen.apply_opts, set()
+
+  def apply_opts(ast, renderer, beam=0):
+    key = ast.replace(arg=replace(ast.arg, beam=2)).key.hex()
+    if ast.tag is None and (entry := schedules.get(key)) is not None:
+      opts = []
+      for op, axis, arg in entry['opts']:
+        if isinstance(arg, list):
+          arg = (arg[0], AxisType[arg[1]], *arg[2:]) if op == 'SPLIT' else tuple(arg)
+        opts.append(Opt(OptOps[op], axis, arg))
+      ast = ast.replace(arg=replace(ast.arg, opts_to_apply=tuple(opts)))
+      applied.add(key)
+    return original(ast, renderer, beam=beam)
+
+  codegen.apply_opts = apply_opts
+  try:
+    yield
+  finally:
+    codegen.apply_opts = original
+  print(f'Applied {len(applied)} tuned worldmodel kernel schedules', flush=True)
 
 
 class WorldModelBuilder:
@@ -126,7 +156,8 @@ def host_programs(jits, arch):
 
 def compile_model(directory: Path, output: Path):
   start = time.monotonic()
-  runner = WorldModelBuilder(directory)
+  with Context(PARALLEL=0), kernel_optimizations():
+    runner = WorldModelBuilder(directory)
   inputs = np.random.default_rng(22).integers(0, 256, (32, 1, 6, 128, 256), dtype=np.uint8)
   action_t = np.random.default_rng(23).uniform(.3, .9, (32, 1, 2)).astype(np.float32)
   reference = []

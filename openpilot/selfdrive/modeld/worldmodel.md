@@ -8,7 +8,7 @@ no separate target actor.
 
 `models/worldmodel/model.pkl` contains FP8 E4M3 matrix weights, the INT8 encoder,
 higher-precision small parameters, compiled GPU kernels, and Linux ARM64/x86-64
-host programs. Its size is 3,993,169,911 bytes (3.99 GB / 3.72 GiB). The artifact
+host programs. Its size is 3,993,212,217 bytes (3.99 GB / 3.72 GiB). The artifact
 is stored in Git LFS and targets the USB AMD gfx1200 GPU. `hparams.json` and the
 PKL metadata pin the checkpoints and training input contract.
 
@@ -74,7 +74,9 @@ prediction time grid is unchanged.
 History advances at the trained 5 Hz, spanning 1.6 seconds. The fused attention
 kernel preserves frame causality, softmax reduction order, BF16 probability
 rounding, and FP32 accumulation order. Longer attention tiles run first, and
-large FP8 projections prefetch their next tile. GELU fuses into the activation
+attention prefetches the next key tile. Large FP8 projections prefetch their
+next tile; QKV and MLP-up projections dispatch neighboring row tiles together.
+GELU fuses into the activation
 reduction and quantization. These produce bitwise-identical outputs
 to the unfused quantized implementation on the synthetic validation sequence.
 
@@ -102,6 +104,15 @@ for ARM64. A neighboring `model.reference.npz` contains 32 synthetic images and
 varying action delays, with outputs for cold and repeating histories. This
 reference file is not deployed. Rebuild when changing the model or tinygrad.
 
+The compiler applies the gfx1200 schedules in `worldmodel_kernel_opts.json`.
+They were selected offline with BEAM=2 and paired GPU timing, rejecting
+candidates that changed the checked outputs or lost to the heuristic. RMSNorm
+also searches schedules that process more rows without changing its reduction.
+The compiler uses one process so these schedules apply consistently; it reports
+the number of distinct schedules used. The deployed PKL does not run BEAM.
+The pinned tinygrad measures device execution separately from USB submission
+and compares BEAM's winner with the original heuristic before caching it.
+
 ## Validation and hardware limits
 
 Chestnut CI first enables the worldmodel for
@@ -122,13 +133,25 @@ action delays with image history held constant changes both predictions;
 restoring the delays reproduces the original outputs exactly. Python garbage
 collection is disabled in the publisher to avoid pauses during inference.
 
-At 100 W, 640 fresh-process predictions over 128 seconds measured 194.85 ms
-median, 195.65 ms p95 and 198.41 ms maximum, with zero 200 ms deadlines missed.
-Every output matched the reference, including after a history reset. The unfused
-checkpoint measured 214.34 ms median and 216.45 ms maximum over 64 frames on
-the same GPU at 100 W. These timings exclude camera preprocessing and
-concurrent openpilot operation. The PKL compiled in 161.67 seconds and loaded
-in 13.61 seconds without compiler calls.
+At 100 W, 640 fresh-process predictions paced at 5 Hz measured 179.35 ms
+median, 180.20 ms p95 and 182.06 ms maximum, with zero 200 ms deadlines missed.
+The 128 predictions checked against the reference matched bit for bit, including
+after a history reset. The previous artifact measured 194.60 ms median and
+198.80 ms maximum over 320 frames in the same benchmark. These inference
+timings exclude camera preprocessing and concurrent openpilot operation.
+
+A separate 160-frame synthetic NV12 benchmark including both camera image
+transforms measured 178.08 ms median, 178.62 ms p95 and 179.16 ms maximum;
+image preparation alone took 2.52 ms median. Different image inputs account for
+the lower inference time in this test. Its previous-artifact baseline was
+193.60 ms median. The PKL compiled in 162.42 seconds and loaded in 13.44 seconds
+without compiler calls. These are workstation measurements, not onroad cadence.
+
+A 200-frame replay of real narrow/wide camera images from CI route
+`98395b7c5b27882e|0000002b--2686b5a2d0/1`, sampled at 5 Hz with varying
+synthetic action delays, matched the previous artifact's plan and action bits
+throughout, including a history reset. Prepared-image inference fell from
+192.49 ms to 177.34 ms median, with 178.79 ms p95 and 180.49 ms maximum.
 
 The previous checkpoint's 4 Hz Chestnut results and the older planner's 5 Hz
 results do not validate this artifact. This checkpoint must pass the dedicated

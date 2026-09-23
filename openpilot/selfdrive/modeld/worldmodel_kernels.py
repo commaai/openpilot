@@ -9,6 +9,7 @@ from tinygrad.renderer import Estimates
 def _program(M, N, K, device):
   name = f'worldmodel_fp8_linear_{M}_{N}_{K}'
   prefetch = M > 128 and max(N, K) >= 6912
+  transpose = M > 128 and N in (6912, 9216)
   # Eight waves share 128 x 128 x 64 tiles; padding spreads LDS reads across memory banks.
   stride = 72
   size = 128 * stride
@@ -26,8 +27,8 @@ def _program(M, N, K, device):
     '%as = load float, ptr addrspace(1) %scale_a, align 4',
     '%bs = load float, ptr addrspace(1) %scale_b, align 4',
     '%scale = fmul float %as, %bs',
-    '%bx = call i32 @llvm.amdgcn.workgroup.id.x()',
-    '%by = call i32 @llvm.amdgcn.workgroup.id.y()',
+    f'%bx = call i32 @llvm.amdgcn.workgroup.id.{"y" if transpose else "x"}()',
+    f'%by = call i32 @llvm.amdgcn.workgroup.id.{"x" if transpose else "y"}()',
     '%tid = call i32 @llvm.amdgcn.workitem.id.x()',
     '%lane = and i32 %tid, 31',
     '%wave = lshr i32 %tid, 5',
@@ -155,6 +156,7 @@ def _kernel(c, a, b, scale_a, scale_b, bias):
   M, K = a.shape
   N = b.shape[0]
   assert M % 128 == N % 128 == K % 64 == 0
+  transpose = M > 128 and N in (6912, 9216)
   name, src, lib = _program(M, N, K, a.device)
   sink = UOp.sink(
     c.base,
@@ -163,8 +165,8 @@ def _kernel(c, a, b, scale_a, scale_b, bias):
     scale_a.base,
     scale_b.base,
     bias.base,
-    UOp.special(N // 128, 'gidx0'),
-    UOp.special(M // 128, 'gidx1'),
+    UOp.special((M if transpose else N) // 128, 'gidx0'),
+    UOp.special((N if transpose else M) // 128, 'gidx1'),
     UOp.special(256, 'lidx0'),
     arg=KernelInfo(name=name, estimates=Estimates(ops=2 * M * N * K, mem=M * K + N * K + M * N * 2)),
   )
@@ -259,13 +261,27 @@ def _attention_program(seq, total, start_frame, device):
       val = f'%{n}'
     return val
 
+  def load_k(tag, offset):
+    emit(f'%{tag}row = add i32 {offset}, %loadrow')
+    emit(f'%{tag}rowoff = mul i32 %{tag}row, 64')
+    emit(f'%{tag}off0 = add i32 %kvbase, %{tag}rowoff')
+    emit(f'%{tag}off = add i32 %{tag}off0, %loadcol')
+    for r in range(4):
+      emit(f'%{tag}i{r} = add i32 %{tag}off, {r * 16 * 64}')
+      emit(f'%{tag}p{r} = getelementptr i16, ptr addrspace(1) %k, i32 %{tag}i{r}')
+      emit(f'%{tag}v{r} = load <8 x i16>, ptr addrspace(1) %{tag}p{r}, align 16')
+
   # Find row maxima, sum exponentials, then round normalized probabilities to BF16 for PV.
   # Preserve the context-9 softmax's per-lane sums and 32-lane reduction order.
+  load_k('initial1', '0')
   emit('br label %pass1')
   for phase in (1, 2, 3):
     tag = f't{phase}'
     emit(f'pass{phase}:')
     emit(f'%{tag}kk = phi i32 [0, %' + ('entry' if phase == 1 else f'between{phase - 1}') + f'], [%{tag}next, %pass{phase}]')
+    for r in range(4):
+      emit(f'%{tag}kgv{r} = phi <8 x i16> [%initial{phase}v{r}, %' +
+           ('entry' if phase == 1 else f'between{phase - 1}') + f'], [%next{phase}v{r}, %pass{phase}]')
     if phase == 1:
       for e in range(8):
         emit(f'%m{e} = phi float [0xFFF0000000000000, %entry], [%mnew{e}, %pass1]')
@@ -284,13 +300,15 @@ def _attention_program(seq, total, start_frame, device):
     emit(f'%{tag}ls0 = mul i32 %loadrow, {stride}')
     emit(f'%{tag}ls = add i32 %{tag}ls0, %loadcol')
     for r in range(4):
-      emit(f'%{tag}kgi{r} = add i32 %{tag}ki, {r * 16 * 64}')
-      emit(f'%{tag}kgp{r} = getelementptr i16, ptr addrspace(1) %k, i32 %{tag}kgi{r}')
-      emit(f'%{tag}kgv{r} = load <8 x i16>, ptr addrspace(1) %{tag}kgp{r}, align 16')
       emit(f'%{tag}kli{r} = add i32 %{tag}ls, {r * 16 * stride + area}')
       emit(f'%{tag}klp{r} = getelementptr i16, ptr addrspace(3) @lds, i32 %{tag}kli{r}')
       emit(f'store <8 x i16> %{tag}kgv{r}, ptr addrspace(3) %{tag}klp{r}, align 16')
     emit('call void @llvm.amdgcn.s.barrier()')
+    emit(f'%{tag}prefnext = add i32 %{tag}kk, 64')
+    emit(f'%{tag}preflast = sub i32 %kend, 64')
+    emit(f'%{tag}prefmore = icmp ult i32 %{tag}prefnext, %kend')
+    emit(f'%{tag}prefkk = select i1 %{tag}prefmore, i32 %{tag}prefnext, i32 %{tag}preflast')
+    load_k(f'next{phase}', f'%{tag}prefkk')
     emit(f'%{tag}kn0 = mul i32 %lm, {stride}')
     emit(f'%{tag}kn = add i32 %{tag}kn0, %khalf')
     for ik in range(4):
@@ -376,6 +394,7 @@ def _attention_program(seq, total, start_frame, device):
           emit(f'%lsum{e} = fadd float %lnew{e}_0, %lnew{e}_1')
           total_sum = reduce(f'sumwave{e}', f'%lsum{e}', 'sum')
           emit(f'%inv{e} = fdiv fast float 1.0, {total_sum}')
+      load_k(f'initial{phase + 1}', '0')
       emit(f'br label %pass{phase + 1}')
   emit('exit:')
   for n in range(4):
