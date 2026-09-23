@@ -4,7 +4,6 @@ os.environ['GMMU'] = '0'
 os.environ.setdefault('AM_POWER_LIMIT', '100')
 import time
 import platform
-import gc
 from functools import lru_cache
 from pathlib import Path
 
@@ -17,6 +16,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient
 from opendbc.car.structs import car
 from openpilot.common.params import Params
+from openpilot.common.realtime import config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
@@ -83,7 +83,7 @@ def prepare_image(buffer, width, height, transform):
 
 
 def main():
-  gc.disable()
+  config_realtime_process([4, 5], 5)
   directory = Path(WORLDMODEL_DIR)
   with Context(DEV='USB+AMD:LLVM', TC_OPT=2, TC_MIN_GLOBALS=32, JIT_BATCH_SIZE=0):
     runner = WorldModelRunner(directory)
