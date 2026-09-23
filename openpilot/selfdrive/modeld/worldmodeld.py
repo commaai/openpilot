@@ -102,16 +102,19 @@ def main():
       narrow = cameras[0].recv()
       if narrow is None:
         continue
-      timestamp = cameras[0].timestamp_eof
-      frame_id = cameras[0].frame_id
       # Count camera frames so timestamp jitter cannot skip a complete planner period.
-      if last_frame_id is not None and 0 <= frame_id - last_frame_id < CAMERA_FRAME_STRIDE:
+      if last_frame_id is not None and 0 <= cameras[0].frame_id - last_frame_id < CAMERA_FRAME_STRIDE:
         continue
       wide = cameras[1].recv()
-      while wide is not None and cameras[1].timestamp_sof + 10_000_000 < cameras[0].timestamp_sof:
-        wide = cameras[1].recv()
-      if wide is None or abs(cameras[0].timestamp_sof - cameras[1].timestamp_sof) > 10_000_000:
+      while narrow is not None and wide is not None and abs(cameras[0].timestamp_sof - cameras[1].timestamp_sof) > 10_000_000:
+        if cameras[0].timestamp_sof < cameras[1].timestamp_sof:
+          narrow = cameras[0].recv()
+        else:
+          wide = cameras[1].recv()
+      if narrow is None or wide is None:
         continue
+      timestamp = cameras[0].timestamp_eof
+      frame_id = cameras[0].frame_id
       sm.update(0)
       if not all(sm.seen.values()):
         continue
