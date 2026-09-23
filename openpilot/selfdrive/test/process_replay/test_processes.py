@@ -74,11 +74,19 @@ EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
-  ref_log_msgs = list(LogReader(ref_log_path))
+  ref_error = None
+  try:
+    ref_log_msgs = list(LogReader(ref_log_path))
+  except Exception:
+    # New routes have no ref yet, still replay and publish new refs.
+    ref_log_msgs = []
+    ref_error = f"Failed to load reference {ref_log_path}:\n{traceback.format_exc()}"
   lr = LogReader.from_bytes(lr_dat)
   res, log_msgs = test_process(cfg, lr, segment, ref_log_msgs, cur_log_fn, args.ignore_fields, args.ignore_msgs)
   # save logs so we can update refs
   save_log(cur_log_fn, log_msgs)
+  if ref_error is not None:
+    return (segment, cfg.proc_name, ref_error, ref_error)
   try:
     diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
   except Exception:
