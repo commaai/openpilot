@@ -18,12 +18,9 @@ CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 
-# Road-plane footprint in meters; shared by both lead markers.
+# Road-plane bar width in meters; shared by both lead markers.
+LEAD_BAR_OPACITY = 0.9
 LEAD_BAR_WIDTH = 1.8
-# Rounded mean overall length of 2025 Corolla, RAV4, CR-V, Civic, and Camry.
-LEAD_BAR_DEPTH = 4.7
-LEAD_BAR_MAX_DEPTH = 6.0
-LEAD_BAR_MIN_HEIGHT = 8.0
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -86,7 +83,6 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._lead_bar_smoothing = [None, None]
-    self._rear_lead_bar = ui_state.lead_bar_style
     self._path_offset_z = HEIGHT_INIT[0]
 
     # Initialize ModelPoints objects
@@ -124,7 +120,6 @@ class ModelRenderer(Widget):
 
   def _render(self, rect: rl.Rectangle):
     sm = ui_state.sm
-    self._rear_lead_bar = ui_state.lead_bar_style
 
     self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
@@ -213,7 +208,7 @@ class ModelRenderer(Widget):
     return not fcw and has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
 
   def _update_leads(self, radar_state, path_x_array, vision_leads=None):
-    """Place road-plane footprints beneath the detected vehicles."""
+    """Place road-plane bars behind the detected vehicles."""
     previous = self._lead_vehicles
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     if vision_leads is None:
@@ -257,14 +252,14 @@ class ModelRenderer(Widget):
       visible = bool(current.points.size)
       current.visibility = previous[i].visibility
       alpha = current.visibility.update(float(visible))
-      if not visible and round(255 * self._lead_bar_opacity(previous[i].points) * alpha) > 0:
+      if not visible and round(255 * LEAD_BAR_OPACITY * alpha) > 0:
         current.points = previous[i].points
         current.distance = previous[i].distance
       elif not visible:
         current.visibility.x = 0.0
 
   def _project_lead_bar(self, distance, lateral, path_x_array, smoothing=None):
-    """Project a camera-relative lead footprint with its rear edge at the lead."""
+    """Project a camera-relative bar extending toward the camera from behind the lead."""
     empty = np.empty((0, 2), dtype=np.float32)
     if (len(path_x_array) == 0 or not np.isfinite(self._path.raw_points).all() or
         not np.isfinite([distance, lateral]).all() or
@@ -290,16 +285,12 @@ class ModelRenderer(Widget):
     center = np.array([distance, -lateral])  # Radar lateral is left-positive; model lateral is right-positive.
     def project_depth(depth):
       corners = np.array([
-        center + forward * (-0.2 - along if self._rear_lead_bar else along) + sideways * side
-        for along, side in ((depth, -LEAD_BAR_WIDTH / 2),
-                            (depth, LEAD_BAR_WIDTH / 2),
+        center + forward * (-0.2 - along) + sideways * side
+        for along, side in ((0.0, -LEAD_BAR_WIDTH / 2),
                             (0.0, LEAD_BAR_WIDTH / 2),
-                            (0.0, -LEAD_BAR_WIDTH / 2))
+                            (depth, LEAD_BAR_WIDTH / 2),
+                            (depth, -LEAD_BAR_WIDTH / 2))
       ])
-      if self._rear_lead_bar:
-        # Extending toward the camera reverses winding. Keep the triangles
-        # front-facing so the renderer does not cull the rear bar.
-        corners = corners[::-1]
       if np.any(corners[:, 0] < 0.1):
         return empty
       heights = np.interp(corners[:, 0], path_x_array, path[:, 2]) + self._path_offset_z
@@ -308,47 +299,10 @@ class ModelRenderer(Widget):
         return empty
       return (projected[:2] / projected[2]).T.astype(np.float32)
 
-    if self._rear_lead_bar:
-      return self._size_rear_lead_bar(project_depth, distance)
-
-    points = project_depth(LEAD_BAR_DEPTH)
-    if not points.size:
-      return empty
-    height = np.ptp(points[:, 1])
-    target = max(height, LEAD_BAR_MIN_HEIGHT)
-    if height == target:
-      return points
-    best_error = abs(height - target)
-    low, high = LEAD_BAR_DEPTH, LEAD_BAR_MAX_DEPTH
-    candidate = project_depth(high)
-    if candidate.size:
-      candidate_height = np.ptp(candidate[:, 1])
-      if abs(candidate_height - target) < best_error:
-        points, best_error = candidate, abs(candidate_height - target)
-      # Beyond the length cap, accept a thinner footprint instead of stretching
-      # it unrealistically far toward the horizon.
-      if candidate_height <= target:
-        return points
-    for _ in range(24):
-      depth = (low + high) / 2
-      candidate = project_depth(depth)
-      if not candidate.size:
-        high = depth
-        continue
-      height = np.ptp(candidate[:, 1])
-      error = abs(height - target)
-      if error < best_error:
-        points, best_error = candidate, error
-      if error < 1e-5:
-        break
-      if height < target:
-        low = depth
-      else:
-        high = depth
-    return points
+    return self._size_lead_bar(project_depth, distance)
 
   @staticmethod
-  def _size_rear_lead_bar(project_depth, distance):
+  def _size_lead_bar(project_depth, distance):
     # Original bar extends toward the camera, with a 0.2 m gap behind the lead.
     max_depth = (distance - 0.2) * 0.9
     if max_depth <= 0:
@@ -588,15 +542,6 @@ class ModelRenderer(Widget):
     rl.draw_triangle_fan(glow, len(glow), rl.Color(218, 202, 37, 255))
     rl.draw_triangle_fan(chevron, len(chevron), rl.Color(201, 34, 49, int(fill_alpha)))
 
-  def _lead_bar_opacity(self, points):
-    if not points.size:
-      return 0.0
-    if self._rear_lead_bar:
-      return 0.9
-    # Use the projected height before clipping, matching footprint sizing.
-    # Small footprints need more contrast; large nearby ones can be subtler.
-    return float(np.interp(np.ptp(points[:, 1]), [8.0, 24.0], [0.9, 0.65]))
-
   def _draw_lead_indicator(self):
     if self._rect.width <= 0 or self._rect.height <= 0:
       return
@@ -604,7 +549,7 @@ class ModelRenderer(Widget):
     # Draw farther markers first; scissoring clips offscreen corners without pinning them to an edge.
     for lead in sorted(self._lead_vehicles, key=lambda lead: lead.distance, reverse=True):
       if lead.points.size:
-        opacity = self._lead_bar_opacity(lead.points) * lead.visibility.x
+        opacity = LEAD_BAR_OPACITY * lead.visibility.x
         draw_polygon(self._rect, lead.points + offset, rl.Color(255, 255, 255, round(255 * opacity)))
 
   @staticmethod

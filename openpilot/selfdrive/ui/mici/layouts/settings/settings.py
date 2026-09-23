@@ -1,6 +1,6 @@
 from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigParamControl
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network.network_layout import NetworkLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici
@@ -19,9 +19,6 @@ class SettingsLayout(NavScroller):
   def __init__(self):
     super().__init__()
     self._params = Params()
-
-    lead_style_btn = BigParamControl("lead bar style", "LeadBarStyle",
-                                     description="On: bar behind the lead car.\nOff: footprint beneath the lead car.")
 
     toggles_panel = TogglesLayoutMici()
     toggles_btn = SettingsBigButton("toggles", "", gui_app.texture("icons_mici/settings.png", 64, 64))
@@ -48,7 +45,6 @@ class SettingsLayout(NavScroller):
     firehose_btn.set_click_callback(lambda: gui_app.push_widget(firehose_panel))
 
     self._scroller.add_widgets([
-      lead_style_btn,
       toggles_btn,
       network_btn,
       device_btn,

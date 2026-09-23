@@ -4,7 +4,6 @@ import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
-from openpilot.selfdrive.ui.mici.onroad.alert_renderer import TURN_SIGNAL_BLINK_PERIOD
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -22,6 +21,7 @@ KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
+DISTANCE_OVERRIDE_BLINK_PERIOD = 60 / 160  # seconds per full white/grey cycle
 
 
 @dataclass(frozen=True)
@@ -143,10 +143,6 @@ class HudRenderer(Widget):
         ('distance_3', 18, 147, 48, 11),
       )
     ]
-    self._distance_green_parts = [
-      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
-      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
-    ]
     self._longitudinal_icon_opacity = 0.0
     self._longitudinal_icon_visible = False
     # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
@@ -228,7 +224,10 @@ class HudRenderer(Widget):
     # The combined indicator is only visible while engaged.
     self._longitudinal_icon_opacity = self._longitudinal_icon_fade.update(float(self._longitudinal_icon_visible))
     if ui_state.sm.recv_frame['selfdriveState'] >= ui_state.started_frame and ui_state.sm['selfdriveState'].enabled:
-      self._update_longitudinal_layout(ui_state.sm['selfdriveState'].personality.raw)
+      if ui_state.has_longitudinal_control:
+        self._update_longitudinal_layout(ui_state.sm['selfdriveState'].personality.raw)
+      elif self._layout_personality is not None:
+        self._reset_longitudinal_layout()
       icon_rect = rl.Rectangle(rect.x + 4, rect.y, rect.width, rect.height)
       self._draw_lead_car(icon_rect)
       self._draw_distance_bars(icon_rect)
@@ -240,9 +239,6 @@ class HudRenderer(Widget):
 
   def _reset_longitudinal_layout(self) -> None:
     self._distance_override_timer = None
-    self._distance_override_filter = FirstOrderFilter(1.0, 0.3, 1 / gui_app.target_fps)
-    self._distance_highlight_time = -math.inf
-    self._distance_highlight_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._layout_personality = None
     self._layout_filters = [FirstOrderFilter(float(i == 0), 0.1, 1 / gui_app.target_fps) for i in range(3)]
 
@@ -259,10 +255,6 @@ class HudRenderer(Widget):
                 log.LongitudinalPersonality.standard: 2,
                 log.LongitudinalPersonality.relaxed: 3}[personality]
     first = self._layout_personality is None
-    now = rl.get_time()
-    if personality != self._layout_personality:
-      self._distance_highlight_time = now
-    self._distance_highlight_filter.update(float(now - self._distance_highlight_time < SET_SPEED_PERSISTENCE))
     self._layout_personality = personality
     for count, fade in enumerate(self._layout_filters, start=1):
       if first:
@@ -277,43 +269,34 @@ class HudRenderer(Widget):
                   any(event.name == EventName.gasPressedOverride for event in sm['onroadEvents']))
     if not overriding:
       self._distance_override_timer = None
-      self._distance_override_filter.x = 1.0
       return 1.0
-    # Match the turn-signal heartbeat: overshoot to 2, decay toward 0.2,
-    # and clamp to 1 for the bright portion of each pulse.
     now = time.monotonic()
-    if self._distance_override_timer is None or now - self._distance_override_timer > TURN_SIGNAL_BLINK_PERIOD:
+    if self._distance_override_timer is None:
       self._distance_override_timer = now
-      self._distance_override_filter.x = 2.0
-    else:
-      self._distance_override_filter.update(0.2)
-    return min(self._distance_override_filter.x, 1.0)
+    phase = (now - self._distance_override_timer) % DISTANCE_OVERRIDE_BLINK_PERIOD
+    # Hard switch with equal bright/dim halves; bars normally render at 90%.
+    return 1.0 if phase < DISTANCE_OVERRIDE_BLINK_PERIOD / 2 else 0.35 / 0.9
 
   def _draw_distance_bars(self, rect: rl.Rectangle) -> None:
+    if not ui_state.has_longitudinal_control:
+      return
     override_alpha = self._distance_override_opacity()
     # Move each physical asset once, rather than crossfading copies of whole layouts.
     y_offset = sum(self._longitudinal_layout(count)[1] * fade.x
                    for count, fade in enumerate(self._layout_filters, start=1))
     for asset_index, (texture, x, y) in enumerate(self._distance_icon_parts):
-      visibility = green_alpha = 0.0
+      visibility = 0.0
       for count, layout_filter in enumerate(self._layout_filters, start=1):
         index = asset_index - (3 - count)
         if index < 0:
           continue
         weight = layout_filter.x
         visibility += weight
-        if index == 0:
-          green_alpha += weight * self._distance_highlight_filter.x
       if visibility < 1e-5:
         continue
-      alpha = 0.9 * (visibility - green_alpha)
+      alpha = 0.9 * visibility
       color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
       rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
-      if green_alpha > 0:
-        green, gx, gy = self._distance_green_parts[asset_index]
-        rl.draw_texture_ex(green, rl.Vector2(rect.x + gx, rect.y + gy + y_offset), 0.0, 1.0,
-                           rl.Color(255, 255, 255, round(255 * green_alpha *
-                                                        self._longitudinal_icon_opacity * override_alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
@@ -327,10 +310,16 @@ class HudRenderer(Widget):
     white_alpha = self._lead_car_white_filter.update(0.0 if green or fcw else (0.9 if has_lead else 0.35))
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
-    x, y, width, height = (sum(self._longitudinal_layout(count)[0][axis] * fade.x
-                              for count, fade in enumerate(self._layout_filters, start=1)) for axis in range(4))
-    # Figma's colored exports have a 68x54 car core and 28 px glow padding.
-    pad_x, pad_y = 28 * width / 68, 28 * height / 54
+    if ui_state.has_longitudinal_control:
+      x, y, width, height = (sum(self._longitudinal_layout(count)[0][axis] * fade.x
+                                for count, fade in enumerate(self._layout_filters, start=1)) for axis in range(4))
+      # Figma's colored exports have a 68x54 car core and 28 px glow padding.
+      pad_x, pad_y = 28 * width / 68, 28 * height / 54
+    else:
+      # Center the standalone car 2 px below the former car-only placement.
+      # Both 94x83 glow variants share the 52x41 white car's center.
+      x, y, width, height = 16, 102, 52, 41
+      pad_x = pad_y = 21
     white_rect = rl.Rectangle(rect.x + x, rect.y + y, width, height)
     glow_rect = rl.Rectangle(rect.x + x - pad_x, rect.y + y - pad_y, width + 2 * pad_x, height + 2 * pad_y)
     for texture, destination, alpha in ((self._txt_lead_car, white_rect, white_alpha),
