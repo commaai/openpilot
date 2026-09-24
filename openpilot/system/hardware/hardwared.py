@@ -20,6 +20,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE, PC
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.git import get_short_branch
+from openpilot.common.hardware.base import max_valid_temperature
 from openpilot.common.hardware.usb import CHESTNUT_FW_VERSION, CHESTNUT_USB_PRODUCT, get_usb_state, get_usb_topology, is_chestnut_usb_id, set_usb_state
 from openpilot.common.linux import LinuxSystemStats
 from openpilot.system.loggerd.config import get_available_percent
@@ -319,14 +320,14 @@ def hardware_thread(end_event, hw_queue) -> None:
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
+      max_valid_temperature(msg.deviceState.cpuTempC),
+      max_valid_temperature(msg.deviceState.gpuTempC),
     ]
-    offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
+    offroad_comp_temp = offroad_temp_filter.update(max_valid_temperature(temp_sources))
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
-    all_comp_temp = all_temp_filter.update(max(temp_sources))
+    temp_sources.append(max_valid_temperature(msg.deviceState.pmicTempC))
+    all_comp_temp = all_temp_filter.update(max_valid_temperature(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
     msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])

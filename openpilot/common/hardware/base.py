@@ -1,12 +1,21 @@
 import os
+import math
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, fields
+from collections.abc import Iterable
 
 from openpilot.cereal import log
 from openpilot.common.esim.base import LPABase
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
+INVALID_TEMPERATURE = math.nan
+MISSING_THERMAL_ZONE_TEMPERATURE = 0.0
+THERMAL_STATUS_FALLBACK_TEMPERATURE = 0.0
+
+
+def max_valid_temperature(temperatures: Iterable[float], default: float = THERMAL_STATUS_FALLBACK_TEMPERATURE) -> float:
+  return max((temperature for temperature in temperatures if math.isfinite(temperature)), default=default)
 
 @dataclass
 class ThermalZone:
@@ -29,7 +38,9 @@ class ThermalZone:
       with open(f"/sys/devices/virtual/thermal/thermal_zone{self.zone_number}/temp") as f:
         return int(f.read()) / self.scale
     except FileNotFoundError:
-      return 0
+      return MISSING_THERMAL_ZONE_TEMPERATURE
+    except (OSError, ValueError):
+      return INVALID_TEMPERATURE
 
 @dataclass
 class ThermalConfig:
