@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 
 from openpilot.common.hardware import AGNOS
@@ -28,6 +29,14 @@ def chestnut_present() -> bool:
     except Exception:
       pass
   return False
+
+def wait_for_chestnut(timeout: float = 10.) -> None:
+  # the cable is detected before chestnut enumerates
+  st = time.monotonic()
+  while not chestnut_present():
+    if time.monotonic() - st > timeout:
+      raise TimeoutError("chestnut did not enumerate")
+    time.sleep(0.1)
 
 def chestnut_compiled() -> bool:
   path = modeld_pkl_path(chestnut=True)
