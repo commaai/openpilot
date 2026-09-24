@@ -132,6 +132,10 @@ class UIState:
   def is_offroad(self) -> bool:
     return not self.started
 
+  @property
+  def experimental_mode_locked(self) -> bool:
+    return self.has_longitudinal_control and self.sm["deviceState"].chestnutPresent
+
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
     if self._params_thread is None:
@@ -246,6 +250,9 @@ class UIState:
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    if self.experimental_mode_locked and not self.experimental_mode:
+      self.params.put_bool("ExperimentalMode", True)
+      self.experimental_mode = True
     self.experimental_mode_confirmed = self.params.get_bool("ExperimentalModeConfirmed")
     if not self.chestnut_compiled:
       self.chestnut_compiled = chestnut_compiled()
