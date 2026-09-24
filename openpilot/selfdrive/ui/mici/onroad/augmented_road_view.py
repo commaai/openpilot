@@ -17,6 +17,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
+from openpilot.selfdrive.ui.mici.onroad.bookmark_gesture import BookmarkParentScrollBlocker
 from enum import IntEnum
 
 OpState = log.SelfdriveState.OpenpilotState
@@ -56,10 +57,15 @@ class BookmarkIcon(Widget):
     self._is_swiping = False
     self._is_swiping_left: bool = False
     self._triggered_time: float = 0.0
+    self._parent_scroll_blocker = BookmarkParentScrollBlocker()
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
     return self._is_swiping_left
+
+  def blocks_parent_scroll(self, mouse_events: list[MouseEvent]) -> bool:
+    """Pre-process bookmark swipes before the parent scroller consumes input."""
+    return self._parent_scroll_blocker.update(mouse_events, self._hit_rect)
 
   def interacting(self):
     interacting, self._interacting = self._interacting, False
@@ -161,7 +167,7 @@ class AugmentedRoadView(CameraView):
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
-    return self._bookmark_icon.is_swiping_left()
+    return self._bookmark_icon.blocks_parent_scroll(gui_app.mouse_events) or self._bookmark_icon.is_swiping_left()
 
   def _update_state(self):
     super()._update_state()
