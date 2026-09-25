@@ -138,9 +138,9 @@ class LongitudinalPlanner:
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
     model_limited = (sm['selfdriveState'].experimentalMode and
-                     output_a_target_e2e + self.accel_boost.value < min(output_a_target_mpc, self.a_cruise))
+                     self.accel_boost.apply(output_a_target_e2e) < min(output_a_target_mpc, self.a_cruise))
     self.accel_boost.update(sm['selfdriveState'].enabled, sm['carState'].gasPressed, v_ego, model_limited)
-    output_a_target_e2e += self.accel_boost.value
+    output_a_target_e2e = self.accel_boost.apply(output_a_target_e2e)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]
