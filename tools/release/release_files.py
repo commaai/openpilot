@@ -14,7 +14,7 @@ blacklist = [
 
   "matlab.*.md",
 
-  # release scripts configure LFS for the big driving model
+  # release scripts configure LFS for the big driving model and warps
   ".lfsconfig",
   ".gitattributes",
   ".git$",
@@ -31,7 +31,7 @@ if __name__ == "__main__":
       continue
 
     rf = os.fsdecode(tracked_file)
-    if not os.getenv("INCLUDE_BIG_MODEL") and rf == "openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl":
+    if not os.getenv("INCLUDE_BIG_MODEL") and rf.startswith("openpilot/selfdrive/modeld/models/big_"):
       continue
     blacklisted = any(re.search(p, rf) for p in blacklist)
     whitelisted = any(re.search(p, rf) for p in whitelist)

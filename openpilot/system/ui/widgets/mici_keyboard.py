@@ -353,8 +353,12 @@ class MiciKeyboard(Widget):
 
           # draw black circle behind selected key
           circle_alpha = int(self._selected_key_filter.x * 225)
-          rl.draw_circle_gradient(rl.Vector2(key_x + key.rect.width / 2, key_y + key.rect.height / 2),
-                                  SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
+          try:
+            rl.draw_circle_gradient(rl.Vector2(key_x + key.rect.width / 2, key_y + key.rect.height / 2),
+                                    SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
+          except (TypeError, RuntimeError):  # AGNOS updater compatibility for raylib 5
+            rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
+                                    SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
           # move other keys away from selected key a bit
           dx = key.original_position.x - self._closest_key[0].original_position.x
