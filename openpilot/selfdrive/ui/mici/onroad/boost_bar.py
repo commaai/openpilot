@@ -1,5 +1,5 @@
 import pyray as rl
-from openpilot.selfdrive.controls.lib.drive_helpers import ACCEL_BOOST_MAX
+from openpilot.selfdrive.controls.lib.accel_boost import ACCEL_BOOST_MAX
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
