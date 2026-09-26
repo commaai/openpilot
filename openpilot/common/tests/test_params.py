@@ -35,6 +35,19 @@ class TestParams(OpenpilotTestCase):
     assert self.params.get("DongleId") is not None
     assert not os.path.isfile(undefined_param)
 
+  def test_params_get_cleared_offroad_transition(self):
+    # pandad's safety setter reads these at the next ignition; nothing from the previous drive may be left for it
+    self.params.put("CarParams", b"test", block=True)
+    self.params.put_bool("ControlsReady", True, block=True)
+    self.params.put_bool("FirmwareQueryDone", True, block=True)
+    self.params.put("CurrentRoute", "test", block=True)
+
+    self.params.clear_all(ParamKeyFlag.CLEAR_ON_OFFROAD_TRANSITION)
+    assert self.params.get("CarParams") is None
+    assert not self.params.get_bool("ControlsReady")
+    assert not self.params.get_bool("FirmwareQueryDone")
+    assert self.params.get("CurrentRoute") is not None
+
   def test_params_two_things(self):
     self.params.put("DongleId", "bob", block=True)
     self.params.put("AthenadPid", 123, block=True)
