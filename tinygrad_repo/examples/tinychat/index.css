@@ -1,0 +1,281 @@
+/* define colors */
+:root {
+  --primary-color: #fff;
+  --secondary-color: #2a2a2a;
+  --secondary-color-transparent: #ffffff66;
+  --primary-bg-color: #1a1a1a;
+  --foreground-color: #f0f0f0;
+}
+
+main {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  place-items: center;
+}
+
+.home {
+  width: 100%;
+  height: 90%;
+
+  margin-bottom: 10rem;
+}
+
+.title {
+  font-size: 3rem;
+  margin: 1rem 0;
+  margin-top: 3rem;
+}
+
+.histories-container-container {
+  width: 100%;
+  max-height: 75%;
+
+  position: relative;
+}
+
+.histories-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+
+  margin: 0;
+  padding: 3rem 1rem;
+}
+
+.histories-start {
+  height: 3rem;
+  width: 100%;
+
+  z-index: 999;
+  top: 0;
+  position: absolute;
+
+  background: linear-gradient(
+    180deg,
+    var(--primary-bg-color) 0%,
+    transparent 100%
+  );
+}
+.histories-end {
+  height: 3rem;
+  width: 100%;
+
+  z-index: 999;
+  bottom: 0;
+  position: absolute;
+
+  background: linear-gradient(
+    0deg,
+    var(--primary-bg-color) 0%,
+    transparent 100%
+  );
+}
+
+.history {
+  padding: 1rem;
+  width: 100%;
+  max-width: 40rem;
+
+  background-color: var(--secondary-color);
+  border-radius: 10px;
+  border-left: 2px solid var(--primary-color);
+
+  cursor: pointer;
+
+  transform: translateX(calc(1px * var(--tx, 0)));
+  opacity: var(--opacity, 1);
+}
+.history:hover {
+  background-color: var(--secondary-color);
+}
+
+.history-delete-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.5rem;
+  margin: 0;
+  outline: none;
+  border: none;
+  background-color: var(--secondary-color);
+  color: var(--foreground-color);
+  border-radius: 0 0 0 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.history-delete-button:hover {
+  background-color: var(--secondary-color);
+  padding: 0.75rem;
+}
+
+.messages {
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  max-width: 1200px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  padding-top: 1rem;
+  padding-bottom: 11rem;
+}
+
+.message {
+  max-width: 75%;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+}
+.message-role-assistant {
+  background-color: var(--secondary-color);
+  margin-right: auto;
+  color: #fff;
+}
+.message-role-user {
+  margin-left: auto;
+  background-color: var(--primary-color);
+  color: #000;
+}
+
+.message > pre {
+  white-space: pre-wrap;
+}
+
+.hljs {
+  width: 100%;
+  position: relative;
+  border-radius: 10px;
+  /* wrap code blocks */
+  white-space: pre-wrap;
+}
+/* put clipboard button in the top right corner of the code block */
+.clipboard-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.5rem;
+  margin: 0;
+  outline: none;
+  border: none;
+  background-color: var(--secondary-color);
+  color: var(--foreground-color);
+  border-radius: 0 0 0 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.clipboard-button:hover {
+  background-color: var(--secondary-color);
+  padding: 0.75rem;
+}
+
+.input-container {
+  position: absolute;
+  bottom: 0;
+
+  /* linear gradient from background-color to transparent on the top */
+  background: linear-gradient(
+    0deg,
+    var(--primary-bg-color) 55%,
+    transparent 100%
+  );
+
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.input-performance {
+  margin-top: 4rem;
+
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.input-performance-point {
+  display: flex;
+  flex-direction: row;
+  place-items: center;
+  gap: 0.5rem;
+}
+.input-performance-point > p {
+  height: 1rem;
+  line-height: normal;
+}
+
+.input {
+  width: 90%;
+  min-height: 3rem;
+  flex-shrink: 0;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.5rem;
+
+  align-items: flex-end;
+  margin-bottom: 2rem;
+}
+
+.input-form {
+  width: 100%;
+  padding: 1rem;
+  min-height: 3rem;
+  max-height: 8rem;
+
+  background-color: var(--secondary-color);
+  color: var(--foreground-color);
+  border-radius: 10px;
+  border: none;
+  resize: none;
+  outline: none;
+}
+
+.input-button {
+  height: 3rem;
+  width: 4rem;
+
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border-radius: 10px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+.input-button:hover {
+  background-color: var(--secondary-color-transparent);
+}
+.input-button:disabled {
+  background-color: var(--secondary-color);
+  cursor: not-allowed;
+}
+
+/* wrap text */
+p {
+  white-space: pre-wrap;
+}
+
+/* fonts */
+.megrim-regular {
+  font-family: monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.monospace {
+  font-family: monospace;
+}
