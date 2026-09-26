@@ -2589,6 +2589,7 @@ struct Event {
     # microphone data
     soundPressure @103 :SoundPressure;
     rawAudioData @147 :AudioData;
+    livestreamAudio @154 :AudioData;
 
     # systems stuff
     operatingSystemLog @20 :OperatingSystemLogEntry;
