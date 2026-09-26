@@ -33,8 +33,8 @@ def joystickd_thread():
     CC = cc_msg.carControl
     CC.enabled = sm['selfdriveState'].enabled
     CC.latActive = sm['selfdriveState'].active and not sm['carState'].steerFaultTemporary and not sm['carState'].steerFaultPermanent
-    CC.longActive = CC.enabled and not any(e.overrideLongitudinal for e in sm['onroadEvents']) and CP.openpilotLongitudinalControl
-    CC.cruiseControl.override = CC.enabled and not CC.longActive and CP.openpilotLongitudinalControl
+    CC.longActive = CC.enabled and CP.openpilotLongitudinalControl
+    CC.cruiseControl.override = CC.longActive and any(e.overrideLongitudinal for e in sm['onroadEvents'])
     CC.cruiseControl.cancel = sm['carState'].cruiseState.enabled and (not CC.enabled or not CP.pcmCruise)
     CC.hudControl.leadDistanceBars = 2
 
@@ -50,7 +50,11 @@ def joystickd_thread():
 
     if CC.longActive:
       actuators.accel = 4.0 * float(np.clip(joystick_axes[0], -1, 1))
-      actuators.longControlState = LongCtrlState.stopping if should_stop(sm['carState'].vEgo, actuators.accel) else LongCtrlState.pid
+      if CC.cruiseControl.override:
+        actuators.accel = max(actuators.accel, 0.)
+        actuators.longControlState = LongCtrlState.overriding
+      else:
+        actuators.longControlState = LongCtrlState.stopping if should_stop(sm['carState'].vEgo, actuators.accel) else LongCtrlState.pid
       CC.cruiseControl.resume = actuators.accel > 0.0
 
     if CC.latActive:
