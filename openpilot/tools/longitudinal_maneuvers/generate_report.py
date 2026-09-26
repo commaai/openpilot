@@ -55,7 +55,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       t_longitudinalPlan = [(t - t_longitudinalPlan[0]) / 1e9 for t in t_longitudinalPlan]
 
       # maneuver validity
-      longActive = [m.longActive for m in carControl]
+      longActive = [m.longActive and not m.cruiseControl.override for m in carControl]
       maneuver_valid = all(longActive) and (not any(cs.cruiseState.standstill for cs in carState) or CP.autoResumeSng)
 
       _open = 'open' if maneuver_valid else ''
