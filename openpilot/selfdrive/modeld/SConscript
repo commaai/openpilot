@@ -1,3 +1,4 @@
+import ctypes.util
 import glob
 import os
 from SCons.Script import Action, Value
@@ -7,6 +8,13 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 
 
 Import('env', 'arch')
+
+# TODO: add GCC support to tinygrad?
+# tinygrad's CPU:LLVM backend requires libLLVM, skip the build on PC if it's not available
+if arch not in ('comma_arm64', 'Darwin') and ctypes.util.find_library('LLVM') is None:
+  print("\033[93mmodeld: LLVM not found, skipping tinygrad model compilation. Install LLVM to compile models.\033[0m")
+  Return()
+
 lenv = env.Clone()
 lenv.PrependENVPath('PYTHONPATH', Dir('#tinygrad_repo').abspath)
 
