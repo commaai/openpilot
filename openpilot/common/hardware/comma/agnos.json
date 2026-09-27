@@ -56,28 +56,28 @@
   },
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-335c17579879614a3b6f9b58c867aa2e66609530258e12d9174d6007494fdb11.img.xz",
-    "hash": "335c17579879614a3b6f9b58c867aa2e66609530258e12d9174d6007494fdb11",
-    "hash_raw": "335c17579879614a3b6f9b58c867aa2e66609530258e12d9174d6007494fdb11",
-    "size": 46897152,
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-c309f26129ed18e8b94b336ce1968367c7517a881abd8431a088e5b32114cecf.img.xz",
+    "hash": "c309f26129ed18e8b94b336ce1968367c7517a881abd8431a088e5b32114cecf",
+    "hash_raw": "c309f26129ed18e8b94b336ce1968367c7517a881abd8431a088e5b32114cecf",
+    "size": 46962688,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "545d64ff38626d0aff49054cdb7abc735992178f4872fd26ac544d652af38544"
+    "ondevice_hash": "4258a0e141bdaba50ec9444863c5fb0ebbe3b470043bc90b888053c77ca7f605"
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-20d7a522190ba8b6351364beca9702f40303651577d7c3f6c2c1cb6b34e5db6b.img.xz",
-    "hash": "62c6ecab2772f48b90dd2e7f0c3bb413dd7577d1ae9aad971135ce0d9d141544",
-    "hash_raw": "20d7a522190ba8b6351364beca9702f40303651577d7c3f6c2c1cb6b34e5db6b",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-9aac10bdebf0f6e2e760a72f340339583aa7264171a4f7ce8bc5dab084fe5c18.img.xz",
+    "hash": "58ab63e5a24f1eb3c87f1a71f2dc41f6d0cba356afcb2dc1c01c63ce7a2395a3",
+    "hash_raw": "9aac10bdebf0f6e2e760a72f340339583aa7264171a4f7ce8bc5dab084fe5c18",
     "size": 4718592000,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "14251b982859824ea12f5e5c63b336b6d6333779d42457aff7e43bbf9c9fd79b",
+    "ondevice_hash": "e34b2243601e0dd27c22160c54e4fa063d12868791e5663b0ee026edb1923164",
     "alt": {
-      "hash": "20d7a522190ba8b6351364beca9702f40303651577d7c3f6c2c1cb6b34e5db6b",
-      "url": "https://commadist.azureedge.net/agnosupdate/system-20d7a522190ba8b6351364beca9702f40303651577d7c3f6c2c1cb6b34e5db6b.img",
+      "hash": "9aac10bdebf0f6e2e760a72f340339583aa7264171a4f7ce8bc5dab084fe5c18",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-9aac10bdebf0f6e2e760a72f340339583aa7264171a4f7ce8bc5dab084fe5c18.img",
       "size": 4718592000
     }
   }
