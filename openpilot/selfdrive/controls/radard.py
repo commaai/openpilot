@@ -11,19 +11,20 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
 
-# radar tracks
-SPEED, ACCEL = 0, 1     # Kalman filter states enum
-
 # stationary qualification parameters
 V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
+
+# lead speed fusion: radar speed variance (the unit the track filter is tuned in), and the factor on the model's
+# lead vStd used as the vision measurement's standard deviation
+RADAR_V_VAR = 1.0  # (m/s)^2
+VISION_V_STD_SCALE = 2.0
 
 
 class KalmanParams:
@@ -46,6 +47,20 @@ class KalmanParams:
           0.27162685, 0.27023228, 0.26888809, 0.26758976, 0.26633338, 0.26511557,
           0.26393339, 0.26278425]
     self.K = [[np.interp(dt, dts, K0)], [np.interp(dt, dts, K1)]]
+    # Covariance form of the same filter, so the matched lead can also take vision's speed (Track.fuse_vision).
+    # KF1D is a one-step predictor, x <- A x + K (z - C x); with R = 1 (m/s)^2 and Q = diag(0.2, 2.0) * dt its
+    # steady-state predictor gain equals K above, so radar-only tracks behave exactly as before.
+    self.Q = (0.2 * dt, 2.0 * dt)
+    self.P0 = self._steady_state_prior(dt, self.Q)
+
+  @staticmethod
+  def _steady_state_prior(dt: float, q: tuple[float, float]) -> tuple[float, float, float]:
+    p00, p01, p11 = 1.0, 0.0, 1.0
+    for _ in range(500):
+      k0, k1 = p00 / (p00 + 1.0), p01 / (p00 + 1.0)
+      p00, p01, p11 = p00 - k0 * p00, p01 - k0 * p01, p11 - k1 * p01
+      p00, p01, p11 = p00 + 2 * dt * p01 + dt * dt * p11 + q[0], p01 + dt * p11, p11 + q[1]
+    return p00, p01, p11
 
 
 class Track:
@@ -56,7 +71,26 @@ class Track:
     self.K_A = kalman_params.A
     self.K_C = kalman_params.C
     self.K_K = kalman_params.K
-    self.kf = KF1D([[v_lead], [0.0]], self.K_A, self.K_C, self.K_K)
+    # [vLead, aLead] one-step-predictor Kalman filter in covariance form (plain floats, as cheap as KF1D). With radar
+    # measurements only it reproduces KF1D exactly; the covariance lets the matched lead also take vision's speed.
+    self.dt = kalman_params.A[0][1]
+    self.q0, self.q1 = kalman_params.Q
+    self.v, self.a = v_lead, 0.0
+    self.p00, self.p01, self.p11 = kalman_params.P0
+
+  def _correct(self, z: float, r: float):
+    s = self.p00 + r
+    k0, k1 = self.p00 / s, self.p01 / s
+    y = z - self.v
+    self.v += k0 * y
+    self.a += k1 * y
+    self.p00, self.p01, self.p11 = self.p00 - k0 * self.p00, self.p01 - k0 * self.p01, self.p11 - k1 * self.p01
+
+  def _predict(self):
+    dt = self.dt
+    self.v += self.a * dt
+    self.p00, self.p01, self.p11 = (self.p00 + 2 * dt * self.p01 + dt * dt * self.p11 + self.q0,
+                                    self.p01 + dt * self.p11, self.p11 + self.q1)
 
   def update(self, d_rel: float, y_rel: float, v_rel: float, v_lead: float):
     # relative values, copy
@@ -67,10 +101,11 @@ class Track:
 
     # computed velocity and accelerations
     if self.cnt > 0:
-      self.kf.update(self.vLead)
+      self._correct(self.vLead, RADAR_V_VAR)
+      self._predict()
 
-    self.vLeadK = float(self.kf.x[SPEED][0])
-    self.aLeadK = float(self.kf.x[ACCEL][0])
+    self.vLeadK = float(self.v)
+    self.aLeadK = float(self.a)
 
     # Learn if constant acceleration
     if abs(self.aLeadK) < 0.5:
@@ -79,6 +114,14 @@ class Track:
       self.aLeadTau.update(0.0)
 
     self.cnt += 1
+
+  def fuse_vision(self, v_lead_vision: float, v_std_vision: float):
+    # Vision's lead speed as a second, lower-weight measurement of the same lead. Where radar and vision agree it
+    # changes nothing; a radar speed excursion that vision does not see is pulled back instead of passed on.
+    if self.cnt > 1:
+      self._correct(v_lead_vision, (VISION_V_STD_SCALE * max(v_std_vision, 0.1)) ** 2)
+      self.vLeadK = float(self.v)
+      self.aLeadK = float(self.a)
 
   def get_RadarState(self, model_prob: float = 0.0):
     return {
@@ -151,7 +194,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
 
 
 def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
-             model_v_ego: float, lead_prob: float, low_speed_override: bool = True) -> dict[str, Any]:
+             model_v_ego: float, lead_prob: float, low_speed_override: bool = True, fuse_vision: bool = False) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -160,6 +203,8 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
 
   lead_dict = {'present': False}
   if track is not None:
+    if fuse_vision:
+      track.fuse_vision(v_ego + lead_msg.v[0] - model_v_ego, lead_msg.vStd[0])
     lead_dict = track.get_RadarState(lead_prob)
   elif (track is None) and ready and (lead_prob > .5):
     lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego, lead_prob)
@@ -238,7 +283,7 @@ class RadarD:
         else:
           self.lead_prob_filters[i].update(lead_prob)
 
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x, low_speed_override=True)
+      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x, low_speed_override=True, fuse_vision=True)
       self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_prob_filters[1].x, low_speed_override=False)
 
   def publish(self, pm: messaging.PubMaster):
