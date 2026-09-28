@@ -829,7 +829,7 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
       const std::string current_layout = session->layout_path.empty() ? std::string("untitled") : session->layout_path.stem().string();
       for (const std::string &layout_name : layouts) {
         const bool selected = layout_name == current_layout;
-        if (ImGui::Selectable(layout_name.c_str(), selected) && !selected) {
+        if (ImGui::Selectable(layout_name.c_str(), selected)) {
           reload_layout(session, state, layout_name);
         }
         if (selected) {
