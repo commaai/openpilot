@@ -4,6 +4,7 @@ import pyray as rl
 import re
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
@@ -231,6 +232,11 @@ class MiciOffroadAlerts(Scroller):
 
   def scrolling(self):
     return self._scroller.scroll_panel.is_touch_valid()
+
+  def set_pairing_callback(self, callback: Callable[[], None]):
+    for alert_item in self.alert_items:
+      if alert_item.alert_data.key == "Offroad_Pairing":
+        alert_item.set_click_callback(callback)
 
   def _build_alerts(self):
     """Build sorted list of alerts from OFFROAD_ALERTS."""

@@ -128,6 +128,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
     userBookmark @95;
+    userBookmarkNotPaired @104;
     excessiveActuation @96;
     bigModelLoading @100;
     bigModelFailed @102;
@@ -694,6 +695,7 @@ struct PeripheralState {
 
 struct UsbState {
   devices @0 :List(Device);
+  connected @1 :Bool;
 
   struct Device {
     busnum @0 :UInt8;
@@ -2236,6 +2238,7 @@ struct DriverMonitoringState {
       pose @0: Bool;
       eye @1: Bool;
       phone @2: Bool;
+      sleep @3: Bool;
     }
 
     struct Pose {

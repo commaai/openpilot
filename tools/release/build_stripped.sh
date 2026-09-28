@@ -39,7 +39,7 @@ cd "$SOURCE_DIR"
 cd "$TARGET_DIR"
 rm -rf .git/modules/
 
-find openpilot/selfdrive/modeld/models -name '*.onnx' -size +95M -exec ./openpilot/common/file_chunker.py {} \;
+source "$SOURCE_DIR/tools/release/setup_lfs.sh"
 
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir="$SOURCE_DIR/.git" rev-parse HEAD)
@@ -60,29 +60,20 @@ date: $DATETIME
 master commit: $GIT_HASH
 "
 
-# should be no submodules or LFS files
+# should be no submodules or unexpected LFS files
 git submodule status
-if [ ! -z "$(git lfs ls-files)" ]; then
+if [ -z "$INCLUDE_BIG_MODEL" ] && [ -n "$(git lfs ls-files)" ]; then
   echo "LFS files detected!"
   exit 1
 fi
 
-# ensure files are within GitHub's limit
-BIG_FILES="$(find . -type f -not -path './.git/*' -size +95M)"
-if [ ! -z "$BIG_FILES" ]; then
-  printf '\n\n\n'
-  echo "Found files exceeding GitHub's 100MB limit:"
-  echo "$BIG_FILES"
-  exit 1
-fi
+source "$SOURCE_DIR/tools/release/check_file_sizes.sh"
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
-  # Reset hooks since releases exclude .venv
-  git config --local core.hooksPath .git/hooks
-  git lfs update --force
   # uploading the larger pack is faster than spending CPU to optimize it
-  git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "tmp:$BRANCH"
+  # The big model is already published to LFS by the source branch.
+  GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "tmp:$BRANCH"
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"

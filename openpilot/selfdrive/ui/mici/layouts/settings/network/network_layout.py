@@ -30,7 +30,7 @@ class NetworkLayoutMici(NavScroller):
       self._wifi_manager.set_tethering_active(checked)
 
     self._tethering_toggle_btn = BigToggle("enable tethering", "", toggle_callback=tethering_toggle_callback,
-                                           description="Share the device’s internet connection through a Wi-Fi hotspot.")
+                                           description="Share the device's internet connection through a Wi-Fi hotspot.")
 
     def tethering_password_callback(password: str):
       if password:
@@ -61,7 +61,7 @@ class NetworkLayoutMici(NavScroller):
     # TODO: signal for current network metered type when changing networks, this is wrong until you press it once
     # TODO: disable when not connected
     self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback,
-                                               description="Metered prevents large uploads on this Wi-Fi connection. Default uses the network’s detected " +
+                                               description="Metered prevents large uploads on this Wi-Fi connection. Default uses the network's detected " +
                                                            "setting.")
     self._network_metered_btn.set_enabled(False)
 

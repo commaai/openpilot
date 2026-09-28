@@ -12,7 +12,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.hardware import HARDWARE, PC
-from openpilot.common.hardware.usb import TYPEC_CC_ORIENTATION_PATH, get_usb_state, is_chestnut_usb_id, read_int
+from openpilot.common.hardware.usb import cable_connected, get_usb_state, is_chestnut_usb_id
 from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
@@ -202,7 +202,7 @@ class UIState:
         self.status = UIStatus.DISENGAGED
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
-        self.chestnut_present = self.sm["deviceState"].chestnutPresent
+        self.chestnut_present = self.sm["deviceState"].chestnutPresent or (self.chestnut_compiled and self.usb_connected)
 
       for callback in self._offroad_transition_callbacks:
         callback()
@@ -222,10 +222,10 @@ class UIState:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
       self.chestnut_state = ChestnutState.UNCOMPILED
-    elif self.chestnut_state == ChestnutState.FAILED or not detected or (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big)):
-      self.chestnut_state = ChestnutState.FAILED
     elif self.chestnut_loading or not model_seen:
       self.chestnut_state = ChestnutState.LOADING
+    elif self.chestnut_state == ChestnutState.FAILED or not detected or (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big)):
+      self.chestnut_state = ChestnutState.FAILED
     elif self.chestnut_active is False:
       self.chestnut_state = ChestnutState.FAILED
     else:
@@ -252,7 +252,7 @@ class UIState:
     self.chestnut_active = self.params.get("ChestnutActive")
     self.chestnut_loading = self.params.get_bool("ChestnutLoading")
     now = time.monotonic()
-    if read_int(TYPEC_CC_ORIENTATION_PATH) != 0:
+    if cable_connected():
       self.usb_disconnected_ts = None
       if not self.usb_connected:
         self.usb_connected = True

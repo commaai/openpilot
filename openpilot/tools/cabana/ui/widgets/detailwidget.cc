@@ -48,6 +48,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
   }));
   connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { tabbar_.removeTab(index); }));
   connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) { showTabBarContextMenu(index); }));
+  heatmap_live_ = can->liveStreaming();
   binary_view_ = std::make_unique<BinaryView>();
   signal_view_ = std::make_unique<SignalView>(charts);
 
@@ -60,6 +61,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
     updateState();
   }));
 
+  connections_.push_back(binary_view_->signalsChanged.connect([this]() { refresh(); }));
   connections_.push_back(binary_view_->signalHovered.connect([this](const cabana::Signal *s) { signal_view_->signalHovered(s); }));
   connections_.push_back(binary_view_->signalClicked.connect([this](const cabana::Signal *s) { signal_view_->selectSignal(s, true); }));
   connections_.push_back(binary_view_->editSignal.connect([this](const cabana::Signal *origin_s, cabana::Signal &s) { signal_view_->saveSignal(origin_s, s); }));
@@ -74,8 +76,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts) : charts_(charts) {
     char text[64];
     if (range) snprintf(text, sizeof(text), "%.3f - %.3f", range->first, range->second);
     heatmap_all_text_ = range ? text : "All";
-    const bool live = !range;
-    if (std::exchange(heatmap_live_, live) != live) binary_view_->setHeatmapLiveMode(live);
+    heatmap_live_ = !range && can->liveStreaming();
+    binary_view_->setHeatmapLiveMode(heatmap_live_);
   }));
 }
 
@@ -174,23 +176,30 @@ void DetailWidget::restoreTabs(const std::string &active_msg_id, const std::vect
 }
 
 void DetailWidget::refresh() {
+  auto msg = dbc()->msg(msg_id_);
+  std::string msg_name = msg ? msg->name + " (" + msg->transmitter + ")" : msgName(msg_id_);
+  name_label_.setText(msg_name);
+  name_label_.setToolTip(msg_name);
+  action_remove_msg_enabled_ = msg != nullptr;
+  updateWarnings();
+}
+
+void DetailWidget::updateWarnings() {
   std::vector<std::string> warnings;
   auto msg = dbc()->msg(msg_id_);
   if (msg) {
-    if (msg_id_.source == INVALID_SOURCE) {
+    // A restored tab or a seek can refer to a bus with no sample at the current time.
+    // lastMessage() returns empty data in that case, not a received zero-byte frame.
+    if (msg_id_.source == INVALID_SOURCE || !can->lastMessages().count(msg_id_)) {
       warnings.push_back("No messages received.");
     } else if (msg->size != can->lastMessage(msg_id_).dat.size()) {
-      warnings.push_back("Message size (" + std::to_string(msg->size) + ") is incorrect.");
+      warnings.push_back("Message size mismatch: DBC defines " + std::to_string(msg->size) +
+                         " bytes, received " + std::to_string(can->lastMessage(msg_id_).dat.size()) + " bytes.");
     }
     for (auto s : binary_view_->getOverlappingSignals()) {
       warnings.push_back(s->name + " has overlapping bits.");
     }
   }
-  std::string msg_name = msg ? msg->name + " (" + msg->transmitter + ")" : msgName(msg_id_);
-  name_label_.setText(msg_name);
-  name_label_.setToolTip(msg_name);
-  action_remove_msg_enabled_ = msg != nullptr;
-
   if (!warnings.empty()) {
     warning_label_.clear();
     for (size_t i = 0; i < warnings.size(); ++i) {
@@ -210,6 +219,7 @@ void DetailWidget::updateState(const std::set<MessageId> *msgs) {
     binary_view_->updateState();
   else
     history_log_->updateState();
+  updateWarnings();
 }
 
 void DetailWidget::editMsg(float parent_width) {
@@ -223,16 +233,29 @@ void DetailWidget::drawTabWidget() {
   page_tabs_.draw();
   if (tab_widget_index_ == 0) {
     if (heatmap_visible_) {
-      // Keep most of a short window available for signal rows.
+      // Allow the heatmap to grow while reserving room for signal rows.
+      const float handle_height = style.DockingSeparatorSize;
       const float avail = ImGui::GetContentRegionAvail().y;
-      const float max_height = std::max(avail - style.ItemSpacing.y - SignalView::minimumHeight(), 1.0f);
-      const float height = std::min(binary_view_->minimumSizeHint().y, max_height);
-      ImGui::BeginChild("binary_view", ImVec2(0, std::max(height, 1.0f)), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+      const float max_height = std::max(avail - handle_height - style.ItemSpacing.y * 2 - SignalView::minimumHeight(), 1.0f);
+      const float min_height = std::min(ImGui::GetFrameHeight(), max_height);
+      float height = std::clamp(heatmap_height_ < 0 ? binary_view_->minimumSizeHint().y : heatmap_height_, min_height, max_height);
+      ImGui::BeginChild("binary_view", ImVec2(0, height), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
       binary_view_rect_ = ImGui::GetCurrentWindow()->Rect();
       binary_view_->draw();
       ImGui::EndChild();
+
+      const ImVec2 pos = ImGui::GetCursorScreenPos();
+      const ImVec2 size(std::max(ImGui::GetContentRegionAvail().x, 1.0f), handle_height);
+      const ImRect splitter(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+      float signal_height = std::max(avail - height - handle_height - style.ItemSpacing.y * 2, SignalView::minimumHeight());
+      if (ImGui::SplitterBehavior(splitter, ImGui::GetID("##heatmap_resize"), ImGuiAxis_Y,
+                                  &height, &signal_height, min_height, SignalView::minimumHeight(), 4.0f)) {
+        heatmap_height_ = height;
+      }
+      ImGui::Dummy(size);
     }
-    ImGui::BeginChild("signal_view", ImVec2(0, 0), ImGuiChildFlags_None,
+    const float signal_height = std::max(ImGui::GetContentRegionAvail().y, SignalView::minimumHeight());
+    ImGui::BeginChild("signal_view", ImVec2(0, signal_height), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     signal_view_rect_ = ImGui::GetCurrentWindow()->Rect();
     signal_view_->draw();
@@ -244,8 +267,7 @@ void DetailWidget::drawTabWidget() {
 
 void DetailWidget::draw() {
   tabbar_.draw();
-  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding,
-                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+  ImGui::BeginChild("message_content", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
   drawToolBar();
 
   if (warning_widget_visible_) {
@@ -387,7 +409,7 @@ void CenterWidget::drawWelcomeWidget() {
     ImGui::SetCursorPos(ImVec2(origin.x + (avail.x - size.x) * 0.5f, y));
     ImGui::TextUnformatted(text);
   };
-  ImGui::PushStyleColor(ImGuiCol_Text, colorRgb(169, 169, 169));
+  ImGui::PushStyleColor(ImGuiCol_Text, palette().text_disabled);
   float y = origin.y + avail.y * 0.5f - 90.0f;
   pushLargeFont();
   centered("CABANA", y);

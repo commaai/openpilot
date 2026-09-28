@@ -15,6 +15,6 @@ ImVec2 byteCellSize();                              // one "00 " cell
 ImVec2 bytesCellSize(int n, bool multiple_lines);   // a cell of n bytes, the table's cell padding included
 ImU32 cellTextColor(bool selected, bool inactive);  // inactive rows gray the text and fade the highlighted text
 
-void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive);
+void drawTextCell(ImDrawList *dl, const ImRect &rect, const std::string &text, bool selected, bool inactive, bool align_right = false);
 void drawBytesCell(ImDrawList *dl, const ImRect &rect, const std::vector<uint8_t> &bytes, const std::vector<CabanaColor> *colors,
                    bool selected, bool inactive, bool multiple_lines);

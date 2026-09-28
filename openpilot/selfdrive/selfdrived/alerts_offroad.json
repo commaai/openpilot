@@ -21,6 +21,10 @@
     "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
     "severity": -1
   },
+  "Offroad_ChestnutModelError": {
+    "text": "Chestnut model error. Restart the car to retry.",
+    "severity": 0
+  },
   "Offroad_ChestnutNotDetected": {
     "text": "Chestnut not detected. Check USB and 12V connections.",
     "severity": 0
@@ -65,5 +69,10 @@
     "text": "Excessive %1 actuation detected on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
     "severity": 1,
     "_comment": "Set extra field to lateral or longitudinal."
+  },
+  "Offroad_Pairing": {
+    "text": "Finish setup. Pair your device with comma connect to view recent drives and bookmarked routes.",
+    "severity": -2,
+    "icon": "icons_mici/settings/device/green_settings.png"
   }
 }
