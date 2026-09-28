@@ -540,45 +540,6 @@ class ModelRenderer(Widget):
       else:
         draw_polygon(self._rect, path_pts, gradient=gradient)
 
-  def _draw_legacy_lead_indicators(self, radar_state):
-    """Original mici chevrons, enabled alongside the bars for comparison."""
-    path_x = self._path.raw_points[:, 0]
-    for lead in (radar_state.leadOne, radar_state.leadTwo):
-      if not lead.present:
-        continue
-      idx = self._get_path_length_idx(path_x, lead.dRel)
-      z = self._path.raw_points[idx, 2]
-      point = self._map_to_screen(lead.dRel, -lead.yRel, z + self._path_offset_z)
-      if point is not None:
-        self._draw_legacy_lead(lead.dRel, lead.vRel, point, self._rect)
-
-  def _draw_legacy_lead(self, d_rel, v_rel, point, rect):
-    speed_buff, lead_buff = 10.0, 40.0
-
-    # Calculate fill alpha
-    fill_alpha = 0
-    if d_rel < lead_buff:
-      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
-      if v_rel < 0:
-        fill_alpha += 255 * (-1 * (v_rel / speed_buff))
-      fill_alpha = min(fill_alpha, 255)
-
-    # Calculate size and position
-    sz = np.clip((25 * 30) / (d_rel / 3 + 30), 15.0, 30.0) * 1
-    x = np.clip(point[0], 0.0, rect.width - sz / 2)
-    y = min(point[1], rect.height - sz * 0.6)
-
-    g_xo = sz / 5
-    g_yo = sz / 10
-
-    glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
-    chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
-
-    glow = [(px + rect.x, py + rect.y) for px, py in glow]
-    chevron = [(px + rect.x, py + rect.y) for px, py in chevron]
-    rl.draw_triangle_fan(glow, len(glow), rl.Color(218, 202, 37, 255))
-    rl.draw_triangle_fan(chevron, len(chevron), rl.Color(201, 34, 49, int(fill_alpha)))
-
   def _draw_lead_indicator(self):
     if self._rect.width <= 0 or self._rect.height <= 0:
       return
