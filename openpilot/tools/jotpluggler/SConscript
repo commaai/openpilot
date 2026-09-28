@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import bootstrap_icons
 import imgui
 import libusb
@@ -17,6 +18,7 @@ jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 jot_env["CXXFLAGS"] += [
   "-DGLFW_INCLUDE_NONE",
   '-DJOTP_REPO_ROOT=\\"%s\\"' % os.path.realpath(BASEDIR).replace(os.sep, "/"),
+  '-DJOTP_PYTHON_EXE=\\"%s\\"' % os.path.realpath(sys.executable).replace(os.sep, "/"),
   '-DBOOTSTRAP_ICONS_TTF=\\"%s\\"' % bootstrap_icons.TTF_PATH.as_posix(),
 ]
 
