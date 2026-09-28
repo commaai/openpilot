@@ -77,18 +77,22 @@ inline void ensure_parent_dir(const std::filesystem::path &path) {
 }
 
 inline std::string shell_quote(std::string_view value) {
-  std::string quoted;
-  quoted.reserve(value.size() + 8);
-  quoted.push_back('\'');
+#ifdef _WIN32
+  // cmd.exe quotes with " (POSIX shells use ').
+  std::string quoted = "\"";
   for (char c : value) {
-    if (c == '\'') {
-      quoted += "'\\''";
-    } else {
-      quoted.push_back(c);
-    }
+    if (c == '"') quoted += '\\';
+    quoted += c;
   }
-  quoted.push_back('\'');
-  return quoted;
+  return quoted + '"';
+#else
+  std::string quoted = "'";
+  for (char c : value) {
+    if (c == '\'') quoted += "'\\''";
+    else quoted += c;
+  }
+  return quoted + '\'';
+#endif
 }
 
 struct CommandResult {
