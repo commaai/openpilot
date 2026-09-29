@@ -3,7 +3,7 @@ import time
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, is_chestnut_usb_id
 
 
-CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut")
+CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut", "nightly-chestnut-dev")
 CHESTNUT_POWERED_VOLTAGE = 5000
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.
