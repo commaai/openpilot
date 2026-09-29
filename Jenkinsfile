@@ -242,9 +242,18 @@ node {
     }
 
     if (env.BRANCH_NAME == '__nightly-chestnut') {
-      deviceStage("build nightly-chestnut", "mici-chestnut-ci", ["CHESTNUT=1"], [
-        step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
-      ])
+      parallel (
+        'nightly-chestnut': {
+          deviceStage("build nightly-chestnut", "mici-chestnut-ci", ["CHESTNUT=1"], [
+            step("build nightly-chestnut", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 RELEASE_BRANCH=nightly-chestnut $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
+          ])
+        },
+        'nightly-chestnut-dev': {
+          deviceStage("build nightly-chestnut-dev", "mici-chestnut-ci", ["CHESTNUT=1"], [
+            step("build nightly-chestnut-dev", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-chestnut-dev $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
+          ])
+        },
+      )
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
