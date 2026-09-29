@@ -143,6 +143,10 @@ class HudRenderer(Widget):
         ('distance_3', 18, 147, 48, 11),
       )
     ]
+    self._distance_green_parts = [
+      (gui_app.texture(f'icons_mici/longitudinal/distance_{index}_green.png', width, height, keep_aspect_ratio=False), x, y)
+      for index, x, y, width, height in ((1, 12, 105, 60, 35), (2, 8, 118, 68, 37), (3, 4, 133, 76, 39))
+    ]
     self._longitudinal_icon_opacity = 0.0
     self._longitudinal_icon_visible = False
     # Match DMoji visibility timing without inheriting its inactive-monitoring dimming.
@@ -240,27 +244,26 @@ class HudRenderer(Widget):
   def _reset_longitudinal_layout(self) -> None:
     self._distance_override_timer = None
     self._layout_personality = None
-    self._layout_filters = [FirstOrderFilter(float(i == 0), 0.1, 1 / gui_app.target_fps) for i in range(3)]
-
-  @staticmethod
-  def _longitudinal_layout(count):
-    # Persistent personality layouts.
-    # Coordinates precede the shared 4 px rightward offset.
-    return {1: ((18, 95, 48, 38), -8),
-            2: ((21, 89, 42, 34), -3),
-            3: ((25, 86, 34, 27), 0)}[count]
+    self._distance_highlight_time = -math.inf
+    self._distance_active_filters = [FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for _ in range(3)]
+    self._distance_green_filters = [FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for _ in range(3)]
 
   def _update_longitudinal_layout(self, personality):
     selected = {log.LongitudinalPersonality.aggressive: 1,
                 log.LongitudinalPersonality.standard: 2,
                 log.LongitudinalPersonality.relaxed: 3}[personality]
     first = self._layout_personality is None
+    now = rl.get_time()
+    if not first and personality != self._layout_personality:
+      self._distance_highlight_time = now
     self._layout_personality = personality
-    for count, fade in enumerate(self._layout_filters, start=1):
+    highlight = now - self._distance_highlight_time < SET_SPEED_PERSISTENCE
+    for index, (active, green) in enumerate(zip(self._distance_active_filters, self._distance_green_filters, strict=True)):
       if first:
-        fade.x = float(count == selected)
+        active.x = float(index < selected)
       else:
-        fade.update(float(count == selected))
+        active.update(float(index < selected))
+      green.update(float(highlight and index == selected - 1))
 
   def _distance_override_opacity(self) -> float:
     sm = ui_state.sm
@@ -281,22 +284,17 @@ class HudRenderer(Widget):
     if not ui_state.has_longitudinal_control:
       return
     override_alpha = self._distance_override_opacity()
-    # Move each physical asset once, rather than crossfading copies of whole layouts.
-    y_offset = sum(self._longitudinal_layout(count)[1] * fade.x
-                   for count, fade in enumerate(self._layout_filters, start=1))
-    for asset_index, (texture, x, y) in enumerate(self._distance_icon_parts):
-      visibility = 0.0
-      for count, layout_filter in enumerate(self._layout_filters, start=1):
-        index = asset_index - (3 - count)
-        if index < 0:
-          continue
-        weight = layout_filter.x
-        visibility += weight
-      if visibility < 1e-5:
-        continue
-      alpha = 0.9 * visibility
-      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity * override_alpha))
-      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y + y_offset), 0.0, 1.0, color)
+    for index, (texture, x, y) in enumerate(self._distance_icon_parts):
+      active = self._distance_active_filters[index].x
+      green = self._distance_green_filters[index].x
+      # Inactive bars stay grey; only active bars participate in override blinking.
+      alpha = 0.35 * (1 - active) + 0.9 * (active - green) * override_alpha
+      color = rl.Color(255, 255, 255, round(255 * alpha * self._longitudinal_icon_opacity))
+      rl.draw_texture_ex(texture, rl.Vector2(rect.x + x, rect.y + y), 0.0, 1.0, color)
+      if green > 1e-5:
+        glow, gx, gy = self._distance_green_parts[index]
+        rl.draw_texture_ex(glow, rl.Vector2(rect.x + gx, rect.y + gy), 0.0, 1.0,
+                           rl.Color(255, 255, 255, round(255 * green * override_alpha * self._longitudinal_icon_opacity)))
 
   def _draw_lead_car(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
@@ -311,8 +309,7 @@ class HudRenderer(Widget):
     green_alpha = self._lead_car_green_filter.update(float(green))
     orange_alpha = self._lead_car_orange_filter.update(float(fcw))
     if ui_state.has_longitudinal_control:
-      x, y, width, height = (sum(self._longitudinal_layout(count)[0][axis] * fade.x
-                                for count, fade in enumerate(self._layout_filters, start=1)) for axis in range(4))
+      x, y, width, height = 25, 86, 34, 27
       # Figma's colored exports have a 68x54 car core and 28 px glow padding.
       pad_x, pad_y = 28 * width / 68, 28 * height / 54
     else:
