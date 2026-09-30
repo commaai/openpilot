@@ -87,11 +87,11 @@ class ChestnutStatus:
     set_alert("Offroad_ChestnutOverheated", self.overheated, f"{state.tempC:.0f} °C" if state is not None else None)
     set_alert("Offroad_ChestnutUsbSlow", slow_usb, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None)
     if self.power_lost:
-      pcie_alert = ("Chestnut power restored. 12V is stable again, cycle ignition." if self.power_restored else
-                    "Chestnut power disconnected. Check 12V connection, then cycle ignition." if self.power_unavailable else
-                    "Chestnut power lost. Possibly caused by an engine-crank voltage drop. Check 12V connection, then cycle ignition.")
+      pcie_alert = ("Chestnut power restored. Restart the car to retry." if self.power_restored else
+                    "Chestnut power disconnected. Check 12V connection, then restart the car." if self.power_unavailable else
+                    "Chestnut power lost. Check 12V connection, then restart the car.")
     else:
-      pcie_alert = "Chestnut GPU unavailable. PCIe link is not up. Check the GPU is securely seated."
+      pcie_alert = "Chestnut GPU unavailable. Check the GPU is securely seated, then restart the car."
     set_alert("Offroad_ChestnutPcieUnavailable", self.pcie_failed, pcie_alert)
     set_alert("Offroad_ChestnutModelError", self.model_failed and not (missing or self.pcie_failed))
     set_alert("Offroad_ChestnutUpdateFailed", offroad and firmware_failed)
