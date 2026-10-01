@@ -46,11 +46,8 @@ class ModelPoints:
 
 class LeadVehicle:
   def __init__(self):
-    self.bar = np.empty((0, 2), dtype=np.float32)  # kept while fading out
-    self.track: int | None = None
-    self.d_rel = 0.0
+    self.bar = np.empty((0, 2), dtype=np.float32)
     self.y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
-    self.heading_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self.fade_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
 
@@ -168,56 +165,40 @@ class ModelRenderer(Widget):
 
   def _update_leads(self, sm):
     plan = sm['longitudinalPlan']
-    if plan.hasLead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e and len(sm['modelV2'].leadsV3) > 1:
-      leads = [(lead.prob > 0.5, lead.x[0], -lead.y[0], None) for lead in list(sm['modelV2'].leadsV3)[:2]]
+    if plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e and len(sm['modelV2'].leadsV3) > 1:
+      leads = [(lead.prob > 0.5, lead.x[0], -lead.y[0]) for lead in list(sm['modelV2'].leadsV3)[:2]]
     else:
       radar = sm['radarState']
-      leads = [(lead.present, lead.dRel + RADAR_TO_CAMERA, lead.yRel, lead.radarTrackId) for lead in (radar.leadOne, radar.leadTwo)]
+      leads = [(lead.present, lead.dRel + RADAR_TO_CAMERA, lead.yRel) for lead in (radar.leadOne, radar.leadTwo)]
 
     # both leads can be the same vehicle
-    first_present, first_d, first_y, _ = leads[0]
-    if first_present and abs(leads[1][1] - first_d) < 3.0 and abs(leads[1][2] - first_y) < 1.0:
-      leads[1] = (False, 0.0, 0.0, None)
+    if leads[0][0] and abs(leads[1][1] - leads[0][1]) < 3.0:
+      leads[1] = (False, 0.0, 0.0)
 
+    lane = (self._lane_lines[1].raw_points + self._lane_lines[2].raw_points) / 2
     opacity = 0.4 if ui_state.status == UIStatus.DISENGAGED else 0.8
-    for lead, (present, d_rel, y_rel, track) in zip(self._lead_vehicles, leads, strict=True):
-      visible = present and 1.0 < d_rel < MAX_DRAW_DISTANCE
+    for lead, (present, d_rel, y_rel) in zip(self._lead_vehicles, leads, strict=True):
+      visible = present and d_rel < MAX_DRAW_DISTANCE and len(lane) > 0
       # snap to a new vehicle instead of sliding over
-      if not visible or track != lead.track or abs(d_rel - lead.d_rel) > 10.0 or abs(y_rel - lead.y_filter.x) > 3.0:
-        lead.y_filter.initialized = lead.heading_filter.initialized = False
+      if not visible or abs(y_rel - lead.y_filter.x) > 1.0:
+        lead.y_filter.initialized = False
       lead.fade_filter.update(opacity if visible else 0.0)
       if visible:
-        lead.track, lead.d_rel = track, d_rel
-        heading = lead.heading_filter.update(self._get_lane_heading(d_rel))
-        lead.bar = self._get_lead_bar(d_rel, lead.y_filter.update(y_rel), heading)
+        lead.bar = self._get_lead_bar(lane, d_rel, lead.y_filter.update(y_rel))
 
-  def _get_lead_bar(self, d_rel, y_rel, heading):
-    forward = np.array([np.cos(heading), np.sin(heading)])
-    side = np.array([-forward[1], forward[0]]) * 0.9
-    far = np.array([d_rel, -y_rel]) - 0.2 * forward
-    near = far - min(6.0, 0.25 * d_rel) * forward
-    corners = np.array([far + side, near + side, near - side, far - side])
-    # predicted x can retreat near standstill
-    path = self._path.raw_points
-    path = path[np.r_[True, path[1:, 0] > np.maximum.accumulate(path[:-1, 0])]]
-    z = np.interp(corners[:, 0], path[:, 0], path[:, 2]) + self._path_offset_z
-    pts = self._car_space_transform @ np.column_stack((corners, z)).T
+  def _get_lead_bar(self, lane, d_rel, y_rel):
+    # bar on the road behind the lead, following the lane
+    x = np.array([d_rel, d_rel - min(6.0, 0.25 * d_rel)])
+    y = np.interp(x, lane[:, 0], lane[:, 1]) - np.interp(d_rel, lane[:, 0], lane[:, 1]) - y_rel
+    z = np.interp(x, self._path.raw_points[:, 0], self._path.raw_points[:, 2]) + self._path_offset_z
+    corners = np.vstack((np.column_stack((x, y + 0.9, z)), np.column_stack((x, y - 0.9, z))[::-1]))
+    pts = self._car_space_transform @ corners.T
     bar = (pts[:2] / pts[2]).T
 
-    # at least 80 px^2 on screen
     far, near = bar[[0, 3]], bar[[1, 2]]
-    width = np.linalg.norm(far[1] - far[0])
     length = np.linalg.norm(near.mean(axis=0) - far.mean(axis=0))
-    bar[[1, 2]] = far + (near - far) * min(max(length, 80.0 / width), LEAD_BAR_LENGTH) / length
+    bar[[1, 2]] = far + (near - far) * np.clip(length, 3.0, LEAD_BAR_LENGTH) / length
     return bar.astype(np.float32)
-
-  def _get_lane_heading(self, d_rel):
-    headings = []
-    for prob, lane_line in zip(self._lane_line_probs[1:3], self._lane_lines[1:3], strict=True):
-      if prob > 0.6:
-        y0, y1 = np.interp([d_rel - 6.0, d_rel + 6.0], lane_line.raw_points[:, 0], lane_line.raw_points[:, 1])
-        headings.append(np.arctan2(y1 - y0, 12.0))
-    return np.mean(headings) if headings else 0.0
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
