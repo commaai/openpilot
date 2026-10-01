@@ -165,7 +165,8 @@ def main():
     v_ego = max(sm['carState'].vEgo, 0)
 
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, sm['carState'].standstill, sm['carState'].cruiseState.standstill)
+      long_regulating = sm['carControl'].longActive and not sm['carControl'].cruiseControl.override
+      accel = maneuver.get_accel(v_ego, long_regulating, sm['carState'].standstill, sm['carState'].cruiseState.standstill)
 
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'

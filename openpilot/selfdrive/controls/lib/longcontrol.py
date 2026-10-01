@@ -10,7 +10,7 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
-def long_control_state_trans(active, long_control_state, should_stop, brake_pressed, cruise_standstill):
+def long_control_state_trans(active, long_control_state, should_stop, brake_pressed, cruise_standstill, override=False):
   starting_condition = (not should_stop and
                         not cruise_standstill and
                         not brake_pressed)
@@ -18,8 +18,11 @@ def long_control_state_trans(active, long_control_state, should_stop, brake_pres
   if not active:
     long_control_state = LongCtrlState.off
 
+  elif override:
+    long_control_state = LongCtrlState.overriding
+
   else:
-    if long_control_state == LongCtrlState.off:
+    if long_control_state in (LongCtrlState.off, LongCtrlState.overriding):
       if not starting_condition:
         long_control_state = LongCtrlState.stopping
       else:
@@ -46,16 +49,20 @@ class LongControl:
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, CS, a_target, should_stop, accel_limits):
+  def update(self, active, CS, a_target, should_stop, accel_limits, override=False):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
     self.long_control_state = long_control_state_trans(active, self.long_control_state, should_stop,
-                                                       CS.brakePressed, CS.cruiseState.standstill)
+                                                       CS.brakePressed, CS.cruiseState.standstill, override)
     if self.long_control_state == LongCtrlState.off:
       self.reset()
       output_accel = 0.
+
+    elif self.long_control_state == LongCtrlState.overriding:
+      self.reset()
+      output_accel = max(a_target, 0.)
 
     elif self.long_control_state == LongCtrlState.stopping:
       output_accel = self.last_output_accel

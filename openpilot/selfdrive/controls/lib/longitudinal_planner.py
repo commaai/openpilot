@@ -82,7 +82,7 @@ class LongitudinalPlanner:
     if sm['controlsState'].forceDecel:
       v_cruise = 0.0
 
-    long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
+    long_control_off = sm['controlsState'].longControlState in (LongCtrlState.off, LongCtrlState.overriding)
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['selfdriveState'].enabled
