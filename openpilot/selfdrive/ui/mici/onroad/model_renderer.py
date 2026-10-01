@@ -48,7 +48,8 @@ class ModelPoints:
 class LeadVehicle:
   def __init__(self):
     self.bar = np.empty((0, 2), dtype=np.float32)
-    self.y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
+    self.d_filter = FirstOrderFilter(0.0, 0.2, 1 / gui_app.target_fps, initialized=False)
+    self.y_filter = FirstOrderFilter(0.0, 0.2, 1 / gui_app.target_fps, initialized=False)
     self.fade_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
 
@@ -124,7 +125,7 @@ class ModelRenderer(Widget):
     model = sm['modelV2']
     radar_state = sm['radarState'] if sm.valid['radarState'] else None
     lead_one = radar_state.leadOne if radar_state else None
-    render_lead_indicator = self._longitudinal_control and radar_state is not None and sm['selfdriveState'].engageable
+    render_lead_indicator = self._longitudinal_control and radar_state is not None
 
     # Update model data when needed
     model_updated = sm.updated['modelV2']
@@ -176,16 +177,19 @@ class ModelRenderer(Widget):
     if leads[0][0] and abs(leads[1][1] - leads[0][1]) < 3.0:
       leads[1] = (False, 0.0, 0.0)
 
+    ss, cs = sm['selfdriveState'], sm['carState']
+    # braking disengages without making openpilot unavailable
+    available = ss.enabled or ss.engageable or cs.brakePressed
     lane = (self._lane_lines[1].raw_points + self._lane_lines[2].raw_points) / 2
     opacity = 0.4 if ui_state.status == UIStatus.DISENGAGED else 0.8
     for lead, (present, d_rel, y_rel) in zip(self._lead_vehicles, leads, strict=True):
-      visible = present and d_rel < MAX_DRAW_DISTANCE and len(lane) > 0
+      visible = available and present and d_rel < MAX_DRAW_DISTANCE and len(lane) > 0
       # snap to a new vehicle instead of sliding over
-      if not visible or abs(y_rel - lead.y_filter.x) > 1.0:
-        lead.y_filter.initialized = False
+      if not visible or abs(y_rel - lead.y_filter.x) > 3.0:
+        lead.d_filter.initialized = lead.y_filter.initialized = False
       lead.fade_filter.update(opacity if visible else 0.0)
       if visible:
-        lead.bar = self._get_lead_bar(lane, d_rel, lead.y_filter.update(y_rel))
+        lead.bar = self._get_lead_bar(lane, lead.d_filter.update(d_rel), lead.y_filter.update(y_rel))
 
   def _get_lead_bar(self, lane, d_rel, y_rel):
     # bar on the road behind the lead, following the lane
