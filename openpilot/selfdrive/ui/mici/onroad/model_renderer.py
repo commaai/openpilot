@@ -17,7 +17,8 @@ from openpilot.system.ui.widgets import Widget
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
-LEAD_BAR_LENGTH = 12.0  # max on-screen depth in px
+LEAD_BAR_LENGTH = 12.0  # px
+LEAD_BAR_WIDTH = 1.8  # m
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -191,7 +192,7 @@ class ModelRenderer(Widget):
     x = np.array([d_rel, d_rel - min(6.0, 0.25 * d_rel)])
     y = np.interp(x, lane[:, 0], lane[:, 1]) - np.interp(d_rel, lane[:, 0], lane[:, 1]) - y_rel
     z = np.interp(x, self._path.raw_points[:, 0], self._path.raw_points[:, 2]) + self._path_offset_z
-    corners = np.vstack((np.column_stack((x, y + 0.9, z)), np.column_stack((x, y - 0.9, z))[::-1]))
+    corners = np.vstack((np.column_stack((x, y + LEAD_BAR_WIDTH / 2, z)), np.column_stack((x, y - LEAD_BAR_WIDTH / 2, z))[::-1]))
     pts = self._car_space_transform @ corners.T
     bar = (pts[:2] / pts[2]).T
 
