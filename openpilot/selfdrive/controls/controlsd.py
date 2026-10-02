@@ -170,13 +170,17 @@ class Controls:
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
 
-    # Same 0.5 threshold as LDW
-    probs = self.sm['modelV2'].laneLineProbs if self.sm.valid['modelV2'] else []
-    hudControl.leftLaneVisible = bool(len(probs) > 1 and probs[1] > 0.5)
-    hudControl.rightLaneVisible = bool(len(probs) > 2 and probs[2] > 0.5)
+    hudControl.rightLaneVisible = True
+    hudControl.leftLaneVisible = True
     if self.sm.valid['driverAssistance']:
       hudControl.leftLaneDepart = self.sm['driverAssistance'].leftLaneDeparture
       hudControl.rightLaneDepart = self.sm['driverAssistance'].rightLaneDeparture
+
+    # BYD cluster: model lane on/off. Do not change other brands' HUD lane bits.
+    if self.CP.brand == "byd":
+      probs = self.sm['modelV2'].laneLineProbs if self.sm.valid['modelV2'] else []
+      hudControl.leftLaneVisible = bool(len(probs) > 1 and probs[1] > 0.5)
+      hudControl.rightLaneVisible = bool(len(probs) > 2 and probs[2] > 0.5)
 
     if self.sm['selfdriveState'].active:
       CO = self.sm['carOutput']
