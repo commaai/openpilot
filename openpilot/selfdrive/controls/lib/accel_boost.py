@@ -14,16 +14,19 @@ class AccelBoost:
     self.dt = dt
     self.value = 0.0
     self.override_boost = 0.0
+    self.model_limited = False
 
   def update(self, enabled, gas_pressed, v_ego, model_limited):
     if not enabled or not gas_pressed:
       self.override_boost = 0.0
+      # Latch eligibility before the override changes the lead plan.
+      self.model_limited = enabled and model_limited
 
     if not enabled:
       self.value = 0.0
     elif v_ego < ACCEL_BOOST_MIN_SPEED:
       self.value = max(0.0, self.value - ACCEL_BOOST_DECAY_RATE * self.dt)
-    elif gas_pressed and model_limited:
+    elif gas_pressed and self.model_limited:
       increase = min(ACCEL_BOOST_RATE * self.dt, ACCEL_BOOST_PER_OVERRIDE - self.override_boost, ACCEL_BOOST_MAX - self.value)
       self.value += increase
       self.override_boost += increase
