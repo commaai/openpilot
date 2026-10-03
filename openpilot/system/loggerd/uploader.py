@@ -23,6 +23,14 @@ NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
+# (connect timeout, read timeout). The blob store PUT can take a while to
+# ack a large file on a slow connection even after it has fully received
+# and stored it -- a short read timeout there raises before the ack
+# arrives, and since the upload already succeeded server-side, the file
+# gets retried forever (see #34941). Connect timeout stays short since an
+# unreachable host should still fail fast.
+PUT_TIMEOUT = (10, 60)
+
 MAX_UPLOAD_SIZES = {
   "qlog": 25*1e6,  # can't be too restrictive here since we use qlogs to find
                    # bugs, including ones that can cause massive log sizes
@@ -154,7 +162,7 @@ class Uploader:
     try:
       compress = key.endswith('.zst') and not fn.endswith('.zst')
       stream, _ = get_upload_stream(fn, compress)
-      response = requests.put(url, data=stream, headers=headers, timeout=10)
+      response = requests.put(url, data=stream, headers=headers, timeout=PUT_TIMEOUT)
       return response
     finally:
       if stream:
