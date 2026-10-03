@@ -29,6 +29,16 @@ LaneChangeDirection = log.LaneChangeDirection
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 
 
+def lane_flags_from_probs(probs, from_model: bool):
+  # Brand-opt-in lane HUD: model probs for visibility.
+  left_visible = True
+  right_visible = True
+  if from_model:
+    left_visible = bool(len(probs) > 1 and probs[1] > 0.5)
+    right_visible = bool(len(probs) > 2 and probs[2] > 0.5)
+  return left_visible, right_visible
+
+
 class Controls:
   def __init__(self) -> None:
     self.params = Params()
@@ -176,11 +186,10 @@ class Controls:
       hudControl.leftLaneDepart = self.sm['driverAssistance'].leftLaneDeparture
       hudControl.rightLaneDepart = self.sm['driverAssistance'].rightLaneDeparture
 
-    # BYD cluster: model lane on/off. Do not change other brands' HUD lane bits.
-    if self.CP.brand == "byd":
+    # Brand-opt-in: model lane visibility. Do not change other brands' HUD lane bits.
+    if self.CP.hudLaneFromModel:
       probs = self.sm['modelV2'].laneLineProbs if self.sm.valid['modelV2'] else []
-      hudControl.leftLaneVisible = bool(len(probs) > 1 and probs[1] > 0.5)
-      hudControl.rightLaneVisible = bool(len(probs) > 2 and probs[2] > 0.5)
+      hudControl.leftLaneVisible, hudControl.rightLaneVisible = lane_flags_from_probs(probs, self.CP.hudLaneFromModel)
 
     if self.sm['selfdriveState'].active:
       CO = self.sm['carOutput']
