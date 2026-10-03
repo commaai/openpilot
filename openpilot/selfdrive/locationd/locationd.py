@@ -26,6 +26,8 @@ MAX_SENSOR_TIME_DIFF = 0.1  # s
 YAWRATE_CROSS_ERR_CHECK_FACTOR = 30
 INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
 INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
+MSG_INVALID_LIMIT = 3.0 # bad cameraOdometry cycles before a subscribed message being invalid counts against the inputs
+MSG_INVALID_RECOVERY = 0.5 # steps given back per good cycle, less than the step up so an alternating stream still trips
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
 CAM_ODO_POSE_DELAY = 0.1 # dependent on the vision model context frames and temporal frequency (current model is 5 fps with 2 context frames)
@@ -284,6 +286,7 @@ def main():
   input_invalid_limit = {s: round(INPUT_INVALID_LIMIT * (SERVICE_LIST[s].frequency / 20.)) for s in critical_services}
   input_invalid_threshold = {s: input_invalid_limit[s] - 0.5 for s in critical_services}
   input_invalid_decay = {s: calculate_invalid_input_decay(input_invalid_limit[s], INPUT_INVALID_RECOVERY, SERVICE_LIST[s].frequency) for s in critical_services}
+  msg_invalid = MSG_INVALID_LIMIT # inputs start bad: a service that has never arrived is not valid
 
   initial_pose_data = params.get("LocationFilterInitialState")
   if initial_pose_data is not None:
@@ -329,7 +332,8 @@ def main():
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < input_invalid_threshold[s] for s in critical_services)
-      inputs_valid = sm.all_valid() and critical_service_inputs_valid
+      msg_invalid = min(msg_invalid + 1, MSG_INVALID_LIMIT) if not sm.all_valid() else max(msg_invalid - MSG_INVALID_RECOVERY, 0)
+      inputs_valid = msg_invalid < MSG_INVALID_LIMIT and critical_service_inputs_valid
       sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
