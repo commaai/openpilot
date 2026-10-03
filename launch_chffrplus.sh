@@ -25,7 +25,8 @@ function agnos_init {
       sudo reboot
     fi
     while true; do
-      "$DIR/openpilot/common/hardware/comma/updater" "$AGNOS_PY" "$MANIFEST"
+      "$DIR/openpilot/common/hardware/comma/updater" "$AGNOS_PY" "$MANIFEST" > /tmp/updater_log 2>&1
+      exec "$DIR/openpilot/system/ui/text.py" "openpilot failed to update"$'\n\n'"$(tail -c 8192 /tmp/updater_log)"
     done
   fi
 }
