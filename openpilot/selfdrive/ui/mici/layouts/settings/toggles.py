@@ -91,6 +91,7 @@ class TogglesLayoutMici(NavScroller):
       ("OpenpilotEnabledToggle", enable_openpilot),
     )
 
+    self._experimental_btn.set_enabled(lambda: not ui_state.experimental_mode_locked)
     enable_openpilot.set_enabled(lambda: not ui_state.engaged)
     record_front.set_enabled(False if ui_state.params.get_bool("RecordFrontLock") else (lambda: not ui_state.engaged))
     record_mic.set_enabled(lambda: not ui_state.engaged)
@@ -109,6 +110,9 @@ class TogglesLayoutMici(NavScroller):
       if personality != ui_state.personality and ui_state.started:
         self._personality_toggle.set_value(self._personality_toggle._options[personality])
       ui_state.personality = personality
+
+    if ui_state.experimental_mode_locked:
+      self._experimental_btn.set_checked(True)
 
   def show_event(self):
     super().show_event()
