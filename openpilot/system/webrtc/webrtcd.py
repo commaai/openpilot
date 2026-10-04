@@ -118,6 +118,8 @@ class StreamSession:
           case "livestreamVideoEnable":
             video_enabled = payload["data"]["enabled"]
             self.video_enabled = video_enabled
+            for track in self.video_tracks:
+              track.enable(video_enabled)
             if self.outgoing_bridge is not None:
               self.outgoing_bridge.enable(video_enabled)
             if self.bitrate_controller is not None:
@@ -155,6 +157,9 @@ class StreamSession:
 
   async def run(self):
     try:
+      if self.video_enabled:
+        self.params.put("LivestreamRequestKeyframe", True)
+
       # avoid datachannel race by adding messange_handler immediately
       self.stream.set_message_handler(self.message_handler)
 
@@ -207,7 +212,6 @@ class ServerState:
     self.teardown: asyncio.TimerHandle | None = None
 
 
-# if nothing connects for 5 seconds, tear down livestreaming processes
 def schedule_teardown(state: ServerState):
   if state.teardown is not None:
     state.teardown.cancel()
@@ -216,6 +220,7 @@ def schedule_teardown(state: ServerState):
     if not state.streams:
       Params().put_bool("IsLiveStreaming", False)
 
+  # if nothing connects for 5 seconds, tear down livestreaming processes
   state.teardown = asyncio.get_running_loop().call_later(5.0, clear)
 
 
@@ -236,7 +241,7 @@ async def handle_get_stream(state: ServerState, raw_body: bytes, content_type: s
 
   async with state.stream_lock:
     # don't remove existing connection on prewarm request
-    enabled = any(s.run_task and not s.run_task.done() and s.enabled for s in stream_dict.values())
+    enabled = any(s.run_task and not s.run_task.done() and s.video_enabled for s in stream_dict.values())
     if enabled and not body.enabled:
       return _json_response({"error": "busy", "message": "someone else is connected."})
 
