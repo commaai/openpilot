@@ -28,6 +28,11 @@ LaneChangeDirection = log.LaneChangeDirection
 
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 
+# Follow distance target in seconds per longitudinal personality
+GAP_TARGETS = {0: 1.25, 1: 1.45, 2: 1.75}
+# Stop distance the longitudinal plan keeps on top of the time gap, see long_mpc
+STOP_DISTANCE = 6.0
+
 
 def lane_flags_from_probs(probs, from_model: bool):
   # Brand-opt-in lane HUD: model probs for visibility.
@@ -37,6 +42,24 @@ def lane_flags_from_probs(probs, from_model: bool):
     left_visible = bool(len(probs) > 1 and probs[1] > 0.5)
     right_visible = bool(len(probs) > 2 and probs[2] > 0.5)
   return left_visible, right_visible
+
+
+def lead_follow_status(lead, plan, personality: int, v_ego: float) -> int:
+  # 1 within the gap, 2 within 90% of the gap or braking for the lead, 3 within 50% of the gap
+  if not lead.present or v_ego < 2.0:
+    return 1
+  if plan is not None and plan.longitudinalPlanSource in (1, 2) and plan.aTarget < -1.5:
+    return 3
+  if plan is not None and plan.longitudinalPlanSource in (1, 2) and plan.aTarget < -0.5:
+    return 2
+  # Thresholds scale with the distance the longitudinal plan keeps:
+  # t_follow * v + stop distance, matching the MPC's desired distance
+  d_target = GAP_TARGETS.get(personality, 1.45) * v_ego + STOP_DISTANCE
+  if lead.dRel < 0.5 * d_target:
+    return 3
+  if lead.dRel < 0.9 * d_target:
+    return 2
+  return 1
 
 
 class Controls:
@@ -50,7 +73,7 @@ class Controls:
 
     self.sm = messaging.SubMaster(['lateralDelay', 'vehicleParameters', 'lateralTorqueParameters', 'modelV2', 'selfdriveState',
                                    'extrinsicsCalibration', 'deviceMotion', 'longitudinalPlan', 'lateralManeuverPlan', 'carState', 'carOutput',
-                                   'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
+                                   'driverMonitoringState', 'onroadEvents', 'driverAssistance', 'radarState'], poll='selfdriveState')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
     self.steer_limited_by_safety = False
@@ -178,6 +201,10 @@ class Controls:
     hudControl.lanesVisible = CC.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
+    if self.CP.hudLeadShading and self.sm.valid['radarState']:
+      # Braking-based escalation only reflects the gap when openpilot is controlling the car.
+      plan = self.sm['longitudinalPlan'] if CC.enabled else None
+      hudControl.leadFollowStatus = lead_follow_status(self.sm['radarState'].leadOne, plan, self.sm['selfdriveState'].personality.raw, CS.vEgo)
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
 
     hudControl.rightLaneVisible = True
