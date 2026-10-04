@@ -142,7 +142,7 @@ void LogsWidget::draw() {
     const float value_w = std::clamp(ImGui::GetContentRegionAvail().x - fixed, 30.0f, 120.0f);
 
     ImGui::SetNextItemWidth(DISPLAY_TYPE_WIDTH);
-    if (ImGui::Combo("##display_type", &display_type_cb_, "Signal\0Hex\0")) {
+    if (dropdown::Combo("##display_type", &display_type_cb_, "Signal\0Hex\0")) {
       hex_mode_ = display_type_cb_;
       reset();
     }
@@ -155,10 +155,10 @@ void LogsWidget::draw() {
     }
     sig_items += '\0';
     ImGui::SetNextItemWidth(SIGNALS_WIDTH);
-    if (ImGui::Combo("##signals", &signals_cb_, sig_items.c_str())) filterChanged();
+    if (dropdown::Combo("##signals", &signals_cb_, sig_items.c_str())) filterChanged();
     ImGui::SameLine();
     ImGui::SetNextItemWidth(COMPARE_WIDTH);
-    if (ImGui::Combo("##comp", &comp_box_, ">\0=\0!=\0<\0")) filterChanged();
+    if (dropdown::Combo("##comp", &comp_box_, ">\0=\0!=\0<\0")) filterChanged();
     ImGui::SameLine();
     ImGui::SetNextItemWidth(value_w);
     if (clearableInput("##value", &value_edit_, "", doubleValidator)) {

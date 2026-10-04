@@ -23,11 +23,12 @@ namespace {
 const char *COLUMN_TITLES[MessageList::COLUMN_COUNT] = {"Name", "Bus", "ID", "Node", "Freq", "Count", "Bytes"};
 constexpr float DEFAULT_SECTION_SIZE = 100.0f;
 
-// surrounding whitespace is ignored; no sign, no 0x prefix
+// surrounding whitespace is ignored; no sign, optional 0x prefix for hex
 unsigned int toUInt(const std::string &s, bool *ok, int base) {
   const char *b = s.data(), *e = b + s.size();
   while (b < e && std::isspace((unsigned char)*b)) ++b;
   while (e > b && std::isspace((unsigned char)e[-1])) --e;
+  if (base == 16 && e - b >= 2 && b[0] == '0' && (b[1] == 'x' || b[1] == 'X')) b += 2;
   unsigned int v = 0;
   auto [p, ec] = std::from_chars(b, e, v, base);
   *ok = b < e && p == e && ec == std::errc();
@@ -301,22 +302,22 @@ void MessagesWidget::suppressHighlighted(bool from_suppress_add) {
 }
 
 void MessagesWidget::drawContextMenu() {
-  if (!ImGui::BeginPopup("menu")) return;
+  if (!dropdown::BeginPopup("menu")) return;
   for (int i = 0; i < MessageList::COLUMN_COUNT; ++i) {
     const int column = display_order_[i];
     // can't hide the name column
-    if (ImGui::MenuItem(COLUMN_TITLES[column], nullptr, !hidden_[column], column > 0)) {
+    if (dropdown::Item(COLUMN_TITLES[column], nullptr, !hidden_[column], column > 0)) {
       pending_hidden_.emplace_back(column, !hidden_[column]);
     }
   }
   ImGui::Separator();
-  if (ImGui::MenuItem("Multiline Bytes", nullptr, settings.multiple_lines_hex)) {
+  if (dropdown::Item("Multiline Bytes", nullptr, settings.multiple_lines_hex)) {
     setMultiLineBytes(!settings.multiple_lines_hex);
   }
-  if (ImGui::MenuItem("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
+  if (dropdown::Item("Show Inactive Messages", nullptr, list_.show_inactive_messages)) {
     list_.showInactiveMessages(!list_.show_inactive_messages);
   }
-  ImGui::EndPopup();
+  dropdown::EndPopup();
 }
 
 void MessagesWidget::setMultiLineBytes(bool multi) {
@@ -365,8 +366,8 @@ void MessagesWidget::drawTable() {
   const bool multiple_lines = settings.multiple_lines_hex;
 
   const ImGuiTableFlags flags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders |
-                                ImGuiTableFlags_Hideable;
+                                ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInner |
+                                ImGuiTableFlags_Hideable | ImGuiTableFlags_PadOuterX;
   // with ScrollX a stretch column needs an explicit inner width
   const float bytes_width = bytesCellSize(bytes_section_bytes_, multiple_lines).x;
   const float avail_width = ImGui::GetContentRegionAvail().x - (has_scrollbar_y_ ? ImGui::GetStyle().ScrollbarSize : 0);
@@ -505,7 +506,9 @@ void MessagesWidget::drawRow(int row) {
     if (column == MessageList::DATA && seen) {
       drawBytesCell(ImGui::GetWindowDrawList(), rect, m.dat, &m.colors, selected, inactive, multiple_lines);
     } else {
-      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive);
+      const bool align_right = seen && (column == MessageList::SOURCE || column == MessageList::COUNT ||
+                                        (column == MessageList::FREQ && m.freq > 0));
+      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive, align_right);
     }
     // the Selectable already sized its cell
     if (!row_item) ImGui::Dummy(ImVec2(width, row_height));

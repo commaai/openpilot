@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-TARGET=openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl.chunkmanifest
-rm -f "$TARGET"
+sudo python3 openpilot/system/hardware/chestnut/flash.py
+
 SCONSFLAGS="-j4" ./openpilot/system/manager/build.py
-test -s "$TARGET"

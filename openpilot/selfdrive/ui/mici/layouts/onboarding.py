@@ -3,7 +3,7 @@ import numpy as np
 import pyray as rl
 from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.qrcode import make_texture
+from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.system.ui.lib.application import FontWeight, gui_app, TextAlignment
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
@@ -275,27 +275,6 @@ class TrainingGuide(NavWidget):
     self._steps[0].render(self._rect)
 
 
-class QRCodeWidget(Widget):
-  def __init__(self, url: str, size: int = 170):
-    super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, size, size))
-    self._size = size
-    self._qr_texture: rl.Texture | None = None
-    self._generate_qr(url)
-
-  def _generate_qr(self, url: str):
-    self._qr_texture = make_texture(url, inverted=True)
-
-  def _render(self, _):
-    if self._qr_texture:
-      scale = self._size / self._qr_texture.height
-      rl.draw_texture_ex(self._qr_texture, rl.Vector2(round(self._rect.x), round(self._rect.y)), 0.0, scale, rl.WHITE)
-
-  def __del__(self):
-    if self._qr_texture and self._qr_texture.id != 0:
-      rl.unload_texture(self._qr_texture)
-
-
 class TermsPage(Scroller):
   def __init__(self, on_accept, on_decline):
     super().__init__()
@@ -312,7 +291,7 @@ class TermsPage(Scroller):
       self._terms_header,
       GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
                     gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
-      QRCodeWidget("https://comma.ai/terms"),
+      QR("https://comma.ai/terms"),
       self._must_accept_card,
       self._accept_button,
       self._decline_button,

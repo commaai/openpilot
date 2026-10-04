@@ -19,6 +19,31 @@ ImVec2 TipLabel::layoutLines(ImDrawList *p, const ImVec2 &origin, ImU32 fg) cons
   };
   const char *heading = !text_.empty() && !text_[0].has_marker ? text_[0].name.c_str() : "Signal";
   const char *headers[] = {heading, "Value", "Min", "Max"};
+  if (compact_) {
+    const float right = origin.x + std::max(0.0f, area_.GetWidth() - MARGIN * 2 - 1);
+    auto cell = [&](float left, const std::string &text, ImU32 color) {
+      if (p) drawElidedText(p, ImRect(ImVec2(left, y), ImVec2(right, y + font_size)), text, color);
+    };
+    cell(origin.x, heading, muted);
+    y += line_height;
+    for (const auto &line : text_) {
+      if (!line.has_marker) continue;
+      if (p) p->AddRectFilled(ImVec2(origin.x, y + (font_size - marker) * 0.5f),
+                              ImVec2(origin.x + marker, y + (font_size + marker) * 0.5f), line.marker);
+      cell(origin.x + marker + 6, line.name, fg);
+      y += line_height;
+      const std::string *values[] = {&line.value, &line.min, &line.max};
+      const float label_width = ImGui::CalcTextSize("Value").x + gap;
+      for (int i = 0; i < 3; ++i) {
+        draw(origin.x, headers[i + 1], muted);
+        pushMonoFont(font_size);
+        cell(origin.x + label_width, *values[i], i == 0 ? fg : muted);
+        popMonoFont();
+        y += line_height;
+      }
+    }
+    return ImVec2(right - origin.x, y - origin.y);
+  }
   float x = origin.x;
   for (int i = 0; i < 4; ++i) {
     draw(i ? x + column_widths_[i] - ImGui::CalcTextSize(headers[i]).x : x, headers[i], muted);
@@ -77,8 +102,15 @@ void TipLabel::updateLayout() {
   }
   popMonoFont();
   const ImGuiViewport *viewport = ImGui::GetWindowViewport();
-  const ImRect bounds(viewport->WorkPos, viewport->WorkPos + viewport->WorkSize);
+  ImRect bounds(viewport->WorkPos, viewport->WorkPos + viewport->WorkSize);
+  bounds.ClipWith(area_);
+  if (bounds.GetWidth() <= 0 || bounds.GetHeight() <= 0) {
+    visible_ = false;
+    return;
+  }
+  area_ = bounds;
   const float numeric_width = column_widths_[1] + column_widths_[2] + column_widths_[3] + 24 + MARGIN * 2 + 1;
+  compact_ = bounds.GetWidth() < numeric_width + ImGui::GetFontSize() * 4;
   column_widths_[0] = std::min(column_widths_[0], std::max(40.0f, std::min(ImGui::GetFontSize() * 16, bounds.GetWidth() - numeric_width)));
   if (!text_.empty()) {
     ImVec2 extra(1, 1);
@@ -96,13 +128,17 @@ void TipLabel::updateLayout() {
   visible_ = false;
 }
 
-void TipLabel::draw() {
+void TipLabel::draw(const ImRect &rect) {
   if (!visible_) return;
+  area_ = rect;
   updateLayout();
+  if (!visible_) return;
 
-  ImDrawList *p = ImGui::GetForegroundDrawList();
+  ImDrawList *p = ImGui::GetWindowDrawList();
+  p->PushClipRect(area_.Min, area_.Max, true);
   // filled panel with a 1px frame
   p->AddRectFilled(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_PopupBg), ImGui::GetStyle().PopupRounding);
   p->AddRect(pos_, pos_ + size_, ImGui::GetColorU32(ImGuiCol_Border), ImGui::GetStyle().PopupRounding);
   layoutLines(p, pos_ + ImVec2(MARGIN, MARGIN), ImGui::GetColorU32(ImGuiCol_Text));
+  p->PopClipRect();
 }

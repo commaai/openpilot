@@ -20,8 +20,8 @@ from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
-TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
-SEGMENT = 4
+TEST_ROUTE = "98395b7c5b27882e|0000002b--2686b5a2d0"
+SEGMENT = 1
 START_FRAME = 0
 END_FRAME = 60
 
@@ -80,6 +80,7 @@ def generate_report(proposed, master, tmp, commit):
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.faceOrientation, 0), "leftDriverData.faceOrientation0"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.leftBlinkProb), "leftDriverData.leftBlinkProb"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.phoneProb), "leftDriverData.phoneProb"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.sleepProb), "leftDriverData.sleepProb"),
                      (lambda x: get_idx_if_non_empty(x.rightDriverData.faceProb), "rightDriverData.faceProb"),
                     ], "driverStateV2")
 

@@ -36,6 +36,10 @@ def read_int(path: Path, base: int = 10) -> int:
     return 0
 
 
+def cable_connected() -> bool:
+  return read_int(TYPEC_CC_ORIENTATION_PATH) != 0
+
+
 def usb_devices() -> list[Path]:
   try:
     devices = (d for d in USB_DEVICES_PATH.glob("*") if (d / "idVendor").exists())
@@ -91,3 +95,4 @@ def set_usb_state(device_state, devices: list[dict]) -> None:
       chestnut_present = True
 
   device_state.chestnutPresent = chestnut_present
+  device_state.usbState.connected = cable_connected()

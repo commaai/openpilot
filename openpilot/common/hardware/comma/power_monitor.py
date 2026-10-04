@@ -9,25 +9,22 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
-def read_power(panda=None):
-  if panda is not None and panda.get_type() == panda.HW_TYPE_CUATRO:
-    health = panda.health()
-    return health['voltage'] * health['current'] / 1e6
+def read_power():
   with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/power1_input") as f:
     return int(f.read()) / 1e6
 
-def sample_power(seconds=5, panda=None) -> list[float]:
+def sample_power(seconds=5) -> list[float]:
   rate = 123
   rk = Ratekeeper(rate, print_delay_threshold=None)
 
   pwrs = []
   for _ in range(rate*seconds):
-    pwrs.append(read_power(panda))
+    pwrs.append(read_power())
     rk.keep_time()
   return pwrs
 
-def get_power(seconds=5, panda=None):
-  pwrs = sample_power(seconds, panda)
+def get_power(seconds=5):
+  pwrs = sample_power(seconds)
   return np.mean(pwrs)
 
 def wait_for_power(min_pwr, max_pwr, min_secs_in_range, timeout):

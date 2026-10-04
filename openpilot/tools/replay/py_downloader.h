@@ -18,6 +18,9 @@ std::string decompress(const std::string &path, std::atomic<bool> *abort = nullp
 // Returns JSON string of route files (same format as /v1/route/.../files API)
 std::string getRouteFiles(const std::string &route);
 
+// Browser sign-in; abort closes the local callback server. Returns a JSON status.
+std::string authenticate(const std::string &provider, std::atomic<bool> *abort);
+
 // Returns JSON string of user's devices
 std::string getDevices();
 

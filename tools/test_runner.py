@@ -170,7 +170,7 @@ def collect(targets, keyword):
       cls = type(test)
       if cls.__name__ == "_FailedTest":
         continue
-      if getattr(cls, "__unittest_skip_why__", "") == "parameterized base class":
+      if cls.__dict__.get("__unittest_skip_why__", "") == "parameterized base class":
         continue
       if not keyword or keyword.lower() in test.id().lower():
         tests.append(test)

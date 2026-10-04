@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import pyray as rl
 import re
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
@@ -29,6 +32,7 @@ class AlertData:
   text: str
   severity: int
   visible: bool = False
+  icon: str | None = None
 
 
 class AlertItem(Widget):
@@ -56,10 +60,20 @@ class AlertItem(Widget):
     self._bg_big = gui_app.texture("icons_mici/offroad_alerts/big_alert.png", self.ALERT_WIDTH, self.ALERT_HEIGHT_BIG)
     self._bg_big_pressed = gui_app.texture("icons_mici/offroad_alerts/big_alert_pressed.png", self.ALERT_WIDTH, self.ALERT_HEIGHT_BIG)
 
-    # Load warning icons
+    # Load alert icons
     self._icon_orange = gui_app.texture("icons_mici/offroad_alerts/orange_warning.png", self.ICON_SIZE, self.ICON_SIZE)
     self._icon_red = gui_app.texture("icons_mici/offroad_alerts/red_warning.png", self.ICON_SIZE, self.ICON_SIZE)
     self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", self.ICON_SIZE, self.ICON_SIZE)
+    self._custom_icon = gui_app.texture(alert_data.icon, self.ICON_SIZE, self.ICON_SIZE) if alert_data.icon else None
+
+    if self._custom_icon is not None:
+      self._icon = self._custom_icon
+    elif alert_data.severity == -1:
+      self._icon = self._icon_green
+    elif alert_data.severity > 0:
+      self._icon = self._icon_red
+    else:
+      self._icon = self._icon_orange
 
     self._title_label = UnifiedLabel(text="", font_size=32, font_weight=FontWeight.SEMI_BOLD, text_color=self.TEXT_COLOR,
                                      alignment=TextAlignment.LEFT,
@@ -74,6 +88,10 @@ class AlertItem(Widget):
     self._alert_size = AlertSize.SMALL
 
     self._update_content()
+
+  @property
+  def icon(self) -> rl.Texture:
+    return self._icon
 
   def _split_text(self, text: str) -> tuple[str, str]:
     """Split text into title (first sentence) and body (remaining text)."""
@@ -176,16 +194,9 @@ class AlertItem(Widget):
       self._body_label.render(body_rect)
 
     # Draw warning icon on the right side
-    # Use green icon for update alerts (severity = -1), red for high severity, orange for low severity
-    if self.alert_data.severity == -1:
-      icon_texture = self._icon_green
-    elif self.alert_data.severity > 0:
-      icon_texture = self._icon_red
-    else:
-      icon_texture = self._icon_orange
     icon_x = self._rect.x + self.ALERT_WIDTH - self.ALERT_PADDING - self.ICON_SIZE
     icon_y = self._rect.y + self.ALERT_PADDING
-    rl.draw_texture_ex(icon_texture, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(self._icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
 
 
 class MiciOffroadAlerts(Scroller):
@@ -214,11 +225,18 @@ class MiciOffroadAlerts(Scroller):
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts)
 
-  def max_severity(self) -> int | None:
-    return max((alert.severity for alert in self.sorted_alerts if alert.visible), default=None)
+  def highest_severity_icon(self) -> rl.Texture | None:
+    item = max((item for item in self.alert_items if item.alert_data.visible),
+               key=lambda item: (item.alert_data.severity, bool(item.alert_data.icon)), default=None)
+    return item.icon if item is not None else None
 
   def scrolling(self):
     return self._scroller.scroll_panel.is_touch_valid()
+
+  def set_pairing_callback(self, callback: Callable[[], None]):
+    for alert_item in self.alert_items:
+      if alert_item.alert_data.key == "Offroad_Pairing":
+        alert_item.set_click_callback(callback)
 
   def _build_alerts(self):
     """Build sorted list of alerts from OFFROAD_ALERTS."""
@@ -235,7 +253,7 @@ class MiciOffroadAlerts(Scroller):
     # Add regular alerts sorted by severity
     for key, config in sorted(OFFROAD_ALERTS.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
       severity = config.get("severity", 0)
-      alert_data = AlertData(key=key, text="", severity=severity)
+      alert_data = AlertData(key=key, text="", severity=severity, icon=config.get("icon"))
       self.sorted_alerts.append(alert_data)
 
       # Create alert item widget

@@ -39,6 +39,8 @@ void readLine(ImGuiContext *, ImGuiSettingsHandler *, void *entry, const char *l
     state->video_splitter_ratio = ratio;
   } else if (sscanf(line, "MessagesVisible=%d", &flag) == 1) {
     state->messages_visible = flag != 0;
+  } else if (sscanf(line, "ChartsVisible=%d", &flag) == 1) {
+    state->charts_visible = flag != 0;
   } else if (sscanf(line, "VideoVisible=%d", &flag) == 1) {
     state->video_visible = flag != 0;
   }
@@ -54,6 +56,7 @@ void writeAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuffer *bu
   buf->appendf("VideoSplitterRatio=%.4f\n", main_window.video_splitter_ratio);
   buf->appendf("MessagesVisible=%d\n", main_window.messages_visible ? 1 : 0);
   buf->appendf("VideoVisible=%d\n", main_window.video_visible ? 1 : 0);
+  buf->appendf("ChartsVisible=%d\n", main_window.charts_visible ? 1 : 0);
   buf->append("\n");
 }
 
@@ -104,6 +107,15 @@ std::string migrateQtState() {
   return std::string(buf.c_str());
 }
 
+void migrateDockLayout() {
+  // Show dock tabs hidden by older layouts.
+  if (const auto *center = ImGui::FindWindowSettingsByID(ImHashStr("###CenterWidget"))) {
+    if (auto *node = ImGui::DockBuilderGetNode(center->DockId)) {
+      node->LocalFlags &= ~ImGuiDockNodeFlags_NoTabBar;
+    }
+  }
+}
+
 }  // namespace
 
 void addSettingsHandler() {
@@ -120,6 +132,8 @@ void load() {
   if (settings.ui_state.empty()) settings.ui_state = migrateQtState();
   if (!settings.ui_state.empty())
     ImGui::LoadIniSettingsFromMemory(settings.ui_state.data(), settings.ui_state.size());
+
+  migrateDockLayout();
 }
 
 void applyWindowGeometry(GLFWwindow *window) {

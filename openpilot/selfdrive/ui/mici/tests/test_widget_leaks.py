@@ -19,7 +19,7 @@ KNOWN_LEAKS = {
   "openpilot.system.ui.widgets.button.Button",
   "openpilot.system.ui.widgets.html_render.HtmlRenderer",
   "openpilot.system.ui.widgets.nav_widget.NavBar",
-  "openpilot.selfdrive.ui.mici.layouts.settings.device.MiciFccModal",
+  "openpilot.selfdrive.ui.mici.layouts.settings.device.device_layout.MiciFccModal",
   "openpilot.system.ui.widgets.inputbox.InputBox",
   "openpilot.system.ui.widgets.scroller_tici.Scroller",
   "openpilot.system.ui.widgets.label.UnifiedLabel",
@@ -52,9 +52,9 @@ class TestWidgetLeaks(OpenpilotTestCase):
     # mici dialogs
     from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
     from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog as MiciCabinCameraDialog
-    from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
+    from openpilot.selfdrive.ui.mici.layouts.settings.device.prime import PrimeScroller
     from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigInputDialog
-    from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
+    from openpilot.selfdrive.ui.mici.layouts.settings.device.device_layout import MiciFccModal
 
     # tici dialogs
     from openpilot.selfdrive.ui.onroad.cabin_camera_dialog import CabinCameraDialog as TiciCabinCameraDialog
@@ -71,7 +71,7 @@ class TestWidgetLeaks(OpenpilotTestCase):
 
     for ctor in (
       # mici
-      MiciCabinCameraDialog, MiciPairingDialog,
+      MiciCabinCameraDialog, PrimeScroller,
       lambda: MiciTrainingGuide(lambda: None),
       lambda: MiciOnboardingWindow(lambda: None),
       lambda: BigDialog("test", "test"),

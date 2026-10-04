@@ -70,11 +70,13 @@ class MiciMainLayout(Scroller):
     return self._body_onroad_layout if ui_state.is_body else self._car_onroad_layout
 
   def _setup_callbacks(self):
+    self._alerts_layout.set_enabled(lambda: self.enabled)
+    self._alerts_layout.set_pairing_callback(self._settings_layout.show_pairing)
     self._home_layout.set_callbacks(
       on_settings=lambda: gui_app.push_widget(self._settings_layout),
       on_alerts=lambda: self._scroll_to(self._alerts_layout),
       alert_count_callback=self._alerts_layout.active_alerts,
-      max_severity_callback=self._alerts_layout.max_severity,
+      alert_icon_callback=self._alerts_layout.highest_severity_icon,
     )
     for layout in (self._car_onroad_layout, self._body_onroad_layout):
       layout.set_click_callback(lambda: self._scroll_to(self._home_layout))

@@ -26,6 +26,7 @@ from openpilot.system.loggerd.config import get_available_percent
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring
 from openpilot.system.hardware.fan_controller import FanController
+from openpilot.system.hardware.chestnut.monitoring import chestnut_state_thread
 from openpilot.system.hardware.chestnut.status import ChestnutStatus
 from openpilot.common.version import terms_version, training_version
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
@@ -194,7 +195,7 @@ def hw_state_thread(end_event, hw_queue):
 
 
 def hardware_thread(end_event, hw_queue) -> None:
-  system_stats = LinuxSystemStats()
+  system_stats = LinuxSystemStats() if sys.platform == "linux" else None
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "chestnutState"], poll="pandaStates")
 
@@ -287,10 +288,13 @@ def hardware_thread(end_event, hw_queue) -> None:
     except queue.Empty:
       pass
 
+    memory_usage = system_stats.memory_usage_percent() if system_stats is not None else 0.
+    cpu_usage = system_stats.cpu_usage_percent() if system_stats is not None else []
+
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
-    msg.deviceState.memoryUsagePercent = int(round(system_stats.memory_usage_percent()))
+    msg.deviceState.memoryUsagePercent = int(round(memory_usage))
     msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent()))
-    online_cpu_usage = [int(round(n)) for n in system_stats.cpu_usage_percent()]
+    online_cpu_usage = [int(round(n)) for n in cpu_usage]
     offline_cpu_usage = [0., ] * (len(msg.deviceState.cpuTempC) - len(online_cpu_usage))
     msg.deviceState.cpuUsagePercent = online_cpu_usage + offline_cpu_usage
 
@@ -493,6 +497,7 @@ def main():
 
   if COMMA_HARDWARE:
     threads.append(threading.Thread(target=touch_thread, args=(end_event,)))
+    threads.append(threading.Thread(target=chestnut_state_thread, args=(end_event,)))
 
   for t in threads:
     t.start()
