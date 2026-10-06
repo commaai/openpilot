@@ -425,7 +425,7 @@ void Slider::paint(double thumbnail_time) {
   groove_rect.Min.y = std::floor(center_y - groove_height / 2);
   groove_rect.Max.y = groove_rect.Min.y + groove_height;
 
-  p->AddRectFilled(groove_rect.Min, groove_rect.Max, timeline_colors[(int)TimelineType::None], groove_height * 0.5f);
+  p->AddRectFilled(groove_rect.Min, groove_rect.Max, toImU32(graphicColor(fromImVec4(ImGui::ColorConvertU32ToFloat4(timeline_colors[(int)TimelineType::None])), palette().window)), groove_height * 0.5f);
 
   double min = minimum() / factor;
   double max = maximum() / factor;
@@ -444,7 +444,7 @@ void Slider::paint(double thumbnail_time) {
 
   if (auto replay = getReplay()) {
     for (const auto &entry : *replay->getTimeline()) {
-      fillRange(entry.start_time, entry.end_time, timeline_colors[(int)entry.type]);
+      fillRange(entry.start_time, entry.end_time, toImU32(graphicColor(fromImVec4(ImGui::ColorConvertU32ToFloat4(timeline_colors[(int)entry.type])), palette().window)));
     }
 
     ImU32 empty_color = ImGui::GetColorU32(ImGuiCol_WindowBg, 160 / 255.0f);
@@ -531,8 +531,9 @@ void StreamCameraView::draw(const ImVec2 &size, double thumbnail_time) {
     const char *text = "PAUSED";
     const ImVec2 text_size = font->CalcTextSizeA(POINT_16_FONT_SIZE, FLT_MAX, 0.0f, text);
     const ImVec2 center = rect().GetCenter();
-    p->AddText(font, POINT_16_FONT_SIZE, ImVec2(center.x - text_size.x / 2, center.y - text_size.y / 2),
-               IM_COL32(200, 200, 200, static_cast<int>(255 * 0.7f)), text);
+    const ImVec2 pos(center.x - text_size.x / 2, center.y - text_size.y / 2);
+    p->AddRectFilled(ImVec2(pos.x - 4, pos.y - 2), ImVec2(pos.x + text_size.x + 4, pos.y + text_size.y + 2), ImGui::GetColorU32(palette().badge), ImGui::GetStyle().FrameRounding);
+    p->AddText(font, POINT_16_FONT_SIZE, pos, ImGui::GetColorU32(palette().text_selected), text);
   }
 }
 
@@ -583,13 +584,16 @@ void StreamCameraView::drawTime(ImDrawList *p, const ImRect &rect, double second
   ImFont *font = ImGui::GetFont();
   const ImVec2 text_size = font->CalcTextSizeA(POINT_10_FONT_SIZE, FLT_MAX, 0.0f, text);
   // centered horizontally, above the bottom margin
-  p->AddText(font, POINT_10_FONT_SIZE, ImVec2(rect.GetCenter().x - text_size.x / 2, rect.Max.y - THUMBNAIL_MARGIN - text_size.y),
-             IM_COL32_WHITE, text);
+  const ImVec2 pos(rect.GetCenter().x - text_size.x / 2, rect.Max.y - THUMBNAIL_MARGIN - text_size.y);
+  p->AddRectFilled(ImVec2(pos.x - 4, pos.y - 2), ImVec2(pos.x + text_size.x + 4, pos.y + text_size.y + 2), ImGui::GetColorU32(palette().badge), ImGui::GetStyle().FrameRounding);
+  p->AddText(font, POINT_10_FONT_SIZE, pos, ImGui::GetColorU32(palette().text_selected), text);
 }
 
 void StreamCameraView::drawAlert(ImDrawList *p, const ImRect &rect, const Timeline::Entry &alert, float font_size, float rounding) {
   const ImU32 pen = IM_COL32_WHITE;
-  ImU32 color = withAlpha(timeline_colors[int(alert.type)], 128);
+  // Opaque backing keeps alert text readable over every camera frame.
+  const auto source = fromImVec4(ImGui::ColorConvertU32ToFloat4(timeline_colors[int(alert.type)]));
+  const ImU32 color = toImU32(contrastColor(source, fromImVec4(palette().text_selected)));
   std::string text = alert.text1;
   if (!alert.text2.empty()) text += "\n" + alert.text2;
 

@@ -18,12 +18,17 @@ concurrency:
 env:
   GIT_CONFIG_COUNT: 1
   GIT_CONFIG_KEY_0: lfs.fetchexclude
-  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 
 jobs:
   docs:
     name: build docs
-    runs-on: ubuntu-24.04
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
+      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
+      && fromJSON('["namespace-profile-amd64-8x16"]')
+      || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: commaai/timeout@v1
     - uses: actions/checkout@v7

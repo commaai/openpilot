@@ -6,17 +6,16 @@ from typing import Union
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
+from openpilot.selfdrive.ui.mici.layouts.settings.device.prime import PrimeScroller
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
+from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
-from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, MousePos
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -91,70 +90,56 @@ class EngagedConfirmationButton(BigButton):
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
-class DeviceInfoLayoutMici(Widget):
+class DeviceInfoLayoutMici(InfoLayoutMici):
   def __init__(self):
-    super().__init__()
-
-    self.set_rect(rl.Rectangle(0, 0, 360, 180))
-
     params = Params()
-    subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
-    max_width = int(self._rect.width - 20)
-    self._dongle_id_label = UnifiedLabel("device ID", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._dongle_id_text_label = UnifiedLabel(params.get("DongleId") or 'N/A', 32, max_width=max_width, text_color=subheader_color,
-                                              font_weight=FontWeight.ROMAN, wrap_text=False)
-
-    self._serial_number_label = UnifiedLabel("serial", 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._serial_number_text_label = UnifiedLabel(params.get("HardwareSerial") or 'N/A', 32, max_width=max_width, text_color=subheader_color,
-                                                  font_weight=FontWeight.ROMAN, wrap_text=False)
-
-  def _render(self, _):
-    self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
-    self._dongle_id_label.render()
-
-    self._dongle_id_text_label.set_position(self._rect.x + 20, self._rect.y + 68 - 25)
-    self._dongle_id_text_label.render()
-
-    self._serial_number_label.set_position(self._rect.x + 20, self._rect.y + 114 - 30)
-    self._serial_number_label.render()
-
-    self._serial_number_text_label.set_position(self._rect.x + 20, self._rect.y + 161 - 25)
-    self._serial_number_text_label.render()
+    super().__init__("device ID", params.get("DongleId") or 'N/A', "serial", params.get("HardwareSerial") or 'N/A', width=380)
 
 
 class PairBigButton(BigButton):
   def __init__(self):
-    super().__init__("pair", "connect.comma.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
-
-  def _get_label_font_size(self):
-    return 64
+    self._commacare_badge = gui_app.texture("icons_mici/settings/device/commacare.png", 27, 32)
+    self._show_commacare = False
+    self._comma_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
+    self._provider_icons = {provider: gui_app.texture(f"icons_mici/settings/device/paired_{provider}.png", 64, 64)
+                           for provider in ("github", "google", "apple")}
+    super().__init__("pair to connect", "connect.comma.ai", self._comma_icon)
 
   def _update_state(self):
     super()._update_state()
 
+    self._show_commacare = (ui_state.prime_state.is_paired() and ui_state.prime_state.is_prime()
+                            and ui_state.prime_state.has_commacare())
     if ui_state.prime_state.is_paired():
+      self.set_icon(self._provider_icons.get(ui_state.prime_state.get_pairing_provider(), self._comma_icon))
       self.set_text("paired")
       if ui_state.prime_state.is_prime():
-        self.set_value("subscribed")
+        self.set_value("prime" if ui_state.prime_state.is_full_prime() else "prime lite")
       else:
-        self.set_value("upgrade to prime")
+        self.set_value("claim prime trial" if ui_state.prime_state.can_claim_prime_trial() else "upgrade to prime")
     else:
-      self.set_text("pair")
+      self.set_icon(self._comma_icon)
+      self.set_text("pair to connect")
       self.set_value("connect.comma.ai")
+
+  def _draw_subtitle(self, rect: rl.Rectangle):
+    if self._show_commacare:
+      y = rect.y + rect.height - self._commacare_badge.height
+      rl.draw_texture_v(self._commacare_badge, rl.Vector2(rect.x, y), rl.WHITE)
+      offset = self._commacare_badge.width + 14
+      rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
+    super()._draw_subtitle(rect)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    # TODO: show ad dialog when clicked if not prime
-    if ui_state.prime_state.is_paired():
-      return
-    dlg: BigDialog | PairingDialog
+    dlg: BigDialog | PrimeScroller
     if not system_time_valid():
       dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
       dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
     else:
-      dlg = PairingDialog()
+      dlg = PrimeScroller()
     gui_app.push_widget(dlg)
 
 
@@ -163,6 +148,8 @@ class DeviceLayoutMici(NavScroller):
     super().__init__()
 
     self._fcc_dialog: MiciFccModal | None = None
+    self._pairing_button = PairBigButton()
+    self._pending_pairing_grow_animation = False
 
     def power_off_callback():
       ui_state.params.put_bool("DoShutdown", True, block=True)
@@ -207,7 +194,7 @@ class DeviceLayoutMici(NavScroller):
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
-      PairBigButton(),
+      self._pairing_button,
       review_training_guide_btn,
       cabin_cam_btn,
       terms_btn,
@@ -216,6 +203,31 @@ class DeviceLayoutMici(NavScroller):
       reboot_btn,
       self._power_off_btn,
     ])
+
+  def _update_state(self):
+    super()._update_state()
+    if self._pending_pairing_grow_animation:
+      btn_right = self._pairing_button.rect.x + self._pairing_button.rect.width
+      visible_right = self._rect.x + self._rect.width
+      if btn_right < visible_right + 50:
+        self._pending_pairing_grow_animation = False
+        self._pairing_button.trigger_grow_animation()
+
+  def show_event(self):
+    super().show_event()
+    if not ui_state.prime_state.is_paired():
+      self.set_shown_callback(self._pairing_button.trigger_grow_animation)
+
+  def hide_event(self):
+    super().hide_event()
+    self.set_shown_callback(None)
+    self._pending_pairing_grow_animation = False
+
+  def scroll_to_pairing(self):
+    self._scroller._layout()
+    offset = (self._pairing_button.rect.x + self._pairing_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+    self._scroller.scroll_to(offset, smooth=True, block_interrupt=True, block_widget_interaction=True)
+    self._pending_pairing_grow_animation = True
 
   def _on_regulatory(self):
     if not self._fcc_dialog:

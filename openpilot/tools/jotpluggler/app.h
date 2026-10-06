@@ -168,7 +168,18 @@ struct LogEntry {
 
 struct EnumInfo {
   std::vector<std::string> names;
+  bool is_text = false;
+  std::unordered_map<std::string, size_t> text_indices;
+
+  double text_value(std::string text) {
+    is_text = true;
+    auto [it, inserted] = text_indices.try_emplace(text, names.size());
+    if (inserted) names.push_back(std::move(text));
+    return static_cast<double>(it->second);
+  }
 };
+
+void merge_text_labels(RouteSeries *incoming, const EnumInfo &labels, EnumInfo *destination);
 
 struct SeriesFormat {
   int decimals = 3;
@@ -316,7 +327,19 @@ struct RouteIdentifier {
   }
 };
 
+struct InitDataSection {
+  std::string name;
+  std::vector<std::pair<std::string, std::string>> values;
+};
+
+struct InitDataSnapshot {
+  std::vector<InitDataSection> sections;
+};
+
+InitDataSnapshot extract_init_data(cereal::InitData::Reader reader);
+
 struct RouteData {
+  std::optional<InitDataSnapshot> init_data;
   std::vector<RouteSeries> series;
   std::vector<std::string> paths;
   std::vector<std::string> roots;
@@ -340,6 +363,7 @@ struct RouteData {
 };
 
 struct StreamExtractBatch {
+  std::optional<InitDataSnapshot> init_data;
   std::vector<RouteSeries> series;
   std::vector<CanMessageData> can_messages;
   std::vector<LogEntry> logs;
@@ -706,6 +730,8 @@ struct UiState {
   DbcEditorState dbc_editor;
   CustomSeriesEditorState custom_series;
   LogsUiState logs;
+  bool init_data_selected = false;
+  std::string init_data_search;
   UndoStack undo;
 };
 
@@ -767,6 +793,7 @@ void draw_custom_series_editor(AppSession *session, UiState *state);
 // *****
 
 void draw_logs_tab(AppSession *session, UiState *state);
+void draw_init_data_tab(AppSession *session, UiState *state);
 
 // *****
 // map

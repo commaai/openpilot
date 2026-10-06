@@ -94,9 +94,10 @@ bool selectable(const char *label, bool selected, ImGuiSelectableFlags flags, co
   if (selected) {
     ImGui::PushStyleColor(ImGuiCol_Text, palette().text_selected);
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, palette().header);
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, palette().header);
   }
   const bool clicked = ImGui::Selectable(label, selected, flags, size);
-  if (selected) ImGui::PopStyleColor(2);
+  if (selected) ImGui::PopStyleColor(3);
   return clicked;
 }
 
@@ -382,7 +383,7 @@ int tableHeadersRow() {
 
 bool viewSelectable(const char *label, bool selected, ImGuiSelectableFlags flags, const ImVec2 &size) {
   ImGui::PushStyleColor(ImGuiCol_HeaderHovered, selected ? ImGui::GetColorU32(ImGuiCol_Header) : IM_COL32(0, 0, 0, 0));
-  ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetColorU32(ImGuiCol_Header));
+  ImGui::PushStyleColor(ImGuiCol_HeaderActive, selected ? palette().header : palette().header_active);
   const bool clicked = selectable(label, selected, flags, size);
   ImGui::PopStyleColor(2);
   return clicked;

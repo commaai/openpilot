@@ -23,11 +23,12 @@ namespace {
 const char *COLUMN_TITLES[MessageList::COLUMN_COUNT] = {"Name", "Bus", "ID", "Node", "Freq", "Count", "Bytes"};
 constexpr float DEFAULT_SECTION_SIZE = 100.0f;
 
-// surrounding whitespace is ignored; no sign, no 0x prefix
+// surrounding whitespace is ignored; no sign, optional 0x prefix for hex
 unsigned int toUInt(const std::string &s, bool *ok, int base) {
   const char *b = s.data(), *e = b + s.size();
   while (b < e && std::isspace((unsigned char)*b)) ++b;
   while (e > b && std::isspace((unsigned char)e[-1])) --e;
+  if (base == 16 && e - b >= 2 && b[0] == '0' && (b[1] == 'x' || b[1] == 'X')) b += 2;
   unsigned int v = 0;
   auto [p, ec] = std::from_chars(b, e, v, base);
   *ok = b < e && p == e && ec == std::errc();
@@ -505,7 +506,9 @@ void MessagesWidget::drawRow(int row) {
     if (column == MessageList::DATA && seen) {
       drawBytesCell(ImGui::GetWindowDrawList(), rect, m.dat, &m.colors, selected, inactive, multiple_lines);
     } else {
-      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive);
+      const bool align_right = seen && (column == MessageList::SOURCE || column == MessageList::COUNT ||
+                                        (column == MessageList::FREQ && m.freq > 0));
+      drawTextCell(ImGui::GetWindowDrawList(), rect, cellText(item, column), selected, inactive, align_right);
     }
     // the Selectable already sized its cell
     if (!row_item) ImGui::Dummy(ImVec2(width, row_height));

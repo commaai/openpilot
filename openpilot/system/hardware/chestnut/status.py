@@ -1,10 +1,9 @@
 import time
 
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, is_chestnut_usb_id
-from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 
 
-CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut")
+CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut", "nightly-chestnut-dev")
 CHESTNUT_POWERED_VOLTAGE = 5000
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.
@@ -23,6 +22,7 @@ class ChestnutStatus:
     self.link_failures = 0
     self.model_loading_seen = False
     self.model_attempted = False
+    self.model_failed = False
     self.overheated = False
     self.usb_seen = False
     self.usb_failed = False
@@ -42,11 +42,13 @@ class ChestnutStatus:
       self.link_failures = 0
       self.model_loading_seen = False
       self.model_attempted = False
+      self.model_failed = False
       self.usb_seen = firmware_ok
       self.usb_failed = False
 
     self.model_loading_seen |= model_loading
     self.model_attempted |= self.model_loading_seen and not model_loading and model_active is not None
+    self.model_failed |= not offroad and self.model_attempted and model_active is False
 
     if not offroad and self.usb_seen and not firmware_ok:
       self.usb_failed = True
@@ -91,6 +93,6 @@ class ChestnutStatus:
     else:
       pcie_alert = "Chestnut GPU unavailable. PCIe link is not up. Check the GPU is securely seated."
     set_alert("Offroad_ChestnutPcieUnavailable", self.pcie_failed, pcie_alert)
-    set_alert("Offroad_ChestnutUncompiled", offroad and firmware_ok and not chestnut_compiled())
+    set_alert("Offroad_ChestnutModelError", self.model_failed and not (missing or self.pcie_failed))
     set_alert("Offroad_ChestnutUpdateFailed", offroad and firmware_failed)
     self.offroad = offroad
