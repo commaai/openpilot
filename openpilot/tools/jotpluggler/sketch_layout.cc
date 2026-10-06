@@ -320,20 +320,18 @@ std::map<int, SegmentLogs> trim_segments(std::map<int, SegmentLogs> segments, co
 
 std::map<int, SegmentLogs> load_segments_from_json(const json11::Json &json) {
   std::map<int, SegmentLogs> segments;
-  static const std::regex rx(R"(\/(\d+)\/)");
-  for (const auto &value : json.object_items()) {
-    for (const auto &url : value.second.array_items()) {
-      const std::string url_str = url.string_value();
-      std::smatch match;
-      if (!std::regex_search(url_str, match, rx)) continue;
-      add_log_file_to_segments(&segments, std::stoi(match[1].str()), url_str);
-    }
+  for (const auto &[number, files] : json.object_items()) {
+    segments[std::stoi(number)] = {
+      files["rlog"].string_value(), files["qlog"].string_value(), files["narrow_road"].string_value(),
+      files["cabin"].string_value(), files["wide_road"].string_value(), files["qcamera"].string_value(),
+    };
   }
   return segments;
 }
 
 std::map<int, SegmentLogs> load_segments_from_server(const RouteSelection &route) {
-  const std::string result = PyDownloader::getRouteFiles(route.canonical_name);
+  const std::string selector = route.selector == LogSelector::RLog ? "r" : route.selector == LogSelector::QLog ? "q" : "a";
+  const std::string result = PyDownloader::resolveRouteFiles(route.canonical_name, route.begin_segment, route.end_segment, selector);
   if (result.empty()) throw std::runtime_error("Failed to fetch route files for " + route.canonical_name);
 
   std::string parse_error;
