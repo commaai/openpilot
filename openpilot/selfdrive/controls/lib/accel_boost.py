@@ -23,7 +23,7 @@ class AccelBoost:
     gas_pressed = sm['carState'].gasPressed
     v_ego = sm['carState'].vEgo
     model_limited = (sm['selfdriveState'].experimentalMode and
-                     output_a_target_e2e < min(output_a_target_mpc, a_cruise) - 0.1)
+                     self.apply(output_a_target_e2e, v_ego) < min(output_a_target_mpc, a_cruise) - 0.1)
 
     if not enabled or not gas_pressed:
       self.boost_this_override = 0.0
