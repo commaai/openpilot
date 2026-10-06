@@ -11,9 +11,9 @@ ACCEL_BOOST_MIN_SPEED = 10 * CV.MPH_TO_MS
 
 class AccelBoost:
   def __init__(self):
-    self.value = 0.0
-    self.override_boost = 0.0
-    self.model_limited = False
+    self.total_boost = 0.0
+    self.boost_this_override = 0.0
+    self.boost_eligible = False
 
   def update(self, sm, output_a_target_e2e, output_a_target_mpc, a_cruise):
     enabled = sm['selfdriveState'].enabled
@@ -23,18 +23,18 @@ class AccelBoost:
                      output_a_target_e2e < min(output_a_target_mpc, a_cruise) - 0.1)
 
     if not enabled or not gas_pressed:
-      self.override_boost = 0.0
+      self.boost_this_override = 0.0
       # Latch eligibility before the override changes the lead plan.
-      self.model_limited = enabled and model_limited
+      self.boost_eligible = enabled and model_limited
 
     if not enabled:
-      self.value = 0.0
+      self.total_boost = 0.0
     elif v_ego < ACCEL_BOOST_MIN_SPEED:
-      self.value = max(0.0, self.value - ACCEL_BOOST_DECAY_RATE * DT_MDL)
-    elif gas_pressed and self.model_limited:
-      increase = min(ACCEL_BOOST_RATE * DT_MDL, ACCEL_BOOST_PER_OVERRIDE - self.override_boost, ACCEL_BOOST_MAX - self.value)
-      self.value += increase
-      self.override_boost += increase
+      self.total_boost = max(0.0, self.total_boost - ACCEL_BOOST_DECAY_RATE * DT_MDL)
+    elif gas_pressed and self.boost_eligible:
+      increase = min(ACCEL_BOOST_RATE * DT_MDL, ACCEL_BOOST_PER_OVERRIDE - self.boost_this_override, ACCEL_BOOST_MAX - self.total_boost)
+      self.total_boost += increase
+      self.boost_this_override += increase
 
   def apply(self, accel):
-    return accel + np.interp(accel, [-1.0, -0.5, 5.0], [0.0, self.value, self.value], right=0.0)
+    return accel + np.interp(accel, [-1.0, -0.5, 5.0], [0.0, self.total_boost, self.total_boost], right=0.0)
