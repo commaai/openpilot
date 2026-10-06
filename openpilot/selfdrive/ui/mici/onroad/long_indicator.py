@@ -1,10 +1,11 @@
 import pyray as rl
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.ui.mici.onroad.hud_renderer import SET_SPEED_PERSISTENCE
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
+
+HIGHLIGHT_TIME = 2.5  # seconds
 
 
 class LongIndicator(Widget):
@@ -20,7 +21,7 @@ class LongIndicator(Widget):
     self._distance_filters = [(FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
                               for _ in range(3)]
     self._personality: int | None = None
-    self._personality_changed_time = -SET_SPEED_PERSISTENCE
+    self._personality_changed_time = -HIGHLIGHT_TIME
     self._should_draw = False
 
   @staticmethod
@@ -34,16 +35,13 @@ class LongIndicator(Widget):
     sm = ui_state.sm
     if sm.recv_frame['selfdriveState'] < ui_state.started_frame or not sm['selfdriveState'].enabled or not ui_state.has_longitudinal_control:
       self._personality = None
-      self._personality_changed_time = -SET_SPEED_PERSISTENCE
+      self._personality_changed_time = -HIGHLIGHT_TIME
       self._alpha_filter.x = 0.0
       return
 
-    # hidden under alerts and set speed
-    visible = self._should_draw and sm['selfdriveState'].alertSize == log.SelfdriveState.AlertSize.none
-    alpha = self._alpha_filter.update(visible)
-
+    alpha = self._alpha_filter.update(self._should_draw)
     self._draw_lead_car(rect, alpha)
-    self._draw_distance_bars(rect, alpha, visible)
+    self._draw_distance_bars(rect, alpha)
 
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
@@ -59,7 +57,7 @@ class LongIndicator(Widget):
     self._draw_centered(white, rect, 100, white_alpha * alpha)
     self._draw_centered(green, rect, 100, green_alpha * alpha)
 
-  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
+  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
     now = rl.get_time()
     personality = sm['selfdriveState'].personality.raw
@@ -67,9 +65,9 @@ class LongIndicator(Widget):
       self._personality_changed_time = now
     self._personality = personality
     # the personality alert covers the bars, hold the highlight until they show
-    if not visible and now - self._personality_changed_time < SET_SPEED_PERSISTENCE:
+    if not self._should_draw and now - self._personality_changed_time < HIGHLIGHT_TIME:
       self._personality_changed_time = now
-    highlight = now - self._personality_changed_time < SET_SPEED_PERSISTENCE
+    highlight = now - self._personality_changed_time < HIGHLIGHT_TIME
 
     # blink at double the turn signal rate (2.67 Hz) while overriding the gas
     overriding = any(e.name == log.OnroadEvent.EventName.gasPressedOverride for e in sm['onroadEvents'])
