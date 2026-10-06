@@ -167,12 +167,7 @@ struct InitData {
   gitSrcCommit @23 :Text;
   gitSrcCommitDate @24 :Text;
 
-  androidProperties @16 :Map(Text, Text);
-
-  pandaInfo @8 :PandaInfo;
-
   dirty @9 :Bool;
-  passive @12 :Bool;
   params @17 :Map(Text, Data);
 
   commands @19 :Map(Text, Data);
@@ -190,6 +185,17 @@ struct InitData {
     mici @7;  # comma four
   }
 
+  deprecated :group {
+    gctx @1 :Text;
+    androidBuildInfo @5 :Deprecated.AndroidBuildInfo;
+    androidSensors @6 :List(Deprecated.AndroidSensor);
+    chffrAndroidExtra @7 :ChffrAndroidExtra;
+    pandaInfo @8 :PandaInfo;
+    passive @12 :Bool;
+    iosBuildInfo @14 :Deprecated.IosBuildInfo;
+    androidProperties @16 :Map(Text, Text);
+  }
+
   struct PandaInfo {
     hasPanda @0 :Bool;
     dongleId @1 :Text;
@@ -199,14 +205,6 @@ struct InitData {
 
   struct ChffrAndroidExtra {
     allCameraCharacteristics @0 :Map(Text, Text);
-  }
-
-  deprecated :group {
-    gctx @1 :Text;
-    androidBuildInfo @5 :Deprecated.AndroidBuildInfo;
-    androidSensors @6 :List(Deprecated.AndroidSensor);
-    chffrAndroidExtra @7 :ChffrAndroidExtra;
-    iosBuildInfo @14 :Deprecated.IosBuildInfo;
   }
 }
 
