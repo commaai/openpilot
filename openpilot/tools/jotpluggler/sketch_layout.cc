@@ -1202,9 +1202,12 @@ RouteData build_route_data(std::vector<RouteSeries> &&series_list,
   route_data.paths.reserve(series_list.size());
   for (RouteSeries &series : series_list) {
     if (series.times.empty()) continue;
-    route_data.has_time_range = true;
-    route_data.x_min = route_data.series.empty() ? series.times.front() : std::min(route_data.x_min, series.times.front());
-    route_data.x_max = route_data.series.empty() ? series.times.back() : std::max(route_data.x_max, series.times.back());
+    // initData is copied into every segment with its original route timestamp.
+    if (series.path.rfind("/initData/", 0) != 0) {
+      route_data.x_min = !route_data.has_time_range ? series.times.front() : std::min(route_data.x_min, series.times.front());
+      route_data.x_max = !route_data.has_time_range ? series.times.back() : std::max(route_data.x_max, series.times.back());
+      route_data.has_time_range = true;
+    }
     route_data.paths.push_back(series.path);
     route_data.series.push_back(std::move(series));
   }
