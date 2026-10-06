@@ -39,9 +39,11 @@ class LongIndicator(Widget):
       self._alpha_filter.x = 0.0
       return
 
-    alpha = self._alpha_filter.update(self._should_draw)
+    # hidden under alerts and set speed
+    visible = self._should_draw and sm['selfdriveState'].alertSize == log.SelfdriveState.AlertSize.none
+    alpha = self._alpha_filter.update(visible)
     self._draw_lead_car(rect, alpha)
-    self._draw_distance_bars(rect, alpha)
+    self._draw_distance_bars(rect, alpha, visible)
 
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
@@ -57,7 +59,7 @@ class LongIndicator(Widget):
     self._draw_centered(white, rect, 100, white_alpha * alpha)
     self._draw_centered(green, rect, 100, green_alpha * alpha)
 
-  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float) -> None:
+  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
     sm = ui_state.sm
     now = rl.get_time()
     personality = sm['selfdriveState'].personality.raw
@@ -65,7 +67,7 @@ class LongIndicator(Widget):
       self._personality_changed_time = now
     self._personality = personality
     # the personality alert covers the bars, hold the highlight until they show
-    if not self._should_draw and now - self._personality_changed_time < HIGHLIGHT_TIME:
+    if not visible and now - self._personality_changed_time < HIGHLIGHT_TIME:
       self._personality_changed_time = now
     highlight = now - self._personality_changed_time < HIGHLIGHT_TIME
 
