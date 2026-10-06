@@ -74,6 +74,8 @@ struct SeriesAccumulator {
 
 void append_fixed_scalar_point(RouteSeries *series, double tm, double value);
 void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
+RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series);
+void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator);
 RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series);
 void append_can_frame(CanServiceKind service,
                       uint8_t bus,
@@ -318,20 +320,18 @@ std::map<int, SegmentLogs> trim_segments(std::map<int, SegmentLogs> segments, co
 
 std::map<int, SegmentLogs> load_segments_from_json(const json11::Json &json) {
   std::map<int, SegmentLogs> segments;
-  static const std::regex rx(R"(\/(\d+)\/)");
-  for (const auto &value : json.object_items()) {
-    for (const auto &url : value.second.array_items()) {
-      const std::string url_str = url.string_value();
-      std::smatch match;
-      if (!std::regex_search(url_str, match, rx)) continue;
-      add_log_file_to_segments(&segments, std::stoi(match[1].str()), url_str);
-    }
+  for (const auto &[number, files] : json.object_items()) {
+    segments[std::stoi(number)] = {
+      files["rlog"].string_value(), files["qlog"].string_value(), files["narrow_road"].string_value(),
+      files["cabin"].string_value(), files["wide_road"].string_value(), files["qcamera"].string_value(),
+    };
   }
   return segments;
 }
 
 std::map<int, SegmentLogs> load_segments_from_server(const RouteSelection &route) {
-  const std::string result = PyDownloader::getRouteFiles(route.canonical_name);
+  const std::string selector = route.selector == LogSelector::RLog ? "r" : route.selector == LogSelector::QLog ? "q" : "a";
+  const std::string result = PyDownloader::resolveRouteFiles(route.canonical_name, route.begin_segment, route.end_segment, selector);
   if (result.empty()) throw std::runtime_error("Failed to fetch route files for " + route.canonical_name);
 
   std::string parse_error;
@@ -959,7 +959,14 @@ void append_can_frame(CanServiceKind service,
   });
 }
 
+void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator) {
+  const double value = accumulator->enum_info[series->path].text_value(std::string(text.begin(), text.size()));
+  append_fixed_scalar_point(series, tm, value);
+}
+
 void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
+RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series);
+void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator);
 
 void decode_can_frame(const dbc::Database *can_dbc,
                       const std::string &service_name,
@@ -1115,6 +1122,15 @@ void merge_series_accumulator(SeriesAccumulator *dst, SeriesAccumulator *src) {
   if (dst->fixed_series.size() != src->fixed_series.size()) {
     throw std::runtime_error("Fixed-series slot count mismatch during merge");
   }
+
+  const auto remap_text = [&](RouteSeries &series) {
+    auto it = src->enum_info.find(series.path);
+    if (it != src->enum_info.end() && it->second.is_text) {
+      merge_text_labels(&series, it->second, &dst->enum_info[series.path]);
+    }
+  };
+  for (RouteSeries &series : src->fixed_series) remap_text(series);
+  for (RouteSeries &series : src->dynamic_series) remap_text(series);
 
   for (size_t i = 0; i < dst->fixed_series.size(); ++i) {
     merge_route_series(&dst->fixed_series[i], &src->fixed_series[i]);

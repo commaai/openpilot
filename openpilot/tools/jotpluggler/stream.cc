@@ -84,7 +84,7 @@ void apply_stream_batch(AppSession *session, UiState *state, StreamExtractBatch 
   }
   if (!batch.enum_info.empty()) {
     for (auto &[path, info] : batch.enum_info) {
-      session->route_data.enum_info[path] = std::move(info);
+      if (!info.is_text) session->route_data.enum_info[path] = std::move(info);
     }
   }
 
@@ -93,6 +93,10 @@ void apply_stream_batch(AppSession *session, UiState *state, StreamExtractBatch 
   std::vector<std::string> touched_paths;
   touched_paths.reserve(batch.series.size());
   for (RouteSeries &incoming : batch.series) {
+    auto labels = batch.enum_info.find(incoming.path);
+    if (labels != batch.enum_info.end() && labels->second.is_text) {
+      merge_text_labels(&incoming, labels->second, &session->route_data.enum_info[incoming.path]);
+    }
     touched_paths.push_back(incoming.path);
     auto existing_it = session->series_by_path.find(incoming.path);
     if (existing_it == session->series_by_path.end()) {

@@ -168,7 +168,18 @@ struct LogEntry {
 
 struct EnumInfo {
   std::vector<std::string> names;
+  bool is_text = false;
+  std::unordered_map<std::string, size_t> text_indices;
+
+  double text_value(std::string text) {
+    is_text = true;
+    auto [it, inserted] = text_indices.try_emplace(text, names.size());
+    if (inserted) names.push_back(std::move(text));
+    return static_cast<double>(it->second);
+  }
 };
+
+void merge_text_labels(RouteSeries *incoming, const EnumInfo &labels, EnumInfo *destination);
 
 struct SeriesFormat {
   int decimals = 3;
