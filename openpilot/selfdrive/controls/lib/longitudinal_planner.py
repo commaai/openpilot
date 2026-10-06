@@ -138,7 +138,7 @@ class LongitudinalPlanner:
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
     self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
-    output_a_target_e2e = self.accel_boost.apply(output_a_target_e2e)
+    output_a_target_e2e = self.accel_boost.apply(output_a_target_e2e, v_ego)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop)]

@@ -4,7 +4,6 @@ from openpilot.common.realtime import DT_MDL
 
 ACCEL_BOOST_MAX = 0.2
 ACCEL_BOOST_RATE = 0.025
-ACCEL_BOOST_DECAY_RATE = 0.1
 ACCEL_BOOST_PER_OVERRIDE = 0.05
 ACCEL_BOOST_MIN_SPEED = 10 * CV.MPH_TO_MS
 
@@ -29,12 +28,11 @@ class AccelBoost:
 
     if not enabled:
       self.total_boost = 0.0
-    elif v_ego < ACCEL_BOOST_MIN_SPEED:
-      self.total_boost = max(0.0, self.total_boost - ACCEL_BOOST_DECAY_RATE * DT_MDL)
-    elif gas_pressed and self.boost_eligible:
+    elif gas_pressed and self.boost_eligible and v_ego >= ACCEL_BOOST_MIN_SPEED:
       increase = min(ACCEL_BOOST_RATE * DT_MDL, ACCEL_BOOST_PER_OVERRIDE - self.boost_this_override, ACCEL_BOOST_MAX - self.total_boost)
       self.total_boost += increase
       self.boost_this_override += increase
 
-  def apply(self, accel):
-    return accel + np.interp(accel, [-1.0, -0.5, 5.0], [0.0, self.total_boost, self.total_boost], right=0.0)
+  def apply(self, accel, v_ego):
+    speed_scale = np.interp(v_ego, [ACCEL_BOOST_MIN_SPEED, 2 * ACCEL_BOOST_MIN_SPEED], [0.0, 1.0])
+    return accel + speed_scale * np.interp(accel, [-1.0, -0.5, 5.0], [0.0, self.total_boost, self.total_boost], right=0.0)
