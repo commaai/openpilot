@@ -10,8 +10,7 @@ ACCEL_BOOST_MIN_SPEED = 10 * CV.MPH_TO_MS
 
 
 class AccelBoost:
-  def __init__(self, dt=DT_MDL):
-    self.dt = dt
+  def __init__(self):
     self.value = 0.0
     self.override_boost = 0.0
     self.model_limited = False
@@ -31,9 +30,9 @@ class AccelBoost:
     if not enabled:
       self.value = 0.0
     elif v_ego < ACCEL_BOOST_MIN_SPEED:
-      self.value = max(0.0, self.value - ACCEL_BOOST_DECAY_RATE * self.dt)
+      self.value = max(0.0, self.value - ACCEL_BOOST_DECAY_RATE * DT_MDL)
     elif gas_pressed and self.model_limited:
-      increase = min(ACCEL_BOOST_RATE * self.dt, ACCEL_BOOST_PER_OVERRIDE - self.override_boost, ACCEL_BOOST_MAX - self.value)
+      increase = min(ACCEL_BOOST_RATE * DT_MDL, ACCEL_BOOST_PER_OVERRIDE - self.override_boost, ACCEL_BOOST_MAX - self.value)
       self.value += increase
       self.override_boost += increase
 
