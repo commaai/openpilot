@@ -18,7 +18,7 @@ SCALAR_KINDS = {
   "enum": "Enum",
 }
 NESTED_TYPE_KINDS = {"struct", "list"}
-IGNORED_TYPE_KINDS = {"void", "text", "data", "interface", "anyPointer"}
+IGNORED_TYPE_KINDS = {"void", "data", "interface", "anyPointer"}
 
 
 def cxx_string(value):
@@ -114,6 +114,11 @@ class Generator:
           self.emit(indent, f"append_fixed_scalar_point(&series->fixed_series[{slot}], tm, {double_expr});")
       return
 
+    if type_kind == "text":
+      target = f"ensure_dynamic_series({path_expr}, series)" if dynamic_path else f"&series->fixed_series[{self.add_fixed_path(path)}]"
+      self.emit(indent, f"append_text_point({target}, tm, {expr}, series);")
+      return
+
     if type_kind == "struct":
       self.emit_struct(indent, schema, expr, path, path_expr, dynamic_path)
       return
@@ -180,7 +185,7 @@ class Generator:
       self.emit(indent, f"const std::string {base_path_var} = {cxx_string(path)};")
 
     elem_scalar = scalar_kind(elem_type)
-    if elem_scalar is not None:
+    if elem_scalar is not None or elem_kind == "text":
       self.emit(indent, f"if ({list_expr}.size() <= 16) {{")
       index_var = self.tmp("i")
       self.emit(indent + 2, f"for (uint {index_var} = 0; {index_var} < {list_expr}.size(); ++{index_var}) {{")
@@ -188,7 +193,10 @@ class Generator:
       self.emit(indent + 4, f"RouteSeries *{item_series} = ensure_list_scalar_series({base_path_var}, {index_var}, series);")
       if elem_scalar == "Enum":
         self.emit_enum_capture(indent + 4, f"{item_series}->path", enum_names(schema.elementType))
-      self.emit(indent + 4, f"append_fixed_scalar_point({item_series}, tm, {self.scalar_double_expr(f'{list_expr}[{index_var}]', elem_scalar)});")
+      if elem_kind == "text":
+        self.emit(indent + 4, f"append_text_point({item_series}, tm, {list_expr}[{index_var}], series);")
+      else:
+        self.emit(indent + 4, f"append_fixed_scalar_point({item_series}, tm, {self.scalar_double_expr(f'{list_expr}[{index_var}]', elem_scalar)});")
       self.emit(indent + 2, "}")
       self.emit(indent, "}")
       return
@@ -207,7 +215,7 @@ class Generator:
       self.emit(indent, "}")
 
   def node_emits(self, type_kind, type_proto, schema, seen=frozenset()):
-    if scalar_kind(type_proto) is not None:
+    if scalar_kind(type_proto) is not None or type_kind == "text":
       return True
     if type_kind == "struct":
       if schema is None:
@@ -238,7 +246,7 @@ class Generator:
       elem_kind = elem_type.which()
       if elem_kind in IGNORED_TYPE_KINDS:
         return False
-      if scalar_kind(elem_type) is not None:
+      if scalar_kind(elem_type) is not None or elem_kind == "text":
         return True
       if elem_kind == "struct":
         return self.node_emits("struct", None, schema.elementType, seen)

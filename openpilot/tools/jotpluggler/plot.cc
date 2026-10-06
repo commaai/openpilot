@@ -117,8 +117,8 @@ ImU32 state_block_color(int value, float alpha = 1.0f) {
 std::string state_block_label(const PreparedCurve &curve, int value) {
   if (curve.enum_info != nullptr && value >= 0 && static_cast<size_t>(value) < curve.enum_info->names.size()) {
     const std::string &name = curve.enum_info->names[static_cast<size_t>(value)];
-    if (!name.empty()) {
-      return name;
+    if (!name.empty() || curve.enum_info->is_text) {
+      return name.empty() ? "(empty)" : name;
     }
   }
   return std::to_string(value);
