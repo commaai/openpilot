@@ -94,6 +94,7 @@ void decode_can_frame(const dbc::Database *can_dbc,
 #include "tools/jotpluggler/generated_event_extractors.h"
 
 struct LoadedRouteArtifacts {
+  std::optional<InitDataSnapshot> init_data;
   std::vector<RouteSeries> series;
   std::vector<CanMessageData> can_messages;
   std::vector<LogEntry> logs;
@@ -1560,6 +1561,7 @@ LoadedRouteArtifacts load_route_series_parallel(
     LoadStats *stats) {
   struct SegmentResult {
     SeriesAccumulator series;
+    std::optional<InitDataSnapshot> init_data;
     std::vector<LogEntry> logs;
     std::vector<TimelineEntry> timeline;
     std::vector<ThumbnailFrame> thumbnails;
@@ -1624,6 +1626,13 @@ LoadedRouteArtifacts load_route_series_parallel(
       const auto extract_start = LoadStats::Clock::now();
       results[index].series = extract_segment_series(reader.events, schema, can_dbc, skip_raw_can, worker_budget, segment_workers);
       results[index].logs = extract_segment_logs(reader.events);
+      for (const Event &record : reader.events) {
+        if (record.which != cereal::Event::Which::INIT_DATA) continue;
+        with_parseable_event(record.data, [&](const cereal::Event::Reader &event) {
+          results[index].init_data = extract_init_data(event.getInitData());
+        });
+        if (results[index].init_data) break;
+      }
       results[index].timeline = extract_segment_timeline(reader.events);
       results[index].thumbnails = extract_segment_thumbnails(reader.events, segment_number);
       segment_stats.extract_seconds = std::chrono::duration<double>(LoadStats::Clock::now() - extract_start).count();
@@ -1671,6 +1680,12 @@ LoadedRouteArtifacts load_route_series_parallel(
     }
   }
   LoadedRouteArtifacts artifacts;
+  for (SegmentResult &result : results) {
+    if (result.init_data) {
+      artifacts.init_data = std::move(result.init_data);
+      break;
+    }
+  }
   artifacts.series = collect_series(std::move(merged));
   artifacts.can_messages = std::move(merged.can_messages);
   artifacts.logs = std::move(logs);
@@ -1720,6 +1735,7 @@ std::vector<std::string> collect_route_roots_for_paths(const std::vector<std::st
 }
 
 struct StreamAccumulator::Impl {
+  std::optional<InitDataSnapshot> init_data;
   const SchemaIndex &schema = SchemaIndex::instance();
   SeriesAccumulator series = make_series_accumulator(schema);
   std::vector<LogEntry> logs;
@@ -1762,6 +1778,9 @@ void StreamAccumulator::appendEvent(kj::ArrayPtr<const capnp::word> data) {
     if (!impl_->time_offset.has_value()) {
       impl_->time_offset = boot_time;
     }
+    if (which == cereal::Event::Which::INIT_DATA) {
+      impl_->init_data = extract_init_data(event.getInitData());
+    }
     if (which == cereal::Event::Which::CAR_PARAMS) {
       const std::string fingerprint = event.getCarParams().getCarFingerprint().cStr();
       if (!fingerprint.empty() && fingerprint != impl_->car_fingerprint) {
@@ -1803,6 +1822,8 @@ void StreamAccumulator::appendCanFrames(CanServiceKind service, const std::vecto
 
 StreamExtractBatch StreamAccumulator::takeBatch() {
   StreamExtractBatch batch;
+  batch.init_data = std::move(impl_->init_data);
+  impl_->init_data.reset();
   batch.car_fingerprint = impl_->car_fingerprint;
   batch.dbc_name = impl_->detected_dbc_name;
   if (impl_->time_offset.has_value()) {
@@ -1885,6 +1906,7 @@ RouteData load_route_data(const std::string &route_name,
                                           std::move(artifacts.enum_info),
                                           metadata.car_fingerprint,
                                           resolved_dbc);
+  route_data.init_data = std::move(artifacts.init_data);
   route_data.route_id = make_route_identifier(route, segments);
   build_camera_index(segments, route_data, &SegmentLogs::narrow_road, "narrowRoadEncodeIdx", &route_data.road_camera);
   build_camera_index(segments, route_data, &SegmentLogs::cabin, "cabinEncodeIdx", &route_data.cabin_camera);

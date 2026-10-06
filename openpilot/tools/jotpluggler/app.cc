@@ -1614,6 +1614,7 @@ void draw_pane_windows(AppSession *session, UiState *state) {
 void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
   state->custom_series.selected = false;
   state->logs.selected = false;
+  state->init_data_selected = false;
   ImGui::SetNextWindowPos(ImVec2(ui.content_x, ui.content_y));
   ImGui::SetNextWindowSize(ImVec2(ui.content_w, ui.content_h));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -1709,6 +1710,11 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
           state->logs.request_select = false;
           state->logs.selected = true;
           draw_logs_tab(session, state);
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("initData##workspace_init_data")) {
+          state->init_data_selected = true;
+          draw_init_data_tab(session, state);
           ImGui::EndTabItem();
         }
         if (custom_series_tab_open) {
