@@ -121,7 +121,6 @@ class HudRenderer(Widget):
     self._torque_bar = TorqueBar()
 
     self._txt_lead_car = (self._longitudinal_texture('car', 35, 27), self._longitudinal_texture('car_green', 50, 42))
-    self._txt_lead_car_large = (self._longitudinal_texture('car', 52, 41), self._longitudinal_texture('car_green', 94, 83))
     self._txt_distance = [(self._longitudinal_texture('distance_1', 32, 7), self._longitudinal_texture('distance_1_green', 60, 35)),
                           (self._longitudinal_texture('distance_2', 40, 9), self._longitudinal_texture('distance_2_green', 68, 37)),
                           (self._longitudinal_texture('distance_3', 48, 11), self._longitudinal_texture('distance_3_green', 76, 39))]
@@ -209,7 +208,8 @@ class HudRenderer(Widget):
     self._draw_longitudinal(rect)
 
   def _draw_longitudinal(self, rect: rl.Rectangle) -> None:
-    if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame or not ui_state.sm['selfdriveState'].enabled:
+    sm = ui_state.sm
+    if sm.recv_frame['selfdriveState'] < ui_state.started_frame or not sm['selfdriveState'].enabled or not ui_state.has_longitudinal_control:
       self._personality = None
       self._personality_changed_time = -SET_SPEED_PERSISTENCE
       self._longitudinal_alpha_filter.x = 0.0
@@ -220,8 +220,7 @@ class HudRenderer(Widget):
     alpha = self._longitudinal_alpha_filter.update(visible)
 
     self._draw_lead_car(rect, alpha)
-    if ui_state.has_longitudinal_control:
-      self._draw_distance_bars(rect, alpha, visible)
+    self._draw_distance_bars(rect, alpha, visible)
 
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
@@ -233,9 +232,9 @@ class HudRenderer(Widget):
     white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
     green_alpha = green_f.update(float(e2e))
 
-    (white, green), y = (self._txt_lead_car, 100) if ui_state.has_longitudinal_control else (self._txt_lead_car_large, 122)
-    self._draw_centered(white, rect, y, white_alpha * alpha)
-    self._draw_centered(green, rect, y, green_alpha * alpha)
+    white, green = self._txt_lead_car
+    self._draw_centered(white, rect, 100, white_alpha * alpha)
+    self._draw_centered(green, rect, 100, green_alpha * alpha)
 
   def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
     sm = ui_state.sm
