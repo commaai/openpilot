@@ -8,10 +8,6 @@ ACCEL_BOOST_PER_OVERRIDE = 0.05
 ACCEL_BOOST_MIN_SPEED = 10 * CV.MPH_TO_MS
 
 
-def get_speed_scale(v_ego):
-  return np.interp(v_ego, [ACCEL_BOOST_MIN_SPEED, 2 * ACCEL_BOOST_MIN_SPEED], [0.0, 1.0])
-
-
 class AccelBoost:
   def __init__(self):
     self.total_boost = 0.0
@@ -22,8 +18,10 @@ class AccelBoost:
     enabled = sm['selfdriveState'].enabled
     gas_pressed = sm['carState'].gasPressed
     v_ego = sm['carState'].vEgo
+    speed_scale = np.interp(v_ego, [ACCEL_BOOST_MIN_SPEED, 2 * ACCEL_BOOST_MIN_SPEED], [0.0, 1.0])
+    boost_scale = speed_scale * np.interp(output_a_target_e2e, [-1.0, -0.5, 5.0], [0.0, 1.0, 1.0], right=0.0)
     model_limited = (sm['selfdriveState'].experimentalMode and
-                     self.apply(output_a_target_e2e, v_ego) < min(output_a_target_mpc, a_cruise) - 0.1)
+                     output_a_target_e2e + self.total_boost * boost_scale < min(output_a_target_mpc, a_cruise) - 0.1)
 
     if not enabled or not gas_pressed:
       self.boost_this_override = 0.0
@@ -33,11 +31,9 @@ class AccelBoost:
     if not enabled:
       self.total_boost = 0.0
     elif gas_pressed and self.boost_eligible:
-      increase = min(ACCEL_BOOST_RATE * DT_MDL * get_speed_scale(v_ego),
+      increase = min(ACCEL_BOOST_RATE * DT_MDL * speed_scale,
                      ACCEL_BOOST_PER_OVERRIDE - self.boost_this_override, ACCEL_BOOST_MAX - self.total_boost)
       self.total_boost += increase
       self.boost_this_override += increase
 
-  def apply(self, accel, v_ego):
-    speed_scale = get_speed_scale(v_ego)
-    return accel + speed_scale * np.interp(accel, [-1.0, -0.5, 5.0], [0.0, self.total_boost, self.total_boost], right=0.0)
+    return output_a_target_e2e + self.total_boost * boost_scale
