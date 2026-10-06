@@ -3,10 +3,7 @@ from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
-from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr, tr_noop
-from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
@@ -156,7 +153,7 @@ class TogglesLayout(Widget):
     ui_state.update_params()
 
     e2e_description = tr(
-      "openpilot defaults to driving in chill mode. Experimental mode enables alpha-level features that aren't ready for chill mode. " +
+      "Experimental mode enables alpha-level features that aren't ready for chill mode. " +
       "Experimental features are listed below:<br>" +
       "<h4>End-to-End Longitudinal Control</h4><br>" +
       "Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. " +
@@ -212,32 +209,11 @@ class TogglesLayout(Widget):
     icon = "experimental.png" if self._toggles["ExperimentalMode"].action_item.get_state() else "experimental_white.png"
     self._toggles["ExperimentalMode"].set_icon(icon)
 
-  def _handle_experimental_mode_toggle(self, state: bool):
-    confirmed = self._params.get_bool("ExperimentalModeConfirmed")
-    if state and not confirmed:
-      def confirm_callback(result: DialogResult):
-        if result == DialogResult.CONFIRM:
-          self._params.put_bool("ExperimentalMode", True, block=True)
-          self._params.put_bool("ExperimentalModeConfirmed", True, block=True)
-        else:
-          self._toggles["ExperimentalMode"].action_item.set_state(False)
-        self._update_experimental_mode_icon()
-
-      # show confirmation dialog
-      content = (f"<h1>{self._toggles['ExperimentalMode'].title}</h1><br>" +
-                 f"<p>{self._toggles['ExperimentalMode'].description}</p>")
-      dlg = ConfirmDialog(content, tr("Enable"), rich=True, callback=confirm_callback)
-      gui_app.push_widget(dlg)
-    else:
-      self._update_experimental_mode_icon()
-      self._params.put_bool("ExperimentalMode", state, block=True)
-
   def _toggle_callback(self, state: bool, param: str):
-    if param == "ExperimentalMode":
-      self._handle_experimental_mode_toggle(state)
-      return
-
     self._params.put_bool(param, state, block=True)
+    if param == "ExperimentalMode":
+      self._update_experimental_mode_icon()
+
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True, block=True)
 
