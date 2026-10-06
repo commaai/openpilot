@@ -83,7 +83,7 @@ void render_layout(AppSession *session, UiState *state, bool show_camera_feed) {
   draw_sidebar(session, ui, state, show_camera_feed);
   draw_workspace(session, ui, state);
   draw_sidebar_resizer(ui, state);
-  if (!state->custom_series.selected && !state->logs.selected) {
+  if (!state->custom_series.selected && !state->logs.selected && !state->init_data_selected) {
     draw_pane_windows(session, state);
   }
   draw_status_bar(*session, ui, state);

@@ -72,6 +72,7 @@ bool can_message_less(const CanMessageData &a, const CanMessageData &b) {
 }
 
 void apply_stream_batch(AppSession *session, UiState *state, StreamExtractBatch batch) {
+  if (batch.init_data) session->route_data.init_data = std::move(batch.init_data);
   if (batch.has_time_offset) {
     session->stream_time_offset = batch.time_offset;
   }

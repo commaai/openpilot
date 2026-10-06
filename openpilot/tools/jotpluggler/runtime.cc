@@ -48,7 +48,8 @@ CameraType decoder_camera_type(CameraViewKind view) {
 }
 
 bool stream_batch_has_data(const StreamExtractBatch &batch) {
-  return !batch.series.empty()
+  return batch.init_data.has_value()
+      || !batch.series.empty()
       || !batch.can_messages.empty()
       || !batch.logs.empty()
       || !batch.timeline.empty()
@@ -526,6 +527,7 @@ struct StreamPoller::Impl {
       }
       merge_can_message_data(&dst->can_messages[it->second], &message);
     }
+    if (src->init_data) dst->init_data = std::move(src->init_data);
     if (!src->logs.empty()) {
       dst->logs.insert(dst->logs.end(),
                        std::make_move_iterator(src->logs.begin()),
