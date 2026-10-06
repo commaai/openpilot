@@ -155,8 +155,7 @@ class TogglesLayout(Widget):
     e2e_description = tr(
       "<h4>End-to-End Longitudinal Control</h4><br>" +
       "Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. " +
-      "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; " +
-      "mistakes should be expected.<br>"
+      "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. Mistakes should be expected.<br>"
     )
 
     if ui_state.CP is not None:
