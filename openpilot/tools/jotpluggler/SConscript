@@ -112,3 +112,8 @@ program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
 jot_env.Depends(program, generated_dbc_stamp)
 jot_env.Depends(program, car_fingerprint_to_dbc)
 jot_env.Depends(program, event_extractors)
+
+if GetOption('extras'):
+  test_sources = [src for src in jot_env.Glob("*.cc") if src.name != "main.cc"]
+  text_tests = jot_env.Program("tests/test_text_fields", test_sources + ["tests/test_text_fields.cc"], LIBS=libs)
+  jot_env.Depends(text_tests, [generated_dbc_stamp, car_fingerprint_to_dbc, event_extractors])
