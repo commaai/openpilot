@@ -16,7 +16,13 @@ class AccelBoost:
     self.override_boost = 0.0
     self.model_limited = False
 
-  def update(self, enabled, gas_pressed, v_ego, model_limited):
+  def update(self, sm, output_a_target_e2e, output_a_target_mpc, a_cruise):
+    enabled = sm['selfdriveState'].enabled
+    gas_pressed = sm['carState'].gasPressed
+    v_ego = sm['carState'].vEgo
+    model_limited = (sm['selfdriveState'].experimentalMode and
+                     output_a_target_e2e < min(output_a_target_mpc, a_cruise) - 0.1)
+
     if not enabled or not gas_pressed:
       self.override_boost = 0.0
       # Latch eligibility before the override changes the lead plan.
