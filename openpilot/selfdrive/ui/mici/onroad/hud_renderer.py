@@ -120,6 +120,19 @@ class HudRenderer(Widget):
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
 
+    self._txt_lead_car = (self._longitudinal_texture('car', 35, 27), self._longitudinal_texture('car_green', 50, 42))
+    self._txt_lead_car_large = (self._longitudinal_texture('car', 52, 41), self._longitudinal_texture('car_green', 94, 83))
+    self._txt_distance = [(self._longitudinal_texture('distance_1', 32, 7), self._longitudinal_texture('distance_1_green', 60, 35)),
+                          (self._longitudinal_texture('distance_2', 40, 9), self._longitudinal_texture('distance_2_green', 68, 37)),
+                          (self._longitudinal_texture('distance_3', 48, 11), self._longitudinal_texture('distance_3_green', 76, 39))]
+    self._longitudinal_alpha_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    # crossfade between states, a white and a green filter per icon
+    self._lead_car_filters = (FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
+    self._distance_filters = [(FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
+                              for _ in range(3)]
+    self._personality: int | None = None
+    self._personality_changed_time = -SET_SPEED_PERSISTENCE
+
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
     self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
     self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 9, 44)
@@ -132,6 +145,10 @@ class HudRenderer(Widget):
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+
+  @staticmethod
+  def _longitudinal_texture(name: str, width: int, height: int) -> rl.Texture:
+    return gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False)
 
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
@@ -188,6 +205,66 @@ class HudRenderer(Widget):
     self._draw_model_source(rect)
 
     self._draw_steering_wheel(rect)
+
+    self._draw_longitudinal(rect)
+
+  def _draw_longitudinal(self, rect: rl.Rectangle) -> None:
+    if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame or not ui_state.sm['selfdriveState'].enabled:
+      self._personality = None
+      self._personality_changed_time = -SET_SPEED_PERSISTENCE
+      self._longitudinal_alpha_filter.x = 0.0
+      return
+
+    # hidden under alerts and set speed
+    visible = self._can_draw_top_icons and not self.drawing_top_icons()
+    alpha = self._longitudinal_alpha_filter.update(visible)
+
+    self._draw_lead_car(rect, alpha)
+    if ui_state.has_longitudinal_control:
+      self._draw_distance_bars(rect, alpha, visible)
+
+  def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
+    sm = ui_state.sm
+    plan = sm['longitudinalPlan']
+    has_lead = sm.alive['longitudinalPlan'] and plan.hasLead
+
+    e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
+    white_f, green_f = self._lead_car_filters
+    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
+    green_alpha = green_f.update(float(e2e))
+
+    (white, green), y = (self._txt_lead_car, 100) if ui_state.has_longitudinal_control else (self._txt_lead_car_large, 122)
+    self._draw_centered(white, rect, y, white_alpha * alpha)
+    self._draw_centered(green, rect, y, green_alpha * alpha)
+
+  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
+    sm = ui_state.sm
+    now = rl.get_time()
+    personality = sm['selfdriveState'].personality.raw
+    if self._personality is not None and personality != self._personality:
+      self._personality_changed_time = now
+    self._personality = personality
+    # the personality alert covers the bars, hold the highlight until they show
+    if not visible and now - self._personality_changed_time < SET_SPEED_PERSISTENCE:
+      self._personality_changed_time = now
+    highlight = now - self._personality_changed_time < SET_SPEED_PERSISTENCE
+
+    # blink at double the turn signal rate (2.67 Hz) while overriding the gas
+    overriding = any(e.name == EventName.gasPressedOverride for e in sm['onroadEvents'])
+    blink = 0.35 / 0.9 if overriding and now % 0.375 > 0.1875 else 1.0
+
+    count = personality + 1
+    for i, ((white, green), y, (active_f, green_f)) in enumerate(zip(self._txt_distance, (122, 136, 152), self._distance_filters, strict=True)):
+      active = active_f.update(float(i < count))
+      green_alpha = green_f.update(float(highlight and i == count - 1))
+      # only lit bars blink on override
+      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha) * blink) * alpha)
+      self._draw_centered(green, rect, y, green_alpha * blink * alpha)
+
+  @staticmethod
+  def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
+    pos = rl.Vector2(rect.x + 46 - texture.width / 2, rect.y + y - texture.height / 2)
+    rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
