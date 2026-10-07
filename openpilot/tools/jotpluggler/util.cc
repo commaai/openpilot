@@ -42,7 +42,12 @@ CommandResult run_process_capture_output(const std::vector<std::string> &args) {
     if (!command.empty()) command += ' ';
     command += shell_quote(arg);
   }
+#ifdef _WIN32
+  // cmd.exe strips the first and last quote, so wrap the whole command.
+  command = "\"" + command + " 2>&1\"";
+#else
   command += " 2>&1";
+#endif
 
   FILE *pipe = popen(command.c_str(), "r");
   if (pipe == nullptr) {

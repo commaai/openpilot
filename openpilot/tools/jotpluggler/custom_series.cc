@@ -188,7 +188,8 @@ PythonEvalResult evaluate_custom_python_series(const AppSession &session,
     write_text_file(manifest_path, manifest_json.dump());
 
     const CommandResult process = run_process_capture_output({
-      "python3",
+      // Python that built this binary: the openpilot venv, which has numpy.
+      JOTP_PYTHON_EXE,
       (repo_root() / "openpilot" / "tools" / "jotpluggler" / "math_eval.py").string(),
       manifest_path.string(),
       globals_path.string(),

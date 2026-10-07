@@ -123,6 +123,10 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
+#ifdef _WIN32
+  // Windows opens files in text mode by default, corrupting binary data.
+  flags |= O_BINARY;
+#endif
   int fd = HANDLE_EINTR(open(path, flags, mode));
   if (fd == -1) {
     return -1;
