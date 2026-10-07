@@ -229,6 +229,11 @@ std::string getRouteFiles(const std::string &route) {
   return runPython(DOWNLOADER_MODULE, {"route-files", route});
 }
 
+std::string resolveRouteFiles(const std::string &route, int begin, int end, const std::string &selector) {
+  return runPython(DOWNLOADER_MODULE, {"resolve-route-files", route, "--begin", std::to_string(begin),
+                                     "--end", std::to_string(end), "--selector", selector});
+}
+
 std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
   return runPython(AUTH_MODULE, {provider, "--json"}, abort);
 }

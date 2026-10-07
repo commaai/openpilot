@@ -1,10 +1,10 @@
 import time
 
 from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, is_chestnut_usb_id
-from openpilot.selfdrive.modeld.helpers import chestnut_compiled
+from openpilot.common.version import RELEASE_BRANCHES
 
 
-CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut")
+CHESTNUT_RELEASE_BRANCHES = ("release-chestnut", "release-chestnut-staging", "nightly-chestnut", "nightly-chestnut-dev")
 CHESTNUT_POWERED_VOLTAGE = 5000
 GPU_TEMP_LIMIT = 100.
 MEMORY_TEMP_LIMIT = 95.
@@ -23,6 +23,7 @@ class ChestnutStatus:
     self.link_failures = 0
     self.model_loading_seen = False
     self.model_attempted = False
+    self.model_failed = False
     self.overheated = False
     self.usb_seen = False
     self.usb_failed = False
@@ -42,11 +43,13 @@ class ChestnutStatus:
       self.link_failures = 0
       self.model_loading_seen = False
       self.model_attempted = False
+      self.model_failed = False
       self.usb_seen = firmware_ok
       self.usb_failed = False
 
     self.model_loading_seen |= model_loading
     self.model_attempted |= self.model_loading_seen and not model_loading and model_active is not None
+    self.model_failed |= not offroad and self.model_attempted and model_active is False
 
     if not offroad and self.usb_seen and not firmware_ok:
       self.usb_failed = True
@@ -80,7 +83,7 @@ class ChestnutStatus:
     release = branch in CHESTNUT_RELEASE_BRANCHES
     missing = self.usb_failed or (offroad and release and time.monotonic() - self.started > 10. and len(detected) != 1)
     slow_usb = offroad and len(devices) == 1 and devices[0]["speedMbps"] < 5000
-    set_alert("Offroad_ChestnutBranch", not release and len(devices) == 1)
+    set_alert("Offroad_ChestnutBranch", branch in RELEASE_BRANCHES and not release and len(devices) == 1)
     set_alert("Offroad_ChestnutNotDetected", missing)
     set_alert("Offroad_ChestnutOverheated", self.overheated, f"{state.tempC:.0f} °C" if state is not None else None)
     set_alert("Offroad_ChestnutUsbSlow", slow_usb, f"{devices[0]['speedMbps']} Mbps" if slow_usb else None)
@@ -91,6 +94,6 @@ class ChestnutStatus:
     else:
       pcie_alert = "Chestnut GPU unavailable. PCIe link is not up. Check the GPU is securely seated."
     set_alert("Offroad_ChestnutPcieUnavailable", self.pcie_failed, pcie_alert)
-    set_alert("Offroad_ChestnutUncompiled", offroad and firmware_ok and not chestnut_compiled())
+    set_alert("Offroad_ChestnutModelError", self.model_failed and not (missing or self.pcie_failed))
     set_alert("Offroad_ChestnutUpdateFailed", offroad and firmware_failed)
     self.offroad = offroad

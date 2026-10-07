@@ -4,6 +4,7 @@
 [submodule "opendbc"]
   path = opendbc_repo
   url = ../../commaai/opendbc.git
+  branch = crosstrek2
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git
