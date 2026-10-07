@@ -9,6 +9,15 @@ function agnos_init {
   sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
   rm -f /data/scons_cache/config.lock
 
+  # The SDE display driver panics the kernel when a command-mode panel misses two
+  # consecutive pingpong-done IRQs (sde_encoder_phys_cmd.c, SDE_DBG_DUMP("panic")),
+  # which heat-soaked EA8074 panels do ~20-45s into boot - so a recoverable panel
+  # fault becomes a reboot loop. Disarming panic_on_err keeps the register dump and
+  # the PANEL_DEAD/ctl-reset recovery path; it only skips the panic() call.
+  # See commaai/openpilot#34971 and commaai/agnos-kernel-sdm845#85.
+  # Done here rather than in hardwared: this runs before any openpilot DRM client.
+  echo 0 | sudo tee /sys/kernel/debug/dri/0/debug/panic > /dev/null || true
+
   # set success flag for current boot slot
   sudo abctl --set_success
 
