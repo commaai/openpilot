@@ -65,8 +65,7 @@ jobs:
 
   build_mac:
     name: build macOS
-    # tinygrad's metal backend uses indirect command buffers, which crash on the macOS 15 VM gpu
-    runs-on: macos-26
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v7
     - name: Remove Homebrew from environment
