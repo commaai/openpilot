@@ -45,7 +45,7 @@ def lane_flags_from_probs(probs, from_model: bool):
 
 
 def lead_follow_status(lead, plan, personality: int, v_ego: float) -> int:
-  # 1 within the gap, 2 within 90% of the gap or braking for the lead, 3 within 50% of the gap
+  # 1 within the gap, 2 within 75% of the gap or braking for the lead, 3 within 60% of the gap
   if not lead.present or v_ego < 2.0:
     return 1
   if plan is not None and plan.longitudinalPlanSource in (1, 2) and plan.aTarget < -1.5:
@@ -55,9 +55,9 @@ def lead_follow_status(lead, plan, personality: int, v_ego: float) -> int:
   # Thresholds scale with the distance the longitudinal plan keeps:
   # t_follow * v + stop distance, matching the MPC's desired distance
   d_target = GAP_TARGETS.get(personality, 1.45) * v_ego + STOP_DISTANCE
-  if lead.dRel < 0.5 * d_target:
+  if lead.dRel < 0.6 * d_target:
     return 3
-  if lead.dRel < 0.9 * d_target:
+  if lead.dRel < 0.75 * d_target:
     return 2
   return 1
 
