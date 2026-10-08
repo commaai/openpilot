@@ -190,9 +190,6 @@ class HudRenderer(Widget):
     self._draw_steering_wheel(rect)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
-    if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
-      return
-
     loading = ui_state.chestnut_state == ChestnutState.LOADING
     if loading:
       icon = self._txt_chestnut
