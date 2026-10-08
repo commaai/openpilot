@@ -30,7 +30,7 @@
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {
-    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
+    "text": "Chestnut overheated. Ensure good airflow.",
     "severity": 0
   },
   "Offroad_ChestnutPcieUnavailable": {
