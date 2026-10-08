@@ -31,6 +31,9 @@ void apply_route_data(AppSession *session, UiState *state, RouteData route_data)
   } else if (session->route_name.empty() && session->data_mode == SessionDataMode::Route) {
     session->route_id = {};
   }
+  state->plot_view_history.clear();
+  state->last_plot_view_id = 0;
+  state->restore_plot_view.reset();
   session->route_data = std::move(route_data);
   rebuild_route_index(session);
   rebuild_browser_nodes(session, state);
