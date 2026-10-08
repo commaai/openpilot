@@ -38,13 +38,13 @@ class TestLeadFollowStatus(unittest.TestCase):
       d_target = target * 10.0 + 6.0
       lead.dRel = d_target
       self.assertEqual(lead_follow_status(lead, None, personality, 10.0), 1)
-      lead.dRel = 0.95 * d_target
+      lead.dRel = 0.8 * d_target
       self.assertEqual(lead_follow_status(lead, None, personality, 10.0), 1)
-      lead.dRel = 0.89 * d_target
+      lead.dRel = 0.7 * d_target
       self.assertEqual(lead_follow_status(lead, None, personality, 10.0), 2)
-      lead.dRel = 0.51 * d_target
+      lead.dRel = 0.65 * d_target
       self.assertEqual(lead_follow_status(lead, None, personality, 10.0), 2)
-      lead.dRel = 0.49 * d_target
+      lead.dRel = 0.55 * d_target
       self.assertEqual(lead_follow_status(lead, None, personality, 10.0), 3)
 
   def test_unknown_personality_is_standard(self):
