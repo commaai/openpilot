@@ -680,6 +680,7 @@ struct UiState {
   bool has_shared_range = false;
   bool has_tracker_time = false;
   bool layout_dirty = false;
+  int route_time_zone = 0;
   bool playback_loop = false;
   bool playback_playing = false;
   bool show_deprecated_fields = false;

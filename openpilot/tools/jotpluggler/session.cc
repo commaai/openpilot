@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 
 namespace fs = std::filesystem;
 
@@ -659,6 +660,9 @@ void draw_route_id_chip(AppSession *session, UiState *state) {
     ImGui::EndPopup();
   }
 
+  ImGui::SetCursorScreenPos(ImVec2(chip_max.x + 16.0f, window->Pos.y));
+  ImGui::Dummy(ImVec2(0.0f, window->Size.y));
+
   draw_route_copy_feedback(state, draw_list, chip_max);
   draw_route_info_popup(session, state, ImVec2(std::max(window->Pos.x + 16.0f, chip_max.x - 360.0f), chip_max.y + 6.0f));
 }
@@ -767,6 +771,58 @@ float draw_main_menu_bar(AppSession *session, UiState *state) {
     }
     ImGui::SameLine(0.0f, 8.0f);
     draw_route_id_chip(session, state);
+    if (session->data_mode == SessionDataMode::Route && state->has_tracker_time) {
+      const RouteSeries *wall = app_find_route_series(*session, "/initData/wallTimeNanos");
+      const double route_start = wall && !wall->times.empty() ? wall->times.front() : 0.0;
+      const double elapsed = std::max(0.0, state->tracker_time - route_start);
+      int segment = static_cast<int>(elapsed / 60.0);
+      for (const char *path : {"/narrowRoadEncodeIdx/segmentNum", "/wideRoadEncodeIdx/segmentNum",
+                               "/qNarrowRoadEncodeIdx/segmentNum", "/cabinEncodeIdx/segmentNum"}) {
+        const RouteSeries *series = app_find_route_series(*session, path);
+        if (!series) continue;
+        auto value = app_sample_xy_value_at_time(series->times, series->values, true, state->tracker_time);
+        if (value) {
+          segment = static_cast<int>(*value);
+          break;
+        }
+      }
+      ImGui::SameLine(0.0f, 0.0f);
+      const float segment_x = ImGui::GetCursorPosX();
+      ImGui::Text("Segment %d", segment);
+      ImGui::SameLine();
+      ImGui::SetCursorPosX(segment_x + ImGui::CalcTextSize(util::string_format("Segment %d", std::max(segment, session->route_id.available_end)).c_str()).x + 16.0f);
+      app_push_mono_font();
+      const int total = static_cast<int>(std::max(0.0, session->route_data.x_max - route_start));
+      const int current = static_cast<int>(elapsed);
+      const int minutes_width = std::max(2, static_cast<int>(std::to_string(total / 60).size()));
+      ImGui::Text("%0*d:%02d / %0*d:%02d", minutes_width, current / 60, current % 60, minutes_width, total / 60, total % 60);
+      ImGui::SameLine(0.0f, 20.0f);
+      std::string clock_text = "--";
+      if (wall && !wall->values.empty() && wall->values.front() > 0.0) {
+        const time_t seconds = static_cast<time_t>(wall->values.front() / 1.0e9 + elapsed);
+        std::tm tm = {};
+        std::string zone_name;
+        if (state->route_time_zone == 1) localtime_r(&seconds, &tm);
+        else gmtime_r(&seconds, &tm);
+        char text[64];
+        std::strftime(text, sizeof(text), "%Y-%m-%d %H:%M:%S", &tm);
+        if (state->route_time_zone == 1) {
+          char name[32];
+          std::strftime(name, sizeof(name), "%Z", &tm);
+          zone_name = name;
+        }
+        if (state->route_time_zone == 0) zone_name = "UTC";
+        clock_text = util::string_format("%s %s", text, zone_name.c_str());
+      }
+      if (ImGui::BeginMenu((clock_text + "###route_clock").c_str())) {
+        const char *zones[] = {"UTC", "Computer local"};
+        for (int i = 0; i < 2; ++i) {
+          if (ImGui::MenuItem(zones[i], nullptr, state->route_time_zone == i)) state->route_time_zone = i;
+        }
+        ImGui::EndMenu();
+      }
+      app_pop_mono_font();
+    }
     height = ImGui::GetWindowSize().y;
     ImGui::EndMainMenuBar();
   }
