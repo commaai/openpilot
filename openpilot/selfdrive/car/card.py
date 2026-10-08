@@ -66,7 +66,8 @@ class Car:
   def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
-    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'radarTracks'])
+    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'radarTracks', 'alertDebug'])
+    self.repro_alert_frame = 0  # REPRO ONLY
 
     self.can_rcv_cum_timeout_counter = 0
 
@@ -236,6 +237,15 @@ class Car:
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+
+      # REPRO ONLY: show the VW MEB hold repro status on screen
+      repro = getattr(self.CI.CC, 'meb_repro', None)
+      self.repro_alert_frame += 1
+      if repro is not None and repro.alert_text1 is not None and self.repro_alert_frame % 5 == 0:
+        alert_msg = messaging.new_message('alertDebug')
+        alert_msg.alertDebug.alertText1 = repro.alert_text1
+        alert_msg.alertDebug.alertText2 = repro.alert_text2
+        self.pm.send('alertDebug', alert_msg)
 
       self.CC_prev = CC
 

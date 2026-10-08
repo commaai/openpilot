@@ -367,6 +367,12 @@ def longitudinal_maneuver_alert(CP: car.CarParams, CS: car.CarState, sm: messagi
                Priority.LOW, VisualAlert.none, audible_alert, 0.2)
 
 
+def meb_repro_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  # REPRO ONLY: stays visible after the expected cruise fault disengages
+  ad = sm['alertDebug']
+  return Alert(ad.alertText1, ad.alertText2, AlertStatus.normal, AlertSize.mid, Priority.MID, VisualAlert.none, AudibleAlert.none, 0.2)
+
+
 def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   personality = str(personality).title()
   return NormalPermanentAlert(f"Driving Personality: {personality}", duration=1.5)
@@ -399,9 +405,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.longitudinalManeuver: {
-    ET.WARNING: longitudinal_maneuver_alert,
-    ET.PERMANENT: NormalPermanentAlert("Longitudinal Maneuver Mode",
-                                       "Ensure road ahead is clear"),
+    ET.WARNING: meb_repro_alert,  # REPRO ONLY
+    ET.PERMANENT: meb_repro_alert,
   },
 
   EventName.bigModelLoading: {
