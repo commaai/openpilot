@@ -1,0 +1,23 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _lkas_hud_5byte.dbc";
+CM_ "IMPORT _nidec_scm_group_b.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+CM_ "IMPORT _steering_control_a.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+BO_ 768 VEHICLE_STATE: 8 ADAS
+ SG_ SET_ME_XF9 : 7|8@0+ (1,0) [0|255] "" Vector__XXX
+ SG_ VEHICLE_SPEED : 15|8@0+ (1,0) [0|255] "kph" Vector__XXX
+ SG_ SET_ME_X8A : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_XD0 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ SALTED_WITH_IDX : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 769 VEHICLE_STATE2: 8 ADAS
+ SG_ SET_ME_X5D : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X02 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X5F : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
