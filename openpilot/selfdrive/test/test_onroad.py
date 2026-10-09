@@ -500,25 +500,27 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
 
   def test_usb_unplug_fallback(self):
-    authorized = next(d / "authorized" for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
+    bus = next(read(d / "busnum") for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
+    authorized = str(USB_DEVICES_PATH / f"usb{bus}" / "authorized")
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     sm = messaging.SubMaster(['modelV2'])
     pm = messaging.PubMaster(['deviceState'])
     device_state = messaging.new_message('deviceState')
     device_state.deviceState.deviceType = HARDWARE.get_device_type()
+    device_state_bytes = device_state.to_bytes()
     with processes_context(['camerad', 'modeld']):
       with Timeout(60, "big model didn't start"):
         while not sm['modelV2'].big:
-          pm.send('deviceState', device_state.to_bytes())
+          pm.send('deviceState', device_state_bytes)
           sm.update(1000)
       try:
-        # simulated unplug
-        sudo_write("0", str(authorized))
+        # unplug by disconnecting the chestnut's root hub
+        sudo_write("0", authorized)
         with Timeout(10, "modeld didn't fall back to the small model"):
           while not sm.updated['modelV2'] or sm['modelV2'].big:
             sm.update(1000)
       finally:
-        sudo_write("1", str(authorized))
+        sudo_write("1", authorized)
     assert Params().get("ChestnutActive") is False
 
 
