@@ -7,20 +7,14 @@
 
 namespace {
 
+constexpr const char *AUTH_MODULE = "openpilot.tools.lib.auth";
+constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
+
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
-std::string runDownloader(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
-  std::string result = PyProcess::runModule("openpilot.tools.lib.file_downloader", args, abort);
-  if (result.empty()) {
-    std::lock_guard<std::mutex> lk(handler_mutex);
-    if (progress_handler) progress_handler(0, 0, false);
-  }
-  return result;
-}
-
-std::string runAuth(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
-  std::string result = PyProcess::runModule("openpilot.tools.lib.auth", args, abort);
+std::string runModuleWithProgress(const std::string &module, const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+  std::string result = PyProcess::runModule(module, args, abort);
   if (result.empty()) {
     std::lock_guard<std::mutex> lk(handler_mutex);
     if (progress_handler) progress_handler(0, 0, false);
@@ -42,28 +36,28 @@ std::string download(const std::string &url, bool use_cache, std::atomic<bool> *
   if (!use_cache) {
     args.push_back("--no-cache");
   }
-  return runDownloader(args, abort);
+  return runModuleWithProgress(DOWNLOADER_MODULE, args, abort);
 }
 
 std::string decompress(const std::string &path, std::atomic<bool> *abort) {
-  return runDownloader({"decompress", path}, abort);
+  return runModuleWithProgress(DOWNLOADER_MODULE, {"decompress", path}, abort);
 }
 
 std::string getRouteFiles(const std::string &route) {
-  return runDownloader({"route-files", route});
+  return runModuleWithProgress(DOWNLOADER_MODULE, {"route-files", route});
 }
 
 std::string resolveRouteFiles(const std::string &route, int begin, int end, const std::string &selector) {
-  return runDownloader({"resolve-route-files", route, "--begin", std::to_string(begin),
-                        "--end", std::to_string(end), "--selector", selector});
+  return runModuleWithProgress(DOWNLOADER_MODULE, {"resolve-route-files", route, "--begin", std::to_string(begin),
+                                                   "--end", std::to_string(end), "--selector", selector});
 }
 
 std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
-  return runAuth({provider, "--json"}, abort);
+  return runModuleWithProgress(AUTH_MODULE, {provider, "--json"}, abort);
 }
 
 std::string getDevices() {
-  return runDownloader({"devices"});
+  return runModuleWithProgress(DOWNLOADER_MODULE, {"devices"});
 }
 
 std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int64_t end_ms, bool preserved) {
@@ -80,7 +74,7 @@ std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int6
       args.push_back(std::to_string(end_ms));
     }
   }
-  return runDownloader(args);
+  return runModuleWithProgress(DOWNLOADER_MODULE, args);
 }
 
 }  // namespace PyDownloader
