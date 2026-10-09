@@ -180,7 +180,7 @@ class ModelRenderer(Widget):
     ss, cs = sm['selfdriveState'], sm['carState']
     # braking disengages without making openpilot unavailable
     available = ss.enabled or ss.engageable or cs.brakePressed
-    lane = self._path.raw_points
+    lane = (self._lane_lines[1].raw_points + self._lane_lines[2].raw_points) / 2
     opacity = 0.4 if ui_state.status == UIStatus.DISENGAGED else 0.8
     for lead, (present, d_rel, y_rel) in zip(self._lead_vehicles, leads, strict=True):
       visible = available and present and d_rel < MAX_DRAW_DISTANCE and len(lane) > 0
