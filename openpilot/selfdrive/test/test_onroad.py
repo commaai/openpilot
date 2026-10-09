@@ -497,9 +497,8 @@ class TestChestnutOnroad(OpenpilotTestCase):
         sudo_write("1", authorized)
 
       # test small model keeps running
-      with Timeout(10, "small model isn't running"):
-        while not (sm.alive['modelV2'] and sm.freq_ok['modelV2']):
-          sm.update(1000)
+      with log_collector(['modelV2']) as (small_model_logs, _):
+        time.sleep(3)
 
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
     for service, messages in msgs.items():
@@ -516,6 +515,8 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert all(m.modelV2.big for m in msgs['modelV2']), "chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
     assert Params().get("ChestnutActive") is False
+    expected = 3 * SERVICE_LIST['modelV2'].frequency
+    assert np.isclose(len(small_model_logs), expected, rtol=0.05, atol=2), f"small model: expected {expected}, got {len(small_model_logs)}"
 
 
 if __name__ == "__main__":
