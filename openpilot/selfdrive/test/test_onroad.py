@@ -11,7 +11,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.utils import tabulate
+from openpilot.common.utils import sudo_write, tabulate
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
@@ -23,6 +23,7 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only, processes_context, log_collector
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, read
 from openpilot.common.mock import mock_messages
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled
@@ -466,8 +467,10 @@ class TestChestnutOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
 
   @mock_messages(['deviceMotion'])
-  def test_camera_models(self, subtests):
+  def test_big_model(self, subtests):
     assert chestnut_present() and chestnut_compiled()
+    bus = next(read(d / "busnum") for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
+    authorized = str(USB_DEVICES_PATH / f"usb{bus}" / "authorized")
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
     sm = messaging.SubMaster(services)
@@ -480,8 +483,22 @@ class TestChestnutOnroad(OpenpilotTestCase):
         while not all(sm.seen.values()) or not sm.valid['modelV2']:
           pm.send('deviceState', device_state_bytes)
           sm.update(1000)
+      # test big model and camera timings
       with log_collector(services) as (logs, _):
         time.sleep(TEST_DURATION)
+
+      # test small model fallback by deauthorizing the usb bus
+      try:
+        sudo_write("0", authorized)
+        with Timeout(10, "modeld didn't fall back to the small model"):
+          while sm['modelV2'].big:
+            sm.update(1000)
+      finally:
+        sudo_write("1", authorized)
+
+      # test small model keeps running
+      with log_collector(['modelV2']) as (small_model_logs, _):
+        time.sleep(3)
 
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
     for service, messages in msgs.items():
@@ -495,8 +512,11 @@ class TestChestnutOnroad(OpenpilotTestCase):
     camera_frames = {m.narrowRoadCameraState.frameId for m in msgs['narrowRoadCameraState']}
     model_frames = {m.modelV2.frameId for m in msgs['modelV2']}
     assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
-    assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
+    assert all(m.modelV2.big for m in msgs['modelV2']), "chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
+    assert Params().get("ChestnutActive") is False
+    expected = 3 * SERVICE_LIST['modelV2'].frequency
+    assert np.isclose(len(small_model_logs), expected, rtol=0.05, atol=2), f"small model: expected {expected}, got {len(small_model_logs)}"
 
 
 if __name__ == "__main__":
