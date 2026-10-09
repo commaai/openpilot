@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.250401;0.249599;0.250401;0.249599" count="4">
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
+       <range right="126.285782" top="1.391623" left="104.907277" bottom="-2.563614"/>
+       <limitY/>
+       <curve name="/carState/aEgo" color="#f14cc1"/>
+       <curve name="/longitudinalPlan/accels/0" color="#9467bd"/>
+       <curve name="/carControl/actuators/accel" color="#17becf"/>
+       <curve name="/carOutput/actuatorsOutput/accel" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
+       <range right="126.285782" top="1.184960" left="104.907277" bottom="-1.811222" />
+       <limitY/>
+       <curve name="/controlsState/upAccelCmd" color="#1f77b4"/>
+       <curve name="/controlsState/uiAccelCmd" color="#d62728"/>
+       <curve name="/controlsState/ufAccelCmd" color="#1ac938"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
+       <range right="126.285782" top="15.862889" left="104.907277" bottom="-0.568809" />
+       <limitY/>
+       <curve name="/carState/vEgo" color="#1ac938"/>
+       <curve name="/longitudinalPlan/speeds/0" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
+       <range right="126.285782" top="1.025000" left="104.907277" bottom="-0.025000" />
+       <limitY/>
+       <curve name="/carControl/longActive" color="#1f77b4"/>
+       <curve name="/carState/gasPressed" color="#d62728"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+
