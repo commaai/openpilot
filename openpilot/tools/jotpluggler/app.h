@@ -663,6 +663,11 @@ struct UndoStack {
   }
 };
 
+struct PlotView {
+  ImGuiID plot_id = 0;
+  PlotRange range;
+};
+
 struct UiState {
   bool open_open_route = false;
   bool open_stream = false;
@@ -680,6 +685,7 @@ struct UiState {
   bool has_shared_range = false;
   bool has_tracker_time = false;
   bool layout_dirty = false;
+  int route_time_zone = 0;
   bool playback_loop = false;
   bool playback_playing = false;
   bool show_deprecated_fields = false;
@@ -733,6 +739,12 @@ struct UiState {
   bool init_data_selected = false;
   std::string init_data_search;
   UndoStack undo;
+  std::vector<PlotView> plot_view_history;
+  std::optional<PlotView> restore_plot_view;
+  ImGuiID last_plot_view_id = 0;
+  double last_plot_view_change = -1.0;
+  bool last_plot_view_wheel = false;
+  double last_plot_pan_click = -1.0;
 };
 
 // app.cc public API

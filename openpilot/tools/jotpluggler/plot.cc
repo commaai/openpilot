@@ -1,6 +1,7 @@
 #include "tools/jotpluggler/internal.h"
 
 #include "implot.h"
+#include "implot_internal.h"
 #include "imgui_internal.h"
 
 #include <cmath>
@@ -801,7 +802,13 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     plot_flags |= ImPlotFlags_NoLegend;
   }
 
-  const ImPlotAxisFlags x_axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight;
+  ImPlotAxisFlags x_axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight;
+  const ImGuiIO &input = ImGui::GetIO();
+  const bool at_zoom_limit = state->x_view_max - state->x_view_min <= MIN_HORIZONTAL_ZOOM_SECONDS + 1.0e-6;
+  if (at_zoom_limit && (input.MouseWheel > 0.0f || input.MouseReleased[ImGuiMouseButton_Left])) {
+    // Further zoom-in must not move the time window; panning and zoom-out remain available.
+    x_axis_flags |= ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LockMax;
+  }
   ImPlotAxisFlags y_axis_flags = ImPlotAxisFlags_NoMenus | ImPlotAxisFlags_NoHighlight;
   if (state_block_mode) {
     y_axis_flags |= ImPlotAxisFlags_NoDecorations;
@@ -817,6 +824,8 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
   if (ImPlot::BeginPlot("##plot", plot_size, plot_flags)) {
     ImPlot::SetupAxes(nullptr, nullptr, x_axis_flags, y_axis_flags);
     ImPlot::SetupAxisFormat(ImAxis_X1, "%.1f");
+    // ImPlot updates pan endpoints separately; a minimum span would distort the pan.
+    ImPlot::SetupAxisZoomConstraints(ImAxis_X1, input.MouseDown[ImGuiMouseButton_Right] ? 0.0 : MIN_HORIZONTAL_ZOOM_SECONDS, INFINITY);
     if (state_block_mode) {
       ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, 1.0, ImPlotCond_Always);
     } else if (pane_value_format.valid) {
@@ -839,6 +848,28 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     }
     if (!state_block_mode && supported_count > 0) {
       ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+    }
+
+    ImPlotPlot *plot = ImPlot::GetCurrentPlot();
+    const PlotRange previous_view = {.left = previous_x_min, .right = previous_x_max,
+                                     .bottom = plot->Axes[ImAxis_Y1].Range.Min, .top = plot->Axes[ImAxis_Y1].Range.Max};
+    const bool was_selecting = plot->Selecting;
+    const bool restoring_view = state->restore_plot_view && state->restore_plot_view->plot_id == plot->ID;
+    if (restoring_view) {
+      ImPlot::SetupAxisLimits(ImAxis_Y1, state->restore_plot_view->range.bottom, state->restore_plot_view->range.top, ImPlotCond_Always);
+      state->restore_plot_view.reset();
+    }
+    const ImGuiIO &io = ImGui::GetIO();
+    const ImVec2 drag(io.MousePos.x - plot->SelectStart.x, io.MousePos.y - plot->SelectStart.y);
+    const bool zoom_ready = ImGui::GetTime() - io.MouseClickedTime[ImGuiMouseButton_Left] >= 0.09
+                         && (std::abs(drag.x) > 12.0f || std::abs(drag.y) > 12.0f);
+    // Cancel before ImPlot processes release; hide the box until both thresholds are met.
+    if (io.MouseReleased[ImGuiMouseButton_Left] && !zoom_ready) {
+      plot->Selecting = false;
+    }
+    ImPlot::SetupFinish();
+    if (!zoom_ready) {
+      plot->Selected = false;
     }
 
     if (state_block_mode) {
@@ -872,6 +903,28 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     if (ImPlot::IsPlotHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       state->tracker_time = std::clamp(ImPlot::GetPlotMousePos().x, state->route_x_min, state->route_x_max);
       state->has_tracker_time = true;
+    }
+    const ImPlotRect view = ImPlot::GetPlotLimits();
+    const bool changed = std::abs(view.X.Min - previous_view.left) > 1.0e-6
+                      || std::abs(view.X.Max - previous_view.right) > 1.0e-6
+                      || std::abs(view.Y.Min - previous_view.bottom) > 1.0e-6
+                      || std::abs(view.Y.Max - previous_view.top) > 1.0e-6;
+    const bool wheel = io.MouseWheel != 0.0f;
+    const bool pan = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    if (changed && (ImPlot::IsPlotHovered() || was_selecting || plot->Held) && (wheel || pan || io.MouseReleased[ImGuiMouseButton_Left])
+        && !restoring_view && !state->suppress_range_side_effects && !plot->JustCreated) {
+      // Keep continuous pans and wheel bursts as one view-history entry.
+      const bool continuing = state->last_plot_view_id == plot->ID
+                           && ((pan && state->last_plot_pan_click == io.MouseClickedTime[ImGuiMouseButton_Right])
+                               || (wheel && state->last_plot_view_wheel && ImGui::GetTime() - state->last_plot_view_change < 0.3));
+      if (!continuing) {
+        if (state->plot_view_history.size() == 50) state->plot_view_history.erase(state->plot_view_history.begin());
+        state->plot_view_history.push_back({plot->ID, previous_view});
+      }
+      state->last_plot_view_id = plot->ID;
+      state->last_plot_view_change = ImGui::GetTime();
+      state->last_plot_view_wheel = wheel;
+      state->last_plot_pan_click = io.MouseClickedTime[ImGuiMouseButton_Right];
     }
     ImPlot::EndPlot();
   }

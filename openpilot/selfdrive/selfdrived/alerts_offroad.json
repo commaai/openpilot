@@ -26,7 +26,7 @@
     "severity": 0
   },
   "Offroad_ChestnutNotDetected": {
-    "text": "Chestnut not detected. Check USB and 12V connections.",
+    "text": "Chestnut not detected. Check USB and 12V connections, then restart the car.",
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {

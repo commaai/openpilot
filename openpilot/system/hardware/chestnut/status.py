@@ -53,6 +53,8 @@ class ChestnutStatus:
 
     if not offroad and self.usb_seen and len(devices) != 1:
       self.usb_failed = True
+    if offroad and len(devices) == 1:
+      self.usb_failed = False
 
     if not offroad and state is not None:
       powered = state.supplyVoltage >= CHESTNUT_POWERED_VOLTAGE
@@ -74,6 +76,7 @@ class ChestnutStatus:
       self.power_unavailable = False
       self.power_lost = False
       self.power_restored = False
+      self.model_failed = False
 
     if state is not None:
       gpu_limit = GPU_TEMP_LIMIT - (TEMP_HYSTERESIS if self.overheated else 0.)
