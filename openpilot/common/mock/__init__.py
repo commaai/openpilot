@@ -8,12 +8,12 @@ import functools
 import threading
 from openpilot.cereal.messaging import PubMaster
 from openpilot.cereal.services import SERVICE_LIST
-from openpilot.common.mock.generators import generate_livePose
+from openpilot.common.mock.generators import generate_deviceMotion
 from openpilot.common.realtime import Ratekeeper
 
 
 MOCK_GENERATOR = {
-  "livePose": generate_livePose
+  "deviceMotion": generate_deviceMotion
 }
 
 

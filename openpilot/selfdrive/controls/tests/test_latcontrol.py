@@ -8,17 +8,20 @@ from opendbc.car.honda.values import CAR as HONDA
 from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.nissan.values import CAR as NISSAN
 from opendbc.car.gm.values import CAR as GM
+from opendbc.car.volkswagen.values import CAR as VOLKSWAGEN
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from openpilot.selfdrive.controls.lib.latcontrol_curvature import LatControlCurvature
 
 
 class TestLatControl(OpenpilotTestCase):
 
   @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),
-                         (NISSAN.NISSAN_LEAF, LatControlAngle), (GM.CHEVROLET_BOLT_EUV, LatControlTorque)])
+                         (NISSAN.NISSAN_LEAF, LatControlAngle), (GM.CHEVROLET_BOLT_EUV, LatControlTorque),
+                         (VOLKSWAGEN.VOLKSWAGEN_ID4_MK2, LatControlCurvature)])
   def test_saturation(self, car_name, controller):
     CarInterface = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
@@ -31,7 +34,7 @@ class TestLatControl(OpenpilotTestCase):
     CS.vEgo = 30
     CS.steeringPressed = False
 
-    params = log.LiveParametersData.new_message()
+    params = log.VehicleParameters.new_message()
 
     # Saturate for curvature limited and controller limited
     for _ in range(1000):

@@ -48,9 +48,6 @@ class RunningStat:
   def std(self):
     return np.sqrt(self.variance())
 
-  def params_to_save(self):
-    return [self.M, self.S, self.n]
-
 class RunningStatFilter:
   def __init__(self, raw_priors=None, filtered_priors=None, max_trackable=-1):
     self.raw_stat = RunningStat(raw_priors, -1)

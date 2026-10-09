@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 import os
 import re
-from pathlib import Path
+import subprocess
+import sys
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "../.."))
 
 blacklist = [
   ".git/",
+  ".venv/",
   ".github/workflows/",
 
   "matlab.*.md",
 
-  # skip big model for now
-  "openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx",
-
-  # no LFS or submodules in release
+  # release scripts configure LFS for the big driving model and warps
   ".lfsconfig",
   ".gitattributes",
   ".git$",
@@ -23,18 +22,20 @@ blacklist = [
 ]
 
 # gets you through the blacklist
-whitelist: list[str] = [
-]
+whitelist: list[str] = [r"^\.lfsconfig$"] if os.getenv("INCLUDE_BIG_MODEL") else []
 
 if __name__ == "__main__":
-  for f in Path(ROOT).rglob("**/*"):
-    if not (f.is_file() or f.is_symlink()):
+  tracked_files = subprocess.check_output(["git", "ls-files", "-z", "--recurse-submodules"], cwd=ROOT).split(b"\0")
+  for tracked_file in tracked_files:
+    if not tracked_file:
       continue
 
-    rf = str(f.relative_to(ROOT))
+    rf = os.fsdecode(tracked_file)
+    if not os.getenv("INCLUDE_BIG_MODEL") and rf.startswith("openpilot/selfdrive/modeld/models/big_"):
+      continue
     blacklisted = any(re.search(p, rf) for p in blacklist)
     whitelisted = any(re.search(p, rf) for p in whitelist)
     if blacklisted and not whitelisted:
       continue
 
-    print(rf)
+    sys.stdout.buffer.write(tracked_file + b"\0")

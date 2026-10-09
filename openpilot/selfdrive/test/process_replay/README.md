@@ -85,7 +85,7 @@ Supported processes:
 * modeld
 * dmonitoringmodeld
 
-Certain processes may require an initial state, which is usually supplied within `Params` and persisting from segment to segment (e.g CalibrationParams, LiveParameters). The `custom_params` is dictionary  used to prepopulate `Params` with arbitrary values. The `get_custom_params_from_lr` helper is provided to fetch meaningful values from log files.
+Certain processes may require an initial state, which is usually supplied within `Params` and persists from segment to segment (for example `CalibrationParams` or the learner cache keys like `LiveParametersV2`). The `custom_params` is a dictionary used to prepopulate `Params` with arbitrary values. The `get_custom_params_from_lr` helper is provided to fetch meaningful values from log files.
 
 ```py
 from openpilot.selfdrive.test.process_replay import get_custom_params_from_lr
@@ -104,9 +104,9 @@ Replaying processes that use VisionIPC (e.g. modeld, dmonitoringmodeld) require 
 from openpilot.tools.lib.framereader import FrameReader
 
 frs = {
-  'roadCameraState': FrameReader(...),
+  'narrowRoadCameraState': FrameReader(...),
   'wideRoadCameraState': FrameReader(...),
-  'driverCameraState': FrameReader(...),
+  'cabinCameraState': FrameReader(...),
 }
 
 output_logs = replay_process_with_name(['modeld', 'dmonitoringmodeld'], lr, frs=frs)

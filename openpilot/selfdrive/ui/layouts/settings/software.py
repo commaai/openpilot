@@ -197,6 +197,9 @@ class SoftwareLayout(Widget):
         selection = self._branch_dialog.selection
         ui_state.params.put("UpdaterTargetBranch", selection, block=True)
         self._branch_btn.action_item.set_value(selection)
+        self._download_btn.action_item.set_enabled(False)
+        self._waiting_for_updater = True
+        self._waiting_start_ts = time.monotonic()
         subprocess.run("pkill -SIGUSR1 -f openpilot.system.updated.updated", shell=True)
       self._branch_dialog = None
 

@@ -10,9 +10,17 @@ namespace {
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
-// Run the file_downloader module and notify the progress handler on failure.
 std::string runDownloader(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
   std::string result = PyProcess::runModule("openpilot.tools.lib.file_downloader", args, abort);
+  if (result.empty()) {
+    std::lock_guard<std::mutex> lk(handler_mutex);
+    if (progress_handler) progress_handler(0, 0, false);
+  }
+  return result;
+}
+
+std::string runAuth(const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+  std::string result = PyProcess::runModule("openpilot.tools.lib.auth", args, abort);
   if (result.empty()) {
     std::lock_guard<std::mutex> lk(handler_mutex);
     if (progress_handler) progress_handler(0, 0, false);
@@ -43,6 +51,15 @@ std::string decompress(const std::string &path, std::atomic<bool> *abort) {
 
 std::string getRouteFiles(const std::string &route) {
   return runDownloader({"route-files", route});
+}
+
+std::string resolveRouteFiles(const std::string &route, int begin, int end, const std::string &selector) {
+  return runDownloader({"resolve-route-files", route, "--begin", std::to_string(begin),
+                        "--end", std::to_string(end), "--selector", selector});
+}
+
+std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
+  return runAuth({provider, "--json"}, abort);
 }
 
 std::string getDevices() {

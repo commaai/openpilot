@@ -2,6 +2,7 @@
 
 #include "common/util.h"
 #include "openpilot/cereal/gen/cpp/log.capnp.h"
+#include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_server.h"
 
 #include "media/cam_isp_ife.h"
@@ -43,12 +44,12 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .staggered_sof = false,
 };
 
-const CameraConfig ROAD_CAMERA_CONFIG = {
+const CameraConfig NARROW_ROAD_CAMERA_CONFIG = {
   .camera_num = 1,
-  .stream_type = VISION_STREAM_ROAD,
+  .stream_type = VISION_STREAM_NARROW_ROAD,
   .focal_len = 8.0,
-  .publish_name = "roadCameraState",
-  .init_camera_state = &cereal::Event::Builder::initRoadCameraState,
+  .publish_name = "narrowRoadCameraState",
+  .init_camera_state = &cereal::Event::Builder::initNarrowRoadCameraState,
   .enabled = !getenv("DISABLE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
   .vignetting_correction = true,
@@ -56,12 +57,12 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .staggered_sof = false,
 };
 
-const CameraConfig DRIVER_CAMERA_CONFIG = {
+const CameraConfig CABIN_CAMERA_CONFIG = {
   .camera_num = 2,
-  .stream_type = VISION_STREAM_DRIVER,
+  .stream_type = VISION_STREAM_CABIN,
   .focal_len = 1.71,
-  .publish_name = "driverCameraState",
-  .init_camera_state = &cereal::Event::Builder::initDriverCameraState,
+  .publish_name = "cabinCameraState",
+  .init_camera_state = &cereal::Event::Builder::initCabinCameraState,
   .enabled = !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
@@ -69,4 +70,4 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .staggered_sof = true,
 };
 
-const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};
+const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, NARROW_ROAD_CAMERA_CONFIG, CABIN_CAMERA_CONFIG};

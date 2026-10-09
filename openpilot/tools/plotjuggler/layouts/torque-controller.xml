@@ -53,7 +53,7 @@
        <range top="19.665784" bottom="19.359553" right="1138.816328" left="0.000000"/>
        <limitY/>
        <curve name="/carParams/steerRatio" color="#1f77b4"/>
-       <curve name="/liveParameters/steerRatio" color="#1ac938"/>
+       <curve name="/vehicleParameters/steerRatio" color="#1ac938"/>
       </plot>
      </DockArea>
      <DockArea name="configured-initial vs online-learned tireStiffnessRatio, set configured value to match learned">
@@ -61,15 +61,15 @@
        <range top="1.112210" bottom="0.995631" right="1138.816328" left="0.000000"/>
        <limitY/>
        <curve name="/carParams/tireStiffnessFactor" color="#d62728"/>
-       <curve name="/liveParameters/stiffnessFactor" color="#ff7f0e"/>
+       <curve name="/vehicleParameters/stiffnessFactor" color="#ff7f0e"/>
       </plot>
      </DockArea>
-     <DockArea name="live steering angle offsets for straight-ahead driving, large values here may indicate alignment problems">
+     <DockArea name="online-learned steering angle offsets for straight-ahead driving, large values here may indicate alignment problems">
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="-1.081041" bottom="-4.494133" right="1138.816328" left="0.000000"/>
        <limitY/>
-       <curve name="/liveParameters/angleOffsetAverageDeg" color="#f14cc1"/>
-       <curve name="/liveParameters/angleOffsetDeg" color="#9467bd"/>
+       <curve name="/vehicleParameters/angleOffsetAverageDeg" color="#f14cc1"/>
+       <curve name="/vehicleParameters/angleOffsetDeg" color="#9467bd"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -82,8 +82,8 @@
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="1.216110" bottom="0.539474" right="1138.920072" left="0.000000"/>
        <limitY/>
-       <curve name="/liveTorqueParameters/latAccelFactorFiltered" color="#1f77b4"/>
-       <curve name="/liveTorqueParameters/latAccelFactorRaw" color="#d62728"/>
+       <curve name="/lateralTorqueParameters/latAccelFactorFiltered" color="#1f77b4"/>
+       <curve name="/lateralTorqueParameters/latAccelFactorRaw" color="#d62728"/>
        <curve name="/carParams/lateralTuning/torque/latAccelFactor" color="#1c9222"/>
       </plot>
      </DockArea>
@@ -91,16 +91,16 @@
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="-0.304367" bottom="-0.418688" right="1138.920072" left="0.000000"/>
        <limitY/>
-       <curve name="/liveTorqueParameters/latAccelOffsetFiltered" color="#1ac938"/>
-       <curve name="/liveTorqueParameters/latAccelOffsetRaw" color="#ff7f0e"/>
+       <curve name="/lateralTorqueParameters/latAccelOffsetFiltered" color="#1ac938"/>
+       <curve name="/lateralTorqueParameters/latAccelOffsetRaw" color="#ff7f0e"/>
       </plot>
      </DockArea>
      <DockArea name="offline-calculated vs online-learned EPS friction factor, necessary to start moving the steering wheel">
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="0.226389" bottom="0.158050" right="1138.920072" left="0.000000"/>
        <limitY/>
-       <curve name="/liveTorqueParameters/frictionCoefficientFiltered" color="#f14cc1"/>
-       <curve name="/liveTorqueParameters/frictionCoefficientRaw" color="#9467bd"/>
+       <curve name="/lateralTorqueParameters/frictionCoefficientFiltered" color="#f14cc1"/>
+       <curve name="/lateralTorqueParameters/frictionCoefficientRaw" color="#9467bd"/>
        <curve name="/carParams/lateralTuning/torque/friction" color="#1c9222"/>
       </plot>
      </DockArea>
@@ -114,15 +114,15 @@
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="1.025000" bottom="-0.025000" right="1138.749979" left="0.000000"/>
        <limitY/>
-       <curve name="/liveDelay/status" color="#ff7f0e"/>
+       <curve name="/lateralDelay/status" color="#ff7f0e"/>
       </plot>
      </DockArea>
      <DockArea name="offline default vs online estimated steering actuator lag">
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="0.419648" bottom="0.318362" right="1138.749979" left="0.000000"/>
        <limitY/>
-       <curve name="/liveDelay/lateralDelay" color="#1f77b4"/>
-       <curve name="/liveDelay/lateralDelayEstimate" color="#d62728"/>
+       <curve name="/lateralDelay/lateralDelay" color="#1f77b4"/>
+       <curve name="/lateralDelay/lateralDelayEstimate" color="#d62728"/>
        <curve name="opendbc default steering lag" color="#1ac938"/>
       </plot>
      </DockArea>
@@ -130,7 +130,7 @@
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="0.067320" bottom="-0.001642" right="1138.749979" left="0.000000"/>
        <limitY/>
-       <curve name="/liveDelay/lateralDelayEstimateStd" color="#f14cc1"/>
+       <curve name="/lateralDelay/lateralDelayEstimateStd" color="#f14cc1"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -174,7 +174,7 @@
       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
        <range top="0.109446" bottom="-0.045525" right="1138.891921" left="0.000194"/>
        <limitY/>
-       <curve name="/liveParameters/roll" color="#f14cc1"/>
+       <curve name="/vehicleParameters/roll" color="#f14cc1"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -221,7 +221,7 @@
    <linked_source>/controlsState/desiredCurvature</linked_source>
    <additional_sources>
     <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
+    <v2>/vehicleParameters/roll</v2>
    </additional_sources>
   </snippet>
   <snippet name="Actual lateral accel (roll compensated)">
@@ -230,7 +230,7 @@
    <linked_source>/controlsState/curvature</linked_source>
    <additional_sources>
     <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
+    <v2>/vehicleParameters/roll</v2>
    </additional_sources>
   </snippet>
   <snippet name="opendbc default steering lag">
@@ -247,4 +247,3 @@
  <snippets/>
  <!-- - - - - - - - - - - - - - - -->
 </root>
-

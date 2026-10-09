@@ -4,7 +4,7 @@ set -euo pipefail
 DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd)"
 ROOT="$DIR/../../../"
 
-cd $DIR
+cd "$DIR"
 ./update_translations.py
 
 command -v codex >/dev/null || {

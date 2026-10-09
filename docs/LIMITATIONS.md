@@ -52,7 +52,7 @@ Many factors can impact the performance of openpilot DM, causing it to be unable
 
 * Low light conditions, such as driving at night or in dark tunnels.
 * Bright light (due to oncoming headlights, direct sunlight, etc.).
-* The driver's face is partially or completely outside field of view of the driver facing camera.
-* The driver facing camera is obstructed, covered, or damaged.
+* The driver's face is partially or completely outside field of view of the cabin camera.
+* The cabin camera is obstructed, covered, or damaged.
 
 The list above does not represent an exhaustive list of situations that may interfere with proper operation of openpilot components. A driver should not rely on openpilot DM to assess their level of attention.

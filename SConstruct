@@ -10,7 +10,7 @@ import numpy as np
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
-TICI = os.path.isfile('/TICI')
+COMMA_HARDWARE = os.path.isfile('/AGNOS')
 
 SCons.Warnings.warningAsException(True)
 
@@ -20,11 +20,11 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
-release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
+release = not os.path.exists(File('#.gitmodules').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=(not TICI and not release),
+          default=(not COMMA_HARDWARE and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 submodule_python_paths = [
@@ -46,13 +46,13 @@ if external_pythonpath := os.environ.get("PYTHONPATH"):
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and TICI:
-  arch = "larch64"
+elif arch == "aarch64" and COMMA_HARDWARE:
+  arch = "comma_arm64"
 assert arch in [
-  "larch64",  # linux tici arm64
-  "aarch64",  # linux pc arm64
-  "x86_64",   # linux pc x64
-  "Darwin",   # macOS arm64 (x86 not supported)
+  "comma_arm64",  # linux comma hardware (AGNOS) arm64
+  "aarch64",      # linux pc arm64
+  "x86_64",       # linux pc x64
+  "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
 pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
@@ -61,7 +61,7 @@ acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 # Shared package ships .so/.dylib; older device venvs still have static .a only.
 # Keep static link deps (x264/z/va/drm) when the installed package is static so
-# TICI CI works without upgrading the device venv yet.
+# COMMA_HARDWARE CI works without upgrading the device venv yet.
 # TODO: drop the static fallback once device venvs have comma-deps-ffmpeg>=7.1.0.post94
 _ffmpeg_lib_names = os.listdir(ffmpeg.LIB_DIR) if os.path.isdir(ffmpeg.LIB_DIR) else []
 ffmpeg_shared = any(
@@ -87,7 +87,6 @@ acados_include_dirs = [
 # vendored in commaai/dependencies.
 allowed_system_libs = {
   "EGL", "GLESv2", "GL",
-  "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
   "dl", "drm", "gbm", "m", "pthread",
 }
 
@@ -133,7 +132,7 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow" if arch in ("Darwin", "larch64") else "-Wshadow=local",
+    "-Wshadow" if arch in ("Darwin", "comma_arm64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
@@ -172,17 +171,17 @@ if arch == "Darwin":
   env["RPATHPREFIX"] = "-Wl,-rpath,"
   env["RPATHSUFFIX"] = ""
   env["_RPATH"] = "${_concat(RPATHPREFIX, RPATH, RPATHSUFFIX, __env__)}"
-if arch != "larch64":
+if arch != "comma_arm64":
   env['_LIBFLAGS'] = _libflags
 
 # Arch-specific flags and paths
-if arch == "larch64":
+if arch == "comma_arm64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
   env.Append(LIBPATH=[
     "/usr/lib/aarch64-linux-gnu",
   ])
-  arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
+  arch_flags = ["-D__COMMA_HARDWARE__", "-mcpu=cortex-a57"]
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
@@ -234,7 +233,7 @@ Export('envCython', 'np_version')
 Export('env', 'arch', 'acados', 'ffmpeg_libs')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if arch == "comma_arm64" else '/tmp/scons_cache'
 cache_size_limit = 4e9 if "CI" in os.environ else 2e9
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
@@ -280,7 +279,7 @@ SConscript([
   'openpilot/system/loggerd/SConscript',
 ])
 
-if arch == "larch64":
+if arch == "comma_arm64":
   SConscript(['openpilot/system/camerad/SConscript'])
 
 # Build selfdrive
@@ -293,7 +292,7 @@ SConscript([
 ])
 
 # Build desktop-only tools
-if GetOption('extras') and arch != "larch64":
+if GetOption('extras') and arch != "comma_arm64":
   SConscript([
     'openpilot/tools/replay/SConscript',
     'openpilot/tools/cabana/SConscript',
@@ -313,8 +312,6 @@ def count_scons_nodes(nodes):
     if node in seen:
       continue
     seen.add(node)
-    if hasattr(node, 'has_builder') and node.has_builder():
-      build_product_nodes.add(node)
     executor = node.get_executor()
     if executor is not None:
       stack += executor.get_all_prerequisites() + executor.get_all_children()
@@ -323,7 +320,6 @@ def count_scons_nodes(nodes):
 
 progress_interval = 5
 progress_count = 0
-build_product_nodes = set()
 progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
 
 def progress_function(node):
@@ -339,11 +335,3 @@ def progress_function(node):
 
 Progress(progress_function, interval=progress_interval)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
-
-def check_build_product_size(target, source, env):
-  limit = 50 * 1024 * 1024  # GitHub max size
-  for t in target:
-    if hasattr(t, 'isfile') and t.isfile() and (size := os.path.getsize(t.abspath)) > limit:
-      raise SCons.Errors.UserError(f"{t} is {size / (1024 * 1024):.1f} MiB, exceeding the {limit / (1024 * 1024):.1f} MiB limit")
-if not GetOption('extras'):
-  AddPostAction(list(build_product_nodes), Action(check_build_product_size, None))

@@ -5,7 +5,8 @@ import cProfile
 import pyray as rl
 import numpy as np
 
-from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionIpcServer
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.system.ui.lib.application import gui_app
@@ -89,7 +90,7 @@ if __name__ == "__main__":
 
   W, H = 2048, 1216
   vipc = VisionIpcServer("camerad")
-  vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, W, H)
+  vipc.create_buffers(VisionStreamType.VISION_STREAM_NARROW_ROAD, 5, W, H)
   vipc.start_listener()
   yuv_buffer_size = W * H + (W // 2) * (H // 2) * 2
   yuv_data = np.random.default_rng().integers(0, 256, yuv_buffer_size, dtype=np.uint8).tobytes()
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         break
       if ui_state.sm.frame % 3 == 0:
         eof = int((ui_state.sm.frame % 3) * 0.05 * 1e9)
-        vipc.send(VisionStreamType.VISION_STREAM_ROAD, yuv_data, ui_state.sm.frame % 3, eof, eof)
+        vipc.send(VisionStreamType.VISION_STREAM_NARROW_ROAD, yuv_data, ui_state.sm.frame % 3, eof, eof)
       ui_state.update()
     pr.dump_stats(f'{args.output}_deterministic.stats')
 

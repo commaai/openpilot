@@ -15,7 +15,7 @@ a.out
 .cache/
 bin/
 
-# created at launch for TICI PYTHONPATH (PC uses editable installs via pyproject.toml)
+# created at launch for comma hardware PYTHONPATH (PC uses editable installs via pyproject.toml)
 /msgq
 /opendbc
 /rednose
@@ -50,6 +50,7 @@ st[0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z][0-9A-Za-z]
 *.stats
 *.pkl
 *.pkl*
+!openpilot/selfdrive/modeld/models/big_*_tinygrad.pkl
 config.json
 compile_commands.json
 compare_runtime*.html

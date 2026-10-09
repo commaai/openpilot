@@ -40,6 +40,7 @@ jobs:
         echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
     - name: Download diff
       if: steps.wait.outcome == 'success'
+      continue-on-error: true
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +49,7 @@ jobs:
         name: diff_report_${{ github.event.number }}
         path: .
     - name: Comment on PR
-      if: steps.wait.outcome == 'success'
+      if: steps.wait.outcome == 'success' && hashFiles('diff_report.txt') != ''
       uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b
       with:
         file-path: diff_report.txt

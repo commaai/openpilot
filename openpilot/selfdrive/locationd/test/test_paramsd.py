@@ -11,12 +11,12 @@ from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
 
 
-def get_random_live_parameters(CP):
-  msg = messaging.new_message("liveParameters")
-  msg.liveParameters.steerRatio = (random.random() + 0.5) * CP.steerRatio
-  msg.liveParameters.stiffnessFactor = random.random()
-  msg.liveParameters.angleOffsetAverageDeg = random.random()
-  msg.liveParameters.debugFilterState.std = [random.random() for _ in range(CarKalman.P_initial.shape[0])]
+def get_random_vehicle_parameters(CP):
+  msg = messaging.new_message("vehicleParameters")
+  msg.vehicleParameters.steerRatio = (random.random() + 0.5) * CP.steerRatio
+  msg.vehicleParameters.stiffnessFactor = random.random()
+  msg.vehicleParameters.angleOffsetAverageDeg = random.random()
+  msg.vehicleParameters.debugFilterState.std = [random.random() for _ in range(CarKalman.P_initial.shape[0])]
   return msg
 
 
@@ -27,13 +27,13 @@ class TestParamsd(OpenpilotTestCase):
     lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
-    msg = get_random_live_parameters(CP)
+    msg = get_random_vehicle_parameters(CP)
     params.put("LiveParametersV2", msg.to_bytes(), block=True)
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes(), block=True)
 
     sr, sf, offset, p_init = retrieve_initial_vehicle_params(params, CP, replay=True, debug=True)
-    np.testing.assert_allclose(sr, msg.liveParameters.steerRatio)
-    np.testing.assert_allclose(sf, msg.liveParameters.stiffnessFactor)
-    np.testing.assert_allclose(offset, msg.liveParameters.angleOffsetAverageDeg)
+    np.testing.assert_allclose(sr, msg.vehicleParameters.steerRatio)
+    np.testing.assert_allclose(sf, msg.vehicleParameters.stiffnessFactor)
+    np.testing.assert_allclose(offset, msg.vehicleParameters.angleOffsetAverageDeg)
     np.testing.assert_equal(p_init.shape, CarKalman.P_initial.shape)
-    np.testing.assert_allclose(np.diagonal(p_init), msg.liveParameters.debugFilterState.std)
+    np.testing.assert_allclose(np.diagonal(p_init), msg.vehicleParameters.debugFilterState.std)

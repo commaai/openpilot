@@ -44,14 +44,12 @@ dependencies = [
 
   # these should be removed
   "pyzmq",
-  "sentry-sdk",
   "setproctitle",
   "jeepney",
   "zstandard",  # this can go once we're on Python 3.14+
 
   # ui
   "comma-deps-raylib",
-  "qrcode",
 ]
 
 [project.optional-dependencies]

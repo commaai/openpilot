@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-while read hash submodule ref; do
+while read -r hash submodule ref; do
   if [ "$submodule" = "tinygrad_repo" ]; then
     echo "Skipping $submodule"
     continue
   fi
 
-  git -C $submodule fetch --depth 100 origin master
-  git -C $submodule branch -r --contains $hash | grep "origin/master"
+  git -C "$submodule" fetch --depth 100 origin master
+  git -C "$submodule" branch -r --contains "$hash" | grep "origin/master"
   if [ "$?" -eq 0 ]; then
     echo "$submodule ok"
   else

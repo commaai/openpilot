@@ -74,15 +74,15 @@ class Calibrator:
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
     valid_blocks = 0
-    self.cal_status = log.LiveCalibrationData.Status.uncalibrated
+    self.cal_status = log.ExtrinsicsCalibration.Status.uncalibrated
 
     if param_put and calibration_params:
       try:
         with log.Event.from_bytes(calibration_params) as msg:
-          rpy_init = np.array(msg.liveCalibration.rpyCalib)
-          valid_blocks = msg.liveCalibration.validBlocks
-          wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
-          height = np.array(msg.liveCalibration.height)
+          rpy_init = np.array(msg.extrinsicsCalibration.rpyCalib)
+          valid_blocks = msg.extrinsicsCalibration.validBlocks
+          wide_from_device_euler = np.array(msg.extrinsicsCalibration.wideFromDeviceEuler)
+          height = np.array(msg.extrinsicsCalibration.height)
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
 
@@ -149,22 +149,22 @@ class Calibrator:
       self.calib_spread = np.zeros(3)
 
     if self.valid_blocks < INPUTS_NEEDED:
-      if self.cal_status == log.LiveCalibrationData.Status.recalibrating:
-        self.cal_status = log.LiveCalibrationData.Status.recalibrating
+      if self.cal_status == log.ExtrinsicsCalibration.Status.recalibrating:
+        self.cal_status = log.ExtrinsicsCalibration.Status.recalibrating
       else:
-        self.cal_status = log.LiveCalibrationData.Status.uncalibrated
+        self.cal_status = log.ExtrinsicsCalibration.Status.uncalibrated
     elif is_calibration_valid(self.rpy):
-      self.cal_status = log.LiveCalibrationData.Status.calibrated
+      self.cal_status = log.ExtrinsicsCalibration.Status.calibrated
     else:
-      self.cal_status = log.LiveCalibrationData.Status.invalid
+      self.cal_status = log.ExtrinsicsCalibration.Status.invalid
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
     # TODO: add height spread check with smooth transition too
     spread_too_high = self.calib_spread[1] > MAX_ALLOWED_PITCH_SPREAD or self.calib_spread[2] > MAX_ALLOWED_YAW_SPREAD
-    if spread_too_high and self.cal_status == log.LiveCalibrationData.Status.calibrated:
+    if spread_too_high and self.cal_status == log.ExtrinsicsCalibration.Status.calibrated:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
-      self.cal_status = log.LiveCalibrationData.Status.recalibrating
+      self.cal_status = log.ExtrinsicsCalibration.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
@@ -234,35 +234,35 @@ class Calibrator:
   def get_msg(self, valid: bool) -> capnp.lib.capnp._DynamicStructBuilder:
     smooth_rpy = self.get_smooth_rpy()
 
-    msg = messaging.new_message('liveCalibration')
+    msg = messaging.new_message('extrinsicsCalibration')
     msg.valid = valid
 
-    liveCalibration = msg.liveCalibration
-    liveCalibration.validBlocks = self.valid_blocks
-    liveCalibration.calStatus = self.cal_status
-    liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    liveCalibration.rpyCalib = smooth_rpy.tolist()
-    liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
-    liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
-    liveCalibration.height = self.height.tolist()
+    extrinsicsCalibration = msg.extrinsicsCalibration
+    extrinsicsCalibration.validBlocks = self.valid_blocks
+    extrinsicsCalibration.calStatus = self.cal_status
+    extrinsicsCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
+    extrinsicsCalibration.rpyCalib = smooth_rpy.tolist()
+    extrinsicsCalibration.rpyCalibSpread = self.calib_spread.tolist()
+    extrinsicsCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
+    extrinsicsCalibration.height = self.height.tolist()
 
     if self.not_car:
-      liveCalibration.validBlocks = INPUTS_NEEDED
-      liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
-      liveCalibration.calPerc = 100.
-      liveCalibration.rpyCalib = [0, 0, 0]
-      liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
+      extrinsicsCalibration.validBlocks = INPUTS_NEEDED
+      extrinsicsCalibration.calStatus = log.ExtrinsicsCalibration.Status.calibrated
+      extrinsicsCalibration.calPerc = 100.
+      extrinsicsCalibration.rpyCalib = [0, 0, 0]
+      extrinsicsCalibration.rpyCalibSpread = self.calib_spread.tolist()
 
     return msg
 
   def send_data(self, pm: messaging.PubMaster, valid: bool) -> None:
-    pm.send('liveCalibration', self.get_msg(valid))
+    pm.send('extrinsicsCalibration', self.get_msg(valid))
 
 
 def main() -> NoReturn:
   config_realtime_process([0, 1, 2, 3], 5)
 
-  pm = messaging.PubMaster(['liveCalibration'])
+  pm = messaging.PubMaster(['extrinsicsCalibration'])
   sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll='cameraOdometry')
 
   params_reader = Params()

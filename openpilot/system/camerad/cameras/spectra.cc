@@ -609,7 +609,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     tmp.header = CAM_ICP_CMD_GENERIC_BLOB_CLK;
     tmp.header |= (sizeof(cam_icp_clk_bw_request)) << 8;
     tmp.clk.budget_ns = 0x1fca058;
-    tmp.clk.frame_cycles = sensor->frame_width * sensor->frame_height; // matches striping lib pixelCount
+    tmp.clk.frame_cycles = 20000000; // force max BPS clock (600 MHz)
     tmp.clk.rt_flag = 0x0;
     tmp.clk.uncompressed_bw = 0x38512180;
     tmp.clk.compressed_bw = 0x38512180;

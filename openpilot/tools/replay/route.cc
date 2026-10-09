@@ -27,8 +27,8 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
     const auto range_str = match[6].str();
     if (!range_str.empty()) {
       if (separator == "/") {
-        int pos = range_str.find(':');
-        int begin_seg = std::stoi(range_str.substr(0, pos));
+        const auto pos = range_str.find(':');
+        int begin_seg = pos == 0 ? 0 : std::stoi(range_str.substr(0, pos));
         identifier.begin_segment = identifier.end_segment = begin_seg;
         if (pos != std::string::npos) {
           auto end_seg_str = range_str.substr(pos + 1);
@@ -180,9 +180,9 @@ void Route::addFileToSegment(int n, const std::string &file) {
   } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
     segments_[n].qlog = file;
   } else if (name == "fcamera.hevc") {
-    segments_[n].road_cam = file;
+    segments_[n].narrow_road_cam = file;
   } else if (name == "dcamera.hevc") {
-    segments_[n].driver_cam = file;
+    segments_[n].cabin_cam = file;
   } else if (name == "ecamera.hevc") {
     segments_[n].wide_road_cam = file;
   } else if (name == "qcamera.ts") {
@@ -195,11 +195,11 @@ void Route::addFileToSegment(int n, const std::string &file) {
 Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters,
                  std::function<void(int, bool)> callback)
     : seg_num(n), flags(flags), filters_(filters), on_load_finished_(callback) {
-  // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  // [NarrowRoadCam, CabinCam, WideRoadCam, log]. fallback to qcamera/qlog
   const std::array file_list = {
-      (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.empty() ? files.qcamera : files.road_cam,
-      flags & REPLAY_FLAG_DCAM ? files.driver_cam : "",
-      flags & REPLAY_FLAG_ECAM ? files.wide_road_cam : "",
+      (flags & REPLAY_FLAG_QCAMERA) || files.narrow_road_cam.empty() ? files.qcamera : files.narrow_road_cam,
+      flags & REPLAY_FLAG_CABIN_CAMERA ? files.cabin_cam : "",
+      flags & REPLAY_FLAG_WIDE_ROAD ? files.wide_road_cam : "",
       files.rlog.empty() ? files.qlog : files.rlog,
   };
   for (int i = 0; i < file_list.size(); ++i) {

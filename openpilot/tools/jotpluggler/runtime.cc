@@ -39,16 +39,17 @@ const bool kLogCameraTimings = env_flag_enabled("JOTP_CAMERA_TIMINGS");
 
 CameraType decoder_camera_type(CameraViewKind view) {
   switch (view) {
-    case CameraViewKind::Driver: return DriverCam;
+    case CameraViewKind::Cabin: return CabinCam;
     case CameraViewKind::WideRoad: return WideRoadCam;
-    case CameraViewKind::QRoad: return RoadCam;
+    case CameraViewKind::QRoad: return NarrowRoadCam;
     case CameraViewKind::Road:
-    default: return RoadCam;
+    default: return NarrowRoadCam;
   }
 }
 
 bool stream_batch_has_data(const StreamExtractBatch &batch) {
-  return !batch.series.empty()
+  return batch.init_data.has_value()
+      || !batch.series.empty()
       || !batch.can_messages.empty()
       || !batch.logs.empty()
       || !batch.timeline.empty()
@@ -59,17 +60,17 @@ bool stream_batch_has_data(const StreamExtractBatch &batch) {
 
 bool should_subscribe_stream_service(const std::string &name) {
   static const std::array<std::string_view, 13> kSkippedServices = {{
-    "roadEncodeIdx",
-    "driverEncodeIdx",
+    "narrowRoadEncodeIdx",
+    "cabinEncodeIdx",
     "wideRoadEncodeIdx",
-    "qRoadEncodeIdx",
-    "roadEncodeData",
-    "driverEncodeData",
+    "qNarrowRoadEncodeIdx",
+    "narrowRoadEncodeData",
+    "cabinEncodeData",
     "wideRoadEncodeData",
-    "qRoadEncodeData",
+    "qNarrowRoadEncodeData",
     "livestreamWideRoadEncodeIdx",
-    "livestreamRoadEncodeIdx",
-    "livestreamDriverEncodeIdx",
+    "livestreamNarrowRoadEncodeIdx",
+    "livestreamCabinEncodeIdx",
     "thumbnail",
   }};
   if (name == "rawAudioData") return false;
@@ -528,6 +529,7 @@ struct StreamPoller::Impl {
       }
       merge_can_message_data(&dst->can_messages[it->second], &message);
     }
+    if (src->init_data) dst->init_data = std::move(src->init_data);
     if (!src->logs.empty()) {
       dst->logs.insert(dst->logs.end(),
                        std::make_move_iterator(src->logs.begin()),

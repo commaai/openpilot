@@ -22,7 +22,7 @@ env:
   PYTHONPATH: ${{ github.workspace }}
   GIT_CONFIG_COUNT: 1
   GIT_CONFIG_KEY_0: lfs.fetchexclude
-  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_supercombo.onnx
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 
 jobs:
   build_release:
@@ -173,12 +173,6 @@ jobs:
         timeout_minutes: 2
         max_attempts: 3
         command: cd ${{ github.workspace }}/ci-artifacts && git push origin process-replay --force
-    - name: Run regen
-      if: false
-      timeout-minutes: 4
-      env:
-        ONNXCPU: 1
-      run: python openpilot/selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving

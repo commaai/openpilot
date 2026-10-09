@@ -19,14 +19,14 @@ class TestSoundd(OpenpilotTestCase):
     sm.update(100)
     assert sm.updated['selfdriveState']
 
-    received_at = sm.recv_time['selfdriveState']
-    clock = mocker.patch("openpilot.selfdrive.ui.soundd.time.monotonic", return_value=received_at + SELFDRIVE_STATE_TIMEOUT)
+    sm.recv_time['selfdriveState'] = 0
+    clock = mocker.patch("openpilot.selfdrive.ui.soundd.time.monotonic", return_value=SELFDRIVE_STATE_TIMEOUT)
     assert not check_selfdrive_timeout_alert(sm)
 
-    clock.return_value = received_at + SELFDRIVE_STATE_TIMEOUT + 0.1
+    clock.return_value = SELFDRIVE_STATE_TIMEOUT + 0.1
     assert check_selfdrive_timeout_alert(sm)
 
-    clock.return_value = received_at + SELFDRIVE_STATE_TIMEOUT + 10
+    clock.return_value = SELFDRIVE_STATE_TIMEOUT + 10
     assert not check_selfdrive_timeout_alert(sm)
 
   # TODO: add test with micd for checking that soundd actually outputs sounds

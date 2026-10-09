@@ -61,6 +61,15 @@ Running `master` and other branches directly is supported, but it's recommended 
 | `nightly`              | `nightly`              | openpilot-nightly.comma.ai             | This is the bleeding edge development branch. Do not expect this to be stable.      |
 | `nightly-dev`          | `nightly-dev`          | installer.comma.ai/commaai/nightly-dev | Same as nightly, but includes experimental development features for some cars.      |
 
+For [chestnut](https://comma.ai/shop/chestnut), use the following installer URLs:
+
+| branch                       | URL                                                        | description                                                                         |
+|------------------------------|------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `release-chestnut`           | installer.comma.ai/commaai/release-chestnut                | This is openpilot's release branch.                                                 |
+| `release-chestnut-staging`   | installer.comma.ai/commaai/release-chestnut-staging        | This is the staging branch for releases. Use it to get new releases slightly early. |
+| `nightly-chestnut`           | installer.comma.ai/commaai/nightly-chestnut                | This is the bleeding edge development branch. Do not expect this to be stable.      |
+| `nightly-chestnut-dev`       | installer.comma.ai/commaai/nightly-chestnut-dev            | Same as nightly, but includes experimental development features for some cars.      |
+
 To start developing openpilot
 ------
 

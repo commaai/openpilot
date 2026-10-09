@@ -1,6 +1,7 @@
 import json
 import os
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.utils import atomic_write
 
 
 class MissingAuthConfigError(Exception):
@@ -18,7 +19,7 @@ def get_token():
 
 def set_token(token):
   os.makedirs(Paths.config_root(), exist_ok=True)
-  with open(os.path.join(Paths.config_root(), 'auth.json'), 'w') as f:
+  with atomic_write(os.path.join(Paths.config_root(), 'auth.json'), overwrite=True) as f:
     json.dump({'access_token': token}, f)
 
 

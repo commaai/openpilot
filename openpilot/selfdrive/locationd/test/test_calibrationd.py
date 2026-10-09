@@ -33,16 +33,16 @@ def process_messages(c, cam_odo_calib, cycles,
 class TestCalibrationd(OpenpilotTestCase):
 
   def test_read_saved_params(self):
-    msg = messaging.new_message('liveCalibration')
-    msg.liveCalibration.validBlocks = random.randint(1, 10)
-    msg.liveCalibration.rpyCalib = [random.random() for _ in range(3)]
-    msg.liveCalibration.height = [random.random() for _ in range(1)]
+    msg = messaging.new_message('extrinsicsCalibration')
+    msg.extrinsicsCalibration.validBlocks = random.randint(1, 10)
+    msg.extrinsicsCalibration.rpyCalib = [random.random() for _ in range(3)]
+    msg.extrinsicsCalibration.height = [random.random() for _ in range(1)]
     Params().put("CalibrationParams", msg.to_bytes(), block=True)
     c = Calibrator(param_put=True)
 
-    np.testing.assert_allclose(msg.liveCalibration.rpyCalib, c.rpy)
-    np.testing.assert_allclose(msg.liveCalibration.height, c.height)
-    assert msg.liveCalibration.validBlocks == c.valid_blocks
+    np.testing.assert_allclose(msg.extrinsicsCalibration.rpyCalib, c.rpy)
+    np.testing.assert_allclose(msg.extrinsicsCalibration.height, c.height)
+    assert msg.extrinsicsCalibration.validBlocks == c.valid_blocks
 
 
   def test_calibration_basics(self):
@@ -92,7 +92,7 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0], atol=1e-3)
     process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*0.9, MAX_ALLOWED_YAW_SPREAD*0.9], BLOCK_SIZE + 10)
     assert c.valid_blocks == INPUTS_NEEDED + 1
-    assert c.cal_status == log.LiveCalibrationData.Status.calibrated
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.calibrated
 
     c = Calibrator(param_put=False)
     process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * INPUTS_NEEDED)
@@ -100,7 +100,7 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], BLOCK_SIZE + 10)
     assert c.valid_blocks == 1
-    assert c.cal_status == log.LiveCalibrationData.Status.recalibrating
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], atol=1e-2)
 
     c = Calibrator(param_put=False)
@@ -109,5 +109,5 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     process_messages(c, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], BLOCK_SIZE + 10)
     assert c.valid_blocks == 1
-    assert c.cal_status == log.LiveCalibrationData.Status.recalibrating
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)

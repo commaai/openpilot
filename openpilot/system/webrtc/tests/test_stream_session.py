@@ -7,7 +7,7 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
+from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy, ServerState, handle_get_stream
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
@@ -65,7 +65,7 @@ class TestStreamSession(OpenpilotTestCase):
       mocked_pubmaster.reset_mock()
 
   def test_livestream_track(self, mocker):
-    fake_msg = messaging.new_message("livestreamDriverEncodeData")
+    fake_msg = messaging.new_message("livestreamCabinEncodeData")
 
     config = {"receive.return_value": fake_msg.to_bytes()}
     mocker.patch("msgq.SubSocket", spec=True, **config)
@@ -80,3 +80,8 @@ class TestStreamSession(OpenpilotTestCase):
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
       assert bytes(packet) == b""
+
+  def test_stream_rejects_non_json_content_type(self):
+    response = self.loop.run_until_complete(handle_get_stream(ServerState(), b"{}", "text/plain"))
+
+    assert response == (415, b'{"error": "unsupported media type"}', "application/json; charset=utf-8")

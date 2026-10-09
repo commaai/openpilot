@@ -11,7 +11,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.utils import tabulate
+from openpilot.common.utils import sudo_write, tabulate
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
@@ -20,8 +20,13 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
-from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
+from openpilot.selfdrive.test.helpers import set_params_enabled, release_only, processes_context, log_collector
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, read
+from openpilot.common.mock import mock_messages
+from opendbc.car.car_helpers import get_demo_car_params
+from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -67,9 +72,9 @@ PROCS = {
   "openpilot.selfdrive.pandad.pandad": 0,
   "openpilot.system.loggerd.uploader": 15.0,
   "openpilot.system.loggerd.deleter": 1.0,
-  "./pandad": 19.0,
+  "./pandad": 40.0,
   "openpilot.system.qcomgpsd.qcomgpsd": 1.0,
-  "openpilot.common.hardware.tici.modem": 10.0,
+  "openpilot.common.hardware.comma.modem": 10.0,
 }
 
 TIMINGS = {
@@ -83,12 +88,12 @@ TIMINGS = {
   "controlsState": [2.5, 0.35],
   "longitudinalPlan": [2.5, 0.5],
   "driverAssistance": [2.5, 0.5],
-  "roadCameraState": [2.5, 0.35],
-  "driverCameraState": [2.5, 0.35],
+  "narrowRoadCameraState": [2.5, 0.35],
+  "cabinCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
-  "livePose": [2.5, 0.35],
-  "liveParameters": [2.5, 0.35],
+  "deviceMotion": [2.5, 0.35],
+  "vehicleParameters": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
 
@@ -105,7 +110,11 @@ def cputime_total(ct):
 
 
 class TestOnroad(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
+
+  def setUp(self):
+    # Hardware setup is handled once for the full onroad test in setup_class.
+    unittest.TestCase.setUp(self)
 
   @classmethod
   def setup_class(cls):
@@ -304,7 +313,7 @@ class TestOnroad(OpenpilotTestCase):
     result += "------------------------------------------------\n"
     result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
-    for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
+    for name in ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']:
       ts = self.ts[name]['timestampSof']
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
@@ -317,8 +326,8 @@ class TestOnroad(OpenpilotTestCase):
     print(result)
 
   def test_camera_sync(self, subtests):
-    cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
-    encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
+    cam_states = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']
+    encode_cams = ['narrowRoadEncodeIdx', 'wideRoadEncodeIdx', 'cabinEncodeIdx']
     for cams in (cam_states, encode_cams):
       with subtests.test(cams=cams):
         # sanity checks within a single cam
@@ -332,32 +341,40 @@ class TestOnroad(OpenpilotTestCase):
             assert np.all(eof_sof_diff < 50*1e6)
 
         first_fid = {min(self.ts[c]['frameId']) for c in cams}
-        assert len(first_fid) == 1, "Cameras don't start on same frame ID"
-        if cam.endswith('CameraState'):
+        if cams[0].endswith('CameraState'):
           # camerad guarantees that all cams start on frame ID 0
           # (note loggerd also needs to start up fast enough to catch it)
-          assert next(iter(first_fid)) < 100, "Cameras start on frame ID too high"
+          assert min(first_fid) < 100, "Cameras start on frame ID too high"
+        else:
+          # encoderd synchronizes all camera encoders to the same starting frame
+          assert len(first_fid) == 1, "Camera encoders don't start on same frame ID"
 
         # we don't do a full segment rotation, so these might not match exactly
         last_fid = {max(self.ts[c]['frameId']) for c in cams}
         assert max(last_fid) - min(last_fid) < 10
 
-        start, end = min(first_fid), min(last_fid)
-        for i in range(end-start):
-          # road and wide cameras (first two) should be synced within 2ms
-          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams[:2]}
-          diff = (max(ts.values()) - min(ts.values()))
-          assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+        timestamps = {
+          cam: dict(zip(self.ts[cam]['frameId'], self.ts[cam]['timestampSof'], strict=True))
+          for cam in cams
+        }
+        common_frame_ids = set.intersection(*(set(ts) for ts in timestamps.values()))
+        assert common_frame_ids, "Cameras have no overlapping frame IDs"
 
-          # driver camera should be staggered ~25ms from road camera
-          offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
-          assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
+        for frame_id in sorted(common_frame_ids):
+          # road and wide cameras (first two) should be synced within 2ms
+          ts = {cam: timestamps[cam][frame_id] / 1e6 for cam in cams[:2]}
+          diff = max(ts.values()) - min(ts.values())
+          assert diff < 2, f"Cameras not synced properly: {frame_id=}, {diff=:.1f}ms, {ts=}"
+
+          # cabin camera should be staggered ~25ms from road camera
+          offset_ms = abs(timestamps[cams[2]][frame_id] - timestamps[cams[0]][frame_id]) / 1e6
+          assert 20 < offset_ms < 30, f"cabin camera stagger out of range at frame {frame_id}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):
     # sanity check that the frame metadata is consistent with the encoded frames
-    pairs = [('roadCameraState', 'roadEncodeIdx'),
+    pairs = [('narrowRoadCameraState', 'narrowRoadEncodeIdx'),
              ('wideRoadCameraState', 'wideRoadEncodeIdx'),
-             ('driverCameraState', 'driverEncodeIdx')]
+             ('cabinCameraState', 'cabinEncodeIdx')]
     for cam, enc in pairs:
       with subtests.test(camera=cam, encoder=enc):
         cam_frames = {fid: (sof, eof) for fid, sof, eof in zip(
@@ -443,6 +460,63 @@ class TestOnroad(OpenpilotTestCase):
     eng = [m.selfdriveState.engageable for m in self.msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
+
+
+@unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
+class TestChestnutOnroad(OpenpilotTestCase):
+  COMMA_HARDWARE_TEST = True
+
+  @mock_messages(['deviceMotion'])
+  def test_big_model(self, subtests):
+    assert chestnut_present() and chestnut_compiled()
+    bus = next(read(d / "busnum") for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
+    authorized = str(USB_DEVICES_PATH / f"usb{bus}" / "authorized")
+    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
+    services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
+    sm = messaging.SubMaster(services)
+    pm = messaging.PubMaster(['deviceState'])
+    device_state = messaging.new_message('deviceState')
+    device_state.deviceState.deviceType = HARDWARE.get_device_type()
+    device_state_bytes = device_state.to_bytes()
+    with processes_context(['camerad', 'calibrationd', 'modeld', 'dmonitoringmodeld']):
+      with Timeout(60, "camera models didn't start"):
+        while not all(sm.seen.values()) or not sm.valid['modelV2']:
+          pm.send('deviceState', device_state_bytes)
+          sm.update(1000)
+      # test big model and camera timings
+      with log_collector(services) as (logs, _):
+        time.sleep(TEST_DURATION)
+
+      # test small model fallback by deauthorizing the usb bus
+      try:
+        sudo_write("0", authorized)
+        with Timeout(10, "modeld didn't fall back to the small model"):
+          while sm['modelV2'].big:
+            sm.update(1000)
+      finally:
+        sudo_write("1", authorized)
+
+      # test small model keeps running
+      with log_collector(['modelV2']) as (small_model_logs, _):
+        time.sleep(3)
+
+    msgs = {s: [m for m in logs if m.which() == s] for s in services}
+    for service, messages in msgs.items():
+      with subtests.test(service=service):
+        expected = TEST_DURATION * SERVICE_LIST[service].frequency
+        assert np.isclose(len(messages), expected, rtol=0.05, atol=2), f"{service}: expected {expected}, got {len(messages)}"
+        assert all(m.valid for m in messages)
+        frame_ids = [getattr(m, service).frameId for m in messages]
+        assert np.all(np.diff(frame_ids) > 0), f"{service}: repeated or reordered frames"
+
+    camera_frames = {m.narrowRoadCameraState.frameId for m in msgs['narrowRoadCameraState']}
+    model_frames = {m.modelV2.frameId for m in msgs['modelV2']}
+    assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
+    assert all(m.modelV2.big for m in msgs['modelV2']), "chestnut fell back to the small model"
+    assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
+    assert Params().get("ChestnutActive") is False
+    expected = 3 * SERVICE_LIST['modelV2'].frequency
+    assert np.isclose(len(small_model_logs), expected, rtol=0.05, atol=2), f"small model: expected {expected}, got {len(small_model_logs)}"
 
 
 if __name__ == "__main__":

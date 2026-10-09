@@ -44,14 +44,14 @@ def report(platform, route, _description, CP, ID, maneuvers):
       t_carControl, carControl = zip(*[(m.logMonoTime, m.carControl) for m in msgs if m.which() == 'carControl'], strict=True)
       t_carOutput, carOutput = zip(*[(m.logMonoTime, m.carOutput) for m in msgs if m.which() == 'carOutput'], strict=True)
       t_carState, carState = zip(*[(m.logMonoTime, m.carState) for m in msgs if m.which() == 'carState'], strict=True)
-      t_livePose, livePose = zip(*[(m.logMonoTime, m.livePose) for m in msgs if m.which() == 'livePose'], strict=True)
+      t_deviceMotion, deviceMotion = zip(*[(m.logMonoTime, m.deviceMotion) for m in msgs if m.which() == 'deviceMotion'], strict=True)
       t_longitudinalPlan, longitudinalPlan = zip(*[(m.logMonoTime, m.longitudinalPlan) for m in msgs if m.which() == 'longitudinalPlan'], strict=True)
 
       # make time relative seconds
       t_carControl = [(t - t_carControl[0]) / 1e9 for t in t_carControl]
       t_carOutput = [(t - t_carOutput[0]) / 1e9 for t in t_carOutput]
       t_carState = [(t - t_carState[0]) / 1e9 for t in t_carState]
-      t_livePose = [(t - t_livePose[0]) / 1e9 for t in t_livePose]
+      t_deviceMotion = [(t - t_deviceMotion[0]) / 1e9 for t in t_deviceMotion]
       t_longitudinalPlan = [(t - t_longitudinalPlan[0]) / 1e9 for t in t_longitudinalPlan]
 
       # maneuver validity
@@ -70,7 +70,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       # Localizer is noisy, require two consecutive 20Hz frames above threshold
       prev_crossed = False
-      for t, lp in zip(t_livePose, livePose, strict=True):
+      for t, lp in zip(t_deviceMotion, deviceMotion, strict=True):
         crossed = (0 < aTarget < lp.accelerationDevice.x) or (0 > aTarget > lp.accelerationDevice.x)
         if crossed and prev_crossed:
           builder.append(f', <strong>crossed in {t:.3f}s</strong>')
@@ -95,7 +95,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[0].plot(t_carOutput, [m.actuatorsOutput.accel for m in carOutput], label='carOutput.actuatorsOutput.accel', linewidth=6)
       ax[0].plot(t_longitudinalPlan, [m.aTarget for m in longitudinalPlan], label='longitudinalPlan.aTarget', linewidth=6)
       ax[0].plot(t_carState, [m.aEgo for m in carState], label='carState.aEgo', linewidth=6)
-      ax[0].plot(t_livePose, [m.accelerationDevice.x for m in livePose], label='livePose.accelerationDevice.x', linewidth=6)
+      ax[0].plot(t_deviceMotion, [m.accelerationDevice.x for m in deviceMotion], label='deviceMotion.accelerationDevice.x', linewidth=6)
       # TODO localizer accel
       ax[0].set_ylabel('Acceleration (m/s^2)')
       #ax[0].set_ylim(-6.5, 6.5)

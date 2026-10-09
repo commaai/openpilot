@@ -1,9 +1,8 @@
 import pyray as rl
-import qrcode
-import numpy as np
 import time
 
 from openpilot.common.api import Api
+from openpilot.common.qrcode import make_texture
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.system.ui.widgets import Widget
@@ -39,24 +38,9 @@ class PairingDialog(Widget):
 
   def _generate_qr_code(self) -> None:
     try:
-      qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
-      qr.add_data(self._get_pairing_url())
-      qr.make(fit=True)
-
-      pil_img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
-      img_array = np.array(pil_img, dtype=np.uint8)
-
       if self.qr_texture and self.qr_texture.id != 0:
         rl.unload_texture(self.qr_texture)
-
-      rl_image = rl.Image()
-      rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
-      rl_image.width = pil_img.width
-      rl_image.height = pil_img.height
-      rl_image.mipmaps = 1
-      rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
-
-      self.qr_texture = rl.load_texture_from_image(rl_image)
+      self.qr_texture = make_texture(self._get_pairing_url())
     except Exception:
       cloudlog.exception("QR code generation failed")
       self.qr_texture = None

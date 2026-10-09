@@ -52,7 +52,7 @@ msgstr "<br><br>La calibración del retraso de dirección está completa en un {
 msgid "ADD"
 msgstr "AÑADIR"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "APN Setting"
 msgstr "Configuración de APN"
 
@@ -60,7 +60,7 @@ msgstr "Configuración de APN"
 msgid "Acknowledge Excessive Actuation"
 msgstr "Reconocer actuación excesiva"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Advanced"
 msgstr "Avanzado"
 
@@ -93,7 +93,7 @@ msgid "Are you sure you want to uninstall?"
 msgstr "¿Seguro que quieres desinstalar?"
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Back"
 msgstr "Atrás"
 
@@ -118,22 +118,26 @@ msgid "CHILL MODE ON"
 msgstr "MODO CHILL ACTIVADO"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
 msgstr "CONECTAR"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
 msgstr "CONECTAR"
 
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/keyboard.py
-#: system/ui/widgets/network.py
-#: system/ui/widgets/option_dialog.py
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/keyboard.py
+#: openpilot/system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Cellular Metered"
 msgstr "Medición celular"
 
@@ -205,15 +209,11 @@ msgstr "ID del dongle"
 msgid "Download"
 msgstr "Descargar"
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Driver Camera"
-msgstr "Cámara del conductor"
-
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Driving Personality"
 msgstr "Estilo de conducción"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "EDITAR"
 
@@ -242,7 +242,7 @@ msgstr "Activar ADB"
 msgid "Enable Lane Departure Warnings"
 msgstr "Activar advertencias de salida de carril"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Roaming"
 msgstr "Activar roaming"
 
@@ -250,7 +250,7 @@ msgstr "Activar roaming"
 msgid "Enable SSH"
 msgstr "Activar SSH"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enable Tethering"
 msgstr "Activar anclaje"
 
@@ -266,19 +266,19 @@ msgstr "Activar openpilot"
 msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 msgstr "Activa el interruptor de control longitudinal de openpilot (alpha) para permitir el modo Experimental."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "Introduce APN"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter SSID"
 msgstr "Introduzca SSID"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter new tethering password"
 msgstr "Ingrese una nueva contraseña de anclaje a red"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Enter password"
 msgstr "Introduce la contraseña"
 
@@ -286,7 +286,7 @@ msgstr "Introduce la contraseña"
 msgid "Enter your GitHub username"
 msgstr "Introduce tu nombre de usuario de GitHub"
 
-#: system/ui/widgets/list_view.py
+#: openpilot/system/ui/widgets/list_view.py
 msgid "Error"
 msgstr "Fallo"
 
@@ -298,7 +298,7 @@ msgstr "Modo experimental"
 msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 msgstr "El modo experimental no está disponible actualmente en este coche, ya que se usa el ACC de fábrica para el control longitudinal."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "OLVIDAR..."
 
@@ -311,14 +311,15 @@ msgid "Firehose"
 msgstr "Flujo masivo"
 
 #: openpilot/selfdrive/ui/layouts/settings/firehose.py
+#: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Modo Firehose"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget"
 msgstr "Olvidar"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr "¿Olvidaste la red Wi-Fi \"{}\"?"
 
@@ -334,7 +335,7 @@ msgstr "Ve a https://connect.comma.ai en tu teléfono"
 msgid "HIGH"
 msgstr "ALTO"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Hidden Network"
 msgstr "Red oculta"
 
@@ -342,7 +343,7 @@ msgstr "Red oculta"
 msgid "INSTALL"
 msgstr "INSTALAR"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "Dirección IP"
 
@@ -361,6 +362,10 @@ msgstr "CARGANDO"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "LTE"
 msgstr "LTE"
+
+#: openpilot/selfdrive/ui/layouts/settings/developer.py
+msgid "Lateral Maneuver Mode"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Longitudinal Maneuver Mode"
@@ -398,9 +403,8 @@ msgstr "No hay notas de versión disponibles."
 msgid "OFFLINE"
 msgstr "SIN CONEXIÓN"
 
-#: openpilot/selfdrive/ui/layouts/sidebar.py
-#: system/ui/widgets/confirm_dialog.py
-#: system/ui/widgets/html_render.py
+#: openpilot/system/ui/widgets/confirm_dialog.py
+#: openpilot/system/ui/widgets/html_render.py
 msgid "OK"
 msgstr "OK"
 
@@ -453,17 +457,17 @@ msgstr "Conéctate a Wi‑Fi para completar el emparejamiento inicial"
 msgid "Power Off"
 msgstr "Apagar"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
 msgstr "Evite grandes cargas de datos cuando esté en una conexión Wi-Fi medida"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr "Evite grandes cargas de datos cuando esté en una conexión celular medida"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr "Previsualiza la cámara hacia el conductor para asegurarte de que la supervisión del conductor tenga buena visibilidad. (el vehículo debe estar apagado)"
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "QR Code Error"
@@ -494,8 +498,8 @@ msgid "Reboot and Update"
 msgstr "Reiniciar y actualizar"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Driver Camera"
-msgstr "Grabar y subir cámara del conductor"
+msgid "Record and Upload Cabin Camera"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Record and Upload Microphone Audio"
@@ -549,11 +553,11 @@ msgstr "SELECCIONAR"
 msgid "SSH Keys"
 msgstr "Claves SSH"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Scanning Wi-Fi networks..."
 msgstr "Escaneando redes Wi-Fi..."
 
-#: system/ui/widgets/option_dialog.py
+#: openpilot/system/ui/widgets/option_dialog.py
 msgid "Select"
 msgstr "Seleccionar"
 
@@ -597,7 +601,7 @@ msgstr "TEMP."
 msgid "Target Branch"
 msgstr "Rama objetivo"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Tethering Password"
 msgstr "Contraseña de anclaje"
 
@@ -634,8 +638,8 @@ msgid "Upgrade Now"
 msgstr "Mejorar ahora"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the driver facing camera and help improve the driver monitoring algorithm."
-msgstr "Sube datos de la cámara orientada al conductor y ayuda a mejorar el algoritmo de supervisión del conductor."
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Use Metric System"
@@ -665,11 +669,11 @@ msgstr "Cuando está activado, al presionar el pedal del acelerador se desactiva
 msgid "Wi-Fi"
 msgstr "Wi‑Fi"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wi-Fi Network Metered"
 msgstr "Red Wi-Fi medida"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "Wrong password"
 msgstr "Contraseña incorrecta"
 
@@ -681,7 +685,7 @@ msgstr "Debes aceptar los Términos y Condiciones para poder usar openpilot."
 msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr "Debes aceptar los Términos y Condiciones para usar openpilot. Lee los términos más recientes en https://comma.ai/terms antes de continuar."
 
-#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
 msgid "camera starting"
 msgstr "iniciando cámara"
 
@@ -693,7 +697,7 @@ msgstr "de cheques..."
 msgid "comma prime"
 msgstr "comma prime"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "default"
 msgstr "por defecto"
 
@@ -713,7 +717,7 @@ msgstr "Error al buscar actualizaciones"
 msgid "finalizing update..."
 msgstr "finalizando actualización..."
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "for \"{}\""
 msgstr "para \"{}\""
 
@@ -721,7 +725,7 @@ msgstr "para \"{}\""
 msgid "km/h"
 msgstr "km/h"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "leave blank for automatic configuration"
 msgstr "dejar en blanco para configuración automática"
 
@@ -729,7 +733,7 @@ msgstr "dejar en blanco para configuración automática"
 msgid "left"
 msgstr "izquierda"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "metered"
 msgstr "medido"
 
@@ -765,7 +769,7 @@ msgstr "openpilot requiere que el dispositivo esté montado dentro de 4° a izqu
 msgid "right"
 msgstr "derecha"
 
-#: system/ui/widgets/network.py
+#: openpilot/system/ui/widgets/network.py
 msgid "unmetered"
 msgstr "sin medir"
 
@@ -809,17 +813,7 @@ msgid_plural "{} minutes ago"
 msgstr[0] "hace {} minuto"
 msgstr[1] "hace {} minutos"
 
-#: openpilot/selfdrive/ui/layouts/settings/firehose.py
-msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "{} segmento de tu conducción está en el conjunto de entrenamiento hasta ahora."
-msgstr[1] "{} segmentos de tu conducción están en el conjunto de entrenamiento hasta ahora."
-
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "✓ SUBSCRIBED"
 msgstr "✓ SUSCRITO"
-
-#: openpilot/selfdrive/ui/widgets/setup.py
-msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Modo Firehose 🔥"
 

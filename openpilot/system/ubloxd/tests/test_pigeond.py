@@ -6,12 +6,12 @@ from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.common.hardware.tici.pins import GPIO
+from openpilot.common.hardware.comma.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
 class TestPigeond(OpenpilotTestCase):
-  TICI_TEST = True
+  COMMA_HARDWARE_TEST = True
 
   def teardown_method(self):
     managed_processes['pigeond'].stop()

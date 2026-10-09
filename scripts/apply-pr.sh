@@ -6,6 +6,6 @@ if [ $# -eq 0 ]; then
 fi
 
 BASE="https://github.com/commaai/openpilot/pull/"
-PR_NUM="$(echo $1 | grep -o -E '[0-9]+')"
+PR_NUM="$(echo "$1" | grep -o -E '[0-9]+')"
 
-curl -L $BASE/$PR_NUM.patch | git apply -3
+curl -L "$BASE/$PR_NUM.patch" | git apply -3

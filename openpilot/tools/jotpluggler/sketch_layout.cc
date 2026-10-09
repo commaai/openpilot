@@ -46,9 +46,9 @@ struct RouteSelection {
 struct SegmentLogs {
   std::string rlog;
   std::string qlog;
-  std::string fcamera;
-  std::string dcamera;
-  std::string ecamera;
+  std::string narrow_road;
+  std::string cabin;
+  std::string wide_road;
   std::string qcamera;
 };
 
@@ -75,6 +75,8 @@ struct SeriesAccumulator {
 
 void append_fixed_scalar_point(RouteSeries *series, double tm, double value);
 void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
+RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series);
+void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator);
 RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series);
 void append_can_frame(CanServiceKind service,
                       uint8_t bus,
@@ -95,6 +97,7 @@ void decode_can_frame(const dbc::Database *can_dbc,
 #include "tools/jotpluggler/generated_event_extractors.h"
 
 struct LoadedRouteArtifacts {
+  std::optional<InitDataSnapshot> init_data;
   std::vector<RouteSeries> series;
   std::vector<CanMessageData> can_messages;
   std::vector<LogEntry> logs;
@@ -296,11 +299,11 @@ void add_log_file_to_segments(std::map<int, SegmentLogs> *segments, int segment_
   } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
     segment.qlog = file;
   } else if (name == "fcamera.hevc") {
-    segment.fcamera = file;
+    segment.narrow_road = file;
   } else if (name == "dcamera.hevc") {
-    segment.dcamera = file;
+    segment.cabin = file;
   } else if (name == "ecamera.hevc") {
-    segment.ecamera = file;
+    segment.wide_road = file;
   } else if (name == "qcamera.ts") {
     segment.qcamera = file;
   }
@@ -318,20 +321,18 @@ std::map<int, SegmentLogs> trim_segments(std::map<int, SegmentLogs> segments, co
 
 std::map<int, SegmentLogs> load_segments_from_json(const json11::Json &json) {
   std::map<int, SegmentLogs> segments;
-  static const std::regex rx(R"(\/(\d+)\/)");
-  for (const auto &value : json.object_items()) {
-    for (const auto &url : value.second.array_items()) {
-      const std::string url_str = url.string_value();
-      std::smatch match;
-      if (!std::regex_search(url_str, match, rx)) continue;
-      add_log_file_to_segments(&segments, std::stoi(match[1].str()), url_str);
-    }
+  for (const auto &[number, files] : json.object_items()) {
+    segments[std::stoi(number)] = {
+      files["rlog"].string_value(), files["qlog"].string_value(), files["narrow_road"].string_value(),
+      files["cabin"].string_value(), files["wide_road"].string_value(), files["qcamera"].string_value(),
+    };
   }
   return segments;
 }
 
 std::map<int, SegmentLogs> load_segments_from_server(const RouteSelection &route) {
-  const std::string result = PyDownloader::getRouteFiles(route.canonical_name);
+  const std::string selector = route.selector == LogSelector::RLog ? "r" : route.selector == LogSelector::QLog ? "q" : "a";
+  const std::string result = PyDownloader::resolveRouteFiles(route.canonical_name, route.begin_segment, route.end_segment, selector);
   if (result.empty()) throw std::runtime_error("Failed to fetch route files for " + route.canonical_name);
 
   std::string parse_error;
@@ -959,7 +960,14 @@ void append_can_frame(CanServiceKind service,
   });
 }
 
+void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator) {
+  const double value = accumulator->enum_info[series->path].text_value(std::string(text.begin(), text.size()));
+  append_fixed_scalar_point(series, tm, value);
+}
+
 void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
+RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series);
+void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator);
 
 void decode_can_frame(const dbc::Database *can_dbc,
                       const std::string &service_name,
@@ -1116,6 +1124,15 @@ void merge_series_accumulator(SeriesAccumulator *dst, SeriesAccumulator *src) {
     throw std::runtime_error("Fixed-series slot count mismatch during merge");
   }
 
+  const auto remap_text = [&](RouteSeries &series) {
+    auto it = src->enum_info.find(series.path);
+    if (it != src->enum_info.end() && it->second.is_text) {
+      merge_text_labels(&series, it->second, &dst->enum_info[series.path]);
+    }
+  };
+  for (RouteSeries &series : src->fixed_series) remap_text(series);
+  for (RouteSeries &series : src->dynamic_series) remap_text(series);
+
   for (size_t i = 0; i < dst->fixed_series.size(); ++i) {
     merge_route_series(&dst->fixed_series[i], &src->fixed_series[i]);
   }
@@ -1202,9 +1219,12 @@ RouteData build_route_data(std::vector<RouteSeries> &&series_list,
   route_data.paths.reserve(series_list.size());
   for (RouteSeries &series : series_list) {
     if (series.times.empty()) continue;
-    route_data.has_time_range = true;
-    route_data.x_min = route_data.series.empty() ? series.times.front() : std::min(route_data.x_min, series.times.front());
-    route_data.x_max = route_data.series.empty() ? series.times.back() : std::max(route_data.x_max, series.times.back());
+    // initData is copied into every segment with its original route timestamp.
+    if (series.path.rfind("/initData/", 0) != 0) {
+      route_data.x_min = !route_data.has_time_range ? series.times.front() : std::min(route_data.x_min, series.times.front());
+      route_data.x_max = !route_data.has_time_range ? series.times.back() : std::max(route_data.x_max, series.times.back());
+      route_data.has_time_range = true;
+    }
     route_data.paths.push_back(series.path);
     route_data.series.push_back(std::move(series));
   }
@@ -1566,6 +1586,7 @@ LoadedRouteArtifacts load_route_series_parallel(
     LoadStats *stats) {
   struct SegmentResult {
     SeriesAccumulator series;
+    std::optional<InitDataSnapshot> init_data;
     std::vector<LogEntry> logs;
     std::vector<TimelineEntry> timeline;
     std::vector<ThumbnailFrame> thumbnails;
@@ -1638,6 +1659,13 @@ LoadedRouteArtifacts load_route_series_parallel(
       const auto extract_start = LoadStats::Clock::now();
       results[index].series = extract_segment_series(reader.events, schema, can_dbc, skip_raw_can, worker_budget, segment_workers);
       results[index].logs = extract_segment_logs(reader.events);
+      for (const Event &record : reader.events) {
+        if (record.which != cereal::Event::Which::INIT_DATA) continue;
+        with_parseable_event(record.data, [&](const cereal::Event::Reader &event) {
+          results[index].init_data = extract_init_data(event.getInitData());
+        });
+        if (results[index].init_data) break;
+      }
       results[index].timeline = extract_segment_timeline(reader.events);
       results[index].thumbnails = extract_segment_thumbnails(reader.events, segment_number);
       segment_stats.extract_seconds = std::chrono::duration<double>(LoadStats::Clock::now() - extract_start).count();
@@ -1685,6 +1713,12 @@ LoadedRouteArtifacts load_route_series_parallel(
     }
   }
   LoadedRouteArtifacts artifacts;
+  for (SegmentResult &result : results) {
+    if (result.init_data) {
+      artifacts.init_data = std::move(result.init_data);
+      break;
+    }
+  }
   artifacts.series = collect_series(std::move(merged));
   artifacts.can_messages = std::move(merged.can_messages);
   artifacts.logs = std::move(logs);
@@ -1734,6 +1768,7 @@ std::vector<std::string> collect_route_roots_for_paths(const std::vector<std::st
 }
 
 struct StreamAccumulator::Impl {
+  std::optional<InitDataSnapshot> init_data;
   const SchemaIndex &schema = SchemaIndex::instance();
   SeriesAccumulator series = make_series_accumulator(schema);
   std::vector<LogEntry> logs;
@@ -1776,6 +1811,9 @@ void StreamAccumulator::appendEvent(kj::ArrayPtr<const capnp::word> data) {
     if (!impl_->time_offset.has_value()) {
       impl_->time_offset = boot_time;
     }
+    if (which == cereal::Event::Which::INIT_DATA) {
+      impl_->init_data = extract_init_data(event.getInitData());
+    }
     if (which == cereal::Event::Which::CAR_PARAMS) {
       const std::string fingerprint = event.getCarParams().getCarFingerprint().cStr();
       if (!fingerprint.empty() && fingerprint != impl_->car_fingerprint) {
@@ -1817,6 +1855,8 @@ void StreamAccumulator::appendCanFrames(CanServiceKind service, const std::vecto
 
 StreamExtractBatch StreamAccumulator::takeBatch() {
   StreamExtractBatch batch;
+  batch.init_data = std::move(impl_->init_data);
+  impl_->init_data.reset();
   batch.car_fingerprint = impl_->car_fingerprint;
   batch.dbc_name = impl_->detected_dbc_name;
   if (impl_->time_offset.has_value()) {
@@ -1900,11 +1940,12 @@ RouteData load_route_data(const std::string &route_name,
                                           std::move(artifacts.enum_info),
                                           metadata.car_fingerprint,
                                           resolved_dbc);
+  route_data.init_data = std::move(artifacts.init_data);
   route_data.route_id = make_route_identifier(route, segments);
-  build_camera_index(segments, route_data, &SegmentLogs::fcamera, "roadEncodeIdx", &route_data.road_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::dcamera, "driverEncodeIdx", &route_data.driver_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::ecamera, "wideRoadEncodeIdx", &route_data.wide_road_camera);
-  build_camera_index(segments, route_data, &SegmentLogs::qcamera, "qRoadEncodeIdx", &route_data.qroad_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::narrow_road, "narrowRoadEncodeIdx", &route_data.road_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::cabin, "cabinEncodeIdx", &route_data.cabin_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::wide_road, "wideRoadEncodeIdx", &route_data.wide_road_camera);
+  build_camera_index(segments, route_data, &SegmentLogs::qcamera, "qNarrowRoadEncodeIdx", &route_data.qroad_camera);
   stats.load_end = LoadStats::Clock::now();
   stats.publish(RouteLoadStage::Finished, segments.size(), {});
   stats.print_summary(route_data.series.size());

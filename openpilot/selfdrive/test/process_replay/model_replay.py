@@ -20,10 +20,12 @@ from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
-TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
-SEGMENT = 4
+TEST_ROUTE = "98395b7c5b27882e|0000002b--2686b5a2d0"
+SEGMENT = 1
 START_FRAME = 0
 END_FRAME = 60
+
+CHESTNUT = "--chestnut" in sys.argv
 
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
@@ -33,13 +35,13 @@ MODEL_REPLAY_BUCKET="model_replay_master"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
-  # model, instant max, average max
-  ("modelV2", 0.05, 0.028),
-  ("driverStateV2", 0.05, 0.018),
+  # model, instant max, average max, chestnut average max
+  ("modelV2", 0.05, 0.03, 0.05),
+  ("driverStateV2", 0.05, 0.018, 0.018),
 ]
 
 def get_log_fn(test_route, ref="master"):
-  return f"{test_route}_model_tici_{ref}.zst"
+  return f"{test_route}_model_{'chestnut' if CHESTNUT else 'tici'}_{ref}.zst"
 
 def plot(proposed, master, title, tmp):
   proposed = list(proposed)
@@ -78,11 +80,12 @@ def generate_report(proposed, master, tmp, commit):
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.faceOrientation, 0), "leftDriverData.faceOrientation0"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.leftBlinkProb), "leftDriverData.leftBlinkProb"),
                      (lambda x: get_idx_if_non_empty(x.leftDriverData.phoneProb), "leftDriverData.phoneProb"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.sleepProb), "leftDriverData.sleepProb"),
                      (lambda x: get_idx_if_non_empty(x.rightDriverData.faceProb), "rightDriverData.faceProb"),
                     ], "driverStateV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
-               map(v[0], get_event(master, event)), f"{v[1]}_{commit[:7]}", tmp) \
+               map(v[0], get_event(master, event)), f"{v[1]}_{'chestnut' if CHESTNUT else 'tici'}_{commit[:7]}", tmp) \
                for v,event in ([*ModelV2_Plots] + [*DriverStateV2_Plots])]
 
 def create_table(title, files, link, open_table=False):
@@ -102,7 +105,8 @@ def create_table(title, files, link, open_table=False):
 def comment_replay_report(proposed, master, full_logs):
   with tempfile.TemporaryDirectory() as tmp:
     PR_BRANCH = os.getenv("GIT_BRANCH","")
-    DATA_BUCKET = f"model_replay_{PR_BRANCH}"
+    model_type = "chestnut" if CHESTNUT else "tici"
+    DATA_BUCKET = f"model_replay_{PR_BRANCH}_{model_type}"
 
     try:
       GITHUB.get_pr_number(PR_BRANCH)
@@ -123,8 +127,9 @@ def comment_replay_report(proposed, master, full_logs):
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
-    comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
-    GITHUB.comment_on_pr(comment, PR_BRANCH, "commaci-public", True)
+    model_title = "Big model (Chestnut)" if CHESTNUT else "Small model"
+    comment = f"<h2>Model Replay: {model_title}</h2>ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
+    GITHUB.comment_on_pr(comment, PR_BRANCH, "commaci-public", True, comment_marker=f"_model_{model_type}_")
 
 def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
   all_msgs = []
@@ -146,16 +151,17 @@ def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
 
 def model_replay(lr, frs):
   # modeld is using frame pairs
-  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"roadCameraState", "wideRoadCameraState"},
-                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
-  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"driverCameraState"}, {"driverEncodeIdx", "carParams", "can"})
+  camera_states = {"narrowRoadCameraState", "wideRoadCameraState"}
+  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, camera_states,
+                          {"narrowRoadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
+  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"cabinCameraState"}, {"cabinEncodeIdx", "carParams", "can"})
 
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'liveCalibration']
+    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'extrinsicsCalibration']
+    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'extrinsicsCalibration']
 
   # initial setup
-  for s in ('liveCalibration', 'deviceState'):
+  for s in ('extrinsicsCalibration', 'deviceState'):
     msg = next(msg for msg in lr if msg.which() == s).as_builder()
     msg.logMonoTime = lr[0].logMonoTime
     modeld_logs.insert(1, msg.as_reader())
@@ -168,11 +174,15 @@ def model_replay(lr, frs):
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
+  chestnut = any(m.modelV2.big for m in modeld_msgs if m.which() == "modelV2")
+  if CHESTNUT:
+    assert chestnut and all(m.modelV2.big for m in modeld_msgs if m.which() == "modelV2"), "Chestnut replay must run the big model without fallback"
 
   header = ['model', 'max instant', 'max instant allowed', 'average', 'max average allowed', 'test result']
   rows = []
   timings_ok = True
-  for (s, instant_max, avg_max) in EXEC_TIMINGS:
+  for (s, instant_max, avg_max, chestnut_avg_max) in EXEC_TIMINGS:
+    avg_max = chestnut_avg_max if chestnut else avg_max
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
     # TODO some init can happen in first iteration
     ts = ts[1:]
@@ -209,8 +219,8 @@ def get_frames():
       print(f"Failed to load frames from cache {cache_name}: {e}")
 
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'narrowRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'cabinCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
   }
   for fr in frs.values():

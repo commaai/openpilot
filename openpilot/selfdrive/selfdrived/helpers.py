@@ -31,7 +31,7 @@ class ExcessiveActuationCheck:
 
     # lateral
     yaw_rate = calibrated_pose.angular_velocity.yaw
-    roll = sm['liveParameters'].roll
+    roll = sm['vehicleParameters'].roll
     roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
     # Prevent false positives after overriding
@@ -41,9 +41,9 @@ class ExcessiveActuationCheck:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
         excessive_lat_actuation = True
 
-    # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
-    livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
-    self._excessive_counter = self._excessive_counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
+    # deviceMotion acceleration can be noisy due to bad mounting or aliased deviceMotion measurements
+    device_motion_valid = abs(CS.aEgo - accel_calibrated) < 2
+    self._excessive_counter = self._excessive_counter + 1 if device_motion_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
     excessive_type = None
     if self._excessive_counter > MIN_EXCESSIVE_ACTUATION_COUNT:

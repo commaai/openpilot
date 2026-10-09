@@ -1,7 +1,7 @@
 from openpilot.cereal import log
 from openpilot.common.hardware.base import HardwareBase
 
-class Pc(HardwareBase):
+class HardwarePc(HardwareBase):
   def get_device_type(self):
     return "pc"
 

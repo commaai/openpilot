@@ -1,10 +1,7 @@
-from collections.abc import Callable
-
 from openpilot.cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle, BigToggle, GreyBigButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -12,44 +9,37 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 
-class ExperimentalModeConfirmPage(NavScroller):
-  def __init__(self, on_confirm: Callable[[], None]):
-    super().__init__()
-
-    accept = BigConfirmationCircleButton("enable\nexperimental mode",
-                                         gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
-                                         lambda: self.dismiss(on_confirm))
-
-    self._scroller.add_widgets([
-      GreyBigButton("enabling\nexperimental mode", "scroll to continue",
-                    gui_app.texture("icons_mici/setup/warning.png", 64, 64)),
-      GreyBigButton("", "openpilot defaults to driving in chill mode."),
-      GreyBigButton("", "Experimental mode enables alpha-level features that aren't ready for chill mode."),
-      GreyBigButton("End-to-End Longitudinal Control"),
-      GreyBigButton("", "Let the driving model control the gas and brakes."),
-      GreyBigButton("", "openpilot will drive as it thinks a human would, including stopping for red lights and stop signs."),
-      GreyBigButton("", "The set speed will only act as an upper bound."),
-      GreyBigButton("", "This is an alpha quality feature; mistakes should be expected."),
-      GreyBigButton("New Driving Visualization"),
-      GreyBigButton("", "The path will change colors to communicate acceleration intent."),
-      GreyBigButton("", "Red for braking, green for acceleration, and gray for coasting."),
-      accept,
-    ])
-
-
 class TogglesLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
-    self._experimental_btn = BigToggle("experimental mode", initial_state=ui_state.params.get_bool("ExperimentalMode"),
-                                       toggle_callback=self._on_experimental_mode)
+    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
+                                                   description="Standard is recommended.\n" +
+                                                               "Aggressive follows closer, with firmer gas and braking.\n" +
+                                                               "Relaxed leaves more space.\n" +
+                                                               "Use the steering wheel distance button on supported cars.")
+    self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode",
+                                       description_icon=gui_app.texture("icons_mici/experimental_mode.png", 64, 64),
+                                       description="Let the driving model control gas and brakes.\n" +
+                                                   "Includes stopping for red lights and stop signs.\n" +
+                                                   "Set speed is a maximum, not a target.\n" +
+                                                   "These are alpha features. Expect mistakes.\n" +
+                                                   "The path colors show acceleration and braking.")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
-    ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled")
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM")
-    record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback)
-    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
-    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
+    ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
+                                 description="Warn when you drift across a detected lane line.\n" +
+                                             "Only above 31 mph (50 km/h), with no turn signal.")
+    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description="Monitor the driver even when openpilot is not engaged.")
+    record_front = BigParamControl("record & upload cabin camera", "RecordFront",
+                                   description_icon=gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
+                                   toggle_callback=restart_needed_callback, description="Upload cabin camera data to help improve driver monitoring.")
+    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", description_icon=gui_app.texture("icons_mici/microphone.png", 64, 64),
+                                 toggle_callback=restart_needed_callback,
+                                 description="Record microphone audio while driving.\n" +
+                                             "Audio is included in dashcam videos in comma connect.")
+    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback,
+                                       description="Enable to use openpilot driver assistance.\n" +
+                                                   "Disable to use your car's stock driver assistance.")
 
     self._scroller.add_widgets([
       self._personality_toggle,
@@ -114,17 +104,3 @@ class TogglesLayoutMici(NavScroller):
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:
       item.set_checked(ui_state.params.get_bool(key))
-
-  def _on_experimental_mode(self, state: bool):
-    if state and not ui_state.params.get_bool("ExperimentalModeConfirmed"):
-      # Don't show enabled state until confirm
-      self._experimental_btn.set_checked(False)
-
-      def on_confirm():
-        ui_state.params.put_bool("ExperimentalModeConfirmed", True)
-        ui_state.params.put_bool("ExperimentalMode", True)
-        self._experimental_btn.set_checked(True)
-
-      gui_app.push_widget(ExperimentalModeConfirmPage(on_confirm))
-    else:
-      ui_state.params.put_bool("ExperimentalMode", state)

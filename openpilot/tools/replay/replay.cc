@@ -40,8 +40,7 @@ void Replay::setupServices(const std::vector<std::string> &allow, const std::vec
   auto event_schema = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_schema.getUnionFields().size(), nullptr);
 
-  std::vector<const char *> active_services;
-  active_services.reserve(services.size());
+  auto &active_services = active_services_;
 
   for (const auto &[name, _] : services) {
     bool is_blocked = std::find(block.begin(), block.end(), name) != block.end();
@@ -55,9 +54,6 @@ void Replay::setupServices(const std::vector<std::string> &allow, const std::vec
 
   std::string services_str = join(active_services, ", ");
   rInfo("active services: %s", services_str.c_str());
-  if (!sm_) {
-    pm_ = std::make_unique<PubMaster>(active_services);
-  }
 }
 
 void Replay::setupSegmentManager(bool has_filters) {
@@ -73,6 +69,15 @@ void Replay::setupSegmentManager(bool has_filters) {
 }
 
 Replay::~Replay() {
+  stop();
+  camera_server_.reset();
+  seg_mgr_.reset();
+}
+
+void Replay::stop() {
+  // Merge callbacks access both Replay and its owner. Join them while all objects
+  // and their owning pointers are still alive, before stopping the playback thread.
+  seg_mgr_->stop();
   if (stream_thread_.joinable()) {
     rInfo("shutdown: in progress...");
     interruptStream([this]() {
@@ -82,8 +87,6 @@ Replay::~Replay() {
     stream_thread_.join();
     rInfo("shutdown: done");
   }
-  camera_server_.reset();
-  seg_mgr_.reset();
 }
 
 bool Replay::load() {
@@ -235,6 +238,7 @@ void Replay::publishMessage(const Event *e) {
   if (event_filter_ && event_filter_(e)) return;
 
   if (!sm_) {
+    if (!pm_) pm_ = std::make_unique<PubMaster>(active_services_);  // consumers with an event filter never need one
     auto bytes = e->data.asBytes();
     int ret = pm_->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
     if (ret == -1) {
@@ -251,13 +255,13 @@ void Replay::publishMessage(const Event *e) {
 void Replay::publishFrame(const Event *e) {
   CameraType cam;
   switch (e->which) {
-    case cereal::Event::ROAD_ENCODE_IDX: cam = RoadCam; break;
-    case cereal::Event::DRIVER_ENCODE_IDX: cam = DriverCam; break;
+    case cereal::Event::NARROW_ROAD_ENCODE_IDX: cam = NarrowRoadCam; break;
+    case cereal::Event::CABIN_ENCODE_IDX: cam = CabinCam; break;
     case cereal::Event::WIDE_ROAD_ENCODE_IDX: cam = WideRoadCam; break;
     default: return;  // Invalid event type
   }
 
-  if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM)))
+  if ((cam == CabinCam && !hasFlag(REPLAY_FLAG_CABIN_CAMERA)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_WIDE_ROAD)))
     return;  // Camera isdisabled
 
   auto seg_it = event_data_->segments.find(e->eidx_segnum);

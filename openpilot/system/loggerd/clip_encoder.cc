@@ -29,11 +29,11 @@ constexpr int CLIP_FPS = 20;
 constexpr double PARALLEL_CLIP_MIN_DURATION = 2 * SEGMENT_DURATION;
 
 const EncoderInfo clip_encoder_info = {
-  .publish_name = "livestreamRoadEncodeData",
+  .publish_name = "livestreamNarrowRoadEncodeData",
   .record = false,
   .fps = CLIP_FPS,
   .get_settings = [](int) { return EncoderSettings::StreamEncoderSettings(); },
-  INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
+  INIT_ENCODE_FUNCTIONS(LivestreamNarrowRoadEncode),
 };
 
 bool open_input(const std::string &path, AVFormatContext **ctx, int *stream_index) {

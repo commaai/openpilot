@@ -4,10 +4,9 @@ from collections.abc import Callable
 from typing import Union
 import pyray as rl
 
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.lib.wrap_text import wrap_text
 
 ICON_PADDING = 15
@@ -32,8 +31,8 @@ def gui_label(
   font_size: int = DEFAULT_TEXT_SIZE,
   color: rl.Color = DEFAULT_TEXT_COLOR,
   font_weight: FontWeight = FontWeight.NORMAL,
-  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+  alignment: int = TextAlignment.LEFT,
+  alignment_vertical: int = TextAlignmentVertical.MIDDLE,
   elide_right: bool = True
 ):
   font = gui_app.font(font_weight)
@@ -57,49 +56,21 @@ def gui_label(
 
   # Calculate horizontal position based on alignment
   text_x = rect.x + {
-    rl.GuiTextAlignment.TEXT_ALIGN_LEFT: 0,
-    rl.GuiTextAlignment.TEXT_ALIGN_CENTER: (rect.width - text_size.x) / 2,
-    rl.GuiTextAlignment.TEXT_ALIGN_RIGHT: rect.width - text_size.x,
+    TextAlignment.LEFT: 0,
+    TextAlignment.CENTER: (rect.width - text_size.x) / 2,
+    TextAlignment.RIGHT: rect.width - text_size.x,
   }.get(alignment, 0)
 
   # Calculate vertical position based on alignment
   text_y = rect.y + {
-    rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP: 0,
-    rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE: (rect.height - text_size.y) / 2,
-    rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM: rect.height - text_size.y,
+    TextAlignmentVertical.TOP: 0,
+    TextAlignmentVertical.MIDDLE: (rect.height - text_size.y) / 2,
+    TextAlignmentVertical.BOTTOM: rect.height - text_size.y,
   }.get(alignment_vertical, 0)
 
   # Draw the text in the specified rectangle
   # TODO: add wrapping and proper centering for multiline text
   rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
-
-
-def gui_text_box(
-  rect: rl.Rectangle,
-  text: str,
-  font_size: int = DEFAULT_TEXT_SIZE,
-  color: rl.Color = DEFAULT_TEXT_COLOR,
-  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
-  font_weight: FontWeight = FontWeight.NORMAL,
-  line_scale: float = 1.0,
-):
-  styles = [
-    (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(color)),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, round(font_size * FONT_SCALE)),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, round(font_size * FONT_SCALE * line_scale)),
-    (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, alignment),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, alignment_vertical),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD)
-  ]
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(font_weight))
-
-  with GuiStyleContext(styles):
-    rl.gui_label(rect, text)
-
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
 
 
 # Non-interactive text area. Can render an optional specified icon.
@@ -108,8 +79,8 @@ class Label(Widget):
                text: str | Callable[[], str],
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-               text_alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+               text_alignment: int = TextAlignment.CENTER,
+               text_alignment_vertical: int = TextAlignmentVertical.MIDDLE,
                text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
                icon: Union[rl.Texture, None] = None,
@@ -181,10 +152,10 @@ class Label(Widget):
     self._update_text(self._text)
 
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
-    if self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
+    if self._text_alignment_vertical == TextAlignmentVertical.MIDDLE:
       total_text_height = sum(ts.y for ts in self._text_size) or self._font_size * FONT_SCALE
       text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - total_text_height) // 2))
-    elif self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
+    elif self._text_alignment_vertical == TextAlignmentVertical.BOTTOM:
       total_text_height = sum(ts.y for ts in self._text_size) or self._font_size * FONT_SCALE
       text_pos = rl.Vector2(self._rect.x, self._rect.y + self._rect.height - total_text_height)
     else:
@@ -193,10 +164,10 @@ class Label(Widget):
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
       if len(self._text_wrapped) > 0:
-        if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
+        if self._text_alignment == TextAlignment.LEFT:
           icon_x = self._rect.x + self._text_padding
           text_pos.x = self._rect.x + self._icon.width + ICON_PADDING
-        elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+        elif self._text_alignment == TextAlignment.CENTER:
           total_width = self._icon.width + ICON_PADDING + text_size.x
           icon_x = self._rect.x + (self._rect.width - total_width) / 2
           text_pos.x = self._rect.x + self._icon.width + ICON_PADDING
@@ -208,11 +179,11 @@ class Label(Widget):
 
     for text, text_size in zip(self._text_wrapped, self._text_size, strict=True):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
-      if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
+      if self._text_alignment == TextAlignment.LEFT:
         line_pos.x += self._text_padding
-      elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+      elif self._text_alignment == TextAlignment.CENTER:
         line_pos.x += (self._rect.width - text_size.x) // 2
-      elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+      elif self._text_alignment == TextAlignment.RIGHT:
         line_pos.x += self._rect.width - text_size.x - self._text_padding
 
       rl.draw_text_ex(self._font, text, line_pos, self._font_size, 0, self._text_color)
@@ -221,7 +192,7 @@ class Label(Widget):
 
 class UnifiedLabel(Widget):
   """
-  Unified label widget that combines functionality from gui_label, gui_text_box, and Label.
+  Unified label widget that combines functionality from gui_label and Label.
 
   Supports:
   - Text wrapping
@@ -241,8 +212,8 @@ class UnifiedLabel(Widget):
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
-               alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-               alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+               alignment: int = TextAlignment.LEFT,
+               alignment_vertical: int = TextAlignmentVertical.TOP,
                text_padding: int = 0,
                max_width: int | None = None,
                elide: bool = True,
@@ -561,9 +532,9 @@ class UnifiedLabel(Widget):
         total_visible_height += size.y * self._line_height
 
     # Calculate vertical alignment offset
-    if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
+    if self._alignment_vertical == TextAlignmentVertical.TOP:
       start_y = self._rect.y
-    elif self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
+    elif self._alignment_vertical == TextAlignmentVertical.BOTTOM:
       start_y = self._rect.y + self._rect.height - total_visible_height
     else:  # TEXT_ALIGN_MIDDLE
       start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
@@ -640,11 +611,11 @@ class UnifiedLabel(Widget):
 
   def _render_line(self, line, size, current_y, x_offset=0.0):
     # Calculate horizontal position
-    if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
+    if self._alignment == TextAlignment.LEFT:
       line_x = self._rect.x + self._text_padding
-    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+    elif self._alignment == TextAlignment.CENTER:
       line_x = self._rect.x + (self._rect.width - size.x) / 2
-    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+    elif self._alignment == TextAlignment.RIGHT:
       line_x = self._rect.x + self._rect.width - size.x - self._text_padding
     else:
       line_x = self._rect.x + self._text_padding
@@ -662,9 +633,9 @@ class UnifiedLabel(Widget):
   def _render_line_shimmer(self, line, line_x, current_y):
     # Shimmer range based on widest line so sweep is even across all lines
     max_width = self.text_width
-    if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+    if self._alignment == TextAlignment.RIGHT:
       shimmer_left = self._rect.x + self._rect.width - self._text_padding - max_width
-    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+    elif self._alignment == TextAlignment.CENTER:
       shimmer_left = self._rect.x + (self._rect.width - max_width) / 2
     else:
       shimmer_left = self._rect.x + self._text_padding

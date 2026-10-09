@@ -60,7 +60,7 @@ ExitHandler do_exit;
 
 }  // namespace
 
-ConsoleUI::ConsoleUI(Replay *replay) : replay(replay), sm({"carState", "liveParameters"}) {
+ConsoleUI::ConsoleUI(Replay *replay) : replay(replay), sm({"carState", "vehicleParameters"}) {
   // Initialize curses
   initscr();
   clear();
@@ -174,7 +174,7 @@ void ConsoleUI::updateStatus() {
   std::string current_segment = " - " + std::to_string((int)(replay->currentSeconds() / 60));
   write_item(0, 25, "TIME:  ", time_string, current_segment, true);
 
-  auto p = sm["liveParameters"].getLiveParameters();
+  auto p = sm["vehicleParameters"].getVehicleParameters();
   write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f %%", p.getStiffnessFactor() * 100), "  ");
   write_item(1, 25, "SPEED: ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
   write_item(2, 0, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");

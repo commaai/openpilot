@@ -1,5 +1,6 @@
 #include "tools/cabana/commands.h"
 
+#include <cassert>
 #include <cmath>
 
 // UndoStack
@@ -28,39 +29,27 @@ void UndoStack::clear() {
   bool was_clean = isClean();
   commands_.clear();
   index_ = clean_index_ = 0;
-  if (callbacks_.index_changed) callbacks_.index_changed();
-  if (!was_clean && callbacks_.clean_changed) callbacks_.clean_changed(true);
+  indexChanged();
+  if (!was_clean) cleanChanged(true);
 }
 
 void UndoStack::setClean() {
   if (!isClean()) {
     clean_index_ = index_;
-    if (callbacks_.clean_changed) callbacks_.clean_changed(true);
+    cleanChanged(true);
   }
 }
 
 void UndoStack::setIndex(int index) {
   bool was_clean = isClean();
   index_ = index;
-  if (callbacks_.index_changed) callbacks_.index_changed();
-  if (isClean() != was_clean && callbacks_.clean_changed) callbacks_.clean_changed(isClean());
+  indexChanged();
+  if (isClean() != was_clean) cleanChanged(isClean());
 }
 
 UndoStack *UndoStack::instance() {
   static UndoStack undo_stack;
   return &undo_stack;
-}
-
-QtUndoNotifier::QtUndoNotifier(QObject *parent) : QObject(parent) {
-  UndoStack::instance()->setCallbacks({
-    .index_changed = [this]() { emit indexChanged(); },
-    .clean_changed = [this](bool clean) { emit cleanChanged(clean); },
-  });
-}
-
-QtUndoNotifier *undoNotifier() {
-  static QtUndoNotifier notifier;
-  return &notifier;
 }
 
 // EditMsgCommand

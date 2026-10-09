@@ -451,7 +451,7 @@ def process_notifications(client: AtClient) -> None:
       response = es10x_command(client, request)
       content = require_tag(require_tag(response, TAG_RETRIEVE_NOTIFICATION, "RetrieveNotificationsListResponse"),
                             TAG_OK, "RetrieveNotificationsListResponse")
-      pending_notif = next((v for t, v in iter_tlv(content) if t in (TAG_PROFILE_INSTALL_RESULT, 0x30)), None)
+      pending_notif = next((content[start:end] for t, _, start, end in iter_tlv(content, with_positions=True) if t in (TAG_PROFILE_INSTALL_RESULT, 0x30)), None)
       if pending_notif is None:
         raise RuntimeError("Missing PendingNotification")
 
@@ -613,7 +613,7 @@ def parse_lpa_activation_code(activation_code: str) -> tuple[str, str]:
   if not activation_code.startswith("LPA:"):
     raise ValueError("Invalid activation code format")
   parts = activation_code[4:].split("$")
-  if len(parts) != 3:
+  if len(parts) != 3 or not all(parts):
     raise ValueError("Invalid activation code format")
   return parts[1], parts[2]
 
@@ -682,7 +682,7 @@ def download_profile(client: AtClient, activation_code: str) -> str:
     session.close()
 
 
-class TiciLPA(LPABase):
+class LPA(LPABase):
   def __init__(self):
     if hasattr(self, '_client'):
       return

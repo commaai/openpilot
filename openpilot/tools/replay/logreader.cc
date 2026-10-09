@@ -74,8 +74,8 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort,
       uint64_t mono_time = event.getLogMonoTime();
       const Event &evt = events.emplace_back(which, mono_time, event_data);
       // Add encodeIdx packet again as a frame packet for the video stream
-      if (evt.which == cereal::Event::ROAD_ENCODE_IDX ||
-          evt.which == cereal::Event::DRIVER_ENCODE_IDX ||
+      if (evt.which == cereal::Event::NARROW_ROAD_ENCODE_IDX ||
+          evt.which == cereal::Event::CABIN_ENCODE_IDX ||
           evt.which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
         auto idx = capnp::AnyStruct::Reader(event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
         if (idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {

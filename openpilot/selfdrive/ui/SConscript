@@ -3,7 +3,7 @@ from pathlib import Path
 
 Import('env', 'arch', 'common')
 
-if GetOption('extras') and arch == "larch64":
+if GetOption('extras') and arch == "comma_arm64":
   # build installers
   raylib_dir = Path(importlib.util.find_spec("raylib").submodule_search_locations[0]) / "install"
   raylib_env = env.Clone()

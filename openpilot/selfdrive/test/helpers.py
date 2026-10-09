@@ -22,9 +22,9 @@ def set_params_enabled():
   params.put_bool("OpenpilotEnabledToggle", True, block=True)
 
   # valid calib
-  msg = messaging.new_message('liveCalibration')
-  msg.liveCalibration.validBlocks = 20
-  msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
+  msg = messaging.new_message('extrinsicsCalibration')
+  msg.extrinsicsCalibration.validBlocks = 20
+  msg.extrinsicsCalibration.rpyCalib = [0.0, 0.0, 0.0]
   params.put("CalibrationParams", msg.to_bytes(), block=True)
 
 def release_only(f):
