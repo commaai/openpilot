@@ -15,6 +15,19 @@ if [ -z "$RELEASE_BRANCH" ]; then
   exit 1
 fi
 
+# openpilot only runs as a release on RELEASE_BRANCHES, the panda fw build type must match
+RELEASE_BRANCHES=$(python3 -c "import ast; t = ast.parse(open('$SOURCE_DIR/openpilot/common/version.py').read()); \
+print(' '.join(next(ast.literal_eval(n.value) for n in t.body if isinstance(n, ast.Assign) and n.targets[0].id == 'RELEASE_BRANCHES')))")
+for branch in ${RELEASE_BRANCH//,/ }; do
+  if [[ " $RELEASE_BRANCHES " == *" $branch "* ]] && [ -n "$PANDA_DEBUG_BUILD" ]; then
+    echo "$branch is a release branch, it can't use a debug panda build"
+    exit 1
+  elif [[ " $RELEASE_BRANCHES " != *" $branch "* ]] && [ -z "$PANDA_DEBUG_BUILD" ]; then
+    echo "$branch is not in RELEASE_BRANCHES, it needs PANDA_DEBUG_BUILD=1"
+    exit 1
+  fi
+done
+
 BUILD_BRANCH=release-mici-staging
 
 
