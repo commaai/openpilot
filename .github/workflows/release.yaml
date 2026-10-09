@@ -36,5 +36,6 @@ jobs:
       run: BRANCH=__nightly tools/release/build_stripped.sh
     - name: Push chestnut nightly
       run: |
+        tools/release/setup_git_xet.sh install
         git lfs pull --exclude=''
         INCLUDE_BIG_MODEL=1 BRANCH=__nightly-chestnut tools/release/build_stripped.sh
