@@ -6,29 +6,27 @@ Cabana is a tool developed to view raw CAN data. One use for this is creating an
 
 ```bash
 $ ./cabana -h
-Usage: ./cabana [options] route
+Usage: ./cabana [options] [route]
+
+  route                     the drive to replay. find your drives at connect.comma.ai
 
 Options:
-  -h, --help                     Displays help on commandline options.
-  --help-all                     Displays help including Qt specific options.
-  --demo                         use a demo route instead of providing your own
-  --auto                         Auto load the route from the best available source (no video):
-                                 internal, openpilotci, comma_api, car_segments, testing_closet
-  --qcam                         load qcamera
-  --wide-road                         load wide road camera
-  --msgq                         read can messages from msgq
-  --panda                        read can messages from panda
-  --panda-serial <panda-serial>  read can messages from panda with given serial
-  --socketcan <socketcan>        read can messages from given SocketCAN device
-  --zmq <ip-address>             read can messages from zmq at the specified ip-address
-                                 messages
-  --data_dir <data_dir>          local directory with routes
-  --no-vipc                      do not output video
-  --dbc <dbc>                    dbc file to open
-
-Arguments:
-  route                          the drive to replay. find your drives at
-                                 connect.comma.ai
+  --help                    show this help
+  --demo                    use a demo route instead of providing your own
+  --auto                    Auto load the route from the best available source (no video):
+                            internal, openpilotci, comma_api, car_segments, testing_closet
+  --qcam                    load qcamera
+  --wide-road               load wide road camera (alias: --ecam)
+  --cabin                   load cabin camera (alias: --dcam)
+  --msgq                    read can messages from the msgq
+  --panda                   read can messages from panda
+  --panda-serial <serial>   read can messages from panda with given serial
+  --socketcan <device>      read can messages from given SocketCAN device
+  --zmq <ip-address>        read can messages from zmq at the specified ip-address
+  --data_dir <dir>          local directory with routes
+  --no-vipc                 do not output video
+  --no-cache                turn off the local route file cache
+  --dbc <file>              dbc file to open
 ```
 
 ## Examples

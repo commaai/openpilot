@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from openpilot.cereal import messaging, log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.hardware import COMMA_HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
@@ -76,10 +76,10 @@ class AlertRenderer(Widget):
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
     # font size is set dynamically
-    self._full_text1_label = Label("", font_size=0, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                   text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
-    self._full_text2_label = Label("", font_size=ALERT_FONT_BIG, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                   text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+    self._full_text1_label = Label("", font_size=0, font_weight=FontWeight.BOLD, text_alignment=TextAlignment.CENTER,
+                                   text_alignment_vertical=TextAlignmentVertical.TOP)
+    self._full_text2_label = Label("", font_size=ALERT_FONT_BIG, text_alignment=TextAlignment.CENTER,
+                                   text_alignment_vertical=TextAlignmentVertical.TOP)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
     """Generate the current alert based on selfdrive state."""

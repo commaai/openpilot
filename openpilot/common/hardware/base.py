@@ -145,6 +145,9 @@ class HardwareBase(ABC):
   def get_modem_temperatures(self):
     return []
 
+  def get_modem_state(self) -> dict:
+    return {}
+
   def initialize_hardware(self):
     pass
 

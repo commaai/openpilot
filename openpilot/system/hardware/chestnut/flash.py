@@ -63,9 +63,9 @@ def find_chestnut():
   found = []
   for d in glob.glob("/sys/bus/usb/devices/*"):
     try:
-      vid_pid = (open(d + "/idVendor").read().strip(), open(d + "/idProduct").read().strip())
+      vid_pid = (Path(d, "idVendor").read_text().strip(), Path(d, "idProduct").read_text().strip())
       if vid_pid in VID_PIDS + ROM_VID_PIDS:
-        found.append((d, vid_pid, open(d + "/product").read().strip()))
+        found.append((d, vid_pid, Path(d, "product").read_text().strip()))
     except OSError:
       pass
   if len(found) > 1:
@@ -101,7 +101,7 @@ def unbind_drivers(path):
 
 
 def open_device(path):
-  bus, dev = int(open(path + "/busnum").read()), int(open(path + "/devnum").read())
+  bus, dev = int(Path(path, "busnum").read_text()), int(Path(path, "devnum").read_text())
   return os.open(f"/dev/bus/usb/{bus:03d}/{dev:03d}", os.O_RDWR)
 
 

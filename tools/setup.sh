@@ -59,10 +59,10 @@ function ask_dir() {
     return 0
   fi
 
-  read
+  read -r
   if [[ ! -z "$REPLY" ]]; then
-    mkdir -p $REPLY
-    OPENPILOT_ROOT="$(realpath $REPLY)/openpilot"
+    mkdir -p "$REPLY"
+    OPENPILOT_ROOT="$(realpath "$REPLY")/openpilot"
   fi
 }
 
@@ -114,7 +114,7 @@ function check_git() {
 function git_clone() {
   st="$(date +%s)"
   echo "Cloning openpilot..."
-  if $(git clone --filter=blob:none https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
+  if git clone --filter=blob:none https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"; then
     if [[ -f $OPENPILOT_ROOT/launch_openpilot.sh ]]; then
       et="$(date +%s)"
       echo -e " ↳ [${GREEN}✔${NC}] Successfully cloned openpilot in $((et - st)) seconds.\n"
@@ -127,10 +127,10 @@ function git_clone() {
 }
 
 function install_with_op() {
-  cd $OPENPILOT_ROOT
-  $OPENPILOT_ROOT/tools/op.sh post-commit
+  cd "$OPENPILOT_ROOT"
+  "$OPENPILOT_ROOT/tools/op.sh" post-commit
 
-  if ! $OPENPILOT_ROOT/tools/op.sh setup; then
+  if ! "$OPENPILOT_ROOT/tools/op.sh" setup; then
     echo -e "\n[${RED}✗${NC}] failed to install openpilot!"
     return 1
   fi
@@ -147,5 +147,5 @@ check_stdin
 ask_dir
 check_dir
 check_git
-[ -z $SKIP_GIT_CLONE ] && git_clone
+[ -z "$SKIP_GIT_CLONE" ] && git_clone
 install_with_op

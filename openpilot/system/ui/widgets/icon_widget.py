@@ -14,3 +14,6 @@ class IconWidget(Widget):
   def _render(self, _) -> None:
     color = rl.Color(255, 255, 255, int(self._opacity * 255))
     rl.draw_texture_ex(self._texture, rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0, color)
+
+  def set_opacity(self, opacity: float) -> None:
+    self._opacity = opacity
