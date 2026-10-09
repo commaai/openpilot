@@ -11,7 +11,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.utils import tabulate
+from openpilot.common.utils import sudo_write, tabulate
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
@@ -23,6 +23,7 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only, processes_context, log_collector
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, read
 from openpilot.common.mock import mock_messages
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled
@@ -497,6 +498,28 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
     assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
+
+  def test_usb_unplug_fallback(self):
+    authorized = next(d / "authorized" for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
+    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
+    sm = messaging.SubMaster(['modelV2'])
+    pm = messaging.PubMaster(['deviceState'])
+    device_state = messaging.new_message('deviceState')
+    device_state.deviceState.deviceType = HARDWARE.get_device_type()
+    with processes_context(['camerad', 'modeld']):
+      with Timeout(60, "big model didn't start"):
+        while not sm['modelV2'].big:
+          pm.send('deviceState', device_state.to_bytes())
+          sm.update(1000)
+      try:
+        # simulated unplug
+        sudo_write("0", str(authorized))
+        with Timeout(10, "modeld didn't fall back to the small model"):
+          while not sm.updated['modelV2'] or sm['modelV2'].big:
+            sm.update(1000)
+      finally:
+        sudo_write("1", str(authorized))
+    assert Params().get("ChestnutActive") is False
 
 
 if __name__ == "__main__":
