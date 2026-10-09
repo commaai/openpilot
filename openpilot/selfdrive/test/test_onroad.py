@@ -23,7 +23,6 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only, processes_context, log_collector
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, read
 from openpilot.common.mock import mock_messages
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled
@@ -462,6 +461,8 @@ class TestOnroad(OpenpilotTestCase):
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
 
 
+CHESTNUT_VBUS = "/sys/kernel/debug/regulator/smb2-vbus/enable"
+
 @unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
 class TestChestnutOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
@@ -469,8 +470,6 @@ class TestChestnutOnroad(OpenpilotTestCase):
   @mock_messages(['deviceMotion'])
   def test_big_model(self, subtests):
     assert chestnut_present() and chestnut_compiled()
-    bus = next(read(d / "busnum") for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
-    authorized = str(USB_DEVICES_PATH / f"usb{bus}" / "authorized")
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
     sm = messaging.SubMaster(services)
@@ -487,18 +486,23 @@ class TestChestnutOnroad(OpenpilotTestCase):
       with log_collector(services) as (logs, _):
         time.sleep(TEST_DURATION)
 
-      # test small model fallback by deauthorizing the usb bus
+      # test small model fallback, cutting VBUS cold boots the GPU next init
       try:
-        sudo_write("0", authorized)
+        sudo_write("0", CHESTNUT_VBUS)
         with Timeout(10, "modeld didn't fall back to the small model"):
           while sm['modelV2'].big:
             sm.update(1000)
+        time.sleep(2)  # short VBUS drops can leave chestnut unenumerated
       finally:
-        sudo_write("1", authorized)
+        sudo_write("1", CHESTNUT_VBUS)
 
       # test small model keeps running
       with log_collector(['modelV2']) as (small_model_logs, _):
         time.sleep(3)
+
+      with Timeout(30, "chestnut didn't come back"):
+        while not chestnut_present():
+          time.sleep(0.5)
 
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
     for service, messages in msgs.items():

@@ -179,11 +179,19 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
-  if (env.JOB_BASE_NAME == 'chestnut-stresstest') {
-    sh 'git fetch --no-tags origin nightly-chestnut'
-    env.GIT_COMMIT = sh(script: 'git show FETCH_HEAD:git_src_commit', returnStdout: true).trim()
+  if (env.JOB_BASE_NAME == 'chestnut-stresstest' || env.BRANCH_NAME == 'chestnut-vbus') {
+    if (env.JOB_BASE_NAME == 'chestnut-stresstest') {
+      sh 'git fetch --no-tags origin nightly-chestnut'
+      env.GIT_COMMIT = sh(script: 'git show FETCH_HEAD:git_src_commit', returnStdout: true).trim()
+    }
     if (!(env.GIT_COMMIT ==~ /[0-9a-f]{40}/)) {
       error("invalid nightly-chestnut source commit")
+    }
+    if (env.BRANCH_NAME == 'chestnut-vbus') {
+      // reset a chestnut left wedged by a previous stress run
+      deviceStage("chestnut reset", "mici-chestnut-ci", [], [
+        step("vbus cycle", "echo 0 | sudo tee /sys/kernel/debug/regulator/smb2-vbus/enable && sleep 3 && echo 1 | sudo tee /sys/kernel/debug/regulator/smb2-vbus/enable && sleep 10"),
+      ])
     }
     def results = []
     try {
