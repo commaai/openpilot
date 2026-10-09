@@ -1,5 +1,7 @@
 #include "tools/replay/py_downloader.h"
 
+#include <cstdio>
+#include <cstring>
 #include <mutex>
 #include <vector>
 
@@ -13,8 +15,23 @@ constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
 
+void reportProgress(const char *line) {
+  uint64_t cur = 0, total = 0;
+  if (sscanf(line, "PROGRESS:%llu:%llu", (unsigned long long *)&cur, (unsigned long long *)&total) != 2) return;
+  std::lock_guard<std::mutex> lk(handler_mutex);
+  if (progress_handler && total > 0) progress_handler(cur, total, true);
+}
+
+// Run a Python module, report download progress from PROGRESS lines on stderr,
+// and notify the progress handler on failure.
 std::string runModuleWithProgress(const std::string &module, const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
-  std::string result = PyProcess::runModule(module, args, abort);
+  std::string result = PyProcess::runModule(module, args, abort, true, [](const char *line) {
+    if (strncmp(line, "PROGRESS:", 9) == 0) {
+      reportProgress(line);
+    } else {
+      fputs(line, stderr);
+    }
+  });
   if (result.empty()) {
     std::lock_guard<std::mutex> lk(handler_mutex);
     if (progress_handler) progress_handler(0, 0, false);
@@ -49,7 +66,7 @@ std::string getRouteFiles(const std::string &route) {
 
 std::string resolveRouteFiles(const std::string &route, int begin, int end, const std::string &selector) {
   return runModuleWithProgress(DOWNLOADER_MODULE, {"resolve-route-files", route, "--begin", std::to_string(begin),
-                                                   "--end", std::to_string(end), "--selector", selector});
+                                                  "--end", std::to_string(end), "--selector", selector});
 }
 
 std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
