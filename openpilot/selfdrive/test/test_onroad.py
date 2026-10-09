@@ -496,6 +496,11 @@ class TestChestnutOnroad(OpenpilotTestCase):
       finally:
         sudo_write("1", authorized)
 
+      # test small model keeps running
+      with Timeout(10, "small model isn't running"):
+        while not (sm.alive['modelV2'] and sm.freq_ok['modelV2']):
+          sm.update(1000)
+
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
     for service, messages in msgs.items():
       with subtests.test(service=service):
@@ -508,7 +513,7 @@ class TestChestnutOnroad(OpenpilotTestCase):
     camera_frames = {m.narrowRoadCameraState.frameId for m in msgs['narrowRoadCameraState']}
     model_frames = {m.modelV2.frameId for m in msgs['modelV2']}
     assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
-    assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
+    assert all(m.modelV2.big for m in msgs['modelV2']), "chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
     assert Params().get("ChestnutActive") is False
 
