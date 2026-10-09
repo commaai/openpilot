@@ -29,6 +29,7 @@ STEER_MIN_THRESHOLD = 0.02
 MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
+LONG_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
@@ -173,8 +174,8 @@ class TorqueEstimator(ParameterEstimator):
       self.raw_points["steer_torque"].append(-msg.actuatorsOutput.torque)
     elif which == "carState":
       self.raw_points["carState_t"].append(t + self.lag)
-      # TODO: check if high aEgo affects resulting lateral accel
       self.raw_points["vego"].append(msg.vEgo)
+      self.raw_points["aego"].append(msg.aEgo)
       self.raw_points["steer_override"].append(msg.steeringPressed)
     elif which == "extrinsicsCalibration":
       self.calibrator.feed_extrinsics_calibration(msg)
@@ -197,10 +198,11 @@ class TorqueEstimator(ParameterEstimator):
         steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t + self.lag, DT_MDL),
                                    self.raw_points['carState_t'], self.raw_points['steer_override']).astype(bool)
         vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
+        aego = np.interp(t, self.raw_points['carState_t'], self.raw_points['aego'])
         steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque']).item()
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY).item()
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
-          if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
+          if abs(lateral_acc) <= LAT_ACC_THRESHOLD and abs(aego) <= LONG_ACC_THRESHOLD:
             self.filtered_points.add_point(steer, lateral_acc)
 
           if self.track_all_points:
