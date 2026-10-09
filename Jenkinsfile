@@ -209,7 +209,7 @@ node {
     return
   }
 
-  def excludeBranches = ['__nightly', '__nightly-chestnut', 'devel', 'devel-staging',
+  def excludeBranches = ['__nightly', '__nightly-chestnut', '__release-chestnut-staging', 'devel', 'devel-staging',
                          'release-tizi', 'release-tizi-staging', 'release-mici', 'release-mici-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
@@ -223,6 +223,12 @@ node {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
         step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging,release-mici-staging $SOURCE_DIR/tools/release/build_release.sh"),
+      ])
+    }
+
+    if (env.BRANCH_NAME == '__release-chestnut-staging') {
+      deviceStage("build release-chestnut-staging", "mici-chestnut-ci", ["CHESTNUT=1"], [
+        step("build release-chestnut-staging", "SCONSFLAGS=-j4 INCLUDE_BIG_MODEL=1 RELEASE_BRANCH=release-chestnut-staging $SOURCE_DIR/tools/release/build_release.sh TestChestnutOnroad"),
       ])
     }
 
