@@ -467,8 +467,10 @@ class TestChestnutOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
 
   @mock_messages(['deviceMotion'])
-  def test_camera_models(self, subtests):
+  def test_big_model(self, subtests):
     assert chestnut_present() and chestnut_compiled()
+    bus = next(read(d / "busnum") for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
+    authorized = str(USB_DEVICES_PATH / f"usb{bus}" / "authorized")
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
     sm = messaging.SubMaster(services)
@@ -481,8 +483,18 @@ class TestChestnutOnroad(OpenpilotTestCase):
         while not all(sm.seen.values()) or not sm.valid['modelV2']:
           pm.send('deviceState', device_state_bytes)
           sm.update(1000)
+      # test big model and camera timings
       with log_collector(services) as (logs, _):
         time.sleep(TEST_DURATION)
+
+      # test small model fallback by deauthorizing the usb bus
+      try:
+        sudo_write("0", authorized)
+        with Timeout(10, "modeld didn't fall back to the small model"):
+          while sm['modelV2'].big:
+            sm.update(1000)
+      finally:
+        sudo_write("1", authorized)
 
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
     for service, messages in msgs.items():
@@ -498,29 +510,6 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
     assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
-
-  def test_usb_unplug_fallback(self):
-    bus = next(read(d / "busnum") for d in USB_DEVICES_PATH.glob("*") if read(d / "product") == CHESTNUT_USB_PRODUCT)
-    authorized = str(USB_DEVICES_PATH / f"usb{bus}" / "authorized")
-    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
-    sm = messaging.SubMaster(['modelV2'])
-    pm = messaging.PubMaster(['deviceState'])
-    device_state = messaging.new_message('deviceState')
-    device_state.deviceState.deviceType = HARDWARE.get_device_type()
-    device_state_bytes = device_state.to_bytes()
-    with processes_context(['camerad', 'modeld']):
-      with Timeout(60, "big model didn't start"):
-        while not sm['modelV2'].big:
-          pm.send('deviceState', device_state_bytes)
-          sm.update(1000)
-      try:
-        # unplug by disconnecting the chestnut's root hub
-        sudo_write("0", authorized)
-        with Timeout(10, "modeld didn't fall back to the small model"):
-          while not sm.updated['modelV2'] or sm['modelV2'].big:
-            sm.update(1000)
-      finally:
-        sudo_write("1", authorized)
     assert Params().get("ChestnutActive") is False
 
 
