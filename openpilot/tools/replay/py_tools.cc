@@ -1,4 +1,4 @@
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 
 #include <cstdio>
 #include <cstring>
@@ -11,6 +11,7 @@ namespace {
 
 constexpr const char *AUTH_MODULE = "openpilot.tools.lib.auth";
 constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
+constexpr const char *MIGRATION_MODULE = "openpilot.selfdrive.test.process_replay.migration";
 
 static std::mutex handler_mutex;
 static DownloadProgressHandler progress_handler = nullptr;
@@ -46,7 +47,7 @@ void installDownloadProgressHandler(DownloadProgressHandler handler) {
   progress_handler = handler;
 }
 
-namespace PyDownloader {
+namespace PyTools {
 
 std::string download(const std::string &url, bool use_cache, std::atomic<bool> *abort) {
   std::vector<std::string> args = {"download", url};
@@ -94,4 +95,8 @@ std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int6
   return runModuleWithProgress(DOWNLOADER_MODULE, args);
 }
 
-}  // namespace PyDownloader
+std::string migrateLog(const std::string &log_path) {
+  return PyProcess::runModule(MIGRATION_MODULE, {log_path, "/dev/stdout"}, nullptr, false);
+}
+
+}  // namespace PyTools

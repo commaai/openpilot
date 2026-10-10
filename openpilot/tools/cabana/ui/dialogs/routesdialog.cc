@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "json11/json11.hpp"
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 #include "tools/cabana/ui/theme.h"
 
 #include "imgui.h"
@@ -157,7 +157,7 @@ void RoutesDialog::signIn(const std::string &provider) {
   s_.auth_error.clear();
   auth_abort_ = std::make_shared<std::atomic<bool>>(false);
   std::thread([this, alive = std::weak_ptr<bool>(alive_), abort = auth_abort_, provider]() {
-    const std::string result = PyDownloader::authenticate(provider, abort.get());
+    const std::string result = PyTools::authenticate(provider, abort.get());
     utils::runOnMainThread(utils::guarded(alive.lock(), [this, abort, result]() {
       if (*abort) return;
       auth_abort_.reset();

@@ -7,7 +7,7 @@
 typedef std::function<void(uint64_t cur, uint64_t total, bool success)> DownloadProgressHandler;
 void installDownloadProgressHandler(DownloadProgressHandler handler);
 
-namespace PyDownloader {
+namespace PyTools {
 
 // Downloads url to local cache, returns local file path. Reports progress via installDownloadProgressHandler.
 std::string download(const std::string &url, bool use_cache = true, std::atomic<bool> *abort = nullptr);
@@ -30,4 +30,7 @@ std::string getDevices();
 // Returns JSON string of device routes
 std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms = 0, int64_t end_ms = 0, bool preserved = false);
 
-}  // namespace PyDownloader
+// Migrates a log segment through the Python migration CLI. Returns the migrated bytes (empty on failure).
+std::string migrateLog(const std::string &log_path);
+
+}  // namespace PyTools

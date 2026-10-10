@@ -25,8 +25,7 @@
 #include "common/util.h"
 #include "json11/json11.hpp"
 #include "tools/replay/logreader.h"
-#include "tools/replay/py_downloader.h"
-#include "tools/replay/py_process.h"
+#include "tools/replay/py_tools.h"
 
 namespace fs = std::filesystem;
 
@@ -332,7 +331,7 @@ std::map<int, SegmentLogs> load_segments_from_json(const json11::Json &json) {
 
 std::map<int, SegmentLogs> load_segments_from_server(const RouteSelection &route) {
   const std::string selector = route.selector == LogSelector::RLog ? "r" : route.selector == LogSelector::QLog ? "q" : "a";
-  const std::string result = PyDownloader::resolveRouteFiles(route.canonical_name, route.begin_segment, route.end_segment, selector);
+  const std::string result = PyTools::resolveRouteFiles(route.canonical_name, route.begin_segment, route.end_segment, selector);
   if (result.empty()) throw std::runtime_error("Failed to fetch route files for " + route.canonical_name);
 
   std::string parse_error;
@@ -1572,10 +1571,6 @@ SeriesAccumulator extract_segment_series(const std::vector<Event> &events,
   return merged;
 }
 
-std::string migrate_log(const std::string &log_path) {
-  return PyProcess::runModule("openpilot.selfdrive.test.process_replay.migration", {log_path, "/dev/stdout"}, nullptr, false);
-}
-
 LoadedRouteArtifacts load_route_series_parallel(
     const std::map<int, SegmentLogs> &segments,
     const SchemaIndex &schema,
@@ -1629,7 +1624,7 @@ LoadedRouteArtifacts load_route_series_parallel(
 
       std::string migrated_data;
       if (migrate) {
-        migrated_data = migrate_log(log_path);
+        migrated_data = PyTools::migrateLog(log_path);
       }
 
       LogReader reader;
