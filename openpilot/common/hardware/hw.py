@@ -4,7 +4,12 @@ from pathlib import Path
 
 from openpilot.common.hardware import PC
 
-DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache"
+# /tmp is a small tmpfs on-device (150M), too small for multi-segment route
+# downloads -- large downloads there silently truncate once it fills. /data
+# is the large persistent partition already used for realdata/params/log on
+# device (see log_root()/persist_root() below), so use it there instead.
+# Keep /tmp on PC, where it isn't a constrained tmpfs. See #35583.
+DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache" if PC else "/data/comma_download_cache"
 
 class Paths:
   @staticmethod
