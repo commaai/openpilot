@@ -215,6 +215,7 @@ class Modem:
     self._sim_change = False
     self._apn = ""  # blank = network-provided via PCO
     self._roaming_allowed = True
+    self._reattach_tries = 0  # re-registrations left to attach with a new APN in DIAL_CID
     self.running = True
     self.S = INITIAL_STATE.copy()
 
@@ -328,6 +329,10 @@ class Modem:
       logging.warning("AT echo still on, retrying")
       return State.INITIALIZING
 
+    # an interrupted re-registration can leave the modem deregistered
+    if self._cops_mode() == "2":
+      self._at("AT+COPS=0")
+
     identity = self._read_identity()
     if not identity["iccid"] or not identity["imei"]:
       logging.warning(f"identity read incomplete: {identity}, retrying")
@@ -338,6 +343,9 @@ class Modem:
     self.S.update(identity)
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._is_roaming_allowed()
+    # the modem attaches with the APN it has stored, so a new one only applies on its next attach
+    if self._read_dial_apn() != self._apn:
+      self._reattach_tries = 2
     # blank APN lets the carrier supply one via PCO
     self._at(f'AT+CGDCONT={DIAL_CID},"IP","{self._apn}"')
     logging.info(f"APN '{self._apn or '(network-provided)'}' written to CID {DIAL_CID}, roaming={'on' if self._roaming_allowed else 'off'}")
@@ -367,11 +375,20 @@ class Modem:
     logging.info(f"imei={imei} iccid={iccid} mcc_mnc={mcc_mnc} ver={modem_version}")
     return {"imei": imei, "iccid": iccid, "mcc_mnc": mcc_mnc, "modem_version": modem_version}
 
+  def _read_dial_apn(self) -> str | None:
+    v = self._atv("AT+CGDCONT?", f"+CGDCONT: {DIAL_CID},")
+    fields = v.split(",") if v else []
+    return fields[2].strip('"') if len(fields) > 2 else None
+
   def _do_searching(self):
     new_roaming = self._is_roaming_allowed()
     if new_roaming != self._roaming_allowed:
       logging.info(f"roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
+
+    # roaming was just synced, so this only fires on a GsmApn change; INITIALIZING writes it
+    if self._params_changed():
+      return State.DISCONNECTING
 
     v = self._atv("AT+CREG?", "+CREG:")
     if not v:
@@ -380,6 +397,10 @@ class Modem:
     reg = self._parse_reg(v)
     greg = self._parse_reg(self._atv("AT+CGREG?", "+CGREG:") or "")
     logging.debug(f"creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
+
+    if reg == "denied" and self._reattach_tries > 0:
+      self._publish_state(registration=reg)
+      return self._reattach()
 
     if reg == "roaming" and not self._roaming_allowed:
       self._publish_state(registration=reg)
@@ -393,6 +414,23 @@ class Modem:
       self._publish_state(registration=reg)
     return self._searching_idle()
 
+  def _cops_mode(self) -> str | None:
+    v = self._atv("AT+COPS?", "+COPS:")
+    return v.split(",", 1)[0].strip() if v else None
+
+  def _reattach(self):
+    logging.info(f"registration denied, re-attaching with APN '{self._apn or '(network-provided)'}'")
+    self._reattach_tries -= 1
+    self._at("AT+COPS=2")  # deregister
+    if self._cops_mode() == "2":
+      self._reattach_tries = 0
+    # context is inactive while deregistered; the INITIALIZING write may have been lost to the AT lock
+    self._at(f'AT+CGDCONT={DIAL_CID},"IP","{self._apn}"')
+    self._at("AT+COPS=0")  # automatic registration, attaches with the APN in DIAL_CID
+    if self._cops_mode() != "0":
+      return State.DISCONNECTING  # AT port busy; INITIALIZING sends AT+COPS=0
+    return State.SEARCHING
+
   def _searching_idle(self):
     if self._sim_change or not os.path.exists(AT_PORT):
       logging.info(f"-> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
@@ -403,6 +441,7 @@ class Modem:
     logging.info("starting pppd")
     self._ppp.reset_fail_counter()
     self._sim_change = False
+    self._reattach_tries = 0  # registered, nothing left to apply
     self._ppp.start()
     return State.CONNECTED
 
