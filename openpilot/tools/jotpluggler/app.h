@@ -34,6 +34,7 @@ struct Options {
   bool show = false;
   bool sync_load = false;
   bool stream = false;
+  bool migrate = true;
   double stream_buffer_seconds = 30.0;
 };
 
@@ -435,6 +436,7 @@ std::vector<RouteSeries> decode_can_messages(const std::vector<CanMessageData> &
 RouteData load_route_data(const std::string &route_name,
                           const std::string &data_dir = {},
                           const std::string &dbc_name = {},
+                          bool migrate = true,
                           const RouteLoadProgressCallback &progress = {});
 RouteIdentifier parse_route_identifier(std::string_view route_name);
 void rebuild_gps_trace(RouteData *route_data);
@@ -508,6 +510,7 @@ struct AppSession {
   std::string route_name;
   std::string data_dir;
   std::string dbc_override;
+  bool migrate = true;
   StreamSourceConfig stream_source;
   double stream_buffer_seconds = 30.0;
   SessionDataMode data_mode = SessionDataMode::Route;
@@ -885,7 +888,7 @@ public:
   AsyncRouteLoader(const AsyncRouteLoader &) = delete;
   AsyncRouteLoader &operator=(const AsyncRouteLoader &) = delete;
 
-  void start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name);
+  void start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name, bool migrate);
   RouteLoadSnapshot snapshot() const;
   bool consume(RouteData *route_data, std::string *error_text);
 

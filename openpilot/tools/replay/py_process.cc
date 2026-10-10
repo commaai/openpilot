@@ -1,10 +1,9 @@
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_process.h"
 
 #include <csignal>
-#include <fcntl.h>
 #include <cstdio>
 #include <cstring>
-#include <mutex>
+#include <fcntl.h>
 #include <spawn.h>
 #ifdef __APPLE__
 #include <crt_externs.h>
@@ -16,29 +15,15 @@
 
 #include "tools/replay/util.h"
 
-namespace {
+namespace PyProcess {
 
-constexpr const char *AUTH_MODULE = "openpilot.tools.lib.auth";
-constexpr const char *DOWNLOADER_MODULE = "openpilot.tools.lib.file_downloader";
-
-static std::mutex handler_mutex;
-static DownloadProgressHandler progress_handler = nullptr;
-
-void reportProgress(const char *line) {
-  uint64_t cur = 0, total = 0;
-  if (sscanf(line, "PROGRESS:%llu:%llu", (unsigned long long *)&cur, (unsigned long long *)&total) != 2) return;
-  std::lock_guard<std::mutex> lk(handler_mutex);
-  if (progress_handler && total > 0) progress_handler(cur, total, true);
-}
-
-// Run a Python command and capture stdout. Stderr is scanned for PROGRESS lines and otherwise passed
-// through to the parent's stderr. Returns stdout content. If abort is signaled, kills the child process.
-std::string runPython(const char *module, const std::vector<std::string> &args, std::atomic<bool> *abort = nullptr) {
+std::string runModule(const std::string &module, const std::vector<std::string> &args,
+                      std::atomic<bool> *abort, bool trim, const StderrLineCallback &stderr_line_cb) {
   // Build argv for the Python module
   std::vector<const char *> argv;
   argv.push_back("python3");
   argv.push_back("-m");
-  argv.push_back(module);
+  argv.push_back(module.c_str());
   for (const auto &a : args) {
     argv.push_back(a.c_str());
   }
@@ -56,17 +41,17 @@ std::string runPython(const char *module, const std::vector<std::string> &args, 
   };
   int stdout_pipe[2], stderr_pipe[2];
   if (open_pipe(stdout_pipe) != 0) {
-    rWarning("py_downloader: pipe() failed");
+    rWarning("py_process: pipe() failed");
     return {};
   }
   if (open_pipe(stderr_pipe) != 0) {
-    rWarning("py_downloader: pipe() failed");
+    rWarning("py_process: pipe() failed");
     close(stdout_pipe[0]); close(stdout_pipe[1]);
     return {};
   }
 
   // Avoid copying the large replay address space and running atfork handlers on
-  // every segment download: both can stall rendering even from a worker thread.
+  // every spawn: both can stall rendering even from a worker thread.
   std::vector<std::string> environment;
 #ifdef __APPLE__
   char **parent_environment = *_NSGetEnviron();
@@ -103,7 +88,7 @@ std::string runPython(const char *module, const std::vector<std::string> &args, 
   if (attributes_initialized) posix_spawnattr_destroy(&attributes);
   if (actions_initialized) posix_spawn_file_actions_destroy(&actions);
   if (error) {
-    rWarning("py_downloader: posix_spawnp() failed: %s", strerror(error));
+    rWarning("py_process: posix_spawnp() failed: %s", strerror(error));
     close(stdout_pipe[0]); close(stdout_pipe[1]);
     close(stderr_pipe[0]); close(stderr_pipe[1]);
     return {};
@@ -113,8 +98,8 @@ std::string runPython(const char *module, const std::vector<std::string> &args, 
   close(stdout_pipe[1]);
   close(stderr_pipe[1]);
 
-  // stderr carries the progress lines, so a thread reads it while the loop below waits on stdout
-  std::thread stderr_thread([fd = stderr_pipe[0]]() {
+  // stderr is read in a thread so it can be inspected while the loop below waits on stdout
+  std::thread stderr_thread([fd = stderr_pipe[0], cb = stderr_line_cb]() {
     FILE *f = fdopen(fd, "r");
     if (!f) {
       close(fd);
@@ -123,8 +108,8 @@ std::string runPython(const char *module, const std::vector<std::string> &args, 
     char *line = nullptr;
     size_t cap = 0;
     while (getline(&line, &cap, f) > 0) {
-      if (strncmp(line, "PROGRESS:", 9) == 0) {
-        reportProgress(line);
+      if (cb) {
+        cb(line);
       } else {
         fputs(line, stderr);
       }
@@ -182,81 +167,23 @@ std::string runPython(const char *module, const std::vector<std::string> &args, 
                 WIFSIGNALED(status);
   if (failed) {
     if (expected_sigterm) {
-      // Route/camera teardown cancels outstanding downloader subprocesses.
-      // Keep that expected shutdown path quiet.
+      // Caller signaled abort; expected shutdown path.
     } else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-      rWarning("py_downloader: process exited with code %d", WEXITSTATUS(status));
+      rWarning("py_process: %s exited with code %d", module.c_str(), WEXITSTATUS(status));
     } else if (WIFSIGNALED(status)) {
-      rWarning("py_downloader: process killed by signal %d", WTERMSIG(status));
-    }
-    std::lock_guard<std::mutex> lk(handler_mutex);
-    if (progress_handler) {
-      progress_handler(0, 0, false);
+      rWarning("py_process: %s killed by signal %d", module.c_str(), WTERMSIG(status));
     }
     return {};
   }
 
   // Trim trailing newline
-  while (!stdout_data.empty() && (stdout_data.back() == '\n' || stdout_data.back() == '\r')) {
-    stdout_data.pop_back();
+  if (trim) {
+    while (!stdout_data.empty() && (stdout_data.back() == '\n' || stdout_data.back() == '\r')) {
+      stdout_data.pop_back();
+    }
   }
 
   return stdout_data;
 }
 
-}  // namespace
-
-void installDownloadProgressHandler(DownloadProgressHandler handler) {
-  std::lock_guard<std::mutex> lk(handler_mutex);
-  progress_handler = handler;
-}
-
-namespace PyDownloader {
-
-std::string download(const std::string &url, bool use_cache, std::atomic<bool> *abort) {
-  std::vector<std::string> args = {"download", url};
-  if (!use_cache) {
-    args.push_back("--no-cache");
-  }
-  return runPython(DOWNLOADER_MODULE, args, abort);
-}
-
-std::string decompress(const std::string &path, std::atomic<bool> *abort) {
-  return runPython(DOWNLOADER_MODULE, {"decompress", path}, abort);
-}
-
-std::string getRouteFiles(const std::string &route) {
-  return runPython(DOWNLOADER_MODULE, {"route-files", route});
-}
-
-std::string resolveRouteFiles(const std::string &route, int begin, int end, const std::string &selector) {
-  return runPython(DOWNLOADER_MODULE, {"resolve-route-files", route, "--begin", std::to_string(begin),
-                                     "--end", std::to_string(end), "--selector", selector});
-}
-
-std::string authenticate(const std::string &provider, std::atomic<bool> *abort) {
-  return runPython(AUTH_MODULE, {provider, "--json"}, abort);
-}
-
-std::string getDevices() {
-  return runPython(DOWNLOADER_MODULE, {"devices"});
-}
-
-std::string getDeviceRoutes(const std::string &dongle_id, int64_t start_ms, int64_t end_ms, bool preserved) {
-  std::vector<std::string> args = {"device-routes", dongle_id};
-  if (preserved) {
-    args.push_back("--preserved");
-  } else {
-    if (start_ms > 0) {
-      args.push_back("--start");
-      args.push_back(std::to_string(start_ms));
-    }
-    if (end_ms > 0) {
-      args.push_back("--end");
-      args.push_back(std::to_string(end_ms));
-    }
-  }
-  return runPython(DOWNLOADER_MODULE, args);
-}
-
-}  // namespace PyDownloader
+}  // namespace PyProcess

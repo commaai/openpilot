@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "json11/json11.hpp"
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 
 namespace routes {
 
@@ -91,7 +91,7 @@ std::vector<RouteInfo> parseRoutes(const std::string &json, bool preserved) {
 
 void fetchDevices(DevicesCallback callback) {
   std::thread([callback = std::move(callback)]() {
-    std::string result = PyDownloader::getDevices();
+    std::string result = PyTools::getDevices();
     auto [success, error_code] = checkApiResponse(result);
     callback(success ? parseDevices(result) : std::vector<DeviceInfo>{}, success, error_code);
   }).detach();
@@ -106,7 +106,7 @@ void fetchRoutes(const std::string &dongle_id, int period_days, RoutesCallback c
   }
 
   std::thread([dongle_id, start_ms, end_ms, preserved, callback = std::move(callback)]() {
-    std::string result = PyDownloader::getDeviceRoutes(dongle_id, start_ms, end_ms, preserved);
+    std::string result = PyTools::getDeviceRoutes(dongle_id, start_ms, end_ms, preserved);
     auto [success, error_code] = checkApiResponse(result);
     callback(success ? parseRoutes(result, preserved) : std::vector<RouteInfo>{}, success, error_code);
   }).detach();
