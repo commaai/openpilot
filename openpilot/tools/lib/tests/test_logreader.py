@@ -286,3 +286,86 @@ class TestLogReader(OpenpilotTestCase):
       msgs = list(LogReader(qlog.name, only_union_types=True))
       assert len(msgs) == num_msgs
       [m.which() for m in msgs]
+
+  @staticmethod
+  def _write_controls_log(path, enabled, with_selfdrive_state=False):
+    """Old logs only have controlsState, with the fields we care about under `deprecated`"""
+    events = []
+    for i, en in enumerate(enabled):
+      event = capnp_log.Event.new_message(logMonoTime=i + 1, valid=True)
+      event.init("controlsState")
+      event.controlsState.deprecated.enabled = en
+      events.append(event.to_bytes())
+
+      if with_selfdrive_state:
+        event = capnp_log.Event.new_message(logMonoTime=i + 1, valid=True)
+        event.init("selfdriveState")
+        event.selfdriveState.enabled = en
+        events.append(event.to_bytes())
+
+    with open(path, "wb") as f:
+      f.write(b"".join(events))
+
+  def test_migrate(self):
+    enabled = [False, False, True, True, True]
+    path = os.path.join(self.tmpdir.name, "old_rlog")
+    self._write_controls_log(path, enabled)
+
+    # not migrated by default
+    assert {m.which() for m in LogReader(path)} == {"controlsState"}
+
+    msgs = list(LogReader(path, migrate=True))
+    assert msgs == sorted(msgs, key=lambda m: m.logMonoTime)
+    assert {m.which() for m in msgs} == {"controlsState", "selfdriveState"}
+    assert [m.selfdriveState.enabled for m in msgs if m.which() == "selfdriveState"] == enabled
+
+    lr = LogReader(path, migrate=True)
+    assert [m.enabled for m in lr.filter("selfdriveState")] == enabled
+    assert lr.first("selfdriveState").enabled == enabled[0]
+
+  def test_migrate_current_schema_unchanged(self):
+    enabled = [False, True, True]
+    path = os.path.join(self.tmpdir.name, "current_rlog")
+    self._write_controls_log(path, enabled, with_selfdrive_state=True)
+
+    raw = list(LogReader(path))
+    migrated = list(LogReader(path, migrate=True))
+    assert [m.which() for m in migrated] == [m.which() for m in raw]
+    assert [m.selfdriveState.enabled for m in migrated if m.which() == "selfdriveState"] == enabled
+
+  def test_migrate_multiple_iterations(self, mocker):
+    path = os.path.join(self.tmpdir.name, "old_rlog_cached")
+    self._write_controls_log(path, [True, False])
+
+    import openpilot.selfdrive.test.process_replay.migration as migration
+    migrate_mock = mocker.patch.object(migration, "migrate_all", wraps=migration.migrate_all)
+    lr = LogReader(path, migrate=True)
+    assert len(list(lr)) == len(list(lr))
+    assert migrate_mock.call_count == 1
+
+  def test_time_series_union_members(self):
+    # messages of the same type with different union members set (old sensorEvents migrate to this)
+    path = os.path.join(self.tmpdir.name, "union_rlog")
+    events = []
+    for i, member in enumerate(["gyroUncalibrated", "gyro", "gyro"]):
+      event = capnp_log.Event.new_message(logMonoTime=i + 1, valid=True)
+      event.init("gyroscope").init(member).v = [float(i)] * 3
+      events.append(event.to_bytes())
+    with open(path, "wb") as f:
+      f.write(b"".join(events))
+
+    gyro = LogReader(path).time_series["gyroscope"]
+    assert len(gyro["t"]) == 3
+    assert all(len(v) == 3 for v in gyro.values())
+    assert list(gyro["gyro/v"][1]) == [1.0] * 3
+    assert gyro["gyro/v"][0] is None
+    assert gyro["gyroUncalibrated/v"][1] is None
+
+  def test_time_series_migrated(self):
+    enabled = [False, False, True, True, True]
+    path = os.path.join(self.tmpdir.name, "old_rlog_ts")
+    self._write_controls_log(path, enabled)
+
+    ts = LogReader(path).time_series
+    assert list(ts["selfdriveState"]["enabled"]) == enabled
+    assert list(ts["selfdriveState"]["t"]) == [(i + 1) / 1e9 for i in range(len(enabled))]

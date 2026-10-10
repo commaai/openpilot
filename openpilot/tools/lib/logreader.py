@@ -244,7 +244,12 @@ class LogReader:
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
-               sources: list[Source] | None = None, sort_by_time=False, only_union_types=False):
+               sources: list[Source] | None = None, sort_by_time=False, only_union_types=False, migrate=False):
+    """
+    migrate: apply selfdrive/test/process_replay/migration.py to the whole log, so logs from older
+             versions expose the current message and field names. Messages come back sorted by time.
+             Migration runs across all segments at once and holds them in memory.
+    """
     if sources is None:
       sources = [internal_source, comma_api_source, openpilotci_source, comma_car_segments_source]
 
@@ -256,8 +261,10 @@ class LogReader:
 
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types
+    self.migrate = migrate
 
     self.__lrs: dict[int, _LogFileReader] = {}
+    self.__migrated: list | None = None
     self.reset()
 
   def _get_lr(self, i):
@@ -265,14 +272,28 @@ class LogReader:
       self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i], sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
     return self.__lrs[i]
 
-  def __iter__(self):
+  def _iter_raw(self):
     for i in range(len(self.logreader_identifiers)):
       yield from self._get_lr(i)
+
+  def _get_migrated(self) -> list:
+    if self.__migrated is None:
+      # imported here because migration imports this module and pulls in heavy dependencies
+      from openpilot.selfdrive.test.process_replay.migration import migrate_all
+      self.__migrated = migrate_all(self._iter_raw())
+    return self.__migrated
+
+  def __iter__(self):
+    if self.migrate:
+      yield from self._get_migrated()
+    else:
+      yield from self._iter_raw()
 
   def _run_on_segment(self, func, i):
     return func(self._get_lr(i))
 
   def run_across_segments(self, num_processes, func, disable_tqdm=False, desc=None):
+    # note: func gets the raw segments, migration (migrate=True) does not apply here since it needs the whole log
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
       num_segs = len(self.logreader_identifiers)
@@ -281,6 +302,7 @@ class LogReader:
       return ret
 
   def reset(self):
+    self.__migrated = None
     self.logreader_identifiers = []
     for identifier in self.identifier:
       self.logreader_identifiers.extend(self._parse_identifier(identifier))
@@ -297,7 +319,8 @@ class LogReader:
 
   @property
   def time_series(self):
-    return msgs_to_time_series(self)
+    # always migrated, so logs from older versions have the current message and field names
+    return msgs_to_time_series(self._get_migrated())
 
 
 if __name__ == "__main__":

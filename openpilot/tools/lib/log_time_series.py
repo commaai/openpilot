@@ -40,9 +40,16 @@ def append_dict(path, t, d, values):
   else:
     group = values[path]
 
+  # messages of one type can have different fields set (e.g. different union members),
+  # so backfill earlier rows for new fields and fill None where a field is missing
+  for k in d:
+    if k not in group:
+      group[k] = [None] * len(group["t"])
+
   group["t"].append(t)
-  for k, v in d.items():
-    group[k].append(v)
+  for k in group:
+    if k != "t":
+      group[k].append(d.get(k))
 
 
 def potentially_ragged_array(arr, dtype=None, **kwargs):
