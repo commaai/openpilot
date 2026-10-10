@@ -1,0 +1,55 @@
+VERSION "ParkAssistCAN"
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: ACM CGM EPAS_P ESP IBM OCS RCM SAS TestTool VDM Vector_XXX
+
+BO_ 794 WheelButtons: 7 XXX
+ SG_ LeftButton_ScrollClick : 19|2@0+ (1,0) [0|3] "" XXX
+ SG_ LeftButton_RightClick : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ LeftButton_LeftClick : 22|2@1+ (1,0) [0|3] "" XXX
+ SG_ LeftButton_Scroll : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ RightButton_ScrollClick : 35|2@0+ (1,0) [0|3] "" XXX
+ SG_ RightButton_RightClick : 37|2@0+ (1,0) [0|3] "" XXX
+ SG_ RightButton_LeftClick : 38|2@1+ (1,0) [0|3] "" XXX
+ SG_ RightButton_Scroll : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 848 BSM_BlindSpotIndicator: 4 XXX
+ SG_ BSM_BlindSpotIndicator_Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ BSM_BlindSpotIndicator_Counter : 11|4@0+ (1,0) [0|15] "" XXX
+ SG_ BSM_BlindSpotIndicator_Left : 29|2@0+ (1,0) [0|3] "" XXX
+ SG_ BSM_BlindSpotIndicator_Right : 30|2@1+ (1,0) [0|3] "" XXX
+
+VAL_ 848 BSM_BlindSpotIndicator_Left 0 "OFF" 1 "OBJECT_DETECTED" 2 "ACTIVE_WARNING" ;
+VAL_ 848 BSM_BlindSpotIndicator_Right 0 "OFF" 1 "OBJECT_DETECTED" 2 "ACTIVE_WARNING" ;
