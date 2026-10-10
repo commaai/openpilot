@@ -6,7 +6,8 @@ from pathlib import Path
 from openpilot.common.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.loggerd.uploader import clear_locks, main, Uploader, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from openpilot.system.loggerd.uploader import clear_locks, main, Uploader, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE, PUT_TIMEOUT
+import openpilot.system.loggerd.uploader as uploader
 
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
@@ -162,6 +163,30 @@ class TestUploader(UploaderTestCase):
     uploader = Uploader("0000000000000000", Paths.log_root())
     upload_candidates = {candidate[2] for candidate in uploader.list_upload_files(metered=False)}
     assert upload_candidates.isdisjoint(map(str, f_paths)), "Uploaded file selected again"
+
+  def test_upload_put_uses_widened_read_timeout(self, mocker):
+    # Regression test for #34941: do_upload's PUT to the blob store used a
+    # flat 10s timeout, so a slow-but-successful server-side upload raised
+    # ReadTimeout client-side, the file was never xattr-tagged as uploaded,
+    # and the uploader retried the same already-uploaded file forever.
+    # PUT_TIMEOUT widens the read side while keeping connect short.
+    f_path = self.gen_files(lock=False, boot=False)[0]
+
+    class FakeStat:
+      status_code = 200
+      request = type("Req", (), {"headers": {"Content-Length": "1"}})()
+
+    put_mock = mocker.patch("openpilot.system.loggerd.uploader.requests.put", return_value=FakeStat())
+    uploader.fake_upload = False
+    try:
+      up = Uploader("0000000000000000", Paths.log_root())
+      up.do_upload("qlog.zst", str(f_path))
+    finally:
+      uploader.fake_upload = True
+
+    assert put_mock.call_count == 1
+    assert put_mock.call_args.kwargs["timeout"] == PUT_TIMEOUT
+    assert PUT_TIMEOUT[1] > 10, "read timeout should be widened past the original 10s"
 
   def test_clear_locks_on_startup(self, mocker):
     f_paths = self.gen_files(lock=True, boot=False)
