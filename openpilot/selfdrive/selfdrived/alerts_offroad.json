@@ -26,11 +26,11 @@
     "severity": 0
   },
   "Offroad_ChestnutNotDetected": {
-    "text": "Chestnut not detected. Check USB and 12V connections.",
+    "text": "Chestnut not detected. Check USB and 12V connections, then restart the car.",
     "severity": 0
   },
   "Offroad_ChestnutOverheated": {
-    "text": "Chestnut overheated. Ensure good airflow. Current GPU temperature is %1.",
+    "text": "Chestnut overheated. Ensure good airflow.",
     "severity": 0
   },
   "Offroad_ChestnutPcieUnavailable": {

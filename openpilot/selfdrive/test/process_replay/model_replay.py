@@ -85,7 +85,7 @@ def generate_report(proposed, master, tmp, commit):
                     ], "driverStateV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
-               map(v[0], get_event(master, event)), f"{v[1]}_{commit[:7]}", tmp) \
+               map(v[0], get_event(master, event)), f"{v[1]}_{'chestnut' if CHESTNUT else 'tici'}_{commit[:7]}", tmp) \
                for v,event in ([*ModelV2_Plots] + [*DriverStateV2_Plots])]
 
 def create_table(title, files, link, open_table=False):
@@ -105,7 +105,8 @@ def create_table(title, files, link, open_table=False):
 def comment_replay_report(proposed, master, full_logs):
   with tempfile.TemporaryDirectory() as tmp:
     PR_BRANCH = os.getenv("GIT_BRANCH","")
-    DATA_BUCKET = f"model_replay_{PR_BRANCH}"
+    model_type = "chestnut" if CHESTNUT else "tici"
+    DATA_BUCKET = f"model_replay_{PR_BRANCH}_{model_type}"
 
     try:
       GITHUB.get_pr_number(PR_BRANCH)
@@ -126,8 +127,9 @@ def comment_replay_report(proposed, master, full_logs):
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
-    comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
-    GITHUB.comment_on_pr(comment, PR_BRANCH, "commaci-public", True)
+    model_title = "Big model (Chestnut)" if CHESTNUT else "Small model"
+    comment = f"<h2>Model Replay: {model_title}</h2>ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
+    GITHUB.comment_on_pr(comment, PR_BRANCH, "commaci-public", True, comment_marker=f"_model_{model_type}_")
 
 def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
   all_msgs = []
@@ -290,8 +292,7 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
-        if not CHESTNUT:
-          comment_replay_report(log_msgs, cmp_log, log_msgs)
+        comment_replay_report(log_msgs, cmp_log, log_msgs)
         failed = False
         print(diff_long)
       print('-------------\n'*5)

@@ -25,7 +25,7 @@
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/export.h"
 #include "tools/cabana/utils/util.h"
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 #include "tools/replay/util.h"
 
 namespace {

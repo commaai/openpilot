@@ -34,6 +34,7 @@ struct Options {
   bool show = false;
   bool sync_load = false;
   bool stream = false;
+  bool migrate = true;
   double stream_buffer_seconds = 30.0;
 };
 
@@ -435,6 +436,7 @@ std::vector<RouteSeries> decode_can_messages(const std::vector<CanMessageData> &
 RouteData load_route_data(const std::string &route_name,
                           const std::string &data_dir = {},
                           const std::string &dbc_name = {},
+                          bool migrate = true,
                           const RouteLoadProgressCallback &progress = {});
 RouteIdentifier parse_route_identifier(std::string_view route_name);
 void rebuild_gps_trace(RouteData *route_data);
@@ -508,6 +510,7 @@ struct AppSession {
   std::string route_name;
   std::string data_dir;
   std::string dbc_override;
+  bool migrate = true;
   StreamSourceConfig stream_source;
   double stream_buffer_seconds = 30.0;
   SessionDataMode data_mode = SessionDataMode::Route;
@@ -663,6 +666,11 @@ struct UndoStack {
   }
 };
 
+struct PlotView {
+  ImGuiID plot_id = 0;
+  PlotRange range;
+};
+
 struct UiState {
   bool open_open_route = false;
   bool open_stream = false;
@@ -680,6 +688,7 @@ struct UiState {
   bool has_shared_range = false;
   bool has_tracker_time = false;
   bool layout_dirty = false;
+  int route_time_zone = 0;
   bool playback_loop = false;
   bool playback_playing = false;
   bool show_deprecated_fields = false;
@@ -733,6 +742,12 @@ struct UiState {
   bool init_data_selected = false;
   std::string init_data_search;
   UndoStack undo;
+  std::vector<PlotView> plot_view_history;
+  std::optional<PlotView> restore_plot_view;
+  ImGuiID last_plot_view_id = 0;
+  double last_plot_view_change = -1.0;
+  bool last_plot_view_wheel = false;
+  double last_plot_pan_click = -1.0;
 };
 
 // app.cc public API
@@ -873,7 +888,7 @@ public:
   AsyncRouteLoader(const AsyncRouteLoader &) = delete;
   AsyncRouteLoader &operator=(const AsyncRouteLoader &) = delete;
 
-  void start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name);
+  void start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name, bool migrate);
   RouteLoadSnapshot snapshot() const;
   bool consume(RouteData *route_data, std::string *error_text);
 
