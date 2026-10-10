@@ -179,7 +179,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
         # We've found all files, return them
         if len(needed_seg_idxs) == 0:
-          return list(valid_files.values())
+          return [valid_files[idx] for idx in sorted(valid_files)]
         else:
           raise FileNotFoundError(f"Did not find {fn} for seg idxs {needed_seg_idxs} of {sr.route_name}")
 

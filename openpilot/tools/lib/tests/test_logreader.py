@@ -11,7 +11,7 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.cereal import log as capnp_log
-from openpilot.tools.lib.logreader import _LogFileReader, LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
+from openpilot.tools.lib.logreader import _LogFileReader, LogsUnavailable, LogIterable, LogReader, auto_source, parse_indirect, ReadMode
 from openpilot.tools.lib.file_sources import InternalUnavailableException
 from openpilot.tools.lib.route import FileName, SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
@@ -250,6 +250,17 @@ class TestLogReader(OpenpilotTestCase):
       lr = LogReader(f"{TEST_ROUTE}/3/q")
       log_len = len(list(lr))
       assert qlog_len == log_len
+
+  def test_auto_source_returns_segments_in_order(self):
+    # The rlog pass skips the middle segment and the qlog fallback fills it last.
+    # The late arrival must land in segment order, not at the end of the list.
+    def rlog_missing_middle(sr, seg_idxs, fns):
+      if fns == FileName.RLOG:
+        return {idx: f"rlog{idx}" for idx in seg_idxs if idx != 2}
+      return {idx: f"qlog{idx}" for idx in seg_idxs}
+
+    files = auto_source(f"{TEST_ROUTE}/0:5", [rlog_missing_middle], ReadMode.AUTO)
+    assert files == ["rlog0", "rlog1", "qlog2", "rlog3", "rlog4"]
 
   def test_sort_by_time(self):
     msgs = list(LogReader(self.qlog_path))
