@@ -486,13 +486,12 @@ class TestChestnutOnroad(OpenpilotTestCase):
       with log_collector(services) as (logs, _):
         time.sleep(TEST_DURATION)
 
-      # test small model fallback, cutting VBUS cold boots the GPU next init
+      # test small model fallback by cutting VBUS which simulates usb disconnect
       try:
         sudo_write("0", CHESTNUT_VBUS)
         with Timeout(10, "modeld didn't fall back to the small model"):
           while sm['modelV2'].big:
             sm.update(1000)
-        time.sleep(2)  # short VBUS drops can leave chestnut unenumerated
       finally:
         sudo_write("1", CHESTNUT_VBUS)
 
@@ -500,7 +499,7 @@ class TestChestnutOnroad(OpenpilotTestCase):
       with log_collector(['modelV2']) as (small_model_logs, _):
         time.sleep(3)
 
-      with Timeout(30, "chestnut didn't come back"):
+      with Timeout(10, "chestnut did not enumerate"):
         while not chestnut_present():
           time.sleep(0.5)
 
