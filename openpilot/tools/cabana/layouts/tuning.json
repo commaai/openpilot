@@ -193,76 +193,70 @@
     {
       "name": "engaged curvature yaw",
       "linked_source": "/carControl/angularVelocity/2",
-      "function_body": "curvature = value / v3\npressed = v1\nenabled = v2\n\nif (pressed == 1 or enabled == 0) then\n  last_bad_time = time\nend\n\nif (time > last_bad_time + engage_delay) then\n  return curvature\nelse\n  return 0\nend",
-      "global_init": "engage_delay = 5\nlast_bad_time = -engage_delay",
       "additional_sources": [
         "/carState/steeringPressed",
         "/carControl/enabled",
         "/carState/vEgo"
-      ]
+      ],
+      "code": "_last_bad_time = -5\n\ndef derive(value, v1, v2, v3, v4, time):\n    global _last_bad_time\n    engage_delay = 5\n    curvature = value / v3 if v3 != 0 else 0\n    if v1 == 1 or v2 == 0:\n        _last_bad_time = time\n    return curvature if time > _last_bad_time + engage_delay else 0\n"
     },
     {
       "name": "engaged curvature vehicle model",
       "linked_source": "/controlsState/curvature",
-      "function_body": "curvature = value\npressed = v1\nenabled = v2\n\nif (pressed == 1 or enabled == 0) then\n  last_bad_time = time\nend\n\nif (time > last_bad_time + engage_delay) then\n  return value\nelse\n  return 0\nend",
-      "global_init": "engage_delay = 5\nlast_bad_time = -engage_delay",
       "additional_sources": [
         "/carState/steeringPressed",
         "/carControl/enabled"
-      ]
+      ],
+      "code": "_last_bad_time = -5\n\ndef derive(value, v1, v2, v3, v4, time):\n    global _last_bad_time\n    engage_delay = 5\n    if v1 == 1 or v2 == 0:\n        _last_bad_time = time\n    return value if time > _last_bad_time + engage_delay else 0\n"
     },
     {
       "name": "engaged curvature plan",
       "linked_source": "/modelV2/action/desiredCurvature",
-      "function_body": "curvature = value\npressed = v1\nenabled = v2\n\nif (pressed == 1 or enabled == 0) then\n  last_bad_time = time\nend\n\nif (time > last_bad_time + engage_delay) then\n  return value\nelse\n  return 0\nend",
-      "global_init": "engage_delay = 5\nlast_bad_time = -engage_delay",
       "additional_sources": [
         "/carState/steeringPressed",
         "/carControl/enabled"
-      ]
+      ],
+      "code": "_last_bad_time = -5\n\ndef derive(value, v1, v2, v3, v4, time):\n    global _last_bad_time\n    engage_delay = 5\n    if v1 == 1 or v2 == 0:\n        _last_bad_time = time\n    return value if time > _last_bad_time + engage_delay else 0\n"
     },
     {
       "name": "engaged_accel_actual",
       "linked_source": "/carState/aEgo",
-      "function_body": "accel = value\nbrake = v1\ngas = v2\nenabled = v3\n\nif (brake ~= 0 or gas ~= 0 or enabled == 0) then\n  last_bad_time = time\nend\n\nif (time > last_bad_time + engage_delay) then\n  return value\nelse\n  return 0\nend",
-      "global_init": "engage_delay = 5\nlast_bad_time = -engage_delay",
       "additional_sources": [
         "/carState/brakePressed",
         "/carState/gasPressed",
         "/carControl/enabled"
-      ]
+      ],
+      "code": "_last_bad_time = -5\n\ndef derive(value, v1, v2, v3, v4, time):\n    global _last_bad_time\n    engage_delay = 5\n    if v1 != 0 or v2 != 0 or v3 == 0:\n        _last_bad_time = time\n    return value if time > _last_bad_time + engage_delay else 0\n"
     },
     {
       "name": "engaged_accel_plan",
       "linked_source": "/longitudinalPlan/accels/0",
-      "function_body": "accel = value\nbrake = v1\ngas = v2\nenabled = v3\n\nif (brake ~= 0 or gas ~= 0 or enabled == 0) then\n  last_bad_time = time\nend\n\nif (time > last_bad_time + engage_delay) then\n  return value\nelse\n  return 0\nend",
-      "global_init": "engage_delay = 5\nlast_bad_time = -engage_delay",
       "additional_sources": [
         "/carState/brakePressed",
         "/carState/gasPressed",
         "/carControl/enabled"
-      ]
+      ],
+      "code": "_last_bad_time = -5\n\ndef derive(value, v1, v2, v3, v4, time):\n    global _last_bad_time\n    engage_delay = 5\n    if v1 != 0 or v2 != 0 or v3 == 0:\n        _last_bad_time = time\n    return value if time > _last_bad_time + engage_delay else 0\n"
     },
     {
       "name": "engaged_accel_actuator",
       "linked_source": "/carControl/actuators/accel",
-      "function_body": "accel = value\nbrake = v1\ngas = v2\nenabled = v3\n\nif (brake ~= 0 or gas ~= 0 or enabled == 0) then\n  last_bad_time = time\nend\n\nif (time > last_bad_time + engage_delay) then\n  return value\nelse\n  return 0\nend",
-      "global_init": "engage_delay = 5\nlast_bad_time = -engage_delay",
       "additional_sources": [
         "/carState/brakePressed",
         "/carState/gasPressed",
         "/carControl/enabled"
-      ]
+      ],
+      "code": "_last_bad_time = -5\n\ndef derive(value, v1, v2, v3, v4, time):\n    global _last_bad_time\n    engage_delay = 5\n    if v1 != 0 or v2 != 0 or v3 == 0:\n        _last_bad_time = time\n    return value if time > _last_bad_time + engage_delay else 0\n"
     },
     {
       "name": "steering rate limited",
       "linked_source": "/carControl/actuators/torque",
-      "function_body": "return (math.abs(value - v1) > 0.001 or math.abs(v2 - v3) > 0.05) and 1 or 0",
       "additional_sources": [
         "/carOutput/actuatorsOutput/torque",
         "/carControl/actuators/steeringAngleDeg",
         "/carOutput/actuatorsOutput/steeringAngleDeg"
-      ]
+      ],
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return 1 if (abs(value - v1) > 0.001 or abs(v2 - v3) > 0.05) else 0\n"
     }
   ]
 }

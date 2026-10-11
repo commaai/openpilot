@@ -687,18 +687,32 @@ void ChartView::drawAxes() {
     const bool hist_mode = series_type_ == SeriesType::Histogram;
     const std::string xy_x_label = xy_mode ? sigs_[0].signalName() : "";
     ImPlot::SetupAxis(ImAxis_X1, xy_mode ? xy_x_label.c_str() : (hist_mode ? "Value" : nullptr), axis_flags);
-    ImPlot::SetupAxis(ImAxis_Y1, hist_mode ? "Count" : (y_unit_.empty() ? nullptr : y_unit_.c_str()),
-                      hist_mode ? (axis_flags | ImPlotAxisFlags_AutoFit) : axis_flags);
+    ImPlot::SetupAxis(ImAxis_Y1, hist_mode ? "Count" : (y_unit_.empty() ? nullptr : y_unit_.c_str()), axis_flags);
     if (hist_mode) {
       double vmin = std::numeric_limits<double>::max(), vmax = std::numeric_limits<double>::lowest();
+      int max_count = 1;
       for (const auto &s : sigs_) {
         if (!s.visible) continue;
         vmin = std::min(vmin, s.min); vmax = std::max(vmax, s.max);
+        auto [first, last] = visibleRange(s.vals);
+        int n = (int)(last - first);
+        if (n >= 2) {
+          int num_bins = (int)std::ceil(std::log2((double)n)) + 1;
+          double bin_w = (s.max - s.min) / num_bins;
+          if (bin_w > 0) {
+            std::vector<int> counts(num_bins, 0);
+            for (auto it = first; it != last; ++it) {
+              int b = std::clamp((int)((it->y - s.min) / bin_w), 0, num_bins - 1);
+              counts[b]++;
+            }
+            max_count = std::max(max_count, *std::max_element(counts.begin(), counts.end()));
+          }
+        }
       }
       if (vmin == std::numeric_limits<double>::max()) { vmin = 0; vmax = 1; }
       double pad = (vmax - vmin) * 0.05;
       ImPlot::SetupAxisLimits(ImAxis_X1, vmin - pad, vmax + pad, ImPlotCond_Always);
-      ImPlot::SetupAxisLimits(ImAxis_Y1, 0, IMPLOT_AUTO, ImPlotCond_Once);
+      ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max_count * 1.15, ImPlotCond_Always);
     } else {
       ImPlot::SetupAxisLimits(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, ImPlotCond_Always);
       ImPlot::SetupAxisLimits(ImAxis_Y1, y_min_, y_max_, ImPlotCond_Always);
@@ -809,7 +823,8 @@ void ChartView::drawSeries() {
         ys.push_back(yv);
       }
       if (xs.empty()) continue;
-      const ImVec4 col = toImVec4(y_sig.color);
+      // single Y signal: use x_sig color so chart looks consistent with Line/Histogram modes
+      const ImVec4 col = toImVec4(sigs_.size() == 2 ? x_sig.color : y_sig.color);
       ImPlotSpec spec;
       spec.Marker = ImPlotMarker_Circle;
       spec.MarkerSize = 3.0f;
@@ -827,7 +842,10 @@ void ChartView::drawSeries() {
     if (!s.visible) continue;
 
     // enum signals: render as colored horizontal state blocks
+    // only applies to pure integer signals (factor=1, offset=0) to avoid
+    // treating analog signals that happen to have val_desc entries as enums
     if (!s.isCereal() && s.sig && !s.sig->val_desc.empty() &&
+        s.sig->factor == 1.0 && s.sig->offset == 0.0 &&
         (series_type_ == SeriesType::Line || series_type_ == SeriesType::StepLine)) {
       auto [first, last] = visibleRange(s.vals);
       if (first == last) continue;

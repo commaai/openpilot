@@ -48,13 +48,12 @@
     {
       "name": "haversine distance [m]",
       "linked_source": "/gpsLocationExternal/latitude",
-      "function_body": "-- Compute the Haversine distance between \n-- two points defined by latitude and longitude.\n-- Return the distance in meters\nlat1, lon1 = value, v1\nlat2, lon2 = v2, v3\ndLat = (lat2 - lat1) * math.pi / 180\ndLon = (lon2 - lon1) * math.pi / 180\na = math.sin(dLat/2) * math.sin(dLat/2) +\nmath.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *\nmath.sin(dLon/2) * math.sin(dLon/2)\nc = 2 * math.atan(math.sqrt(a), math.sqrt(1-a))\nd = R * c\ndistance = d * 1000 -- meters\nreturn distance",
-      "global_init": "R = 6378.137 -- Radius of earth in KM",
       "additional_sources": [
         "/gpsLocationExternal/longitude",
         "/gpsLocation/latitude",
         "/gpsLocation/longitude"
-      ]
+      ],
+      "code": "import math\n\ndef derive(value, v1, v2, v3, v4, time):\n    R = 6378.137  # Earth radius in km\n    lat1, lon1 = value, v1\n    lat2, lon2 = v2, v3\n    dLat = (lat2 - lat1) * math.pi / 180\n    dLon = (lon2 - lon1) * math.pi / 180\n    a = (math.sin(dLat/2)**2 +\n         math.cos(lat1*math.pi/180) * math.cos(lat2*math.pi/180) * math.sin(dLon/2)**2)\n    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)) * 1000\n"
     }
   ]
 }

@@ -261,40 +261,40 @@
     {
       "name": "carState.vEgo kmh",
       "linked_source": "/carState/vEgo",
-      "function_body": "return value * 3.6"
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return value * 3.6\n"
     },
     {
       "name": "carState.vEgo mph",
       "linked_source": "/carState/vEgo",
-      "function_body": "return value * 2.23694"
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return value * 2.23694\n"
     },
     {
       "name": "Desired lateral accel (roll compensated)",
       "linked_source": "/controlsState/desiredCurvature",
-      "function_body": "return (value * v1 ^ 2) - (v2 * 9.81)",
       "additional_sources": [
         "/carState/vEgo",
         "/vehicleParameters/roll"
-      ]
+      ],
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return (value * v1**2) - (v2 * 9.81)\n"
     },
     {
       "name": "Actual lateral accel (roll compensated)",
       "linked_source": "/controlsState/curvature",
-      "function_body": "return (value * v1 ^ 2) - (v2 * 9.81)",
       "additional_sources": [
         "/carState/vEgo",
         "/vehicleParameters/roll"
-      ]
+      ],
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return (value * v1**2) - (v2 * 9.81)\n"
     },
     {
       "name": "opendbc default steering lag",
       "linked_source": "/carParams/steerActuatorDelay",
-      "function_body": "return value + 0.2"
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return value + 0.2\n"
     },
     {
       "name": "Zero",
       "linked_source": "/carState/canValid",
-      "function_body": "return (0)"
+      "code": "def derive(value, v1, v2, v3, v4, time):\n    return 0\n"
     }
   ]
 }
