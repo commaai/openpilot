@@ -5,6 +5,7 @@ import pyray as rl
 
 from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
+from openpilot.selfdrive.navigation.helpers import latest_gps_source
 from openpilot.selfdrive.navigation.renderer import FORWARD_OFFSET, ROUTE_INTENSITY, SIZE
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import FontWeight, TextAlignmentVertical
@@ -62,44 +63,68 @@ class NavigationPanel(Widget):
 
   @property
   def active(self):
-    return ui_state.navigation_enabled and ui_state.sm.valid['navInstruction'] and ui_state.sm.alive['navInstruction']
+    return ui_state.navigation_enabled and ui_state.nav_destination_set
+
+  @property
+  def routing(self):
+    return ui_state.sm.valid['navInstruction'] and ui_state.sm.alive['navInstruction']
+
+  @property
+  def map_ready(self):
+    return self._texture is not None and 0 <= time.monotonic() - self._frame_time < STALE_SECONDS
+
+  def _draw_status(self, rect):
+    """What the map is waiting on, in place of the map."""
+    statuses = (
+      ('GPS fix', latest_gps_source(ui_state.sm) is not None),
+      ('Route', self.routing),
+      ('Map frames', self.map_ready),
+    )
+    for i, (name, ok) in enumerate(statuses):
+      gui_label(rl.Rectangle(rect.x + 10, rect.y + 12 + i * 28, rect.width - 20, 26), f'{name}: {"yes" if ok else "no"}', 22,
+                self._accent if ok else self._muted, FontWeight.MEDIUM, alignment_vertical=TextAlignmentVertical.TOP)
 
   def _render(self, rect):
     x, y = rect.x, rect.y
     rl.draw_rectangle_rec(rect, rl.Color(7, 13, 18, 255))
-    direction = str(self._instruction.get('maneuverModifier', 'straight'))
-    flip = -1 if 'left' in direction else 1
-    # The maneuver arrow on a 1.4x grid, centered in the header's icon box, with round joins for the thick stroke.
-    if direction in ('straight', ''):
-      shape = [(0, 14), (0, -12), (-6, -5), (0, -12), (6, -5)]
+    if self.routing:
+      direction = str(self._instruction.get('maneuverModifier', 'straight'))
+      flip = -1 if 'left' in direction else 1
+      # The maneuver arrow on a 1.4x grid, centered in the header's icon box, with round joins for the thick stroke.
+      if direction in ('straight', ''):
+        shape = [(0, 14), (0, -12), (-6, -5), (0, -12), (6, -5)]
+      else:
+        shape = [(-flip*9, 14), (-flip*9, -4), (-flip*2, -9), (flip*9, -9), (flip*3, -15), (flip*9, -9), (flip*3, -3)]
+      points = [rl.Vector2(x + 31 + 1.4*px, y + 30 + 1.4*py) for px, py in shape]
+      for a, b in zip(points[:-1], points[1:], strict=True):
+        rl.draw_line_ex(a, b, 7, self._accent)
+      for point in points:
+        rl.draw_circle_v(point, 3.5, self._accent)
+      distance = max(0, self._instruction.get('maneuverDistance', 0))
+      if ui_state.is_metric:
+        distance_text = f'{round(distance / 10) * 10} m' if distance < 1000 else f'{distance / 1000:.1f} km'
+      else:
+        distance_text = f'{round(distance * 3.28084 / 50) * 50} ft' if distance < 300 else f'{distance / 1609.344:.1f} mi'
+      gui_label(rl.Rectangle(x+64, y+11, rect.width-72, 40), distance_text, 34, rl.WHITE, FontWeight.BOLD, alignment_vertical=TextAlignmentVertical.TOP)
     else:
-      shape = [(-flip*9, 14), (-flip*9, -4), (-flip*2, -9), (flip*9, -9), (flip*3, -15), (flip*9, -9), (flip*3, -3)]
-    points = [rl.Vector2(x + 31 + 1.4*px, y + 30 + 1.4*py) for px, py in shape]
-    for a, b in zip(points[:-1], points[1:], strict=True):
-      rl.draw_line_ex(a, b, 7, self._accent)
-    for point in points:
-      rl.draw_circle_v(point, 3.5, self._accent)
-    distance = max(0, self._instruction.get('maneuverDistance', 0))
-    if ui_state.is_metric:
-      distance_text = f'{round(distance / 10) * 10} m' if distance < 1000 else f'{distance / 1000:.1f} km'
-    else:
-      distance_text = f'{round(distance * 3.28084 / 50) * 50} ft' if distance < 300 else f'{distance / 1609.344:.1f} mi'
-    gui_label(rl.Rectangle(x+64, y+11, rect.width-72, 40), distance_text, 34, rl.WHITE, FontWeight.BOLD, alignment_vertical=TextAlignmentVertical.TOP)
+      gui_label(rl.Rectangle(x+12, y+18, rect.width-24, 30), 'Waiting for route', 26, rl.WHITE, FontWeight.BOLD,
+                alignment_vertical=TextAlignmentVertical.TOP)
     map_rect = rl.Rectangle(x+8, y+61, rect.width-16, rect.height-111)
     rl.draw_rectangle_rec(map_rect, rl.BLACK)
-    if self._texture and 0 <= time.monotonic() - self._frame_time < STALE_SECONDS:
+    if self.map_ready:
       # A 1:1 crop of the model's frame, centered horizontally with the ego near the bottom.
       width, height = min(map_rect.width, SIZE), min(map_rect.height, SIZE)
       source = rl.Rectangle((SIZE - width) // 2, min(SIZE - height, max(0, EGO_ROW + MARKER_MARGIN - height)), width, height)
       target = rl.Rectangle(map_rect.x + (map_rect.width - width) / 2, map_rect.y + map_rect.height - height, width, height)
       rl.draw_texture_pro(self._texture, source, target, rl.Vector2(0, 0), 0, rl.WHITE)
     else:
-      gui_label(rl.Rectangle(x+16, y+125, 142, 14), 'Map unavailable', 11, self._muted, FontWeight.MEDIUM, alignment_vertical=TextAlignmentVertical.TOP)
-    seconds = max(0, self._instruction.get('timeRemaining', 0))
-    remaining = max(0, self._instruction.get('distanceRemaining', 0))
-    length = f'{remaining / 1000:.1f} km' if ui_state.is_metric else f'{remaining / 1609.344:.1f} mi'
-    self._eta_label.set_text(f'{max(1, round(seconds / 60))} min / {length}')
-    self._eta_label.render(rl.Rectangle(x+9, y+rect.height-45, rect.width-18, 40))
+      self._draw_status(map_rect)
+    if self.routing:
+      seconds = max(0, self._instruction.get('timeRemaining', 0))
+      remaining = max(0, self._instruction.get('distanceRemaining', 0))
+      length = f'{remaining / 1000:.1f} km' if ui_state.is_metric else f'{remaining / 1609.344:.1f} mi'
+      self._eta_label.set_text(f'{max(1, round(seconds / 60))} min / {length}')
+      self._eta_label.render(rl.Rectangle(x+9, y+rect.height-45, rect.width-18, 40))
 
   def _unload_texture(self):
     if self._texture:

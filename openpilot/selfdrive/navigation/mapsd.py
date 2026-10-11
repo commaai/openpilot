@@ -46,6 +46,7 @@ def main():
             archive = PMTiles(RemoteTiles())
             renderer = MapRenderer(archive)
           if not prefetched:
+            # TODO: fetch the tiles more intelligently on demand
             # Every tile the route can show is fetched up front, so each render below is a cache hit.
             renderer.prefetch(route)
             prefetched = True
