@@ -729,6 +729,8 @@ void ChartsWidget::draw() {
   }
   if (cereal_browser_open_) drawCerealBrowser();
   if (lua_panel_open_) drawLuaPanel();
+  if (map_panel_open_) drawMapPanel();
+  if (log_panel_open_) drawLogPanel();
   ImGui::PopID();
 }
 
@@ -1007,5 +1009,104 @@ void ChartsWidget::drawLuaPanel() {
   }
 
   ImGui::EndChild();
+  ImGui::End();
+}
+
+void ChartsWidget::drawMapPanel() {
+  ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("GPS Map", &map_panel_open_)) { ImGui::End(); return; }
+
+  const auto &series = can->cerealSeries();
+  const char *lat_paths[] = {"/gpsLocationExternal/latitude", "/gpsLocation/latitude"};
+  const char *lon_paths[] = {"/gpsLocationExternal/longitude", "/gpsLocation/longitude"};
+  const std::vector<CerealPoint> *lats = nullptr, *lons = nullptr;
+  for (int i = 0; i < 2; ++i) {
+    auto la = series.find(lat_paths[i]), lo = series.find(lon_paths[i]);
+    if (la != series.end() && lo != series.end() && !la->second.empty()) {
+      lats = &la->second; lons = &lo->second; break;
+    }
+  }
+
+  if (!lats) {
+    ImGui::TextDisabled("No GPS data (gpsLocation / gpsLocationExternal).");
+    ImGui::End(); return;
+  }
+
+  std::vector<double> xs, ys;
+  xs.reserve(lats->size());
+  ys.reserve(lats->size());
+  for (const auto &lp : *lats) {
+    auto it = std::lower_bound(lons->begin(), lons->end(), lp.t,
+                               [](const CerealPoint &p, double t) { return p.t < t; });
+    if (it == lons->end()) continue;
+    xs.push_back(it->v);
+    ys.push_back(lp.v);
+  }
+  if (xs.empty()) { ImGui::TextDisabled("No GPS samples."); ImGui::End(); return; }
+
+  double cur = can->currentSec();
+  auto cur_la = std::lower_bound(lats->begin(), lats->end(), cur,
+                                 [](const CerealPoint &p, double t) { return p.t < t; });
+  auto cur_lo = std::lower_bound(lons->begin(), lons->end(), cur,
+                                 [](const CerealPoint &p, double t) { return p.t < t; });
+  if (cur_la != lats->begin()) --cur_la;
+  if (cur_lo != lons->begin()) --cur_lo;
+  double cur_lon = cur_lo->v, cur_lat = cur_la->v;
+
+  if (ImPlot::BeginPlot("##gpsmap", ImVec2(-1, -1), ImPlotFlags_Equal | ImPlotFlags_NoTitle)) {
+    ImPlot::SetupAxis(ImAxis_X1, "Longitude");
+    ImPlot::SetupAxis(ImAxis_Y1, "Latitude");
+    ImPlotSpec route_spec;
+    route_spec.LineColor = ImVec4(0.3f, 0.6f, 1.0f, 0.9f);
+    route_spec.LineWeight = 2.0f;
+    ImPlot::PlotLine("Route", xs.data(), ys.data(), (int)xs.size(), route_spec);
+    ImPlotSpec pos;
+    pos.Marker = ImPlotMarker_Circle;
+    pos.MarkerSize = 8.0f;
+    pos.MarkerFillColor = ImVec4(1, 0.4f, 0.1f, 1);
+    pos.MarkerLineColor = ImVec4(1, 1, 1, 1);
+    ImPlot::PlotScatter("Position", &cur_lon, &cur_lat, 1, pos);
+    ImPlot::EndPlot();
+  }
+  ImGui::End();
+}
+
+void ChartsWidget::drawLogPanel() {
+  ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("Events Log", &log_panel_open_)) { ImGui::End(); return; }
+
+  ImGui::SetNextItemWidth(-1);
+  ImGui::InputTextWithHint("##logfilter", "Filter signals...", log_filter_buf_, sizeof(log_filter_buf_));
+  ImGui::Separator();
+
+  const auto &series = can->cerealSeries();
+  double cur = can->currentSec();
+  std::string_view filter(log_filter_buf_);
+
+  if (ImGui::BeginTable("##logtable", 3,
+      ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+      ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable,
+      ImVec2(-1, -1))) {
+    ImGui::TableSetupScrollFreeze(0, 1);
+    ImGui::TableSetupColumn("Signal",   ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn("Value",    ImGuiTableColumnFlags_WidthFixed, 100);
+    ImGui::TableSetupColumn("Age (s)",  ImGuiTableColumnFlags_WidthFixed, 70);
+    ImGui::TableHeadersRow();
+
+    for (const auto &[path, pts] : series) {
+      if (!filter.empty() && path.find(filter) == std::string::npos) continue;
+      if (pts.empty()) continue;
+      auto it = std::lower_bound(pts.begin(), pts.end(), cur,
+                                 [](const CerealPoint &p, double t) { return p.t < t; });
+      if (it != pts.begin()) --it;
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted(path.c_str());
+      ImGui::TableSetColumnIndex(1); ImGui::Text("%.4g", it->v);
+      ImGui::TableSetColumnIndex(2);
+      double age = cur - it->t;
+      ImGui::TextColored(age < 1.0 ? ImVec4(0.4f,1,0.4f,1) : ImVec4(0.7f,0.7f,0.7f,1), "%.2f", age);
+    }
+    ImGui::EndTable();
+  }
   ImGui::End();
 }

@@ -364,12 +364,16 @@ void ChartView::updateAxisY() {
     } else {
       std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last) - 1);
     }
-    // mean over visible range
+    // mean + stddev over visible range
     s.mean = 0;
+    s.stddev = 0;
     int n = (int)(last - first);
     if (n > 0) {
       for (auto it = first; it != last; ++it) s.mean += it->y;
       s.mean /= n;
+      double var = 0;
+      for (auto it = first; it != last; ++it) { double d = it->y - s.mean; var += d * d; }
+      s.stddev = std::sqrt(var / n);
     }
     // in XY scatter, signal 0 is the X axis — don't let it contaminate the Y range
     const bool is_xy_x = series_type_ == SeriesType::XYScatter && sigs_.size() >= 2 && &s == &sigs_[0];
@@ -589,7 +593,7 @@ void ChartView::showTip(double sec) {
         x = std::max(x, xPos(pt->x));
       }
       std::string name = sigs_.size() > 1 ? s.signalName() : "";
-      if (show_stats_) name += "  μ=" + utils::toString(s.mean);
+      if (show_stats_) name += "  μ=" + utils::toString(s.mean) + "  σ=" + utils::toString(s.stddev);
       std::string smin = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
       std::string smax = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
       text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .value = value, .min = smin, .max = smax});
@@ -680,16 +684,32 @@ void ChartView::drawAxes() {
   const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x;
   if (ImPlot::BeginPlot("##plot", ImVec2(layout_.content_rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
     const bool xy_mode = series_type_ == SeriesType::XYScatter && sigs_.size() >= 2;
+    const bool hist_mode = series_type_ == SeriesType::Histogram;
     const std::string xy_x_label = xy_mode ? sigs_[0].signalName() : "";
-    ImPlot::SetupAxis(ImAxis_X1, xy_mode ? xy_x_label.c_str() : nullptr, axis_flags);
-    ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
-    ImPlot::SetupAxisLimits(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, ImPlotCond_Always);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, y_min_, y_max_, ImPlotCond_Always);
-    // the format must be set before the ticks are generated
-    ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision_) + "f").c_str());
-    ImPlot::SetupAxisTicks(ImAxis_Y1, y_min_, y_max_, y_tick_count_);
-    ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
-    ImPlot::SetupAxisTicks(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, X_TICK_COUNT);
+    ImPlot::SetupAxis(ImAxis_X1, xy_mode ? xy_x_label.c_str() : (hist_mode ? "Value" : nullptr), axis_flags);
+    ImPlot::SetupAxis(ImAxis_Y1, hist_mode ? "Count" : (y_unit_.empty() ? nullptr : y_unit_.c_str()),
+                      hist_mode ? (axis_flags | ImPlotAxisFlags_AutoFit) : axis_flags);
+    if (hist_mode) {
+      double vmin = std::numeric_limits<double>::max(), vmax = std::numeric_limits<double>::lowest();
+      for (const auto &s : sigs_) {
+        if (!s.visible) continue;
+        vmin = std::min(vmin, s.min); vmax = std::max(vmax, s.max);
+      }
+      if (vmin == std::numeric_limits<double>::max()) { vmin = 0; vmax = 1; }
+      double pad = (vmax - vmin) * 0.05;
+      ImPlot::SetupAxisLimits(ImAxis_X1, vmin - pad, vmax + pad, ImPlotCond_Always);
+      ImPlot::SetupAxisLimits(ImAxis_Y1, 0, IMPLOT_AUTO, ImPlotCond_Once);
+    } else {
+      ImPlot::SetupAxisLimits(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, ImPlotCond_Always);
+      ImPlot::SetupAxisLimits(ImAxis_Y1, y_min_, y_max_, ImPlotCond_Always);
+    }
+    if (!hist_mode) {
+      // the format must be set before the ticks are generated
+      ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision_) + "f").c_str());
+      ImPlot::SetupAxisTicks(ImAxis_Y1, y_min_, y_max_, y_tick_count_);
+      ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
+      ImPlot::SetupAxisTicks(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, X_TICK_COUNT);
+    }
     ImPlot::SetupFinish();
 
     layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
@@ -806,6 +826,58 @@ void ChartView::drawSeries() {
     auto &s = sigs_[i];
     if (!s.visible) continue;
 
+    // enum signals: render as colored horizontal state blocks
+    if (!s.isCereal() && s.sig && !s.sig->val_desc.empty() &&
+        (series_type_ == SeriesType::Line || series_type_ == SeriesType::StepLine)) {
+      auto [first, last] = visibleRange(s.vals);
+      if (first == last) continue;
+      // build stable color map: val_desc index → color
+      std::unordered_map<int64_t, ImU32> cmap;
+      for (int idx = 0; idx < (int)s.sig->val_desc.size(); ++idx) {
+        float hue = std::fmod(idx * 0.618f, 1.0f);
+        float r, g, b;
+        ImGui::ColorConvertHSVtoRGB(hue, 0.65f, 0.85f, r, g, b);
+        cmap[(int64_t)std::round(s.sig->val_desc[idx].first)] = IM_COL32((int)(r*255), (int)(g*255), (int)(b*255), 120);
+      }
+      ImDrawList *painter = ImPlot::GetPlotDrawList();
+      ImPlot::PushPlotClipRect();
+      for (auto it = first; it != last; ++it) {
+        int64_t raw = (int64_t)std::round((it->y - s.sig->offset) / s.sig->factor);
+        double t_end = (it + 1 != last) ? (it + 1)->x : x_max_;
+        ImVec2 p1 = ImPlot::PlotToPixels(it->x, y_max_);
+        ImVec2 p2 = ImPlot::PlotToPixels(t_end, y_min_);
+        ImU32 col = cmap.count(raw) ? cmap[raw] : IM_COL32(128, 128, 128, 80);
+        painter->AddRectFilled(p1, p2, col);
+        // label if block is wide enough
+        std::string lbl = s.sig->formatValue(it->y, false);
+        ImVec2 tsz = ImGui::CalcTextSize(lbl.c_str());
+        if (tsz.x + 6 < std::abs(p2.x - p1.x)) {
+          float tx = (p1.x + p2.x) / 2.0f - tsz.x / 2.0f;
+          float ty = (p1.y + p2.y) / 2.0f - tsz.y / 2.0f;
+          painter->AddText(ImVec2(tx, ty), IM_COL32_WHITE, lbl.c_str());
+        }
+      }
+      ImPlot::PopPlotClipRect();
+      continue;
+    }
+
+    if (series_type_ == SeriesType::Histogram) {
+      auto [first, last] = visibleRange(s.vals);
+      if (first == last) continue;
+      std::vector<double> ys;
+      ys.reserve(last - first);
+      for (auto it = first; it != last; ++it) ys.push_back(it->y);
+      ImPlotSpec hspec;
+      hspec.FillColor = toImVec4(s.color.lighter(130));
+      hspec.LineColor = toImVec4(s.color);
+      hspec.LineWeight = 1.5f;
+      ImPlot::PlotHistogram(("##hist" + std::to_string(i)).c_str(),
+                            ys.data(), (int)ys.size(), ImPlotBin_Sturges,
+                            1.0, ImPlotRange(), hspec);
+      continue;
+    }
+
+
     // visible points in vals to compute point density
     auto [first, last] = visibleRange(s.vals);
     int num_points = std::max<int>(last - first, 1);
@@ -873,7 +945,8 @@ void ChartView::drawSeries() {
 }
 
 void ChartView::drawForeground() {
-  if (!(series_type_ == SeriesType::XYScatter && sigs_.size() >= 2))
+  if (!(series_type_ == SeriesType::XYScatter && sigs_.size() >= 2) &&
+      series_type_ != SeriesType::Histogram)
     drawTimeline();
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   ImPlot::PushPlotClipRect();
