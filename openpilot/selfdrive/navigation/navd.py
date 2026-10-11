@@ -10,7 +10,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.navigation.helpers import latest_gps_source
-from openpilot.selfdrive.navigation.route import along_path, local_meters
+from openpilot.selfdrive.navigation.route import RouteTracker, along_path, local_meters
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
@@ -46,6 +46,8 @@ class RouteEngine:
     self.step_idx = None
     self.route = None
     self.route_geometry = None  # an (n, 2) array of (longitude, latitude) per step
+    self.route_tracker = None
+    self.maneuver_distances = None
 
     self.recompute_hold = 0
     self.reroute_counter = 0
@@ -129,6 +131,9 @@ class RouteEngine:
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
         self.route_geometry = [np.array(step['geometry']['coordinates'], dtype=np.float64).reshape((-1, 2)) for step in self.route]
+        # Each step begins with its maneuver; measure them along the route the way training does
+        self.route_tracker = RouteTracker(np.concatenate(self.route_geometry))
+        self.maneuver_distances = self.route_tracker.distance[np.cumsum([0] + [len(path) for path in self.route_geometry[:-1]])]
         self.step_idx = 0
       else:
         cloudlog.warning("Got empty route response")
@@ -147,6 +152,7 @@ class RouteEngine:
       return
 
     assert self.route is not None and self.route_geometry is not None and self.last_position is not None
+    assert self.route_tracker is not None and self.maneuver_distances is not None
     step = self.route[self.step_idx]
     along_geometry, _ = along_path(self.route_geometry[self.step_idx], self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
@@ -159,6 +165,12 @@ class RouteEngine:
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
     set_banner(msg.navInstruction, banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
+
+    # Maneuvers not yet passed, for the model's navigation input
+    progress = self.route_tracker.project(*self.last_position)
+    msg.navInstruction.allManeuvers = [
+      {'distance': float(distance - progress), 'type': step['maneuver']['type'], 'modifier': step['maneuver'].get('modifier', '')}
+      for step, distance in zip(self.route, self.maneuver_distances, strict=True) if distance >= progress]
 
     # Total remaining distance and time: the rest of this step, then every step after it
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
@@ -190,6 +202,8 @@ class RouteEngine:
   def clear_route(self):
     self.route = None
     self.route_geometry = None
+    self.route_tracker = None
+    self.maneuver_distances = None
     self.step_idx = None
     self.nav_destination = None
 

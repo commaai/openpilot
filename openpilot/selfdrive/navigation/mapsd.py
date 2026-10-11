@@ -46,8 +46,11 @@ class MapsD:
           self.prefetched = True
         if source is not None:
           gps = sm[source]
-          # As in training, the map is centered on the route and headed along it, not at the GPS fix.
-          image, valid = self.renderer.render(*self.tracker.snap(gps.longitude, gps.latitude), self.route)
+          # As in training, the map is centered on the route and headed along it, not at the GPS fix,
+          # moved ahead by the distance driven since the fix.
+          ahead = max(gps.speed, 0.) * (now - sm.recv_time[source])
+          pose = self.tracker.pose(self.tracker.project(gps.longitude, gps.latitude) + ahead)
+          image, valid = self.renderer.render(*pose, self.route)
           if valid:
             return image, sm.logMonoTime[source]
     except Exception:  # a failed fetch, or a corrupt cached tile

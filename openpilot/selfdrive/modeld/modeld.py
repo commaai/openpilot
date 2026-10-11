@@ -8,7 +8,7 @@ import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 os.environ.setdefault('AM_POWER_LIMIT', '100')
 from tinygrad.device import Buffer, Device
-from tinygrad.dtype import DType, dtypes
+from tinygrad.dtype import DType, dtypes, _from_np_dtype
 from tinygrad.engine.realize import lower_and_compile
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
@@ -35,6 +35,7 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
+from openpilot.selfdrive.navigation.helpers import navigation_input
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
@@ -170,17 +171,17 @@ class ModelState:
     # Pack host inputs into one upload to reduce USB transfer overhead for the eGPU.
     self.input_queues = {name: Tensor(np.zeros(shape, dtype=dtype), device=self.model_device).realize()
                          for name, (shape, dtype) in self.input_shapes.items() if name in self.state_pairs}
-    shapes = {'tfm': (2, 3, 3)} | {name: shape for name, (shape, _) in self.input_shapes.items()
-                                   if name not in self.state_pairs and name != 'new_img'}
-    npy_size = sum(round_up(math.prod(shape) * 4, 128) for shape in shapes.values())
+    shapes = {'tfm': ((2, 3, 3), np.dtype(np.float32))} | {name: spec for name, spec in self.input_shapes.items()
+                                                          if name not in self.state_pairs and name != 'new_img'}
+    npy_size = sum(round_up(math.prod(shape) * dtype.itemsize, 128) for shape, dtype in shapes.values())
     self.packed_input = np.zeros(npy_size + 2 * self.frame_copy_size, dtype=np.uint8)
     self.input_host = Tensor(self.packed_input, device='NPY')._buffer()
     self.input_device = Tensor(self.packed_input, device=self.model_device)._buffer()
     self.npy = {}
     offset = 0
-    for name, shape in shapes.items():
-      self.npy[name] = np.ndarray(shape, dtype=np.float32, buffer=self.packed_input, offset=offset)
-      self.input_queues[name] = input_view(self.input_device, shape, dtypes.float32, offset)
+    for name, (shape, dtype) in shapes.items():
+      self.npy[name] = np.ndarray(shape, dtype=dtype, buffer=self.packed_input, offset=offset)
+      self.input_queues[name] = input_view(self.input_device, shape, _from_np_dtype(dtype), offset)
       offset += round_up(self.npy[name].nbytes, 128)
     self.frames = self.packed_input[npy_size:].reshape(2, self.frame_copy_size)
     self.warp_inputs = {'input_frame': input_view(self.input_device, self.frames.shape, dtypes.uint8, npy_size), 'M_inv': self.input_queues.pop('tfm')}
@@ -200,6 +201,9 @@ class ModelState:
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
+    for name in ('nav_map', 'navigation'):  # only map models take these
+      if name in self.npy:
+        self.npy[name][:] = inputs.get(name, 0)
 
     self.input_device.copy_from(self.input_host)
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
@@ -251,6 +255,7 @@ def main(demo=False):
   vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_NARROW_ROAD
   vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True)
   vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False)
+  vipc_client_map = VisionIpcClient("mapsd", VisionStreamType.VISION_STREAM_MAP, True)
   cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
 
   while not vipc_client_main.connect(False):
@@ -293,7 +298,8 @@ def main(demo=False):
   # messaging
   pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutGpuState"] if CHESTNUT else [])
   pm = PubMaster(pub_socks)
-  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
+  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay",
+                  "navInstruction"])
 
   publish_state = PublishState()
   params = Params()
@@ -324,6 +330,7 @@ def main(demo=False):
   prev_action = log.ModelDataV2.Action()
 
   DH = DesireHelper()
+  nav_map, nav_map_time = None, 0.
 
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
@@ -402,6 +409,17 @@ def main(demo=False):
       'traffic_convention': traffic_convention,
       'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
     }
+
+    # Map and navigation inputs
+    now = time.monotonic()
+    if vipc_client_map.is_connected() or vipc_client_map.connect(False):
+      if (buf_map := vipc_client_map.recv(0)) is not None:
+        nav_map = np.frombuffer(buf_map.data, dtype=np.uint8, count=buf_map.width * buf_map.height).reshape(buf_map.height, buf_map.width).copy()
+        nav_map_time = now
+    if nav_map is not None and now - nav_map_time < 0.5: # map timeout
+      inputs['nav_map'] = nav_map
+    if sm.valid['navInstruction'] and now - sm.recv_time['navInstruction'] < 2:
+      inputs['navigation'] = navigation_input(sm['navInstruction'].allManeuvers, v_ego * (now - sm.recv_time['navInstruction']))
 
     mt1 = time.perf_counter()
     try:
