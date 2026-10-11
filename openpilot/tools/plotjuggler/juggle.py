@@ -13,6 +13,12 @@ import argparse
 BASEDIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 CABANA_BIN = os.path.join(BASEDIR, "openpilot", "tools", "cabana", "cabana")
 
+DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
+
+
+def install():
+  """No-op: cabana is built from source, no separate install step needed."""
+
 
 def print_redirect_banner():
   bold  = "\033[1m"   if sys.stdout.isatty() else ""
