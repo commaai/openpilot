@@ -82,6 +82,13 @@ class DeveloperLayout(Widget):
       enabled=lambda: not ui_state.engaged,
     )
 
+    self._navigation_toggle = toggle_item(
+      lambda: tr("navigation (alpha)"),
+      description=lambda: tr("Enable navigation routes and map rendering."),
+      initial_state=self._params.get_bool("NavigationEnabled"),
+      callback=lambda enabled: self._params.put_bool("NavigationEnabled", enabled, block=True),
+    )
+
     self._ui_debug_toggle = toggle_item(
       lambda: tr("UI Debug Mode"),
       description="",
@@ -94,6 +101,7 @@ class DeveloperLayout(Widget):
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys,
+      self._navigation_toggle,
       self._joystick_toggle,
       self._long_maneuver_toggle,
       self._lat_maneuver_toggle,
@@ -146,6 +154,7 @@ class DeveloperLayout(Widget):
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
       ("LateralManeuverMode", self._lat_maneuver_toggle),
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
+      ("NavigationEnabled", self._navigation_toggle),
       ("ShowDebugInfo", self._ui_debug_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))

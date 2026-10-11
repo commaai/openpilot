@@ -112,6 +112,48 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   # *** test cases ***
 
+  def test_set_nav_destination(self):
+    self.params.put_bool("NavigationEnabled", True, block=True)
+    request = {"jsonrpc": "2.0", "id": 1, "method": "setNavDestination",
+               "params": {"latitude": 32.875134, "longitude": -117.209777}}
+    self.assertEqual(json.loads(athenad.handle(request))["result"], {"success": 1})
+    self.assertEqual(self.params.get("NavDestination"), request["params"])
+    request["params"] = {"latitude": 0, "longitude": 0}
+    self.assertEqual(json.loads(athenad.handle(request))["result"], {"success": 1})
+    self.assertEqual(self.params.get("NavDestination"), request["params"])
+
+  def test_nav_destination_disabled(self):
+    request = {"id": 1, "method": "setNavDestination", "params": {"latitude": 32, "longitude": -117}}
+    self.assertEqual(json.loads(athenad.handle(request))["result"], {"success": 0, "error": "Navigation is disabled"})
+    self.assertIsNone(self.params.get("NavDestination"))
+
+    self.params.put_bool("NavigationEnabled", True, block=True)
+    self.assertEqual(json.loads(athenad.handle(request))["result"], {"success": 1})
+    destination = self.params.get("NavDestination")
+
+    self.params.put_bool("NavigationEnabled", False, block=True)
+    request["params"] = {"latitude": 0, "longitude": 0}
+    self.assertEqual(json.loads(athenad.handle(request))["result"], {"success": 0, "error": "Navigation is disabled"})
+    self.assertEqual(self.params.get("NavDestination"), destination)
+
+  def test_invalid_nav_destination(self):
+    self.params.put_bool("NavigationEnabled", True, block=True)
+    destination = {"latitude": 32, "longitude": -117}
+    self.params.put("NavDestination", destination, block=True)
+    for latitude, longitude in [(91, 0), (-91, 0), (0, 181), (0, -181), (float('nan'), 0),
+                                (0, float('inf')), (None, 0), ('32', 0), (True, 0), (0, False)]:
+      with self.subTest(latitude=latitude, longitude=longitude):
+        request = {"id": 1, "method": "setNavDestination", "params": {"latitude": latitude, "longitude": longitude}}
+        self.assertEqual(json.loads(athenad.handle(request))["result"]["success"], 0)
+        self.assertEqual(self.params.get("NavDestination"), destination)
+
+  def test_clear_nav_destination(self):
+    self.params.put("NavDestination", {"latitude": 32, "longitude": -117}, block=True)
+    for _ in range(2):
+      response = json.loads(athenad.handle({"id": 1, "method": "clearNavDestination"}))
+      self.assertEqual(response["result"], {"success": 1})
+      self.assertIsNone(self.params.get("NavDestination"))
+
   def test_echo(self):
     assert dispatcher["echo"]("bob") == "bob"
 

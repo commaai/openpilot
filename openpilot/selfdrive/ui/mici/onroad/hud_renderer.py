@@ -110,6 +110,7 @@ class HudRenderer(Widget):
     self._chestnut_fade_time: float = 0
 
     self._can_draw_top_icons = True
+    self._show_torque_bar = True
     self._show_wheel_critical = False
 
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
@@ -140,6 +141,9 @@ class HudRenderer(Widget):
   def set_can_draw_top_icons(self, can_draw_top_icons: bool):
     """Set whether to draw the top part of the HUD."""
     self._can_draw_top_icons = can_draw_top_icons
+
+  def set_show_torque_bar(self, show: bool):
+    self._show_torque_bar = show
 
   def drawing_top_icons(self) -> bool:
     # whether we're drawing any top icons currently
@@ -180,7 +184,8 @@ class HudRenderer(Widget):
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
 
-    self._torque_bar.render(rect)
+    if self._show_torque_bar:
+      self._torque_bar.render(rect)
 
     if self.is_cruise_set:
       self._draw_set_speed(rect)
