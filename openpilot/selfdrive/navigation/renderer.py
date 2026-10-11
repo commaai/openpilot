@@ -125,7 +125,7 @@ def project(points: np.ndarray, position: Position) -> np.ndarray:
                           SIZE / 2 - (forward - FORWARD_OFFSET) / METERS_PER_PIXEL))
 
 
-def draw_segments(image: np.ndarray, starts: np.ndarray, ends: np.ndarray, radii: np.ndarray, intensity: int,
+def draw_segments(image: np.ndarray, starts: np.ndarray, ends: np.ndarray, radii: np.ndarray | float, intensity: int,
                   *, overlay: bool = False, caps: np.ndarray | None = None):
   """Strokes with round joins and one pixel of analytic edge antialiasing.
 
@@ -257,7 +257,7 @@ class MapRenderer:
         draw_segments(image, starts[chosen], ends[chosen], widths[chosen] / 2, ROAD_INTENSITY)
     if isinstance(route_color, tuple):
       image = np.repeat(image[..., None], 3, axis=2)
-    channels = [image[..., c] for c in range(image.shape[2])] if image.ndim == 3 else [image]
+    channels = [image[..., c] for c in range(3)] if isinstance(route_color, tuple) else [image]
     route_present = route is not None and len(route) >= 2
     if route_present:
       points = to_view(project(mercator(route), position))

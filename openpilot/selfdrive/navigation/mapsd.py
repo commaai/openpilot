@@ -28,7 +28,7 @@ class Mapsd:
     self.tracker = RouteTracker(self.route) if len(self.route) >= 2 else None
 
   def update(self, position: Position) -> RenderResult:
-    # As in training, the map is centred on the route and headed along it, not at the GPS fix.
+    # As in training, the map is centered on the route and headed along it, not at the GPS fix.
     if self.tracker is not None:
       longitude, latitude, bearing = self.tracker.snap(position.longitude, position.latitude)
       position = Position(latitude, longitude, bearing)

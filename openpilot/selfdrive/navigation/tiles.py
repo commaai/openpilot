@@ -73,6 +73,7 @@ class RemoteTiles:
     if length == 0:
       return b''
     source = urlsplit(self.url)._replace(query='', fragment='').geturl()
+    assert self.etag is not None
     version = hashlib.sha256((source + self.etag).encode()).hexdigest()[:16]
     path = self.cache / f'{version}-{offset}-{length}'
     try:

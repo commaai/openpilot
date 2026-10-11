@@ -10,7 +10,7 @@ def route_coordinates(route) -> np.ndarray:
 
 
 # Training renders the map on the route rather than at the measured position:
-# the ego is projected onto the route, the frame is centred there and headed along the route's tangent.
+# the ego is projected onto the route, the frame is centered there and headed along the route's tangent.
 PROJECTION_WINDOW = (-30.0, 100.0)  # meters around the previous progress to search; a loop cannot capture the ego
 HEADING_HALF_WINDOW = 50.0  # meters; the heading is the chord of the route this far behind and ahead
 

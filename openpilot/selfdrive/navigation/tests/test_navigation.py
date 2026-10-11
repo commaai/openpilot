@@ -117,7 +117,7 @@ class RangeHandler(BaseHTTPRequestHandler):
     self.end_headers()
     self.wfile.write(data)
 
-  def log_message(self, *args):
+  def log_message(self, format: str, *args: object) -> None:  # noqa: A002  # stdlib override
     pass
 
 
@@ -155,41 +155,41 @@ class TestEndToEnd(TileServerCase):
       pm = messaging.PubMaster(['navInstruction', 'navRoute', 'gpsLocationExternal'])
       values = {'LastGPSPosition': json.dumps({'latitude': 0, 'longitude': 0}), 'NavDestination': dict(destination)}
       navd = route_engine(messaging.SubMaster(['gpsLocation', 'gpsLocationExternal']), pm, values)
-      state = {'step': 0, 'fix': True, 'deadline': time.monotonic() + 10, 'client': None}
+      state = SimpleNamespace(step=0, fix=True, deadline=time.monotonic() + 10, client=None)
       # Each step waits for a map or a black frame, then changes something. Messages take a loop to propagate.
       steps = [
         (False, lambda: (values.pop('NavDestination'), navd.update())),  # a map, then the destination is cleared
         (True, lambda: (values.update(NavDestination=dict(destination)), navd.update())),  # black, then a new destination
-        (False, lambda: state.update(fix=False)),  # a map again, then the GPS fix is lost
+        (False, lambda: setattr(state, 'fix', False)),  # a map again, then the GPS fix is lost
         (True, None),  # black, not stale
       ]
 
       def on_frame():
-        self.assertLess(time.monotonic(), state['deadline'], state['step'])
-        if state['client'] is None:  # the server exists now
-          state['client'] = client = VisionIpcClient('mapsd', VisionStreamType.VISION_STREAM_MAP, True)
-          while not client.connect(False) and time.monotonic() < state['deadline']:
+        self.assertLess(time.monotonic(), state.deadline, state.step)
+        if state.client is None:  # the server exists now
+          state.client = client = VisionIpcClient('mapsd', VisionStreamType.VISION_STREAM_MAP, True)
+          while not client.connect(False) and time.monotonic() < state.deadline:
             time.sleep(0.01)
           self.assertTrue(client.is_connected())
           navd.update()
           return
-        client = state['client']
+        client = state.client
         gps = messaging.new_message('gpsLocationExternal', valid=True)
-        gps.gpsLocationExternal.hasFix = state['fix']
+        gps.gpsLocationExternal.hasFix = state.fix
         pm.send('gpsLocationExternal', gps)
         frame = client.recv(timeout_ms=1000)
         assert frame is not None
         self.assertEqual((frame.width, frame.height, frame.stride), (SIZE, SIZE, SIZE))
         image = np.frombuffer(bytes(frame.data), dtype=np.uint8).reshape((SIZE, SIZE))
-        expect_black, action = steps[state['step']]
+        expect_black, action = steps[state.step]
         if bool(image.any()) == expect_black:
           return
         if not expect_black:
-          # The route is centred over the white road, with the ego arrow three quarters down.
+          # The route is centered over the white road, with the ego arrow three quarters down.
           self.assertEqual(tuple(image[[128, 128, 188, 195], [128, 131, 128, 128]]), (128, 255, 255, 0))
           self.assertEqual(client.frame_id, 42)
           self.assertGreater(client.timestamp_sof, 0)
-        state['step'] += 1
+        state.step += 1
         if action is None:
           raise StopIteration
         action()
@@ -198,7 +198,7 @@ class TestEndToEnd(TileServerCase):
       rk.keep_time.side_effect = on_frame
       with patch('openpilot.selfdrive.navigation.mapsd.Ratekeeper', return_value=rk), self.assertRaises(StopIteration):
         mapsd_main()
-      self.assertEqual(state['step'], len(steps))
+      self.assertEqual(state.step, len(steps))
       self.api.get.assert_called_once_with('v1/test-dongle/nav/tiles', access_token='device-token', timeout=10)
       self.assertTrue(all('Range' in headers for headers in self.server.requests))
       self.assertTrue(all(headers['If-Match'] == self.server.etag for headers in self.server.requests[1:]))

@@ -156,6 +156,7 @@ class RouteEngine:
       self.pm.send('navInstruction', msg)
       return
 
+    assert self.route is not None and self.route_geometry is not None and self.last_position is not None
     step = self.route[self.step_idx]
     geometry = self.route_geometry[self.step_idx]
     along_geometry = distance_along_geometry(geometry, self.last_position)
@@ -227,6 +228,7 @@ class RouteEngine:
     if self.step_idx is None:
       return True
 
+    assert self.route is not None and self.route_geometry is not None and self.last_position is not None
     # Don't recompute in last segment, assume destination is reached
     if self.step_idx == len(self.route) - 1:
       return False

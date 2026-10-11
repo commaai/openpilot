@@ -259,7 +259,6 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     self._alert_renderer.render(self._content_rect)
-    self._hud_renderer.set_show_torque_bar(not show_navigation)
     self._hud_renderer.render(self._content_rect)
 
     # Draw fake rounded border
