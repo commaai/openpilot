@@ -56,16 +56,29 @@ ui_env['CXXFLAGS'] += [
   '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
 ]
 try:
-  py_flags = subprocess.check_output(['python3-config', '--includes', '--ldflags', '--embed'], text=True)
+  _py_flags = subprocess.check_output(['python3-config', '--includes', '--ldflags', '--embed'], text=True).split()
 except subprocess.CalledProcessError:
-  py_flags = subprocess.check_output(['python3-config', '--includes', '--ldflags'], text=True)
-ui_env.MergeFlags(py_flags.strip())
+  _py_flags = subprocess.check_output(['python3-config', '--includes', '--ldflags'], text=True).split()
+_py_libs = []
+_skip = False
+for _i, _f in enumerate(_py_flags):
+  if _skip:
+    _skip = False
+    continue
+  if _f.startswith('-I'):
+    ui_env.Append(CPPPATH=[_f[2:]])
+  elif _f.startswith('-L'):
+    ui_env.Append(LIBPATH=[_f[2:]])
+  elif _f.startswith('-l'):
+    _py_libs.append(_f[2:])
+  elif _f == '-framework':
+    _skip = True  # CoreFoundation already in FRAMEWORKS below
 
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
 ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
 ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
-          ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
+          ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0'] + _py_libs
 if arch == "Darwin":
   ui_env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'Security', 'VideoToolbox']
 else:
