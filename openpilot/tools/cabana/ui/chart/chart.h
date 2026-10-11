@@ -20,9 +20,10 @@ enum class SeriesType {
   Line = 0,
   StepLine,
   Scatter,
-  XYScatter
+  XYScatter,
+  Histogram
 };
-inline constexpr const char *SERIES_TYPE_NAMES[] = {"Line", "Step Line", "Scatter", "XY Scatter"};
+inline constexpr const char *SERIES_TYPE_NAMES[] = {"Line", "Step Line", "Scatter", "XY Scatter", "Histogram"};
 
 // the message part of a legend entry, drawn after the signal name
 inline std::string msgLabel(const MessageId &id) { return " " + msgName(id) + " " + id.toString(); }
@@ -50,6 +51,7 @@ public:
       return sig ? sig->formatValue(v, with_unit) : utils::toString(v);
     }
     double mean = 0;
+    double stddev = 0;
   };
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
