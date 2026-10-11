@@ -66,8 +66,6 @@ class UIState:
         "longitudinalPlan",
         "gpsLocationExternal",
         "navInstruction",
-        "navRoute",
-        "gpsLocation",
         "carOutput",
         "carControl",
         "vehicleParameters",

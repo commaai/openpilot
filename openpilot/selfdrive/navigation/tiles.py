@@ -1,4 +1,4 @@
-"""Byte ranges of the hosted PMTiles basemap, cached on disk. mapsd fetches them; the UI only reads the cache."""
+"""Byte ranges of the hosted PMTiles basemap, cached on disk."""
 import os
 import re
 import tempfile
@@ -18,27 +18,23 @@ HEADER_LENGTH = 127
 
 
 class RemoteTiles:
-  def __init__(self, online: bool = True):
+  def __init__(self):
     self.cache = Path(Paths.comma_home() if PC else '/data') / 'navigation' / 'tiles'
     self.cache.mkdir(parents=True, exist_ok=True, mode=0o700)
-    self.session = requests.Session() if online else None
-    self.api = Api(Params().get('DongleId')) if online else None
+    self.session = requests.Session()
+    self.api = Api(Params().get('DongleId'))
     self.url = ''
     self.expires = 0
     self.etag = None
     self.size = 0
     version = self.cache / 'version'
     try:
-      if online:
-        header = self._fetch(0, HEADER_LENGTH)  # learns the archive's ETag and size
-        if not version.exists() or version.read_text() != f'{self.etag} {self.size}':
-          for cached in self.cache.iterdir():  # a new archive has new offsets
-            cached.unlink()
-          version.write_text(f'{self.etag} {self.size}')
-        self._store(0, header)
-      else:
-        self.etag, size = version.read_text().split()
-        self.size = int(size)
+      header = self._fetch(0, HEADER_LENGTH)  # learns the archive's ETag and size
+      if not version.exists() or version.read_text() != f'{self.etag} {self.size}':
+        for cached in self.cache.iterdir():  # a new archive has new offsets
+          cached.unlink()
+        version.write_text(f'{self.etag} {self.size}')
+      self._store(0, header)
     except Exception:
       self.close()
       raise
@@ -104,17 +100,15 @@ class RemoteTiles:
         return data
     except FileNotFoundError:
       pass
-    if self.session is None:
-      raise OSError('Map tiles not cached')
     data = self._fetch(offset, length)
     self._store(offset, data)
     self._trim()
     return data
 
   def prefetch(self, ranges):
-    """Cache (offset, length) ranges ahead of reads, fetching neighbouring ones in a single request."""
+    """Cache (offset, length) ranges ahead of reads, fetching neighboring ones in a single request."""
     missing = sorted((offset, length) for offset, length in set(ranges) if not (self.cache / f'{offset}-{length}').exists())
-    if not missing or self.session is None:
+    if not missing:
       return
     groups = [[missing[0]]]
     for offset, length in missing[1:]:
@@ -131,5 +125,4 @@ class RemoteTiles:
     self._trim()
 
   def close(self):
-    if self.session is not None:
-      self.session.close()
+    self.session.close()

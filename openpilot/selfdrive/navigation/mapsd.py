@@ -51,7 +51,7 @@ def main():
             prefetched = True
           if source is not None:
             gps = sm[source]
-            # As in training, the map is centred on the route and headed along it, not at the GPS fix.
+            # As in training, the map is centered on the route and headed along it, not at the GPS fix.
             longitude, latitude, bearing = tracker.snap(gps.longitude, gps.latitude)
             result = renderer.render(Position(latitude, longitude, bearing), route)
             if result.valid:

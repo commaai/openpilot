@@ -163,9 +163,9 @@ def draw_line(image: np.ndarray, points: np.ndarray, intensity: int, width: floa
   draw_segments(image, points[:-1], points[1:], np.full(len(points) - 1, width / 2.0), intensity, overlay=overlay)
 
 
-def draw_vehicle(image: np.ndarray, center: tuple[float, float], scale: float = 1.0):
+def draw_vehicle(image: np.ndarray, center: np.ndarray):
   """The training ego marker: a white arrow with a black outline, drawn over everything else."""
-  arrow = ARROW * scale + center
+  arrow = ARROW + center
   x0, y0 = np.maximum(np.floor(arrow.min(axis=0)) - 2, 0).astype(int)
   x1, y1 = np.minimum(np.ceil(arrow.max(axis=0)) + 2, [image.shape[1], image.shape[0]]).astype(int)
   if x1 <= x0 or y1 <= y0:
@@ -176,7 +176,7 @@ def draw_vehicle(image: np.ndarray, center: tuple[float, float], scale: float = 
     sides = [(q[0] - p[0]) * (py - p[1]) - (q[1] - p[1]) * (px - p[0]) for p, q in ((a, b), (b, c), (c, a))]
     inside |= ((sides[0] >= 0) & (sides[1] >= 0) & (sides[2] >= 0)) | ((sides[0] <= 0) & (sides[1] <= 0) & (sides[2] <= 0))
   image[y0:y1, x0:x1][inside] = 255
-  draw_segments(image, arrow, np.roll(arrow, -1, axis=0), ARROW_OUTLINE * scale / 2, 0, overlay=True)
+  draw_segments(image, arrow, np.roll(arrow, -1, axis=0), ARROW_OUTLINE / 2, 0, overlay=True)
 
 
 class MapRenderer:
@@ -233,9 +233,8 @@ class MapRenderer:
   def prefetch(self, route: np.ndarray):
     self.archive.prefetch((self.zoom, x, y) for x, y in self.route_tiles(route))
 
-  def render(self, position: Position, route: np.ndarray | None = None, *, width: int = SIZE, height: int = SIZE,
-             route_color: int | tuple[int, int, int] = ROUTE_INTENSITY, vehicle: bool = True) -> RenderResult:
-    image = np.full((height, width), BACKGROUND, dtype=np.uint8)
+  def render(self, position: Position, route: np.ndarray | None = None) -> RenderResult:
+    image = np.full((SIZE, SIZE), BACKGROUND, dtype=np.uint8)
     wanted, complete = self.view_tiles(position.longitude, position.latitude)
     loaded = [self.roads(x, y) for x, y in wanted]
     tiles = [tile for tile in loaded if tile is not None]
@@ -243,38 +242,27 @@ class MapRenderer:
     # The training renderer's latitude-dependent style zoom: the web mercator zoom with METERS_PER_PIXEL
     # at this latitude, under the 512-pixel tile convention. Tile zoom and style zoom are independent.
     style_zoom = math.log2(math.cos(math.radians(position.latitude)) * EARTH_CIRCUMFERENCE / (256 * METERS_PER_PIXEL)) - 1
-    scale = width / SIZE
-    def to_view(points):
-      return (points - [SIZE / 2, SIZE]) * scale + [width / 2, height] if (width, height) != (SIZE, SIZE) else points
-    ego = to_view(np.array([[SIZE / 2, SIZE / 2 + FORWARD_OFFSET / METERS_PER_PIXEL]]))[0]
+    ego = np.array([SIZE / 2, SIZE / 2 + FORWARD_OFFSET / METERS_PER_PIXEL])
     road_distance = math.inf
     if tiles:
       starts, ends, styles, levels, caps = (np.concatenate(column) for column in zip(*tiles, strict=True))
-      starts, ends = to_view(project(starts, position)), to_view(project(ends, position))
+      starts, ends = project(starts, position), project(ends, position)
       # Tunnels are drawn at their interior width; everywhere else the white casing widens the stroke.
       table = np.array([[interpolate_width(style_zoom, *style.interior), interpolate_width(style_zoom, *style.casing)]
                         for style in STYLES])
-      widths = (table[styles, 0] + np.where(levels < 0, 0, 2 * table[styles, 1])) * scale
-      road_distance = nearest_distance(ego, starts, ends) * METERS_PER_PIXEL / scale
+      widths = table[styles, 0] + np.where(levels < 0, 0, 2 * table[styles, 1])
+      road_distance = nearest_distance(ego, starts, ends) * METERS_PER_PIXEL
       for level in np.unique(levels):
         chosen = levels == level
         if level > levels.min():
           # Cut the roads beneath, open at way endpoints so a bridge does not end in a black oval.
-          draw_segments(image, starts[chosen], ends[chosen], (widths[chosen] + CUT_WIDTH * scale) / 2, BACKGROUND,
+          draw_segments(image, starts[chosen], ends[chosen], (widths[chosen] + CUT_WIDTH) / 2, BACKGROUND,
                         overlay=True, caps=~caps[chosen])
         draw_segments(image, starts[chosen], ends[chosen], widths[chosen] / 2, ROAD_INTENSITY)
-    if isinstance(route_color, tuple):
-      image = np.repeat(image[..., None], 3, axis=2)
-    channels = [image[..., c] for c in range(3)] if isinstance(route_color, tuple) else [image]
     route_present = route is not None and len(route) >= 2
     if route_present:
-      points = to_view(project(mercator(route), position))
-      colors = route_color if isinstance(route_color, tuple) else (route_color,)
-      for channel, intensity in zip(channels, colors, strict=True):
-        draw_line(channel, points, intensity, ROUTE_WIDTH * scale, overlay=True)
-    if vehicle:
-      for channel in channels:
-        draw_vehicle(channel, ego, scale)
+      draw_line(image, project(mercator(route), position), ROUTE_INTENSITY, ROUTE_WIDTH, overlay=True)
+    draw_vehicle(image, ego)
     return RenderResult(image, complete, route_present, road_distance)
 
 

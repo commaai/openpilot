@@ -205,10 +205,6 @@ class TestEndToEnd(TileServerCase):
       self.assertTrue(all('Range' in headers for headers in self.server.requests))
       self.assertTrue(all(headers['If-Match'] == self.server.etag for headers in self.server.requests[1:]))
       self.assertTrue(all(b'secret' not in p.read_bytes() for p in self.cache.iterdir()))
-      # The UI reads the cache mapsd filled without touching the network
-      with closing(PMTiles(RemoteTiles(online=False))) as archive:
-        self.assertEqual(archive.get(0, 0, 0), road_tile())
-      self.assertEqual(len(self.server.requests), 4)
 
 
 class TestRemoteTiles(TileServerCase):
@@ -400,12 +396,12 @@ class TestRendering(unittest.TestCase):
     images = {}
     for crossing in ('bridge', 'tunnel'):
       with local_archive(make_archive(road_tile(crossing))) as archive:
-        images[crossing] = MapRenderer(archive).render(Position(0, 0, 0), vehicle=False).image
-    # The horizontal road crosses the vertical one at the ego, 192px down. A bridge severs the road beneath
+        images[crossing] = MapRenderer(archive).render(Position(-40 * METER, 0, 0)).image  # the crossing 40m ahead
+    # The horizontal road crosses the vertical one 40px above the ego, at row 152. A bridge severs the road beneath
     # just outside its own stroke; a tunnel passes underneath untouched. The cut has butt caps, so the
     # bridge's own end is not wrapped in black.
-    self.assertEqual((images['bridge'][186, 128], images['bridge'][192, 128], images['bridge'][192, 200], images['bridge'][180, 128]), (0, 255, 255, 255))
-    self.assertEqual((images['tunnel'][186, 128], images['tunnel'][192, 200]), (255, 255))
+    self.assertEqual((images['bridge'][146, 128], images['bridge'][152, 128], images['bridge'][152, 200], images['bridge'][140, 128]), (0, 255, 255, 255))
+    self.assertEqual((images['tunnel'][146, 128], images['tunnel'][152, 200]), (255, 255))
 
   def test_route_tiles(self):
     data = bytearray(make_archive())
@@ -431,9 +427,6 @@ class TestRendering(unittest.TestCase):
       far = renderer.render(Position(0, 0.01, 0), route)  # no road near the ego
       self.assertGreater(far.road_distance, 1000)
       self.assertFalse(far.valid)
-      display = renderer.render(Position(0, 0, 0), route, width=490, height=254, route_color=(72, 235, 132))
-      self.assertEqual(display.image.shape, (254, 490, 3))
-      np.testing.assert_array_equal(display.image[-1, 245], [72, 235, 132])
       with patch.object(archive, 'get', return_value=None):
         missing = MapRenderer(archive).render(Position(0, 0, 0), route)
         self.assertFalse(missing.complete or missing.valid)
