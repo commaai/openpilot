@@ -7,7 +7,6 @@ to their cabana equivalents and launches cabana.
 """
 import os
 import sys
-import shutil
 import subprocess
 import argparse
 
