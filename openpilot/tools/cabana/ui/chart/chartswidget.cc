@@ -179,8 +179,8 @@ void ChartsWidget::drawToolBar() {
       cereal_browser_open_ = !cereal_browser_open_;
   }});
   items.push_back({iconButtonWidth(), [this]() {
-    if (iconButton("lua_panel_btn", icon::PENCIL, "Derived Signals (Lua)"))
-      lua_panel_open_ = !lua_panel_open_;
+    if (iconButton("python_panel_btn", icon::PENCIL, "Derived Signals (Python)"))
+      python_panel_open_ = !python_panel_open_;
   }});
   items.push_back({iconButtonWidth(), [this]() {
     if (iconButton("map_panel_btn", icon::GEO_ALT, "GPS Map"))
@@ -396,25 +396,23 @@ bool ChartsWidget::loadLayout(const std::string &path) {
     }
   }
 
-  // populate lua snippets panel
+  // populate python snippets panel
   for (const auto &s_j : doc["snippets"].array_items()) {
-    LuaSnippet s;
+    PythonSnippet s;
     s.name          = s_j["name"].string_value();
     s.linked_source = s_j["linked_source"].string_value();
-    s.function_body = s_j["function_body"].string_value();
-    s.global_init   = s_j["global_init"].string_value();
+    s.code          = s_j["code"].string_value();
     for (const auto &v : s_j["additional_sources"].array_items())
       s.additional_sources.push_back(v.string_value());
-    lua_snippets_.push_back(std::move(s));
+    python_snippets_.push_back(std::move(s));
   }
-  if (!lua_snippets_.empty()) {
-    lua_panel_open_ = true;
-    // auto-evaluate all snippets now that data is loaded
-    for (auto &s : lua_snippets_) {
+  if (!python_snippets_.empty()) {
+    python_panel_open_ = true;
+    for (auto &snip : python_snippets_) {
       CerealSeriesMap result;
-      std::string lua_err = luaEvaluate(s, can->cerealSeries(), result);
-      if (lua_err.empty() && !result.empty())
-        can->insertDerivedSeries(s.name, std::move(result.begin()->second));
+      std::string py_err = pythonEvaluate(snip, can->cerealSeries(), result);
+      if (py_err.empty() && !result.empty())
+        can->insertDerivedSeries(snip.name, std::move(result.begin()->second));
     }
   }
   return true;
@@ -442,13 +440,12 @@ void ChartsWidget::saveLayout(const std::string &path) {
   }
 
   json11::Json::array snippets_j;
-  for (const auto &s : lua_snippets_) {
+  for (const auto &s : python_snippets_) {
     json11::Json::array addl;
     for (const auto &a : s.additional_sources) addl.push_back(json11::Json(a));
     snippets_j.push_back(json11::Json::object{
       {"name", s.name}, {"linked_source", s.linked_source},
-      {"function_body", s.function_body}, {"global_init", s.global_init},
-      {"additional_sources", addl}
+      {"code", s.code}, {"additional_sources", addl}
     });
   }
 
@@ -728,7 +725,7 @@ void ChartsWidget::draw() {
     if (dlg->accepted() && accepted) accepted(*dlg);
   }
   if (cereal_browser_open_) drawCerealBrowser();
-  if (lua_panel_open_) drawLuaPanel();
+  if (python_panel_open_) drawPythonPanel();
   if (map_panel_open_) drawMapPanel();
   if (log_panel_open_) drawLogPanel();
   ImGui::PopID();
@@ -817,15 +814,15 @@ void ChartsWidget::cerealSeriesUpdated() {
   for (auto &c : charts_) c->updateCerealSeries();
 
   // re-run any snippet whose output series doesn't exist yet (e.g. after layout load at startup)
-  if (!lua_evaluating_ && !lua_snippets_.empty() && !can->cerealSeries().empty()) {
-    lua_evaluating_ = true;
-    for (auto &s : lua_snippets_) {
+  if (!python_evaluating_ && !python_snippets_.empty() && !can->cerealSeries().empty()) {
+    python_evaluating_ = true;
+    for (auto &s : python_snippets_) {
       CerealSeriesMap result;
-      std::string lua_err = luaEvaluate(s, can->cerealSeries(), result);
-      if (lua_err.empty() && !result.empty())
+      std::string py_err = pythonEvaluate(s, can->cerealSeries(), result);
+      if (py_err.empty() && !result.empty())
         can->insertDerivedSeries(s.name, std::move(result.begin()->second));
     }
-    lua_evaluating_ = false;
+    python_evaluating_ = false;
   }
 }
 
@@ -881,9 +878,10 @@ void ChartsWidget::drawCerealBrowser() {
   ImGui::End();
 }
 
-// ── Lua derived signal panel ──────────────────────────────────────────────────
+// ── Python derived signal panel ───────────────────────────────────────────────
 
-static void copySnippetToBuffers(const LuaSnippet &s, char *name, char *linked, char *v1, char *v2, char *v3, char *v4, char *global, char *func) {
+static void copyPySnippetToBuffers(const PythonSnippet &s, char *name, char *linked,
+                                   char *v1, char *v2, char *v3, char *v4, char *code) {
   snprintf(name,   256,  "%s", s.name.c_str());
   snprintf(linked, 256,  "%s", s.linked_source.c_str());
   auto src = [&](int i) -> const char * { return i < (int)s.additional_sources.size() ? s.additional_sources[i].c_str() : ""; };
@@ -891,110 +889,111 @@ static void copySnippetToBuffers(const LuaSnippet &s, char *name, char *linked, 
   snprintf(v2, 256, "%s", src(1));
   snprintf(v3, 256, "%s", src(2));
   snprintf(v4, 256, "%s", src(3));
-  snprintf(global, 2048, "%s", s.global_init.c_str());
-  snprintf(func,   4096, "%s", s.function_body.c_str());
+  snprintf(code, 4096, "%s", s.code.c_str());
 }
 
-static LuaSnippet buffersToSnippet(const char *name, const char *linked, const char *v1, const char *v2, const char *v3, const char *v4, const char *global, const char *func) {
-  LuaSnippet s;
-  s.name           = name;
-  s.linked_source  = linked;
-  s.global_init    = global;
-  s.function_body  = func;
+static PythonSnippet buffersToPySnippet(const char *name, const char *linked,
+                                        const char *v1, const char *v2, const char *v3, const char *v4,
+                                        const char *code) {
+  PythonSnippet s;
+  s.name          = name;
+  s.linked_source = linked;
+  s.code          = code;
   for (const char *src : {v1, v2, v3, v4})
     if (src[0]) s.additional_sources.push_back(src);
   return s;
 }
 
-void ChartsWidget::drawLuaPanel() {
+static const char *DEFAULT_PYTHON_CODE =
+  "def derive(value, v1, v2, v3, v4, time):\n"
+  "    return value\n";
+
+void ChartsWidget::drawPythonPanel() {
   ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
-  if (!ImGui::Begin("Derived Signals (Lua)", &lua_panel_open_)) { ImGui::End(); return; }
+  if (!ImGui::Begin("Derived Signals (Python)", &python_panel_open_)) { ImGui::End(); return; }
 
   // left: snippet list
-  ImGui::BeginChild("lua_list", ImVec2(160, 0), true);
-  for (int i = 0; i < (int)lua_snippets_.size(); i++) {
-    if (ImGui::Selectable(lua_snippets_[i].name.c_str(), lua_selected_ == i)) {
-      lua_selected_ = i;
-      copySnippetToBuffers(lua_snippets_[i], lua_name_buf_, lua_linked_buf_,
-                           lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
-                           lua_global_buf_, lua_func_buf_);
-      lua_error_.clear();
-      lua_success_.clear();
+  ImGui::BeginChild("py_list", ImVec2(160, 0), true);
+  for (int i = 0; i < (int)python_snippets_.size(); i++) {
+    if (ImGui::Selectable(python_snippets_[i].name.c_str(), python_selected_ == i)) {
+      python_selected_ = i;
+      copyPySnippetToBuffers(python_snippets_[i], python_name_buf_, python_linked_buf_,
+                             python_v1_buf_, python_v2_buf_, python_v3_buf_, python_v4_buf_,
+                             python_code_buf_);
+      python_error_.clear();
+      python_success_.clear();
     }
   }
   if (ImGui::Button("+ New")) {
-    LuaSnippet blank;
+    PythonSnippet blank;
     blank.name = "new_signal";
-    blank.function_body = "return value";
-    lua_snippets_.push_back(std::move(blank));
-    lua_selected_ = (int)lua_snippets_.size() - 1;
-    copySnippetToBuffers(lua_snippets_[lua_selected_], lua_name_buf_, lua_linked_buf_,
-                         lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
-                         lua_global_buf_, lua_func_buf_);
-    lua_error_.clear();
-    lua_success_.clear();
+    blank.code = DEFAULT_PYTHON_CODE;
+    python_snippets_.push_back(std::move(blank));
+    python_selected_ = (int)python_snippets_.size() - 1;
+    copyPySnippetToBuffers(python_snippets_[python_selected_], python_name_buf_, python_linked_buf_,
+                           python_v1_buf_, python_v2_buf_, python_v3_buf_, python_v4_buf_,
+                           python_code_buf_);
+    python_error_.clear();
+    python_success_.clear();
   }
   ImGui::EndChild();
 
   ImGui::SameLine();
 
   // right: editor
-  ImGui::BeginChild("lua_editor", ImVec2(0, 0));
-  if (lua_selected_ < 0 || lua_selected_ >= (int)lua_snippets_.size()) {
+  ImGui::BeginChild("py_editor", ImVec2(0, 0));
+  if (python_selected_ < 0 || python_selected_ >= (int)python_snippets_.size()) {
     ImGui::TextUnformatted("Select or create a snippet on the left.");
     ImGui::EndChild();
     ImGui::End();
     return;
   }
 
-  ImGui::InputText("Name",          lua_name_buf_,   sizeof(lua_name_buf_));
-  ImGui::InputText("Linked source (value)", lua_linked_buf_, sizeof(lua_linked_buf_));
-  ImGui::InputText("v1", lua_v1_buf_, sizeof(lua_v1_buf_)); ImGui::SameLine();
-  ImGui::InputText("v2", lua_v2_buf_, sizeof(lua_v2_buf_)); ImGui::SameLine();
-  ImGui::InputText("v3", lua_v3_buf_, sizeof(lua_v3_buf_)); ImGui::SameLine();
-  ImGui::InputText("v4", lua_v4_buf_, sizeof(lua_v4_buf_));
+  ImGui::InputText("Name", python_name_buf_, sizeof(python_name_buf_));
+  ImGui::InputText("Linked source (value)", python_linked_buf_, sizeof(python_linked_buf_));
+  ImGui::InputText("v1", python_v1_buf_, sizeof(python_v1_buf_)); ImGui::SameLine();
+  ImGui::InputText("v2", python_v2_buf_, sizeof(python_v2_buf_)); ImGui::SameLine();
+  ImGui::InputText("v3", python_v3_buf_, sizeof(python_v3_buf_)); ImGui::SameLine();
+  ImGui::InputText("v4", python_v4_buf_, sizeof(python_v4_buf_));
 
-  ImGui::TextUnformatted("Global init (runs once):");
-  ImGui::InputTextMultiline("##global", lua_global_buf_, sizeof(lua_global_buf_), ImVec2(-1, 60));
-  ImGui::TextUnformatted("Function body (receives: value, v1..v4, time — must return a number):");
-  ImGui::InputTextMultiline("##func", lua_func_buf_, sizeof(lua_func_buf_), ImVec2(-1, 120));
+  ImGui::TextUnformatted("Python code (define derive(value, v1, v2, v3, v4, time) → number):");
+  ImGui::InputTextMultiline("##pycode", python_code_buf_, sizeof(python_code_buf_), ImVec2(-1, 180));
 
-  if (!lua_error_.empty()) {
+  if (!python_error_.empty()) {
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 80, 80, 255));
-    ImGui::TextWrapped("%s", lua_error_.c_str());
+    ImGui::TextWrapped("%s", python_error_.c_str());
     ImGui::PopStyleColor();
-  } else if (!lua_success_.empty()) {
+  } else if (!python_success_.empty()) {
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(80, 200, 80, 255));
-    ImGui::TextUnformatted(lua_success_.c_str());
+    ImGui::TextUnformatted(python_success_.c_str());
     ImGui::PopStyleColor();
   }
 
   if (ImGui::Button("Run")) {
-    LuaSnippet s = buffersToSnippet(lua_name_buf_, lua_linked_buf_,
-                                    lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
-                                    lua_global_buf_, lua_func_buf_);
-    lua_snippets_[lua_selected_] = s;
-    lua_success_.clear();
+    PythonSnippet s = buffersToPySnippet(python_name_buf_, python_linked_buf_,
+                                         python_v1_buf_, python_v2_buf_, python_v3_buf_, python_v4_buf_,
+                                         python_code_buf_);
+    python_snippets_[python_selected_] = s;
+    python_success_.clear();
     CerealSeriesMap result;
-    lua_error_ = luaEvaluate(s, can->cerealSeries(), result);
-    if (lua_error_.empty() && !result.empty()) {
+    python_error_ = pythonEvaluate(s, can->cerealSeries(), result);
+    if (python_error_.empty() && !result.empty()) {
       auto &pts = result.begin()->second;
-      lua_success_ = "OK — " + std::to_string(pts.size()) + " samples computed";
+      python_success_ = "OK — " + std::to_string(pts.size()) + " samples computed";
       can->insertDerivedSeries(s.name, std::move(pts));
-    } else if (lua_error_.empty()) {
-      lua_error_ = "linked source '" + s.linked_source + "' not found in loaded data";
+    } else if (python_error_.empty()) {
+      python_error_ = "linked source '" + s.linked_source + "' not found in loaded data";
     }
   }
   ImGui::SameLine();
   if (ImGui::Button("Plot")) {
-    if (lua_selected_ >= 0) {
-      LuaSnippet s = buffersToSnippet(lua_name_buf_, lua_linked_buf_,
-                                      lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
-                                      lua_global_buf_, lua_func_buf_);
-      // run if not already computed under this name
+    if (python_selected_ >= 0) {
+      PythonSnippet s = buffersToPySnippet(python_name_buf_, python_linked_buf_,
+                                           python_v1_buf_, python_v2_buf_, python_v3_buf_, python_v4_buf_,
+                                           python_code_buf_);
       if (!can->cerealSeries().count(s.name)) {
         CerealSeriesMap result;
-        if (luaEvaluate(s, can->cerealSeries(), result).empty() && !result.empty())
+        if (pythonEvaluate(s, can->cerealSeries(), result).empty() && !result.empty())
           can->insertDerivedSeries(s.name, std::move(result.begin()->second));
       }
       if (can->cerealSeries().count(s.name))
@@ -1002,10 +1001,10 @@ void ChartsWidget::drawLuaPanel() {
     }
   }
   ImGui::SameLine();
-  if (ImGui::Button("Delete") && lua_selected_ >= 0) {
-    lua_snippets_.erase(lua_snippets_.begin() + lua_selected_);
-    lua_selected_ = std::min(lua_selected_, (int)lua_snippets_.size() - 1);
-    lua_error_.clear();
+  if (ImGui::Button("Delete") && python_selected_ >= 0) {
+    python_snippets_.erase(python_snippets_.begin() + python_selected_);
+    python_selected_ = std::min(python_selected_, (int)python_snippets_.size() - 1);
+    python_error_.clear();
   }
 
   ImGui::EndChild();

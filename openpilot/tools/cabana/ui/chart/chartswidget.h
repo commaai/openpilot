@@ -15,7 +15,7 @@
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/lua/lua_evaluator.h"
+#include "tools/cabana/lua/python_evaluator.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/utils/util.h"
 
@@ -167,22 +167,21 @@ private:
   bool log_panel_open_ = false;
   char log_filter_buf_[256] = {};
   void drawLogPanel();
-  // Lua derived signal panel state
-  bool lua_panel_open_ = false;
-  bool lua_evaluating_ = false;  // re-entrancy guard for cerealSeriesUpdated
-  std::vector<LuaSnippet> lua_snippets_;
-  int lua_selected_ = -1;
-  char lua_name_buf_[256] = {};
-  char lua_linked_buf_[256] = {};
-  char lua_v1_buf_[256] = {};
-  char lua_v2_buf_[256] = {};
-  char lua_v3_buf_[256] = {};
-  char lua_v4_buf_[256] = {};
-  char lua_global_buf_[2048] = {};
-  char lua_func_buf_[4096] = {};
-  std::string lua_error_;
-  std::string lua_success_;
-  void drawLuaPanel();
+  // Python derived signal panel state
+  bool python_panel_open_ = false;
+  bool python_evaluating_ = false;  // re-entrancy guard for cerealSeriesUpdated
+  std::vector<PythonSnippet> python_snippets_;
+  int python_selected_ = -1;
+  char python_name_buf_[256] = {};
+  char python_linked_buf_[256] = {};
+  char python_v1_buf_[256] = {};
+  char python_v2_buf_[256] = {};
+  char python_v3_buf_[256] = {};
+  char python_v4_buf_[256] = {};
+  char python_code_buf_[4096] = {};
+  std::string python_error_;
+  std::string python_success_;
+  void drawPythonPanel();
   Connections connections_;
   friend class ChartView;
   friend class ChartsContainer;
