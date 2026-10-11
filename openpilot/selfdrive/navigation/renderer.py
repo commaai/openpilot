@@ -65,7 +65,7 @@ def road_style(road: Road) -> Style | None:
     return None
   if detail in ('motorway', 'trunk', 'primary') or (not detail and road.kind == 'highway'):
     return MAJOR
-  if detail in ('secondary', 'tertiary') or (not detail and road.kind in ('major_road', 'medium_road')):
+  if detail in ('secondary', 'tertiary') or (not detail and road.kind == 'major_road'):
     return MEDIUM
   if detail == 'track':
     return TRACK
@@ -208,30 +208,38 @@ class MapRenderer:
       return np.empty((0, 2)), np.empty((0, 2)), np.empty(0, dtype=int), np.empty(0, dtype=int), np.empty((0, 2), dtype=bool)
     return np.concatenate(starts), np.concatenate(ends), np.concatenate(styles), np.concatenate(levels), np.concatenate(caps)
 
-  def render(self, position: Position, route: np.ndarray | None = None, *, width: int = SIZE, height: int = SIZE,
-             route_color: int | tuple[int, int, int] = ROUTE_INTENSITY, vehicle: bool = True) -> RenderResult:
-    image = np.full((height, width), BACKGROUND, dtype=np.uint8)
-    origin = mercator(np.array([[position.longitude, position.latitude]]))[0]
+  def view_tiles(self, longitude: float, latitude: float) -> tuple[list[tuple[int, int]], bool]:
+    """Tiles covering the view at a point for every heading, and whether the view stays within the map."""
+    origin = mercator(np.array([[longitude, latitude]]))[0]
     # A bounding circle includes all headings, forward offset and road stroke widths.
-    radius = (SIZE * METERS_PER_PIXEL / math.sqrt(2) + FORWARD_OFFSET + 16) / (
-      EARTH_CIRCUMFERENCE * math.cos(math.radians(position.latitude)))
+    radius = (SIZE * METERS_PER_PIXEL / math.sqrt(2) + FORWARD_OFFSET + 16) / (EARTH_CIRCUMFERENCE * math.cos(math.radians(latitude)))
     count = 1 << self.zoom
     low = np.floor((origin - radius) * count).astype(int)
     high = np.floor((origin + radius) * count).astype(int)
     if (high[0] - low[0] + 1) * (high[1] - low[1] + 1) > 256:
       raise ValueError("View requires more than 256 tiles; use a lower zoom")
-    tiles = []
-    complete = True
-    for y in range(low[1], high[1] + 1):
-      for x in range(low[0], high[0] + 1):
-        if not 0 <= y < count:
-          complete = False
-          continue
-        tile = self.roads(x % count, y)
-        if tile is None:
-          complete = False
-        else:
-          tiles.append(tile)
+    tiles = [(x % count, y) for y in range(low[1], high[1] + 1) for x in range(low[0], high[0] + 1) if 0 <= y < count]
+    return tiles, len(tiles) == (high[0] - low[0] + 1) * (high[1] - low[1] + 1)
+
+  def route_tiles(self, route: np.ndarray) -> set[tuple[int, int]]:
+    """Every tile the view can show while the pose is snapped onto the route."""
+    tiles: set[tuple[int, int]] = set()
+    for a, b in zip(route[:-1], route[1:], strict=True):
+      meters = np.hypot(*((b - a) * [111320.0 * math.cos(math.radians(a[1])), 110540.0]))
+      for t in np.linspace(0, 1, int(meters / 100) + 2):
+        tiles.update(self.view_tiles(*(a + (b - a) * t))[0])
+    return tiles
+
+  def prefetch(self, route: np.ndarray):
+    self.archive.prefetch((self.zoom, x, y) for x, y in self.route_tiles(route))
+
+  def render(self, position: Position, route: np.ndarray | None = None, *, width: int = SIZE, height: int = SIZE,
+             route_color: int | tuple[int, int, int] = ROUTE_INTENSITY, vehicle: bool = True) -> RenderResult:
+    image = np.full((height, width), BACKGROUND, dtype=np.uint8)
+    wanted, complete = self.view_tiles(position.longitude, position.latitude)
+    loaded = [self.roads(x, y) for x, y in wanted]
+    tiles = [tile for tile in loaded if tile is not None]
+    complete = complete and len(tiles) == len(loaded)
     # The training renderer's latitude-dependent style zoom: the web mercator zoom with METERS_PER_PIXEL
     # at this latitude, under the 512-pixel tile convention. Tile zoom and style zoom are independent.
     style_zoom = math.log2(math.cos(math.radians(position.latitude)) * EARTH_CIRCUMFERENCE / (256 * METERS_PER_PIXEL)) - 1

@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 import unittest
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
@@ -25,6 +25,7 @@ from openpilot.selfdrive.navigation.navd import REROUTE_COUNTER_MIN, RouteEngine
 from openpilot.selfdrive.navigation.pmtiles import PMTiles, decode_directory, tile_id
 from openpilot.selfdrive.navigation.renderer import SIZE, MapRenderer, Position, draw_line, mercator, project
 from openpilot.selfdrive.navigation.route import RouteTracker
+from openpilot.selfdrive.navigation.tiles import RemoteTiles
 from openpilot.selfdrive.navigation.vector_tile import decode_lines, decode_roads
 
 METER = 1 / 111319.49079327358  # degrees of latitude
@@ -58,19 +59,18 @@ def road_tile(crossing=None):
   return field(3, field(1, b'buildings')) + field(3, roads)
 
 
-def make_archive(payload=None, leaf=False, compression=2):
+def make_archive(payload=None, leaf=False, run=1):
   """A PMTiles archive with one zoom-zero tile, in the root directory or in a leaf directory."""
-  compress = gzip.compress if compression == 2 else lambda data: data
-  tile = compress(road_tile() if payload is None else payload)
-  directory = compress(varint(1) + varint(0) + varint(1) + varint(len(tile)) + varint(1))
+  tile = gzip.compress(road_tile() if payload is None else payload)
+  directory = gzip.compress(varint(1) + varint(0) + varint(run) + varint(len(tile)) + varint(1))
   child = directory if leaf else b''
-  root = compress(varint(1) + varint(0) + varint(0) + varint(len(child)) + varint(1)) if leaf else directory
-  metadata = compress(b'{"vector_layers":[{"id":"roads"}]}')
+  root = gzip.compress(varint(1) + varint(0) + varint(0) + varint(len(child)) + varint(1)) if leaf else directory
+  metadata = gzip.compress(b'{"vector_layers":[{"id":"roads"}]}')
   header = bytearray(127)
   header[:8] = b'PMTiles\x03'
   offsets = [127, 127 + len(root), 127 + len(root) + len(metadata), 127 + len(root) + len(metadata) + len(child)]
   struct.pack_into('<11Q', header, 8, offsets[0], len(root), offsets[1], len(metadata), offsets[2], len(child), offsets[3], len(tile), 1, 1, 1)
-  header[96:102] = bytes([1, compression, compression, 1, 0, 0])
+  header[96:102] = bytes([1, 2, 2, 1, 0, 0])
   return bytes(header + root + metadata + child + tile)
 
 
@@ -79,7 +79,7 @@ def local_archive(data):
   """A PMTiles reader over in-memory bytes, bypassing the tile server."""
   source = MagicMock(size=len(data))
   source.read.side_effect = lambda offset, length: data[offset:offset + length]
-  with patch('openpilot.selfdrive.navigation.pmtiles.RemoteTiles', return_value=source), PMTiles() as archive:
+  with closing(PMTiles(source)) as archive:
     yield archive
 
 
@@ -200,40 +200,56 @@ class TestEndToEnd(TileServerCase):
         mapsd_main()
       self.assertEqual(state.step, len(steps))
       self.api.get.assert_called_once_with('v1/test-dongle/nav/tiles', access_token='device-token', timeout=10)
+      # header, root directory, leaf directory and the route's tiles in one request; the second route is cached
+      self.assertEqual(len(self.server.requests), 4)
       self.assertTrue(all('Range' in headers for headers in self.server.requests))
       self.assertTrue(all(headers['If-Match'] == self.server.etag for headers in self.server.requests[1:]))
       self.assertTrue(all(b'secret' not in p.read_bytes() for p in self.cache.iterdir()))
+      # The UI reads the cache mapsd filled without touching the network
+      with closing(PMTiles(RemoteTiles(online=False))) as archive:
+        self.assertEqual(archive.get(0, 0, 0), road_tile())
+      self.assertEqual(len(self.server.requests), 4)
 
 
 class TestRemoteTiles(TileServerCase):
   def test_shared_cache_and_refresh(self):
-    with PMTiles() as archive:
-      archive.remote.expires = 0  # the signed URL is refreshed before the next fetch
+    with closing(PMTiles(RemoteTiles())) as archive:
+      archive.source.expires = 0  # the signed URL is refreshed before the next fetch
       self.assertEqual(archive.get(0, 0, 0), road_tile())
       self.assertEqual(archive.get(0, 0, 0), road_tile())
       self.assertEqual(self.api.get.call_count, 2)
     count = len(self.server.requests)
-    with PMTiles() as archive:
+    with closing(PMTiles(RemoteTiles())) as archive:
       self.assertEqual(archive.get(0, 0, 0), road_tile())
     # A second reader revalidates only the header; directories and tiles are shared on disk.
     self.assertEqual(len(self.server.requests), count + 1)
-    with patch('openpilot.selfdrive.navigation.tiles.CACHE_LIMIT', 1), PMTiles() as archive:
-      archive.remote.read(1, 2)  # an uncached range is downloaded, then the cache is trimmed to the limit
-    self.assertEqual(list(self.cache.iterdir()), [])
+    with patch('openpilot.selfdrive.navigation.tiles.CACHE_LIMIT', 1), closing(RemoteTiles()) as source:
+      source.read(1, 2)  # an uncached range is downloaded, then the cache is trimmed to the limit
+    self.assertEqual([p.name for p in self.cache.iterdir()], ['version'])
+
+  def test_prefetch_merges_nearby_ranges(self):
+    with patch('openpilot.selfdrive.navigation.tiles.MERGE_GAP', 16), closing(RemoteTiles()) as source:
+      count = len(self.server.requests)
+      source.prefetch([(20, 10), (0, 10), (60, 10), (20, 10)])
+      self.assertEqual(len(self.server.requests), count + 2)  # 0-29 in one request, 60-69 in another
+      self.assertEqual(self.server.requests[-2]['Range'], 'bytes=0-29')
+      for offset in (0, 20, 60):
+        self.assertEqual(source.read(offset, 10), self.server.archive[offset:offset + 10])
+      self.assertEqual(len(self.server.requests), count + 2)
 
   def test_failures(self):
-    with PMTiles() as archive:
+    with closing(PMTiles(RemoteTiles())) as archive:
       self.server.etag = '"new-version"'
       with self.assertRaisesRegex(OSError, '412'):  # the archive changed under an open reader
         archive.get(0, 0, 0)
-    with PMTiles() as archive:
+    with closing(PMTiles(RemoteTiles())) as archive:  # a new reader starts over on the new version
       self.assertEqual(archive.get(0, 0, 0), road_tile())
     self.server.ignore_range = True
     with self.assertRaisesRegex(OSError, '200'):
-      PMTiles()
+      RemoteTiles()
     self.api.get.return_value.raise_for_status.side_effect = requests.HTTPError(self.url)
     with self.assertRaisesRegex(OSError, '^Unable to fetch map tiles$'):  # the signed URL stays out of the error
-      PMTiles()
+      RemoteTiles()
 
 
 class TestRouteEngine(unittest.TestCase):
@@ -333,13 +349,11 @@ class TestTiles(unittest.TestCase):
       with self.assertRaises(ValueError):
         decode_directory(invalid)
     for leaf in (False, True):
-      for compression in (1, 2):
-        with local_archive(make_archive(leaf=leaf, compression=compression)) as archive:
-          self.assertEqual(archive.get(0, 0, 0), road_tile())
-          self.assertIsNone(archive.get(1, 0, 0))
-    data = bytearray(make_archive(compression=1))
+      with local_archive(make_archive(leaf=leaf)) as archive:
+        self.assertEqual(archive.get(0, 0, 0), road_tile())
+        self.assertIsNone(archive.get(1, 0, 0))
+    data = bytearray(make_archive(run=3))  # the zoom-zero tile is also addressed by IDs 1 and 2
     data[101] = 1  # max zoom
-    data[129] = 3  # the zoom-zero tile is also addressed by IDs 1 and 2
     with local_archive(bytes(data)) as archive:
       self.assertEqual(archive.get(1, 0, 1), road_tile())
       self.assertIsNone(archive.get(1, 1, 1))
@@ -392,6 +406,19 @@ class TestRendering(unittest.TestCase):
     # bridge's own end is not wrapped in black.
     self.assertEqual((images['bridge'][186, 128], images['bridge'][192, 128], images['bridge'][192, 200], images['bridge'][180, 128]), (0, 255, 255, 255))
     self.assertEqual((images['tunnel'][186, 128], images['tunnel'][192, 200]), (255, 255))
+
+  def test_route_tiles(self):
+    data = bytearray(make_archive())
+    data[101] = 15  # max zoom
+    route = np.array([[0, -0.01], [0, 0.01]])  # 2.2 km north along the prime meridian
+    with local_archive(bytes(data)) as archive:
+      renderer = MapRenderer(archive)
+      tiles = renderer.route_tiles(route)
+      # Both columns beside the meridian, and the rows within the view radius of the route's ends.
+      self.assertEqual({x for x, _ in tiles}, {16383, 16384})
+      self.assertEqual({y for _, y in tiles}, set(range(16382, 16386)))
+      renderer.prefetch(route)
+      archive.source.prefetch.assert_called_once_with([])  # the test archive has no zoom-15 tiles
 
   def test_validity_and_display(self):
     route = np.array([[0, -0.01], [0, 0.01]])

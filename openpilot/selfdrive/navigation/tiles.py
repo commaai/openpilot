@@ -1,11 +1,9 @@
-"""Authenticated range reads of the hosted PMTiles basemap."""
-import hashlib
+"""Byte ranges of the hosted PMTiles basemap, cached on disk. mapsd fetches them; the UI only reads the cache."""
 import os
 import re
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import urlsplit
 
 import requests
 
@@ -15,21 +13,32 @@ from openpilot.common.hardware.hw import Paths
 from openpilot.common.params import Params
 
 CACHE_LIMIT = 64 * 1024 * 1024
+MERGE_GAP = 256 * 1024  # tiles this close together in the archive are fetched in one range request
+HEADER_LENGTH = 127
 
 
 class RemoteTiles:
-  def __init__(self):
-    self.api = Api(Params().get('DongleId'))
-    self.session = requests.Session()
+  def __init__(self, online: bool = True):
+    self.cache = Path(Paths.comma_home() if PC else '/data') / 'navigation' / 'tiles'
+    self.cache.mkdir(parents=True, exist_ok=True, mode=0o700)
+    self.session = requests.Session() if online else None
+    self.api = Api(Params().get('DongleId')) if online else None
     self.url = ''
     self.expires = 0
     self.etag = None
     self.size = 0
-    self.cache = Path(Paths.comma_home() if PC else '/data') / 'navigation' / 'tiles'
-    self.cache.mkdir(parents=True, exist_ok=True, mode=0o700)
-    self.downloads = 0
+    version = self.cache / 'version'
     try:
-      self.header = self._fetch(0, 127)
+      if online:
+        header = self._fetch(0, HEADER_LENGTH)  # learns the archive's ETag and size
+        if not version.exists() or version.read_text() != f'{self.etag} {self.size}':
+          for cached in self.cache.iterdir():  # a new archive has new offsets
+            cached.unlink()
+          version.write_text(f'{self.etag} {self.size}')
+        self._store(0, header)
+      else:
+        self.etag, size = version.read_text().split()
+        self.size = int(size)
     except Exception:
       self.close()
       raise
@@ -67,48 +76,60 @@ class RemoteTiles:
       # requests exceptions contain the signed URL; keep it out of logs.
       raise OSError('Unable to fetch map tiles') from None
 
-  def read(self, offset: int, length: int) -> bytes:
-    if offset == 0 and length == 127:
-      return self.header
-    if length == 0:
-      return b''
-    source = urlsplit(self.url)._replace(query='', fragment='').geturl()
-    assert self.etag is not None
-    version = hashlib.sha256((source + self.etag).encode()).hexdigest()[:16]
-    path = self.cache / f'{version}-{offset}-{length}'
-    try:
-      data = path.read_bytes()
-      if len(data) == length:
-        return data
-    except FileNotFoundError:
-      pass
-    data = self._fetch(offset, length)
+  def _store(self, offset: int, data: bytes):
     with tempfile.NamedTemporaryFile(dir=self.cache, delete=False) as file:
       temporary = Path(file.name)
       try:
         file.write(data)
         file.flush()
-        os.replace(temporary, path)
+        os.replace(temporary, self.cache / f'{offset}-{len(data)}')
       finally:
         temporary.unlink(missing_ok=True)
-    self.downloads += 1
-    if self.downloads % 32 == 1:
-      files = []
-      for cached in self.cache.iterdir():
-        if re.fullmatch(r'[0-9a-f]{16}-\d+-\d+', cached.name) is None:
-          continue
-        try:
-          stat = cached.stat()
-          files.append((stat.st_mtime, stat.st_size, cached))
-        except FileNotFoundError:
-          pass
-      size = sum(size for _, size, _ in files)
-      for _, cached_size, cached in sorted(files):
-        if size <= CACHE_LIMIT:
-          break
-        cached.unlink(missing_ok=True)
-        size -= cached_size
+
+  def _trim(self):
+    files = [(cached.stat().st_mtime, cached.stat().st_size, cached) for cached in self.cache.iterdir() if re.fullmatch(r'\d+-\d+', cached.name)]
+    size = sum(cached_size for _, cached_size, _ in files)
+    for _, cached_size, cached in sorted(files):
+      if size <= CACHE_LIMIT:
+        break
+      cached.unlink(missing_ok=True)
+      size -= cached_size
+
+  def read(self, offset: int, length: int) -> bytes:
+    if length == 0:
+      return b''
+    try:
+      data = (self.cache / f'{offset}-{length}').read_bytes()
+      if len(data) == length:
+        return data
+    except FileNotFoundError:
+      pass
+    if self.session is None:
+      raise OSError('Map tiles not cached')
+    data = self._fetch(offset, length)
+    self._store(offset, data)
+    self._trim()
     return data
 
+  def prefetch(self, ranges):
+    """Cache (offset, length) ranges ahead of reads, fetching neighbouring ones in a single request."""
+    missing = sorted((offset, length) for offset, length in set(ranges) if not (self.cache / f'{offset}-{length}').exists())
+    if not missing or self.session is None:
+      return
+    groups = [[missing[0]]]
+    for offset, length in missing[1:]:
+      last_offset, last_length = groups[-1][-1]
+      if offset - (last_offset + last_length) <= MERGE_GAP:
+        groups[-1].append((offset, length))
+      else:
+        groups.append([(offset, length)])
+    for group in groups:
+      start, end = group[0][0], group[-1][0] + group[-1][1]
+      data = self._fetch(start, end - start)
+      for offset, length in group:
+        self._store(offset, data[offset - start:offset - start + length])
+    self._trim()
+
   def close(self):
-    self.session.close()
+    if self.session is not None:
+      self.session.close()

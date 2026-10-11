@@ -127,10 +127,8 @@ def decode_roads(data: bytes) -> list[Road]:
         if tags[i] >= len(keys) or tags[i + 1] >= len(values):
           raise ValueError("MVT tag index out of bounds")
         properties[keys[tags[i]]] = values[tags[i + 1]]
-      kind = properties.get('kind', properties.get('pmap:kind', ''))
-      if kind in ('highway', 'major_road', 'medium_road', 'minor_road', 'other'):
-        detail = properties.get('kind_detail', properties.get('pmap:kind_detail', ''))
-        tunnel = properties.get('is_tunnel', properties.get('tunnel', False)) in (True, 'yes')
-        bridge = properties.get('is_bridge', properties.get('bridge', False)) in (True, 'yes')
-        roads.extend(Road(points, kind, extent, detail, tunnel, bridge) for points in decode_lines(geometry))
+      kind = properties.get('kind', '')
+      if kind in ('highway', 'major_road', 'minor_road', 'other'):
+        roads.extend(Road(points, kind, extent, properties.get('kind_detail', ''), properties.get('is_tunnel') is True,
+                          properties.get('is_bridge') is True) for points in decode_lines(geometry))
   return roads

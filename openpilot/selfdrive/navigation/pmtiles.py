@@ -1,10 +1,8 @@
-"""PMTiles v3 reader. Supports uncompressed, gzip and zstd MVT archives."""
+"""PMTiles v3 reader for the gzip-compressed Protomaps MVT basemap, over any byte-range source."""
 import gzip
 import struct
 from bisect import bisect_right
 from functools import lru_cache
-
-from openpilot.selfdrive.navigation.tiles import RemoteTiles
 
 
 def read_varint(data: bytes, offset: int) -> tuple[int, int]:
@@ -18,18 +16,6 @@ def read_varint(data: bytes, offset: int) -> tuple[int, int]:
     if byte < 128:
       return value, offset
   raise ValueError("Varint exceeds 64 bits")
-
-
-def decompress(data: bytes, compression: int) -> bytes:
-  if compression == 1:
-    return data
-  if compression == 2:
-    return gzip.decompress(data)
-  if compression == 4:
-    import zstandard
-    with zstandard.ZstdDecompressor().stream_reader(data) as reader:
-      return reader.read()
-  raise ValueError(f"Unsupported PMTiles compression: {compression}")
 
 
 def tile_id(z: int, x: int, y: int) -> int:
@@ -78,43 +64,42 @@ def decode_directory(data: bytes) -> tuple[list[int], list[tuple[int, int, int]]
 
 
 class PMTiles:
-  def __init__(self):
-    self.remote = RemoteTiles()
-    self.size = self.remote.size
+  def __init__(self, source):
+    """source has size, read(offset, length), prefetch(ranges) and close()."""
+    self.source = source
+    self.size = source.size
     try:
       header = self.read(0, 127)
       if header[:8] != b'PMTiles\x03':
         raise ValueError("Expected a PMTiles v3 archive")
       self.root_offset, self.root_length, _, _, self.leaf_offset, self.leaf_length, self.data_offset, self.data_length = struct.unpack_from('<8Q', header, 8)
-      self.internal_compression, self.tile_compression, tile_type, self.min_zoom, self.max_zoom = header[97:102]
-      if tile_type != 1:
-        raise ValueError("Expected MVT vector tiles")
+      compression, tile_type, self.min_zoom, self.max_zoom = header[97:99], header[99], header[100], header[101]
+      if compression != b'\x02\x02' or tile_type != 1:
+        raise ValueError("Expected gzip-compressed MVT vector tiles")
       if not 0 <= self.min_zoom <= self.max_zoom <= 26:
         raise ValueError("Unsupported PMTiles zoom range")
-      for compression in (self.internal_compression, self.tile_compression):
-        if compression not in (1, 2, 4):
-          raise ValueError(f"Unsupported PMTiles compression: {compression}")
       for offset, length in ((self.root_offset, self.root_length), (self.leaf_offset, self.leaf_length), (self.data_offset, self.data_length)):
         if offset + length > self.size:
           raise ValueError("PMTiles section outside archive")
       self.directory = lru_cache(maxsize=32)(self._read_directory)
       self.directory(self.root_offset, self.root_length)
     except Exception:
-      self.remote.close()
+      self.source.close()
       raise
 
   def read(self, offset: int, length: int) -> bytes:
     if offset < 0 or length < 0 or offset + length > self.size:
       raise ValueError("PMTiles read outside archive")
-    data = self.remote.read(offset, length)
+    data = self.source.read(offset, length)
     if len(data) != length:
       raise ValueError("Truncated PMTiles archive")
     return data
 
   def _read_directory(self, offset: int, length: int):
-    return decode_directory(decompress(self.read(offset, length), self.internal_compression))
+    return decode_directory(gzip.decompress(self.read(offset, length)))
 
-  def get(self, z: int, x: int, y: int) -> bytes | None:
+  def locate(self, z: int, x: int, y: int) -> tuple[int, int] | None:
+    """The byte range of a tile in the archive, or None when there is no such tile."""
     if not self.min_zoom <= z <= self.max_zoom:
       return None
     target = tile_id(z, x, y)
@@ -130,18 +115,20 @@ class PMTiles:
           return None
         if offset + length > self.data_length:
           raise ValueError("Tile outside PMTiles data section")
-        return decompress(self.read(self.data_offset + offset, length), self.tile_compression)
+        return self.data_offset + offset, length
       if offset + length > self.leaf_length:
         raise ValueError("Directory outside PMTiles leaf section")
       offset += self.leaf_offset
     raise ValueError("PMTiles directory nesting exceeds four levels")
 
+  def get(self, z: int, x: int, y: int) -> bytes | None:
+    located = self.locate(z, x, y)
+    return gzip.decompress(self.read(*located)) if located else None
+
+  def prefetch(self, tiles):
+    """Cache the (z, x, y) tiles ahead of reads."""
+    self.source.prefetch([located for located in (self.locate(*tile) for tile in tiles) if located])
+
   def close(self):
     self.directory.cache_clear()
-    self.remote.close()
-
-  def __enter__(self):
-    return self
-
-  def __exit__(self, *args):
-    self.close()
+    self.source.close()

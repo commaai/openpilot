@@ -1,5 +1,4 @@
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pyray as rl
@@ -8,6 +7,7 @@ from openpilot.selfdrive.navigation.pmtiles import PMTiles
 from openpilot.selfdrive.navigation.renderer import MapRenderer, Position
 from openpilot.selfdrive.navigation.helpers import latest_gps_source
 from openpilot.selfdrive.navigation.route import RouteTracker, route_coordinates
+from openpilot.selfdrive.navigation.tiles import RemoteTiles
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
@@ -22,9 +22,6 @@ class NavigationPanel(Widget):
     super().__init__()
     self._archive = None
     self._renderer = None
-    self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix='navigation')
-    self._pending = None
-    self._route_revision = 0
     self._route = np.empty((0, 2))
     self._tracker: RouteTracker | None = None
     self._instruction = {}
@@ -46,27 +43,9 @@ class NavigationPanel(Widget):
       if not np.array_equal(route, self._route):
         self._route = route
         self._tracker = RouteTracker(route) if len(route) >= 2 else None
-        self._route_revision += 1
         self._frame_timestamp = 0
         self._next_render = 0.0
     now = time.monotonic()
-    if self._pending is not None:
-      if not self._pending.done():
-        return
-      try:
-        result, timestamp, size, revision = self._pending.result()
-        if self.active and revision == self._route_revision and size == self._map_size and result.valid:
-          width, height = size
-          buffer = rl.ffi.new('unsigned char[]', result.image.tobytes())
-          texture = rl.load_texture_from_image(rl.Image(buffer, width, height, 1, rl.PIXELFORMAT_UNCOMPRESSED_R8G8B8))
-          if self._texture:
-            rl.unload_texture(self._texture)
-          self._texture = texture
-          self._frame_timestamp = timestamp
-      except (OSError, ValueError):
-        self._frame_timestamp = 0
-        self._next_render = now + 10
-      self._pending = None
     if now < self._next_render or self._map_size is None or not self.active:
       return
     self._next_render = now + 0.2
@@ -76,30 +55,31 @@ class NavigationPanel(Widget):
       return
     gps = sm[source]
     try:
-      timestamp = int(sm.recv_time[source] * 1e9)
+      if self._renderer is None:
+        self._archive = PMTiles(RemoteTiles(online=False))  # mapsd fetches the route's tiles into the shared cache
+        self._renderer = MapRenderer(self._archive)
       if self._tracker is not None:
         # The same route-snapped pose the model sees.
         longitude, latitude, bearing = self._tracker.snap(gps.longitude, gps.latitude)
         position = Position(latitude, longitude, bearing)
       else:
         position = Position(gps.latitude, gps.longitude, gps.bearingDeg)
-      self._pending = self._worker.submit(self._render_map, position, timestamp, self._route, self._map_size, self._route_revision)
+      width, height = self._map_size
+      result = self._renderer.render(position, self._route, width=width, height=height, route_color=(72, 235, 132), vehicle=False)
+      if result.valid:
+        buffer = rl.ffi.new('unsigned char[]', result.image.tobytes())
+        texture = rl.load_texture_from_image(rl.Image(buffer, width, height, 1, rl.PIXELFORMAT_UNCOMPRESSED_R8G8B8))
+        if self._texture:
+          rl.unload_texture(self._texture)
+        self._texture = texture
+        self._frame_timestamp = int(sm.recv_time[source] * 1e9)
     except (OSError, ValueError):
-      self._frame_timestamp = 0
-
-  def _render_map(self, position, timestamp, route, size, revision):
-    try:
-      if self._renderer is None:
-        self._archive = PMTiles()
-        self._renderer = MapRenderer(self._archive)
-      width, height = size
-      result = self._renderer.render(position, route, width=width, height=height, route_color=(72, 235, 132), vehicle=False)
-      return result, timestamp, size, revision
-    except (OSError, ValueError):
+      # Not cached yet, or a new archive version: try again once mapsd has fetched it.
       if self._archive is not None:
         self._archive.close()
       self._archive = self._renderer = None
-      raise
+      self._frame_timestamp = 0
+      self._next_render = now + 2
 
   @property
   def active(self):
@@ -154,7 +134,6 @@ class NavigationPanel(Widget):
     self._text(f'{max(1, round(seconds / 60))} min / {length}', x+9, y+rect.height-28, 19, rect.width-18, bold=True)
 
   def close(self):
-    self._worker.shutdown(wait=True, cancel_futures=True)
     if self._texture:
       rl.unload_texture(self._texture)
       self._texture = None
