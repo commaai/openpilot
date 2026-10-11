@@ -1,0 +1,37 @@
+{
+  "name": "ublox-debug",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/horizontalAccuracy",
+              "color": "#1f77b4"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/flags",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/ubloxGnss/measurementReport/numMeas",
+              "color": "#1ac938"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

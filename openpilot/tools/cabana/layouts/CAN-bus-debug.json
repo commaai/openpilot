@@ -1,0 +1,61 @@
+{
+  "name": "CAN-bus-debug",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "CAN RX",
+          "signals": [
+            {
+              "path": "/pandaStates/0/canState0/totalRxCnt",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/pandaStates/0/canState1/totalRxCnt",
+              "color": "#9467bd"
+            },
+            {
+              "path": "/pandaStates/0/canState2/totalRxCnt",
+              "color": "#ff7f0e"
+            }
+          ]
+        },
+        {
+          "title": "CAN TX",
+          "signals": [
+            {
+              "path": "/pandaStates/0/canState0/totalTxCnt",
+              "color": "#17becf"
+            },
+            {
+              "path": "/pandaStates/0/canState1/totalTxCnt",
+              "color": "#bcbd22"
+            },
+            {
+              "path": "/pandaStates/0/canState2/totalTxCnt",
+              "color": "#1f77b4"
+            }
+          ]
+        },
+        {
+          "title": "CAN errors",
+          "signals": [
+            {
+              "path": "/pandaStates/0/canState0/totalErrorCnt",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/pandaStates/0/canState1/totalErrorCnt",
+              "color": "#d62728"
+            },
+            {
+              "path": "/pandaStates/0/canState2/totalErrorCnt",
+              "color": "#1ac938"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

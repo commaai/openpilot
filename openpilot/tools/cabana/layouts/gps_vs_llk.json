@@ -1,0 +1,60 @@
+{
+  "name": "gps_vs_llk",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [],
+          "_skipped": [
+            "haversine distance [m]"
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/vEgo",
+              "color": "#17becf"
+            },
+            {
+              "path": "/gpsLocationExternal/speed",
+              "color": "#bcbd22"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/horizontalAccuracy",
+              "color": "#ff7f0e"
+            },
+            {
+              "path": "/gpsLocationExternal/verticalAccuracy",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/gpsLocationExternal/speedAccuracy",
+              "color": "#9467bd"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "snippets": [
+    {
+      "name": "haversine distance [m]",
+      "linked_source": "/gpsLocationExternal/latitude",
+      "function_body": "-- Compute the Haversine distance between \n-- two points defined by latitude and longitude.\n-- Return the distance in meters\nlat1, lon1 = value, v1\nlat2, lon2 = v2, v3\ndLat = (lat2 - lat1) * math.pi / 180\ndLon = (lon2 - lon1) * math.pi / 180\na = math.sin(dLat/2) * math.sin(dLat/2) +\nmath.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *\nmath.sin(dLon/2) * math.sin(dLon/2)\nc = 2 * math.atan(math.sqrt(a), math.sqrt(1-a))\nd = R * c\ndistance = d * 1000 -- meters\nreturn distance",
+      "global_init": "R = 6378.137 -- Radius of earth in KM",
+      "additional_sources": [
+        "/gpsLocationExternal/longitude",
+        "/gpsLocation/latitude",
+        "/gpsLocation/longitude"
+      ]
+    }
+  ]
+}

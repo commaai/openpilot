@@ -35,6 +35,8 @@ constexpr const char ARROWS_COLLAPSE[]        = "\xef\x85\x8b";
 constexpr const char BOX_ARROW_UP_RIGHT[]     = "\xef\x87\x85";
 constexpr const char BOX_ARROW_IN_DOWN_LEFT[] = "\xef\x86\xba";
 constexpr const char WINDOW_PLUS[]            = "\xef\x9b\x90";
+constexpr const char GEO_ALT[]               = "\xef\x8f\xab";
+constexpr const char JOURNAL_TEXT[]          = "\xef\x8f\xbf";
 constexpr const char CHEVRON_DOUBLE_RIGHT[]   = "\xef\x8a\x80";
 constexpr const char THREE_DOTS_VERTICAL[]    = "\xef\x97\x93";
 }  // namespace icon

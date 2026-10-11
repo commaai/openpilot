@@ -89,6 +89,7 @@ void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
 // called on the main thread via requestUpdateLastMessages()
 void LiveStream::updateLastMessages() {
   update_pending_ = false;
+  CerealSeriesMap cereal_batch;
   {
     // merge events received from live stream thread.
     std::lock_guard lk(lock);
@@ -96,7 +97,9 @@ void LiveStream::updateLastMessages() {
     uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;
     lastest_event_ts = std::max(lastest_event_ts, last_received_ts);
     received_events_.clear();
+    cereal_batch = std::move(pending_cereal_);
   }
+  if (!cereal_batch.empty()) insertCerealPoints(std::move(cereal_batch));
   if (!all_events_.empty()) {
     begin_event_ts = all_events_.front()->mono_time;
     updateEvents();

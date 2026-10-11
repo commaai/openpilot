@@ -1,0 +1,74 @@
+{
+  "name": "longitudinal",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/aEgo",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/longitudinalPlan/accels/0",
+              "color": "#9467bd"
+            },
+            {
+              "path": "/carControl/actuators/accel",
+              "color": "#17becf"
+            },
+            {
+              "path": "/carOutput/actuatorsOutput/accel",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/controlsState/upAccelCmd",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/controlsState/uiAccelCmd",
+              "color": "#d62728"
+            },
+            {
+              "path": "/controlsState/ufAccelCmd",
+              "color": "#1ac938"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/vEgo",
+              "color": "#1ac938"
+            },
+            {
+              "path": "/longitudinalPlan/speeds/0",
+              "color": "#ff7f0e"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carControl/longActive",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/carState/gasPressed",
+              "color": "#d62728"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

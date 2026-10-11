@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/streams/cereal_series.h"
 
 class LiveStream : public AbstractStream {
 public:
@@ -28,13 +29,14 @@ protected:
   void handleEvent(kj::ArrayPtr<capnp::word> event);
 
   std::atomic<bool> exit_ = false;
+  std::mutex lock;                    // protects received_events_ and pending_cereal_
+  CerealSeriesMap pending_cereal_;    // written by cereal subscriber threads, flushed on main thread
 
 private:
   void updateThread();
   void updateLastMessages() override;
   void updateEvents();
 
-  std::mutex lock;
   std::thread stream_thread, update_thread;
   std::atomic<bool> update_pending_ = false;
   std::vector<const CanEvent *> received_events_;

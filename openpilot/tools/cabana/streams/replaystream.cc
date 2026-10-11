@@ -5,6 +5,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/streams/cereal_extractor.h"
 
 ReplayStream::ReplayStream() {
   unsetenv("ZMQ");
@@ -33,6 +34,7 @@ void ReplayStream::mergeSegments() {
       std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
       MessageEventsMap msg_events;
+      CerealSeriesMap new_cereal;
       for (const Event &e : seg->log->events) {
         if (e.which == cereal::Event::Which::CAN) {
           capnp::FlatArrayMessageReader reader(e.data);
@@ -42,15 +44,27 @@ void ReplayStream::mergeSegments() {
             new_events.push_back(ce);
             msg_events[{.source = ce->src, .address = ce->address}].push_back(ce);
           }
+        } else {
+          extractCerealEvent(e, toSeconds(e.mono_time), new_cereal);
         }
       }
       postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
+      if (!new_cereal.empty()) {
+        postToMainThread([this, cereal = std::move(new_cereal)]() mutable {
+          insertCerealPoints(std::move(cereal));
+        });
+      }
     }
   }
 }
 
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {
-  replay.reset(new Replay(route, {"can", "narrowRoadEncodeIdx", "cabinEncodeIdx", "wideRoadEncodeIdx", "carParams"},
+  replay.reset(new Replay(route,
+                          {"can", "narrowRoadEncodeIdx", "cabinEncodeIdx", "wideRoadEncodeIdx", "carParams",
+                           "carState", "carControl", "carOutput", "controlsState", "selfdriveState",
+                           "longitudinalPlan", "modelV2", "deviceState", "gpsLocation", "gpsLocationExternal",
+                           "cameraOdometry", "radarState", "pandaStates", "peripheralState",
+                           "gyroscope", "accelerometer", "deviceMotion"},
                           {}, nullptr, replay_flags, data_dir, auto_source));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });

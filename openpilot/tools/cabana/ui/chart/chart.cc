@@ -59,6 +59,8 @@ void ChartView::drawMenuActions() {
     }
   }
   ImGui::Separator();
+  dropdown::Item("Show Stats (μ, σ)", nullptr, &show_stats_);
+  ImGui::Separator();
   if (dropdown::Item("Manage Signals")) manageSignals();
   if (dropdown::Item("Split Chart", nullptr, false, sigs_.size() > 1)) charts_widget_->splitChart(this);
   if (dropdown::Item("Export to CSV...", nullptr, false, !sigs_.empty())) {
@@ -93,7 +95,11 @@ void ChartView::exportToCSV(const std::string &file_name) const {
   if (!stream) return;
 
   stream << "time";
-  for (const auto &s : sigs_) stream << "," << msgName(s.msg_id) << "." << s.sig->name;
+  for (const auto &s : sigs_) {
+    stream << ",";
+    if (s.isCereal()) stream << s.cereal_path;
+    else stream << msgName(s.msg_id) << "." << s.sig->name;
+  }
   stream << "\n";
 
   // one cursor per signal; `times` and every signal's `vals` are both already sorted, so each
@@ -106,7 +112,8 @@ void ChartView::exportToCSV(const std::string &file_name) const {
       while (cursor[i] < vals.size() && quantize(vals[cursor[i]].x) <= t) ++cursor[i];
       stream << ",";
       if (cursor[i] > 0) {
-        stream << std::fixed << std::setprecision(sigs_[i].sig->precision) << vals[cursor[i] - 1].y;
+        const int prec = sigs_[i].sig ? sigs_[i].sig->precision : 6;
+        stream << std::fixed << std::setprecision(prec) << vals[cursor[i] - 1].y;
       }
     }
     stream << "\n";
@@ -140,6 +147,18 @@ bool ChartView::hasSignal(const MessageId &msg_id, const cabana::Signal *sig) co
   return std::any_of(sigs_.cbegin(), sigs_.cend(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
+void ChartView::addCerealSignal(const std::string &path) {
+  if (hasCerealSignal(path)) return;
+  CabanaColor color = uniqueColor(CabanaColor::fromHsv(0.5, 0.7, 0.9));
+  sigs_.push_back({.cereal_path = path, .color = color});
+  updateCerealSeries();
+  charts_widget_->seriesChanged();
+}
+
+bool ChartView::hasCerealSignal(const std::string &path) const {
+  return std::any_of(sigs_.cbegin(), sigs_.cend(), [&](auto &s) { return s.cereal_path == path; });
+}
+
 void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   int prev_size = sigs_.size();
   sigs_.erase(std::remove_if(sigs_.begin(), sigs_.end(), predicate), sigs_.end());
@@ -164,7 +183,7 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
 void ChartView::manageSignals() {
   auto dlg = std::make_unique<SignalSelector>("Manage Chart");
   for (auto &s : sigs_) {
-    dlg->addSelected(s.msg_id, s.sig);
+    if (!s.isCereal()) dlg->addSelected(s.msg_id, s.sig);
   }
   // runs once the dialog is accepted, dropped if the chart is removed first
   charts_widget_->execSignalSelector(std::move(dlg), this, [this](SignalSelector &selector) {
@@ -205,11 +224,10 @@ void ChartView::updateLayout() {
   layout_.legend_rects.clear();
   int x = legend_left, y = top_left.y;
   for (auto &s : sigs_) {
-    int w = marker_size + style.ItemInnerSpacing.x + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x +
-            ImGui::CalcTextSize(msgLabel(s.msg_id).c_str()).x;
-    pushMonoFont(font_size);
-    w = std::max(w, (int)std::ceil(ImGui::CalcTextSize("-0.00000e+000").x));
-    popMonoFont();
+    const std::string &sname = s.signalName();
+    const std::string msg_lbl = s.isCereal() ? "" : msgLabel(s.msg_id);
+    int w = marker_size + 5 + bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, sname.c_str()).x +
+            ImGui::CalcTextSize(msg_lbl.c_str()).x;
     w = std::min(w, legend_right - legend_left);  // keep oversized entries clear of the header buttons
     if (x + w > legend_right && x > legend_left) {
       x = legend_left;
@@ -254,6 +272,7 @@ void ChartView::appendCanEvents(const cabana::Signal *sig, const std::vector<con
 
 void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *msg_new_events) {
   for (auto &s : sigs_) {
+    if (s.isCereal()) continue;  // cereal signals are updated via updateCerealSeries()
     if (!sig || s.sig == sig) {
       if (!msg_new_events) {
         s.vals.clear();
@@ -283,6 +302,29 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
   updateAxisY();
 }
 
+void ChartView::updateCerealSeries() {
+  const auto &cereal = can->cerealSeries();
+  bool changed = false;
+  for (auto &s : sigs_) {
+    if (!s.isCereal()) continue;
+    auto it = cereal.find(s.cereal_path);
+    if (it == cereal.end()) continue;
+    const auto &pts = it->second;
+    size_t n = pts.size();
+    if (n <= s.cereal_synced_count) continue;
+    s.vals.reserve(n);
+    for (size_t i = s.cereal_synced_count; i < n; i++) {
+      s.vals.push_back({pts[i].t, pts[i].v});
+      if (!s.step_vals.empty()) s.step_vals.push_back({pts[i].t, s.step_vals.back().y});
+      s.step_vals.push_back({pts[i].t, pts[i].v});
+    }
+    s.cereal_synced_count = n;
+    s.segment_tree.build(s.vals.size(), [&vals = s.vals](int i) { return vals[i].y; });
+    changed = true;
+  }
+  if (changed) updateAxisY();
+}
+
 std::pair<ChartView::PointIter, ChartView::PointIter> ChartView::visibleRange(const std::vector<ImPlotPoint> &points) const {
   auto first = std::lower_bound(points.cbegin(), points.cend(), x_min_, xLessThan);
   auto last = std::lower_bound(first, points.cend(), x_max_, xLessThan);
@@ -299,13 +341,14 @@ void ChartView::updateAxisY() {
 
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
-  std::string unit = sigs_[0].sig->unit;
+  std::string unit = (sigs_[0].sig && !sigs_[0].isCereal()) ? sigs_[0].sig->unit : "";
 
   for (auto &s : sigs_) {
     if (!s.visible) continue;
 
     // Only show unit when all signals have the same unit
-    if (unit != s.sig->unit) {
+    const std::string &s_unit = (s.sig && !s.isCereal()) ? s.sig->unit : "";
+    if (unit != s_unit) {
       unit.clear();
     }
 
@@ -313,7 +356,7 @@ void ChartView::updateAxisY() {
     s.min = std::numeric_limits<double>::max();
     s.max = std::numeric_limits<double>::lowest();
     if (first == last) continue;
-    if (can->liveStreaming()) {
+    if (can->liveStreaming() || s.isCereal()) {
       for (auto it = first; it != last; ++it) {
         if (it->y < s.min) s.min = it->y;
         if (it->y > s.max) s.max = it->y;
@@ -321,8 +364,25 @@ void ChartView::updateAxisY() {
     } else {
       std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last) - 1);
     }
-    min = std::min(min, s.min);
-    max = std::max(max, s.max);
+    // mean over visible range
+    s.mean = 0;
+    int n = (int)(last - first);
+    if (n > 0) {
+      for (auto it = first; it != last; ++it) s.mean += it->y;
+      s.mean /= n;
+    }
+    // in XY scatter, signal 0 is the X axis — don't let it contaminate the Y range
+    const bool is_xy_x = series_type_ == SeriesType::XYScatter && sigs_.size() >= 2 && &s == &sigs_[0];
+    if (!is_xy_x) {
+      min = std::min(min, s.min);
+      max = std::max(max, s.max);
+    }
+  }
+  // x range for xy mode: based on first signal's min/max
+  if (series_type_ == SeriesType::XYScatter && sigs_.size() >= 2) {
+    xy_x_min_ = sigs_[0].min == std::numeric_limits<double>::max() ? 0 : sigs_[0].min;
+    xy_x_max_ = sigs_[0].max == std::numeric_limits<double>::lowest() ? 1 : sigs_[0].max;
+    if (std::abs(xy_x_max_ - xy_x_min_) < 1e-9) xy_x_max_ = xy_x_min_ + 1;
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
@@ -350,7 +410,8 @@ std::tuple<double, double, int> ChartView::getNiceAxisNumbers(double min, double
 }
 
 int ChartView::xAxisPrecision() const {
-  return axisPrecision(x_max_ - x_min_, X_TICK_COUNT, 2);
+  const bool xy_mode = series_type_ == SeriesType::XYScatter && sigs_.size() >= 2;
+  return axisPrecision(xy_mode ? xy_x_max_ - xy_x_min_ : x_max_ - x_min_, X_TICK_COUNT, 2);
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
@@ -484,6 +545,7 @@ void ChartView::takeSignalsFrom(ChartView *source) {
   for (auto &s : source->sigs_) {
     s.color = uniqueColor(s.color);
     sigs_.push_back(std::move(s));
+    sigs_.back().color = uniqueColor(sigs_.back().color, sigs_.back().sig);  // sig may be null (cereal)
   }
   source->sigs_.clear();
   updateAxisY();
@@ -493,7 +555,7 @@ void ChartView::takeSignalsFrom(ChartView *source) {
 std::vector<ChartView::SigItem> ChartView::takeExtraSignals() {
   std::vector<SigItem> extra;
   for (auto it = sigs_.begin() + 1; it != sigs_.end(); ++it) {
-    it->color = it->sig->color;
+    if (!it->isCereal()) it->color = it->sig->color;
     extra.push_back(std::move(*it));
   }
   sigs_.resize(1);
@@ -522,14 +584,15 @@ void ChartView::showTip(double sec) {
     if (s.visible) {
       std::string value = "--";
       if (const ImPlotPoint *pt = lastPointBefore(s, sec)) {
-        value = s.sig->formatValue(pt->y, false);
+        value = s.formatValue(pt->y, false);
         s.track_pt = *pt;
         x = std::max(x, xPos(pt->x));
       }
-      std::string name = s.sig->name;
-      std::string min = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
-      std::string max = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
-      text_list.push_back({.has_marker = true, .marker = toImU32(graphicColor(s.color)), .name = name, .value = value, .min = min, .max = max});
+      std::string name = sigs_.size() > 1 ? s.signalName() : "";
+      if (show_stats_) name += "  μ=" + utils::toString(s.mean);
+      std::string smin = s.min == std::numeric_limits<double>::max() ? "--" : utils::toString(s.min);
+      std::string smax = s.max == std::numeric_limits<double>::lowest() ? "--" : utils::toString(s.max);
+      text_list.push_back({.has_marker = true, .marker = toImU32(s.color), .name = name, .value = value, .min = smin, .max = smax});
     }
   }
   if (x < 0) {
@@ -616,15 +679,17 @@ void ChartView::drawAxes() {
   // reserve room for the right half of the last x tick label
   const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x;
   if (ImPlot::BeginPlot("##plot", ImVec2(layout_.content_rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
-    ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
+    const bool xy_mode = series_type_ == SeriesType::XYScatter && sigs_.size() >= 2;
+    const std::string xy_x_label = xy_mode ? sigs_[0].signalName() : "";
+    ImPlot::SetupAxis(ImAxis_X1, xy_mode ? xy_x_label.c_str() : nullptr, axis_flags);
     ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
-    ImPlot::SetupAxisLimits(ImAxis_X1, x_min_, x_max_, ImPlotCond_Always);
+    ImPlot::SetupAxisLimits(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, ImPlotCond_Always);
     ImPlot::SetupAxisLimits(ImAxis_Y1, y_min_, y_max_, ImPlotCond_Always);
     // the format must be set before the ticks are generated
     ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision_) + "f").c_str());
     ImPlot::SetupAxisTicks(ImAxis_Y1, y_min_, y_max_, y_tick_count_);
     ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
-    ImPlot::SetupAxisTicks(ImAxis_X1, x_min_, x_max_, X_TICK_COUNT);
+    ImPlot::SetupAxisTicks(ImAxis_X1, xy_mode ? xy_x_min_ : x_min_, xy_mode ? xy_x_max_ : x_max_, X_TICK_COUNT);
     ImPlot::SetupFinish();
 
     layout_.plot_area = ImRect(ImPlot::GetPlotPos(), ImPlot::GetPlotPos() + ImPlot::GetPlotSize());
@@ -681,10 +746,11 @@ void ChartView::drawLegend() {
 
     float x = r.Min.x + marker_size + ImGui::GetStyle().ItemInnerSpacing.x;
     const float text_y = r.GetCenter().y - font_size / 2.0f;
-    addTextEllipsis(painter, bold, title_color, ImVec2(x, text_y), r.Max.x, s.sig->name);
-    float name_w = std::min(bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, s.sig->name.c_str()).x, r.Max.x - x);
+    const std::string &sname = s.signalName();
+    addTextEllipsis(painter, bold, title_color, ImVec2(x, text_y), r.Max.x, sname);
+    float name_w = std::min(bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, sname.c_str()).x, r.Max.x - x);
     x += name_w;
-    const std::string msg = msgLabel(s.msg_id);
+    const std::string msg = s.isCereal() ? "" : msgLabel(s.msg_id);
     addTextEllipsis(painter, normal, msg_color, ImVec2(x, text_y), r.Max.x, msg);
     if (!s.visible) {  // strike out
       const float y = r.GetCenter().y;
@@ -694,7 +760,49 @@ void ChartView::drawLegend() {
 }
 
 void ChartView::drawSeries() {
-  for (int i = 0; i < sigs_.size(); ++i) {
+  // XY scatter mode: first signal is X axis, rest are Y; pair by interpolation
+  if (( series_type_ == SeriesType::XYScatter) && sigs_.size() >= 2) {
+    const auto &x_sig = sigs_[0];
+    for (int i = 1; i < (int)sigs_.size(); ++i) {
+      const auto &y_sig = sigs_[i];
+      if (!y_sig.visible) continue;
+      std::vector<double> xs, ys;
+      auto [x_first, x_last] = visibleRange(x_sig.vals);
+      xs.reserve(x_last - x_first);
+      ys.reserve(x_last - x_first);
+      for (auto it = x_first; it != x_last; ++it) {
+        const auto &pt = *it;
+        auto yit = std::lower_bound(y_sig.vals.begin(), y_sig.vals.end(), pt.x,
+                                    [](const ImPlotPoint &p, double t) { return p.x < t; });
+        double yv;
+        if (yit == y_sig.vals.end()) {
+          if (y_sig.vals.empty()) continue;
+          yv = y_sig.vals.back().y;
+        } else if (yit == y_sig.vals.begin()) {
+          yv = yit->y;
+        } else {
+          auto prev = std::prev(yit);
+          double f = (pt.x - prev->x) / (yit->x - prev->x);
+          yv = prev->y + f * (yit->y - prev->y);
+        }
+        xs.push_back(pt.y);
+        ys.push_back(yv);
+      }
+      if (xs.empty()) continue;
+      const ImVec4 col = toImVec4(y_sig.color);
+      ImPlotSpec spec;
+      spec.Marker = ImPlotMarker_Circle;
+      spec.MarkerSize = 3.0f;
+      spec.LineColor = col;
+      spec.MarkerFillColor = col;
+      spec.MarkerLineColor = col;
+      spec.Stride = sizeof(double);
+      ImPlot::PlotScatter(("##xy" + std::to_string(i)).c_str(), xs.data(), ys.data(), (int)xs.size(), spec);
+    }
+    return;
+  }
+
+  for (int i = 0; i < (int)sigs_.size(); ++i) {
     auto &s = sigs_[i];
     if (!s.visible) continue;
 
@@ -744,10 +852,29 @@ void ChartView::drawSeries() {
       }
     }
   }
+
+  // mean lines — dashed horizontal at each signal's mean value
+  if (show_stats_) {
+    for (int i = 0; i < (int)sigs_.size(); ++i) {
+      const auto &s = sigs_[i];
+      if (!s.visible) continue;
+      auto [first, last] = visibleRange(s.vals);
+      if (first == last) continue;
+      const ImVec4 mean_col(1.0f, 0.55f, 0.0f, 0.9f);
+      ImPlotSpec spec;
+      spec.LineColor = mean_col;
+      spec.LineWeight = 1.5f;
+      double xs[2] = {x_min_, x_max_};
+      double ys[2] = {s.mean, s.mean};
+      ImPlot::PlotLine(("##mean" + std::to_string(i)).c_str(), xs, ys, 2, spec);
+      ImPlot::TagY(s.mean, mean_col, "μ=%.4g", s.mean);
+    }
+  }
 }
 
 void ChartView::drawForeground() {
-  drawTimeline();
+  if (!(series_type_ == SeriesType::XYScatter && sigs_.size() >= 2))
+    drawTimeline();
   ImDrawList *painter = ImPlot::GetPlotDrawList();
   ImPlot::PushPlotClipRect();
   float track_line_x = -1;
@@ -812,7 +939,7 @@ void ChartView::drawSignalValue() {
   for (int i = 0; i < sigs_.size() && i < layout_.legend_rects.size(); ++i) {
     const auto &s = sigs_[i];
     const ImPlotPoint *pt = lastPointBefore(s, cur_sec_);
-    std::string value = pt ? s.sig->formatValue(pt->y) : "--";
+    std::string value = pt ? s.formatValue(pt->y) : "--";
     const ImVec2 value_min = layout_.legend_rects[i].GetBL() - ImVec2(0, 1);
     ImRect value_rect(value_min, value_min + layout_.legend_rects[i].GetSize());
     float w = ImGui::CalcTextSize(value.c_str()).x;

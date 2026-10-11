@@ -17,6 +17,7 @@
 #include "tools/cabana/core/can_data.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/streams/cereal_series.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/util.h"
 
@@ -56,6 +57,14 @@ public:
   void clearSuppressed();
   void suppressDefinedSignals(bool suppress);
 
+  // cereal (non-CAN) signal time series, keyed by "/topic/field" path
+  const CerealSeriesMap &cerealSeries() const { return cereal_series_; }
+  // inject a derived (Lua-computed) series; fires cerealSeriesUpdated
+  void insertDerivedSeries(const std::string &name, std::vector<CerealPoint> pts) {
+    cereal_series_[name] = std::move(pts);
+    cerealSeriesUpdated();
+  }
+
   // invoked on the main thread
   Observable<> paused;
   Observable<> resume;
@@ -65,6 +74,7 @@ public:
   Observable<const MessageEventsMap &> eventsMerged;
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
+  Observable<> cerealSeriesUpdated;
 
   SourceSet sources;
 
@@ -75,10 +85,12 @@ protected:
   void requestUpdateLastMessages() { postToMainThread([this]() { updateLastMessages(); }); }
   void mergeEvents(const std::vector<const CanEvent *> &events);
   void insertEvents(const std::vector<const CanEvent *> &events, const MessageEventsMap &msg_events);
+  void insertCerealPoints(CerealSeriesMap &&points);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void waitForSeekFinshed();
   virtual void updateLastMessages();
+  CerealSeriesMap cereal_series_;
   std::vector<const CanEvent *> all_events_;
   double current_sec_ = 0;
   std::optional<std::pair<double, double>> time_range_;
