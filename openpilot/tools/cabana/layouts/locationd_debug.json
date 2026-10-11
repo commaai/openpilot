@@ -1,0 +1,104 @@
+{
+  "name": "locationd_debug",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/deviceMotion/inputsOK",
+              "color": "#ff7f0e"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/accelerometer/acceleration/v/0",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/accelerometer/acceleration/v/1",
+              "color": "#9467bd"
+            },
+            {
+              "path": "/accelerometer/acceleration/v/2",
+              "color": "#17becf"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gyroscope/gyroUncalibrated/v/0",
+              "color": "#d62728"
+            },
+            {
+              "path": "/gyroscope/gyroUncalibrated/v/1",
+              "color": "#1ac938"
+            },
+            {
+              "path": "/gyroscope/gyroUncalibrated/v/2",
+              "color": "#ff7f0e"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/accelerometer/__valid",
+              "color": "#17becf"
+            },
+            {
+              "path": "/gyroscope/__valid",
+              "color": "#bcbd22"
+            },
+            {
+              "path": "/carState/__valid",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/extrinsicsCalibration/__valid",
+              "color": "#1ac938"
+            },
+            {
+              "path": "/cameraOdometry/__valid",
+              "color": "#9467bd"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gyroscope/__logMonoTime",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/accelerometer/__logMonoTime",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/accelerometer/timestamp",
+              "color": "#bcbd22"
+            },
+            {
+              "path": "/gyroscope/timestamp",
+              "color": "#1f77b4"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -23,7 +23,7 @@ struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &layout = {});
   ~MainWindow();
   void draw();
   void close();  // remind unsaved changes, save state, exit
@@ -59,6 +59,8 @@ private:
   void copyToClipboard(const std::string &text);
   void loadFingerprints();
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
+  void loadLayoutFromFile();
+  void saveLayoutToFile();
   void updateRecentFiles(const std::string &fn);
   void dbcFileChanged();
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
@@ -100,6 +102,8 @@ private:
   HelpOverlay help_overlay_;
   std::unordered_map<std::string, std::string> fingerprint_to_dbc_;
   std::vector<std::string> opendbc_names_;
+  std::vector<std::string> layout_names_;
+  std::string startup_layout_;
   enum { MAX_RECENT_FILES = 15 };
   std::string car_fingerprint_;
   bool messages_visible_ = true;

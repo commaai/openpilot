@@ -8,6 +8,11 @@
 #include <cstdio>
 #include <future>
 
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
+#include "json11/json11.hpp"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/chart/chart.h"
 #include "tools/cabana/ui/icons.h"
@@ -36,6 +41,7 @@ ChartsWidget::ChartsWidget() {
 
   connections_.push_back(dbc()->fileChanged.connect([this]() { removeAll(); }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
+  connections_.push_back(can->cerealSeriesUpdated.connect([this]() { cerealSeriesUpdated(); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
   connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { updateState(); }));
@@ -85,14 +91,18 @@ void ChartsWidget::removeTab(int index) {
     removeChart(c);
   }
   tab_charts_.erase(id);
+  tab_names_.erase(id);
   tabbar_.removeTab(index);
   updateTabBar();
 }
 
 void ChartsWidget::updateTabBar() {
   for (int i = 0; i < tabbar_.count(); ++i) {
-    const auto &charts_in_tab = tab_charts_[tabbar_.tabData(i)];
-    tabbar_.setTabText(i, "Tab " + std::to_string(i + 1) + " (" + std::to_string((int)charts_in_tab.size()) + ")");
+    int id = tabbar_.tabData(i);
+    const auto &charts_in_tab = tab_charts_[id];
+    const auto it = tab_names_.find(id);
+    const std::string prefix = (it != tab_names_.end()) ? it->second : "Tab " + std::to_string(i + 1);
+    tabbar_.setTabText(i, prefix + " (" + std::to_string((int)charts_in_tab.size()) + ")");
   }
 }
 
@@ -163,6 +173,22 @@ void ChartsWidget::drawToolBar() {
   }});
   items.push_back({iconButtonWidth(), [this]() {
     if (iconButton("new_tab_btn", icon::WINDOW_PLUS, "New Tab")) newTab();
+  }});
+  items.push_back({iconButtonWidth(), [this]() {
+    if (iconButton("cereal_browser_btn", icon::GRAPH_UP, "Browse Cereal Signals"))
+      cereal_browser_open_ = !cereal_browser_open_;
+  }});
+  items.push_back({iconButtonWidth(), [this]() {
+    if (iconButton("lua_panel_btn", icon::PENCIL, "Derived Signals (Lua)"))
+      lua_panel_open_ = !lua_panel_open_;
+  }});
+  items.push_back({iconButtonWidth(), [this]() {
+    if (iconButton("map_panel_btn", icon::GEO_ALT, "GPS Map"))
+      map_panel_open_ = !map_panel_open_;
+  }});
+  items.push_back({iconButtonWidth(), [this]() {
+    if (iconButton("log_panel_btn", icon::JOURNAL_TEXT, "Events Log"))
+      log_panel_open_ = !log_panel_open_;
   }});
 
   const int type_count = (int)std::size(SERIES_TYPE_NAMES);
@@ -302,7 +328,11 @@ std::vector<std::string> ChartsWidget::serializeChartIds() const {
     std::string ids;
     for (const auto &s : c->signals()) {
       if (!ids.empty()) ids += ',';
-      ids += s.msg_id.toString() + "|" + s.sig->name;
+      if (s.isCereal()) {
+        ids += "cereal:" + s.cereal_path;
+      } else {
+        ids += s.msg_id.toString() + "|" + s.sig->name;
+      }
     }
     chart_ids.push_back(ids);
   }
@@ -314,6 +344,10 @@ void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_id
   for (const auto &chart_id : chart_ids) {
     int index = 0;
     for (const auto &part : utils::split(chart_id, ',')) {
+      if (part.rfind("cereal:", 0) == 0) {
+        showCerealSignal(part.substr(7), index++ > 0);
+        continue;
+      }
       const size_t sep = part.find('|');
       if (sep == std::string::npos) continue;
       MessageId msg_id = MessageId::fromString(part.substr(0, sep));
@@ -322,6 +356,110 @@ void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_id
           showChart(msg_id, sig, true, index++ > 0);
     }
   }
+}
+
+bool ChartsWidget::loadLayout(const std::string &path) {
+  std::ifstream f(path);
+  if (!f) { can->error("Layout file not found: " + path); return false; }
+  const std::string src{std::istreambuf_iterator<char>(f), {}};
+  std::string err;
+  auto doc = json11::Json::parse(src, err);
+  if (!err.empty() || !doc.is_object()) { can->error("Layout parse error: " + err); return false; }
+
+  // create one tab per JSON tab
+  for (const auto &tab_j : doc["tabs"].array_items()) {
+    newTab();
+    const std::string tab_name = tab_j["name"].string_value();
+    if (!tab_name.empty())
+      tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = tab_name;
+    for (const auto &chart_j : tab_j["charts"].array_items()) {
+      int idx = 0;
+      for (const auto &sig_j : chart_j["signals"].array_items()) {
+        const std::string &path_s = sig_j["path"].string_value();
+        if (!path_s.empty()) { showCerealSignal(path_s, idx++ > 0); continue; }
+        const std::string &can_s = sig_j["can"].string_value();
+        if (!can_s.empty()) {
+          const size_t sep = can_s.find('|');
+          if (sep != std::string::npos) {
+            MessageId msg_id = MessageId::fromString(can_s.substr(0, sep));
+            if (auto *msg = dbc()->msg(msg_id))
+              if (auto *sig = msg->sig(can_s.substr(sep + 1)))
+                showChart(msg_id, sig, true, idx++ > 0);
+          }
+        }
+      }
+      // derived signals (Lua snippets) — placeholder added now, filled when snippets run
+      for (const auto &name_j : chart_j["_skipped"].array_items()) {
+        const std::string &name = name_j.string_value();
+        if (!name.empty()) showCerealSignal(name, idx++ > 0);
+      }
+    }
+  }
+
+  // populate lua snippets panel
+  for (const auto &s_j : doc["snippets"].array_items()) {
+    LuaSnippet s;
+    s.name          = s_j["name"].string_value();
+    s.linked_source = s_j["linked_source"].string_value();
+    s.function_body = s_j["function_body"].string_value();
+    s.global_init   = s_j["global_init"].string_value();
+    for (const auto &v : s_j["additional_sources"].array_items())
+      s.additional_sources.push_back(v.string_value());
+    lua_snippets_.push_back(std::move(s));
+  }
+  if (!lua_snippets_.empty()) {
+    lua_panel_open_ = true;
+    // auto-evaluate all snippets now that data is loaded
+    for (auto &s : lua_snippets_) {
+      CerealSeriesMap result;
+      std::string lua_err = luaEvaluate(s, can->cerealSeries(), result);
+      if (lua_err.empty() && !result.empty())
+        can->insertDerivedSeries(s.name, std::move(result.begin()->second));
+    }
+  }
+  return true;
+}
+
+void ChartsWidget::saveLayout(const std::string &path) {
+  json11::Json::array tabs_j;
+  for (int i = 0; i < tabbar_.count(); ++i) {
+    int id = tabbar_.tabData(i);
+    json11::Json::array charts_j;
+    for (auto *c : tab_charts_[id]) {
+      json11::Json::array sigs_j;
+      for (const auto &s : c->signals()) {
+        if (s.isCereal())
+          sigs_j.push_back(json11::Json::object{{"path", s.cereal_path}});
+        else
+          sigs_j.push_back(json11::Json::object{{"can", s.msg_id.toString() + "|" + s.sig->name}});
+      }
+      if (!sigs_j.empty())
+        charts_j.push_back(json11::Json::object{{"signals", sigs_j}});
+    }
+    const auto nit = tab_names_.find(id);
+    const std::string tab_name = (nit != tab_names_.end()) ? nit->second : "Tab " + std::to_string(i + 1);
+    tabs_j.push_back(json11::Json::object{{"name", tab_name}, {"charts", charts_j}});
+  }
+
+  json11::Json::array snippets_j;
+  for (const auto &s : lua_snippets_) {
+    json11::Json::array addl;
+    for (const auto &a : s.additional_sources) addl.push_back(json11::Json(a));
+    snippets_j.push_back(json11::Json::object{
+      {"name", s.name}, {"linked_source", s.linked_source},
+      {"function_body", s.function_body}, {"global_init", s.global_init},
+      {"additional_sources", addl}
+    });
+  }
+
+  std::filesystem::path fp(path);
+  json11::Json doc = json11::Json::object{
+    {"name", fp.stem().string()}, {"tabs", tabs_j}, {"snippets", snippets_j}
+  };
+
+  std::ofstream f(path);
+  if (!f) { can->error("Could not write layout: " + path); return; }
+  f << doc.dump();
 }
 
 void ChartsWidget::setColumnCount(int n) {
@@ -589,6 +727,8 @@ void ChartsWidget::draw() {
     signal_selector_owner_ = nullptr;
     if (dlg->accepted() && accepted) accepted(*dlg);
   }
+  if (cereal_browser_open_) drawCerealBrowser();
+  if (lua_panel_open_) drawLuaPanel();
   ImGui::PopID();
 }
 
@@ -647,4 +787,225 @@ ChartView *ChartsContainer::childAt(const ImVec2 &pos) const {
     if (c->rect().Contains(pos)) return c;
   }
   return nullptr;
+}
+
+void ChartsWidget::showCerealSignal(const std::string &path, bool merge) {
+  // find any existing chart containing this cereal path
+  ChartView *existing = nullptr;
+  for (auto &c : charts_)
+    if (c->hasCerealSignal(path)) { existing = c.get(); break; }
+
+  if (existing) {
+    // switch to the tab that owns this chart
+    for (int i = 0; i < tabbar_.count(); ++i) {
+      const auto &tab_c = tab_charts_[tabbar_.tabData(i)];
+      if (std::find(tab_c.begin(), tab_c.end(), existing) != tab_c.end()) {
+        tabbar_.setCurrentIndex(i);
+        break;
+      }
+    }
+  } else {
+    ChartView *chart = merge && !currentCharts().empty() ? currentCharts().front() : createChart();
+    chart->addCerealSignal(path);
+    updateState();
+  }
+}
+
+void ChartsWidget::cerealSeriesUpdated() {
+  for (auto &c : charts_) c->updateCerealSeries();
+
+  // re-run any snippet whose output series doesn't exist yet (e.g. after layout load at startup)
+  if (!lua_evaluating_ && !lua_snippets_.empty() && !can->cerealSeries().empty()) {
+    lua_evaluating_ = true;
+    for (auto &s : lua_snippets_) {
+      CerealSeriesMap result;
+      std::string lua_err = luaEvaluate(s, can->cerealSeries(), result);
+      if (lua_err.empty() && !result.empty())
+        can->insertDerivedSeries(s.name, std::move(result.begin()->second));
+    }
+    lua_evaluating_ = false;
+  }
+}
+
+void ChartsWidget::drawCerealBrowser() {
+  ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("Cereal Signals", &cereal_browser_open_)) {
+    ImGui::End();
+    return;
+  }
+
+  // search filter
+  bool filter_changed = ImGui::InputText("##cereal_filter", cereal_filter_buf_, sizeof(cereal_filter_buf_));
+  ImGui::SameLine();
+  if (ImGui::Button("Clear")) {
+    cereal_filter_buf_[0] = '\0';
+    filter_changed = true;
+  }
+
+  const auto &series = can->cerealSeries();
+  if (filter_changed || cereal_filtered_paths_.empty()) {
+    cereal_filtered_paths_.clear();
+    const std::string filter(cereal_filter_buf_);
+    for (const auto &[path, _] : series) {
+      if (filter.empty() || path.find(filter) != std::string::npos)
+        cereal_filtered_paths_.push_back(path);
+    }
+    std::sort(cereal_filtered_paths_.begin(), cereal_filtered_paths_.end());
+  }
+
+  ImGui::Text("%zu signals", cereal_filtered_paths_.size());
+  ImGui::Separator();
+
+  if (ImGui::BeginChild("cereal_list")) {
+    for (const auto &path : cereal_filtered_paths_) {
+      bool selected = false;
+      for (auto &c : charts_) selected |= c->hasCerealSignal(path);
+      if (ImGui::Selectable(path.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
+        if (ImGui::IsMouseDoubleClicked(0)) {
+          bool merge = ImGui::GetIO().KeyShift;
+          showCerealSignal(path, merge);
+        }
+      }
+      if (ImGui::IsItemHovered()) {
+        auto it = series.find(path);
+        if (it != series.end() && !it->second.empty()) {
+          ImGui::SetTooltip("%.4g (latest)  %zu samples",
+                            it->second.back().v, it->second.size());
+        }
+      }
+    }
+  }
+  ImGui::EndChild();
+  ImGui::End();
+}
+
+// ── Lua derived signal panel ──────────────────────────────────────────────────
+
+static void copySnippetToBuffers(const LuaSnippet &s, char *name, char *linked, char *v1, char *v2, char *v3, char *v4, char *global, char *func) {
+  snprintf(name,   256,  "%s", s.name.c_str());
+  snprintf(linked, 256,  "%s", s.linked_source.c_str());
+  auto src = [&](int i) -> const char * { return i < (int)s.additional_sources.size() ? s.additional_sources[i].c_str() : ""; };
+  snprintf(v1, 256, "%s", src(0));
+  snprintf(v2, 256, "%s", src(1));
+  snprintf(v3, 256, "%s", src(2));
+  snprintf(v4, 256, "%s", src(3));
+  snprintf(global, 2048, "%s", s.global_init.c_str());
+  snprintf(func,   4096, "%s", s.function_body.c_str());
+}
+
+static LuaSnippet buffersToSnippet(const char *name, const char *linked, const char *v1, const char *v2, const char *v3, const char *v4, const char *global, const char *func) {
+  LuaSnippet s;
+  s.name           = name;
+  s.linked_source  = linked;
+  s.global_init    = global;
+  s.function_body  = func;
+  for (const char *src : {v1, v2, v3, v4})
+    if (src[0]) s.additional_sources.push_back(src);
+  return s;
+}
+
+void ChartsWidget::drawLuaPanel() {
+  ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("Derived Signals (Lua)", &lua_panel_open_)) { ImGui::End(); return; }
+
+  // left: snippet list
+  ImGui::BeginChild("lua_list", ImVec2(160, 0), true);
+  for (int i = 0; i < (int)lua_snippets_.size(); i++) {
+    if (ImGui::Selectable(lua_snippets_[i].name.c_str(), lua_selected_ == i)) {
+      lua_selected_ = i;
+      copySnippetToBuffers(lua_snippets_[i], lua_name_buf_, lua_linked_buf_,
+                           lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
+                           lua_global_buf_, lua_func_buf_);
+      lua_error_.clear();
+      lua_success_.clear();
+    }
+  }
+  if (ImGui::Button("+ New")) {
+    LuaSnippet blank;
+    blank.name = "new_signal";
+    blank.function_body = "return value";
+    lua_snippets_.push_back(std::move(blank));
+    lua_selected_ = (int)lua_snippets_.size() - 1;
+    copySnippetToBuffers(lua_snippets_[lua_selected_], lua_name_buf_, lua_linked_buf_,
+                         lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
+                         lua_global_buf_, lua_func_buf_);
+    lua_error_.clear();
+    lua_success_.clear();
+  }
+  ImGui::EndChild();
+
+  ImGui::SameLine();
+
+  // right: editor
+  ImGui::BeginChild("lua_editor", ImVec2(0, 0));
+  if (lua_selected_ < 0 || lua_selected_ >= (int)lua_snippets_.size()) {
+    ImGui::TextUnformatted("Select or create a snippet on the left.");
+    ImGui::EndChild();
+    ImGui::End();
+    return;
+  }
+
+  ImGui::InputText("Name",          lua_name_buf_,   sizeof(lua_name_buf_));
+  ImGui::InputText("Linked source (value)", lua_linked_buf_, sizeof(lua_linked_buf_));
+  ImGui::InputText("v1", lua_v1_buf_, sizeof(lua_v1_buf_)); ImGui::SameLine();
+  ImGui::InputText("v2", lua_v2_buf_, sizeof(lua_v2_buf_)); ImGui::SameLine();
+  ImGui::InputText("v3", lua_v3_buf_, sizeof(lua_v3_buf_)); ImGui::SameLine();
+  ImGui::InputText("v4", lua_v4_buf_, sizeof(lua_v4_buf_));
+
+  ImGui::TextUnformatted("Global init (runs once):");
+  ImGui::InputTextMultiline("##global", lua_global_buf_, sizeof(lua_global_buf_), ImVec2(-1, 60));
+  ImGui::TextUnformatted("Function body (receives: value, v1..v4, time — must return a number):");
+  ImGui::InputTextMultiline("##func", lua_func_buf_, sizeof(lua_func_buf_), ImVec2(-1, 120));
+
+  if (!lua_error_.empty()) {
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 80, 80, 255));
+    ImGui::TextWrapped("%s", lua_error_.c_str());
+    ImGui::PopStyleColor();
+  } else if (!lua_success_.empty()) {
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(80, 200, 80, 255));
+    ImGui::TextUnformatted(lua_success_.c_str());
+    ImGui::PopStyleColor();
+  }
+
+  if (ImGui::Button("Run")) {
+    LuaSnippet s = buffersToSnippet(lua_name_buf_, lua_linked_buf_,
+                                    lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
+                                    lua_global_buf_, lua_func_buf_);
+    lua_snippets_[lua_selected_] = s;
+    lua_success_.clear();
+    CerealSeriesMap result;
+    lua_error_ = luaEvaluate(s, can->cerealSeries(), result);
+    if (lua_error_.empty() && !result.empty()) {
+      auto &pts = result.begin()->second;
+      lua_success_ = "OK — " + std::to_string(pts.size()) + " samples computed";
+      can->insertDerivedSeries(s.name, std::move(pts));
+    } else if (lua_error_.empty()) {
+      lua_error_ = "linked source '" + s.linked_source + "' not found in loaded data";
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Plot")) {
+    if (lua_selected_ >= 0) {
+      LuaSnippet s = buffersToSnippet(lua_name_buf_, lua_linked_buf_,
+                                      lua_v1_buf_, lua_v2_buf_, lua_v3_buf_, lua_v4_buf_,
+                                      lua_global_buf_, lua_func_buf_);
+      // run if not already computed under this name
+      if (!can->cerealSeries().count(s.name)) {
+        CerealSeriesMap result;
+        if (luaEvaluate(s, can->cerealSeries(), result).empty() && !result.empty())
+          can->insertDerivedSeries(s.name, std::move(result.begin()->second));
+      }
+      if (can->cerealSeries().count(s.name))
+        showCerealSignal(s.name, ImGui::GetIO().KeyShift);
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Delete") && lua_selected_ >= 0) {
+    lua_snippets_.erase(lua_snippets_.begin() + lua_selected_);
+    lua_selected_ = std::min(lua_selected_, (int)lua_snippets_.size() - 1);
+    lua_error_.clear();
+  }
+
+  ImGui::EndChild();
+  ImGui::End();
 }

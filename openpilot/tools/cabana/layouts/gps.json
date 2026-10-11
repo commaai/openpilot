@@ -1,0 +1,46 @@
+{
+  "name": "gps",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/hasFix",
+              "color": "#1f77b4"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/satelliteCount",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/horizontalAccuracy",
+              "color": "#1ac938"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/gpsLocationExternal/horizontalAccuracy",
+              "color": "#1ac938"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

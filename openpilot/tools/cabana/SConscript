@@ -36,8 +36,11 @@ bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_ico
 
 # sources shared by the imgui frontend and the core test
 core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
+             'streams/cereal_extractor.cc',
+             'lua/lua_evaluator.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
              'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc']
+
 if arch != "Darwin":
   core_srcs += ['streams/socketcanstream.cc']
 
@@ -53,6 +56,7 @@ ui_env['CXXFLAGS'] += [
 ]
 ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
 ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
+ui_objs += [ui_env.Object('ui/obj/luaall', 'lua/luaall.c')]
 ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
 ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
           ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']

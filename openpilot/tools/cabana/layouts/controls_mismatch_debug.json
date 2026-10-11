@@ -1,0 +1,67 @@
+{
+  "name": "controls_mismatch_debug",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carControl/enabled",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/pandaStates/0/controlsAllowed",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/cumLagMs",
+              "color": "#9467bd"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/pandaStates/0/safetyRxInvalid",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/pandaStates/0/safetyRxChecksInvalid",
+              "color": "#e801ce"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/pandaStates/0/safetyTxBlocked",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/gasPressed",
+              "color": "#1ac938"
+            },
+            {
+              "path": "/carState/brakePressed",
+              "color": "#ff7f0e"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

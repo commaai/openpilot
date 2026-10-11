@@ -14,7 +14,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include "openpilot/cereal/gen/cpp/log.capnp.h"
 #include "openpilot/cereal/services.h"
+#include "tools/cabana/streams/cereal_extractor.h"
 #include "tools/cabana/utils/util.h"
 
 // DeviceStream
@@ -23,7 +25,8 @@ DeviceStream::DeviceStream(std::string address) : zmq_address(std::move(address)
 }
 
 DeviceStream::~DeviceStream() {
-  stop();
+  stop();  // sets exit_ = true and joins stream/update threads
+  if (cereal_thread_.joinable()) cereal_thread_.join();
   stopBridge();
 }
 
@@ -91,6 +94,44 @@ void DeviceStream::start() {
   }
 
   LiveStream::start();
+  // only subscribe to cereal topics for local msgq (not ZMQ bridge which forwards only CAN)
+  if (zmq_address.empty()) {
+    cereal_thread_ = std::thread(&DeviceStream::cerealThread, this);
+  }
+}
+
+void DeviceStream::cerealThread() {
+  static const char *TOPICS[] = {
+    "carState", "carControl", "controlsState", "selfdriveState",
+    "longitudinalPlan", "deviceState", "radarState", "gyroscope",
+    "accelerometer", "gpsLocation", "pandaStates",
+  };
+
+  std::unique_ptr<Context> ctx(Context::create());
+  std::vector<std::unique_ptr<SubSocket>> socks;
+  for (const char *t : TOPICS)
+    socks.emplace_back(SubSocket::create(ctx.get(), t, "127.0.0.1", false, true, services.at(t).queue_size));
+
+  while (!exit_) {
+    bool any = false;
+    for (auto &sock : socks) {
+      std::unique_ptr<Message> msg(sock->receive(true));
+      if (!msg) continue;
+      any = true;
+      auto words = kj::ArrayPtr<const capnp::word>(
+          reinterpret_cast<const capnp::word *>(msg->getData()),
+          msg->getSize() / sizeof(capnp::word));
+      uint64_t begin = beginMonoTime();
+      if (begin == 0) continue;  // wait for first CAN event to set the time base
+      capnp::FlatArrayMessageReader reader(words);
+      uint64_t mono = reader.getRoot<cereal::Event>().getLogMonoTime();
+      if (mono < begin) continue;
+      double t = (mono - begin) / 1e9;
+      std::lock_guard lk(lock);
+      extractCerealEvent(words, t, pending_cereal_);
+    }
+    if (!any) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 }
 
 void DeviceStream::streamThread() {

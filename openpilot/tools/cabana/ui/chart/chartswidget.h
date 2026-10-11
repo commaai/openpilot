@@ -15,6 +15,7 @@
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/lua/lua_evaluator.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/utils/util.h"
 
@@ -72,8 +73,11 @@ public:
   size_t chartCount() const { return charts_.size(); }
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
+  void showCerealSignal(const std::string &path, bool merge);
   std::vector<std::string> serializeChartIds() const;
   void restoreChartsFromIds(const std::vector<std::string> &chart_ids);
+  bool loadLayout(const std::string &path);  // returns false + logs error on failure
+  void saveLayout(const std::string &path);
   std::string whatsThis() const;
 
   void setColumnCount(int n);
@@ -120,6 +124,7 @@ private:
 
   std::vector<std::unique_ptr<ChartView>> charts_;
   std::unordered_map<int, std::vector<ChartView *>> tab_charts_;
+  std::unordered_map<int, std::string> tab_names_;  // custom names set by loadLayout
   TabBar tabbar_;
   ChartsContainer charts_container_{this};
   ImGuiWindow *charts_scroll_ = nullptr;  // the scroll area child window
@@ -149,6 +154,35 @@ private:
   std::unique_ptr<SignalSelector> signal_selector_;
   ChartView *signal_selector_owner_ = nullptr;
   std::function<void(SignalSelector &)> signal_selector_accepted_;
+  // cereal signal browser state
+  bool cereal_browser_open_ = false;
+  char cereal_filter_buf_[256] = {};
+  std::vector<std::string> cereal_filtered_paths_;
+  void drawCerealBrowser();
+  void cerealSeriesUpdated();
+  // GPS map panel
+  bool map_panel_open_ = false;
+  void drawMapPanel();
+  // Events log panel
+  bool log_panel_open_ = false;
+  char log_filter_buf_[256] = {};
+  void drawLogPanel();
+  // Lua derived signal panel state
+  bool lua_panel_open_ = false;
+  bool lua_evaluating_ = false;  // re-entrancy guard for cerealSeriesUpdated
+  std::vector<LuaSnippet> lua_snippets_;
+  int lua_selected_ = -1;
+  char lua_name_buf_[256] = {};
+  char lua_linked_buf_[256] = {};
+  char lua_v1_buf_[256] = {};
+  char lua_v2_buf_[256] = {};
+  char lua_v3_buf_[256] = {};
+  char lua_v4_buf_[256] = {};
+  char lua_global_buf_[2048] = {};
+  char lua_func_buf_[4096] = {};
+  std::string lua_error_;
+  std::string lua_success_;
+  void drawLuaPanel();
   Connections connections_;
   friend class ChartView;
   friend class ChartsContainer;

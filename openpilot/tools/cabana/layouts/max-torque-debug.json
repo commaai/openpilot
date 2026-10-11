@@ -1,0 +1,78 @@
+{
+  "name": "max-torque-debug",
+  "tabs": [
+    {
+      "name": "tab1",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [],
+          "_skipped": [
+            "Actual lateral accel (roll compensated)",
+            "Desired lateral accel (roll compensated)"
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [],
+          "_skipped": [
+            "roll compensated lateral acceleration"
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/steeringPressed",
+              "color": "#0097ff"
+            },
+            {
+              "path": "/carOutput/actuatorsOutput/torque",
+              "color": "#d62728"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/carState/vEgo",
+              "color": "#f14cc1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "snippets": [
+    {
+      "name": "roll compensated lateral acceleration",
+      "linked_source": "/controlsState/curvature",
+      "function_body": "if (v3 == 0 and v4 == 1) then\n  return  (value * v1 ^ 2) - (v2 * 9.81)\nend\nreturn 0",
+      "additional_sources": [
+        "/carState/vEgo",
+        "/vehicleParameters/roll",
+        "/carState/steeringPressed",
+        "/carControl/latActive"
+      ]
+    },
+    {
+      "name": "Desired lateral accel (roll compensated)",
+      "linked_source": "/controlsState/desiredCurvature",
+      "function_body": "return (value * v1 ^ 2) - (v2 * 9.81)",
+      "additional_sources": [
+        "/carState/vEgo",
+        "/vehicleParameters/roll"
+      ]
+    },
+    {
+      "name": "Actual lateral accel (roll compensated)",
+      "linked_source": "/controlsState/curvature",
+      "function_body": "return (value * v1 ^ 2) - (v2 * 9.81)",
+      "additional_sources": [
+        "/carState/vEgo",
+        "/vehicleParameters/roll"
+      ]
+    }
+  ]
+}

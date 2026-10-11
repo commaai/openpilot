@@ -13,14 +13,16 @@
 #include "tools/cabana/ui/chart/tiplabel.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/strings.h"
 #include "tools/cabana/utils/util.h"
 
 enum class SeriesType {
   Line = 0,
   StepLine,
-  Scatter
+  Scatter,
+  XYScatter
 };
-inline constexpr const char *SERIES_TYPE_NAMES[] = {"Line", "Step Line", "Scatter"};
+inline constexpr const char *SERIES_TYPE_NAMES[] = {"Line", "Step Line", "Scatter", "XY Scatter"};
 
 // the message part of a legend entry, drawn after the signal name
 inline std::string msgLabel(const MessageId &id) { return " " + msgName(id) + " " + id.toString(); }
@@ -31,6 +33,7 @@ public:
   struct SigItem {
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
+    std::string cereal_path;  // non-empty = cereal signal, sig is null
     CabanaColor color;
     bool visible = true;
     std::vector<ImPlotPoint> vals;
@@ -39,11 +42,22 @@ public:
     SegmentTree segment_tree;
     double min = 0;
     double max = 0;
+    size_t cereal_synced_count = 0;  // how many cereal points are already in vals
+
+    bool isCereal() const { return !cereal_path.empty(); }
+    const std::string &signalName() const { return isCereal() ? cereal_path : sig->name; }
+    std::string formatValue(double v, bool with_unit = true) const {
+      return sig ? sig->formatValue(v, with_unit) : utils::toString(v);
+    }
+    double mean = 0;
   };
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
+  void addCerealSignal(const std::string &path);
+  bool hasCerealSignal(const std::string &path) const;
+  void updateCerealSeries();
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type) { series_type_ = type; }
@@ -138,6 +152,8 @@ private:
   std::vector<SigItem> sigs_;
   double cur_sec_ = 0;
   SeriesType series_type_ = SeriesType::Line;
+  bool show_stats_ = false;
+  double xy_x_min_ = 0, xy_x_max_ = 1;
   bool can_drop_ = false;
   double tooltip_x_ = -1;
   ChartsWidget *charts_widget_;

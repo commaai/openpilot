@@ -36,7 +36,7 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &layout) : window_(window), startup_layout_(layout) {
   can = &dummy_;
   messages_visible_ = inistate::main_window.messages_visible;
   video_visible_ = inistate::main_window.video_visible;
@@ -49,6 +49,12 @@ MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> strea
     }
   }
   std::sort(opendbc_names_.begin(), opendbc_names_.end());
+
+  for (const auto &entry : std::filesystem::directory_iterator(executableDir() / "layouts", ec)) {
+    if (entry.is_regular_file() && entry.path().extension() == ".json")
+      layout_names_.push_back(entry.path().filename().stem().string());
+  }
+  std::sort(layout_names_.begin(), layout_names_.end());
 
   // download handlers are called from download threads
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
@@ -116,6 +122,19 @@ void MainWindow::drawFileMenu() {
     dropdown::EndMenu();
   }
   if (dropdown::Item("Load DBC from Clipboard")) loadFromClipboard();
+
+  if (ImGui::BeginMenu("Load Layout", hasStream())) {
+    for (const auto &name : layout_names_) {
+      if (ImGui::MenuItem(name.c_str())) {
+        auto path = (executableDir() / "layouts" / (name + ".json")).string();
+        charts_widget_->loadLayout(path);
+      }
+    }
+    if (!layout_names_.empty()) ImGui::Separator();
+    if (ImGui::MenuItem("From file...")) loadLayoutFromFile();
+    ImGui::EndMenu();
+  }
+  if (ImGui::MenuItem("Save Layout...", nullptr, false, hasStream())) saveLayoutToFile();
 
   ImGui::Separator();
   const int cnt = dbc()->nonEmptyDBCCount();
@@ -327,6 +346,18 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
     } else {
       MessageBox::warning("Failed to load DBC from clipboard", "Make sure the clipboard contains correctly formatted DBC text.", error);
     }
+  });
+}
+
+void MainWindow::loadLayoutFromFile() {
+  FileDialog::getOpenFileName("Load Layout", settings.last_dir, ".json", [this](const std::string &fn) {
+    if (!fn.empty()) charts_widget_->loadLayout(fn);
+  });
+}
+
+void MainWindow::saveLayoutToFile() {
+  FileDialog::getSaveFileName("Save Layout", settings.last_dir, ".json", [this](const std::string &fn) {
+    if (!fn.empty()) charts_widget_->saveLayout(fn);
   });
 }
 
@@ -677,6 +708,15 @@ void MainWindow::restoreSessionState() {
 
   if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
     charts_widget_->restoreChartsFromIds(settings.active_charts);
+  }
+
+  if (charts_widget_ != nullptr && !startup_layout_.empty()) {
+    // resolve name → path if it doesn't look like a file path
+    std::string path = startup_layout_;
+    if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos)
+      path = (executableDir() / "layouts" / (path + ".json")).string();
+    charts_widget_->loadLayout(path);
+    startup_layout_.clear();  // only load once
   }
 }
 

@@ -126,6 +126,14 @@ void AbstractStream::updateLastMessages() {
   msgsReceived(&msgs, prev_msg_size != last_msgs.size());
 }
 
+void AbstractStream::insertCerealPoints(CerealSeriesMap &&points) {
+  for (auto &[path, pts] : points) {
+    auto &dest = cereal_series_[path];
+    dest.insert(dest.end(), pts.begin(), pts.end());
+  }
+  cerealSeriesUpdated();
+}
+
 void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>> &range) {
   time_range_ = range;
   if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {

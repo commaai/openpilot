@@ -1,0 +1,128 @@
+{
+  "name": "camera-timings",
+  "tabs": [
+    {
+      "name": "SOF / EOF (encodeIdx)",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/cabinEncodeIdx/timestampSof",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/narrowRoadEncodeIdx/timestampSof",
+              "color": "#d62728"
+            },
+            {
+              "path": "/wideRoadEncodeIdx/timestampSof",
+              "color": "#1ac938"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/cabinEncodeIdx/timestampEof",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/narrowRoadEncodeIdx/timestampEof",
+              "color": "#9467bd"
+            },
+            {
+              "path": "/wideRoadEncodeIdx/timestampEof",
+              "color": "#17becf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "model timings",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/modelV2/modelExecutionTime",
+              "color": "#ff7f0e"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/modelV2/frameDropPerc",
+              "color": "#f14cc1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sensor info",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/cabinCameraState/sensor",
+              "color": "#bcbd22"
+            },
+            {
+              "path": "/narrowRoadCameraState/sensor",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/wideRoadCameraState/sensor",
+              "color": "#d62728"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SOF / EOF (cameraState)",
+      "charts": [
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/cabinCameraState/timestampSof",
+              "color": "#1f77b4"
+            },
+            {
+              "path": "/narrowRoadCameraState/timestampSof",
+              "color": "#d62728"
+            },
+            {
+              "path": "/wideRoadCameraState/timestampSof",
+              "color": "#1ac938"
+            }
+          ]
+        },
+        {
+          "title": "...",
+          "signals": [
+            {
+              "path": "/cabinCameraState/timestampEof",
+              "color": "#ff7f0e"
+            },
+            {
+              "path": "/narrowRoadCameraState/timestampEof",
+              "color": "#f14cc1"
+            },
+            {
+              "path": "/wideRoadCameraState/timestampEof",
+              "color": "#9467bd"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -16,7 +16,9 @@ public:
 protected:
   void start() override;
   void streamThread() override;
+  void cerealThread();  // subscribes to cereal topics alongside CAN
   void stopBridge();
   pid_t bridge_pid = -1;
   const std::string zmq_address;
+  std::thread cereal_thread_;
 };
