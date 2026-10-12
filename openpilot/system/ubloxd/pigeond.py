@@ -149,10 +149,10 @@ class TTYPigeon:
     return False
 
 def send_time(pigeon: TTYPigeon) -> None:
-  t_now = datetime.now(UTC).replace(tzinfo=None)
   cloudlog.warning("Sending current time to ublox")
 
   # UBX-MGA-INI-TIME_UTC
+  t_now = datetime.now(UTC).replace(tzinfo=None)
   msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x18\x00" + struct.pack("<BBBBHBBBBBxIHxxI",
     0x10,
     0x00,
@@ -164,7 +164,7 @@ def send_time(pigeon: TTYPigeon) -> None:
     t_now.hour,
     t_now.minute,
     t_now.second,
-    0,
+    t_now.microsecond * 1000,
     30,
     0
   ))
