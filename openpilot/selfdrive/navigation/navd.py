@@ -15,7 +15,8 @@ from openpilot.selfdrive.navigation.route import along_path, local_meters
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 REROUTE_COUNTER_MIN = 3
-ROUTE_RESEND_DELAY = 5  # updates (seconds) after mapsd restarts before resending the route, once its subscriber is up
+ROUTE_RESEND_PERIOD = 10  # updates (seconds); a restarted mapsd gets the route within this
+RECOMPUTE_HOLD = 10  # updates (seconds) between route requests
 
 
 def set_banner(instruction, banners, distance_to_maneuver):
@@ -41,19 +42,13 @@ class RouteEngine:
     self.last_position = None  # (longitude, latitude)
     self.last_bearing = None
 
-    self.gps_ok = False
-
     self.nav_destination = None
     self.step_idx = None
     self.route = None
     self.route_geometry = None  # an (n, 2) array of (longitude, latitude) per step
 
-    self.recompute_backoff = 0
-    self.recompute_countdown = 0
-
+    self.recompute_hold = 0
     self.reroute_counter = 0
-    self.mapsd_pid = None
-    self.route_resend = 0
 
     self.mapbox_token = os.environ.get("MAPBOX_TOKEN")
     self.api = Api(self.params.get("DongleId")) if self.mapbox_token is None else None
@@ -62,64 +57,40 @@ class RouteEngine:
   def update(self):
     self.sm.update(0)
 
-    self.update_location()
+    source = latest_gps_source(self.sm)
+    if source is not None:
+      gps = self.sm[source]
+      self.last_position, self.last_bearing = (gps.longitude, gps.latitude), gps.bearingDeg
     route = self.route
     try:
-      self.recompute_route()
+      self.recompute_route(gps_ok=source is not None)
       self.send_instruction()
     except Exception:
       cloudlog.exception("navd.failed_to_compute")
-    # mapsd gets the route when it changes, and again shortly after mapsd restarts
-    if self.mapsd_restarted():
-      self.route_resend = ROUTE_RESEND_DELAY
-    self.route_resend -= 1
-    if self.route is not route or self.route_resend == 0:
+    # mapsd dedupes repeats, so a periodic resend is how a restarted mapsd gets the route
+    if self.route is not route or self.sm.frame % ROUTE_RESEND_PERIOD == 0:
       self.send_route()
 
-  def mapsd_restarted(self) -> bool:
-    if not self.sm.updated['managerState']:
-      return False
-    pid = next((p.pid for p in self.sm['managerState'].processes if p.name == 'mapsd'), None)
-    restarted = pid != self.mapsd_pid
-    self.mapsd_pid = pid
-    return restarted
-
-  def update_location(self):
-    source = latest_gps_source(self.sm)
-    self.gps_ok = source is not None
-
-    if source is not None:
-      location = self.sm[source]
-      self.last_bearing = location.bearingDeg
-      self.last_position = (location.longitude, location.latitude)
-
-  def recompute_route(self):
+  def recompute_route(self, gps_ok: bool):
     if self.last_position is None:
       return
 
     destination = self.params.get("NavDestination")
     if destination is None:
       self.clear_route()
-      self.reset_recompute_limits()
+      self.recompute_hold = 0
       return
     new_destination = (destination['longitude'], destination['latitude'])
 
-    should_recompute = self.should_recompute()
-    if new_destination != self.nav_destination:
-      cloudlog.warning(f"Got new destination from NavDestination param {new_destination}")
-      should_recompute = True
-
     # Don't recompute when GPS drifts in tunnels
-    if not self.gps_ok and self.step_idx is not None:
+    if not gps_ok and self.step_idx is not None:
       return
 
-    if self.recompute_countdown == 0 and should_recompute:
-      self.recompute_countdown = 2**self.recompute_backoff
-      self.recompute_backoff = min(6, self.recompute_backoff + 1)
+    self.recompute_hold -= 1
+    if (self.should_recompute() or new_destination != self.nav_destination) and self.recompute_hold <= 0:
+      self.recompute_hold = RECOMPUTE_HOLD
       self.calculate_route(new_destination)
       self.reroute_counter = 0
-    else:
-      self.recompute_countdown = max(0, self.recompute_countdown - 1)
 
   def calculate_route(self, destination):
     assert self.last_position is not None
@@ -201,7 +172,7 @@ class RouteEngine:
     if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
       if self.step_idx + 1 < len(self.route):
         self.step_idx += 1
-        self.reset_recompute_limits()
+        self.recompute_hold = 0
       else:
         cloudlog.warning("Destination reached")
 
@@ -222,10 +193,6 @@ class RouteEngine:
     self.step_idx = None
     self.nav_destination = None
 
-  def reset_recompute_limits(self):
-    self.recompute_backoff = 0
-    self.recompute_countdown = 0
-
   def should_recompute(self):
     if self.step_idx is None:
       return True
@@ -245,7 +212,7 @@ class RouteEngine:
 
 def main():
   pm = messaging.PubMaster(['navInstruction', 'navRoute'])
-  sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal', 'managerState'])
+  sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
 
   rk = Ratekeeper(1.0)
   route_engine = RouteEngine(sm, pm)

@@ -50,7 +50,7 @@ class MapsD:
           image, valid = self.renderer.render(*self.tracker.snap(gps.longitude, gps.latitude), self.route)
           if valid:
             return image, sm.logMonoTime[source]
-    except (OSError, ValueError):
+    except Exception:  # a failed fetch, or a corrupt cached tile
       cloudlog.exception('mapsd.render_failed')
       self.close()  # a changed archive needs a fresh reader
       self.retry_at = now + RETRY_SECONDS

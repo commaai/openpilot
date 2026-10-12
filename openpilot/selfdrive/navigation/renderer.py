@@ -83,11 +83,8 @@ def project(points: np.ndarray, longitude: float, latitude: float, bearing: floa
   delta = points - origin
   delta[:, 0] = (delta[:, 0] + 0.5) % 1.0 - 0.5  # wrap across the antimeridian
   delta *= EARTH_CIRCUMFERENCE * math.cos(math.radians(latitude))  # meters, which are pixels
-  east, north = delta[:, 0], -delta[:, 1]
-  angle = math.radians(bearing)
-  right = east * math.cos(angle) - north * math.sin(angle)
-  forward = east * math.sin(angle) + north * math.cos(angle)
-  return EGO + np.column_stack((right, -forward))
+  c, s = math.cos(math.radians(bearing)), math.sin(math.radians(bearing))
+  return EGO + delta @ np.array([[c, -s], [s, c]])  # x right, y down
 
 
 def draw_segments(image: np.ndarray, starts: np.ndarray, ends: np.ndarray, radii: np.ndarray | float, intensity: int,
@@ -148,7 +145,7 @@ class MapRenderer:
     tile = self.archive.get(self.zoom, x, y)
     if tile is None:
       return None
-    starts, ends, styles, levels, caps = [], [], [], [], []
+    starts, ends, styles, levels, caps = [np.empty((0, 2))], [np.empty((0, 2))], [np.empty(0, int)], [np.empty(0, int)], [np.empty((0, 2), bool)]
     for road in decode_roads(tile):
       style = road_style(road)
       if style is None:
@@ -162,8 +159,6 @@ class MapRenderer:
       ends_of_line = np.zeros((n, 2), dtype=bool)
       ends_of_line[0, 0] = ends_of_line[-1, 1] = True
       caps.append(ends_of_line)
-    if not starts:
-      return np.empty((0, 2)), np.empty((0, 2)), np.empty(0, dtype=int), np.empty(0, dtype=int), np.empty((0, 2), dtype=bool)
     return np.concatenate(starts), np.concatenate(ends), np.concatenate(styles), np.concatenate(levels), np.concatenate(caps)
 
   def view_tiles(self, longitude: float, latitude: float) -> list[tuple[int, int]]:

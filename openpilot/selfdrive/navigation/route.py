@@ -1,9 +1,7 @@
 """Planar geometry for routes, and route-relative map pose and progress tracking."""
-import math
-
 import numpy as np
 
-METERS_PER_DEGREE = 2 * math.pi * 6371008.8 / 360  # mean Earth radius, as Mapbox measures distances
+METERS_PER_DEGREE = 2 * np.pi * 6371008.8 / 360  # mean Earth radius, as Mapbox measures distances
 
 # Training renders the map on the route rather than at the measured position:
 # the ego is projected onto the route, the frame is centered there and headed along the route's tangent.
@@ -39,7 +37,7 @@ def along_path(path: np.ndarray, point) -> tuple[float, float]:
   the path up to the start of the nearest segment, then straight to the point."""
   local, p = local_meters(path, path[0]), local_meters(point, path[0])
   segment, _, lateral = nearest_segment(local[:-1], local[1:], p)
-  return float(cumulative_distance(path[:segment + 1])[-1] + np.linalg.norm(local_meters(point, path[segment]))), lateral
+  return float(cumulative_distance(path)[segment] + np.linalg.norm(local_meters(point, path[segment]))), lateral
 
 
 class RouteTracker:

@@ -5,7 +5,7 @@ from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.common.constants import CV
 from openpilot.selfdrive.navigation.helpers import latest_gps_source
-from openpilot.selfdrive.navigation.renderer import EGO, ROUTE_INTENSITY
+from openpilot.selfdrive.navigation.renderer import EGO, ROUTE_INTENSITY, SIZE
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CONNECTION_RETRY_INTERVAL
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import FontWeight, TextAlignmentVertical
@@ -50,12 +50,10 @@ class NavigationPanel(Widget):
       if not self._client.connect(False) or not self._client.num_buffers:
         return
       self._unload_texture()
-      self._texture = rl.load_texture_from_image(rl.Image(None, int(self._client.width), int(self._client.height), 1,
-                                                          rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8))
+      self._texture = rl.load_texture_from_image(rl.Image(None, SIZE, SIZE, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8))
     frame = self._client.recv(timeout_ms=0)
     if frame is not None:
-      width, height, stride = int(self._client.width), int(self._client.height), int(self._client.stride)
-      gray = np.frombuffer(frame.data, dtype=np.uint8, count=stride * height).reshape(height, stride)[:, :width]
+      gray = np.frombuffer(frame.data, dtype=np.uint8, count=SIZE * SIZE)
       rl.update_texture(self._texture, rl.ffi.cast("void *", rl.ffi.from_buffer(MAP_COLORS[gray])))
       # Without a usable map, mapsd publishes black frames with a zero timestamp.
       self._frame_time = rl.get_time() if self._client.timestamp_sof else 0.0
@@ -105,9 +103,8 @@ class NavigationPanel(Widget):
     rl.draw_rectangle_rec(map_rect, rl.BLACK)
     if self.map_ready:
       # A 1:1 crop of the model's frame, centered horizontally with the ego near the bottom.
-      frame_width, frame_height = int(self._client.width), int(self._client.height)
-      width, height = min(map_rect.width, frame_width), min(map_rect.height, frame_height)
-      source = rl.Rectangle((frame_width - width) // 2, min(frame_height - height, max(0, EGO[1] + MARKER_MARGIN - height)), width, height)
+      width, height = min(map_rect.width, SIZE), min(map_rect.height, SIZE)
+      source = rl.Rectangle((SIZE - width) // 2, min(SIZE - height, max(0, EGO[1] + MARKER_MARGIN - height)), width, height)
       target = rl.Rectangle(map_rect.x + (map_rect.width - width) / 2, map_rect.y + map_rect.height - height, width, height)
       rl.draw_texture_pro(self._texture, source, target, rl.Vector2(0, 0), 0, rl.WHITE)
     else:

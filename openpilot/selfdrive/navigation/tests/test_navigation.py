@@ -17,9 +17,9 @@ import requests
 import openpilot.cereal.messaging as messaging
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.navigation.mapsd import MapsD
-from openpilot.selfdrive.navigation.navd import REROUTE_COUNTER_MIN, RouteEngine
+from openpilot.selfdrive.navigation.navd import REROUTE_COUNTER_MIN, ROUTE_RESEND_PERIOD, RouteEngine, set_banner
 from openpilot.selfdrive.navigation.pmtiles import PMTiles, decode_directory, tile_id
-from openpilot.selfdrive.navigation.renderer import SIZE, MapRenderer, draw_segments, mercator, project
+from openpilot.selfdrive.navigation.renderer import MAJOR, MEDIUM, MINOR, SIZE, STREET, TRACK, MapRenderer, draw_segments, mercator, project, stroke_widths
 from openpilot.selfdrive.navigation.route import RouteTracker
 from openpilot.selfdrive.navigation.tiles import RemoteTiles
 from openpilot.selfdrive.navigation.vector_tile import decode_lines, decode_roads
@@ -155,7 +155,7 @@ class TestEndToEnd(TileServerCase):
       pm = messaging.PubMaster(['navInstruction', 'navRoute', 'gpsLocationExternal'])
       sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal', 'navRoute'])
       values = {'NavDestination': dict(destination)}
-      navd = route_engine(messaging.SubMaster(['gpsLocation', 'gpsLocationExternal', 'managerState']), pm, values)
+      navd = route_engine(messaging.SubMaster(['gpsLocation', 'gpsLocationExternal']), pm, values)
       mapsd = MapsD()
       self.addCleanup(mapsd.close)
 
@@ -169,9 +169,13 @@ class TestEndToEnd(TileServerCase):
 
       image, timestamp = frame()
       # The route is centered over the white road, with the ego arrow three quarters down.
-      self.assertEqual(tuple(image[[128, 128, 188, 195], [128, 131, 128, 128]]), (128, 255, 255, 0))
-      self.assertGreater(timestamp, 0)
+      self.assertEqual((image[128, 128], image[128, 131], image[188, 128], image[195, 128]), (128, 255, 255, 0))
+      self.assertEqual(timestamp, sm.logMonoTime['gpsLocationExternal'])
       fetched = len(self.server.requests)
+      tracker = mapsd.tracker
+      navd.send_route()  # the same route again, as a restarted mapsd would get it
+      frame()
+      self.assertIs(mapsd.tracker, tracker)  # progress along it is kept
       values.pop('NavDestination')
       self.assertFalse(frame()[0].any())  # black without a route
       values['NavDestination'] = dict(destination)
@@ -183,6 +187,22 @@ class TestEndToEnd(TileServerCase):
       self.assertTrue(all('Range' in headers for headers in self.server.requests))
       self.assertTrue(all(headers['If-Match'] == self.server.etag for headers in self.server.requests[1:]))
       self.assertTrue(all(b'secret' not in p.read_bytes() for p in self.cache.iterdir()))
+      # The archive is replaced on the server and the cache evicted: the next fetch fails, the map goes black,
+      # and after a delay a fresh reader starts over on the new version.
+      self.server.etag = '"new-version"'
+      for cached in self.cache.iterdir():
+        cached.unlink()
+      values.pop('NavDestination')
+      frame()
+      values['NavDestination'] = dict(destination)
+      image, timestamp = frame()
+      self.assertFalse(image.any() or timestamp)
+      fetched = len(self.server.requests)
+      self.assertFalse(frame()[1])  # not retried yet
+      self.assertEqual(len(self.server.requests), fetched)
+      mapsd.retry_at = 0
+      self.assertEqual(frame()[0][128, 128], 128)
+      self.assertEqual((self.cache / 'version').read_text().split()[0], '"new-version"')
 
 
 class TestRemoteTiles(TileServerCase):
@@ -236,8 +256,8 @@ class TestRouteEngine(unittest.TestCase):
     self.sm.recv_time = dict.fromkeys(self.sm.valid, time.monotonic())
     self.sm.__getitem__.return_value = SimpleNamespace(hasFix=True, latitude=0, longitude=0, bearingDeg=90)
     self.engine = route_engine(self.sm, self.pm, self.values)
-    self.engine.update_location()
-    distance = 0.001 / METER
+    self.engine.last_position, self.engine.last_bearing = (0, 0), 90
+    distance = 111.195  # Mapbox's length of 0.001 degrees at the equator
     self.response = mapbox_response([
       {'geometry': {'coordinates': [[0, 0], [0.0005, 0], [0.001, 0]]}, 'distance': distance, 'duration': 10,
        'bannerInstructions': [{'distanceAlongGeometry': 100, 'primary': {'text': 'Turn right', 'type': 'turn', 'modifier': 'right'}}]},
@@ -266,14 +286,30 @@ class TestRouteEngine(unittest.TestCase):
     self.assertEqual((instruction['maneuverPrimaryText'], instruction['maneuverModifier'], instruction['timeRemaining']), ('Turn right', 'right', 20))
     self.engine.last_position = (0.0007, 0)  # on the step's second segment
     self.engine.send_instruction()
-    self.assertAlmostEqual(self.last_message('navInstruction').navInstruction.maneuverDistance, 0.0003 / METER, delta=0.5)
-    # mapsd gets the route again whenever it restarts
-    self.sm.updated = {'managerState': True}
-    processes = [SimpleNamespace(name='mapsd', pid=7)]
-    self.sm.__getitem__.return_value = SimpleNamespace(hasFix=True, latitude=0, longitude=0, bearingDeg=90, processes=processes)
-    self.assertEqual([self.engine.mapsd_restarted(), self.engine.mapsd_restarted()], [True, False])
-    processes[0].pid = 8
-    self.assertTrue(self.engine.mapsd_restarted())
+    self.assertAlmostEqual(self.last_message('navInstruction').navInstruction.timeRemaining, 13, delta=0.05)
+    self.engine.last_position = (0.001, 0)  # at the maneuver
+    self.engine.send_instruction()
+    self.assertAlmostEqual(self.last_message('navInstruction').navInstruction.maneuverDistance, 0, delta=0.01)
+
+  def test_banner_selection(self):
+    banners = [{'distanceAlongGeometry': 100, 'primary': {'text': 'Turn right', 'type': 'turn', 'modifier': 'right'}},
+               {'distanceAlongGeometry': 50, 'primary': {'text': 'Turn right'}, 'secondary': {'text': 'onto Main St'}}]
+    # The last banner still ahead of the ego, else the first: 120 m, 70 m and 30 m from the maneuver.
+    for distance, expected in [(120, ('Turn right', '', False)), (70, ('Turn right', '', True)), (30, ('Turn right', 'onto Main St', True))]:
+      instruction = messaging.new_message('navInstruction').navInstruction
+      set_banner(instruction, banners, distance)
+      self.assertEqual((instruction.maneuverPrimaryText, instruction.maneuverSecondaryText, instruction.showFull), expected)
+
+  def test_route_sent_on_change_and_periodically(self):
+    sent = lambda: sum(call.args[0] == 'navRoute' for call in self.pm.send.call_args_list)  # noqa: E731
+    self.sm.frame = 1
+    with patch('requests.get', return_value=self.response):
+      self.engine.update()  # the route to a new destination is sent once
+      self.engine.update()
+    self.assertEqual(sent(), 1)
+    self.sm.frame = ROUTE_RESEND_PERIOD  # and again periodically, for a mapsd that started after it
+    self.engine.update()
+    self.assertEqual(sent(), 2)
 
   def test_maneuvers_and_rerouting(self):
     self.load_route()
@@ -281,15 +317,13 @@ class TestRouteEngine(unittest.TestCase):
     for _ in range(REROUTE_COUNTER_MIN):
       self.assertFalse(self.engine.should_recompute())
     self.assertTrue(self.engine.should_recompute())
-    self.engine.gps_ok = False  # but not while the GPS drifts in a tunnel
     with patch('requests.get') as get:
-      self.engine.recompute_route()
+      self.engine.recompute_route(gps_ok=False)  # but not while the GPS drifts in a tunnel
       get.assert_not_called()
-    self.engine.gps_ok = True
-    self.engine.reset_recompute_limits()
     with patch('requests.get', return_value=self.response) as get:
-      self.engine.recompute_route()
-      self.engine.recompute_route()  # an immediate second recompute is held back
+      self.engine.recompute_route(gps_ok=True)
+      self.engine.reroute_counter = REROUTE_COUNTER_MIN  # still off route, but an immediate second recompute is held back
+      self.engine.recompute_route(gps_ok=True)
       self.assertEqual(get.call_count, 1)
     self.engine.last_position = (0.0012, 0)  # past the first maneuver
     self.engine.send_instruction()
@@ -312,16 +346,20 @@ class TestRouteEngine(unittest.TestCase):
     self.assertFalse(self.last_message('navInstruction').valid)
 
   def test_gps_source(self):
-    self.sm.__getitem__.return_value = SimpleNamespace(hasFix=True, latitude=1, longitude=1, bearingDeg=180)
-    self.sm.logMonoTime = dict.fromkeys(self.sm.valid, 1)  # replayed logs are judged by receipt time
-    self.engine.update_location()
-    self.assertTrue(self.engine.gps_ok)
-    self.assertEqual(self.engine.last_position, (1, 1))
-    self.sm.recv_time = dict.fromkeys(self.sm.valid, time.monotonic() - 3)
-    self.sm.__getitem__.return_value = SimpleNamespace(hasFix=True, latitude=2, longitude=2, bearingDeg=0)
-    self.engine.update_location()
-    self.assertFalse(self.engine.gps_ok)
-    self.assertEqual((self.engine.last_position, self.engine.last_bearing), ((1, 1), 180))
+    fixes = {'gpsLocation': SimpleNamespace(hasFix=True, latitude=1, longitude=1, bearingDeg=180),
+             'gpsLocationExternal': SimpleNamespace(hasFix=True, latitude=2, longitude=2, bearingDeg=0)}
+    self.sm.__getitem__.side_effect = fixes.get
+    self.sm.logMonoTime = {'gpsLocation': 2, 'gpsLocationExternal': 1}  # replayed logs are judged by receipt time
+    with patch('requests.get', return_value=self.response):
+      self.engine.update()
+      self.assertEqual((self.engine.last_position, self.engine.last_bearing), ((1, 1), 180))  # the newest fix wins
+      self.sm.valid['gpsLocation'] = False
+      self.engine.update()
+      self.assertEqual(self.engine.last_position, (2, 2))  # unless it is invalid
+      fixes['gpsLocationExternal'] = SimpleNamespace(hasFix=True, latitude=3, longitude=3, bearingDeg=0)
+      self.sm.recv_time = dict.fromkeys(self.sm.valid, time.monotonic() - 3)  # or stale
+      self.engine.update()
+      self.assertEqual(self.engine.last_position, (2, 2))
 
 
 class TestTiles(unittest.TestCase):
@@ -387,6 +425,14 @@ class TestRendering(unittest.TestCase):
     # bridge's own end is not wrapped in black.
     self.assertEqual((images['bridge'][146, 128], images['bridge'][152, 128], images['bridge'][152, 200], images['bridge'][140, 128]), (0, 255, 255, 255))
     self.assertEqual((images['tunnel'][146, 128], images['tunnel'][152, 200]), (255, 255))
+    # The ground road cuts over the tunnel beneath it, and the tunnel is drawn without its casing.
+    self.assertEqual((images['tunnel'][152, 133], images['tunnel'][147, 200]), (0, 0))
+
+  def test_road_widths(self):
+    # Pinned at the style zoom of 1 m per pixel: 16.26 at the equator and 15.26 at 60 degrees. Tunnels have no casing.
+    styles, levels = np.array([MAJOR, MEDIUM, STREET, MINOR, TRACK, STREET]), np.array([0, 0, 0, 0, 0, -1])
+    np.testing.assert_allclose(stroke_widths(16.256, styles, levels), [19.02, 15.48, 9.86, 6.70, 7.02, 7.89], atol=0.01)
+    np.testing.assert_allclose(stroke_widths(15.256, styles, levels), [13.52, 10.78, 6.39, 4.16, 4.58, 4.62], atol=0.01)
 
   def test_route_tiles(self):
     route = np.array([[0, -0.01], [0, 0.01]])  # 2.2 km north along the prime meridian
