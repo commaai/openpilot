@@ -174,7 +174,7 @@ def save_almanac(pigeon: TTYPigeon) -> None:
   # store almanac in flash
   pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
   try:
-    if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
+    if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK, timeout=10):
       cloudlog.info("Done storing almanac")
     else:
       cloudlog.error("Error storing almanac")
@@ -258,6 +258,8 @@ def deinitialize_and_exit(pigeon: TTYPigeon | None):
   if pigeon is not None:
     # controlled GNSS stop
     pigeon.send(b"\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74")
+    time.sleep(0.5)
+    save_almanac(pigeon)
 
   # turn off power and exit cleanly
   set_power(False)
@@ -283,7 +285,6 @@ def run_receiving(duration: int = 0):
   init(pigeon)
 
   start_time = time.monotonic()
-  last_almanac_save = time.monotonic()
   assist_attempted = False
   assist_messages = None
 
@@ -324,10 +325,6 @@ def run_receiving(duration: int = 0):
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
 
-      # save almanac every 5 minutes
-      if (time.monotonic() - last_almanac_save) > 60*5:
-        save_almanac(pigeon)
-        last_almanac_save = time.monotonic()
     else:
       # prevent locking up a CPU core if ublox disconnects
       time.sleep(0.001)
