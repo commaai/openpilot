@@ -96,10 +96,12 @@ class CarKalman(KalmanFilter):
     # Massimo Guiggiani, The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
     # Springer Cham, 2023. doi: https://doi.org/10.1007/978-3-031-06461-6
 
-    # Mass-normalized inertia and tire stiffness; vehicle mass cancels out.
     # globals
     global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]
     j, aF, aR, cF_orig, cR_orig = global_vars
+    # Tire stiffness and rotational inertia are already divided by vehicle mass, which cancels out of the model.
+    # Use unit mass to preserve the standard bicycle-model equations below.
+    m = 1
 
     # make functions and jacobians with sympy
     # state variables
@@ -120,13 +122,13 @@ class CarKalman(KalmanFilter):
     r = state[States.YAW_RATE, :][0, 0]
 
     A = sp.Matrix(np.zeros((2, 2)))
-    A[0, 0] = -(cF + cR) / u
-    A[0, 1] = -(cF * aF - cR * aR) / u - u
+    A[0, 0] = -(cF + cR) / (m * u)
+    A[0, 1] = -(cF * aF - cR * aR) / (m * u) - u
     A[1, 0] = -(cF * aF - cR * aR) / (j * u)
     A[1, 1] = -(cF * aF**2 + cR * aR**2) / (j * u)
 
     B = sp.Matrix(np.zeros((2, 1)))
-    B[0, 0] = cF / sR
+    B[0, 0] = cF / m / sR
     B[1, 0] = (cF * aF) / j / sR
 
     C = sp.Matrix(np.zeros((2, 1)))
