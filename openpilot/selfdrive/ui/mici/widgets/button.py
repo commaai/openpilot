@@ -122,10 +122,12 @@ class BigCircleToggle(BigCircleButton):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-
     self._checked = not self._checked
+    self._toggled(self._checked)
+
+  def _toggled(self, checked: bool):
     if self._toggle_callback:
-      self._toggle_callback(self._checked)
+      self._toggle_callback(checked)
 
   def _draw_content(self, btn_y: float):
     super()._draw_content(btn_y)
@@ -308,8 +310,11 @@ class BigToggle(BigButton):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
     self._checked = not self._checked
+    self._toggled(self._checked)
+
+  def _toggled(self, checked: bool):
     if self._toggle_callback:
-      self._toggle_callback(self._checked)
+      self._toggle_callback(checked)
 
   def _draw_pill(self, x: float, y: float, checked: bool):
     # draw toggle icon top right
@@ -337,12 +342,15 @@ class BigMultiToggle(BigToggle):
     self.set_value(self._options[0])
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
+    BigButton._handle_mouse_release(self, mouse_pos)
     cur_idx = self._options.index(self.value)
     new_idx = (cur_idx + 1) % len(self._options)
     self.set_value(self._options[new_idx])
+    self._selected(self.value)
+
+  def _selected(self, value: str):
     if self._select_callback:
-      self._select_callback(self.value)
+      self._select_callback(value)
 
   def _draw_content(self, btn_y: float):
     # don't draw pill from BigToggle
@@ -392,55 +400,46 @@ class GreyBigButton(BigButton):
     self._draw_content(self._rect.y)
 
 
-class BigMultiParamToggle(BigMultiToggle):
-  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None, *, description: str = "", description_icon: Union[rl.Texture, None] = None):
+class ParamControl:
+  """Mixin for toggles backed by a param. The widget owns its param: it reads it on init,
+  writes it when toggled (before the toggle callback runs), and re-reads it on refresh()."""
+
+  def __init__(self, param: str, *args, **kwargs):
     assert Params is not None
-    super().__init__(text, options, toggle_callback, select_callback, description=description, description_icon=description_icon)
-    self._param = param
-
-    self._params = Params()
-    self._load_value()
-
-  def _load_value(self):
-    self.set_value(self._options[self._params.get(self._param) or 0])
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-    new_idx = self._options.index(self.value)
-    self._params.put(self._param, new_idx)
-
-
-class BigParamControl(BigToggle):
-  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None, *, description: str = "",
-               description_icon: Union[rl.Texture, None] = None):
-    assert Params is not None
-    super().__init__(text, "", toggle_callback=toggle_callback, description=description, description_icon=description_icon)
+    super().__init__(*args, **kwargs)
     self.param = param
     self.params = Params()
-    self.set_checked(self.params.get_bool(self.param, False))
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-    self.params.put_bool(self.param, self._checked, block=True)
+    self.refresh()
 
   def refresh(self):
     self.set_checked(self.params.get_bool(self.param, False))
 
+  def _toggled(self, checked: bool):
+    self.params.put_bool(self.param, checked, block=True)
+    super()._toggled(checked)
 
-# TODO: param control base class
-class BigCircleParamControl(BigCircleToggle):
+
+class BigParamControl(ParamControl, BigToggle):
+  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None, *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
+    super().__init__(param, text, "", toggle_callback=toggle_callback, description=description, description_icon=description_icon)
+
+
+class BigCircleParamControl(ParamControl, BigCircleToggle):
   def __init__(self, icon: rl.Texture, param: str, toggle_callback: Callable | None = None,
                icon_offset: tuple[int, int] = (0, 0), *, description: str = "", description_icon: Union[rl.Texture, None] = None, title: str = ""):
-    assert Params is not None
-    super().__init__(icon, toggle_callback, icon_offset=icon_offset, description=description, description_icon=description_icon, title=title)
-    self._param = param
-    self.params = Params()
-    self.set_checked(self.params.get_bool(self._param, False))
+    super().__init__(param, icon, toggle_callback, icon_offset=icon_offset, description=description, description_icon=description_icon, title=title)
 
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-    self.params.put_bool(self._param, self._checked, block=True)
+
+class BigMultiParamToggle(ParamControl, BigMultiToggle):
+  """Backed by an int param holding the index into options"""
+  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
+               select_callback: Callable | None = None, *, description: str = "", description_icon: Union[rl.Texture, None] = None):
+    super().__init__(param, text, options, toggle_callback, select_callback, description=description, description_icon=description_icon)
 
   def refresh(self):
-    self.set_checked(self.params.get_bool(self._param, False))
+    self.set_value(self._options[self.params.get(self.param) or 0])
+
+  def _selected(self, value: str):
+    self.params.put(self.param, self._options.index(value))
+    super()._selected(value)
