@@ -171,7 +171,7 @@ class TogglesLayout(Widget):
       # refresh toggles from params to mirror external changes
       action.refresh()
       # these toggles need restart, block while engaged
-      if needs_restart and not action.locked:
+      if needs_restart:
         action.set_enabled(not ui_state.engaged)
 
   def _render(self, rect):

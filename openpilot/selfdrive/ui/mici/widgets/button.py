@@ -1,6 +1,6 @@
 import math
 import pyray as rl
-from typing import TYPE_CHECKING, Union
+from typing import Union
 from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
@@ -8,14 +8,7 @@ from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
-
-if TYPE_CHECKING:
-  from openpilot.common.params import Params
-else:
-  try:
-    from openpilot.common.params import Params
-  except (ImportError, OSError):
-    Params = None
+from openpilot.system.ui.lib.params import UnknownKeyName, ui_params
 
 COMPLICATION_SIZE    = 36
 LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
@@ -124,10 +117,11 @@ class BigCircleToggle(BigCircleButton):
     super()._handle_mouse_release(mouse_pos)
     self._checked = not self._checked
     self._toggled(self._checked)
+    if self._toggle_callback:
+      self._toggle_callback(self._checked)
 
   def _toggled(self, checked: bool):
-    if self._toggle_callback:
-      self._toggle_callback(checked)
+    """Hook for subclasses, runs before the toggle callback"""
 
   def _draw_content(self, btn_y: float):
     super()._draw_content(btn_y)
@@ -311,10 +305,11 @@ class BigToggle(BigButton):
     super()._handle_mouse_release(mouse_pos)
     self._checked = not self._checked
     self._toggled(self._checked)
+    if self._toggle_callback:
+      self._toggle_callback(self._checked)
 
   def _toggled(self, checked: bool):
-    if self._toggle_callback:
-      self._toggle_callback(checked)
+    """Hook for subclasses, runs before the toggle callback"""
 
   def _draw_pill(self, x: float, y: float, checked: bool):
     # draw toggle icon top right
@@ -332,9 +327,11 @@ class BigToggle(BigButton):
 
 
 class BigMultiToggle(BigToggle):
-  def __init__(self, text: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None, *, description: str = "", description_icon: Union[rl.Texture, None] = None):
-    super().__init__(text, "", toggle_callback=toggle_callback, description=description, description_icon=description_icon)
+  """Cycles through options on press. Subclasses BigToggle only for the pill drawing, so there's no toggle callback."""
+
+  def __init__(self, text: str, options: list[str], select_callback: Callable | None = None, *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
+    super().__init__(text, "", description=description, description_icon=description_icon)
     assert len(options) > 0
     self._options = options
     self._select_callback = select_callback
@@ -342,15 +339,17 @@ class BigMultiToggle(BigToggle):
     self.set_value(self._options[0])
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
+    # skip BigToggle's checked flip
     BigButton._handle_mouse_release(self, mouse_pos)
     cur_idx = self._options.index(self.value)
     new_idx = (cur_idx + 1) % len(self._options)
     self.set_value(self._options[new_idx])
     self._selected(self.value)
+    if self._select_callback:
+      self._select_callback(self.value)
 
   def _selected(self, value: str):
-    if self._select_callback:
-      self._select_callback(value)
+    """Hook for subclasses, runs before the select callback"""
 
   def _draw_content(self, btn_y: float):
     # don't draw pill from BigToggle
@@ -400,46 +399,67 @@ class GreyBigButton(BigButton):
     self._draw_content(self._rect.y)
 
 
-class ParamControl:
-  """Mixin for toggles backed by a param. The widget owns its param: it reads it on init,
-  writes it when toggled (before the toggle callback runs), and re-reads it on refresh()."""
+class ParamControl(Widget):
+  """Mixin for widgets backed by a param. Must come first in the bases, before the widget it's mixed into.
+
+  The widget owns its param: it reads it on init, writes it on user input (before the widget's callback runs),
+  and re-reads it on refresh(). A "<param>Lock" param, if set, disables the widget."""
 
   def __init__(self, param: str, *args, **kwargs):
-    assert Params is not None
     super().__init__(*args, **kwargs)
     self.param = param
-    self.params = Params()
+    self.params = ui_params()
+    try:
+      self.locked = self.params.get_bool(param + "Lock")
+    except UnknownKeyName:
+      self.locked = False
     self.refresh()
 
+  @property
+  def enabled(self) -> bool:
+    return not self.locked and super().enabled
+
   def refresh(self):
-    self.set_checked(self.params.get_bool(self.param, False))
+    raise NotImplementedError
+
+
+class ParamToggle(ParamControl):
+  """ParamControl for a bool param behind a checked toggle"""
+
+  # provided by the toggle this is mixed into
+  set_checked: Callable[[bool], None]
+
+  def refresh(self):
+    self.set_checked(self.params.get_bool(self.param))
 
   def _toggled(self, checked: bool):
     self.params.put_bool(self.param, checked, block=True)
-    super()._toggled(checked)
 
 
-class BigParamControl(ParamControl, BigToggle):
+class BigParamControl(ParamToggle, BigToggle):
   def __init__(self, text: str, param: str, toggle_callback: Callable | None = None, *, description: str = "",
                description_icon: Union[rl.Texture, None] = None):
     super().__init__(param, text, "", toggle_callback=toggle_callback, description=description, description_icon=description_icon)
 
 
-class BigCircleParamControl(ParamControl, BigCircleToggle):
+class BigCircleParamControl(ParamToggle, BigCircleToggle):
   def __init__(self, icon: rl.Texture, param: str, toggle_callback: Callable | None = None,
                icon_offset: tuple[int, int] = (0, 0), *, description: str = "", description_icon: Union[rl.Texture, None] = None, title: str = ""):
     super().__init__(param, icon, toggle_callback, icon_offset=icon_offset, description=description, description_icon=description_icon, title=title)
 
 
 class BigMultiParamToggle(ParamControl, BigMultiToggle):
-  """Backed by an int param holding the index into options"""
-  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
-               select_callback: Callable | None = None, *, description: str = "", description_icon: Union[rl.Texture, None] = None):
-    super().__init__(param, text, options, toggle_callback, select_callback, description=description, description_icon=description_icon)
+  """ParamControl for an int param holding the index into options"""
+
+  def __init__(self, text: str, param: str, options: list[str], select_callback: Callable | None = None, *, description: str = "",
+               description_icon: Union[rl.Texture, None] = None):
+    super().__init__(param, text, options, select_callback, description=description, description_icon=description_icon)
 
   def refresh(self):
-    self.set_value(self._options[self.params.get(self.param) or 0])
+    idx = self.params.get(self.param, return_default=True)
+    if idx is None or not 0 <= idx < len(self._options):
+      idx = 0
+    self.set_value(self._options[idx])
 
   def _selected(self, value: str):
-    self.params.put(self.param, self._options.index(value))
-    super()._selected(value)
+    self.params.put(self.param, self._options.index(value), block=True)

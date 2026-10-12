@@ -3,7 +3,6 @@ import os
 import pyray as rl
 from collections.abc import Callable
 from abc import ABC
-from typing import TYPE_CHECKING
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -12,15 +11,7 @@ from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
-
-if TYPE_CHECKING:
-  from openpilot.common.params import Params, UnknownKeyName
-else:
-  try:
-    from openpilot.common.params import Params, UnknownKeyName
-  except (ImportError, OSError):
-    Params = None
-    UnknownKeyName = Exception
+from openpilot.system.ui.lib.params import UnknownKeyName, ui_params
 
 ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
@@ -95,15 +86,19 @@ class ParamToggleAction(ToggleAction):
 
   def __init__(self, param: str, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True,
                callback: Callable[[bool], None] | None = None):
-    assert Params is not None
+    params = ui_params()
+    super().__init__(initial_state=params.get_bool(param), width=width, enabled=enabled, callback=self._on_toggle)
     self.param = param
-    self._params = Params()
+    self._params = params
     self._callback = callback
     try:
-      self.locked = self._params.get_bool(param + "Lock")
+      self.locked = params.get_bool(param + "Lock")
     except UnknownKeyName:
       self.locked = False
-    super().__init__(initial_state=self._params.get_bool(param), width=width, enabled=False if self.locked else enabled, callback=self._on_toggle)
+
+  @property
+  def enabled(self) -> bool:
+    return not self.locked and super().enabled
 
   def _on_toggle(self, state: bool):
     self._params.put_bool(self.param, state, block=True)

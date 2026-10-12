@@ -53,7 +53,7 @@ class TogglesLayoutMici(NavScroller):
     ])
 
     enable_openpilot.set_enabled(lambda: not ui_state.engaged)
-    record_front.set_enabled(False if ui_state.params.get_bool("RecordFrontLock") else (lambda: not ui_state.engaged))
+    record_front.set_enabled(lambda: not ui_state.engaged)
     record_mic.set_enabled(lambda: not ui_state.engaged)
 
     if ui_state.params.get_bool("ShowDebugInfo"):

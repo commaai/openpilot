@@ -2,17 +2,10 @@ from importlib.resources import files
 import json
 import os
 import re
-from typing import TYPE_CHECKING
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
-if TYPE_CHECKING:
-  from openpilot.common.params import Params
-else:
-  try:
-    from openpilot.common.params import Params
-  except (ImportError, OSError):
-    Params = None
+from openpilot.system.ui.lib.params import Params
 
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "openpilot/system", "ui")
 UI_DIR = files("openpilot.selfdrive.ui")
