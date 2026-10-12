@@ -1,7 +1,7 @@
 from openpilot.cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle, ParamControl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -52,17 +52,6 @@ class TogglesLayoutMici(NavScroller):
       enable_openpilot,
     ])
 
-    # Toggle lists
-    self._refresh_toggles = (
-      ("ExperimentalMode", self._experimental_btn),
-      ("IsMetric", is_metric_toggle),
-      ("IsLdwEnabled", ldw_toggle),
-      ("AlwaysOnDM", always_on_dm_toggle),
-      ("RecordFront", record_front),
-      ("RecordAudio", record_mic),
-      ("OpenpilotEnabledToggle", enable_openpilot),
-    )
-
     enable_openpilot.set_enabled(lambda: not ui_state.engaged)
     record_front.set_enabled(False if ui_state.params.get_bool("RecordFrontLock") else (lambda: not ui_state.engaged))
     record_mic.set_enabled(lambda: not ui_state.engaged)
@@ -99,8 +88,9 @@ class TogglesLayoutMici(NavScroller):
         self._experimental_btn.set_visible(False)
         self._experimental_btn.set_checked(False)
         self._personality_toggle.set_visible(False)
-        ui_state.params.remove("ExperimentalMode")
+        ui_state.params.remove(self._experimental_btn.param)
 
     # Refresh toggles from params to mirror external changes
-    for key, item in self._refresh_toggles:
-      item.set_checked(ui_state.params.get_bool(key))
+    for item in self._scroller.items:
+      if isinstance(item, ParamControl):
+        item.refresh()

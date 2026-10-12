@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl, GreyBigButton, ParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog, BigConfirmationCircleButton
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
@@ -71,14 +71,12 @@ class DeveloperLayoutMici(NavScroller):
                                              description="Use Android Debug Bridge (ADB) over USB or the network.", title="enable ADB")
     self._ssh_toggle = BigCircleParamControl(gui_app.texture("icons_mici/ssh_short.png", 82, 82), "SshEnabled", icon_offset=(0, 12),
                                              description="Access the device remotely using your SSH keys.", title="enable SSH")
-    self._joystick_toggle = BigToggle("joystick debug\nmode", initial_state=ui_state.params.get_bool("JoystickDebugMode"),
-                                      toggle_callback=self._on_joystick_debug_mode, description="Control the car with a joystick for debugging.")
-    self._long_maneuver_toggle = BigToggle("longitudinal maneuver mode", initial_state=ui_state.params.get_bool("LongitudinalManeuverMode"),
-                                           toggle_callback=self._on_long_maneuver_mode,
-                                           description="Run longitudinal maneuvers for testing gas and brake control.")
-    self._lat_maneuver_toggle = BigToggle("lateral maneuver mode", initial_state=ui_state.params.get_bool("LateralManeuverMode"),
-                                          toggle_callback=self._on_lat_maneuver_mode,
-                                          description="Run lateral maneuvers for testing steering control.")
+    self._joystick_toggle = BigParamControl("joystick debug\nmode", "JoystickDebugMode", toggle_callback=self._on_joystick_debug_mode,
+                                            description="Control the car with a joystick for debugging.")
+    self._long_maneuver_toggle = BigParamControl("longitudinal maneuver mode", "LongitudinalManeuverMode", toggle_callback=self._on_long_maneuver_mode,
+                                                 description="Run longitudinal maneuvers for testing gas and brake control.")
+    self._lat_maneuver_toggle = BigParamControl("lateral maneuver mode", "LateralManeuverMode", toggle_callback=self._on_lat_maneuver_mode,
+                                                description="Run lateral maneuvers for testing steering control.")
     self._alpha_long_toggle = BigToggle("alpha longitudinal", initial_state=ui_state.params.get_bool("AlphaLongitudinalEnabled"),
                                         toggle_callback=self._on_alpha_long_enabled,
                                         description="Use alpha openpilot longitudinal control instead of stock ACC. This may disable Automatic Emergency " +
@@ -101,17 +99,6 @@ class DeveloperLayoutMici(NavScroller):
       self._navigation_toggle,
     ])
 
-    # Toggle lists
-    self._refresh_toggles = (
-      ("AdbEnabled", self._adb_toggle),
-      ("SshEnabled", self._ssh_toggle),
-      ("JoystickDebugMode", self._joystick_toggle),
-      ("LongitudinalManeuverMode", self._long_maneuver_toggle),
-      ("LateralManeuverMode", self._lat_maneuver_toggle),
-      ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
-      ("ShowDebugInfo", self._debug_mode_toggle),
-      ("NavigationEnabled", self._navigation_toggle),
-    )
     onroad_blocked_toggles = (self._adb_toggle, self._joystick_toggle)
     release_blocked_toggles = (self._joystick_toggle, self._long_maneuver_toggle, self._lat_maneuver_toggle, self._alpha_long_toggle, self._navigation_toggle)
     engaged_blocked_toggles = (self._long_maneuver_toggle, self._lat_maneuver_toggle, self._alpha_long_toggle)
@@ -164,31 +151,28 @@ class DeveloperLayoutMici(NavScroller):
       self._alpha_long_toggle.set_visible(False)
 
     # Refresh toggles from params to mirror external changes
-    for key, item in self._refresh_toggles:
-      item.set_checked(ui_state.params.get_bool(key))
+    for item in self._scroller.items:
+      if isinstance(item, ParamControl):
+        item.refresh()
+    # alpha long writes its param only after confirmation, so it isn't a ParamControl
+    self._alpha_long_toggle.set_checked(ui_state.params.get_bool("AlphaLongitudinalEnabled"))
+
+  def _clear_modes(self, *toggles: ParamControl):
+    # the debug/maneuver modes are mutually exclusive
+    for toggle in toggles:
+      ui_state.params.put_bool(toggle.param, False, block=True)
+      toggle.refresh()
 
   def _on_joystick_debug_mode(self, state: bool):
-    ui_state.params.put_bool("JoystickDebugMode", state, block=True)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
-    self._long_maneuver_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
-    self._lat_maneuver_toggle.set_checked(False)
+    self._clear_modes(self._long_maneuver_toggle, self._lat_maneuver_toggle)
 
   def _on_long_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LongitudinalManeuverMode", state, block=True)
-    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
-    self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
-    self._lat_maneuver_toggle.set_checked(False)
+    self._clear_modes(self._joystick_toggle, self._lat_maneuver_toggle)
     restart_needed_callback()
 
   def _on_lat_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LateralManeuverMode", state, block=True)
     ui_state.params.put_bool("ExperimentalMode", False, block=True)
-    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
-    self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
-    self._long_maneuver_toggle.set_checked(False)
+    self._clear_modes(self._joystick_toggle, self._long_maneuver_toggle)
     restart_needed_callback()
 
   def _on_alpha_long_enabled(self, state: bool):
