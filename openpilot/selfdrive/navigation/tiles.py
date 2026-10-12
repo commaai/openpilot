@@ -1,7 +1,5 @@
 """Byte ranges of the hosted PMTiles basemap, cached on disk."""
-import os
 import re
-import tempfile
 import time
 from pathlib import Path
 
@@ -11,10 +9,10 @@ from openpilot.common.api import Api
 from openpilot.common.hardware import PC
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.params import Params
+from openpilot.selfdrive.navigation.pmtiles import HEADER_LENGTH
 
 CACHE_LIMIT = 64 * 1024 * 1024
 MERGE_GAP = 256 * 1024  # tiles this close together in the archive are fetched in one range request
-HEADER_LENGTH = 127
 
 
 class RemoteTiles:
@@ -73,14 +71,7 @@ class RemoteTiles:
       raise OSError('Unable to fetch map tiles') from None
 
   def _store(self, offset: int, data: bytes):
-    with tempfile.NamedTemporaryFile(dir=self.cache, delete=False) as file:
-      temporary = Path(file.name)
-      try:
-        file.write(data)
-        file.flush()
-        os.replace(temporary, self.cache / f'{offset}-{len(data)}')
-      finally:
-        temporary.unlink(missing_ok=True)
+    (self.cache / f'{offset}-{len(data)}').write_bytes(data)
 
   def _trim(self):
     files = [(cached.stat().st_mtime, cached.stat().st_size, cached) for cached in self.cache.iterdir() if re.fullmatch(r'\d+-\d+', cached.name)]
@@ -92,8 +83,6 @@ class RemoteTiles:
       size -= cached_size
 
   def read(self, offset: int, length: int) -> bytes:
-    if length == 0:
-      return b''
     try:
       data = (self.cache / f'{offset}-{length}').read_bytes()
       if len(data) == length:

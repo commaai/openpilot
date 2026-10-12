@@ -8,12 +8,11 @@ from openpilot.selfdrive.navigation.pmtiles import read_varint
 
 @dataclass
 class Road:
-  points: np.ndarray  # tile coordinates, x right / y down
+  points: np.ndarray  # fractions of the tile, x right / y down
   kind: str
-  extent: int
-  detail: str = ''
-  tunnel: bool = False
-  bridge: bool = False
+  detail: str
+  tunnel: bool
+  bridge: bool
 
 
 def fields(data: bytes):
@@ -129,6 +128,6 @@ def decode_roads(data: bytes) -> list[Road]:
         properties[keys[tags[i]]] = values[tags[i + 1]]
       kind = properties.get('kind', '')
       if kind in ('highway', 'major_road', 'minor_road', 'other'):
-        roads.extend(Road(points, kind, extent, properties.get('kind_detail', ''), properties.get('is_tunnel') is True,
+        roads.extend(Road(points / extent, kind, properties.get('kind_detail', ''), properties.get('is_tunnel') is True,
                           properties.get('is_bridge') is True) for points in decode_lines(geometry))
   return roads

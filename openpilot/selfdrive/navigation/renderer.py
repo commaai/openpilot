@@ -5,20 +5,19 @@ down the frame, pure white roads whose casings are part of the stroke, bridges c
 them, a grey route and a white ego arrow.
 """
 import math
-from dataclasses import dataclass
 from functools import lru_cache
 
 import numpy as np
 
 from openpilot.selfdrive.navigation.pmtiles import PMTiles
-from openpilot.selfdrive.navigation.route import MAX_LATITUDE
+from openpilot.selfdrive.navigation.route import cumulative_distance, nearest_segment
 from openpilot.selfdrive.navigation.vector_tile import Road, decode_roads
 
 SIZE = 256
-ZOOM = 15  # tile zoom; the style zoom is derived from METERS_PER_PIXEL
-METERS_PER_PIXEL = 1.0
+ZOOM = 15  # tile zoom; the style zoom is derived from the 1 m per pixel scale instead
 FORWARD_OFFSET = 64.0  # the ego sits three quarters down the frame
-EARTH_CIRCUMFERENCE = 40075016.68557849
+EGO = np.array([SIZE / 2, SIZE / 2 + FORWARD_OFFSET])  # pixel position of the ego
+EARTH_CIRCUMFERENCE = 40075016.68557849  # equatorial, for Web Mercator
 BACKGROUND = 0
 ROAD_INTENSITY = 255
 ROUTE_INTENSITY = 128
@@ -29,36 +28,27 @@ ARROW = np.array([(0, -9), (7, 7), (0, 3), (-7, 7)], dtype=np.float64)  # ego ma
 ARROW_OUTLINE = 2.0  # pixels
 
 
-def interpolate_width(zoom: float, *stops: float) -> float:
-  """The style's exponential (base 1.5) interpolation between (zoom, width) stops, in screen pixels."""
-  zooms, widths = stops[::2], stops[1::2]
-  if zoom <= zooms[0]:
-    return widths[0]
-  if zoom >= zooms[-1]:
-    return widths[-1]
-  for low_zoom, low, high_zoom, high in zip(zooms, widths, zooms[1:], widths[1:], strict=False):
-    if low_zoom <= zoom <= high_zoom:
-      fraction = (1.5 ** (zoom - low_zoom) - 1) / (1.5 ** (high_zoom - low_zoom) - 1)
-      return low + fraction * (high - low)
-  raise ValueError("Unsorted width stops")
+# The training style's road classes as (zoom, width, zoom, width) stops for the interior and for one side of the
+# casing, in pixels. Casings are white there too, so they only widen the stroke. Only each class's top interval is
+# kept: the style zoom at 1 m per pixel stays above 14 until 78 degrees of latitude, where the lower stops begin.
+MAJOR, MEDIUM, STREET, MINOR, TRACK = range(5)
+STOPS = np.array([[[5, 0.75, 18, 32], [10, 1, 18, 2]],  # MAJOR: motorway, trunk, primary
+                  [[5, 0.1, 18, 26], [10, 0.75, 18, 2]],  # MEDIUM: secondary, tertiary
+                  [[14, 2, 18, 18], [12, 0.75, 20, 2]],  # STREET: residential, unclassified, living streets, major links
+                  [[14, 0.5, 18, 12], [12, 0.75, 20, 2]],  # MINOR: service roads and minor links
+                  [[14, 1, 18, 12], [12, 0.75, 20, 2]]], dtype=np.float64)  # TRACK
 
 
-@dataclass(frozen=True)
-class Style:
-  interior: tuple[float, ...]  # (zoom, width, ...) stops
-  casing: tuple[float, ...]  # one side, in pixels
+def stroke_widths(zoom: float, styles: np.ndarray, levels: np.ndarray) -> np.ndarray:
+  """Full stroke width of each segment: the style's exponential (base 1.5) interpolation between its stops, flat
+  beyond them, with the casing on both sides except for tunnels, which are drawn at their interior width."""
+  z0, w0, z1, w1 = np.moveaxis(STOPS, -1, 0)
+  z = np.clip(zoom, z0, z1)
+  table = w0 + (w1 - w0) * (1.5 ** (z - z0) - 1) / (1.5 ** (z1 - z0) - 1)  # (style, interior / casing)
+  return table[styles, 0] + np.where(levels < 0, 0, 2 * table[styles, 1])
 
 
-# The training style's road classes. Casings are white there too, so they only widen the stroke.
-MAJOR = Style((5, 0.75, 18, 32), (10, 1, 18, 2))  # motorway, trunk, primary
-MEDIUM = Style((5, 0.1, 18, 26), (10, 0.75, 18, 2))  # secondary, tertiary
-STREET = Style((12, 0.5, 14, 2, 18, 18), (12, 0.75, 20, 2))  # residential, unclassified, living streets, major links
-MINOR = Style((14, 0.5, 18, 12), (12, 0.75, 20, 2))  # service roads and minor links
-TRACK = Style((14, 1, 18, 12), (12, 0.75, 20, 2))
-STYLES = (MAJOR, MEDIUM, STREET, MINOR, TRACK)
-
-
-def road_style(road: Road) -> Style | None:
+def road_style(road: Road) -> int | None:
   """The style for a road, or None when hidden. Protomaps kind_detail is the underlying OSM highway type."""
   detail = road.detail
   if detail in ('platform', 'pier', 'raceway'):
@@ -80,31 +70,6 @@ def road_level(road: Road) -> int:
   return 1 if road.bridge else -1 if road.tunnel else 0
 
 
-@dataclass(frozen=True)
-class Position:
-  latitude: float
-  longitude: float
-  bearing: float  # degrees clockwise from north
-
-  def __post_init__(self):
-    if not all(math.isfinite(v) for v in (self.latitude, self.longitude, self.bearing)):
-      raise ValueError("Non-finite position")
-    if abs(self.latitude) > MAX_LATITUDE or abs(self.longitude) > 180:
-      raise ValueError("Position outside Web Mercator bounds")
-
-
-@dataclass
-class RenderResult:
-  image: np.ndarray
-  complete: bool  # every tile covering the view was present
-  route_present: bool = False
-  road_distance: float = math.inf  # meters from the ego to the nearest drawn road centerline
-
-  @property
-  def valid(self) -> bool:
-    return self.complete and self.route_present and self.road_distance <= MAX_ROAD_DISTANCE
-
-
 def mercator(coordinates: np.ndarray) -> np.ndarray:
   """Longitude/latitude -> normalized Web Mercator, x east / y south."""
   longitude, latitude = coordinates.T
@@ -112,17 +77,17 @@ def mercator(coordinates: np.ndarray) -> np.ndarray:
   return np.column_stack(((longitude + 180.0) / 360.0, y))
 
 
-def project(points: np.ndarray, position: Position) -> np.ndarray:
-  origin = mercator(np.array([[position.longitude, position.latitude]]))[0]
+def project(points: np.ndarray, longitude: float, latitude: float, bearing: float) -> np.ndarray:
+  """Mercator points to pixels of a frame at a position, headed along a bearing in degrees clockwise from north."""
+  origin = mercator(np.array([[longitude, latitude]]))[0]
   delta = points - origin
   delta[:, 0] = (delta[:, 0] + 0.5) % 1.0 - 0.5  # wrap across the antimeridian
-  delta *= EARTH_CIRCUMFERENCE * math.cos(math.radians(position.latitude))
+  delta *= EARTH_CIRCUMFERENCE * math.cos(math.radians(latitude))  # meters, which are pixels
   east, north = delta[:, 0], -delta[:, 1]
-  angle = math.radians(position.bearing)
+  angle = math.radians(bearing)
   right = east * math.cos(angle) - north * math.sin(angle)
   forward = east * math.sin(angle) + north * math.cos(angle)
-  return np.column_stack((SIZE / 2 + right / METERS_PER_PIXEL,
-                          SIZE / 2 - (forward - FORWARD_OFFSET) / METERS_PER_PIXEL))
+  return EGO + np.column_stack((right, -forward))
 
 
 def draw_segments(image: np.ndarray, starts: np.ndarray, ends: np.ndarray, radii: np.ndarray | float, intensity: int,
@@ -159,17 +124,10 @@ def draw_segments(image: np.ndarray, starts: np.ndarray, ends: np.ndarray, radii
       np.maximum(view, np.rint(alpha * intensity).astype(np.uint8), out=view)
 
 
-def draw_line(image: np.ndarray, points: np.ndarray, intensity: int, width: float, *, overlay: bool = False):
-  draw_segments(image, points[:-1], points[1:], np.full(len(points) - 1, width / 2.0), intensity, overlay=overlay)
-
-
-def draw_vehicle(image: np.ndarray, center: np.ndarray):
+def draw_vehicle(image: np.ndarray):
   """The training ego marker: a white arrow with a black outline, drawn over everything else."""
-  arrow = ARROW + center
-  x0, y0 = np.maximum(np.floor(arrow.min(axis=0)) - 2, 0).astype(int)
-  x1, y1 = np.minimum(np.ceil(arrow.max(axis=0)) + 2, [image.shape[1], image.shape[0]]).astype(int)
-  if x1 <= x0 or y1 <= y0:
-    return
+  arrow = ARROW + EGO
+  (x0, y0), (x1, y1) = (np.floor(arrow.min(axis=0)) - 2).astype(int), (np.ceil(arrow.max(axis=0)) + 2).astype(int)
   px, py = np.meshgrid(np.arange(x0, x1) + 0.5, np.arange(y0, y1) + 0.5)
   inside = np.zeros(px.shape, dtype=bool)
   for a, b, c in ((arrow[0], arrow[1], arrow[2]), (arrow[0], arrow[2], arrow[3])):  # the concave arrow as two triangles
@@ -195,11 +153,11 @@ class MapRenderer:
       style = road_style(road)
       if style is None:
         continue
-      points = (road.points / road.extent + np.array([x, y])) / (1 << self.zoom)
+      points = (road.points + np.array([x, y])) / (1 << self.zoom)
       n = len(points) - 1
       starts.append(points[:-1])
       ends.append(points[1:])
-      styles.append(np.full(n, STYLES.index(style)))
+      styles.append(np.full(n, style))
       levels.append(np.full(n, road_level(road)))
       ends_of_line = np.zeros((n, 2), dtype=bool)
       ends_of_line[0, 0] = ends_of_line[-1, 1] = True
@@ -208,50 +166,40 @@ class MapRenderer:
       return np.empty((0, 2)), np.empty((0, 2)), np.empty(0, dtype=int), np.empty(0, dtype=int), np.empty((0, 2), dtype=bool)
     return np.concatenate(starts), np.concatenate(ends), np.concatenate(styles), np.concatenate(levels), np.concatenate(caps)
 
-  def view_tiles(self, longitude: float, latitude: float) -> tuple[list[tuple[int, int]], bool]:
-    """Tiles covering the view at a point for every heading, and whether the view stays within the map."""
+  def view_tiles(self, longitude: float, latitude: float) -> list[tuple[int, int]]:
+    """Tiles covering the view at a point for every heading."""
     origin = mercator(np.array([[longitude, latitude]]))[0]
     # A bounding circle includes all headings, forward offset and road stroke widths.
-    radius = (SIZE * METERS_PER_PIXEL / math.sqrt(2) + FORWARD_OFFSET + 16) / (EARTH_CIRCUMFERENCE * math.cos(math.radians(latitude)))
+    radius = (SIZE / math.sqrt(2) + FORWARD_OFFSET + 16) / (EARTH_CIRCUMFERENCE * math.cos(math.radians(latitude)))
     count = 1 << self.zoom
     low = np.floor((origin - radius) * count).astype(int)
     high = np.floor((origin + radius) * count).astype(int)
-    if (high[0] - low[0] + 1) * (high[1] - low[1] + 1) > 256:
-      raise ValueError("View requires more than 256 tiles; use a lower zoom")
-    tiles = [(x % count, y) for y in range(low[1], high[1] + 1) for x in range(low[0], high[0] + 1) if 0 <= y < count]
-    return tiles, len(tiles) == (high[0] - low[0] + 1) * (high[1] - low[1] + 1)
+    return [(x % count, y) for y in range(low[1], high[1] + 1) for x in range(low[0], high[0] + 1) if 0 <= y < count]
 
   def route_tiles(self, route: np.ndarray) -> set[tuple[int, int]]:
-    """Every tile the view can show while the pose is snapped onto the route."""
-    tiles: set[tuple[int, int]] = set()
-    for a, b in zip(route[:-1], route[1:], strict=True):
-      meters = np.hypot(*((b - a) * [111320.0 * math.cos(math.radians(a[1])), 110540.0]))
-      for t in np.linspace(0, 1, int(meters / 100) + 2):
-        tiles.update(self.view_tiles(*(a + (b - a) * t))[0])
-    return tiles
+    """Every tile the view can show while the pose is snapped onto the route, sampled every 100 m."""
+    distance = cumulative_distance(route)
+    samples = np.column_stack([np.interp(np.arange(0, distance[-1], 100), distance, route[:, axis]) for axis in (0, 1)])
+    return {tile for lon, lat in np.vstack((samples, route)).tolist() for tile in self.view_tiles(lon, lat)}
 
   def prefetch(self, route: np.ndarray):
     self.archive.prefetch((self.zoom, x, y) for x, y in self.route_tiles(route))
 
-  def render(self, position: Position, route: np.ndarray | None = None) -> RenderResult:
+  def render(self, longitude: float, latitude: float, bearing: float, route: np.ndarray) -> tuple[np.ndarray, bool]:
+    """The map image at a position and bearing, and whether every tile was present with a road near the ego."""
     image = np.full((SIZE, SIZE), BACKGROUND, dtype=np.uint8)
-    wanted, complete = self.view_tiles(position.longitude, position.latitude)
-    loaded = [self.roads(x, y) for x, y in wanted]
+    loaded = [self.roads(x, y) for x, y in self.view_tiles(longitude, latitude)]
     tiles = [tile for tile in loaded if tile is not None]
-    complete = complete and len(tiles) == len(loaded)
-    # The training renderer's latitude-dependent style zoom: the web mercator zoom with METERS_PER_PIXEL
+    # The training renderer's latitude-dependent style zoom: the web mercator zoom with one meter per pixel
     # at this latitude, under the 512-pixel tile convention. Tile zoom and style zoom are independent.
-    style_zoom = math.log2(math.cos(math.radians(position.latitude)) * EARTH_CIRCUMFERENCE / (256 * METERS_PER_PIXEL)) - 1
-    ego = np.array([SIZE / 2, SIZE / 2 + FORWARD_OFFSET / METERS_PER_PIXEL])
+    style_zoom = math.log2(math.cos(math.radians(latitude)) * EARTH_CIRCUMFERENCE / 256) - 1
     road_distance = math.inf
     if tiles:
       starts, ends, styles, levels, caps = (np.concatenate(column) for column in zip(*tiles, strict=True))
-      starts, ends = project(starts, position), project(ends, position)
-      # Tunnels are drawn at their interior width; everywhere else the white casing widens the stroke.
-      table = np.array([[interpolate_width(style_zoom, *style.interior), interpolate_width(style_zoom, *style.casing)]
-                        for style in STYLES])
-      widths = table[styles, 0] + np.where(levels < 0, 0, 2 * table[styles, 1])
-      road_distance = nearest_distance(ego, starts, ends) * METERS_PER_PIXEL
+      starts, ends = project(starts, longitude, latitude, bearing), project(ends, longitude, latitude, bearing)
+      widths = stroke_widths(style_zoom, styles, levels)
+      if len(starts):
+        road_distance = nearest_segment(starts, ends, EGO)[2]
       for level in np.unique(levels):
         chosen = levels == level
         if level > levels.min():
@@ -259,18 +207,7 @@ class MapRenderer:
           draw_segments(image, starts[chosen], ends[chosen], (widths[chosen] + CUT_WIDTH) / 2, BACKGROUND,
                         overlay=True, caps=~caps[chosen])
         draw_segments(image, starts[chosen], ends[chosen], widths[chosen] / 2, ROAD_INTENSITY)
-    route_present = route is not None and len(route) >= 2
-    if route_present:
-      draw_line(image, project(mercator(route), position), ROUTE_INTENSITY, ROUTE_WIDTH, overlay=True)
-    draw_vehicle(image, ego)
-    return RenderResult(image, complete, route_present, road_distance)
-
-
-def nearest_distance(point: np.ndarray, starts: np.ndarray, ends: np.ndarray) -> float:
-  """Distance from a point to the closest of the segments."""
-  if not len(starts):
-    return math.inf
-  delta = ends - starts
-  length2 = np.maximum((delta * delta).sum(axis=1), 1e-12)
-  t = np.clip(((point - starts) * delta).sum(axis=1) / length2, 0, 1)
-  return float(np.linalg.norm(starts + t[:, None] * delta - point, axis=1).min())
+    pixels = project(mercator(route), longitude, latitude, bearing)
+    draw_segments(image, pixels[:-1], pixels[1:], ROUTE_WIDTH / 2, ROUTE_INTENSITY, overlay=True)
+    draw_vehicle(image)
+    return image, len(tiles) == len(loaded) and road_distance <= MAX_ROAD_DISTANCE

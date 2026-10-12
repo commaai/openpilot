@@ -4,6 +4,8 @@ import struct
 from bisect import bisect_right
 from functools import lru_cache
 
+HEADER_LENGTH = 127
+
 
 def read_varint(data: bytes, offset: int) -> tuple[int, int]:
   value = 0
@@ -69,7 +71,7 @@ class PMTiles:
     self.source = source
     self.size = source.size
     try:
-      header = self.read(0, 127)
+      header = self.read(0, HEADER_LENGTH)
       if header[:8] != b'PMTiles\x03':
         raise ValueError("Expected a PMTiles v3 archive")
       self.root_offset, self.root_length, _, _, self.leaf_offset, self.leaf_length, self.data_offset, self.data_length = struct.unpack_from('<8Q', header, 8)

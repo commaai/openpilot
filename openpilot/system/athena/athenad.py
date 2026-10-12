@@ -693,13 +693,9 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
 
 @dispatcher.add_method
 def setNavDestination(latitude: float, longitude: float) -> dict[str, int | str]:
-  if (any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in (latitude, longitude)) or
-      not (-90 <= latitude <= 90 and -180 <= longitude <= 180)):
+  if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
     return {"success": 0, "error": "Invalid destination coordinates"}
-  params = Params()
-  if not params.get_bool("NavigationEnabled"):
-    return {"success": 0, "error": "Navigation is disabled"}
-  params.put("NavDestination", {"latitude": latitude, "longitude": longitude}, block=True)
+  Params().put("NavDestination", {"latitude": latitude, "longitude": longitude}, block=True)
   return {"success": 1}
 
 

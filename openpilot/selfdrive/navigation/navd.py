@@ -1,32 +1,44 @@
 #!/usr/bin/env python3
 import os
 
+import numpy as np
 import requests
 
 import openpilot.cereal.messaging as messaging
 from openpilot.common.api import API_HOST, Api
+from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
-from openpilot.selfdrive.navigation.helpers import (Coordinate, coordinate_from_param, distance_along_geometry,
-                                                    latest_gps_source, minimum_distance, parse_banner_instructions)
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.navigation.helpers import latest_gps_source
+from openpilot.selfdrive.navigation.route import along_path, local_meters
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 REROUTE_COUNTER_MIN = 3
+ROUTE_RESEND_DELAY = 5  # updates (seconds) after mapsd restarts before resending the route, once its subscriber is up
+
+
+def set_banner(instruction, banners, distance_to_maneuver):
+  """Fill the banner fields from the banner to show now: the last one still ahead of the ego, else the first."""
+  if not banners:
+    return
+  banner = next((b for b in reversed(banners) if distance_to_maneuver < b['distanceAlongGeometry']), banners[0])
+  instruction.showFull = distance_to_maneuver < banner['distanceAlongGeometry']
+  primary = banner['primary']
+  instruction.maneuverPrimaryText = primary.get('text') or ''
+  instruction.maneuverType = primary.get('type') or ''
+  instruction.maneuverModifier = primary.get('modifier') or ''
+  if banner.get('secondary') is not None:
+    instruction.maneuverSecondaryText = banner['secondary']['text']
 
 
 class RouteEngine:
   def __init__(self, sm, pm, params=None):
     self.sm = sm
     self.pm = pm
+    self.params = params if params is not None else Params()
 
-    if params is None:
-      from openpilot.common.params import Params
-      params = Params()
-    self.params = params
-
-    # Get last gps position from params
-    self.last_position = coordinate_from_param("LastGPSPosition", self.params)
+    self.last_position = None  # (longitude, latitude)
     self.last_bearing = None
 
     self.gps_ok = False
@@ -34,13 +46,14 @@ class RouteEngine:
     self.nav_destination = None
     self.step_idx = None
     self.route = None
-    self.route_geometry = None
+    self.route_geometry = None  # an (n, 2) array of (longitude, latitude) per step
 
     self.recompute_backoff = 0
     self.recompute_countdown = 0
 
     self.reroute_counter = 0
-
+    self.mapsd_pid = None
+    self.route_resend = 0
 
     self.mapbox_token = os.environ.get("MAPBOX_TOKEN")
     self.api = Api(self.params.get("DongleId")) if self.mapbox_token is None else None
@@ -50,12 +63,26 @@ class RouteEngine:
     self.sm.update(0)
 
     self.update_location()
+    route = self.route
     try:
       self.recompute_route()
       self.send_instruction()
-      self.send_route()
     except Exception:
       cloudlog.exception("navd.failed_to_compute")
+    # mapsd gets the route when it changes, and again shortly after mapsd restarts
+    if self.mapsd_restarted():
+      self.route_resend = ROUTE_RESEND_DELAY
+    self.route_resend -= 1
+    if self.route is not route or self.route_resend == 0:
+      self.send_route()
+
+  def mapsd_restarted(self) -> bool:
+    if not self.sm.updated['managerState']:
+      return False
+    pid = next((p.pid for p in self.sm['managerState'].processes if p.name == 'mapsd'), None)
+    restarted = pid != self.mapsd_pid
+    self.mapsd_pid = pid
+    return restarted
 
   def update_location(self):
     source = latest_gps_source(self.sm)
@@ -64,17 +91,18 @@ class RouteEngine:
     if source is not None:
       location = self.sm[source]
       self.last_bearing = location.bearingDeg
-      self.last_position = Coordinate(location.latitude, location.longitude)
+      self.last_position = (location.longitude, location.latitude)
 
   def recompute_route(self):
     if self.last_position is None:
       return
 
-    new_destination = coordinate_from_param("NavDestination", self.params)
-    if new_destination is None:
+    destination = self.params.get("NavDestination")
+    if destination is None:
       self.clear_route()
       self.reset_recompute_limits()
       return
+    new_destination = (destination['longitude'], destination['latitude'])
 
     should_recompute = self.should_recompute()
     if new_destination != self.nav_destination:
@@ -94,6 +122,7 @@ class RouteEngine:
       self.recompute_countdown = max(0, self.recompute_countdown - 1)
 
   def calculate_route(self, destination):
+    assert self.last_position is not None
     cloudlog.warning(f"Calculating route {self.last_position} -> {destination}")
     self.nav_destination = destination
 
@@ -114,16 +143,10 @@ class RouteEngine:
       'alternatives': 'false',
       'language': lang,
     }
-
-    coords = [
-      (self.last_position.longitude, self.last_position.latitude),
-      (destination.longitude, destination.latitude)
-    ]
-    params['waypoints'] = '0;1'
     if self.last_bearing is not None:
       params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
 
-    coords_str = ';'.join([f'{lon},{lat}' for lon, lat in coords])
+    coords_str = ';'.join(f'{lon},{lat}' for lon, lat in (self.last_position, destination))
     url = self.mapbox_host + '/directions/v5/mapbox/driving-traffic/' + coords_str
     try:
       resp = requests.get(url, params=params, timeout=10)
@@ -134,11 +157,7 @@ class RouteEngine:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
-        self.route_geometry = []
-
-        for step in self.route:
-          self.route_geometry.append([Coordinate.from_mapbox_tuple(c) for c in step['geometry']['coordinates']])
-
+        self.route_geometry = [np.array(step['geometry']['coordinates'], dtype=np.float64).reshape((-1, 2)) for step in self.route]
         self.step_idx = 0
       else:
         cloudlog.warning("Got empty route response")
@@ -158,8 +177,7 @@ class RouteEngine:
 
     assert self.route is not None and self.route_geometry is not None and self.last_position is not None
     step = self.route[self.step_idx]
-    geometry = self.route_geometry[self.step_idx]
-    along_geometry = distance_along_geometry(geometry, self.last_position)
+    along_geometry, _ = along_path(self.route_geometry[self.step_idx], self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     # Banner instructions are for the following maneuver step, don't use empty last step
@@ -169,23 +187,13 @@ class RouteEngine:
 
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    instruction = parse_banner_instructions(banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
-    if instruction is not None:
-      for k,v in instruction.items():
-        setattr(msg.navInstruction, k, v)
+    set_banner(msg.navInstruction, banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
 
-    # Compute total remaining time and distance
+    # Total remaining distance and time: the rest of this step, then every step after it
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
-    total_distance = step['distance'] * remaining
-    total_time = step['duration'] * remaining
-
-    # Add up totals for future steps
-    for i in range(self.step_idx + 1, len(self.route)):
-      total_distance += self.route[i]['distance']
-      total_time += self.route[i]['duration']
-
-    msg.navInstruction.distanceRemaining = total_distance
-    msg.navInstruction.timeRemaining = total_time
+    future = self.route[self.step_idx + 1:]
+    msg.navInstruction.distanceRemaining = step['distance'] * remaining + sum(s['distance'] for s in future)
+    msg.navInstruction.timeRemaining = step['duration'] * remaining + sum(s['duration'] for s in future)
 
     self.pm.send('navInstruction', msg)
 
@@ -198,20 +206,14 @@ class RouteEngine:
         cloudlog.warning("Destination reached")
 
         # Clear route if driving away from destination
-        dist = self.nav_destination.distance_to(self.last_position)
-        if dist > REROUTE_DISTANCE:
+        if np.linalg.norm(local_meters(self.last_position, self.nav_destination)) > REROUTE_DISTANCE:
           self.params.remove("NavDestination")
           self.clear_route()
 
   def send_route(self):
-    coords = []
-
-    if self.route_geometry is not None:
-      for path in self.route_geometry:
-        coords += [c.as_dict() for c in path]
-
+    coords = np.concatenate(self.route_geometry) if self.route_geometry is not None else np.empty((0, 2))
     msg = messaging.new_message('navRoute', valid=True)
-    msg.navRoute.coordinates = coords
+    msg.navRoute.coordinates = [{'longitude': lon, 'latitude': lat} for lon, lat in coords.tolist()]
     self.pm.send('navRoute', msg)
 
   def clear_route(self):
@@ -233,29 +235,17 @@ class RouteEngine:
     if self.step_idx == len(self.route) - 1:
       return False
 
-    # Compute closest distance to all line segments in the current path
-    min_d = REROUTE_DISTANCE + 1
-    path = self.route_geometry[self.step_idx]
-    for i in range(len(path) - 1):
-      a = path[i]
-      b = path[i + 1]
-
-      if a.distance_to(b) < 1.0:
-        continue
-
-      min_d = min(min_d, minimum_distance(a, b, self.last_position))
-
-    if min_d > REROUTE_DISTANCE:
+    # TODO: Check for going wrong way in segment
+    if along_path(self.route_geometry[self.step_idx], self.last_position)[1] > REROUTE_DISTANCE:
       self.reroute_counter += 1
     else:
       self.reroute_counter = 0
     return self.reroute_counter > REROUTE_COUNTER_MIN
-    # TODO: Check for going wrong way in segment
 
 
 def main():
   pm = messaging.PubMaster(['navInstruction', 'navRoute'])
-  sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
+  sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal', 'managerState'])
 
   rk = Ratekeeper(1.0)
   route_engine = RouteEngine(sm, pm)
