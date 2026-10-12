@@ -61,7 +61,6 @@ def join_process(process: Process, timeout: float) -> None:
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
-  shutdown_timeout = 5
   should_run: Callable[[bool, Params, car.CarParams], bool]
   proc: Process | None = None
   enabled = True
@@ -87,7 +86,7 @@ class ManagerProcess(ABC):
         if not block:
           return None
 
-      join_process(self.proc, self.shutdown_timeout)
+      join_process(self.proc, 5)
 
       # If process failed to die send SIGKILL
       if self.proc.exitcode is None and retry:
@@ -156,13 +155,12 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, should_run, enabled=True, sigkill=False, shutdown_timeout=5):
+  def __init__(self, name, module, should_run, enabled=True, sigkill=False):
     self.name = name
     self.module = module
     self.should_run = should_run
     self.enabled = enabled
     self.sigkill = sigkill
-    self.shutdown_timeout = shutdown_timeout
     self.launcher = launcher
 
   def start(self) -> None:
