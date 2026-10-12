@@ -1,34 +1,18 @@
 from openpilot.cereal import log
-from openpilot.common.params import Params, UnknownKeyName
+from openpilot.common.params import Params
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.list_view import multiple_button_item, param_toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
-# Description constants
-DESCRIPTIONS = {
-  "OpenpilotEnabledToggle": tr_noop(
-    "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
-    "Your attention is required at all times to use this feature."
-  ),
-  "DisengageOnAccelerator": tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
-  "LongitudinalPersonality": tr_noop(
-    "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
-    "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
-    "your steering wheel distance button."
-  ),
-  "IsLdwEnabled": tr_noop(
-    "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
-    "without a turn signal activated while driving over 31 mph (50 km/h)."
-  ),
-  "AlwaysOnDM": tr_noop("Enable driver monitoring even when openpilot is not engaged."),
-  'RecordFront': tr_noop("Upload data from the cabin camera and help improve the driver monitoring algorithm."),
-  "IsMetric": tr_noop("Display speed in km/h instead of mph."),
-  "RecordAudio": tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
-}
+PERSONALITY_DESCRIPTION = tr_noop(
+  "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
+  "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
+  "your steering wheel distance button."
+)
 
 
 class TogglesLayout(Widget):
@@ -37,11 +21,14 @@ class TogglesLayout(Widget):
     self._params = Params()
     self._is_release = self._params.get_bool("IsReleaseBranch")
 
-    # param, title, desc, icon, needs_restart
+    # param: (title, desc, icon, needs_restart)
     self._toggle_defs = {
       "OpenpilotEnabledToggle": (
         lambda: tr("Enable openpilot"),
-        DESCRIPTIONS["OpenpilotEnabledToggle"],
+        tr_noop(
+          "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
+          "Your attention is required at all times to use this feature."
+        ),
         "chffr_wheel.png",
         True,
       ),
@@ -53,37 +40,40 @@ class TogglesLayout(Widget):
       ),
       "DisengageOnAccelerator": (
         lambda: tr("Disengage on Accelerator Pedal"),
-        DESCRIPTIONS["DisengageOnAccelerator"],
+        tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
         "disengage_on_accelerator.png",
         False,
       ),
       "IsLdwEnabled": (
         lambda: tr("Enable Lane Departure Warnings"),
-        DESCRIPTIONS["IsLdwEnabled"],
+        tr_noop(
+          "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
+          "without a turn signal activated while driving over 31 mph (50 km/h)."
+        ),
         "warning.png",
         False,
       ),
       "AlwaysOnDM": (
         lambda: tr("Always-On Driver Monitoring"),
-        DESCRIPTIONS["AlwaysOnDM"],
+        tr_noop("Enable driver monitoring even when openpilot is not engaged."),
         "monitoring.png",
         False,
       ),
       "RecordFront": (
         lambda: tr("Record and Upload Cabin Camera"),
-        DESCRIPTIONS["RecordFront"],
+        tr_noop("Upload data from the cabin camera and help improve the driver monitoring algorithm."),
         "monitoring.png",
         True,
       ),
       "RecordAudio": (
         lambda: tr("Record and Upload Microphone Audio"),
-        DESCRIPTIONS["RecordAudio"],
+        tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
         "microphone.png",
         True,
       ),
       "IsMetric": (
         lambda: tr("Use Metric System"),
-        DESCRIPTIONS["IsMetric"],
+        tr_noop("Display speed in km/h instead of mph."),
         "metric.png",
         False,
       ),
@@ -91,7 +81,7 @@ class TogglesLayout(Widget):
 
     self._long_personality_setting = multiple_button_item(
       lambda: tr("Driving Personality"),
-      lambda: tr(DESCRIPTIONS["LongitudinalPersonality"]),
+      lambda: tr(PERSONALITY_DESCRIPTION),
       buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
       button_width=255,
       callback=self._set_longitudinal_personality,
@@ -100,31 +90,20 @@ class TogglesLayout(Widget):
     )
 
     self._toggles = {}
-    self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
-      toggle = toggle_item(
+      toggle = param_toggle_item(
+        param,
         title,
         desc,
-        self._params.get_bool(param),
         callback=lambda state, p=param: self._toggle_callback(state, p),
         icon=icon,
       )
 
-      try:
-        locked = self._params.get_bool(param + "Lock")
-      except UnknownKeyName:
-        locked = False
-      toggle.action_item.set_enabled(not locked)
-
       # Make description callable for live translation
       additional_desc = ""
-      if needs_restart and not locked:
+      if needs_restart and not toggle.action_item.locked:
         additional_desc = tr("Changing this setting will restart openpilot if the car is powered on.")
       toggle.set_description(lambda og_desc=toggle.description, add_desc=additional_desc: tr(og_desc) + (" " + tr(add_desc) if add_desc else ""))
-
-      # track for engaged state updates
-      if locked:
-        self._locked_toggles.add(param)
 
       self._toggles[param] = toggle
 
@@ -132,6 +111,7 @@ class TogglesLayout(Widget):
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
 
+    self._exp_toggle = self._toggles["ExperimentalMode"]
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
@@ -160,15 +140,15 @@ class TogglesLayout(Widget):
 
     if ui_state.CP is not None:
       if ui_state.has_longitudinal_control:
-        self._toggles["ExperimentalMode"].action_item.set_enabled(True)
-        self._toggles["ExperimentalMode"].set_description(e2e_description)
+        self._exp_toggle.action_item.set_enabled(True)
+        self._exp_toggle.set_description(e2e_description)
         self._long_personality_setting.action_item.set_enabled(True)
       else:
         # no long for now
-        self._toggles["ExperimentalMode"].action_item.set_enabled(False)
-        self._toggles["ExperimentalMode"].action_item.set_state(False)
+        self._exp_toggle.action_item.set_enabled(False)
+        self._exp_toggle.action_item.set_state(False)
         self._long_personality_setting.action_item.set_enabled(False)
-        self._params.remove("ExperimentalMode")
+        self._params.remove(self._exp_toggle.action_item.param)
 
         unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.")
 
@@ -180,32 +160,29 @@ class TogglesLayout(Widget):
           else:
             long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.")
 
-        self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
+        self._exp_toggle.set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
     else:
-      self._toggles["ExperimentalMode"].set_description(e2e_description)
+      self._exp_toggle.set_description(e2e_description)
 
     self._update_experimental_mode_icon()
 
-    # TODO: make a param control list item so we don't need to manage internal state as much here
-    # refresh toggles from params to mirror external changes
-    for param in self._toggle_defs:
-      self._toggles[param].action_item.set_state(self._params.get_bool(param))
-
-    # these toggles need restart, block while engaged
-    for toggle_def in self._toggle_defs:
-      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
-        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
+    for param, (_, _, _, needs_restart) in self._toggle_defs.items():
+      action = self._toggles[param].action_item
+      # refresh toggles from params to mirror external changes
+      action.refresh()
+      # these toggles need restart, block while engaged
+      if needs_restart and not action.locked:
+        action.set_enabled(not ui_state.engaged)
 
   def _render(self, rect):
     self._scroller.render(rect)
 
   def _update_experimental_mode_icon(self):
-    icon = "experimental.png" if self._toggles["ExperimentalMode"].action_item.get_state() else "experimental_white.png"
-    self._toggles["ExperimentalMode"].set_icon(icon)
+    icon = "experimental.png" if self._exp_toggle.action_item.get_state() else "experimental_white.png"
+    self._exp_toggle.set_icon(icon)
 
   def _toggle_callback(self, state: bool, param: str):
-    self._params.put_bool(param, state, block=True)
-    if param == "ExperimentalMode":
+    if param == self._exp_toggle.action_item.param:
       self._update_experimental_mode_icon()
 
     if self._toggle_defs[param][3]:

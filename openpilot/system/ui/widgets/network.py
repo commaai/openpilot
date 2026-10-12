@@ -13,7 +13,7 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller_tici import Scroller
-from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
+from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ParamToggleAction, ToggleAction, button_item, text_item
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -117,16 +117,12 @@ class AdvancedNetworkSettings(Widget):
     tethering_password_btn = ListItem(lambda: tr("Tethering Password"), action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
     # Roaming toggle
-    roaming_enabled = self._params.get_bool("GsmRoaming")
-    self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    self._roaming_btn = ListItem(lambda: tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
+    self._roaming_btn = ListItem(lambda: tr("Enable Roaming"), action_item=ParamToggleAction("GsmRoaming"))
 
     # Cellular metered toggle
-    cellular_metered = self._params.get_bool("GsmMetered")
-    self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
     self._cellular_metered_btn = ListItem(lambda: tr("Cellular Metered"),
                                           description=lambda: tr("Prevent large data uploads when on a metered cellular connection"),
-                                          action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
+                                          action_item=ParamToggleAction("GsmMetered"))
 
     # APN setting
     self._apn_btn = button_item(lambda: tr("APN Setting"), lambda: tr("EDIT"), callback=self._edit_apn)
@@ -170,9 +166,6 @@ class AdvancedNetworkSettings(Widget):
       self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
 
-  def _toggle_roaming(self):
-    self._params.put_bool("GsmRoaming", self._roaming_action.get_state(), block=True)
-
   def _edit_apn(self):
     def update_apn(result: DialogResult):
       if result != DialogResult.CONFIRM:
@@ -190,9 +183,6 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard.set_text(current_apn)
     self._keyboard.set_callback(update_apn)
     gui_app.push_widget(self._keyboard)
-
-  def _toggle_cellular_metered(self):
-    self._params.put_bool("GsmMetered", self._cellular_metered_action.get_state(), block=True)
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)

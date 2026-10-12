@@ -2,7 +2,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import toggle_item
+from openpilot.system.ui.widgets.list_view import ParamToggleAction, param_toggle_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
@@ -35,45 +35,40 @@ class DeveloperLayout(Widget):
     self._is_release = self._params.get_bool("IsReleaseBranch")
 
     # Build items and keep references for callbacks/state updates
-    self._adb_toggle = toggle_item(
+    self._adb_toggle = param_toggle_item(
+      "AdbEnabled",
       lambda: tr("Enable ADB"),
       description=lambda: tr(DESCRIPTIONS["enable_adb"]),
-      initial_state=self._params.get_bool("AdbEnabled"),
-      callback=self._on_enable_adb,
       enabled=ui_state.is_offroad,
     )
 
     # SSH enable toggle + SSH key management
-    self._ssh_toggle = toggle_item(
-      lambda: tr("Enable SSH"),
-      description="",
-      initial_state=self._params.get_bool("SshEnabled"),
-      callback=self._on_enable_ssh,
-    )
+    self._ssh_toggle = param_toggle_item("SshEnabled", lambda: tr("Enable SSH"), description="")
     self._ssh_keys = ssh_key_item(lambda: tr("SSH Keys"), description=lambda: tr(DESCRIPTIONS["ssh_key"]))
 
-    self._joystick_toggle = toggle_item(
+    self._joystick_toggle = param_toggle_item(
+      "JoystickDebugMode",
       lambda: tr("Joystick Debug Mode"),
       description="",
-      initial_state=self._params.get_bool("JoystickDebugMode"),
       callback=self._on_joystick_debug_mode,
       enabled=ui_state.is_offroad,
     )
 
-    self._long_maneuver_toggle = toggle_item(
+    self._long_maneuver_toggle = param_toggle_item(
+      "LongitudinalManeuverMode",
       lambda: tr("Longitudinal Maneuver Mode"),
       description="",
-      initial_state=self._params.get_bool("LongitudinalManeuverMode"),
       callback=self._on_long_maneuver_mode,
     )
 
-    self._lat_maneuver_toggle = toggle_item(
+    self._lat_maneuver_toggle = param_toggle_item(
+      "LateralManeuverMode",
       lambda: tr("Lateral Maneuver Mode"),
       description="",
-      initial_state=self._params.get_bool("LateralManeuverMode"),
       callback=self._on_lat_maneuver_mode,
     )
 
+    # alpha long writes its param only after confirmation, so it isn't a param toggle
     self._alpha_long_toggle = toggle_item(
       lambda: tr("openpilot Longitudinal Control (Alpha)"),
       description=lambda: tr(DESCRIPTIONS["alpha_longitudinal"]),
@@ -82,15 +77,15 @@ class DeveloperLayout(Widget):
       enabled=lambda: not ui_state.engaged,
     )
 
-    self._ui_debug_toggle = toggle_item(
+    self._ui_debug_toggle = param_toggle_item(
+      "ShowDebugInfo",
       lambda: tr("UI Debug Mode"),
       description="",
-      initial_state=self._params.get_bool("ShowDebugInfo"),
       callback=self._on_enable_ui_debug,
     )
-    self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
+    self._on_enable_ui_debug(self._ui_debug_toggle.action_item.get_state())
 
-    self._scroller = Scroller([
+    self._items = [
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys,
@@ -99,7 +94,8 @@ class DeveloperLayout(Widget):
       self._lat_maneuver_toggle,
       self._alpha_long_toggle,
       self._ui_debug_toggle,
-    ], line_separator=True, spacing=0)
+    ]
+    self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
     # Toggles should be not available to change in onroad state
     ui_state.add_offroad_transition_callback(self._update_toggles)
@@ -137,51 +133,31 @@ class DeveloperLayout(Widget):
       self._lat_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
 
-    # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
-    for key, item in (
-      ("AdbEnabled", self._adb_toggle),
-      ("SshEnabled", self._ssh_toggle),
-      ("JoystickDebugMode", self._joystick_toggle),
-      ("LongitudinalManeuverMode", self._long_maneuver_toggle),
-      ("LateralManeuverMode", self._lat_maneuver_toggle),
-      ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
-      ("ShowDebugInfo", self._ui_debug_toggle),
-    ):
-      item.action_item.set_state(self._params.get_bool(key))
+    for item in self._items:
+      if isinstance(item.action_item, ParamToggleAction):
+        item.action_item.refresh()
+    self._alpha_long_toggle.action_item.set_state(self._params.get_bool("AlphaLongitudinalEnabled"))
 
   def _on_enable_ui_debug(self, state: bool):
-    self._params.put_bool("ShowDebugInfo", state, block=True)
     gui_app.set_show_touches(state)
     gui_app.set_show_fps(state)
 
-  def _on_enable_adb(self, state: bool):
-    self._params.put_bool("AdbEnabled", state, block=True)
-
-  def _on_enable_ssh(self, state: bool):
-    self._params.put_bool("SshEnabled", state, block=True)
+  def _clear_modes(self, *items):
+    # the debug/maneuver modes are mutually exclusive
+    for item in items:
+      self._params.put_bool(item.action_item.param, False, block=True)
+      item.action_item.refresh()
 
   def _on_joystick_debug_mode(self, state: bool):
-    self._params.put_bool("JoystickDebugMode", state, block=True)
-    self._params.put_bool("LongitudinalManeuverMode", False, block=True)
-    self._long_maneuver_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False, block=True)
-    self._lat_maneuver_toggle.action_item.set_state(False)
+    self._clear_modes(self._long_maneuver_toggle, self._lat_maneuver_toggle)
 
   def _on_long_maneuver_mode(self, state: bool):
-    self._params.put_bool("LongitudinalManeuverMode", state, block=True)
-    self._params.put_bool("JoystickDebugMode", False, block=True)
-    self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False, block=True)
-    self._lat_maneuver_toggle.action_item.set_state(False)
+    self._clear_modes(self._joystick_toggle, self._lat_maneuver_toggle)
 
   def _on_lat_maneuver_mode(self, state: bool):
-    self._params.put_bool("LateralManeuverMode", state, block=True)
     self._params.put_bool("ExperimentalMode", False, block=True)
-    self._params.put_bool("JoystickDebugMode", False, block=True)
-    self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LongitudinalManeuverMode", False, block=True)
-    self._long_maneuver_toggle.action_item.set_state(False)
+    self._clear_modes(self._joystick_toggle, self._long_maneuver_toggle)
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:
