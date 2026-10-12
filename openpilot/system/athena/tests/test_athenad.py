@@ -112,6 +112,21 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   # *** test cases ***
 
+  def test_nav_destination(self):
+    set_destination = dispatcher["setNavDestination"]
+    destination = {"latitude": 32.875134, "longitude": -117.209777}
+    assert set_destination(**destination) == {"success": 1}
+    assert self.params.get("NavDestination") == destination
+
+    # out of range and non-finite coordinates are rejected without touching the destination
+    for latitude, longitude in [(91, 0), (0, -181), (float('nan'), 0), (0, float('inf'))]:
+      assert set_destination(latitude, longitude)["success"] == 0, (latitude, longitude)
+      assert self.params.get("NavDestination") == destination
+
+    assert dispatcher["clearNavDestination"]() == {"success": 1}
+    assert dispatcher["clearNavDestination"]() == {"success": 1}
+    assert self.params.get("NavDestination") is None
+
   def test_echo(self):
     assert dispatcher["echo"]("bob") == "bob"
 
