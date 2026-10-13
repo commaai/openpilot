@@ -204,6 +204,8 @@ class ModelState:
     self.input_device.copy_from(self.input_host)
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     self.run_model(output_buffers=self.outputs, **self.input_queues)
+    if self.chestnut and (err := Device[self.outputs['outputs'].device].error_state.host.view(fmt='q')[0]):
+      raise RuntimeError(f"chestnut failed with {err}")
     if after_enqueue is not None:
       after_enqueue()
     model_output = self.outputs['outputs'].numpy()[0]
