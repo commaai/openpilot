@@ -513,7 +513,7 @@ def main():
   pm = messaging.PubMaster(['ubloxGnss', 'gpsLocationExternal'])
   sock = messaging.sub_sock('ubloxRaw', timeout=100, conflate=False)
   params = Params()
-  last_position_save = 0.
+  last_position_save = float('-inf')
 
   while True:
     msg = messaging.recv_one(sock)
