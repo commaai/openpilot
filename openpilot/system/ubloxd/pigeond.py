@@ -210,7 +210,7 @@ def send_position(pigeon: TTYPigeon) -> None:
       round(gps.latitude * 1e7),
       round(gps.longitude * 1e7),
       round(gps.altitude * 100),
-      100_000 * 100,  # allow for movement since the last fix
+      100_000 * 100,
     ))
   pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
 
