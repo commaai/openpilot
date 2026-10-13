@@ -230,7 +230,6 @@ msgid "EXPERIMENTAL MODE ON"
 msgstr "EXPERIMENTALMODUS AKTIV"
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable"
 msgstr "Aktivieren"
 
