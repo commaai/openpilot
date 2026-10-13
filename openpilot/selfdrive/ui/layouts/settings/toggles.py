@@ -103,9 +103,9 @@ class TogglesLayout(Widget):
 
     self._toggles = {}
     self._initial_cruise_speed = button_item(
-      lambda: tr("Initial Cruise Speed"),
+      lambda: tr("Initial Max Speed"),
       lambda: initial_cruise_speed_text(self._params),
-      lambda: tr("Minimum set speed when engaging openpilot. If you are driving faster, your current speed is used. " +
+      lambda: tr("Set speed when engaging openpilot. If you are driving faster, your current speed is used. " +
                  "Resume restores the previous set speed. Changes apply the next time you engage."),
       callback=lambda: gui_app.push_widget(InitialCruiseSpeedDialog(self._update_toggles)),
     )

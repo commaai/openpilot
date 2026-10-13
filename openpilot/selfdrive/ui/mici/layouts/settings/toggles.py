@@ -28,8 +28,8 @@ class TogglesLayoutMici(NavScroller):
                                                    "These are alpha features. Expect mistakes.\n" +
                                                    "The path colors show acceleration and braking.")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
-    self._initial_cruise_speed = BigButton("initial cruise speed", initial_cruise_speed_text(ui_state.params),
-                                           description="Minimum set speed when engaging openpilot.\n" +
+    self._initial_cruise_speed = BigButton("initial max speed", initial_cruise_speed_text(ui_state.params),
+                                           description="Set speed when engaging openpilot.\n" +
                                                        "If you are driving faster, your current speed is used.\n" +
                                                        "Resume restores the previous set speed.\n" +
                                                        "Changes apply the next time you engage.")
