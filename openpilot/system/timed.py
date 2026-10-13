@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import json
 import subprocess
 import time
 from typing import NoReturn
@@ -55,6 +56,7 @@ def main() -> NoReturn:
     if gps_time < min_date() or gps_time > MAX_DATE:
       continue
 
+    params.put("LastGPSPosition", json.dumps(gps.to_dict()))
     set_time(gps_time)
     time.sleep(10)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import sys
 import time
 import signal
@@ -194,6 +195,27 @@ def init_baudrate(pigeon: TTYPigeon):
   pigeon.set_baud(460800)
 
 
+def send_position(pigeon: TTYPigeon) -> None:
+  if not (position := Params().get("LastGPSPosition")):
+    return
+
+  try:
+    gps = json.loads(position)
+    # Allow for movement since the last fix.
+    accuracy = max(100_000, gps['horizontalAccuracy'] + gps['verticalAccuracy'])
+    # UBX-MGA-INI-POS_LLH
+    msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BB2xiiiI",
+      0x01, 0x00,
+      round(gps['latitude'] * 1e7),
+      round(gps['longitude'] * 1e7),
+      round(gps['altitude'] * 100),
+      round(accuracy * 100),
+    ))
+    pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+  except Exception:
+    cloudlog.exception("failed to send last GPS position")
+
+
 def init_pigeon(pigeon: TTYPigeon) -> bool:
   # try initializing a few times
   for _ in range(10):
@@ -244,6 +266,7 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
       else:
         cloudlog.error(f"failed to restore almanac backup, status: {restore_status}")
 
+      send_position(pigeon)
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
