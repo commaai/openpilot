@@ -200,7 +200,7 @@ def send_position(pigeon: TTYPigeon) -> None:
 
   with log.Event.from_bytes(position) as evt:
     gps = evt.gpsLocationExternal
-    if time.time() - gps.unixTimestampMillis / 1000 > 7 * 24 * 3600:
+    if datetime.now(UTC).timestamp() - gps.unixTimestampMillis / 1000 > 7 * 24 * 3600:
       return
     cloudlog.warning("Sending last position to ublox")
 
