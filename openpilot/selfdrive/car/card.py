@@ -153,6 +153,7 @@ class Car:
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    self.initial_cruise_speed = self.params.get("InitialCruiseSpeed", return_default=True)
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -183,7 +184,7 @@ class Car:
     self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
       # Use CarState w/ buttons from the step selfdrived enables on
-      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode, self.initial_cruise_speed)
 
     # TODO: mirror the carState.cruiseState struct?
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
@@ -256,6 +257,7 @@ class Car:
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.initial_cruise_speed = self.params.get("InitialCruiseSpeed", return_default=True)
       time.sleep(0.1)
 
   def card_thread(self):

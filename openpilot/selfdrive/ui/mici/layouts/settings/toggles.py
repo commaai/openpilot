@@ -1,10 +1,11 @@
 from openpilot.cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import InitialCruiseSpeedDialog, initial_cruise_speed_text
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -12,6 +13,7 @@ PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 class TogglesLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
+    self._is_metric = ui_state.is_metric
 
     self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
                                                    description="Standard is recommended.\n" +
@@ -26,6 +28,12 @@ class TogglesLayoutMici(NavScroller):
                                                    "These are alpha features. Expect mistakes.\n" +
                                                    "The path colors show acceleration and braking.")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
+    self._initial_cruise_speed = BigButton("initial cruise speed", initial_cruise_speed_text(ui_state.params),
+                                           description="Minimum set speed when engaging openpilot.\n" +
+                                                       "If you are driving faster, your current speed is used.\n" +
+                                                       "Resume restores the previous set speed.\n" +
+                                                       "Changes apply the next time you engage.")
+    self._initial_cruise_speed.set_click_callback(lambda: gui_app.push_widget(InitialCruiseSpeedDialog(self._update_toggles)))
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
                                  description="Warn when you drift across a detected lane line.\n" +
                                              "Only above 31 mph (50 km/h), with no turn signal.")
@@ -44,6 +52,7 @@ class TogglesLayoutMici(NavScroller):
     self._scroller.add_widgets([
       self._personality_toggle,
       self._experimental_btn,
+      self._initial_cruise_speed,
       is_metric_toggle,
       ldw_toggle,
       always_on_dm_toggle,
@@ -76,6 +85,9 @@ class TogglesLayoutMici(NavScroller):
   def _update_state(self):
     super()._update_state()
 
+    if ui_state.is_metric != self._is_metric:
+      self._update_toggles()
+
     if ui_state.sm.updated["selfdriveState"]:
       personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
       if personality != ui_state.personality and ui_state.started:
@@ -88,6 +100,9 @@ class TogglesLayoutMici(NavScroller):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._is_metric = ui_state.is_metric
+    self._initial_cruise_speed.set_value(initial_cruise_speed_text(ui_state.params))
+    self._initial_cruise_speed.set_visible(ui_state.has_longitudinal_control and ui_state.CP is not None and not ui_state.CP.pcmCruise)
 
     # CP gating for experimental mode
     if ui_state.CP is not None:

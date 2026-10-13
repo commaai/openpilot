@@ -1,10 +1,12 @@
 from openpilot.cereal import log
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.list_view import button_item, multiple_button_item, toggle_item
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import InitialCruiseSpeedDialog, initial_cruise_speed_text
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -100,6 +102,14 @@ class TogglesLayout(Widget):
     )
 
     self._toggles = {}
+    self._initial_cruise_speed = button_item(
+      lambda: tr("Initial Cruise Speed"),
+      lambda: initial_cruise_speed_text(self._params),
+      lambda: tr("Minimum set speed when engaging openpilot. If you are driving faster, your current speed is used. " +
+                 "Resume restores the previous set speed. Changes apply the next time you engage."),
+      callback=lambda: gui_app.push_widget(InitialCruiseSpeedDialog(self._update_toggles)),
+    )
+    self._initial_cruise_speed.set_icon("speed_limit.png")
     self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
       toggle = toggle_item(
@@ -131,6 +141,7 @@ class TogglesLayout(Widget):
       # insert longitudinal personality after NDOG toggle
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
+        self._toggles["InitialCruiseSpeed"] = self._initial_cruise_speed
 
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
@@ -151,6 +162,7 @@ class TogglesLayout(Widget):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._initial_cruise_speed.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.CP is not None and not ui_state.CP.pcmCruise)
 
     e2e_description = tr(
       "<h4>End-to-End Longitudinal Control</h4><br>" +
