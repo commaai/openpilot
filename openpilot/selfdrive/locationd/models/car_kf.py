@@ -80,7 +80,6 @@ class CarKalman(KalmanFilter):
   }
 
   global_vars = [
-    'mass',
     'rotational_inertia',
     'center_to_front',
     'center_to_rear',
@@ -99,7 +98,10 @@ class CarKalman(KalmanFilter):
 
     # globals
     global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]
-    m, j, aF, aR, cF_orig, cR_orig = global_vars
+    j, aF, aR, cF_orig, cR_orig = global_vars
+    # Tire stiffness and rotational inertia are already divided by vehicle mass, which cancels out of the model.
+    # Use unit mass to preserve the standard bicycle-model equations below.
+    m = 1
 
     # make functions and jacobians with sympy
     # state variables
@@ -166,8 +168,7 @@ class CarKalman(KalmanFilter):
     self.filter = EKF_sym_pyx(generated_dir, CarKalman.name, CarKalman.Q, CarKalman.initial_x, CarKalman.P_initial,
                               dim_state, dim_state_err, global_vars=CarKalman.global_vars, logger=cloudlog)
 
-  def set_globals(self, mass, rotational_inertia, center_to_front, center_to_rear, stiffness_front, stiffness_rear):
-    self.filter.set_global("mass", mass)
+  def set_globals(self, rotational_inertia, center_to_front, center_to_rear, stiffness_front, stiffness_rear):
     self.filter.set_global("rotational_inertia", rotational_inertia)
     self.filter.set_global("center_to_front", center_to_front)
     self.filter.set_global("center_to_rear", center_to_rear)
