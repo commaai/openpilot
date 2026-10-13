@@ -533,7 +533,6 @@ def main():
       service, dat = res
       pm.send(service, dat)
 
-      # save position every minute to aid startup
       if service == 'gpsLocationExternal' and dat.gpsLocationExternal.hasFix and time.monotonic() - last_position_save > 60:
         params.put("LastGPSPosition", dat.to_bytes())
         last_position_save = time.monotonic()
