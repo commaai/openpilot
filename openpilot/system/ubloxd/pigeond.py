@@ -241,10 +241,6 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
       else:
         cloudlog.error(f"failed to restore almanac backup, status: {restore_status}")
 
-      # sending time to ublox
-      if system_time_valid():
-        send_time(pigeon)
-
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
