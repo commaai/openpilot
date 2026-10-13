@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import math
+import time
 import capnp
 import calendar
 import numpy as np
@@ -8,6 +9,7 @@ from dataclasses import dataclass
 
 from openpilot.cereal import log
 from openpilot.cereal import messaging
+from openpilot.common.params import Params
 from openpilot.system.ubloxd.ubx import Ubx
 from openpilot.system.ubloxd.gps import Gps
 from openpilot.system.ubloxd.glonass import Glonass
@@ -510,6 +512,8 @@ def main():
   parser = UbloxMsgParser()
   pm = messaging.PubMaster(['ubloxGnss', 'gpsLocationExternal'])
   sock = messaging.sub_sock('ubloxRaw', timeout=100, conflate=False)
+  params = Params()
+  last_position_save = 0.
 
   while True:
     msg = messaging.recv_one(sock)
@@ -528,6 +532,11 @@ def main():
         continue
       service, dat = res
       pm.send(service, dat)
+
+      # save position every minute to aid startup
+      if service == 'gpsLocationExternal' and dat.gpsLocationExternal.hasFix and time.monotonic() - last_position_save > 60:
+        params.put("LastGPSPosition", dat.to_bytes())
+        last_position_save = time.monotonic()
 
 
 if __name__ == '__main__':

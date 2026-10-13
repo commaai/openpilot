@@ -55,9 +55,6 @@ def main() -> NoReturn:
     if gps_time < min_date() or gps_time > MAX_DATE:
       continue
 
-    msg = messaging.new_message(gps_location_service, valid=True)
-    setattr(msg, gps_location_service, gps)
-    params.put("LastGPSPosition", msg.to_bytes())
     set_time(gps_time)
     time.sleep(10)
 
