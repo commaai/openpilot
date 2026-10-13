@@ -196,20 +196,20 @@ def init_baudrate(pigeon: TTYPigeon):
 
 
 def send_position(pigeon: TTYPigeon) -> None:
-  if not (position := Params().get("LastGPSPosition")):
+  if not system_time_valid() or not (position := Params().get("LastGPSPosition")):
     return
 
   try:
     gps = json.loads(position)
-    # Allow for movement since the last fix.
-    accuracy = max(100_000, gps['horizontalAccuracy'] + gps['verticalAccuracy'])
+    if time.time() - gps['unixTimestampMillis'] / 1000 > 7 * 24 * 3600:
+      return
     # UBX-MGA-INI-POS_LLH
     msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BB2xiiiI",
       0x01, 0x00,
       round(gps['latitude'] * 1e7),
       round(gps['longitude'] * 1e7),
       round(gps['altitude'] * 100),
-      round(accuracy * 100),
+      100_000 * 100,  # allow for movement since the last fix
     ))
     pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
   except Exception:
