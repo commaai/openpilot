@@ -304,9 +304,9 @@ def run_receiving(duration: int = 0):
     if assist_messages is not None and not assist_attempted and system_time_valid():
       assist_attempted = True
       try:
-        send_time(pigeon)
         for msg in assist_messages:
           pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+        send_time(pigeon)
         cloudlog.warning("AssistNow messages sent")
       except Exception:
         cloudlog.warning("failed to send AssistNow messages")
