@@ -67,7 +67,9 @@ def get_assistnow_messages() -> list[bytes]:
   while len(dat) > 0:
     assert dat[:2] == b"\xB5\x62"
     msg_len = 6 + (dat[5] << 8 | dat[4]) + 2
-    msgs.append(dat[:msg_len])
+    # Skip MGA-INI messages; time from proxyserver is a stale cache
+    if dat[2:4] != b"\x13\x40":
+      msgs.append(dat[:msg_len])
     dat = dat[msg_len:]
   return msgs
 
@@ -146,6 +148,31 @@ class TTYPigeon:
         return True
     return False
 
+def send_time(pigeon: TTYPigeon) -> None:
+  if not system_time_valid():
+    return
+
+  cloudlog.warning("Sending current time to ublox")
+
+  # UBX-MGA-INI-TIME_UTC
+  t_now = datetime.now(UTC).replace(tzinfo=None)
+  msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x18\x00" + struct.pack("<BBBBHBBBBBxIHxxI",
+    0x10,
+    0x00,
+    0x00,
+    0x80,
+    t_now.year,
+    t_now.month,
+    t_now.day,
+    t_now.hour,
+    t_now.minute,
+    t_now.second,
+    t_now.microsecond * 1000,
+    30,
+    0
+  ))
+  pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+
 def save_almanac(pigeon: TTYPigeon) -> None:
   # store almanac in flash
   pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
@@ -217,29 +244,6 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
       else:
         cloudlog.error(f"failed to restore almanac backup, status: {restore_status}")
 
-      # sending time to ublox
-      if system_time_valid():
-        t_now = datetime.now(UTC).replace(tzinfo=None)
-        cloudlog.warning("Sending current time to ublox")
-
-        # UBX-MGA-INI-TIME_UTC
-        msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x18\x00" + struct.pack("<BBBBHBBBBBxIHxxI",
-          0x10,
-          0x00,
-          0x00,
-          0x80,
-          t_now.year,
-          t_now.month,
-          t_now.day,
-          t_now.hour,
-          t_now.minute,
-          t_now.second,
-          0,
-          30,
-          0
-        ))
-        pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
@@ -301,6 +305,7 @@ def run_receiving(duration: int = 0):
       try:
         for msg in assist_messages:
           pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+        send_time(pigeon)
         cloudlog.warning("AssistNow messages sent")
       except Exception:
         cloudlog.warning("failed to send AssistNow messages")
