@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import sys
 import time
 import signal
@@ -200,17 +199,18 @@ def send_position(pigeon: TTYPigeon) -> None:
     return
 
   try:
-    gps = json.loads(position)
-    if time.time() - gps['unixTimestampMillis'] / 1000 > 7 * 24 * 3600:
-      return
-    # UBX-MGA-INI-POS_LLH
-    msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BB2xiiiI",
-      0x01, 0x00,
-      round(gps['latitude'] * 1e7),
-      round(gps['longitude'] * 1e7),
-      round(gps['altitude'] * 100),
-      100_000 * 100,  # allow for movement since the last fix
-    ))
+    with log.Event.from_bytes(position) as evt:
+      gps = getattr(evt, evt.which())
+      if time.time() - gps.unixTimestampMillis / 1000 > 7 * 24 * 3600:
+        return
+      # UBX-MGA-INI-POS_LLH
+      msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BB2xiiiI",
+        0x01, 0x00,
+        round(gps.latitude * 1e7),
+        round(gps.longitude * 1e7),
+        round(gps.altitude * 100),
+        100_000 * 100,  # allow for movement since the last fix
+      ))
     pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
   except Exception:
     cloudlog.exception("failed to send last GPS position")
