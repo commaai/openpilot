@@ -149,6 +149,9 @@ class TTYPigeon:
     return False
 
 def send_time(pigeon: TTYPigeon) -> None:
+  if not system_time_valid():
+    return
+
   cloudlog.warning("Sending current time to ublox")
 
   # UBX-MGA-INI-TIME_UTC
@@ -297,7 +300,7 @@ def run_receiving(duration: int = 0):
   threading.Thread(target=download_assistnow, daemon=True).start()
 
   while (duration == 0) or (time.monotonic() - start_time < duration):
-    if assist_messages is not None and not assist_attempted and system_time_valid():
+    if assist_messages is not None and not assist_attempted:
       assist_attempted = True
       try:
         for msg in assist_messages:
