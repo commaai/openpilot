@@ -423,6 +423,7 @@ def migrate_carParams(msgs):
   ops = []
   for index, msg in msgs:
     CP = msg.as_builder()
+    # Normalize by mass after https://github.com/commaai/opendbc/pull/3858
     mass = CP.carParams.deprecated.mass
     if mass > 0:
       CP.carParams.rotationalInertiaPerMass /= mass
