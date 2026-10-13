@@ -67,8 +67,8 @@ def get_assistnow_messages() -> list[bytes]:
   while len(dat) > 0:
     assert dat[:2] == b"\xB5\x62"
     msg_len = 6 + (dat[5] << 8 | dat[4]) + 2
-    # Cached AssistNow time must not overwrite the current time sent by the host.
-    if dat[2:4] != b"\x13\x40" or dat[6] not in (0x10, 0x11):
+    # Skip MGA-INI messages; time is supplied by the host.
+    if dat[2:4] != b"\x13\x40":
       msgs.append(dat[:msg_len])
     dat = dat[msg_len:]
   return msgs
