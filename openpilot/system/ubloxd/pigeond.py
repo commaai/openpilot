@@ -266,7 +266,6 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
       else:
         cloudlog.error(f"failed to restore almanac backup, status: {restore_status}")
 
-      send_position(pigeon)
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
@@ -296,7 +295,8 @@ def init(pigeon: TTYPigeon) -> None:
   time.sleep(0.5)
 
   init_baudrate(pigeon)
-  init_pigeon(pigeon)
+  if init_pigeon(pigeon):
+    send_position(pigeon)
 
 def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
