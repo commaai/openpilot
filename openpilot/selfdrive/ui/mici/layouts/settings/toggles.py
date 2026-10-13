@@ -46,6 +46,7 @@ class TogglesLayoutMici(NavScroller):
                                                    "The path colors show acceleration and braking.")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
     self._initial_cruise_speed = InitialCruiseSpeedButton()
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
                                  description="Warn when you drift across a detected lane line.\n" +
                                              "Only above 31 mph (50 km/h), with no turn signal.")
@@ -114,7 +115,6 @@ class TogglesLayoutMici(NavScroller):
     ui_state.update_params()
     self._is_metric = ui_state.is_metric
     self._initial_cruise_speed.refresh()
-    self._initial_cruise_speed.set_visible(ui_state.has_longitudinal_control and ui_state.CP is not None and not ui_state.CP.pcmCruise)
 
     # CP gating for experimental mode
     if ui_state.CP is not None:

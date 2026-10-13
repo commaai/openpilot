@@ -3,7 +3,7 @@ import pyray as rl
 
 from openpilot.common.constants import CV
 from openpilot.common.params import Params
-from openpilot.selfdrive.car.cruise import V_CRUISE_MIN, V_CRUISE_MAX
+from openpilot.selfdrive.car.cruise import V_CRUISE_INITIAL, V_CRUISE_MAX
 from openpilot.system.ui.lib.application import FontWeight, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.button import Button
@@ -29,9 +29,9 @@ class InitialCruiseSpeedControl(ItemAction):
   def refresh(self):
     self._metric = self._params.get_bool("IsMetric")
     self._conversion = 1 if self._metric else CV.KPH_TO_MPH
-    self._minimum = round(V_CRUISE_MIN * self._conversion)
+    self._minimum = round(V_CRUISE_INITIAL * self._conversion)
     self._maximum = round(V_CRUISE_MAX * self._conversion)
-    self._value = round(self._params.get("InitialCruiseSpeed", return_default=True) * self._conversion)
+    self._value = max(self._minimum, round(self._params.get("InitialCruiseSpeed", return_default=True) * self._conversion))
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)

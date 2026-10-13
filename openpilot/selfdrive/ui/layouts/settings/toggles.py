@@ -108,6 +108,7 @@ class TogglesLayout(Widget):
       action_item=InitialCruiseSpeedControl(),
       icon="speed_limit.png",
     )
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
     self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
       toggle = toggle_item(
@@ -161,7 +162,6 @@ class TogglesLayout(Widget):
   def _update_toggles(self):
     ui_state.update_params()
     self._initial_cruise_speed.action_item.refresh()
-    self._initial_cruise_speed.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.CP is not None and not ui_state.CP.pcmCruise)
 
     e2e_description = tr(
       "<h4>End-to-End Longitudinal Control</h4><br>" +
