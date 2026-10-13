@@ -5,7 +5,6 @@ import contextlib
 import subprocess
 import time
 import functools
-from subprocess import Popen, PIPE, TimeoutExpired
 import zstandard as zstd
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
@@ -155,20 +154,6 @@ def run_cmd_default(cmd: list[str], default: str = "", cwd=None, env=None) -> st
     return run_cmd(cmd, cwd=cwd, env=env)
   except subprocess.CalledProcessError:
     return default
-
-
-@contextlib.contextmanager
-def managed_proc(cmd: list[str], env: dict[str, str]):
-  proc = Popen(cmd, env=env, stdout=PIPE, stderr=PIPE)
-  try:
-    yield proc
-  finally:
-    if proc.poll() is None:
-      proc.terminate()
-    try:
-      proc.wait(timeout=5)
-    except TimeoutExpired:
-      proc.kill()
 
 
 def tabulate(tabular_data, headers=(), tablefmt="simple", floatfmt="g", stralign="left", numalign=None):

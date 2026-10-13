@@ -27,16 +27,6 @@ def gpio_read(pin: int) -> bool | None:
 
   return val
 
-def gpio_export(pin: int) -> None:
-  if os.path.isdir(f"/sys/class/gpio/gpio{pin}"):
-    return
-
-  try:
-    with open("/sys/class/gpio/export", 'w') as f:
-      f.write(str(pin))
-  except Exception:
-    print(f"Failed to export gpio {pin}")
-
 @cache
 def get_irq_action(irq: int) -> list[str]:
   try:

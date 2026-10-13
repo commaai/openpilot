@@ -21,10 +21,3 @@ def set_token(token):
   os.makedirs(Paths.config_root(), exist_ok=True)
   with atomic_write(os.path.join(Paths.config_root(), 'auth.json'), overwrite=True) as f:
     json.dump({'access_token': token}, f)
-
-
-def clear_token():
-  try:
-    os.unlink(os.path.join(Paths.config_root(), 'auth.json'))
-  except FileNotFoundError:
-    pass
