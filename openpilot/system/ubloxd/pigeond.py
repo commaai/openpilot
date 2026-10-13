@@ -296,6 +296,13 @@ def init(pigeon: TTYPigeon) -> None:
   init_baudrate(pigeon)
   init_pigeon(pigeon)
 
+  if system_time_valid():
+    try:
+      send_time(pigeon)
+      send_position(pigeon)
+    except Exception:
+      cloudlog.exception("failed to send time and position to ublox")
+
 def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
 
@@ -304,7 +311,6 @@ def run_receiving(duration: int = 0):
 
   start_time = time.monotonic()
   last_almanac_save = time.monotonic()
-  init_aiding_attempted = False
   assist_attempted = False
   assist_messages = None
 
@@ -322,15 +328,6 @@ def run_receiving(duration: int = 0):
   threading.Thread(target=download_assistnow, daemon=True).start()
 
   while (duration == 0) or (time.monotonic() - start_time < duration):
-    # time must come first, position and AssistNow data are useless without it
-    if system_time_valid() and not init_aiding_attempted:
-      init_aiding_attempted = True
-      try:
-        send_time(pigeon)
-        send_position(pigeon)
-      except Exception:
-        cloudlog.exception("failed to send time and position to ublox")
-
     if assist_messages is not None and not assist_attempted:
       assist_attempted = True
       try:
@@ -346,7 +343,6 @@ def run_receiving(duration: int = 0):
       if dat[0] == 0x00:
         cloudlog.warning("received invalid data from ublox, re-initing!")
         init(pigeon)
-        init_aiding_attempted = False
         assist_attempted = False
         continue
 
