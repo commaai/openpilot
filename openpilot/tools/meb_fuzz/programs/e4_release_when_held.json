@@ -1,0 +1,23 @@
+{
+ "name": "E4 go right after hold (set --starting)",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "hms == 1",
+   "timeout": 8
+  },
+  {
+   "state": "pid",
+   "accel": 0.2,
+   "until": "t >= 1.5"
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "t >= 3"
+  }
+ ],
+ "hold_accel": -0.5
+}

@@ -1,0 +1,23 @@
+{
+ "name": "E5 creep churn (b6 style)",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "v < 0.12",
+   "timeout": 8
+  },
+  {
+   "state": "'pid' if (t % 0.3) < 0.2 else 'stopping'",
+   "accel": "0.1 if (t % 0.3) < 0.2 else -0.35",
+   "until": "t >= 3"
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "t >= 3"
+  }
+ ],
+ "hold_accel": -0.5
+}

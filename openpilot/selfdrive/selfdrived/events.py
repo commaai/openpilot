@@ -398,10 +398,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: NormalPermanentAlert("Joystick Mode"),
   },
 
+  # DO NOT MERGE: MEB hold fuzzing shows its alertDebug text engaged or not
   EventName.longitudinalManeuver: {
-    ET.WARNING: longitudinal_maneuver_alert,
-    ET.PERMANENT: NormalPermanentAlert("Longitudinal Maneuver Mode",
-                                       "Ensure road ahead is clear"),
+    ET.PERMANENT: longitudinal_maneuver_alert,
   },
 
   EventName.bigModelLoading: {

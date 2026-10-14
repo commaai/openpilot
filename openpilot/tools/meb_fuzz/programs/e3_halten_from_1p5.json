@@ -1,0 +1,19 @@
+{
+ "name": "E3 hold request from 1.5 m/s",
+ "setup_speed": 2.5,
+ "steps": [
+  {
+   "state": "pid",
+   "accel": -0.8,
+   "until": "v < 1.5",
+   "timeout": 6
+  },
+  {
+   "state": "stopping",
+   "accel": -0.4,
+   "until": "hms == 1 and ss == 1 and t > 1",
+   "timeout": 10
+  }
+ ],
+ "hold_accel": -0.5
+}

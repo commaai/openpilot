@@ -1,0 +1,23 @@
+{
+ "name": "E2 churn 0.14 s at stop",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "v < 0.3",
+   "timeout": 8
+  },
+  {
+   "state": "'pid' if int(t / 0.14) % 2 else 'stopping'",
+   "accel": "0.1 if int(t / 0.14) % 2 else -0.35",
+   "until": "t >= 2.5"
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "t >= 3"
+  }
+ ],
+ "hold_accel": -0.5
+}

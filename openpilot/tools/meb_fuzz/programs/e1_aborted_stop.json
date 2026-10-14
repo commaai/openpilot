@@ -1,0 +1,29 @@
+{
+ "name": "E1 aborted stop",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "hms == 1",
+   "timeout": 8
+  },
+  {
+   "state": "pid",
+   "accel": 0.1,
+   "until": "ss == 1",
+   "timeout": 4
+  },
+  {
+   "state": "pid",
+   "accel": 0.15,
+   "until": "t >= 0.5"
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "t >= 3"
+  }
+ ],
+ "hold_accel": -0.5
+}

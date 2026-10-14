@@ -1,0 +1,13 @@
+{
+ "name": "E0 clean stop",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "hms == 1 and ss == 1 and t > 1",
+   "timeout": 10
+  }
+ ],
+ "hold_accel": -0.5
+}
