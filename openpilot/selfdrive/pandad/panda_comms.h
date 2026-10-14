@@ -36,7 +36,7 @@ private:
 
   struct __attribute__((packed)) spi_header {
     uint8_t endpoint;
-    uint8_t seq;
+    uint32_t id;
     uint16_t tx_len;
     uint16_t rx_len;
   };

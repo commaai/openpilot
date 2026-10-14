@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <iomanip>
+#include <random>
 #include <sstream>
 
 #include "common/util.h"
@@ -22,7 +23,7 @@
 #define SPI_NACK 0x5AU
 #define SPI_POLL 0xFFU  // filler while reading the response, never a valid request
 
-#define SPI_RESP_HEADER_SIZE 4U
+#define SPI_RESP_HEADER_SIZE 7U
 #define SPI_CRC_SIZE 4U
 #define SPI_XFER_SIZE (SPI_BUF_SIZE - 0x40)  // bulk chunk size, leaves room for the protocol overhead
 #define SPI_FIRST_READ_SIZE (1024 - SPI_RESP_HEADER_SIZE - SPI_CRC_SIZE)  // reads are usually small, start small
@@ -183,6 +184,12 @@ std::vector<std::string> PandaSpiHandle::list() {
   return {};
 }
 
+// random, so it's never the same as another request the panda just handled, even from another client
+static uint32_t random_id() {
+  static thread_local std::mt19937 rng{std::random_device{}()};
+  return rng();
+}
+
 // standard CRC-32, same as zlib's crc32()
 static uint32_t crc32(const uint8_t *data, uint32_t len) {
   static const auto table = [] {
@@ -297,7 +304,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   xfer_count++;
   header = {
     .endpoint = endpoint,
-    .seq = (uint8_t)xfer_count,
+    .id = random_id(),
     .tx_len = tx_len,
     .rx_len = (uint16_t)rx_len,
   };
@@ -331,10 +338,10 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
 
         // a response that got cut off or corrupted isn't one, keep reading
         const uint8_t status = rx_buf[0];
-        const uint16_t rx_data_len = *(uint16_t *)(rx_buf + 2);
+        const uint16_t rx_data_len = *(uint16_t *)(rx_buf + 5);
         if ((status == SPI_ACK || status == SPI_NACK) && rx_data_len <= max_rx_len && check_crc(rx_buf, SPI_RESP_HEADER_SIZE + rx_data_len)) {
           // otherwise it's the response to an old request, and we send ours again
-          if (rx_buf[1] == header.seq) {
+          if (*(uint32_t *)(rx_buf + 1) == header.id) {
             if (status == SPI_NACK) {
               SPILOG(LOGD, "SPI: got NACK");
               return SpiError::NACK;
