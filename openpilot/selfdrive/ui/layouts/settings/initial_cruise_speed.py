@@ -1,4 +1,3 @@
-from collections.abc import Callable
 import pyray as rl
 
 from openpilot.common.constants import CV
@@ -25,18 +24,15 @@ class InitialCruiseSpeedControl(ItemAction):
                                        border_radius=16, text_padding=0))
     self._decrease.set_enabled(lambda: self.enabled and self._value - 5 >= self._minimum)
     self._increase.set_enabled(lambda: self.enabled and self._value + 5 <= self._maximum)
+    self._decrease.set_touch_valid_callback(self._touch_valid)
+    self._increase.set_touch_valid_callback(self._touch_valid)
 
-  def refresh(self):
-    self._metric = self._params.get_bool("IsMetric")
+  def refresh(self, is_metric: bool | None = None):
+    self._metric = self._params.get_bool("IsMetric") if is_metric is None else is_metric
     self._conversion = 1 if self._metric else CV.KPH_TO_MPH
     self._minimum = round(V_CRUISE_INITIAL * self._conversion)
     self._maximum = round(V_CRUISE_MAX * self._conversion)
     self._value = max(self._minimum, round(self._params.get("InitialCruiseSpeedKph", return_default=True) * self._conversion))
-
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(touch_callback)
-    self._decrease.set_touch_valid_callback(touch_callback)
-    self._increase.set_touch_valid_callback(touch_callback)
 
   def _adjust_speed(self, delta: int):
     self._value += delta
