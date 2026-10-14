@@ -573,6 +573,7 @@ struct PandaState @0xa7649e2575e4591e {
 
   nmiReset @40 :Bool;
   hardfaultReset @41 :Bool;
+  heartbeatDisabled @42 :Bool;
 
   enum FaultStatus {
     none @0;
