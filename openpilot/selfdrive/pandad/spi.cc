@@ -23,10 +23,9 @@
 #define SPI_NACK 0x5AU
 #define SPI_POLL 0xFFU  // filler while reading the response, never a valid request
 
-#define SPI_RESP_HEADER_SIZE 7U
 #define SPI_CRC_SIZE 4U
 #define SPI_XFER_SIZE (SPI_BUF_SIZE - 0x40)  // bulk chunk size, leaves room for the protocol overhead
-#define SPI_FIRST_READ_SIZE (1024 - SPI_RESP_HEADER_SIZE - SPI_CRC_SIZE)  // reads are usually small, start small
+#define SPI_FIRST_READ_SIZE (1024 - sizeof(spi_resp_header) - SPI_CRC_SIZE)  // reads are usually small, start small
 
 
 enum SpiError {
@@ -310,7 +309,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data
   LockEx lock(spi_fd, hw_lock);
 
   // the response is always read in one transfer of rx_len
-  const uint32_t rx_len = SPI_RESP_HEADER_SIZE + max_rx_len + SPI_CRC_SIZE;
+  const uint32_t rx_len = sizeof(spi_resp_header) + max_rx_len + SPI_CRC_SIZE;
   const uint32_t req_len = sizeof(header) + tx_len;
   assert(req_len + SPI_CRC_SIZE <= SPI_BUF_SIZE);
   assert(rx_len <= SPI_BUF_SIZE);
@@ -356,19 +355,19 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data
         }
 
         // a response that got cut off or corrupted isn't one, keep reading
-        const uint8_t status = rx_buf[0];
-        const uint16_t rx_data_len = *(uint16_t *)(rx_buf + 5);
-        if ((status == SPI_ACK || status == SPI_NACK) && rx_data_len <= max_rx_len && check_crc(rx_buf, SPI_RESP_HEADER_SIZE + rx_data_len)) {
+        spi_resp_header resp;
+        memcpy(&resp, rx_buf, sizeof(resp));
+        if ((resp.status == SPI_ACK || resp.status == SPI_NACK) && resp.len <= max_rx_len && check_crc(rx_buf, sizeof(resp) + resp.len)) {
           // otherwise it's the response to an old request, and we send ours again
-          if (*(uint32_t *)(rx_buf + 1) == header.id) {
-            if (status == SPI_NACK) {
+          if (resp.id == header.id) {
+            if (resp.status == SPI_NACK) {
               SPILOG(LOGD, "SPI: got NACK");
               return SpiError::NACK;
             }
             if (rx_data != NULL) {
-              memcpy(rx_data, rx_buf + SPI_RESP_HEADER_SIZE, rx_data_len);
+              memcpy(rx_data, rx_buf + sizeof(resp), resp.len);
             }
-            return rx_data_len;
+            return resp.len;
           }
           alive = millis_since_boot();
           break;
