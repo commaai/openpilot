@@ -1,10 +1,11 @@
 from openpilot.cereal import log
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.list_view import ListItem, multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import InitialCruiseSpeedControl
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -100,6 +101,14 @@ class TogglesLayout(Widget):
     )
 
     self._toggles = {}
+    self._initial_cruise_speed = ListItem(
+      title=lambda: tr("Initial Max Speed"),
+      description=lambda: tr("Max speed when engaging openpilot. If you are already driving faster, your current speed is used. " +
+                             "Resume restores the previous max speed. Changes apply the next time you engage."),
+      action_item=InitialCruiseSpeedControl(),
+      icon="speed_limit.png",
+    )
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
     self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
       toggle = toggle_item(
@@ -131,6 +140,7 @@ class TogglesLayout(Widget):
       # insert longitudinal personality after NDOG toggle
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
+        self._toggles["InitialCruiseSpeedKph"] = self._initial_cruise_speed
 
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
@@ -151,6 +161,7 @@ class TogglesLayout(Widget):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._initial_cruise_speed.action_item.refresh()
 
     e2e_description = tr(
       "<h4>End-to-End Longitudinal Control</h4><br>" +
@@ -207,6 +218,8 @@ class TogglesLayout(Widget):
     self._params.put_bool(param, state, block=True)
     if param == "ExperimentalMode":
       self._update_experimental_mode_icon()
+    elif param == "IsMetric":
+      self._initial_cruise_speed.action_item.refresh()
 
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True, block=True)

@@ -1,12 +1,31 @@
 from openpilot.cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import InitialCruiseSpeedControl
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
+
+
+class InitialCruiseSpeedButton(BigButton):
+  def __init__(self):
+    super().__init__("initial max speed", " ")
+    self._long_press_callback = None
+    self._control = self._child(InitialCruiseSpeedControl(compact=True))
+    self._control.set_enabled(lambda: self.enabled)
+    self._control.set_touch_valid_callback(self._touch_valid)
+
+  def _get_label_font_size(self):
+    return 36
+
+  def _draw_subtitle(self, rect):
+    self._control.render(rect)
+
+  def refresh(self, is_metric: bool | None = None):
+    self._control.refresh(is_metric)
 
 
 class TogglesLayoutMici(NavScroller):
@@ -25,7 +44,9 @@ class TogglesLayoutMici(NavScroller):
                                                    "Set speed is a maximum, not a target.\n" +
                                                    "These are alpha features. Expect mistakes.\n" +
                                                    "The path colors show acceleration and braking.")
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
+    self._initial_cruise_speed = InitialCruiseSpeedButton()
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
+    is_metric_toggle = BigParamControl("use metric units", "IsMetric", toggle_callback=self._initial_cruise_speed.refresh)
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
                                  description="Warn when you drift across a detected lane line.\n" +
                                              "Only above 31 mph (50 km/h), with no turn signal.")
@@ -44,6 +65,7 @@ class TogglesLayoutMici(NavScroller):
     self._scroller.add_widgets([
       self._personality_toggle,
       self._experimental_btn,
+      self._initial_cruise_speed,
       is_metric_toggle,
       ldw_toggle,
       always_on_dm_toggle,
@@ -88,6 +110,7 @@ class TogglesLayoutMici(NavScroller):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._initial_cruise_speed.refresh()
 
     # CP gating for experimental mode
     if ui_state.CP is not None:
