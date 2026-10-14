@@ -18,7 +18,7 @@
 
 
 // protocol, see panda/board/drivers/spi.h
-#define SPI_LISTENING 0x3CU
+#define SPI_SLAVE_READY 0x3CU
 #define SPI_ACK 0xC3U
 #define SPI_NACK 0x5AU
 #define SPI_POLL 0xFFU  // filler while reading the response, never a valid request
@@ -297,7 +297,7 @@ int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
 }
 
 // One request and its response. Resends until the panda got the request and we got its response,
-// or the deadline. Every transfer either sees all of what the panda armed from its first byte, or
+// or the deadline. Every transfer either sees all of what the panda queued from its first byte, or
 // nothing it can mistake for a response. Returns the response length, or a negative SpiError
 int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, double deadline) {
   static const auto poll = [] {
@@ -334,7 +334,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data
   // when the panda last showed it's there. while it's quiet, we let go of the bus
   double alive = millis_since_boot();
   while (true) {
-    // send the request, until the panda was listening for it. it's rebuilt every time,
+    // send the request, until the panda was ready for it. it's rebuilt every time,
     // since SPI_ERR_PROB corrupts tx_buf
     memcpy(tx_buf, &header, sizeof(header));
     if (tx_data != NULL) {
@@ -342,14 +342,14 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data
     }
     put_crc(tx_buf, req_len);
     // a failed transfer is sent again like any other, keeping the bus, so nothing can run in between
-    if (xfer(tx_buf, req_len + SPI_CRC_SIZE) >= 0 && rx_buf[0] == SPI_LISTENING) {
+    if (xfer(tx_buf, req_len + SPI_CRC_SIZE) >= 0 && rx_buf[0] == SPI_SLAVE_READY) {
       alive = millis_since_boot();
-      // read until the response. if the panda is listening again, it never got the request
+      // read until the response. if the panda is ready again, it never got the request
       do {
         if (xfer(poll.data(), rx_len) < 0) {
           break;
         }
-        if (rx_buf[0] == SPI_LISTENING) {
+        if (rx_buf[0] == SPI_SLAVE_READY) {
           alive = millis_since_boot();
           break;
         }
