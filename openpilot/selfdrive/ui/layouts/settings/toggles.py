@@ -103,8 +103,8 @@ class TogglesLayout(Widget):
     self._toggles = {}
     self._initial_cruise_speed = ListItem(
       title=lambda: tr("Initial Max Speed"),
-      description=lambda: tr("Set speed when engaging openpilot. If you are driving faster, your current speed is used. " +
-                             "Resume restores the previous set speed. Changes apply the next time you engage."),
+      description=lambda: tr("Max speed when engaging openpilot. If you are already driving faster, your current speed is used. " +
+                             "Resume restores the previous max speed. Changes apply the next time you ."),
       action_item=InitialCruiseSpeedControl(),
       icon="speed_limit.png",
     )
