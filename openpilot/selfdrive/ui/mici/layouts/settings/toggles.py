@@ -13,6 +13,7 @@ PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 class InitialCruiseSpeedButton(BigButton):
   def __init__(self):
     super().__init__("initial max speed", " ")
+    self._long_press_callback = None
     self._control = self._child(InitialCruiseSpeedControl(compact=True))
     self._control.set_enabled(lambda: self.enabled)
     self._control.set_touch_valid_callback(self._touch_valid)

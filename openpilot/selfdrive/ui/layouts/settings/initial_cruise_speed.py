@@ -1,3 +1,4 @@
+import time
 import pyray as rl
 
 from openpilot.common.constants import CV
@@ -10,24 +11,52 @@ from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.list_view import ItemAction
 
 
+class RepeatButton(Button):
+  def __init__(self, text, callback, font_size):
+    super().__init__(text, callback, font_size=font_size, border_radius=16, text_padding=0)
+    self._repeat_at: float | None = None
+    self._repeated = False
+
+  def cancel_repeat(self):
+    self._repeat_at = None
+    self._repeated = True
+
+  def _handle_mouse_press(self, mouse_pos):
+    self._repeat_at = time.monotonic() + 0.5
+    self._repeated = False
+
+  def _handle_mouse_release(self, mouse_pos):
+    if not self._repeated:
+      super()._handle_mouse_release(mouse_pos)
+
+  def _process_mouse_events(self):
+    super()._process_mouse_events()
+    if not self.is_pressed or not self._touch_valid():
+      self.cancel_repeat()
+    elif self._repeat_at is not None and time.monotonic() >= self._repeat_at:
+      self._repeated = True
+      self._repeat_at = time.monotonic() + 0.2
+      self._click_callback()
+
+
 class InitialCruiseSpeedControl(ItemAction):
   def __init__(self, compact: bool = False):
     super().__init__(width=322 if compact else 580)
     self._params = Params()
     self._button_size = 64 if compact else 100
     self._font_size = 36 if compact else 50
-    self.refresh()
 
-    self._decrease = self._child(Button("-", lambda: self._adjust_speed(-5), font_size=self._font_size,
-                                       border_radius=16, text_padding=0))
-    self._increase = self._child(Button("+", lambda: self._adjust_speed(5), font_size=self._font_size,
-                                       border_radius=16, text_padding=0))
+    self._decrease = self._child(RepeatButton("-", lambda: self._adjust_speed(-5), self._font_size))
+    self._increase = self._child(RepeatButton("+", lambda: self._adjust_speed(5), self._font_size))
     self._decrease.set_enabled(lambda: self.enabled and self._value - 5 >= self._minimum)
     self._increase.set_enabled(lambda: self.enabled and self._value + 5 <= self._maximum)
     self._decrease.set_touch_valid_callback(self._touch_valid)
     self._increase.set_touch_valid_callback(self._touch_valid)
+    self.refresh()
 
   def refresh(self, is_metric: bool | None = None):
+    for button in (self._decrease, self._increase):
+      button.cancel_repeat()
     self._metric = self._params.get_bool("IsMetric") if is_metric is None else is_metric
     self._conversion = 1 if self._metric else CV.KPH_TO_MPH
     self._minimum = round(V_CRUISE_INITIAL * self._conversion)
