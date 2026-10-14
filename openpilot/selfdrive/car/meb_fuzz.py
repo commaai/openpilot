@@ -105,6 +105,7 @@ class MebFuzz:
     self.persist = _read_json(self.state_path, {'run_count': 0, 'restart_reason': '', 'last_outcome': ''})
     self.run = None
     self.prev_long_active = False
+    self.armed = False  # engaged, waiting for the driver to release the pedals before the run starts
     self.restart_ok_time = 0.
     self.alert_text = ('', '')
     self.frame = 0  # all timing is in card cycles, so replays and sims run at log time
@@ -304,7 +305,14 @@ class MebFuzz:
     long_active = CC.longActive
     out = None
     if enabled:
-      if long_active and not self.prev_long_active and self.run is None and self.control.get('program') and not self.persist['restart_reason']:
+      # engaging at a standstill needs the brake held, so a run arms on engagement and starts once the pedals are released
+      if long_active and not self.prev_long_active:
+        self.armed = True
+      if not long_active:
+        self.armed = False
+      if self.armed and not sig['brake'] and not sig['gas'] and self.run is None and self.control.get('program') and \
+         not self.persist['restart_reason']:
+        self.armed = False
         self._start_run(now, sig)
 
       if self.run is not None:
