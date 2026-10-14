@@ -177,7 +177,6 @@ class DeveloperLayout(Widget):
 
   def _on_lat_maneuver_mode(self, state: bool):
     self._params.put_bool("LateralManeuverMode", state, block=True)
-    self._params.put_bool("ExperimentalMode", False, block=True)
     self._params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.action_item.set_state(False)
     self._params.put_bool("LongitudinalManeuverMode", False, block=True)
