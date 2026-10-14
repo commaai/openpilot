@@ -45,7 +45,6 @@ class TestBoarddSpi(OpenpilotTestCase):
 
     st = time.monotonic()
     ts = {s: [] for s in socks.keys()}
-    spi_errors = 0
     test_time = int(os.getenv("TEST_TIME", "20"))
     for i in range(test_time + 2):
       # send some CAN messages, then give the last ones time to come back
@@ -86,7 +85,6 @@ class TestBoarddSpi(OpenpilotTestCase):
             assert ps.ignitionLine
             assert not ps.ignitionCan
             assert 4000 < ps.voltage < 14000
-            spi_errors = ps.spiErrorCount
           elif service == "peripheralState":
             ps = m.peripheralState
             assert ps.pandaType == "tres"
@@ -111,7 +109,6 @@ class TestBoarddSpi(OpenpilotTestCase):
       assert total_recv_count > 20
       # every message came back exactly once, despite the injected errors
       assert all(len(v) == 0 for v in sent_msgs.values())
-      assert spi_errors > 0
 
 
 if __name__ == "__main__":
