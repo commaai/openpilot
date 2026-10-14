@@ -1,13 +1,13 @@
-import math
+import time
 import pyray as rl
 from typing import TYPE_CHECKING, Union
 from enum import Enum
 from collections.abc import Callable
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import Widget, LONG_PRESS_DURATION
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignmentVertical
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import FirstOrderFilter
 
 if TYPE_CHECKING:
   from openpilot.common.params import Params
@@ -21,6 +21,8 @@ COMPLICATION_SIZE    = 36
 LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
+HOLD_SCALE = 1.25 if DO_ZOOM else 1.18
+EXPAND_FEEDBACK_DURATION = 0.18
 
 
 class ScrollState(Enum):
@@ -32,32 +34,32 @@ class ScrollState(Enum):
 class BaseButton(Widget):
   def __init__(self, description: str, title: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
-    self._shake_start: float | None = None
+    self._expand_until = 0.0
+    self._scale_filter = FirstOrderFilter(1.0, 0.09, 1 / gui_app.target_fps)
     if description:
       # Dialogs also use buttons; import lazily to avoid a circular import.
       from openpilot.selfdrive.ui.mici.widgets.dialog import SettingDescriptionDialog
       self.set_long_press_callback(lambda: gui_app.push_widget(SettingDescriptionDialog(title, description, icon)))
     else:
-      self.set_long_press_callback(self.trigger_shake)
+      self.set_long_press_callback(lambda: None)
 
-  def trigger_shake(self):
-    self._shake_start = rl.get_time()
+  def trigger_expand(self):
+    self._expand_until = time.monotonic() + EXPAND_FEEDBACK_DURATION
 
-  @property
-  def _shake_offset(self) -> float:
-    SHAKE_DURATION = 0.5
-    SHAKE_AMPLITUDE = 24.0
-    SHAKE_FREQUENCY = 32.0
-    if self._shake_start is None:
-      return 0.0
-    t = rl.get_time() - self._shake_start
-    if t > SHAKE_DURATION:
-      return 0.0
-    decay = 1.0 - t / SHAKE_DURATION
-    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
+  def _update_scale(self, growing: bool = False) -> float:
+    now = time.monotonic()
+    target = 1.0
+    if self.enabled and self._touch_valid():
+      if self.is_pressed:
+        started = [started for started in self._press_started if started is not None]
+        progress = min(max((now - min(started)) / LONG_PRESS_DURATION, 0.0), 1.0) if started else 0.0
+        target = PRESSED_SCALE + (HOLD_SCALE - PRESSED_SCALE) * progress
+      if now < self._expand_until:
+        target = HOLD_SCALE
+    if growing:
+      target = max(target, PRESSED_SCALE)
+    return self._scale_filter.update(target)
 
-  def set_position(self, x: float, y: float) -> None:
-    super().set_position(x + self._shake_offset, y)
 
 class BigCircleButton(BaseButton):
   def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0),
@@ -69,7 +71,6 @@ class BigCircleButton(BaseButton):
 
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
-    self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
 
     # Icons
@@ -96,7 +97,7 @@ class BigCircleButton(BaseButton):
     elif self.is_pressed:
       txt_bg = self._txt_btn_pressed_bg if not self._red else self._txt_btn_red_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
+    scale = self._update_scale()
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
@@ -152,7 +153,6 @@ class BigButton(BaseButton):
     self._txt_icon = icon
     self._scroll = scroll
 
-    self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
     self._grow_animation_until: float | None = None
 
@@ -236,7 +236,7 @@ class BigButton(BaseButton):
     elif self.is_pressed:
       txt_bg = self._txt_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
+    scale = self._update_scale(self._grow_animation_until is not None)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     return txt_bg, btn_x, btn_y, scale

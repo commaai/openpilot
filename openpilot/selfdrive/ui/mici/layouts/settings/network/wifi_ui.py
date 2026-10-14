@@ -130,7 +130,7 @@ class WifiButton(BigButton):
 
   def set_wrong_password(self):
     self._wrong_password = True
-    self.trigger_shake()
+    self.trigger_expand()
 
   @property
   def network(self) -> Network:

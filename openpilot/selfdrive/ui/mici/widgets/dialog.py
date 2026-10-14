@@ -39,29 +39,41 @@ class BigDialog(BigDialogBase):
     ))
 
 
+def setting_description_cards(title: str, description: str, icon: Union[rl.Texture, None] = None,
+                              width: float | None = None) -> list[GreyBigButton]:
+
+  def make_card(card_title: str = "", value: str = "", card_icon: Union[rl.Texture, None] = None) -> GreyBigButton:
+    card = GreyBigButton(card_title, value, card_icon)
+    if width is not None:
+      card.set_rect(rl.Rectangle(0, 0, width, card.rect.height))
+    return card
+
+  cards = [make_card(title, "scroll for details", icon or gui_app.texture("icons_mici/setup/green_info.png", 64, 64))]
+  # Explicit lines are authored cards; otherwise prefer sentence boundaries.
+  paragraphs = description.splitlines() if "\n" in description else re.split(r"(?<=[.!?])\s+", description.strip())
+  # Measure each card so longer text still fits with the actual font and padding.
+  for sentence in paragraphs:
+    card = make_card()
+    words: list[str] = []
+    for word in sentence.split():
+      card.set_value(" ".join([*words, word]))
+      height = card._sub_label.get_content_height(card._subtitle_width_hint())
+      if words and height > card.rect.height - 2 * card.LABEL_VERTICAL_PADDING:
+        card.set_value(" ".join(words))
+        cards.append(card)
+        card = make_card()
+        words = []
+      words.append(word)
+    if words:
+      card.set_value(" ".join(words))
+      cards.append(card)
+  return cards
+
+
 class SettingDescriptionDialog(NavScroller):
   def __init__(self, title: str, description: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
-    cards = [GreyBigButton(title, "scroll for details", icon or gui_app.texture("icons_mici/setup/green_info.png", 64, 64))]
-    # Explicit lines are authored cards; otherwise prefer sentence boundaries.
-    paragraphs = description.splitlines() if "\n" in description else re.split(r"(?<=[.!?])\s+", description.strip())
-    # Measure each card so longer text still fits with the actual font and padding.
-    for sentence in paragraphs:
-      card = GreyBigButton("", "")
-      words: list[str] = []
-      for word in sentence.split():
-        card.set_value(" ".join([*words, word]))
-        height = card._sub_label.get_content_height(card._subtitle_width_hint())
-        if words and height > card.rect.height - 2 * card.LABEL_VERTICAL_PADDING:
-          card.set_value(" ".join(words))
-          cards.append(card)
-          card = GreyBigButton("", "")
-          words = []
-        words.append(word)
-      if words:
-        card.set_value(" ".join(words))
-        cards.append(card)
-    self._scroller.add_widgets(cards)
+    self._scroller.add_widgets(setting_description_cards(title, description, icon))
 
 
 class BigConfirmationDialog(BigDialogBase):
