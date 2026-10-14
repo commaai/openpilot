@@ -3,7 +3,6 @@ import pyray as rl
 from collections.abc import Callable
 
 from openpilot.common.constants import CV
-from openpilot.common.filter_simple import BounceFilter
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.cruise import V_CRUISE_INITIAL, V_CRUISE_MAX
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, COMPLICATION_GREY, LABEL_COLOR
@@ -27,10 +26,6 @@ MIN_SCALE = 0.43
 SCALE_DECAY = 1.14
 COLOR_DECAY = 1.4
 EDGE_COLOR = rl.Color(0x3A, 0x3A, 0x3A, 255)
-# like iOS Messages, values lag the scroll more the farther they are from the touch point, then spring back
-JELLO_RESISTANCE = 800  # px from the anchor at which a value fully lags the scroll
-JELLO_MAX_LAG = 20  # px
-JELLO_RC = 0.1
 
 
 def get_conversion() -> float:
@@ -73,10 +68,6 @@ class InitialCruiseSpeedPicker(NavWidget):
     self._options: list[int] = []
     self._text_widths: list[float] = []
     self._item_centers: list[float] = []
-    self._jello_lags: list[BounceFilter] = []
-    self._jello_anchor: float | None = None  # last touch x, center of the picker if not touched
-    self._prev_offset = 0.0
-    self._scroll_delta = 0.0
     self._selected_idx = 0
     self._locked_idx: int | None = None  # value the picker is easing onto, None while the user drags
     self._press_pos: MousePos | None = None
@@ -93,9 +84,6 @@ class InitialCruiseSpeedPicker(NavWidget):
 
     # open at the lowest value and glide to the selected one
     self._scroll_panel.set_offset(0.0)
-    self._prev_offset = self._scroll_panel.get_offset()
-    self._jello_lags = [BounceFilter(0.0, JELLO_RC, 1 / gui_app.target_fps) for _ in self._options]
-    self._jello_anchor = None
 
   def _clamp_index(self, idx: int) -> int:
     return max(0, min(len(self._options) - 1, idx))
@@ -120,11 +108,6 @@ class InitialCruiseSpeedPicker(NavWidget):
     snap_target = -self._locked_idx * ITEM_DRAG_DISTANCE if self._locked_idx is not None else None
     content_size = (len(self._options) - 1) * ITEM_DRAG_DISTANCE + self._rect.width
     self._scroll_panel.update(self._rect, content_size, snap_target=snap_target)
-
-    self._scroll_delta = self._scroll_panel.get_offset() - self._prev_offset
-    self._prev_offset = self._scroll_panel.get_offset()
-    if self._scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
-      self._jello_anchor = gui_app.last_mouse_event.pos.x
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
@@ -156,12 +139,6 @@ class InitialCruiseSpeedPicker(NavWidget):
       self._item_centers[idx] = self._item_centers[idx - 1] + widths[idx - 1] / 2 + ITEM_GAP + widths[idx] / 2
     for idx in range(left_idx - 1, -1, -1):
       self._item_centers[idx] = self._item_centers[idx + 1] - widths[idx + 1] / 2 - ITEM_GAP - widths[idx] / 2
-
-    anchor = self._jello_anchor if self._jello_anchor is not None else center_x
-    for idx, lag in enumerate(self._jello_lags):
-      resistance = min(abs(self._item_centers[idx] - anchor) / JELLO_RESISTANCE, 1.0)
-      lag.x = max(-JELLO_MAX_LAG, min(JELLO_MAX_LAG, lag.x - self._scroll_delta * resistance))
-      self._item_centers[idx] += lag.update(0.0)
 
     # the value closest to the center snaps to a heavier weight
     center_idx = max(0, min(len(self._options) - 1, round(current)))
