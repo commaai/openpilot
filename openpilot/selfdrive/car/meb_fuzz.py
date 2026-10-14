@@ -50,7 +50,7 @@ CONTROL_EXAMPLE = {
       {"state": "pid", "accel": 0.15, "until": "t >= 0.5"},
       {"state": "stopping", "accel": -0.5, "until": "t >= 3"},
     ],
-    "hold_accel": -0.5,
+    "hold_accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0",
   },
 }
 
@@ -60,6 +60,8 @@ ACCEL_LIMITS = (-2.5, 1.0)
 SETUP_KP = 0.8
 SETUP_LIMITS = (-1.5, 0.6)
 FINISH_HOLD_TIME = 3.0  # s held at the end before the run counts as done
+# brake only while still rolling forward: a negative accel at a standstill without a hold drives the car backwards
+DEFAULT_HOLD_ACCEL = '-0.5 if (motion == 1 and v > 0.05) else 0.0'
 
 
 def _read_json(path, default):
@@ -197,7 +199,8 @@ class MebFuzz:
   def _eval(expr, env):
     if isinstance(expr, (int, float)):
       return expr
-    return eval(expr, {'__builtins__': {}, 'abs': abs, 'min': min, 'max': max, 'clip': np.clip}, env)
+    return eval(expr, {'__builtins__': {}, 'abs': abs, 'min': min, 'max': max, 'int': int, 'float': float, 'round': round,
+                       'clip': np.clip}, env)
 
   # ---- control
 
@@ -238,7 +241,7 @@ class MebFuzz:
       except Exception as e:
         self._event_note(now, f'expr error step {run["step"]}: {e}'[:120])
         run['phase'] = 'hold'
-        return 'stopping', program.get('hold_accel', -0.5)
+        return 'stopping', 0.
       if done or env['t'] > step.get('timeout', 10.):
         if not done:
           self._event_note(now, f'step {run["step"]} timeout')
@@ -246,12 +249,20 @@ class MebFuzz:
       if run['phase'] == 'steps':
         return state, accel
 
-    # hold: stop and stay held until the driver disengages
-    if run['hold_since'] is None and sig['ss'] and sig['v'] < 0.05:
+    # hold: stop and stay held until the driver disengages. done needs the hold manager holding a stopped car,
+    # ESC_50.Standstill is also set while rolling backwards
+    held = sig['hms'] == 1 and sig['motion'] == 3
+    if not held:
+      run['hold_since'] = None
+    elif run['hold_since'] is None:
       run['hold_since'] = now
     if run['hold_since'] is not None and now - run['hold_since'] > FINISH_HOLD_TIME and run['outcome'] is None:
       run['outcome'] = 'done'
-    return 'stopping', program.get('hold_accel', -0.5)
+    try:
+      accel = float(self._eval(program.get('hold_accel', DEFAULT_HOLD_ACCEL), env))
+    except Exception:
+      accel = 0.
+    return 'stopping', accel
 
   def _next_step(self, now):
     run = self.run
