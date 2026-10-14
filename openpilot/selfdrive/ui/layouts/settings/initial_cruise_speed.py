@@ -12,11 +12,11 @@ from openpilot.system.ui.widgets.list_view import ItemAction
 
 
 class InitialCruiseSpeedControl(ItemAction):
-  def __init__(self, compact: bool = False):
-    super().__init__(width=322 if compact else 580)
+  def __init__(self):
+    super().__init__(width=580)
     self._params = Params()
-    self._button_size = 64 if compact else 100
-    self._font_size = 36 if compact else 50
+    self._button_size = 100
+    self._font_size = 50
     self.refresh()
 
     self._decrease = self._child(Button("-", lambda: self._adjust_speed(-5), font_size=self._font_size,
