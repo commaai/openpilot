@@ -14,7 +14,8 @@ from openpilot.common.swaglog import cloudlog
 def panda_ready() -> bool:
   """Is the panda up and running the firmware we ship?"""
   try:
-    if not Panda.wait_for_panda(None, timeout=5):
+    # a healthy panda answers on SPI within ~200ms of reset
+    if not Panda.wait_for_panda(None, timeout=1):
       cloudlog.warning("no panda found")
       return False
     with Panda(cli=False) as p:
