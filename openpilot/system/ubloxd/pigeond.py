@@ -194,6 +194,27 @@ def init_baudrate(pigeon: TTYPigeon):
   pigeon.set_baud(460800)
 
 
+def send_position(pigeon: TTYPigeon) -> None:
+  if not (position := Params().get("LastGPSPosition")):
+    return
+
+  with log.Event.from_bytes(position) as evt:
+    gps = evt.gpsLocationExternal
+    if datetime.now(UTC).timestamp() - gps.unixTimestampMillis / 1000 > 7 * 24 * 3600:
+      return
+    cloudlog.warning("Sending last position to ublox")
+
+    # UBX-MGA-INI-POS_LLH
+    msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BB2xiiiI",
+      0x01, 0x00,
+      round(gps.latitude * 1e7),
+      round(gps.longitude * 1e7),
+      round(gps.altitude * 100),
+      100_000 * 100,
+    ))
+  pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+
+
 def init_pigeon(pigeon: TTYPigeon) -> bool:
   # try initializing a few times
   for _ in range(10):
@@ -274,6 +295,13 @@ def init(pigeon: TTYPigeon) -> None:
 
   init_baudrate(pigeon)
   init_pigeon(pigeon)
+
+  if system_time_valid():
+    try:
+      send_time(pigeon)
+      send_position(pigeon)
+    except Exception:
+      cloudlog.exception("failed to send time and position to ublox")
 
 def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
