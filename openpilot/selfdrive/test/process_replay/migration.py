@@ -423,6 +423,13 @@ def migrate_carParams(msgs):
   ops = []
   for index, msg in msgs:
     CP = msg.as_builder()
+    # Normalize by mass after https://github.com/commaai/opendbc/pull/3858
+    mass = CP.carParams.deprecated.mass
+    if mass > 0:
+      CP.carParams.rotationalInertiaPerMass /= mass
+      CP.carParams.tireStiffnessFrontPerMass /= mass
+      CP.carParams.tireStiffnessRearPerMass /= mass
+      CP.carParams.deprecated.mass = 0
     CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
     for car_fw in CP.carParams.carFw:
       car_fw.brand = CP.carParams.brand

@@ -67,7 +67,9 @@ def get_assistnow_messages() -> list[bytes]:
   while len(dat) > 0:
     assert dat[:2] == b"\xB5\x62"
     msg_len = 6 + (dat[5] << 8 | dat[4]) + 2
-    msgs.append(dat[:msg_len])
+    # Skip MGA-INI messages; time from proxyserver is a stale cache
+    if dat[2:4] != b"\x13\x40":
+      msgs.append(dat[:msg_len])
     dat = dat[msg_len:]
   return msgs
 
@@ -146,6 +148,31 @@ class TTYPigeon:
         return True
     return False
 
+def send_time(pigeon: TTYPigeon) -> None:
+  if not system_time_valid():
+    return
+
+  cloudlog.warning("Sending current time to ublox")
+
+  # UBX-MGA-INI-TIME_UTC
+  t_now = datetime.now(UTC).replace(tzinfo=None)
+  msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x18\x00" + struct.pack("<BBBBHBBBBBxIHxxI",
+    0x10,
+    0x00,
+    0x00,
+    0x80,
+    t_now.year,
+    t_now.month,
+    t_now.day,
+    t_now.hour,
+    t_now.minute,
+    t_now.second,
+    t_now.microsecond * 1000,
+    30,
+    0
+  ))
+  pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+
 def save_almanac(pigeon: TTYPigeon) -> None:
   # store almanac in flash
   pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
@@ -165,6 +192,27 @@ def init_baudrate(pigeon: TTYPigeon):
   pigeon.send(b"\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A")
   time.sleep(0.1)
   pigeon.set_baud(460800)
+
+
+def send_position(pigeon: TTYPigeon) -> None:
+  if not (position := Params().get("LastGPSPosition")):
+    return
+
+  with log.Event.from_bytes(position) as evt:
+    gps = evt.gpsLocationExternal
+    if datetime.now(UTC).timestamp() - gps.unixTimestampMillis / 1000 > 7 * 24 * 3600:
+      return
+    cloudlog.warning("Sending last position to ublox")
+
+    # UBX-MGA-INI-POS_LLH
+    msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BB2xiiiI",
+      0x01, 0x00,
+      round(gps.latitude * 1e7),
+      round(gps.longitude * 1e7),
+      round(gps.altitude * 100),
+      100_000 * 100,
+    ))
+  pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
 
 
 def init_pigeon(pigeon: TTYPigeon) -> bool:
@@ -217,29 +265,6 @@ def init_pigeon(pigeon: TTYPigeon) -> bool:
       else:
         cloudlog.error(f"failed to restore almanac backup, status: {restore_status}")
 
-      # sending time to ublox
-      if system_time_valid():
-        t_now = datetime.now(UTC).replace(tzinfo=None)
-        cloudlog.warning("Sending current time to ublox")
-
-        # UBX-MGA-INI-TIME_UTC
-        msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x18\x00" + struct.pack("<BBBBHBBBBBxIHxxI",
-          0x10,
-          0x00,
-          0x00,
-          0x80,
-          t_now.year,
-          t_now.month,
-          t_now.day,
-          t_now.hour,
-          t_now.minute,
-          t_now.second,
-          0,
-          30,
-          0
-        ))
-        pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-
       cloudlog.warning("Pigeon GPS on!")
       break
     except TimeoutError:
@@ -271,6 +296,13 @@ def init(pigeon: TTYPigeon) -> None:
   init_baudrate(pigeon)
   init_pigeon(pigeon)
 
+  if system_time_valid():
+    try:
+      send_time(pigeon)
+      send_position(pigeon)
+    except Exception:
+      cloudlog.exception("failed to send time and position to ublox")
+
 def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
 
@@ -301,6 +333,7 @@ def run_receiving(duration: int = 0):
       try:
         for msg in assist_messages:
           pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+        send_time(pigeon)
         cloudlog.warning("AssistNow messages sent")
       except Exception:
         cloudlog.warning("failed to send AssistNow messages")
