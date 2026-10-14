@@ -140,7 +140,7 @@ class TogglesLayout(Widget):
       # insert longitudinal personality after NDOG toggle
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
-        self._toggles["InitialCruiseSpeed"] = self._initial_cruise_speed
+        self._toggles["InitialCruiseSpeedKph"] = self._initial_cruise_speed
 
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)

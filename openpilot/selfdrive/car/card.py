@@ -153,7 +153,7 @@ class Car:
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
-    self.initial_cruise_speed = self.params.get("InitialCruiseSpeed", return_default=True)
+    self.initial_cruise_speed = self.params.get("InitialCruiseSpeedKph", return_default=True)
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -257,7 +257,7 @@ class Car:
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.initial_cruise_speed = self.params.get("InitialCruiseSpeed", return_default=True)
+      self.initial_cruise_speed = self.params.get("InitialCruiseSpeedKph", return_default=True)
       time.sleep(0.1)
 
   def card_thread(self):

@@ -31,7 +31,7 @@ class InitialCruiseSpeedControl(ItemAction):
     self._conversion = 1 if self._metric else CV.KPH_TO_MPH
     self._minimum = round(V_CRUISE_INITIAL * self._conversion)
     self._maximum = round(V_CRUISE_MAX * self._conversion)
-    self._value = max(self._minimum, round(self._params.get("InitialCruiseSpeed", return_default=True) * self._conversion))
+    self._value = max(self._minimum, round(self._params.get("InitialCruiseSpeedKph", return_default=True) * self._conversion))
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -40,7 +40,7 @@ class InitialCruiseSpeedControl(ItemAction):
 
   def _adjust_speed(self, delta: int):
     self._value += delta
-    self._params.put("InitialCruiseSpeed", round(self._value / self._conversion), block=True)
+    self._params.put("InitialCruiseSpeedKph", round(self._value / self._conversion), block=True)
 
   def _render(self, rect):
     size = self._button_size
