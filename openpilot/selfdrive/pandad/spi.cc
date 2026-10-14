@@ -342,13 +342,14 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data
       memcpy(tx_buf + sizeof(header), tx_data, tx_len);
     }
     put_crc(tx_buf, req_len);
-    if (int ret = xfer(tx_buf, req_len + SPI_CRC_SIZE); ret < 0) return ret;
-
-    if (rx_buf[0] == SPI_LISTENING) {
+    // a failed transfer is sent again like any other, keeping the bus, so nothing can run in between
+    if (xfer(tx_buf, req_len + SPI_CRC_SIZE) >= 0 && rx_buf[0] == SPI_LISTENING) {
       alive = millis_since_boot();
       // read until the response. if the panda is listening again, it never got the request
       do {
-        if (int ret = xfer(poll.data(), rx_len); ret < 0) return ret;
+        if (xfer(poll.data(), rx_len) < 0) {
+          break;
+        }
         if (rx_buf[0] == SPI_LISTENING) {
           alive = millis_since_boot();
           break;
