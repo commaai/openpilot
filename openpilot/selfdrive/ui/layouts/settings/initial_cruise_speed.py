@@ -1,3 +1,4 @@
+import math
 import time
 import pyray as rl
 
@@ -48,8 +49,8 @@ class InitialCruiseSpeedControl(ItemAction):
 
     self._decrease = self._child(RepeatButton("-", lambda: self._adjust_speed(-5), self._font_size))
     self._increase = self._child(RepeatButton("+", lambda: self._adjust_speed(5), self._font_size))
-    self._decrease.set_enabled(lambda: self.enabled and self._value - 5 >= self._minimum)
-    self._increase.set_enabled(lambda: self.enabled and self._value + 5 <= self._maximum)
+    self._decrease.set_enabled(lambda: self.enabled and self._value > self._minimum)
+    self._increase.set_enabled(lambda: self.enabled and self._value < self._maximum)
     self._decrease.set_touch_valid_callback(self._touch_valid)
     self._increase.set_touch_valid_callback(self._touch_valid)
     self.refresh()
@@ -64,7 +65,8 @@ class InitialCruiseSpeedControl(ItemAction):
     self._value = max(self._minimum, round(self._params.get("InitialCruiseSpeedKph", return_default=True) * self._conversion))
 
   def _adjust_speed(self, delta: int):
-    self._value += delta
+    round_func = math.floor if delta > 0 else math.ceil
+    self._value = round_func(self._value / 5) * 5 + delta
     self._params.put("InitialCruiseSpeedKph", round(self._value / self._conversion), block=True)
 
   def _render(self, rect):
