@@ -1,3 +1,4 @@
+import html
 import re
 import pyray as rl
 from dataclasses import dataclass
@@ -125,7 +126,7 @@ class HtmlRenderer(Widget):
       if current_tag is None:
         current_tag = ElementType.P
 
-      text = ' '.join(current_content).strip()
+      text = html.unescape(' '.join(current_content).strip())
       current_content = []
       if text:
         if current_tag == ElementType.LI:
