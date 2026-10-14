@@ -153,7 +153,7 @@ def model_replay(lr, frs):
   # modeld is using frame pairs
   camera_states = {"narrowRoadCameraState", "wideRoadCameraState"}
   modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, camera_states,
-                          {"narrowRoadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
+                          {"narrowRoadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "controlsState", "can"})
   dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"cabinCameraState"}, {"cabinEncodeIdx", "carParams", "can"})
 
   if not SEND_EXTRA_INPUTS:
