@@ -32,9 +32,11 @@
 enum SpiError {
   NACK = -2,
   ACK_TIMEOUT = -3,
+  SILENT = -4,
 };
 
 const unsigned int SPI_MIN_TIMEOUT = 100; // milliseconds
+const double SPI_SILENT_TIMEOUT = 1000;  // milliseconds, longer than the slowest request takes on the panda
 const std::string SPI_DEVICE = "/dev/spidev0.0";
 
 class LockEx {
@@ -227,21 +229,29 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
   // timeout of 0 means forever
   const double deadline = (timeout == 0) ? INFINITY : millis_since_boot() + std::max(timeout, SPI_MIN_TIMEOUT);
 
+  // the id stays the same when we send the request again, so the panda never runs it twice
+  uint32_t id = random_id();
   int ret;
   int nack_count = 0;
   while (true) {
-    ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len, deadline);
+    ret = spi_transfer(endpoint, id, tx_data, tx_len, rx_data, max_rx_len, deadline);
     if (ret >= 0 || !connected) {
       break;
     }
 
     if (ret == SpiError::NACK) {
       // the panda NACKs while its CAN TX buffers are full. that's not a comms
-      // failure, so keep trying regardless of the timeout, without busy waiting
+      // failure, so keep trying regardless of the timeout, without busy waiting.
+      // a new id, since the panda would answer the same id with the same NACK
+      id = random_id();
       nack_count += 1;
       if (nack_count > 3) {
         usleep(std::clamp(nack_count*10, 200, 2000));
       }
+    } else if (ret == SpiError::SILENT) {
+      // the panda went quiet. let go of the bus for a bit, someone else might need it
+      LOGW("SPI: panda isn't responding");
+      usleep(10000);
     } else if (millis_since_boot() > deadline) {
       break;
     }
@@ -275,6 +285,10 @@ int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
   }
 
   int ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &t);
+  if (err_prob > 0 && chance(err_prob)) {
+    printf("ioctl error\n");
+    ret = -1;
+  }
 
   if (err_prob > 0 && chance(err_prob)) {
     printf("corrupting RX\n");
@@ -286,7 +300,7 @@ int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
 // One request and its response. Resends until the panda got the request and we got its response,
 // or the deadline. Every transfer either sees all of what the panda armed from its first byte, or
 // nothing it can mistake for a response. Returns the response length, or a negative SpiError
-int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, double deadline) {
+int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, double deadline) {
   static const auto poll = [] {
     std::array<uint8_t, SPI_BUF_SIZE> p;
     p.fill(SPI_POLL);
@@ -304,7 +318,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   xfer_count++;
   header = {
     .endpoint = endpoint,
-    .id = random_id(),
+    .id = id,
     .tx_len = tx_len,
     .rx_len = (uint16_t)rx_len,
   };
@@ -318,6 +332,8 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
     return ret;
   };
 
+  // when the panda last showed it's there. while it's quiet, we let go of the bus
+  double alive = millis_since_boot();
   while (true) {
     // send the request, until the panda was listening for it. it's rebuilt every time,
     // since SPI_ERR_PROB corrupts tx_buf
@@ -329,10 +345,12 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
     if (int ret = xfer(tx_buf, req_len + SPI_CRC_SIZE); ret < 0) return ret;
 
     if (rx_buf[0] == SPI_LISTENING) {
+      alive = millis_since_boot();
       // read until the response. if the panda is listening again, it never got the request
       do {
         if (int ret = xfer(poll.data(), rx_len); ret < 0) return ret;
         if (rx_buf[0] == SPI_LISTENING) {
+          alive = millis_since_boot();
           break;
         }
 
@@ -351,14 +369,18 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
             }
             return rx_data_len;
           }
+          alive = millis_since_boot();
           break;
         }
-      } while (millis_since_boot() < deadline);
+      } while (millis_since_boot() < std::min(deadline, alive + SPI_SILENT_TIMEOUT));
     }
 
     if (millis_since_boot() > deadline) {
       SPILOG(LOGW, "SPI: timed out");
       return SpiError::ACK_TIMEOUT;
+    }
+    if (millis_since_boot() > alive + SPI_SILENT_TIMEOUT) {
+      return SpiError::SILENT;
     }
   }
 }
