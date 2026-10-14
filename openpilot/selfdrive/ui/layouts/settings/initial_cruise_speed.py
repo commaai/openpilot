@@ -37,7 +37,8 @@ class RepeatButton(Button):
     elif self._repeat_at is not None and time.monotonic() >= self._repeat_at:
       self._repeated = True
       self._repeat_at = time.monotonic() + 0.2
-      self._click_callback()
+      if self._click_callback:
+        self._click_callback()
 
 
 class InitialCruiseSpeedControl(ItemAction):
