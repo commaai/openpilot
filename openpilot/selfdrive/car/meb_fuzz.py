@@ -104,7 +104,7 @@ class MebFuzz:
 
     self.persist = _read_json(self.state_path, {'run_count': 0, 'restart_reason': '', 'last_outcome': ''})
     self.run = None
-    self.prev_long_active = False
+    self.prev_enabled = False
     self.armed = False  # engaged, waiting for the driver to release the pedals before the run starts
     self.restart_ok_time = 0.
     self.alert_text = ('', '')
@@ -306,11 +306,12 @@ class MebFuzz:
     out = None
     if enabled:
       # engaging at a standstill needs the brake held, so a run arms on engagement and starts once the pedals are released
-      if long_active and not self.prev_long_active:
+      # arm on engagement only: longActive also drops and returns around every gas override
+      if CC.enabled and not self.prev_enabled:
         self.armed = True
-      if not long_active:
+      if not CC.enabled:
         self.armed = False
-      if self.armed and not sig['brake'] and not sig['gas'] and self.run is None and self.control.get('program') and \
+      if self.armed and long_active and not sig['brake'] and not sig['gas'] and self.run is None and self.control.get('program') and \
          not self.persist['restart_reason']:
         self.armed = False
         self._start_run(now, sig)
@@ -332,7 +333,7 @@ class MebFuzz:
         self._record(now, sig, out[0] if out else 'passthrough')
     elif self.run is not None:
       self._end_run('aborted: harness disabled', sig)
-    self.prev_long_active = long_active
+    self.prev_enabled = CC.enabled
 
     self._publish(now, sig, enabled)
 
