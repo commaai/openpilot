@@ -41,7 +41,7 @@ def main():
   p.add_argument('cmd')
   p.add_argument('args', nargs='*')
   p.add_argument('--hold-source', choices=('hms', 'standstill'))
-  p.add_argument('--starting', choices=('master', 'stock', 'hold_first', 'hold_first2'))
+  p.add_argument('--starting', choices=('master', 'stock', 'hold_first', 'hold_first2', 'hold_first3'))
   a = p.parse_args()
 
   if a.cmd in ('show', 'status'):
