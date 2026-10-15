@@ -1,5 +1,4 @@
 import math
-import numpy as np
 import pyray as rl
 from collections.abc import Callable
 
@@ -17,17 +16,17 @@ ITEM_GAP = 20  # px between neighboring values
 VALUE_CENTER_Y = 102
 UNIT_FONT_SIZE = 36
 UNIT_LETTER_SPACING = -0.03
-UNIT_Y = 166  # px, top of the unit's text
-EDGE_SHADOW_WIDTH = 120  # px, black at the edge to transparent
 VISIBLE_VALUES = 3  # on each side of the closest value
 
 # the value nearest the center, and every other value
 CENTER_FONT_SIZE = 120
 CENTER_LETTER_SPACING = -0.03  # of the font size
-CENTER_ALPHA = 0.9
 SIDE_FONT_SIZE = 96
 SIDE_LETTER_SPACING = -0.01
-SIDE_ALPHA = 0.9 * 0.65
+
+
+def lerp(start: float, end: float, t: float) -> float:
+  return start + (end - start) * t
 
 
 def letter_spacing(font_size: float, spacing: float) -> float:
@@ -115,22 +114,22 @@ class InitialCruiseSpeedPicker(NavWidget):
 
     # values blend from the center style to the side style over one value from the center
     blends = [min(abs(idx - current), 1.0) for idx in range(len(self._options))]
-    widths = [center + (side - center) * t for center, side, t in zip(self._center_widths, self._side_widths, blends, strict=True)]
+    widths = [lerp(center, side, t) for center, side, t in zip(self._center_widths, self._side_widths, blends, strict=True)]
 
     # lay values out with a constant gap, then shift so the scroll position sits at the center
     centers = [0.0]
     for idx in range(1, len(widths)):
       centers.append(centers[-1] + widths[idx - 1] / 2 + ITEM_GAP + widths[idx] / 2)
     left_idx = max(0, min(len(widths) - 2, math.floor(current)))
-    shift = center_x - (centers[left_idx] + (current - left_idx) * (centers[left_idx + 1] - centers[left_idx]))
+    shift = center_x - lerp(centers[left_idx], centers[left_idx + 1], current - left_idx)
 
     # only values near the center can be on screen. the closest one snaps to bold
     closest_idx = self._clamp_index(round(current))
     for idx in range(max(0, closest_idx - VISIBLE_VALUES), min(len(self._options), closest_idx + VISIBLE_VALUES + 1)):
-      distance = abs(idx - current)
-      font_size = float(np.interp(distance, [0, 1], [CENTER_FONT_SIZE, SIDE_FONT_SIZE]))
-      spacing = letter_spacing(font_size, float(np.interp(distance, [0, 1], [CENTER_LETTER_SPACING, SIDE_LETTER_SPACING])))
-      color = rl.Color(255, 255, 255, int(np.interp(distance, [0, 1], [255 * CENTER_ALPHA, 255 * SIDE_ALPHA])))
+      t = blends[idx]
+      font_size = lerp(CENTER_FONT_SIZE, SIDE_FONT_SIZE, t)
+      spacing = letter_spacing(font_size, lerp(CENTER_LETTER_SPACING, SIDE_LETTER_SPACING, t))
+      color = rl.Color(255, 255, 255, int(255 * lerp(0.9, 0.9 * 0.65, t)))
       # center on the width in the font it's drawn with, scaled to its size, so switching fonts grows it evenly
       if idx == closest_idx:
         font, width = self._center_font, self._center_widths[idx] * font_size / CENTER_FONT_SIZE
@@ -140,13 +139,12 @@ class InitialCruiseSpeedPicker(NavWidget):
       rl.draw_text_ex(font, str(self._options[idx]), position, font_size, spacing, color)
 
     # fade values out into the left and right edges
-    rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), EDGE_SHADOW_WIDTH, int(self._rect.height), rl.BLACK, rl.BLANK)
-    rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - EDGE_SHADOW_WIDTH), int(self._rect.y), EDGE_SHADOW_WIDTH, int(self._rect.height),
-                                 rl.BLANK, rl.BLACK)
+    rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), 120, int(self._rect.height), rl.BLACK, rl.BLANK)
+    rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - 120), int(self._rect.y), 120, int(self._rect.height), rl.BLANK, rl.BLACK)
 
     unit_spacing = letter_spacing(UNIT_FONT_SIZE, UNIT_LETTER_SPACING)
     unit_size = measure_text_cached(self._unit_font, self._unit, UNIT_FONT_SIZE, unit_spacing)
-    unit_position = rl.Vector2(center_x - unit_size.x / 2, self._rect.y + UNIT_Y)
+    unit_position = rl.Vector2(center_x - unit_size.x / 2, self._rect.y + 166)
     rl.draw_text_ex(self._unit_font, self._unit, unit_position, UNIT_FONT_SIZE, unit_spacing, LABEL_COLOR)
 
 
