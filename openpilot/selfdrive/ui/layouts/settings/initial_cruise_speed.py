@@ -7,25 +7,18 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.car.cruise import V_CRUISE_INITIAL, V_CRUISE_MAX
 from openpilot.system.ui.lib.application import FontWeight, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets.button import Button
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
-from openpilot.system.ui.widgets.list_view import (ItemAction, BUTTON_HEIGHT, BUTTON_BORDER_RADIUS, BUTTON_BG_COLOR,
-                                                   BUTTON_PRESSED_BG_COLOR, BUTTON_DISABLED_ALPHA)
+from openpilot.system.ui.widgets.list_view import ItemAction, BUTTON_HEIGHT, BUTTON_BORDER_RADIUS
 
 STEP_BUTTON_WIDTH = 160
 
 
 class RepeatButton(Button):
   def __init__(self, text, callback, font_size):
-    super().__init__(text, callback, font_size=font_size, border_radius=BUTTON_BORDER_RADIUS, text_padding=0)
+    super().__init__(text, callback, font_size=font_size, button_style=ButtonStyle.PILL, border_radius=BUTTON_BORDER_RADIUS, text_padding=0)
     self._repeat_at: float | None = None
     self._repeated = False
-
-  def _update_state(self):
-    super()._update_state()
-    # match the driving personality buttons
-    color = BUTTON_PRESSED_BG_COLOR if self.enabled and self.is_pressed else BUTTON_BG_COLOR
-    self._background_color = color if self.enabled else rl.Color(color.r, color.g, color.b, BUTTON_DISABLED_ALPHA)
 
   def cancel_repeat(self):
     self._repeat_at = None
