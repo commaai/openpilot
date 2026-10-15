@@ -21,7 +21,7 @@ class ButtonStyle(IntEnum):
   NO_EFFECT = 6
   KEYBOARD = 7
   FORGET_WIFI = 8
-  PILL = 11  # For pill buttons in list items, like the multiple button selector
+  PILL = 11  # For pill buttons in list items, for example the multiple button selector
 
 
 ICON_PADDING = 15
