@@ -1,10 +1,11 @@
 from openpilot.cereal import log
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.list_view import ListItem, multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import InitialCruiseSpeedControl
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -35,7 +36,6 @@ class TogglesLayout(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
-    self._is_release = self._params.get_bool("IsReleaseBranch")
 
     # param, title, desc, icon, needs_restart
     self._toggle_defs = {
@@ -44,12 +44,6 @@ class TogglesLayout(Widget):
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         "chffr_wheel.png",
         True,
-      ),
-      "ExperimentalMode": (
-        lambda: tr("Experimental Mode"),
-        "",
-        "experimental_white.png",
-        False,
       ),
       "DisengageOnAccelerator": (
         lambda: tr("Disengage on Accelerator Pedal"),
@@ -100,6 +94,14 @@ class TogglesLayout(Widget):
     )
 
     self._toggles = {}
+    self._initial_cruise_speed = ListItem(
+      title=lambda: tr("Initial Max Speed"),
+      description=lambda: tr("Max speed when engaging openpilot. If you are already driving faster, your current speed is used. " +
+                             "Resume restores the previous max speed. Changes apply the next time you engage."),
+      action_item=InitialCruiseSpeedControl(),
+      icon="speed_limit.png",
+    )
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
     self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
       toggle = toggle_item(
@@ -131,8 +133,8 @@ class TogglesLayout(Widget):
       # insert longitudinal personality after NDOG toggle
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
+        self._toggles["InitialCruiseSpeedKph"] = self._initial_cruise_speed
 
-    self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
     ui_state.add_engaged_transition_callback(self._update_toggles)
@@ -151,40 +153,10 @@ class TogglesLayout(Widget):
 
   def _update_toggles(self):
     ui_state.update_params()
-
-    e2e_description = tr(
-      "<h4>End-to-End Longitudinal Control</h4><br>" +
-      "Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. " +
-      "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. Mistakes should be expected.<br>"
-    )
+    self._initial_cruise_speed.action_item.refresh()
 
     if ui_state.CP is not None:
-      if ui_state.has_longitudinal_control:
-        self._toggles["ExperimentalMode"].action_item.set_enabled(True)
-        self._toggles["ExperimentalMode"].set_description(e2e_description)
-        self._long_personality_setting.action_item.set_enabled(True)
-      else:
-        # no long for now
-        self._toggles["ExperimentalMode"].action_item.set_enabled(False)
-        self._toggles["ExperimentalMode"].action_item.set_state(False)
-        self._long_personality_setting.action_item.set_enabled(False)
-        self._params.remove("ExperimentalMode")
-
-        unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.")
-
-        long_desc = unavailable + " " + tr("openpilot longitudinal control may come in a future update.")
-        if ui_state.CP.alphaLongitudinalAvailable:
-          if self._is_release:
-            long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with " +
-                                               "Experimental mode, on non-release branches.")
-          else:
-            long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.")
-
-        self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
-    else:
-      self._toggles["ExperimentalMode"].set_description(e2e_description)
-
-    self._update_experimental_mode_icon()
+      self._long_personality_setting.action_item.set_enabled(ui_state.has_longitudinal_control)
 
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
@@ -199,14 +171,10 @@ class TogglesLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
-  def _update_experimental_mode_icon(self):
-    icon = "experimental.png" if self._toggles["ExperimentalMode"].action_item.get_state() else "experimental_white.png"
-    self._toggles["ExperimentalMode"].set_icon(icon)
-
   def _toggle_callback(self, state: bool, param: str):
     self._params.put_bool(param, state, block=True)
-    if param == "ExperimentalMode":
-      self._update_experimental_mode_icon()
+    if param == "IsMetric":
+      self._initial_cruise_speed.action_item.refresh()
 
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True, block=True)
