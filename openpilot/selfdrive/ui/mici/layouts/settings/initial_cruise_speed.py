@@ -2,17 +2,14 @@ import math
 import pyray as rl
 from collections.abc import Callable
 
-from openpilot.common.constants import CV
-from openpilot.common.params import Params
-from openpilot.selfdrive.car.cruise import V_CRUISE_INITIAL, V_CRUISE_MAX
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import (get_speed_options, get_speed_unit, get_selected_speed_index,
+                                                                           set_initial_cruise_speed)
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, COMPLICATION_GREY, LABEL_COLOR
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel2 import AUTO_SCROLL_TC, MIN_DRAG_PIXELS, GuiScrollPanel2, ScrollState
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 
-SPEED_STEP = 5
 ITEM_DRAG_DISTANCE = 120  # px of drag per value
 ITEM_GAP = 22  # px between neighboring values
 VALUE_FONT_SIZE = 133
@@ -27,23 +24,6 @@ COLOR_DECAY = 1.4
 EDGE_COLOR = rl.Color(0x3A, 0x3A, 0x3A, 255)
 
 
-def get_conversion(is_metric: bool) -> float:
-  return 1 if is_metric else CV.KPH_TO_MPH
-
-
-def get_unit(is_metric: bool) -> str:
-  return tr("km/h") if is_metric else tr("mph")
-
-
-def get_speed_options(conversion: float) -> list[int]:
-  return list(range(round(V_CRUISE_INITIAL * conversion), round(V_CRUISE_MAX * conversion) + 1, SPEED_STEP))
-
-
-def get_selected_index(params: Params, options: list[int], conversion: float) -> int:
-  speed = params.get("InitialCruiseSpeedKph", return_default=True) * conversion
-  return min(range(len(options)), key=lambda idx: abs(options[idx] - speed))
-
-
 def lerp_color(start: rl.Color, end: rl.Color, t: float) -> rl.Color:
   return rl.Color(int(start.r + (end.r - start.r) * t), int(start.g + (end.g - start.g) * t),
                   int(start.b + (end.b - start.b) * t), int(start.a + (end.a - start.a) * t))
@@ -53,7 +33,6 @@ class InitialCruiseSpeedPicker(NavWidget):
   def __init__(self, change_callback: Callable[[], None]):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self._params = Params()
     self._change_callback = change_callback
 
     self._value_font = gui_app.font(FontWeight.ROMAN)
@@ -63,7 +42,6 @@ class InitialCruiseSpeedPicker(NavWidget):
     self._scroll_panel = GuiScrollPanel2(horizontal=True)
     self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
-    self._conversion = 1.0
     self._unit = ""
     self._options: list[int] = []
     self._text_widths: list[float] = []
@@ -74,13 +52,11 @@ class InitialCruiseSpeedPicker(NavWidget):
 
   def show_event(self):
     super().show_event()
-    is_metric = self._params.get_bool("IsMetric")
-    self._conversion = get_conversion(is_metric)
-    self._unit = get_unit(is_metric)
-    self._options = get_speed_options(self._conversion)
+    self._unit = get_speed_unit()
+    self._options = get_speed_options()
     self._text_widths = [measure_text_cached(self._value_font, str(option), VALUE_FONT_SIZE, VALUE_LETTER_SPACING).x for option in self._options]
     self._item_centers = [0.0] * len(self._options)
-    self._selected_idx = get_selected_index(self._params, self._options, self._conversion)
+    self._selected_idx = get_selected_speed_index(self._options)
     self._locked_idx = self._selected_idx
     self._press_pos = None
 
@@ -94,7 +70,7 @@ class InitialCruiseSpeedPicker(NavWidget):
     self._locked_idx = idx
     if idx != self._selected_idx:
       self._selected_idx = idx
-      self._params.put("InitialCruiseSpeedKph", round(self._options[idx] / self._conversion), block=True)
+      set_initial_cruise_speed(self._options[idx])
       self._change_callback()
 
   def _update_state(self):
@@ -163,14 +139,10 @@ class InitialCruiseSpeedPicker(NavWidget):
 class InitialCruiseSpeedButton(BigButton):
   def __init__(self):
     super().__init__("initial max speed", " ")
-    self._params = Params()
     self._picker = InitialCruiseSpeedPicker(self.refresh)
     self.set_click_callback(lambda: gui_app.push_widget(self._picker))
     self.refresh()
 
-  def refresh(self, is_metric: bool | None = None):
-    if is_metric is None:
-      is_metric = self._params.get_bool("IsMetric")
-    conversion = get_conversion(is_metric)
-    options = get_speed_options(conversion)
-    self.set_value(f"{options[get_selected_index(self._params, options, conversion)]} {get_unit(is_metric)}")
+  def refresh(self):
+    options = get_speed_options()
+    self.set_value(f"{options[get_selected_speed_index(options)]} {get_speed_unit()}")

@@ -174,7 +174,7 @@ class TogglesLayout(Widget):
   def _toggle_callback(self, state: bool, param: str):
     self._params.put_bool(param, state, block=True)
     if param == "IsMetric":
-      self._initial_cruise_speed.action_item.refresh()
+      self._update_toggles()
 
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True, block=True)
