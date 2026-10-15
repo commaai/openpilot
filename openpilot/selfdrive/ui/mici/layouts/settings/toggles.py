@@ -22,7 +22,7 @@ class InitialCruiseSpeedButton(BigButton):
     self.set_long_press_callback(self._on_long_press)
 
   def _on_long_press(self):
-    # a hold on a step button repeats the step. only a long press out of the speed control shows the description
+    # a hold on the speed control repeats a step
     if not self._control.is_pressed and self._show_description is not None:
       self._show_description()
 
