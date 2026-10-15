@@ -14,13 +14,13 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 
 ITEM_DRAG_DISTANCE = 120  # px of drag per value
-ITEM_GAP = 20  # px between neighboring values
+ITEM_GAP = 20  # px between adjacent values
 VALUE_CENTER_Y = 102
-VISIBLE_VALUES = 3  # on each side of the closest value
+VISIBLE_VALUES = 3  # on each side of center value
 
-# the value nearest the center, and every other value
+# value styles
 CENTER_FONT_SIZE = 120
-CENTER_LETTER_SPACING = -0.03  # of the font size
+CENTER_LETTER_SPACING = -0.03
 SIDE_FONT_SIZE = 96
 SIDE_LETTER_SPACING = -0.01
 
@@ -50,7 +50,7 @@ class InitialCruiseSpeedPicker(BigDialogBase):
     self._scroll_panel = GuiScrollPanel2(horizontal=True)
     self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
-    # like scroller items, scrolling or swiping away cancels a tap
+    # need this for touch_valid support
     self._tap_area = self._child(TapArea())
     self._tap_area.set_enabled(lambda: self.enabled and not self.is_dismissing)
     self._tap_area.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
@@ -83,7 +83,7 @@ class InitialCruiseSpeedPicker(BigDialogBase):
   def _update_state(self):
     super()._update_state()
 
-    # Once released, lock onto the value the fling would coast to, like an iOS picker
+    # when the finger releases, lock the value where the scroll will stop
     if self._scroll_panel.state == ScrollState.MANUAL_SCROLL:
       self._locked_idx = None
     elif self._locked_idx is None and self._scroll_panel.state != ScrollState.PRESSED:
@@ -98,7 +98,7 @@ class InitialCruiseSpeedPicker(BigDialogBase):
     if self._locked_idx is None:
       return
 
-    # tap either side of the center value to step one value, from where the picker is heading
+    # a tap on the left or the right moves one value
     tap_x = gui_app.last_mouse_event.pos.x
     center_x = self._rect.x + self._rect.width / 2
     tap_zone = self._center_widths[self._locked_idx] / 2 + ITEM_GAP / 2
@@ -112,7 +112,7 @@ class InitialCruiseSpeedPicker(BigDialogBase):
     center_x = self._rect.x + self._rect.width / 2
     current = -self._scroll_panel.get_offset() / ITEM_DRAG_DISTANCE
 
-    # values blend from the center style to the side style over one value from the center
+    # the style of each value changes from the center style to the side style over a distance of one value
     blends = [min(abs(idx - current), 1.0) for idx in range(len(self._options))]
     widths = [lerp(center, side, t) for center, side, t in zip(self._center_widths, self._side_widths, blends, strict=True)]
 
@@ -123,14 +123,14 @@ class InitialCruiseSpeedPicker(BigDialogBase):
     left_idx = max(0, min(len(widths) - 2, math.floor(current)))
     shift = center_x - lerp(centers[left_idx], centers[left_idx + 1], current - left_idx)
 
-    # only values near the center can be on screen. the closest one snaps to bold
+    # only the values near the center can be on the screen. the nearest value uses the bold font
     closest_idx = self._clamp_index(round(current))
     for idx in range(max(0, closest_idx - VISIBLE_VALUES), min(len(self._options), closest_idx + VISIBLE_VALUES + 1)):
       t = blends[idx]
       font_size = lerp(CENTER_FONT_SIZE, SIDE_FONT_SIZE, t)
       spacing = letter_spacing(font_size, lerp(CENTER_LETTER_SPACING, SIDE_LETTER_SPACING, t))
       color = rl.Color(255, 255, 255, int(255 * lerp(0.9, 0.9 * 0.65, t)))
-      # center on the width in the font it's drawn with, scaled to its size, so switching fonts grows it evenly
+      # use the width of the font that draws the value. this keeps the value at its center when the font changes
       if idx == closest_idx:
         font, width = self._center_font, self._center_widths[idx] * font_size / CENTER_FONT_SIZE
       else:
@@ -138,7 +138,7 @@ class InitialCruiseSpeedPicker(BigDialogBase):
       position = rl.Vector2(centers[idx] + shift - width / 2, self._rect.y + VALUE_CENTER_Y - font_size * FONT_SCALE / 2)
       rl.draw_text_ex(font, str(self._options[idx]), position, font_size, spacing, color)
 
-    # fade values out into the left and right edges
+    # gradient on left and right
     rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), 120, int(self._rect.height), rl.BLACK, rl.BLANK)
     rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - 120), int(self._rect.y), 120, int(self._rect.height), rl.BLANK, rl.BLACK)
 
@@ -155,7 +155,6 @@ class InitialCruiseSpeedButton(BigButton):
     self.refresh()
 
   def _get_label_font_size(self):
-    # size as a long title so the wrapped title doesn't crowd the speed
     return 42
 
   def refresh(self):
