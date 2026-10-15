@@ -54,12 +54,11 @@ class RepeatButton(Button):
     if not self._repeated:
       super()._handle_mouse_release(mouse_pos)
 
-  def _process_mouse_events(self):
-    super()._process_mouse_events()
-    if not self.is_pressed or not self._touch_valid():
-      # released, scrolled away, or repeated: the release shouldn't step again
+  def _update_state(self):
+    super()._update_state()
+    # step repeatedly while held. once it has repeated, the release doesn't step again
+    if not self.is_pressed or not self.enabled:
       self._repeat_at = None
-      self._repeated = True
     elif self._repeat_at is not None and time.monotonic() >= self._repeat_at:
       self._repeated = True
       self._repeat_at = time.monotonic() + REPEAT_INTERVAL

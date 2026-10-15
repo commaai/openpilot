@@ -4,18 +4,17 @@ from collections.abc import Callable
 
 from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import get_speed_options, set_initial_cruise_speed
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialogBase
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.lib.scroll_panel2 import AUTO_SCROLL_TC, MIN_DRAG_PIXELS, GuiScrollPanel2, ScrollState
+from openpilot.system.ui.lib.scroll_panel2 import AUTO_SCROLL_TC, GuiScrollPanel2, ScrollState
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.label import UnifiedLabel
 
 ITEM_DRAG_DISTANCE = 120  # px of drag per value
 ITEM_GAP = 20  # px between neighboring values
 VALUE_CENTER_Y = 102
-UNIT_FONT_SIZE = 36
-UNIT_LETTER_SPACING = -0.03
 VISIBLE_VALUES = 3  # on each side of the closest value
 
 # the value nearest the center, and every other value
@@ -33,29 +32,26 @@ def letter_spacing(font_size: float, spacing: float) -> float:
   return spacing * font_size * FONT_SCALE
 
 
-class InitialCruiseSpeedPicker(NavWidget):
+class InitialCruiseSpeedPicker(BigDialogBase):
   def __init__(self, change_callback: Callable[[], None]):
     super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     self._change_callback = change_callback
 
     self._center_font = gui_app.font(FontWeight.BOLD)
     self._side_font = gui_app.font(FontWeight.ROMAN)
-    self._unit_font = gui_app.font(FontWeight.BOLD)
+    self._unit_label = self._child(UnifiedLabel("", 36, FontWeight.BOLD, LABEL_COLOR, alignment=TextAlignment.CENTER, letter_spacing=-0.03))
 
     self._scroll_panel = GuiScrollPanel2(horizontal=True)
     self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
-    self._unit = ""
     self._options: list[int] = []
     self._center_widths: list[float] = []
     self._side_widths: list[float] = []
     self._locked_idx: int | None = None  # value the picker is easing onto, None while the user drags
-    self._tap_start: MousePos | None = None
 
   def show_event(self):
     super().show_event()
-    self._unit = tr("KPH") if ui_state.is_metric else tr("MPH")
+    self._unit_label.set_text(tr("KPH") if ui_state.is_metric else tr("MPH"))
     self._options, self._locked_idx = get_speed_options()
     self._center_widths = [measure_text_cached(self._center_font, str(option), CENTER_FONT_SIZE,
                                                letter_spacing(CENTER_FONT_SIZE, CENTER_LETTER_SPACING)).x for option in self._options]
@@ -86,27 +82,19 @@ class InitialCruiseSpeedPicker(NavWidget):
     content_size = (len(self._options) - 1) * ITEM_DRAG_DISTANCE + self._rect.width
     self._scroll_panel.update(self._rect, content_size, snap_target=snap_target)
 
-  def _handle_mouse_press(self, mouse_pos: MousePos):
-    super()._handle_mouse_press(mouse_pos)
-    # a press that stops a fling isn't a tap
-    self._tap_start = mouse_pos if self._scroll_panel.state == ScrollState.PRESSED else None
-
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    tap_start, self._tap_start = self._tap_start, None
-    if tap_start is None or self.is_dismissing:
-      return
-    if abs(mouse_pos.x - tap_start.x) > MIN_DRAG_PIXELS or abs(mouse_pos.y - tap_start.y) > MIN_DRAG_PIXELS:
+    # dragging or stopping a fling clears the lock, so a release that's still locked is a tap
+    if self._locked_idx is None or self.is_dismissing:
       return
 
     # tap either side of the center value to step one value, from where the picker is heading
-    idx = self._locked_idx if self._locked_idx is not None else self._clamp_index(round(-self._scroll_panel.get_offset() / ITEM_DRAG_DISTANCE))
     center_x = self._rect.x + self._rect.width / 2
-    tap_zone = self._center_widths[idx] / 2 + ITEM_GAP / 2
+    tap_zone = self._center_widths[self._locked_idx] / 2 + ITEM_GAP / 2
     if mouse_pos.x > center_x + tap_zone:
-      self._lock(idx + 1)
+      self._lock(self._locked_idx + 1)
     elif mouse_pos.x < center_x - tap_zone:
-      self._lock(idx - 1)
+      self._lock(self._locked_idx - 1)
 
   def _render(self, _):
     center_x = self._rect.x + self._rect.width / 2
@@ -142,17 +130,14 @@ class InitialCruiseSpeedPicker(NavWidget):
     rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), 120, int(self._rect.height), rl.BLACK, rl.BLANK)
     rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - 120), int(self._rect.y), 120, int(self._rect.height), rl.BLANK, rl.BLACK)
 
-    unit_spacing = letter_spacing(UNIT_FONT_SIZE, UNIT_LETTER_SPACING)
-    unit_size = measure_text_cached(self._unit_font, self._unit, UNIT_FONT_SIZE, unit_spacing)
-    unit_position = rl.Vector2(center_x - unit_size.x / 2, self._rect.y + 166)
-    rl.draw_text_ex(self._unit_font, self._unit, unit_position, UNIT_FONT_SIZE, unit_spacing, LABEL_COLOR)
+    self._unit_label.render(rl.Rectangle(self._rect.x, self._rect.y + 166, self._rect.width, self._rect.height - 166))
 
 
 class InitialCruiseSpeedButton(BigButton):
   def __init__(self):
     super().__init__("initial max speed", " ", description="Max speed when engaging openpilot.\n" +
-                                                          "If you are already driving faster, your current speed is used.\n" +
-                                                          "Resume restores the previous max speed.")
+                                                           "If you are already driving faster, your current speed is used.\n" +
+                                                           "Resume restores the previous max speed.")
     self._picker = InitialCruiseSpeedPicker(self.refresh)
     self.set_click_callback(lambda: gui_app.push_widget(self._picker))
     self.refresh()
