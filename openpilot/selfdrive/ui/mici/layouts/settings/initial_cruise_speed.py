@@ -1,32 +1,37 @@
 import math
+import numpy as np
 import pyray as rl
 from collections.abc import Callable
 
-from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import (get_speed_options, get_speed_unit, get_selected_speed_index,
-                                                                           set_initial_cruise_speed)
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, COMPLICATION_GREY, LABEL_COLOR
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import get_speed_options, set_initial_cruise_speed
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, FONT_SCALE
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel2 import AUTO_SCROLL_TC, MIN_DRAG_PIXELS, GuiScrollPanel2, ScrollState
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 ITEM_DRAG_DISTANCE = 120  # px of drag per value
-ITEM_GAP = 22  # px between neighboring values
-VALUE_FONT_SIZE = 133
-VALUE_LETTER_SPACING = -0.05 * VALUE_FONT_SIZE * FONT_SCALE  # -5% of the font size, between digits
-UNIT_FONT_SIZE = 42
+ITEM_GAP = 20  # px between neighboring values
 VALUE_CENTER_Y = 102
-UNIT_CENTER_Y = 183
-# values shrink and darken with distance from the center, in items
-MIN_SCALE = 0.43
-SCALE_DECAY = 1.14
-COLOR_DECAY = 1.4
-EDGE_COLOR = rl.Color(0x3A, 0x3A, 0x3A, 255)
+UNIT_FONT_SIZE = 36
+UNIT_LETTER_SPACING = -0.03
+UNIT_Y = 166  # px, top of the unit's text
+EDGE_SHADOW_WIDTH = 120  # px, black at the edge to transparent
+VISIBLE_VALUES = 3  # on each side of the closest value
+
+# the value nearest the center, and every other value
+CENTER_FONT_SIZE = 120
+CENTER_LETTER_SPACING = -0.03  # of the font size
+CENTER_ALPHA = 0.9
+SIDE_FONT_SIZE = 96
+SIDE_LETTER_SPACING = -0.01
+SIDE_ALPHA = 0.9 * 0.65
 
 
-def lerp_color(start: rl.Color, end: rl.Color, t: float) -> rl.Color:
-  return rl.Color(int(start.r + (end.r - start.r) * t), int(start.g + (end.g - start.g) * t),
-                  int(start.b + (end.b - start.b) * t), int(start.a + (end.a - start.a) * t))
+def letter_spacing(font_size: float, spacing: float) -> float:
+  return spacing * font_size * FONT_SCALE
 
 
 class InitialCruiseSpeedPicker(NavWidget):
@@ -35,53 +40,48 @@ class InitialCruiseSpeedPicker(NavWidget):
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     self._change_callback = change_callback
 
-    self._value_font = gui_app.font(FontWeight.ROMAN)
-    self._center_value_font = gui_app.font(FontWeight.SEMI_BOLD)
-    self._unit_font = gui_app.font(FontWeight.MEDIUM)
+    self._center_font = gui_app.font(FontWeight.BOLD)
+    self._side_font = gui_app.font(FontWeight.ROMAN)
+    self._unit_font = gui_app.font(FontWeight.BOLD)
 
     self._scroll_panel = GuiScrollPanel2(horizontal=True)
     self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
     self._unit = ""
     self._options: list[int] = []
-    self._text_widths: list[float] = []
-    self._item_centers: list[float] = []
-    self._selected_idx = 0
+    self._center_widths: list[float] = []
+    self._side_widths: list[float] = []
     self._locked_idx: int | None = None  # value the picker is easing onto, None while the user drags
-    self._press_pos: MousePos | None = None
+    self._tap_start: MousePos | None = None
 
   def show_event(self):
     super().show_event()
-    self._unit = get_speed_unit()
-    self._options = get_speed_options()
-    self._text_widths = [measure_text_cached(self._value_font, str(option), VALUE_FONT_SIZE, VALUE_LETTER_SPACING).x for option in self._options]
-    self._item_centers = [0.0] * len(self._options)
-    self._selected_idx = get_selected_speed_index(self._options)
-    self._locked_idx = self._selected_idx
-    self._press_pos = None
+    self._unit = tr("KPH") if ui_state.is_metric else tr("MPH")
+    self._options, self._locked_idx = get_speed_options()
+    self._center_widths = [measure_text_cached(self._center_font, str(option), CENTER_FONT_SIZE,
+                                               letter_spacing(CENTER_FONT_SIZE, CENTER_LETTER_SPACING)).x for option in self._options]
+    self._side_widths = [measure_text_cached(self._side_font, str(option), SIDE_FONT_SIZE,
+                                             letter_spacing(SIDE_FONT_SIZE, SIDE_LETTER_SPACING)).x for option in self._options]
 
-    # open at the lowest value and glide to the selected one
-    self._scroll_panel.set_offset(0.0)
+    self._scroll_panel.set_offset(-self._locked_idx * ITEM_DRAG_DISTANCE)
 
   def _clamp_index(self, idx: int) -> int:
     return max(0, min(len(self._options) - 1, idx))
 
-  def _select(self, idx: int):
-    self._locked_idx = idx
-    if idx != self._selected_idx:
-      self._selected_idx = idx
-      set_initial_cruise_speed(self._options[idx])
-      self._change_callback()
+  def _lock(self, idx: int):
+    self._locked_idx = self._clamp_index(idx)
+    set_initial_cruise_speed(self._options[self._locked_idx])
+    self._change_callback()
 
   def _update_state(self):
     super()._update_state()
 
     # Once released, lock onto the value the fling would coast to, like an iOS picker
-    if self._scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL):
+    if self._scroll_panel.state == ScrollState.MANUAL_SCROLL:
       self._locked_idx = None
-    elif self._locked_idx is None:
+    elif self._locked_idx is None and self._scroll_panel.state != ScrollState.PRESSED:
       projected_offset = self._scroll_panel.get_offset() + self._scroll_panel.velocity * AUTO_SCROLL_TC
-      self._select(self._clamp_index(round(-projected_offset / ITEM_DRAG_DISTANCE)))
+      self._lock(round(-projected_offset / ITEM_DRAG_DISTANCE))
 
     snap_target = -self._locked_idx * ITEM_DRAG_DISTANCE if self._locked_idx is not None else None
     content_size = (len(self._options) - 1) * ITEM_DRAG_DISTANCE + self._rect.width
@@ -90,59 +90,79 @@ class InitialCruiseSpeedPicker(NavWidget):
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
     # a press that stops a fling isn't a tap
-    self._press_pos = mouse_pos if self._scroll_panel.state == ScrollState.PRESSED else None
+    self._tap_start = mouse_pos if self._scroll_panel.state == ScrollState.PRESSED else None
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    if self._press_pos is None or self.is_dismissing:
+    tap_start, self._tap_start = self._tap_start, None
+    if tap_start is None or self.is_dismissing:
+      return
+    if abs(mouse_pos.x - tap_start.x) > MIN_DRAG_PIXELS or abs(mouse_pos.y - tap_start.y) > MIN_DRAG_PIXELS:
       return
 
-    # tap a neighboring value to select it
-    if abs(mouse_pos.x - self._press_pos.x) <= MIN_DRAG_PIXELS and abs(mouse_pos.y - self._press_pos.y) <= MIN_DRAG_PIXELS:
-      self._select(min(range(len(self._options)), key=lambda idx: abs(self._item_centers[idx] - mouse_pos.x)))
-    self._press_pos = None
+    # tap either side of the center value to step one value, from where the picker is heading
+    idx = self._locked_idx if self._locked_idx is not None else self._clamp_index(round(-self._scroll_panel.get_offset() / ITEM_DRAG_DISTANCE))
+    center_x = self._rect.x + self._rect.width / 2
+    tap_zone = self._center_widths[idx] / 2 + ITEM_GAP / 2
+    if mouse_pos.x > center_x + tap_zone:
+      self._lock(idx + 1)
+    elif mouse_pos.x < center_x - tap_zone:
+      self._lock(idx - 1)
 
   def _render(self, _):
     center_x = self._rect.x + self._rect.width / 2
     current = -self._scroll_panel.get_offset() / ITEM_DRAG_DISTANCE
 
-    scales = [MIN_SCALE + (1.0 - MIN_SCALE) * math.exp(-SCALE_DECAY * abs(idx - current)) for idx in range(len(self._options))]
-    widths = [width * scale for width, scale in zip(self._text_widths, scales, strict=True)]
+    # values blend from the center style to the side style over one value from the center
+    blends = [min(abs(idx - current), 1.0) for idx in range(len(self._options))]
+    widths = [center + (side - center) * t for center, side, t in zip(self._center_widths, self._side_widths, blends, strict=True)]
 
-    # lay values out from the pair straddling the center with a constant gap, so smaller values pack closer like a wheel
-    left_idx = max(0, min(len(self._options) - 2, math.floor(current)))
-    step = widths[left_idx] / 2 + ITEM_GAP + widths[left_idx + 1] / 2
-    self._item_centers[left_idx] = center_x - (current - left_idx) * step
-    for idx in range(left_idx + 1, len(self._options)):
-      self._item_centers[idx] = self._item_centers[idx - 1] + widths[idx - 1] / 2 + ITEM_GAP + widths[idx] / 2
-    for idx in range(left_idx - 1, -1, -1):
-      self._item_centers[idx] = self._item_centers[idx + 1] - widths[idx + 1] / 2 - ITEM_GAP - widths[idx] / 2
+    # lay values out with a constant gap, then shift so the scroll position sits at the center
+    centers = [0.0]
+    for idx in range(1, len(widths)):
+      centers.append(centers[-1] + widths[idx - 1] / 2 + ITEM_GAP + widths[idx] / 2)
+    left_idx = max(0, min(len(widths) - 2, math.floor(current)))
+    shift = center_x - (centers[left_idx] + (current - left_idx) * (centers[left_idx + 1] - centers[left_idx]))
 
-    # the value closest to the center snaps to a heavier weight
-    center_idx = max(0, min(len(self._options) - 1, round(current)))
+    # only values near the center can be on screen. the closest one snaps to bold
+    closest_idx = self._clamp_index(round(current))
+    for idx in range(max(0, closest_idx - VISIBLE_VALUES), min(len(self._options), closest_idx + VISIBLE_VALUES + 1)):
+      distance = abs(idx - current)
+      font_size = float(np.interp(distance, [0, 1], [CENTER_FONT_SIZE, SIDE_FONT_SIZE]))
+      spacing = letter_spacing(font_size, float(np.interp(distance, [0, 1], [CENTER_LETTER_SPACING, SIDE_LETTER_SPACING])))
+      color = rl.Color(255, 255, 255, int(np.interp(distance, [0, 1], [255 * CENTER_ALPHA, 255 * SIDE_ALPHA])))
+      # center on the width in the font it's drawn with, scaled to its size, so switching fonts grows it evenly
+      if idx == closest_idx:
+        font, width = self._center_font, self._center_widths[idx] * font_size / CENTER_FONT_SIZE
+      else:
+        font, width = self._side_font, self._side_widths[idx] * font_size / SIDE_FONT_SIZE
+      position = rl.Vector2(centers[idx] + shift - width / 2, self._rect.y + VALUE_CENTER_Y - font_size * FONT_SCALE / 2)
+      rl.draw_text_ex(font, str(self._options[idx]), position, font_size, spacing, color)
 
-    for idx, option in enumerate(self._options):
-      if abs(self._item_centers[idx] - center_x) > self._rect.width / 2 + widths[idx] / 2:
-        continue
+    # fade values out into the left and right edges
+    rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), EDGE_SHADOW_WIDTH, int(self._rect.height), rl.BLACK, rl.BLANK)
+    rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - EDGE_SHADOW_WIDTH), int(self._rect.y), EDGE_SHADOW_WIDTH, int(self._rect.height),
+                                 rl.BLANK, rl.BLACK)
 
-      font = self._center_value_font if idx == center_idx else self._value_font
-      text_size = measure_text_cached(font, str(option), VALUE_FONT_SIZE, VALUE_LETTER_SPACING)
-      position = rl.Vector2(self._item_centers[idx] - text_size.x * scales[idx] / 2, self._rect.y + VALUE_CENTER_Y - text_size.y * scales[idx] / 2)
-      color = lerp_color(EDGE_COLOR, LABEL_COLOR, math.exp(-COLOR_DECAY * abs(idx - current)))
-      rl.draw_text_ex(font, str(option), position, VALUE_FONT_SIZE * scales[idx], VALUE_LETTER_SPACING * scales[idx], color)
-
-    unit_size = measure_text_cached(self._unit_font, self._unit, UNIT_FONT_SIZE)
-    unit_position = rl.Vector2(center_x - unit_size.x / 2, self._rect.y + UNIT_CENTER_Y - unit_size.y / 2)
-    rl.draw_text_ex(self._unit_font, self._unit, unit_position, UNIT_FONT_SIZE, 0, COMPLICATION_GREY)
+    unit_spacing = letter_spacing(UNIT_FONT_SIZE, UNIT_LETTER_SPACING)
+    unit_size = measure_text_cached(self._unit_font, self._unit, UNIT_FONT_SIZE, unit_spacing)
+    unit_position = rl.Vector2(center_x - unit_size.x / 2, self._rect.y + UNIT_Y)
+    rl.draw_text_ex(self._unit_font, self._unit, unit_position, UNIT_FONT_SIZE, unit_spacing, LABEL_COLOR)
 
 
 class InitialCruiseSpeedButton(BigButton):
   def __init__(self):
-    super().__init__("initial max speed", " ")
+    super().__init__("initial max speed", " ", description="Max speed when engaging openpilot.\n" +
+                                                          "If you are already driving faster, your current speed is used.\n" +
+                                                          "Resume restores the previous max speed.")
     self._picker = InitialCruiseSpeedPicker(self.refresh)
     self.set_click_callback(lambda: gui_app.push_widget(self._picker))
     self.refresh()
 
+  def _get_label_font_size(self):
+    # size as a long title so the wrapped title doesn't crowd the speed
+    return 42
+
   def refresh(self):
-    options = get_speed_options()
-    self.set_value(f"{options[get_selected_speed_index(options)]} {get_speed_unit()}")
+    options, idx = get_speed_options()
+    self.set_value(f"{options[idx]} " + (tr("kph") if ui_state.is_metric else tr("mph")))

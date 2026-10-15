@@ -17,7 +17,7 @@ REPEAT_DELAY = 0.5  # seconds held before repeating
 REPEAT_INTERVAL = 0.2  # seconds
 
 
-def get_speed_conversion() -> float:
+def _speed_conversion() -> float:
   return 1 if ui_state.is_metric else CV.KPH_TO_MPH
 
 
@@ -25,19 +25,17 @@ def get_speed_unit() -> str:
   return tr("km/h") if ui_state.is_metric else tr("mph")
 
 
-def get_speed_options() -> list[int]:
-  conversion = get_speed_conversion()
-  return list(range(round(V_CRUISE_INITIAL * conversion), round(V_CRUISE_MAX * conversion) + 1, SPEED_STEP))
-
-
-def get_selected_speed_index(options: list[int]) -> int:
-  speed = ui_state.initial_cruise_speed * get_speed_conversion()
-  return min(range(len(options)), key=lambda idx: abs(options[idx] - speed))
+def get_speed_options() -> tuple[list[int], int]:
+  """Initial cruise speeds in display units, and the index of the nearest to the saved one"""
+  conversion = _speed_conversion()
+  options = list(range(round(V_CRUISE_INITIAL * conversion), round(V_CRUISE_MAX * conversion) + 1, SPEED_STEP))
+  idx = round((ui_state.initial_cruise_speed * conversion - options[0]) / SPEED_STEP)
+  return options, max(0, min(len(options) - 1, idx))
 
 
 def set_initial_cruise_speed(speed: int) -> None:
   """Save an initial cruise speed in display units"""
-  ui_state.params.put("InitialCruiseSpeedKph", round(speed / get_speed_conversion()), block=True)
+  ui_state.params.put("InitialCruiseSpeedKph", round(speed / _speed_conversion()), block=True)
   ui_state.update_params()
 
 
@@ -84,8 +82,7 @@ class InitialCruiseSpeedControl(ItemAction):
     self.refresh()
 
   def refresh(self):
-    self._options = get_speed_options()
-    self._selected_idx = get_selected_speed_index(self._options)
+    self._options, self._selected_idx = get_speed_options()
 
   def _adjust_speed(self, step: int):
     self._selected_idx += step
