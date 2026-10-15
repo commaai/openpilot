@@ -28,6 +28,10 @@ BUTTON_HEIGHT = 100
 BUTTON_BORDER_RADIUS = 50
 BUTTON_FONT_SIZE = 35
 BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
+BUTTON_BG_COLOR = rl.Color(57, 57, 57, 255)
+BUTTON_PRESSED_BG_COLOR = rl.Color(74, 74, 74, 255)
+BUTTON_SELECTED_BG_COLOR = rl.Color(51, 171, 76, 255)
+BUTTON_DISABLED_ALPHA = 150
 
 TEXT_PADDING = 20
 
@@ -240,14 +244,14 @@ class MultipleButtonAction(ItemAction):
 
       # Button colors
       if is_selected:
-        bg_color = rl.Color(51, 171, 76, 255)  # Green
+        bg_color = BUTTON_SELECTED_BG_COLOR
       elif is_pressed:
-        bg_color = rl.Color(74, 74, 74, 255)  # Dark gray
+        bg_color = BUTTON_PRESSED_BG_COLOR
       else:
-        bg_color = rl.Color(57, 57, 57, 255)  # Gray
+        bg_color = BUTTON_BG_COLOR
 
       if not self.enabled:
-        bg_color = rl.Color(bg_color.r, bg_color.g, bg_color.b, 150)  # Dim
+        bg_color = rl.Color(bg_color.r, bg_color.g, bg_color.b, BUTTON_DISABLED_ALPHA)
 
       # Draw button
       rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)

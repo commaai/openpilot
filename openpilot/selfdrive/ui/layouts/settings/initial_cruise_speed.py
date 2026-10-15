@@ -9,25 +9,22 @@ from openpilot.system.ui.lib.application import FontWeight, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.button import Button
 from openpilot.system.ui.widgets.label import gui_label
-from openpilot.system.ui.widgets.list_view import ItemAction
+from openpilot.system.ui.widgets.list_view import (ItemAction, BUTTON_HEIGHT, BUTTON_BORDER_RADIUS, BUTTON_BG_COLOR,
+                                                   BUTTON_PRESSED_BG_COLOR, BUTTON_DISABLED_ALPHA)
 
-# match the driving personality buttons
-BUTTON_COLOR = rl.Color(57, 57, 57, 255)
-BUTTON_PRESSED_COLOR = rl.Color(74, 74, 74, 255)
-BUTTON_DISABLED_ALPHA = 150
-BUTTON_WIDTH = 160
-BUTTON_HEIGHT = 100
+STEP_BUTTON_WIDTH = 160
 
 
 class RepeatButton(Button):
   def __init__(self, text, callback, font_size):
-    super().__init__(text, callback, font_size=font_size, border_radius=BUTTON_HEIGHT // 2, text_padding=0)
+    super().__init__(text, callback, font_size=font_size, border_radius=BUTTON_BORDER_RADIUS, text_padding=0)
     self._repeat_at: float | None = None
     self._repeated = False
 
   def _update_state(self):
     super()._update_state()
-    color = BUTTON_PRESSED_COLOR if self.enabled and self.is_pressed else BUTTON_COLOR
+    # match the driving personality buttons
+    color = BUTTON_PRESSED_BG_COLOR if self.enabled and self.is_pressed else BUTTON_BG_COLOR
     self._background_color = color if self.enabled else rl.Color(color.r, color.g, color.b, BUTTON_DISABLED_ALPHA)
 
   def cancel_repeat(self):
@@ -83,8 +80,8 @@ class InitialCruiseSpeedControl(ItemAction):
 
   def _render(self, rect):
     y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
-    self._decrease.render(rl.Rectangle(rect.x, y, BUTTON_WIDTH, BUTTON_HEIGHT))
-    self._increase.render(rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, y, BUTTON_WIDTH, BUTTON_HEIGHT))
+    self._decrease.render(rl.Rectangle(rect.x, y, STEP_BUTTON_WIDTH, BUTTON_HEIGHT))
+    self._increase.render(rl.Rectangle(rect.x + rect.width - STEP_BUTTON_WIDTH, y, STEP_BUTTON_WIDTH, BUTTON_HEIGHT))
     text = f"{self._value} " + (tr("km/h") if self._metric else tr("mph"))
-    gui_label(rl.Rectangle(rect.x + BUTTON_WIDTH, y, rect.width - 2 * BUTTON_WIDTH, BUTTON_HEIGHT), text, self._font_size,
+    gui_label(rl.Rectangle(rect.x + STEP_BUTTON_WIDTH, y, rect.width - 2 * STEP_BUTTON_WIDTH, BUTTON_HEIGHT), text, self._font_size,
               color=rl.WHITE if self.enabled else rl.GRAY, font_weight=FontWeight.MEDIUM, alignment=TextAlignment.CENTER)
