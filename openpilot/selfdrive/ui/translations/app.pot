@@ -716,7 +716,7 @@ msgid "Record and store microphone audio while driving. The audio will be includ
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
+msgid "Following Distance"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py

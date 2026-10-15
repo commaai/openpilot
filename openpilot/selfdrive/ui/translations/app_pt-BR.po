@@ -210,8 +210,8 @@ msgid "Download"
 msgstr "Baixar"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
-msgstr "Personalidade"
+msgid "Following Distance"
+msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
