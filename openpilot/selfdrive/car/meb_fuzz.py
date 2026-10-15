@@ -169,7 +169,14 @@ class MebFuzz:
   def _end_run(self, outcome, sig):
     if self.run is None:
       return
+    # a run that already reported done is not reported again when the driver disengages
+    if not self.run.get('reported'):
+      self._report(outcome, sig)
+    self.run = None
+
+  def _report(self, outcome, sig):
     self.run['outcome'] = outcome
+    self.run['reported'] = True
     result = {
       'id': self.run['id'], 'wall_time': datetime.now().isoformat(timespec='seconds'), 'program': self.run['program'], 'variants': self.run['variants'],
       'outcome': outcome, 'phase_at_end': self.run['phase'], 'step_at_end': self.run['step'],
@@ -185,7 +192,6 @@ class MebFuzz:
     cloudlog.event('meb_fuzz end', run=self.run['id'], outcome=outcome)
     self.persist['last_outcome'] = f"#{self.run['id']} {self.run['program'].get('name', '')}: {outcome}"
     _write_json(self.state_path, self.persist)
-    self.run = None
 
   def _record(self, now, sig, state):
     values = dict(sig, state=state)
@@ -258,7 +264,8 @@ class MebFuzz:
     elif run['hold_since'] is None:
       run['hold_since'] = now
     if run['hold_since'] is not None and now - run['hold_since'] > FINISH_HOLD_TIME and run['outcome'] is None:
-      run['outcome'] = 'done'
+      # report as soon as the run is done, the driver may stay engaged and held for a while
+      self._report('done', sig)
     try:
       accel = float(self._eval(program.get('hold_accel', DEFAULT_HOLD_ACCEL), env))
     except Exception:
