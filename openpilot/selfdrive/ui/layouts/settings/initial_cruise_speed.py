@@ -7,14 +7,14 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.car.cruise import V_CRUISE_INITIAL, V_CRUISE_MAX
 from openpilot.system.ui.lib.application import FontWeight, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets.button import Button
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.list_view import ItemAction
 
 
 class RepeatButton(Button):
   def __init__(self, text, callback, font_size):
-    super().__init__(text, callback, font_size=font_size, border_radius=16, text_padding=0)
+    super().__init__(text, callback, font_size=font_size, button_style=ButtonStyle.PILL, border_radius=16, text_padding=0)
     self._repeat_at: float | None = None
     self._repeated = False
 
