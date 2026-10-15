@@ -11,7 +11,6 @@ This is the roadmap for the next major openpilot releases. Also check out
 
 openpilot 1.0 will feature a fully end-to-end driving policy.
 
-* End-to-end longitudinal control in Chill mode
 * Driver monitoring with sleep detection
 * Rolling updates/releases pushed out by CI
 * [panda safety 1.0](https://github.com/orgs/commaai/projects/27)
