@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import math
-import time
 
 from openpilot.cereal import log
 import pyray as rl
@@ -127,13 +126,8 @@ class MiciHomeLayout(Widget):
     self._on_alerts_click: Callable | None = None
     self._alert_count_callback: Callable[[], int] | None = None
 
-    self._mouse_down_t: None | float = None
-    self._did_long_press = False
-    self._is_pressed_prev = False
-
     self._version_text = self._get_version_text()
 
-    self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._usb_icon = IconWidget("icons_mici/usb.png", (62, 40))
     self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (54, 40))
     self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40))
@@ -146,7 +140,6 @@ class MiciHomeLayout(Widget):
     self._status_bar_layout = HBoxLayout([
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
-      self._experimental_icon,
       self._usb_icon,
       self._chestnut_icon,
       self._chestnut_loading_icon,
@@ -162,23 +155,6 @@ class MiciHomeLayout(Widget):
     self._branch_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, scroll=True)
     self._version_commit_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, max_width=480, wrap_text=False)
 
-  def _update_state(self):
-    if self.is_pressed and not self._is_pressed_prev:
-      self._mouse_down_t = time.monotonic()
-    elif not self.is_pressed and self._is_pressed_prev:
-      self._mouse_down_t = None
-      self._did_long_press = False
-    self._is_pressed_prev = self.is_pressed
-
-    if self._mouse_down_t is not None:
-      if time.monotonic() - self._mouse_down_t > 0.5:
-        # long gating for experimental mode - only allow toggle if longitudinal control is available
-        if ui_state.has_longitudinal_control:
-          ui_state.experimental_mode = not ui_state.experimental_mode
-          ui_state.params.put("ExperimentalMode", ui_state.experimental_mode, block=True)
-        self._mouse_down_t = None
-        self._did_long_press = True
-
   def set_callbacks(self, on_settings: Callable | None = None, on_alerts: Callable | None = None,
                     alert_count_callback: Callable[[], int] | None = None,
                     alert_icon_callback: Callable[[], rl.Texture | None] | None = None):
@@ -188,15 +164,13 @@ class MiciHomeLayout(Widget):
     self._alerts_pill.set_alert_count_callback(alert_count_callback, alert_icon_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if not self._did_long_press:
-      relative_x = mouse_pos.x - self.rect.x
-      has_alerts = self._alert_count_callback and self._alert_count_callback() > 0
-      if has_alerts and relative_x > self.rect.width - ALERTS_ZONE_WIDTH:
-        if self._on_alerts_click:
-          self._on_alerts_click()
-      elif self._on_settings_click:
-        self._on_settings_click()
-    self._did_long_press = False
+    relative_x = mouse_pos.x - self.rect.x
+    has_alerts = self._alert_count_callback and self._alert_count_callback() > 0
+    if has_alerts and relative_x > self.rect.width - ALERTS_ZONE_WIDTH:
+      if self._on_alerts_click:
+        self._on_alerts_click()
+    elif self._on_settings_click:
+      self._on_settings_click()
 
   def _get_version_text(self) -> tuple[str, str, str, str] | None:
     version = ui_state.params.get("Version")
@@ -249,7 +223,6 @@ class MiciHomeLayout(Widget):
     usb_connected = ui_state.usb_connected
     usb_unknown = ui_state.usb_unknown
     chestnut_state = ui_state.chestnut_state
-    self._experimental_icon.set_visible(ui_state.experimental_mode)
     self._usb_icon.set_visible(usb_connected and usb_unknown)
     self._chestnut_icon.set_visible(not usb_unknown and chestnut_state not in
                                     (ChestnutState.LOADING, ChestnutState.UNCOMPILED, ChestnutState.FAILED) and
