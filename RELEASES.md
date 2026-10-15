@@ -1,6 +1,6 @@
 Version 0.11.3 (2026-XX-XX)
 ========================
-* Auto-speed
+* Autospeed
   * On supported cars openpilot will decide what speed to drive intelligently based on the scene, including:
     * stopping at red lights, and going at green lights
     * slowing down for curves
