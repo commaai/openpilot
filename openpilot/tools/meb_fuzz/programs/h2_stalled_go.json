@@ -1,0 +1,35 @@
+{
+ "name": "H2 hold_first, stalled go: roll >3 mph, engage. BRAKE if creeps",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "pid",
+   "accel": -0.6,
+   "until": "v < 0.3",
+   "timeout": 8
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "hms == 1",
+   "timeout": 6
+  },
+  {
+   "state": "pid",
+   "accel": "-0.2 if v > 0.1 else 0.0",
+   "until": "ss == 1 and motion == 3",
+   "timeout": 5
+  },
+  {
+   "state": "pid",
+   "accel": 0.05,
+   "until": "t >= 3 or v > 0.2"
+  },
+  {
+   "state": "stopping",
+   "accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0",
+   "until": "hms == 1 and motion == 3 and t > 3",
+   "timeout": 8
+  }
+ ]
+}

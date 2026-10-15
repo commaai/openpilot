@@ -1,0 +1,24 @@
+{
+ "name": "E2 churn at stop: roll >3 mph, THEN engage",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "pid",
+   "accel": -0.6,
+   "until": "v < 0.3",
+   "timeout": 8
+  },
+  {
+   "state": "'pid' if (t % 0.28) >= 0.14 else 'stopping'",
+   "accel": "0.1 if (t % 0.28) >= 0.14 else (-0.35 if (motion == 1 and v > 0.05) else 0.0)",
+   "until": "t >= 3"
+  },
+  {
+   "state": "stopping",
+   "accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0",
+   "until": "hms == 1 and motion == 3 and t > 3",
+   "timeout": 20
+  }
+ ],
+ "hold_accel": -0.5
+}

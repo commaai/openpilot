@@ -1,0 +1,35 @@
+{
+ "name": "E1 stock rule: roll ABOVE 3 mph, THEN engage",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "pid",
+   "accel": -0.6,
+   "until": "v < 0.3",
+   "timeout": 8
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "hms == 1",
+   "timeout": 6
+  },
+  {
+   "state": "pid",
+   "accel": 0.1,
+   "until": "ss == 1",
+   "timeout": 4
+  },
+  {
+   "state": "pid",
+   "accel": 0.15,
+   "until": "t >= 0.9"
+  },
+  {
+   "state": "stopping",
+   "accel": -0.5,
+   "until": "t >= 4"
+  }
+ ],
+ "hold_accel": -0.5
+}

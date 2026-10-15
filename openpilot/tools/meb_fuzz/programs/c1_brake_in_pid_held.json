@@ -1,0 +1,11 @@
+{
+ "name": "C1 brake in pid while held: roll >3 mph, engage",
+ "setup_speed": 2.2,
+ "steps": [
+  {"state": "pid", "accel": -0.6, "until": "v < 0.3", "timeout": 8},
+  {"state": "stopping", "accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0", "until": "hms == 1 and motion == 3 and t > 2", "timeout": 10},
+  {"state": "pid", "accel": -0.3, "until": "t >= 2.5"},
+  {"state": "stopping", "accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0", "until": "hms == 1 and motion == 3 and t > 3", "timeout": 10}
+ ],
+ "hold_accel": 0.0
+}

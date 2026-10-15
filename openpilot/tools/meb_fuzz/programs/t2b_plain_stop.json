@@ -1,0 +1,19 @@
+{
+ "name": "T2b plain stop, NO restart: roll >3 mph, THEN engage",
+ "setup_speed": 2.2,
+ "steps": [
+  {
+   "state": "pid",
+   "accel": -0.6,
+   "until": "v < 0.3",
+   "timeout": 8
+  },
+  {
+   "state": "stopping",
+   "accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0",
+   "until": "hms == 1 and motion == 3 and t > 3",
+   "timeout": 12
+  }
+ ],
+ "hold_accel": -0.5
+}

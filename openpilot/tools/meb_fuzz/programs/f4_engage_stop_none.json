@@ -1,0 +1,30 @@
+{
+ "name": "F4 STOP, brake, engage, release (sits 2 s)",
+ "setup_speed": 0.0,
+ "steps": [
+  {
+   "state": "pid",
+   "accel": 0.0,
+   "until": "t >= 2.5"
+  },
+  {
+   "state": "pid",
+   "accel": "clip(0.8 * (2.2 - v), -1.5, 0.6)",
+   "until": "v > 1.8",
+   "timeout": 8
+  },
+  {
+   "state": "pid",
+   "accel": -0.6,
+   "until": "v < 0.3",
+   "timeout": 8
+  },
+  {
+   "state": "stopping",
+   "accel": "-0.5 if (motion == 1 and v > 0.05) else 0.0",
+   "until": "hms == 1 and motion == 3 and t > 3",
+   "timeout": 10
+  }
+ ],
+ "hold_accel": 0.0
+}
