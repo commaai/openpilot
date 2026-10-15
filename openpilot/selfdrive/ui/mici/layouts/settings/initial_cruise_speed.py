@@ -6,10 +6,11 @@ from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import get_spe
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialogBase
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel2 import AUTO_SCROLL_TC, GuiScrollPanel2, ScrollState
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 
 ITEM_DRAG_DISTANCE = 120  # px of drag per value
@@ -32,6 +33,11 @@ def letter_spacing(font_size: float, spacing: float) -> float:
   return spacing * font_size * FONT_SCALE
 
 
+class TapArea(Widget):
+  def _render(self, _):
+    pass
+
+
 class InitialCruiseSpeedPicker(BigDialogBase):
   def __init__(self, change_callback: Callable[[], None]):
     super().__init__()
@@ -43,6 +49,12 @@ class InitialCruiseSpeedPicker(BigDialogBase):
 
     self._scroll_panel = GuiScrollPanel2(horizontal=True)
     self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
+
+    # like scroller items, scrolling or swiping away cancels a tap
+    self._tap_area = self._child(TapArea())
+    self._tap_area.set_enabled(lambda: self.enabled and not self.is_dismissing)
+    self._tap_area.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
+    self._tap_area.set_click_callback(self._on_tap)
 
     self._options: list[int] = []
     self._center_widths: list[float] = []
@@ -82,21 +94,21 @@ class InitialCruiseSpeedPicker(BigDialogBase):
     content_size = (len(self._options) - 1) * ITEM_DRAG_DISTANCE + self._rect.width
     self._scroll_panel.update(self._rect, content_size, snap_target=snap_target)
 
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-    # dragging or stopping a fling clears the lock, so a release that's still locked is a tap
-    if self._locked_idx is None or self.is_dismissing:
+  def _on_tap(self):
+    if self._locked_idx is None:
       return
 
     # tap either side of the center value to step one value, from where the picker is heading
+    tap_x = gui_app.last_mouse_event.pos.x
     center_x = self._rect.x + self._rect.width / 2
     tap_zone = self._center_widths[self._locked_idx] / 2 + ITEM_GAP / 2
-    if mouse_pos.x > center_x + tap_zone:
+    if tap_x > center_x + tap_zone:
       self._lock(self._locked_idx + 1)
-    elif mouse_pos.x < center_x - tap_zone:
+    elif tap_x < center_x - tap_zone:
       self._lock(self._locked_idx - 1)
 
   def _render(self, _):
+    self._tap_area.render(self._rect)
     center_x = self._rect.x + self._rect.width / 2
     current = -self._scroll_panel.get_offset() / ITEM_DRAG_DISTANCE
 
