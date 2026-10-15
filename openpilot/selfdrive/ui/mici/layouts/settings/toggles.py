@@ -12,11 +12,19 @@ PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 class InitialCruiseSpeedButton(BigButton):
   def __init__(self):
-    super().__init__("initial max speed", " ")
-    self._long_press_callback = None
+    super().__init__("initial max speed", " ", description="Max speed when engaging openpilot.\n" +
+                                                           "If you are already driving faster, your current speed is used.\n" +
+                                                           "Resume restores the previous max speed.")
     self._control = self._child(InitialCruiseSpeedControl(compact=True))
     self._control.set_enabled(lambda: self.enabled)
     self._control.set_touch_valid_callback(self._touch_valid)
+    self._show_description = self._long_press_callback
+    self.set_long_press_callback(self._on_long_press)
+
+  def _on_long_press(self):
+    # a hold on the speed control repeats a step
+    if not self._control.is_pressed and self._show_description is not None:
+      self._show_description()
 
   def _get_label_font_size(self):
     return 36

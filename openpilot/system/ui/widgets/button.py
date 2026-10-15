@@ -21,6 +21,7 @@ class ButtonStyle(IntEnum):
   NO_EFFECT = 6
   KEYBOARD = 7
   FORGET_WIFI = 8
+  PILL = 11  # For pill buttons in list items, for example the multiple button selector
 
 
 ICON_PADDING = 15
@@ -39,10 +40,12 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
   ButtonStyle.KEYBOARD: rl.Color(221, 221, 221, 255),
   ButtonStyle.FORGET_WIFI: rl.Color(51, 51, 51, 255),
+  ButtonStyle.PILL: rl.Color(228, 228, 228, 255),
 }
 
 BUTTON_DISABLED_TEXT_COLORS = {
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.WHITE,
+  ButtonStyle.PILL: rl.Color(150, 150, 150, 255),
 }
 
 BUTTON_BACKGROUND_COLORS = {
@@ -57,6 +60,7 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
   ButtonStyle.KEYBOARD: rl.Color(68, 68, 68, 255),
   ButtonStyle.FORGET_WIFI: rl.Color(189, 189, 189, 255),
+  ButtonStyle.PILL: rl.Color(57, 57, 57, 255),
 }
 
 BUTTON_PRESSED_BACKGROUND_COLORS = {
@@ -71,10 +75,12 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
   ButtonStyle.KEYBOARD: rl.Color(51, 51, 51, 255),
   ButtonStyle.FORGET_WIFI: rl.Color(130, 130, 130, 255),
+  ButtonStyle.PILL: rl.Color(74, 74, 74, 255),
 }
 
 BUTTON_DISABLED_BACKGROUND_COLORS = {
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
+  ButtonStyle.PILL: rl.Color(57, 57, 57, 150),
 }
 
 

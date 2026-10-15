@@ -530,7 +530,7 @@ class SelfdriveD:
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
-    ss.experimentalMode = True
+    ss.experimentalMode = self.CP.openpilotLongitudinalControl
     ss.personality = self.personality
 
     ss.alertText1 = self.AM.current_alert.alert_text_1
