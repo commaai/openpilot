@@ -14,6 +14,13 @@ CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 
+STOCK_PATH_GRADIENT = Gradient(
+  start=(0.0, 1.0),
+  end=(0.0, 0.0),
+  colors=[rl.Color(13, 248, 122, 102), rl.Color(114, 255, 92, 89), rl.Color(114, 255, 92, 0)],
+  stops=[0.0, 0.5, 1.0],
+)
+
 
 @dataclass
 class ModelPoints:
@@ -169,6 +176,9 @@ class ModelRenderer(Widget):
     self._update_path_gradient()
 
   def _update_path_gradient(self):
+    if not self._longitudinal_control:
+      return
+
     max_len = min(len(self._path.projected_points) // 2, len(self._acceleration_x))
 
     segment_colors = []
@@ -255,7 +265,9 @@ class ModelRenderer(Widget):
     if not self._path.projected_points.size:
       return
 
-    if len(self._path_gradient.colors) > 1:
+    if not self._longitudinal_control:
+      draw_polygon(self._rect, self._path.projected_points, gradient=STOCK_PATH_GRADIENT)
+    elif len(self._path_gradient.colors) > 1:
       draw_polygon(self._rect, self._path.projected_points, gradient=self._path_gradient)
     else:
       draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))

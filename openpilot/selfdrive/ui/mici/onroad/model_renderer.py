@@ -20,6 +20,13 @@ MAX_DRAW_DISTANCE = 100.0
 LEAD_BAR_LENGTH = 12.0  # px
 LEAD_BAR_WIDTH = 1.8  # m
 
+STOCK_PATH_GRADIENT = Gradient(
+  start=(0.0, 1.0),
+  end=(0.0, 0.0),
+  colors=[rl.Color(13, 248, 122, 102), rl.Color(114, 255, 92, 89), rl.Color(114, 255, 92, 0)],
+  stops=[0.0, 0.5, 1.0],
+)
+
 LANE_LINE_COLORS = {
   UIStatus.DISENGAGED: rl.Color(200, 200, 200, 255),
   UIStatus.OVERRIDE: rl.Color(255, 255, 255, 255),
@@ -215,6 +222,9 @@ class ModelRenderer(Widget):
     self._update_path_gradient()
 
   def _update_path_gradient(self):
+    if not self._longitudinal_control:
+      return
+
     path_pts = self._path.projected_points + np.array([self._rect.x, self._rect.y], dtype=np.float32)
     max_len = min(len(path_pts) // 2, len(self._acceleration_x))
 
@@ -302,6 +312,8 @@ class ModelRenderer(Widget):
 
     if ui_state.status == UIStatus.DISENGAGED:
       draw_polygon(self._rect, path_pts, rl.Color(0, 0, 0, 90))
+    elif not self._longitudinal_control:
+      draw_polygon(self._rect, path_pts, gradient=STOCK_PATH_GRADIENT)
     elif len(self._path_gradient.colors) > 1:
       draw_polygon(self._rect, path_pts, gradient=self._path_gradient)
     else:
