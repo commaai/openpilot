@@ -115,11 +115,8 @@ class SwagErrorFilter(logging.Filter):
   def filter(self, record):
     return record.levelno < logging.ERROR
 
-def _tmpfunc():
-  return 0
-
-def _srcfile():
-  return os.path.normcase(_tmpfunc.__code__.co_filename)
+# frames from these files are skipped when finding a record's call site
+_srcfiles = (logging._srcfile, os.path.normcase(__file__))
 
 class SwagLogger(logging.Logger):
   def __init__(self):
@@ -179,41 +176,22 @@ class SwagLogger(logging.Logger):
       self.debug(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
-    """
-    Find the stack frame of the caller so that we can note the source
-    file name, line number and function name.
-    """
-    f = sys._getframe(3)
-    #On some versions of IronPython, currentframe() returns None if
-    #IronPython isn't run with -X:Frames.
-    if f is not None:
+    """Find the first frame outside logging and this module (then stacklevel-1 more), so records point at the real caller."""
+    f = sys._getframe(1)
+    while f is not None and (os.path.normcase(f.f_code.co_filename) in _srcfiles or stacklevel > 1):
+      if os.path.normcase(f.f_code.co_filename) not in _srcfiles:
+        stacklevel -= 1
       f = f.f_back
-    orig_f = f
-    while f and stacklevel > 1:
-      f = f.f_back
-      stacklevel -= 1
-    if not f:
-      f = orig_f
-    rv = "(unknown file)", 0, "(unknown function)", None
-    while hasattr(f, "f_code"):
-      co = f.f_code
-      filename = os.path.normcase(co.co_filename)
-
-      if filename == _srcfile:
-        f = f.f_back
-        continue
-      sinfo = None
-      if stack_info:
-        sio = io.StringIO()
-        sio.write('Stack (most recent call last):\n')
-        traceback.print_stack(f, file=sio)
-        sinfo = sio.getvalue()
-        if sinfo[-1] == '\n':
-          sinfo = sinfo[:-1]
-        sio.close()
-      rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
-      break
-    return rv
+    if f is None:
+      return "(unknown file)", 0, "(unknown function)", None
+    sinfo = None
+    if stack_info:
+      sio = io.StringIO()
+      sio.write('Stack (most recent call last):\n')
+      traceback.print_stack(f, file=sio)
+      sinfo = sio.getvalue().rstrip('\n')
+      sio.close()
+    return f.f_code.co_filename, f.f_lineno, f.f_code.co_name, sinfo
 
 if __name__ == "__main__":
   log = SwagLogger()
