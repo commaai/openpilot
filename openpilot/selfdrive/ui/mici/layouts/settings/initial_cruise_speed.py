@@ -129,7 +129,7 @@ class InitialCruiseSpeedPicker(BigDialogBase):
       t = blends[idx]
       font_size = lerp(CENTER_FONT_SIZE, SIDE_FONT_SIZE, t)
       spacing = letter_spacing(font_size, lerp(CENTER_LETTER_SPACING, SIDE_LETTER_SPACING, t))
-      color = rl.Color(255, 255, 255, int(255 * lerp(0.9, 0.35, t)))
+      color = rl.Color(255, 255, 255, int(255 * lerp(0.9, 0.45, t)))
       # use the width of the font that draws the value. this keeps the value at its center when the font changes
       if idx == closest_idx:
         font, width = self._center_font, self._center_widths[idx] * font_size / CENTER_FONT_SIZE
