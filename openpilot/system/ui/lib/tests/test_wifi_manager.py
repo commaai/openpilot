@@ -467,6 +467,20 @@ class TestLifecycle(OpenpilotTestCase):
     self.assertFalse(wm.is_connection_saved("Elsewhere"))
     self.assertFalse(wm.is_tethering_active())
 
+  def test_fresh_start_without_networkmanager(self, manager_env, mocker):
+    real_sudo = wifi_manager._sudo
+
+    def sudo(*cmd, check=True):
+      if cmd[0] == "nmcli":
+        return subprocess.CompletedProcess(cmd, 1, "", "sudo: nmcli: command not found")
+      return real_sudo(*cmd, check=check)
+
+    mocker.patch.object(wifi_manager, "_sudo", sudo)
+    wm = start_manager(manager_env)
+    self.assertIsNotNone(manager_env.supplicant)
+    self.assertEqual(manager_env.popen[0][:2], ["sudo", "udhcpc"])
+    self.assertEqual(wm.wifi_state, wifi_manager.WifiState())
+
   def test_adopts_connected_station_without_respawning(self, manager_env):
     write(os.path.join(manager_env.dirs["persistent"], "Home.nmconnection"), KEYFILE_A.replace("type=wifi\n", "type=wifi\nmetered=2\n"))
     manager_env.spawn_status = {"wpa_state": "COMPLETED", "ssid": "Home", "mode": "station", "ip_address": "10.0.0.5", "id": "0"}
@@ -2283,47 +2297,96 @@ class TestHealth(OpenpilotTestCase):
     self.assertEqual(wm.connected_ssid, "Home")
 
 
+def dhcp_hook():
+  with tempfile.TemporaryDirectory() as d:
+    fake_bin = os.path.join(d, "bin")
+    os.makedirs(fake_bin)
+    log, resolver, stock = (os.path.join(d, name) for name in ("calls", "resolv.conf", "default.script"))
+    write(os.path.join(fake_bin, "ip"), f'#!/bin/sh\necho "ip $*" >> {log}\n')
+    write(os.path.join(fake_bin, "busybox"), f'''#!/bin/sh
+if [ "$1" = ipcalc ]; then
+  case "$2" in
+    -p) [ "$subnet" = 255.255.255.255 ] && echo PREFIX=32 || echo PREFIX=24 ;;
+    -n) echo NETWORK=10.0.0.0 ;;
+  esac
+elif [ "$1" = awk ]; then
+  shift
+  awk "$@"
+else
+  echo "$*" >> {log}
+fi
+''')
+    write(os.path.join(fake_bin, "logger"), '#!/bin/sh\nexit 0\n')
+    write(os.path.join(fake_bin, "resolvconf"), f'#!/bin/sh\necho "resolvconf $*" >> {log}\ncat > {resolver}\n')
+    write(stock, f'#!/bin/sh\necho "default $1" >> {log}\n')
+    for command in os.listdir(fake_bin):
+      os.chmod(os.path.join(fake_bin, command), 0o755)
+    os.chmod(stock, 0o755)
+    with open(wifi_manager.UDHCPC_SCRIPT_PATH) as f:
+      script = f.read().replace("/sbin/resolvconf", os.path.join(fake_bin, "resolvconf")).replace("/etc/resolv.conf", resolver)
+    path = os.path.join(d, "udhcpc.script")
+    write(path, script)
+    os.chmod(path, 0o755)
+    env = {"PATH": f"{fake_bin}:/usr/bin:/bin", "UDHCPC_DEFAULT_SCRIPT": stock,
+           "interface": "wlan0", "ip": "10.0.0.2", "router": "10.0.0.1 10.0.0.9", "subnet": "255.255.255.0",
+           "broadcast": "10.0.0.255", "mtu": "1400", "domain": "lab", "dns": "10.0.0.1 10.0.0.9", "lease": "3600"}
+    yield path, env, log, resolver, stock
+
+
 class TestShippedFiles(OpenpilotTestCase):
   def test_supplicant_conf_has_no_secrets(self):
     with open(wifi_manager.WPA_CONF_PATH) as f:
       lines = [line.strip() for line in f if line.strip()]
     self.assertEqual(lines, ["ctrl_interface=DIR=/run/wpa_supplicant GROUP=netdev", "update_config=0"])
 
-  def test_udhcpc_script_sets_wifi_metric(self):
+  def test_udhcpc_script_sets_wifi_metric(self, dhcp_hook):
     self.assertTrue(os.access(wifi_manager.UDHCPC_SCRIPT_PATH, os.X_OK))
-    with tempfile.TemporaryDirectory() as d:
-      fake_bin = os.path.join(d, "bin")
-      os.makedirs(fake_bin)
-      log = os.path.join(d, "calls")
-      write(os.path.join(fake_bin, "busybox"), f'''#!/bin/sh
-if [ "$1" = ip ] && [ "$2" = -4 ] && [ "$3" = route ] && [ "$4" = show ]; then
-  echo "$@" >> {log}
-  if [ "$subnet" != 255.255.255.255 ]; then
-    printf '%s\\n' '10.0.0.0/25 proto kernel scope link src 10.0.0.20' '10.0.0.0/24 proto kernel scope link src 10.0.0.2'
-  fi
-elif [ "$1" = awk ]; then
-  shift
-  awk "$@"
-else
-  echo "$@" >> {log}
-fi
-''')
-      os.chmod(os.path.join(fake_bin, "busybox"), 0o755)
-      write(os.path.join(d, "default.script"), f'#!/bin/sh\necho "default $1" >> {log}\n')
-      os.chmod(os.path.join(d, "default.script"), 0o755)
-      env = {"PATH": f"{fake_bin}:/usr/bin:/bin", "UDHCPC_DEFAULT_SCRIPT": os.path.join(d, "default.script"),
-             "interface": "wlan0", "ip": "10.0.0.2", "router": "10.0.0.1 10.0.0.2", "subnet": "255.255.255.0"}
-      subprocess.run([wifi_manager.UDHCPC_SCRIPT_PATH, "bound"], check=True, env=env)
-      subprocess.run([wifi_manager.UDHCPC_SCRIPT_PATH, "deconfig"], check=True, env=env)
+    script, env, log, resolver, stock = dhcp_hook
+    for action in ("bound", "renew"):
+      write(log, "")
+      subprocess.run([script, action], check=True, env=env)
       with open(log) as f:
-        self.assertEqual(f.read().splitlines(), ["default bound", "ip -4 route show dev wlan0 proto kernel scope link",
-                                                 "ip -4 route del 10.0.0.0/24 dev wlan0",
-                                                 "ip -4 route add 10.0.0.0/24 dev wlan0 proto kernel scope link src 10.0.0.2 metric 600",
-                                                 "ip -4 route flush exact 0.0.0.0/0 dev wlan0",
-                                                 "ip -4 route add default via 10.0.0.1 dev wlan0 metric 600", "default deconfig"])
-      env["subnet"] = "255.255.255.255"
-      subprocess.run([wifi_manager.UDHCPC_SCRIPT_PATH, "renew"], check=True, env=env)
+        calls = f.read().splitlines()
+      self.assertEqual([c for c in calls if c.startswith("ip -4 route")],
+                       ["ip -4 route replace 10.0.0.0/24 dev wlan0 proto kernel scope link src 10.0.0.2 metric 600",
+                        "ip -4 route flush exact 0.0.0.0/0 dev wlan0", "ip -4 route add default via 10.0.0.1 dev wlan0 metric 600"])
+      self.assertIn("resolvconf -a wlan0.udhcpc", calls)
+      with open(resolver) as f:
+        self.assertEqual(f.read(), "domain lab\nnameserver 10.0.0.1\nnameserver 10.0.0.9\n")
+
+    # Exercise the stock file fallback without touching the host resolver.
+    os.chmod(os.path.join(os.path.dirname(script), "bin", "resolvconf"), 0o644)
+    env["router"], env["domain"], env["dns"] = "", "", "10.0.0.9"
+    write(log, "")
+    subprocess.run([script, "renew"], check=True, env=env)
+    with open(log) as f:
+      self.assertFalse(any("default via" in line for line in f))
+    with open(resolver) as f:
+      self.assertEqual(f.read(), "\nnameserver 10.0.0.9\n")
+    for action in ("deconfig", "leasefail", "nak"):
+      write(log, "")
+      subprocess.run([script, action], check=True, env=env)
       with open(log) as f:
-        self.assertEqual(f.read().splitlines()[-4:], ["default renew", "ip -4 route show dev wlan0 proto kernel scope link",
-                                                       "ip -4 route flush exact 0.0.0.0/0 dev wlan0",
-                                                       "ip -4 route add default via 10.0.0.1 dev wlan0 onlink metric 600"])
+        self.assertEqual(f.read().splitlines(), [f"default {action}"])
+    write(stock, '#!/bin/sh\nexit 7\n')
+    self.assertEqual(subprocess.run([script, "deconfig"], env=env).returncode, 7)
+
+  def test_udhcpc_script_installs_routes_at_wifi_metric(self, dhcp_hook):
+    script, env, log, _, _ = dhcp_hook
+    for action, subnet in (("bound", "255.255.255.0"), ("renew", "255.255.255.0"), ("renew", "255.255.255.255")):
+      with self.subTest(action=action, subnet=subnet):
+        env["subnet"] = subnet
+        write(log, "")
+        subprocess.run([script, action], check=True, env=env)
+        with open(log) as f:
+          calls = f.read().splitlines()
+        address = next((c for c in calls if c.startswith("ip -4 addr replace")), "")
+        self.assertIn("noprefixroute", address)
+        self.assertIn("broadcast 10.0.0.255", address)
+        self.assertIn("ip link set dev wlan0 mtu 1400 up", calls)
+        routes = [c for c in calls if c.startswith("ip -4 route") and "show" not in c and "flush" not in c]
+        self.assertTrue(routes)
+        self.assertTrue(all("metric 600" in c for c in routes), routes)
+        self.assertTrue(any("default via 10.0.0.1" in c for c in routes), routes)
+        self.assertEqual(any("scope link src 10.0.0.2" in c for c in routes), subnet != "255.255.255.255")
+        self.assertEqual(any("onlink" in c for c in routes), subnet == "255.255.255.255")
