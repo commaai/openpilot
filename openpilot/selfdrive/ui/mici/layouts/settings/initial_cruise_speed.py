@@ -29,10 +29,6 @@ def lerp(start: float, end: float, t: float) -> float:
   return start + (end - start) * t
 
 
-def letter_spacing(font_size: float, spacing: float) -> float:
-  return spacing * font_size * FONT_SCALE
-
-
 class SpeedScroller(Widget):
   def __init__(self, change_callback: Callable[[], None]):
     super().__init__()
@@ -55,9 +51,9 @@ class SpeedScroller(Widget):
     super().show_event()
     self._options, self._locked_idx = get_speed_options()
     self._center_widths = [measure_text_cached(self._center_font, str(option), CENTER_FONT_SIZE,
-                                               letter_spacing(CENTER_FONT_SIZE, CENTER_LETTER_SPACING)).x for option in self._options]
+                                               CENTER_LETTER_SPACING * CENTER_FONT_SIZE * FONT_SCALE).x for option in self._options]
     self._side_widths = [measure_text_cached(self._side_font, str(option), SIDE_FONT_SIZE,
-                                             letter_spacing(SIDE_FONT_SIZE, SIDE_LETTER_SPACING)).x for option in self._options]
+                                             SIDE_LETTER_SPACING * SIDE_FONT_SIZE * FONT_SCALE).x for option in self._options]
 
     self._scroll_panel.set_offset(-self._locked_idx * ITEM_DRAG_DISTANCE)
 
@@ -116,7 +112,7 @@ class SpeedScroller(Widget):
     for idx in range(max(0, closest_idx - VISIBLE_VALUES), min(len(self._options), closest_idx + VISIBLE_VALUES + 1)):
       t = blends[idx]
       font_size = lerp(CENTER_FONT_SIZE, SIDE_FONT_SIZE, t)
-      spacing = letter_spacing(font_size, lerp(CENTER_LETTER_SPACING, SIDE_LETTER_SPACING, t))
+      spacing = lerp(CENTER_LETTER_SPACING, SIDE_LETTER_SPACING, t) * font_size * FONT_SCALE
       color = rl.Color(255, 255, 255, int(255 * lerp(0.9, 0.45, t)))
       # use the width of the font that draws the value. this keeps the value at its center when the font changes
       if idx == closest_idx:
