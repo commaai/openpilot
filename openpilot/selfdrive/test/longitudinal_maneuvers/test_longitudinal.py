@@ -83,18 +83,6 @@ def create_maneuvers(kwargs):
       **kwargs,
     ),
     Maneuver(
-      "approach stopped car at 20m/s, with prob_throttle_values",
-      duration=30.,
-      initial_speed=20.,
-      lead_relevancy=True,
-      initial_distance_lead=120.,
-      speed_lead_values=[0.0, 0., 0.],
-      prob_throttle_values=[1., 0., 0.],
-      cruise_values=[20., 20., 20.],
-      breakpoints=[0.0, 2., 2.01],
-      **kwargs,
-    ),
-    Maneuver(
       "approach slower cut-in car at 20m/s",
       duration=20.,
       initial_speed=20.,
