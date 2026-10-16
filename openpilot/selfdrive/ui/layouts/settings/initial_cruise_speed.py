@@ -21,10 +21,6 @@ def _speed_conversion() -> float:
   return 1 if ui_state.is_metric else CV.KPH_TO_MPH
 
 
-def get_speed_unit() -> str:
-  return tr("km/h") if ui_state.is_metric else tr("mph")
-
-
 def get_speed_options() -> tuple[list[int], int]:
   """Initial cruise speeds in display units, and the index of the nearest to the saved one"""
   conversion = _speed_conversion()
@@ -54,10 +50,10 @@ class RepeatButton(Button):
     if not self._repeated:
       super()._handle_mouse_release(mouse_pos)
 
-  def _update_state(self):
-    super()._update_state()
+  def _process_mouse_events(self):
+    super()._process_mouse_events()
     # step repeatedly while held. once it has repeated, the release doesn't step again
-    if not self.is_pressed or not self.enabled:
+    if not self.is_pressed or not self._touch_valid():
       self._repeat_at = None
     elif self._repeat_at is not None and time.monotonic() >= self._repeat_at:
       self._repeated = True
@@ -69,8 +65,7 @@ class RepeatButton(Button):
 class InitialCruiseSpeedControl(ItemAction):
   def __init__(self):
     super().__init__(width=580)
-    self._options: list[int] = []
-    self._selected_idx = 0
+    self._options, self._selected_idx = get_speed_options()
 
     self._decrease = self._child(RepeatButton("-", lambda: self._adjust_speed(-1), VALUE_FONT_SIZE))
     self._increase = self._child(RepeatButton("+", lambda: self._adjust_speed(1), VALUE_FONT_SIZE))
@@ -78,7 +73,6 @@ class InitialCruiseSpeedControl(ItemAction):
     self._increase.set_enabled(lambda: self.enabled and self._selected_idx < len(self._options) - 1)
     self._decrease.set_touch_valid_callback(self._touch_valid)
     self._increase.set_touch_valid_callback(self._touch_valid)
-    self.refresh()
 
   def refresh(self):
     self._options, self._selected_idx = get_speed_options()
@@ -91,6 +85,6 @@ class InitialCruiseSpeedControl(ItemAction):
     y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
     self._decrease.render(rl.Rectangle(rect.x, y, STEP_BUTTON_WIDTH, BUTTON_HEIGHT))
     self._increase.render(rl.Rectangle(rect.x + rect.width - STEP_BUTTON_WIDTH, y, STEP_BUTTON_WIDTH, BUTTON_HEIGHT))
-    text = f"{self._options[self._selected_idx]} {get_speed_unit()}"
+    text = f"{self._options[self._selected_idx]} " + (tr("km/h") if ui_state.is_metric else tr("mph"))
     gui_label(rl.Rectangle(rect.x + STEP_BUTTON_WIDTH, y, rect.width - 2 * STEP_BUTTON_WIDTH, BUTTON_HEIGHT), text, VALUE_FONT_SIZE,
               color=rl.WHITE if self.enabled else rl.GRAY, font_weight=FontWeight.MEDIUM, alignment=TextAlignment.CENTER)
