@@ -29,7 +29,6 @@ BUTTON_HEIGHT = 100
 BUTTON_BORDER_RADIUS = 50
 BUTTON_FONT_SIZE = 35
 BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
-BUTTON_SELECTED_BG_COLOR = rl.Color(51, 171, 76, 255)
 
 TEXT_PADDING = 20
 
@@ -242,7 +241,7 @@ class MultipleButtonAction(ItemAction):
 
       # Button colors
       if is_selected:
-        bg_color = BUTTON_SELECTED_BG_COLOR
+        bg_color = rl.Color(51, 171, 76, 255)  # Green
       elif is_pressed:
         bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[ButtonStyle.PILL]
       else:
