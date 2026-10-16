@@ -33,37 +33,26 @@ def letter_spacing(font_size: float, spacing: float) -> float:
   return spacing * font_size * FONT_SCALE
 
 
-class TapArea(Widget):
-  def _render(self, _):
-    pass
-
-
-class InitialCruiseSpeedPicker(BigDialogBase):
+class SpeedScroller(Widget):
   def __init__(self, change_callback: Callable[[], None]):
     super().__init__()
     self._change_callback = change_callback
 
     self._center_font = gui_app.font(FontWeight.BOLD)
     self._side_font = gui_app.font(FontWeight.ROMAN)
-    self._unit_label = self._child(UnifiedLabel("", 36, FontWeight.BOLD, LABEL_COLOR, alignment=TextAlignment.CENTER, letter_spacing=-0.03))
 
     self._scroll_panel = GuiScrollPanel2(horizontal=True)
-    self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
-
-    # need this for touch_valid support
-    self._tap_area = self._child(TapArea())
-    self._tap_area.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._tap_area.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    self._tap_area.set_click_callback(self._on_tap)
+    self._scroll_panel.set_enabled(lambda: self.enabled)
+    self.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
+    self.set_click_callback(self._on_tap)
 
     self._options: list[int] = []
     self._center_widths: list[float] = []
     self._side_widths: list[float] = []
-    self._locked_idx: int | None = None  # value the picker is easing onto, None while the user drags
+    self._locked_idx: int | None = None  # value the scroller is easing onto, None while the user drags
 
   def show_event(self):
     super().show_event()
-    self._unit_label.set_text(tr("KPH") if ui_state.is_metric else tr("MPH"))
     self._options, self._locked_idx = get_speed_options()
     self._center_widths = [measure_text_cached(self._center_font, str(option), CENTER_FONT_SIZE,
                                                letter_spacing(CENTER_FONT_SIZE, CENTER_LETTER_SPACING)).x for option in self._options]
@@ -108,7 +97,6 @@ class InitialCruiseSpeedPicker(BigDialogBase):
       self._lock(self._locked_idx - 1)
 
   def _render(self, _):
-    self._tap_area.render(self._rect)
     center_x = self._rect.x + self._rect.width / 2
     current = -self._scroll_panel.get_offset() / ITEM_DRAG_DISTANCE
 
@@ -139,9 +127,23 @@ class InitialCruiseSpeedPicker(BigDialogBase):
       rl.draw_text_ex(font, str(self._options[idx]), position, font_size, spacing, color)
 
     # gradient on left and right
-    rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), 120, int(self._rect.height), rl.BLACK, rl.BLANK)
-    rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - 120), int(self._rect.y), 120, int(self._rect.height), rl.BLANK, rl.BLACK)
+    rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), 100, int(self._rect.height), rl.BLACK, rl.BLANK)
+    rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - 100), int(self._rect.y), 100, int(self._rect.height), rl.BLANK, rl.BLACK)
 
+
+class InitialCruiseSpeedPicker(BigDialogBase):
+  def __init__(self, change_callback: Callable[[], None]):
+    super().__init__()
+    self._unit_label = self._child(UnifiedLabel("", 36, FontWeight.BOLD, LABEL_COLOR, alignment=TextAlignment.CENTER, letter_spacing=-0.03))
+    self._speed_scroller = self._child(SpeedScroller(change_callback))
+    self._speed_scroller.set_enabled(lambda: self.enabled and not self.is_dismissing)
+
+  def show_event(self):
+    super().show_event()
+    self._unit_label.set_text(tr("KPH") if ui_state.is_metric else tr("MPH"))
+
+  def _render(self, _):
+    self._speed_scroller.render(self._rect)
     self._unit_label.render(rl.Rectangle(self._rect.x, self._rect.y + 166, self._rect.width, self._rect.height - 166))
 
 
