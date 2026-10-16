@@ -241,6 +241,9 @@ class GuiApplication:
     self._ffmpeg_stop_event: threading.Event | None = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
+    self._fps_limit: int = _DEFAULT_FPS
+    self._frame_clock: Callable[[], bool] | None = None
+    self._frame_clocked = False
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
     self._window_close_requested = False
@@ -339,7 +342,8 @@ class GuiApplication:
 
       # four display runs slightly faster than 60 FPS, let it dictate rate so we don't drift and drop frames
       vblank_control = HARDWARE.get_device_type() == 'mici'
-      rl.set_target_fps(0 if OFFSCREEN or vblank_control else fps)
+      self._fps_limit = 0 if OFFSCREEN or vblank_control else fps
+      rl.set_target_fps(self._fps_limit)
 
       self._target_fps = fps
       self._load_fonts()
@@ -467,6 +471,10 @@ class GuiApplication:
   def remove_nav_stack_tick(self, tick_function: Callable[[], None]):
     if tick_function in self._nav_stack_ticks:
       self._nav_stack_ticks.remove(tick_function)
+
+  def set_frame_clock(self, clock: Callable[[], bool] | None):
+    """clock is called before each swap; block until present time and return True, or return False to use the fixed rate."""
+    self._frame_clock = clock
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -678,6 +686,7 @@ class GuiApplication:
         if self._grid_size > 0:
           self._draw_grid()
 
+        self._wait_for_frame_clock()
         rl.end_drawing()
 
         if RECORD:
@@ -810,6 +819,12 @@ class GuiApplication:
     # Store callback reference
     self._trace_log_callback = trace_log_callback
     rl.set_trace_log_callback(self._trace_log_callback)
+
+  def _wait_for_frame_clock(self):
+    clocked = self._frame_clock is not None and self._fps_limit > 0 and self._frame_clock()
+    if clocked != self._frame_clocked:
+      self._frame_clocked = clocked
+      rl.set_target_fps(0 if clocked else self._fps_limit)
 
   def _monitor_fps(self):
     fps = rl.get_fps()
