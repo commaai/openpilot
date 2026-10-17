@@ -45,6 +45,7 @@ class TestBoarddSpi(OpenpilotTestCase):
 
     st = time.monotonic()
     ts = {s: [] for s in socks.keys()}
+    last_panda_uptime = None
     test_time = int(os.getenv("TEST_TIME", "20"))
     for i in range(test_time + 2):
       # send some CAN messages, then give the last ones time to come back
@@ -80,7 +81,9 @@ class TestBoarddSpi(OpenpilotTestCase):
           elif service == "pandaStates":
             assert len(m.pandaStates) == 1
             ps = m.pandaStates[0]
-            assert ps.uptime < 1000
+            if last_panda_uptime is not None:
+              assert last_panda_uptime <= ps.uptime <= last_panda_uptime + 5
+            last_panda_uptime = ps.uptime
             assert ps.pandaType == "tres"
             assert ps.ignitionLine
             assert not ps.ignitionCan

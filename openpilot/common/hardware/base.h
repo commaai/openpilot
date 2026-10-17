@@ -19,7 +19,5 @@ public:
     return {};
   }
 
-  static void set_ir_power(int percentage) {}
-
   static bool PC() { return false; }
 };
