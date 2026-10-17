@@ -1,50 +1,36 @@
 openpilot in simulator
 =====================
 
-openpilot implements a [bridge](run_bridge.py) that allows it to run in the [MetaDrive simulator](https://github.com/metadriverse/metadrive).
+The simulator drives openpilot through a logged route. It replays the segment until openpilot engages, then a simulated car follows openpilot's controls. Each logged camera frame is reprojected to where the simulated car is, so openpilot sees the consequences of its own driving.
 
-## Launching openpilot
-First, start openpilot.
+The reprojection assumes a flat road, so it's only accurate for small deviations from the logged path. The episode ends if the car gets more than 2 m or 8° off the logged path. Lane changes in the log end it too, since openpilot stays in its lane. Segments must be from a comma 3X (1928x1208 cameras).
+
+## Usage
 ``` bash
-# Run locally
-./openpilot/tools/sim/launch_openpilot.sh
+./openpilot/tools/sim/run.py
 ```
 
-## Bridge usage
+This starts openpilot and the simulator, and shows their status until you quit. openpilot engages on its own once it's ready.
+
 ```
-$ ./run_bridge.py -h
-usage: run_bridge.py [-h] [--joystick] [--high_quality] [--dual_camera]
-Bridge between the simulator and openpilot.
+$ ./run.py -h
+usage: run.py [-h] [--route ROUTE] [--start-sec START_SEC]
 
 options:
-  -h, --help            show this help message and exit
-  --joystick
-  --high_quality
-  --dual_camera
+  --route ROUTE          segment to drive
+  --start-sec START_SEC  seconds into the segment to start from (default: 15 s on the default route)
 ```
 
-#### Bridge Controls:
-- To engage openpilot press 2, then press 1 to increase the speed and 2 to decrease.
-- To disengage, press "S" (simulates a user brake)
+| key   | functionality                                          |
+|-------|--------------------------------------------------------|
+| space | engage / disengage                                     |
+| ↑ ↓   | set speed up / down                                    |
+| ← →   | left / right blinker                                   |
+| w s   | gas / brake                                            |
+| a d   | steer                                                  |
+| g     | put the car back on the logged path and keep going     |
+| r     | restart the episode                                    |
+| i     | toggle ignition                                        |
+| q     | quit                                                   |
 
-#### All inputs:
-
-```
-| key  |   functionality       |
-|------|-----------------------|
-|  1   | Cruise Resume / Accel |
-|  2   | Cruise Set    / Decel |
-|  3   | Cruise Cancel         |
-|  r   | Reset Simulation      |
-|  i   | Toggle Ignition       |
-|  q   | Exit all              |
-| wasd | Control manually      |
-```
-
-## MetaDrive
-
-### Launching Metadrive
-Start bridge processes located in openpilot/tools/sim:
-``` bash
-./run_bridge.py
-```
+openpilot's output goes to `~/.comma/sim.log`.
