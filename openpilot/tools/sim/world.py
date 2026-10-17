@@ -15,12 +15,24 @@ MAX_HEADING_ERROR = math.radians(8)
 
 
 class Camera:
-  def __init__(self, url: str, K: np.ndarray, view_from_calib: np.ndarray, warp: Warp):
-    self.url = url
-    self.stream: FrameStream | None = None
+  def __init__(self, url: str, index: dict, start_frame: int, K: np.ndarray, view_from_calib: np.ndarray, warp: Warp):
+    self.url, self.index, self.start_frame = url, index, start_frame
     self.K = K
     self.view_from_calib = view_from_calib
     self.warp = warp
+    self.stream: FrameStream | None = None
+    # a stream at the start frame stays ready, so a restart doesn't have to wait on the first frames to download and decode
+    self.next_stream = FrameStream(url, index, start_frame)
+
+  def restart(self):
+    if self.stream is not None:
+      self.stream.close()
+    self.stream, self.next_stream = self.next_stream, FrameStream(self.url, self.index, self.start_frame)
+
+  def close(self):
+    for s in (self.stream, self.next_stream):
+      if s is not None:
+        s.close()
 
 
 class LogWorld:
@@ -40,17 +52,16 @@ class LogWorld:
     device_from_calib = rot_from_euler(route.rpy_calib)
     cam = route.camera
     wide_from_device = rot_from_euler(route.wide_from_device_euler)
-    self.cameras = [Camera(route.road_url, cam.narrow_road.intrinsics, view_frame_from_device_frame @ device_from_calib, Warp(*cam.narrow_road.size)),
-                    Camera(route.wide_url, cam.wide_road.intrinsics, view_frame_from_device_frame @ wide_from_device @ device_from_calib,
-                           Warp(*cam.wide_road.size))]
+    self.cameras = [Camera(route.road_url, route.road_index, start_frame, cam.narrow_road.intrinsics, view_frame_from_device_frame @ device_from_calib,
+                           Warp(*cam.narrow_road.size)),
+                    Camera(route.wide_url, route.wide_index, start_frame, cam.wide_road.intrinsics,
+                           view_frame_from_device_frame @ wide_from_device @ device_from_calib, Warp(*cam.wide_road.size))]
     self.reset()
 
   def reset(self):
     """Start the episode over, replaying from the start frame until openpilot engages again"""
     for cam in self.cameras:
-      if cam.stream is not None:
-        cam.stream.close()
-      cam.stream = FrameStream(cam.url, self.start_frame)
+      cam.restart()
 
     self.t_idx = self.start_frame  # logged frame at the current sim time
     self.frame_idx = self.start_frame  # logged frame closest to the simulated car
@@ -62,6 +73,17 @@ class LogWorld:
     self.stats = {"engaged_time": 0., "max_lateral_error": 0., "min_lead_gap": math.inf}
     route = self.route
     self.vehicle.set_state(route.pose[self.start_frame], route.v[self.start_frame], route.yaw_rate[self.start_frame])
+
+  def recenter(self):
+    """Puts the car back where the logged car was at the current frame, with its speed, and continues the episode from there"""
+    if self.ended == "route_end":
+      return
+    route, i = self.route, self.frame_idx
+    self.t_idx = i
+    self.vehicle.set_state(route.pose[i], route.v[i], route.yaw_rate[i])
+    if self.rel_pose is not None:
+      self.rel_pose = np.zeros(3)
+    self.ended = None
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if self.closed_loop and self.ended is None:
@@ -127,6 +149,5 @@ class LogWorld:
 
   def close(self):
     for cam in self.cameras:
-      if cam.stream is not None:
-        cam.stream.close()
+      cam.close()
     self.image_lock.release()  # unblock the camera thread

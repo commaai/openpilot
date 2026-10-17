@@ -94,10 +94,12 @@ class Simulator:
     elif cmd == "restart":
       self.world.reset()
       self.past_startup_engaged = False
+    elif cmd == "recenter":
+      self.world.recenter()
 
   def run(self):
     # CAN and cameras go out on their own clocks, so they keep flowing while a frame renders
-    threads = [threading.Thread(target=self._send_can), threading.Thread(target=self._send_cameras)]
+    threads = [threading.Thread(target=self._send_can, daemon=True), threading.Thread(target=self._send_cameras, daemon=True)]
     for t in threads:
       t.start()
     try:
@@ -106,7 +108,7 @@ class Simulator:
       self.keep_alive = False
       self.world.close()
       for t in threads:
-        t.join()
+        t.join(timeout=1)
 
   def _send_can(self):
     rk = Ratekeeper(100, None)
@@ -143,16 +145,18 @@ class Simulator:
       self.engaged = engaged = selfdrive.active
       world.set_engaged(engaged)
 
+      # the driver can always push the gas and turn the wheel, even while openpilot drives
+      driver_steer = self.manual["steer"] * -40
       if engaged:
         actuators = self.car.sm['carControl'].actuators
-        throttle = np.clip(actuators.accel / 1.6, 0.0, 1.0)
+        throttle = max(np.clip(actuators.accel / 1.6, 0.0, 1.0), driver.gas)
         brake = np.clip(-actuators.accel / 4.0, 0.0, 1.0)
-        steer = actuators.steeringAngleDeg
+        steer = actuators.steeringAngleDeg + driver_steer
         self.past_startup_engaged = True
         if world.ended is not None:
           driver.cruise_button = CruiseButtons.CANCEL
       else:
-        throttle, brake, steer = driver.gas, driver.brake, self.manual["steer"] * -40
+        throttle, brake, steer = driver.gas, driver.brake, driver_steer
         if not self.past_startup_engaged and selfdrive.engageable:
           driver.cruise_button = CruiseButtons.DECEL_SET if self.startup_button_prev else CruiseButtons.MAIN  # force engagement on startup
           self.startup_button_prev = not self.startup_button_prev

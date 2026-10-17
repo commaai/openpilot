@@ -2,10 +2,11 @@ import itertools
 import queue
 import threading
 import numpy as np
+from collections.abc import Iterator
 
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.tools.lib.file_sources import openpilotci_source
-from openpilot.tools.lib.framereader import FrameIterator
+from openpilot.tools.lib.framereader import FrameIterator, get_video_index
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import FileName, Route, SegmentRange
 
@@ -24,6 +25,9 @@ class RouteData:
     seg = sr.seg_idxs[0]
     self.road_url = camera_url(sr, seg, FileName.FCAMERA)
     self.wide_url = camera_url(sr, seg, FileName.ECAMERA)
+    # indexing reads the whole file, so it's done once here instead of every time a FrameStream starts
+    self.road_index = get_video_index(self.road_url)
+    self.wide_index = get_video_index(self.wide_url)
 
     msgs: dict[str, list] = {k: [] for k in ('carState', 'deviceMotion', 'radarState', 'narrowRoadEncodeIdx', 'wideRoadEncodeIdx')}
     for m in LogReader(f"{sr.route_name}/{seg}"):
@@ -81,27 +85,42 @@ class RouteData:
 
 class FrameStream:
   """Decodes a camera file forward in a background thread. Frames are requested with non-decreasing indices."""
-  def __init__(self, url: str, start: int, buffer: int = 20):
+  TIMEOUT = 10.  # s
+
+  def __init__(self, url: str, index: dict, start: int, buffer: int = 20):
     self.q: queue.Queue = queue.Queue(buffer)
     self.idx = start - 1
     self.frame: np.ndarray | None = None
     self.closed = threading.Event()
-    threading.Thread(target=self._decode, args=(url, start), daemon=True).start()
+    threading.Thread(target=self._decode, args=(url, index, start), daemon=True).start()
 
-  def _decode(self, url: str, start: int) -> None:
-    for frame in itertools.chain(FrameIterator(url, pix_fmt='nv12', start_fidx=start), [None]):
-      while not self.closed.is_set():
-        try:
-          self.q.put(frame, timeout=0.1)
-          break
-        except queue.Full:
-          pass
-      else:
-        return
+  def _decode(self, url: str, index: dict, start: int) -> None:
+    try:
+      frames: Iterator[np.ndarray | Exception | None] = itertools.chain(FrameIterator(url, index, pix_fmt='nv12', start_fidx=start), [None])
+      for frame in frames:
+        if not self._put(frame):
+          return
+    except Exception as e:
+      self._put(e)
+
+  def _put(self, item) -> bool:
+    while not self.closed.is_set():
+      try:
+        self.q.put(item, timeout=0.1)
+        return True
+      except queue.Full:
+        pass
+    return False
 
   def get(self, idx: int) -> np.ndarray:
     while self.idx < idx:
-      self.frame = self.q.get()
+      try:
+        frame = self.q.get(timeout=self.TIMEOUT)
+      except queue.Empty:
+        raise TimeoutError(f"no frame from the camera file in {self.TIMEOUT:.0f} s") from None
+      if isinstance(frame, Exception):
+        raise frame
+      self.frame = frame
       self.idx += 1
     assert self.frame is not None, f"camera file ends before frame {idx}"
     return self.frame

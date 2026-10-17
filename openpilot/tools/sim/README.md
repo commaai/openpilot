@@ -21,16 +21,16 @@ options:
   --start-sec START_SEC  seconds into the segment to start from (default: 15 s on the default route)
 ```
 
-| key  | functionality                |
-|------|------------------------------|
-|  2   | engage / set speed down      |
-|  1   | resume / set speed up        |
-|  3   | cancel                       |
-| w s  | gas / brake                  |
-| a d  | steer                        |
-| z x  | left / right blinker         |
-|  r   | restart the episode          |
-|  i   | toggle ignition              |
-|  q   | quit                         |
+| key   | functionality                                          |
+|-------|--------------------------------------------------------|
+| space | engage / disengage                                     |
+| ↑ ↓   | set speed up / down                                    |
+| ← →   | left / right blinker                                   |
+| w s   | gas / brake                                            |
+| a d   | steer                                                  |
+| g     | put the car back on the logged path and keep going     |
+| r     | restart the episode                                    |
+| i     | toggle ignition                                        |
+| q     | quit                                                   |
 
 openpilot's output goes to `~/.comma/sim.log`.
