@@ -3,7 +3,7 @@ openpilot in simulator
 
 The simulator drives openpilot through a logged route. It replays the segment until openpilot engages, then a simulated car follows openpilot's controls. Each logged camera frame is reprojected to where the simulated car is, so openpilot sees the consequences of its own driving.
 
-The reprojection assumes a flat road, so it's only accurate for small deviations from the logged path. The episode ends if the car gets more than 2 m or 8° off the logged path. Lane changes in the log end it too, since openpilot stays in its lane. Segments must be from a comma 3X (1928x1208 cameras).
+The reprojection assumes a flat road, so it's only accurate for small deviations from the logged path. The episode ends if the car gets more than 2 m or 8° off the logged path, which includes lane changes in the log since openpilot stays in its lane. Press g to put the car back on the logged path and keep going. Routes must be from a comma 3X (1928x1208 cameras). Camera files download to the local download cache as they're needed.
 
 ## Usage
 ``` bash
@@ -17,8 +17,8 @@ $ ./run.py -h
 usage: run.py [-h] [--route ROUTE] [--start-sec START_SEC]
 
 options:
-  --route ROUTE          segment to drive
-  --start-sec START_SEC  seconds into the segment to start from (default: 15 s on the default route)
+  --route ROUTE          route to drive, or some of its segments (e.g. dongle|route/3:6)
+  --start-sec START_SEC  seconds in to start from (default: 315 s on the default route)
 ```
 
 | key   | functionality                                          |

@@ -5,10 +5,11 @@ import time
 import traceback
 import numpy as np
 
+from collections import deque
 from multiprocessing import Process, Queue
 from opendbc.car.honda.values import CruiseButtons
 from openpilot.common.params import Params
-from openpilot.common.realtime import Ratekeeper
+from openpilot.common.realtime import DT_CTRL, DT_MDL, Ratekeeper
 from openpilot.selfdrive.test.helpers import set_params_enabled
 from openpilot.tools.sim.car import Driver, SimulatedCar
 from openpilot.tools.sim.route import RouteData
@@ -16,6 +17,8 @@ from openpilot.tools.sim.sensors import SimulatedSensors
 from openpilot.tools.sim.world import LogWorld
 
 STATUS_HZ = 5
+MAX_CATCH_UP = 0.5  # s
+MIN_FRAME_SPACING = 0.8  # of a frame
 # terminals repeat a held key at ~30 Hz, so a manual input stays on this long after each press. it's
 # also long enough for a button press to make it into a CAN message, which go out on their own clock
 HOLD = 0.1  # s
@@ -54,16 +57,18 @@ class Simulator:
     set_params_enabled()
     params = Params()
     params.put_bool("AlphaLongitudinalEnabled", True, block=True)
+    params.put_bool("UbloxAvailable", True, block=True)  # the sim's GPS is gpsLocationExternal
     route_data = RouteData(route)
     # written before the car turns on, so calibrationd starts out with the route's mounting
     params.put("CalibrationParams", route_data.calib_msg, block=True)
 
-    self.world = LogWorld(route_data, start_frame=int(start_sec * 20))
+    start_frame = int(np.searchsorted(route_data.t, route_data.t[0] + start_sec))
+    self.world = LogWorld(route_data, start_frame=start_frame)
     self.car = SimulatedCar()
     self.sensors = SimulatedSensors()
-    self.rk = Ratekeeper(100, None)
 
     self.driver = Driver()
+    self.repeated: deque[bool] = deque(maxlen=20)  # whether each of the last second of camera frames repeated the one before
     self.engaged = False
     self.manual = {"gas": 0., "brake": 0., "steer": 0.}
     self.manual_until = 0.
@@ -118,16 +123,25 @@ class Simulator:
       rk.keep_time()
 
   def _send_cameras(self):
-    rk = Ratekeeper(20, None)
+    # like camerad, frames go out on a steady 20 Hz clock, with whatever was rendered last. modeld sees any frame it
+    # misses as a dropped frame and invalidates its outputs, so frames must never bunch up after the sim hiccups
+    next_frame_time = time.monotonic()
+    last_images = None
     while self.keep_alive:
-      self.world.image_lock.acquire()
-      self.sensors.camerad.cam_send_yuv_road(self.world.road_image)
-      self.sensors.camerad.cam_send_yuv_wide_road(self.world.wide_road_image)
-      rk.keep_time()
+      next_frame_time = max(next_frame_time + DT_MDL, time.monotonic() + DT_MDL * MIN_FRAME_SPACING)
+      time.sleep(max(0., next_frame_time - time.monotonic()))
+      if (images := self.world.images) is not None:
+        self.sensors.camerad.cam_send_yuv_road(images[0])
+        self.sensors.camerad.cam_send_yuv_wide_road(images[1])
+        self.repeated.append(images is last_images)
+        last_images = images
 
   def _loop(self):
     driver, world, vehicle = self.driver, self.world, self.world.vehicle
     ended = None
+    frame = 0
+    next_frame_time = time.monotonic()
+    behind = 0.  # how far the sim fell behind real time since the last status
     while self.keep_alive:
       while not self.cmd_q.empty():
         self.handle(self.cmd_q.get())
@@ -164,15 +178,27 @@ class Simulator:
       world.apply_controls(steer, throttle, brake)
       self.sensors.update(vehicle)
 
-      if self.rk.frame % 5 == 0:
+      if frame % 5 == 0:
         world.tick()
-        world.render()
+        # catching up, only the latest frame renders. sending the ones in between back-to-back would show up as dropped frames to modeld
+        if time.monotonic() - next_frame_time < DT_MDL:
+          world.render()
 
       if world.ended != ended:
         ended = world.ended
         if ended is not None:
-          self.status_q.put(("episode_end", world.status()))
-      if self.rk.frame % (100 // STATUS_HZ) == 0:
-        self.status_q.put(("status", world.status()))
+          self.status_q.put(("episode_end", world.status() | {"behind": behind, "repeated": sum(self.repeated)}))
+      if frame % (100 // STATUS_HZ) == 0:
+        self.status_q.put(("status", world.status() | {"behind": behind, "repeated": sum(self.repeated)}))
+        behind = 0.
 
-      self.rk.keep_time()
+      # sim time keeps up with real time: a slow frame (a render, a busy machine) is made up with quicker ones after it,
+      # instead of being dropped, so the cameras stay at 20 Hz. only a long stall resyncs
+      frame += 1
+      next_frame_time += DT_CTRL
+      delay = next_frame_time - time.monotonic()
+      behind = max(behind, -delay)
+      if delay > 0:
+        time.sleep(delay)
+      elif delay < -MAX_CATCH_UP:
+        next_frame_time = time.monotonic()

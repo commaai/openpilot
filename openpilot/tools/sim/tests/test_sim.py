@@ -5,9 +5,11 @@ from multiprocessing import Queue
 
 from openpilot.cereal import messaging
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.tools.sim.run import DEFAULT_ROUTE, DEFAULT_ROUTE_START, launch_openpilot, stop_openpilot
+from openpilot.tools.sim.run import launch_openpilot, stop_openpilot
 from openpilot.tools.sim.simulator import start_simulator
 
+ROUTE = "8494c69d3c710e81|000001d4--2648a9a404/5"  # highway, a gentle curve and a lead throughout
+START_SEC = 15  # the logged driver tailgates before this, and openpilot can't open up the gap
 ENGAGE_TIMEOUT = 40
 TIMEOUT = 110
 MAX_LATERAL_ERROR = 0.75
@@ -32,9 +34,8 @@ class TestSim(OpenpilotTestCase):
     while not sm.seen['managerState']:
       sm.update(100)
 
-    # highway, a gentle curve and a lead throughout
     q: Queue = Queue()
-    self.simulator = start_simulator(DEFAULT_ROUTE, DEFAULT_ROUTE_START, Queue(), q)
+    self.simulator = start_simulator(ROUTE, START_SEC, Queue(), q)
 
     start = time.monotonic()
     engaged_at = None
