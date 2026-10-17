@@ -582,6 +582,13 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.belowSteerSpeed: {
     ET.WARNING: below_steer_speed_alert,
+    # below steer speed openpilot has no lateral control to override, hold the
+    # overriding state so the border doesn't flicker with steeringPressed
+    ET.OVERRIDE_LATERAL: Alert(
+      "",
+      "",
+      AlertStatus.normal, AlertSize.none,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.preLaneChangeLeft: {

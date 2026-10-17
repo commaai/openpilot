@@ -5,6 +5,7 @@ from openpilot.selfdrive.selfdrived.state import StateMachine, SOFT_DISABLE_TIME
 from openpilot.selfdrive.selfdrived.events import Events, ET, EVENTS, NormalPermanentAlert
 
 State = log.SelfdriveState.OpenpilotState
+EventName = log.OnroadEvent.EventName
 
 # The event types that maintain the current state
 MAINTAIN_STATES = {State.enabled: (None,), State.disabled: (None,), State.softDisabling: (ET.SOFT_DISABLE,),
@@ -91,3 +92,35 @@ class TestStateMachine(OpenpilotTestCase):
         self.state_machine.update(self.events)
         assert self.state_machine.state == state
         self.events.clear()
+
+  def test_below_steer_speed(self):
+    # https://github.com/commaai/openpilot/issues/36136
+    # below steer speed the driver has lateral control the whole time, so the
+    # event should hold overriding (gray border) instead of flickering with
+    # steeringPressed while actuation is unchanged
+    assert ET.OVERRIDE_LATERAL in EVENTS[EventName.belowSteerSpeed]
+
+    self.state_machine.state = State.enabled
+    self.events.add(EventName.belowSteerSpeed)
+    enabled, active = self.state_machine.update(self.events)
+    assert self.state_machine.state == State.overriding
+    assert enabled and active
+
+    # holds for as long as we're below steer speed
+    for _ in range(100):
+      enabled, active = self.state_machine.update(self.events)
+      assert self.state_machine.state == State.overriding
+      assert enabled and active
+
+    # back to enabled above steer speed
+    self.events.clear()
+    enabled, active = self.state_machine.update(self.events)
+    assert self.state_machine.state == State.enabled
+    assert enabled and active
+
+  def test_below_steer_speed_on_enable(self):
+    # engaging below steer speed goes straight to overriding
+    self.events.add(make_event([ET.ENABLE]))
+    self.events.add(EventName.belowSteerSpeed)
+    self.state_machine.update(self.events)
+    assert self.state_machine.state == State.overriding
