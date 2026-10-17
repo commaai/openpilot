@@ -1,0 +1,153 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 928 EPB_STATUS: 8 XXX
+ SG_ EPB_BRAKE : 16|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 1104 SEATBELT_STATUS: 8 XXX
+ SG_ DRIVER_SEAT_BELT_ONOFF : 21|1@0+ (1,0) [0|3] "" XXX
+
+BO_ 1056 BODY_ECU_STATUS: 8 XXX
+ SG_ DOOR_RL_STATUS : 18|1@0+ (1,0) [0|255] "" XXX
+ SG_ DOOR_FL_STATUS : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_FR_STATUS : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_RR_STATUS : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_BACK_DOOR_STATUS : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ LEFT_SIGNAL_STATUS : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_SIGNAL_STATUS : 9|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 832 GEAR_RPM_SPEED_STATUS: 8 XXX
+ SG_ TRANS_MODE : 7|5@1+ (1,0) [0|0] "" XXX
+ SG_ TRANS_GEAR_POS : 2|3@0+ (1,0) [0|1] "" XXX
+ SG_ ENGINE_RPM1 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ ENGINE_TEMP : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 821 THROTTLE_STATUS: 8 XXX
+ SG_ CRUSE_ONOFF : 2|1@0+ (1,0) [0|1] "on/off" XXX
+ SG_ CRUSE_ENABLED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ THROTTLE_PEDAL_POS : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ THROTTLE_POS : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ RPM : 48|8@1- (1,0) [0|65535] "" XXX
+
+BO_ 922 STEERING_ANGLE_STATUS: 8 XXX
+ SG_ STEER_ANGLE_9000 : 7|16@0- (1,0) [0|65535] "" XXX
+
+BO_ 906 WHEEL_SPEEDS: 8 XXX
+ SG_ SPEED_FR : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ ABS_UNDEF1 : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ SPEED_FL : 0|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 848 ABS_WHEELS_STATUS: 8 XXX
+ SG_ NEW_SIGNAL_1 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 15|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1402 DASH_STATUS: 8 XXX
+ SG_ CAR_SPEED : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ DASH_INFO2 : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ DASH_INFO0 : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ DASH_INFO_2 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ DASH_INFO_3 : 31|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1306 _SPEEDX: 8 XXX
+ SG_ DASH_CAR_SPEED : 7|9@0+ (1,0) [0|255] "" XXX
+
+BO_ 1296 undefined: 8 XXX
+
+BO_ 790 ENGINE_DATA: 8 XXX
+ SG_ _X2 : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_5 : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1313 undefined_2: 8 XXX
+
+BO_ 1312 __trigger_every_range: 8 XXX
+ SG_ __SIGNAL_every_interval : 4|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 896 undefined_3: 8 XXX
+ SG_ NEW_SIGNAL_1 : 32|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 809 undefined_4: 8 XXX
+
+BO_ 864 BREAK_TCS_STATUS: 8 XXX
+ SG_ SPEED3 : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ TCS_ON_FF : 45|1@0+ (1,0) [0|1] "" XXX
+ SG_ XXXX1 : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ BRAKE_PRSSED : 42|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 842 undefined_5: 8 XXX
+
+BO_ 880 WHEEL_RPM_STATUS: 8 XXX
+ SG_ WHEEL_RL_SPEED : 23|16@0+ (1,0) [0|255] "" XXX
+ SG_ WHEEL_FR_SPEED : 39|16@0+ (1,0) [0|255] "" XXX
+ SG_ WHEEL_FL_SPEED : 55|16@0+ (1,0) [0|255] "" XXX
+ SG_ WHEEL_RR_SPEED : 7|16@0- (1,0) [0|255] "" XXX
+
+BO_ 1040 CONSOLE_STATUS: 8 XXX
+ SG_ LEFT_SIGNAL_SWITCH : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_SIGNAL_SWITCH : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ HEAD_LIGHT_HANDLE_SWITCH : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ HID_LIGHT_SWITCH : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ YELLOW_WARN_TEMP_TRIGGER : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ HID_LIGHT_HANDLE_SWITCH : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ MIX_MODE : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ slider_rain_bar : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ temp_slider_rain_bar : 15|1@0+ (1,0) [0|1] "" XXX
+ SG_ temp_water_push : 11|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1120 HAVC_STATUS: 8 XXX
+ SG_ HAVC_TEMP : 32|8@1+ (1,0) [0|255] "" XXX
+
+
+CM_ SG_ 1104 DRIVER_SEAT_BELT_ONOFF "0 - on , 1 = off";
+CM_ SG_ 1056 DOOR_RL_STATUS "04 - RL - open";
+CM_ SG_ 1056 DOOR_FL_STATUS "28 - FL open , 38 - FR";
+CM_ SG_ 1056 RIGHT_SIGNAL_STATUS "R,L shows at same time means hazard";
+CM_ SG_ 832 TRANS_MODE "AT - 85 / MT - 8D";
+CM_ SG_ 832 TRANS_GEAR_POS "R-7 , 0 - N";
+CM_ SG_ 821 CRUSE_ONOFF "Cruse Switch";
+CM_ SG_ 821 CRUSE_ENABLED "Cruse enabled";
+CM_ SG_ 821 THROTTLE_PEDAL_POS "Real Pedal Pos";
+CM_ SG_ 821 THROTTLE_POS "Throttle Pos for Cruse Mode";
+CM_ SG_ 906 ABS_UNDEF1 "ABS force";
+CM_ SG_ 906 SPEED_FL "used for car speed in dash board";
+CM_ SG_ 864 TCS_ON_FF "ON = 1, OFF =0";
