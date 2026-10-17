@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.ui_state import ui_state

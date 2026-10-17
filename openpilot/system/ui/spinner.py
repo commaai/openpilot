@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import select
 import sys
 

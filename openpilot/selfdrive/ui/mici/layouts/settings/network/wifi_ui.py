@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
