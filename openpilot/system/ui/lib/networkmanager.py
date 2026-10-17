@@ -1,0 +1,64 @@
+from enum import IntEnum
+
+
+# NetworkManager device states
+class NMDeviceState(IntEnum):
+  # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceState
+  UNKNOWN = 0
+  UNMANAGED = 10
+  UNAVAILABLE = 20
+  DISCONNECTED = 30
+  PREPARE = 40
+  CONFIG = 50
+  NEED_AUTH = 60
+  IP_CONFIG = 70
+  IP_CHECK = 80
+  SECONDARIES = 90
+  ACTIVATED = 100
+  DEACTIVATING = 110
+  FAILED = 120
+
+
+class NMDeviceStateReason(IntEnum):
+  # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceStateReason
+  NONE = 0
+  UNKNOWN = 1
+  IP_CONFIG_UNAVAILABLE = 5
+  NO_SECRETS = 7
+  SUPPLICANT_DISCONNECT = 8
+  SUPPLICANT_TIMEOUT = 11
+  CONNECTION_REMOVED = 38
+  USER_REQUESTED = 39
+  SSID_NOT_FOUND = 53
+  NEW_ACTIVATION = 60
+
+
+# NetworkManager constants
+NM = "org.freedesktop.NetworkManager"
+NM_PATH = '/org/freedesktop/NetworkManager'
+NM_IFACE = 'org.freedesktop.NetworkManager'
+NM_ACCESS_POINT_IFACE = 'org.freedesktop.NetworkManager.AccessPoint'
+NM_SETTINGS_PATH = '/org/freedesktop/NetworkManager/Settings'
+NM_SETTINGS_IFACE = 'org.freedesktop.NetworkManager.Settings'
+NM_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Settings.Connection'
+NM_ACTIVE_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Connection.Active'
+NM_WIRELESS_IFACE = 'org.freedesktop.NetworkManager.Device.Wireless'
+NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
+NM_DEVICE_IFACE = 'org.freedesktop.NetworkManager.Device'
+NM_IP4_CONFIG_IFACE = 'org.freedesktop.NetworkManager.IP4Config'
+
+NM_DEVICE_TYPE_WIFI = 2
+NM_DEVICE_TYPE_MODEM = 8
+
+# https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
+NM_802_11_AP_FLAGS_NONE = 0x0
+NM_802_11_AP_FLAGS_PRIVACY = 0x1
+NM_802_11_AP_FLAGS_WPS = 0x2
+
+# https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApSecurityFlags
+NM_802_11_AP_SEC_PAIR_WEP40 = 0x00000001
+NM_802_11_AP_SEC_PAIR_WEP104 = 0x00000002
+NM_802_11_AP_SEC_GROUP_WEP40 = 0x00000010
+NM_802_11_AP_SEC_GROUP_WEP104 = 0x00000020
+NM_802_11_AP_SEC_KEY_MGMT_PSK = 0x00000100
+NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200
