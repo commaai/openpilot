@@ -149,3 +149,16 @@ class TestCalibrationd(OpenpilotTestCase):
     msg.extrinsicsCalibration.calStatus = log.ExtrinsicsCalibration.Status.calibrated
     Params().put("CalibrationParams", msg.to_bytes(), block=True)
     assert Calibrator(param_put=True).cal_status == log.ExtrinsicsCalibration.Status.calibrated
+
+  def test_calibration_valid_hysteresis_noisy(self):
+    # mount right at the edge with slowly wandering noise (road grade, load), status should settle instead of flickering
+    rng = np.random.default_rng(0)
+    c = Calibrator(param_put=False)
+    noise, statuses = 0.0, []
+    for _ in range(INPUTS_WANTED * 12):
+      noise = 0.9 * noise + np.sqrt(1 - 0.9 ** 2) * rng.normal(0, np.radians(0.2))
+      process_messages(c, [0.0, 0.0, YAW_LIMITS[1] + noise - c.get_smooth_rpy()[2]], BLOCK_SIZE)
+      statuses.append(c.cal_status)
+    to_invalid = sum(a == log.ExtrinsicsCalibration.Status.calibrated and b == log.ExtrinsicsCalibration.Status.invalid
+                     for a, b in zip(statuses, statuses[1:], strict=False))
+    assert to_invalid <= 1
