@@ -256,7 +256,7 @@ RouteSelection parse_route_selection(std::string route_name) {
 
   route.dongle_id = match[2].str();
   route.timestamp = match[3].str();
-  route.canonical_name = route.dongle_id + "|" + route.timestamp;
+  route.canonical_name = route.dongle_id + "/" + route.timestamp;
 
   const std::string separator = match[5].str();
   const std::string range_str = match[6].str();

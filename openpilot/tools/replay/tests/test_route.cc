@@ -21,6 +21,9 @@ void test_route_ranges() {
   for (const std::string route : {DEMO_ROUTE, "64e16c4237493597/00000033--332a5f9d82"}) {
     const auto full = Route::parseRoute(route);
     REQUIRE(!full.str.empty());
+    REQUIRE(full.str == full.dongle_id + "/" + full.timestamp);
+    const auto legacy = Route::parseRoute(full.dongle_id + "|" + full.timestamp);
+    REQUIRE(legacy.str == full.str);
     for (const auto &range : ranges) {
       const auto parsed = Route::parseRoute(route + range.suffix);
       REQUIRE(parsed.str == full.str);

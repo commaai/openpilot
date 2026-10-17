@@ -12,7 +12,7 @@ from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
 
 # TODO find a new segment to test
-TEST_ROUTE = "4019fff6e54cf1c7|00000123--4bc0d95ef6/5"
+TEST_ROUTE = "4019fff6e54cf1c7/00000123--4bc0d95ef6/5"
 GPS_MESSAGES = ['gpsLocationExternal', 'gpsLocation']
 SELECT_COMPARE_FIELDS = {
   'yaw_rate': ['angularVelocityDevice', 'z'],
