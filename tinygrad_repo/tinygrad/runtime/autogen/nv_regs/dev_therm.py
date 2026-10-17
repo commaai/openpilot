@@ -1,0 +1,4 @@
+gb202 = {
+  'NV_THERM_I2CS_SCRATCH': (0x0, 0x00ad00bc, {'data': (0, 31)}),
+  'NV_THERM_I2CS_SCRATCH_DATA_INIT': 0x00000000,
+}
