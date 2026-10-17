@@ -1,0 +1,96 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+BO_ 2 STEERING: 5 XXX
+ SG_ COUNTER : 35|4@0+ (1,0) [0|255] "" XXX
+ SG_ STEERING_ANGLE : 0|16@1- (0.1,0) [0|65535] "deg" XXX
+ SG_ POWER_STEER_RATE : 23|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 505 ENGINE_1: 8 XXX
+ SG_ RPM : 16|16@1+ (0.125,0) [0|45000] "R/min" XXX
+ SG_ FAN_REQ : 6|2@1+ (1,0) [0|3] "" XXX
+ SG_ AC_REQ : 3|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 561 ENGINE_2: 8 XXX
+ SG_ Pedal_position : 16|8@1+ (0.5,0) [0|200] "%" XXX
+
+BO_ 563 ENGINE_7: 8 XXX
+ SG_ CLT : 0|8@1+ (0.366666,0) [0|255] "C" XXX
+ SG_ RPMlow : 32|8@1+ (3.15,0) [0|45000] "R/min" XXX
+ SG_ RPMhi : 56|8@1+ (3.15,0) [0|45000] "R/min" XXX
+
+BO_ 573 ENGINE_3: 8 XXX
+ SG_ Pedal_position : 8|8@1+ (0.392,0) [0|255] "%" XXX
+ SG_ Throttle_position_capped : 16|8@1+ (0.392,0) [0|255] "%" XXX
+ SG_ RPM : 24|16@1+ (3.15,0) [0|45000] "R/min" XXX
+ SG_ CLT : 56|8@1+ (0.366666,0) [0|255] "C" XXX
+
+BO_ 574 ENGINE_4: 8 XXX
+ SG_ Throttle_position_inverted : 16|8@1+ (0.392,0) [0|255] "%" XXX
+ SG_ EstimatedTorque : 24|16@1+ (0.1,0) [0|45000] "nM" XXX
+ SG_ Throttle_position : 48|8@1+ (0.392,0) [0|255] "%" XXX
+
+BO_ 595 TCU_1: 8 XXX
+ SG_ SHAFT_1_SPEED : 32|16@1+ (1,0) [0|45000] "r/min" XXX
+ SG_ SHAFT_2_SPEED : 48|16@1+ (1,0) [0|45000] "r/min" XXX
+
+BO_ 640 SPEED: 8 XXX
+ SG_ SPEED : 32|16@1+ (0.01,0) [0|45000] "km/h" XXX
+
+BO_ 644 ABS_1: 8 XXX
+ SG_ WHEEL_1 : 0|16@1+ (0.01,0) [0|45000] "km/h" XXX
+ SG_ WHEEL_2 : 15|16@1+ (0.01,0) [0|45000] "km/h" XXX
+
+BO_ 645 ABS_2: 8 XXX
+ SG_ WHEEL_3 : 0|16@1+ (0.01,0) [0|45000] "km/h" XXX
+ SG_ WHEEL_4 : 15|16@1+ (0.01,0) [0|45000] "km/h" XXX
+
+BO_ 852 SPEED_BREAK: 8 XXX
+ SG_ BREAK_LIGHT : 52|1@0+ (1,0) [0|3] "" XXX
+ SG_ SPEED_MPH : 7|16@0+ (0.0066,0) [0|65535] "mph" XXX
+ SG_ TCS_OFF : 38|1@0+ (1,0) [0|255] "" XXX
+
+BO_ 861 BCM: 8 XXX
+
+BO_ 1361 ENGINE_5: 8 XXX
+ SG_ CLT : 0|8@1+ (1,-45) [-45|150] "" XXX
+
+BO_ 1408 ENGINE_6: 8 XXX
+ SG_ RPM : 7|16@0+ (1.5,0) [0|65535] "" XXX
+ SG_ OIL_TEMP : 32|8@1+ (1,-40) [-40|150] "" XXX
+
+BO_ 1477 MILEAGE: 8 XXX
