@@ -229,13 +229,14 @@ class StreamSession:
 
   def __init__(self, body: StreamRequestBody):
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from teleoprtc.builder import WebRTCAnswerBuilder
+    from openpilot.system.webrtc.device.audio import AudioAnswerBuilder
 
     self.identifier = str(uuid.uuid4())
     self.params = Params()
-    builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
+    builder = AudioAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
     self.enabled = body.enabled
+    self.audio_enabled = True
     self.video_tracks = []
     for camera in body.cameras:
       track = LiveStreamVideoStreamTrack(camera, self.enabled)
@@ -256,8 +257,7 @@ class StreamSession:
     self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
-    self._cleanup_lock = asyncio.Lock()
-    self._cleanup_done = False
+    self._cleanup_task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
     cloudlog.warning(
       "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s",
@@ -276,7 +276,10 @@ class StreamSession:
     await self.post_run_cleanup()
 
   async def get_answer(self):
-    return await self.stream.start()
+    answer = await self.stream.start()
+    if self.stream.audio is not None:
+      self.stream.audio.enable(self.enabled and self.audio_enabled)
+    return answer
 
   def message_handler(self, message: bytes):
     try:
@@ -292,9 +295,15 @@ class StreamSession:
           case "livestreamSettings":
             if self.bitrate_controller is not None:
               self.bitrate_controller.set_quality(payload["data"]["quality"])
+          case "livestreamAudioEnable":
+            self.audio_enabled = payload["data"]["enabled"] is True
+            if self.stream.audio is not None:
+              self.stream.audio.enable(self.audio_enabled and self.enabled)
           case "livestreamVideoEnable":
             enabled = payload["data"]["enabled"]
             self.enabled = enabled
+            if self.stream.audio is not None:
+              self.stream.audio.enable(enabled and self.audio_enabled)
             for track in self.video_tracks:
               track.enable(enabled)
             if self.outgoing_bridge is not None:
@@ -366,19 +375,22 @@ class StreamSession:
       await self.post_run_cleanup()
 
   async def post_run_cleanup(self):
-    async with self._cleanup_lock:
-      if self._cleanup_done:
-        return
-      self._cleanup_done = True
-      self.params.put("LivestreamRequestKeyframe", False)
-      if self.bitrate_controller is not None:
-        await self.bitrate_controller.stop()
-      if self.outgoing_bridge is not None:
-        await self.outgoing_bridge.stop()
-      for track in self.video_tracks:
-        track.stop()
-      self.video_tracks.clear()
-      await self.stream.stop()
+    # stop() can cancel run() while it is already cleaning up. The cleanup
+    # must finish before a replacement session opens its sockets/resources.
+    if self._cleanup_task is None:
+      self._cleanup_task = asyncio.create_task(self._cleanup_resources())
+    await asyncio.shield(self._cleanup_task)
+
+  async def _cleanup_resources(self):
+    self.params.put("LivestreamRequestKeyframe", False)
+    if self.bitrate_controller is not None:
+      await self.bitrate_controller.stop()
+    if self.outgoing_bridge is not None:
+      await self.outgoing_bridge.stop()
+    await self.stream.stop()
+    for track in self.video_tracks:
+      track.stop()
+    self.video_tracks.clear()
 
 
 class ServerState:
@@ -591,9 +603,9 @@ async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio
 
 def prewarm_stream_session_imports() -> None:
   from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-  from teleoprtc.builder import WebRTCAnswerBuilder
+  from openpilot.system.webrtc.device.audio import AudioAnswerBuilder
   assert LiveStreamVideoStreamTrack
-  assert WebRTCAnswerBuilder
+  assert AudioAnswerBuilder
 
 
 def webrtcd_thread(host: str, port: int):
