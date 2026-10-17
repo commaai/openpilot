@@ -22,15 +22,16 @@ void test_route_ranges() {
     const auto full = Route::parseRoute(route);
     REQUIRE(!full.str.empty());
     REQUIRE(full.str == full.dongle_id + "/" + full.timestamp);
-    const auto legacy = Route::parseRoute(full.dongle_id + "|" + full.timestamp);
-    REQUIRE(legacy.str == full.str);
-    for (const auto &range : ranges) {
-      const auto parsed = Route::parseRoute(route + range.suffix);
-      REQUIRE(parsed.str == full.str);
-      REQUIRE(parsed.dongle_id == full.dongle_id);
-      REQUIRE(parsed.timestamp == full.timestamp);
-      REQUIRE(parsed.begin_segment == range.begin);
-      REQUIRE(parsed.end_segment == range.end);
+    for (const std::string separator : {"/", "|"}) {
+      const auto identifier = full.dongle_id + separator + full.timestamp;
+      for (const auto &range : ranges) {
+        const auto parsed = Route::parseRoute(identifier + range.suffix);
+        REQUIRE(parsed.str == full.str);
+        REQUIRE(parsed.dongle_id == full.dongle_id);
+        REQUIRE(parsed.timestamp == full.timestamp);
+        REQUIRE(parsed.begin_segment == range.begin);
+        REQUIRE(parsed.end_segment == range.end);
+      }
     }
   }
 }

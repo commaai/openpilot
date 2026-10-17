@@ -25,7 +25,12 @@ class TestRouteLibrary(OpenpilotTestCase):
       assert s.data_dir == case.expected_data_dir
 
     for case in cases:
-      _validate(case)
+      for log_id in ("2023-07-27--13-01-19", "000000cc--8e8d8ec716"):
+        route = f"a2a0ccea32023010/{log_id}"
+        for separator in ("/", "|"):
+          identifier = case.input.replace("|", "/").replace(case.expected_route, route.replace("/", separator))
+          with self.subTest(identifier=identifier):
+            _validate(case._replace(input=identifier, expected_route=route))
 
   def test_slash_output(self):
     for log_id in ("2023-07-27--13-01-19", "000000cc--8e8d8ec716"):
