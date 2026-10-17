@@ -1,5 +1,5 @@
 from enum import IntEnum
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import numpy as np
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached

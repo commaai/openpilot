@@ -9,7 +9,7 @@ import urllib.error
 from urllib.parse import urlparse
 from collections.abc import Callable
 
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.cereal import log
 from openpilot.common.filter_simple import BounceFilter
