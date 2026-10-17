@@ -1,0 +1,19 @@
+Import('env')
+
+gen_dir = Dir('generated/').abspath
+
+env.RednoseCompileFilter(
+  target="live",
+  filter_gen_script="live_kf.py",
+  output_dir=gen_dir,
+)
+env.RednoseCompileFilter(
+  target="kinematic",
+  filter_gen_script="kinematic_kf.py",
+  output_dir=gen_dir,
+)
+env.RednoseCompileFilter(
+  target="compare",
+  filter_gen_script="test_compare.py",
+  output_dir=gen_dir,
+)

@@ -1,0 +1,36 @@
+name: Miscellaneous
+description: For tools or test bugs, or enhancements
+labels: ["bug"]
+body:
+
+  - type: markdown
+    attributes:
+      value: >
+        * If the issue likely only affects your car model or make, go back and open a **car bug report** instead.
+        Before creating a **miscellaneous bug report**, please check the following:
+          * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
+
+  - type: textarea
+    attributes:
+      label: Describe the bug or enhancement
+      description: Also include a description of how to reproduce the bug or how the enhancement would work
+    validations:
+      required: true
+
+  - type: input
+    id: route
+    attributes:
+      label: Provide a route where the issue occurs if applicable
+      description: Ensure the route is fully uploaded at https://useradmin.comma.ai
+      placeholder: 77611a1fac303767|2020-05-11--16-37-07
+
+  - type: input
+    id: version
+    attributes:
+      label: openpilot version if applicable
+      description: If you're not on release, provide the commit hash
+      placeholder: 0.8.10
+
+  - type: textarea
+    attributes:
+      label: Additional info
