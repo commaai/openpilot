@@ -330,8 +330,7 @@ function op_cabana() {
 
 function op_sim() {
   op_before_cmd
-  op_run_command exec openpilot/tools/sim/run_bridge.py &
-  op_run_command exec openpilot/tools/sim/launch_openpilot.sh
+  op_run_command exec openpilot/tools/sim/run.py "$@"
 }
 
 function op_clip() {
