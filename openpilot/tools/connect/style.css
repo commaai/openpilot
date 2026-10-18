@@ -1,0 +1,37 @@
+:root { --fg: #1a1a1a; --muted: #6b6b6b; --bg: #fff; --line: #e4e4e4; --accent: #0a7; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root { --fg: #eee; --muted: #999; --bg: #141414; --line: #2a2a2a; } }
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+a { color: inherit; }
+#header { display: flex; gap: 16px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; text-decoration: none; }
+.onebox { flex: 1; max-width: 520px; }
+.onebox input { width: 100%; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+.user { margin-left: auto; color: var(--muted); }
+.page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.muted { color: var(--muted); }
+.error { color: #c33; }
+.login { text-align: center; padding: 80px 16px; }
+.button, button { display: inline-block; margin: 6px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); text-decoration: none; cursor: pointer; font: inherit; }
+button:disabled { opacity: .5; }
+.cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.card { display: flex; gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
+.card:hover { border-color: var(--muted); }
+.card .title { font-weight: 600; }
+.thumb { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: #000; }
+.dot { display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 50%; background: var(--line); }
+.dot.online { background: var(--accent); }
+.device-head, .route-head { margin-bottom: 16px; }
+h2 { margin: 4px 0; }
+.actions { margin-top: 8px; }
+.actions button { margin: 0 6px 0 0; }
+video { width: 100%; max-height: 60vh; background: #000; border-radius: 8px; }
+.timeline { position: relative; height: 22px; margin: 8px 0 16px; background: var(--line); border-radius: 4px; overflow: hidden; cursor: pointer; }
+.timeline .span { position: absolute; top: 0; height: 100%; }
+.span.engaged { background: var(--accent); }
+.span.override { background: #999; top: 50%; height: 50%; }
+.span.alert { background: #f5a623; top: 0; height: 50%; }
+.span.critical { background: #e0352b; top: 0; height: 50%; }
+.cursor { position: absolute; top: 0; width: 2px; height: 100%; background: var(--fg); }
+.files { border-collapse: collapse; }
+.files th, .files td { padding: 2px 10px; text-align: center; border-bottom: 1px solid var(--line); }
