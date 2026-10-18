@@ -1,33 +1,14 @@
 import {api, auth} from "/api.js";
 import {h, clear} from "/dom.js";
-import {devicesPage} from "/pages/devices.js";
 import {devicePage} from "/pages/device.js";
 import {routePage} from "/pages/route.js";
 
 const ROUTE_RE = /^([0-9a-f]{16})[|/_]([0-9a-f]+--[0-9a-f]+)$/i;
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
-// a route name typed or pasted anywhere lands on its page; a dongle id on its device
-export function navigateOnebox(text) {
-  const s = text.trim();
-  const m = s.match(ROUTE_RE);
-  if (m) return go(`/${m[1]}/${m[2]}`);
-  if (DONGLE_RE.test(s)) return go(`/${s}`);
-  alert("Enter a route name (dongle|time) or a dongle id");
-}
-
 export function go(path) {
   history.pushState(null, "", path);
   render();
-}
-
-function header(me) {
-  const box = h("input", {type: "search", placeholder: "route name or dongle id", onkeydown: (e) => { if (e.key === "Enter") navigateOnebox(e.target.value); }});
-  return [
-    h("a", {href: "/", class: "brand", onclick: link("/")}, "comma connect"),
-    h("form", {class: "onebox", onsubmit: (e) => { e.preventDefault(); navigateOnebox(box.value); }}, box),
-    me ? h("span", {class: "user"}, me.username, " ", h("a", {href: "#", onclick: (e) => { e.preventDefault(); auth.logOut(); }}, "sign out")) : null,
-  ];
 }
 
 export function link(path) {
@@ -38,11 +19,55 @@ export function link(path) {
   };
 }
 
+// a route name or dongle id typed anywhere lands on its page
+function onebox(text) {
+  const s = text.trim();
+  const m = s.match(ROUTE_RE);
+  if (m) return go(`/${m[1]}/${m[2]}`);
+  if (DONGLE_RE.test(s)) return go(`/${s}`);
+  alert("Enter a route name (dongle|time) or a dongle id");
+}
+
+export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
+
+const state = {me: null, devices: null, drawerOpen: false};
+
+function header() {
+  const search = h("input", {type: "search", class: "onebox", placeholder: "route name or dongle id",
+    onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; } }});
+  const menu = h("div", {class: "menu", hidden: true},
+    state.me ? h("div", {class: "menu-item muted"}, state.me.username) : null,
+    state.me ? h("div", {class: "menu-item", onclick: () => auth.logOut()}, "Sign out") : h("div", {class: "menu-item", onclick: () => go("/")}, "Sign in"));
+  const account = h("div", {class: "account"},
+    h("button", {class: "icon-button", "aria-label": "Account", onclick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; }}, avatarIcon()),
+    menu);
+  document.addEventListener("click", () => { menu.hidden = true; });
+  return [
+    h("button", {class: "icon-button hamburger", "aria-label": "Menu", onclick: () => { state.drawerOpen = !state.drawerOpen; document.body.classList.toggle("drawer-open", state.drawerOpen); }}, "☰"),
+    h("a", {class: "brand", href: "/", onclick: link("/")}, h("img", {src: "/images/comma-white.png", alt: "comma"}), h("span", {}, "connect")),
+    search,
+    account,
+  ];
+}
+
+function avatarIcon() {
+  return h("span", {class: "avatar"});
+}
+
+function sidebar(selected) {
+  if (!state.devices) return [];
+  return state.devices.map((d) => h("a", {class: `device-item ${d.dongle_id === selected ? "selected" : ""}`, href: `/${d.dongle_id}`,
+    onclick: (e) => { state.drawerOpen = false; document.body.classList.remove("drawer-open"); link(`/${d.dongle_id}`)(e); }},
+    h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}),
+    h("span", {}, h("div", {class: "name"}, d.alias || d.dongle_id), h("div", {class: "muted small"}, d.dongle_id))));
+}
+
 function loginPage() {
   return h("div", {class: "login"},
-    h("h1", {}, "comma connect"),
-    ["google", "github", "apple"].map((p) => h("a", {class: "button", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase() + p.slice(1)}`)),
-    h("p", {class: "muted"}, "Or open a public route by name above."));
+    h("img", {src: "/images/comma-white.png", alt: "comma", class: "login-logo"}),
+    h("h1", {}, "connect"),
+    ["google", "github", "apple"].map((p) => h("a", {class: "button wide", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase() + p.slice(1)}`)),
+    h("p", {class: "muted"}, "Or open a public route by name in the search box."));
 }
 
 async function authCallback() {
@@ -56,27 +81,31 @@ async function authCallback() {
   return render();
 }
 
-let me = null;
-
 async function render() {
   const main = clear(document.getElementById("main"));
   const path = location.pathname.replace(/\/+$/, "") || "/";
-  main.append(h("p", {class: "muted"}, "loading…"));
+  main.append(h("p", {class: "muted center"}, "Loading…"));
   try {
     if (path === "/auth") return main.replaceChildren(await authCallback());
-    if (auth.isAuthenticated() && !me) me = await api.me().catch(() => null);
-    clear(document.getElementById("header")).append(...header(me).filter(Boolean));
-
+    if (auth.isAuthenticated() && !state.me) {
+      [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
+    }
     const parts = path.split("/").filter(Boolean);
+    const dongleId = DONGLE_RE.test(parts[0] || "") ? parts[0] : null;
+    clear(document.getElementById("header")).append(...header().filter(Boolean));
+    clear(document.getElementById("sidebar")).append(...sidebar(dongleId));
+    document.body.classList.toggle("has-sidebar", !!state.devices && state.devices.length > 0);
+
     let page;
-    if (parts.length === 2 && DONGLE_RE.test(parts[0])) page = await routePage(`${parts[0]}|${parts[1]}`, parts[0]);
-    else if (parts.length === 1 && DONGLE_RE.test(parts[0])) page = await devicePage(parts[0]);
+    if (dongleId && parts.length === 2) page = await routePage(`${dongleId}|${parts[1]}`, dongleId, state.devices);
+    else if (dongleId) page = await devicePage(dongleId, state.devices);
     else if (!auth.isAuthenticated()) page = loginPage();
-    else page = await devicesPage();
+    else if (state.devices.length) { history.replaceState(null, "", `/${state.devices[0].dongle_id}`); return render(); }
+    else page = h("div", {class: "page"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen."));
     main.replaceChildren(page);
   } catch (e) {
     console.error(e);
-    main.replaceChildren(h("p", {class: "error"}, e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e)));
+    main.replaceChildren(h("p", {class: "error center"}, e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e)));
   }
 }
 

@@ -1,47 +1,71 @@
 import {api} from "/api.js";
 import {h, fmt} from "/dom.js";
-import {link} from "/app.js";
+import {isOnline, link} from "/app.js";
+import {reverseLookup} from "/geocode.js";
+import {deviceMap} from "/map.js";
+import {timeline, routeDuration} from "/timeline.js";
 
 const DAY = 86400000;
 
-export function routeCard(r) {
-  const path = `/${r.dongle_id}/${r.fullname.split("|")[1]}`;
-  const duration = r.end_time_utc_millis - r.start_time_utc_millis;
-  return h("a", {class: "card route", href: path, onclick: link(path)},
-    h("img", {class: "thumb", src: api.segmentAsset(r, 0, "sprite.jpg"), alt: "", loading: "lazy", onerror: (e) => { e.target.style.visibility = "hidden"; }}),
-    h("div", {},
-      h("div", {class: "title"}, fmt.date(r.start_time_utc_millis)),
-      h("div", {class: "muted"}, fmt.duration(duration), " · ", fmt.miles(r.distance ?? 0), r.is_preserved ? " · preserved" : "", r.is_public ? " · public" : "")));
+function placeCell(lng, lat) {
+  const cell = h("div", {class: "cell"});
+  reverseLookup(lng, lat).then((loc) => {
+    if (loc) cell.replaceChildren(h("div", {class: "first"}, loc.place), h("div", {}, loc.details));
+  });
+  return cell;
 }
 
-export async function devicePage(dongleId) {
-  const [device, location] = await Promise.all([api.device(dongleId), api.deviceLocation(dongleId).catch(() => null)]);
-  const list = h("div", {class: "cards"});
-  const more = h("button", {}, "Load older drives");
+export function driveCard(r) {
+  const path = `/${r.dongle_id}/${r.fullname.split("|")[1]}`;
+  const start = new Date(r.start_time_utc_millis), end = new Date(r.end_time_utc_millis);
+  const sameYear = start.getFullYear() === new Date().getFullYear();
+  const date = start.toLocaleDateString(undefined, {weekday: "long", month: "short", day: "numeric", ...(sameYear ? {} : {year: "numeric"})});
+  const hm = (d) => d.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
+  const duration = routeDuration(r);
+  return h("a", {class: "drive", href: path, onclick: link(path)},
+    h("div", {class: "drive-head"},
+      h("div", {class: "cell date"}, h("div", {class: "first"}, date), h("div", {}, `${hm(start)} to ${hm(end)}`)),
+      h("div", {class: "cell dur"}, h("div", {class: "first"}, fmt.minutes(duration)), h("div", {}, fmt.miles(r.distance ?? 0))),
+      placeCell(r.start_lng, r.start_lat),
+      placeCell(r.end_lng, r.end_lat),
+      h("div", {class: "cell arrow"}, "›")),
+    timeline(r));
+}
+
+export async function devicePage(dongleId, devices) {
+  const known = (devices || []).find((d) => d.dongle_id === dongleId);
+  const [device, location] = await Promise.all([
+    known ? known : api.device(dongleId),
+    api.deviceLocation(dongleId).catch(() => null),
+  ]);
+  const list = h("div", {class: "drives"});
+  const more = h("button", {class: "button"}, "Load older drives");
   let end = Date.now();
-  let seen = new Set();
+  const seen = new Set();
 
   async function loadMore() {
     more.disabled = true;
-    more.textContent = "loading…";
+    more.textContent = "Loading…";
     const start = end - 14 * DAY;
     const routes = await api.routes(dongleId, start, end);
     for (const r of routes) {
       if (seen.has(r.fullname)) continue;
       seen.add(r.fullname);
-      list.append(routeCard(r));
+      list.append(driveCard(r));
     }
     end = start;
     more.disabled = false;
-    more.textContent = list.children.length ? "Load older drives" : "No drives yet, load older";
-    if (!routes.length && list.children.length === 0 && Date.now() - end < 180 * DAY) loadMore();  // keep looking back
+    more.textContent = "Load older drives";
+    if (!routes.length && !list.children.length && Date.now() - end < 180 * DAY) loadMore();
   }
   loadMore();
 
-  return h("div", {class: "page"},
+  const online = isOnline(device);
+  return h("div", {class: "device-page"},
+    deviceMap(location),
     h("div", {class: "device-head"},
       h("h2", {}, device.alias || dongleId),
-      h("div", {class: "muted"}, dongleId, " · ", device.device_type, " · ", device.openpilot_version || "", " · last seen ", fmt.ago(device.last_athena_ping),
-        location && location.lat ? [" · ", h("a", {href: `https://www.google.com/maps?q=${location.lat},${location.lng}`, target: "_blank"}, "last location")] : null)),
-    list, h("p", {}, more));
+      h("div", {class: "device-buttons"},
+        h("span", {class: `pill ${online ? "online" : ""}`}, online ? "device online" : "device offline"))),
+    h("div", {class: "page"}, list, h("p", {class: "center"}, more)));
 }

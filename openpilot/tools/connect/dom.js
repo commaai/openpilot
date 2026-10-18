@@ -26,6 +26,7 @@ export const fmt = {
     const [n, unit] = s < 90 ? [s, "s"] : s < 5400 ? [s / 60, "m"] : s < 129600 ? [s / 3600, "h"] : [s / 86400, "d"];
     return `${Math.round(n)}${unit} ago`;
   },
+  minutes: (ms) => `${Math.max(1, Math.round(ms / 60000))} min`,
   duration(ms) {
     const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m ${String(s).padStart(2, "0")}s`;
