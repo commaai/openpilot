@@ -6,11 +6,20 @@
 #include <utility>
 
 #include <GLFW/glfw3.h>
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>
+#else
 #include "imgui_impl_opengl3_loader.h"
+#endif
 
+#ifndef __EMSCRIPTEN__
 #include "common/yuv.h"
+#endif
 #include "tools/cabana/utils/util.h"
 #include "tools/cabana/settings.h"
+#ifdef __EMSCRIPTEN__
+#include "tools/cabana/web/web.h"
+#endif
 
 namespace {
 constexpr GLenum GL_LINEAR_MIPMAP_LINEAR_ = 0x2703;
@@ -108,6 +117,32 @@ void CameraWidget::draw(const ImVec2 &size) {
   if (ImGui::IsItemDeactivated()) clicked();
 }
 
+#ifdef __EMSCRIPTEN__
+static CameraType cameraOf(VisionStreamType type) {
+  return type == VISION_STREAM_CABIN ? CabinCam : type == VISION_STREAM_WIDE_ROAD ? WideRoadCam : NarrowRoadCam;
+}
+
+float CameraWidget::frameAspectRatio() const {
+  auto frame = web::video::latest(cameraOf(requested_stream_type_));
+  if (frame.width > 0 && frame.height > 0) return (float)frame.width / frame.height;
+  return DEFAULT_CAMERA_ASPECT_RATIO;
+}
+
+void CameraWidget::paint() {
+  ImDrawList *p = ImGui::GetWindowDrawList();
+  p->AddRectFilled(rect_.Min, rect_.Max, bg_, ImGui::GetStyle().ChildRounding);
+
+  active_stream_type_ = requested_stream_type_.load();
+  auto frame = web::video::latest(cameraOf(active_stream_type_));
+  if (frame.texture == 0) return;
+
+  VideoPlacement placement = videoPlacement(rect_, frameAspectRatio(), settings.crop_video);
+  if (active_stream_type_ == VISION_STREAM_CABIN) {
+    std::swap(placement.uv0.x, placement.uv1.x);
+  }
+  drawVideoFrame(p, ImTextureRef((ImTextureID)(uintptr_t)frame.texture), rect_, placement);
+}
+#else
 float CameraWidget::frameAspectRatio() const {
   if (frame_texture_.width > 0 && frame_texture_.height > 0) {
     return (float)frame_texture_.width / frame_texture_.height;
@@ -133,7 +168,11 @@ void CameraWidget::paint() {
   }
   drawVideoFrame(p, frame_texture_.ref(), rect_, placement);
 }
+#endif
 
+#ifdef __EMSCRIPTEN__
+void CameraWidget::vipcThread() {}  // frames come through web::video
+#else
 void CameraWidget::vipcThread() {
   VisionStreamType cur_stream = requested_stream_type_;
   std::unique_ptr<VisionIpcClient> vipc_client;
@@ -180,6 +219,7 @@ void CameraWidget::vipcThread() {
     }
   }
 }
+#endif
 
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock_);
