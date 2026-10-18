@@ -1,6 +1,7 @@
 #include "tools/jotpluggler/app.h"
 #include "tools/jotpluggler/car_fingerprint_to_dbc.h"
 #include "tools/jotpluggler/common.h"
+#include "tools/jotpluggler/event_extractors.h"
 
 #include <kj/exception.h>
 
@@ -59,41 +60,6 @@ struct SchemaIndex {
 };
 
 constexpr size_t INVALID_DYNAMIC_SLOT = std::numeric_limits<size_t>::max();
-
-struct SeriesAccumulator {
-  explicit SeriesAccumulator(size_t fixed_count = 0) : fixed_series(fixed_count) {}
-
-  std::vector<RouteSeries> fixed_series;
-  std::vector<RouteSeries> dynamic_series;
-  std::vector<CanMessageData> can_messages;
-  std::unordered_map<std::string, size_t> dynamic_slots;
-  std::unordered_map<std::string, std::vector<size_t>> list_scalar_slots;
-  std::unordered_map<CanMessageId, size_t, CanMessageIdHash> can_message_slots;
-  std::unordered_map<std::string, EnumInfo> enum_info;
-};
-
-void append_fixed_scalar_point(RouteSeries *series, double tm, double value);
-void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
-RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series);
-void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator);
-RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series);
-void append_can_frame(CanServiceKind service,
-                      uint8_t bus,
-                      uint32_t address,
-                      uint16_t bus_time,
-                      capnp::Data::Reader dat,
-                      double tm,
-                      SeriesAccumulator *series);
-void decode_can_frame(const dbc::Database *can_dbc,
-                      const std::string &service_name,
-                      uint8_t bus,
-                      uint32_t address,
-                      const uint8_t *raw,
-                      size_t data_size,
-                      double tm,
-                      SeriesAccumulator *series);
-
-#include "tools/jotpluggler/generated_event_extractors.h"
 
 struct LoadedRouteArtifacts {
   std::optional<InitDataSnapshot> init_data;
@@ -928,13 +894,6 @@ void append_scalar_point(RouteSeries *series,
   series->values.push_back(value);
 }
 
-// This has thousands of generated call sites. Inlining it duplicates vector
-// growth logic throughout the extractor and is slower both to compile and run.
-__attribute__((noinline)) void append_fixed_scalar_point(RouteSeries *series, double tm, double value) {
-  series->times.push_back(tm);
-  series->values.push_back(value);
-}
-
 CanMessageData *ensure_can_message(CanServiceKind service, uint8_t bus, uint32_t address, SeriesAccumulator *series) {
   const CanMessageId id{service, bus, address};
   auto [it, inserted] = series->can_message_slots.try_emplace(id, series->can_messages.size());
@@ -942,6 +901,25 @@ CanMessageData *ensure_can_message(CanServiceKind service, uint8_t bus, uint32_t
     series->can_messages.push_back(CanMessageData{.id = id});
   }
   return &series->can_messages[it->second];
+}
+
+size_t ensure_dynamic_slot(const std::string &path, SeriesAccumulator *series) {
+  auto [it, inserted] = series->dynamic_slots.try_emplace(path, series->dynamic_series.size());
+  if (inserted) {
+    series->dynamic_series.push_back(RouteSeries{it->first});
+  }
+  return it->second;
+}
+
+}  // namespace
+
+// used by the generated event extractors
+
+// This has thousands of generated call sites. Inlining it duplicates vector
+// growth logic throughout the extractor and is slower both to compile and run.
+__attribute__((noinline)) void append_fixed_scalar_point(RouteSeries *series, double tm, double value) {
+  series->times.push_back(tm);
+  series->values.push_back(value);
 }
 
 void append_can_frame(CanServiceKind service,
@@ -963,10 +941,6 @@ void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text,
   const double value = accumulator->enum_info[series->path].text_value(std::string(text.begin(), text.size()));
   append_fixed_scalar_point(series, tm, value);
 }
-
-void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series);
-RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series);
-void append_text_point(RouteSeries *series, double tm, capnp::Text::Reader text, SeriesAccumulator *accumulator);
 
 void decode_can_frame(const dbc::Database *can_dbc,
                       const std::string &service_name,
@@ -998,6 +972,28 @@ void decode_can_frame(const dbc::Database *can_dbc,
   }
 }
 
+RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series) {
+  return &series->dynamic_series[ensure_dynamic_slot(path, series)];
+}
+
+RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series) {
+  auto [it, _] = series->list_scalar_slots.try_emplace(base_path);
+  std::vector<size_t> &slots = it->second;
+  if (slots.size() <= index) {
+    slots.resize(index + 1, INVALID_DYNAMIC_SLOT);
+  }
+  if (slots[index] == INVALID_DYNAMIC_SLOT) {
+    slots[index] = ensure_dynamic_slot(base_path + "/" + std::to_string(index), series);
+  }
+  return &series->dynamic_series[slots[index]];
+}
+
+void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series) {
+  append_scalar_point(ensure_dynamic_series(path, series), path, tm, value);
+}
+
+namespace {
+
 void append_live_can_frame(CanServiceKind service,
                            const LiveCanFrame &frame,
                            double time_offset,
@@ -1026,34 +1022,6 @@ SeriesAccumulator make_series_accumulator(const SchemaIndex &schema) {
     out.fixed_series[i].path = schema.fixed_paths[i];
   }
   return out;
-}
-
-size_t ensure_dynamic_slot(const std::string &path, SeriesAccumulator *series) {
-  auto [it, inserted] = series->dynamic_slots.try_emplace(path, series->dynamic_series.size());
-  if (inserted) {
-    series->dynamic_series.push_back(RouteSeries{it->first});
-  }
-  return it->second;
-}
-
-RouteSeries *ensure_dynamic_series(const std::string &path, SeriesAccumulator *series) {
-  return &series->dynamic_series[ensure_dynamic_slot(path, series)];
-}
-
-RouteSeries *ensure_list_scalar_series(const std::string &base_path, size_t index, SeriesAccumulator *series) {
-  auto [it, _] = series->list_scalar_slots.try_emplace(base_path);
-  std::vector<size_t> &slots = it->second;
-  if (slots.size() <= index) {
-    slots.resize(index + 1, INVALID_DYNAMIC_SLOT);
-  }
-  if (slots[index] == INVALID_DYNAMIC_SLOT) {
-    slots[index] = ensure_dynamic_slot(base_path + "/" + std::to_string(index), series);
-  }
-  return &series->dynamic_series[slots[index]];
-}
-
-void append_dynamic_scalar_point(const std::string &path, double tm, double value, SeriesAccumulator *series) {
-  append_scalar_point(ensure_dynamic_series(path, series), path, tm, value);
 }
 
 void append_event_fast(cereal::Event::Which which,

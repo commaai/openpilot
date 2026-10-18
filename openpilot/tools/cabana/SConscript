@@ -51,9 +51,10 @@ ui_env['CXXFLAGS'] += [
   '-DCABANA_FONTS_DIR=\'"%s"\'' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts"),
   '-DBOOTSTRAP_ICONS_TTF=\'"%s"\'' % bootstrap_icons.TTF_PATH,
 ]
-ui_objs = [ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs]
-ui_objs += [ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)]
-ui_objs += ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc')
+core_objs = {src: ui_env.Object('ui/obj/' + src.replace('/', '_')[:-3], src) for src in core_srcs}
+bootstrap_icons_obj = ui_env.Object('ui/obj/bootstrap_icons', bootstrap_icons_src)
+ui_objs = list(core_objs.values()) + [bootstrap_icons_obj]
+ui_objs += ui_env.Object(ui_env.Glob('ui/*.cc') + ui_env.Glob('ui/widgets/*.cc') + ui_env.Glob('ui/dialogs/*.cc') + ui_env.Glob('ui/chart/*.cc') + ui_env.Glob('ui/tools/*.cc'))
 ui_libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a")] + \
           ffmpeg_libs + ['zstd', 'm', 'pthread', 'usb-1.0']
 if arch == "Darwin":
@@ -66,16 +67,12 @@ ui_env.Requires(cabana_ui, generated_dbcs)
 if GetOption('extras'):
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
+  # reuse the frontend's objects instead of compiling them twice
   cabana_core_test_objects = [
     cabana_core_test_env.Object('tests/cabana_core_tests', 'tests/test_cabana.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_model', 'dbc/dbc.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_file', 'dbc/dbcfile.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_manager', 'dbc/dbcmanager.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_strings', 'utils/strings.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_util', 'utils/util.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_icons', bootstrap_icons_src),
-    cabana_core_test_env.Object('tests/cabana_core_routes', 'routes.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
+    [core_objs[src] for src in ('dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/strings.cc', 'utils/util.cc', 'routes.cc')],
+    bootstrap_icons_obj,
+    ui_env.Object('ui/qtstate.cc'),
   ]
   cabana_core_test = cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[replay_lib, common])
   cabana_core_test_env.Requires(cabana_core_test, generated_dbcs)
