@@ -1,4 +1,5 @@
 import math
+import threading
 import time
 import numpy as np
 from collections import deque
@@ -46,6 +47,7 @@ class LogWorld:
 
     # the latest (road, wide) NV12 frames in VisionIPC buffer layout, None until the first render
     self.images: tuple[np.ndarray, np.ndarray] | None = None
+    self.new_images = threading.Event()
 
     device_from_calib = rot_from_euler(route.rpy_calib)
     cam = route.camera
@@ -156,6 +158,7 @@ class LogWorld:
       images.append(cam.warp(frame, params).copy())
       wait, warp = wait + t1 - t0, warp + time.monotonic() - t1
     self.images = (images[0], images[1])
+    self.new_images.set()
     self.frame_times.append((wait, warp))
 
   def close(self):

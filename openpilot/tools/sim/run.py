@@ -230,13 +230,10 @@ class Sim:
     line = f"camera {rate(camera)}   model {rate(model)}"
     if (st := self.status) is None:
       return line
-    # the cameras always run at 20 Hz like camerad, repeating the last frame if the sim didn't render a new one in time
-    repeated = st["repeated"]
-    line += f"   {RED if repeated > 2 else YELLOW if repeated else GREY}{repeated} repeated frames/s{RESET}"
     line += f"   {GREY}decode wait {st['decode_wait'] * 1e3:.0f} ms, warp {st['warp'] * 1e3:.0f} ms, behind {st['behind'] * 1e3:.0f} ms{RESET}"
     if model < MIN_MODEL_HZ:
       line += f"   {RED}the model is too slow for openpilot to drive{RESET}"
-    elif repeated > 2:
+    elif camera < 19:
       cause = "video decoding" if st["decode_wait"] > 0.02 else "warping" if st["warp"] > 0.04 else "the sim"
       line += f"   {YELLOW}{cause} can't keep up{RESET}"
     return line

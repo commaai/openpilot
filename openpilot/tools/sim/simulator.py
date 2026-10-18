@@ -5,7 +5,6 @@ import time
 import traceback
 import numpy as np
 
-from collections import deque
 from multiprocessing import Process, Queue
 from opendbc.car.honda.values import CruiseButtons
 from openpilot.common.params import Params
@@ -74,7 +73,6 @@ class Simulator:
     self.sensors = SimulatedSensors()
 
     self.driver = Driver()
-    self.repeated: deque[bool] = deque(maxlen=20)  # whether each of the last second of camera frames repeated the one before
     self.engaged = False
     self.manual = {"gas": 0., "brake": 0., "steer": 0.}
     self.manual_until = 0.
@@ -129,18 +127,18 @@ class Simulator:
       rk.keep_time()
 
   def _send_cameras(self):
-    # like camerad, frames go out on a steady 20 Hz clock, with whatever was rendered last. modeld sees any frame it
-    # misses as a dropped frame and invalidates its outputs, so frames must never bunch up after the sim hiccups
-    next_frame_time = time.monotonic()
-    last_images = None
+    # each frame goes out once as soon as it's rendered, but never bunched up after the sim hiccups. a late frame is harmless,
+    # while modeld treats a dropped frame as an error and a repeated one as the car standing still, which fails locationd's checks
+    next_send = time.monotonic()
     while self.keep_alive:
-      next_frame_time = max(next_frame_time + DT_MDL, time.monotonic() + DT_MDL * MIN_FRAME_SPACING)
-      time.sleep(max(0., next_frame_time - time.monotonic()))
+      if not self.world.new_images.wait(0.1):
+        continue
+      time.sleep(max(0., next_send - time.monotonic()))
+      self.world.new_images.clear()
       if (images := self.world.images) is not None:
         self.sensors.camerad.cam_send_yuv_road(images[0])
         self.sensors.camerad.cam_send_yuv_wide_road(images[1])
-        self.repeated.append(images is last_images)
-        last_images = images
+      next_send = time.monotonic() + DT_MDL * MIN_FRAME_SPACING
 
   def _loop(self):
     driver, world, vehicle = self.driver, self.world, self.world.vehicle
@@ -193,9 +191,9 @@ class Simulator:
       if world.ended != ended:
         ended = world.ended
         if ended is not None:
-          self.status_q.put(("episode_end", world.status() | {"behind": behind, "repeated": sum(self.repeated)}))
+          self.status_q.put(("episode_end", world.status() | {"behind": behind}))
       if frame % (100 // STATUS_HZ) == 0:
-        self.status_q.put(("status", world.status() | {"behind": behind, "repeated": sum(self.repeated)}))
+        self.status_q.put(("status", world.status() | {"behind": behind}))
         behind = 0.
 
       # sim time keeps up with real time: a slow frame (a render, a busy machine) is made up with quicker ones after it,
