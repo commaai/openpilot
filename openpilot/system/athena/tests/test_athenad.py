@@ -45,6 +45,9 @@ def with_upload_handler(func):
       return func(*args, **kwargs)
     finally:
       end_event.set()
+      # wake the handler from its blocking queue get
+      athenad.cancelled_uploads.add('wakeup')
+      athenad.upload_queue.put_nowait(athenad.UploadItem(path='', url='', headers={}, created_at=0, id='wakeup'))
       thread.join()
   return wrapper
 
@@ -56,11 +59,8 @@ def host():
     yield f"http://{host}:{port}"
 
 class TestAthenadMethods(OpenpilotTestCase):
-  @classmethod
-  def setup_class(cls):
-    athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
-
   def setup_method(self):
+    athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
     self.default_params = {
       "DongleId": "0000000000000000",
       "GithubSshKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
@@ -132,7 +132,7 @@ class TestAthenadMethods(OpenpilotTestCase):
 
   def test_get_message(self):
     with self.assertRaises(TimeoutError) as _:
-      dispatcher["getMessage"]("controlsState")
+      dispatcher["getMessage"]("controlsState", timeout=100)
 
     end_event = multiprocessing.Event()
 

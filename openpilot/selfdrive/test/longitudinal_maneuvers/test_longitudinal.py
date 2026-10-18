@@ -1,5 +1,5 @@
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.parameterized import parameterized_class
+from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -141,13 +141,9 @@ def create_maneuvers(kwargs):
   return maneuvers
 
 
-@parameterized_class("force_decel", [True, False])
 class TestLongitudinalControl(OpenpilotTestCase):
-  force_decel: bool
-
-  def test_maneuver(self, subtests):
-    for maneuver in create_maneuvers({"force_decel": self.force_decel}):
-      with subtests.test(title=maneuver.title, force_decel=maneuver.force_decel):
-        print(maneuver.title)
-        valid, _ = maneuver.evaluate()
-        assert valid
+  @parameterized.expand([m for force_decel in (True, False) for m in create_maneuvers({"force_decel": force_decel})],
+                        ids=lambda m: f"{m.title}_force_decel_{m.force_decel}")
+  def test_maneuver(self, maneuver):
+    valid, _ = maneuver.evaluate()
+    assert valid

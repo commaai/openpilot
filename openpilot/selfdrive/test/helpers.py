@@ -110,7 +110,7 @@ def http_server_context(handler, setup=None):
   host = '127.0.0.1'
   server = http.server.HTTPServer((host, 0), handler)
   port = server.server_port
-  t = threading.Thread(target=server.serve_forever)
+  t = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': 0.01})
   t.start()
 
   if setup is not None:
