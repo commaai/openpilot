@@ -25,7 +25,8 @@ class TestSim(OpenpilotTestCase):
   def teardown_method(self):
     if self.simulator is not None:
       self.simulator.terminate()
-      self.simulator.join()
+      self.simulator.join(5)
+      self.simulator.kill()
     stop_openpilot(self.manager)
 
   def test_driving(self):

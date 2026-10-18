@@ -35,13 +35,19 @@ def start_simulator(route: str, start_sec: float, cmd_q: Queue, status_q: Queue,
 
 
 def _simulator_main(route, start_sec, cmd_q, status_q, log_path):
-  signal.signal(signal.SIGINT, signal.SIG_IGN)  # the parent shuts us down
+  # the parent shuts us down with terminate(), and may have stopped reading status by then
+  for sig in (signal.SIGINT, signal.SIGHUP):
+    signal.signal(sig, signal.SIG_IGN)
+  signal.signal(signal.SIGTERM, signal.SIG_DFL)
+  status_q.cancel_join_thread()
   if log_path is not None:
     fd = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND)
     os.dup2(fd, 1)
     os.dup2(fd, 2)
   try:
-    Simulator(route, start_sec, cmd_q, status_q).run()
+    sim = Simulator(route, start_sec, cmd_q, status_q)
+    signal.signal(signal.SIGTERM, lambda *_: sim.shutdown())
+    sim.run()
   except Exception:
     traceback.print_exc()
     status_q.put(("error", traceback.format_exc()))

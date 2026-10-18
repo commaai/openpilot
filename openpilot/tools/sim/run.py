@@ -273,7 +273,8 @@ class Sim:
   def close(self):
     if self.simulator is not None:
       self.simulator.terminate()
-      self.simulator.join()
+      self.simulator.join(5)
+      self.simulator.kill()
     if self.manager is not None:
       stop_openpilot(self.manager)
     self.log.close()
@@ -352,7 +353,7 @@ def main():
   finally:
     for sig in (signal.SIGINT, signal.SIGHUP, signal.SIGTERM):
       signal.signal(sig, signal.SIG_IGN)  # don't get interrupted cleaning up
-    with contextlib.suppress(OSError):  # the terminal may be gone
+    with contextlib.suppress(OSError, termios.error):  # the terminal may be gone
       if tui:
         sys.stdout.write("\x1b[?25h\x1b[?1049l")
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
