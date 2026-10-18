@@ -32,7 +32,6 @@ def decoder(addr, vipc_server, vst, W, H, debug=False):
   codec = Decoder("hevc")
 
   os.environ["ZMQ"] = "1"
-  messaging.reset_context()
   sock = messaging.sub_sock(sock_name, None, addr=addr, conflate=False)
   cnt = 0
   last_idx = -1
@@ -108,12 +107,10 @@ class CompressedVipc:
   def __init__(self, addr, vision_streams, server_name, debug=False):
     print("getting frame sizes")
     os.environ["ZMQ"] = "1"
-    messaging.reset_context()
     sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
     while min(sm.recv_frame.values()) == 0:
       sm.update(100)
     os.environ.pop("ZMQ")
-    messaging.reset_context()
 
     self.vipc_server = VisionIpcServer(server_name)
     for vst in vision_streams:

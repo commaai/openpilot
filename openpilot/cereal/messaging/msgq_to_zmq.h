@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "msgq/impl_msgq.h"
+#include "msgq/ipc.h"
 #include "openpilot/cereal/messaging/bridge_zmq.h"
 
 class MsgqToZmq {
@@ -22,15 +22,14 @@ protected:
   struct SocketPair {
     std::string endpoint;
     std::unique_ptr<BridgeZmqPubSocket> pub_sock;
-    std::unique_ptr<MSGQSubSocket> sub_sock;
+    std::unique_ptr<SubSocket> sub_sock;
     int connected_clients = 0;
   };
 
-  std::unique_ptr<Context> msgq_context;
   std::unique_ptr<BridgeZmqContext> zmq_context;
   std::mutex mutex;
   std::condition_variable cv;
-  std::unique_ptr<MSGQPoller> msgq_poller;
+  std::unique_ptr<Poller> msgq_poller;
   std::map<SubSocket *, BridgeZmqPubSocket *> sub2pub;
   std::vector<SocketPair> socket_pairs;
 };

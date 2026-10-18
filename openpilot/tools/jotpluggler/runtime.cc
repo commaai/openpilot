@@ -569,14 +569,13 @@ struct StreamPoller::Impl {
       unsetenv("ZMQ");
     }
 
-    std::unique_ptr<Context> context(Context::create());
-    std::unique_ptr<Poller> poller(Poller::create());
+    auto poller = std::make_unique<Poller>();
     std::vector<std::unique_ptr<SubSocket>> sockets;
     sockets.reserve(services.size());
     for (const auto &[name, info] : services) {
       if (!should_subscribe_stream_service(name)) continue;
       std::unique_ptr<SubSocket> socket(
-        SubSocket::create(context.get(), name.c_str(), source.address.c_str(), false, true, info.queue_size));
+        SubSocket::create(name.c_str(), false, info.queue_size));
       if (socket == nullptr) continue;
       socket->setTimeout(0);
       poller->registerSocket(socket.get());
