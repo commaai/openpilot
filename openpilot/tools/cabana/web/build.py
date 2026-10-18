@@ -110,7 +110,7 @@ def main():
   failed = False
   objs = []
   with ThreadPoolExecutor(args.j) as ex:
-    for src, (obj, res) in zip(sources, ex.map(compile_one, sources)):
+    for src, (obj, res) in zip(sources, ex.map(compile_one, sources), strict=True):
       objs.append(obj)
       if res and res[0] != 0:
         failed = True
