@@ -9,6 +9,7 @@ import pyray as rl
 import openpilot.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.tools.bridge import start_bridge
 from openpilot.tools.replay.lib.ui_helpers import (
   UP,
   BLACK,
@@ -27,9 +28,22 @@ from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
+SERVICES = [
+  'carState',
+  'longitudinalPlan',
+  'carControl',
+  'radarState',
+  'extrinsicsCalibration',
+  'controlsState',
+  'selfdriveState',
+  'radarTracks',
+  'modelV2',
+  'vehicleParameters',
+  'narrowRoadCameraState',
+]
 
 
-def ui_thread(addr):
+def ui_thread():
   # Get monitor info before creating window
   rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(1, 1, "")
@@ -70,22 +84,7 @@ def ui_thread(addr):
   top_down_texture = rl.load_texture_from_image(top_down_image)
   rl.unload_image(top_down_image)
 
-  sm = messaging.SubMaster(
-    [
-      'carState',
-      'longitudinalPlan',
-      'carControl',
-      'radarState',
-      'extrinsicsCalibration',
-      'controlsState',
-      'selfdriveState',
-      'radarTracks',
-      'modelV2',
-      'vehicleParameters',
-      'narrowRoadCameraState',
-    ],
-    addr=addr,
-  )
+  sm = messaging.SubMaster(SERVICES)
 
   img = np.zeros((480, 640, 3), dtype='uint8')
   num_px = 0
@@ -255,16 +254,14 @@ def ui_thread(addr):
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="Show replay data in a UI.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("ip_address", nargs="?", default="127.0.0.1", help="The ip address on which to receive zmq messages.")
-
-  parser.add_argument("--frame-address", default=None, help="The frame address (fully qualified ZMQ endpoint for frames) on which to receive zmq messages.")
+  parser.add_argument("device", nargs="?", default=None, help="Device IP address or dongle id to bridge messages from, instead of the local msgq.")
   return parser
 
 
 if __name__ == "__main__":
   args = get_arg_parser().parse_args(sys.argv[1:])
 
-  if args.ip_address != "127.0.0.1":
-    os.environ["ZMQ"] = "1"
+  if args.device is not None:
+    start_bridge(args.device, SERVICES)
 
-  ui_thread(args.ip_address)
+  ui_thread()

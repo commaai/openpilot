@@ -33,7 +33,7 @@ struct CabanaArgs {
   bool no_cache = false;
   std::string panda_serial;
   std::string socketcan;
-  std::string zmq;
+  std::string device;
   std::string data_dir;
   std::string dbc;
   std::string route;
@@ -59,7 +59,7 @@ void printUsage(const char *argv0) {
 #ifdef __linux__
           "  --socketcan <device>      read can messages from given SocketCAN device\n"
 #endif
-          "  --zmq <ip-address>        read can messages from zmq at the specified ip-address\n"
+          "  --device <ip|dongle id>   read can messages from a comma device on the LAN or through athena\n"
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
           "  --no-cache                turn off the local route file cache\n"
@@ -106,8 +106,8 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       fprintf(stderr, "error: --socketcan is only supported on Linux\n");
       return 1;
 #endif
-    } else if (std::strcmp(a, "--zmq") == 0) {
-      if (!takeValue(argc, argv, i, args.zmq)) return 1;
+    } else if (std::strcmp(a, "--device") == 0) {
+      if (!takeValue(argc, argv, i, args.device)) return 1;
     } else if (std::strcmp(a, "--data_dir") == 0) {
       if (!takeValue(argc, argv, i, args.data_dir)) return 1;
     } else if (std::strcmp(a, "--no-vipc") == 0) {
@@ -151,8 +151,8 @@ int main(int argc, char *argv[]) {
 
   if (args.msgq) {
     stream = std::make_unique<DeviceStream>();
-  } else if (!args.zmq.empty()) {
-    stream = std::make_unique<DeviceStream>(args.zmq);
+  } else if (!args.device.empty()) {
+    stream = std::make_unique<DeviceStream>(args.device);
   } else if (args.panda) {
     try {
       stream = std::make_unique<PandaStream>(PandaStreamConfig{.serial = args.panda_serial});

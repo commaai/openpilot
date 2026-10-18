@@ -5,10 +5,13 @@ import time
 from collections import defaultdict
 
 import openpilot.cereal.messaging as messaging
+from openpilot.tools.bridge import start_bridge
 
 
 def can_printer(bus, max_msg, addr, ascii_decode):
-  logcan = messaging.sub_sock('can', addr=addr)
+  if addr != "127.0.0.1":
+    start_bridge(addr, ['can'])
+  logcan = messaging.sub_sock('can')
 
   start = time.monotonic()
   lp = time.monotonic()

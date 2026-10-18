@@ -149,29 +149,6 @@ ValidState validateNonWhitespace(const std::string &input) {
   return ValidState::Acceptable;
 }
 
-ValidState validateIpAddress(const std::string &input) {
-  if (input.empty()) return ValidState::Intermediate;
-
-  int dots = 0;
-  int value = 0;
-  bool has_digit = false;
-  for (const unsigned char c : input) {
-    if (std::isdigit(c)) {
-      value = has_digit ? value * 10 + (c - '0') : (c - '0');
-      if (value > 255) return ValidState::Invalid;
-      has_digit = true;
-    } else if (c == '.') {
-      if (!has_digit || dots >= 3) return ValidState::Invalid;
-      ++dots;
-      has_digit = false;
-      value = 0;
-    } else {
-      return ValidState::Invalid;
-    }
-  }
-  return (dots == 3 && has_digit) ? ValidState::Acceptable : ValidState::Intermediate;
-}
-
 ValidState validateDouble(const std::string &input) {
   if (input.empty()) return ValidState::Intermediate;
 

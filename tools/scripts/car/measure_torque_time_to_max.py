@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
 import struct
 from collections import deque
@@ -8,6 +7,7 @@ from statistics import mean
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
+from openpilot.tools.bridge import start_bridge
 
 if __name__ == "__main__":
 
@@ -16,10 +16,10 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   if args.addr != "127.0.0.1":
-    os.environ["ZMQ"] = "1"
+    start_bridge(args.addr, ['can'])
 
   poller = messaging.Poller()
-  messaging.sub_sock('can', poller, addr=args.addr)
+  messaging.sub_sock('can', poller)
 
   active = 0
   start_t = 0

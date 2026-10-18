@@ -14,10 +14,18 @@ class StreamRequestBody:
   bridge_services_out: list[str] = field(default_factory=list)
 
 
-def post_stream_request(body: StreamRequestBody) -> dict:
+@dataclass
+class BridgeRequestBody:
+  sdp: str
+  services_out: list[str] = field(default_factory=list)
+  services_in: list[str] = field(default_factory=list)
+
+
+def post_stream_request(body: StreamRequestBody | BridgeRequestBody) -> dict:
+  path = "stream" if isinstance(body, StreamRequestBody) else "bridge"
   t_start = time.monotonic()
   try:
-    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/stream", json=asdict(body), timeout=10)
+    resp = requests.post(f"http://localhost:{WEBRTCD_PORT}/{path}", json=asdict(body), timeout=10)
     t_end = time.monotonic()
     ret = resp.json()
     ret["time"] = (t_end - t_start) * 1000

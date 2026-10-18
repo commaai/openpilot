@@ -3,6 +3,7 @@ import argparse
 import json
 
 import openpilot.cereal.messaging as messaging
+from openpilot.tools.bridge import start_bridge
 from openpilot.tools.lib.logreader import LogReader
 
 LEVELS = {
@@ -68,7 +69,9 @@ if __name__ == "__main__":
         elif m.which() == 'operatingSystemLog':
           print_operating_system_log(m.logMonoTime-st, m.operatingSystemLog)
   else:
-    sm = messaging.SubMaster(['logMessage', 'operatingSystemLog'], addr=args.addr)
+    if args.addr != "127.0.0.1":
+      start_bridge(args.addr, ['logMessage', 'operatingSystemLog'])
+    sm = messaging.SubMaster(['logMessage', 'operatingSystemLog'])
     while True:
       sm.update()
 

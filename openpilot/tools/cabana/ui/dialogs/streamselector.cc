@@ -188,22 +188,21 @@ std::unique_ptr<AbstractStream> OpenPandaWidget::open() {
 
 void OpenDeviceWidget::draw() {
   ImGui::RadioButton("MSGQ", &mode_, 0);
-  ImGui::RadioButton("ZMQ", &mode_, 1);
-  // the radio buttons are the label column, the ip address is the field column
+  ImGui::RadioButton("Remote", &mode_, 1);
+  // the radio buttons are the label column, the device address is the field column
   const float label_width = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
-                            std::max(ImGui::CalcTextSize("MSGQ").x, ImGui::CalcTextSize("ZMQ").x) +
+                            std::max(ImGui::CalcTextSize("MSGQ").x, ImGui::CalcTextSize("Remote").x) +
                             ImGui::GetStyle().ItemInnerSpacing.x;
   ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);
   ImGui::SetNextItemWidth(-1.0f);
-  validatedText("##ip", &ip_address_, validateIpAddress, "Enter device IP address", ipValidator);
+  validatedText("##address", &address_, validateNonWhitespace, "Device IP address or dongle id", nonWhitespaceValidator);
   ImGui::EndDisabled();
 }
 
 std::unique_ptr<AbstractStream> OpenDeviceWidget::open() {
-  std::string ip = ip_address_.empty() ? "127.0.0.1" : ip_address_;
-  bool msgq = mode_ == 0;
-  return std::make_unique<DeviceStream>(msgq ? "" : ip);
+  bool msgq = mode_ == 0 || address_.empty();
+  return std::make_unique<DeviceStream>(msgq ? "" : address_);
 }
 
 #ifdef __linux__

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import argparse
 import multiprocessing
 import time
@@ -10,13 +9,13 @@ from collections import deque
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcServer
+from openpilot.tools.bridge import start_bridge
 from openpilot.tools.camerastream.ffmpeg_decoder import Decoder, FFmpegError
 
 V4L2_BUF_FLAG_KEYFRAME = 8
 
-# start encoderd
-# also start cereal messaging bridge
-# then run this "./compressed_vipc.py <ip>"
+# start camerad and encoderd on the device
+# then run this "./compressed_vipc.py <ip|dongle id>"
 
 ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_NARROW_ROAD: "narrowRoadEncodeData",
@@ -24,15 +23,14 @@ ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 
-def decoder(addr, vipc_server, vst, W, H, debug=False):
+def decoder(vipc_server, vst, W, H, debug=False):
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
     print(f"start decoder for {sock_name}, {W}x{H}")
 
   codec = Decoder("hevc")
 
-  os.environ["ZMQ"] = "1"
-  sock = messaging.sub_sock(sock_name, None, addr=addr, conflate=False)
+  sock = messaging.sub_sock(sock_name, None, conflate=False)
   cnt = 0
   last_idx = -1
   seen_iframe = False
@@ -105,12 +103,12 @@ def decoder(addr, vipc_server, vst, W, H, debug=False):
 
 class CompressedVipc:
   def __init__(self, addr, vision_streams, server_name, debug=False):
+    self.bridge = start_bridge(addr, [ENCODE_SOCKETS[s] for s in vision_streams])
+
     print("getting frame sizes")
-    os.environ["ZMQ"] = "1"
-    sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
+    sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams])
     while min(sm.recv_frame.values()) == 0:
       sm.update(100)
-    os.environ.pop("ZMQ")
 
     self.vipc_server = VisionIpcServer(server_name)
     for vst in vision_streams:
@@ -121,7 +119,7 @@ class CompressedVipc:
     self.procs = []
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, ed.width, ed.height, debug))
+      p = multiprocessing.Process(target=decoder, args=(self.vipc_server, vst, ed.width, ed.height, debug))
       p.start()
       self.procs.append(p)
 
@@ -132,11 +130,12 @@ class CompressedVipc:
   def kill(self):
     for p in self.procs:
       p.terminate()
+    self.bridge.terminate()
     self.join()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
-  parser.add_argument("addr", help="Address of comma three")
+  parser.add_argument("addr", help="IP address or dongle id of the comma device")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
   parser.add_argument("--server", default="camerad", help="choose vipc server name")
   parser.add_argument("--silent", action="store_true", help="Suppress debug output")

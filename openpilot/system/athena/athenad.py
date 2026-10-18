@@ -829,6 +829,22 @@ def startStream(sdp: str, enabled: bool) -> dict:
   return post_stream_request(StreamRequestBody(sdp, ["wideRoad"], enabled, bridge_services_in, ["carState", "deviceState"]))
 
 
+@dispatcher.add_method
+def startBridge(sdp: str, services_out: list[str], services_in: list[str]) -> dict:
+  from openpilot.system.webrtc.helpers import BridgeRequestBody, post_stream_request, wait_for_webrtcd
+  params = Params()
+  if params.get_bool("IsOffroad"):
+    # webrtcd clears IsBridging when the session ends
+    params.put_bool("IsBridging", True)
+    try:
+      wait_for_webrtcd()
+    except TimeoutError:
+      cloudlog.event("athena.startBridge.webrtcd_offroad_start_timeout", error=True)
+      raise
+
+  return post_stream_request(BridgeRequestBody(sdp, services_out, services_in))
+
+
 def get_logs_to_send_sorted() -> list[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())  # noqa: TID251

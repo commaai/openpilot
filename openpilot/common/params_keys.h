@@ -56,6 +56,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"HasAcceptedTerms", {PERSISTENT, STRING, "0"}},
     {"InitialCruiseSpeedKph", {PERSISTENT, INT, "40"}},
     {"InstallDate", {PERSISTENT, TIME}},
+    {"IsBridging", {CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON, BOOL}},
     {"IsDriverViewEnabled", {CLEAR_ON_MANAGER_START, BOOL}},
     {"IsEngaged", {PERSISTENT, BOOL}},
     {"IsLdwEnabled", {PERSISTENT, BOOL}},

@@ -9,6 +9,7 @@ import capnp
 import argparse
 import asyncio
 import contextlib
+import ipaddress
 import json
 import uuid
 import logging
@@ -18,13 +19,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any
 
-from openpilot.system.webrtc.helpers import StreamRequestBody
+from openpilot.system.webrtc.cereal_bridge import CerealBridge
+from openpilot.system.webrtc.helpers import WEBRTCD_PORT, BridgeRequestBody, StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.cereal import messaging, log
+from openpilot.cereal.services import SERVICE_LIST
+from opendbc.car.structs import car
 
 SESSION_TIMEOUT_SECONDS = 300
+# services a bridge client may publish on the device
+BRIDGE_SERVICES_IN = {"testJoystick"}
 
 
 # ice candidate parser for logging
@@ -381,9 +387,64 @@ class StreamSession:
       await self.stream.stop()
 
 
+class BridgeSession:
+  def __init__(self, body: BridgeRequestBody):
+    from teleoprtc.builder import WebRTCAnswerBuilder
+
+    self.identifier = str(uuid.uuid4())
+    # bridge clients may be on the LAN, so gather candidates on every interface
+    self.stream = WebRTCAnswerBuilder(body.sdp).stream()
+    self.services_out = body.services_out
+    self.services_in = body.services_in
+    self.bridge: CerealBridge | None = None
+    self.run_task: asyncio.Task | None = None
+    self.logger = logging.getLogger("webrtcd")
+    cloudlog.warning("New bridge session (%s), outgoing services %s, incoming services %s", self.identifier, self.services_out, self.services_in)
+
+  async def get_answer(self):
+    return await self.stream.start()
+
+  def start(self):
+    self.run_task = asyncio.create_task(self.run())
+
+  async def stop(self):
+    if self.run_task is not None and not self.run_task.done():
+      self.run_task.cancel()
+      with contextlib.suppress(asyncio.CancelledError):
+        await self.run_task
+    self.run_task = None
+    await self.cleanup()
+
+  async def run(self):
+    try:
+      # the channel is a byte stream, so the handler has to be in place before the first message
+      self.bridge = CerealBridge(self.services_out, self.services_in)
+      self.stream.set_message_handler(self.bridge.on_message)
+      await asyncio.wait_for(self.stream.wait_for_connection(), timeout=15)
+      self.bridge.start(self.stream.get_messaging_channel())
+      with cloudlog.ctx(session_id=self.identifier):
+        cloudlog.warning("webrtcd.bridge.connected")
+      await self.stream.wait_for_disconnection()
+      with cloudlog.ctx(session_id=self.identifier):
+        cloudlog.warning("webrtcd.bridge.ended")
+    except Exception:
+      self.logger.exception("Bridge session failure")
+      with cloudlog.ctx(session_id=self.identifier):
+        cloudlog.exception("webrtcd.bridge.exception")
+    finally:
+      await self.cleanup()
+
+  async def cleanup(self):
+    if self.bridge is not None:
+      await asyncio.get_running_loop().run_in_executor(None, self.bridge.stop)
+      self.bridge = None
+    await self.stream.stop()
+
+
 class ServerState:
   def __init__(self):
     self.streams: dict[str, StreamSession] = {}
+    self.bridges: dict[str, BridgeSession] = {}
     self.stream_lock = asyncio.Lock()
     self.teardown: asyncio.TimerHandle | None = None
 
@@ -396,6 +457,8 @@ def schedule_teardown(state: ServerState):
   def clear():
     if not state.streams:
       Params().put_bool("IsLiveStreaming", False)
+    if not state.bridges:
+      Params().put_bool("IsBridging", False)
 
   state.teardown = asyncio.get_running_loop().call_later(5.0, clear)
 
@@ -466,6 +529,35 @@ async def handle_get_stream(state: ServerState, raw_body: bytes, content_type: s
   return _json_response({"sdp": answer.sdp, "type": answer.type})
 
 
+async def handle_bridge(state: ServerState, raw_body: bytes, content_type: str, can_send: bool) -> tuple[int, bytes, str]:
+  if content_type != "application/json":
+    return _json_response({"error": "unsupported media type"}, status=415)
+
+  body = BridgeRequestBody(**json.loads(raw_body))
+  if not all(s in SERVICE_LIST for s in body.services_out + body.services_in):
+    return _json_response({"error": "invalid service"}, status=400)
+  if (body.services_in and not can_send) or not set(body.services_in) <= BRIDGE_SERVICES_IN:
+    return _json_response({"error": "forbidden incoming service"}, status=403)
+
+  session = BridgeSession(body)
+  try:
+    answer = await asyncio.wait_for(session.get_answer(), timeout=30)
+  except Exception:
+    await session.stop()
+    logging.getLogger("webrtcd").exception("Failed to create bridge answer")
+    raise
+
+  state.bridges[session.identifier] = session
+  session.start()
+
+  def remove_finished_session(_: asyncio.Task) -> None:
+    state.bridges.pop(session.identifier, None)
+    schedule_teardown(state)
+
+  session.run_task.add_done_callback(remove_finished_session)
+  return _json_response({"sdp": answer.sdp, "type": answer.type})
+
+
 async def handle_get_schema(state: ServerState, services_param: str) -> tuple[int, bytes, str]:
   services = services_param.split(",")
   services = [s for s in services if s]
@@ -494,6 +586,9 @@ async def on_shutdown(state: ServerState):
       pass
     await session.stop()
   state.streams.clear()
+  for bridge in list(state.bridges.values()):
+    await bridge.stop()
+  state.bridges.clear()
 
 
 class WebrtcdHandler(BaseHTTPRequestHandler):
@@ -504,6 +599,7 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
     "/schema": ("GET", "HEAD"),
     "/stream": ("POST",),
     "/notify": ("POST",),
+    "/bridge": ("POST",),
   }
 
   def _send(self, status: int, body: bytes, content_type: str) -> None:
@@ -524,9 +620,11 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
   def _dispatch_request(self) -> None:
     parsed = urlparse(self.path)
     allowed = self._routes.get(parsed.path)
+    # only the bridge is exposed to the LAN
+    remote = not ipaddress.ip_address(self.client_address[0]).is_loopback
 
     try:
-      if allowed is None:
+      if allowed is None or (remote and parsed.path != "/bridge"):
         result = _json_response({"error": "not found"}, status=404)
       elif self.command not in allowed:
         result = _json_response({"error": "method not allowed"}, status=405)
@@ -535,6 +633,10 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
         result = self._run(handle_get_schema(self.server.state, services))
       elif parsed.path == "/stream":
         result = self._run(handle_get_stream(self.server.state, self._read_body(), self.headers.get_content_type()))
+      elif parsed.path == "/bridge":
+        # LAN clients are unauthenticated, so they only get to listen unless webrtcd was started with --lan
+        can_send = not remote or self.server.lan_send
+        result = self._run(handle_bridge(self.server.state, self._read_body(), self.headers.get_content_type(), can_send))
       else:  # /notify
         try:
           payload = json.loads(self._read_body())
@@ -579,6 +681,7 @@ class WebrtcdHTTPServer(ThreadingHTTPServer):
   allow_reuse_address = True
   state: ServerState
   loop: asyncio.AbstractEventLoop
+  lan_send: bool
 
 
 async def _shutdown(server: WebrtcdHTTPServer, state: ServerState, loop: asyncio.AbstractEventLoop) -> None:
@@ -596,7 +699,7 @@ def prewarm_stream_session_imports() -> None:
   assert WebRTCAnswerBuilder
 
 
-def webrtcd_thread(host: str, port: int):
+def webrtcd_thread(host: str, port: int, lan_send: bool = False):
   logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
   prewarm_start = time.monotonic()
   prewarm_stream_session_imports()
@@ -610,6 +713,7 @@ def webrtcd_thread(host: str, port: int):
   server = WebrtcdHTTPServer((host, port), WebrtcdHandler)
   server.state = state
   server.loop = loop
+  server.lan_send = lan_send
 
   # serve HTTP on a daemon thread so the asyncio loop can own the main thread
   http_thread = threading.Thread(target=server.serve_forever, name="webrtcd-http", daemon=True)
@@ -635,13 +739,23 @@ def webrtcd_thread(host: str, port: int):
     loop.close()
 
 
+def is_notcar() -> bool:
+  cp_bytes = Params().get("CarParamsPersistent")
+  if cp_bytes is None:
+    return False
+  with car.CarParams.from_bytes(cp_bytes) as CP:
+    return CP.notCar
+
+
 def main():
   parser = argparse.ArgumentParser(description="WebRTC daemon")
-  parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to listen on")
-  parser.add_argument("--port", type=int, default=5001, help="Port to listen on")
+  parser.add_argument("--host", type=str, default=None, help="Host to listen on (default: LAN for notCar, otherwise localhost)")
+  parser.add_argument("--port", type=int, default=WEBRTCD_PORT, help="Port to listen on")
+  parser.add_argument("--lan", action="store_true", help="Listen on the LAN and let LAN bridge clients send services too, for running by hand over SSH")
   args = parser.parse_args()
 
-  webrtcd_thread(args.host, args.port)
+  host = args.host or ("0.0.0.0" if args.lan or is_notcar() else "127.0.0.1")
+  webrtcd_thread(host, args.port, args.lan)
 
 
 if __name__=="__main__":

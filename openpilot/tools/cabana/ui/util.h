@@ -70,7 +70,6 @@ bool validatedText(const char *label, std::string *s, ValidState (*validate)(con
 int nameValidator(ImGuiInputTextCallbackData *data);
 int nodeValidator(ImGuiInputTextCallbackData *data);
 int doubleValidator(ImGuiInputTextCallbackData *data);
-int ipValidator(ImGuiInputTextCallbackData *data);
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data);
 
 #ifdef __APPLE__

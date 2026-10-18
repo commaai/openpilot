@@ -149,12 +149,6 @@ int doubleValidator(ImGuiInputTextCallbackData *data) {
   return (c < 128 && (std::isdigit((int)c) || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E')) ? 0 : 1;
 }
 
-int ipValidator(ImGuiInputTextCallbackData *data) {
-  // [0-9.]
-  const ImWchar c = data->EventChar;
-  return ((c >= '0' && c <= '9') || c == '.') ? 0 : 1;
-}
-
 int nonWhitespaceValidator(ImGuiInputTextCallbackData *data) {
   // \S+
   return (data->EventChar < 128 && std::isspace((int)data->EventChar)) ? 1 : 0;

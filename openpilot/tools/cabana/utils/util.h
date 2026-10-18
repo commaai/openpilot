@@ -56,7 +56,6 @@ ValidState validateNodes(const std::string &input);
 // one or more non-whitespace characters (\S+)
 ValidState validateNonWhitespace(const std::string &input);
 // dotted IPv4 address (0-255 per octet)
-ValidState validateIpAddress(const std::string &input);
 // C-locale floating-point
 ValidState validateDouble(const std::string &input);
 

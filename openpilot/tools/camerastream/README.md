@@ -7,7 +7,7 @@
 ### On the device
 SSH into the device and run following in separate terminals:
 
-`cd /data/openpilot && ./openpilot/cereal/messaging/bridge`
+`/data/openpilot/openpilot/system/webrtc/webrtcd.py --lan`
 
 `cd /data/openpilot/system/loggerd && ./encoderd`
 
@@ -19,7 +19,7 @@ Alternatively paste this as a single command:
 ```
 (
   cd /data/openpilot
-  ./openpilot/cereal/messaging/bridge &
+  ./openpilot/system/webrtc/webrtcd.py --lan &
 
   cd /data/openpilot/system/camerad/
   ./camerad &
@@ -49,7 +49,7 @@ usage: compressed_vipc.py [-h] [--cams CAMS] [--server SERVER] [--silent] addr
 Decode video streams and broadcast on VisionIPC
 
 positional arguments:
-  addr             Address of comma three
+  addr             IP address or dongle id of the comma device
 
 options:
   -h, --help       show this help message and exit

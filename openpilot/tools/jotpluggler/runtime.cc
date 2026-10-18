@@ -16,12 +16,14 @@
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <deque>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <memory>
@@ -29,6 +31,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "system/camerad/cameras/nv12_info.h"
 
@@ -57,6 +60,31 @@ bool stream_batch_has_data(const StreamExtractBatch &batch) {
       || !batch.car_fingerprint.empty()
       || !batch.dbc_name.empty();
 }
+
+class BridgeProcess {
+public:
+  BridgeProcess(const std::string &address, const std::vector<std::string> &service_names) {
+    std::vector<std::string> args = {"python3", (repo_root() / "openpilot" / "tools" / "bridge.py").string(), address};
+    args.insert(args.end(), service_names.begin(), service_names.end());
+    std::vector<char *> argv;
+    for (std::string &arg : args) argv.push_back(arg.data());
+    argv.push_back(nullptr);
+
+    pid = ::fork();
+    if (pid == 0) {
+      ::execvp(argv[0], argv.data());
+      ::_exit(127);
+    }
+    if (pid < 0) throw std::runtime_error("Failed to start bridge");
+  }
+  ~BridgeProcess() {
+    ::kill(pid, SIGTERM);
+    ::waitpid(pid, nullptr, 0);
+  }
+
+private:
+  pid_t pid = -1;
+};
 
 bool should_subscribe_stream_service(const std::string &name) {
   static const std::array<std::string_view, 13> kSkippedServices = {{
@@ -563,17 +591,21 @@ struct StreamPoller::Impl {
   }
 
   void run_cereal_source(StreamAccumulator *accumulator) {
+    std::vector<std::string> names;
+    for (const auto &[name, info] : services) {
+      if (should_subscribe_stream_service(name)) names.push_back(name);
+    }
+    // remote sources are republished into the local msgq by the webrtc bridge
+    std::optional<BridgeProcess> bridge;
     if (source.kind == StreamSourceKind::CerealRemote) {
-      setenv("ZMQ", "1", 1);
-    } else {
-      unsetenv("ZMQ");
+      bridge.emplace(source.address, names);
     }
 
     auto poller = std::make_unique<Poller>();
     std::vector<std::unique_ptr<SubSocket>> sockets;
-    sockets.reserve(services.size());
-    for (const auto &[name, info] : services) {
-      if (!should_subscribe_stream_service(name)) continue;
+    sockets.reserve(names.size());
+    for (const std::string &name : names) {
+      const auto &info = services.at(name);
       std::unique_ptr<SubSocket> socket(
         SubSocket::create(name.c_str(), false, info.queue_size));
       if (socket == nullptr) continue;

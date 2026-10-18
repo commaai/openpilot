@@ -33,16 +33,15 @@ In order to use a joystick over the network, we need to run joystick_control loc
    # on your comma device
    echo -n "1" > /data/params/d/JoystickDebugMode
    ```
-3. Run bridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
+3. Start webrtcd so your laptop can connect and send `testJoystick` packets to openpilot:
    ```shell
    # on your comma device
-   openpilot/cereal/messaging/bridge {LAPTOP_IP} testJoystick
+   /data/openpilot/openpilot/system/webrtc/webrtcd.py --lan
    ```
-4. Start joystick_control on your laptop in ZMQ mode.
+4. Start joystick_control on your laptop with the device's IP address.
    ```shell
    # on your laptop
-   export ZMQ=1
-   openpilot/tools/joystick/joystick_control.py
+   openpilot/tools/joystick/joystick_control.py --device {DEVICE_IP}
    ```
 
 ---

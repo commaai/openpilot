@@ -15,7 +15,7 @@ void print_usage(const char *argv0) {
       << "  --demo\n"
       << "  --data-dir <dir>\n"
       << "  --stream\n"
-      << "  --address <host>\n"
+      << "  --address <ip|dongle id>\n"
       << "  --buffer-seconds <seconds>\n"
       << "  --width <pixels>\n"
       << "  --height <pixels>\n"

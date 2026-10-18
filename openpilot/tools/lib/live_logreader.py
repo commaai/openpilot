@@ -1,7 +1,7 @@
-import os
 from openpilot.cereal import log as capnp_log, messaging
 from openpilot.cereal.services import SERVICE_LIST
 
+from openpilot.tools.bridge import start_bridge
 from openpilot.tools.lib.logreader import LogIterable, RawLogIterable
 
 
@@ -9,12 +9,12 @@ ALL_SERVICES = list(SERVICE_LIST.keys())
 
 def raw_live_logreader(services: list[str] = ALL_SERVICES, addr: str = '127.0.0.1') -> RawLogIterable:
   if addr != "127.0.0.1":
-    os.environ["ZMQ"] = "1"
+    start_bridge(addr, services)
 
   poller = messaging.Poller()
 
   for m in services:
-    messaging.sub_sock(m, poller, addr=addr)
+    messaging.sub_sock(m, poller)
 
   while True:
     polld = poller.poll(100)
