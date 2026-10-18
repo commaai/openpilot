@@ -25,7 +25,7 @@ button { font: inherit; color: inherit; }
 body.loading #progress { width: 100%; opacity: 1; transform-origin: left; animation: progress 1.2s ease-in-out infinite; }
 @keyframes progress { 0% { transform: scaleX(0); } 70% { transform: scaleX(.9); } 100% { transform: scaleX(1); opacity: 0; } }
 .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; font-weight: 800; font-size: 20px; }
-.brand img { height: 34px; width: auto; }
+.brand svg { display: block; }
 .onebox { flex: 1; max-width: 420px; margin-left: 24px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.05); color: #fff; font: inherit; transition: border-color .15s, background .15s; }
 .onebox::placeholder { color: var(--white30); }
 .onebox:focus { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.08); outline: none; }
@@ -53,7 +53,7 @@ body.has-sidebar #main { margin-left: var(--sidebar); }
 
 /* login */
 .login { text-align: center; padding: 100px 16px; }
-.login-logo { height: 60px; }
+.login-logo { color: #fff; }
 .button { display: inline-block; padding: 10px 18px; border: 1px solid rgba(255,255,255,.15); border-radius: 24px; background: rgba(255,255,255,.08); color: #fff; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; transition: background .15s, opacity .15s; }
 .button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
 .button.wide { display: block; width: 280px; margin: 10px auto; }

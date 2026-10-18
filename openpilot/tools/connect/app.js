@@ -1,6 +1,6 @@
 import {api, auth} from "/api.js";
 import {h, clear} from "/dom.js";
-import {icon} from "/icons.js";
+import {icon, logo} from "/icons.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {routePage} from "/pages/route.js";
 
@@ -51,7 +51,7 @@ function header() {
   document.addEventListener("click", closeMenu);
   return [
     h("button", {class: "icon-button hamburger", "aria-label": "Menu", onclick: () => setDrawer(!document.body.classList.contains("drawer-open"))}, icon("menu")),
-    h("a", {class: "brand", href: "/", onclick: link("/")}, h("img", {src: "/images/comma-white.png", alt: "comma"}), h("span", {}, "connect")),
+    h("a", {class: "brand", href: "/", onclick: link("/")}, logo(34), h("span", {}, "connect")),
     search,
     account,
   ];
@@ -73,7 +73,7 @@ function sidebar(selected) {
 
 function loginPage() {
   return h("div", {class: "login"},
-    h("img", {src: "/images/comma-white.png", alt: "comma", class: "login-logo"}),
+    h("div", {class: "login-logo"}, logo(60)),
     h("h1", {}, "connect"),
     ["google", "github", "apple"].map((p) => h("a", {class: "button wide", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase() + p.slice(1)}`)),
     h("p", {class: "muted"}, "Or open a public route by name in the search box."));
