@@ -13,6 +13,7 @@ function player(route) {
     const hls = new Hls({maxBufferLength: 60});
     hls.loadSource(src);
     hls.attachMedia(video);
+    video._hls = hls;
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = src;
   }
@@ -133,7 +134,7 @@ export async function routePage(routeName, dongleId) {
   const videoPill = h("div", {class: "pill-item", onclick: () => show("video")}, "Video");
   const mapPill = h("div", {class: "pill-item dim", onclick: () => show("map")}, "Map");
 
-  return h("div", {class: "route-page"},
+  const page = h("div", {class: "route-page"},
     h("div", {class: "route-card"},
       h("div", {class: "route-head"},
         h("button", {class: "icon-button", "aria-label": "Back", onclick: () => history.length > 1 ? history.back() : go(`/${dongleId}`)}, icon("back")),
@@ -150,4 +151,6 @@ export async function routePage(routeName, dongleId) {
             panel)),
         media,
         controls(route, video))));
+  page.cleanup = () => { video.pause(); video._hls?.destroy(); map?.querySelector(".drive-map")?._map?.remove(); };
+  return page;
 }

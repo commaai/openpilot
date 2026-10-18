@@ -69,18 +69,30 @@ export async function request(method, endpoint, {params, body} = {}) {
 }
 const get = (endpoint, params) => request("GET", endpoint, {params});
 
+// reads are cached for the session so revisits never wait on the network; failures are not kept
+function memo(fn, key = (...args) => JSON.stringify(args)) {
+  const cache = new Map();
+  const wrapped = (...args) => {
+    const k = key(...args);
+    if (!cache.has(k)) cache.set(k, fn(...args).catch((e) => { cache.delete(k); throw e; }));
+    return cache.get(k);
+  };
+  wrapped.prime = (value, ...args) => cache.set(key(...args), Promise.resolve(value));
+  return wrapped;
+}
+
 export const api = {
   me: () => get("v1/me/"),
   devices: () => get("v1/me/devices/"),
-  device: (dongleId) => get(`v1.1/devices/${dongleId}/`),
+  device: memo((dongleId) => get(`v1.1/devices/${dongleId}/`)),
   deviceStats: (dongleId) => get(`v1.1/devices/${dongleId}/stats`),
-  deviceLocation: (dongleId) => get(`v1/devices/${dongleId}/location`),
+  deviceLocation: memo((dongleId) => get(`v1/devices/${dongleId}/location`)),
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
   // routes that overlap [start, end] in unix millis, newest first
-  routes: (dongleId, start, end, limit = 50) => get(`v1/devices/${dongleId}/routes_segments`, {start, end, limit}),
+  routes: memo((dongleId, start, end, limit = 50) => get(`v1/devices/${dongleId}/routes_segments`, {start, end, limit})),
   preservedRoutes: (dongleId) => get(`v1/devices/${dongleId}/routes/preserved`),
   // the device listing carries the share credentials and utc times; v1/route is the fallback for public routes
-  async route(routeName) {
+  route: memo(async (routeName) => {
     const dongleId = routeName.split("|")[0];
     const [r] = await get(`v1/devices/${dongleId}/routes_segments`, {route_str: routeName}).catch(() => []);
     if (r) return r;
@@ -88,8 +100,8 @@ export const api = {
     route.start_time_utc_millis ??= Date.parse(route.start_time + "Z");
     route.end_time_utc_millis ??= Date.parse(route.end_time + "Z");
     return route;
-  },
-  routeFiles: (routeName) => get(`v1/route/${routeName}/files`),
+  }),
+  routeFiles: memo((routeName) => get(`v1/route/${routeName}/files`)),
   setRoutePublic: (routeName, isPublic) => request("PATCH", `v1/route/${routeName}/`, {body: {is_public: isPublic}}),
   setRoutePreserved: (routeName, preserved) => request(preserved ? "POST" : "DELETE", `v1/route/${routeName}/preserve`),
 
@@ -101,7 +113,7 @@ export const api = {
 };
 
 // engaged, alert and override spans from the per-segment events, in route milliseconds
-export async function routeEvents(route) {
+export const routeEvents = memo(async (route) => {
   const segments = Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
   const lists = await Promise.all(segments.map(async (n) => {
     const resp = await fetch(api.segmentAsset(route, n, "events.json"));
@@ -130,4 +142,4 @@ export async function routeEvents(route) {
   const duration = route.end_time_utc_millis - route.start_time_utc_millis;
   for (const s of spans) if (s.end === null) s.end = duration;
   return spans;
-}
+}, (route) => route.fullname);

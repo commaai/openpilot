@@ -7,6 +7,16 @@ import {deviceMap} from "/map.js";
 import {timeline, routeDuration} from "/timeline.js";
 
 const DAY = 86400000;
+const HOUR = 3600000;
+
+// the first 14-day window ends at the next hour boundary so prefetch and page share a cache key
+const firstWindowEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
+
+export function prefetchDevice(dongleId) {
+  const end = firstWindowEnd();
+  api.routes(dongleId, end - 14 * DAY, end).catch(() => {});
+  api.deviceLocation(dongleId).catch(() => {});
+}
 
 function placeCell(lng, lat) {
   const cell = h("div", {class: "cell"});
@@ -34,15 +44,12 @@ export function driveCard(r) {
 }
 
 export async function devicePage(dongleId, devices) {
-  const known = (devices || []).find((d) => d.dongle_id === dongleId);
-  const [device, location] = await Promise.all([
-    known ? known : api.device(dongleId),
-    api.deviceLocation(dongleId).catch(() => null),
-  ]);
+  const device = (devices || []).find((d) => d.dongle_id === dongleId) || await api.device(dongleId);
+  const location = api.deviceLocation(dongleId).catch(() => null);
   const list = h("div", {class: "drives"});
   const more = h("button", {class: "button"}, "Load older drives");
   const empty = h("p", {class: "muted center", hidden: true}, "No drives in this period.");
-  let end = Date.now();
+  let end = firstWindowEnd();
   const seen = new Set();
 
   async function loadMore() {
@@ -52,6 +59,7 @@ export async function devicePage(dongleId, devices) {
     for (const r of routes) {
       if (seen.has(r.fullname)) continue;
       seen.add(r.fullname);
+      api.route.prime(r, r.fullname);
       list.append(driveCard(r));
     }
     end = start;

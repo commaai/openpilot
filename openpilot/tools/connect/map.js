@@ -8,12 +8,14 @@ function create(container, opts) {
   return new mapboxgl.Map({container, style: MAPBOX_STYLE, attributionControl: false, ...opts});
 }
 
-export function deviceMap(location) {
+export function deviceMap(locationPromise) {
   const el = h("div", {class: "device-map"});
-  requestAnimationFrame(() => {
+  Promise.resolve(locationPromise).then((location) => {
     const center = location && location.lat ? [location.lng, location.lat] : [-117.16, 32.72];
     const map = create(el, {center, zoom: location && location.lat ? 13 : 5, interactive: false});
-    if (map && location && location.lat) new mapboxgl.Marker({color: "#57a9e3"}).setLngLat(center).addTo(map);
+    if (!map) return;
+    el._map = map;
+    if (location && location.lat) new mapboxgl.Marker({color: "#57a9e3"}).setLngLat(center).addTo(map);
   });
   return el;
 }
@@ -26,6 +28,7 @@ export function driveMap(coords, video) {
     if (!line.length) { el.append(h("p", {class: "muted center"}, "No location data")); return; }
     const map = create(el, {center: line[0], zoom: 14});
     if (!map) return;
+    el._map = map;
     const bounds = line.reduce((b, p) => b.extend(p), new mapboxgl.LngLatBounds(line[0], line[0]));
     map.fitBounds(bounds, {padding: 40, duration: 0});
     map.on("load", () => {

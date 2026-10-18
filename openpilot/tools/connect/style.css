@@ -4,8 +4,8 @@
   --header: 64px; --sidebar: 280px;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
-body { font: 14px/1.45 "Inter", system-ui, sans-serif; color: #fff; background: var(--bg); -webkit-font-smoothing: antialiased; overflow-y: scroll; }
+html { overflow-y: scroll; }
+body { margin: 0; min-height: 100vh; font: 14px/1.45 "Inter", system-ui, sans-serif; color: #fff; background: var(--bg); -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
 :focus { outline: none; }
@@ -42,7 +42,7 @@ body.loading #progress { width: 100%; opacity: 1; transform-origin: left; animat
 #sidebar { position: fixed; top: var(--header); bottom: 0; left: 0; width: var(--sidebar); background: linear-gradient(180deg, #1B2023 0%, #111516 100%); overflow-y: auto; z-index: 10; }
 body:not(.has-sidebar) #sidebar { display: none; }
 #backdrop { display: none; }
-#main { padding-top: var(--header); min-height: 100%; }
+#main { padding-top: var(--header); min-height: 100vh; }
 body.has-sidebar #main { margin-left: var(--sidebar); }
 .device-item { display: flex; align-items: center; gap: 12px; padding: 16px 24px; text-decoration: none; transition: background .15s; }
 .device-item:hover { background: rgba(255,255,255,.03); }

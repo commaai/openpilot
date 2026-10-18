@@ -1,7 +1,7 @@
 import {api, auth} from "/api.js";
 import {h, clear} from "/dom.js";
 import {icon} from "/icons.js";
-import {devicePage} from "/pages/device.js";
+import {devicePage, prefetchDevice} from "/pages/device.js";
 import {routePage} from "/pages/route.js";
 
 const ROUTE_RE = /^([0-9a-f]{16})[|/_]([0-9a-f]+--[0-9a-f]+)$/i;
@@ -63,7 +63,7 @@ function sidebar(selected) {
   if (sidebarFor !== state.devices) {
     sidebarFor = state.devices;
     clear(nav).append(...(state.devices || []).map((d) => h("a", {class: "device-item", href: `/${d.dongle_id}`, "data-dongle": d.dongle_id,
-      onclick: (e) => { setDrawer(false); link(`/${d.dongle_id}`)(e); }},
+      onclick: (e) => { setDrawer(false); link(`/${d.dongle_id}`)(e); }, onpointerenter: () => prefetchDevice(d.dongle_id)},
       h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}),
       h("span", {}, h("div", {class: "name"}, d.alias || d.dongle_id), h("div", {class: "muted small"}, d.dongle_id)))));
   }
@@ -90,41 +90,77 @@ async function authCallback() {
   return render();
 }
 
-// the old page stays up while the next one loads; a progress bar shows instead of a "Loading…" flash
+// built pages are kept (with their scroll position) so back/forward and revisits swap in instantly;
+// the old page stays up while a new one loads, and the progress bar only appears if that takes a moment
+const PAGE_CACHE = 8;
+const PAGE_TTL = 5 * 60000;
+const pages = new Map();
+let current = null;
 let navId = 0;
+
+function cachePage(path, el) {
+  pages.delete(path);
+  pages.set(path, {el, scrollY: 0, time: Date.now()});
+  for (const [k, v] of pages) {
+    if (pages.size <= PAGE_CACHE) break;
+    pages.delete(k);
+    v.el.cleanup?.();
+  }
+  return pages.get(path);
+}
+
+function show(entry, fresh) {
+  if (current && current !== entry) {
+    current.scrollY = window.scrollY;
+    for (const v of current.el.querySelectorAll("video")) v.pause();
+  }
+  current = entry;
+  entry.el.classList.toggle("enter", fresh);
+  document.getElementById("main").replaceChildren(entry.el);
+  window.scrollTo(0, entry.scrollY);
+  for (const m of entry.el.querySelectorAll(".device-map, .drive-map")) m._map?.resize();
+}
+
 async function render() {
   const id = ++navId;
   const main = document.getElementById("main");
   const path = location.pathname.replace(/\/+$/, "") || "/";
-  document.body.classList.add("loading");
   setDrawer(false);
-  let page;
+  const parts = path.split("/").filter(Boolean);
+  const dongleId = DONGLE_RE.test(parts[0] || "") ? parts[0] : null;
+
+  const cached = pages.get(path);
+  if (cached && Date.now() - cached.time < PAGE_TTL) {
+    sidebar(dongleId);
+    return show(cached, false);
+  }
+
+  const slow = setTimeout(() => document.body.classList.add("loading"), 150);
+  let page, cacheable = false;
   try {
     if (path === "/auth") return main.replaceChildren(await authCallback());
     if (auth.isAuthenticated() && !state.me) {
       [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
     }
-    const parts = path.split("/").filter(Boolean);
-    const dongleId = DONGLE_RE.test(parts[0] || "") ? parts[0] : null;
     sidebar(dongleId);
-
     if (dongleId && parts.length === 2) page = await routePage(`${dongleId}|${parts[1]}`, dongleId, state.devices);
     else if (dongleId) page = await devicePage(dongleId, state.devices);
     else if (!auth.isAuthenticated()) page = loginPage();
     else if (state.devices.length) { history.replaceState(null, "", `/${state.devices[0].dongle_id}`); return render(); }
     else page = h("div", {class: "page"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen."));
+    cacheable = !!dongleId;
   } catch (e) {
     console.error(e);
     page = h("p", {class: "error center"}, e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e));
   } finally {
+    clearTimeout(slow);
     if (id === navId) document.body.classList.remove("loading");
   }
-  if (id !== navId) return;  // superseded by a newer navigation
-  page.classList.add("enter");
-  main.replaceChildren(page);
-  window.scrollTo(0, 0);
+  if (id !== navId) { page.cleanup?.(); return; }  // superseded by a newer navigation
+  show(cacheable ? cachePage(path, page) : {el: page, scrollY: 0}, true);
 }
 
+history.scrollRestoration = "manual";
 document.getElementById("header").append(...header().filter(Boolean));
 document.getElementById("backdrop").addEventListener("click", () => setDrawer(false));
 window.addEventListener("popstate", render);
