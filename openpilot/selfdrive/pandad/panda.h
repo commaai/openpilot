@@ -26,7 +26,7 @@
 #define PANDA_BUS_OFFSET 4
 
 struct __attribute__((packed)) can_header {
-  uint8_t reserved : 1;
+  uint8_t fd : 1;
   uint8_t bus : 3;
   uint8_t data_len_code : 4;
   uint8_t rejected : 1;
@@ -76,6 +76,7 @@ public:
   void send_heartbeat(bool engaged);
   void set_can_fd_auto(uint16_t bus, bool enabled);
   void can_send(const capnp::List<cereal::CanData>::Reader &can_data_list);
+  void can_send(uint32_t address, const std::string &data, uint8_t bus);
   bool can_receive(std::vector<can_frame>& out_vec);
   void can_reset_communications();
 

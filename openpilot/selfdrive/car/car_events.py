@@ -133,6 +133,8 @@ class CarEvents:
       events.add(EventName.parkBrake)
     if CS.accFaulted:
       events.add(EventName.accFaulted)
+    if CS.signerUnavailable:
+      events.add(EventName.signerUnavailable)
     if CS.carNotReady:
       events.add(EventName.carNotReady)
     if CS.steeringPressed:

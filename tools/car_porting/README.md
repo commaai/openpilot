@@ -15,6 +15,21 @@ Example:
 > openpilot/tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
 ```
 
+### [Guided CAN capture](/tools/scripts/car/collect_car_port_data.py)
+
+On the comma, copy the script to `/data/script.py` and run with pandad running, the vehicle in Park, and openpilot disengaged:
+
+```bash
+python /data/script.py --wizard
+```
+
+Press Enter to mark an action's start, perform it, then press Enter to mark its end. Use `s` to skip or `q` to save and quit.
+CAN capture continues between actions and while prompts wait.
+
+The wizard saves `.can.zst` (cereal CAN events readable by `LogReader`) and `.events.jsonl` (action markers).
+Marker `logMonoTime` values use pandad's clock in nanoseconds; `wallTimeNs` records Unix time.
+Use `--out /data/session.json` to name the pair `session.can.zst` and `session.events.jsonl`.
+
 ### [tools/car_porting/auto_fingerprint.py](/tools/car_porting/auto_fingerprint.py)
 
 Given a route and platform, automatically inserts FW fingerprints from the platform into the correct place in fingerprints.py

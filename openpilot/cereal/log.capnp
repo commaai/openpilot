@@ -76,6 +76,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     driverUnresponsive3 @38;
     belowSteerSpeed @39;
     accFaulted @41;
+    signerUnavailable @105;
     sensorDataInvalid @42;
     commIssue @43;
     commIssueAvgFreq @44;

@@ -2,12 +2,15 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import toggle_item
+from openpilot.system.ui.widgets.list_view import button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import DialogResult
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import tss3_fingerprints
+from openpilot.selfdrive.ui.layouts.settings.tss3_oracle import Tss3OracleBringupDialog
+from openpilot.selfdrive.ui.tss3_oracle_runner import tool_available
 
 # Description constants
 DESCRIPTIONS = {
@@ -24,6 +27,14 @@ DESCRIPTIONS = {
     "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
     "Enable this to switch to openpilot longitudinal control. " +
     "Changing this setting will restart openpilot if the car is powered on."
+  ),
+  'tss3_oracle_auto': tr_noop(
+    "TSS3 Toyota platforms. Preserves normal sleep behavior while off, then starts volatile RAM-oracle bringup on native Panda " +
+    "ignition detection. No EPS flash writes and no automatic Brake/FRC resets on a healthy run."
+  ),
+  'tss3_oracle_manual': tr_noop(
+    "TSS3 Toyota platforms. Arm while fully off and in Park, then press the brake and POWER normally. " +
+    "The page stays open through RAM-oracle installation and no-reset verification."
   ),
 }
 
@@ -81,6 +92,22 @@ class DeveloperLayout(Widget):
       callback=self._on_alpha_long_enabled,
       enabled=lambda: not ui_state.engaged,
     )
+    self._tss3_oracle_auto_toggle = toggle_item(
+      lambda: tr("Auto-arm TSS3 Oracle"),
+      description=lambda: tr(DESCRIPTIONS["tss3_oracle_auto"]),
+      initial_state=self._params.get_bool("Tss3OracleAutoArm"),
+      callback=self._on_tss3_oracle_auto_arm,
+      enabled=lambda: ui_state.is_offroad() and not ui_state.engaged and tool_available(),
+    )
+
+    self._tss3_oracle_button = button_item(
+      lambda: tr("TSS3 Oracle Bringup"),
+      lambda: tr("ARM") if tool_available() else tr("KIT MISSING"),
+      description=lambda: tr(DESCRIPTIONS["tss3_oracle_manual"]),
+      callback=self._on_tss3_oracle_bringup,
+      enabled=lambda: ui_state.is_offroad() and not ui_state.engaged,
+    )
+
 
     self._ui_debug_toggle = toggle_item(
       lambda: tr("UI Debug Mode"),
@@ -98,6 +125,8 @@ class DeveloperLayout(Widget):
       self._long_maneuver_toggle,
       self._lat_maneuver_toggle,
       self._alpha_long_toggle,
+      self._tss3_oracle_auto_toggle,
+      self._tss3_oracle_button,
       self._ui_debug_toggle,
     ], line_separator=True, spacing=0)
 
@@ -136,6 +165,11 @@ class DeveloperLayout(Widget):
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._lat_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
+    tss3 = ui_state.CP is not None and ui_state.CP.carFingerprint in tss3_fingerprints()
+    oracle_visible = not self._is_release and tss3
+    self._tss3_oracle_auto_toggle.set_visible(oracle_visible)
+    self._tss3_oracle_button.set_visible(oracle_visible)
+
 
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
@@ -146,9 +180,19 @@ class DeveloperLayout(Widget):
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
       ("LateralManeuverMode", self._lat_maneuver_toggle),
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
+      ("Tss3OracleAutoArm", self._tss3_oracle_auto_toggle),
       ("ShowDebugInfo", self._ui_debug_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
+
+  def _on_tss3_oracle_auto_arm(self, state: bool):
+    self._params.put_bool("Tss3OracleAutoArm", state, block=True)
+
+  def _on_tss3_oracle_bringup(self):
+    if ui_state.is_offroad():
+      # Keep the page reachable when the kit is missing so it can report the
+      # exact compatibility or installation failure.
+      gui_app.push_widget(Tss3OracleBringupDialog())
 
   def _on_enable_ui_debug(self, state: bool):
     self._params.put_bool("ShowDebugInfo", state, block=True)

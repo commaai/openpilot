@@ -7,6 +7,9 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
+from openpilot.selfdrive.ui.mici.layouts.settings.tss3_oracle import Tss3OracleBringupPage
+from openpilot.selfdrive.ui.tss3_oracle_runner import tool_available
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import tss3_fingerprints
 
 
 class AlphaLongConfirmPage(NavScroller):
@@ -85,6 +88,20 @@ class DeveloperLayoutMici(NavScroller):
                                                     "Braking (AEB).")
     self._navigation_toggle = BigParamControl("navigation (alpha)", "NavigationEnabled",
                                               description="Turn-by-turn navigation with a route map. Set a destination from comma connect.")
+    self._tss3_oracle_auto_toggle = BigParamControl(
+      "auto-arm TSS3 oracle", "Tss3OracleAutoArm",
+      description="TSS3 Toyota platforms. Preserves normal sleep behavior while OFF, then starts the volatile RAM-oracle bringup on " +
+                  "native Panda ignition detection. " +
+                  "No EPS flash writes and no automatic Brake/FRC resets on a healthy run."
+    )
+
+    self._tss3_oracle_button = BigButton(
+      "TSS3 oracle bringup", "ARM",
+      description="TSS3 Toyota platforms. Arm while fully OFF and in Park, then press the brake and POWER normally. " +
+                  "The native comma page stays open through RAM-oracle installation and no-reset verification."
+    )
+    self._tss3_oracle_button.set_click_callback(self._on_tss3_oracle_bringup)
+
     self._debug_mode_toggle = BigParamControl("ui debug mode", "ShowDebugInfo",
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked), gui_app.set_show_fps(checked)),
                                               description="Show touch locations and the UI frame rate.")
@@ -97,6 +114,8 @@ class DeveloperLayoutMici(NavScroller):
       self._long_maneuver_toggle,
       self._lat_maneuver_toggle,
       self._alpha_long_toggle,
+      self._tss3_oracle_auto_toggle,
+      self._tss3_oracle_button,
       self._debug_mode_toggle,
       self._navigation_toggle,
     ])
@@ -109,11 +128,13 @@ class DeveloperLayoutMici(NavScroller):
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
       ("LateralManeuverMode", self._lat_maneuver_toggle),
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
+      ("Tss3OracleAutoArm", self._tss3_oracle_auto_toggle),
       ("ShowDebugInfo", self._debug_mode_toggle),
       ("NavigationEnabled", self._navigation_toggle),
     )
-    onroad_blocked_toggles = (self._adb_toggle, self._joystick_toggle)
-    release_blocked_toggles = (self._joystick_toggle, self._long_maneuver_toggle, self._lat_maneuver_toggle, self._alpha_long_toggle, self._navigation_toggle)
+    onroad_blocked_toggles = (self._adb_toggle, self._joystick_toggle, self._tss3_oracle_auto_toggle)
+    release_blocked_toggles = (self._joystick_toggle, self._long_maneuver_toggle, self._lat_maneuver_toggle,
+                               self._alpha_long_toggle, self._navigation_toggle, self._tss3_oracle_auto_toggle)
     engaged_blocked_toggles = (self._long_maneuver_toggle, self._lat_maneuver_toggle, self._alpha_long_toggle)
 
     # Hide non-release toggles on release builds
@@ -163,9 +184,25 @@ class DeveloperLayoutMici(NavScroller):
       self._lat_maneuver_toggle.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
 
+    tss3 = ui_state.CP is not None and ui_state.CP.carFingerprint in tss3_fingerprints()
+    oracle_visible = not ui_state.is_release and tss3
+    self._tss3_oracle_auto_toggle.set_visible(oracle_visible)
+    self._tss3_oracle_auto_toggle.set_enabled(
+      lambda: ui_state.is_offroad() and not ui_state.engaged and tool_available()
+    )
+    self._tss3_oracle_button.set_visible(oracle_visible)
+    self._tss3_oracle_button.set_enabled(lambda: ui_state.is_offroad() and not ui_state.engaged)
+    self._tss3_oracle_button.set_value("ARM" if tool_available() else "KIT MISSING")
+
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:
       item.set_checked(ui_state.params.get_bool(key))
+
+  def _on_tss3_oracle_bringup(self):
+    if ui_state.is_offroad():
+      # The page owns compatibility diagnostics. Keep it reachable when the
+      # tool is missing or malformed so collaborators see the exact fix.
+      gui_app.push_widget(Tss3OracleBringupPage())
 
   def _on_joystick_debug_mode(self, state: bool):
     ui_state.params.put_bool("JoystickDebugMode", state, block=True)
