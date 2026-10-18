@@ -1,5 +1,6 @@
 import {api} from "/api.js";
 import {h, fmt} from "/dom.js";
+import {icon} from "/icons.js";
 import {link, go} from "/app.js";
 import {driveMap} from "/map.js";
 import {timeline, routeDuration, segmentNumber} from "/timeline.js";
@@ -26,13 +27,13 @@ function controls(route, video) {
   let speed = 3;
   const time = h("span", {class: "time"}, "--:--:--");
   const rate = h("span", {class: "rate"}, "1×");
-  const play = h("button", {class: "ctl big", "aria-label": "Play"}, "▶");
-  const mute = h("button", {class: "ctl", "aria-label": "Mute"}, "🔇");
+  const play = h("button", {class: "ctl big", "aria-label": "Play"}, icon("play", 32));
+  const mute = h("button", {class: "ctl", "aria-label": "Mute"}, icon("volumeOff"));
   const setSpeed = (i) => { speed = Math.max(0, Math.min(SPEEDS.length - 1, i)); video.playbackRate = SPEEDS[speed]; rate.textContent = `${SPEEDS[speed]}×`; };
   play.addEventListener("click", () => video.paused ? video.play() : video.pause());
-  mute.addEventListener("click", () => { video.muted = !video.muted; mute.textContent = video.muted ? "🔇" : "🔊"; });
-  video.addEventListener("play", () => { play.textContent = "❚❚"; });
-  video.addEventListener("pause", () => { play.textContent = "▶"; });
+  mute.addEventListener("click", () => { video.muted = !video.muted; mute.replaceChildren(icon(video.muted ? "volumeOff" : "volumeUp")); });
+  video.addEventListener("play", () => { play.replaceChildren(icon("pause", 32)); });
+  video.addEventListener("pause", () => { play.replaceChildren(icon("play", 32)); });
   const showTime = () => {
     const ms = video.currentTime * 1000;
     time.textContent = `${new Date(route.start_time_utc_millis + ms).toLocaleTimeString(undefined, {hour12: false})} – ${segmentNumber(route, ms)}`;
@@ -40,12 +41,12 @@ function controls(route, video) {
   video.addEventListener("timeupdate", showTime);
   showTime();
   return h("div", {class: "controls"},
-    h("button", {class: "ctl", "aria-label": "Back 10 seconds", onclick: () => { video.currentTime -= 10; }}, "↺10"),
-    h("button", {class: "ctl", "aria-label": "Forward 10 seconds", onclick: () => { video.currentTime += 10; }}, "↻10"),
+    h("button", {class: "ctl", "aria-label": "Back 10 seconds", onclick: () => { video.currentTime -= 10; }}, icon("replay10")),
+    h("button", {class: "ctl", "aria-label": "Forward 10 seconds", onclick: () => { video.currentTime += 10; }}, icon("forward10")),
     time,
     h("div", {class: "speed"},
-      h("button", {class: "ctl tiny", onclick: () => setSpeed(speed + 1)}, "▲"), rate,
-      h("button", {class: "ctl tiny", onclick: () => setSpeed(speed - 1)}, "▼")),
+      h("button", {class: "ctl tiny", "aria-label": "Faster", onclick: () => setSpeed(speed + 1)}, icon("up", 18)), rate,
+      h("button", {class: "ctl tiny", "aria-label": "Slower", onclick: () => setSpeed(speed - 1)}, icon("down", 18))),
     mute, play);
 }
 
@@ -68,7 +69,7 @@ function filesMenu(routeName) {
     body.replaceWith(h("table", {class: "files"},
       h("tr", {}, h("th", {}, "seg"), Object.values(kinds).map((k) => h("th", {}, k))),
       Object.keys(segments).sort((a, b) => a - b).map((n) => h("tr", {}, h("td", {}, n),
-        Object.values(kinds).map((k) => h("td", {}, segments[n][k] ? h("a", {href: segments[n][k]}, "↓") : ""))))));
+        Object.values(kinds).map((k) => h("td", {}, segments[n][k] ? h("a", {href: segments[n][k], class: "dl", title: `${k} ${n}`}, icon("download", 18)) : ""))))));
   }).catch(() => body.replaceWith(h("p", {class: "muted"}, "Files not available.")));
   return h("div", {class: "menu-panel"}, body);
 }
@@ -76,7 +77,7 @@ function filesMenu(routeName) {
 function moreInfoMenu(route, routeName) {
   const toggle = (label, field, setter) => {
     const b = h("div", {class: "menu-item"});
-    const refresh = () => { b.textContent = `${route[field] ? "✓ " : ""}${label}`; };
+    const refresh = () => { b.replaceChildren(h("span", {class: "tick"}, route[field] ? icon("check", 18) : ""), label); };
     b.addEventListener("click", async () => {
       try { await setter(!route[field]); route[field] = !route[field]; } catch (e) { alert(e.status === 403 ? "Not allowed" : String(e)); }
       refresh();
@@ -85,7 +86,7 @@ function moreInfoMenu(route, routeName) {
     return b;
   };
   return h("div", {class: "menu-panel"},
-    h("div", {class: "menu-item muted"}, route.fullname),
+    h("div", {class: "menu-item muted mono"}, route.fullname),
     h("div", {class: "menu-item muted"}, [route.platform, route.version, route.git_branch].filter(Boolean).join(" · ")),
     h("div", {class: "menu-item", onclick: () => navigator.clipboard.writeText(route.fullname)}, "Copy route name"),
     h("div", {class: "menu-item", onclick: () => navigator.clipboard.writeText(location.origin + location.pathname)}, "Copy link"),
@@ -126,6 +127,8 @@ export async function routePage(routeName, dongleId) {
   };
   const panel = h("div", {class: "panel-holder"});
   const openPanel = (el) => { panel.replaceChildren(panel.firstChild === el ? "" : el); };
+  panel.addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("click", () => panel.replaceChildren());
   const files = filesMenu(routeName), info = moreInfoMenu(route, routeName);
   const videoPill = h("div", {class: "pill-item", onclick: () => show("video")}, "Video");
   const mapPill = h("div", {class: "pill-item dim", onclick: () => show("map")}, "Map");
@@ -133,17 +136,18 @@ export async function routePage(routeName, dongleId) {
   return h("div", {class: "route-page"},
     h("div", {class: "route-card"},
       h("div", {class: "route-head"},
-        h("button", {class: "icon-button", "aria-label": "Back", onclick: () => history.length > 1 ? history.back() : go(`/${dongleId}`)}, "←"),
+        h("button", {class: "icon-button", "aria-label": "Back", onclick: () => history.length > 1 ? history.back() : go(`/${dongleId}`)}, icon("back")),
         h("div", {class: "route-title"}, h("span", {class: "weekday"}, start.toLocaleDateString(undefined, {weekday: "long"}), " "), title),
-        h("a", {class: "icon-button", "aria-label": "Close", href: `/${dongleId}`, onclick: link(`/${dongleId}`)}, "✕")),
+        h("a", {class: "icon-button", "aria-label": "Close", href: `/${dongleId}`, onclick: link(`/${dongleId}`)}, icon("close"))),
       timeline(route, {video, ruler: true, lazy: false}),
       h("div", {class: "route-body"},
         h("div", {class: "options"},
           h("div", {class: "pills"}, videoPill, mapPill),
-          h("div", {class: "pills"},
-            h("div", {class: "pill-item", onclick: () => openPanel(files)}, "Files"),
-            h("div", {class: "pill-item", onclick: () => openPanel(info)}, "More info"))),
-        panel,
+          h("div", {class: "anchor"},
+            h("div", {class: "pills"},
+              h("div", {class: "pill-item", onclick: (e) => { e.stopPropagation(); openPanel(files); }}, "Files"),
+              h("div", {class: "pill-item", onclick: (e) => { e.stopPropagation(); openPanel(info); }}, "More info")),
+            panel)),
         media,
         controls(route, video))));
 }

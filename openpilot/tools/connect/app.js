@@ -1,5 +1,6 @@
 import {api, auth} from "/api.js";
 import {h, clear} from "/dom.js";
+import {icon} from "/icons.js";
 import {devicePage} from "/pages/device.js";
 import {routePage} from "/pages/route.js";
 
@@ -30,36 +31,44 @@ function onebox(text) {
 
 export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
 
-const state = {me: null, devices: null, drawerOpen: false};
+const state = {me: null, devices: null};
 
+function setDrawer(open) {
+  document.body.classList.toggle("drawer-open", open);
+}
+
+// the header is built once; the account menu is built on open so it always reflects auth state
 function header() {
   const search = h("input", {type: "search", class: "onebox", placeholder: "route name or dongle id",
     onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; } }});
-  const menu = h("div", {class: "menu", hidden: true},
+  const account = h("div", {class: "account"});
+  const closeMenu = () => account.querySelector(".menu")?.remove();
+  const openMenu = () => account.append(h("div", {class: "menu"},
     state.me ? h("div", {class: "menu-item muted"}, state.me.username) : null,
-    state.me ? h("div", {class: "menu-item", onclick: () => auth.logOut()}, "Sign out") : h("div", {class: "menu-item", onclick: () => go("/")}, "Sign in"));
-  const account = h("div", {class: "account"},
-    h("button", {class: "icon-button", "aria-label": "Account", onclick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; }}, avatarIcon()),
-    menu);
-  document.addEventListener("click", () => { menu.hidden = true; });
+    state.me ? h("div", {class: "menu-item", onclick: () => auth.logOut()}, "Sign out") : h("div", {class: "menu-item", onclick: () => go("/")}, "Sign in")));
+  account.append(h("button", {class: "icon-button", "aria-label": "Account",
+    onclick: (e) => { e.stopPropagation(); account.querySelector(".menu") ? closeMenu() : openMenu(); }}, icon("account", 28)));
+  document.addEventListener("click", closeMenu);
   return [
-    h("button", {class: "icon-button hamburger", "aria-label": "Menu", onclick: () => { state.drawerOpen = !state.drawerOpen; document.body.classList.toggle("drawer-open", state.drawerOpen); }}, "☰"),
+    h("button", {class: "icon-button hamburger", "aria-label": "Menu", onclick: () => setDrawer(!document.body.classList.contains("drawer-open"))}, icon("menu")),
     h("a", {class: "brand", href: "/", onclick: link("/")}, h("img", {src: "/images/comma-white.png", alt: "comma"}), h("span", {}, "connect")),
     search,
     account,
   ];
 }
 
-function avatarIcon() {
-  return h("span", {class: "avatar"});
-}
-
+let sidebarFor = null;
 function sidebar(selected) {
-  if (!state.devices) return [];
-  return state.devices.map((d) => h("a", {class: `device-item ${d.dongle_id === selected ? "selected" : ""}`, href: `/${d.dongle_id}`,
-    onclick: (e) => { state.drawerOpen = false; document.body.classList.remove("drawer-open"); link(`/${d.dongle_id}`)(e); }},
-    h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}),
-    h("span", {}, h("div", {class: "name"}, d.alias || d.dongle_id), h("div", {class: "muted small"}, d.dongle_id))));
+  const nav = document.getElementById("sidebar");
+  if (sidebarFor !== state.devices) {
+    sidebarFor = state.devices;
+    clear(nav).append(...(state.devices || []).map((d) => h("a", {class: "device-item", href: `/${d.dongle_id}`, "data-dongle": d.dongle_id,
+      onclick: (e) => { setDrawer(false); link(`/${d.dongle_id}`)(e); }},
+      h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}),
+      h("span", {}, h("div", {class: "name"}, d.alias || d.dongle_id), h("div", {class: "muted small"}, d.dongle_id)))));
+  }
+  for (const a of nav.children) a.classList.toggle("selected", a.dataset.dongle === selected);
+  document.body.classList.toggle("has-sidebar", !!state.devices && state.devices.length > 0);
 }
 
 function loginPage() {
@@ -81,10 +90,15 @@ async function authCallback() {
   return render();
 }
 
+// the old page stays up while the next one loads; a progress bar shows instead of a "Loading…" flash
+let navId = 0;
 async function render() {
-  const main = clear(document.getElementById("main"));
+  const id = ++navId;
+  const main = document.getElementById("main");
   const path = location.pathname.replace(/\/+$/, "") || "/";
-  main.append(h("p", {class: "muted center"}, "Loading…"));
+  document.body.classList.add("loading");
+  setDrawer(false);
+  let page;
   try {
     if (path === "/auth") return main.replaceChildren(await authCallback());
     if (auth.isAuthenticated() && !state.me) {
@@ -92,22 +106,26 @@ async function render() {
     }
     const parts = path.split("/").filter(Boolean);
     const dongleId = DONGLE_RE.test(parts[0] || "") ? parts[0] : null;
-    clear(document.getElementById("header")).append(...header().filter(Boolean));
-    clear(document.getElementById("sidebar")).append(...sidebar(dongleId));
-    document.body.classList.toggle("has-sidebar", !!state.devices && state.devices.length > 0);
+    sidebar(dongleId);
 
-    let page;
     if (dongleId && parts.length === 2) page = await routePage(`${dongleId}|${parts[1]}`, dongleId, state.devices);
     else if (dongleId) page = await devicePage(dongleId, state.devices);
     else if (!auth.isAuthenticated()) page = loginPage();
     else if (state.devices.length) { history.replaceState(null, "", `/${state.devices[0].dongle_id}`); return render(); }
     else page = h("div", {class: "page"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen."));
-    main.replaceChildren(page);
   } catch (e) {
     console.error(e);
-    main.replaceChildren(h("p", {class: "error center"}, e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e)));
+    page = h("p", {class: "error center"}, e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e));
+  } finally {
+    if (id === navId) document.body.classList.remove("loading");
   }
+  if (id !== navId) return;  // superseded by a newer navigation
+  page.classList.add("enter");
+  main.replaceChildren(page);
+  window.scrollTo(0, 0);
 }
 
+document.getElementById("header").append(...header().filter(Boolean));
+document.getElementById("backdrop").addEventListener("click", () => setDrawer(false));
 window.addEventListener("popstate", render);
 render();

@@ -1,5 +1,6 @@
 import {api} from "/api.js";
 import {h, fmt} from "/dom.js";
+import {icon} from "/icons.js";
 import {isOnline, link} from "/app.js";
 import {reverseLookup} from "/geocode.js";
 import {deviceMap} from "/map.js";
@@ -10,7 +11,7 @@ const DAY = 86400000;
 function placeCell(lng, lat) {
   const cell = h("div", {class: "cell"});
   reverseLookup(lng, lat).then((loc) => {
-    if (loc) cell.replaceChildren(h("div", {class: "first"}, loc.place), h("div", {}, loc.details));
+    if (loc) { cell.replaceChildren(h("div", {class: "first"}, loc.place), h("div", {}, loc.details)); cell.classList.add("enter"); }
   });
   return cell;
 }
@@ -28,7 +29,7 @@ export function driveCard(r) {
       h("div", {class: "cell dur"}, h("div", {class: "first"}, fmt.minutes(duration)), h("div", {}, fmt.miles(r.distance ?? 0))),
       placeCell(r.start_lng, r.start_lat),
       placeCell(r.end_lng, r.end_lat),
-      h("div", {class: "cell arrow"}, "›")),
+      h("div", {class: "cell arrow"}, icon("chevron", 32))),
     timeline(r));
 }
 
@@ -40,12 +41,12 @@ export async function devicePage(dongleId, devices) {
   ]);
   const list = h("div", {class: "drives"});
   const more = h("button", {class: "button"}, "Load older drives");
+  const empty = h("p", {class: "muted center", hidden: true}, "No drives in this period.");
   let end = Date.now();
   const seen = new Set();
 
   async function loadMore() {
     more.disabled = true;
-    more.textContent = "Loading…";
     const start = end - 14 * DAY;
     const routes = await api.routes(dongleId, start, end);
     for (const r of routes) {
@@ -55,8 +56,8 @@ export async function devicePage(dongleId, devices) {
     }
     end = start;
     more.disabled = false;
-    more.textContent = "Load older drives";
-    if (!routes.length && !list.children.length && Date.now() - end < 180 * DAY) loadMore();
+    if (!routes.length && !list.children.length && Date.now() - end < 180 * DAY) return loadMore();
+    empty.hidden = list.children.length > 0;
   }
   loadMore();
 
@@ -67,5 +68,5 @@ export async function devicePage(dongleId, devices) {
       h("h2", {}, device.alias || dongleId),
       h("div", {class: "device-buttons"},
         h("span", {class: `pill ${online ? "online" : ""}`}, online ? "device online" : "device offline"))),
-    h("div", {class: "page"}, list, h("p", {class: "center"}, more)));
+    h("div", {class: "page"}, list, empty, h("p", {class: "center"}, more)));
 }

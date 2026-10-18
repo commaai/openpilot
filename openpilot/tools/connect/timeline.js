@@ -62,7 +62,7 @@ export function timeline(route, {video = null, ruler = false, lazy = true} = {})
       const r = rulerEl.getBoundingClientRect();
       const off = offsetAt(e.clientX);
       bead.hidden = false;
-      bead.style.left = `${Math.max(-10, Math.min(r.width - 70, e.clientX - r.left - 40))}px`;
+      bead.style.left = `${Math.max(0, Math.min(r.width - 90, e.clientX - r.left - 45))}px`;
       bead.textContent = `${segmentNumber(route, off)}, ${new Date(route.start_time_utc_millis + off).toLocaleTimeString(undefined, {hour12: false})}`;
     });
     rulerEl.addEventListener("pointerleave", () => { bead.hidden = true; });
