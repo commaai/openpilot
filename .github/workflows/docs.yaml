@@ -32,6 +32,9 @@ jobs:
     steps:
     - uses: commaai/timeout@v1
     - uses: actions/checkout@v7
+    - uses: ./.github/actions/ci-cache
+      with:
+        build: 'false'
     - run: ./tools/op.sh setup
 
     # Build

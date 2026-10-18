@@ -6,6 +6,15 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+    inputs:
+      cache:
+        description: Restore and save CI caches
+        type: boolean
+        default: true
+      run_number:
+        description: Unique identifier for concurrent benchmark runs
+        type: string
+        default: '1'
   workflow_call:
     inputs:
       run_number:
@@ -40,6 +49,8 @@ jobs:
     - uses: actions/checkout@v7
       with:
         submodules: true
+    - uses: ./.github/actions/ci-cache
+      if: github.event_name != 'workflow_dispatch' || inputs.cache
     - name: Getting LFS files
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
@@ -72,6 +83,8 @@ jobs:
       run: |
         FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
         echo "PATH=${FILTERED}/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> $GITHUB_ENV
+    - uses: ./.github/actions/ci-cache
+      if: github.event_name != 'workflow_dispatch' || inputs.cache
     - run: ./tools/op.sh setup
     - name: Building openpilot
       run: scons
@@ -86,6 +99,10 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
+    - uses: ./.github/actions/ci-cache
+      if: github.event_name != 'workflow_dispatch' || inputs.cache
+      with:
+        build: 'false'
     - run: ./tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
@@ -101,6 +118,8 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
+    - uses: ./.github/actions/ci-cache
+      if: github.event_name != 'workflow_dispatch' || inputs.cache
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -120,6 +139,8 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
+    - uses: ./.github/actions/ci-cache
+      if: github.event_name != 'workflow_dispatch' || inputs.cache
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -185,6 +206,8 @@ jobs:
     if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v7
+    - uses: ./.github/actions/ci-cache
+      if: github.event_name != 'workflow_dispatch' || inputs.cache
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -205,6 +228,8 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/ci-cache
+        if: github.event_name != 'workflow_dispatch' || inputs.cache
       - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons

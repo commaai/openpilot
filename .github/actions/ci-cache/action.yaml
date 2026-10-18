@@ -1,0 +1,31 @@
+name: CI cache
+description: Persist dependency downloads, LFS objects, and the SCons build cache
+inputs:
+  build:
+    description: Cache SCons outputs for this job
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Cache dependencies
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: |
+          ~/.cache/uv
+          ~/Library/Caches/uv
+          ~/.local/share/uv/python
+        key: deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('uv.lock', 'tools/setup_dependencies.sh') }}
+        restore-keys: deps-v1-${{ runner.os }}-${{ runner.arch }}-
+    - name: Cache LFS objects
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: .git/lfs
+        key: lfs-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+        restore-keys: lfs-v1-${{ runner.os }}-${{ runner.arch }}-
+    - name: Cache SCons
+      if: inputs.build == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: /tmp/scons_cache
+        key: scons-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('uv.lock', 'tools/setup_dependencies.sh') }}-${{ github.sha }}
+        restore-keys: scons-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('uv.lock', 'tools/setup_dependencies.sh') }}-
