@@ -157,7 +157,7 @@ override-dependencies = [
 ]
 
 [tool.uv.sources]
-# SCons owns the native build; pip builds can reuse incompatible swaglog objects.
+# SCons owns the native build; an editable install would shadow it with a stale .so
 msgq-ipc = { path = "msgq_repo", package = false }
 opendbc = { path = "opendbc_repo", editable = true }
 pandacan = { path = "panda", editable = true }
