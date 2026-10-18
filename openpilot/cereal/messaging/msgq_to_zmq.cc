@@ -23,7 +23,6 @@ static std::string recv_zmq_msg(void *sock) {
 
 void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string &ip) {
   zmq_context = std::make_unique<BridgeZmqContext>();
-  msgq_context = std::make_unique<Context>();
 
   // Create ZMQPubSockets for each endpoint
   for (const auto &endpoint : endpoints) {
@@ -108,9 +107,9 @@ void MsgqToZmq::zmqMonitorThread() {
           printf("socket [%s] connected\n", pair.endpoint.c_str());
           if (++pair.connected_clients == 1) {
             // Create new MSGQ subscriber socket and map to ZMQ publisher
-            pair.sub_sock = std::make_unique<MSGQSubSocket>();
+            pair.sub_sock = std::make_unique<SubSocket>();
             size_t queue_size = services.at(pair.endpoint).queue_size;
-            pair.sub_sock->connect(msgq_context.get(), pair.endpoint, "127.0.0.1", false, true, queue_size);
+            pair.sub_sock->connect(pair.endpoint, false, queue_size);
             sub2pub[pair.sub_sock.get()] = pair.pub_sock.get();
             registerSockets();
           }
@@ -137,7 +136,7 @@ void MsgqToZmq::zmqMonitorThread() {
 }
 
 void MsgqToZmq::registerSockets() {
-  msgq_poller = std::make_unique<MSGQPoller>();
+  msgq_poller = std::make_unique<Poller>();
   for (const auto &socket_pair : socket_pairs) {
     if (socket_pair.sub_sock) {
       msgq_poller->registerSocket(socket_pair.sub_sock.get());

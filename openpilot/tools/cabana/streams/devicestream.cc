@@ -96,8 +96,7 @@ void DeviceStream::start() {
 void DeviceStream::streamThread() {
   zmq_address.empty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
 
-  std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", "127.0.0.1", false, true, services.at("can").queue_size));
+  std::unique_ptr<SubSocket> sock(SubSocket::create("can", false, services.at("can").queue_size));
   assert(sock != NULL);
   // run as fast as messages come in
   while (!exit_) {
