@@ -300,7 +300,7 @@ if GetOption('extras') and arch != "comma_arm64":
 env.CompilationDatabase('compile_commands.json')
 
 # progress output
-def count_scons_nodes(nodes):
+def get_scons_nodes(nodes):
   seen = set()
   stack = list(nodes)
 
@@ -316,22 +316,26 @@ def count_scons_nodes(nodes):
         # Only scan directories here; generated sources must be scanned after they are built.
         stack += target.children(scan=isinstance(target, SCons.Node.FS.Dir))
 
-  return len(seen)
+  return seen
 
 progress_interval = 5
 progress_count = 0
-progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
+progress_nodes = get_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry))
+progress_total = max(1, len(progress_nodes))
 
 def progress_function(node):
   global progress_count
-  if progress_count >= progress_total:
+  if node not in progress_nodes:
     return
-  progress_count = min(progress_count + progress_interval, progress_total)
+  progress_nodes.remove(node)
+  progress_count += 1
+  if progress_count % progress_interval and progress_nodes:
+    return
   progress = round(100. * progress_count / progress_total, 1)
   sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
   if progress == 100. and sys.stderr.isatty():
     sys.stderr.write("\n")
   sys.stderr.flush()
 
-Progress(progress_function, interval=progress_interval)
+Progress(progress_function)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)
