@@ -7,18 +7,10 @@ need to control the vehicle.
 
 The driver is responsible for operating the vehicle safely at all times. The driver must
 pay attention to the road and surrounding traffic and be ready to take immediate control
-of the vehicle at all times. openpilot may disengage or behave unexpectedly without warning.
+of the vehicle at all times.
 
-> [!WARNING]
-> openpilot does not detect all vehicles, objects, or road conditions and may not steer or
-> brake to avoid a collision. Over-reliance on openpilot can lead to a crash resulting in
-> serious injury or death. Read [LIMITATIONS.md](LIMITATIONS.md) before use.
-
-openpilot includes driver monitoring. It alerts when it detects driver distraction or no
-driver response. Alerts escalate up to a request to disengage immediately, and repeated
-terminal alerts block engagement for an increasing amount of time. Driver monitoring is not
-an exact measurement of driver alertness, and the driver must not rely on it to assess
-their own attention.
+To assist the driver in maintaining alertness, openpilot includes a driver monitoring feature
+that alerts when it detects driver distraction. See [LIMITATIONS.md](LIMITATIONS.md) before use.
 
 Driver alertness is necessary, but not sufficient, for openpilot to be used safely.
 openpilot is provided with no warranty of fitness for any purpose.
