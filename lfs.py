@@ -1,11 +1,15 @@
-#!/usr/bin/env python3
-"""A small Git LFS client. Downloads use urllib; uploads require curl."""
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["huggingface-hub==1.7.1", "hf-xet==1.7.0"]
+# ///
+"""A small Git LFS client backed by a Hugging Face bucket."""
 
+import argparse
 import concurrent.futures
 import contextlib
 import fcntl
 import hashlib
-import http.client
 import io
 import os
 from pathlib import Path
@@ -15,35 +19,17 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
-import urllib.error
-import urllib.request
-import xml.etree.ElementTree as ET
+
+os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
+
+from huggingface_hub import HfApi
 
 POINTER_VERSION = "https://git-lfs.github.com/spec/v1"
 POINTER_RE = re.compile(rb"\Aversion " + POINTER_VERSION.encode() + rb"\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n\Z")
-# Temporary development bucket. Production cutover requires explicit approval.
-R2_BASE = "https://4a5b3dbb5151b29bca371371370cbc54.r2.cloudflarestorage.com/fakelfs-test/sha256"
-PUBLIC_BASE = "https://pub-8fc0b2b05a7e46349231e9c61e182006.r2.dev/sha256"
+BUCKET = os.environ.get("OPENPILOT_LFS_BUCKET", "commaai/openpilot-lfs")
 ZERO = "0" * 40
-TRANSFERS = 16
-RANGES = 8
-RANGE_MIN = 16 << 20
-PART_SIZE = 128 << 20
-UPLOAD_CONCURRENCY = 8
-RETRIES = 5
-CURL_OPTIONS = ("--silent", "--connect-timeout", "20", "--speed-limit", "1024", "--speed-time", "30")
-RETRY_OPTIONS = ("--retry", str(RETRIES), "--retry-all-errors", "--remove-on-error")
-R2_OPTIONS = (
-  "--variable",
-  "%R2_ACCESS_KEY_ID",
-  "--variable",
-  "%R2_SECRET_ACCESS_KEY",
-  "--expand-user",
-  "{{R2_ACCESS_KEY_ID}}:{{R2_SECRET_ACCESS_KEY}}",
-  "--aws-sigv4",
-  "aws:amz:auto:s3",
-)
+TRANSFERS = 4
+API = HfApi()
 
 
 def git(*args, stdin=None, check=True):
@@ -71,7 +57,7 @@ def remove_git_lfs_hooks(directory):
 
 
 def install():
-  filter_process_command = shlex.join((sys.executable, str(Path(__file__).resolve()), "filter-process"))
+  filter_process_command = shlex.join((str(Path(__file__).resolve()), "filter-process"))
   legacy_hook = ROOT / Path(git("rev-parse", "--git-path", "hooks/pre-push").decode().strip())
   remove_git_lfs_hooks(legacy_hook.parent)
   hook = GIT_DIR / "lfs-hooks" / "pre-push"
@@ -146,62 +132,10 @@ def store(chunks):
     return pointer(oid, size)
 
 
-def curl(url, *options, data=None, output=None):
-  marker = b"\n\x1e"
-  write_out = marker.decode() + "%{http_code}\n%header{etag}\n%header{content-length}"
-  args = ["curl", "--disable", *CURL_OPTIONS, *options, "--write-out", write_out]
-  if output is not None:
-    args += ["--output", str(output)]
-  args.append(url)
-  result = subprocess.run(args, input=data, capture_output=True)
-  if result.returncode or marker not in result.stdout:
-    return 0, "", "", b""
-  body, metadata = result.stdout.rsplit(marker, 1)
-  status, etag, content_length = metadata.decode().split("\n")
-  return int(status), etag, content_length, body if output is None else b""
-
-
-def public_object_exists(oid, size):
-  status, _etag, content_length, _body = curl(f"{PUBLIC_BASE}/{oid}", *RETRY_OPTIONS, "--head")
-  if status == 404:
-    return False
-  if status != 200 or not content_length.isdecimal() or int(content_length) != size:
-    raise RuntimeError(f"invalid public object {oid}: HTTP {status}, size {content_length!r}")
-  return True
-
-
 def parallel(function, arguments, workers=TRANSFERS):
   with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
     futures = [pool.submit(function, *args) for args in arguments]
     return [future.result() for future in futures]
-
-
-def download(url, path, size, span=None):
-  # can't call out to curl for downloads since some modern Linux
-  # distros don't ship without it anymore. pure stdlib python only.
-  headers = {} if span is None else {"Range": f"bytes={span[0]}-{span[1]}"}
-  expected_size = size if span is None else span[1] - span[0] + 1
-  for attempt in range(RETRIES + 1):
-    try:
-      request = urllib.request.Request(url, headers=headers)
-      with urllib.request.urlopen(request, timeout=30) as response:
-        if response.status != (200 if span is None else 206):
-          raise RuntimeError(f"unexpected HTTP {response.status} downloading {url}")
-        if span is not None and response.headers.get("Content-Range") != f"bytes {span[0]}-{span[1]}/{size}":
-          raise RuntimeError(f"invalid Content-Range downloading {url}")
-        with path.open("wb") as out:
-          shutil.copyfileobj(response, out, length=1 << 20)
-      if path.stat().st_size != expected_size:
-        raise http.client.HTTPException(f"expected {expected_size} bytes downloading {url}, got {path.stat().st_size}")
-      return
-    except (OSError, http.client.HTTPException) as error:
-      if isinstance(error, urllib.error.HTTPError):
-        error.close()
-        if error.code not in (408, 429, 500, 502, 503, 504):
-          raise
-      if attempt == RETRIES:
-        raise
-      time.sleep(min(2**attempt, 8))
 
 
 def download_one(oid, size):
@@ -210,24 +144,9 @@ def download_one(oid, size):
     if valid(dst, size):
       return dst
     dst.parent.mkdir(parents=True, exist_ok=True)
-    href = f"{PUBLIC_BASE}/{oid}"
     with tempfile.TemporaryDirectory(prefix=f"{oid}-", dir=dst.parent) as directory:
       tmp = Path(directory) / "object"
-      ranges = min(RANGES, max(1, (size + RANGE_MIN - 1) // RANGE_MIN))
-      if ranges > 1:
-        spans = [(i * size // ranges, (i + 1) * size // ranges - 1) for i in range(ranges)]
-        parts = [Path(directory) / str(i) for i in range(ranges)]
-
-        def fetch(part, span):
-          download(href, part, size, span)
-
-        parallel(fetch, zip(parts, spans, strict=True), ranges)
-        with tmp.open("wb") as out:
-          for part in parts:
-            with part.open("rb") as stream:
-              shutil.copyfileobj(stream, out)
-      else:
-        download(href, tmp, size)
+      API.download_bucket_files(BUCKET, [(f"sha256/{oid}", tmp)], raise_on_missing_files=True)
       if tmp.stat().st_size != size or hash_file(tmp) != oid:
         raise RuntimeError(f"sha256 mismatch for {oid}")
       os.replace(tmp, dst)
@@ -316,10 +235,11 @@ def pointers_for_head():
   return found
 
 
-def pull():
+def pull(exclude=None):
   install()
   found = pointers_for_head()
-  exclude = git("config", "--get", "lfs.fetchexclude", check=False).decode().strip()
+  if exclude is None:
+    exclude = git("config", "--get", "lfs.fetchexclude", check=False).decode().strip()
   if exclude:
     found = {obj: kept for obj, paths in found.items() if (kept := [path for path in paths if path != exclude])}
   parallel(download_one, found)
@@ -341,113 +261,30 @@ def pull():
     git("add", "--renormalize", "--", *materialized)
 
 
-class ObjectExists(Exception):
-  pass
-
-
-def r2_request(action, oid, *options, query=(), data=None, statuses=(200,), race_size=None):
-  if not os.environ.get("R2_ACCESS_KEY_ID") or not os.environ.get("R2_SECRET_ACCESS_KEY"):
-    raise RuntimeError("R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are required for uploads")
-  request_options = list(R2_OPTIONS) + list(options)
-  for key, value in sorted(query):
-    request_options += ["--url-query", f"{key}={value}"]
-  for attempt in range(RETRIES):
-    status, etag, _content_length, body = curl(f"{R2_BASE}/{oid}", *request_options, data=data)
-    if status in statuses:
-      return etag, body
-    if race_size is not None and public_object_exists(oid, race_size):
-      raise ObjectExists
-    if status not in (0, 429, 500, 502, 503, 504):
-      break
-    time.sleep(min(2**attempt, 8))
-  raise RuntimeError(f"{action} returned HTTP {status} for {oid}")
-
-
-def xml_value(body, name):
-  try:
-    element = ET.fromstring(body).find(f".//{{*}}{name}")
-  except ET.ParseError as error:
-    raise RuntimeError("R2 returned malformed XML") from error
-  if element is None or element.text is None:
-    raise RuntimeError(f"R2 response has no {name}")
-  return element.text
-
-
-def prepare_part(path, offset, size, part_number, directory):
-  part_path = Path(directory) / str(part_number)
-  md5 = hashlib.md5(usedforsecurity=False)
-  with path.open("rb") as source, part_path.open("xb") as part:
-    source.seek(offset)
-    remaining = size
-    while remaining:
-      chunk = source.read(min(1 << 20, remaining))
-      if not chunk:
-        raise RuntimeError(f"short read from {path}")
-      part.write(chunk)
-      md5.update(chunk)
-      remaining -= len(chunk)
-  return part_path, md5.hexdigest()
-
-
-def create_multipart_upload(oid, size):
-  _etag, body = r2_request("CreateMultipartUpload", oid, "--data-binary", "@-", query=(("uploads", ""),), data=b"", race_size=size)
-  return xml_value(body, "UploadId")
-
-
-def upload_part(path, oid, size, upload_id, part_number, offset, part_size, directory):
-  part_path, part_md5 = prepare_part(path, offset, part_size, part_number, directory)
-  query = (("partNumber", part_number), ("uploadId", upload_id))
-  etag, _body = r2_request(f"UploadPart {part_number}", oid, "--upload-file", str(part_path), query=query, race_size=size)
-  etag = etag.strip('"').lower()
-  if etag != part_md5:
-    raise RuntimeError(f"wrong ETag for part {part_number} of {oid}")
-  part_path.unlink()
-  return part_number, etag
-
-
-def abort_multipart_upload(oid, upload_id):
-  r2_request("AbortMultipartUpload", oid, "--request", "DELETE", query=(("uploadId", upload_id),), statuses=(204, 404))
-
-
-def complete_multipart_upload(oid, size, upload_id, parts):
-  root = ET.Element("CompleteMultipartUpload")
-  for part_number, etag in sorted(parts):
-    part = ET.SubElement(root, "Part")
-    ET.SubElement(part, "PartNumber").text = str(part_number)
-    ET.SubElement(part, "ETag").text = f'"{etag}"'
-  body = ET.tostring(root, encoding="utf-8", xml_declaration=True)
-  _etag, response = r2_request("CompleteMultipartUpload", oid, "--data-binary", "@-", query=(("uploadId", upload_id),), data=body, race_size=size)
-  xml_value(response, "ETag")
-  if not public_object_exists(oid, size):
-    raise RuntimeError(f"completed object {oid} is not publicly readable")
-
-
-def multipart_upload(path, oid, size):
-  upload_id = create_multipart_upload(oid, size)
-  parts = [(part_number + 1, offset, min(PART_SIZE, size - offset)) for part_number, offset in enumerate(range(0, size, PART_SIZE))]
-  try:
-    with tempfile.TemporaryDirectory(prefix="r2-upload-", dir=STORE) as directory:
-      arguments = [(path, oid, size, upload_id, *part, directory) for part in parts]
-      uploaded_parts = parallel(upload_part, arguments, UPLOAD_CONCURRENCY)
-      complete_multipart_upload(oid, size, upload_id, uploaded_parts)
-  except BaseException as error:
-    try:
-      abort_multipart_upload(oid, upload_id)
-    except Exception as abort_error:
-      error.add_note(str(abort_error))
-    raise
-
-
-def upload_one(oid, size):
-  path = object_path(oid)
-  if public_object_exists(oid, size):
+def upload(objects):
+  objects = dict(objects)
+  if not objects:
     return
-  if not valid(path, size):
-    raise RuntimeError(f"missing local LFS object {oid}")
-  if hash_file(path) != oid:
-    raise RuntimeError(f"local sha256 mismatch for {oid}")
-  with contextlib.suppress(ObjectExists):
-    multipart_upload(path, oid, size)
+  existing = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (f"sha256/{oid}" for oid in objects))}
+  pending = []
+  for oid, size in objects.items():
+    key = f"sha256/{oid}"
+    if key in existing:
+      if existing[key] != size:
+        raise RuntimeError(f"invalid bucket object {oid}: size {existing[key]}, expected {size}")
+      continue
+    path = object_path(oid)
+    if not valid(path, size):
+      raise RuntimeError(f"missing local LFS object {oid}")
+    if hash_file(path) != oid:
+      raise RuntimeError(f"local sha256 mismatch for {oid}")
+    pending.append((path, key))
+  if pending:
+    API.batch_bucket_files(BUCKET, add=pending)
+    uploaded = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (key for _path, key in pending))}
+    for path, key in pending:
+      if uploaded.get(key) != objects[path.name]:
+        raise RuntimeError(f"uploaded object {path.name} is missing or has the wrong size")
 
 
 def pre_push(remote):
@@ -459,21 +296,24 @@ def pre_push(remote):
     return
   output = git("rev-list", "--objects", "--no-object-names", *local_oids, "--not", f"--remotes={remote}")
   object_ids = output.decode().splitlines()
-  parallel(upload_one, (parsed for _oid, data in cat_small(object_ids) if (parsed := parse_pointer(data))))
+  upload(parsed for _oid, data in cat_small(object_ids) if (parsed := parse_pointer(data)))
 
 
 def main():
-  command = sys.argv[1] if len(sys.argv) > 1 else ""
-  if command == "filter-process":
+  parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument("command", choices=("filter-process", "pull", "pre-push", "install"))
+  parser.add_argument("remote", nargs="?", default="origin")
+  parser.add_argument("url", nargs="?")
+  parser.add_argument("--exclude", help="path to leave as a pointer when pulling; overrides lfs.fetchexclude")
+  args = parser.parse_args()
+  if args.command == "filter-process":
     filter_process()
-  elif command == "pull":
-    pull()
-  elif command == "pre-push":
-    pre_push(sys.argv[2] if len(sys.argv) > 2 else "origin")
-  elif command == "install":
+  elif args.command == "pull":
+    pull(args.exclude)
+  elif args.command == "pre-push":
+    pre_push(args.remote)
+  elif args.command == "install":
     install()
-  else:
-    raise SystemExit("usage: lfs.py {filter-process|pull|pre-push|install}")
 
 
 if __name__ == "__main__":
