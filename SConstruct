@@ -311,7 +311,10 @@ def count_scons_nodes(nodes):
     seen.add(node)
     executor = node.get_executor()
     if executor is not None:
-      stack += executor.get_all_prerequisites() + executor.get_all_children()
+      stack += executor.get_all_prerequisites()
+      for target in executor.get_all_targets():
+        # Only scan directories here; generated sources must be scanned after they are built.
+        stack += target.children(scan=isinstance(target, SCons.Node.FS.Dir))
 
   return len(seen)
 
