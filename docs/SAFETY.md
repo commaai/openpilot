@@ -1,15 +1,27 @@
 # Safety
 
 openpilot is an Adaptive Cruise Control (ACC) and Automated Lane Centering (ALC) system.
-Like other ACC and ALC systems, openpilot is a failsafe passive system and it requires the
-driver to be alert and to pay attention at all times.
+It is a SAE Level 2 driver assistance system. openpilot is not a self-driving system and does
+not make the vehicle autonomous. It does not replace the driver's attention, judgment, and
+need to control the vehicle.
 
-To assist the driver in maintaining alertness, openpilot includes a driver monitoring feature
-that alerts when it detects driver distraction.
+The driver is responsible for operating the vehicle safely at all times. The driver must
+pay attention to the road and surrounding traffic and be ready to take immediate control
+of the vehicle at all times. openpilot may disengage or behave unexpectedly without warning.
 
-However, even with an attentive driver, we must make further efforts for the system to be
-safe. We repeat, **driver alertness is necessary, but not sufficient, for openpilot to be
-used safely** and openpilot is provided with no warranty of fitness for any purpose.
+> [!WARNING]
+> openpilot does not detect all vehicles, objects, or road conditions and may not steer or
+> brake to avoid a collision. Over-reliance on openpilot can lead to a crash resulting in
+> serious injury or death. Read [LIMITATIONS.md](LIMITATIONS.md) before use.
+
+openpilot includes driver monitoring. It alerts when it detects driver distraction or no
+driver response. Alerts escalate up to a request to disengage immediately, and repeated
+terminal alerts block engagement for an increasing amount of time. Driver monitoring is not
+an exact measurement of driver alertness, and the driver must not rely on it to assess
+their own attention.
+
+Driver alertness is necessary, but not sufficient, for openpilot to be used safely.
+openpilot is provided with no warranty of fitness for any purpose.
 
 openpilot is developed in good faith to be compliant with FMVSS requirements and to follow
 industry standards of safety for Level 2 Driver Assistance Systems. In particular, we observe
@@ -21,7 +33,7 @@ hardware-in-the-loop, and in-vehicle tests before each software release.
 Following Hazard and Risk Analysis and FMEA, at a very high level, we have designed openpilot
 ensuring two main safety requirements.
 
-1. The driver must always be capable to immediately retake manual control of the vehicle,
+1. The driver must always be able to immediately retake manual control of the vehicle,
    by stepping on the brake pedal or by pressing the cancel button.
 2. The vehicle must not alter its trajectory too quickly for the driver to safely
    react. This means that while the system is engaged, the actuators are constrained
