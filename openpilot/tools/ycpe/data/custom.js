@@ -41,12 +41,13 @@ if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
 
 // one worker runs the jobs in turn, holding their inputs' chunks so each crosses threads once. A job that runs
 // past TIMEOUT_MS takes the worker down; the jobs queued behind it go to a new one, and the same code fails at once
-// from then on, so it doesn't hold the others up again as its inputs change
+// on that store from then on, so it doesn't hold the others up again as its inputs change
 let worker = null, feed = null, timer = 0;
 const jobs = [];  // posted and unanswered, the running one first: {store, path, spec, resolve, reject}
-const hung = new Set();  // the specs that timed out
+const hung = new WeakMap();  // store → the specs that timed out on it
 const TIMED_OUT = `timed out after ${TIMEOUT_MS / 1000} s`;
 const key = ({inputs, globals, code}) => JSON.stringify([inputs, globals, code]);
+const timedOut = ({store, spec}) => !!hung.get(store)?.has(key(spec));
 
 function post(job) {
   if (!worker) {
@@ -68,7 +69,9 @@ function arm() {
   clearTimeout(timer);
   if (!jobs.length) return;
   timer = setTimeout(() => {
-    hung.add(key(jobs[0].spec));
+    const {store, spec} = jobs[0];
+    if (!hung.has(store)) hung.set(store, new Set());
+    hung.get(store).add(key(spec));
     restart(new Error(TIMED_OUT));
   }, TIMEOUT_MS);
 }
@@ -86,13 +89,13 @@ function restart(error) {
   worker = null;
   const [job, ...rest] = jobs.splice(0);
   job?.reject(error);
-  for (const j of rest) hung.has(key(j.spec)) ? j.reject(new Error(TIMED_OUT)) : post(j);
+  for (const j of rest) timedOut(j) ? j.reject(new Error(TIMED_OUT)) : post(j);
   arm();
 }
 
 // evaluates a custom series into the store at path
 export function evaluate(store, path, {inputs, globals = "", code}) {
   const spec = {inputs, globals, code};
-  if (hung.has(key(spec))) return Promise.reject(new Error(TIMED_OUT));
+  if (timedOut({store, spec})) return Promise.reject(new Error(TIMED_OUT));
   return new Promise((resolve, reject) => post({store, path, spec, resolve, reject}));
 }
