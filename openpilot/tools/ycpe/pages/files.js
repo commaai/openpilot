@@ -142,7 +142,7 @@ export function deviceUploads(device) {
   const dongleId = device.dongle_id;
   const el = h("div", {}, h("p", {class: "muted"}, "Loading…"));
   const status = h("p", {class: "small error"});
-  const up = {queue: [], metered: false, cancelling: new Set(), offline: () => !isOnline(device), cancel};
+  const up = {queue: [], metered: false, cancelling: new Set(), offline: () => !isOnline(device), cancel: null};  // cancel: for those who manage it
   let polling = 0, busy = false, first = true;
 
   async function cancel(ids) {
@@ -162,8 +162,13 @@ export function deviceUploads(device) {
   }
 
   async function load() {
+    if (first) {
+      if (await canManage(device)) up.cancel = cancel;
+      if (!up.offline()) up.metered = await api.athena(dongleId, "getNetworkMetered").catch(() => false);
+      first = false;
+    }
     if (up.offline()) {
-      const waiting = await offlineFiles(dongleId);
+      const waiting = up.cancel ? await offlineFiles(dongleId) : [];
       el.replaceChildren(h("p", {class: "muted"}, waiting.length ? "Device offline. These uploads start when it's back:" : "Device offline."));
       if (waiting.length) {
         el.append(h("table", {class: "list"},
@@ -172,7 +177,6 @@ export function deviceUploads(device) {
       }
       return;
     }
-    if (first) up.metered = await api.athena(dongleId, "getNetworkMetered").catch(() => false);
     up.queue = await api.athena(dongleId, "listUploadQueue");
     up.cancelling = new Set([...up.cancelling].filter((id) => up.queue.some((q) => q.id === id)));
     show();
@@ -182,10 +186,12 @@ export function deviceUploads(device) {
     clearTimeout(polling);
     if (busy) return;
     busy = true;
-    load().catch((err) => el.replaceChildren(h("p", {class: "error"}, err.message))).finally(() => {
-      busy = first = false;
+    // an error (not registered, no access, athena down) stops the polling until Retry or the tab is shown again
+    load().then(() => {
       if (!up.offline()) polling = setTimeout(() => el.isConnected && refresh(), POLL_MS);
-    });
+    }, (err) => {
+      el.replaceChildren(h("p", {class: "muted", title: err.message}, "Couldn't load the upload queue. ", h("button", {class: "button small", onclick: refresh}, "Retry")));
+    }).finally(() => { busy = false; });
   }
   el.resume = refresh;
   return el;
@@ -204,8 +210,8 @@ export function uploadQueue(up) {
           h("td", {class: "mono"}, `${r}--${n}`),
           h("td", {}, LABELS[kind] ?? q.path),
           h("td", {}, q.current ? h("progress", {max: 1, value: q.progress}) : up.metered && !q.allow_cellular ? "paused" : "pending"),
-          h("td", {}, q.current ? "" : up.cancelling.has(q.id) ? h("span", {class: "spinner"})
+          h("td", {}, q.current || !up.cancel ? "" : up.cancelling.has(q.id) ? h("span", {class: "spinner"})
             : h("button", {class: "icon-btn", "aria-label": "Cancel upload", onclick: () => up.cancel([q.id])}, icon("cancel", 18))));
       })),
-    h("p", {}, h("button", {class: "button small", disabled: !waiting.length, onclick: () => up.cancel(waiting)}, "Cancel all")));
+    up.cancel && h("p", {}, h("button", {class: "button small", disabled: !waiting.length, onclick: () => up.cancel(waiting)}, "Cancel all")));
 }
