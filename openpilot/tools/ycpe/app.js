@@ -119,10 +119,34 @@ function updateTop() {
   const layout = ws.layout;
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: () => { layout.selectTab(i); updateTop(); },
-    ondblclick: () => { const n = prompt("Tab name", t.name); if (n) { layout.renameTab(i, n); updateTop(); } },
+    ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
+    oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"));
+}
+
+function tabMenu(tabEl, i, name) {
+  const layout = ws.layout;
+  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { document.querySelector(".popover")?.remove(); fn(); updateTop(); }}, label);
+  menu(tabEl, () => h("div", {class: "menu-list"},
+    item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
+    item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
+    layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
+    item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
+}
+
+// double-click a tab to rename it in place
+function renameTab(tabEl, i, name) {
+  const input = h("input", {class: "tab-edit", value: name});
+  const done = (save) => {
+    if (save && input.value.trim()) ws.layout.renameTab(i, input.value.trim());
+    updateTop();
+  };
+  input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
+  input.addEventListener("blur", () => done(true));
+  tabEl.replaceChildren(input);
+  input.select();
 }
 
 // ---- route workspace: one clock, one store, one layout per view ----
@@ -196,6 +220,13 @@ class Workspace {
     this.layout.invalidateAll();
     this.syncUrl(true);
     updateTop();
+  }
+
+  resetLayout() {
+    localStorage.removeItem(`ycpe_layout_${this.view}`);
+    this.layout.dispose();
+    delete this.layouts[this.view];
+    this.setView(this.view);
   }
 
   openRoute(name) {

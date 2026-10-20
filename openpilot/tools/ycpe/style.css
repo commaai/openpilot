@@ -145,3 +145,9 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 /* simple pages */
 .page-msg { max-width: 520px; margin: 12vh auto; padding: 0 16px; text-align: center; }
 .page-msg h2 { font-size: 20px; margin: 0 0 8px; }
+
+/* pane docking */
+.pane-head { cursor: grab; }
+body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
+.dock-hint { position: fixed; z-index: 45; border: 2px solid var(--accent); border-radius: 5px; background: var(--loop); pointer-events: none; transition: all .08s ease-out; }
+.tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }
