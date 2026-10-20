@@ -204,7 +204,7 @@ function updateTop() {
   h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
   h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
   refocus(focused);
-  // scrolled to on the next frame, when it lays out anyway, and only when the active tab or the tab set changed
+  // scrolled to once laid out (tabsObserver), and only when the active tab or the tab set changed
   const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
   if (shown !== tabsShown) {
     tabsShown = shown;

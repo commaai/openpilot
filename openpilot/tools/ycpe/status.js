@@ -143,8 +143,9 @@ export function loadPill() {
       const k = active[0], n = counts(k);
       text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
-      text.textContent = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ");
-      if (!text.textContent) text.replaceChildren(icon("check", 14));
+      const missing = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ");
+      if (missing) text.textContent = missing;
+      else if (!text.querySelector("svg")) text.replaceChildren(icon("check", 14));
     }
     el.classList.toggle("loaded", !text.textContent);
     // read out: the playhead waiting, failures, and "ready" once neither is the case anymore
