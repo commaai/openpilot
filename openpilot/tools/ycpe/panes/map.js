@@ -135,26 +135,47 @@ class TileMap {
       this.zoomAt(...at(e), this.z - e.deltaY * (e.deltaMode ? 0.05 : 0.002));
     }, {passive: false});
     c.addEventListener("dblclick", (e) => this.zoomAt(...at(e), this.z + 1));
+
+    // one pointer pans; two pan and pinch-zoom around their midpoint, keeping the point under it there. Where the page
+    // scrolls under the map (map.css: touch-action pan-y on a phone), one finger is the page's and the map takes two.
+    const down = new Map();  // pointerId → [x, y]
+    let from = null, moved = false, scrolls = false;  // from: the gesture's midpoint, spread, unit point and zoom
+    const spread = () => {
+      const [[x0, y0], [x1, y1] = [x0, y0]] = down.values();
+      return [(x0 + x1) / 2, (y0 + y1) / 2, Math.hypot(x1 - x0, y1 - y0)];
+    };
+    const start = () => {
+      const [x, y, d] = spread();
+      from = {x, y, d, u: this.toUnit(x, y), z: this.z};
+    };
     c.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       c.setPointerCapture(e.pointerId);
-      const [x0, y0] = at(e), cx = this.cx, cy = this.cy;
-      let moved = false;
-      c.onpointermove = (ev) => {
-        const [x, y] = at(ev);
-        moved ||= Math.hypot(x - x0, y - y0) > 3;
-        if (!moved) return;
-        this.cx = cx - (x - x0) / this.scale;
-        this.cy = cy - (y - y0) / this.scale;
-        c.classList.add("panning");
-        this.invalidate();
-      };
-      c.onpointerup = (ev) => {
-        c.onpointermove = c.onpointerup = null;
-        c.classList.remove("panning");
-        if (!moved) this.onClick?.(...at(ev));
-      };
+      down.set(e.pointerId, at(e));
+      moved = down.size > 1;  // two pointers never click
+      scrolls = e.pointerType === "touch" && getComputedStyle(c).touchAction === "pan-y";
+      start();
     });
+    c.addEventListener("pointermove", (e) => {
+      if (!down.has(e.pointerId)) return;
+      down.set(e.pointerId, at(e));
+      const [x, y, d] = spread();
+      moved ||= Math.hypot(x - from.x, y - from.y) > 3;
+      if (!moved || scrolls && down.size < 2) return;
+      this.z = Math.max(MIN_Z, Math.min(MAX_Z, from.z + (from.d && down.size > 1 ? Math.log2(d / from.d) : 0)));
+      this.cx = from.u[0] - (x - this.w / 2) / this.scale;
+      this.cy = from.u[1] - (y - this.h / 2) / this.scale;
+      c.classList.add("panning");
+      this.invalidate();
+    });
+    const up = (e) => {
+      if (!down.delete(e.pointerId)) return;
+      if (down.size) return start();  // the other pointer carries on from here
+      c.classList.remove("panning");
+      if (!moved && e.type === "pointerup") this.onClick?.(...at(e));
+    };
+    c.addEventListener("pointerup", up);
+    c.addEventListener("pointercancel", up);
   }
 
   render() {
