@@ -158,7 +158,7 @@ function perfPanel(onClose) {
     const rows = Object.entries(totals).map(([k, v]) => [k, v.reduce((a, b) => a + b, 0) / recent.length, Math.max(...v)]).sort((a, b) => b[1] - a[1]);
     table.replaceChildren(h("div", {class: "perf-row head"}, h("span", {}, "pane"), h("span", {}, "avg ms"), h("span", {}, "max ms")),
       ...rows.map(([k, avg, max]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, avg.toFixed(2)), h("span", {class: max > BUDGET_MS ? "bad" : ""}, max.toFixed(2)))),
-      ...Object.entries(marks).map(([k, v]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, String(v)), h("span"))));
+      ...Object.entries(marks).map(([k, v]) => h("div", {class: "perf-row mark"}, h("span", {}, k), h("span", {}, String(v)))));
     longs.replaceChildren(h("div", {class: "muted"}, `${longFrames.length} long frames`),
       ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms (layout ${l.layout.toFixed(0)})  ${l.scripts.slice(0, 2).join(" · ")}`)));
   };
