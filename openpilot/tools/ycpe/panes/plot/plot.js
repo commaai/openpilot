@@ -4,6 +4,7 @@
 // O(pixels): curves come from store.decimate (cached on a bucket grid, so a pan only decimates the newly
 // exposed edge) and state blocks from cached runs.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
 import {Decimator} from "./decimate.js";
@@ -342,21 +343,28 @@ export function create(ctx, state = {}) {
 
   // ---- legend
 
+  // where a popup for click e opens: at the pointer, or under the control when it came from a key
+  const from = (e) => e.detail ? e : (({left, bottom}) => ({clientX: left, clientY: bottom}))(e.currentTarget.getBoundingClientRect());
+
   function rebuildLegend() {
+    // the keyboard focus stays on the same control of the same row
+    const f = document.activeElement, at = legend.contains(f) && [rows.indexOf(f.parentElement), [...f.parentElement.children].indexOf(f)];
     rows = st.curves.map((c, k) => {
-      const val = h("span", {class: "val"});
-      const row = h("div", {class: `row ${c.hidden ? "off" : ""}`, title: c.error || label(c),
+      const val = h("span", {class: "val"}), name = label(c);
+      const row = h("div", {class: `row ${c.hidden ? "off" : ""}`, title: c.error || name,
         onpointerenter: () => { st.hl = k; invalidate(); },
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
-      h("i", {class: c.dash ? "dash" : "", style: `color:${c.color}`, title: "show/hide", onclick: () => { view.rememberCurves(clock, pane); c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
-      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, h("bdi", {}, label(c))),
+      h("button", {class: `swatch ${c.dash ? "dash" : ""}`, style: `color:${c.color}`, title: "show/hide", "aria-label": `${c.hidden ? "Show" : "Hide"} ${name}`,
+        onclick: () => { view.rememberCurves(clock, pane); c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
+      h("button", {class: `name ${c.error ? "error" : ""}`, "aria-label": `Edit ${name}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, from(e))}, h("bdi", {}, name)),
       val,
-      h("b", {class: "x", title: "remove", onclick: () => removeCurves([c])}, "×"));
+      h("button", {class: "x", title: "remove", "aria-label": `Remove ${name}`, onclick: () => removeCurves([c])}, icon("close", 12)));
       row.val = val;
       return row;
     });
     legend.replaceChildren(...rows);
+    if (at) (rows[at[0]] || rows.at(-1))?.children[at[1]]?.focus();
     legend.hidden = !rows.length;
     hint();
     statsKey = "";
@@ -535,7 +543,13 @@ export function create(ctx, state = {}) {
   over.addEventListener("pointerleave", () => gesture || view.track(null));
   // a legend highlight can outlive its pointerleave when a popup opens over the row
   over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
-  over.addEventListener("contextmenu", (e) => e.preventDefault());
+  // the context menu key (or shift+F10) opens the plot's menu at its middle; a right click opens it on release
+  over.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (e.button !== -1 || !frame) return;
+    const r = over.getBoundingClientRect();
+    paneMenu({clientX: r.left + r.width / 2, clientY: r.top + r.height / 2});
+  });
 
   over.addEventListener("wheel", (e) => {
     if (!frame) return;

@@ -3,6 +3,7 @@
 // the transforms worker; the main thread draws at most a few thousand points per curve, on a base canvas that
 // redraws only when the results or the view change. The playhead points go on an overlay.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {colors, fitCanvas, ticks, axes, fmtTick, fmtValue, nextColor} from "./draw.js";
 import * as view from "./view.js";
 import {menu} from "./menu.js";
@@ -68,8 +69,8 @@ export function create(ctx, state = {}) {
 
   function rebuild() {
     legend.replaceChildren(...st.curves.map((c) => h("div", {class: "row"},
-      h("i", {style: `background:${c.color}`}), h("span", {class: "name", title: name(c)}, h("bdi", {}, name(c))), h("span"),
-      h("b", {class: "x", title: "remove", onclick: () => { st.curves.splice(st.curves.indexOf(c), 1); rebuild(); refresh(); }}, "×"))));
+      h("span", {class: "swatch", style: `color:${c.color}`}), h("span", {class: "name", title: name(c)}, h("bdi", {}, name(c))), h("span"),
+      h("button", {class: "x", title: "remove", "aria-label": `Remove ${name(c)}`, onclick: () => { st.curves.splice(st.curves.indexOf(c), 1); rebuild(); refresh(); }}, icon("close", 12)))));
     legend.hidden = !st.curves.length;
     showHint(false);
   }

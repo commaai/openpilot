@@ -1,11 +1,14 @@
 // popups for the plot panes: context menus and the curve editor
 import {h} from "/dom.js";
 import {STYLES} from "./draw.js";
+import {icon} from "/icons.js";
 import {TRANSFORMS} from "/data/transforms.js";
 
-let open = null;
+let open = null, opener = null;  // the popup, and what had the focus before it
 
+// focus inside the popup goes back where it came from
 export function close() {
+  if (open?.contains(document.activeElement)) opener?.focus({preventScroll: true});
   open?.remove();
   open = null;
 }
@@ -13,6 +16,7 @@ export function close() {
 // a floating panel at client (x, y), kept on screen; closes on an outside press or Escape
 export function popup(x, y, ...content) {
   close();
+  opener = document.activeElement;
   const el = open = h("div", {class: "popover plot-popup", onpointerdown: (e) => e.stopPropagation()}, ...content);
   document.body.append(el);
   return place(el, x, y);
@@ -29,13 +33,22 @@ addEventListener("pointerdown", close);
 addEventListener("blur", close);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && open) close(); });  // wherever the focus is (the plot, say)
 
-// items: [{label, fn, checked?, disabled?} | null (separator)]
+// items: [{label, fn, checked?, disabled?} | null (separator)]; it takes the focus, and the arrow keys move it
 export function menu(x, y, items) {
-  return popup(x, y, items.map((it) => it ? h("div", {class: `menu-row ${it.disabled ? "muted" : ""}`, onclick: () => {
-    if (it.disabled) return;
+  const rows = items.map((it) => it ? h("button", {class: `menu-row ${it.disabled ? "muted" : ""}`, role: "menuitem", disabled: !!it.disabled, onclick: () => {
     close();
     it.fn();
-  }}, h("span", {class: "tick"}, it.checked ? "✓" : ""), it.label) : h("hr")));
+  }}, h("span", {class: "tick"}, it.checked && icon("check", 14)), it.label) : h("hr"));
+  const list = h("div", {class: "menu-list", role: "menu", onkeydown: (e) => {
+    const live = [...list.querySelectorAll("button:enabled")], k = live.indexOf(document.activeElement);
+    const to = {ArrowDown: k + 1, ArrowUp: k - 1, Home: 0, End: live.length - 1}[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    live[(to + live.length) % live.length]?.focus();
+  }}, rows);
+  const el = popup(x, y, list);
+  list.querySelector("button:enabled")?.focus();
+  return el;
 }
 
 const num = (label, value, set, step = "any") => h("label", {}, label,
@@ -51,7 +64,7 @@ export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
     param.replaceChildren(spec?.param ? num(spec.param.label, curve.transform.param ?? spec.param.value, (v) => { curve.transform.param = v; change(); }) : "");
   };
   showParam();
-  return popup(x, y,
+  const el = popup(x, y,
     h("div", {class: "title"}, curve.label || curve.path),
     h("label", {}, "label", h("input", {value: curve.label || "", placeholder: curve.path.slice(1), spellcheck: false, oninput: (e) => set("label")(e.target.value.trim() || undefined)})),
     h("label", {}, "color", h("input", {type: "color", value: curve.color, oninput: (e) => set("color")(e.target.value)})),
@@ -70,4 +83,6 @@ export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
     code && h("button", {onclick: code}, "Edit code…"),
     actions.map(({label, fn}) => h("button", {onclick: () => { close(); fn(); }}, label)),
     h("button", {class: "danger", onclick: () => { close(); remove(); }}, "Remove curve"));
+  el.querySelector("input").focus();
+  return el;
 }
