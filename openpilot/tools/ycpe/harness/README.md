@@ -32,10 +32,12 @@ Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by:
 - a page error, a console error, a failed step or assert
 - a long animation frame over `loaf_ms`, perf.js work p99 over `work_p99_ms`, dropped frames over `drops`
 
-Time spent taking screenshots and linting is excluded from the frame stats (shaded in the charts).
+Time spent taking screenshots and linting is excluded from the frame stats (shaded in the charts). When an empty page
+drops frames or the load average exceeds the cpu count, the perf budgets only warn. A scenario that hits a network flake
+(ERR_NETWORK_CHANGED: USB ethernet devices on this box come and go) is retried once.
+
 Layout lint findings (overflow, sideways scroll, clipped text, overlap, obscured controls, small targets, layout shift,
-broken images)
-are reported but don't fail the scenario.
+broken images) are reported but don't fail the scenario.
 
 ## Modes (`--mode`)
 
