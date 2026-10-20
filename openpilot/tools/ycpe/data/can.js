@@ -3,8 +3,8 @@
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, raw, value} from "./dbc.js";
-import {Checkout, parseRemote} from "./github.js";
-import {Opendbc, opendbcAt} from "./upstream.js";
+import {parseRemote} from "./github.js";
+import {upstream as github} from "./remote.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -619,14 +619,15 @@ export class Can {
     return {fingerprints, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
   }
 
-  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master
+  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master. The
+  // fetching and generating happen in remote.js's worker: {names, co: {label}, text(name)}, or null offline
   upstream() {
     const remote = parseRemote(this.store.valueAt?.("/initData/gitRemote", Infinity)), commit = this.store.valueAt?.("/initData/gitCommit", Infinity);
     const at = remote && commit ? `${remote}@${commit}` : "master";
     if (this.src?.at !== at) {
-      const open = (co) => co && Opendbc.open(co).catch(() => null);
-      this.src = {at, opendbc: (async () => (at !== "master" && await open(await opendbcAt(remote, commit).catch(() => null))) ||
-        await open(new Checkout("commaai/opendbc", "master")))()};
+      const args = remote && commit ? {repo: remote, commit} : {};
+      this.src = {at, opendbc: github("dbcs", args).then(({label, names}) => ({names, co: {label},
+        text: (name) => github("dbc", {...args, name}).then((r) => r.text)}), () => null)};
     }
     return this.src.opendbc;
   }
