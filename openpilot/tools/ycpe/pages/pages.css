@@ -159,10 +159,16 @@ a.drive-row:hover { background: var(--hover); }
 @media (max-width: 760px) {
   .topbar :is(.brand > span, .sep, .hud, .local-badge) { display: none; }
   .topbar > .crumb:first-of-type { display: none; }  /* the device: the route crumb's menu reaches the rest */
-  body.in-ws .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
-  body.in-ws .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
-  body.in-ws .topbar .omni { flex: 1; min-width: 0; }  /* it shrinks rather than wrapping the first row */
-  body.in-ws .topbar .omnibox { width: 100%; }
+  /* from the route's load on, so the row is there before the views and nothing shifts when they fill in */
+  body:is(.in-ws, .loading) .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
+  body:is(.in-ws, .loading) .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
+  body:is(.in-ws, .loading) .topbar .views { display: flex; min-height: calc(var(--top) - 8px); }
+  body:is(.in-ws, .loading) .topbar .views:empty { visibility: hidden; }
+  /* the omnibox and the load pill shrink rather than wrapping the first row */
+  body:is(.in-ws, .loading) .topbar :is(.omni, .load-pill) { flex: 1 1 0; min-width: 0; }
+  body:is(.in-ws, .loading) .topbar .load-pill { max-width: fit-content; }
+  body:is(.in-ws, .loading) .topbar .grow { display: none; }
+  body:is(.in-ws, .loading) .topbar .omnibox { width: 100%; }
   .topbar :is(.views, .tabs) { order: 2; margin-left: 0; }
   .topbar .tabs { flex: 1; max-width: none; }
   .playbar > .tbtn:not(.play), .pb-wall { display: none; }
