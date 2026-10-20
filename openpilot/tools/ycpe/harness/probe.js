@@ -10,7 +10,7 @@
   };
   observe("long-animation-frame", (e) => probe.loaf.push({
     start: e.startTime, duration: e.duration, blocking: e.blockingDuration,
-    scripts: e.scripts.map((s) => ({invoker: s.invoker, url: s.sourceURL.replace(location.origin, ""), pos: s.sourceCharPosition, fn: s.sourceFunctionName, duration: s.duration})),
+    scripts: e.scripts.map((s) => ({invoker: s.invoker.replace(location.origin, ""), url: s.sourceURL.replace(location.origin, ""), pos: s.sourceCharPosition, fn: s.sourceFunctionName, duration: s.duration})),
   }));
   observe("layout-shift", (e) => {
     if (e.hadRecentInput) return;

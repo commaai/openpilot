@@ -111,7 +111,7 @@ def chart(perf, prev):
   W, H, P, YMAX = 640, 150, 30, 100
   t0 = perf["t"][0] if perf["t"] else 0
   span = max(1, perf["t"][-1] - t0 if perf["t"] else 1, prev["t"][-1] - prev["t"][0] if prev and prev["t"] else 1)
-  x = lambda t: P + (W - P - 5) * t / span  # noqa: E731
+  x = lambda t: P + (W - P - 5) * min(max(t, 0), span) / span  # noqa: E731
   y = lambda ms: H - 15 - (H - 25) * min(ms, YMAX) / YMAX  # noqa: E731
 
   def steps(p, color, width):

@@ -24,6 +24,7 @@ OUT = HERE / "out"
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
+FATAL = ("blocked", "page-error", "console-error")  # events that fail a scenario
 DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None}
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
 # gpu: headless Chrome on the NVIDIA GPU through ANGLE/EGL; hardware raster and compositing, 60 Hz begin-frames
@@ -150,7 +151,7 @@ def run_scenario(browser, base, sc, out, token):
   page = ctx.new_page()
   page.on("console", lambda m: m.type in ("error", "warning") and event(f"console-{m.type}", m.text))
   page.on("pageerror", lambda e: event("page-error", f"{e.name}: {e.message}"))
-  page.on("requestfailed", lambda r: r.failure != "net::ERR_BLOCKED_BY_CLIENT" and event("request-failed", f"{r.failure} {r.method} {r.url}"))
+  page.on("requestfailed", lambda r: not r.failure.startswith("net::ERR_BLOCKED_BY_CLIENT") and event("request-failed", f"{r.failure} {r.method} {r.url}"))
   page.on("response", lambda r: r.status >= 400 and event("http-error", f"{r.status} {r.request.method} {r.url}"))
   if sc.get("cpu_throttle"):
     ctx.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": sc["cpu_throttle"]})
@@ -231,7 +232,7 @@ def check(res, budgets):
     fail("frame-work", f"perf.js work p99 {s['work_p99_ms']:.1f} ms > {budgets['work_p99_ms']} ms (max {s['work_max_ms']:.1f})", key="p99")
   if budgets["drops"] is not None and (s["drops"] or 0) > budgets["drops"]:
     fail("drops", f"{s['drops']} dropped frames (perf.js counter: {s['perf_js_drops']}), budget {budgets['drops']}", key="drops")
-  res["pass"] = not res["failures"] and not any(e["kind"] in ("blocked", "page-error", "console-error") for e in res["events"])
+  res["pass"] = not res["failures"] and not any(e["kind"] in FATAL for e in res["events"])
 
 
 def main():
@@ -265,7 +266,8 @@ def main():
       browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode], env=env)
       for sc in scenarios:
         r = run_scenario(browser, base, sc, latest, token)
-        print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<24} {r['duration']:5.1f}s  {'; '.join(f['detail'][:90] for f in r['failures'])}")
+        errors = [f"{f['rule']}: {f['detail'][:70]}" for f in r["failures"]] + [f"{e['kind']}: {e['text'][:70]}" for e in r["events"] if e["kind"] in FATAL]
+        print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<16} {r['duration']:5.1f}s  {' | '.join(errors[:2])}{f' (+{len(errors) - 2})' if len(errors) > 2 else ''}")
         results.append(r)
       browser.close()
   finally:
