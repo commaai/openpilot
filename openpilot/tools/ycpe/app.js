@@ -344,8 +344,9 @@ addEventListener("keydown", (e) => {
   updateTop();
 });
 
+// the global keys, for whatever a pane didn't handle itself
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.defaultPrevented || e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
   if (e.key === "?") return help();
