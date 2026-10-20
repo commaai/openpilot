@@ -91,6 +91,7 @@ async function parse(buf, opts) {
     t1 = performance.now();
     raw = bytes.byteLength;
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
+    if (!read.size) throw new Error(reader.unknown.events ? "none of its messages are in the schema" : "not an openpilot log: no messages in it");
     migrated = opts.schema || opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
     return compact(read).services;
   });
@@ -150,6 +151,6 @@ onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
     }
   } catch (e) {
     if (e.partial) postMessage({id, partial: e.partial}, [e.partial]);
-    else postMessage({id, error: String(e)});
+    else postMessage({id, error: e?.message ?? String(e)});
   }
 };

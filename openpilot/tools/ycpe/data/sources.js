@@ -162,7 +162,7 @@ export const AUTO = ["internal", "api", "openpilotci", "carSegments"];
 
 // the source a route's files come from: "auto" (AUTO's order) or one SOURCES name, kept per route
 export const routeSource = {
-  get: (route) => setting(`ycpe_source:${route}`) || "auto",
+  get: (route) => SOURCES[setting(`ycpe_source:${route}`)] ? setting(`ycpe_source:${route}`) : "auto",
   set: (route, name) => name === "auto" ? localStorage.removeItem(`ycpe_source:${route}`) : localStorage.setItem(`ycpe_source:${route}`, name),
   list: (name) => name === "auto" ? "auto" : [name],
 };
@@ -271,8 +271,9 @@ export async function routeLogs(name, record) {
   const route = await record, sr = parseRange(name);
   if (route.loose) return slotted(route, looseLogs(route.files, sr?.selector));
   const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
-  const {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(routeSource.get(sr.route))});
+  const source = routeSource.get(sr.route), {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(source)});
   if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
+  if (!logs.size) throw new Error(source === "auto" ? "No source has this route's logs" : `${SOURCES[source].label} doesn't have this route's logs`);
   const urls = [];
   for (const [n, f] of logs) urls[n] = f;
   return slotted(route, urls);
