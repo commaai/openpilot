@@ -517,14 +517,18 @@ export class Can {
       const a = start[m], b = start[m + 1];
       let s = this.msgs.get(k);
       if (!s) {
-        this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
+        this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, gaps: 0, span: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
         named ||= !!this.dbcMsg(k);
       }
       s.count += b - a;
       s.t0 = Math.min(s.t0, can.t0 + off + t[a]);
       s.t1 = Math.max(s.t1, can.t0 + off + t[b - 1]);
       s.size = Math.max(s.size, len[b - 1], stride[m] && s.size);
-      s.freq = s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
+      // within segments, so segments not loaded (or missing) in between don't count as silence; a message sent
+      // less than once a segment goes by first and last
+      s.gaps += b - a - 1;
+      s.span += t[b - 1] - t[a];
+      s.freq = s.span > 0 ? s.gaps / s.span : s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
       s.segs.add(n);
     });
     const bytes = t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
