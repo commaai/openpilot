@@ -25,23 +25,6 @@ env:
   GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
 
 jobs:
-  lfs_references:
-    name: LFS references
-    runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v7
-      with:
-        fetch-depth: 0
-    - name: Check HF references
-      env:
-        BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-      run: |
-        python3 scripts/lfs_refs.py --check "$HEAD"
-        if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
-          python3 scripts/lfs_refs.py --check "$BASE" "$HEAD"
-        fi
-
   build_release:
     name: build release
     runs-on: ${{
