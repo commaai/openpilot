@@ -60,9 +60,10 @@ def install():
   script = GIT_DIR / "lfs.py"
   hook = Path(git("rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-push").decode().strip())
   remove_git_lfs_hooks(hook.parent)
-  hook_script = f'#!/bin/sh\nexec {shlex.quote(str(script))} pre-push "$@"\n'
+  hook_script = '#!/bin/sh\nexec "$(git rev-parse --git-common-dir)/lfs.py" pre-push "$@"\n'
+  installed_hook = f'#!/bin/sh\nexec {shlex.quote(str(script))} pre-push "$@"\n'
   previous_hook = '#!/bin/sh\nexec "$(git rev-parse --show-toplevel)/lfs.py" pre-push "$@"\n'
-  if hook.is_file() and hook.read_text(errors="replace") not in (hook_script, previous_hook):
+  if hook.is_file() and hook.read_text(errors="replace") not in (hook_script, installed_hook, previous_hook):
     raise RuntimeError(f"refusing to replace custom hook {hook}")
   if Path(__file__).resolve() != script:
     shutil.copyfile(__file__, script)
