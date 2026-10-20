@@ -524,8 +524,7 @@ auth.on((reason) => {
   if (location.pathname.startsWith("/auth")) return;
   if (reason === "expired") toast("Your session expired. Sign in again to see private routes and devices.");
   if (reason === "expired" && ws) return updateTop();
-  ws?.dispose();
-  ws = null;
+  closeWorkspace();
   render();
 });
 render();
