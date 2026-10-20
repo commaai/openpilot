@@ -93,8 +93,14 @@ export function fmtValue(v, names, unit) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
   if (names?.[v] !== undefined) return names[v];
-  const a = Math.abs(v), s = Number.isInteger(v) || !isFinite(v) ? String(v) : a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
+  const s = fmtNumber(v);
   return unit && v === v ? `${s} ${unit}` : s;
+}
+
+function fmtNumber(v) {
+  if (Number.isInteger(v) || !isFinite(v)) return String(v);
+  const a = Math.abs(v);
+  return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
 }
 
 // one decimated series ({t, min, max}) in a style; X and Y map time and value to css px, and the line
