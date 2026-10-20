@@ -27,8 +27,10 @@ body.in-ws { overflow: hidden; }
 a { color: inherit; }
 button, input, select { font: inherit; color: inherit; }
 /* dropdowns draw their lists in the page (Chrome's customizable select), so the lists take the theme: a native one can
-   ignore the page's color-scheme (macOS draws its own) and highlights in the system's blue. Heights stay the panes' own */
-select, ::picker(select) { appearance: base-select; }
+   ignore the page's color-scheme (macOS draws its own) and highlights in the system's blue. Important, as a pane's own
+   `appearance` would silently bring the native one back: style the select, its ::picker-icon and ::picker(select)
+   instead (the harness lints for a native one). Heights stay the panes' own */
+select, ::picker(select) { appearance: base-select !important; }
 select { display: inline-flex; gap: 6px; min-block-size: 0; min-inline-size: 0; }
 select::picker-icon { content: ""; align-self: center; width: 4px; height: 4px; margin: 0 1px 2px auto; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; rotate: 45deg; transition: none; }
 select:open::picker-icon { margin: 2px 1px 0 auto; rotate: 225deg; }

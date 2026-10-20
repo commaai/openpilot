@@ -125,6 +125,13 @@
     }
   }
 
+  // a dropdown the browser draws itself ignores the theme (style.css): some rule set its appearance
+  if (CSS.supports("appearance", "base-select")) {
+    for (const el of document.querySelectorAll("select")) {
+      if (style(el).appearance !== "base-select") add("native-select", el, el.getBoundingClientRect(), `"${snippet(el)}" has appearance: ${style(el).appearance}`);
+    }
+  }
+
   for (const {el, vis} of els) {
     if (el.localName === "img" && el.complete && el.naturalWidth === 0 && el.currentSrc) add("broken-image", el, vis, el.currentSrc.slice(0, 120));
   }

@@ -272,6 +272,10 @@ class Scenario:
     self.shifts_seen = lint["shifts"]
     self.paused.append([start, page.evaluate("performance.now()")])
     self.res["shots"].append({"name": name, "path": str(path.relative_to(self.out)), "issues": lint["issues"], "cls": lint["cls"]})
+    # the lint findings that fail the scenario (report.SEVERITY), not just its shot
+    for i in lint["issues"]:
+      if report.SEVERITY.get(i["rule"]) == report.ERROR:
+        self.fail(i["rule"], f"{i['selector']}: {i['detail']}", f"{i['rule']} {i['selector']}")
 
   def filmstrip(self, arg, timeout):
     """a screenshot every `every` ms until `until` (js) holds, with the boxes of the `crop` selectors for the strip"""

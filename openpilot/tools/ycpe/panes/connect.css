@@ -59,9 +59,9 @@
 .cn-rate-box { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 48px; height: 50px;
   padding: 3px 0; color: var(--cn-dim); cursor: pointer; }
 .cn-rate-box > svg { pointer-events: none; }
-.cn-rate { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; background: none; color: var(--cn-fg); font-size: .875em; text-align: center;
-  text-align-last: center; appearance: none; cursor: pointer; }
-.cn-rate option { background: var(--raised); color: var(--fg); }
+.cn-rate { position: absolute; inset: 0; width: 100%; justify-content: center; align-items: center; padding: 0; border: 0; background: none; color: var(--cn-fg);
+  font-size: .875em; cursor: pointer; }
+.cn-rate::picker-icon { display: none; }  /* the box's arrows say it opens */
 .cn-mute { width: 44px; color: var(--cn-fg); }
 .cn-mute:disabled { color: var(--cn-dim); opacity: .5; cursor: default; }
 .cn-video .camera-mute { display: none; }  /* the pill has it */
