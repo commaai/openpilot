@@ -18,7 +18,9 @@ const WALL = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-dig
 export function playbar(ctx) {
   const {clock, route} = ctx;
   let spans = [];
-  routeEvents(route).then((s) => { spans = s; perf.invalidate(pane); }).catch(() => {});
+  // alerts last, so they're drawn over the engagement around them
+  const isAlert = (s) => s.kind === "alert" || s.kind === "critical";
+  routeEvents(route).then((s) => { spans = [...s].sort((a, b) => isAlert(a) - isAlert(b)); perf.invalidate(pane); }).catch(() => {});
 
   const playBtn = h("button", {class: "tbtn play", title: "Play/pause (space)", onclick: () => clock.toggle()});
   const rate = h("select", {class: "rate", title: "Playback rate ([ and ])", onchange: (e) => clock.setRate(+e.target.value)},
@@ -111,7 +113,7 @@ export function playbar(ctx) {
     for (const s of spans) {
       if (!SPAN_COLORS[s.kind]) continue;
       c.fillStyle = col(SPAN_COLORS[s.kind]);
-      c.fillRect(t2x(s.start / 1000), spanY, Math.max(1, t2x((s.end - s.start) / 1000)), SPAN_H);
+      c.fillRect(t2x(s.start / 1000), spanY, Math.max(isAlert(s) ? 3 : 1, t2x((s.end - s.start) / 1000)), SPAN_H);  // a short alert still shows
     }
     // bookmarks: a flag above the spans
     c.fillStyle = col("--bookmark");
@@ -192,7 +194,7 @@ export function playbar(ctx) {
     // the spans under the cursor, with the alert's text once logs are loaded
     const ms = hover * 1000, alert = ctx.peekStore()?.valueAt("/selfdriveState/alertText1", hover);
     const under = spans.filter((s) => SPAN_LABELS[s.kind] && s.start <= ms && ms < s.end)
-      .map((s) => SPAN_LABELS[s.kind] + ((s.kind === "alert" || s.kind === "critical") && alert ? `: ${alert}` : ""));
+      .map((s) => SPAN_LABELS[s.kind] + (isAlert(s) && alert ? `: ${alert}` : ""));
     const loads = status.kinds().filter((k) => k.segs[slot]).map((k) => `${k.label}: ${describe(k.segs[slot])}`);
     hoverText.data = `${fmt.clock(hover)} · segment ${n}`;
     const text = [n, ...under, ...loads].join("\n");

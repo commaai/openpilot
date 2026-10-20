@@ -10,7 +10,7 @@ export const VIEWS = {
   plot: view("Plot", split("row", [0.2, 0.55, 0.25],
     pane("browser"),
     split("col", [1 / 3, 1 / 3, 1 / 3], pane("plot"), pane("plot"), pane("plot")),
-    split("col", [0.5, 0.5], pane("camera", {camera: "qcamera"}), pane("map")))),
+    split("col", [0.4, 0.3, 0.3], pane("camera", {camera: "qcamera"}), pane("map"), pane("logs")))),  // logs list the alerts
   can: view("CAN", split("row", [0.32, 0.36, 0.32],
     pane("can-messages"),
     split("col", [0.38, 0.37, 0.25], pane("can-binary"), pane("can-signals"), pane("can-history")),  // as cabana's detail view
