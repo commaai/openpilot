@@ -289,6 +289,7 @@ class Workspace {
     this.filesReady = files.then((f) => { this.files = f; });
     this.filesReady.catch(() => {});  // a view that needs the logs shows the failure; until then it's not an error
     this.repeat = repeat;
+    this.href = location.pathname + location.search;  // the URL it shows, as syncUrl last wrote it
     this.store = null;
     this.storeSubs = new Set();
     this.layouts = {};
