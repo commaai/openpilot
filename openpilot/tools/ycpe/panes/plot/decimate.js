@@ -1,21 +1,32 @@
 // store.decimate on a fixed grid of buckets [k·w, (k + 1)·w), cached per path. w is quantized to 1/64 octave
 // steps, so a pan keeps the grid: the buckets still in view are reused and only the newly exposed edge is
-// decimated. Exact samples (a sparse series) are binned onto the same grid.
+// decimated. Exact samples (a sparse series) are binned onto the same grid. A zoom keeps the cached grid while
+// it's within half an octave of the right one, so a wheel tick re-decimates only what's newly exposed; the right
+// grid is decimated SETTLE_MS after the zoom stops, and settled() is called to draw it.
+const SETTLE_MS = 150;
 
 export class Decimator {
-  constructor(store) {
+  constructor(store, settled) {
     this.store = store;
+    this.settled = settled;
     this.cache = new Map();  // path → {version, w, k0, k1, t, min, max}
     this.used = new Set();
+    this.zooming = false;  // a cached grid stood in for the right one since the last sweep
+    this.exact = false;  // the zoom has settled: decimate on the right grid until it's drawn
+    this.timer = 0;
   }
 
   // ~n buckets covering [a, b] → {t, min, max, w}, or null for text and unknown paths (no version)
   get(path, version, a, b, n) {
     if (version === undefined) return null;
     this.used.add(path);
-    const w = 2 ** (Math.round(Math.log2((b - a) / n) * 64) / 64);
-    const k0 = Math.floor(a / w), k1 = Math.ceil(b / w), m = k1 - k0;
     const c = this.cache.get(path);
+    let w = 2 ** (Math.round(Math.log2((b - a) / n) * 64) / 64);
+    if (!this.exact && c?.version === version && c.w !== w && Math.abs(Math.log2(c.w / w)) <= 0.5 && c.k0 * c.w < b && a < c.k1 * c.w) {
+      w = c.w;
+      this.zooming = true;
+    }
+    const k0 = Math.floor(a / w), k1 = Math.ceil(b / w), m = k1 - k0;
     const keep = c && c.version === version && c.w === w && c.k0 < k1 && k0 < c.k1;
     if (keep && c.k0 === k0 && c.k1 === k1) return c;
     const out = {version, w, k0, k1, t: new Float64Array(m), min: new Float64Array(m).fill(NaN), max: new Float64Array(m).fill(NaN)};
@@ -48,9 +59,16 @@ export class Decimator {
     return true;
   }
 
-  // drops the paths not asked for since the last sweep
+  // after a draw: drops the paths not asked for since the last sweep
   sweep() {
     for (const path of this.cache.keys()) if (!this.used.has(path)) this.cache.delete(path);
     this.used.clear();
+    this.exact = false;
+    if (!this.zooming) return;
+    this.zooming = false;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => { this.exact = true; this.settled(); }, SETTLE_MS);
   }
+
+  dispose() { clearTimeout(this.timer); }
 }

@@ -462,39 +462,37 @@ export class Store {
     const w = (t1 - t0) / n;
     const t = new Float64Array(n), min = new Float64Array(n).fill(Infinity), max = new Float64Array(n).fill(-Infinity);
     for (let b = 0; b < n; b++) t[b] = t0 + (b + 0.5) * w;
-    const add = (time, lo, hi) => {
-      const b = Math.min(n - 1, Math.floor((time - t0) / w));
-      if (lo < min[b]) min[b] = lo;
-      if (hi > max[b]) max[b] = hi;
-    };
     for (const c of chunks) {
-      const {tt, v} = c, k0 = lowerBound(tt, t0), k1 = upperBound(tt, t1);
+      const {tt} = c, k0 = lowerBound(tt, t0), k1 = upperBound(tt, t1);
       if (k1 <= k0) continue;
-      if ("c" in c) {  // a constant: the value in each bucket with a sample, found by bisecting at bucket ends
+      if ("c" in c) {  // a constant: the value in each bucket with a sample, found by stepping (or bisecting) to bucket ends
         for (let k = k0; k < k1;) {
-          const b = Math.min(n - 1, Math.floor((tt[k] - t0) / w));
-          add(tt[k], c.c, c.c);
-          k = b === n - 1 ? k1 : lowerBound(tt, t0 + (b + 1) * w, k + 1, k1);
+          const b = Math.min(n - 1, Math.floor((tt[k] - t0) / w)), end = b === n - 1 ? Infinity : t0 + (b + 1) * w;
+          if (c.c < min[b]) min[b] = c.c;
+          if (c.c > max[b]) max[b] = c.c;
+          let j = k + 1;
+          while (j < k1 && tt[j] < end && j < k + 8) j++;
+          k = j < k1 && tt[j] < end ? lowerBound(tt, end, j, k1) : j;
         }
         continue;
       }
-      // the coarsest level whose blocks still fit four to a bucket
-      const perBucket = (k1 - k0) / Math.max(1, (tt[k1 - 1] - tt[k0]) / w);
-      const levels = perBucket >= 4 * BLOCK ? pyramid(c) : [];
+      // the coarsest level whose blocks still fit two to a bucket
+      const {v} = c, perBucket = (k1 - k0) / Math.max(1, (tt[k1 - 1] - tt[k0]) / w);
+      const levels = perBucket >= 2 * BLOCK ? pyramid(c) : [];
       let level = -1, size = 1;
-      while (level + 1 < levels.length && (level < 0 ? BLOCK : size * FANOUT) * 4 <= perBucket) {
+      while (level + 1 < levels.length && (level < 0 ? BLOCK : size * FANOUT) * 2 <= perBucket) {
         size = level < 0 ? BLOCK : size * FANOUT;
         level++;
       }
       const b0 = Math.ceil(k0 / size), b1 = Math.floor(k1 / size);
       if (level < 0 || b1 <= b0) {
-        for (let k = k0; k < k1; k++) add(tt[k], v[k], v[k]);
+        bin(tt, v, v, k0, k1, 1, t0, w, min, max);
         continue;
       }
       const {lo, hi} = levels[level];
-      for (let k = k0; k < b0 * size; k++) add(tt[k], v[k], v[k]);
-      for (let b = b0; b < b1; b++) add(tt[b * size], lo[b], hi[b]);
-      for (let k = b1 * size; k < k1; k++) add(tt[k], v[k], v[k]);
+      bin(tt, v, v, k0, b0 * size, 1, t0, w, min, max);
+      bin(tt, lo, hi, b0, b1, size, t0, w, min, max);
+      bin(tt, v, v, b1 * size, k1, 1, t0, w, min, max);
     }
     for (let b = 0; b < n; b++) if (min[b] > max[b]) min[b] = max[b] = NaN;
     return {t, min, max};
@@ -705,6 +703,25 @@ function pyramid(c) {
     size = FANOUT;
   }
   return (c.pyramid = levels);
+}
+
+// the min and max of lo[k] and hi[k], k in [k0, k1), into the buckets of width w from t0 (min.length of them) that
+// the times tt[k * size] fall in: the bucket's end is kept, so a sample costs two compares
+function bin(tt, lo, hi, k0, k1, size, t0, w, min, max) {
+  const last = min.length - 1;
+  let b = -1, end = -Infinity, a = 0, z = 0;
+  for (let k = k0; k < k1; k++) {
+    const time = tt[k * size];
+    if (time >= end) {
+      if (b >= 0) [min[b], max[b]] = [a, z];
+      b = Math.min(last, Math.floor((time - t0) / w));
+      end = b === last ? Infinity : t0 + (b + 1) * w;
+      [a, z] = [min[b], max[b]];
+    }
+    if (lo[k] < a) a = lo[k];
+    if (hi[k] > z) z = hi[k];
+  }
+  if (b >= 0) [min[b], max[b]] = [a, z];
 }
 
 // a chunk's last value at or before t

@@ -65,7 +65,7 @@ export function create(ctx, state = {}) {
   let failure = null;  // store.failure as the empty state shows it
   const made = new Map();  // derived or custom path → input version it was computed from
   const busy = new Set();
-  const decimator = new Decimator(store);
+  const decimator = new Decimator(store, () => invalidate());
 
   const pane = {
     name: "plot", el, render, resize, dispose, save, addCurves, compare,
@@ -658,6 +658,7 @@ export function create(ctx, state = {}) {
     view.leave(pane);
     clearTimeout(statsTimer);
     clearTimeout(recomputeTimer);
+    decimator.dispose();
     closeMenu();
   }
 
