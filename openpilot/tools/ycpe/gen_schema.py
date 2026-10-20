@@ -22,7 +22,7 @@ def bits(kind, value):
   fmt = {"float32": "<f", "float64": "<d"}.get(kind)
   if fmt:
     return int.from_bytes(struct.pack(fmt, value), "little")
-  return int(value) & ((1 << 64) - 1)
+  return int(value)
 
 
 def type_desc(t, schema):

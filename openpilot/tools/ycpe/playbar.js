@@ -65,8 +65,17 @@ export function playbar(ctx) {
     c.fillStyle = col("--driving");
     c.fillRect(0, spanY, width, SPAN_H);
     for (const s of spans) {
+      if (!SPAN_COLORS[s.kind]) continue;
       c.fillStyle = col(SPAN_COLORS[s.kind]);
       c.fillRect(t2x(s.start / 1000), spanY, Math.max(1, t2x((s.end - s.start) / 1000)), SPAN_H);
+    }
+    // bookmarks: a flag above the spans
+    c.fillStyle = col("--bookmark");
+    for (const s of spans) {
+      if (s.kind !== "bookmark") continue;
+      const x = Math.round(t2x(s.start / 1000));
+      c.fillRect(x, spanY - 3, 2, SPAN_H + 3);
+      c.fillRect(x, spanY - 3, 5, 3);
     }
     // loaded segments
     const segs = ctx.peekStore()?.route.segments;

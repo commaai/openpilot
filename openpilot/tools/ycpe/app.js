@@ -114,10 +114,34 @@ function updateTop() {
   const layout = ws.layout;
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: () => { layout.selectTab(i); updateTop(); },
-    ondblclick: () => { const n = prompt("Tab name", t.name); if (n) { layout.renameTab(i, n); updateTop(); } },
+    ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
+    oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"));
+}
+
+function tabMenu(tabEl, i, name) {
+  const layout = ws.layout;
+  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { document.querySelector(".popover")?.remove(); fn(); updateTop(); }}, label);
+  menu(tabEl, () => h("div", {class: "menu-list"},
+    item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
+    item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
+    layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
+    item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
+}
+
+// double-click a tab to rename it in place
+function renameTab(tabEl, i, name) {
+  const input = h("input", {class: "tab-edit", value: name});
+  const done = (save) => {
+    if (save && input.value.trim()) ws.layout.renameTab(i, input.value.trim());
+    updateTop();
+  };
+  input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
+  input.addEventListener("blur", () => done(true));
+  tabEl.replaceChildren(input);
+  input.select();
 }
 
 // ---- route workspace: one clock, one store, one layout per view ----
@@ -126,7 +150,8 @@ class Workspace {
   constructor(route, files, view, {t = 0, repeat = 1}) {
     this.route = route;
     this.dongle = route.fullname.split("|")[0];
-    this.files = files;
+    this.files = null;  // the file list only matters once logs load; the drive view mounts without it
+    this.filesReady = files.then((f) => { this.files = f; });
     this.repeat = repeat;
     this.store = null;
     this.storeSubs = new Set();
@@ -150,9 +175,9 @@ class Workspace {
     };
   }
 
-  // logs load only once something needs them (the drive view doesn't)
+  // logs load only once something needs them (the drive view doesn't); null until the file list is in
   ensureStore() {
-    if (this.store) return this.store;
+    if (this.store || !this.files) return this.store;
     const urls = [];
     for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
     this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
@@ -181,6 +206,11 @@ class Workspace {
     if (!this.layouts[view]) {
       const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
+      if (usesData(model) && !this.files) {
+        this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
+        this.main.replaceChildren(h("div", {class: "pane-missing"}, "loading files…"));
+        return updateTop();
+      }
       if (usesData(model)) this.ensureStore();
       this.layouts[view] = new Layout(this.ctx(), model, (m) => {
         localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(m));
@@ -191,6 +221,13 @@ class Workspace {
     this.layout.invalidateAll();
     this.syncUrl(true);
     updateTop();
+  }
+
+  resetLayout() {
+    localStorage.removeItem(`ycpe_layout_${this.view}`);
+    this.layout.dispose();
+    delete this.layouts[this.view];
+    this.setView(this.view);
   }
 
   openRoute(name) {
@@ -225,6 +262,7 @@ document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
+  if (e.key === "?") return help();
   if (!ws) return;
   const c = ws.clock, step = e.shiftKey ? 10 : 1;
   const keys = {
@@ -243,6 +281,24 @@ document.addEventListener("keydown", (e) => {
   Object.keys(VIEWS).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
 });
+
+const SHORTCUTS = [
+  ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
+  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3", "Drive / Plot / CAN"],
+  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
+  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
+  ["wheel on the timeline", "zoom the visible range"],
+];
+
+function help() {
+  if (document.querySelector(".help")) return document.querySelector(".help").remove();
+  const el = h("div", {class: "help", onclick: () => el.remove()},
+    h("div", {class: "help-card", onclick: (e) => e.stopPropagation()},
+      h("b", {}, "Keyboard and mouse"),
+      h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, k.split(" ").map((x) => h("kbd", {}, x))), h("dd", {}, v)]))));
+  document.body.append(el);
+  addEventListener("keydown", function off(e) { if (e.key === "Escape") { el.remove(); removeEventListener("keydown", off); } });
+}
 
 // ---- routing ----
 
@@ -273,7 +329,9 @@ async function render() {
     }
     document.body.classList.add("loading");
     try {
-      const [route, files] = await Promise.all([api.route(routeName), api.routeFiles(routeName)]);
+      const files = api.routeFiles(routeName);
+      files.catch(() => {});
+      const route = await api.route(routeName);
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});

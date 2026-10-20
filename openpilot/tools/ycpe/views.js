@@ -10,9 +10,9 @@ export const VIEWS = {
   plot: view("Plot", split("row", [0.2, 0.55, 0.25],
     pane("browser"),
     split("col", [1 / 3, 1 / 3, 1 / 3], pane("plot"), pane("plot"), pane("plot")),
-    split("col", [0.5, 0.5], pane("camera", {camera: "fcamera"}), pane("map")))),
+    split("col", [0.5, 0.5], pane("camera", {camera: "qcamera"}), pane("map")))),
   can: view("CAN", split("row", [0.32, 0.36, 0.32],
     pane("can-messages"),
     split("col", [0.5, 0.5], pane("can-binary"), pane("can-signals")),
-    split("col", [0.6, 0.4], pane("can-charts"), pane("camera", {camera: "fcamera"})))),
+    split("col", [0.6, 0.4], pane("can-charts"), pane("camera", {camera: "qcamera"})))),
 };

@@ -1,6 +1,5 @@
 // reverse geocoding for drive cards: "Little Italy" / "San Diego, CA", cached by the browser
 export const MAPBOX_TOKEN = "pk.eyJ1IjoiY29tbWFhaSIsImEiOiJjangyYXV0c20wMGU2NDluMWR4amUydGl5In0.6Vb11S6tdX6Arpj6trRE_g";
-export const MAPBOX_STYLE = "mapbox://styles/commaai/cjj4yzqk201c52ss60ebmow0w";
 
 const cache = new Map();
 const MAX_IN_FLIGHT = 4;
