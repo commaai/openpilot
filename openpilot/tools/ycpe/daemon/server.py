@@ -13,7 +13,7 @@ from openpilot.tools.ycpe.daemon.core import HTTPError, Response, Stream, File, 
 
 APP = Path(__file__).resolve().parent.parent
 # feature modules, imported in order; one that fails to import is left out of /local/caps with its error
-MODULES = ["auth", "jobs", "proxy", "athena", "sources", "cache", "repos", "device", "transcode", "replay"]
+MODULES = ["auth", "jobs", "athena", "sources", "cache", "repos", "device", "transcode", "replay"]
 failed: dict[str, str] = {}
 
 

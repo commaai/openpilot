@@ -32,7 +32,6 @@ What the daemon unlocks in the UI:
 | `cache` | One disk cache shared with cabana, jotpluggler, replay and LogReader, so a route downloaded by any of them loads instantly in all of them. The badge panel can cache a whole route ahead of time (logs or video) and evict it. Progress shows in the loading pill. |
 | `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
-| `proxy` | Reaches log hosts that browsers can't (openpilotci, huggingface). |
 | `athena` | Relays the page's device calls (upload queue, upload requests) to athena on ports athena doesn't allow. |
 | `jobs` | Progress and cancel for anything long, shown in the badge panel. |
 | `transcode`, `replay` | Video transcoding and openpilot re-runs, when installed (see their modules). |
@@ -67,7 +66,6 @@ The page finds the daemon through `<meta name="ycpe-daemon">` in index.html, plu
   header, or in `?tok=` for URLs the page can't set headers on (media elements, worker fetches). serve.py
   puts the token in index.html, and the request log never prints query strings.
 - File reads go through `confine(path, roots)`, which resolves symlinks and rejects `..`.
-- The proxy only reaches an allowlist of hosts.
 - The athena relay is POST only, to `https://athena.comma.ai/<dongle id>`, for the few JSON-RPC methods the app calls.
   It forwards the page's `Authorization` and nothing else, and limits body and answer sizes.
 
@@ -124,7 +122,6 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
 | `POST /local/cache/prune` | Body `{budget?}`. Applies the LRU budget now. |
-| `GET /local/proxy?url=` | GET-only access to the hosts that send no CORS headers: commadataci, huggingface (and `*.hf.co` redirects), and the internal endpoint. Redirects are checked against the same allowlist, the response is always `application/octet-stream` with `CSP: sandbox`, and no credentials are added. |
 | `GET /local/repos` | `[{id, name, path, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default), plus a worktree's main checkout. |
 | `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
 | `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
