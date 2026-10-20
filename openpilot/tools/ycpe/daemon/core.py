@@ -41,9 +41,10 @@ config = Config()
 
 
 def session_token(path: Path = TOKEN_FILE) -> str:
-  """The session token kept across restarts (only this user can read it), so open tabs keep working."""
+  """The session token kept across restarts (only this user can read it), so open tabs keep working. A file others
+  can read, or write, gets a new one."""
   try:
-    if len(token := path.read_text().strip()) >= 32:
+    if not path.stat().st_mode & 0o077 and len(token := path.read_text().strip()) >= 32:
       return token
   except OSError:
     pass

@@ -162,6 +162,6 @@ without its query, so signed URLs of one file share an entry.
   replaced. The hit is still served at once, and carries `X-Ycpe-Cache: stale-refetch` instead of `hit` until the new copy is
   in place. Plain hits are `X-Ycpe-Cache: hit`, and misses are `miss`.
 - **Daemon-made files.** Device pulls and other modules' outputs go under `ycpe/`:
-  - `cache.derived(name)` returns a path for a module's output
+  - `cache.ycpe_dir(name)` is the directory for one module's output
   - `cache.fetch(dongle, log_id, seg, file, sources=None, job=None)` returns a local path, downloading into the cache if
     needed
