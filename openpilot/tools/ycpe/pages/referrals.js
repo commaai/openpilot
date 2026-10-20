@@ -3,13 +3,12 @@
 import {api, auth} from "../api.js";
 import {h, css} from "../dom.js";
 import {icon} from "../icons.js";
-import {link} from "../app.js";
+import {REFERRALS_SEEN, link} from "../app.js";
 import {copyButton} from "./account.js";
 import {signInCard} from "./login.js";
 
 const REFER = "https://refer.comma.ai";
 const TERMS = "https://comma.ai/terms#referral-terms";
-const SEEN_KEY = "ycpe_referrals_seen";  // the gift's dot until referrals are opened once
 const PROMO_KEY = "ycpe_referrals_promo_2026-09-02";  // connect's campaign: a new one shows the card again
 const STEPS = [
   ["Share your link", "Send it to a friend who is interested in comma four."],
@@ -17,7 +16,6 @@ const STEPS = [
   ["You earn $50 cash", "Every successful referral puts $50 in your pocket."],
 ];
 
-export const referralsNew = () => !localStorage.getItem(SEEN_KEY);
 const dollars = (n) => `$${(n || 0).toFixed(0)}`;
 
 // the email to support that claims what's available, as connect writes it
@@ -69,7 +67,7 @@ function rewardsSection(summary, me) {
 
 export async function referralsPage(me) {
   await css(new URL("./account.css", import.meta.url));
-  localStorage.setItem(SEEN_KEY, "1");
+  localStorage.setItem(REFERRALS_SEEN, "1");
   if (!auth.isAuthenticated()) return signInCard();
   const body = h("div", {class: "ref-body"}, h("p", {class: "muted"}, h("span", {class: "spinner"}), " Loading your referrals…"));
   const load = () => api.referrals().then((summary) => body.replaceChildren(

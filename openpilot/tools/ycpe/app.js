@@ -17,9 +17,6 @@ import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, d
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath, safe} from "/pages/login.js";
-import {accountHead, accountPage, version, USERADMIN} from "/pages/account.js";
-import {referralsPage, referralPromo, referralsNew} from "/pages/referrals.js";
-import {installPrompt} from "/pages/install.js";
 import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
@@ -63,6 +60,7 @@ function markOnline(el, d) {
 }
 
 const DEVICES_MS = 60e3;
+export const REFERRALS_SEEN = "ycpe_referrals_seen";  // the gift's dot shows until referrals are opened once
 let devicesAt = 0;  // when the list was last asked for
 async function watchDevices() {
   if (document.hidden || !state.devices || !auth.isAuthenticated() || performance.now() - devicesAt < DEVICES_MS - 1000) return;
@@ -216,19 +214,24 @@ function topBar() {
   bar.route.addEventListener("pointerleave", hideAnatomy);
   const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
   // who's signed in, then where to from there, as connect's account menu; its version at the foot
-  account.addEventListener("click", () => menu(account, (close) => {
-    const row = (path, label) => h("a", {class: "menu-row", href: path, onclick: (e) => { close(); link(path)(e); }}, label);
-    const signedIn = auth.isAuthenticated();
-    return h("div", {class: "menu-list"},
-      state.me && accountHead(state.me),
-      auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
-      !signedIn && daemon.hasJwt && h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
-      signedIn && row("/account", "Account and developer token"),
-      signedIn && row("/referrals", "Referrals"),
-      signedIn && h("a", {class: "menu-row", href: USERADMIN, target: "_blank", rel: "noopener", onclick: close}, "Manage account"),
-      signedIn ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out") : row(loginPath(), "Sign in"),
-      h("div", {class: "menu-foot"}, version()));
-  }));
+  // its module loads with the first click, not with the app
+  account.addEventListener("click", async () => {
+    const {accountHead, version, USERADMIN, styled} = await import("/pages/account.js");
+    await styled;
+    menu(account, (close) => {
+      const row = (path, label) => h("a", {class: "menu-row", href: path, onclick: (e) => { close(); link(path)(e); }}, label);
+      const signedIn = auth.isAuthenticated();
+      return h("div", {class: "menu-list"},
+        state.me && accountHead(state.me),
+        auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
+        !signedIn && daemon.hasJwt && h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
+        signedIn && row("/account", "Account and developer token"),
+        signedIn && row("/referrals", "Referrals"),
+        signedIn && h("a", {class: "menu-row", href: USERADMIN, target: "_blank", rel: "noopener", onclick: close}, "Manage account"),
+        signedIn ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out") : row(loginPath(), "Sign in"),
+        h("div", {class: "menu-foot"}, version()));
+    });
+  });
   bar.gift.addEventListener("click", () => go("/referrals"));
   const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
   const helpBtn = h("button", {class: "tbtn help-btn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
@@ -251,7 +254,7 @@ function updateTop() {
   // has no room to spare
   bar.gift.hidden = !!ws || !auth.isAuthenticated();
   bar.gift.classList.toggle("on", location.pathname === "/referrals");
-  bar.gift.lastChild.hidden = !referralsNew();
+  bar.gift.lastChild.hidden = !!localStorage.getItem(REFERRALS_SEEN);
   if (!ws) return bar.tabs.replaceChildren();  // the tabs' handlers would keep the closed workspace alive
   // the route's log id and the segment at the playhead, as one segment name; a live session: the device crumb names a
   // device's, else the source does
@@ -761,7 +764,8 @@ async function renderPage() {
   if (parts.length === 1 && (parts[0] === "account" || parts[0] === "referrals")) {
     closeWorkspace();
     updateTop();
-    const page = await (parts[0] === "account" ? accountPage : referralsPage)(state.me);
+    const page = await (parts[0] === "account" ? import("/pages/account.js").then((m) => m.accountPage(state.me))
+      : import("/pages/referrals.js").then((m) => m.referralsPage(state.me)));
     if (id !== navId) return;
     main.replaceChildren(page);
     return updateTop();  // the gift's dot goes once referrals are seen
@@ -816,6 +820,7 @@ async function renderPage() {
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch((e) => errorPage(e, {device: parts[0]}));
     if (id === navId) main.replaceChildren(page);
+    const {referralPromo} = await import("/pages/referrals.js");
     const promo = await referralPromo(state.devices?.find((d) => d.dongle_id === parts[0]));
     if (promo && id === navId) main.prepend(promo);
   } else if (parts.length) {
@@ -934,4 +939,4 @@ auth.on((reason) => {
   render();
 });
 render();
-installPrompt().then((el) => el && document.body.append(el));
+if (/iphone|ipad|ipod/i.test(navigator.userAgent)) import("/pages/install.js").then((m) => m.installPrompt()).then((el) => el && document.body.append(el));

@@ -6,8 +6,8 @@ import {h, css, fmt} from "../dom.js";
 import {icon} from "../icons.js";
 import {PROVIDERS, startSignIn, takeNewToken, signInCard} from "./login.js";
 
-// not waited for: the account menu needs it once it's opened, the pages here wait for it
-const styled = css(new URL("./account.css", import.meta.url));
+// the account menu and the pages here wait for it
+export const styled = css(new URL("./account.css", import.meta.url));
 
 export const USERADMIN = "https://useradmin.comma.ai/";
 const DATE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
