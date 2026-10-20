@@ -100,18 +100,26 @@ function driveRow(r) {
 
 const drivesHead = () => h("div", {class: "drive-row head"}, ["drive", "time", "distance", "engaged", "from → to", "timeline", "version"].map((c) => h("span", {}, c)));
 
-// newest first, a window at a time; a full window continues from its oldest drive
+// newest first, a window at a time; a full window continues from its oldest drive. A date restarts the list from
+// the end of that day, like connect's filter.
 function drivesSection(dongleId) {
   const body = h("div", {class: "drives"});
-  const more = h("button", {class: "button", onclick: loadMore}, "Older drives");
+  const more = h("button", {class: "button", onclick: () => loadMore()}, "Older drives");
   const status = h("p", {class: "muted small"});
-  let end = firstWindowEnd();
+  const before = h("input", {type: "date", class: "field", title: "Drives up to this day", onchange: () => {
+    end = top = before.value ? new Date(`${before.value}T00:00`).getTime() + DAY : firstWindowEnd();
+    body.replaceChildren();
+    seen.clear();
+    loadMore(++gen);
+  }});
+  let end = firstWindowEnd(), top = end, gen = 0;
   const seen = new Set();
 
-  async function loadMore() {
+  async function loadMore(g = gen) {
     more.disabled = true;
     const start = end - WINDOW;
     const routes = await api.routes(dongleId, start, end, LIMIT).catch(() => []);
+    if (g !== gen) return;
     for (const r of routes) {
       if (seen.has(r.fullname)) continue;
       seen.add(r.fullname);
@@ -120,11 +128,13 @@ function drivesSection(dongleId) {
     }
     end = routes.length === LIMIT ? Math.min(...routes.map((r) => r.start_time_utc_millis)) : start;
     more.disabled = false;
-    if (!routes.length && !body.children.length && Date.now() - end < 180 * DAY) return loadMore();
+    if (!routes.length && !body.children.length && top - end < 180 * DAY) return loadMore(g);
     status.textContent = `${body.children.length} drives since ${new Date(end).toLocaleDateString()}`;
   }
   loadMore();
-  return h("div", {}, drivesHead(), body, h("div", {class: "list-foot"}, status, more));
+  return h("div", {},
+    h("div", {class: "list-foot"}, status, h("label", {class: "muted small"}, "drives before ", before)),
+    drivesHead(), body, h("div", {class: "list-foot"}, h("span"), more));
 }
 
 function preservedSection(dongleId) {
