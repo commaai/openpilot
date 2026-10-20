@@ -55,6 +55,9 @@ from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import config
 from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.lib import filereader
+
+filereader.DATA_ENDPOINT = os.environ["DATA_ENDPOINT"]  # in case filereader was imported before the env was set
 
 DONGLE, LOG = "0123456789abcdef", "00000001--abcdef0123"
 ROUTE = f"{DONGLE}|{LOG}"
