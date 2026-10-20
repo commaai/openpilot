@@ -53,12 +53,16 @@ export function fitCanvas(cv, w, hgt) {
   return g;
 }
 
-// 1-2-5 steps with about `count` ticks over [lo, hi]
-export function ticks(lo, hi, count) {
+// steps a clock reads well, in seconds
+const CLOCK = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
+
+// 1-2-5 steps with about `count` ticks over [lo, hi]; on a clock (m:ss) whole seconds go by CLOCK
+export function ticks(lo, hi, count, clock = false) {
   const raw = (hi - lo) / Math.max(1, count);
   if (!(raw > 0) || !isFinite(raw)) return {step: 1, values: []};
   const mag = 10 ** Math.floor(Math.log10(raw)), f = raw / mag;
-  const step = (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+  let step = (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+  if (clock && step >= 1 && raw < 5400) step = CLOCK.reduce((a, s) => Math.abs(Math.log(s / raw)) < Math.abs(Math.log(a / raw)) ? s : a);
   const values = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) values.push(Math.abs(v) < step * 1e-9 ? 0 : v);
   return {step, values};

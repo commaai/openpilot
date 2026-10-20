@@ -286,7 +286,7 @@ export function create(ctx, state = {}) {
     g.fillStyle = col.bg;
     g.fillRect(px, T, pw, ph0);
 
-    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34), xt = ticks(t0, t1, pw / 90);
+    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34), xt = ticks(t0, t1, pw / 90, t1 >= 120);
     axes(g, col, {x: px, y: T, w: pw, h: ph0}, xt, X, (t) => fmtTime(t, xt.step, t1 >= 120), yt, Y);
     drawUnloaded(g, view.unloaded(), X, {x: px, y: T, w: pw, h: ph0}, col);
 
