@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.filereader import DATA_ENDPOINT, internal_source_available
+from openpilot.tools.lib import filereader
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.url_file import URLFile
 from openpilot.tools.ycpe.daemon import cache
@@ -28,6 +28,7 @@ KINDS = {
 FILES = {f: k for k, fs in KINDS.items() for f in fs}
 API_KINDS = {"logs": "rlog", "qlogs": "qlog", "cameras": "fcamera", "ecameras": "ecamera", "dcameras": "dcamera", "qcameras": "qcamera"}
 ROUTE_RE = re.compile(RE.SEGMENT_RANGE)
+HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
 
 module("sources", "1", sources=SOURCES, kinds=[*KINDS, "log"])
@@ -113,7 +114,7 @@ class Resolver:
     self._api = None
     self._local = local_dirs(log_id) if "local" in sources else {}
     self._device = device_segs(dongle, log_id) if "device" in sources else {}
-    if "internal" in sources and not internal_source_available(DATA_ENDPOINT):
+    if "internal" in sources and not filereader.internal_source_available(filereader.DATA_ENDPOINT):
       self.sources = [s for s in sources if s != "internal"]
       self.errors["internal"] = "not reachable"
 
@@ -252,6 +253,48 @@ def upstream(source: str, key: Key, jwt: str | None) -> str | None:
   return found[0] if found else None
 
 
+# staleness: a blob can change under the same URL (logs get recompressed server side), and every cache keyed by URL would
+# keep serving the old bytes. So a whole-file hit is compared with its source's size at most once a day, in the
+# background (the hit never waits), and refetched in place on a mismatch along with the other tools' forms of it.
+
+CHECK_EVERY = 24 * 3600
+STALE = {"X-Ycpe-Cache": "stale-refetch"}  # served from the old copy while the new one downloads
+_checking: set[Key] = set()
+_refetching: dict[Key, int] = {}  # key → inode of the stale copy, which is what gets the stale header
+_check_lock = threading.Lock()
+
+
+def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
+  url = cache.canonical_url(source, key)
+  if url is None or path.name != cache.sha(url) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
+    return  # device pulls, decompressed-only copies, or checked lately
+  with _check_lock:
+    if key in _checking:
+      return
+    _checking.add(key)
+
+  def check():
+    try:
+      found = Resolver(key.dongle, key.log_id, [source], jwt, True).find(source, key)
+      if not found or found[1] is None:
+        return  # unreachable or gone: keep the copy, ask again on a later hit
+      if found[1] == path.stat().st_size:
+        cache.mark_checked(path)
+        return
+      cache.stats["stale"] += 1
+      _refetching[key] = path.stat().st_ino
+      cache.remove(cache.derived_copies(url))
+      fill = cache.fill(key, source, found[0])
+      fill.finished.wait()
+    except Exception as e:
+      print(f"revalidating {key}: {type(e).__name__}: {e}")
+    finally:
+      _refetching.pop(key, None)
+      with _check_lock:
+        _checking.discard(key)
+  threading.Thread(target=check, daemon=True, name=f"check {key}").start()
+
+
 @route("GET", "/local/file/{source}/{dongle}/{log_id}/{seg}/{file}")
 def serve_file(req):
   """The file's bytes: from the shared cache, a local directory, or downloaded from the source into the cache while
@@ -261,11 +304,12 @@ def serve_file(req):
     found = Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)
     if not found:
       raise HTTPError(404)
-    return File(str(confine(found[0], config.log_roots)))
+    return File(str(confine(found[0], config.log_roots)), headers=HIT)
   if (hit := cache.lookup(key)):
     cache.stats["hits"] += 1
     cache.touch(hit[1])
-    return File(str(hit[1]))
+    revalidate(key, *hit, jwt_of(req))
+    return File(str(hit[1]), headers=STALE if _refetching.get(key) == hit[1].stat().st_ino else HIT)
   if source == "device":
     raise HTTPError(404)
   cache.stats["misses"] += 1
@@ -282,10 +326,10 @@ def serve_file(req):
       fh = open(fill.tmp, "rb")
     except FileNotFoundError:
       continue
-    return Stream(file_chunks(fh, 0, fill.total, fill.running), headers={"Accept-Ranges": "bytes"}, length=fill.total)
+    return Stream(file_chunks(fh, 0, fill.total, fill.running), headers={"Accept-Ranges": "bytes", **MISS}, length=fill.total)
   if fill.error:
     raise HTTPError(502, fill.error)
-  return File(str(fill.final))
+  return File(str(fill.final), headers=MISS)
 
 
 def proxy_range(url: str, rng: str) -> Stream:
@@ -293,7 +337,7 @@ def proxy_range(url: str, rng: str) -> Stream:
   if r.status not in (200, 206):
     r.release_conn()
     raise HTTPError(502, f"upstream {r.status}")
-  headers = {"Accept-Ranges": "bytes"}
+  headers = {"Accept-Ranges": "bytes", **MISS}
   if (cr := r.headers.get("content-range")):
     headers["Content-Range"] = cr
 
@@ -311,6 +355,7 @@ def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
   stops when it's cancelled, and so does a download this call started."""
   if (hit := cache.lookup(key)):
     cache.touch(hit[1])
+    revalidate(key, *hit, jwt)
     return hit[1]
   srcs = [s for s in (sources or SOURCES) if s in SOURCES]
   if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):

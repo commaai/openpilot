@@ -71,7 +71,7 @@ export function create(ctx) {
   async function resolve(batch, kinds = COLS) {
     const g = gen;
     if (kinds === COLS) for (const n of batch) asked.add(n);
-    const r = await resolveFiles(sr, batch, kinds, routeSource.list(source)).catch((e) => ({found: new Map(), errors: {[source]: e.message}}));
+    const r = await resolveFiles(sr, batch, kinds, routeSource.list(source), {sizes: true}).catch((e) => ({found: new Map(), errors: {[source]: e.message}}));
     if (g !== gen) return;
     for (const [k, f] of r.found) found.set(k, f);
     Object.assign(errors, r.errors);
@@ -118,7 +118,7 @@ export function create(ctx) {
   function cell(n, kind) {
     const key = `${n}/${kind}`, f = found.get(key);
     if (f) {
-      return h("a", {class: "fp-cell dl", href: f.url, download: `${route.fullname.replace("|", "_")}--${n}--${f.file}`, title: `${f.file} from ${label(f.source)}`},
+      return h("a", {class: "fp-cell dl", href: f.url, download: `${route.fullname.replace("|", "_")}--${n}--${f.file}`, title: `${f.file} from ${label(f.source)}${f.cached ? " (on disk)" : ""}`},
         icon("download", 14), f.size ? fmtBytes(f.size) : "");
     }
     const state = up && uploadState(up, key);

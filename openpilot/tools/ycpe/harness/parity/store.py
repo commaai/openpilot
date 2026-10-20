@@ -7,7 +7,6 @@ running; on a daemon's port, sources resolve through the daemon.
 usage: store.py <port> <log> [--url URL] [--source "<route>/<seg>[:auto|name,name]"] [--rtol x]
 """
 import argparse
-import json
 import uuid
 from pathlib import Path
 
@@ -99,8 +98,8 @@ if __name__ == "__main__":
   py, frames, results = run(args.port, args.log, args.url, args.source, args.rtol)
   failed = False
   for label, (failed_segs, (bad, n), bad_can) in results.items():
-    print(f"{args.log} via {label}:\n  {len(py)} services, {n} values, {len(bad)} mismatching paths, "
-          f"{frames} CAN frames, {len(bad_can)} mismatching CAN messages, {failed_segs} failed loads")
+    counts = f"{len(py)} services, {n} values, {len(bad)} mismatching paths, {frames} CAN frames, {len(bad_can)} mismatching CAN messages"
+    print(f"{args.log} via {label}:\n  {counts}, {failed_segs} failed loads")
     for path, (count, i, a, b) in list(bad.items())[:args.max]:
       print(f"  {path}: {count} (first at {i}: py={a!r} js={b!r})")
     for k, (problem, a, b) in list(bad_can.items())[:args.max]:

@@ -3,6 +3,8 @@
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, raw, value} from "./dbc.js";
+import {Checkout, parseRemote} from "./github.js";
+import {Opendbc, opendbcAt} from "./upstream.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -10,6 +12,7 @@ export const addrOf = (k) => k % 2 ** 32;
 export const hexId = (k) => `${busOf(k)}:${addrOf(k).toString(16).toUpperCase()}`;
 
 const FADE = 2;  // seconds a byte change stays highlighted, as in cabana
+const BUDGET = 512e6;  // frame bytes the CAN worker holds, ~90 segments
 
 // ---- pipeline worker: one segment's frames, grouped by message ----
 
@@ -19,14 +22,15 @@ export class CanFrames {
     this.addrPos = f.address * 4;
     this.srcPos = f.src;
     this.datIdx = f.dat;
-    this.n = this.nbytes = 0;
-    this.ids = new Map();  // key -> message id in order of appearance
+    this.n = this.nwords = 0;
+    this.ids = [];  // by bus: message ids in order of appearance, a table for 11-bit addresses and a map for the rest
+    this.keys = [];  // by message id
     this.count = [];
     this.stride = [];
     this.time = new Float64Array(1 << 16);
     this.mid = new Uint16Array(1 << 16);
     this.len = new Uint8Array(1 << 16);
-    this.bytes = new Uint8Array(1 << 20);
+    this.words = new Uint32Array(1 << 18);  // frame data, each frame word-aligned
     this.hook = (name, t, ptr) => { if (name === "can") this.add(t, ptr); };
   }
 
@@ -40,30 +44,46 @@ export class CanFrames {
       this.mid = grow(this.mid, this.n + count);
       this.len = grow(this.len, this.n + count);
     }
-    if (this.nbytes + count * 64 > this.bytes.length) this.bytes = grow(this.bytes, this.nbytes + count * 64);
+    if (this.nwords + count * 16 > this.words.length) this.words = grow(this.words, this.nwords + count * 16);
     for (let j = 0; j < count; j++) {
-      const e = off + j * step, d = this.datIdx < ptrs ? list(e + data + this.datIdx * 8) : null;
-      const k = key(this.srcPos < data ? U8[e + this.srcPos] : 0, U32[(e + this.addrPos) >> 2]);
-      let id = this.ids.get(k);
-      if (id === undefined) {
-        this.ids.set(k, id = this.count.length);
+      const e = off + j * step, bus = this.srcPos < data ? U8[e + this.srcPos] : 0, address = U32[(e + this.addrPos) >> 2];
+      const ids = this.ids[bus] ||= {std: new Int32Array(2048).fill(-1), ext: new Map()};
+      let id = address < 2048 ? ids.std[address] : ids.ext.get(address) ?? -1;
+      if (id < 0) {
+        id = this.keys.length;
+        if (address < 2048) ids.std[address] = id; else ids.ext.set(address, id);
+        this.keys.push(key(bus, address));
         this.count.push(0);
         this.stride.push(0);
       }
-      const n = this.n++, len = d ? Math.min(d[1], 64) : 0;
+      // dat: a near byte-list pointer, read inline (the hot path); anything else through list()
+      let src = 0, len = 0;
+      if (this.datIdx < ptrs) {
+        const p = e + data + this.datIdx * 8, w0 = U32[p >> 2], w1 = U32[(p >> 2) + 1];
+        if ((w0 & 3) === 1 && (w1 & 7) === 2) {
+          src = p + 8 + (w0 >> 2) * 8;
+          len = w1 >>> 3;
+        } else if (w0) {
+          const l = list(p);
+          if (l) [src, len] = l;
+        }
+      }
+      len = Math.min(len, 64);
+      const n = this.n++;
       this.time[n] = t;
       this.mid[n] = id;
       this.len[n] = len;
       this.count[id]++;
       if (len > this.stride[id]) this.stride[id] = len;
-      for (let b = 0; b < len; b++) this.bytes[this.nbytes + b] = U8[d[0] + b];
-      this.nbytes += len;
+      // capnp data is word-aligned, so it copies four bytes at a time
+      for (let w = 0, end = (len + 3) >> 2; w < end; w++) this.words[this.nwords + w] = U32[(src >> 2) + w];
+      this.nwords += (len + 3) >> 2;
     }
   }
 
   // messages in key order, each a run of frames in time order with a fixed data stride (its longest frame)
   finish() {
-    const {n} = this, order = [...this.ids].sort((a, b) => a[0] - b[0]), M = order.length;
+    const {n} = this, order = this.keys.map((k, id) => [k, id]).sort((a, b) => a[0] - b[0]), M = order.length;
     const keys = new Float64Array(M), start = new Uint32Array(M + 1), stride = new Uint8Array(M), dstart = new Uint32Array(M + 1);
     const at = new Uint32Array(M), m = new Uint16Array(M);  // by message id: next frame slot, sorted index
     order.forEach(([k, id], j) => {
@@ -75,12 +95,13 @@ export class CanFrames {
       dstart[j + 1] = dstart[j] + this.count[id] * stride[j];
     });
     const t0 = n ? this.time[0] : 0, t = new Float32Array(n), len = new Uint8Array(n), data = new Uint8Array(dstart[M]);
+    const bytes = new Uint8Array(this.words.buffer);
     for (let i = 0, src = 0; i < n; i++) {
       const id = this.mid[i], j = m[id], f = at[id]++, l = this.len[i];
       t[f] = this.time[i] - t0;
       len[f] = l;
-      for (let b = 0, dst = dstart[j] + (f - start[j]) * stride[j]; b < l; b++) data[dst + b] = this.bytes[src + b];
-      src += l;
+      for (let b = 0, dst = dstart[j] + (f - start[j]) * stride[j]; b < l; b++) data[dst + b] = bytes[src + b];
+      src += (l + 3) & ~3;
     }
     const can = {t0, keys, start, stride, dstart, t, len, data};
     return {can, transfer: [keys, start, stride, dstart, t, len, data].map((a) => a.buffer)};
@@ -89,21 +110,31 @@ export class CanFrames {
 
 // ---- CAN worker: frames of every segment and the scans over them ----
 
-const segs = [];  // by time; each the CanFrames payload plus {n, base, idx, flips, before}
+const segs = [];  // resident, by time; each the CanFrames payload plus {n, base, idx, flips, before}
+const counts = new Map();  // n -> {base, frames: Map(key -> count)} of every segment ever added, resident or not
 
 function addSegment(n, c, off) {
+  dropSegment(n);
   const s = {...c, n, base: c.t0 + off, idx: new Map(), flips: []};
   c.keys.forEach((k, m) => {
     s.idx.set(k, m);
     s.flips.push(flipCounts(s, m, c.start[m], c.start[m + 1]));
   });
   segs.splice(segs.findLastIndex((x) => x.base < s.base) + 1, 0, s);
-  // per message frame counts before each segment, for counts at t
-  const before = new Map();
-  for (const x of segs) {
-    x.before = new Map(before);
-    x.keys.forEach((k, m) => before.set(k, (before.get(k) || 0) + x.start[m + 1] - x.start[m]));
+  counts.set(n, {base: s.base, frames: new Map(Array.from(c.keys, (k, m) => [k, c.start[m + 1] - c.start[m]]))});
+  // per message frame counts before each segment, for counts at t; evicted segments still count
+  const before = new Map(), at = new Map();
+  for (const [x, {frames}] of [...counts].sort((a, b) => a[1].base - b[1].base)) {
+    at.set(x, new Map(before));
+    for (const [k, f] of frames) before.set(k, (before.get(k) || 0) + f);
   }
+  for (const x of segs) x.before = at.get(x.n);
+}
+
+// evicts a segment's frames; its counts stay
+function dropSegment(n) {
+  const j = segs.findIndex((s) => s.n === n);
+  if (j >= 0) segs.splice(j, 1);
 }
 
 // cabana's HeatmapCounts over frames [i0, i1) of message m: flips between neighbours, never against a byte that just appeared
@@ -352,6 +383,7 @@ function csv(keys, t0, t1, msg) {
 if (import.meta.url.endsWith("?worker")) {
   const ops = {
     add: ({n, can, off}) => { addSegment(n, can, off); },
+    drop: ({n}) => { dropSegment(n); },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
     heatmap: ({k, t0, t1}) => heatmap(k, t0, t1),
@@ -400,6 +432,21 @@ export class Can {
     this.selected = null;
     this.live = null;
     this.bytes = 0;
+    this.budget = BUDGET;
+    this.resident = new Map();  // segment -> its bytes in the worker
+    this.evicted = new Set();
+    this.reloading = new Set();
+    this.at = 0;  // the playhead's segment
+    // status.js touches the DOM, which this file's worker side can't import
+    import("../status.js").then(({status}) => {
+      if (this.disposed) return;
+      this.status = status.source("can", {label: "CAN", order: 3});
+      const segs = store.route?.segments || [];
+      this.status.count(segs.length);
+      for (const s of segs) if (s.status === "missing") this.status.seg(s.n, "missing");
+      for (const n of this.resident.keys()) this.status.seg(n, "ready");
+      this.status.bytes({memory: this.bytes});
+    });
     this.suppressed = new Map();  // key -> per-byte 0xff for suppressed bytes
     this.suppressDefined = false;
     this.autoDbc = store.on?.("segment", () => this.fingerprint());
@@ -422,7 +469,8 @@ export class Can {
   // a segment's frames from the pipeline worker (route time = mono time + off); summaries stay here
   ingest(n, can, off) {
     const {keys, start, t, len, stride} = can;
-    keys.forEach((k, m) => {
+    // a reloaded segment is already in the summaries
+    if (!this.evicted.delete(n)) keys.forEach((k, m) => {
       const a = start[m], b = start[m + 1];
       let s = this.msgs.get(k);
       if (!s) this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
@@ -433,11 +481,38 @@ export class Can {
       s.freq = s.count > 1 ? (s.count - 1) / (s.t1 - s.t0) : 0;
       s.segs.add(n);
     });
-    this.bytes += t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
+    const bytes = t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
+    this.bytes += bytes - (this.resident.get(n) || 0);
+    this.resident.set(n, bytes);
     this.call("add", {n, can, off}, [keys, can.start, stride, can.dstart, t, len, can.data].map((a) => a.buffer));
+    this.status?.seg(n, "ready");
+    this.evict();
+    this.status?.bytes({memory: this.bytes});
     this.dataVersion++;
     this.emit("messages");
     for (const c of this.cache.values()) c.stale = true;
+  }
+
+  // over budget, the segments farthest from the playhead go; their summaries stay, and they come back from the
+  // cached log when the playhead nears them
+  evict() {
+    const far = (n) => Math.abs(n - this.at);
+    for (const n of [...this.resident.keys()].filter((n) => far(n) > 1).sort((a, b) => far(b) - far(a))) {
+      if (this.bytes <= this.budget * 0.9) break;
+      this.bytes -= this.resident.get(n);
+      this.resident.delete(n);
+      this.evicted.add(n);
+      this.call("drop", {n});
+      this.status?.seg(n, "disk");
+    }
+  }
+
+  reload(n) {
+    if (!this.evicted.has(n) || this.reloading.has(n)) return;
+    this.reloading.add(n);
+    this.status?.seg(n, "loading");
+    this.store.load(this.store.route.segments[n], {}, {can: true}).then((p) => p.can && this.ingest(n, p.can, 0),
+      () => this.status?.seg(n, "disk")).finally(() => this.reloading.delete(n));
   }
 
   messages() { return [...this.msgs.values()]; }
@@ -454,6 +529,8 @@ export class Can {
 
   // live bytes at t, coalesced to one request in flight; emits "live"
   requestState(t) {
+    this.at = this.store.route?.segments.find((s) => t >= s.t0 && t < s.t1)?.n ?? this.at;
+    for (const n of [this.at - 1, this.at, this.at + 1]) this.reload(n);
     if (this.stateBusy) { this.stateNext = t; return; }
     this.stateBusy = true;
     this.call("state", {t}).then((r) => {
@@ -520,26 +597,46 @@ export class Can {
     this.store.emit?.("paths");
   }
 
+  // opendbc's DBC names and the fingerprint → DBC map
   async opendbc() {
-    return this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
+    this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
+    const [{fingerprints}, src] = await Promise.all([this.index, this.upstream()]);
+    return {fingerprints, files: src?.names || [], label: src?.co.label};
+  }
+
+  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master
+  upstream() {
+    const remote = parseRemote(this.store.valueAt?.("/initData/gitRemote", Infinity)), commit = this.store.valueAt?.("/initData/gitCommit", Infinity);
+    const at = remote && commit ? `${remote}@${commit}` : "master";
+    if (this.src?.at !== at) {
+      const open = (co) => co && Opendbc.open(co).catch(() => null);
+      this.src = {at, opendbc: (async () => (at !== "master" && await open(await opendbcAt(remote, commit).catch(() => null))) ||
+        await open(new Checkout("commaai/opendbc", "master")))()};
+    }
+    return this.src.opendbc;
   }
 
   async loadOpendbc(name, buses = [-1]) {
-    const text = await fetch(new URL(`./opendbc/${name}.dbc`, import.meta.url)).then((r) => {
-      if (!r.ok) throw new Error(`${name}.dbc: ${r.status}`);
-      return r.text();
-    });
-    this.dbcs.open(buses, new DBC(name, text));
+    const src = await this.upstream();
+    if (!src) {
+      this.src = null;  // try again next time
+      throw new Error("can't reach opendbc on GitHub");
+    }
+    this.dbcs.open(buses, new DBC(name, await src.text(name)));
   }
 
-  // the car's DBC from the fingerprint, once, unless a DBC is already open
+  // the car's DBC from the fingerprint, once, unless a DBC is already open; a failure is a notice, not an error
   async fingerprint() {
     if (this.fingerprinted || this.dbcs.all().length) return;
     const fp = this.store.valueAt?.("/carParams/carFingerprint", Infinity);
     if (!fp) return;
     this.fingerprinted = fp;
     const name = (await this.opendbc()).fingerprints[fp];
-    if (name && !this.dbcs.all().length) await this.loadOpendbc(name);
+    if (!name || this.dbcs.all().length) return;
+    await this.loadOpendbc(name).catch((e) => {
+      this.notice = `${name}.dbc didn't load: ${e.message}`;
+      this.emit("notice");
+    });
   }
 
   // ---- decoded signals as series: /dbc/<bus>/<Msg>/<Sig> ----
@@ -596,6 +693,8 @@ export class Can {
 
   dispose() {
     this.autoDbc?.();
+    this.status?.remove();
+    this.disposed = true;
     this.worker.terminate();
   }
 }
