@@ -310,10 +310,10 @@ export function create(ctx, state = {}) {
     return true;
   }
 
-  // the y axis' unit, as cabana: when the curves share one and none is scaled, along the gutter left of the tick
-  // labels if it fits there
+  // the y axis' unit, as cabana: when the curves share one and none is scaled (an offset keeps it), along the gutter
+  // left of the tick labels if it fits there
   function drawUnit(g, lines, yt, right, y, len) {
-    const units = new Set(lines.map((it) => it.scale === 1 && !it.offset ? it.s.unit : undefined)), [unit] = units;
+    const units = new Set(lines.map((it) => it.scale === 1 ? it.s.unit : undefined)), [unit] = units;
     if (units.size !== 1 || !unit) return;
     const x = right - 14 - Math.max(0, ...yt.values.map((v) => g.measureText(fmtTick(v, yt.step)).width));
     if (x < 7) return;
@@ -487,12 +487,12 @@ export function create(ctx, state = {}) {
       const row = rows[k];
       if (!row) return;
       const path = c.transform ? derivedPath(c.path, c.transform) : c.path, m = store.meta(path);
+      const scale = c.scale ?? 1, offset = c.offset ?? 0;
       let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined, fm = m;
-      // names stand for the sample as it is; other numbers are scaled, and keep their unit only when they aren't
-      const plain = (c.scale ?? 1) === 1 && !c.offset;
-      if (typeof v === "number" && m.type !== "e" && m.names?.[v] === undefined && !plain) {
-        v = v * (c.scale ?? 1) + (c.offset ?? 0);
-        fm = null;
+      // names stand for the sample as it is; other numbers are scaled and offset, and keep their unit unless scaled
+      if (typeof v === "number" && m.type !== "e" && m.names?.[v] === undefined && (scale !== 1 || offset)) {
+        v = v * scale + offset;
+        fm = scale === 1 ? {unit: m.unit} : null;
       }
       const text = fmtValue(v, fm).slice(0, 100);
       if (row.val.textContent !== text) row.val.textContent = text;
