@@ -60,6 +60,7 @@ export function create(ctx, state = {}) {
   let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
   let frame = null;    // geometry and prepared curves of the last base draw
   let gesture = null;  // the pointer gesture in progress
+  const pointers = new Map();  // pointer id → where it is, while it's down (two make a pinch)
   let rows = [];       // legend rows, parallel to st.curves
   let statsTimer = 0, statsKey = "", recomputeTimer = 0;
   const made = new Map();  // derived or custom path → the recipe it was computed from
@@ -522,18 +523,36 @@ export function create(ctx, state = {}) {
     invalidate();
   }
 
+  // a press: left drags a zoom box, others pan; one finger pans, two pinch time around their middle. The mouse's
+  // back button undoes the view, as in jotpluggler
   over.addEventListener("pointerdown", (e) => {
     view.touch(pane);
     if (!frame) return;
+    if (e.button === 3) return view.undo(clock);
     over.focus();
     over.setPointerCapture(e.pointerId);
     const p = local(e);
-    gesture = {button: e.button, zone: zone(p), start: p, range: [...xRange()], lo: frame.lo, hi: frame.hi, moved: false};
+    pointers.set(e.pointerId, p);
+    if (pointers.size === 2) {
+      const [f0, f1] = pointers.values(), [a, b] = xRange();
+      view.remember(clock);
+      gesture = {pinch: true, moved: true, span: b - a, apart: Math.max(10, Math.abs(f1.x - f0.x)), at: timeAt((f0.x + f1.x) / 2)};
+      return pane.overlay();
+    }
+    if (pointers.size > 2) return;
+    gesture = {button: e.button, touch: e.pointerType === "touch", zone: zone(p), start: p, range: [...xRange()], lo: frame.lo, hi: frame.hi, moved: false};
   });
+  over.addEventListener("mouseup", (e) => { if (e.button === 3) e.preventDefault(); });  // else the page goes back
 
   over.addEventListener("pointermove", (e) => {
     if (!frame) return;
     const p = local(e);
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, p);
+    if (gesture?.pinch) {
+      const [f0, f1] = pointers.values(), span = gesture.span * gesture.apart / Math.max(10, Math.abs(f1.x - f0.x));
+      const a = gesture.at - ((f0.x + f1.x) / 2 - frame.px) / frame.pw * span;
+      return setRange(a, a + span);
+    }
     view.track(zone(p) === "plot" && !(gesture?.moved && gesture.box === undefined) ? Math.max(frame.t0, timeAt(p.x)) : null);
     const tip = gesture ? "" : blockAt(p);
     if (over.title !== tip) over.title = tip;
@@ -542,8 +561,8 @@ export function create(ctx, state = {}) {
     if (!gesture.moved && Math.hypot(dx, dy) < DRAG) return;
     if (!gesture.moved) view.remember(clock);
     gesture.moved = true;
-    const {zone: z, button, range: [a, b], lo, hi} = gesture;
-    const panX = z === "x" || (z === "plot" && button !== 0), panY = z === "y" || (button !== 0 && st.y.min !== undefined);
+    const {zone: z, button, touch, range: [a, b], lo, hi} = gesture;
+    const panX = z === "x" || (z === "plot" && (button !== 0 || touch)), panY = z === "y" || (button !== 0 && st.y.min !== undefined);
     if (panX) {
       const dt = dx / frame.pw * (b - a);
       setRange(a - dt, b - dt);
@@ -553,7 +572,7 @@ export function create(ctx, state = {}) {
       st.y = {min: lo + dv, max: hi + dv};
       invalidate();
     }
-    if (z === "plot" && button === 0) {
+    if (z === "plot" && button === 0 && !touch) {
       const x0 = Math.max(frame.px, Math.min(p.x, gesture.start.x)), x1 = Math.min(frame.px + frame.pw, Math.max(p.x, gesture.start.x));
       const y0 = Math.max(frame.py, Math.min(p.y, gesture.start.y)), y1 = Math.min(frame.py + frame.ph, Math.max(p.y, gesture.start.y));
       // a flat box (or alt) zooms time only, a narrow one (or shift) zooms values only
@@ -564,9 +583,10 @@ export function create(ctx, state = {}) {
   });
 
   over.addEventListener("pointerup", (e) => {
+    pointers.delete(e.pointerId);
     const g = gesture;
     gesture = null;
-    if (!g || !frame) return;
+    if (!g || g.pinch || !frame) return;  // the finger left of a pinch doesn't start a gesture
     const p = local(e);
     if (!g.moved) {
       if (g.button === 0 && g.zone === "plot") clock.seek(timeAt(p.x));
@@ -580,16 +600,25 @@ export function create(ctx, state = {}) {
     pane.overlay();
   });
 
+  over.addEventListener("pointercancel", (e) => {
+    pointers.delete(e.pointerId);
+    gesture = null;
+    pane.overlay();
+  });
   over.addEventListener("pointerleave", () => gesture || view.track(null));
   // a legend highlight can outlive its pointerleave when a popup opens over the row
   over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
   // the context menu key (or shift+F10) opens the plot's menu at its middle; a right click opens it on release,
-  // or here in an empty plot (which has no gestures)
+  // or here in an empty plot (which has no gestures); a long press opens it here, unless the finger has moved
   over.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     const r = over.getBoundingClientRect();
     if (e.button === -1) paneMenu({clientX: r.left + r.width / 2, clientY: r.top + r.height / 2});
     else if (!frame) paneMenu(e);
+    else if (e.pointerType === "touch" && gesture && !gesture.moved) {
+      gesture = null;  // so lifting the finger doesn't seek
+      paneMenu(e);
+    }
   });
 
   over.addEventListener("wheel", (e) => {
