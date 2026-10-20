@@ -22,7 +22,8 @@ export function dbcDialog(can) {
       await fn();
       d.close();
     } catch (e) {
-      error.textContent = e.message;
+      // a cancelled file picker
+      if (e.name !== "AbortError") error.textContent = e.message;
     }
   };
 
