@@ -328,7 +328,7 @@ export class Store {
 
   // the chunks of a path; an unknown index of a skipped long list (/modelV2/position/x/32) starts loading it
   series(path) {
-    if (path.startsWith("/dbc/")) return this.can.series(path);
+    if (path.startsWith("/dbc/") && !this.entries.has(path)) return this.can.series(path);  // transforms of signals are put here
     const o = this.overlays.length ? this.overlayOf(path) : null;
     if (o) return this.overlaySeries(o, path);
     if (path.endsWith(`/${MONO}`)) return this.monoSeries(path);
