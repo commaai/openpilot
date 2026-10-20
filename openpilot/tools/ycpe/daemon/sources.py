@@ -253,6 +253,48 @@ def upstream(source: str, key: Key, jwt: str | None) -> str | None:
   return found[0] if found else None
 
 
+# staleness: a blob can change under the same URL (logs get recompressed server side), and every cache keyed by URL would
+# keep serving the old bytes. So a whole-file hit is compared with its source's size at most once a day, in the
+# background (the hit never waits), and refetched in place on a mismatch along with the other tools' forms of it.
+
+CHECK_EVERY = 24 * 3600
+STALE = {"X-Ycpe-Cache": "stale-refetch"}  # served from the old copy while the new one downloads
+_checking: set[Key] = set()
+_refetching: dict[Key, int] = {}  # key → inode of the stale copy, which is what gets the stale header
+_check_lock = threading.Lock()
+
+
+def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
+  url = cache.canonical_url(source, key)
+  if url is None or path.name != cache.sha(url) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
+    return  # device pulls, decompressed-only copies, or checked lately
+  with _check_lock:
+    if key in _checking:
+      return
+    _checking.add(key)
+
+  def check():
+    try:
+      found = Resolver(key.dongle, key.log_id, [source], jwt, True).find(source, key)
+      if not found or found[1] is None:
+        return  # unreachable or gone: keep the copy, ask again on a later hit
+      if found[1] == path.stat().st_size:
+        cache.mark_checked(path)
+        return
+      cache.stats["stale"] += 1
+      _refetching[key] = path.stat().st_ino
+      cache.remove(cache.derived_copies(url))
+      fill = cache.fill(key, source, found[0])
+      fill.finished.wait()
+    except Exception as e:
+      print(f"revalidating {key}: {type(e).__name__}: {e}")
+    finally:
+      _refetching.pop(key, None)
+      with _check_lock:
+        _checking.discard(key)
+  threading.Thread(target=check, daemon=True, name=f"check {key}").start()
+
+
 @route("GET", "/local/file/{source}/{dongle}/{log_id}/{seg}/{file}")
 def serve_file(req):
   """The file's bytes: from the shared cache, a local directory, or downloaded from the source into the cache while
@@ -266,7 +308,8 @@ def serve_file(req):
   if (hit := cache.lookup(key)):
     cache.stats["hits"] += 1
     cache.touch(hit[1])
-    return File(str(hit[1]), headers=HIT)
+    revalidate(key, *hit, jwt_of(req))
+    return File(str(hit[1]), headers=STALE if _refetching.get(key) == hit[1].stat().st_ino else HIT)
   if source == "device":
     raise HTTPError(404)
   cache.stats["misses"] += 1
@@ -312,6 +355,7 @@ def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
   stops when it's cancelled, and so does a download this call started."""
   if (hit := cache.lookup(key)):
     cache.touch(hit[1])
+    revalidate(key, *hit, jwt)
     return hit[1]
   srcs = [s for s in (sources or SOURCES) if s in SOURCES]
   if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):

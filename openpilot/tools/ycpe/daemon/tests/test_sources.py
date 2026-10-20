@@ -23,8 +23,14 @@ class Upstream(SimpleHTTPRequestHandler):
   def __init__(self, *a, **kw):
     super().__init__(*a, directory=UPSTREAM, **kw)
 
+  heads: dict[str, int] = {}
+
   def log_message(self, *a):
     pass
+
+  def do_HEAD(self):
+    Upstream.heads[self.path] = Upstream.heads.get(self.path, 0) + 1
+    super().do_HEAD()
 
   def do_GET(self):
     if self.path.endswith("/3/rlog.zst"):
@@ -182,6 +188,41 @@ class TestSources(DaemonCase):
   def test_fetch_for_modules(self):
     p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)
     self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
+
+  def test_stale_refetch(self):
+    rel = f"/{DONGLE}/{LOG}/5/fcamera.hevc"
+    up = Path(UPSTREAM) / rel.lstrip("/")
+    up.parent.mkdir(parents=True, exist_ok=True)
+    old, new = b"a" * 1000, b"b" * 1500
+    up.write_bytes(old)
+    url = f"/local/file/internal{rel}"
+    self.assertEqual(self.req(url)[1], old)  # miss: downloaded, and counts as just checked
+    key = cache.Key(DONGLE, LOG, 5, "fcamera.hevc")
+    for _ in range(100):
+      if cache.lookup(key):
+        break
+      time.sleep(0.01)
+    heads = Upstream.heads.get(rel, 0)
+    self.assertEqual(self.req(url)[1], old)
+    time.sleep(0.1)
+    self.assertEqual(Upstream.heads.get(rel, 0), heads)  # checked within the day: no HEAD
+
+    up.write_bytes(new)  # the source changed under the same URL
+    path = cache.lookup(key)[1]
+    cache.mark_checked(path, 0.0)
+    stale = cache.stats["stale"]
+    r, data = self.req(url)
+    self.assertEqual(data, old)  # a hit never waits on the check
+    for _ in range(200):
+      r, data = self.req(url)
+      if data == new:
+        break
+      time.sleep(0.01)
+    self.assertEqual((data, r.getheader("X-Ycpe-Cache")), (new, "hit"))
+    self.assertEqual((cache.stats["stale"], Upstream.heads.get(rel, 0)), (stale + 1, heads + 1))
+    self.req(url)
+    time.sleep(0.1)
+    self.assertEqual(Upstream.heads.get(rel, 0), heads + 1)  # the new copy counts as checked
 
   def test_usage_running_total(self):
     cache._usage["at"] = -cache.RESCAN
