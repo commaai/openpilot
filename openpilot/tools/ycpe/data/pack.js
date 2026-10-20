@@ -85,7 +85,10 @@ export function unpack(p, k, n) {
     v = typeof c === "string" ? new Array(t.length).fill(c) : new Float64Array(t.length).fill(c);
   } else if (kind === TEXT) {
     const offs = new Uint32Array(buf, r[o + 2], len + 1), bytes = new Uint8Array(buf, r[o + 8], offs[len]);
-    v = Array.from({length: len}, (_, j) => decoder.decode(bytes.subarray(offs[j], offs[j + 1])));
+    // one decode, cut at the byte offsets when they're also character offsets (ASCII); else one decode each
+    const all = decoder.decode(bytes);
+    v = all.length === bytes.length ? Array.from({length: len}, (_, j) => all.slice(offs[j], offs[j + 1]))
+      : Array.from({length: len}, (_, j) => decoder.decode(bytes.subarray(offs[j], offs[j + 1])));
   } else {
     v = new ARRAYS[kind](buf, r[o + 2], len);
   }
