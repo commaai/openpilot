@@ -8,7 +8,7 @@ import {FilesChannel} from "./files.js";
 const daemon = await import("/daemon.js").then((m) => m.daemon, () => null);
 
 const STUN = [{urls: "stun:stun.l.google.com:19302"}];  // as the device's side (teleoprtc) uses
-const GATHER_MS = 3000, CONNECT_MS = 20000, DISCONNECTED_MS = 5000;
+const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 5000;
 export const CAMERAS = ["road", "wideRoad", "driver"];
 
 const peers = new Map();  // "local" or a dongle id → Peer
@@ -145,14 +145,16 @@ class Peer {
   }
 }
 
-// webrtcd answers no trickled candidates, so the offer goes once gathering is done (or has had GATHER_MS: host
-// candidates come at once, a slow STUN server shouldn't hold the rest up)
+// webrtcd takes no trickled candidates, so the offer goes once gathering is done, or soon after the first
+// server-reflexive candidate (what a device on another network needs: Chrome can take seconds more to call gathering
+// complete), or after GATHER_MS
 function gathered(pc) {
-  if (pc.iceGatheringState === "complete") return;
   return new Promise((resolve) => {
     const done = () => pc.iceGatheringState === "complete" && resolve();
     pc.addEventListener("icegatheringstatechange", done);
+    pc.addEventListener("icecandidate", (e) => e.candidate?.type === "srflx" && setTimeout(resolve, SRFLX_MS));
     setTimeout(resolve, GATHER_MS);
+    done();
   });
 }
 
