@@ -56,6 +56,7 @@ export class Store {
     this.gen = 0;  // bumped with every schema change; packs carry the generation they were parsed with
     this.unknown = {events: 0, services: new Set()};  // what the reads so far didn't know (capnp.js)
     this.bytes = 0;
+    this.puts = 0;  // put() versions: a path's never repeat, even once dropped
     this.progress = {done: 0, failed: 0, total: 0, bytes: 0, raw: 0, cached: 0, ms: {fetch: 0, decompress: 0, read: 0, ingest: 0}, ingestMax: 0, start: performance.now()};
     this.t = t;
     this.focusSeg = Math.floor(t / SEGMENT);
@@ -364,8 +365,7 @@ export class Store {
     if (added) this.emit("paths");
     this.emit("segment", seg.n);
     this.emit("progress", this.progress);
-    if (this.bytes > this.budget) this.evict();
-    perf.mark("store", `${(this.bytes / 1e6).toFixed(0)} / ${(this.budget / 1e6).toFixed(0)} MB, ${this.entries.size} paths`);
+    this.account();
     perf.mark("ingest", `${ms.toFixed(1)} ms (max ${this.progress.ingestMax.toFixed(1)})`);
   }
 
@@ -475,14 +475,29 @@ export class Store {
     return m;
   }
 
-  // registers or replaces a derived series (transforms, /custom/*) as one chunk; "put" tells of every new version
+  // registers or replaces a derived series (transforms, /custom/*) as one chunk; "put" tells of every new version.
+  // Its bytes count against the budget: evicted, it's gone until computed again
   put(path, {type, t, v, names}) {
     const old = this.entries.get(path);
-    const e = {path, type, ...(names && {names}), at: [], views: [{n: 0, t, v, tt: t}], version: (old?.version || 0) + 1, used: Infinity};
+    const e = {path, type, ...(names && {names}), at: [], views: [{n: 0, t, v, tt: t}], version: ++this.puts, used: performance.now(),
+      put: t.byteLength + (v.byteLength ?? 0)};
     e.series = {path, type, names, chunks: e.views, version: e.version};
     this.entries.set(path, e);
+    this.bytes += e.put - (old?.put || 0);
     if (!old) this.emit("paths");
     this.emit("put", path);
+    this.account();
+  }
+
+  // forgets a derived series nothing shows any more
+  drop(path) {
+    const e = this.entries.get(path);
+    if (!e?.put) return;
+    this.entries.delete(path);
+    this.bytes -= e.put;
+    this.listed = null;
+    this.emit("paths");
+    this.account();
   }
 
   // n min/max buckets over [t0, t1] read from the pyramids; the exact samples when there are no more than n
@@ -635,12 +650,26 @@ export class Store {
     });
   }
 
-  // drops the least recently used columns not in use until under 90% of the budget
+  // evicts over the budget, and shows the total
+  account() {
+    if (this.bytes > this.budget) this.evict();
+    this.totals();
+    perf.mark("store", `${(this.bytes / 1e6).toFixed(0)} / ${(this.budget / 1e6).toFixed(0)} MB, ${this.entries.size} paths`);
+  }
+
+  // drops the least recently used columns and derived series not in use until under 90% of the budget
   evict() {
     const now = performance.now(), target = this.budget * 0.9;
-    const lru = [...this.entries.values()].filter((e) => e.at.length && now - e.used > IN_USE).sort((a, b) => a.used - b.used);
+    const lru = [...this.entries.values()].filter((e) => (e.at.length || e.put) && now - e.used > IN_USE).sort((a, b) => a.used - b.used);
+    let dropped = false;
     for (const e of lru) {
       if (this.bytes <= target) break;
+      if (e.put) {
+        this.entries.delete(e.path);
+        this.bytes -= e.put;
+        dropped = true;
+        continue;
+      }
       e.at.forEach((a) => this.release(a));
       e.at = [];
       e.views = [];
@@ -650,6 +679,10 @@ export class Store {
       const [svc, sub] = split(e.path);
       if (!this.evicted.has(svc)) this.evicted.set(svc, new Set());
       this.evicted.get(svc).add(sub);
+    }
+    if (dropped) {
+      this.listed = null;
+      this.emit("paths");
     }
   }
 
