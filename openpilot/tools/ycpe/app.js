@@ -10,6 +10,7 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
+import {homePage} from "/pages/home.js";
 import {create as routesPane} from "/panes/routes.js";
 
 const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
@@ -295,10 +296,10 @@ async function render() {
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch(errorPage);
     if (id === navId) main.replaceChildren(page);
-  } else if (state.devices?.length) {
+  } else if (state.devices?.length === 1) {
     go(`/${state.devices[0].dongle_id}`, true);
   } else {
-    main.replaceChildren(homePage());
+    main.replaceChildren(homePage(state.devices));
   }
 }
 
@@ -306,14 +307,6 @@ function errorPage(e) {
   console.error(e);
   const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
-}
-
-function homePage() {
-  return h("div", {class: "page-msg"},
-    h("h2", {}, "ycpe"),
-    h("p", {class: "muted"}, "Routes, plots, and CAN for openpilot drives."),
-    !auth.isAuthenticated() && h("p", {}, ["google", "github", "apple"].map((p) => h("a", {class: "button", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`))),
-    h("p", {}, h("a", {href: "/5beb9b58bd12b691/0000010a--a51155e496/drive", onclick: link("/5beb9b58bd12b691/0000010a--a51155e496/drive")}, "Open the demo route")));
 }
 
 document.getElementById("app").prepend(topBar());

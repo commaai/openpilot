@@ -26,8 +26,8 @@ export function openLog(kind, url, name) {
   const dialog = h("dialog", {class: "log-dialog", onclose: () => dialog.remove()},
     h("div", {class: "log-head"},
       h("span", {class: "mono"}, name),
-      h("a", {class: "icon-button", href: url, download: name, "aria-label": "Download"}, icon("download", 20)),
-      h("button", {class: "icon-button", "aria-label": "Close", onclick: () => dialog.close()}, icon("close", 20))),
+      h("a", {class: "icon-btn", href: url, download: name, "aria-label": "Download"}, icon("download", 20)),
+      h("button", {class: "icon-btn", "aria-label": "Close", onclick: () => dialog.close()}, icon("close", 20))),
     viewers[kind](url, name));
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   document.body.append(dialog);
@@ -49,7 +49,7 @@ export function logsSection(dongleId, kind) {
         const cells = kind === "boot" ? [file.replace(/\.zst$/, "")] : crashName(file);
         table.append(h("tr", {class: "clickable", onclick: () => openLog(kind, url, file)},
           cells.map((c, i) => h("td", {class: i ? "mono muted" : "mono"}, c)),
-          h("td", {}, h("a", {class: "dl", href: url, download: file, "aria-label": "Download", onclick: (e) => e.stopPropagation()}, icon("download", 18)))));
+          h("td", {class: "right"}, h("a", {class: "dl", href: url, download: file, "aria-label": "Download", onclick: (e) => e.stopPropagation()}, icon("download", 18)))));
       }
       shown += PAGE;
       more.hidden = shown >= files.length;

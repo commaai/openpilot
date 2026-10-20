@@ -4,7 +4,7 @@ import {api} from "../api.js";
 import {h} from "../dom.js";
 import {icon} from "../icons.js";
 import {isOnline} from "../app.js";
-import {canManage} from "./devices.js";
+import {canManage} from "./home.js";
 
 // files key → column label and the names the device may have it under
 export const KINDS = {
@@ -51,7 +51,7 @@ export function filesSection(route, device) {
     if (f.requested) return h("span", {class: "spinner"});
     if (f.notFound) return h("span", {class: "small muted", title: kind === "dcameras" ? "enable \"Record and Upload Driver Camera\" on the device" : ""}, "not found");
     if (f.error) return h("span", {class: "small error", title: f.error}, "failed");
-    if (canUpload && UPLOADABLE.includes(kind)) return h("button", {class: "icon-button small", title: `request ${KINDS[kind][0]} ${n}`, onclick: () => request([key])}, icon("upload", 18));
+    if (canUpload && UPLOADABLE.includes(kind)) return h("button", {class: "icon-btn", title: `request ${KINDS[kind][0]} ${n}`, onclick: () => request([key])}, icon("upload", 18));
     return h("span", {class: "muted"}, "–");
   }
 
@@ -133,7 +133,7 @@ export function filesSection(route, device) {
             h("td", {}, KINDS[kind]?.[0] ?? q.path),
             h("td", {}, q.current ? h("progress", {max: 1, value: q.progress}) : metered && !q.allow_cellular ? "paused" : "pending"),
             h("td", {}, q.current ? "" : cancelling.has(q.id) ? h("span", {class: "spinner"})
-              : h("button", {class: "icon-button small", "aria-label": "Cancel upload", onclick: () => cancel([q.id])}, icon("cancel", 18))));
+              : h("button", {class: "icon-btn", "aria-label": "Cancel upload", onclick: () => cancel([q.id])}, icon("cancel", 18))));
         })),
       h("p", {}, h("button", {class: "button small", disabled: !waiting.length, onclick: () => cancel(waiting)}, "Cancel all")));
   }

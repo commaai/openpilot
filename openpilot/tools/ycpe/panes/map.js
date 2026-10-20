@@ -1,16 +1,18 @@
-// mapbox maps: the device location header, and the drive map pane (GPS trace colored by engagement, playhead marker)
-import {MAPBOX_TOKEN, MAPBOX_STYLE} from "../geocode.js";
+// mapbox maps: the device location on the device page, and the map pane (GPS trace colored by engagement,
+// a playhead marker, click to seek). The trace comes from coords.json, or from the store's GPS once it's loaded.
+import {MAPBOX_TOKEN} from "../geocode.js";
 import {routeCoords, routeEvents} from "../api.js";
 import {h} from "../dom.js";
+import {theme} from "../theme.js";
 
-const ENGAGED = "#1da756", DRIVING = "#57a9e3";
+const STYLES = {dark: "mapbox://styles/commaai/cjj4yzqk201c52ss60ebmow0w", light: "mapbox://styles/mapbox/light-v10"};
 const GPS = ["gpsLocationExternal", "gpsLocation"];
 const BUCKETS = 2000;
 
 function mapbox(container, opts) {
   if (!window.mapboxgl) return null;
   mapboxgl.accessToken = MAPBOX_TOKEN;
-  return new mapboxgl.Map({container, style: MAPBOX_STYLE, attributionControl: false, ...opts});
+  return new mapboxgl.Map({container, style: STYLES[theme.name] || STYLES.dark, attributionControl: false, ...opts});
 }
 
 export function deviceMap(locationPromise) {
@@ -20,12 +22,12 @@ export function deviceMap(locationPromise) {
     const map = mapbox(el, {center, zoom: location?.lat ? 13 : 5, interactive: false});
     if (!map) return;
     el._map = map;
-    if (location?.lat) new mapboxgl.Marker({color: "#57a9e3"}).setLngLat(center).addTo(map);
+    if (location?.lat) new mapboxgl.Marker({color: theme.color("--accent")}).setLngLat(center).addTo(map);
   });
   return el;
 }
 
-// the store's GPS columns as decimated {t, lat, lng} points, O(buckets)
+// the store's GPS columns as decimated {t, lat, lng} points: O(buckets), not O(samples)
 function storeTrack(store, duration) {
   const svc = GPS.find((s) => store.series(`/${s}/latitude`));
   if (!svc) return null;
@@ -46,10 +48,9 @@ function features(points, spans) {
   for (const p of points) {
     const ms = p.t * 1000;
     while (k < engaged.length && engaged[k].end < ms) k++;
-    const color = k < engaged.length && engaged[k].start <= ms ? ENGAGED : DRIVING;
-    if (run?.properties.color !== color) {
-      const start = run ? [run.geometry.coordinates.at(-1)] : [];
-      run = {type: "Feature", properties: {color}, geometry: {type: "LineString", coordinates: start}};
+    const on = k < engaged.length && engaged[k].start <= ms;
+    if (run?.properties.engaged !== on) {
+      run = {type: "Feature", properties: {engaged: on}, geometry: {type: "LineString", coordinates: run ? [run.geometry.coordinates.at(-1)] : []}};
       out.push(run);
     }
     run.geometry.coordinates.push([p.lng, p.lat]);
@@ -63,52 +64,53 @@ function nearest(points, t) {
   return points[lo];
 }
 
-// pane: ctx.route is the API route record; GPS from the store once it has some, coords.json until then
 export function create(ctx) {
-  const {clock, route, store, perf} = ctx;
-  const duration = (route.end_time_utc_millis - route.start_time_utc_millis) / 1000;
-  const empty = h("p", {class: "muted map-empty", hidden: true}, "No location data");
+  const {clock, route, perf} = ctx;
+  const empty = h("p", {class: "map-empty muted", hidden: true}, "No GPS for this route");
   const el = h("div", {class: "map-pane"}, empty);
   const map = mapbox(el, {center: [route.start_lng || -117.16, route.start_lat || 32.72], zoom: 12});
-  const marker = map && new mapboxgl.Marker({color: "#fff", scale: 0.6});
-  let points = [], spans = [], fromStore = false, fitted = false, shown = null, pending = null;
+  const marker = map && new mapboxgl.Marker({color: theme.color("--fg"), scale: 0.6});
+  let points = [], spans = [], fromStore = false, fitted = false, shown = null, pending = null, styled = false, disposed = false;
 
-  const pane = {name: "map", el, render, resize, dispose, save: () => ({})};
-  const loaded = map ? new Promise((resolve) => map.on("load", resolve)) : Promise.resolve();
+  const pane = {name: "map", el, render, resize: () => map?.resize(), dispose, save: () => ({})};
 
-  async function update(next) {
+  function draw() {
+    if (!styled || !points.length) return;
+    const data = features(points, spans);
+    if (map.getSource("trace")) return map.getSource("trace").setData(data);
+    map.addSource("trace", {type: "geojson", data});
+    map.addLayer({id: "trace", type: "line", source: "trace", layout: {"line-cap": "round", "line-join": "round"},
+      paint: {"line-color": ["case", ["get", "engaged"], theme.color("--engaged"), theme.color("--accent")], "line-width": 4}});
+  }
+
+  function update(next) {
     points = next;
     empty.hidden = points.length > 0;
-    await loaded;
     if (!map || !points.length) return;
-    const data = features(points, spans);
-    if (map.getSource("trace")) map.getSource("trace").setData(data);
-    else {
-      map.addSource("trace", {type: "geojson", data});
-      map.addLayer({id: "trace", type: "line", source: "trace", layout: {"line-cap": "round", "line-join": "round"},
-        paint: {"line-color": ["get", "color"], "line-width": 4}});
-    }
     if (!fitted) {
       fitted = true;
-      const bounds = points.reduce((b, p) => b.extend([p.lng, p.lat]), new mapboxgl.LngLatBounds());
-      map.fitBounds(bounds, {padding: 40, duration: 0});
+      map.fitBounds(points.reduce((b, p) => b.extend([p.lng, p.lat]), new mapboxgl.LngLatBounds()), {padding: 30, duration: 0});
+      marker.setLngLat([points[0].lng, points[0].lat]).addTo(map);
     }
-    marker.setLngLat([points[0].lng, points[0].lat]).addTo(map);
+    draw();
     shown = null;
     perf.invalidate(pane);
   }
 
-  const events = routeEvents(route).catch(() => []);
-  Promise.all([events, routeCoords(route).catch(() => [])]).then(([s, coords]) => { spans = s; if (!fromStore) update(coords); });
-  // rebuild from the store at most every 2 s while segments stream in
-  const fromColumns = () => {
+  map?.on("style.load", () => { styled = true; draw(); });
+  const events = routeEvents(route).then((s) => { spans = s; }, () => {});
+  Promise.all([events, routeCoords(route).catch(() => [])]).then(([, coords]) => { if (!fromStore) update(coords); });
+
+  // once logs are loading, rebuild from the store's GPS at most every 2 s
+  const duration = (route.end_time_utc_millis - route.start_time_utc_millis) / 1000;
+  const unsubs = [clock.on("t", () => perf.invalidate(pane)), theme.on(() => { styled = false; map?.setStyle(STYLES[theme.name]); })];
+  ctx.onStore((store) => !disposed && unsubs.push(store.on("segment", () => {
     pending ??= setTimeout(() => {
       pending = null;
       const track = storeTrack(store, duration);
       if (track?.length) { fromStore = true; events.then(() => update(track)); }
     }, 2000);
-  };
-  const unsubs = [clock.on("t", () => perf.invalidate(pane)), store?.on("segment", fromColumns)];
+  })));
 
   map?.on("click", (e) => {
     if (!points.length) return;
@@ -127,11 +129,8 @@ export function create(ctx) {
     if (p !== shown) { shown = p; marker.setLngLat([p.lng, p.lat]); }
   }
 
-  function resize() {
-    map?.resize();
-  }
-
   function dispose() {
+    disposed = true;
     for (const off of unsubs) off?.();
     clearTimeout(pending);
     map?.remove();
