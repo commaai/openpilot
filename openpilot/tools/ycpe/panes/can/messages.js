@@ -157,11 +157,15 @@ export function create(ctx, state) {
   s.add(can.on("live", () => { if (filters.bytes || sort.col === "count") refresh(); else ctx.perf.invalidate(pane); }));
   s.add(can.on("select", () => ctx.perf.invalidate(pane)));
   s.add(can.dbcs.on(toolbar));
-  // DBC undo/redo anywhere but in a text box, as cabana
+  // DBC undo/redo anywhere but in a text box, as cabana, while this view shows and it has an edit to undo; otherwise
+  // the keys go on to a focused plot or the layout
   const undoKeys = (e) => {
-    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.target.closest?.("input, textarea, select")) return;
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.defaultPrevented || !el.isConnected) return;
+    if (e.target.closest?.("input, textarea, select")) return;
+    const d = can.dbcs;
+    if (e.shiftKey ? d.index >= d.undos.length : d.index === 0) return;
     e.preventDefault();
-    if (e.shiftKey) can.dbcs.redo(); else can.dbcs.undo();
+    if (e.shiftKey) d.redo(); else d.undo();
   };
   document.addEventListener("keydown", undoKeys);
   s.add(() => document.removeEventListener("keydown", undoKeys));

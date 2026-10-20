@@ -284,16 +284,19 @@ const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g
 
 // ---- keyboard ----
 
-document.addEventListener("keydown", (e) => {
-  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
-  // undo/redo the layout, unless a focused pane took the keys for its own (a plot's view)
+// undo/redo of the layout, on window so it runs last: panes take the keys first for their own undo (a plot's view, the
+// CAN view's DBC edits) and mark them handled
+addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "y") && ws?.layout && !e.defaultPrevented) {
-    e.preventDefault();
-    (k === "y" || e.shiftKey ? ws.layout.redo() : ws.layout.undo());
-    return updateTop();
-  }
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y") || e.defaultPrevented || !ws?.layout) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  e.preventDefault();
+  if (k === "y" || e.shiftKey) ws.layout.redo(); else ws.layout.undo();
+  updateTop();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
   if (e.key === "?") return help();
