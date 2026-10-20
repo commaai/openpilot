@@ -164,7 +164,8 @@ def build(out, prev_dir=None):
     s, p = sc["stats"], prev.get(sc["name"], {}).get("stats", {})
     mine = [f["n"] for f in found if any(w["scenario"] == sc["name"] for w in f["where"])]
     sc["findings"] = mine
-    rows.append([sc["name"], "PASS" if sc["pass"] else "FAIL", s["frames"], num(s["worst_ms"], p.get("worst_ms")), num(s["p99_ms"], p.get("p99_ms")),
+    result = ("PASS" if sc["pass"] else "FAIL") + (" (retried)" if sc.get("retried") else "")
+    rows.append([sc["name"], result, s["frames"], num(s["worst_ms"], p.get("worst_ms")), num(s["p99_ms"], p.get("p99_ms")),
                  f"{s['loaf']} ({s['loaf_worst_ms']:.0f})", num(s["work_p99_ms"], fmt="{:.1f}"), num(s["drops"]), len(mine), f"{sc['duration']:.1f}s"])
 
   passed = sum(sc["pass"] for sc in scenarios)
@@ -197,7 +198,7 @@ def write_md(out, title, head, rows, found, scenarios):
 
 def write_html(out, title, head, rows, found, scenarios, prev):
   e = html.escape
-  table = "".join(f'<tr class="{r[1].lower()}">' + "".join(f"<td>{e(str(c))}</td>" for c in r) + "</tr>" for r in rows)
+  table = "".join(f'<tr class="{r[1].split()[0].lower()}">' + "".join(f"<td>{e(str(c))}</td>" for c in r) + "</tr>" for r in rows)
   items = "".join(
     f'<li value="{f["n"]}" class="{f["severity"]}"><b>{e(f["rule"])}</b> ×{len(f["where"])} {e(f["detail"])}'
     + (f' <code>{e(f["selector"])}</code>' if f["selector"] else "")

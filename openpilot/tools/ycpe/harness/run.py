@@ -24,6 +24,7 @@ OUT = HERE / "out"
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
+NETWORK_FLAKE = re.compile(r"ERR_NETWORK_CHANGED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED")
 FATAL = ("blocked", "page-error", "console-error")  # events that fail a scenario
 DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None}
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
@@ -266,6 +267,11 @@ def main():
       browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode], env=env)
       for sc in scenarios:
         r = run_scenario(browser, base, sc, latest, token)
+        # this machine's network drops out now and then; one retry keeps that from reading as an app bug
+        if not r["pass"] and any(NETWORK_FLAKE.search(e["text"]) for e in r["events"]):
+          print(f"RETRY {r['name']} (network flake)")
+          r = run_scenario(browser, base, sc, latest, token)
+          r["retried"] = True
         errors = [f"{f['rule']}: {f['detail'][:70]}" for f in r["failures"]] + [f"{e['kind']}: {e['text'][:70]}" for e in r["events"] if e["kind"] in FATAL]
         print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<16} {r['duration']:5.1f}s  {' | '.join(errors[:2])}{f' (+{len(errors) - 2})' if len(errors) > 2 else ''}")
         results.append(r)
