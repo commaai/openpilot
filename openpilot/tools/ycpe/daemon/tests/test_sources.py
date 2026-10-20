@@ -185,6 +185,8 @@ class TestSources(DaemonCase):
     out = self.json("/local/cache/evict", {"route": ROUTE, "segs": [0, 1], "kinds": ["qcamera"]})
     self.assertGreaterEqual(out["freed"], len(blob(0, "qcamera.ts")) + len(blob(1, "qcamera.ts")))
     self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 0, "qcamera.ts")))
+    for segs in (["x"], "01", [-1], 3):
+      self.json("/local/cache/evict", {"route": ROUTE, "segs": segs}, status=400)
 
   def test_fetch_for_modules(self):
     p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)

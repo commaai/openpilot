@@ -347,8 +347,11 @@ def replay_start(req):
         return cache.fetch(*name.split("|"), seg, file, job=job)
       try:
         return cache.fetch(*name.split("|"), seg, "rlog.zst", job=job)
-      except FileNotFoundError:
-        return cache.fetch(*name.split("|"), seg, "rlog.bz2", job=job)  # older routes
+      except OSError as e:  # not found, or its download failed: older routes only have rlog.bz2
+        try:
+          return cache.fetch(*name.split("|"), seg, "rlog.bz2", job=job)
+        except FileNotFoundError:
+          raise e from None
     try:
       return replay.run(fetch, report, lambda: job.cancelled)
     except InterruptedError as e:
