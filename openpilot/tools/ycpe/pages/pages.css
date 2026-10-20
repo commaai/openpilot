@@ -123,5 +123,6 @@ a.drive-row:hover { background: var(--hover); }
   .ws[data-view="drive"] .info-pane { position: static; overflow: visible; }
   .ws[data-view="drive"] .playbar > .tbtn:not(.play), .ws[data-view="drive"] .pb-wall { display: none; }
   .ws[data-view="drive"] .pb-clock { min-width: 0; }
-  .topbar :is(.brand > span, .sep, .views, .tabs, .hud) { display: none; }
+  .topbar :is(.brand > span, .sep, .views, .tabs, .hud, .local-badge) { display: none; }
+  .topbar > .crumb:first-of-type { display: none; }  /* the device: the route crumb's menu reaches the rest */
 }

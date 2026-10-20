@@ -1,6 +1,6 @@
 // parity of capnpc.js with pycapnp: for commits across cereal's history and forks, fetches the schema files the way
 // the app does (upstream.js), compiles them in JS and with gen_schema.py (capnpc_ref.py), and diffs the text.
-// usage: PYTHONPATH=<repo root> node capnpc.mjs [--fresh] [repo@sha ...]
+// usage: PYTHONPATH=<repo root> node capnpc.mjs [--fresh] [--keep] [--fuzz N | repo@sha ...]; --keep leaves the files on disk
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -124,7 +124,8 @@ for (const [repo, sha, label] of list) {
     continue;
   }
   const refMs = performance.now() - t0;
-  fs.rmSync(dir, {recursive: true});
+  if (process.argv.includes("--keep")) console.log(`kept ${dir}`);
+  else fs.rmSync(dir, {recursive: true});
 
   const s = JSON.parse(js), same = js === ref;
   let at = 0;
