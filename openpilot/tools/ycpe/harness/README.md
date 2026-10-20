@@ -52,13 +52,12 @@ Time spent taking screenshots and linting is excluded from the frame stats (shad
 drops frames or the load average exceeds the cpu count, the perf budgets only warn. A scenario that hits a network flake
 (ERR_NETWORK_CHANGED: USB ethernet devices on this box come and go) is retried once.
 
-## Findings and owners
+## Findings
 
-The report groups failures, events and lint issues across scenarios into findings, each with an owner: the file it
-points at (a local script in a long frame or error stack, else the module that creates the innermost class in its
-selector) and that file's track from SPEC.md's track table. `out/latest/findings.json` keeps them, and every run lists
-what is new, fixed and still open since the previous one, grouped by track and file. Only scenarios that ran can fix a
-finding. Long frames say which step they happened during.
+The report groups failures, events and lint issues across scenarios into findings by rule and selector, each with the
+file it points at (a local script in a long frame or error stack, else the module that creates the innermost class in
+its selector). `out/latest/findings.json` keeps them, and every run lists what is new, fixed and still open since the
+previous one, grouped by file. Only scenarios that ran can fix a finding. Long frames say which step they happened during.
 
 Layout lint findings (overflow, sideways scroll, clipped text, overlap, obscured controls, small targets, layout shift,
 broken images) are reported but don't fail the scenario.
