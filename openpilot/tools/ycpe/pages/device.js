@@ -91,6 +91,12 @@ const cnDuration = (ms) => { const hr = Math.floor(ms / HOUR) % 24, min = Math.f
 const cnDistance = (mi) => isMetric() ? `${+(mi * 1.60934).toFixed(1)} km` : `${+mi.toFixed(1)} mi`;
 const lines = (cls, first, second) => h("div", {class: cls}, h("p", {class: "cn-b"}, first), h("p", {}, second));
 
+// the drive view's modules and hls.js, as a pointer comes over a drive: the first one opened waits on nothing cold
+function prefetchDrive() {
+  import("../panes/connect.js").catch(() => {});
+  import("../panes/camera.js").then((m) => m.prefetch(), () => {});
+}
+
 // connect's DriveListItem: when, how long and how far, from and to, an arrow (wider than a phone), and the drive's strip
 // along the bottom
 function driveCard(r) {
@@ -98,7 +104,7 @@ function driveCard(r) {
   const from = lines("cn-c-from", "", ""), to = lines("cn-c-to", "", "");
   const day = h("p", {class: "cn-b"}, h("span", {class: "cn-wide"}, cnDay("long", r.start_time_utc_millis)),
     h("span", {class: "cn-narrow"}, cnDay("short", r.start_time_utc_millis)));
-  return h("a", {class: "cn-drive", href: path, onclick: link(path)},
+  return h("a", {class: "cn-drive", href: path, onclick: link(path), onpointerenter: prefetchDrive},
     h("div", {class: "cn-drive-head"},
       h("div", {class: "cn-drive-grid"},
         h("div", {class: "cn-c-date"}, day, h("p", {}, `${cnTime(r.start_time_utc_millis)} to ${cnTime(r.end_time_utc_millis)}`)),
