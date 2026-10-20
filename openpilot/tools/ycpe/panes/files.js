@@ -146,12 +146,13 @@ export function create(ctx) {
         if (apiFiles.has(`${n}/${kind}`)) uploaded++;
       }
       const requestable = up?.canUpload ? up.missing(segs.map((n) => `${n}/${kind}`)) : [];
+      const total = saving[kind] ? `saving ${saving[kind]}` : `${count}/${segs.length}${asked.size < segs.length ? "+" : ""}${bytes ? ` · ${fmtBytes(bytes)}` : ""}`;
       return h("span", {class: "fp-cell"},
         h("span", {class: "fp-kind"}, LABELS[kind],
           h("button", {class: "icon-btn", title: `Download every ${LABELS[kind]} file`, disabled: !!saving[kind], onclick: () => downloadAll(kind)}, icon("download", 14)),
           up?.canUpload && UPLOADABLE.includes(kind) && h("button", {class: "icon-btn", title: `Request every missing ${LABELS[kind]} file (${requestable.length})`,
             disabled: !requestable.length, onclick: () => up.request(requestable)}, icon("upload", 14))),
-        h("span", {class: "fp-total muted"}, saving[kind] ? `saving ${saving[kind]}` : `${count}/${segs.length}${asked.size < segs.length ? "+" : ""}${bytes ? ` · ${fmtBytes(bytes)}` : ""}`));
+        h("span", {class: "fp-total muted", title: total}, total));
     }));
     summary.textContent = `${segs.length} segments · ${Math.round(100 * uploaded / (segs.length * COLS.length || 1))}% uploaded`;
     const failed = Object.entries(errors);
