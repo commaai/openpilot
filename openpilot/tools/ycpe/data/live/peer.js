@@ -9,6 +9,7 @@ const daemon = await import("/daemon.js").then((m) => m.daemon, () => null);
 
 const STUN = [{urls: "stun:stun.l.google.com:19302"}];  // as the device's side (teleoprtc) uses
 const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 5000;
+const BUSY_MS = 30000, BUSY_RETRY_MS = 2000;  // a closed viewer's session lingers on the device until ICE gives up
 export const CAMERAS = ["road", "wideRoad", "driver"];
 
 const text = new TextDecoder();
@@ -183,26 +184,38 @@ function connected(pc) {
 }
 
 // devices and webrtcds from before SPEC.md Live take no services, cameras or files (an unexpected keyword); asked
-// again as they were, they send carState and deviceState as JSON on "data"
+// again as they were, they send carState and deviceState as JSON on "data", and no files
 const OLD = /unexpected keyword|invalid params/i;
+const old = (enabled) => {
+  if (!enabled) throw new Error("this device's openpilot is too old to send its files peer to peer");
+};
 
-async function signal(target, sdp, {services, cameras, files}) {
+// webrtcd turns away a files-only session while a live one runs ("busy"): often a viewer that just went away
+async function signal(target, sdp, needs) {
+  for (const t0 = performance.now(); ; await new Promise((r) => setTimeout(r, BUSY_RETRY_MS))) {
+    const answer = await ask(target, sdp, needs);
+    if (answer?.error === "busy" && performance.now() - t0 < BUSY_MS) continue;
+    if (answer?.error === "busy") throw new Error("the device is streaming live to someone else; its files can be read once that ends");
+    if (answer?.error) throw new Error(answer.message || answer.error);
+    if (!answer?.sdp) throw new Error("the device answered without an SDP");
+    return answer;
+  }
+}
+
+async function ask(target, sdp, {services, cameras, files}) {
   const enabled = !!(cameras.length || services.length);
-  let answer;
   if (target === "local") {
     if (!daemon?.has("webrtc")) throw new Error("live data from this PC needs the local daemon (run tools/ycpe/serve.py)");
     // webrtcd's own errors are {error, message}: read here, as daemon.json would keep only the first
-    const ask = (body) => fetch("/local/webrtc/stream", {method: "POST", headers: {...daemon.headers, "Content-Type": "application/json"},
+    const post = (body) => fetch("/local/webrtc/stream", {method: "POST", headers: {...daemon.headers, "Content-Type": "application/json"},
       body: JSON.stringify(body)}).then((r) => r.json());
-    answer = await ask({sdp, cameras, enabled, services, files});
-    if (OLD.test(answer.message || "")) answer = await ask({sdp, cameras, enabled, bridge_services_out: services});
-  } else {
-    answer = await api.athena(target, "startStream", {sdp, enabled, services, cameras, files}).catch((e) => {
-      if (OLD.test(e.message)) return api.athena(target, "startStream", {sdp, enabled});
-      throw /not connected|offline|timed out/i.test(e.message) ? new Error(`the device is offline (${e.message})`) : e;
-    });
+    const answer = await post({sdp, cameras, enabled, services, files});
+    if (!OLD.test(answer.message || "")) return answer;
+    old(enabled);
+    return post({sdp, cameras, enabled, bridge_services_out: services});
   }
-  if (answer?.error) throw new Error(answer.message || answer.error);
-  if (!answer?.sdp) throw new Error("the device answered without an SDP");
-  return answer;
+  return api.athena(target, "startStream", {sdp, enabled, services, cameras, files}).catch((e) => {
+    if (OLD.test(e.message)) return old(enabled), api.athena(target, "startStream", {sdp, enabled});
+    throw /not connected|offline|timed out/i.test(e.message) ? new Error(`the device is offline (${e.message})`) : e;
+  });
 }
