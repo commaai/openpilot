@@ -10,6 +10,7 @@ import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
 import {TRANSFORMS, derivedPath, derive, compute} from "/data/transforms.js";
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
+import {openConsole} from "./console.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
@@ -57,7 +58,8 @@ export function create(ctx, state = {}) {
   }
 
   function normalize(c) {
-    return {...c, color: c.color || nextColor(st.curves.map((x) => x.color))};
+    return {...c, color: c.color || nextColor(st.curves.map((x) => x.color)),
+      ...(c.custom?.untrusted && {error: "custom code from an imported layout: click to review and run it"})};
   }
 
   function removeCurve(c) {
@@ -67,12 +69,14 @@ export function create(ctx, state = {}) {
   }
 
   // the store path a curve draws; transforms and custom series are (re)computed when their inputs change
+  // custom code from an untrusted layout waits until the user has reviewed it in the console
+  const inputsVersion = (inputs) => inputs.map((p) => store.series(p)?.version).join();
   function source(c) {
     if (!c.transform && !c.custom) return c.path;
     const src = c.custom ? c.path : derivedPath(c.path, c.transform);
     const inputs = c.custom ? c.custom.inputs : [c.path];
-    const version = inputs.map((p) => store.series(p)?.version).join();
-    if (inputs.every((p) => store.series(p)) && made.get(src) !== version && !busy.has(src)) {
+    const version = inputsVersion(inputs);
+    if (!c.custom?.untrusted && inputs.every((p) => store.series(p)) && made.get(src) !== version && !busy.has(src)) {
       busy.add(src);
       const job = c.custom ? evaluate(store, c.path, c.custom) : derive(store, c.path, c.transform);
       job.then(() => { made.set(src, version); c.error = null; }, (e) => { made.set(src, version); c.error = e.message; })
@@ -252,7 +256,7 @@ export function create(ctx, state = {}) {
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
       h("i", {style: `background:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
-      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => editCurve(c, e)}, label(c)),
+      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, label(c)),
       val,
       h("b", {class: "x", title: "remove", onclick: () => removeCurve(c)}, "×"));
       row.val = val;
@@ -267,6 +271,18 @@ export function create(ctx, state = {}) {
   const editCurve = (c, e) => curveEditor(e.clientX, e.clientY, c, {
     change: () => { rebuildLegend(); invalidate(); },
     remove: () => removeCurve(c),
+    code: c.custom && (() => editCode(c, e)),
+  });
+
+  // creates (c undefined) or edits a custom series; the curve changes only once the code has run
+  const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.label, ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
+    const path = `/custom/${spec.name}`, custom = {inputs: spec.inputs, globals: spec.globals, code: spec.code};
+    await evaluate(store, path, custom);
+    made.set(path, inputsVersion(custom.inputs));
+    if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
+    else st.curves.push(normalize({path, label: spec.name, custom}));
+    rebuildLegend();
+    invalidate();
   });
 
   function updateLegend() {
@@ -416,6 +432,7 @@ export function create(ctx, state = {}) {
       {label: "Export PNG", fn: () => exportPng([base, over], st.curves.filter((c) => !c.hidden).map((c) => ({color: c.color, name: label(c), value: rows[st.curves.indexOf(c)].val.textContent})),
         col.bg, col.fg, col.font, st.title || "plot")},
       null,
+      {label: "Custom series…", fn: () => editCode(undefined, e)},
       {label: "Remove all curves", disabled: !st.curves.length, fn: () => { st.curves = []; rebuildLegend(); invalidate(); }},
     ]);
   }
