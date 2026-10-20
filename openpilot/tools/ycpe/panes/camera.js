@@ -112,7 +112,7 @@ function qcamera(ctx, pane, {wait, absent}) {
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);
   const loading = new Set();
-  let hls = null, gone = false, files = null;  // files[k]: slot k's file, once known
+  let hls = null, gone = false, files = null, list = null;  // files[k]: slot k's file, once known; list: our playlist's blob URL
 
   // segments the <video> has buffered, from its time ranges
   const update = () => {
@@ -133,7 +133,7 @@ function qcamera(ctx, pane, {wait, absent}) {
     update();
     ctx.perf.invalidate(pane);
     if (files && !files.some(Boolean)) return;
-    const src = ctx.route.loose || ctx.route.range ? playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
+    const src = ctx.route.loose || ctx.route.range ? list = playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
     hls = new Hls({maxBufferLength: 20});
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
     hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
@@ -175,6 +175,7 @@ function qcamera(ctx, pane, {wait, absent}) {
       gone = true;
       lanes.remove();
       hls?.destroy();
+      if (list) URL.revokeObjectURL(list);
       video.removeAttribute("src");
       video.load();
     },
