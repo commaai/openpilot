@@ -4,14 +4,11 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-
-const base = new URL("../../", import.meta.url);
-const netFetch = globalThis.fetch;
-globalThis.fetch = async (u, o) => String(u).startsWith("file:") ? new Response(fs.readFileSync(u), {headers: {"content-type": "application/wasm"}}) : netFetch(u, o);
-const {initCodec, decompress} = await import(new URL("codec/codec.js", base));
-const {Reader} = await import(new URL("data/capnp.js", base));
-const {setCache, parseRemote} = await import(new URL("data/github.js", base));
-const {schemaAt} = await import(new URL("data/upstream.js", base));
+import {schema} from "./node.mjs";
+import {decompress} from "../../codec/codec.js";
+import {Reader} from "../capnp.js";
+import {setCache, parseRemote} from "../github.js";
+import {schemaAt} from "../upstream.js";
 
 const CACHE = path.join(os.tmpdir(), "ycpe-github");
 setCache({
@@ -19,10 +16,9 @@ setCache({
   async put(key, text) { fs.mkdirSync(path.dirname(path.join(CACHE, key)), {recursive: true}); fs.writeFileSync(path.join(CACHE, key), text); },
 });
 
-await initCodec();
 const buf = decompress(new Uint8Array(fs.readFileSync(process.argv[2])));
-const bundled = fs.readFileSync(new URL("data/schema.json", base), "utf8");
-const stock = new Reader(JSON.parse(bundled));
+const bundled = fs.readFileSync(new URL("../schema.json", import.meta.url), "utf8");
+const stock = new Reader(schema);
 
 // columns by path; enums keep their values, with the names they have in that schema
 function columns(reader) {

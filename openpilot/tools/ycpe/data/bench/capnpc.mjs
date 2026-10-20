@@ -8,9 +8,9 @@ import {execFileSync} from "node:child_process";
 import {setCache, stats} from "../github.js";
 import {schemaFiles} from "../upstream.js";
 import {compile} from "../capnpc.js";
+import {PYTHON} from "./node.mjs";
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
-const PYTHON = process.env.PYTHON || "/home/batman/openpilot/.venv/bin/python";
 
 const COMMITS = [
   ["commaai/openpilot", "83b249571ba7679d1d4bd2611219fe97dcd1a21a", "2019-01 in-tree cereal subtree"],

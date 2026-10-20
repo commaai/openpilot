@@ -1,17 +1,15 @@
 // worker pipeline timings on one segment, stage by stage as worker.js runs them: node data/bench/parse.mjs [rlog] [iterations]
 // the first iteration is what a fresh worker pays (cold JIT); the median is a warm one
-import fs from "fs";
-const base = new URL("../../", import.meta.url);
-globalThis.fetch = async (u) => new Response(fs.readFileSync(u), {headers: {"content-type": "application/wasm"}});
-const {initCodec, withDecompressed} = await import(new URL("codec/codec.js", base));
-const {Reader, compact} = await import(new URL("data/capnp.js", base));
-const {pack} = await import(new URL("data/pack.js", base));
-const {migrate, withKeep} = await import(new URL("data/migrate.js", base));
-const {CanFrames} = await import(new URL("data/can.js", base));
-const schema = (await import(new URL("data/schema.json", base), {with: {type: "json"}})).default;
-await initCodec();
+import fs from "node:fs";
+import {logArg, schema} from "./node.mjs";
+import {withDecompressed} from "../../codec/codec.js";
+import {Reader, compact} from "../capnp.js";
+import {pack} from "../pack.js";
+import {migrate, withKeep} from "../migrate.js";
+import {CanFrames} from "../can.js";
+
 const reader = new Reader(schema);
-const src = new Uint8Array(fs.readFileSync(process.argv[2] || "/tmp/aio-probe/rlog"));
+const src = new Uint8Array(fs.readFileSync(logArg()));
 
 const STAGES = ["decompress", "read", "read+can", "migrate", "compact", "pack", "can finish"];
 const runs = [];

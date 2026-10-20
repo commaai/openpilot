@@ -4,9 +4,9 @@ import fs from "node:fs";
 import path from "node:path";
 import {execFileSync} from "node:child_process";
 import {Generator} from "../opendbc-gen.js";
+import {PYTHON, REPO} from "./node.mjs";
 
-const PYTHON = process.env.PYTHON || "/home/batman/openpilot/.venv/bin/python";
-const repo = process.argv[2] || "/home/batman/openpilot/opendbc_repo";
+const repo = process.argv[2] || path.join(REPO, "opendbc_repo");
 const gen = path.join(repo, "opendbc/dbc/generator");
 
 const files = fs.readdirSync(gen, {recursive: true}).filter((f) => !f.includes("__pycache__") && fs.statSync(path.join(gen, f)).isFile());
