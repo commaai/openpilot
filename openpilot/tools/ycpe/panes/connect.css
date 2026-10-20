@@ -9,7 +9,7 @@
   background: none; color: #fff; cursor: pointer; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
 .cn-icon:hover { background: rgba(255,255,255,.08); }
 .cn-icon:disabled { color: rgba(255,255,255,.3); background: none; cursor: default; }
-.cn-title { min-width: 0; font-size: 18px; font-weight: 500; line-height: 28px; text-align: left; }
+.cn-when { min-width: 0; font-size: 18px; font-weight: 500; line-height: 28px; text-align: left; }
 .cn-weekday { display: none; }
 @media (min-width: 640px) { .cn-weekday { display: inline; } }
 
@@ -66,25 +66,25 @@
   background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path fill="%23fff" d="M480-280q14 0 24-9 9-10 9-24t-9-23q-10-10-24-10t-23 9q-10 10-10 24t9 23q10 10 24 10Zm-27-153h60v-253h-60v253Zm27 353q-82 0-155-31t-127-86q-55-55-86-128-32-73-32-155 0-83 32-156 31-73 86-127t127-85q73-32 156-32 82 0 155 32 73 31 127 85t86 127q31 73 31 156 0 82-31 155t-86 127q-54 55-127 86-73 32-156 32Zm1-60q141 0 240-99t99-241q0-142-99-241t-241-99q-141 0-240 99-100 99-100 241 0 141 100 241t241 99Zm-1-340Z"/></svg>'); }
 
 /* connect's pill (TimeDisplay, thin): 10 s back and forward, the wall clock and segment, its speed steps, mute and
-   play, each in its box of a 1 px rule. Scoped above the device page's .cn-pill buttons */
-.connect-pane .cn-pill { display: flex; align-items: center; width: 400px; max-width: 100%; height: 50px; margin: 0 auto; padding: 0 8px; border-radius: 32px;
+   play, each in its box of a 1 px rule */
+.cn-controls { display: flex; align-items: center; width: 400px; max-width: 100%; height: 50px; margin: 0 auto; padding: 0 8px; border-radius: 32px;
   background: #0c0e0f; }
-@media (min-width: 1536px) { .connect-pane .cn-pill { margin: 0 0 0 calc(30% - 206px); } }
-.cn-pill button { position: relative; display: flex; flex-shrink: 0; align-items: center; justify-content: center; height: 40px; padding: 0; border: 0; border-radius: 50%;
+@media (min-width: 1536px) { .cn-controls { margin: 0 0 0 calc(30% - 206px); } }
+.cn-controls button { position: relative; display: flex; flex-shrink: 0; align-items: center; justify-content: center; height: 40px; padding: 0; border: 0; border-radius: 50%;
   background: none; cursor: pointer; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
-.cn-pill button:hover:not(:disabled) { background-color: rgba(255,255,255,.08); }
+.cn-controls button:hover:not(:disabled) { background-color: rgba(255,255,255,.08); }
 :is(.cn-jump, .cn-mute, .cn-play)::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: #1e2224; }
 .cn-jump { width: 40px; margin-right: 1px; color: #535f64; }
 .cn-jump::after { right: -1px; }
 .cn-jump svg { width: 32px; height: 32px; }
 .cn-now { flex: 1 1 0; min-width: 0; margin: 0 8px; font-size: 15px; font-weight: 500; line-height: 21.96px; text-align: center; font-variant-numeric: tabular-nums; }
 .cn-speed { display: flex; flex-direction: column; align-items: center; min-width: 40px; margin-right: 8px; }
-.cn-pill .cn-step { width: 12px; height: 12px; color: #424a4f; }
+.cn-controls .cn-step { width: 12px; height: 12px; color: #424a4f; }
 .cn-step:disabled { visibility: hidden; }
 .cn-speed-text { font-size: 14px; font-weight: 500; line-height: 24px; }
 .cn-mute { width: 40px; margin-left: 1px; color: #fff; }
 :is(.cn-mute, .cn-play)::after { left: -1px; }
 .cn-mute svg { width: 32px; height: 32px; }
 .cn-mute:disabled { color: #535f64; cursor: default; }
-.cn-pill .cn-play { width: 48px; height: 48px; margin-left: 1px; color: #fff; }
+.cn-controls .cn-play { width: 48px; height: 48px; margin-left: 1px; color: #fff; }
 .cn-play::after { top: 1px; bottom: -1px; }

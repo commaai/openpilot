@@ -143,11 +143,11 @@ export function create(ctx, state) {
   const mute = muteButton("cn-mute", 24);  // the camera pane's sound (its own button is hidden here)
   const jumpBack = h("button", {class: "cn-jump", "aria-label": "Jump back 10 seconds", onclick: () => clock.seek(clock.t - 10)}, cnIcon("replay10", 32));
   const jumpOn = h("button", {class: "cn-jump", "aria-label": "Jump forward 10 seconds", onclick: () => clock.seek(clock.t + 10)}, cnIcon("forward10", 32));
-  const pill = h("div", {class: "cn-pill"}, jumpBack, jumpOn, now, speed, mute.el, playBtn);
+  const pill = h("div", {class: "cn-controls"}, jumpBack, jumpOn, now, speed, mute.el, playBtn);
 
   const el = h("div", {class: "connect-pane"},
     h("div", {class: "cn-card"},
-      h("div", {class: "cn-top"}, back, h("div", {class: "cn-title"}, weekday, times), close),
+      h("div", {class: "cn-top"}, back, h("div", {class: "cn-when"}, weekday, times), close),
       timeline,
       h("div", {class: "cn-body"},
         h("div", {class: "cn-bar"}, mediaOptions.el, menuOptions.el),

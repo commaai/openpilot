@@ -35,7 +35,7 @@
   {"key": "Escape"},
   {"waitFor": {"fn": "!document.querySelector('.cm-modal')"}},
 
-  {"eval": "window.__title = () => document.querySelector('.cn-top .cn-title').textContent; window.__zoomed = __title()"},
+  {"eval": "window.__title = () => document.querySelector('.cn-when').textContent; window.__zoomed = __title()"},
   {"eval": "document.querySelector('.cn-ruler').scrollIntoView({block: 'center'}); true"},
   {"drag": {"from": ".cn-ruler", "by": [120, 0], "steps": 20}},
   {"waitFor": {"fn": "__title() !== __zoomed"}},
