@@ -1,8 +1,9 @@
 // series browser: every store path as a tree with a filter, values at the playhead, multi-select and
-// drag onto plots. Rows are virtualized: only the visible ones exist in the DOM.
+// drag onto plots (or double-click into the last used one). Rows are virtualized: only the visible ones
+// exist in the DOM.
 import {h} from "/dom.js";
 import {fmtValue} from "/panes/plot/draw.js";
-import {PATHS_MIME} from "/panes/plot/view.js";
+import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
 const ROW = 18;
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
@@ -134,7 +135,8 @@ export function create(ctx, state = {}) {
   function rowEl(i) {
     if (!pool[i]) {
       const r = pool[i] = h("div", {class: "row", draggable: true,
-        onclick: (e) => click(e, r.k), ondragstart: (e) => dragstart(e, r.k)},
+        onclick: (e) => click(e, r.k), ondragstart: (e) => dragstart(e, r.k),
+        ondblclick: () => { if (rows[r.k].meta) addToPlot([rows[r.k].path]); }},
       h("span", {class: "twisty"}), h("span", {class: "name"}), h("span", {class: "val"}));
       win.append(r);
     }
