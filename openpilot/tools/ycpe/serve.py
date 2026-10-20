@@ -39,6 +39,7 @@ def main():
   if not args.static:
     try:
       from openpilot.common.hardware.hw import Paths
+      from openpilot.tools.ycpe.daemon.core import session_token
       from openpilot.tools.ycpe.daemon.server import make_server, config
     except ImportError as e:
       print(f"daemon unavailable ({e}); serving static files only. Run with openpilot's venv for the daemon.")
@@ -47,6 +48,7 @@ def main():
   if args.static:
     server = ThreadingHTTPServer(("127.0.0.1", args.port), partial(StaticHandler, directory=str(ROOT)))
   else:
+    config.token = session_token()
     config.cache_root = Paths.download_cache_root()
     config.cache_budget = int(args.cache_budget * 1000 ** 3)
     config.log_roots = [Paths.log_root(), *args.data_dir]
