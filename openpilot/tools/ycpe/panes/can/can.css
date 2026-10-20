@@ -24,6 +24,7 @@
 /* the binary view's way back to the list, only where a phone stacks the panes in one scroll (pages.css) */
 .can-back { display: none; }
 @media (max-width: 760px) { .ws:not([data-view="files"]) .can-back { display: inline-flex; } }
+@media (pointer: coarse) { .can-back { width: 32px; height: 32px; } }  /* fingers */
 .can-check { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); white-space: nowrap; }
 .can-select, .can-filter { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-filter { width: 110px; }
