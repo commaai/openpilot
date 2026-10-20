@@ -12,7 +12,7 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
-import {routeRecord, routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
+import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
@@ -166,6 +166,7 @@ class Workspace {
     this.dongle = route.fullname.split("|")[0];
     this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
     this.filesReady = files.then((f) => { this.files = f; });
+    this.filesReady.catch(() => {});  // a view that needs the logs shows the failure; until then it's not an error
     this.repeat = repeat;
     this.store = null;
     this.storeSubs = new Set();
@@ -264,7 +265,7 @@ class Workspace {
       q.set("t", this.clock.t.toFixed(1));
       q.delete("layout");  // opened once, then it's part of the saved layout
       if (this.clock.t === 0) q.delete("t");
-      const path = `/${this.route.fullname.replace("|", "/")}/${this.view}`;
+      const path = `/${routeKey(this.route).replace("|", "/")}/${this.view}`;
       history.replaceState(null, "", `${path}${q.size ? `?${q}` : ""}`);
     };
     if (now) write(); else this.urlTimer = setTimeout(write, 400);
@@ -346,10 +347,11 @@ async function render() {
   }
 
   if (openLoose(parts, q, main)) return;
-  const routeName = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? `${parts[0]}|${parts[1]}` : null;
+  const target = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
+  const routeName = target?.name;
   if (routeName) {
-    if (ws?.route.fullname === routeName) {
-      if (parts[2] && parts[2] !== ws.view) ws.setView(parts[2]);
+    if (ws && routeKey(ws.route) === routeName) {
+      if (target.view && target.view !== ws.view) ws.setView(target.view);
       return;
     }
     document.body.classList.add("loading");
@@ -360,7 +362,7 @@ async function render() {
       const route = await record;
       if (id !== navId) return;
       ws?.dispose();
-      ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");

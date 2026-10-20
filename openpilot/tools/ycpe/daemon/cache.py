@@ -16,7 +16,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from openpilot.tools.lib.filereader import DATA_ENDPOINT
+from openpilot.tools.lib import filereader
 from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
@@ -52,7 +52,7 @@ def canonical_url(source: str, key: Key) -> str | None:
   """The query-less URL the shared cache knows this file by when it came from source."""
   path = f"{key.dongle}/{key.log_id}/{key.seg}/{key.file}"
   if source == "internal":
-    return f"{DATA_ENDPOINT.rstrip('/')}/{path}"
+    return f"{filereader.DATA_ENDPOINT.rstrip('/')}/{path}"
   if source == "api":
     container = "qlog" if key.file.startswith(("qlog", "qcamera")) else "commadata2"
     return f"{API_BLOB}/{container}/{path}"
@@ -212,9 +212,11 @@ class Fill:
         r.release_conn()
       if self.total is not None and self.done != self.total:
         raise OSError(f"short read {self.done}/{self.total}")
+      old = self.final.stat().st_size if self.final.exists() else None  # a stale copy being replaced
       os.replace(self.tmp, self.final)
+      mark_checked(self.final)
       stats["fetched"] += self.done
-      account(self.done, 1)
+      account(self.done - (old or 0), 0 if old is not None else 1)
       if self.key.file in LOGS:
         mirror_chunks(self.cache_url, self.final)
     except Exception as e:
@@ -232,7 +234,29 @@ class Fill:
 
 _fills: dict[Key, Fill] = {}
 _fills_lock = threading.Lock()
-stats = {"hits": 0, "misses": 0, "served": 0, "fetched": 0}
+stats = {"hits": 0, "misses": 0, "served": 0, "fetched": 0, "stale": 0}
+
+
+# when a whole-file copy was last checked against its source, in an xattr on the file (a replaced file starts over);
+# in memory where the filesystem has no user xattrs
+
+XATTR = "user.ycpe.checked"
+_checked: dict[str, float] = {}
+
+
+def checked_at(path: Path) -> float:
+  try:
+    return float(os.getxattr(path, XATTR))
+  except (OSError, ValueError):
+    return _checked.get(str(path), 0.0)
+
+
+def mark_checked(path: Path, when: float | None = None) -> None:
+  when = time.time() if when is None else when  # noqa: TID251  outlives the process
+  try:
+    os.setxattr(path, XATTR, str(when).encode())
+  except OSError:
+    _checked[str(path)] = when
 
 
 def fill(key: Key, source: str, url: str, cancelled=None) -> Fill:
@@ -302,20 +326,28 @@ def prune_soon() -> None:
     _prune_timer.start()
 
 
+def derived_copies(url: str) -> list[Path]:
+  """The other tools' forms of url's file: decompressed logs and url_file chunks (not the whole-file copy)."""
+  h = hash_url(url)
+  paths = [root() / sha(f"decompressed-zst:{url}"), root() / sha(f"decompressed-bz2:{url}")]
+  try:
+    length = int((root() / f"{h}_length").read_text())
+  except (OSError, ValueError):
+    return paths
+  return paths + [root() / f"{h}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))] + [root() / f"{h}_length"]
+
+
 def evict(key: Key) -> int:
   """Removes every cached copy of key; returns bytes freed."""
-  freed = 0
   paths = [device_path(key)]
   for source in ("internal", "api", "openpilotci", "carSegments"):
     url = canonical_url(source, key)
-    h = hash_url(url)
-    paths += [root() / sha(url), root() / sha(f"decompressed-zst:{url}"), root() / sha(f"decompressed-bz2:{url}")]
-    try:
-      length = int((root() / f"{h}_length").read_text())
-    except (OSError, ValueError):
-      continue
-    paths += [root() / f"{h}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))] + [root() / f"{h}_length"]
-  removed = 0
+    paths += [root() / sha(url), *derived_copies(url)]
+  return remove(paths)
+
+
+def remove(paths: list[Path]) -> int:
+  freed = removed = 0
   for p in paths:
     try:
       size = p.stat().st_size

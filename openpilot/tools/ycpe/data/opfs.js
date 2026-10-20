@@ -1,6 +1,7 @@
-// the on-disk cache in OPFS for logs and video, from the page or any worker. Files are keyed by route, segment and
-// name (the signed URLs change). One LRU index in IndexedDB records every file's kind, size and last use, and each
-// kind is trimmed to its share of the budget, oldest use first, never touching the open route.
+// the on-disk cache in OPFS for logs and video, read from the page or any worker and written from dedicated workers
+// (writes need a sync access handle). Files are keyed by route, segment and name (the signed URLs change). One LRU
+// index in IndexedDB records every file's kind, size and last use, and each kind is trimmed to its share of the
+// budget, oldest use first, never touching the open route.
 export const SHARES = {logs: 5e9, video: 10e9};  // bytes; setShare() overrides, per origin
 
 async function handle(key, create) {

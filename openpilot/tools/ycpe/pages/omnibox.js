@@ -1,7 +1,8 @@
 // the omnibox: anything that names a route or a device, typed or pasted (route names in any separator form,
-// connect, useradmin and cabana URLs), with a dropdown of matching recent routes and devices
+// connect, useradmin and cabana URLs, segment ranges and selectors), with a dropdown of matching recent routes and devices
 import {api} from "../api.js";
 import {h} from "../dom.js";
+import {parseRange} from "../data/sources.js";
 
 const RECENT_KEY = "ycpe_recent_routes";
 const RECENT_MAX = 10;
@@ -34,6 +35,9 @@ export async function resolve(text) {
     return `/local/url/plot?url=${encodeURIComponent(s)}`;  // a direct link to a file opens it on its own
   }
   try { s = decodeURIComponent(s); } catch { /* keep it as typed */ }
+  // a segment range or selector, as the Python tools take them ("<route>/2:5/q"); "<route>--3" stays a seek
+  const r = parseRange(s);
+  if (r && (r.selector || r.slice && !s.endsWith(`--${r.slice}`))) return `/${r.dongle}/${r.logId}/${[r.slice, r.selector].filter(Boolean).join("/")}`;
   const t = Number(s.match(/[?&#]t=([\d.]+)/)?.[1]);
   const m = s.match(ROUTE);
   if (m) return routePath(`${m[1]}|${m[2]}`, t || (m[3] ? m[3] * 60 : 0));
