@@ -248,6 +248,18 @@ export const api = {
   segmentAsset: (route, segment, name) => route.url ? `${route.url}/${segment}/${name}` : null,
 };
 
+// connect's version check: "0.10" is at least "0.9.4"; a device that doesn't say is older than anything
+export function versionAtLeast(device, version) {
+  if (!device.openpilot_version) return false;
+  const have = device.openpilot_version.split(".");
+  for (const [i, want] of version.split(".").map(Number).entries()) {
+    const v = have[i] ? parseInt(have[i], 10) : 0;
+    if (!Number.isInteger(v) || v < want) return false;
+    if (v > want) return true;
+  }
+  return true;
+}
+
 export const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 
 // the segment a timeline slot plays: a route opened with a range (data/sources.js routeRecord) plays its segments

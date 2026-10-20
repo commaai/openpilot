@@ -1,5 +1,5 @@
 // the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings
-import {api, auth, engagedFraction} from "../api.js";
+import {api, auth, engagedFraction, versionAtLeast} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {icon} from "../icons.js";
 import {devicesChanged, go, isOnline, link, onlineMark, toast} from "../app.js";
@@ -258,18 +258,6 @@ function stats(dongleId) {
   return el;
 }
 
-// connect's version check: "0.10" is at least "0.9.4"; a device that doesn't say is older than anything
-function versionAtLeast(device, version) {
-  if (!device.openpilot_version) return false;
-  const have = device.openpilot_version.split(".");
-  for (const [i, want] of version.split(".").map(Number).entries()) {
-    const v = have[i] ? parseInt(have[i], 10) : 0;
-    if (!Number.isInteger(v) || v < want) return false;
-    if (v > want) return true;
-  }
-  return true;
-}
-
 // the car's battery, as connect reads it from an online device (peripheralState is in millivolts); red under 11 V
 function battery(device) {
   const el = h("span", {class: "battery", title: "Car battery", hidden: true});
@@ -382,11 +370,13 @@ export async function devicePage(dongleId, devices) {
 
   const online = isOnline(device), map = deviceMap(device, api.deviceLocation(dongleId).catch(() => null));
   const snapshots = h("div", {class: "snapshot", hidden: true});
+  const actions = h("span", {class: "device-actions"}, battery(device), snapshotButton(device, snapshots));
+  import("../panes/clips.js").then(({deviceClips}) => actions.prepend(deviceClips(device)));  // loaded after the page
   const el = h("div", {class: "page device-page"},
     h("div", {class: "device-head"},
       h("div", {class: "device-info"},
         h("h2", {}, onlineMark(device), deviceName(device), onlineMark(device, "pill")),
-        h("span", {class: "device-actions"}, battery(device), snapshotButton(device, snapshots)),
+        actions,
         h("div", {class: "kv"},
           h("span", {class: "mono"}, dongleId),
           device.device_type && h("span", {}, fmt.deviceType(device.device_type)),

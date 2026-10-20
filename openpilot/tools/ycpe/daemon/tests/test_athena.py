@@ -45,6 +45,15 @@ class TestAthena(DaemonCase):
     self.assertEqual(json.loads(kw["body"]), {"id": 0, "jsonrpc": "2.0", "method": "cancelUpload", "params": {"upload_id": ["x"]}})
     self.assertFalse(kw["redirect"])
 
+  def test_clips(self):
+    # the clip menu's calls; a chunk (512 KB on the device) comes back as base64 in the answer
+    chunk = json.dumps({"id": 0, "jsonrpc": "2.0", "result": {"data": "A" * (700 << 10), "offset": 0, "size": 1 << 20}}).encode()
+    self.pool.request.return_value = FakeResponse(chunk)
+    for method in ("getVersion", "getClipState", "createClip", "deleteClip", "getClipChunk"):
+      r, data = self.call({"method": method, "params": {}})
+      self.assertEqual((r.status, data), (200, chunk), method)
+      self.assertEqual(json.loads(self.pool.request.call_args[1]["body"])["method"], method)
+
   def test_upstream_status(self):
     self.pool.request.return_value = FakeResponse(b'{"error": "unauthorized"}', 401)
     r, _ = self.call({"method": "listUploadQueue"})
