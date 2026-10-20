@@ -29,11 +29,14 @@
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
 .can-col-name { flex: 1 1 100px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { width: 64px; }
 .can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { width: 158px; }
-/* narrow panes drop the node and count columns */
+/* narrow panes drop node and count, then bus and freq, then the bytes */
 .can-messages { container-type: inline-size; }
 .can-hide-bus .can-col-bus, .can-hide-id .can-col-id, .can-hide-node .can-col-node, .can-hide-freq .can-col-freq,
 .can-hide-count .can-col-count, .can-hide-bytes .can-col-bytes { display: none; }
 @container (max-width: 560px) { .can-col-node, .can-col-count { display: none; } }
+@container (max-width: 400px) { .can-col-bus, .can-col-freq { display: none; } }
+@container (max-width: 300px) { .can-col-bytes { display: none; } }
+.can-col-name { min-width: 70px; }
 .can-col-bus, .can-col-freq, .can-col-count { text-align: right; font-variant-numeric: tabular-nums; }
 .can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 .can-msg-spacer { position: relative; }
@@ -70,6 +73,13 @@
 .can-field input:not([type=checkbox]), .can-field select, .can-field textarea { flex: 1; min-width: 0; height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
 .can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1) { grid-column: 1 / -1; }
+/* narrow panes: no sparklines (as cabana's compact layout), and the editor in one column */
+.can-signals { container-type: inline-size; }
+@container (max-width: 360px) {
+  .can-spark { display: none; }
+  .can-sig-value { flex-basis: 76px; }
+  .can-sig-editor { grid-template-columns: 1fr; padding-left: 8px; }
+}
 
 /* history */
 .can-hist-row { display: grid; gap: 6px; height: 20px; align-items: center; padding: 0 6px; white-space: nowrap; }

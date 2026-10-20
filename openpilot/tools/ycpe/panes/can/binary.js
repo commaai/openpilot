@@ -27,7 +27,8 @@ export function create(ctx, state) {
   const dirBtn = h("select", {class: "can-select", title: "Endianness of a dragged signal",
     onchange: (e) => { dragDir = e.target.value; localStorage.setItem(DIR_KEY, dragDir); }},
     [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
-  const scroller = h("div", {class: "can-binary-scroll"}, canvas);
+  const empty = h("div", {class: "can-empty"}, "Select a message to see its bits");
+  const scroller = h("div", {class: "can-binary-scroll"}, canvas, empty);
   const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key},
     h("div", {class: "can-toolbar"}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn), scroller, info);
 
@@ -162,6 +163,7 @@ export function create(ctx, state) {
       const g = canvas.getContext("2d");
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, H);
+      if (empty.hidden !== n > 0) empty.hidden = n > 0;
       if (!n) return;
       const color = (x) => ctx.theme.color(x), fg = color("--fg"), muted = color("--muted"), line = color("--line"), accent = color("--accent"), mono = color("--mono");
       // light text on dark needs dimmer signal fills
@@ -204,7 +206,8 @@ export function create(ctx, state) {
             g.fillStyle = fg;
             g.fillText((d[r] >> (7 - c)) & 1, x + col / 2, y + ROW / 2);
           } else hatch(g, x, y, col, ROW, line);
-          for (const sg of cover) {
+          // M/L markers need room beside the digit
+          if (col >= 30) for (const sg of cover) {
             if (pos === sg.msb || pos === sg.lsb) {
               g.save();
               g.font = `9px ${color("--font")}`;

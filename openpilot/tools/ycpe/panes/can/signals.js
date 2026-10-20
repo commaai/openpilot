@@ -45,7 +45,7 @@ export function create(ctx, state) {
       key !== null && h("button", {class: "can-btn", title: "Edit message", onclick: () => messageDialog(can, key)}, m ? "Edit message" : "Add to DBC"),
       key !== null && m && h("button", {class: "can-btn", title: "Remove message", onclick: () => can.dbcs.edit(busOf(key), m.address, null, `remove message ${m.name}`)}, "Remove")].filter(Boolean));
     if (!m) {
-      list.replaceChildren(h("div", {class: "can-empty"}, key === null ? "" : "Drag across bits in the binary view to create a signal."));
+      list.replaceChildren(h("div", {class: "can-empty"}, key === null ? "Select a message to edit its signals" : "Drag across bits in the binary view to create a signal."));
       return;
     }
     if (m.comment) head.append(h("div", {class: "can-comment"}, m.comment));
