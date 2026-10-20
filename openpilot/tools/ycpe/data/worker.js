@@ -8,6 +8,7 @@ import {pack} from "./pack.js";
 import {index, messageAt} from "./message.js";
 import {CanFrames} from "./can.js";
 import {bootLog} from "./boot.js";
+import {Slots} from "./slots.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const codec = initCodec(), ready = codec.then(() => new Reader(schema));
@@ -95,10 +96,11 @@ function elemType(schema, path) {
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
 
-// opts: {n, shift, keep, only, skip, context, schema, gen, migrate}; keep, only and skip are {service: [path globs]};
+// opts: {n, shift, base, keep, only, skip, context, schema, gen, migrate}; keep, only and skip are {service: [path globs]};
 // schema is the log's own ({key, text}), read as it is with no migrations, or null for the bundled one; migrate: false
-// for logs written by current code (replays), where a migration would only invent services from the ones present
-async function parse(buf, opts) {
+// for logs written by current code (replays), where a migration would only invent services from the ones present;
+// base: the logMonoTime (s) of route time 0, where a live session started. more: services read elsewhere (JSON)
+async function parse(buf, opts, more = []) {
   const reader = await readerFor(opts.schema);
   const t0 = performance.now();
   let t1, raw, migrated;
@@ -108,6 +110,7 @@ async function parse(buf, opts) {
     t1 = performance.now();
     raw = bytes.byteLength;
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
+    for (const svc of more) if (![...read.values()].some((s) => s.name === svc.name)) read.set(svc.name, svc);
     if (!read.size) throw new Error(reader.unknown.events ? "none of its messages are in the schema" : "not an openpilot log: no messages in it");
     migrated = opts.schema || opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
     return compact(read).services;
@@ -121,7 +124,7 @@ async function parse(buf, opts) {
       hi = Math.max(hi, s.t.at(-1));
     }
   }
-  const start = services.initData?.t[0] ?? lo - opts.n * 60;
+  const start = opts.base ?? services.initData?.t[0] ?? lo - opts.n * 60;
   const off = opts.shift - start;
   // migrated services can share their source's time array: shift each array once
   for (const t of new Set(Object.values(services).map((s) => s.t))) for (let k = 0; k < t.length; k++) t[k] += off;
@@ -158,10 +161,37 @@ async function boot(url) {
 }
 
 const fetches = new Map();  // id → AbortController of a fetch in flight
+let live = null;  // a live session's slots (slots.js), in a worker of its own
 
-onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
+// a live session's ops; its packs go out unasked, as {live: pack}
+async function liveOp(op, {id, span, buf, msgs, n, opts}) {
+  if (op === "live-start") {
+    live = new Slots({span, schema, parse, post: (pack, transfer) => postMessage({live: pack}, transfer)});
+  } else if (op === "live-events") {
+    live.events(new Uint8Array(buf));
+  } else if (op === "live-json") {
+    live.json(msgs);
+  } else if (op === "live-drop") {
+    live.drop(n);
+  } else if (op === "live-keep") {
+    live.keep = opts.keep;
+  } else if (op === "live-read") {
+    const r = await live.read(n, opts.only, opts.can);
+    postMessage({id, ...r}, [...r.bufs, r.recs.buffer, ...r.canBufs]);
+  } else if (op === "live-message") {
+    const bytes = live.bytes(n), {schema: s} = await ready;
+    postMessage({id, message: messageAt(s, bytes, index(s, bytes), opts.service, opts.mono)});
+  } else if (op === "live-save") {
+    const bytes = live.save();
+    postMessage({id, bytes}, [bytes.buffer]);
+  }
+}
+
+onmessage = async ({data: {id, op, key, url, buf, opts, ...rest}}) => {
   try {
-    if (op === "message") {
+    if (op.startsWith("live-")) {
+      await liveOp(op, {id, buf, opts, ...rest});
+    } else if (op === "message") {
       postMessage({id, message: await message(key, url, opts.service, opts.mono, opts.schema)});
     } else if (op === "boot") {
       postMessage({id, boot: await boot(url)});
