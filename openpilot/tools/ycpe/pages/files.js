@@ -125,8 +125,10 @@ export function uploadState(up, key) {
   return h("span", {class: "small error", title: s.error}, "failed");
 }
 
-export function uploadNotice(up) {
+// keys: the route's "<segment>/<kind>"s. Nothing to say when none of them can be asked for or are on their way.
+export function uploadNotice(up, keys) {
   if (!up.offline() && !up.metered) return null;
+  if (!up.missing(keys).length && !keys.some((k) => up.state(k))) return null;
   return h("div", {class: "notice"}, icon("warning", 16), up.offline()
     ? "Device offline: requested uploads start when it comes back online."
     : "Device on a metered connection: uploads are paused until it's on wifi.");
