@@ -223,4 +223,4 @@ class Server(ThreadingHTTPServer):
 def make_server(port: int) -> Server:
   config.port = port
   load_modules()
-  return Server(("127.0.0.1", port), Handler)  # loopback only, never all interfaces
+  return Server(("0.0.0.0" if config.host else "127.0.0.1", port), Handler)  # loopback only, unless shared with --host

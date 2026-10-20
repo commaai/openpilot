@@ -32,14 +32,15 @@ class Config:
   device_key: str | None = None
   device_root: str | None = None  # the device's realdata directory if not the usual one (tests use a stand-in)
   webrtcd_port: int = 5001  # the webrtcd on this PC that /local/webrtc/stream forwards offers to
+  host: str | None = None  # this PC's LAN address, to share the daemon on the network (serve.py --host)
 
   @property
   def origins(self) -> set[str]:
-    return {f"http://{h}:{self.port}" for h in ("localhost", "127.0.0.1")}
+    return {f"http://{h}" for h in self.hosts}
 
   @property
   def hosts(self) -> set[str]:
-    return {f"{h}:{self.port}" for h in ("localhost", "127.0.0.1")}
+    return {f"{h}:{self.port}" for h in ("localhost", "127.0.0.1", self.host) if h}
 
 
 config = Config()
@@ -236,6 +237,8 @@ def peer_uid(client: tuple[str, int], server: tuple[str, int]) -> int | None:
 
 def check_peer(client: tuple[str, int], server: tuple[str, int]) -> None:
   # any local user can connect to 127.0.0.1, and index.html carries the token: only our own user's processes get in
+  if client[0] != "127.0.0.1" and config.host:
+    return  # shared on the network, on purpose
   if (uid := peer_uid(client, server)) is not None and uid != os.getuid():
     raise HTTPError(403, "another user")
 

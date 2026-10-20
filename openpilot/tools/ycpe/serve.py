@@ -28,7 +28,7 @@ def main():
   p = argparse.ArgumentParser(description=__doc__)
   p.add_argument("port", nargs="?", type=int, default=3000, help="athena allows localhost:3000; elsewhere the daemon relays its calls")
   p.add_argument("--static", action="store_true", help="no daemon, static files only")
-  p.add_argument("--host", default="127.0.0.1", help="address to serve on, with --static (the daemon is this machine's alone)")
+  p.add_argument("--host", default="127.0.0.1", help="this PC's LAN address, to share it on the network (the daemon too: its files, cache and sign-in)")
   p.add_argument("--cache-budget", type=float, default=20, help="GB the shared download cache may use (LRU pruned)")
   p.add_argument("--data-dir", action="append", default=[], help="local route directory the daemon may read (repeatable)")
   p.add_argument("--repo", action="append", default=[], help="openpilot checkout (default: this one)")
@@ -37,8 +37,6 @@ def main():
   p.add_argument("--webrtcd-port", type=int, default=5001, help="port of this PC's webrtcd, for live data at /live/local")
   p.add_argument("--device-root", help=argparse.SUPPRESS)  # a stand-in realdata directory, for testing over ssh localhost
   args = p.parse_args()
-  if args.host != "127.0.0.1" and not args.static:
-    p.error("--host needs --static: the daemon reads this machine's files and holds its sign-in")
 
   if not args.static:
     try:
@@ -59,6 +57,7 @@ def main():
     config.repo_roots = args.repo or [str(ROOT.parents[2])]
     config.device, config.device_key, config.device_root = args.device, args.device_key, args.device_root
     config.webrtcd_port = args.webrtcd_port
+    config.host = args.host if args.host != "127.0.0.1" else None
     server = make_server(args.port)
   print(f"http://{'localhost' if args.host == '127.0.0.1' else args.host}:{args.port}/" + ("" if args.static else "  (with the local daemon)"))
   try:
