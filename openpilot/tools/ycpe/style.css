@@ -3,6 +3,7 @@
   --engaged: #178645; --alert: #da6f25; --critical: #c92231; --bookmark: #e3b341;
   --font: "Inter", system-ui, sans-serif; --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
   --top: 36px; --head: 22px;
+  accent-color: var(--accent);  /* checkboxes, radios, progress bars */
 }
 [data-theme="light"] {
   --bg: #eef0f2; --panel: #fff; --raised: #fff; --fg: #1c2024; --fg-rgb: 28,32,36; --muted: #5f666e; --line: #dde1e5;
