@@ -64,7 +64,8 @@ export function create(ctx, state = {}) {
   const decimator = new Decimator(store);
 
   const pane = {
-    name: "plot", el, render, resize, dispose, save, addCurves,
+    name: "plot", el, render, resize, dispose, save, addCurves, compare,
+    has: (path) => st.curves.some((c) => c.path === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     overlay: () => perf.invalidate(pane),
@@ -211,9 +212,11 @@ export function create(ctx, state = {}) {
       const {shift, scale, offset} = it;
       g.strokeStyle = g.fillStyle = it.c.color;
       g.globalAlpha = st.hl === undefined || st.curves[st.hl] === it.c ? 1 : 0.35;
+      g.setLineDash(it.c.dash ? [5, 3] : []);
       strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5, it.gap);
     }
     g.globalAlpha = 1;
+    g.setLineDash([]);
     drawInvalid(g, p.lines, X, py + ph);
     decimator.sweep();
     g.restore();
@@ -291,7 +294,7 @@ export function create(ctx, state = {}) {
         onpointerenter: () => { st.hl = k; invalidate(); },
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
-      h("i", {style: `background:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
+      h("i", {class: c.dash ? "dash" : "", style: `color:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
       h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, label(c)),
       val,
       h("b", {class: "x", title: "remove", onclick: () => removeCurve(c)}, "×"));
@@ -308,7 +311,32 @@ export function create(ctx, state = {}) {
     change: () => { rebuildLegend(); invalidate(); },
     remove: () => removeCurve(c),
     code: c.custom && (() => editCode(c, e)),
+    actions: c.custom || c.transform ? [] : (store.overlays || [])
+      .filter((o) => !c.path.startsWith(o.prefix) && store.series(o.prefix + c.path))
+      .map((o) => ({label: `Compare with ${o.name}`, fn: () => compare(c.path, o.prefix)})),
   });
+
+  // an overlay's run of path (a replay) next to the original: dashed in the original's color, plus their
+  // difference in a color of its own (hidden until toggled on); t, if given, is seeked to and brought into view
+  function compare(path, prefix, t) {
+    const name = (store.overlays || []).find((o) => o.prefix === prefix)?.name || prefix.split("/").pop();
+    let orig = st.curves.find((c) => c.path === path && !c.transform && !c.custom);
+    if (!orig) st.curves.push(orig = normalize({path}));
+    const replay = prefix + path, tail = path.slice(1);
+    if (!st.curves.some((c) => c.path === replay)) st.curves.push({path: replay, color: orig.color, dash: true, label: `${name}: ${tail}`});
+    const diff = `/custom/${`${name}-${tail}`.replace(/\W+/g, "_")}`;
+    if (!st.curves.some((c) => c.path === diff)) {
+      st.curves.push(normalize({path: diff, label: `${name} − original: ${tail}`, hidden: true,
+        custom: {inputs: [replay, path], globals: "", code: "return value - v1;"}}));
+    }
+    if (t !== undefined) {
+      const [a, b] = xRange();
+      if (t < a || t > b) setRange(t - (b - a) / 2, t + (b - a) / 2);
+      clock.seek(t);
+    }
+    rebuildLegend();
+    invalidate();
+  }
 
   // creates (c undefined) or edits a custom series; the curve changes only once the code has run
   const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.label, ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
@@ -368,6 +396,7 @@ export function create(ctx, state = {}) {
   }
 
   over.addEventListener("pointerdown", (e) => {
+    view.touch(pane);
     if (!frame) return;
     over.focus();
     over.setPointerCapture(e.pointerId);
