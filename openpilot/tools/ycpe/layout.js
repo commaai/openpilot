@@ -10,6 +10,7 @@ import {PANES, loadPane} from "/panes.js";
 
 const MIN = 0.05;   // smallest split fraction
 const MIN_PX = {row: 120, col: 60};  // smallest pane, across and down, so a layout saved on a big screen stays usable
+const DIVIDER = 4;  // px, as in style.css
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
 const UNDO = 50;    // layout edits remembered
 
@@ -138,11 +139,14 @@ export class Layout {
   node(n) {
     if (!n.children) return this.paneBox(n);
     const box = h("div", {class: `split ${n.split}`});
+    // each child's minimum, scaled down together when they don't all fit
+    const mins = n.children.map((c) => minPx(c, n.split)), sum = mins.reduce((a, b) => a + b);
+    const gaps = (n.children.length - 1) * DIVIDER;
     n.children.forEach((c, i) => {
       if (i) box.append(this.divider(n, i, box));
       const child = this.node(c);
       child.style.flex = `${n.sizes[i]} 1 0`;
-      child.style[n.split === "row" ? "minWidth" : "minHeight"] = `${minPx(c, n.split)}px`;
+      child.style[n.split === "row" ? "minWidth" : "minHeight"] = `min(${mins[i]}px, (100% - ${gaps}px) * ${mins[i] / sum})`;
       box.append(child);
     });
     return box;
@@ -311,7 +315,7 @@ export class Layout {
 function minPx(n, dir) {
   if (!n.children) return MIN_PX[dir];
   const mins = n.children.map((c) => minPx(c, dir));
-  return n.split === dir ? mins.reduce((x, y) => x + y) : Math.max(...mins);
+  return n.split === dir ? mins.reduce((x, y) => x + y) + (mins.length - 1) * DIVIDER : Math.max(...mins);
 }
 
 function zoneOf(r, e) {
