@@ -153,7 +153,7 @@ export function create(ctx, state) {
 // the last few seconds of a signal, from worker buckets: a fixed-size canvas, so no layout reads
 function sparkline(canvas, d, color) {
   const dpr = devicePixelRatio, w = SPARK_W, hgt = 18;
-  if (canvas.width !== w * dpr) { canvas.width = w * dpr; canvas.height = hgt * dpr; }
+  if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(hgt * dpr); }
   const g = canvas.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, w, hgt);

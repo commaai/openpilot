@@ -156,10 +156,11 @@ export function create(ctx, state) {
       if (bar.hidden !== (key === null)) bar.hidden = key === null;
       if (key !== null) title.textContent = `${hexId(key)} ${msg()?.name || ""}`;
       dpr = devicePixelRatio;
-      const w = width, H = Math.max(n * ROW, 1);
-      if (canvas.width !== w * dpr || canvas.height !== H * dpr) {
-        canvas.width = w * dpr;
-        canvas.height = H * dpr;
+      // fractional sizes round to the backing store's, or it would be reallocated every frame
+      const w = width, H = Math.max(n * ROW, 1), bw = Math.round(w * dpr), bh = Math.round(H * dpr);
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw;
+        canvas.height = bh;
         canvas.style.height = `${H}px`;
       }
       const g = canvas.getContext("2d");
