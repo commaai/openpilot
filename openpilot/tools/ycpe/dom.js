@@ -37,3 +37,12 @@ export const fmt = {
   },
   miles: (mi) => `${mi.toFixed(1)} mi`,
 };
+
+// a module's own stylesheet, added once: css(new URL("./camera.css", import.meta.url))
+const sheets = new Set();
+export function css(href) {
+  href = String(href);
+  if (sheets.has(href)) return;
+  sheets.add(href);
+  document.head.append(h("link", {rel: "stylesheet", href}));
+}
