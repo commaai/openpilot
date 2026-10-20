@@ -5,12 +5,12 @@ import {format, value} from "/data/dbc.js";
 import {fmtTime} from "/panes/plot/draw.js";
 import {canOf, hex2, ink, subs} from "./common.js";
 
-const PAGE = 500, ROW = 20;
+const PAGE = 500, ROW = 20, AHEAD = 1;  // frames a request brings; px per row; s past the playhead a request reads
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let hex = state.hex || false, frames = {t: [], data: [], more: false}, busy = false, again = false;
-  let cols = [], pool = [], scrollTop = 0, height = 300;
+  let cols = [], pool = [], scrollTop = 0, height = 300, shownH = 0;
   const filter = {sig: h("select", {class: "can-select", "aria-label": "Signal"}), op: h("select", {class: "can-select", "aria-label": "Comparison"}, ["=", "!=", ">", ">=", "<", "<="].map((o) => h("option", {}, o))),
                   v: h("input", {class: "can-filter", placeholder: "value", "aria-label": "Value", type: "number", step: "any"})};
   // the value applies as it's typed
@@ -20,11 +20,7 @@ export function create(ctx, state) {
   const head = h("div", {class: "can-hist-row can-hist-head"});
   const spacer = h("div", {class: "can-msg-spacer"});
   const empty = h("div", {class: "can-empty"});
-  const body = h("div", {class: "can-msg-body", onscroll: () => {
-    scrollTop = body.scrollTop;
-    if (frames.more && !busy && scrollTop + height > frames.t.length * ROW - ROW * 20) load(true);
-    ctx.perf.invalidate(pane);
-  }}, spacer, empty);
+  const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; need(); }}, spacer, empty);
   const el = h("div", {class: "can-pane can-history"},
     h("div", {class: "can-toolbar"}, h("label", {class: "can-check"}, hexBox, "Hex"), h("span", {class: "can-spacer"}), "filter ", filter.sig, filter.op, filter.v), head, body);
 
@@ -35,14 +31,33 @@ export function create(ctx, state) {
     if (k === null) return;
     if (busy) { again = true; return; }
     busy = true;
-    const t = append && frames.t.length ? frames.t.at(-1) - 1e-7 : ctx.clock.t;
+    const version = can.dataVersion, t = append && frames.t.length ? frames.t.at(-1) - 1e-7 : ctx.clock.t + AHEAD;
     const r = await can.frames(k, t, PAGE, filters());
     busy = false;
     if (k !== can.selected) return load();
-    frames = append ? {t: [...frames.t, ...r.t], data: [...frames.data, ...r.data], more: r.more} : r;
-    spacer.style.height = `${frames.t.length * ROW}px`;
+    frames = append ? {...frames, t: [...frames.t, ...r.t], data: [...frames.data, ...r.data], more: r.more} : {...r, hi: t, version};
     ctx.perf.invalidate(pane);
     if (again) { again = false; load(); }
+  }
+
+  // the worker is asked only when the rows shown need frames it hasn't sent: the playhead left the span fetched (which
+  // reads AHEAD past it, so playback isn't a request a frame), the frames changed, or the list scrolled near its end
+  function need() {
+    const t = ctx.clock.t;
+    if (frames.version !== can.dataVersion || t > frames.hi || frames.more && t < frames.t.at(-1)) return load();
+    if (frames.more && !busy && scrollTop + height > (frames.t.length - shown()) * ROW - ROW * 20) load(true);
+    ctx.perf.invalidate(pane);
+  }
+
+  // the frames after the playhead (read ahead) aren't listed: the index of the newest at or before it
+  function shown() {
+    const t = ctx.clock.t, ts = frames.t;
+    let lo = 0, hi = ts.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (ts[mid] > t) lo = mid + 1; else hi = mid;
+    }
+    return lo;
   }
 
   // the columns (time, then signals or the hex bytes) change only with the message, DBC or hex toggle
@@ -89,19 +104,21 @@ export function create(ctx, state) {
   const pane = {
     name: "can-history", el,
     render() {
-      set(empty, can.selected === null ? "Select a message to see its history" : frames.t.length || busy ? "" : filters().length ? "No frames match the filter" : "No frames before the playhead");
+      const b = shown(), count = frames.t.length - b;
+      set(empty, can.selected === null ? "Select a message to see its history" : count || busy ? "" : filters().length ? "No frames match the filter" : "No frames before the playhead");
       if (empty.hidden !== !empty.textContent) empty.hidden = !empty.textContent;
+      if (shownH !== count * ROW) spacer.style.height = `${shownH = count * ROW}px`;
       const m = can.dbcMsg(can.selected), first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       for (let i = 0; i < Math.max(n, pool.length); i++) {
-        const j = first + i, r = pool[i] || (pool[i] = row()), on = i < n && j < frames.t.length;
+        const j = first + i, f = b + j, r = pool[i] || (pool[i] = row()), on = i < n && j < count;
         if (r.hidden !== !on) r.hidden = !on;
         if (!on) continue;
-        r.i = j;
+        r.i = f;
         if (r.top !== j) r.style.top = `${(r.top = j) * ROW}px`;
-        set(r.cells[0], fmtTime(frames.t[j], 0.001, true));
-        if (!cols.length) hexCells(r, frames.data[j], frames.data[j + 1]);
+        set(r.cells[0], fmtTime(frames.t[f], 0.001, true));
+        if (!cols.length) hexCells(r, frames.data[f], frames.data[f + 1]);
         else cols.forEach((sg, c) => {
-          const v = value(m, sg, frames.data[j]);
+          const v = value(m, sg, frames.data[f]);
           set(r.cells[c + 1], Number.isNaN(v) ? "–" : format(sg, v, false));
         });
       }
@@ -109,12 +126,13 @@ export function create(ctx, state) {
     dispose() { s.dispose(); },
     save: () => ({hex}),
   };
+  // the list's own height: the toolbar above it wraps on a narrow pane, so the pane's size doesn't tell it
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
   sizer.observe(body);
   s.add(() => sizer.disconnect());
   s.add(can.on("select", () => { frames = {t: [], data: [], more: false}; body.scrollTop = scrollTop = 0; columns(); load(); }));
   s.add(can.on("dbc", columns));
-  s.add(ctx.clock.on("t", () => load()));
+  s.add(ctx.clock.on("t", need));
   columns();
   load();
   return pane;
