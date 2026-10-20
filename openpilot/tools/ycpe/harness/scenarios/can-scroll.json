@@ -1,0 +1,16 @@
+{"name": "can-scroll", "url": "/5beb9b58bd12b691/0000010a--a51155e496/can", "timeout": 60000,
+ "steps": [
+  {"waitFor": ".can-msg-row"},
+  {"waitFor": {"fn": "!!document.querySelector('.load-pill.done')"}},
+  {"wait": 1000},
+  {"eval": "window.__scroll = {t: performance.now(), drops: __perf.drops}"},
+  {"wheel": {"at": ".can-msg-body", "dy": 60, "every": 16}, "repeat": 120},
+  {"click": ".playbar .play"},
+  {"wheel": {"at": ".can-msg-body", "dy": -60, "every": 16}, "repeat": 120},
+  {"click": ".playbar .play"},
+  {"eval": "window.__scroll.list = __perf.frames.filter((f) => f.t > __scroll.t).map((f) => Object.entries(f.panes).reduce((a, [k, v]) => a + (k.startsWith('can-messages') ? v : 0), 0)).sort((a, b) => a - b)"},
+  {"note": "(() => { const fs = __perf.frames.filter((f) => f.t > __scroll.t), w = __scroll.list, work = fs.map((f) => f.work).sort((a, b) => a - b); return `scroll: ${fs.length} frames, ${__perf.drops - __scroll.drops} dropped, work p99 ${work[Math.floor(work.length * 0.99)]?.toFixed(2)} max ${work.at(-1)?.toFixed(2)} ms, can-messages p50 ${w[w.length >> 1]?.toFixed(2)} p99 ${w[Math.floor(w.length * 0.99)]?.toFixed(2)} max ${w.at(-1)?.toFixed(2)} ms`; })()"},
+  {"assert": "__perf.drops === __scroll.drops || `${__perf.drops - __scroll.drops} frames dropped while scrolling the messages`", "rule": "drops"},
+  {"assert": "(__scroll.list[Math.floor(__scroll.list.length * 0.99)] ?? 0) <= 2 || `the message list's render p99 is ${__scroll.list[Math.floor(__scroll.list.length * 0.99)].toFixed(1)} ms while scrolling`", "rule": "frame-work"},
+  {"shot": "scrolled"}
+ ]}

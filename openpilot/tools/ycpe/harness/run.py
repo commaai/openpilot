@@ -214,7 +214,7 @@ class Scenario:
 
   def step(self, step):
     page = self.page
-    op = next(k for k in step if k not in ("timeout", "repeat"))
+    op = next(k for k in step if k not in ("timeout", "repeat", "rule"))
     arg, timeout = step[op], step.get("timeout", self.timeout)
     if op == "click" and isinstance(arg, str):
       page.locator(arg).first.click(timeout=timeout)
@@ -234,7 +234,9 @@ class Scenario:
     elif op == "wheel":
       vp = page.viewport_size
       page.mouse.move(*self.point(arg.get("at", [vp["width"] / 2, vp["height"] / 2]), timeout))
-      page.mouse.wheel(arg.get("dx", 0), arg.get("dy", 0))
+      for _ in range(step.get("repeat", 1)):  # a run of notches, `every` ms apart
+        page.mouse.wheel(arg.get("dx", 0), arg.get("dy", 0))
+        page.wait_for_timeout(arg.get("every", 0))
     elif op == "key":
       for _ in range(step.get("repeat", 1)):
         page.keyboard.press(arg)
@@ -258,9 +260,9 @@ class Scenario:
     elif op == "note":  # a value worth keeping in the report
       self.res.setdefault("notes", []).append(str(page.evaluate(arg)))
     elif op == "assert":
-      # a string result fails and says why
+      # a string result fails and says why; under its rule, if it has one (a perf rule only warns on a busy machine)
       if not (v := page.evaluate(arg)) or isinstance(v, str):
-        self.fail("assert", v if isinstance(v, str) else f"false: {arg}", arg)
+        self.fail(step.get("rule", "assert"), v if isinstance(v, str) else f"false: {arg}", arg)
     elif op == "network":
       # throttles the page and its workers: {down_kbps, up_kbps?, latency_ms?}, or "online"
       on = arg != "online"
