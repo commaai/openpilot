@@ -24,8 +24,13 @@ OUT = HERE / "out"
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
+# USB ethernet links (devices on this box) come and go, and Chrome fails in-flight requests whenever they do
 NETWORK_FLAKE = re.compile(r"ERR_NETWORK_CHANGED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED")
 FATAL = ("blocked", "page-error", "console-error")  # events that fail a scenario
+RAF_SAMPLE_JS = """(n) => new Promise((r) => {
+  const t = [], f = (now) => { t.push(now); t.length > n ? r(t) : requestAnimationFrame(f); };
+  requestAnimationFrame(f);
+})"""
 DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None}
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
 # gpu: headless Chrome on the NVIDIA GPU through ANGLE/EGL; hardware raster and compositing, 60 Hz begin-frames
@@ -134,7 +139,7 @@ def run_scenario(browser, base, sc, out, token):
 
   def event(kind, text):
     if not IGNORED_EVENTS.search(text) and not any(p.search(text) for p in allow):
-      res["events"].append({"kind": kind, "text": text[:400], "shot": len(res["shots"])})
+      res["events"].append({"kind": "network-flake" if NETWORK_FLAKE.search(text) else kind, "text": text[:400], "shot": len(res["shots"])})
 
   def guard(route):
     req = route.request
@@ -227,13 +232,26 @@ def check(res, budgets):
     if e["duration"] > budgets["loaf_ms"]:
       top = sorted(e["scripts"], key=lambda x: -x["duration"])[:3]
       who = ", ".join(f"{x['fn'] or x['invoker']}{'' if x['url'] == x['invoker'] else ' ' + x['url']}:{x['pos']} {x['duration']:.0f} ms" for x in top)
-      fail("long-frame", f"{e['duration']:.0f} ms frame at {e['start'] / 1000:.1f}s (blocking {e['blocking']:.0f} ms): {who or 'no script, so style/layout/paint'}",
+      who = who or "no script, so style/layout/paint"
+      fail("long-frame", f"{e['duration']:.0f} ms frame at {e['start'] / 1000:.1f}s (blocking {e['blocking']:.0f} ms): {who}",
            key=" ".join(f"{x['fn'] or x['invoker']} {x['url']}" for x in top) or "no script")
   if s["work_p99_ms"] is not None and s["work_p99_ms"] > budgets["work_p99_ms"]:
     fail("frame-work", f"perf.js work p99 {s['work_p99_ms']:.1f} ms > {budgets['work_p99_ms']} ms (max {s['work_max_ms']:.1f})", key="p99")
   if budgets["drops"] is not None and (s["drops"] or 0) > budgets["drops"]:
     fail("drops", f"{s['drops']} dropped frames (perf.js counter: {s['perf_js_drops']}), budget {budgets['drops']}", key="drops")
-  res["pass"] = not res["failures"] and not any(e["kind"] in FATAL for e in res["events"])
+  res["pass"] = passed(res)
+
+
+def passed(res, perf=True):
+  return not any(perf or f["rule"] not in report.PERF_RULES for f in res["failures"]) and not any(e["kind"] in FATAL for e in res["events"])
+
+
+def baseline_jank(browser):
+  """frames over 25 ms on an empty page in 1.5 s: a machine that drops frames here can't measure the app"""
+  page = browser.new_page()
+  t = page.evaluate(RAF_SAMPLE_JS, 90)
+  page.close()
+  return sum(b - a > 25 for a, b in zip(t, t[1:], strict=False))
 
 
 def main():
@@ -265,24 +283,38 @@ def main():
   try:
     with sync_playwright() as p:
       browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode], env=env)
+      jank, load = baseline_jank(browser), [os.getloadavg()[0]]
       for sc in scenarios:
         r = run_scenario(browser, base, sc, latest, token)
         # this machine's network drops out now and then; one retry keeps that from reading as an app bug
-        if not r["pass"] and any(NETWORK_FLAKE.search(e["text"]) for e in r["events"]):
+        if not r["pass"] and any(e["kind"] == "network-flake" for e in r["events"]):
           print(f"RETRY {r['name']} (network flake)")
           r = run_scenario(browser, base, sc, latest, token)
           r["retried"] = True
         errors = [f"{f['rule']}: {f['detail'][:70]}" for f in r["failures"]] + [f"{e['kind']}: {e['text'][:70]}" for e in r["events"] if e["kind"] in FATAL]
-        print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<16} {r['duration']:5.1f}s  {' | '.join(errors[:2])}{f' (+{len(errors) - 2})' if len(errors) > 2 else ''}")
+        more = f" (+{len(errors) - 2})" if len(errors) > 2 else ""
+        print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<16} {r['duration']:5.1f}s  {' | '.join(errors[:2])}{more}")
         results.append(r)
+        load.append(os.getloadavg()[0])
+      jank += baseline_jank(browser)
       browser.close()
   finally:
     server.kill()
     if xvfb:
       xvfb.kill()
 
-  (latest / "results.json").write_text(json.dumps({"mode": args.mode, "time": time.time(), "duration": time.monotonic() - t0,
-                                                   "load": os.getloadavg()[0], "cpus": os.cpu_count(), "scenarios": results}))
+  # on a saturated machine every page drops frames; then the perf budgets only warn
+  noisy = ""
+  if jank >= 3:
+    noisy = f"an empty page dropped {jank} frames"
+  elif max(load) > os.cpu_count():
+    noisy = f"load average reached {max(load):.0f} on {os.cpu_count()} cpus"
+  if noisy:
+    print(f"NOISY: {noisy}, so perf budgets only warn")
+    for r in results:
+      r["pass"] = passed(r, perf=False)
+  (latest / "results.json").write_text(json.dumps({"mode": args.mode, "duration": time.monotonic() - t0, "noisy": noisy,
+                                                   "load": max(load), "cpus": os.cpu_count(), "scenarios": results}))
   if args.bless:
     report.bless(latest)
   report.build(latest, prev)

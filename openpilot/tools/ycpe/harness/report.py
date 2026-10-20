@@ -16,10 +16,11 @@ HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "golden"
 REFERENCE = HERE / "out" / "reference"
 ERROR, WARN, INFO = "error", "warn", "info"
+PERF_RULES = ("long-frame", "frame-work", "drops")  # budgets that only warn when the machine is too busy to measure
 SEVERITY = {
   "blocked": ERROR, "page-error": ERROR, "console-error": ERROR, "long-frame": ERROR, "frame-work": ERROR, "drops": ERROR,
   "step": ERROR, "assert": ERROR, "auth": ERROR,
-  "text-ellipsis": INFO, "small-target": INFO,
+  "text-ellipsis": INFO, "small-target": INFO, "network-flake": INFO,
 }
 ORDER = [ERROR, WARN, INFO]
 DIFF_THRESHOLD = 0.1  # pixelmatch's default: fraction of the max YIQ distance
@@ -73,7 +74,7 @@ def annotate(src, dst, marks):
   img.save(dst)
 
 
-def collect(out, scenarios):
+def collect(out, scenarios, noisy):
   """every failure, event, lint issue and golden diff, grouped across scenarios and shots by what it is rather than where"""
   groups = {}
 
@@ -87,7 +88,8 @@ def collect(out, scenarios):
       add(f["key"], f["rule"], f["detail"], {"scenario": name, "note": f["detail"].split(" (")[0]})
     for e in sc["events"]:
       shot = shots[min(e["shot"], len(shots) - 1)] if shots else None
-      add(re.sub(r"[0-9a-f]{6,}|\d+", "#", e["text"]), e["kind"], e["text"], {"scenario": name, "shot": shot})
+      key = e["text"].split()[0] if e["kind"] == "network-flake" else re.sub(r"[0-9a-f]{6,}|\d+", "#", e["text"])
+      add(key, e["kind"], e["text"], {"scenario": name, "shot": shot})
     for shot in sc["shots"]:
       for i in shot["issues"]:
         add(re.sub(r":nth-of-type\(\d+\)", "", i["selector"]), i["rule"], i["detail"], {"scenario": name, "shot": shot["name"], "box": i["box"]}, i["selector"])
@@ -96,9 +98,10 @@ def collect(out, scenarios):
         shot["diff"] = diff(out / shot["path"], golden, out / shot["path"].replace(".png", ".diff.png"))
         if shot["diff"] > DIFF_REPORT:
           add(f"{name}/{shot['name']}", "golden-diff", f"{shot['diff']:.2%} of pixels differ from the golden", {"scenario": name, "shot": shot["name"]})
-  found = sorted(groups.values(), key=lambda f: (ORDER.index(SEVERITY.get(f["rule"], WARN)), -len(f["where"])))
+  severity = lambda f: WARN if noisy and f["rule"] in PERF_RULES else SEVERITY.get(f["rule"], WARN)  # noqa: E731
+  found = sorted(groups.values(), key=lambda f: (ORDER.index(severity(f)), -len(f["where"])))
   for n, f in enumerate(found, 1):
-    f["n"], f["severity"] = n, SEVERITY.get(f["rule"], WARN)
+    f["n"], f["severity"] = n, severity(f)
   return found
 
 
@@ -121,16 +124,17 @@ def chart(perf, prev):
     d = "".join(f"M{x(t - v - p['t'][0]):.1f} {y(v):.1f}H{x(t - p['t'][0]):.1f}" for t, v in zip(p["t"], p["interval"], strict=True))
     return f'<path d="{d}" fill="none" stroke="{color}" stroke-width="{width}"/>'
 
-  grid = "".join(f'<line x1="{P}" x2="{W - 5}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="#3a3f44" stroke-dasharray="3 3"/>'
+  grid = "".join(f'<line x1="{P}" x2="{W - 5}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="#3a3f44" stroke-dasharray="3 3"/>' +
                  f'<text x="{P - 4}" y="{y(v) + 4:.1f}" text-anchor="end">{v}</text>' for v in (16.7, 33, 50, 100))
-  loaf = "".join(f'<rect x="{x(e["start"] - t0):.1f}" y="{H - 12}" width="{max(2, x(e["duration"]) - P):.1f}" height="8" fill="#e5484d">'
+  loaf = "".join(f'<rect x="{x(e["start"] - t0):.1f}" y="{H - 12}" width="{max(2, x(e["duration"]) - P):.1f}" height="8" fill="#e5484d">' +
                  f'<title>{e["duration"]:.0f} ms frame: {html.escape(", ".join(s["fn"] or s["invoker"] for s in e["scripts"]))}</title></rect>'
                  for e in perf["loaf"])
-  paused = "".join(f'<rect x="{x(a - t0):.1f}" y="5" width="{x(b - a) - P:.1f}" height="{H - 20}" fill="#ffffff10"><title>screenshot + lint, excluded</title></rect>'
+  paused = "".join(f'<rect x="{x(a - t0):.1f}" y="5" width="{x(b - a) - P:.1f}" height="{H - 20}" fill="#ffffff10"><title>harness, excluded</title></rect>'
                    for a, b in perf.get("paused", []))
-  return (f'<svg width="{W}" height="{H}" class="chart">{paused}{grid}{steps(prev, "#8b9096", 1)}{steps(perf, "#4f9cf9", 1.5)}{loaf}'
-          f'<text x="{W - 5}" y="11" text-anchor="end">frame interval ms over {span / 1000:.1f} s · '
-          f'<tspan fill="#4f9cf9">this run</tspan> · previous run · <tspan fill="#e5484d">long frames</tspan> · shaded: harness, excluded</text></svg>')
+  legend = (f'frame interval ms over {span / 1000:.1f} s · <tspan fill="#4f9cf9">this run</tspan> · previous run · ' +
+            '<tspan fill="#e5484d">long frames</tspan> · shaded: harness, excluded')
+  return (f'<svg width="{W}" height="{H}" class="chart">{paused}{grid}{steps(prev, "#8b9096", 1)}{steps(perf, "#4f9cf9", 1.5)}{loaf}' +
+          f'<text x="{W - 5}" y="11" text-anchor="end">{legend}</text></svg>')
 
 
 def num(v, prev=None, fmt="{:.0f}"):
@@ -145,7 +149,7 @@ def build(out, prev_dir=None):
   prev = {}
   if prev_dir and (prev_dir / "results.json").exists():
     prev = {s["name"]: s for s in json.loads((prev_dir / "results.json").read_text())["scenarios"]}
-  found = collect(out, scenarios)
+  found = collect(out, scenarios, bool(res["noisy"]))
 
   marks = {}
   for f in found:
@@ -169,7 +173,9 @@ def build(out, prev_dir=None):
                  f"{s['loaf']} ({s['loaf_worst_ms']:.0f})", num(s["work_p99_ms"], fmt="{:.1f}"), num(s["drops"]), len(mine), f"{sc['duration']:.1f}s"])
 
   passed = sum(sc["pass"] for sc in scenarios)
-  title = f"{passed}/{len(scenarios)} passed · {len(found)} findings · mode {res['mode']} · {res['duration']:.0f} s · load {res['load']:.0f} on {res['cpus']} cpus"
+  title = f"{passed}/{len(scenarios)} passed · {len(found)} findings · mode {res['mode']} · {res['duration']:.0f} s · peak load {res['load']:.0f}/{res['cpus']}"
+  if res["noisy"]:
+    title += f" · NOISY: {res['noisy']}, so perf budgets only warn"
   write_md(out, title, head, rows, found, scenarios)
   write_html(out, title, head, rows, found, scenarios, prev)
 
@@ -180,7 +186,8 @@ def write_md(out, title, head, rows, found, scenarios):
         "## Findings", "",
         "Grouped by rule and selector across all scenarios. error fails the scenario, warn is a likely bug, info is probably intentional.",
         "Boxes are [x, y, w, h] in CSS px; the number is drawn on the annotated screenshots.",
-        "Frame timings are noisy when the machine load is near or above its cpu count.", ""]
+        "Frame timings are noisy on a busy machine: when an empty page drops frames or the load average exceeds the cpu count,",
+        "perf budgets are demoted to warnings.", ""]
   for f in found:
     sel = f" `{f['selector']}`" if f["selector"] else ""
     where = ", ".join(where_text(w, len(f["where"]) > 1) + (f" {w['box']}" if w.get("box") else "") for w in f["where"][:MAX_WHERE])
@@ -207,12 +214,13 @@ def write_html(out, title, head, rows, found, scenarios, prev):
   sections = []
   for sc in scenarios:
     status = "pass" if sc["pass"] else "fail"
-    shots = "".join(fig(s["annotated"], e(s["name"]) + (f' · <a href="{s["path"].replace(".png", ".diff.png")}">diff {s["diff"]:.2%}</a>' if "diff" in s else ""))
-                    for s in sc["shots"])
+    diff = lambda s: f' · <a href="{s["path"].replace(".png", ".diff.png")}">diff {s["diff"]:.2%}</a>' if "diff" in s else ""  # noqa: E731
+    shots = "".join(fig(s["annotated"], e(s["name"]) + diff(s)) for s in sc["shots"])
     refs = "".join(fig(f"../reference/{r}.png", f"reference: {e(r)}") for r in sc["reference"] if (REFERENCE / f"{r}.png").exists())
-    sections.append(f'<section id="{e(sc["name"])}"><h2>{e(sc["name"])} <span class="{status}">{status.upper()}</span> <small>{e(sc["url"])} · findings '
-                    f'{", ".join(map(str, sc["findings"])) or "none"}</small></h2>{chart(sc["perf"], prev.get(sc["name"], {}).get("perf"))}'
-                    f'<div class="sheet">{shots}{refs}</div></section>')
+    findings = ", ".join(map(str, sc["findings"])) or "none"
+    title = f'<h2>{e(sc["name"])} <span class="{status}">{status.upper()}</span> <small>{e(sc["url"])} · findings {findings}</small></h2>'
+    svg = chart(sc["perf"], prev.get(sc["name"], {}).get("perf"))
+    sections.append(f'<section id="{e(sc["name"])}">{title}{svg}<div class="sheet">{shots}{refs}</div></section>')
   (out / "report.html").write_text(f"""<!doctype html><meta charset="utf-8"><title>YCPE harness</title>
 <style>
 body {{ font: 13px/1.45 system-ui, sans-serif; background: #16191b; color: #ddd; margin: 20px; }}
