@@ -2,7 +2,7 @@
 // what's loaded, visible range, loop, playhead, hover preview). Everything on the timeline is one canvas; time with
 // nothing loaded at all is faded.
 import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
-import {h, fmt} from "/dom.js";
+import {h, fmt, parseClock} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -23,7 +23,31 @@ export function playbar(ctx) {
   const playBtn = h("button", {class: "tbtn play", title: "Play/pause (space)", onclick: () => clock.toggle()});
   const rate = h("select", {class: "rate", title: "Playback rate ([ and ])", onchange: (e) => clock.setRate(+e.target.value)},
     RATES.map((r) => h("option", {value: r, selected: r === clock.rate}, `${r}×`)));
-  const time = h("span", {class: "pb-time"});
+  // click the time to type one to go to
+  const time = h("button", {class: "pb-time", title: "Go to a time (3:12, 1:03:12 or seconds)", onclick: () => {
+    goto.value = fmt.clock(clock.t, true);
+    time.hidden = true;
+    goto.hidden = false;
+    goto.focus();
+    goto.select();
+  }});
+  const goto = h("input", {class: "pb-time", hidden: true, "aria-label": "Go to time", spellcheck: false});
+  const shown = () => {
+    const focused = document.activeElement === goto;
+    goto.hidden = true;
+    goto.removeAttribute("aria-invalid");
+    time.hidden = false;
+    if (focused) time.focus();
+  };
+  // Enter goes there (a time it can't read stays, to be fixed); Escape or leaving doesn't
+  goto.addEventListener("keydown", (e) => {
+    const t = parseClock(goto.value);
+    if (e.key === "Enter") e.preventDefault();  // not a click on the time button, focused again
+    if (e.key === "Enter" && Number.isNaN(t)) goto.setAttribute("aria-invalid", "true");
+    else if (e.key === "Enter") { clock.seek(t); shown(); }
+    else if (e.key === "Escape") shown();
+  });
+  goto.addEventListener("blur", () => { if (!goto.hidden) shown(); });
   const wall = h("span", {class: "pb-wall muted"});
   const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", "aria-pressed": "false", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, icon("loop", 16));
   const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(0, clock.duration)}, icon("fit", 16));
@@ -42,7 +66,7 @@ export function playbar(ctx) {
     h("button", {class: "tbtn", title: "Back 1 s (←, shift: 10 s)", onclick: () => clock.seek(clock.t - 1)}, icon("rewind", 16)),
     playBtn,
     h("button", {class: "tbtn", title: "Forward 1 s (→, shift: 10 s)", onclick: () => clock.seek(clock.t + 1)}, icon("forward", 16)),
-    rate, h("span", {class: "pb-clock"}, time, wall), track, loopBtn, fitBtn);
+    rate, h("span", {class: "pb-clock"}, time, goto, wall), track, loopBtn, fitBtn);
 
   let width = 0, hover = null;
   const x2t = (x) => x / width * clock.duration;

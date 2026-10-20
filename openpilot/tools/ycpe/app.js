@@ -1,7 +1,7 @@
 import {api, auth} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h} from "/dom.js";
+import {h, parseClock} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -526,7 +526,7 @@ const GESTURES = [
   ["double-click a series", "add it to a plot"], ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"],
   ["right-drag in a plot", "pan"], ["right-click a plot", "options, custom series, export"], ["double-click a plot", "fit"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
-  ["wheel on the timeline", "zoom the visible range"], ["drop rlog or qlog files on the page", "open them"],
+  ["wheel on the timeline", "zoom the visible range"], ["click the playback time", "type a time to go to (3:12 or 192)"], ["drop rlog or qlog files on the page", "open them"],
 ];
 
 // a modal: Escape, the close button, a click outside or ? again closes it
@@ -611,8 +611,9 @@ async function renderPage() {
       ws?.dispose();
       // ?repeat=n (a load test): the logs n times over, at most 50
       const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
-      ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat});
-      if (target.range) ws.showRange(target.range, !q.has("t"));
+      const t = urlTime(q);
+      ws = new Workspace(route, files, target.view || "drive", {t: t ?? 0, repeat});
+      if (target.range) ws.showRange(target.range, t === null);
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
@@ -652,6 +653,13 @@ async function renderPage() {
   }
 }
 
+// ?t=, in seconds or as the playbar shows it (3:12); null when there's none, or it isn't a time (which is said)
+function urlTime(q) {
+  const t = q.has("t") ? parseClock(q.get("t")) : null;
+  if (Number.isNaN(t)) toast(`Couldn't read t=${q.get("t")}: give seconds or m:ss`);
+  return Number.isNaN(t) ? null : t;
+}
+
 // logs outside the API (data/sources.js): files dropped anywhere on the page, or a direct link (?url=). False when the
 // path is neither.
 let dropped = null;
@@ -663,7 +671,7 @@ function openLoose(parts, q, main) {
     return true;
   }
   ws?.dispose();
-  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: +q.get("t") || 0});
+  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: urlTime(q) ?? 0});
   document.body.classList.toggle("in-ws", !!ws);
   main.replaceChildren(ws ? ws.el : localPage(openFiles));
   updateTop();

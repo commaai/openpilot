@@ -53,6 +53,12 @@ export const fmt = {
   miles: (mi) => `${mi.toFixed(1)} mi`,
 };
 
+// a typed time on the route, as fmt.clock writes it or in seconds ("3:12", "1:03:12.5", "192") → seconds, else NaN
+export function parseClock(s) {
+  const m = /^\s*(?:(?:(\d+):)?(\d+):)?(\d+(?:\.\d*)?)\s*$/.exec(s ?? "");
+  return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + +m[3] : NaN;
+}
+
 // a module's own stylesheet, added once; resolves once it's applied, so a pane module can wait for it at the top
 // level (await css(new URL("./camera.css", import.meta.url))) and never show an unstyled first frame
 const sheets = new Map();
