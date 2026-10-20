@@ -420,7 +420,8 @@ class Workspace {
       q.delete("layout");  // opened once, then it's part of the saved layout
       if (this.clock.t === 0) q.delete("t");
       const path = `/${routeKey(this.route).replace("|", "/")}/${this.view}`;
-      history.replaceState(null, "", `${path}${q.size ? `?${q}` : ""}`);
+      this.href = `${path}${q.size ? `?${q}` : ""}`;
+      history.replaceState(null, "", this.href);
     };
     if (now) write(); else this.urlTimer = setTimeout(write, 400);
   }
@@ -526,6 +527,9 @@ function closeWorkspace() {
   document.body.classList.remove("in-ws");
 }
 
+// the path still names the open workspace's route (or loose logs), whatever the view
+const showsWorkspace = (parts) => [parts.length >= 2 && routeFromPath(parts)?.name, `${parts[0]}|${parts[1]}`].includes(routeKey(ws.route));
+
 let navId = 0;
 async function render() {
   const id = ++navId;
@@ -533,6 +537,10 @@ async function render() {
   const parts = location.pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(location.search);
   closePopover();
+  // leaving the route with unsaved DBC edits asks first, as closing the browser tab does; staying puts its URL back
+  if (ws?.store?.can.dbcs?.dirty && !showsWorkspace(parts) && !confirm("The DBC files have unsaved changes. Leave and discard them?")) {
+    return history.pushState(null, "", ws.href);
+  }
 
   if (parts[0] === "auth" || parts[0] === "login") {
     closeWorkspace();
