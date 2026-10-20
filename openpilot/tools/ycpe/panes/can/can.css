@@ -35,14 +35,16 @@
 .can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
 .can-col-name { flex: 1 1 140px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
-.can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { width: 158px; }
-/* narrow panes drop node and count, then bus and freq, then the bytes */
+.can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { flex: 0 1 158px; }
+/* narrow panes drop node and count, then bus and freq, then the bytes, but for columns turned on in the menu */
 .can-messages { container-type: inline-size; }
 .can-hide-bus .can-col-bus, .can-hide-id .can-col-id, .can-hide-node .can-col-node, .can-hide-freq .can-col-freq,
 .can-hide-count .can-col-count, .can-hide-bytes .can-col-bytes { display: none; }
 @container (max-width: 560px) { .can-col-node, .can-col-count { display: none; } }
 @container (max-width: 400px) { .can-col-bus, .can-col-freq { display: none; } }
 @container (max-width: 300px) { .can-col-bytes { display: none; } }
+.can-show-bus .can-col-bus, .can-show-node .can-col-node, .can-show-freq .can-col-freq,
+.can-show-count .can-col-count, .can-show-bytes .can-col-bytes { display: block; }
 .can-col-name { min-width: 70px; }
 .can-col-bus, .can-col-freq, .can-col-count { text-align: right; font-variant-numeric: tabular-nums; }
 .can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }

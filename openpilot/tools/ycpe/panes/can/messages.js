@@ -20,7 +20,7 @@ const text = (c, m, can) => String(c.text ? c.text(m, can) : c.get(m, can) ?? "N
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
-  const filters = {...state.filters}, hidden = new Set(state.hidden);
+  const filters = {...state.filters}, hidden = new Set(state.hidden), shown = new Set(state.shown);
   let unseen = state.unseen ?? true;  // DBC messages never seen on the bus, as cabana's "Show inactive messages"
 
   const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
@@ -47,13 +47,21 @@ export function create(ctx, state) {
       menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
       menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
       h("hr"),
-      ...COLS.slice(1).map((c) => menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); }))])}, icon("more_horiz", 14)));
+      ...COLS.slice(1).map((c) => menuCheck(c.title, getComputedStyle(head.querySelector(`.can-col-${c.id}`)).display !== "none", (on) => {
+        (on ? hidden : shown).delete(c.id);
+        (on ? shown : hidden).add(c.id);
+        columns();
+      }))])}, icon("more_horiz", 14)));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 
-  // hidden columns are a class per column on the pane, so rows never change for it
+  // hidden columns are a class per column on the pane, so rows never change for it. Narrow panes hide some columns
+  // unless they were turned on: the menu shows which are showing
   function columns() {
-    for (const c of COLS) el.classList.toggle(`can-hide-${c.id}`, hidden.has(c.id));
+    for (const c of COLS) {
+      el.classList.toggle(`can-hide-${c.id}`, hidden.has(c.id));
+      el.classList.toggle(`can-show-${c.id}`, shown.has(c.id));
+    }
   }
 
   function toolbar() {
@@ -190,7 +198,7 @@ export function create(ctx, state) {
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
-    save: () => ({sort, filters, hidden: [...hidden], unseen}),
+    save: () => ({sort, filters, hidden: [...hidden], shown: [...shown], unseen}),
   };
   s.add(can.on("messages", () => refresh(false)));
   s.add(can.on("dbc", () => refresh()));
