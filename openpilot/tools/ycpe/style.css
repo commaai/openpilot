@@ -55,6 +55,7 @@ body.in-ws #main { overflow: hidden; }
 .omnibox:focus { border-color: var(--accent); }
 .views, .tabs { display: flex; flex-shrink: 0; align-items: center; gap: 1px; margin-left: 8px; }
 .views { padding: 2px; border-radius: 6px; background: var(--bg); }
+.views:empty, .tabs:empty { display: none; }
 /* the tabs (they scroll) and the load pill (it ellipsizes) give way when the bar is full */
 .tabs { flex-shrink: 1; min-width: 100px; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
 .topbar { container-type: inline-size; }
