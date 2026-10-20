@@ -99,7 +99,8 @@ function xorDefault(type, raw, def) {
     f64u[1] ^= Math.floor(def / 4294967296);
     return f64[0];
   }
-  return Number(BigInt.asUintN(64, BigInt(raw)) ^ BigInt(def));
+  if (type === "i64" || type === "u64") return Number(BigInt[type === "i64" ? "asIntN" : "asUintN"](64, BigInt(raw) ^ BigInt(def)));
+  return type === "u32" ? (raw ^ def) >>> 0 : raw ^ def;
 }
 const MAX_LIST = 16;  // longer lists are not split into per-index columns
 
@@ -242,8 +243,8 @@ export class Reader {
       this.walk(f.plan, rOff, rData, rPtrs, i);
     }
     for (const f of p.texts) {
-      if (f.disc >= 0 && f.disc !== which || f.idx >= ptrs) continue;
-      f.col.v[i] = readText(pbase + f.idx * 8);
+      if (f.disc >= 0 && f.disc !== which) continue;
+      f.col.v[i] = f.idx < ptrs ? readText(pbase + f.idx * 8) : "";
     }
     for (const f of p.lists) {
       if (f.disc >= 0 && f.disc !== which || f.idx >= ptrs) continue;
