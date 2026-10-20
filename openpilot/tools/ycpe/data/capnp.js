@@ -129,7 +129,7 @@ export class Reader {
     this.ev = Object.fromEntries(this.event.fields.map((f) => [f[0], f]));
   }
 
-  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, cols: Map(path → Column), lists})
+  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, seq, cols: Map(path → Column), lists})
   // keep: {service: ["/speeds", "/laneLines/*/y"]} splits those long lists per index too; every other long list
   // is skipped and reported in lists (path → longest length) so it can be asked for later
   read(buf, {can = null, keep = {}} = {}) {
@@ -168,7 +168,7 @@ export class Reader {
     for (let w = 0; w < counts.length; w++) {
       if (!counts[w]) continue;
       const f = byDisc[w];
-      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), plan: null,
+      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), seq: new Uint32Array(counts[w]), plan: null,
         cols: new Map(), keep: keep[f[0]] && pattern(keep[f[0]]), listPlans: [], lists: new Map()});
     }
 
@@ -182,6 +182,7 @@ export class Reader {
       follow(segBase[0]);
       const evOff = rOff, evData = rData;
       const i = svc.n++;
+      svc.seq[i] = k >> 1;  // log order, which migrations need where times tie or go backwards
       svc.t[i] = u64(evOff) / 1e9;
       svc.valid[i] = validOff >> 3 < evData ? ((U8[evOff + (validOff >> 3)] >> (validOff & 7)) & 1) ^ 1 : 1;
       const f = svc.field, ptr = evOff + evData + f[3] * 8;

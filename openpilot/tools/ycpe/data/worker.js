@@ -54,7 +54,9 @@ async function load(key, url) {
   return {buf, cached: false};
 }
 
-// opts: {n, shift, keep, only, context}; keep and only are {service: [path globs]}
+const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
+
+// opts: {n, shift, keep, only, skip, context}; keep, only and skip are {service: [path globs]}
 async function parse(buf, opts) {
   const reader = await ready;
   const t0 = performance.now();
@@ -78,8 +80,9 @@ async function parse(buf, opts) {
   const off = opts.shift - start;
   for (const s of Object.values(services)) for (let k = 0; k < s.t.length; k++) s.t[k] += off;
 
-  const only = opts.only && Object.fromEntries(Object.entries(opts.only).map(([name, globs]) => [name, pattern(globs)]));
-  const out = pack(services, reader.schema.enums, only);
+  const only = patterns(opts.only), skip = patterns(opts.skip);
+  const want = (only || skip) && ((name, sub) => (!only || !!only[name]?.test(sub)) && !skip?.[name]?.test(sub));
+  const out = pack(services, reader.schema.enums, want);
   return {...out, start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
