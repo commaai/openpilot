@@ -29,7 +29,7 @@ onmessage = async ({data}) => {
   pool.push(...data.buffers || []);
   if (data.urls) {
     ({urls, keys} = data);
-    await Promise.all(urls.map(async (u, n) => {
+    await Promise.all(Array.from(urls, async (u, n) => {  // holes too: segments without a file
       const f = u && keys[n] && await opfs.read(keys[n]);
       if (f) disk.set(n, f.size);
       state(n, !u ? "missing" : f ? "disk" : "idle");
@@ -193,8 +193,13 @@ async function prefetch(n) {
 
 async function start(codec) {
   backend = false;  // opening
-  backend = await openBackend(codec, {emit, pump, alloc, error: () => { next = -1; pump(); }}).catch((e) => console.error(e) ?? null);
-  postMessage(backend ? {backend: backend.name} : {unsupported: codec});
+  let unbuilt = false;
+  backend = await openBackend(codec, {emit, pump, alloc, error: () => { next = -1; pump(); }}).catch((e) => {
+    unbuilt = !!e.unbuilt;
+    console.error(e);
+    return null;
+  });
+  postMessage(backend ? {backend: backend.name} : {unsupported: codec, unbuilt});
 }
 
 function pump() {

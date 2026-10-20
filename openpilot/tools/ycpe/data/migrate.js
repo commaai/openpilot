@@ -1,6 +1,6 @@
-// column-level port of selfdrive/test/process_replay/migration.py. It rewrites one segment's reader output (dense
-// columns, before compact()) into the current schema in place, with aliased and derived columns and no capnp
-// re-encoding.
+// column-level port of selfdrive/test/process_replay/migration.py, plus FIXES for schema moves it has no migration
+// for. It rewrites one segment's reader output (dense columns, before compact()) into the current schema in place,
+// with aliased and derived columns and no capnp re-encoding.
 //
 // Route context: migrations that need initData or carParams read them from the segment if it has them, otherwise
 // from routeContext, which the loader fills from the context migrate() returns for an earlier segment. Python
@@ -464,6 +464,16 @@ const OPTIONAL = {
   cameraStates: [[["narrowRoadCameraState", "wideRoadCameraState", "cabinCameraState"], null, cameraStates]],
 };
 
+// fields the schema moved with no python migration, fixed in logs from before the move. An old log is told by its
+// data in the old field, which new code never writes.
+const FIXES = [
+  // 069506aa36 (2026-06): selfdriveState.alertSound moved from @8 (now deprecated.alertSound) to @13; same ordinals
+  (s) => {
+    const cols = s.selfdriveState?.cols, old = cols?.["/deprecated/alertSound"];
+    if (old?.v.some((x) => x > 0)) cols["/alertSound"] = {...cols["/alertSound"], v: old.v};
+  },
+];
+
 // the reader's keep option plus the lists the migrations read
 export function withKeep(keep = {}) {
   const out = {...keep};
@@ -506,6 +516,7 @@ export function migrate(services, routeContext = {}, options = {}) {
   for (const [inputs, product, fn] of migrations) {
     if (!original.has(product) && inputs.some((name) => original.has(name))) fn(s, ctx, missing);
   }
+  for (const fix of FIXES) fix(s);
   unkeep(s, options.keep);
   services.clear();
   for (const [name, svc] of Object.entries(s)) services.set(name, {lists: new Map(), ...svc, name, cols: new Map(Object.entries(svc.cols))});

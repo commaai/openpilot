@@ -10,14 +10,15 @@ import {Layout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
-import {loadPill, footprint} from "/status.js";
+import {status, loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
-import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
+import {logSchema} from "/data/schemas.js";
+import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles, watchRouteStart} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute} from "/pages/omnibox.js";
-import {localPage} from "/pages/local.js";
+import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 
@@ -196,6 +197,10 @@ class Workspace {
   ensureStore() {
     if (this.store || !this.files) return this.store;
     this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
+    this.offs.push(watchRouteStart(this.route, this.store));
+    const schema = logSchema(this.store, this.route);  // switches to the log's own schema for forks and unknown fields
+    this.offs.push(() => schema.dispose(), () => status.note("schema", ""),
+      schema.on((s) => status.note("schema", s.active === "log" && s.fork ? `${s.label} schema` : "")));
     // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
     this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
@@ -283,6 +288,17 @@ const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g
 
 // ---- keyboard ----
 
+// undo/redo of the layout, on window so it runs last: panes take the keys first for their own undo (a plot's view, the
+// CAN view's DBC edits) and mark them handled
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y") || e.defaultPrevented || !ws?.layout) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  e.preventDefault();
+  if (k === "y" || e.shiftKey) ws.layout.redo(); else ws.layout.undo();
+  updateTop();
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
@@ -311,7 +327,7 @@ const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
   ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
   ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
-  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
+  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["ctrl z", "undo a layout change (shift: redo)"], ["double-click a divider", "even out the split"],
   ["wheel on the timeline", "zoom the visible range"],
 ];
 
@@ -368,7 +384,8 @@ async function render() {
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);
     } catch (e) {
-      main.replaceChildren(errorPage(e));
+      const card = [403, 404].includes(e.status) && await pullCard(routeName, render).catch(() => null);  // only on the LAN device
+      if (id === navId) main.replaceChildren(card || errorPage(e));
     } finally {
       document.body.classList.remove("loading");
     }
@@ -428,6 +445,7 @@ function errorPage(e) {
 }
 
 document.querySelector("#app > .topbar").replaceWith(topBar());
+addEventListener("ycpe:route-start", (e) => { if (ws?.route === e.detail) updateTop(); });
 window.addEventListener("popstate", render);
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice)

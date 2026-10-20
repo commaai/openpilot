@@ -40,7 +40,11 @@ function webcodecs(config, {emit, pump, error, alloc}) {
 
 // one access unit per task, so new requests get through between frames
 async function wasm({emit, pump, alloc}) {
-  const module = await WebAssembly.compileStreaming(fetch(new URL("./hevc.wasm", import.meta.url)));
+  // a build artifact (build.sh), not in git: without it there's no software HEVC (a static server may answer
+  // with the app's index.html instead of a 404)
+  const resp = await fetch(new URL("./hevc.wasm", import.meta.url));
+  if (!resp.ok || resp.headers.get("content-type") !== "application/wasm") throw Object.assign(new Error(`hevc.wasm ${resp.status}`), {unbuilt: true});
+  const module = await WebAssembly.compileStreaming(resp);
   // the libc imports left over (stdio, environ, clock) are never needed: each fails with ENOSYS
   const imports = {};
   for (const {module: m, name} of WebAssembly.Module.imports(module)) (imports[m] ??= {})[name] = () => 52;

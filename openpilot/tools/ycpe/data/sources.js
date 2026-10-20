@@ -305,6 +305,26 @@ function looseRoute(name, files) {
   };
 }
 
+// a loose record's times come from its segment count; once the store has the logs' wall clock (clocks, else
+// initData) the start moves to the true one and "ycpe:route-start" fires on window. → unsubscribe
+export function watchRouteStart(route, store) {
+  if (!route.loose) return () => {};
+  const check = () => {
+    for (const path of ["/clocks/wallTimeNanos", "/initData/wallTimeNanos"]) {
+      const chunk = store.series(path)?.chunks.find((c) => c.tt.length);
+      const ms = chunk && Number(chunk.v[0]) / 1e6 - chunk.tt[0] * 1000;  // wall time at slot 0
+      if (!(ms > Date.UTC(2016, 0))) continue;  // a clock that wasn't set yet
+      route.end_time_utc_millis += ms - route.start_time_utc_millis;
+      route.start_time_utc_millis = ms;
+      off();
+      dispatchEvent(new CustomEvent("ycpe:route-start", {detail: route}));
+      return;
+    }
+  };
+  const off = store.on("segment", check);
+  return off;
+}
+
 // each segment's rlog, or its qlog when that's all there is (/r and /q take only that kind)
 function looseLogs(files, selector) {
   const urls = [];

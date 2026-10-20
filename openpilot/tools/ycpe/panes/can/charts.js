@@ -1,5 +1,5 @@
-// cabana's charts: a grid of plot panes, one per chart. The plot button opens a new chart, dropping signals on
-// a chart adds them, and dragging a chart's handle onto another merges the two.
+// cabana's charts: tabs of plot-pane grids, one plot per chart. The plot button opens a new chart, dropping signals
+// on a chart adds them, and dragging a chart's handle onto another merges the two. Only the open tab has live plots.
 import {h} from "/dom.js";
 import {create as plot} from "/panes/plot/plot.js";
 import {PATHS_MIME} from "/panes/plot/view.js";
@@ -7,7 +7,10 @@ import {canOf, subs} from "./common.js";
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
-  let cols = state.cols || 1, charts = [], dragging = null;
+  let cols = state.cols || 1, style = state.style || "", charts = [], dragging = null;
+  const tabs = state.tabs || [{charts: state.charts || []}];  // the open tab's charts live in `charts`
+  let active = Math.min(state.active || 0, tabs.length - 1);
+  const tabBar = h("div", {class: "can-tabs"});
   const grid = h("div", {class: "can-charts-grid", ondragover: (e) => e.preventDefault(), ondrop: (e) => {
     const data = e.dataTransfer.getData(PATHS_MIME);
     // drops on a chart are the plot's
@@ -16,15 +19,17 @@ export function create(ctx, state) {
   const el = h("div", {class: "can-pane can-charts"},
     h("div", {class: "can-toolbar"}, h("span", {class: "can-muted"}, "Drop signals here; drag a chart's handle onto another to merge"),
       h("span", {class: "can-spacer"}),
+      h("select", {class: "can-select", title: "Series type of every chart", onchange: (e) => restyle(e.target.value)},
+        [["", "auto"], ["line", "line"], ["steps", "step"], ["dots", "scatter"]].map(([v, n]) => h("option", {value: v, selected: v === style}, n))),
       h("select", {class: "can-select", title: "Columns", onchange: (e) => { cols = +e.target.value; layout(); }},
         [1, 2, 3].map((n) => h("option", {value: n, selected: n === cols}, `${n} col`))),
-      h("button", {class: "can-btn", onclick: () => { for (const c of [...charts]) remove(c); }}, "Clear")), grid);
+      h("button", {class: "can-btn", onclick: () => { for (const c of [...charts]) remove(c); }}, "Clear")), tabBar, grid);
   const resizer = new ResizeObserver((entries) => {
     for (const e of entries) charts.find((c) => c.box === e.target)?.pane.resize(e.contentRect.width, e.contentRect.height);
   });
 
   // decoded signals keep their DBC color
-  const curve = (path) => ({path, color: can.parse(path)?.sig.color});
+  const curve = (path) => ({path, color: can.parse(path)?.sig.color, ...(style && {style})});
 
   function add(st) {
     const c = {pane: plot(ctx, st)};
@@ -50,6 +55,40 @@ export function create(ctx, state) {
     c.el.remove();
   }
 
+  function open(i) {
+    tabs[active].charts = charts.map((c) => c.pane.save());
+    for (const c of [...charts]) remove(c);
+    active = i;
+    for (const st of tabs[active].charts) add(st);
+    tabsChanged();
+  }
+
+  function tabsChanged() {
+    tabBar.replaceChildren(...tabs.map((_, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`, onclick: () => i !== active && open(i)}, `Tab ${i + 1}`,
+      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, "✕"))),
+      h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, "+"));
+  }
+
+  // cabana's chart type: one series style for every chart, set on their curves
+  function restyle(v) {
+    style = v;
+    tabs[active].charts = charts.map((c) => c.pane.save());
+    for (const c of [...charts]) remove(c);
+    for (const t of tabs) for (const st of t.charts) for (const c of st.curves) c.style = style || undefined;
+    for (const st of tabs[active].charts) add(st);
+  }
+
+  function closeTab(i) {
+    if (i === active) for (const c of [...charts]) remove(c);
+    tabs.splice(i, 1);
+    if (i < active) active--;
+    else if (i === active) {
+      active = Math.min(active, tabs.length - 1);
+      for (const st of tabs[active].charts) add(st);
+    }
+    tabsChanged();
+  }
+
   function layout() {
     grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
   }
@@ -58,12 +97,14 @@ export function create(ctx, state) {
     name: "can-charts", el,
     render() {},
     dispose() { s.dispose(); resizer.disconnect(); for (const c of charts) c.pane.dispose(); },
-    save: () => ({cols, charts: charts.map((c) => c.pane.save())}),
+    save: () => {
+      tabs[active].charts = charts.map((c) => c.pane.save());
+      return {cols, style, tabs, active};
+    },
   };
   s.add(can.on("chart", (path) => { if (!charts.some((c) => c.pane.save().curves.some((x) => x.path === path))) add({curves: [curve(path)]}); }));
-  // decoded chunks arrive after the plot asked for them; setView redraws the base (until plot listens for "series")
-  s.add(can.on("series", (path) => { for (const c of charts) if (c.pane.save().curves.some((x) => x.path === path)) c.pane.setView(c.pane.view); }));
-  for (const st of state.charts || []) add(st);
+  for (const st of tabs[active].charts) add(st);
+  tabsChanged();
   layout();
   return pane;
 }

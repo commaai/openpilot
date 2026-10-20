@@ -46,13 +46,15 @@
       const local = (kind, n) => Array.from({length: n}, (_, i) => `${q.get("local")}/${i}/${kind}.h264`);
       api.routeFiles.prime({...files, cameras: local("camera", 4), ecameras: local("ecamera", 2), dcameras: local("dcamera", 2)}, base);
     }
-    // a loose route (as if dropped or linked) with the same files, which camera panes get from route.files
+    // a loose route (as if dropped or linked) with the same files, which camera panes get from route.files:
+    // loose=1 for every camera, or loose=<cameras to keep> ("none" for a dropped rlog alone); gaps=<segments> drops some
     if (q.get("loose")) {
-      const primed = await api.routeFiles(base);
+      const primed = await api.routeFiles(base), keep = q.get("loose").split(","), gaps = q.get("gaps") ? q.get("gaps").split(",").map(Number) : [];
       route.loose = true;
       route.files = new Map();
       for (const [kind, camera] of [["qcameras", "qcamera"], ["cameras", "fcamera"], ["ecameras", "ecamera"], ["dcameras", "dcamera"]]) {
-        primed[kind].forEach((url, n) => route.files.set(`${n}/${camera}`, {url, file: url.split("?")[0].split("/").at(-1), size: null, source: "url"}));
+        if (keep[0] !== "1" && !keep.includes(camera)) continue;
+        primed[kind].forEach((url, n) => gaps.includes(n) || route.files.set(`${n}/${camera}`, {url, file: url.split("?")[0].split("/").at(-1), size: null, source: "url"}));
       }
     }
     let store = null;

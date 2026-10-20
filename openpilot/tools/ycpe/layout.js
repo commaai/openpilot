@@ -2,12 +2,14 @@
 //   layout = {tabs: [{name, root}], active}
 //   node   = {split: "row" | "col", sizes: [fractions], children: [node]} | {pane: type, state}
 // Panes are rearranged by dragging their header onto another pane's edge (dock beside) or center (swap).
+// Structural edits (tabs, splits, docking, divider sizes) can be undone; a pane's own state is the pane's business.
 import {h} from "/dom.js";
 import {perf} from "/perf.js";
 import {PANES, loadPane} from "/panes.js";
 
 const MIN = 0.05;   // smallest split fraction
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
+const UNDO = 50;    // layout edits remembered
 
 export class Layout {
   constructor(ctx, model, onChange) {
@@ -18,6 +20,8 @@ export class Layout {
     this.el = h("div", {class: "layout"});
     this.live = new Map();  // rendered node -> {pane, box}
     this.maxPath = null;    // path of the maximized node, if any
+    this.undos = [];        // saved models before each edit, newest last
+    this.redos = [];
     this.resizer = new ResizeObserver((entries) => {
       for (const e of entries) {
         const live = e.target._live;
@@ -33,6 +37,25 @@ export class Layout {
 
   changed() {
     this.onChange?.(this.save());
+  }
+
+  // call before an edit: remembers the layout as it is (or as it was, for edits already made live, like a drag)
+  checkpoint(before = structuredClone(this.save())) {
+    this.undos.push(before);
+    if (this.undos.length > UNDO) this.undos.shift();
+    this.redos.length = 0;
+  }
+
+  undo() { this.step(this.undos, this.redos); }
+  redo() { this.step(this.redos, this.undos); }
+
+  step(from, to) {
+    if (!from.length) return;
+    to.push(structuredClone(this.save()));
+    this.model = from.pop();
+    this.maxPath = null;
+    this.render();
+    this.changed();
   }
 
   // the current layout with each pane's own state folded in; map (if given) collects rendered -> saved nodes
@@ -56,6 +79,7 @@ export class Layout {
   }
 
   addTab(name = `tab ${this.model.tabs.length + 1}`, root = {pane: "empty", state: {}}) {
+    this.checkpoint();
     this.model = this.save();
     this.model.tabs.push({name, root});
     this.model.active = this.model.tabs.length - 1;
@@ -66,6 +90,7 @@ export class Layout {
 
   closeTab(i) {
     if (this.model.tabs.length === 1) return;
+    this.checkpoint();
     this.model = this.save();
     this.model.tabs.splice(i, 1);
     if (i <= this.model.active) this.model.active = Math.max(0, this.model.active - 1);
@@ -75,6 +100,8 @@ export class Layout {
   }
 
   renameTab(i, name) {
+    if (name === this.model.tabs[i].name) return;
+    this.checkpoint();
     this.model.tabs[i].name = name;
     this.changed();
   }
@@ -118,6 +145,7 @@ export class Layout {
       const start = n.split === "row" ? e.clientX : e.clientY;
       const [a, b] = [n.sizes[i - 1], n.sizes[i]];
       const kids = [...box.children].filter((c) => !c.classList.contains("divider"));
+      const before = structuredClone(this.save());
       el.onpointermove = (ev) => {
         const d = ((n.split === "row" ? ev.clientX : ev.clientY) - start) / total;
         const da = Math.max(MIN - a, Math.min(b - MIN, d));
@@ -128,10 +156,13 @@ export class Layout {
       };
       el.onpointerup = () => {
         el.onpointermove = el.onpointerup = null;
+        if (n.sizes[i - 1] === a) return;
+        this.checkpoint(before);
         this.changed();
       };
     });
     el.addEventListener("dblclick", () => {
+      this.checkpoint();
       n.sizes = n.sizes.map(() => 1 / n.sizes.length);
       this.render();
       this.changed();
@@ -207,6 +238,7 @@ export class Layout {
 
   // structural edits run on a freshly saved model; get(n) maps a rendered node to its saved copy
   edit(fn) {
+    this.checkpoint();
     const map = new Map();
     this.model = this.save(map);
     fn(this.tab, (n) => map.get(n));

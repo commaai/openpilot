@@ -13,12 +13,24 @@ export function join(p) { panes.add(p); }
 export function leave(p) { panes.delete(p); }
 export function touch(p) { touched = p; }
 
+// the time plot a series is sent to without a drag: the one last used, else any mounted one
+function target() {
+  const live = [...panes].filter((p) => p.compare && p.el.isConnected);
+  return live.includes(touched) ? touched : live[0];
+}
+
+// adds paths to that plot; false when no plot is mounted
+export function addToPlot(paths) {
+  const p = target();
+  p?.addCurves(paths);
+  return !!p;
+}
+
 // shows an overlay's run of path (prefix + path, e.g. a replay) against the original in a mounted time plot:
 // the one already showing path, else the one last used, else any; seeks to t if given. False when no plot is
 // mounted.
 export function compare(path, prefix, {t} = {}) {
-  const live = [...panes].filter((p) => p.compare && p.el.isConnected);
-  const p = live.find((p) => p.has(path)) || (live.includes(touched) ? touched : live[0]);
+  const p = [...panes].find((p) => p.compare && p.el.isConnected && p.has(path)) || target();
   p?.compare(path, prefix, t);
   return !!p;
 }

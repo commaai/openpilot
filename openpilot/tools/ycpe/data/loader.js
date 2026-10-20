@@ -180,8 +180,9 @@ export class Loader {
     return true;
   }
 
-  // a whole message, decoded by a worker of its own that keeps the last logs it opened (see worker.js)
-  message(key, url, service, mono) {
+  // a whole message, decoded (with the log's own schema when one is in use) by a worker of its own that keeps the last
+  // logs it opened (see worker.js)
+  message(key, url, service, mono, schema) {
     this.inspector ??= this.worker();
     clearTimeout(this.inspector.reap);
     this.inspector.reap = setTimeout(() => {
@@ -189,7 +190,7 @@ export class Loader {
       this.inspector.terminate();
       this.inspector = null;
     }, 30000);
-    return this.call(this.inspector, {op: "message", key, url, opts: {service, mono}}).then((r) => r.message);
+    return this.call(this.inspector, {op: "message", key, url, opts: {service, mono, schema}}).then((r) => r.message);
   }
 
   get pending() { return this.queue.length + this.fetching.size + this.ready.length + this.parsing; }

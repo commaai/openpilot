@@ -121,11 +121,16 @@ export class Checkout {
     });
   }
 
-  // every file path in the repo (not its submodules), from jsDelivr
+  // every file path under the prefix (not in submodules): jsDelivr lists whole repos up to 50 MB, so a subdirectory
+  // of a big one (opendbc in a flattened openpilot release) costs one API call instead
   async files() {
+    if (this.prefix) {
+      const dir = this.prefix.replace(/\/$/, "");
+      const text = await cached(this.ref, `tree/${this.repo}/${this.ref}/${dir}`, () => get(`${API}/repos/${this.repo}/git/trees/${this.ref}:${dir}?recursive=1`, true));
+      return text && JSON.parse(text).tree.filter((t) => t.type === "blob").map((t) => this.prefix + t.path);
+    }
     const text = await cached(this.ref, `ls/${this.repo}/${this.ref}`, () => get(`${JSDELIVR}/${this.repo}@${this.ref}?structure=flat`));
-    if (!text) return null;
-    return JSON.parse(text).files.map((f) => f.name.slice(1));
+    return text && JSON.parse(text).files.map((f) => f.name.slice(1));
   }
 }
 
