@@ -127,7 +127,7 @@ export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
       if (lo !== lo) continue;
       const x = X(t[i]), a = Y(lo), b = Y(max[i]);
       // a bucket is a vertical span: enter it at the end nearer the previous point
-      const [p, q] = Math.abs(a - py) <= Math.abs(b - py) ? [a, b] : [b, a];
+      const near = Math.abs(a - py) <= Math.abs(b - py), p = near ? a : b, q = near ? b : a;
       if (py !== py || gap(t[pi], t[i])) g.moveTo(x, p);
       else {
         if (steps) g.lineTo(x, py);
