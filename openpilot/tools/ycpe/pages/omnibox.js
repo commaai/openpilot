@@ -61,8 +61,9 @@ const DATE = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric",
 
 // go(path) navigates; devices() is the signed-in user's list; onMiss(text) is told when nothing matched
 export function omnibox({go, devices, onMiss}) {
-  const input = h("input", {type: "search", class: "omnibox", placeholder: "route, dongle id or URL  ( / )", spellcheck: false, autocomplete: "off"});
-  const list = h("div", {class: "omni-list", hidden: true});
+  const input = h("input", {type: "search", class: "omnibox", placeholder: "route, dongle id or URL  ( / )", spellcheck: false, autocomplete: "off",
+    role: "combobox", "aria-label": "Open a route or device", "aria-expanded": "false", "aria-controls": "omni-list", "aria-autocomplete": "list"});
+  const list = h("div", {class: "omni-list", id: "omni-list", role: "listbox", hidden: true});
   const el = h("span", {class: "omni"}, input, list);
   let items = [], sel = -1;
 
@@ -77,9 +78,13 @@ export function omnibox({go, devices, onMiss}) {
     sel = -1;
     paint();
   }
+  // the rows aren't tab stops: focus stays in the input, which names the selected row
   function paint() {
     list.hidden = !items.length || document.activeElement !== input;
-    list.replaceChildren(...items.map((i, k) => h("a", {class: `omni-row ${k === sel ? "on" : ""}`, href: i.path,
+    input.setAttribute("aria-expanded", !list.hidden);
+    if (sel >= 0) input.setAttribute("aria-activedescendant", `omni-${sel}`); else input.removeAttribute("aria-activedescendant");
+    list.replaceChildren(...items.map((i, k) => h("a", {class: `omni-row ${k === sel ? "on" : ""}`, href: i.path, tabindex: -1,
+      id: `omni-${k}`, role: "option", "aria-selected": String(k === sel),
       onpointerdown: (e) => e.preventDefault(),  // keep focus in the input
       onclick: (e) => { e.preventDefault(); open(i.path); }},
       h("span", {}, i.label), h("span", {class: "mono muted"}, i.detail))));
@@ -99,7 +104,10 @@ export function omnibox({go, devices, onMiss}) {
 
   input.addEventListener("input", suggest);
   input.addEventListener("focus", suggest);
-  input.addEventListener("blur", () => { list.hidden = true; });
+  input.addEventListener("blur", () => {
+    list.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+  });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
