@@ -62,12 +62,17 @@ function bootSections(b) {
   ];
 }
 
+// bootlog runs before the clock is synced, so a device that lost its time stamps 1970 or a stale date
+const CLOCK_SET = Date.UTC(2020, 0, 1);
+
 // "0.11.2 · master · 7e84a616 (dirty) · mici"
 function bootSummary(b) {
   const i = b.init, when = new Date(b.wallTimeNanos / 1e6);
   const what = i && [i.version, i.gitBranch, i.gitCommit && `${i.gitCommit.slice(0, 8)}${i.dirty ? " (dirty)" : ""}`, i.deviceType].filter(Boolean).join(" · ");
   return h("div", {class: "boot-summary"},
-    h("span", {}, "booted ", h("b", {}, when.toLocaleString()), h("span", {class: "muted"}, ` (${fmt.ago(when / 1000)})`)),
+    when >= CLOCK_SET
+      ? h("span", {}, "booted ", h("b", {}, when.toLocaleString()), h("span", {class: "muted"}, ` (${fmt.ago(when / 1000)})`))
+      : h("span", {class: "muted"}, "boot time unknown (clock not set)"),
     what && h("span", {class: "mono muted"}, what));
 }
 
