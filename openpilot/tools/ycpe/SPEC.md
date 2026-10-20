@@ -183,18 +183,27 @@ polish loop, and keep everyone moving.
 ## Contracts (changed only by root)
 
 ```js
-// clock.js: one per route view
-clock = {t, playing, rate, loop: [a, b] | null, range: [t0, t1],   // route seconds; range = visible x-range
-         seek(t), play(), pause(), setRange(t0, t1), on(event, fn) /* "t" | "range" | "play" */}
+// clock.js: one per route workspace, all times in route seconds
+clock = {t, playing, rate, loop: [a, b] | null, duration, range: [t0, t1],   // range = visible x-range
+         seek(t), play(), pause(), toggle(), setRate(r), setLoop(l), setRange(t0, t1), setDuration(d),
+         on(event, fn) /* "t" | "range" | "play"; returns an unsubscribe */}
 
 // perf.js: every pane renders through the scheduler; never call requestAnimationFrame directly
 perf.invalidate(pane)          // pane.render(frame) runs once on the next frame, timed under pane.name
+perf.tick(fn)                  // fn(frame) every frame until the returned unsubscribe is called
 perf.measure(name, fn)         // ad-hoc timed section
 perf.mark(name, value)         // a counter in the perf panel (bytes, queue length, MB/s)
+// window.__perf = {frames: [{t, n, interval, work, panes: {name: ms}}] (last 600), longFrames, marks, drops}
 
-// pane modules: export function create(ctx, state)
-ctx = {store, clock, route, perf, layout}
-pane = {name, el, render(frame), resize(w, h), dispose(), save() /* JSON state for layouts */}
+// pane modules: export function create(ctx, state); registered in panes.js (type -> file)
+ctx = {route,                  // the API route object (fullname, start_time_utc_millis, url, maxqlog, ...)
+       clock, perf, theme,     // theme.color("--fg"), theme.on(fn); redraw canvases on theme change
+       store,                  // getter: touching it starts loading rlogs. Panes that work without logs
+       peekStore(), onStore(fn),//   (qcamera, map from coords.json) use peekStore()/onStore() instead
+       layout,                 // the Layout; layout.replaceSelf(pane.el, {pane: type, state})
+       openRoute(name)}        // switch route, keeping the view
+pane = {name, el, title?, render(frame), resize(w, h), dispose(), save() /* JSON state for layouts */}
+// el is absolutely positioned to fill the pane body; panes must not scroll the page
 
 // store.js: main thread; never O(samples) per frame
 store.route                    // {name, t0 (mono s), duration, segments: [{n, t0, t1, status}]}
@@ -205,8 +214,15 @@ store.series(path)             // {path, type, names, chunks: [{t: Float64Array 
 store.decimate(path, t0, t1, n)// {t, min, max} with n buckets (min/max pyramid); exact samples if few
 store.valueAt(path, t)         // last value at or before t
 store.message(service, t)      // the full decoded message at t (for the inspector), async
+store.focus(t)                 // load outward from t
 store.can                      // owned by track 3: messages(), frames(bus, addr, t0, t1), ...
 ```
+
+Pane registry (panes.js): routes→panes/routes.js (root), camera→panes/camera.js (state {camera: qcamera|fcamera|ecamera|dcamera}),
+map→panes/map.js, info→panes/routeinfo.js (route info + files + uploads), plot→panes/plot/plot.js, xy→panes/plot/xy.js,
+browser→panes/browser.js, logs→panes/logs.js, inspector→panes/inspector.js, can-messages|can-binary|can-signals|can-history|can-charts
+→panes/can/{messages,binary,signals,history,charts}.js. Series drag-and-drop between panes uses DataTransfer type
+`application/x-ycpe-paths` with a JSON array of paths.
 
 ## Quality harness (track 7)
 
