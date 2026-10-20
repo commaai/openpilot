@@ -281,7 +281,8 @@ store.can                      // owned by track 3: messages(), frames(bus, addr
 Pane registry (panes.js): routes→panes/routes.js (root), camera→panes/camera.js (state {camera: qcamera|fcamera|ecamera|dcamera}),
 map→panes/map.js, info→panes/routeinfo.js (route info + files + uploads), plot→panes/plot/plot.js, xy→panes/plot/xy.js,
 browser→panes/browser.js, logs→panes/logs.js, inspector→panes/inspector.js, can-messages|can-binary|can-signals|can-history|can-charts
-→panes/can/{messages,binary,signals,history,charts}.js. Series drag-and-drop between panes uses DataTransfer type
+→panes/can/{messages,binary,signals,history,charts}.js, connect→panes/connect.js (connect's route page, the view a
+route URL naming none opens). Series drag-and-drop between panes uses DataTransfer type
 `application/x-ycpe-paths` with a JSON array of paths.
 
 ## Quality harness (track 7)
