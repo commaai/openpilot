@@ -36,7 +36,7 @@ function stateStyle(v, label, col) {
     for (let i = 0; i < v.length; i++) x = (x * 31 + v.charCodeAt(i)) | 0;
     v = x;
   }
-  return [STATE[Math.abs(v) % STATE.length], 0.26];
+  return [STATE[Math.abs(Math.round(v)) % STATE.length], 0.26];  // DBC states can be fractional
 }
 
 // sizes the backing store to the css size at devicePixelRatio; drawing stays in css px
@@ -87,14 +87,14 @@ export function fmtTick(v, step) {
   return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
-// a sample for display: enum names, text, integers as is, other numbers to 5 significant figures
-export function fmtValue(v, names) {
+// a sample for display: enum names (or DBC value descriptions), text, integers as is, other numbers to 5 significant
+// figures; numbers with their unit
+export function fmtValue(v, names, unit) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
-  if (names) return names[v] ?? String(v);
-  if (Number.isInteger(v) || !isFinite(v)) return String(v);
-  const a = Math.abs(v);
-  return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
+  if (names?.[v] !== undefined) return names[v];
+  const a = Math.abs(v), s = Number.isInteger(v) || !isFinite(v) ? String(v) : a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
+  return unit && v === v ? `${s} ${unit}` : s;
 }
 
 // one decimated series ({t, min, max}) in a style; X and Y map time and value to css px, and the line
