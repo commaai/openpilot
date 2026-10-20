@@ -251,7 +251,7 @@ function fftInPlace(re, im) {
   }
 }
 
-if (typeof window === "undefined" && self.location.href === import.meta.url) {
+if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
   onmessage = ({data: {id, op, args, data}}) => {
     for (const [path, {version, chunks}] of Object.entries(data)) series.set(path, {version, ...concat(chunks)});
     try {
