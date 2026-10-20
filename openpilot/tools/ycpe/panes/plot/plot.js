@@ -17,7 +17,6 @@ import {openConsole} from "./console.js";
 import {customsOf, plots, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
-const SEGMENT_WAIT = 200;  // ms that inputs changing together wait to recompute as one
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
@@ -46,7 +45,6 @@ function gapTest(maxDt, spans) {
     return j < spans.length && spans[j][0] < b;
   };
 }
-
 
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
@@ -145,7 +143,7 @@ export function create(ctx, state = {}) {
     let src = c.path;
     steps(c, (out, inputs) => {
       src = out;
-      if (stale(c, out, inputs)) recomputeTimer ||= setTimeout(recompute, made.has(out) ? SEGMENT_WAIT : 0);
+      if (stale(c, out, inputs)) recomputeTimer ||= setTimeout(recompute, made.has(out) ? view.RECOMPUTE_DEBOUNCE_MS : 0);
     });
     return src;
   }
@@ -324,7 +322,7 @@ export function create(ctx, state = {}) {
     const g = gOver;
     g.clearRect(0, 0, W, H);
     if (!frame) return;
-    const {px, pw, py, ph, X, Y, t0, t1} = frame, top = T, bottom = T + H - T - B;
+    const {px, pw, py, ph, X, Y, t0, t1} = frame, top = T, bottom = H - B;
     const vline = (t, color, dash) => {
       if (t < t0 || t > t1) return;
       const x = Math.round(X(t)) + 0.5;
@@ -493,8 +491,8 @@ export function create(ctx, state = {}) {
       res.forEach((r, k) => {
         const row = rows[st.curves.indexOf(frame.lines[k]?.c)];
         if (!r || !row) return;
-        const f = fmtValue;
-        row.append(h("div", {class: "stats"}, `min ${f(r.min)}  max ${f(r.max)}  mean ${f(r.mean)}  std ${f(r.std)}  n ${r.count}  ${f(r.rate)} Hz`));
+        row.append(h("div", {class: "stats"},
+          `min ${fmtValue(r.min)}  max ${fmtValue(r.max)}  mean ${fmtValue(r.mean)}  std ${fmtValue(r.std)}  n ${r.count}  ${fmtValue(r.rate)} Hz`));
       });
     }, console.error), 120);
   }
@@ -720,7 +718,7 @@ export function create(ctx, state = {}) {
   }
 
   function dispose() {
-    for (const off of offs) off?.();
+    for (const off of offs) off();
     view.leave(pane, clock);
     clearTimeout(statsTimer);
     clearTimeout(recomputeTimer);
