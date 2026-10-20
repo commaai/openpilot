@@ -1,0 +1,6 @@
+{"name": "drive-mobile", "url": "/5beb9b58bd12b691/0000010a--a51155e496/drive", "viewport": {"width": 390, "height": 844, "mobile": true}, "reference": ["connect-route-demo-mobile"],
+ "steps": [
+  {"waitFor": ".pane"},
+  {"wait": 1500},
+  {"shot": "loaded"}
+ ]}
