@@ -229,14 +229,15 @@ export class Layout {
     const info = PANES[n.pane] || PANES.empty;
     const title = h("span", {class: "pane-title", hidden: true});
     // a closed picker would swap the pane on arrow keys or typing; only picking from the open list does
-    const types = h("select", {class: "pane-type", title: "Pane type", "data-key": "type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
+    const types = h("select", {class: "pane-type", title: "Pane type", "aria-label": `Pane type: ${info.title}`, "data-key": "type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
       onkeydown: (e) => {
         if (e.key === "Escape") e.target.blur();
         else if (!e.altKey && !["Enter", " ", "Tab", "F4"].includes(e.key)) e.preventDefault();
       }},
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
-    const btn = (name, tip, key, fn) => h("button", {class: "pane-btn", title: tip, "data-key": key, onclick: fn}, icon(name, 14));
+    // named for their pane, as a screen reader lists every pane's buttons together
+    const btn = (name, tip, key, fn) => h("button", {class: "pane-btn", title: tip, "aria-label": `${tip}: ${info.title}`, "data-key": key, onclick: fn}, icon(name, 14));
     const head = h("div", {class: "pane-head", title: "Drag to move this pane"}, types, icon("down", 14), title,
       h("span", {class: "pane-tools"},
         btn("splitRight", "Split right", "row", () => this.split(n, "row")),
@@ -246,7 +247,7 @@ export class Layout {
     head.addEventListener("pointerdown", (e) => this.drag(n, e));
     head.addEventListener("dblclick", (e) => { if (e.target === head || e.target === title) this.maximize(n); });
     const body = h("div", {class: "pane-body"});
-    const box = h("section", {class: "pane"}, head, body);
+    const box = h("section", {class: "pane", "aria-label": info.title}, head, body);
     const live = {pane: null, box};
     this.live.set(n, live);
     box._node = n;
@@ -257,7 +258,11 @@ export class Layout {
       pane.name ||= n.pane;
       live.pane = pane;
       body.append(pane.el);
-      if (pane.title) { title.textContent = pane.title; title.hidden = false; }
+      if (pane.title) {
+        title.textContent = pane.title;
+        title.hidden = false;
+        box.setAttribute("aria-label", `${info.title}: ${pane.title}`);
+      }
       this.resizer.observe(body);
       perf.invalidate(pane);
     }).catch((e) => body.append(h("div", {class: "pane-missing"}, `${info.title}: ${e.message}`)));

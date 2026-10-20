@@ -124,7 +124,8 @@ const bar = {
   device: crumb("Devices"),
   route: crumb("Routes on this device"),
   views: h("nav", {class: "views"}),
-  tabs: h("nav", {class: "tabs", role: "tablist", "aria-label": "Layout tabs"}),
+  tabs: h("nav", {class: "tabs", "aria-label": "Layouts"}),  // the tab list, then New tab and the layouts menu
+  tablist: h("span", {class: "tablist", role: "tablist", "aria-label": "Layout tabs"}),
 };
 
 function topBar() {
@@ -136,6 +137,19 @@ function topBar() {
     tabsScrolled = true;
   }, {passive: false});
   tabsObserver.observe(bar.tabs);
+  // arrows move between the tabs (Enter or space opens one); Delete closes the focused one
+  bar.tablist.addEventListener("keydown", (e) => {
+    const tabs = [...bar.tablist.querySelectorAll("[role=tab]")], i = tabs.indexOf(e.target);
+    const to = {ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: tabs.length - 1}[e.key];
+    if (i < 0 || (to === undefined && e.key !== "Delete")) return;
+    e.preventDefault();
+    e.stopPropagation();  // not the playhead's arrows
+    if (to !== undefined) return tabs[(to + tabs.length) % tabs.length].focus();
+    if (tabs.length > 1) {
+      ws.layout.closeTab(i);
+      updateTop();
+    }
+  });
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
       href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
@@ -195,12 +209,13 @@ function updateTop() {
     return refocus(focused);
   }
   const select = (tab) => {
-    for (const t of bar.tabs.children) {
+    for (const t of bar.tablist.children) {
       t.classList.toggle("on", t === tab);
       t.querySelector("[role=tab]")?.setAttribute("aria-selected", t === tab);
+      t.querySelector("[role=tab]")?.setAttribute("tabindex", t === tab ? 0 : -1);
     }
   };
-  bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("span", {class: `tab ${i === layout.model.active ? "on" : ""}`,
+  bar.tablist.replaceChildren(...layout.model.tabs.map((t, i) => h("span", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: (e) => {  // in place, so a double-click lands on the same tab
       if (i === layout.model.active) return;
       layout.selectTab(i);
@@ -209,12 +224,15 @@ function updateTop() {
     ondblclick: (e) => { if (!e.target.closest(".x")) renameTab(e.currentTarget, i, t.name); },
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget.firstChild, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }},
-    h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), "data-key": `tab:${i}`}, t.name),
-    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "data-key": "close", "aria-label": `Close tab ${t.name}`,
+    h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), tabindex: i === layout.model.active ? 0 : -1,
+      "data-key": `tab:${i}`}, t.name),
+    // for the mouse: a tab list holds only tabs, and the keyboard closes one with Delete
+    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab (Delete)", tabindex: -1, "aria-hidden": "true",
       // not on a double-click's second click: that's "+" (or another close button) clicked again after the strip moved
-      onclick: (e) => { e.stopPropagation(); if (e.detail < 2) { layout.closeTab(i); updateTop(); } }}, icon("close", 12)))),
-  h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
-  h("button", {class: "tab add", title: "Layouts: open, import, export, share", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
+      onclick: (e) => { e.stopPropagation(); if (e.detail < 2) { layout.closeTab(i); updateTop(); } }}, icon("close", 12)))));
+  bar.tabs.replaceChildren(bar.tablist,
+    h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
+    h("button", {class: "tab add", title: "Layouts: open, import, export, share", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
   refocus(focused);
   // scrolled to once laid out (tabsObserver), and only when the active tab or the tab set changed
   const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
@@ -228,7 +246,7 @@ function updateTop() {
 
 function refocus(key) {
   if (!key) return;
-  const el = bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(".tab.on [role=tab]");
+  const el = bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tablist.querySelector(".tab.on [role=tab]");
   if (el !== document.activeElement) el?.focus();
 }
 
@@ -264,10 +282,10 @@ function tabMenu(tabEl, i, name) {
   const layout = ws.layout;
   const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { closePopover(); fn(); updateTop(); }}, label);
   menu(tabEl, () => h("div", {class: "menu-list"},
-    item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
+    item("Rename", () => setTimeout(() => renameTab(bar.tablist.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
-    item("Open layout…", () => setTimeout(() => layoutMenu(bar.tabs.children[i]))),
+    item("Open layout…", () => setTimeout(() => layoutMenu(bar.tablist.children[i]))),
     item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
 }
 

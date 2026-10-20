@@ -23,7 +23,7 @@ export function playbar(ctx) {
   routeEvents(route).then((s) => { spans = [...s].sort((a, b) => isAlert(a) - isAlert(b)); perf.invalidate(pane); }).catch(() => {});
 
   const playBtn = h("button", {class: "tbtn play", title: "Play/pause (space)", onclick: () => clock.toggle()});
-  const rate = h("select", {class: "rate", title: "Playback rate ([ and ])", onchange: (e) => clock.setRate(+e.target.value)},
+  const rate = h("select", {class: "rate", title: "Playback rate ([ and ])", "aria-label": "Playback rate", onchange: (e) => clock.setRate(+e.target.value)},
     RATES.map((r) => h("option", {value: r, selected: r === clock.rate}, `${r}×`)));
   // click the time to type one to go to
   const time = h("button", {class: "pb-time", title: "Go to a time (3:12, 1:03:12 or seconds)", onclick: () => {
