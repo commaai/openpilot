@@ -285,7 +285,15 @@ const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g
 // ---- keyboard ----
 
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  // undo/redo the layout, unless a focused pane took the keys for its own (a plot's view)
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "y") && ws?.layout && !e.defaultPrevented) {
+    e.preventDefault();
+    (k === "y" || e.shiftKey ? ws.layout.redo() : ws.layout.undo());
+    return updateTop();
+  }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
   if (e.key === "?") return help();
@@ -312,7 +320,7 @@ const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
   ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
   ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
-  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
+  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["ctrl z", "undo a layout change (shift: redo)"], ["double-click a divider", "even out the split"],
   ["wheel on the timeline", "zoom the visible range"],
 ];
 
