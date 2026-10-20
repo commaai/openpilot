@@ -76,7 +76,8 @@
 .can-field > span:first-child { flex: 0 0 64px; color: var(--muted); }
 .can-field input:not([type=checkbox]), .can-field select, .can-field textarea { flex: 1; min-width: 0; height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
-.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1) { grid-column: 1 / -1; }
+.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1), .can-sig-editor .can-error { grid-column: 1 / -1; }
+.can-sig-editor .can-error:empty { display: none; }
 /* narrow panes: no sparklines (as cabana's compact layout), and the editor in one column */
 .can-signals { container-type: inline-size; }
 @container (max-width: 360px) {

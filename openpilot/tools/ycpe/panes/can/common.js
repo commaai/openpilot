@@ -75,13 +75,15 @@ export function alpha(color, a) {
   return v.replace(/rgba?\(([^)]+?)(,\s*[\d.]+)?\)/, `rgba($1,${a})`);
 }
 
-// edits message k through the undo stack: fn(m) changes a copy (a new message if k has none)
+// edits message k through the undo stack: fn(m) changes a copy (a new message if k has none), or returns false to
+// change nothing. Returns whether it changed
 export function editMsg(can, k, text, fn) {
   const address = addrOf(k);
   const m = cloneMsg(can.dbcMsg(k)) || {address, name: `NEW_MSG_${address.toString(16).toUpperCase()}`, size: can.msg(k)?.size || 8,
                                          transmitter: NODE, comment: "", sigs: []};
-  if (fn(m) === false) return;
+  if (fn(m) === false) return false;
   can.dbcs.edit(busOf(k), address, m, text);
+  return true;
 }
 
 export function createSignal(can, k, props) {
@@ -104,7 +106,7 @@ export function removeSignal(can, k, name) {
 }
 
 export function updateSignal(can, k, name, props) {
-  editMsg(can, k, `edit signal ${name}`, (m) => {
+  return editMsg(can, k, `edit signal ${name}`, (m) => {
     const i = m.sigs.findIndex((x) => x.name === name);
     if (i < 0 || (props.name !== undefined && props.name !== name && m.sigs.some((x) => x.name === props.name))) return false;
     // a new endianness keeps the signal on its bytes, as cabana's saveSignal

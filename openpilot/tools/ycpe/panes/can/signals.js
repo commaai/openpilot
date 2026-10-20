@@ -169,11 +169,16 @@ function editor(can, k, m, sg) {
   const valsText = (x) => x.vals.map(([v, d]) => `${v} "${d}"`).join(" ");
   const vals = h("input", {value: valsText(sg), spellcheck: false, placeholder: '0 "off" 1 "on"',
     onchange: (e) => commit({vals: [...e.target.value.matchAll(/(-?[\d.]+)\s+"([^"]*)"/g)].map(([, v, d]) => [+v, d])})});
+  const error = h("div", {class: "can-error"});
   const el = h("div", {class: "can-sig-editor"},
     field("Name", h("input", {value: sg.name, spellcheck: false, onchange: (e) => {
       const name = e.target.value.trim();
-      if (/^\w+$/.test(name)) { commit({name}); can.emit("edit", name); } else e.target.value = sg.name;
+      error.textContent = !/^\w+$/.test(name) ? "Names are letters, digits and underscores"
+        : name !== sg.name && !commit({name}) ? "There is already a signal with the same name" : "";
+      if (error.textContent) e.target.value = sg.name;
+      else if (name !== sg.name) can.emit("edit", name);
     }})),
+    error,
     field("Size", num("size", {min: 1, max: 64, step: 1})),
     field("Start bit", num("start", {min: 0, max: 511, step: 1})),
     h("div", {class: "can-field"}, h("span"), h("span", {class: "can-row"}, h("label", {class: "can-check"}, check("le"), "Little endian"), h("label", {class: "can-check"}, check("signed"), "Signed"))),
