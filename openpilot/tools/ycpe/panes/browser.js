@@ -11,6 +11,7 @@ const COARSE = matchMedia("(pointer: coarse)").matches;
 const ROW = COARSE ? 28 : 18, BUILD_MS = 2;  // px per row (plot.css agrees); ms a frame spends on the tree and its rows
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
+let browsers = 0;  // ids for the rows' aria-activedescendant
 const order = (a, b) => {
   const x = +a, y = +b;
   return x === x && y === y ? x - y : a < b ? -1 : a > b ? 1 : 0;
@@ -39,7 +40,14 @@ export function create(ctx, state = {}) {
   const win = h("div", {class: "window"});
   // why the list is empty, inside it: showing or hiding it moves nothing
   const note = h("div", {class: "note", hidden: true});
-  const scroller = h("div", {class: "scroller", tabindex: 0, onkeydown: key}, note, spacer, win);
+  // the keyboard's place shows on the way in
+  const scroller = h("div", {class: "scroller", tabindex: 0, role: "tree", "aria-label": "Series", "aria-multiselectable": "true", onkeydown: key,
+    onfocus: () => {
+      if (!rows.length || rows.some((r) => r.path === cursor)) return;
+      cursor = rows[0].path;
+      perf.invalidate(pane);
+    }}, note, spacer, win);
+  const id = `series-${++browsers}`;
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
   scroller.addEventListener("scroll", () => { top = scroller.scrollTop; perf.invalidate(pane); }, {passive: true});
@@ -209,9 +217,14 @@ export function create(ctx, state = {}) {
   // what changed
   const pool = [];
   const flag = (r, cls, on) => { if (r.flags[cls] !== on) r.classList.toggle(cls, r.flags[cls] = on); };
+  const attr = (el, name, v) => {
+    if ((el.attrs ||= {})[name] === v) return;
+    el.attrs[name] = v;
+    v === null ? el.removeAttribute(name) : el.setAttribute(name, v);
+  };
   function rowEl(i) {
     if (!pool[i]) {
-      const r = pool[i] = h("div", {class: "row", draggable: true,
+      const r = pool[i] = h("div", {class: "row", id: `${id}-${i}`, role: "treeitem", draggable: true,
         onclick: (e) => click(e, r.k), ondragstart: (e) => dragstart(e, r.k),
         ondblclick: () => {
           if (!rows[r.k].meta) return;
@@ -239,6 +252,7 @@ export function create(ctx, state = {}) {
     const first = Math.floor(top / ROW), n = Math.min(rows.length - first, Math.ceil(H / ROW) + 1);
     const shift = `translateY(${first * ROW}px)`;
     if (win.style.transform !== shift) win.style.transform = shift;
+    let current = null;  // the cursor's row element
     for (let i = 0; i < Math.max(n, pool.length); i++) {
       const r = rowEl(i), k = first + i, node = rows[k];
       if (r.hidden !== !node) r.hidden = !node;
@@ -248,6 +262,7 @@ export function create(ctx, state = {}) {
       if (r.node !== node || r.meta !== m) {
         [r.node, r.meta] = [node, m];
         r.style.paddingLeft = `${4 + node.depth * 12}px`;
+        r.ariaLevel = node.depth + 1;
         name.textContent = node.name;
         // enum names and DBC value descriptions by value
         r.title = m ? [m.path, m.unit ? `${m.type}, ${m.unit}` : m.type, ...Object.entries(m.names || {}).map(([v, s]) => `${v} ${s}`)].join("\n") : node.path;
@@ -256,9 +271,13 @@ export function create(ctx, state = {}) {
       flag(r, "cur", node.path === cursor);
       flag(r, "branch", !!node.kids);
       flag(r, "open", !!node.kids && !!(st.filter || st.expanded.has(node.path)));
+      if (node.path === cursor) current = r;
+      attr(r, "aria-expanded", node.kids ? String(r.flags.open) : null);
+      attr(r, "aria-selected", node.meta ? String(r.flags.sel) : null);
       const text = m ? fmtValue(store.valueAt(m.path, clock.t), m).slice(0, 200) : "";  // long text only needs what shows
       if (val.textContent !== text) val.textContent = text;
     }
+    attr(scroller, "aria-activedescendant", current?.id ?? null);
   }
 
   function resize(w, hgt = el.clientHeight) {
