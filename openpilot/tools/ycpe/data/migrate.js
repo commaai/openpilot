@@ -6,10 +6,12 @@
 // from routeContext, which the loader fills from the context migrate() returns for an earlier segment. Python
 // migrates each log on its own, so the parity test passes {}.
 //
-// Some migrations read lists longer than capnp.js's per-index limit; read with {keep: KEEP} to have them. When the
-// reader skipped one (svc.lists), the derived paths are skipped and reported in `missing`.
+// Some migrations read lists longer than capnp.js's per-index limit, so the reader keeps them (withKeep) and
+// migrate() drops them again afterwards. When the reader skipped one anyway (svc.lists), the derived paths are
+// skipped and reported in `missing`.
 import schema from "./schema.json" with {type: "json"};
 import tables from "./migrate.json" with {type: "json"};
+import {pattern} from "./capnp.js";
 
 const STRUCTS = Object.fromEntries(schema.structs.map((s) => [s.name, s]));
 const SCALAR = new Set(["b", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64", "e"]);
@@ -17,8 +19,8 @@ const WIDE = new Set(["f64", "i64", "u64", "u32", "i32"]);
 const MAX_LIST = 16;  // capnp.js
 const T_IDXS = Array.from({length: 33}, (_, i) => 10 * (i / 32) ** 2);  // ModelConstants.T_IDXS
 
-// the long lists the migrations read, as a reader keep option
-export const KEEP = {
+// the long lists the migrations read
+const KEEP = {
   sensorEventsDEPRECATED: [""],
   longitudinalPlan: ["/speeds", "/accels"],
   modelV2: ["/position/x", "/position/y", "/position/z", "/laneLines/*/y"],
@@ -103,16 +105,21 @@ function sensorEvents(s, ctx, missing) {
   if (dropped(src, "")) missing.push("sensorEventsDEPRECATED");
   const members = st.fields.filter((f) => f[1] >= 0).map((f) => f[0]), first = st.fields.find((f) => f[1] === 0)[0];
   const paths = Object.keys(src.cols);
-  // the union's active member is the one with values (the reader writes no others), else a null first member
+  // the union's active member is the one with values (the reader writes no others), else a null first member.
+  // A member's shallowest column (a scalar, or a scalar of its struct) has a value whenever it's active.
+  const depth = (p) => p.split("/").length;
   const items = [];
   for (let j = 0; paths.some((p) => p.startsWith(`/${j}/`)); j++) {
-    items.push(members.map((m) => [m, paths.filter((p) => p === `/${j}/${m}` || p.startsWith(`/${j}/${m}/`))]));
+    items.push(members.map((m) => {
+      const ps = paths.filter((p) => p === `/${j}/${m}` || p.startsWith(`/${j}/${m}/`)).sort((a, b) => depth(a) - depth(b));
+      return [m, src.cols[ps[0]]];
+    }).filter(([, col]) => col));
   }
-  const out = {};  // service: [[event, item]]
+  const out = {};  // service: [[event, item, null member]]
   for (let i = 0; i < n; i++) {
     items.forEach((byMember, j) => {
       if (!has(src.cols[`/${j}/timestamp`], i)) return;
-      const m = byMember.find(([, ps]) => ps.some((p) => has(src.cols[p], i)))?.[0];
+      const m = byMember.find(([, col]) => has(col, i))?.[0];
       if (SENSORS[m ?? first]) (out[SENSORS[m ?? first]] ||= []).push([i, j, !m]);
     });
   }
@@ -123,7 +130,8 @@ function sensorEvents(s, ctx, missing) {
     const cols = struct(st, "", entries.length);
     for (const [rel, {type, names}] of rels) {
       if (rel !== "/source" && rel !== "/timestamp" && SENSORS[rel.split("/")[1]] !== name) continue;
-      cols[rel] = column(type, entries.length, (k) => at(src.cols[`/${entries[k][1]}${rel}`], entries[k][0]), names);
+      const byItem = items.map((_, j) => src.cols[`/${j}${rel}`]);
+      cols[rel] = column(type, entries.length, (k) => at(byItem[entries[k][1]], entries[k][0]), names);
     }
     if (SENSORS[first] === name && entries.some((e) => e[2])) {  // a null member copies as a struct of defaults
       const defaults = struct(schema.structs[field(st, first)[4]], `/${first}`, entries.length);
@@ -456,8 +464,40 @@ const OPTIONAL = {
   cameraStates: [[["narrowRoadCameraState", "wideRoadCameraState", "cabinCameraState"], null, cameraStates]],
 };
 
-// migrates the reader's Map(which → {name, t, valid, cols: Map}) in place. Returns this segment's context, for
-// routeContext of later segments, and the derived paths that could not be computed.
+// the reader's keep option plus the lists the migrations read
+export function withKeep(keep = {}) {
+  const out = {...keep};
+  for (const [name, globs] of Object.entries(KEEP)) out[name] = [...(out[name] || []), ...globs];
+  return out;
+}
+
+// once the migrations have read them, the long KEEP lists that weren't asked for are dropped again and reported as
+// skipped (svc.lists), as if read without them
+function unkeep(s, keep = {}) {
+  for (const [name, globs] of Object.entries(KEEP)) {
+    const svc = s[name];
+    if (!svc) continue;
+    const ours = pattern(globs), theirs = keep[name] && pattern(keep[name]);
+    const lists = new Map();  // list path → [length, its columns]
+    for (const p of Object.keys(svc.cols)) {
+      const parts = p.split("/");
+      const k = parts.findIndex((x, k) => k > 0 && /^\d+$/.test(x) && ours.test(parts.slice(0, k).join("/")));
+      if (k < 0) continue;
+      const list = parts.slice(0, k).join("/"), e = lists.get(list) || lists.set(list, [0, []]).get(list);
+      e[0] = Math.max(e[0], +parts[k] + 1);
+      e[1].push(p);
+    }
+    for (const [list, [length, paths]] of lists) {
+      if (length <= MAX_LIST || theirs?.test(list)) continue;
+      for (const p of paths) delete svc.cols[p];
+      svc.lists?.set(list, length);
+    }
+  }
+}
+
+// migrates the reader's Map(which → {name, t, valid, cols: Map, lists}) in place; read it with {keep: withKeep(keep)}
+// and pass the same keep in options. Returns this segment's context, for routeContext of later segments, and the
+// derived paths that could not be computed.
 export function migrate(services, routeContext = {}, options = {}) {
   const s = {};
   for (const svc of services.values()) s[svc.name] = {...svc, cols: Object.fromEntries(svc.cols)};
@@ -466,7 +506,8 @@ export function migrate(services, routeContext = {}, options = {}) {
   for (const [inputs, product, fn] of migrations) {
     if (!original.has(product) && inputs.some((name) => original.has(name))) fn(s, ctx, missing);
   }
+  unkeep(s, options.keep);
   services.clear();
-  for (const [name, svc] of Object.entries(s)) services.set(name, {...svc, name, cols: new Map(Object.entries(svc.cols))});
+  for (const [name, svc] of Object.entries(s)) services.set(name, {lists: new Map(), ...svc, name, cols: new Map(Object.entries(svc.cols))});
   return {context: own, missing};
 }

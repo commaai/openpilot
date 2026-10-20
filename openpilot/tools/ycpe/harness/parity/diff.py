@@ -53,8 +53,7 @@ def run(log, migrate, all_migrations, rtol):
   if migrate:
     from openpilot.selfdrive.test.process_replay.migration import migrate_all
     events = migrate_all(events, manager_states=all_migrations, panda_states=all_migrations, camera_states=all_migrations)
-  keep = json.loads(subprocess.run(["node", HERE / "dump.mjs", "--keep"], check=True, capture_output=True).stdout) if migrate else None
-  py = dump(events, keep)
+  py = dump(events)
   with tempfile.NamedTemporaryFile(suffix=".json") as f:
     flags = (["--migrate"] if migrate else []) + (["--all"] if all_migrations else [])
     subprocess.run(["node", HERE / "dump.mjs", log, f.name, *flags], check=True)

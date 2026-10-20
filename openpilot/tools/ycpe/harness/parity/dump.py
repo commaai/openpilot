@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Dumps every leaf of a log through pycapnp, named like data/capnp.js columns:
 {service: {t, valid, cols: {"/field/sub": [value or None per event]}}}. Enums are ordinals, lists of at most
-16 items (or kept ones, as capnp.js's keep option) split per index, NaN is None and infinities are "inf"/"-inf"."""
+16 items split per index, NaN is None and infinities are "inf"/"-inf"."""
 import json
 import math
-import re
 import sys
 
 import capnp
@@ -15,11 +14,6 @@ from openpilot.tools.lib.logreader import LogReader
 MAX_LIST = 16
 SCALARS = {"bool", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float32", "float64", "enum"}
 plans: dict[int, list] = {}
-kept = None  # the current service's kept long lists
-
-
-def pattern(globs):
-  return re.compile("^(" + "|".join(re.escape(g).replace(r"\*", "[^/]+") for g in globs) + ")$")
 
 
 def scalar(v):
@@ -70,7 +64,7 @@ def walk(s, path, cols, i):
 
 
 def items(lst, elem, path, cols, i):
-  if len(lst) > MAX_LIST and not (kept and kept.match(path)):
+  if len(lst) > MAX_LIST:
     return
   for j, x in enumerate(lst):
     if elem == "struct":
@@ -88,10 +82,8 @@ def put(cols, path, i, v):
   c[i] = v
 
 
-def dump(events, keep=None):
-  global kept
+def dump(events):
   services = {k[0]: k for k in plan(log.Event.schema)}
-  keep = {name: pattern(globs) for name, globs in (keep or {}).items()}
   out = {}
   for e in events:
     try:
@@ -103,7 +95,6 @@ def dump(events, keep=None):
     svc["t"].append(e.logMonoTime / 1e9)
     svc["valid"].append(int(e.valid))
     _, _, kind, elem = services.get(which, (None, None, "data", None))
-    kept = keep.get(which)
     if kind == "struct":
       walk(getattr(e, which), "", svc["cols"], i)
     elif kind == "text":
