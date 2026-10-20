@@ -2,7 +2,8 @@
 // driven by schema.json (offsets from the capnp compiler). No per-event allocation: the walk follows
 // a lazily built tree of field plans whose leaves point straight at their output column.
 
-let U8, I8, U16, I16, U32, I32, F32, F64;
+// views of the log being read; exported as live bindings for the can() hook
+export let U8, I8, U16, I16, U32, I32, F32, F64;
 const segBase = new Int32Array(64);
 const f32 = new Float32Array(1), f32u = new Uint32Array(f32.buffer);
 const f64 = new Float64Array(1), f64u = new Uint32Array(f64.buffer);
@@ -64,6 +65,11 @@ function follow(p) {
     return true;
   }
   return false;
+}
+
+// the struct list at pointer p as [byte offset, count, data bytes, pointers] per element (far pointers followed), or null
+export function list(p) {
+  return follow(p) ? [rOff, rCount, rData, rPtrs] : null;
 }
 
 const decoder = new TextDecoder();
