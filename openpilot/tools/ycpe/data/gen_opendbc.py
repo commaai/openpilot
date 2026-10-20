@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Writes opendbc.json (car fingerprint -> DBC name, plus every DBC name) and the DBC files themselves, generated
-ones included, into opendbc/ (not committed; deploys run this)."""
+"""Writes opendbc.json, car fingerprint -> DBC name. With a directory argument, also writes every DBC there, generated
+ones included, for dbc.test.mjs (not into data/opendbc/: next to this script it would shadow the opendbc package)."""
 import json
+import sys
 from pathlib import Path
 
 from opendbc.car import Bus
@@ -26,11 +27,11 @@ def fingerprints() -> dict[str, str]:
 
 
 if __name__ == "__main__":
-  dbcs = {f.stem: f.read_text() for f in SRC.glob("*.dbc")} | generate_all()
-  out = HERE / "opendbc"
-  out.mkdir(exist_ok=True)
-  (out / ".gitignore").write_text("*\n")
-  for name, text in dbcs.items():
-    (out / f"{name}.dbc").write_text(text)
-  (HERE / "opendbc.json").write_text(json.dumps({"fingerprints": fingerprints(), "files": sorted(dbcs)}, indent=1) + "\n")
-  print(f"{len(dbcs)} DBCs, {sum(map(len, dbcs.values())) / 1e6:.1f} MB")
+  (HERE / "opendbc.json").write_text(json.dumps(fingerprints(), indent=1) + "\n")
+  if len(sys.argv) > 1:
+    out = Path(sys.argv[1])
+    out.mkdir(exist_ok=True)
+    dbcs = {f.stem: f.read_text() for f in SRC.glob("*.dbc")} | generate_all()
+    for name, text in dbcs.items():
+      (out / f"{name}.dbc").write_text(text)
+    print(f"{len(dbcs)} DBCs, {sum(map(len, dbcs.values())) / 1e6:.1f} MB")

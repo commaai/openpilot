@@ -1,7 +1,7 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
 import {h} from "/dom.js";
 import {MUX, MUXED, format, raw, value} from "/data/dbc.js";
-import {hexId} from "/data/can.js";
+import {busOf, hexId} from "/data/can.js";
 import {canOf, createSignal, hex2, removeSignal, subs, updateSignal} from "./common.js";
 
 const ROW = 22;
@@ -19,7 +19,7 @@ export function create(ctx, state) {
   const title = h("span", {class: "can-binary-title"});
   const modeBtn = h("select", {class: "can-select", title: "Heatmap: flips up to the playhead, or over the visible range",
     onchange: (e) => { mode = e.target.value; heat = null; requestHeat(); }},
-    h("option", {value: "live", selected: mode === "live"}, "live"), h("option", {value: "range", selected: mode === "range"}, "range"));
+    ["live", "range", "off"].map((v) => h("option", {value: v, selected: mode === v}, v)));
   const scroller = h("div", {class: "can-binary-scroll"}, canvas);
   const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key},
     h("div", {class: "can-toolbar"}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn), scroller, info);
@@ -54,7 +54,7 @@ export function create(ctx, state) {
 
   let heatBusy = false, heatAgain = false;
   async function requestHeat() {
-    if (k() === null) return;
+    if (k() === null || mode === "off") return ctx.perf.invalidate(pane);
     if (heatBusy) { heatAgain = true; return; }
     heatBusy = true;
     const want = k(), [t0, t1] = mode === "live" ? [-Infinity, ctx.clock.t] : ctx.clock.range;
@@ -132,7 +132,7 @@ export function create(ctx, state) {
     if (["x", "Delete", "Backspace"].includes(e.key)) removeSignal(can, k(), hover.name);
     else if (e.key === "e") updateSignal(can, k(), hover.name, {le: !hover.le});
     else if (e.key === "s") updateSignal(can, k(), hover.name, {signed: !hover.signed});
-    else if ("pgc".includes(e.key)) can.emit("chart", `/dbc/${can.msg(k()).bus}/${msg().name}/${hover.name}`);
+    else if ("pgc".includes(e.key)) can.emit("chart", `/dbc/${busOf(k())}/${msg().name}/${hover.name}`);
     else return;
     hover = null;
     e.preventDefault();
@@ -229,12 +229,21 @@ export function create(ctx, state) {
       for (let r = 0; r <= n; r++) { g.moveTo(x0, r * ROW + 0.5); g.lineTo(x0 + 9 * col, r * ROW + 0.5); }
       g.stroke();
       for (const sg of sigs) outline(g, sg, cells, n, x0, col, hover === sg);
-      info.textContent = hover ? describe(hover) : msg() ? `${sigs.length} signals · drag to add, drag an M/L edge to resize · x delete, e endianness, s sign, c chart` : "drag across bits to create a signal";
+      info.textContent = hover ? describe(hover) : warnings(d, cells) || (msg() ? `${sigs.length} signals · drag to add, drag an M/L edge to resize · x delete, e endianness, s sign, c chart` : "drag across bits to create a signal");
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
     save: () => ({mode}),
   };
+
+  // cabana's detail warnings
+  function warnings(d, cells) {
+    const m = msg(), out = [];
+    if (!d.length) out.push("no messages received yet");
+    else if (m && m.size !== d.length) out.push(`the DBC says ${m.size} bytes, received ${d.length}`);
+    if (cells.some((c) => c.length > 1)) out.push("signals overlap");
+    return out.length ? `⚠ ${out.join(" · ")}` : "";
+  }
 
   function describe(sg) {
     const d = bytes(), v = d.length ? value(msg(), sg, d) : NaN;

@@ -27,7 +27,8 @@ export function subs() {
 }
 
 export const hex2 = (x) => x.toString(16).toUpperCase().padStart(2, "0");
-export const hexBytes = (d, sep = " ") => Array.from(d, hex2).join(sep);
+// a signal color dark enough for text and lines on either theme
+export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
 
 // a modal dialog; close() removes it
 export function dialog(title, ...body) {
