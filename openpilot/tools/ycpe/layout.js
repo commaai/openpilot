@@ -179,8 +179,8 @@ export class Layout {
         kids[i - 1].style.flex = `${n.sizes[i - 1]} 1 0`;
         kids[i].style.flex = `${n.sizes[i]} 1 0`;
       };
-      el.onpointerup = () => {
-        el.onpointermove = el.onpointerup = null;
+      el.onpointerup = el.onpointercancel = () => {
+        el.onpointermove = el.onpointerup = el.onpointercancel = null;
         if (n.sizes[i - 1] === a) return;
         this.checkpoint(before);
         this.changed();

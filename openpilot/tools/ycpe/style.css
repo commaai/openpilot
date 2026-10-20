@@ -150,7 +150,7 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .split { display: flex; min-width: 0; min-height: 0; }
 .split.row { flex-direction: row; }
 .split.col { flex-direction: column; }
-.divider { flex: 0 0 4px; background: transparent; transition: background .1s; }
+.divider { position: relative; flex: 0 0 4px; background: transparent; transition: background .1s; touch-action: none; }
 .split.row > .divider { cursor: col-resize; }
 .split.col > .divider { cursor: row-resize; }
 .divider:hover, .divider:active { background: var(--accent); }

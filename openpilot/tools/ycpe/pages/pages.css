@@ -182,4 +182,5 @@ a.drive-row:hover { background: var(--hover); }
   :root { --top: 44px; --head: 34px; }
   .topbar :is(.brand, .crumb, .omnibox, .tbtn, .load-pill, .view, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
   .pane-type { height: 32px; }
+  .divider::before { content: ""; position: absolute; z-index: 1; inset: -8px; }  /* a 20px grip, over the panes' edges */
 }
