@@ -48,6 +48,7 @@ export class Store {
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.monos = new Map();  // /<service>/__logMonoTime → its series
     this.lists = new Map();  // long lists the workers skipped: path → longest length
+    this.listTypes = new Map();  // and → element type ("s": structs)
     this.missing = new Set();  // migrated paths that couldn't be computed
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
@@ -297,12 +298,17 @@ export class Store {
       route.duration = last.status === "done" ? last.t1 : Math.max(route.duration, seg.t1, (route.segments.length - 1) * SEGMENT);
     }
     Object.assign(this.enums, p.enums);
-    for (const path in p.lists) this.lists.set(path, Math.max(this.lists.get(path) || 0, p.lists[path]));
+    let added = false;
+    for (const path in p.lists) {
+      if (p.lists[path] <= (this.lists.get(path) || 0)) continue;
+      this.lists.set(path, p.lists[path]);
+      this.listTypes.set(path, p.listTypes[path]);
+      added = true;
+    }
 
     const paths = p.paths ? p.paths.split("\n") : [];
     p.types = p.types.split("\n");
     p.live = p.counts.map(() => 0);
-    let added = false;
     for (let k = 0; k < paths.length; k++) {
       let e = this.entries.get(paths[k]);
       const ref = enumRef(p, k), names = ref >= 0 ? this.enums[ref] : undefined;
@@ -350,6 +356,12 @@ export class Store {
       out.push(names ? {path, type, names} : {path, type});
       const mono = path.match(/^(\/[^/]+)\/_?valid$/);  // every service has one
       if (mono) out.push({path: `${mono[1]}/${MONO}`, type: "f64", internal: true});
+    }
+    // the indexes of skipped long lists of values, loaded once plotted
+    for (const [list, n] of this.lists) {
+      const type = this.listTypes.get(list);
+      if (!type || type === "s" || type === "l") continue;
+      for (let i = 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
     }
     for (const o of this.overlays) for (const p of o.store.paths()) out.push({...p, path: o.prefix + p.path});
     return out;
@@ -459,8 +471,9 @@ export class Store {
     return {t, min, max};
   }
 
-  // the last value at or before t
+  // the last value at or before t; an index of a skipped long list isn't loaded for it
   valueAt(path, t) {
+    if (!this.entries.has(path) && this.listOf(path)) return undefined;
     const s = this.series(path);
     if (!s) return undefined;
     const {chunks} = s;
@@ -487,13 +500,19 @@ export class Store {
 
   // a skipped long list is asked for by any of its indexes: keep it from now on and re-parse what's loaded
   request(path) {
-    const m = path.match(/^\/([^/]+)(\/.*)\/\d+(\/.*)?$/);
-    if (!m || !this.lists.has(`/${m[1]}${m[2]}`)) return;
+    const m = this.listOf(path);
+    if (!m) return;
     const glob = m[2], list = this.keep[m[1]] ||= [];
     if (list.includes(glob)) return;
     list.push(glob);
     this.kept.push({[m[1]]: [`${glob}/*`, `${glob}/*/*`]});
     this.reparse(this.kept.at(-1));
+  }
+
+  // the match of [, service, list] when path is an index into a skipped long list
+  listOf(path) {
+    const m = path.match(/^\/([^/]+)(\/.*)\/\d+(\/.*)?$/);
+    return m && this.lists.has(`/${m[1]}${m[2]}`) ? m : null;
   }
 
   reload(e) {
