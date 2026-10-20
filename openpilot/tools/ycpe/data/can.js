@@ -505,7 +505,7 @@ export class Can {
     (this.handlers[event] ||= new Set()).add(fn);
     return () => this.handlers[event].delete(fn);
   }
-  emit(event, arg) { for (const fn of this.handlers[event] || []) fn(arg); }
+  emit(event, ...args) { for (const fn of this.handlers[event] || []) fn(...args); }
 
   // a segment's frames from the pipeline worker (route time = mono time + off); summaries stay here
   ingest(n, can, off) {

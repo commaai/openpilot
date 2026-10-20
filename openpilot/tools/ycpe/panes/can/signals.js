@@ -66,7 +66,7 @@ export function create(ctx, state) {
     list.replaceChildren(...shown(m).map((sg) => {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
-      const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, icon("show_chart", 14));
+      const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg), {merge: e.shiftKey}); }}, icon("show_chart", 14));
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
         h("div", {class: "can-sig-row", role: "button", tabindex: 0, "aria-expanded": String(sg.name === open), onclick: () => toggle(sg.name),
           onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},

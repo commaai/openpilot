@@ -34,6 +34,8 @@ export function create(ctx, state) {
   const resizer = new ResizeObserver((entries) => {
     for (const e of entries) charts.find((c) => c.box === e.target)?.pane.resize(e.contentRect.width, e.contentRect.height);
   });
+  // a plot rebuilds its legend whenever its curves change (a drop, the legend's x, its editor or undo)
+  const legends = new MutationObserver(charted);
 
   // decoded signals keep their DBC color, darkened on the light theme's white
   const color = (path) => {
@@ -60,6 +62,7 @@ export function create(ctx, state) {
     charts.push(c);
     grid.append(c.el);
     resizer.observe(c.box);
+    legends.observe(c.pane.el.querySelector(".legend"), {childList: true});
     if (shown) c.pane.setView({...c.pane.view, range: shown});
     layout();
     return c;
@@ -139,7 +142,11 @@ export function create(ctx, state) {
     grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     empty.hidden = charts.length > 0;
     tabsChanged();
-    // the plot buttons show what the open tab charts
+    charted();
+  }
+
+  // the plot buttons show what the open tab charts
+  function charted() {
     can.charted = new Set(charts.flatMap((c) => c.pane.save().curves.map((x) => x.path)));
     can.emit("charted");
   }
@@ -170,6 +177,7 @@ export function create(ctx, state) {
     dispose() {
       s.dispose();
       resizer.disconnect();
+      legends.disconnect();
       for (const c of charts) c.pane.dispose();
       can.charted = new Set();
       can.emit("charted");
@@ -179,9 +187,10 @@ export function create(ctx, state) {
       return {cols, style, span, tabs, active};
     },
   };
-  // a signal's plot button charts it, or takes it off its chart
-  s.add(can.on("chart", (path) => {
+  // a signal's plot button charts it (shift: on the first chart, as cabana), or takes it off its chart
+  s.add(can.on("chart", (path, {merge = false} = {}) => {
     const c = charts.find((x) => x.pane.save().curves.some((y) => y.path === path));
+    if (!c && merge && charts.length) return charts[0].pane.setCurves([...charts[0].pane.curves, curve(path)]);
     if (!c) return add({curves: [curve(path)]});
     const st = c.pane.save();
     replace(c, {...st, curves: st.curves.filter((x) => x.path !== path)});
