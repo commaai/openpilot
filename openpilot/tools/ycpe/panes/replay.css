@@ -14,11 +14,9 @@
 .replay-start { margin-left: auto; }
 .replay-start:disabled { opacity: .5; cursor: default; }
 .replay-bar { height: 3px; margin: 6px 0 2px; background: var(--line); }
-.replay-bar[hidden] { display: none; }
 .replay-bar > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 .replay-status { min-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .replay-error { max-height: 180px; margin: 6px 0; padding: 6px; overflow: auto; border: 1px solid var(--critical); border-radius: 4px; font: 11px var(--mono); white-space: pre-wrap; }
-.replay-error[hidden] { display: none; }
 .replay-diff table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .replay-diff th { padding: 2px 6px; color: var(--muted); font-weight: 500; text-align: right; white-space: nowrap; }
 .replay-diff td { padding: 1px 6px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; }

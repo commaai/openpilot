@@ -8,7 +8,6 @@
 .inspector-pane .inspector-spacer { position: relative; }
 .inspector-pane .inspector-window { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
 .inspector-pane .inspector-row { display: flex; height: 18px; white-space: pre; overflow: hidden; }
-.inspector-pane .inspector-row[hidden] { display: none; }
 .inspector-pane .inspector-row:hover { background: var(--hover); }
 .inspector-pane .inspector-key { flex: none; width: 45%; overflow: hidden; text-overflow: ellipsis; color: var(--muted); cursor: default; }
 .inspector-pane .inspector-value { flex: 1; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }

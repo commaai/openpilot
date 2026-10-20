@@ -21,6 +21,7 @@ import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
+import {uniqueCustoms} from "/layouts/import.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
@@ -451,7 +452,8 @@ function savedLayout(view) {
   const key = `ycpe_layout_${view}`;
   try {
     const saved = JSON.parse(localStorage.getItem(key) || "null");
-    if (saved?.tabs?.length) return checkLayout(saved);
+    // custom series named alike were saved with different code before names had to be unique: they're renamed
+    if (saved?.tabs?.length) return uniqueCustoms(checkLayout(saved));
   } catch {
     localStorage.removeItem(key);
     toast(`The saved ${VIEWS[view].title} layout couldn't be read, so it's back to the default`);

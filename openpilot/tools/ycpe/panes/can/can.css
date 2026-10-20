@@ -26,7 +26,6 @@
 .can-filter { width: 110px; }
 .can-empty { padding: 16px; color: var(--muted); text-align: center; }
 /* hidden wins over the flex and grid rows */
-.can-pane [hidden] { display: none; }
 .can-comment { width: 100%; color: var(--muted); white-space: pre-wrap; }
 
 /* messages */

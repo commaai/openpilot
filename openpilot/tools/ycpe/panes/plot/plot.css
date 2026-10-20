@@ -1,5 +1,4 @@
 /* plot panes: time plot, XY plot, their popups */
-.plot-pane [hidden], .browser [hidden] { display: none !important; }
 .plot-pane { position: absolute; inset: 0; overflow: hidden; user-select: none; }
 .plot-pane canvas { position: absolute; left: 0; top: 0; }
 .plot-pane canvas.over { cursor: crosshair; touch-action: none; }

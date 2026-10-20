@@ -9,7 +9,6 @@
 .logs-pane .logs-spacer { position: relative; min-height: 100%; }
 .logs-pane .logs-window { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
 .logs-pane .logs-row { display: flex; gap: 8px; height: 18px; padding: 0 6px; white-space: pre; overflow: hidden; cursor: pointer; }
-.logs-pane .logs-row[hidden] { display: none; }
 .logs-pane .logs-row:hover { background: var(--hover); }
 .logs-pane .logs-row.current { background: var(--active); }
 .logs-pane .logs-t { flex: none; width: 9ch; color: var(--muted); text-align: right; }
