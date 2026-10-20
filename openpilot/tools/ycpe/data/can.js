@@ -563,16 +563,16 @@ export class Can {
 
   messages() { return [...this.msgs.values()]; }
 
-  // DBC messages never seen on any bus, listed as cabana does so they can still be edited; keyed on their DBC's bus
+  // DBC messages never seen on any bus, listed as cabana does so they can still be edited; keyed on their DBC's bus,
+  // but on no bus (null) for the list
   unseen() {
     const seen = new Set(Array.from(this.msgs.values(), (s) => s.address)), out = [];
     for (const [b, f] of this.dbcs.files) {
-      const bus = Math.max(b, 0);
       for (const m of f.msgs.values()) {
         if (seen.has(m.address)) continue;
         seen.add(m.address);
-        const k = key(bus, m.address);
-        out.push({key: k, bus, address: m.address, id: hexId(k), count: 0, freq: 0, size: m.size, t0: Infinity, t1: -Infinity, segs: new Set(), unseen: true});
+        const k = key(Math.max(b, 0), m.address);
+        out.push({key: k, bus: null, address: m.address, id: hexId(k), count: 0, freq: 0, size: m.size, t0: Infinity, t1: -Infinity, segs: new Set(), unseen: true});
       }
     }
     return out;

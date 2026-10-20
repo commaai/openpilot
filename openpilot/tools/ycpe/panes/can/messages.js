@@ -5,15 +5,17 @@ import {canOf, hex2, menuCheck, popup, subs} from "./common.js";
 import {dbcDialog, toolsMenu} from "./tools.js";
 
 const ROW = 20;
+// bus, freq and count are null for DBC messages never seen: "N/A", sorted last, and never matching a number
 const COLS = [
   {id: "name", title: "Name", get: (m, can) => can.name(m.key), text: (m, can) => can.name(m.key) || "untitled"},
-  {id: "bus", title: "Bus", get: (m) => m.bus},
+  {id: "bus", title: "Bus", get: (m) => m.bus, num: true},
   {id: "id", title: "ID", get: (m) => m.address, text: (m) => `0x${m.address.toString(16).toUpperCase()}`},
   {id: "node", title: "Node", get: (m, can) => can.dbcMsg(m.key)?.transmitter || ""},
-  {id: "freq", title: "Freq", get: (m) => m.freq, text: (m) => (m.unseen ? "N/A" : m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2))},
-  {id: "count", title: "Count", get: (m, can) => can.countAt(m.key)},
+  {id: "freq", title: "Freq", get: (m) => (m.unseen ? null : m.freq), text: (m) => (m.unseen ? "N/A" : m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2)), num: true},
+  {id: "count", title: "Count", get: (m, can) => (m.unseen ? null : can.countAt(m.key)), num: true},
   {id: "bytes", title: "Bytes", get: (m) => m.size},
 ];
+const text = (c, m, can) => String(c.text ? c.text(m, can) : c.get(m, can) ?? "N/A");
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
@@ -70,23 +72,28 @@ export function create(ctx, state) {
     notice.hidden = !notice.textContent;
   }
 
-  // filtering as cabana: substrings, "a-b" and "a-" ranges for numbers (hex for IDs), and names match signal names too
+  // filtering as cabana's parseRange: bus, freq and count are a number, or an "a-b" or "a-" range, of the value shown;
+  // the rest are substrings, IDs also hex ranges, and names match signal names too
   function match(m) {
     for (const c of COLS) {
       const f = (filters[c.id] || "").trim().toLowerCase();
       if (!f) continue;
-      const v = c.get(m, can), text = String(c.text ? c.text(m, can) : v).toLowerCase();
+      const v = c.get(m, can), t = text(c, m, can).toLowerCase();
+      if (c.num) {
+        const r = /^([\d.]+)(?:\s*-\s*([\d.]*))?$/.exec(f), x = +t;
+        if (v === null || !r || x < +r[1] || x > (r[2] === undefined ? +r[1] : r[2] ? +r[2] : Infinity)) return false;
+        continue;
+      }
       if (c.id === "bytes") {
         const j = can.live?.index.get(m.key);
         if (j === undefined || !Array.from(can.live.data.subarray(can.live.off[j], can.live.off[j + 1]), hex2).join("").toLowerCase().includes(f.replace(/\s/g, ""))) return false;
         continue;
       }
       if (c.id === "name" && can.dbcMsg(m.key)?.sigs.some((sg) => sg.name.toLowerCase().includes(f))) continue;
-      const hex = c.id === "id", range = (hex ? /^(?:0x)?([\da-f]+)\s*-\s*(?:0x)?([\da-f]*)$/ : /^(-?[\d.]+)\s*-\s*(-?[\d.]*)$/).exec(f);
-      if (range && typeof v === "number") {
-        const num = (x) => (hex ? parseInt(x, 16) : +x);
-        if (v < num(range[1]) || (range[2] && v > num(range[2]))) return false;
-      } else if (!(hex ? text.slice(2).includes(f.replace(/^0x/, "")) : text.includes(f))) return false;
+      const hex = c.id === "id", range = hex && /^(?:0x)?([\da-f]+)\s*-\s*(?:0x)?([\da-f]*)$/.exec(f);
+      if (range) {
+        if (v < parseInt(range[1], 16) || (range[2] && v > parseInt(range[2], 16))) return false;
+      } else if (!(hex ? t.slice(2).includes(f.replace(/^0x/, "")) : t.includes(f))) return false;
     }
     return true;
   }
@@ -98,9 +105,10 @@ export function create(ctx, state) {
     const all = [...can.messages(), ...(unseen ? can.unseen() : [])].filter(match);
     if (resort) {
       const col = COLS.find((c) => c.id === sort.col), before = rows.findIndex((m) => m.key === can.selected);
-      // unnamed messages stay below named ones in either direction, as do ties by bus and address
+      // unnamed and unseen messages stay below the others in either direction, as do ties by bus and address
+      const none = (v) => v === "" || v === null;
       rows = all.map((m) => ({m, v: col.get(m, can)}))
-        .sort((a, b) => (sort.col === "name" && !a.v !== !b.v ? (a.v ? -1 : 1) : (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) * sort.dir) || a.m.key - b.m.key)
+        .sort((a, b) => (none(a.v) !== none(b.v) ? (none(a.v) ? 1 : -1) : (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) * sort.dir) || a.m.key - b.m.key)
         .map((r) => r.m);
       const after = rows.findIndex((m) => m.key === can.selected);
       if (before >= 0 && after >= 0 && before * ROW >= scrollTop && before * ROW < scrollTop + height) {
@@ -161,7 +169,7 @@ export function create(ctx, state) {
         if (r.sel !== (m.key === can.selected)) r.classList.toggle("selected", r.sel = m.key === can.selected);
         const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
         if (r.active !== active) r.classList.toggle("inactive", !(r.active = active));
-        COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], String(c.text ? c.text(m, can) : c.get(m, can))); });
+        COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], text(c, m, can)); });
         const dm = can.dbcMsg(m.key), named = !!dm;
         if (r.named !== named) r.cells[0].classList.toggle("can-muted", !(r.named = named));
         const tip = dm ? (dm.comment ? `${dm.name}\n${dm.comment}` : dm.name) : "";
