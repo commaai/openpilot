@@ -1,10 +1,12 @@
 // time plot: curves over the shared x-range with a hover tracker, a legend of values, state blocks for enums
 // and text, and the view gestures. Two canvases: the base (grid, curves) redraws only when the view or the
 // data changes; the overlay (playhead, tracker, zoom box) redraws on every cursor move. Per-frame work is
-// O(pixels): curves come from store.decimate and state blocks from cached runs.
+// O(pixels): curves come from store.decimate (cached on a bucket grid, so a pan only decimates the newly
+// exposed edge) and state blocks from cached runs.
 import {h} from "/dom.js";
 import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
+import {Decimator} from "./decimate.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
 import {TRANSFORMS, derivedPath, derive, compute} from "/data/transforms.js";
@@ -59,6 +61,7 @@ export function create(ctx, state = {}) {
   let statsTimer = 0, statsKey = "";
   const made = new Map();  // derived or custom path → input version it was computed from
   const busy = new Set();
+  const decimator = new Decimator(store);
 
   const pane = {
     name: "plot", el, render, resize, dispose, save, addCurves,
@@ -135,31 +138,26 @@ export function create(ctx, state = {}) {
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
     for (const it of lines) {
       const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
-      const n = Math.round(px * 1.1), d = store.decimate(it.src, a, b, n);
-      // buckets are uniform and may be empty here and there, so a gap is also wider than a couple of them
-      const bucket = d && d.min !== d.max ? (b - a) / n : 0;
-      it.gap = gapTest(Math.max(5 * medianInterval(it.src, it.s), 1, 2.5 * bucket), view.unloaded());
-      it.d = withEdges(d, a, b, store.valueAt(it.src, a), store.valueAt(it.src, b));
+      const d = decimator.get(it.src, it.s.version, a, b, Math.round(px * 1.1));
+      // buckets may be empty here and there, so a gap is also wider than a couple of them
+      it.gap = gapTest(Math.max(5 * medianInterval(it.src, it.s), 1, 2.5 * (d?.w || 0)), view.unloaded());
+      it.d = withEdges(d, it.src, a, b);
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
     return {rows, lines, blockMode};
   }
 
-  // held values at the query edges, so series sparser than the view still reach both sides; only where the
+  // held values in empty edge buckets, so series sparser than the view still reach both sides; only where the
   // edge's logs are loaded, since an unknown span must not show the last value
-  function withEdges(d, a, b, va, vb) {
-    if (!d) return d;
-    const n = d.t.length;
-    const pre = typeof va === "number" && !(d.t[0] <= a) && !view.isUnloaded(a);
-    const post = typeof vb === "number" && !(d.t[n - 1] >= b) && !view.isUnloaded(b);
+  function withEdges(d, path, a, b) {
+    const n = d?.t.length, pre = n && d.min[0] !== d.min[0], post = n && d.min[n - 1] !== d.min[n - 1];
     if (!pre && !post) return d;
-    const m = n + pre + post, t = new Float64Array(m), min = new Float64Array(m), max = new Float64Array(m);
-    t.set(d.t, +pre);
-    min.set(d.min, +pre);
-    max.set(d.max, +pre);
-    if (pre) [t[0], min[0], max[0]] = [a, va, va];
-    if (post) [t[m - 1], min[m - 1], max[m - 1]] = [b, vb, vb];
-    return {t, min, max};
+    const min = d.min.slice(), max = d.max.slice();
+    for (const [i, t, held] of [[0, a, pre], [n - 1, b, post]]) {
+      const v = held && !view.isUnloaded(t) ? store.valueAt(path, t) : undefined;
+      if (typeof v === "number") min[i] = max[i] = v;
+    }
+    return {...d, min, max};
   }
 
   function yRange(lines, t0, t1) {
@@ -217,6 +215,7 @@ export function create(ctx, state = {}) {
     }
     g.globalAlpha = 1;
     drawInvalid(g, p.lines, X, py + ph);
+    decimator.sweep();
     g.restore();
 
     g.fillStyle = col.text;
@@ -231,9 +230,9 @@ export function create(ctx, state = {}) {
     g.fillStyle = col.invalid;
     const [t0, t1] = xRange();
     for (const svc of services) {
-      const d = store.decimate(`/${svc}/valid`, t0, t1, Math.round(W / 2));
+      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
       if (!d) continue;
-      const w = Math.max(2, (W - L - R) / Math.max(1, d.t.length));
+      const w = Math.max(2, X(d.w) - X(0));
       for (let i = 0; i < d.t.length; i++) if (d.min[i] === 0) g.fillRect(X(d.t[i]) - w / 2, bottom - 4, w, 4);
     }
   }
