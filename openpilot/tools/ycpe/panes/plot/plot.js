@@ -62,7 +62,7 @@ export function create(ctx, state = {}) {
   let gesture = null;  // the pointer gesture in progress
   let rows = [];       // legend rows, parallel to st.curves
   let statsTimer = 0, statsKey = "", recomputeTimer = 0;
-  const made = new Map();  // derived or custom path → input version it was computed from
+  const made = new Map();  // derived or custom path → the recipe it was computed from
   const busy = new Set();
   const decimator = new Decimator(store, () => invalidate());
 
@@ -117,9 +117,10 @@ export function create(ctx, state = {}) {
 
   // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
   // change, off the draw and a moment later (inputs that change together, as segments arrive, recompute once);
-  // custom code from an untrusted layout waits until the user has reviewed it in the console
-  const inputsVersion = (inputs) => inputs.map((p) => store.series(p)?.version).join();
-  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== inputsVersion(inputs);
+  // custom code from an untrusted layout waits until the user has reviewed it in the console. A recipe is the inputs'
+  // versions and a custom series' code, so an undone edit of the code computes again
+  const recipe = (c, out, inputs) => (out === c.path && c.custom ? `${specKey(c.custom)}|` : "") + inputs.map((p) => store.series(p)?.version).join();
+  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== recipe(c, out, inputs);
   function source(c) {
     let src = c.path;
     steps(c, (out, inputs) => {
@@ -142,9 +143,9 @@ export function create(ctx, state = {}) {
       if (c.hidden) continue;
       steps(c, (out, inputs, run) => {
         if (!stale(c, out, inputs)) return;
-        const version = inputsVersion(inputs);
+        const from = recipe(c, out, inputs);
         busy.add(out);
-        run().then(() => { made.set(out, version); c.error = null; }, (e) => { made.set(out, version); c.error = e.message; })
+        run().then(() => { made.set(out, from); c.error = null; }, (e) => { made.set(out, from); c.error = e.message; })
           .finally(() => { busy.delete(out); rebuildLegend(); invalidate(); });
       });
     }
@@ -421,7 +422,7 @@ export function create(ctx, state = {}) {
     const other = path !== c?.path && ctx.layout && customsOf(ctx.layout.save()).get(path);
     if (other && other !== specKey(custom)) throw new Error(`another custom series is named ${spec.name}: pick another name`);
     await evaluate(store, path, custom);
-    made.set(path, inputsVersion(custom.inputs));
+    made.set(path, recipe({path, custom}, path, custom.inputs));
     view.rememberCurves(clock, pane);
     if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
     else st.curves.push(normalize({path, label: spec.name, custom}));
