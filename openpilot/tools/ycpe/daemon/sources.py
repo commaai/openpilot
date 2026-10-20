@@ -158,13 +158,16 @@ class Resolver:
     return None
 
   def resolve(self, seg: int, names: tuple[str, ...]) -> dict | None:
-    for name in names:  # cached copies first, from any source this request allows
+    shared = [s for s in self.sources if s in cache.SHARED]
+    for name in names:  # cached copies first, from any source this request allows that has the full files
       key = Key(self.dongle, self.log_id, seg, name)
-      if (hit := cache.lookup(key, [s for s in self.sources if s != "local"])):
+      if (hit := cache.lookup(key, shared)):
         return entry(hit[0], key, hit[1].stat().st_size, True)
     for source in self.sources:
       for name in names:
         key = Key(self.dongle, self.log_id, seg, name)
+        if source == "carSegments" and (hit := cache.lookup(key, ["carSegments"])):  # filtered copies only in their turn
+          return entry(hit[0], key, hit[1].stat().st_size, True)
         try:
           found = self.find(source, key)
         except Exception as e:
@@ -259,8 +262,8 @@ def upstream(source: str, key: Key, jwt: str | None) -> str | None:
 
 CHECK_EVERY = 24 * 3600
 STALE = {"X-Ycpe-Cache": "stale-refetch"}  # served from the old copy while the new one downloads
-_checking: set[Key] = set()
-_refetching: dict[Key, int] = {}  # key → inode of the stale copy, which is what gets the stale header
+_checking: set[str] = set()  # canonical URLs
+_refetching: dict[str, int] = {}  # canonical URL → inode of the stale copy, which is what gets the stale header
 _check_lock = threading.Lock()
 
 
@@ -269,9 +272,9 @@ def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
   if url is None or path.name != cache.sha(url) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
     return  # device pulls, decompressed-only copies, or checked lately
   with _check_lock:
-    if key in _checking:
+    if url in _checking:
       return
-    _checking.add(key)
+    _checking.add(url)
 
   def check():
     try:
@@ -282,16 +285,16 @@ def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
         cache.mark_checked(path)
         return
       cache.stats["stale"] += 1
-      _refetching[key] = path.stat().st_ino
+      _refetching[url] = path.stat().st_ino
       cache.remove(cache.derived_copies(url))
       fill = cache.fill(key, source, found[0])
       fill.finished.wait()
     except Exception as e:
       print(f"revalidating {key}: {type(e).__name__}: {e}")
     finally:
-      _refetching.pop(key, None)
+      _refetching.pop(url, None)
       with _check_lock:
-        _checking.discard(key)
+        _checking.discard(url)
   threading.Thread(target=check, daemon=True, name=f"check {key}").start()
 
 
@@ -305,15 +308,16 @@ def serve_file(req):
     if not found:
       raise HTTPError(404)
     return File(str(confine(found[0], config.log_roots)), headers=HIT)
-  if (hit := cache.lookup(key)):
+  if (hit := cache.lookup(key, cache.peers(source))):
     cache.stats["hits"] += 1
     cache.touch(hit[1])
     revalidate(key, *hit, jwt_of(req))
-    return File(str(hit[1]), headers=STALE if _refetching.get(key) == hit[1].stat().st_ino else HIT)
+    stale = _refetching.get(cache.canonical_url(hit[0], key) or "") == hit[1].stat().st_ino
+    return File(str(hit[1]), headers=STALE if stale else HIT)
   if source == "device":
     raise HTTPError(404)
   cache.stats["misses"] += 1
-  if (fill := cache.filling(key)) is None:
+  if (fill := cache.filling(key, source)) is None:
     if (url := upstream(source, key, jwt_of(req))) is None:
       raise HTTPError(404)
     fill = cache.fill(key, source, url)
@@ -353,18 +357,22 @@ def proxy_range(url: str, rng: str) -> Stream:
 def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
   """A local path holding key, downloading it into the shared cache first if needed (blocking). With a job, the wait
   stops when it's cancelled, and so does a download this call started."""
-  if (hit := cache.lookup(key)):
+  srcs = [s for s in (sources or SOURCES) if s in SOURCES]
+  # full copies stand in for each other; commaCarSegments' filtered ones are only used when it's the source picked
+  space = "carSegments" if srcs == ["carSegments"] else "api"
+  if (hit := cache.lookup(key, [s for s in srcs if s in cache.peers(space)])):
     cache.touch(hit[1])
     revalidate(key, *hit, jwt)
     return hit[1]
-  srcs = [s for s in (sources or SOURCES) if s in SOURCES]
   if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):
     return Path(found[0])
-  if (fill := cache.filling(key)) is None:
+  if (fill := cache.filling(key, space)) is None:
     r = Resolver(key.dongle, key.log_id, [s for s in srcs if s not in ("device", "local")], jwt, False)
     found = next(((s, f) for s in r.sources if (f := r.find(s, key))), None)
     if found is None:
       raise FileNotFoundError(f"{key} isn't in {', '.join(srcs)}" + "".join(f"; {k}: {v}" for k, v in r.errors.items()))
+    if found[0] == "carSegments" and (hit := cache.lookup(key, ["carSegments"])):
+      return hit[1]
     fill = cache.fill(key, found[0], found[1][0], cancelled=(lambda: job.cancelled) if job is not None else None)
   while not fill.finished.wait(0.1):
     if job is not None:
