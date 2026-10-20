@@ -26,6 +26,7 @@
 .dl { display: inline-flex; padding: 2px; border-radius: 4px; color: var(--accent); }
 .dl:hover { background: var(--hover); }
 .list-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.list-foot[hidden] { display: none; }
 
 /* home */
 .recent { margin-bottom: 18px; }
@@ -60,7 +61,9 @@
 .token-form .button { margin: 0; }
 .login-foot { margin-top: 14px !important; padding-top: 10px; border-top: 1px solid var(--line); }
 .login-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 10px; color: var(--muted); }
-.device-name { display: inline-flex; align-items: center; gap: 4px; }
+.device-name { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; white-space: nowrap; }
+.device-name > span { overflow: hidden; text-overflow: ellipsis; }
+.device-info .device-name { white-space: normal; }
 .device-name .field { width: 180px; height: 22px; font-weight: 400; }
 
 /* device page */
@@ -69,7 +72,8 @@
 .device-info h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; }
 .kv { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); }
 .device-map { width: 360px; height: 120px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--bg); }
-.page-tabs { display: flex; gap: 2px; margin: 4px 0 8px; border-bottom: 1px solid var(--line); }
+.page-tabs { display: flex; gap: 2px; margin: 4px 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.page-tabs .tab { flex-shrink: 0; }
 .page-tabs .tab { height: 28px; margin-bottom: -1px; }
 .drive-row { display: grid; grid-template-columns: 190px 64px 72px 64px minmax(120px, 1fr) minmax(160px, 38%) 64px; gap: 0 12px; align-items: center;
   height: 31px; padding: 0 8px; border-bottom: 1px solid var(--line); text-decoration: none; white-space: nowrap;
@@ -88,7 +92,7 @@ a.drive-row:hover { background: var(--hover); }
 .strip-spans .override { background: var(--override); }
 .strip-spans .alert { background: var(--alert); }
 .strip-spans .critical { background: var(--critical); }
-.strip-spans .bookmark { background: var(--bookmark, #e3d756); }
+.strip-spans .bookmark { background: var(--bookmark); }
 .inline-form { display: flex; gap: 6px; align-items: center; }
 .inline-form .field { width: 260px; }
 
@@ -101,11 +105,34 @@ a.drive-row:hover { background: var(--hover); }
 .log-dialog > :last-child:not(.log-head) { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 8px 12px; }
 .log-text { font: 11px/1.45 var(--mono); white-space: pre; }
 
+/* narrower: no version column; phones: no places, the timeline under each drive, the device and log tables down to
+   what identifies a row, and tap targets of at least 32px */
+@media (max-width: 900px) {
+  .drive-row { grid-template-columns: 170px 56px 64px 56px minmax(100px, 1fr) minmax(160px, 34%); }
+  .drive-row > :nth-child(7) { display: none; }
+}
 @media (max-width: 760px) {
+  .page { padding: 8px 12px 24px; }
   .device-head { flex-direction: column; }
+  .device-info h2 { font-size: 16px; }
   .device-map { width: 100%; }
-  .drive-row { grid-template-columns: 150px 56px 64px 52px minmax(120px, 1fr); }
-  .drive-row > :nth-child(5), .drive-row > :nth-child(7) { display: none; }
+  .drive-row { grid-template-columns: minmax(0, 1fr) 48px 56px 52px; gap: 4px 10px; height: 62px; padding: 6px 8px; contain-intrinsic-size: auto 62px; }
+  .drive-row > :nth-child(5) { display: none; }
+  .drive-row > .strip { grid-column: 1 / -1; }
+  .drive-row.head { height: 30px; padding: 0 8px; }
+  .drive-row.head > :nth-child(6) { display: none; }
+  .list.devices { table-layout: fixed; }
+  .list.devices :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5)) { display: none; }
+  .list.devices :is(th, td):first-child { width: 24px; }
+  .list.devices :is(th, td):last-child { width: 76px; }
+  .list.devices td:nth-child(2) a { display: block; margin: -8px 0; padding: 8px 0; }  /* the whole cell height taps */
+  .recent .list td:is(:nth-child(5), :nth-child(6)) { display: none; }
+  .list.crashes :is(th, td):nth-child(2) { display: none; }
+  .list.crashes td:nth-child(3) { word-break: break-all; }
+  .list td { height: 36px; }
+  .page-tabs .tab { height: 36px; }
+  .page .icon-btn, .page .dl { min-width: 32px; min-height: 32px; justify-content: center; align-items: center; }
+  :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
 }
 
 /* the drive view on a phone: camera, map and route info stacked in one scroll, the routes list behind the route
@@ -120,6 +147,7 @@ a.drive-row:hover { background: var(--hover); }
   .ws[data-view="drive"] .pane-body:has(> .camera-pane) { flex: none; aspect-ratio: 526 / 330; }
   .ws[data-view="drive"] .pane-body:has(> .map-pane) { flex: none; height: 45vh; }
   .ws[data-view="drive"] .pane-body:has(> .info-pane) { contain: none; }
+  .ws[data-view="drive"] .pane-body:has(> .files-pane) { flex: none; height: 70vh; }
   .ws[data-view="drive"] .info-pane { position: static; overflow: visible; }
   .ws[data-view="drive"] .playbar > .tbtn:not(.play), .ws[data-view="drive"] .pb-wall { display: none; }
   .ws[data-view="drive"] .pb-clock { min-width: 0; }

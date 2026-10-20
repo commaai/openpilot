@@ -39,7 +39,7 @@ export function logsSection(dongleId, kind) {
   (kind === "boot" ? api.bootlogs : api.crashlogs)(dongleId).then((urls) => {
     if (!urls.length) return el.replaceChildren(h("p", {class: "muted"}, `No ${kind} logs.`));
     const files = urls.map((url) => ({url, file: new URL(url).pathname.split("/").at(-1)})).reverse();
-    const table = h("table", {class: "list"}, kind === "boot"
+    const table = h("table", {class: kind === "boot" ? "list" : "list crashes"}, kind === "boot"
       ? h("tr", {}, h("th", {}, "boot"), h("th"))
       : h("tr", {}, h("th", {}, "time"), h("th", {}, "commit"), h("th", {}, "executable"), h("th")));
     const more = h("button", {class: "button", onclick: show}, "Show more");
@@ -48,7 +48,7 @@ export function logsSection(dongleId, kind) {
       for (const {url, file} of files.slice(shown, shown + PAGE)) {
         const cells = kind === "boot" ? [file.replace(/\.zst$/, "")] : crashName(file);
         table.append(h("tr", {class: "clickable", onclick: () => openLog(kind, url, file)},
-          cells.map((c, i) => h("td", {class: i ? "mono muted" : "mono"}, c)),
+          cells.map((c, i) => h("td", {class: i ? "mono muted" : "mono nowrap"}, c)),
           h("td", {class: "right"}, h("a", {class: "dl", href: url, download: file, "aria-label": "Download", onclick: (e) => e.stopPropagation()}, icon("download", 18)))));
       }
       shown += PAGE;

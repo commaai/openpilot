@@ -105,6 +105,7 @@ const drivesHead = () => h("div", {class: "drive-row head"}, ["drive", "time", "
 function drivesSection(dongleId) {
   const body = h("div", {class: "drives"});
   const more = h("button", {class: "button", onclick: () => loadMore()}, "Older drives");
+  const foot = h("div", {class: "list-foot", hidden: true}, h("span"), more);  // shown with the first drives, so nothing shifts
   const status = h("p", {class: "muted small"});
   const before = h("input", {type: "date", class: "field", title: "Drives up to this day", onchange: () => {
     end = top = before.value ? new Date(`${before.value}T00:00`).getTime() + DAY : firstWindowEnd();
@@ -117,6 +118,7 @@ function drivesSection(dongleId) {
 
   async function loadMore(g = gen) {
     more.disabled = true;
+    if (!body.children.length) status.textContent = "Loading…";
     const start = end - WINDOW;
     const routes = await api.routes(dongleId, start, end, LIMIT).catch(() => []);
     if (g !== gen) return;
@@ -128,13 +130,15 @@ function drivesSection(dongleId) {
     }
     end = routes.length === LIMIT ? Math.min(...routes.map((r) => r.start_time_utc_millis)) : start;
     more.disabled = false;
+    foot.hidden = false;
     if (!routes.length && !body.children.length && top - end < 180 * DAY) return loadMore(g);
-    status.textContent = `${body.children.length} drives since ${new Date(end).toLocaleDateString()}`;
+    const since = new Date(end).toLocaleDateString();
+    status.textContent = body.children.length ? `${body.children.length} drives since ${since}` : `No drives since ${since}`;
   }
   loadMore();
   return h("div", {},
     h("div", {class: "list-foot"}, status, h("label", {class: "muted small"}, "drives before ", before)),
-    drivesHead(), body, h("div", {class: "list-foot"}, h("span"), more));
+    drivesHead(), body, foot);
 }
 
 function preservedSection(dongleId) {
