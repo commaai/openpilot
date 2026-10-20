@@ -1,4 +1,11 @@
 /* route browser pages: home, device page, logs; the small controls here are shared with the info pane */
+/* connect's palette, for the connect view (panes/connect.css) and the pages on a phone; light is its daytime twin */
+[data-theme="dark"] { --cn-bg: #1d2225; --cn-card: #30373b; --cn-card-end: #1d2225; --cn-raised: #394044; --cn-fg: #fff; --cn-muted: rgba(255,255,255,.6);
+  --cn-line: rgba(255,255,255,.1); --cn-driving: #175886; --cn-ruler: #25333d; --cn-left: rgba(29,34,37,.9); --cn-head: #d8dddf;
+  --cn-pill: #0c0e0f; --cn-pill-line: #1e2224; --cn-dim: #6e7d84; --cn-shade: linear-gradient(transparent 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+[data-theme="light"] { --cn-bg: #eef0f2; --cn-card: #fff; --cn-card-end: #f4f6f8; --cn-raised: #e3e6e8; --cn-fg: #1c2024; --cn-muted: #5f666e;
+  --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de; --cn-ruler: #d3dde5; --cn-left: rgba(244,246,248,.85); --cn-head: #1c2024;
+  --cn-pill: #fff; --cn-pill-line: #dde1e5; --cn-dim: #77878f; --cn-shade: linear-gradient(transparent 60%, rgba(0,0,0,.08)); }
 .page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
 .page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .button.small { margin: 0; padding: 3px 8px; }
@@ -84,11 +91,17 @@ a.drive-row:hover { background: var(--hover); }
 .drives { isolation: isolate; }
 .drive-row.head { position: sticky; top: 0; z-index: 2; height: 26px; background: var(--bg); color: var(--muted); font-weight: 500; content-visibility: visible; }
 .drive-row .num { text-align: right; font-variant-numeric: tabular-nums; }
-.strip { position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); }
-.strip-spans { position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--driving); }
+.dr-detail, .online-pill, .list-foot .filter { display: none; }
+.dr-place:empty::before, .dr-dash::before { content: "–"; }
+.stats b { font-weight: inherit; }
+/* a drive's strip (panes/strip.js): spans over the segments' sprites, each repeated across its segment as connect does
+   (sized 120% tall so the sprite's black band falls outside) */
+.strip { --spans: 5px; position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); contain: strict; }
+.strip-track { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; }
+.strip-spans { position: absolute; left: 0; right: 0; top: 0; height: var(--spans); background: var(--driving); }
 .strip-spans span { position: absolute; top: 0; height: 100%; min-width: 1px; }
-.strip-thumbs { display: flex; height: 100%; padding-top: 5px; }
-.strip-thumbs span { flex: 1; background: center / cover; }
+.strip-thumbs { position: absolute; left: 0; right: 0; top: var(--spans); bottom: 0; }
+.strip-thumbs span { position: absolute; top: 0; height: 100%; background: 0 0 / auto 120% repeat-x; }
 .strip-spans .engaged { background: var(--engaged); }
 .strip-spans .override { background: var(--override); }
 .strip-spans .alert { background: var(--alert); }
@@ -128,14 +141,7 @@ a.drive-row:hover { background: var(--hover); }
 }
 @media (max-width: 760px) {
   .page { padding: 8px 12px 24px; }
-  .device-head { flex-direction: column; }
   .device-info h2 { font-size: 16px; }
-  .device-map { width: 100%; }
-  .drive-row { grid-template-columns: minmax(0, 1fr) 48px 56px 52px; gap: 4px 10px; height: 62px; padding: 6px 8px; contain-intrinsic-size: auto 62px; }
-  .drive-row > :nth-child(5) { display: none; }
-  .drive-row > .strip { grid-column: 1 / -1; }
-  .drive-row.head { height: 30px; padding: 0 8px; }
-  .drive-row.head > :nth-child(6) { display: none; }
   .list.devices { table-layout: fixed; }
   .list.devices :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5)) { display: none; }
   .list.devices :is(th, td):first-child { width: 24px; }
@@ -154,6 +160,57 @@ a.drive-row:hover { background: var(--hover); }
 }
 
 @keyframes tabs-more { from { mask-size: 100% 100%; } }
+
+/* a phone's pages look like connect's: the device page under its map, the name with an online pill and the totals,
+   then the drives as cards (when and how long, where from and to, the strip full width along the bottom); home in
+   the same type and colors */
+@media (max-width: 760px) {
+  .topbar { background: var(--cn-bg); }
+  :is(.device-page, .home-page) { min-height: 100%; background: var(--cn-bg); color: var(--cn-fg); font-size: 15px; --driving: var(--cn-driving); }
+  .device-page { padding: 0 0 24px; }
+  .device-head { flex-direction: column; gap: 0; margin: 0; }
+  .device-head .device-map { order: -1; width: 100%; height: 160px; border: 0; border-bottom: 1px solid var(--cn-line); border-radius: 0; }
+  .device-info { gap: 8px; padding: 14px 16px 12px; }
+  .device-info h2 { gap: 10px; font-size: 22px; font-weight: 500; }
+  .device-info h2 > .dot, .device-info .kv, .stats-week { display: none; }
+  .device-info .device-name { min-width: 0; }
+  .online-pill { display: inline-flex; flex-shrink: 0; align-items: center; height: 40px; margin-left: auto; padding: 0 18px; border-radius: 20px;
+    background: var(--cn-raised); color: var(--cn-muted); font-size: 15px; font-weight: 500; }
+  .online-pill.online { color: #2ea44f; }
+  .stats { display: flex; gap: 12px; color: var(--cn-fg); } .stats b { font-weight: 600; }
+  .device-page .page-tabs { margin: 0 0 4px; padding: 0 8px; border-color: var(--cn-line); }
+  .device-page .tab-body { padding: 0 16px; }
+  .device-page .list-foot label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }  /* Filter opens it */
+  .list-foot .filter { display: inline-flex; align-items: center; gap: 8px; height: 40px; margin: 0; padding: 0 12px; border: 0; border-radius: 6px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end) 150%); color: var(--cn-fg); font-size: 15px; }
+  .drives { display: flex; flex-direction: column; gap: 12px; }
+  .drive-row.head { display: none; }
+  .drive-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "when dur" "when dist" "from to" "strip strip"; gap: 0 12px;
+    height: auto; padding: 18px 18px 0; overflow: hidden; border: 0; border-top: 1px solid var(--cn-line); border-radius: 8px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end)); line-height: 1.5; contain-intrinsic-size: auto 178px; }
+  a.drive-row:hover { background: linear-gradient(var(--cn-card), var(--cn-card-end)); }
+  a.drive-row:active { filter: brightness(1.1); }
+  .dr-when { grid-area: when; }
+  :is(.dr-when > b, .dr-hours) { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--cn-fg); }
+  .dr-dash::before { content: " to "; white-space: pre; }
+  .dr-dur { grid-area: dur; font-weight: 600; }
+  .dr-dist { grid-area: dist; }
+  :is(.dr-engaged, .dr-version, .dr-arrow) { display: none; }
+  .dr-places { display: contents; }
+  .dr-place { margin-top: 12px; font-weight: 600; }
+  .dr-place:empty { margin: 0; }
+  .dr-place:empty::before { content: none; }
+  .dr-place > span { display: block; overflow: hidden; text-overflow: ellipsis; }
+  .dr-detail { font-weight: 400; }
+  .dr-from { grid-area: from; }
+  .dr-to { grid-area: to; text-align: right; }
+  .drive-row > .strip { grid-area: strip; --spans: 12px; height: 32px; margin: 18px -18px 0; border-radius: 0; }
+  .drive-row .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
+  .home-page .page { padding: 8px 16px 24px; }
+  .home-page .list td { height: 52px; border-color: var(--cn-line); }
+  .home-page .list th { background: var(--cn-bg); border-color: var(--cn-line); }
+  .home-page .list.devices a { font-size: 17px; font-weight: 500; }
+}
 
 /* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
    a height of its own, the playbar docked below. A routes pane is hidden in every view: the route crumb has the list.
@@ -188,6 +245,12 @@ a.drive-row:hover { background: var(--hover); }
   .ws:not([data-view="files"]) .pane-body:has(> .can-charts) { height: 70vh; }
   .ws[data-view="files"] .divider { display: none; }
   .ws[data-view="files"] .split > * { flex: 1 1 0 !important; }  /* the files pane takes the routes list's width too */
+  /* the content gets the width: panes edge to edge, a line between them */
+  .ws .layout { padding: 0; }
+  .ws .pane { border-width: 0 0 1px; border-radius: 0; }
+  /* the connect view's one pane fills the workspace and scrolls itself */
+  .ws[data-view="connect"] :is(.workspace, .layout) { display: flex; }
+  .ws[data-view="connect"] .pane-body { flex: 1; height: auto; }
 }
 
 /* every view on a phone: the views and tabs on a row of their own under the bar, the timeline gets the playbar */
@@ -199,27 +262,35 @@ a.drive-row:hover { background: var(--hover); }
   body:is(.in-ws, .loading) .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
   body:is(.in-ws, .loading) .topbar .views { display: flex; min-height: calc(var(--top) - 8px); }
   body:is(.in-ws, .loading) .topbar .views:empty { visibility: hidden; }
-  /* the omnibox and the load pill shrink rather than wrapping the first row */
-  body:is(.in-ws, .loading) .topbar :is(.omni, .load-pill) { flex: 1 1 0; min-width: 0; }
-  body:is(.in-ws, .loading) .topbar .omni { min-width: 32px; }  /* still a tap target */
+  /* the omnibox is a search button until it's tapped; the load pill shrinks rather than wrapping the first row */
+  body:is(.in-ws, .loading) .topbar .load-pill { flex: 1 1 0; min-width: 0; }
+  body:is(.in-ws, .loading) .topbar .omni { flex: 0 0 40px; min-width: 40px; }
+  body:is(.in-ws, .loading) .topbar .omnibox:not(:focus) { margin-left: 0; padding: 0; border-color: transparent; color: transparent; background: center / 20px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238a939c' d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E"); }
+  body:is(.in-ws, .loading) .topbar .omnibox:not(:focus)::placeholder { color: transparent; }
   body:is(.in-ws, .loading) .topbar .crumb { max-width: calc(100vw - 232px); }  /* so they fit on a 320px phone */
   body:is(.in-ws, .loading) .topbar .load-pill { max-width: fit-content; }
-  body:is(.in-ws, .loading) .topbar .grow { display: none; }
+  body:is(.in-ws, .loading) .topbar .grow { min-width: 0; }  /* holds the buttons at the end while the load pill comes and goes */
   body:is(.in-ws, .loading) .topbar .omnibox { width: 100%; min-width: 0; }
-  /* too narrow for its placeholder, it's a magnifier until tapped */
-  body:is(.in-ws, .loading) .topbar .omni { container-type: inline-size; }
-  @container (max-width: 120px) {
-    .omnibox:not(:focus):placeholder-shown { background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237a828a' stroke-width='1.6'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.3 10.3 14 14'/%3E%3C/svg%3E") center / 16px no-repeat; }
-    .omnibox:not(:focus)::placeholder { color: transparent; }
-  }
   /* typing, the omnibox takes the whole first row, its list under it inside the window */
   .topbar .omni:focus-within { position: absolute; top: 6px; left: 8px; right: 8px; z-index: 1; }
   .topbar .omni:focus-within .omnibox { width: 100%; margin-left: 0; }
   .omni-list { left: auto; right: 0; }
   .topbar :is(.views, .tabs) { order: 2; margin-left: 0; }
   .topbar .tabs { flex: 1; max-width: none; }
-  .playbar > .tbtn:not(.play), .pb-wall { display: none; }
-  .pb-clock { min-width: 0; }
+  /* the playbar's controls on one row, the timeline the whole width under them */
+  .playbar { flex-wrap: wrap; height: auto; padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); row-gap: 0; }
+  .playbar > .pb-clock { flex: 1; min-width: 0; }
+  .playbar > .pb-track { order: 1; flex-basis: 100%; }
+  .playbar .tbtn { min-width: 40px; min-height: 40px; }
+  .playbar .play { width: 40px; height: 40px; }
+  .playbar .rate { height: 32px; }
+  .playbar .pb-clock { overflow: hidden; }
+}
+/* small phones: no keyboard help on a touchscreen, no 1 s steps (the timeline is a finger wide) */
+@media (max-width: 380px) {
+  @media (pointer: coarse) { .topbar .help-btn { display: none; } }
+  .playbar > .tbtn:is(:first-child, :nth-child(3)) { display: none; }
 }
 
 /* fingers: every control in the bars at least 32 px tall */

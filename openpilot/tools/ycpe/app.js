@@ -171,7 +171,7 @@ function topBar() {
       ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
       : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
   const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
-  const helpBtn = h("button", {class: "tbtn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
+  const helpBtn = h("button", {class: "tbtn help-btn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep", hidden: true}, "›"), bar.route, search, bar.views, bar.tabs,
@@ -204,7 +204,7 @@ function updateTop() {
     if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   }
   const layout = ws.layout;
-  if (!layout) {  // the view is still waiting on its files
+  if (!layout || VIEWS[ws.view].bare) {  // the view is still waiting on its files, or has no tabs
     bar.tabs.replaceChildren();
     return refocus(focused);
   }
@@ -548,7 +548,7 @@ document.addEventListener("keydown", (e) => {
 // keys are space separated; "+" joins a combination
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
-  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
+  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4 5", "Drive / Plot / CAN / Files / Connect"],
   ["/", "search routes and devices"], ["ctrl+f", "filter the series"], ["t", "light / dark"], ["?", "this help"],
   ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
 ];
@@ -652,7 +652,7 @@ async function renderPage() {
       // ?repeat=n (a load test): the logs n times over, at most 50
       const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
       const t = urlTime(q);
-      ws = new Workspace(route, files, target.view || "drive", {t: t ?? 0, repeat});
+      ws = new Workspace(route, files, target.view || "connect", {t: t ?? 0, repeat});  // connect's urls name no view
       if (target.range) ws.showRange(target.range, t === null);
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));

@@ -1,10 +1,12 @@
 // the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings
-import {api, auth, engagedFraction, routeEvents} from "../api.js";
+import {api, auth, engagedFraction} from "../api.js";
 import {h, fmt} from "../dom.js";
+import {icon} from "../icons.js";
 import {devicesChanged, go, isOnline, link} from "../app.js";
 import {perf} from "../perf.js";
 import {reverseLookup} from "../geocode.js";
 import {deviceMap} from "../panes/map.js";
+import {strip} from "../panes/strip.js";
 import {deviceName} from "./home.js";
 import {usersSection} from "./users.js";
 import {logsSection} from "./logs.js";
@@ -13,7 +15,6 @@ import {settingsSection} from "./settings.js";
 
 const DAY = 86400000, HOUR = 3600000;
 const WINDOW = 14 * DAY, LIMIT = 50;
-const THUMBS = 16;  // sprite thumbnails per strip
 
 // the first window ends at the next hour boundary so prefetch and page share a cache key
 const firstWindowEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
@@ -26,16 +27,8 @@ export function prefetchDevice(dongleId) {
 
 const duration = (r) => r.end_time_utc_millis - r.start_time_utc_millis;
 
-function segmentAt(r, ms) {
-  const starts = r.segment_start_times;
-  if (!starts) return Math.min(r.maxqlog ?? 0, Math.floor(ms / 60000));
-  let n = 0;
-  for (let i = 0; i < starts.length && starts[i] <= r.start_time_utc_millis + ms; i++) n = r.segment_numbers?.[i] ?? i;
-  return n;
-}
-
-// engagement spans over sprite thumbnails, filled in when the row nears the viewport. One observer for every
-// strip, and a fixed thumbnail count, so filling one never reads layout.
+// a drive's strip (panes/strip.js), filled in when its row nears the viewport. One observer for every strip, so
+// filling one never reads layout.
 const fillers = new WeakMap();
 const queue = [];
 let draining = null;
@@ -53,29 +46,21 @@ const nearby = new IntersectionObserver((entries) => {
   }, "drives");
 }, {rootMargin: "400px"});
 
-function strip(r, onSpans, onVisible) {
-  const spans = h("div", {class: "strip-spans"});
-  const thumbs = h("div", {class: "strip-thumbs"});
-  const el = h("div", {class: "strip"}, thumbs, spans);
-  fillers.set(el, () => {
+function driveStrip(r, onSpans, onVisible) {
+  const s = strip(r, duration(r) / 1000);
+  fillers.set(s.el, () => {
     onVisible();
-    const d = duration(r);
-    thumbs.replaceChildren(...Array.from({length: THUMBS}, (_, i) =>
-      h("span", {style: `background-image:url(${api.segmentAsset(r, segmentAt(r, (i + 0.5) / THUMBS * d), "sprite.jpg")})`})));
-    routeEvents(r).then((list) => {
-      const pct = (ms) => `${(100 * ms / d).toFixed(2)}%`;
-      spans.replaceChildren(...list.map((s) => h("span", {class: s.kind, style: `left:${pct(s.start)};width:${pct(Math.max(s.end - s.start, d / 500))}`})));
-      onSpans(list);
-    }).catch(() => {});
+    s.fill().then(onSpans, () => {});
   });
-  nearby.observe(el);
-  return el;
+  nearby.observe(s.el);
+  return s.el;
 }
 
+// the neighborhood, and under it (on a phone's card) the city
 function place(el, lng, lat) {
   reverseLookup(lng, lat).then((loc) => {
     if (!loc) return;
-    el.textContent = loc.place || loc.details;
+    el.replaceChildren(h("span", {}, loc.place || loc.details), loc.place && h("span", {class: "dr-detail"}, loc.details));
     el.title = [loc.place, loc.details].filter(Boolean).join(", ");
   });
 }
@@ -84,21 +69,23 @@ const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit
 const DAY_FMT = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "short", day: "numeric"});
 const OLD_DAY_FMT = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"});
 
+// a row of the drives table, or on a phone (pages.css) a card as connect's: when and how long over where from and to,
+// the strip along the bottom
 function driveRow(r) {
   const path = `/${r.fullname.replace("|", "/")}`;
   const start = new Date(r.start_time_utc_millis);
-  const engaged = h("span", {class: "num"});
-  const from = h("span", {}, "–"), to = h("span", {}, "–");
+  const engaged = h("span", {class: "num dr-engaged"});
+  const from = h("span", {class: "dr-place dr-from"}), to = h("span", {class: "dr-place dr-to"});
   return h("a", {class: "drive-row", href: path, onclick: link(path)},
-    h("span", {}, h("b", {}, (start.getFullYear() === new Date().getFullYear() ? DAY_FMT : OLD_DAY_FMT).format(start)),
-      h("span", {class: "muted"}, ` ${HM.format(start)}–${HM.format(r.end_time_utc_millis)}`)),
-    h("span", {class: "num"}, fmt.minutes(duration(r))),
-    h("span", {class: "num"}, fmt.miles(r.distance ?? 0)),
+    h("span", {class: "dr-when"}, h("b", {}, (start.getFullYear() === new Date().getFullYear() ? DAY_FMT : OLD_DAY_FMT).format(start)), " ",
+      h("span", {class: "dr-hours muted"}, HM.format(start), h("span", {class: "dr-dash"}), HM.format(r.end_time_utc_millis))),
+    h("span", {class: "num dr-dur"}, fmt.minutes(duration(r))),
+    h("span", {class: "num dr-dist"}, fmt.miles(r.distance ?? 0)),
     engaged,
-    h("span", {}, from, h("span", {class: "muted"}, " → "), to),
-    strip(r, (spans) => { engaged.textContent = `${Math.round(100 * engagedFraction(spans, duration(r)))}%`; },
+    h("span", {class: "dr-places"}, from, h("span", {class: "dr-arrow muted"}, " → "), to),
+    driveStrip(r, (spans) => { engaged.textContent = `${Math.round(100 * engagedFraction(spans, duration(r)))}%`; },
       () => { place(from, r.start_lng, r.start_lat); place(to, r.end_lng, r.end_lat); }),
-    h("span", {class: "muted"}, r.version || ""));
+    h("span", {class: "muted dr-version"}, r.version || ""));
 }
 
 const drivesHead = () => h("div", {class: "drive-row head"}, ["drive", "time", "distance", "engaged", "from → to", "timeline", "version"].map((c) => h("span", {}, c)));
@@ -107,7 +94,7 @@ const drivesHead = () => h("div", {class: "drive-row head"}, ["drive", "time", "
 // the end of that day, like connect's filter.
 function drivesSection(dongleId) {
   const body = h("div", {class: "drives"});
-  const more = h("button", {class: "button", onclick: () => loadMore()}, "Older drives");
+  const more = h("button", {class: "button more", onclick: () => loadMore()}, "Older drives");
   const foot = h("div", {class: "list-foot", hidden: true}, h("span"), more);  // shown with the first drives, so nothing shifts
   const status = h("p", {class: "muted small"});
   const before = h("input", {type: "date", class: "field", title: "Drives up to this day", onchange: () => {
@@ -139,8 +126,10 @@ function drivesSection(dongleId) {
     status.textContent = body.children.length ? `${body.children.length} drives since ${since}` : `No drives since ${since}`;
   }
   loadMore();
+  // a phone shows connect's Filter button for the date instead (pages.css)
+  const filter = h("button", {class: "button filter", onclick: () => before.showPicker()}, icon("filter", 20), "Filter");
   return h("div", {},
-    h("div", {class: "list-foot"}, status, h("label", {class: "muted small"}, "drives before ", before)),
+    h("div", {class: "list-foot"}, status, h("label", {class: "muted small"}, "drives before ", before), filter),
     drivesHead(), body, foot);
 }
 
@@ -156,10 +145,13 @@ function preservedSection(dongleId) {
   return el;
 }
 
+// a phone shows only the totals, their numbers bold as connect's (pages.css)
 function stats(dongleId) {
-  const el = h("span", {class: "muted"});
+  const el = h("span", {class: "stats muted"});
+  const stat = (n, unit) => h("span", {}, h("b", {}, n), ` ${unit}`);
   api.deviceStats(dongleId).then(({all, week}) => {
-    el.textContent = `${all.routes} drives · ${Math.round(all.distance)} mi · ${Math.round(all.minutes / 60)} h — this week ${week.routes} drives · ${Math.round(week.distance)} mi`;
+    el.replaceChildren(stat(all.routes, "drives"), " · ", stat(Math.round(all.distance), "mi"), " · ", stat(Math.round(all.minutes / 60), "h"),
+      h("span", {class: "stats-week"}, ` — this week ${week.routes} drives · ${Math.round(week.distance)} mi`));
   }).catch(() => {});
   return el;
 }
@@ -236,7 +228,8 @@ export async function devicePage(dongleId, devices) {
   const el = h("div", {class: "page device-page"},
     h("div", {class: "device-head"},
       h("div", {class: "device-info"},
-        h("h2", {}, h("span", {class: `dot ${online ? "online" : ""}`}), deviceName(device)),
+        h("h2", {}, h("span", {class: `dot ${online ? "online" : ""}`}), deviceName(device),
+          h("span", {class: `online-pill ${online ? "online" : ""}`, title: online ? "" : `last seen ${fmt.ago(device.last_athena_ping)}`}, online ? "online" : "offline")),
         h("div", {class: "kv"},
           h("span", {class: "mono"}, dongleId),
           device.device_type && h("span", {}, device.device_type),

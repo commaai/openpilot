@@ -1,0 +1,71 @@
+/* the connect view, in connect's sizes (its type scales with the width up to 16px, as connect's) and palette
+   (pages.css --cn-*); the panes inside keep ours */
+.connect-pane { --driving: var(--cn-driving); overflow-y: auto; background: var(--cn-bg); color: var(--cn-fg); font-size: min(1rem, 3.846vw);
+  container-type: inline-size; overscroll-behavior: contain; }
+.connect-pane button { font: inherit; }
+.cn-card { display: flex; flex-direction: column; gap: 16px; max-width: 960px; margin: 16px auto; border-radius: 8px;
+  background: linear-gradient(var(--cn-card), var(--cn-card-end) 70%); }
+@container (max-width: 992px) { .cn-card { margin: 16px; } }
+@container (min-width: 1500px) { .cn-card { max-width: 1280px; } }  /* the map beside the video (WIDE in connect.js) */
+.cn-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 0; }
+.cn-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--cn-fg); cursor: pointer; }
+.cn-icon:hover { background: var(--cn-line); }
+.cn-icon:disabled { opacity: .3; background: none; cursor: default; }
+.cn-title { min-width: 0; font-size: 1.125em; font-weight: 500; text-align: center; }
+@container (max-width: 639px) { .cn-weekday { display: none; } }
+
+/* the timeline: the strip over the ruler, what's after the playhead dimmed; a finger scrolls the page vertically */
+.cn-timeline { position: relative; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.cn-timeline .strip { --spans: 12px; height: 32px; border-radius: 0; background: var(--cn-bg); }
+.cn-timeline .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
+.cn-ruler { position: relative; height: 44px; overflow: hidden; background: var(--cn-ruler); contain: strict; }
+.cn-left { position: absolute; inset: 0; background: var(--cn-left); opacity: .45; }
+.cn-head { position: absolute; top: 0; bottom: 0; left: -1px; z-index: 3; width: 2px; background: var(--cn-head); box-shadow: 0 0 2px rgba(0,0,0,.5); pointer-events: none; }
+.cn-selection { position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; pointer-events: none;
+  background: color-mix(in srgb, var(--cn-fg) 12%, transparent); border: 1px solid color-mix(in srgb, var(--cn-fg) 35%, transparent); border-width: 0 1px; }
+.cn-bead { position: absolute; bottom: 9px; left: 0; z-index: 4; width: 80px; padding: 3px 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+  background: #272c2f; color: #fff; font-size: .7em; text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; }
+.cn-timeline:focus-visible { outline-offset: 2px; }
+
+.cn-body { display: flex; flex-direction: column; gap: 16px; padding: 0 12px 12px; }
+@container (min-width: 768px) { .cn-body { padding: 0 32px 32px; } }
+.cn-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.cn-options + .cn-options { margin-left: auto; }
+.cn-options { display: flex; border: 1px solid var(--cn-line); border-radius: 50px; overflow: hidden; }
+.cn-option { min-width: 2.75em; min-height: 42px; padding: 0 .9375em; border: 0; border-right: 1px solid var(--cn-line); background: none; color: var(--cn-fg);
+  font-weight: 500; opacity: .6; cursor: pointer; }
+.cn-option:last-child { border-right: 0; }
+.cn-option[aria-pressed="true"] { opacity: 1; }
+.cn-option:hover { background: var(--cn-line); }
+.cn-options + .cn-options .cn-option { opacity: 1; }  /* Files | More info open and close, neither is "the" one */
+.cn-options + .cn-options .cn-option[aria-pressed="true"] { background: var(--cn-line); }
+
+/* the video, or the map; a wide window shows both, the map beside */
+/* the video no taller than leaves the card's controls in the window (it scrolls to them in a phone's landscape) */
+.cn-media { display: flex; justify-content: center; gap: 20px; }
+.cn-box { position: relative; flex: 3 1 0; min-width: 0; max-width: max(320px, (100dvh - 380px) * 526 / 330); aspect-ratio: 526 / 330; overflow: hidden; background: #000; }
+.cn-box > *, .cn-files > * { position: absolute; inset: 0; }
+.cn-video:not([hidden]) + .cn-map { flex: 2 1 0; aspect-ratio: auto; }
+
+/* connect's control pill: 10 s back and forward, the wall clock and segment, the rate, play/pause */
+.cn-pill { display: flex; align-items: center; width: 25em; max-width: 100%; height: 50px; margin: 0 auto; padding: 0 4px 0 8px; border-radius: 25px;
+  background: var(--cn-pill); }
+.cn-pill button { display: flex; align-items: center; justify-content: center; height: 40px; padding: 0; border: 0; background: none; cursor: pointer; }
+.cn-jump { width: 48px; border-right: 1px solid var(--cn-pill-line) !important; color: var(--cn-dim); }
+.cn-jump:hover, .cn-rate-box:hover > svg { color: var(--cn-fg); }
+.cn-now { flex: 1; min-width: 0; margin: 0 .5em; font-size: .9375em; font-weight: 500; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@container (max-width: 360px) { .cn-jump { width: 42px; } .cn-rate-box { width: 40px; } .cn-play { width: 48px; } }
+.cn-rate-box { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 48px; height: 50px;
+  padding: 3px 0; color: var(--cn-dim); cursor: pointer; }
+.cn-rate-box > svg { pointer-events: none; }
+.cn-rate { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; background: none; color: var(--cn-fg); font-size: .875em; text-align: center;
+  text-align-last: center; appearance: none; cursor: pointer; }
+.cn-rate option { background: var(--raised); color: var(--fg); }
+.cn-play { width: 56px; border-left: 1px solid var(--cn-pill-line) !important; color: var(--cn-fg); }
+
+/* Files and More info open under the pill: the files pane at a height of its own, the info pane as it lays out */
+.cn-sheet { --panel: var(--cn-bg); --line: var(--cn-line); border: 1px solid var(--cn-line); border-radius: 8px; overflow: hidden; background: var(--panel);
+  color: var(--fg); font-size: 14px; }
+.cn-files { position: relative; height: min(70vh, 560px); }
+.connect-pane .cn-info .info-pane { position: static; overflow: visible; }

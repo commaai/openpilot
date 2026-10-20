@@ -81,9 +81,9 @@ const localEntry = () => h("p", {class: "small muted local-entry"},
   h("a", {href: "/local", onclick: link("/local")}, "Open local logs…"), " (or drop rlog/qlog files anywhere)");
 
 export function homePage(devices) {
-  if (!auth.isAuthenticated()) return h("div", {}, loginPage(new URLSearchParams()), localEntry(), recentSection(devices));
-  if (!devices?.length) return h("div", {}, h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name."), localEntry()), recentSection(devices));
-  return h("div", {}, recentSection(devices), h("div", {class: "page"},
+  if (!auth.isAuthenticated()) return h("div", {class: "home-page"}, loginPage(new URLSearchParams()), localEntry(), recentSection(devices));
+  if (!devices?.length) return h("div", {class: "home-page"}, h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name."), localEntry()), recentSection(devices));
+  return h("div", {class: "home-page"}, recentSection(devices), h("div", {class: "page"},
     h("table", {class: "list devices"},
       h("thead", {}, h("tr", {}, h("th"), h("th", {}, "device"), h("th", {}, "dongle id"), h("th", {}, "type"), h("th", {}, "version"), h("th", {}, "last seen"))),
       h("tbody", {}, devices.map((d) => h("tr", {class: "clickable", onclick: (e) => { if (!e.target.closest("a")) link(`/${d.dongle_id}`)(e); }},
