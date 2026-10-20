@@ -65,7 +65,9 @@ timestamps.
 ## v1 feature set (the parity checklists are the acceptance spec)
 
 ### Route browser (connect + useradmin, user-facing only)
-- [ ] Sign in (Google/GitHub/Apple), sign out, and a JWT paste for developers. Public routes work signed out.
+- [ ] Its own polished login flow: a /login page (Google/GitHub/Apple, JWT paste, demo link), return-to after
+      OAuth, signing-in and error states, an inline "sign in to view" card on 401/403, sign out without leaving
+      the page, and a live account state in the top bar. Public routes work signed out.
 - [ ] Omnibox accepts a dongle id, a route name, a connect URL, a useradmin URL or a `cabana` route string.
 - [ ] Device list (alias, online dot, last seen, version) and device rename.
 - [ ] Device page: location map; route list (date, duration, distance, engaged %, thumbnails, paging back
@@ -204,17 +206,21 @@ ctx = {route,                  // the API route object (fullname, start_time_utc
        openRoute(name)}        // switch route, keeping the view
 pane = {name, el, title?, render(frame), resize(w, h), dispose(), save() /* JSON state for layouts */}
 // el is absolutely positioned to fill the pane body; panes must not scroll the page
+// styles: each track keeps its own stylesheet next to its modules and loads it with css(url) from dom.js;
+// selectors are prefixed by the pane's root class, and only theme variables are used for colors
 
 // store.js: main thread; never O(samples) per frame
 store.route                    // {name, t0 (mono s), duration, segments: [{n, t0, t1, status}]}
 store.on(event, fn)            // "segment" (n) | "paths" | "progress"
-store.paths()                  // [{path, type, names?}], type: f32 f64 b e t (enum names for e)
+store.paths()                  // [{path, type, names?}], type: f32 f64 i8..u64 b e t (enum names for e; ints keep their schema type)
 store.series(path)             // {path, type, names, chunks: [{t: Float64Array (route s), v, i?}], version}
                                // chunk.i: sparse index into the service times, if present
 store.decimate(path, t0, t1, n)// {t, min, max} with n buckets (min/max pyramid); exact samples if few
 store.valueAt(path, t)         // last value at or before t
 store.message(service, t)      // the full decoded message at t (for the inspector), async
 store.focus(t)                 // load outward from t
+store.put(path, {type, t, v, names?})  // register/replace a derived series (transforms, /custom/*): one chunk,
+                               // new version, emits "paths" when new; then series/decimate/valueAt like any path
 store.can                      // owned by track 3: messages(), frames(bus, addr, t0, t1), ...
 ```
 
