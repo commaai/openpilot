@@ -12,7 +12,7 @@ export const canManage = async (device) => device.is_owner || !!(await auth.user
 
 // the name, plus a pencil for those who may rename; Enter or blur saves, Escape cancels
 export function deviceName(device) {
-  const name = () => device.alias || device.dongle_id;
+  const name = () => fmt.deviceName(device);
   const label = h("span", {}, name());
   const edit = h("button", {class: "icon-btn", title: "Rename", "aria-label": `Rename ${name()}`, hidden: true, onclick: start}, icon("edit", 14));
   const failed = h("span", {class: "small error", role: "alert"});
@@ -22,7 +22,7 @@ export function deviceName(device) {
   function start(e) {
     e.preventDefault();
     e.stopPropagation();
-    const input = h("input", {class: "field", value: device.alias || "", placeholder: device.dongle_id, maxlength: 32, "aria-label": "Device name",
+    const input = h("input", {class: "field", value: device.alias || "", placeholder: fmt.deviceType(device.device_type), maxlength: 32, "aria-label": "Device name",
       onclick: (e) => { e.preventDefault(); e.stopPropagation(); }});
     let done = false;
     const finish = async (save) => {
@@ -56,11 +56,15 @@ export function deviceName(device) {
   return el;
 }
 
+// the API turns this device's uploads away (useradmin's flag); said only when it does, as it's rare and surprising
+const uploadsIgnored = (device) => device.ignore_uploads &&
+  h("span", {class: "tag bad", title: "The comma API ignores this device's uploads"}, "uploads ignored");
+
 // the last routes opened here, newest first
 function recentSection(devices) {
   const routes = recentRoutes();
   if (!routes.length) return null;
-  const alias = (dongle) => devices?.find((d) => d.dongle_id === dongle)?.alias || dongle;
+  const alias = (dongle) => { const d = devices?.find((d) => d.dongle_id === dongle); return d ? fmt.deviceName(d) : dongle; };
   return h("div", {class: "page recent"},
     h("h3", {}, "Recent routes"),
     h("table", {class: "list"},
@@ -70,7 +74,7 @@ function recentSection(devices) {
           h("td", {class: "nowrap"}, h("a", {href: path, onclick: link(path)}, WHEN.format(r.start))),
           h("td", {}, alias(dongle)),
           h("td", {class: "num"}, fmt.minutes(r.end - r.start)),
-          h("td", {class: "num"}, fmt.miles(r.distance ?? 0)),
+          h("td", {class: "num"}, fmt.distance(r.distance ?? 0)),
           h("td", {class: "muted"}, r.platform || ""),
           h("td", {class: "mono muted"}, r.name));
       }))));
@@ -89,9 +93,9 @@ export function homePage(devices) {
       h("thead", {}, h("tr", {}, h("th"), h("th", {}, "device"), h("th", {}, "dongle id"), h("th", {}, "type"), h("th", {}, "version"), h("th", {}, "last seen"))),
       h("tbody", {}, devices.map((d) => h("tr", {class: "clickable", onclick: (e) => { if (!e.target.closest("a")) link(`/${d.dongle_id}`)(e); }},
         h("td", {}, onlineMark(d)),
-        h("td", {}, h("a", {href: `/${d.dongle_id}`, onclick: link(`/${d.dongle_id}`)}, deviceName(d))),
+        h("td", {}, h("a", {href: `/${d.dongle_id}`, onclick: link(`/${d.dongle_id}`)}, deviceName(d)), uploadsIgnored(d)),
         h("td", {class: "mono muted"}, d.dongle_id),
-        h("td", {class: "muted"}, d.device_type),
+        h("td", {class: "muted"}, d.device_type && fmt.deviceType(d.device_type)),
         h("td", {class: "muted"}, d.openpilot_version || ""),
         h("td", {class: "muted"}, onlineMark(d, "ago")))))),
     localEntry()));

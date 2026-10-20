@@ -50,8 +50,18 @@ export const fmt = {
     const ss = withMs ? sec.toFixed(2).padStart(5, "0") : String(sec).padStart(2, "0");
     return `${sign}${hr ? `${hr}:${String(m).padStart(2, "0")}` : m}:${ss}`;
   },
-  miles: (mi) => `${mi.toFixed(1)} mi`,
+  // the API's miles in the visitor's unit: [value, unit], or "12.3 km"
+  distanceIn: (mi) => isMetric() ? [mi * KM_PER_MI, "km"] : [mi, "mi"],
+  distance: (mi) => { const [v, unit] = fmt.distanceIn(mi); return `${v.toFixed(1)} ${unit}`; },
+  // as connect names devices: the alias, else what it is
+  deviceType: (type) => ({threex: "comma 3X", neo: "EON", freon: "freon", unknown: "unknown"})[type] ?? `comma ${type}`,
+  deviceName: (device) => device.alias || fmt.deviceType(device.device_type),
 };
+
+// only a few countries drive in miles; connect decides by the browser's language alone, and so do we
+const KM_PER_MI = 1.60934;
+let metric = null;
+export const isMetric = () => metric ??= !["en-us", "en-gb"].includes(navigator.language.toLowerCase());
 
 // a typed time on the route, as fmt.clock writes it or in seconds ("3:12", "1:03:12.5", "192") → seconds, else NaN
 export function parseClock(s) {

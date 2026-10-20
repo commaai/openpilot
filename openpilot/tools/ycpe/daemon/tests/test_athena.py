@@ -54,7 +54,7 @@ class TestAthena(DaemonCase):
     self.assertEqual(r.status, 502)
 
   def test_allowlist(self):
-    for body in ({"method": "reboot"}, {"method": "takeSnapshot"}, {"method": "startLocalProxy", "params": {}}, {"method": None}, {},
+    for body in ({"method": "reboot"}, {"method": "setNavDestination"}, {"method": "startLocalProxy", "params": {}}, {"method": None}, {},
                  [{"method": "listUploadQueue"}], "listUploadQueue"):
       r, _ = self.call(body)
       self.assertEqual(r.status, 403, body)

@@ -42,7 +42,7 @@ export function create(ctx) {
     ["remote", route.git_remote],
     ["schema", schema.el],
     // a range shows its own segments; the distance is the whole route's
-    ["segments", route.range ? `${route.segment_numbers.length} of ${(route.maxqlog ?? -1) + 1}` : `${(route.maxqlog ?? -1) + 1}, ${fmt.miles(route.distance ?? 0)}`],
+    ["segments", route.range ? `${route.segment_numbers.length} of ${(route.maxqlog ?? -1) + 1}` : `${(route.maxqlog ?? -1) + 1}, ${fmt.distance(route.distance ?? 0)}`],
   ];
 
   const copied = h("span", {class: "small muted"});

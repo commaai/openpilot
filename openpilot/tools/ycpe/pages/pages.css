@@ -77,10 +77,13 @@
 
 /* device page */
 .device-head { display: flex; gap: 16px; align-items: stretch; margin-bottom: 8px; }
-.device-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.device-info { flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; align-content: center; gap: 4px 10px; }
+.device-info > :is(.kv, .stats) { grid-column: 1 / -1; }
+.device-info > h2 { min-width: 0; }
+.device-actions { display: flex; align-items: center; gap: 4px; }
 .device-info h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; }
 .kv { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); }
-.device-map { width: 360px; height: 120px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--bg); }
+.device-map { width: 400px; height: 150px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--bg); }
 .page-tabs { display: flex; gap: 2px; margin: 4px 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .page-tabs .tab { flex-shrink: 0; height: 28px; margin-bottom: -1px; }
 .drive-row { display: grid; grid-template-columns: 190px 64px 72px 64px minmax(120px, 1fr) minmax(160px, 38%) 64px; gap: 0 12px; align-items: center;
@@ -94,6 +97,36 @@ a.drive-row:hover { background: var(--hover); }
 .dr-detail, .online-pill, .list-foot .filter { display: none; }
 .dr-place:empty::before, .dr-dash::before { content: "–"; }
 .stats b { font-weight: inherit; }
+/* a drive's details: a second line across its row, with the list's details on */
+.dr-more { display: none; grid-column: 1 / -1; align-items: center; gap: 0 14px; padding-bottom: 6px; font-size: 11px; }
+.drives.details .dr-more { display: flex; }
+.drives.details .drive-row { grid-template-rows: 31px auto; height: auto; contain-intrinsic-size: auto 52px; }
+.dr-more > * { flex-shrink: 0; }
+.dr-more > .mono { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dr-more .official { padding: 0 4px; border-radius: 3px; background: color-mix(in srgb, var(--engaged) 24%, transparent); color: var(--fg); }
+.dr-preserve { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.dr-preserve:empty { display: none; }
+/* small labels: a preserved drive, a device whose uploads are ignored */
+.tag { display: inline-block; padding: 0 6px; border-radius: 8px; background: var(--active); color: var(--fg); font-size: 10px; font-weight: 600;
+  line-height: 16px; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
+.tag.bad { background: color-mix(in srgb, var(--critical) 22%, transparent); color: var(--critical-fg); }
+.list td > .tag { margin-left: 6px; }
+.drive-opts { display: flex; align-items: center; gap: 12px; }
+.drive-opts label { display: inline-flex; align-items: center; gap: 5px; }
+.drive-opts .field { height: 24px; }
+/* beside the device's name: its car battery (online only) and, before 0.11.2, a camera snapshot */
+.battery { display: inline-flex; flex-shrink: 0; align-items: center; gap: 2px; height: 20px; padding: 0 8px 0 5px; border-radius: 10px; background: var(--active);
+  color: var(--muted); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.battery.ok { background: color-mix(in srgb, var(--engaged) 24%, transparent); color: var(--fg); }
+.battery.low { background: color-mix(in srgb, var(--critical) 24%, transparent); color: var(--critical-fg); }
+.snapshot { position: relative; display: flex; justify-content: center; gap: 8px; margin: 0 0 8px; }
+.snapshot > :is(img, .snapshot-missing) { width: 450px; max-width: calc(50% - 20px); border-radius: 6px; }
+.snapshot-missing { display: flex; flex-direction: column; justify-content: center; aspect-ratio: 1928 / 1208; padding: 0 40px; background: var(--panel); text-align: center; }
+.snapshot > .icon-btn { position: absolute; top: 0; right: 0; }
+.warn { display: flex; align-items: flex-start; gap: 8px; max-width: 640px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--alert) 14%, transparent); }
+.warn > svg { flex-shrink: 0; color: var(--alert-fg); }
+.pubkey { display: flex; align-items: center; gap: 4px; }
+.pubkey > .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a drive's strip (panes/strip.js): spans over the segments' sprites, each repeated across its segment as connect does
    (sized 120% tall so the sprite's black band falls outside) */
 .strip { --spans: 5px; position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); contain: strict; }
@@ -109,7 +142,7 @@ a.drive-row:hover { background: var(--hover); }
 .strip-spans .bookmark { background: var(--bookmark); }
 .inline-form { display: flex; gap: 6px; align-items: center; }
 .inline-form .field { width: 260px; }
-.list.settings { max-width: 640px; }
+.list.settings { max-width: 640px; table-layout: fixed; }  /* a public key ellipsizes rather than widening it */
 .list.settings td:first-child { width: 140px; }
 
 /* log viewer */
@@ -170,22 +203,34 @@ a.drive-row:hover { background: var(--hover); }
   .device-page { padding: 0 0 24px; }
   .device-head { flex-direction: column; gap: 0; margin: 0; }
   .device-head .device-map { order: -1; width: 100%; height: 160px; border: 0; border-bottom: 1px solid var(--cn-line); border-radius: 0; }
-  .device-info { gap: 8px; padding: 14px 16px 12px; }
-  .device-info h2 { gap: 10px; font-size: 22px; font-weight: 500; }
+  .device-info { grid-template-columns: 1fr auto; gap: 8px 12px; padding: 14px 16px 12px; }
+  .device-info h2 { grid-column: 1 / -1; gap: 10px; font-size: 22px; font-weight: 500; }
   .device-info h2 > .dot, .device-info .kv, .stats-week { display: none; }
   .device-info .device-name { min-width: 0; }
+  /* the totals, and across from them the battery and snapshot as connect's pills */
+  .device-info > .stats { grid-area: 2 / 1; align-self: center; }
+  .device-actions { grid-area: 2 / 2; gap: 8px; }
+  .device-actions > :is(.battery, .icon-btn) { height: 32px; min-width: 32px; padding: 0 12px; border-radius: 16px; background: var(--cn-raised); font-size: 14px; }
+  .device-actions > .icon-btn { padding: 0; }
+  .device-actions > .battery.ok { background: color-mix(in srgb, var(--engaged) 40%, var(--cn-raised)); color: var(--cn-fg); }
+  .device-actions > .battery.low { background: color-mix(in srgb, var(--critical) 40%, var(--cn-raised)); color: var(--cn-fg); }
+  .snapshot { justify-content: flex-start; margin: 0; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .snapshot > :is(img, .snapshot-missing) { flex: 0 0 100%; max-width: none; border-radius: 0; scroll-snap-align: start; }
   .online-pill { display: inline-flex; flex-shrink: 0; align-items: center; height: 40px; margin-left: auto; padding: 0 18px; border-radius: 20px;
     background: var(--cn-raised); color: var(--cn-muted); font-size: 15px; font-weight: 500; }
   .online-pill.online { color: #2ea44f; }
   .stats { display: flex; gap: 12px; color: var(--cn-fg); } .stats b { font-weight: 600; }
   .device-page .page-tabs { margin: 0 0 4px; padding: 0 8px; border-color: var(--cn-line); }
   .device-page .tab-body { padding: 0 16px; }
-  .device-page .list-foot label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }  /* Filter opens it */
+  .device-page .list-foot { flex-wrap: wrap; }
+  .drive-opts { order: 1; flex-basis: 100%; flex-wrap: wrap; gap: 8px 16px; padding-top: 10px; color: var(--cn-muted); font-size: 15px; }
+  .drive-opts:not(.open) { display: none; }  /* Filter opens them */
+  .drive-opts .field { height: 36px; }
   .list-foot .filter { display: inline-flex; align-items: center; gap: 8px; height: 40px; margin: 0; padding: 0 12px; border: 0; border-radius: 6px;
     background: linear-gradient(var(--cn-card), var(--cn-card-end) 150%); color: var(--cn-fg); font-size: 15px; }
   .drives { display: flex; flex-direction: column; gap: 12px; }
   .drive-row.head { display: none; }
-  .drive-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "when dur" "when dist" "from to" "strip strip"; gap: 0 12px;
+  .drive-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "when dur" "when dist" "from to" "more more" "strip strip"; gap: 0 12px;
     height: auto; padding: 18px 18px 0; overflow: hidden; border: 0; border-top: 1px solid var(--cn-line); border-radius: 8px;
     background: linear-gradient(var(--cn-card), var(--cn-card-end)); line-height: 1.5; contain-intrinsic-size: auto 178px; }
   a.drive-row:hover { background: linear-gradient(var(--cn-card), var(--cn-card-end)); }
@@ -204,6 +249,8 @@ a.drive-row:hover { background: var(--hover); }
   .dr-detail { font-weight: 400; }
   .dr-from { grid-area: from; }
   .dr-to { grid-area: to; text-align: right; }
+  .drives.details .drive-row { grid-template-rows: none; }
+  .dr-more { grid-area: more; flex-wrap: wrap; gap: 2px 12px; margin-top: 12px; padding: 0; color: var(--cn-muted); font-size: 13px; line-height: 1.4; }
   .drive-row > .strip { grid-area: strip; --spans: 12px; height: 32px; margin: 18px -18px 0; border-radius: 0; }
   .drive-row .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
   .home-page .page { padding: 8px 16px 24px; }

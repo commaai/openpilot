@@ -1,4 +1,4 @@
-// reverse geocoding for drive cards: "Little Italy" / "San Diego, CA", cached by the browser
+// reverse geocoding for drive cards and the device map: "Little Italy" / "San Diego, CA", cached by the browser
 export const MAPBOX_TOKEN = "pk.eyJ1IjoiY29tbWFhaSIsImEiOiJjangyYXV0c20wMGU2NDluMWR4amUydGl5In0.6Vb11S6tdX6Arpj6trRE_g";
 
 const cache = new Map();
@@ -35,7 +35,7 @@ export async function reverseLookup(lng, lat) {
       const region = ctx.region ? (ctx.region.short_code || "").replace(/^[A-Z]{2}-/, "") || ctx.region.text : "";
       const city = ctx.place && ctx.place.text !== place ? ctx.place.text : ctx.district ? ctx.district.text : "";
       const details = [city, region].filter(Boolean).join(", ");
-      return {place, details};
+      return {place, details, address: f.place_name};
     }));
   }
   return cache.get(key);

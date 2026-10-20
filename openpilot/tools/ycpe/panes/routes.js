@@ -21,7 +21,7 @@ export function create(ctx) {
       h("img", {class: "route-thumb", loading: "lazy", alt: "", src: api.segmentAsset(r, 0, "sprite.jpg")}),
       h("span", {class: "route-when"},
         h("b", {}, start.toLocaleDateString(undefined, {month: "short", day: "numeric"}), " ", start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})),
-        h("span", {class: "muted"}, `${fmt.minutes(r.end_time_utc_millis - r.start_time_utc_millis)} · ${fmt.miles(r.distance ?? 0)}${note}`)));
+        h("span", {class: "muted"}, `${fmt.minutes(r.end_time_utc_millis - r.start_time_utc_millis)} · ${fmt.distance(r.distance ?? 0)}${note}`)));
   };
 
   // an open drive older than the first page is pinned on top, so it's always in the list

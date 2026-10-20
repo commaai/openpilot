@@ -1,10 +1,11 @@
-// canvas maps from Mapbox raster tiles: the device location on the device page, and the map pane (GPS trace
+// canvas maps from Mapbox raster tiles: the device page's (where the car was last), and the map pane (GPS trace
 // colored by engagement, a playhead marker, click to seek). Tiles decode off the main thread and every draw goes
 // through the frame scheduler, so the map never costs a frame. The trace comes from coords.json, or from the
 // store's GPS once logs are loading.
-import {MAPBOX_TOKEN} from "/geocode.js";
+import {MAPBOX_TOKEN, reverseLookup} from "/geocode.js";
 import {routeCoords, routeEvents} from "/api.js";
-import {h, css, fitCanvas} from "/dom.js";
+import {h, css, fitCanvas, fmt} from "/dom.js";
+import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 
@@ -72,7 +73,7 @@ function covering(style, z, x, y, stamp) {
 }
 
 class TileMap {
-  constructor(el, {interactive = true} = {}) {
+  constructor(el) {
     this.name = "map";
     this.el = el;
     this.canvas = el.appendChild(h("canvas", {class: "tilemap"}));
@@ -80,7 +81,7 @@ class TileMap {
     this.cx = this.cy = 0.5;
     this.z = 3;
     this.overlay = null;      // fn(ctx) drawing on top, in css px
-    if (interactive) this.interact();
+    this.interact();
     el.append(h("div", {class: "tilemap-credit"},
       h("a", {href: "https://www.mapbox.com/about/maps/", target: "_blank"}, "© Mapbox"), " ",
       h("a", {href: "https://www.openstreetmap.org/copyright", target: "_blank"}, "© OpenStreetMap")));
@@ -153,6 +154,7 @@ class TileMap {
       start();
     });
     c.addEventListener("pointermove", (e) => {
+      if (!down.size) return this.onHover?.(...at(e));
       if (!down.has(e.pointerId)) return;
       down.set(e.pointerId, at(e));
       const [x, y, d] = spread();
@@ -172,6 +174,7 @@ class TileMap {
     };
     c.addEventListener("pointerup", up);
     c.addEventListener("pointercancel", up);
+    c.addEventListener("pointerleave", () => this.onHover?.(-1, -1));
   }
 
   render() {
@@ -206,22 +209,103 @@ class TileMap {
   }
 
   dispose() {
-    this.overlay = this.onClick = null;
+    this.overlay = this.onClick = this.onHover = null;
   }
 }
 
-export function deviceMap(locationPromise) {
+const PIN = 30;  // css px from the car pin's point to its top
+const TIME = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit"});
+
+// the device's last location, as connect's map has it: pan and zoom, the car's pin (pointed at, it says when it was
+// there; tapped, a card with the address and a link to the maps app), and your own location on asking
+export function deviceMap(device, locationPromise) {
+  const tip = h("div", {class: "map-tip", hidden: true});
+  const card = h("div", {class: "map-card", hidden: true});
+  const locate = navigator.geolocation && h("button", {class: "map-btn", title: "Show my location", "aria-label": "Show my location", onclick: () => findMe()}, icon("myLocation", 18));
   const el = h("div", {class: "device-map"});
-  const map = new TileMap(el, {interactive: false});
+  const map = new TileMap(el);
+  el.append(tip, card, locate || "");
+  const at = (lng, lat) => ({lng, lat, x: unitX(lng), y: unitY(lat)});
+  let car = null, me = null;
   const sized = new ResizeObserver(([e]) => map.resize(e.contentRect.width, e.contentRect.height));
   sized.observe(el);
-  el.dispose = () => { sized.disconnect(); map.dispose(); };
+  const offTheme = theme.on(() => map.invalidate());
+  el.dispose = () => { sized.disconnect(); offTheme(); map.dispose(); };
+
+  map.overlay = (g) => {
+    if (me) dot(g, ...map.toScreen(me.x, me.y), 6, "#31a1ee");
+    if (!car) return;
+    const [x, y] = map.toScreen(car.x, car.y);
+    pin(g, x, y, theme.color("--accent"));
+    tip.style.translate = `${Math.round(x)}px ${Math.round(y - PIN - 4)}px`;  // map.css centers it above
+  };
+  const onPin = (px, py) => {
+    if (!car) return false;
+    const [x, y] = map.toScreen(car.x, car.y);
+    return Math.abs(px - x) <= 12 && py <= y + 2 && py >= y - PIN - 2;
+  };
+  map.onHover = (px, py) => {
+    const over = onPin(px, py);
+    if (over && tip.hidden && car.time) tip.replaceChildren(`${TIME.format(car.time)},`, h("br"), fmt.ago(car.time / 1000));
+    tip.hidden = !over || !car.time;
+    map.canvas.classList.toggle("pointing", over);
+  };
+  map.onClick = (px, py) => { if (onPin(px, py)) showCard(); };
+
+  function showCard() {
+    const name = fmt.deviceName(device), {lat, lng} = car;
+    // Apple Maps on an iPhone or iPad, Google's everywhere else, as connect links them
+    const maps = /iphone|ipad|ipod/i.test(navigator.userAgent) ? `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(name)}` : `https://maps.google.com/?q=${lat},${lng}`;
+    const address = h("div", {class: "small muted"}, `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    card.replaceChildren(
+      h("div", {class: "map-card-head"},
+        h("div", {}, h("b", {}, name), car.time && h("div", {class: "small muted"}, fmt.ago(car.time / 1000))),
+        h("a", {class: "button small", href: maps, target: "_blank", rel: "noopener"}, "Open in maps"),
+        h("button", {class: "icon-btn", title: "Close", "aria-label": "Close", onclick: () => { card.hidden = true; }}, icon("close", 16))),
+      address);
+    card.hidden = false;
+    reverseLookup(lng, lat).then((loc) => { if (loc?.address) address.textContent = loc.address; });
+  }
+
+  // asked for only on the button's press; the view takes in both you and the car
+  function findMe() {
+    locate.disabled = true;
+    navigator.geolocation.getCurrentPosition((pos) => {
+      locate.disabled = false;
+      locate.title = "Show my location";
+      me = at(pos.coords.longitude, pos.coords.latitude);
+      if (!car) return map.view(me.lng, me.lat, 13);
+      map.fit(Math.min(me.x, car.x), Math.min(me.y, car.y), Math.max(me.x, car.x), Math.max(me.y, car.y), 40);
+    }, (err) => {
+      locate.disabled = false;
+      locate.title = `Couldn't find your location: ${err.message || "not allowed"}`;
+    }, {enableHighAccuracy: true, timeout: 15000});
+  }
+
   Promise.resolve(locationPromise).then((loc) => {
     if (!loc?.lat) return map.view(-117.16, 32.72, 5);
+    car = {...at(loc.lng, loc.lat), time: loc.time};
     map.view(loc.lng, loc.lat, 13);
-    map.overlay = (ctx) => dot(ctx, ...map.toScreen(unitX(loc.lng), unitY(loc.lat)), 6, theme.color("--accent"));
   });
   return el;
+}
+
+// a map pin with its point at (x, y)
+function pin(ctx, x, y, fill) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x - 2, y - 8, x - 10, y - 13, x - 10, y - 20);
+  ctx.arc(x, y - 20, 10, Math.PI, 0);
+  ctx.bezierCurveTo(x + 10, y - 13, x + 2, y - 8, x, y);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = theme.color("--bg");
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y - 20, 4, 0, 2 * Math.PI);
+  ctx.fillStyle = theme.color("--bg");
+  ctx.fill();
 }
 
 function dot(ctx, x, y, r, fill) {

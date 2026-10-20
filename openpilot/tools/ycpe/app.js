@@ -82,7 +82,7 @@ function searchBox() {
   });
 }
 
-function toast(text) {
+export function toast(text) {
   const el = h("div", {class: "toast", role: "status"}, text);
   document.body.append(el);
   setTimeout(() => el.remove(), 3000);
@@ -187,7 +187,7 @@ function topBar() {
     (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
       href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
-      onlineMark(d), h("span", {}, d.alias || d.dongle_id), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
+      onlineMark(d), h("span", {}, fmt.deviceName(d)), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
     !state.devices?.length && h("div", {class: "menu-row muted"},
       !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
   bar.route.addEventListener("click", () => {
@@ -230,7 +230,7 @@ function updateTop() {
   const focused = document.activeElement?.closest?.(".topbar [data-key]")?.dataset.key;
   const dongle = ws?.dongle || location.pathname.split("/")[1];
   const device = state.devices?.find((d) => d.dongle_id === dongle);
-  bar.device.firstChild.textContent = device ? device.alias || dongle : DONGLE_RE.test(dongle || "") ? dongle : "devices";
+  bar.device.firstChild.textContent = device ? fmt.deviceName(device) : DONGLE_RE.test(dongle || "") ? dongle : "devices";
   bar.device.hidden = false;
   bar.route.hidden = bar.route.previousElementSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;

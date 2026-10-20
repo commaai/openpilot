@@ -1,7 +1,7 @@
 // the omnibox: anything that names a route or a device, typed or pasted (route names in any separator form,
 // connect, useradmin and cabana URLs, segment ranges and selectors), with a dropdown of matching recent routes and devices
 import {api} from "../api.js";
-import {h} from "../dom.js";
+import {h, fmt} from "../dom.js";
 import {parseIndirect, parseRange} from "../data/sources.js";
 
 const RECENT_KEY = "ycpe_recent_routes";
@@ -72,13 +72,13 @@ export function omnibox({go, devices, onMiss}) {
   const el = h("span", {class: "omni"}, input, list);
   let items = [], sel = -1;
 
-  const alias = (dongle) => devices()?.find((d) => d.dongle_id === dongle)?.alias || dongle;
+  const alias = (dongle) => { const d = devices()?.find((d) => d.dongle_id === dongle); return d ? fmt.deviceName(d) : dongle; };
   function suggest() {
     const q = input.value.trim().toLowerCase();
     const recent = recentRoutes().map((r) => ({path: routePath(r.name), label: `${alias(r.name.split("|")[0])} · ${DATE.format(r.start)}`,
       detail: r.name, text: `${r.name} ${alias(r.name.split("|")[0])} ${r.platform || ""}`}));
-    const devs = (devices() || []).map((d) => ({path: `/${d.dongle_id}`, label: d.alias || d.dongle_id, detail: d.dongle_id,
-      text: `${d.alias || ""} ${d.dongle_id}`}));
+    const devs = (devices() || []).map((d) => ({path: `/${d.dongle_id}`, label: fmt.deviceName(d), detail: d.dongle_id,
+      text: `${fmt.deviceName(d)} ${d.dongle_id}`}));
     items = [...recent, ...devs].filter((i) => !q || i.text.toLowerCase().includes(q)).slice(0, 12);
     sel = -1;
     paint();

@@ -1,8 +1,21 @@
 .device-map { position: relative; overflow: hidden; }
 .tilemap { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 .tilemap.panning { cursor: grabbing; }
-.device-map .tilemap { cursor: default; touch-action: auto; }  /* a picture: the page scrolls over it */
-/* the phone's stacked views scroll: one finger scrolls them, two move the map */
-@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) { .ws:not([data-view="files"]) .tilemap { touch-action: pan-y; } }
+.tilemap.pointing { cursor: pointer; }
+/* the phone's stacked views and its device page scroll: one finger scrolls them, two move the map */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) { :is(.ws:not([data-view="files"]), .device-map) .tilemap { touch-action: pan-y; } }
 .tilemap-credit { position: absolute; right: 0; bottom: 0; padding: 0 4px; font-size: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
 .tilemap-credit a { color: var(--muted); text-decoration: none; }
+/* the device map's car pin says when it was there, and tapped, where that is */
+.map-tip { position: absolute; left: 0; top: 0; z-index: 1; padding: 3px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--raised);
+  font-size: 11px; line-height: 1.3; text-align: center; white-space: nowrap; pointer-events: none; transform: translate(-50%, -100%); }
+.map-card { position: absolute; left: 8px; bottom: 8px; z-index: 2; width: min(340px, calc(100% - 16px)); padding: 6px 6px 6px 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--raised); box-shadow: var(--shadow); line-height: 1.35; }
+.map-card-head { display: flex; align-items: center; gap: 6px; }
+.map-card-head > div { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-card-head .button { margin: 0; border-radius: 14px; white-space: nowrap; }
+.map-card > .small { display: -webkit-box; margin-top: 2px; padding-right: 6px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.map-btn { position: absolute; top: 6px; right: 6px; z-index: 1; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--raised); color: var(--fg); cursor: pointer; }
+.map-btn:hover { background: var(--hover); }
+.map-btn:disabled { color: var(--muted); cursor: progress; }

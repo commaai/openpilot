@@ -31,6 +31,6 @@ export function livePage(devices) {
     h("h3", {}, "Devices"),
     !auth.isAuthenticated() ? h("p", {class: "muted"}, h("a", {href: loginPath(), onclick: link(loginPath())}, "Sign in"), " to stream from your devices.")
       : !devices?.length ? h("p", {class: "muted"}, "No devices on this account.")
-      : h("table", {class: "list"}, h("tbody", {}, devices.map((d) => row(`/${d.dongle_id}/live`, isOnline(d), d.alias || d.dongle_id,
-        isOnline(d) ? `online · ${d.device_type || ""}` : `offline · last seen ${fmt.ago(d.last_athena_ping)}`)))));
+      : h("table", {class: "list"}, h("tbody", {}, devices.map((d) => row(`/${d.dongle_id}/live`, isOnline(d), fmt.deviceName(d),
+        isOnline(d) ? `online · ${fmt.deviceType(d.device_type)}` : `offline · last seen ${fmt.ago(d.last_athena_ping)}`)))));
 }
