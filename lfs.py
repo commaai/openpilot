@@ -36,7 +36,7 @@ def git(*args, stdin=None, check=True):
   return subprocess.run(["git", *args], input=stdin, capture_output=True, check=check).stdout
 
 
-ROOT, GIT_DIR = map(Path, git("rev-parse", "--show-toplevel", "--absolute-git-dir").decode().splitlines())
+ROOT, GIT_DIR = map(Path, git("rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir").decode().splitlines())
 STORE = GIT_DIR / "lfs" / "objects"
 
 
@@ -49,7 +49,7 @@ def remove_git_lfs_hooks(directory):
     commands = {f'git lfs {name} "$@"'}
     if name == "pre-push":
       commands.update(('git lfs push --stdin $*', 'git lfs push --stdin "$@"'))
-      if re.fullmatch(r'exec "[^"]*/git-lfs" pre-push "\$@"', lines[-1]):  # shim from tools/op.sh
+      if lines and re.fullmatch(r'exec "[^"]*/git-lfs" pre-push "\$@"', lines[-1]):  # shim from tools/op.sh
         commands.add(lines[-1])
     has_lfs_guard = len(lines) == 3 and lines[1].startswith("command -v git-lfs ")
     if lines[:1] == ["#!/bin/sh"] and lines[-1] in commands and (len(lines) == 2 or has_lfs_guard):
@@ -57,23 +57,22 @@ def remove_git_lfs_hooks(directory):
 
 
 def install():
-  filter_process_command = shlex.join((str(Path(__file__).resolve()), "filter-process"))
-  legacy_hook = ROOT / Path(git("rev-parse", "--git-path", "hooks/pre-push").decode().strip())
-  remove_git_lfs_hooks(legacy_hook.parent)
-  hook = GIT_DIR / "lfs-hooks" / "pre-push"
-  if legacy_hook.parent != hook.parent:
-    shutil.copytree(legacy_hook.parent, hook.parent, dirs_exist_ok=True, symlinks=True)
-  hook_script = '#!/bin/sh\nexec "$(git rev-parse --show-toplevel)/lfs.py" pre-push "$@"\n'
-  if hook.is_file() and hook.read_text(errors="replace") != hook_script:
+  script = GIT_DIR / "lfs.py"
+  hook = Path(git("rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-push").decode().strip())
+  remove_git_lfs_hooks(hook.parent)
+  hook_script = f'#!/bin/sh\nexec {shlex.quote(str(script))} pre-push "$@"\n'
+  previous_hook = '#!/bin/sh\nexec "$(git rev-parse --show-toplevel)/lfs.py" pre-push "$@"\n'
+  if hook.is_file() and hook.read_text(errors="replace") not in (hook_script, previous_hook):
     raise RuntimeError(f"refusing to replace custom hook {hook}")
+  if Path(__file__).resolve() != script:
+    shutil.copyfile(__file__, script)
+  script.chmod(0o755)
   hook.parent.mkdir(parents=True, exist_ok=True)
   hook.write_text(hook_script)
   hook.chmod(0o755)
-  git("config", "--local", "extensions.worktreeConfig", "true")
-  git("config", "--local", "--remove-section", "filter.lfs", check=False)
-  git("config", "--worktree", "filter.lfs.process", filter_process_command)
-  git("config", "--worktree", "filter.lfs.required", "true")
-  git("config", "--worktree", "core.hooksPath", str(hook.parent))
+  git("config", "--worktree", "--remove-section", "filter.lfs", check=False)
+  git("config", "--local", "filter.lfs.process", shlex.join((str(script), "filter-process")))
+  git("config", "--local", "filter.lfs.required", "true")
 
 
 def object_path(oid):

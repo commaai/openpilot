@@ -37,8 +37,10 @@ scons -u
 `lfs.py` stores large files in the Hugging Face bucket `commaai/openpilot-lfs`,
 under `sha256/<object hash>`. `op setup` installs the Git filter and pre-push hook;
 normal Git add, checkout, pull, and push then use the bucket. Run `./lfs.py pull`
-to download files for the current commit. The script uses uv to manage its Xet
-dependencies separately from openpilot's Python environment.
+to download files for the current commit. The installed client and cache live in
+Git's common directory, so older checkouts and linked worktrees keep working.
+The script uses uv to manage its Xet dependencies separately from openpilot's
+Python environment.
 
 Public downloads do not require authentication. For uploads, use `hf auth login`
 or set `HF_TOKEN` to a token with write access to the bucket. Set
