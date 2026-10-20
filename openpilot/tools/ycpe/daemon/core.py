@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, unquote
 
 TOKEN_HEADER = "X-Ycpe-Token"
-TOKEN_PARAM = "t"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
+TOKEN_PARAM = "tok"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
 CHUNK = 1 << 20
 
 
@@ -25,6 +25,7 @@ class Config:
   repo_roots: list[str] = field(default_factory=list)  # openpilot checkouts
   device: str | None = None  # [user@]host of a comma device for /local/device
   device_key: str | None = None
+  device_root: str | None = None  # the device's realdata directory if not the usual one (tests use a stand-in)
 
   @property
   def origins(self) -> set[str]:
@@ -42,6 +43,10 @@ class HTTPError(Exception):
   def __init__(self, status: int, message: str = ""):
     super().__init__(message or HTTPStatus(status).phrase)
     self.status = status
+
+
+class NoRoute(HTTPError):
+  """No /local/ route matches the path (as opposed to a handler's own 404)."""
 
 
 @dataclass
@@ -79,20 +84,25 @@ class Response:
 
 @dataclass
 class Stream:
-  """A body of unknown length, sent chunked. chunks yields bytes; it is closed when the client goes away."""
+  """A streamed body: chunked, or with Content-Length when length is known. chunks yields bytes and is closed when
+  the client goes away. If it raises, the connection is cut short so the client sees an error, not a short body."""
   chunks: object
   type: str = "application/octet-stream"
   headers: dict[str, str] = field(default_factory=dict)
+  status: int = 200
+  length: int | None = None
 
 
 @dataclass
 class File:
   """A file on disk with Range support. While growing() is true the file is still being written: the response is
-  chunked and follows the file's tail until growing() turns false, then ends at the final size."""
+  chunked (or sized, if the final size is known) and follows the file's tail until growing() turns false. growing()
+  may raise to abort the response, e.g. when the download feeding the file fails."""
   path: str
   type: str | None = None
   headers: dict[str, str] = field(default_factory=dict)
   growing: object = None  # callable -> bool
+  size: int | None = None  # the final size of a growing file, when known
 
 
 def sse(events, keepalive: float = 15.0):
@@ -144,7 +154,7 @@ def match(method: str, path: str):
       if m == method:
         return fn, {k: unquote(v) for k, v in g.groupdict().items()}, public
       allowed = True
-  raise HTTPError(405 if allowed else 404)
+  raise HTTPError(405) if allowed else NoRoute(404)
 
 
 # security
@@ -208,8 +218,11 @@ def guess_type(path: str) -> str:
   return mimetypes.guess_type(path)[0] or "application/octet-stream"
 
 
-def file_chunks(path: str, start: int, end: int | None, growing=None, poll: float = 0.05):
-  with open(path, "rb") as f:
+def file_chunks(src, start: int, end: int | None, growing=None, poll: float = 0.05):
+  """Bytes [start, end) of src (a path, or a file opened in binary mode, which is closed at the end). With growing,
+  waits for a file being written until growing() turns false."""
+  path = getattr(src, "name", src)
+  with (open(src, "rb") if isinstance(src, (str, os.PathLike)) else src) as f:
     f.seek(start)
     pos = start
     while end is None or pos < end:
@@ -220,10 +233,9 @@ def file_chunks(path: str, start: int, end: int | None, growing=None, poll: floa
       elif growing is not None and growing():
         time.sleep(poll)
       elif growing is not None:
-        # finished: drain whatever was written between the last read and the end
-        while (data := f.read(CHUNK)):
-          yield data
-        return
+        growing = None  # finished: one more pass picks up what was written since the last read
+      elif end is not None:
+        raise OSError(f"{path} ended at {pos} of {end}")
       else:
         return
 

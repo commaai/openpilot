@@ -2,7 +2,7 @@
  "steps": [
   {"waitFor": ".pane"},
   {"shot": "loading"},
-  {"waitFor": {"fn": "document.querySelector('.load-pill').hidden && document.querySelector('.load-pill').textContent"}},
+  {"waitFor": {"fn": "!!document.querySelector('.load-pill.done')"}},
   {"shot": "light"},
   {"key": "t"},
   {"wait": 300},

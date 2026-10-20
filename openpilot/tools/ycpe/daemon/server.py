@@ -36,6 +36,7 @@ def caps(req):
 
 class Handler(SimpleHTTPRequestHandler):
   protocol_version = "HTTP/1.1"
+  disable_nagle_algorithm = True  # headers and a sendfile body are separate writes: without this, 40 ms delayed ACKs
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, directory=str(APP), **kwargs)
@@ -74,7 +75,14 @@ class Handler(SimpleHTTPRequestHandler):
     try:
       core.check_host(headers)  # every request, static too: index.html carries the token
       if path.startswith("/local/"):
-        return self.api(method, path, core.parse_query(qs), headers)
+        try:
+          return self.api(method, path, core.parse_query(qs), headers)
+        except core.NoRoute:
+          # the app has page routes under /local/ too (loose files): a reload of one gets the app, not an API 404
+          navigating = headers.get("sec-fetch-mode") == "navigate" or "text/html" in headers.get("accept", "")
+          if method in ("GET", "HEAD") and navigating:
+            return self.index(method)
+          raise
       if method not in ("GET", "HEAD"):
         raise HTTPError(405)
       if not Path(path).suffix and not (APP / path.lstrip("/")).is_file() or path == "/index.html":
@@ -115,7 +123,7 @@ class Handler(SimpleHTTPRequestHandler):
     if isinstance(out, Response):
       self.reply(out, head=method == "HEAD")
     elif isinstance(out, Stream):
-      self.stream(out.chunks, 200, out.type, out.headers, head=method == "HEAD")
+      self.stream(out.chunks, out.status, out.type, out.headers, head=method == "HEAD", length=out.length)
     elif isinstance(out, File):
       self.file(out, headers.get("range"), head=method == "HEAD")
     else:
@@ -138,23 +146,27 @@ class Handler(SimpleHTTPRequestHandler):
     except (BrokenPipeError, ConnectionResetError):
       pass
 
-  def stream(self, chunks, status, ctype, extra, head=False):
+  def stream(self, chunks, status, ctype, extra, head=False, length=None):
     self.send_response(status)
     self.send_header("Content-Type", ctype)
     for k, v in extra.items():
       self.send_header(k, v)
-    self.send_header("Transfer-Encoding", "chunked")
+    self.send_header(*(("Content-Length", str(length)) if length is not None else ("Transfer-Encoding", "chunked")))
     self.end_headers()
     try:
       if head:
         return
       for data in chunks:
         if data:
-          self.wfile.write(b"%x\r\n%b\r\n" % (len(data), data))
+          self.wfile.write(data if length is not None else b"%x\r\n%b\r\n" % (len(data), data))
           self.wfile.flush()
-      self.wfile.write(b"0\r\n\r\n")
+      if length is None:
+        self.wfile.write(b"0\r\n\r\n")
     except (BrokenPipeError, ConnectionResetError):
       self.close_connection = True
+    except Exception as e:
+      sys.stderr.write(f"stream aborted: {type(e).__name__}: {e}\n")
+      self.close_connection = True  # no terminating chunk: the client sees a failed body
     finally:
       if hasattr(chunks, "close"):
         chunks.close()
@@ -164,7 +176,7 @@ class Handler(SimpleHTTPRequestHandler):
       raise HTTPError(404)
     ctype = f.type or core.guess_type(f.path)
     if f.growing is not None and f.growing():
-      return self.stream(core.file_chunks(f.path, 0, None, f.growing), 200, ctype, f.headers, head)
+      return self.stream(core.file_chunks(f.path, 0, f.size, f.growing), 200, ctype, f.headers, head, f.size)
     size = os.path.getsize(f.path)
     rng = core.parse_range(range_header, size)
     start, end = rng or (0, size)
@@ -189,6 +201,7 @@ class Handler(SimpleHTTPRequestHandler):
 class Server(ThreadingHTTPServer):
   daemon_threads = True
   allow_reuse_address = True
+  request_queue_size = 64
 
 
 def make_server(port: int) -> Server:

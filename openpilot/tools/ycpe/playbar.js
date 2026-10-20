@@ -88,16 +88,14 @@ export function playbar(ctx) {
     // what's loaded, a lane per loader; fade the time nothing has started on
     const segX = (i) => [t2x(i * SEGMENT), t2x(Math.min(clock.duration, (i + 1) * SEGMENT))];
     kinds.forEach((k, j) => drawLane(c, k, 0, segY + j * (LANE_H + 1), width, LANE_H, segX));
-    if (kinds.length) {
-      c.fillStyle = col("--panel");
-      c.globalAlpha = 0.6;
-      for (let i = 0; i * SEGMENT < clock.duration; i++) {
-        if (kinds.some((k) => ["ready", "disk", "loading"].includes(k.segs[i]?.state))) continue;
-        const [a, b] = segX(i);
-        c.fillRect(a, spanY, b - a, SPAN_H);
-      }
-      c.globalAlpha = 1;
+    c.fillStyle = col("--panel");
+    c.globalAlpha = 0.6;
+    for (let i = 0; i * SEGMENT < clock.duration; i++) {
+      if (kinds.some((k) => ["ready", "disk", "loading"].includes(k.segs[i]?.state))) continue;
+      const [a, b] = segX(i);
+      c.fillRect(a, spanY, b - a, SPAN_H);
     }
+    c.globalAlpha = 1;
     // loop, visible range, hover, playhead
     if (clock.loop) {
       c.fillStyle = col("--loop");
