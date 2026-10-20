@@ -296,6 +296,6 @@ function lastAtOrBefore(rows, t) {
 }
 
 function clock(t) {
-  const m = Math.floor(t / 60), s = t - m * 60;
-  return `${m}:${s.toFixed(3).padStart(6, "0")}`;
+  const ms = Math.round(Math.abs(t) * 1000), m = Math.floor(ms / 60000);
+  return `${t < 0 ? "-" : ""}${m}:${((ms - m * 60000) / 1000).toFixed(3).padStart(6, "0")}`;
 }
