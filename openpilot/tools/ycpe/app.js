@@ -827,13 +827,14 @@ async function renderPage() {
     if (user) shell.mount(main, {devices: state.devices, dongle, signedIn: auth.isAuthenticated()});  // its gift's dot goes too
     return updateTop();  // the gift's dot goes once referrals are seen
   }
-  // connect's prime page for a device (pages/prime.js)
-  if (user && dongle && parts[1] === "prime" && parts.length === 2) {
+  // comma prime at connect's /<dongle>/prime (pages/prime.js), in either mode: where billing sends Stripe back to
+  if (dongle && parts[1] === "prime" && parts.length === 2) {
     closeWorkspace();
-    const device = state.devices?.find((d) => d.dongle_id === dongle) ?? await api.device(dongle).catch(() => null);
-    const page = device && await shell.optional("/pages/prime.js", "primePage", device);
-    if (id !== navId) return;
-    return root.replaceChildren(page || errorPage({status: 404}, {device: dongle}));
+    if (!user) updateTop();
+    const page = await Promise.all([import("/pages/prime.js"), state.devices?.find((d) => d.dongle_id === dongle) ?? api.device(dongle)])
+      .then(([m, device]) => m.primePage(device)).catch((e) => errorPage(e, {device: dongle}));
+    if (id === navId) root.replaceChildren(page);
+    return;
   }
   if (!user && openLoose(parts, q, main)) return;
   const target = parts.length >= 2 && dongle ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
@@ -894,10 +895,10 @@ async function renderPage() {
     const page = await devicePage(dongle, state.devices).catch((e) => errorPage(e, {device: dongle}));
     if (id !== navId) return;
     root.replaceChildren(page);
+    // connect shows the referral card, else the prime sign-up one
     const device = state.devices?.find((d) => d.dongle_id === dongle);
-    if (user && device && page.classList.contains("device-page")) shell.dashboard(page, device, state.devices);
-    const {referralPromo} = await import("/pages/referrals.js");
-    const promo = await referralPromo(device);
+    const promo = await import("/pages/referrals.js").then((m) => m.referralPromo(device)) ??
+      (device?.is_owner && !device.prime ? await import("/pages/prime.js").then((m) => m.primeBanner([device])) : null);
     if (promo && id === navId) root.prepend(promo);
   } else if (parts.length) {
     root.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),

@@ -1,8 +1,8 @@
 // device settings, as in connect: what the device is, its comma prime status, and (for the owner) unpairing
-import {api, auth} from "../api.js";
+import {api, auth, billingReachable} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {icon} from "../icons.js";
-import {onlineMark} from "../app.js";
+import {onlineMark, link} from "../app.js";
 
 const DATE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "short", day: "numeric"});
 const day = (unixSeconds) => unixSeconds ? DATE.format(unixSeconds * 1000) : null;
@@ -11,10 +11,13 @@ const rows = (pairs) => h("table", {class: "list settings"},
   h("tbody", {}, pairs.filter(([, v]) => v !== null && v !== undefined && v !== "").map(([k, v]) =>
     h("tr", {}, h("td", {class: "muted"}, k), h("td", {}, v)))));
 
-// the device says whether it has prime; for its owner, the subscription says the plan and billing
+// the device says whether it has prime; for its owner, the subscription says the plan and billing (where billing
+// answers this page), and pages/prime.js manages it
 function primeSection(device) {
-  const el = h("div", {}, rows([["status", device.prime ? "active" : "no subscription"]]));
-  if (!device.is_owner) return el;
+  const to = `/${device.dongle_id}/prime`;
+  const manage = device.is_owner && h("a", {class: "button small", href: to, onclick: link(to)}, device.prime ? "Prime settings" : "Sign up for comma prime");
+  const el = h("div", {}, rows([["status", device.prime ? "active" : "no subscription"]]), manage);
+  if (!device.is_owner || !billingReachable()) return el;
   api.primeSubscription(device.dongle_id).then((sub) => {
     if (!sub) return;
     el.replaceChildren(rows([
@@ -24,7 +27,7 @@ function primeSection(device) {
       ["since", day(sub.subscribed_at)],
       ["trial ends", sub.trial_end && sub.trial_end * 1000 > Date.now() ? day(sub.trial_end) : null],
       ["next payment", !sub.cancel_at ? day(sub.next_charge_at) : null],
-    ]));
+    ]), manage);
   }).catch((err) => el.append(h("p", {class: "small error"}, err.message)));
   return el;
 }

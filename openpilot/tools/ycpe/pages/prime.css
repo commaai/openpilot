@@ -1,0 +1,80 @@
+/* comma prime (pages/prime.js): connect's narrow column of plans and status blocks, in its palette */
+.prime-page { max-width: 460px; padding-top: 18px; color: var(--cn-fg); }
+.prime-page h2 { margin: 14px 12px 0; font-size: 24px; }
+.prime-page a:not(.button, .icon-btn) { color: var(--engaged); }
+.prime-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.prime-head .icon-btn { min-width: 36px; height: 36px; border-radius: 50%; color: var(--cn-fg); }
+.prime-dongle { color: var(--cn-dim); font-size: 12px; }
+
+.prime-checks { margin: 22px 0 0 12px; padding: 0 7px; list-style: none; }
+.prime-checks li { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 6px; font-size: 14px; }
+.prime-checks svg { flex-shrink: 0; color: var(--engaged); }
+
+.prime-commacare { margin-top: 20px; padding: 10px 14px 10px 12px; border: 1px solid var(--engaged); border-radius: 12px; }
+.prime-commacare b { color: var(--engaged); letter-spacing: .04em; }
+.prime-commacare p { margin: 6px 0 0; font-size: 13px; }
+
+.prime-plans { position: relative; display: flex; gap: 4px; height: 140px; margin-top: 22px; }
+.prime-plan { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: space-around; padding: 8px 0; border: 2px solid transparent;
+  border-radius: 18px; background: var(--cn-card); color: var(--cn-fg); font: inherit; font-weight: 600; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.prime-plan b { font-size: 1.2rem; }
+.prime-plan .prime-price { font-size: 1.5rem; }
+.prime-plan .small { font-size: 12px; font-weight: 400; line-height: 1.35; }
+.prime-plan[aria-pressed="true"] { border-color: var(--cn-fg); }
+.prime-plan:disabled { opacity: .45; cursor: default; }
+.prime-plans:has(.prime-fetching:not([hidden])) .prime-plan { opacity: .2; }
+.prime-fetching { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 14px; }
+.prime-fetching .spinner { width: 30px; height: 30px; border-width: 3px; }
+.prime-fetching[hidden] { display: none; }
+
+.prime-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 8px 12px; border-radius: 12px; background: var(--cn-raised); }
+.prime-note > svg, .prime-note > .spinner { flex-shrink: 0; margin-top: 1px; }
+.prime-note p { margin: 0; }
+.prime-note p + p { margin-top: 4px; }
+.prime-note.prime-error { background: color-mix(in srgb, var(--critical) 22%, transparent); }
+.prime-note.prime-error > svg { color: var(--critical-fg); }
+.prime-note.prime-notice > svg { color: var(--alert-fg); }
+.prime-note.prime-success { background: color-mix(in srgb, var(--engaged) 22%, transparent); }
+.prime-note.prime-success > svg { color: var(--engaged); }
+.prime-page > p { margin: 20px 0 0; }
+
+/* connect's round white buttons: the main one filled, the rest outlined */
+.button.prime-go { display: block; width: 100%; height: 42px; margin: 20px 0 0; border: 1px solid var(--cn-fg); border-radius: 21px; background: var(--cn-fg); color: var(--cn-bg);
+  font-weight: 500; text-align: center; line-height: 28px; }
+.button.prime-go:hover:not(:disabled) { background: var(--cn-fg); opacity: .8; }
+.button.prime-go:not(.primary) { background: none; color: var(--cn-fg); }
+.button.prime-go:not(.primary):hover:not(:disabled) { background: var(--cn-line); opacity: 1; }
+.prime-go .spinner { border-color: var(--cn-dim); border-top-color: currentColor; }
+.prime-buttons { display: flex; flex-direction: column; }
+.prime-buttons .button.prime-go { margin-top: 10px; }
+.button.prime-cancel { border-color: var(--cn-dim); }
+.prime-charge { margin: 16px 0 0; font-size: 13px; }
+
+.prime-items { margin: 20px 0 0; }
+.prime-item + .prime-item { margin-top: 18px; }
+.prime-item dt { font-size: 16px; font-weight: 600; }
+.prime-item dd { margin: 4px 0 0 10px; }
+.prime-item .muted { color: var(--cn-muted); font-size: .9em; }
+.prime-pill { display: inline-flex; margin-top: 14px; padding: 6px 14px; border: 1px solid var(--engaged); border-radius: 12px; font-weight: 600; letter-spacing: .04em; text-decoration: none; }
+.prime-pill:hover { background: color-mix(in srgb, var(--engaged) 10%, transparent); }
+
+/* the switch and cancel confirmations (dom.js ask) */
+.prime-ask { display: flex; flex-direction: column; gap: 8px; }
+.prime-ask > b { font-size: 16px; }
+.prime-ask .warn { padding: 8px 10px; }
+
+/* connect's sign-up card over the device page's top right (clear of the map's location button), where the referral card sits when there's one */
+.prime-promo-slot { position: relative; z-index: 5; max-width: 1280px; height: 0; margin: 0 auto; }
+.prime-promo { position: absolute; top: 10px; right: 56px; box-sizing: border-box; width: 360px; padding: 12px 16px; border: 1px solid var(--cn-pill-line);
+  border-radius: 22px; background: var(--cn-raised); color: var(--cn-fg); box-shadow: var(--shadow); }
+.prime-promo-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.prime-promo-head b { font-size: 20px; line-height: 31px; }
+.prime-promo-head .button { min-width: 90px; padding: 5px 20px; border-radius: 15px; text-align: center; }
+.prime-promo p { margin: 0; opacity: .9; }
+.prime-dismiss.icon-btn { position: absolute; top: -8px; left: -6px; min-width: 24px; height: 24px; border: 1px solid var(--cn-pill-line); border-radius: 12px;
+  background: var(--cn-pill); color: var(--cn-fg); }
+
+@media (max-width: 599px) {
+  .prime-page { padding-top: 6px; }
+  .prime-promo { right: 44px; left: 8px; width: auto; }
+}

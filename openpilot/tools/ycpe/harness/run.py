@@ -24,7 +24,9 @@ from procs import free_port, openpilot_venv, wait_port
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
 PORTS = range(8170, 8180)
-COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
+COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai|billing\.comma\.ai)/")
+# Stripe is never reached, read or not: a scenario fakes the pages billing sends to
+STRIPE = re.compile(r"^https://([\w-]+\.)*stripe\.com/")
 # athena, directly or through the daemon's relay (daemon/athena.py)
 ATHENA = re.compile(r"^(https://athena\.comma\.ai/|http://localhost:\d+/local/athena/)")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
@@ -113,6 +115,7 @@ class Scenario:
                                    has_touch=vp.get("mobile", False), device_scale_factor=1)
     self.ctx.route(COMMA_API, self.guard)
     self.ctx.route(ATHENA, self.guard)
+    self.ctx.route(STRIPE, lambda route: (self.event("blocked", f"{route.request.method} {route.request.url}"), route.abort("blockedbyclient")))
     for r in sc.get("routes", []):  # registered later, so these answer before the guard
       self.ctx.route(re.compile(r["url"]), functools.partial(self.fulfill, r))
     self.ctx.add_init_script(PROBE_JS)

@@ -75,12 +75,3 @@ function deviceRow(d, on) {
     "aria-label": `${fmt.deviceName(d)} settings`}, icon("settings", 22))));
   return row;
 }
-
-// the device page as connect's dashboard: prime's banner over it (the shown device first in the list it's given) and
-// the device's clips above its tabs, each once per page (a page kept for going back already has them)
-export function dashboard(page, device, devices) {
-  if (page.dataset.cnExtras) return;
-  page.dataset.cnExtras = "1";
-  optional("/pages/prime.js", "primeBanner", [device, ...(devices || []).filter((d) => d !== device)]).then((b) => b && page.prepend(b));
-  optional("/panes/clips.js", "deviceClips", device).then((c) => c && page.querySelector(".page-tabs")?.before(c));
-}
