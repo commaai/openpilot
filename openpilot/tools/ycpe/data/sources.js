@@ -135,6 +135,11 @@ export const SOURCES = {
       return new Map(segs.filter((s) => bySeg.has(s)).map((s) => [s, bySeg.get(s)]));
     },
   },
+  // the device itself while it's online: its files over WebRTC (data/live/p2p.js), uploaded or not
+  p2p: {
+    label: "device (peer to peer)",
+    find: async (sr, segs, kind) => (await import("./live/p2p.js")).find(sr, segs, KINDS[kind]),
+  },
   openpilotci: {label: "openpilotci", daemon: true, find: daemonOnly},
   carSegments: {
     label: "commaCarSegments",
@@ -159,7 +164,7 @@ export const SOURCES = {
   },
 };
 
-export const AUTO = ["internal", "api", "openpilotci", "carSegments"];
+export const AUTO = ["internal", "api", "p2p", "openpilotci", "carSegments"];
 
 // the source a route's files come from: "auto" (AUTO's order) or one SOURCES name, kept per route
 export const routeSource = {
@@ -173,18 +178,22 @@ export const routeSource = {
 const cacheName = (f) => f.source === "carSegments" && !f.file.startsWith("ccs-") ? {...f, file: `ccs-${f.file}`} : f;
 
 // file_sources' walk: for each kind, each source in turn on the segments still without it. Partial results are kept,
-// not raised. "auto" is the daemon's order, or without it AUTO's sources a browser reaches.
+// not raised. "auto" is the daemon's order then the device peer to peer, or without it AUTO's sources a browser reaches.
 // → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
 export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = false} = {}) {
-  const found = new Map(), errors = {};
-  if (daemon.sources()) {
-    const r = await daemon.resolve(sr, segs, kinds, sources, sizes);
-    for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, cacheName(f));
-    return {found, errors: r.errors || {}};
+  const found = new Map(), errors = {}, served = daemon.sources();
+  if (served) {
+    const theirs = sources === "auto" ? sources : sources.filter((name) => served.includes(name));
+    sources = (sources === "auto" ? AUTO : sources).filter((name) => !served.includes(name) && !SOURCES[name].daemon);
+    if (theirs.length) {
+      const r = await daemon.resolve(sr, segs, kinds, theirs, sizes);
+      for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, cacheName(f));
+      Object.assign(errors, r.errors);
+    }
   }
   if (sources === "auto") sources = AUTO.filter((name) => !SOURCES[name].daemon);
   await Promise.all(kinds.map(async (kind) => {
-    let need = segs;
+    let need = segs.filter((n) => !found.has(`${n}/${kind}`));
     for (const name of sources) {
       if (!need.length) break;
       try {
