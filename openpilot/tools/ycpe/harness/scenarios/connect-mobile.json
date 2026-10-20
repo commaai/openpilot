@@ -1,0 +1,21 @@
+{"name": "connect-mobile", "url": "/5beb9b58bd12b691/0000010a--a51155e496", "viewport": {"width": 390, "height": 844, "mobile": true},
+ "reference": ["connect-route-demo-mobile"], "budgets": {"drops": 0},
+ "steps": [
+  {"waitFor": ".connect-pane .camera-pane"},
+  {"assert": "document.querySelector('.ws').dataset.view === 'connect' || 'a route without a view should open in the connect view'"},
+  {"assert": "document.querySelector('.cn-timeline').getBoundingClientRect().width >= innerWidth - 40 || 'the timeline should take the full width'"},
+  {"wait": 2000},
+  {"shot": "loaded"},
+  {"drag": {"from": ".cn-ruler", "by": [150, 0], "steps": 60}},
+  {"assert": "!document.querySelector('.cn-now').textContent.endsWith('– 0') || 'scrubbing should move the playhead'"},
+  {"shot": "scrubbed"},
+  {"click": ".cn-option[data-key=map]"},
+  {"waitFor": ".connect-pane .map-pane"},
+  {"assert": "document.querySelector('.cn-video').hidden || 'the map replaces the video'"},
+  {"wait": 1000},
+  {"shot": "map"},
+  {"click": ".cn-option[data-key=files]"},
+  {"waitFor": ".connect-pane .files-pane .fp-body > .fp-row"},
+  {"wait": 500},
+  {"shot": "files"}
+ ]}

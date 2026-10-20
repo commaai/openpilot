@@ -7,6 +7,7 @@ export const PANES = {
   camera: {title: "Camera", src: "/panes/camera.js"},
   map: {title: "Map", src: "/panes/map.js"},
   info: {title: "Route info", src: "/panes/routeinfo.js"},
+  connect: {title: "Connect", src: "/panes/connect.js"},
   files: {title: "Files", src: "/panes/files.js"},
   plot: {title: "Plot", src: "/panes/plot/plot.js", data: true},
   xy: {title: "XY plot", src: "/panes/plot/xy.js", data: true},

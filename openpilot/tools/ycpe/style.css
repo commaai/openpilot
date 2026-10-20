@@ -113,7 +113,7 @@ body.in-ws #main { overflow: hidden; }
 /* a narrower bar sheds the least needed first (after the chips' own display) */
 @container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem) { display: none; } }
 @container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
-@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 6px; } .topbar .load-pill { max-width: 150px; } }
+@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 5px; } .topbar .load-pill { max-width: 150px; } .topbar .tabs { min-width: 80px; } }
 /* the device crumb goes as on phones: the route crumb's menu reaches the rest */
 @container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
 .popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
@@ -178,6 +178,10 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .pane-body > * { position: absolute; inset: 0; }
 .empty-pane { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 6px; padding: 12px; }
 .pane-missing { display: flex; align-items: center; justify-content: center; color: var(--muted); }
+/* the connect view is a page: its pane without chrome, with its own timeline and controls instead of the playback bar */
+.ws[data-view="connect"] .layout { padding: 0; }
+.ws[data-view="connect"] .layout > .pane { border: 0; border-radius: 0; }
+.ws[data-view="connect"] .layout > .pane > .pane-head, .ws[data-view="connect"] .playbar { display: none; }
 
 /* routes pane */
 .routes-pane { overflow: auto; }
