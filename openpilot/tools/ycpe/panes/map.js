@@ -217,11 +217,12 @@ const PIN = 30;  // css px from the car pin's point to its top
 const TIME = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit"});
 
 // the device's last location, as connect's map has it: pan and zoom, the car's pin (pointed at, it says when it was
-// there; tapped, a card with the address and a link to the maps app), and your own location on asking
-export function deviceMap(device, locationPromise) {
+// there; tapped, a card with the address and a link to the maps app), and your own location on asking. User mode's
+// (connect) has connect's zoom and pin (drawPin), and doesn't ask
+export function deviceMap(device, locationPromise, {connect = false, drawPin = null} = {}) {
   const tip = h("div", {class: "map-tip", hidden: true});
   const card = h("div", {class: "map-card", hidden: true});
-  const locate = navigator.geolocation && h("button", {class: "map-btn", title: "Show my location", "aria-label": "Show my location", onclick: () => findMe()}, icon("myLocation", 18));
+  const locate = !connect && navigator.geolocation && h("button", {class: "map-btn", title: "Show my location", "aria-label": "Show my location", onclick: () => findMe()}, icon("myLocation", 18));
   const el = h("div", {class: "device-map"});
   const map = new TileMap(el);
   el.append(tip, card, locate || "");
@@ -236,7 +237,7 @@ export function deviceMap(device, locationPromise) {
     if (me) dot(g, ...map.toScreen(me.x, me.y), 6, "#31a1ee");
     if (!car) return;
     const [x, y] = map.toScreen(car.x, car.y);
-    pin(g, x, y, theme.color("--accent"));
+    if (drawPin) drawPin(g, x, y); else pin(g, x, y, theme.color("--accent"));
     tip.style.translate = `${Math.round(x)}px ${Math.round(y - PIN - 4)}px`;  // map.css centers it above
   };
   const onPin = (px, py) => {
@@ -285,7 +286,8 @@ export function deviceMap(device, locationPromise) {
   Promise.resolve(locationPromise).then((loc) => {
     if (!loc?.lat) return map.view(-117.16, 32.72, 5);
     car = {...at(loc.lng, loc.lat), time: loc.time};
-    map.view(loc.lng, loc.lat, 13);
+    // connect fits the car and a point 0.01° northwest of it at its zoom cap, so the car sits off center
+    if (connect) map.view(loc.lng - 0.005, loc.lat + 0.005, 11); else map.view(loc.lng, loc.lat, 13);
   });
   return el;
 }

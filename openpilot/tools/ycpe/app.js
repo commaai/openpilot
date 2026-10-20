@@ -756,6 +756,7 @@ let shell = null;  // user mode's frame (pages/connect/shell.js), loaded with th
 // the page's bar: connect's header in user mode, ours in developer mode
 async function modeBar(user) {
   if (user) shell ??= await import("/pages/connect/shell.js");
+  theme.hold(user ? "dark" : null);  // connect is dark only
   const want = user ? shell.header : devBar, have = document.querySelector("#app > header");
   if (have !== want) have.replaceWith(want);
 }
@@ -909,8 +910,8 @@ async function renderPage() {
     // connect's page for an account without devices (pages/pair.js): all of it in user mode, under the home page in dev
     const {noDevices} = await import("/pages/pair.js");
     if (id === navId) root.replaceChildren(user ? noDevices() : homePage(state.devices, noDevices()));
-  } else if (state.devices?.length === 1 || user && state.devices?.length && shell.wide.matches) {
-    // connect opens on a device; a phone in user mode lists them first
+  } else if (state.devices?.length === 1 || user && state.devices?.length) {
+    // connect opens on a device
     go(`${base}/${(user ? shell.lastDevice(state.devices) : state.devices[0]).dongle_id}`, true);
   } else {
     root.replaceChildren(user && !auth.isAuthenticated() ? loginPage(q) : homePage(state.devices));
