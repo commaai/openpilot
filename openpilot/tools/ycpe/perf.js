@@ -52,6 +52,7 @@ function loop(now) {
   const batch = [...dirty];
   dirty.clear();
   for (const pane of batch) {
+    if (pane.el && !pane.el.isConnected) continue;  // a hidden view's: it redraws when shown again (Layout.invalidateAll)
     const t = performance.now();
     try { pane.render(frame); } catch (e) { console.error(pane.name, e); }
     add(frame, pane.name || "?", performance.now() - t);
