@@ -166,6 +166,7 @@ class Workspace {
     this.dongle = route.fullname.split("|")[0];
     this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
     this.filesReady = files.then((f) => { this.files = f; });
+    this.filesReady.catch(() => {});  // a view that needs the logs shows the failure; until then it's not an error
     this.repeat = repeat;
     this.store = null;
     this.storeSubs = new Set();

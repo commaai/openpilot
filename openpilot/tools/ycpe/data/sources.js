@@ -92,17 +92,21 @@ const ccsLfs = () => setting("ycpe_ccs_lfs") || ccsRepo();
 // "<n>/<file>" → {size, lfs: {oid, size} | undefined}; empty when the route isn't in the dataset
 const ccsTrees = new Map();
 function ccsTree(sr) {
-  if (!ccsTrees.has(sr.route)) {
-    const url = `${ccsRepo().replace("huggingface.co/", "huggingface.co/api/")}/tree/${ccsBranch()}/segments/${sr.dongle}/${sr.logId}?recursive=true`;
-    ccsTrees.set(sr.route, fetch(url).then(async (r) => {
-      if (r.status === 404) return new Map();
-      if (!r.ok) throw new Error(`huggingface.co ${r.status}`);
-      return new Map((await r.json()).filter((e) => e.type === "file").map((e) => [e.path.split("/").slice(-2).join("/"), e]));
-    }, () => {
-      throw new Error("huggingface.co isn't reachable");
-    }));  // a refusal is kept too: asking again won't change it
-  }
+  if (!ccsTrees.has(sr.route)) ccsTrees.set(sr.route, listCcs(sr));  // a failure is kept too: asking again won't change it
   return ccsTrees.get(sr.route);
+}
+async function listCcs(sr) {
+  const api = `${ccsRepo().replace("huggingface.co/", "huggingface.co/api/")}`, dir = `segments/${sr.dongle}/${sr.logId}`;
+  const get = (url, opts) => fetch(url, opts).then((r) => {
+    if (!r.ok) throw new Error(`huggingface.co ${r.status}`);
+    return r.json();
+  }, () => {
+    throw new Error("huggingface.co isn't reachable");
+  });
+  // whether the route is there at all (an empty answer, where the tree would 404 into the console)
+  if (!(await get(`${api}/paths-info/${ccsBranch()}`, {method: "POST", body: new URLSearchParams({paths: dir})})).length) return new Map();
+  const tree = await get(`${api}/tree/${ccsBranch()}/${dir}?recursive=true`);
+  return new Map(tree.filter((e) => e.type === "file").map((e) => [e.path.split("/").slice(-2).join("/"), e]));
 }
 
 async function lfsUrls(objects) {
