@@ -40,11 +40,17 @@ function webcodecs(config, {emit, pump, error, alloc}) {
 
 // one access unit per task, so new requests get through between frames
 async function wasm({emit, pump, alloc}) {
-  const {instance} = await WebAssembly.instantiateStreaming(fetch(new URL("./hevc.wasm", import.meta.url)), {env: {emscripten_notify_memory_growth() {}}});
-  const w = instance.exports;
+  const module = await WebAssembly.compileStreaming(fetch(new URL("./hevc.wasm", import.meta.url)));
+  // the libc imports left over (stdio, environ, clock) are never needed: each fails with ENOSYS
+  const imports = {};
+  for (const {module: m, name} of WebAssembly.Module.imports(module)) (imports[m] ??= {})[name] = () => 52;
+  const w = (await WebAssembly.instantiate(module, imports)).exports;
   w._initialize?.();
   w.hevc_init();
+  // yields between access units through a message, not setTimeout, whose nesting clamp adds 4 ms per frame
   let busy = false;
+  const yielded = new MessageChannel();
+  yielded.port1.onmessage = () => { busy = false; pump(); };
   const planes = () => {
     const width = w.hevc_width(), height = w.hevc_height();
     const cw = (width + 1) >> 1, ch = (height + 1) >> 1;
@@ -70,7 +76,7 @@ async function wasm({emit, pump, alloc}) {
         w.hevc_release();
       }
       busy = true;
-      setTimeout(() => { busy = false; pump(); });
+      yielded.port2.postMessage(null);
     },
   };
 }

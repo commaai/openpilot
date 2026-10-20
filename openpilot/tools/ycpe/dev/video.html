@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <div>route <b id="route"></b> · ?route=&amp;cams=qcamera,fcamera&amp;t=&amp;local=&lt;base url of seg/camera.h264 stand-ins&gt;&amp;store=1</div>
+  <div>route <b id="route"></b> · ?route=&amp;cams=qcamera,fcamera&amp;t=&amp;local=&lt;base url of seg/camera.h264 stand-ins&gt;&amp;store=1&amp;loose=1</div>
   <div id="bar">
     <button id="play">play</button>
     <button id="prev">&lt; frame</button>
@@ -29,6 +29,7 @@
     import {createClock, RATES} from "/clock.js";
     import {perf} from "/perf.js";
     import {Store} from "/data/store.js";
+    import {routeRecord} from "/data/sources.js";
     import {create} from "/panes/camera.js";
     import {loadPill} from "/status.js";
 
@@ -37,17 +38,29 @@
     const $ = (id) => document.getElementById(id);
     $("route").textContent = name;
 
-    const [route, files] = await Promise.all([api.route(name), api.routeFiles(name)]);
+    // a range of the route ("<route>/2:5") plays its segments back to back
+    const base = name.split("/")[0];
+    const [route, files] = await Promise.all([routeRecord(name), api.routeFiles(base)]);
     // local H.264 stand-ins for the HEVC files, for browsers without an HEVC decoder
     if (q.get("local")) {
       const local = (kind, n) => Array.from({length: n}, (_, i) => `${q.get("local")}/${i}/${kind}.h264`);
-      api.routeFiles.prime({...files, cameras: local("camera", 4), ecameras: local("ecamera", 2), dcameras: local("dcamera", 2)}, name);
+      api.routeFiles.prime({...files, cameras: local("camera", 4), ecameras: local("ecamera", 2), dcameras: local("dcamera", 2)}, base);
+    }
+    // a loose route (as if dropped or linked) with the same files, which camera panes get from route.files
+    if (q.get("loose")) {
+      const primed = await api.routeFiles(base);
+      route.loose = true;
+      route.files = new Map();
+      for (const [kind, camera] of [["qcameras", "qcamera"], ["cameras", "fcamera"], ["ecameras", "ecamera"], ["dcameras", "dcamera"]]) {
+        primed[kind].forEach((url, n) => route.files.set(`${n}/${camera}`, {url, file: url.split("?")[0].split("/").at(-1), size: null, source: "url"}));
+      }
     }
     let store = null;
     if (q.get("store")) {
-      const urls = [];
-      for (const u of [...files.qlogs, ...files.logs]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
-      store = new Store(name, urls, {t: +(q.get("t") || 0)});
+      const logs = [];
+      for (const u of [...files.qlogs, ...files.logs]) logs[+new URL(u).pathname.split("/").at(-2)] = u;
+      const urls = route.range ? route.segment_numbers.map((n) => logs[n] && {url: logs[n], seg: n}) : logs;
+      store = new Store(base, urls, {t: +(q.get("t") || 0)});
     }
 
     const clock = createClock((route.end_time_utc_millis - route.start_time_utc_millis) / 1000);

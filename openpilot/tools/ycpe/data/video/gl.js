@@ -17,37 +17,46 @@ void main() {
   color = vec4(y + 1.596 * v, y - .391 * u - .813 * v, y + 2.018 * u, 1);
 }`;
 
-export function frameRenderer(canvas) {
+// restored() runs once a lost context (a GPU process reset) is back, to draw the frame again
+export function frameRenderer(canvas, restored) {
   const gl = canvas.getContext("webgl2", {alpha: false, antialias: false, depth: false});
-  const prog = gl.createProgram();
-  for (const [type, src] of [[gl.VERTEX_SHADER, VERT], [gl.FRAGMENT_SHADER, FRAG]]) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    gl.attachShader(prog, s);
+  let yuv, size = "";
+  canvas.addEventListener("webglcontextlost", (e) => e.preventDefault());
+  canvas.addEventListener("webglcontextrestored", () => { setup(); restored(); });
+  setup();
+
+  function setup() {
+    const prog = gl.createProgram();
+    for (const [type, src] of [[gl.VERTEX_SHADER, VERT], [gl.FRAGMENT_SHADER, FRAG]]) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      gl.attachShader(prog, s);
+    }
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    ["ty", "tu", "tv"].forEach((name, i) => {
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.uniform1i(gl.getUniformLocation(prog, name), i);
+    });
+    yuv = gl.getUniformLocation(prog, "yuv");
+    size = "";  // new textures need allocating
   }
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-  ["ty", "tu", "tv"].forEach((name, i) => {
-    gl.activeTexture(gl.TEXTURE0 + i);
-    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(gl.getUniformLocation(prog, name), i);
-  });
-  const yuv = gl.getUniformLocation(prog, "yuv");
 
   // frame: a VideoFrame, or {width, height, data} with tightly packed I420 planes
   return function draw(frame) {
     const w = frame.displayWidth ?? frame.width, h = frame.displayHeight ?? frame.height;
-    const resized = canvas.width !== w || canvas.height !== h;
-    if (resized) [canvas.width, canvas.height] = [w, h];
+    const resized = size !== `${w}x${h}`;
+    if (resized) [canvas.width, canvas.height, size] = [w, h, `${w}x${h}`];
     gl.viewport(0, 0, w, h);
     gl.activeTexture(gl.TEXTURE0);
     if (frame.data) {
