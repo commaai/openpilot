@@ -184,7 +184,9 @@ a.drive-row:hover { background: var(--hover); }
   :root { --top: 44px; --head: 34px; }
   .topbar :is(.brand, .crumb, .tbtn, .load-pill, .view, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
   .topbar .omnibox { min-height: 32px; }
-  .pane-type { height: 32px; }
+  .pane-type, .pane-btn { height: 32px; }
+  .pane-btn { width: 32px; }
+  .tab .x { align-self: stretch; align-items: center; justify-content: center; min-width: 32px; opacity: .7; }  /* no hover to reveal it */
   @container (max-width: 860px) { .topbar .hud { display: none; } }  /* the bigger buttons leave the omnibox no room */
   .divider::before { content: ""; position: absolute; z-index: 1; inset: -8px; }  /* a 20px grip, over the panes' edges */
 }
