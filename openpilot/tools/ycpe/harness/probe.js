@@ -16,4 +16,13 @@
     if (e.hadRecentInput) return;
     probe.shifts.push({t: e.startTime, value: e.value, sources: e.sources.map((s) => ({node: s.node, rect: s.currentRect}))});
   });
+
+  // the page's fetches that would change something, {method, url, body}, so a scenario can assert exactly what an
+  // action sends (run.py blocks them, or answers those a scenario's routes fake)
+  const sent = window.__sent = [], send = window.fetch;
+  window.fetch = (input, init = {}) => {
+    const method = init.method || input.method || "GET";
+    if (!["GET", "HEAD", "OPTIONS"].includes(method)) sent.push({method, url: String(input.url || input), body: init.body == null ? null : String(init.body)});
+    return send(input, init);
+  };
 })();

@@ -48,21 +48,27 @@
 .cn-box > *, .cn-files > * { position: absolute; inset: 0; }
 .cn-video:not([hidden]) + .cn-map { flex: 2 1 0; aspect-ratio: auto; }
 
-/* connect's control pill: 10 s back and forward, the wall clock and segment, the rate, play/pause */
+/* connect's control pill: 10 s back and forward, the wall clock and segment, the rate, mute, play/pause */
 .cn-pill { display: flex; align-items: center; width: 25em; max-width: 100%; height: 50px; margin: 0 auto; padding: 0 4px 0 8px; border-radius: 25px;
   background: var(--cn-pill); }
 .cn-pill button { display: flex; align-items: center; justify-content: center; height: 40px; padding: 0; border: 0; background: none; cursor: pointer; }
 .cn-jump { width: 48px; border-right: 1px solid var(--cn-pill-line) !important; color: var(--cn-dim); }
 .cn-jump:hover, .cn-rate-box:hover > svg { color: var(--cn-fg); }
-.cn-now { flex: 1; min-width: 0; margin: 0 .5em; font-size: .9375em; font-weight: 500; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
-@container (max-width: 360px) { .cn-jump { width: 42px; } .cn-rate-box { width: 40px; } .cn-play { width: 48px; } }
+.cn-now { flex: 1; min-width: 0; margin: 0 .5em; font-size: .9375em; font-weight: 500; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
 .cn-rate-box { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 48px; height: 50px;
   padding: 3px 0; color: var(--cn-dim); cursor: pointer; }
 .cn-rate-box > svg { pointer-events: none; }
 .cn-rate { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; background: none; color: var(--cn-fg); font-size: .875em; text-align: center;
   text-align-last: center; appearance: none; cursor: pointer; }
 .cn-rate option { background: var(--raised); color: var(--fg); }
+.cn-mute { width: 44px; color: var(--cn-fg); }
+.cn-mute:disabled { color: var(--cn-dim); opacity: .5; cursor: default; }
+.cn-video .camera-mute { display: none; }  /* the pill has it */
 .cn-play { width: 56px; border-left: 1px solid var(--cn-pill-line) !important; color: var(--cn-fg); }
+/* a phone: narrower buttons leave the time its room */
+@container (max-width: 420px) { .cn-jump { width: 40px; } .cn-rate-box, .cn-mute { width: 36px; } .cn-play { width: 46px; } }
+@container (max-width: 360px) { .cn-jump { width: 36px; } .cn-rate-box, .cn-mute { width: 34px; } .cn-play { width: 42px; } }
 
 /* Files and More info open under the pill: the files pane at a height of its own, the info pane as it lays out */
 .cn-sheet { --panel: var(--cn-bg); --line: var(--cn-line); border: 1px solid var(--cn-line); border-radius: 8px; overflow: hidden; background: var(--panel);

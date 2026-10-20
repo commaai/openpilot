@@ -1,4 +1,5 @@
 {"name": "device", "url": "/", "auth": true,
+ "routes": [{"url": "(/local/athena/|athena\\.comma\\.ai/)", "rpc": "setRouteViewed", "json": {"id": 0, "jsonrpc": "2.0", "result": {"success": 1}}}],
  "steps": [
   {"waitFor": ".device-name"},
   {"shot": "devices"},

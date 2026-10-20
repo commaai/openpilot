@@ -703,6 +703,17 @@ function closeWorkspace() {
   document.body.classList.remove("in-ws");
 }
 
+// as connect: an opened route is named to its device, whose uploader sends the last 10 viewed first. Only for those
+// who can read the device, and openpilot 0.9.6 on
+async function markViewed(route) {
+  const dongle = route.fullname.split("|")[0];
+  const device = await api.device(dongle).catch(() => null);
+  const [major = 0, minor = 0, patch = 0] = (device?.openpilot_version || "").split(".").map((p) => parseInt(p) || 0);
+  if (device && major * 1e6 + minor * 1e3 + patch >= 9006) {
+    api.athena(dongle, "setRouteViewed", {route: route.fullname}).catch(() => {});
+  }
+}
+
 // the path still names the open workspace's route (or loose logs), whatever the view
 const showsWorkspace = (parts) => ws.session ? `/${parts.join("/")}/`.startsWith(`${ws.session.path}/`) : [parts.length >= 2 && routeFromPath(parts)?.name, `${parts[0]}|${parts[1]}`].includes(routeKey(ws.route));
 
@@ -778,6 +789,7 @@ async function renderPage() {
       ws = new Workspace(route, files, target.view || "connect", {t: t ?? 0, repeat});  // connect's urls name no view
       if (target.range) ws.showRange(target.range, t === null);
       rememberRoute(route);
+      markViewed(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);

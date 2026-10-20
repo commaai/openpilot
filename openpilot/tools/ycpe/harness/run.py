@@ -152,7 +152,10 @@ class Scenario:
     headers = {"access-control-allow-origin": "*", "access-control-allow-headers": "*"}
     if route.request.method == "OPTIONS":
       return route.fulfill(status=204, headers=headers)
-    body = {"json": r["json"]} if "json" in r else {"path": HERE / r["file"]} if "file" in r else {"body": r.get("body", "")}
+    # a route may answer only one method, or one athena RPC; the rest go on (to the guard)
+    if r.get("method", route.request.method) != route.request.method or r.get("rpc", athena_rpc(route.request)) != athena_rpc(route.request):
+      return route.fallback()
+    body ={"json": r["json"]} if "json" in r else {"path": HERE / r["file"]} if "file" in r else {"body": r.get("body", "")}
     route.fulfill(status=r.get("status", 200), headers=headers, **body)
 
   def run(self, base):

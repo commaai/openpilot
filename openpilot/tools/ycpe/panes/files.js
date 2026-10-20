@@ -1,7 +1,8 @@
 // files pane: a route's files per segment from the chosen source (data/sources.js), with sizes, downloads, upload
-// requests for what's still on the device, and per kind a download-all and a request-all. Rows are virtualized and
-// resolved as they scroll into view, so a 300+ segment route costs what's on screen.
-import {api} from "/api.js";
+// requests for what's still on the device, per kind a download-all and a request-all, and connect's request of all logs
+// or all files in the zoomed range. Rows are virtualized and resolved as they scroll into view, so a 300+ segment route
+// costs what's on screen.
+import {SEGMENT, api} from "/api.js";
 import {h, css} from "/dom.js";
 import {icon} from "/icons.js";
 import {fmtBytes} from "/status.js";
@@ -16,7 +17,7 @@ const COLS = Object.keys(KINDS);
 const label = (source) => SOURCES[source]?.label ?? source;
 
 export function create(ctx) {
-  const {route, perf} = ctx;
+  const {route, perf, clock} = ctx;
   const sr = parseRange(route.fullname);
   const segs = route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
   let source = routeSource.get(route.fullname);
@@ -29,13 +30,24 @@ export function create(ctx) {
 
   const picker = h("select", {class: "fp-source", title: "Where this route's files come from", onchange: (e) => pick(e.target.value)});
   const summary = h("span", {class: "fp-summary"});
+  // connect's "All logs" and "All files": what's missing of those kinds in the segments of the zoomed range
+  const inRange = (kinds) => {
+    const [r0, r1] = clock.range;
+    return segs.filter((n, i) => {
+      const slot = route.range ? i : n;  // where it plays on the timeline
+      return slot * SEGMENT < r1 && (slot + 1) * SEGMENT > r0;
+    }).flatMap((n) => kinds.map((kind) => `${n}/${kind}`));
+  };
+  const allLogs = h("button", {class: "button small", hidden: true, onclick: () => up.request(inRange(["rlog"]))});
+  const allFiles = h("button", {class: "button small", hidden: true, onclick: () => up.request(inRange(UPLOADABLE))});
+  let ranged = "";  // the range the buttons count
   const notes = h("div", {class: "fp-notes"});
   const head = h("div", {class: "fp-row fp-head"});
   const body = h("div", {class: "fp-body", style: `height: ${segs.length * ROW}px`});
   const scroller = h("div", {class: "fp-scroll", onscroll: () => { top = scroller.scrollTop; perf.invalidate(pane); }}, head, body);
   const queueTitle = h("summary", {}, "Upload queue");
   const queueEl = h("div", {class: "fp-queue-list"});
-  const el = h("div", {class: "files-pane"}, h("div", {class: "fp-bar"}, picker, summary), notes, scroller,
+  const el = h("div", {class: "files-pane"}, h("div", {class: "fp-bar"}, picker, summary, allLogs, allFiles), notes, scroller,
     h("details", {class: "fp-queue"}, queueTitle, queueEl));
   // the scroller's own size: the notes and the upload queue above and below it change it, not just the pane's. Its
   // scrollTop is kept from here and its scroll events (a reattached scroller starts at 0), as reading it in render
@@ -191,6 +203,19 @@ export function create(ctx) {
     }
   }
 
+  // the request-alls count what's missing in the range as it is
+  function updateAll() {
+    ranged = String(clock.range);
+    for (const [button, kinds, what] of [[allLogs, ["rlog"], "logs"], [allFiles, UPLOADABLE, "files"]]) {
+      const n = up?.canUpload ? up.missing(inRange(kinds)).length : 0, text = `Upload ${n} ${what}`;
+      button.hidden = !n;
+      if (button.textContent !== text) {
+        button.textContent = text;
+        button.title = `Request every missing ${kinds.map((k) => LABELS[k]).join(", ")} file of the segments in view from the device`;
+      }
+    }
+  }
+
   function render() {
     const first = Math.max(0, Math.floor(top / ROW) - OVERSCAN), last = Math.min(segs.length, Math.ceil((top + height) / ROW) + OVERSCAN);
     for (const [i, row] of rows) if (i < first || i >= last) { row.el.remove(); rows.delete(i); }
@@ -209,12 +234,14 @@ export function create(ctx) {
       if (!asked.has(segs[i])) want.push(segs[i]);
     }
     if (dirty || stale.size) updateHead();
+    if (dirty || stale.size || ranged !== String(clock.range)) updateAll();
     dirty = false;
     stale.clear();
     if (want.length && height) resolve(want);
   }
 
+  const offRange = clock.on("range", () => perf.invalidate(pane));
   const pane = {name: "files", el, render, resize() {}, save: () => ({}),
-    dispose() { alive = false; gen++; stop.abort(); sized.disconnect(); up?.dispose(); }};
+    dispose() { alive = false; gen++; stop.abort(); sized.disconnect(); up?.dispose(); offRange(); }};
   return pane;
 }

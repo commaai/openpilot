@@ -4,7 +4,8 @@
 // Once logs are loading, the onroad alert at the playhead shows over the picture, as in cabana.
 import {SEGMENT, api, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
-import {h, css} from "/dom.js";
+import {h, css, listeners} from "/dom.js";
+import {icon} from "/icons.js";
 import {onJobs} from "/local.js";
 import {status} from "/status.js";
 import {routeCameraFiles, routeCameras} from "/data/sources.js";
@@ -27,6 +28,33 @@ const HLS_SRI = "sha384-voUqi4Z0V5OBtD0Fe5jaAgsk8ZD/RDweFf6rHo9CrwrIyfJh304PNzV/
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
 const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
+const NO_AUDIO = "Enable audio recording through the \"Record and Upload Microphone Audio\" toggle on your device";
+const MUTED = "ycpe_muted";
+
+// the qcamera's sound (the device's microphone, when it records it): muted until unmuted, as connect starts, and the
+// choice is kept. Chrome won't start sound before the page's first click or key, so until then it plays muted
+export const sound = {...listeners(), muted: localStorage.getItem(MUTED) !== "0",
+  silent: () => sound.muted || !navigator.userActivation.hasBeenActive,
+  set(muted) {
+    sound.muted = muted;
+    localStorage.setItem(MUTED, muted ? "1" : "0");
+    sound.emit();
+  }};
+
+// connect's mute button; show(has) keeps it current, has being whether the video has a sound track
+export function muteButton(cls, size) {
+  let shown = "", on = false;  // on: sound is heard, as last shown (a click is what lets Chrome play it)
+  const el = h("button", {class: cls, onclick: () => sound.set(on)});
+  return {el, show(has) {
+    on = has && !sound.silent();
+    if (shown === `${has} ${on}`) return;
+    shown = `${has} ${on}`;
+    el.disabled = !has;
+    el.title = has ? "" : NO_AUDIO;
+    el.ariaLabel = on ? "Mute" : "Unmute";
+    el.replaceChildren(icon(on ? "volumeUp" : "volumeOff", size));
+  }};
+}
 
 export function create(ctx, state) {
   let camera = CAMERAS[state.camera] ? state.camera : "qcamera";
@@ -41,9 +69,16 @@ export function create(ctx, state) {
     Object.entries(CAMERAS).map(([k, label]) => h("option", {value: k}, label)));
   const alertEl = h("div", {class: "camera-alert", hidden: true});
   let alerted = "";
+  const mute = muteButton("camera-mute", 16);  // shown for a video with sound
   const el = h("div", {class: "camera-pane"});
-  const pane = {name: "camera", el, render() { source.render(); showAlert(); }, resize() {}, save: () => ({camera}), dispose,
-    stats: () => source.stats};
+  // audio: whether the video shown has a sound track
+  const pane = {name: "camera", el, audio: false, resize() {}, save: () => ({camera}), dispose, stats: () => source.stats,
+    render() {
+      source.render();
+      showAlert();
+      mute.el.hidden = !pane.audio;
+      mute.show(pane.audio);
+    }};
 
   // selfdriveState's alert at the playhead; the DOM changes only with it
   function showAlert() {
@@ -86,7 +121,8 @@ export function create(ctx, state) {
     source = src;
     ui.say(why);
     ui.absent(null);
-    el.replaceChildren(src.el, alertEl, overlay, picker, note);
+    pane.audio = false;
+    el.replaceChildren(src.el, alertEl, overlay, picker, mute.el, note);
     ctx.perf.invalidate(pane);
   }
 
@@ -109,6 +145,7 @@ export function create(ctx, state) {
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
+  offs.push(sound.on(() => ctx.perf.invalidate(pane)));
   let disposed = false;
   offs.push(ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane)))));  // its alerts
   function dispose() {
@@ -168,7 +205,7 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 function qcamera(ctx, pane, {wait, absent}) {
   const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {playsinline: true, preload: "auto", poster});
-  video.muted = true;  // the property: the attribute set after creation doesn't mute it, and only a muted video plays unasked
+  video.muted = sound.silent();  // the property: the attribute set after creation doesn't mute it, and only a muted video plays unasked
   const lanes = lane("qcamera");
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);
@@ -203,6 +240,11 @@ function qcamera(ctx, pane, {wait, absent}) {
     if (files && !files.some(Boolean)) return;
     src = ctx.route.loose || ctx.route.range ? list = playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
     hls = new Hls({maxBufferLength: 20});
+    // the codecs hls.js finds say whether there's sound, as connect reads it
+    hls.on(Hls.Events.BUFFER_CODECS, (e, data) => {
+      pane.audio = !!data.audio;
+      sound.emit();
+    });
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
     hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
     hls.on(Hls.Events.ERROR, (e, data) => {
@@ -247,6 +289,7 @@ function qcamera(ctx, pane, {wait, absent}) {
       const b = stalled && {n, text: `segment ${segmentAt(ctx.route, n)}`};
       lanes.buffering(b || null);
       wait(b);
+      if (video.muted !== sound.silent()) video.muted = sound.silent();  // sound comes on with the page's first click or key
       if (video.readyState < 1 || video.seeking) return;  // "seeked" renders again with the latest t
       const drift = video.currentTime - t;
       if (playing && rate >= MIN_RATE) {
