@@ -43,7 +43,7 @@
   {"eval": "addEventListener('click', (e) => e.preventDefault(), {once: true})"},
   {"click": ".again a"},
   {"assert": "(() => { const a = new URL(document.querySelector('.again a').href); return a.origin + a.pathname === 'https://github.com/login/oauth/authorize' && sessionStorage.getItem('ycpe_developer_auth') === '1' && sessionStorage.getItem('ycpe_return_to') === '/account' && localStorage.getItem('ycpe_last_provider') === 'github' || `${a} ${JSON.stringify(sessionStorage)}`; })()"},
-  {"eval": "window.__reqs = []; const f = window.fetch; window.fetch = (u, o = {}) => { __reqs.push({url: String(u), method: o.method || 'GET', type: o.headers?.['Content-Type'], body: o.body && String(o.body)}); return f(u, o); }"},
+  {"eval": "window.__reqs = []; const f = window.fetch; window.fetch = (u, o = {}) => { __reqs.push({url: String(u), method: o.method || 'GET', type: o.headers?.['Content-Type'], body: o.body && String(o.body)}); return f(u, o); }; true"},
   {"eval": "history.pushState(null, '', '/auth/?code=fakecode&provider=h'); dispatchEvent(new PopStateEvent('popstate'))"},
   {"waitFor": ".developer .fresh"},
   {"assert": "(() => { const r = __reqs.filter((r) => r.method !== 'GET'); return r.length === 1 && r[0].url === 'https://api.commadotai.com/v2/auth/' && r[0].method === 'POST' && r[0].type === 'application/x-www-form-urlencoded' && r[0].body === 'code=fakecode&provider=h' || JSON.stringify(r); })()"},

@@ -12,7 +12,7 @@
  ],
  "steps": [
   {"waitFor": ".device-name"},
-  {"eval": "window.__sent = []; const f = window.fetch; window.fetch = (u, o = {}) => { __sent.push([o.method || 'GET', decodeURIComponent(String(u)), o.body ?? null]); return f(u, o); }"},
+  {"eval": "window.__sent = []; const f = window.fetch; window.fetch = (u, o = {}) => { __sent.push([o.method || 'GET', decodeURIComponent(String(u)), o.body ?? null]); return f(u, o); }; true"},
   {"eval": "history.pushState(null, '', '/0123456789abcdef'); dispatchEvent(new PopStateEvent('popstate'))"},
   {"waitFor": "a.drive-row"},
   {"assert": "document.querySelector('.device-info h2 .device-name').textContent === 'comma 3X' || 'a device without an alias is named by its type'"},
