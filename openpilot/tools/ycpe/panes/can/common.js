@@ -1,7 +1,7 @@
 // what the CAN panes share: the route's store.can, following the playhead, dialogs and small formatters
 import {css, h} from "/dom.js";
 import {addrOf, busOf} from "/data/can.js";
-import {MUX, MUXED, NODE, cloneMsg, newSignal} from "/data/dbc.js";
+import {MUX, MUXED, NODE, cloneMsg, flip, newSignal} from "/data/dbc.js";
 
 await css(new URL("./can.css", import.meta.url));
 
@@ -106,6 +106,8 @@ export function updateSignal(can, k, name, props) {
   editMsg(can, k, `edit signal ${name}`, (m) => {
     const i = m.sigs.findIndex((x) => x.name === name);
     if (i < 0 || (props.name !== undefined && props.name !== name && m.sigs.some((x) => x.name === props.name))) return false;
-    m.sigs[i] = {...m.sigs[i], ...props};
+    // a new endianness keeps the signal on its bytes, as cabana's saveSignal
+    const start = props.le !== undefined && props.le !== m.sigs[i].le && props.start === undefined ? flip(m.sigs[i].start) : m.sigs[i].start;
+    m.sigs[i] = {...m.sigs[i], start, ...props};
   });
 }

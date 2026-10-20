@@ -1,11 +1,10 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
 import {h} from "/dom.js";
-import {MUX, MUXED, format, raw, value} from "/data/dbc.js";
+import {MUX, MUXED, flip, format, raw, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
 import {canOf, createSignal, hex2, removeSignal, subs, updateSignal} from "./common.js";
 
 const ROW = 22;
-const flip = (b) => 8 * (b >> 3) + 7 - (b & 7);
 // bit position <-> grid cell: row = byte, column 0 = bit 7
 const posOf = (row, col) => row * 8 + 7 - col;
 const cellOf = (pos) => [pos >> 3, 7 - (pos & 7)];

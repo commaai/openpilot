@@ -22,7 +22,8 @@ export function num(v) {
   return v.toFixed(14 - exp).replace(/\.?0+$/, "");
 }
 
-const flip = (b) => 8 * (b >> 3) + 7 - (b & 7);
+// a bit position's mirror within its byte
+export const flip = (b) => 8 * (b >> 3) + 7 - (b & 7);
 const quote = (s) => s.replaceAll('"', '\\"');
 
 function commentComplete(s) {
