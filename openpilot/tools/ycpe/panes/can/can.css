@@ -83,6 +83,9 @@
 .can-table-row:hover { background: var(--hover); }
 
 /* charts */
+.can-tabs { display: flex; align-items: center; gap: 2px; padding: 0 4px; border-bottom: 1px solid var(--line); }
+.can-tab { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+.can-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .can-charts-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-auto-rows: 200px; gap: 4px; padding: 4px; }
 .can-chart { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 4px; }
 .can-chart-bar { display: flex; align-items: center; height: 16px; padding: 0 2px 0 6px; color: var(--muted); cursor: grab; }
