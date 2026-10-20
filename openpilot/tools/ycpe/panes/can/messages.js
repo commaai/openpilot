@@ -34,13 +34,15 @@ export function create(ctx, state) {
   const redo = h("button", {class: "can-btn", title: "Redo (ctrl+shift+z)", onclick: () => can.dbcs.redo()}, "↷");
   const dbcBtn = h("button", {class: "can-btn can-dbc-btn", title: "DBC files", onclick: () => dbcDialog(can)});
   const clearBtn = h("button", {class: "can-btn", title: "Clear suppressed bytes", onclick: () => { can.suppressHighlighted(false); toolbar(); }});
-  const suppressDefined = h("input", {type: "checkbox", onchange: (e) => can.setSuppressDefined(e.target.checked)});
+  // settings live in the ⋯ menu, so the toolbar stays one row
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
-    clearBtn, h("label", {class: "can-check", title: "Don't highlight bits of defined signals"}, suppressDefined, "Suppress signals"),
-    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
-    h("button", {class: "can-btn", title: "Columns", onclick: (e) => popup(e.currentTarget, COLS.slice(1).map((c) =>
-      menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); })))}, "⋯"));
+    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
+    h("span", {class: "can-spacer"}),
+    h("button", {class: "can-btn", title: "Options", onclick: (e) => popup(e.currentTarget, [
+      menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
+      h("hr"),
+      ...COLS.slice(1).map((c) => menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); }))])}, "⋯"));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 
