@@ -47,6 +47,15 @@ test("lists the log root", async () => {
   assert.deepEqual(routes[0].segments[0].files, {"rlog.zst": FILE.length});
 });
 
+test("joins a listing sent in parts", async () => {
+  const seg = (n) => ({n, files: {"rlog.zst": 1}});
+  const routes = await new FilesChannel(channel((msg, reply) => {
+    reply({id: msg.id, routes: [{name: "a", segments: [seg(0)]}, {name: "b", segments: [seg(0)]}], more: true});
+    reply({id: msg.id, routes: [{name: "b", segments: [seg(1)]}, {name: "c", segments: [seg(0)]}]});
+  })).list();
+  assert.deepEqual(routes.map((r) => [r.name, r.segments.map((s) => s.n)]), [["a", [0]], ["b", [0, 1]], ["c", [0]]]);
+});
+
 test("reads a file into the bytes a download gives", async () => {
   const files = new FilesChannel(channel(device));
   assert.deepEqual(await files.bytes("0000010a--a51155e496--0/rlog.zst"), FILE);

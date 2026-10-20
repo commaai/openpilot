@@ -15,11 +15,15 @@ export class FilesChannel {
     channel.addEventListener("close", () => this.fail(new Error("the device closed the files channel")));
   }
 
-  // → [{name, segments: [{n, files: {name: size}}]}]
+  // → [{name, segments: [{n, files: {name: size}}]}]. A long listing comes in parts ({more: true} on all but the last),
+  // and a route can go on in the next one
   list() {
-    const id = this.nextId++;
-    return this.call(id, {id, op: "list"}, LIST_MS, "the device didn't list its files (an openpilot without the files channel?)")
-      .then((r) => r.routes);
+    const id = this.nextId++, routes = [];
+    const add = (part = []) => {
+      for (const r of part) routes.at(-1)?.name === r.name ? routes.at(-1).segments.push(...r.segments) : routes.push(r);
+    };
+    return this.call(id, {id, op: "list"}, LIST_MS, "the device didn't list its files (an openpilot without the files channel?)", {part: add})
+      .then((r) => (add(r.routes), routes));
   }
 
   // streams [offset, offset + length) of path ("<log id>--<n>/<file>"): onSize(file size), then onChunk(Uint8Array) in
@@ -104,6 +108,10 @@ export class FilesChannel {
     const entry = this.pending.get(msg.id);
     if (!entry) return;
     if (msg.error) return this.settle(msg.id, null, Object.assign(new Error(msg.error), {device: true}));
+    if (msg.more && entry.part) {
+      entry.alive();
+      return entry.part(msg.routes);
+    }
     if (!entry.chunk || msg.done) return this.settle(msg.id, msg);
     if (msg.size != null) {
       entry.alive();
