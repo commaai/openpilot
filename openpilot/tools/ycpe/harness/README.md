@@ -23,8 +23,11 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
 {name, url, viewport?: {width, height, mobile?}, auth?: true /* ~/.comma/auth.json JWT as comma_jwt */,
  cpu_throttle?: 4, timeout?: ms, slow?: true, allow?: [regex for expected errors],
  lint_ignore?: [css selectors], budgets?: {loaf_ms: 50, work_p99_ms: 8, drops: null},
- reference?: [reference names], steps: [...]}
+ reference?: [reference names], routes?: [{url: regex, json | file | body, status?}], steps: [...]}
 ```
+
+`routes` answer matching requests (the page's and its workers') with canned JSON, a file under `harness/`
+(`fixtures/`), or text, so a scenario needn't depend on what a real device has.
 
 Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by: [dx, dy], steps}}`,
 `{dragTo: [sel, sel]}` (HTML drag and drop), `{wheel: {at?, dx?, dy}}`, `{fill: [sel, text]}`, `{viewport: [w, h]}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,

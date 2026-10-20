@@ -4,6 +4,7 @@
 # ///
 """YCPE QA harness: drives scenarios/*.json in Chrome, records frame timing and UI lint, writes out/latest/report.{html,md}."""
 import argparse
+import functools
 import itertools
 import json
 import os
@@ -129,6 +130,8 @@ class Scenario:
                                    has_touch=vp.get("mobile", False), device_scale_factor=1)
     self.ctx.route(COMMA_API, self.guard)
     self.ctx.route(ATHENA, self.guard)
+    for r in sc.get("routes", []):  # registered later, so these answer before the guard
+      self.ctx.route(re.compile(r["url"]), functools.partial(self.fulfill, r))
     self.ctx.add_init_script(PROBE_JS)
     if sc.get("auth"):
       if not token:
@@ -160,6 +163,14 @@ class Scenario:
       return route.continue_()
     self.event("blocked", f"{req.method} {req.url}" + (f" {rpc}" if rpc else ""))
     route.abort("blockedbyclient")
+
+  def fulfill(self, r, route):
+    # the page's origin is localhost, so every answer allows it; a fetch with headers asks with a preflight first
+    headers = {"access-control-allow-origin": "*", "access-control-allow-headers": "*"}
+    if route.request.method == "OPTIONS":
+      return route.fulfill(status=204, headers=headers)
+    body = {"json": r["json"]} if "json" in r else {"path": HERE / r["file"]} if "file" in r else {"body": r.get("body", "")}
+    route.fulfill(status=r.get("status", 200), headers=headers, **body)
 
   def run(self, base):
     t0 = time.monotonic()
