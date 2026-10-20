@@ -58,11 +58,6 @@ chmod +x "$CONTINUE_PATH"
 
 export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
-  export PATH="$HOME/.local/bin:$PATH"
-  if ! command -v uv > /dev/null 2>&1; then
-    curl --retry 3 -LsSf https://astral.sh/uv/install.sh | sh
-  fi
-
   if [ -n "${CHESTNUT:-}" ]
   then
     ./lfs.py pull --exclude=''

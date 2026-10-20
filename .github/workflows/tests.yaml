@@ -40,7 +40,6 @@ jobs:
     - uses: actions/checkout@v7
       with:
         submodules: true
-    - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
     - name: Getting LFS files
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:

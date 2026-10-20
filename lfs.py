@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["huggingface-hub==1.7.1", "hf-xet==1.7.0"]
@@ -10,6 +10,8 @@ import concurrent.futures
 import contextlib
 import fcntl
 import hashlib
+import http.client
+import importlib.util
 import io
 import os
 from pathlib import Path
@@ -19,17 +21,25 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.error
+import urllib.request
 
 os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
 
-from huggingface_hub import HfApi
+try:
+  from huggingface_hub import HfApi
+except ImportError:
+  API = None
+else:
+  API = HfApi() if importlib.util.find_spec("hf_xet") and hasattr(HfApi, "download_bucket_files") else None
 
 POINTER_VERSION = "https://git-lfs.github.com/spec/v1"
 POINTER_RE = re.compile(rb"\Aversion " + POINTER_VERSION.encode() + rb"\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n\Z")
 BUCKET = os.environ.get("OPENPILOT_LFS_BUCKET", "commaai/openpilot-lfs")
 ZERO = "0" * 40
 TRANSFERS = 4
-API = HfApi()
+TRUE_VALUES = ("1", "ON", "YES", "TRUE")
 
 
 def git(*args, stdin=None, check=True):
@@ -138,6 +148,31 @@ def parallel(function, arguments, workers=TRANSFERS):
     return [future.result() for future in futures]
 
 
+def download_http(oid, size, path):
+  request = urllib.request.Request(f"https://huggingface.co/buckets/{BUCKET}/resolve/sha256/{oid}")
+  if os.environ.get("HF_HUB_DISABLE_IMPLICIT_TOKEN", "").upper() not in TRUE_VALUES:
+    hf_home = os.environ.get("HF_HOME", str(Path(os.environ.get("XDG_CACHE_HOME", "~/.cache")).expanduser() / "huggingface"))
+    token_path = Path(os.environ.get("HF_TOKEN_PATH", str(Path(hf_home) / "token"))).expanduser()
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    if not token and token_path.is_file():
+      token = token_path.read_text().strip()
+    if token:
+      request.add_unredirected_header("Authorization", f"Bearer {token.strip()}")
+  for attempt in range(4):
+    try:
+      with urllib.request.urlopen(request, timeout=30) as response, path.open("wb") as out:
+        shutil.copyfileobj(response, out, length=1024 * 1024)
+      if path.stat().st_size != size:
+        raise OSError(f"incomplete download for {oid}")
+      return
+    except (OSError, http.client.HTTPException) as error:
+      if isinstance(error, urllib.error.HTTPError) and error.code not in (408, 429) and not 500 <= error.code < 600:
+        raise
+      if attempt == 3:
+        raise
+      time.sleep(2 ** attempt)
+
+
 def download_one(oid, size):
   dst = object_path(oid)
   with object_lock(oid):
@@ -146,7 +181,10 @@ def download_one(oid, size):
     dst.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=f"{oid}-", dir=dst.parent) as directory:
       tmp = Path(directory) / "object"
-      API.download_bucket_files(BUCKET, [(f"sha256/{oid}", tmp)], raise_on_missing_files=True)
+      if API is not None and os.environ.get("HF_HUB_DISABLE_XET", "").upper() not in TRUE_VALUES:
+        API.download_bucket_files(BUCKET, [(f"sha256/{oid}", tmp)], raise_on_missing_files=True)
+      else:
+        download_http(oid, size, tmp)
       if tmp.stat().st_size != size or hash_file(tmp) != oid:
         raise RuntimeError(f"sha256 mismatch for {oid}")
       os.replace(tmp, dst)
@@ -290,13 +328,20 @@ def upload(objects):
 def pre_push(remote):
   if os.environ.get("GIT_LFS_SKIP_PUSH") == "1":
     return
-  updates = (line.decode().split() for line in sys.stdin.buffer)
+  input_data = sys.stdin.buffer.read()
+  updates = (line.decode().split() for line in input_data.splitlines())
   local_oids = [local_oid for _local_ref, local_oid, _remote_ref, _remote_oid in updates if local_oid != ZERO]
   if not local_oids:
     return
   output = git("rev-list", "--objects", "--no-object-names", *local_oids, "--not", f"--remotes={remote}")
   object_ids = output.decode().splitlines()
-  upload(parsed for _oid, data in cat_small(object_ids) if (parsed := parse_pointer(data)))
+  objects = [parsed for _oid, data in cat_small(object_ids) if (parsed := parse_pointer(data))]
+  if objects and API is None:
+    if not shutil.which("uv"):
+      raise RuntimeError("Install uv to upload LFS objects through Xet.")
+    subprocess.run(["uv", "run", "--script", str(Path(__file__).resolve()), "pre-push", remote], input=input_data, check=True)
+  else:
+    upload(objects)
 
 
 def main():
