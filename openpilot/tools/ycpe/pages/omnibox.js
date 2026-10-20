@@ -62,8 +62,8 @@ export async function resolve(text) {
 
 const DATE = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false});
 
-// go(path) navigates; devices() is the signed-in user's list; onMiss(text) is told when nothing matched
-export function omnibox({go, devices, onMiss}) {
+// go(path) navigates; devices() is the signed-in user's list and me() their account; onMiss(text) is told when nothing matched
+export function omnibox({go, devices, me, onMiss}) {
   // the "/" shortcut is only worth a mention with a keyboard
   const placeholder = `route, dongle id or URL${matchMedia("(pointer: coarse)").matches ? "" : "  ( / )"}`;
   const input = h("input", {type: "search", class: "omnibox", placeholder, spellcheck: false, autocomplete: "off",
@@ -73,13 +73,16 @@ export function omnibox({go, devices, onMiss}) {
   let items = [], sel = -1;
 
   const alias = (dongle) => { const d = devices()?.find((d) => d.dongle_id === dongle); return d ? fmt.deviceName(d) : dongle; };
+  // as in useradmin's search box, your own user id, email or username finds your account
+  const mine = (q, whole) => [me()?.user_id, me()?.email, me()?.username].some((s) => s && (whole ? s.toLowerCase() === q : s.toLowerCase().includes(q)));
   function suggest() {
     const q = input.value.trim().toLowerCase();
     const recent = recentRoutes().map((r) => ({path: routePath(r.name), label: `${alias(r.name.split("|")[0])} · ${DATE.format(r.start)}`,
       detail: r.name, text: `${r.name} ${alias(r.name.split("|")[0])} ${r.platform || ""}`}));
     const devs = (devices() || []).map((d) => ({path: `/${d.dongle_id}`, label: fmt.deviceName(d), detail: d.dongle_id,
       text: `${fmt.deviceName(d)} ${d.dongle_id}`}));
-    items = [...recent, ...devs].filter((i) => !q || i.text.toLowerCase().includes(q)).slice(0, 12);
+    const account = q && mine(q) ? [{path: "/account", label: "Your account", detail: me().email || me().user_id}] : [];
+    items = [...account, ...[...recent, ...devs].filter((i) => !q || i.text.toLowerCase().includes(q))].slice(0, 12);
     sel = -1;
     paint();
   }
@@ -101,10 +104,12 @@ export function omnibox({go, devices, onMiss}) {
   }
   async function enter() {
     if (sel >= 0) return open(items[sel].path);
-    const text = input.value;
+    const text = input.value, q = text.trim().toLowerCase();
+    if (!q) return open("/");  // as useradmin's empty search, which shows your account
+    if (mine(q, true)) return open("/account");
     const path = await resolve(text);
     if (path) open(path);
-    else if (text.trim()) onMiss(text);
+    else onMiss(text);
   }
 
   input.addEventListener("input", suggest);

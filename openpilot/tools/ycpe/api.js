@@ -7,6 +7,8 @@ const setting = (key) => globalThis.localStorage?.getItem(key);
 export const apiHost = () => setting("api_host") || "https://api.commadotai.com";
 // athena only answers CORS for *.comma.ai, connect previews and localhost:3000; elsewhere the daemon relays the calls
 const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
+// billing only answers CORS for *.comma.ai and localhost:3000, as athena
+const billingHost = () => setting("billing_host") || "https://billing.comma.ai";
 const ATHENA_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/localhost:3000)$/;
 const athenaRelay = () => !setting("athena_host") && daemon.has("athena") && !ATHENA_ORIGINS.test(location.origin);
 
@@ -75,7 +77,8 @@ export const auth = {
     }
   },
 
-  async exchangeCode(code, provider) {
+  // a fresh 90-day token for the code; exchangeCode also signs in with it
+  async newToken(code, provider) {
     const resp = await fetch(`${apiHost()}/v2/auth/`, {
       method: "POST",
       headers: {"Content-Type": "application/x-www-form-urlencoded"},
@@ -84,8 +87,9 @@ export const auth = {
     if (!resp.ok) throw new ApiError(resp.status, await resp.text());
     const {access_token} = await resp.json();
     if (!access_token) throw new Error("no token in the sign-in response");
-    auth.setToken(access_token);
+    return access_token;
   },
+  exchangeCode: async (code, provider) => auth.setToken(await auth.newToken(code, provider)),
 
   // a pasted developer JWT is kept only if the API accepts it
   async useToken(token) {
@@ -180,6 +184,8 @@ export const api = {
   // the owner's comma prime billing; 403 and 404 mean there's none this account can see
   primeSubscription: (dongleId) => get("v1/prime/subscription", {dongle_id: dongleId})
     .catch((e) => { if (e.status === 403 || e.status === 404) return null; throw e; }),
+  // the referral code and rewards; 403 for accounts that don't own a device eligible for them
+  referrals: () => request("GET", "v1/referrals", {host: billingHost()}),
   // signed blob urls, oldest first
   bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
   crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),
