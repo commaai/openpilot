@@ -61,8 +61,6 @@ export function create(ctx, state) {
     save: () => ({cols, charts: charts.map((c) => c.pane.save())}),
   };
   s.add(can.on("chart", (path) => { if (!charts.some((c) => c.pane.save().curves.some((x) => x.path === path))) add({curves: [curve(path)]}); }));
-  // decoded chunks arrive after the plot asked for them; setView redraws the base (until plot listens for "series")
-  s.add(can.on("series", (path) => { for (const c of charts) if (c.pane.save().curves.some((x) => x.path === path)) c.pane.setView(c.pane.view); }));
   for (const st of state.charts || []) add(st);
   layout();
   return pane;
