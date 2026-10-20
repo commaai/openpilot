@@ -59,29 +59,58 @@ let ws = null;  // the open route workspace
 
 // ---- top bar ----
 
-// a popover under anchor; clicking the anchor again, clicking elsewhere or Escape closes it. Null when it was open.
+// a popover under anchor; clicking the anchor again, clicking or focusing elsewhere or Escape closes it. Null when it
+// was open. Focus moves into it (arrows step through a menu's rows) and back to the anchor when it closes.
 function menu(anchor, build) {
   const open = document.querySelector(".popover");
-  open?.remove();
+  closePopover();
   if (open?._anchor === anchor) return null;
   const close = () => {
+    if (!el.isConnected) return;
+    const focused = el.contains(document.activeElement);
     el.remove();
+    anchor.setAttribute("aria-expanded", "false");
     document.removeEventListener("pointerdown", outside);
+    document.removeEventListener("focusin", outside);
     document.removeEventListener("keydown", escape);
+    if (focused) anchor.focus();
   };
-  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
+  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };  // a click or focus
   const escape = (e) => { if (e.key === "Escape") close(); };
   const el = h("div", {class: "popover"}, build(close));
   el._anchor = anchor;
+  el._close = close;
+  const rows = () => [...el.querySelectorAll(".menu-list > :is(button, a)")];
+  if (el.querySelector(".menu-list")) {
+    el.setAttribute("role", "menu");
+    for (const row of rows()) row.setAttribute("role", "menuitem");
+  }
+  el.addEventListener("keydown", (e) => {
+    if (el.getAttribute("role") !== "menu" || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const all = rows(), i = all.indexOf(document.activeElement);
+    all[(i + (e.key === "ArrowDown" ? 1 : all.length - 1)) % all.length]?.focus();
+  });
+  anchor.setAttribute("aria-haspopup", "true");
+  anchor.setAttribute("aria-expanded", "true");
   const r = anchor.getBoundingClientRect();
   el.style.left = `${Math.min(r.left, innerWidth - 340)}px`;
   el.style.top = `${r.bottom + 4}px`;
   document.body.append(el);
   setTimeout(() => {
     document.addEventListener("pointerdown", outside);
+    document.addEventListener("focusin", outside);
     document.addEventListener("keydown", escape);
+    el.querySelector("button, a[href], input, select")?.focus();  // once the caller has filled it
   });
   return el;
+}
+
+// the open popover, ours or a pane's (they share the class)
+function closePopover() {
+  const open = document.querySelector(".popover");
+  if (open?._close) open._close(); else open?.remove();
 }
 
 const bar = {
@@ -112,7 +141,7 @@ function topBar() {
   bar.route.addEventListener("click", () => {
     if (!ws) return;
     const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
-    pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
+    pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop._close(); ws.openRoute(name); }}).el);
   });
   const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
@@ -185,7 +214,7 @@ function layoutMenu(anchor) {
 
 function tabMenu(tabEl, i, name) {
   const layout = ws.layout;
-  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { document.querySelector(".popover")?.remove(); fn(); updateTop(); }}, label);
+  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { closePopover(); fn(); updateTop(); }}, label);
   menu(tabEl, () => h("div", {class: "menu-list"},
     item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
@@ -454,7 +483,7 @@ async function render() {
   const main = document.getElementById("main");
   const parts = location.pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(location.search);
-  document.querySelector(".popover")?.remove();
+  closePopover();
 
   if (parts[0] === "auth" || parts[0] === "login") {
     closeWorkspace();
