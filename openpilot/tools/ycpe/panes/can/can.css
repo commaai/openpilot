@@ -13,7 +13,8 @@
 .can-btn:disabled { opacity: .45; cursor: default; }
 .can-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .can-dbc-btn { max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-.can-icon { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+.can-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+.can-btn > svg { vertical-align: middle; margin-right: -3px; }
 .can-icon:hover { background: var(--active); color: var(--fg); }
 .can-check { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); white-space: nowrap; }
 .can-select, .can-filter { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
@@ -116,7 +117,7 @@
 .can-dialog.can-wide { width: 820px; }
 .can-dialog::backdrop { background: rgba(0, 0, 0, .3); }
 .can-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--line); }
-.can-x { width: 22px; height: 22px; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; }
+.can-x { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; }
 .can-dialog-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; max-height: calc(86vh - 40px); overflow: auto; }
 .can-form { display: flex; flex-direction: column; gap: 5px; }
 .can-form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

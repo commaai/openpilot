@@ -1,5 +1,6 @@
 // the selected message's signals: values at the playhead, sparklines, and the signal and message editors
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
 import {canOf, dialog, editMsg, field, removeSignal, subs, updateSignal} from "./common.js";
@@ -18,7 +19,7 @@ export function create(ctx, state) {
   const removeBtn = h("button", {class: "can-btn", title: "Remove message", onclick: () => {
     const m = msg();
     can.dbcs.edit(busOf(k()), m.address, null, `remove message ${m.name}`);
-  }}, "Remove");
+  }}, "Remove message");
   const comment = h("div", {class: "can-comment"});
   const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "can-spacer"}), count, sparkSel, filterBox, editBtn, removeBtn, comment);
   const list = h("div", {class: "can-sig-list"});
@@ -70,7 +71,7 @@ export function create(ctx, state) {
           onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
           swatch, name, spark, v,
           h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈"),
-          h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, "✕")),
+          h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, icon("close", 12))),
         ed);
       row.draggable = true;
       row.addEventListener("dragstart", (e) => e.dataTransfer.setData("application/x-ycpe-paths", JSON.stringify([path(sg)])));

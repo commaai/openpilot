@@ -1,5 +1,6 @@
 // what the CAN panes share: the route's store.can, following the playhead, dialogs and small formatters
 import {css, h} from "/dom.js";
+import {icon} from "/icons.js";
 import {addrOf, busOf} from "/data/can.js";
 import {MUX, MUXED, NODE, cloneMsg, flip, newSignal} from "/data/dbc.js";
 
@@ -33,7 +34,7 @@ export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
 // a modal dialog; close() removes it
 export function dialog(title, ...body) {
   const el = h("dialog", {class: "can-dialog", onclose: () => el.remove()},
-    h("div", {class: "can-dialog-head"}, h("b", {}, title), h("button", {class: "can-x", title: "Close", onclick: () => el.close()}, "×")),
+    h("div", {class: "can-dialog-head"}, h("b", {}, title), h("button", {class: "can-x", title: "Close", onclick: () => el.close()}, icon("close", 14))),
     h("div", {class: "can-dialog-body"}, body));
   document.body.append(el);
   el.showModal();

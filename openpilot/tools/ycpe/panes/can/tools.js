@@ -63,7 +63,7 @@ export function dbcDialog(can) {
       h("button", {class: "can-btn", onclick: () => save(can, f, true).catch(fail)}, "Save as"),
       localSave(f),
       h("button", {class: "can-btn", onclick: (e) => can.serialize(f).then((text) => navigator.clipboard.writeText(text)).then(() => { e.target.textContent = "Copied"; }, fail)}, "Copy"),
-      h("button", {class: "can-btn", onclick: () => { if (discard([f])) { can.dbcs.close(f); d.close(); } }}, "Close")))));
+      h("button", {class: "can-btn", title: "Stop decoding with this DBC", onclick: () => { if (discard([f])) { can.dbcs.close(f); d.close(); } }}, "Unload")))));
 
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),

@@ -2,6 +2,7 @@
 // dropping signals on a chart adds them, and dragging a chart's handle onto another merges the two. Only the open
 // tab has live plots. Charts show the shared view range, or, as cabana, a window that pages along with the playhead.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {create as plot} from "/panes/plot/plot.js";
 import {PATHS_MIME} from "/panes/plot/view.js";
 import {canOf, dialog, subs} from "./common.js";
@@ -49,7 +50,7 @@ export function create(ctx, state) {
       "⠿", h("span", {class: "can-spacer"}),
       h("button", {class: "can-icon", title: "Add or remove signals", onclick: () => picker((p) => replace(c, {...c.pane.save(), curves: p.map(curve)}), paths())}, "±"),
       h("button", {class: "can-icon", title: "Split into one chart per signal", onclick: () => split(c)}, "⫼"),
-      h("button", {class: "can-icon", title: "Close", onclick: () => remove(c)}, "✕")), c.box);
+      h("button", {class: "can-icon", title: "Remove chart", onclick: () => remove(c)}, icon("close", 12))), c.box);
     // dropped back onto itself: nothing to merge
     c.el.addEventListener("drop", (e) => { if (dragging === c) { e.stopPropagation(); dragging = null; } }, true);
     charts.push(c);
@@ -105,7 +106,7 @@ export function create(ctx, state) {
     const count = (t, i) => (i === active ? charts : t.charts).length;
     tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`, onclick: () => i !== active && open(i)},
       `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, `· ${count(t, i)}`),
-      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, "✕"))),
+      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, icon("close", 12)))),
       h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, "+"));
   }
 
