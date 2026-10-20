@@ -14,7 +14,7 @@
  ],
  "allow": ["404 GET .*/v1/prime/subscription"],
  "steps": [
-  {"waitFor": ".device-actions .clips-device:not([hidden])"},
+  {"waitFor": ".cn-info-btns .clips-device:not([hidden])"},
   {"eval": "import('/harness/fixtures/fake-clips.js').then((m) => m.install({clips: [{route: '00000003--cccccccccc', camera: 'fcamera.hevc', source_start_time: 60, source_end_time: 90, bitrate: 5, speedup: 1, filename: 'merge.mp4', requested_at: 1792430100.5, status: 'ready', size: 28696}, {route: '00000002--bbbbbbbbbb', camera: 'ecamera.hevc', source_start_time: 0, source_end_time: 600, bitrate: 12, speedup: 10, filename: 'commute_10x.mp4', requested_at: 1792420000, status: 'ready', size: 9437184}, {route: '00000001--aaaaaaaaaa', camera: 'fcamera.hevc', source_start_time: 0, source_end_time: 30, bitrate: 5, speedup: 1, filename: 'new.mp4', requested_at: 1792430500, status: 'encoding'}]}))"},
   {"click": ".clips-device"},
   {"waitFor": ".clips-menu.um[open] .clips-clip"},

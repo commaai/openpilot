@@ -568,10 +568,13 @@ class Workspace {
     }
   }
 
-  // a connect time range: only it in view, the playhead at its start (or where the URL's t put it)
+  // a connect time range: only it in view, the playhead at its start (or where the URL's t put it). User mode loops
+  // it, as connect does the range its URL opens
   showRange([t0, t1], seek = true) {
     if (seek) this.clock.seek(t0);
     this.clock.setRange(t0, t1);
+    const [r0, r1] = this.clock.range;  // as clamped
+    if (this.user && (r0 > 0 || r1 < this.clock.duration)) this.clock.setLoop([r0, r1]);
   }
 
   openRoute(name) {
