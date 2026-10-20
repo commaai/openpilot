@@ -471,9 +471,18 @@ export class Store {
     return {t, min, max};
   }
 
-  // the last value at or before t; an index of a skipped long list isn't loaded for it
+  // the last value at or before t; an index of a skipped long list isn't loaded for it. A log's column unpacks
+  // only the chunks from t's segment back to the value
   valueAt(path, t) {
-    if (!this.entries.has(path) && this.listOf(path)) return undefined;
+    const e = this.entries.get(path);
+    if (e?.at.length) {
+      for (let n = Math.min(this.segmentAt(t)?.n, e.at.length - 1); n >= 0; n--) {
+        const c = e.at[n] && this.chunk(path, n), v = c && lastValue(c, t);
+        if (v !== undefined) return v;
+      }
+      return undefined;
+    }
+    if (!e && this.listOf(path)) return undefined;
     const s = this.series(path);
     if (!s) return undefined;
     const {chunks} = s;
@@ -483,8 +492,8 @@ export class Store {
       if (chunks[mid].tt[0] <= t) lo = mid + 1; else hi = mid;
     }
     for (let j = lo - 1; j >= 0; j--) {
-      const {tt, v} = chunks[j];
-      for (let k = upperBound(tt, t) - 1; k >= 0; k--) if (v[k] === v[k] && v[k] !== null) return v[k];
+      const v = lastValue(chunks[j], t);
+      if (v !== undefined) return v;
     }
     return undefined;
   }
@@ -666,6 +675,12 @@ function pyramid(c) {
     size = FANOUT;
   }
   return (c.pyramid = levels);
+}
+
+// a chunk's last value at or before t
+function lastValue({tt, v}, t) {
+  for (let k = upperBound(tt, t) - 1; k >= 0; k--) if (v[k] === v[k] && v[k] !== null) return v[k];
+  return undefined;
 }
 
 // the chunks overlapping [t0, t1], found by binary search: chunks follow each other in time
