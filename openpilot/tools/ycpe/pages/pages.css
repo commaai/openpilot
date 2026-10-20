@@ -33,6 +33,7 @@
 .recent h3 { margin-top: 0; }
 .home { max-width: 420px; margin: 14vh auto; padding: 0 16px; text-align: center; }
 .home h2 { margin: 0 0 6px; font-size: 20px; }
+.local-entry { margin: 14px 0; text-align: center; }
 
 /* omnibox dropdown */
 .omni { position: relative; display: inline-flex; flex-shrink: 1; min-width: 80px; }
