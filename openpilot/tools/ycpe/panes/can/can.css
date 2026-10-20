@@ -12,7 +12,7 @@
 .can-btn:hover:not(:disabled) { border-color: var(--accent); }
 .can-btn:disabled { opacity: .45; cursor: default; }
 .can-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
-.can-dbc-btn { max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.can-dbc-btn { min-width: 7ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .can-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
 .can-btn > svg { vertical-align: middle; margin-right: -3px; }
 .can-icon:hover { background: var(--active); color: var(--fg); }
@@ -27,14 +27,14 @@
 
 /* messages */
 /* the DBC chip gives up its width before the toolbar wraps */
-.can-messages .can-dbc-btn { flex: 1 1 40px; max-width: max-content; }
+.can-messages .can-dbc-btn { flex: 1 1 7ch; max-width: calc-size(max-content, min(size, 24ch)); }
 .can-msg-table { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .can-msg-head, .can-msg-filters, .can-msg-row { display: flex; padding: 0 4px; }
 .can-msg-head { height: 20px; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
 .can-msg-filters { padding-bottom: 3px; border-bottom: 1px solid var(--line); gap: 2px; }
 .can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
-.can-col-name { flex: 1 1 100px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { width: 64px; }
+.can-col-name { flex: 1 1 140px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
 .can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { width: 158px; }
 /* narrow panes drop node and count, then bus and freq, then the bytes */
 .can-messages { container-type: inline-size; }
