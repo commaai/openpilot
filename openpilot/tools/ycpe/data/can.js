@@ -600,7 +600,7 @@ export class Can {
   // opendbc's DBC names and the fingerprint → DBC map
   async opendbc() {
     this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
-    const [{fingerprints}, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
+    const [fingerprints, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
     return {fingerprints, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
   }
 
