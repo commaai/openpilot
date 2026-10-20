@@ -22,6 +22,7 @@ small local server that does what a browser can't on its own.
 | `--device-key FILE` | `$YCPE_DEVICE_KEY` | The ssh key for the device. |
 | `--data-dir DIR` | | A folder of route segments on disk (`<log id>--<n>/rlog.zst`, as on a device). It can be repeated. |
 | `--repo DIR` | | An openpilot checkout. Defaults to the one `serve.py` is in. |
+| `--webrtcd-port N` | 5001 | The port of this PC's webrtcd, for live data at `/live/local`. |
 
 What the daemon unlocks in the UI:
 
@@ -32,7 +33,8 @@ What the daemon unlocks in the UI:
 | `cache` | One disk cache shared with cabana, jotpluggler, replay and LogReader, so a route downloaded by any of them loads instantly in all of them. The badge panel can cache a whole route ahead of time (logs or video) and evict it. Progress shows in the loading pill. |
 | `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
-| `athena` | Relays the page's device calls (upload queue, upload requests) to athena on ports athena doesn't allow. |
+| `athena` | Relays the page's device calls (upload queue, upload requests, live streams) to athena on ports athena doesn't allow. |
+| `webrtc` | Live data from a webrtcd on this PC (openpilot, a sim, replay) at `/live/local`: it passes the page's offer on. |
 | `jobs` | Progress and cancel for anything long, shown in the badge panel. |
 | `transcode`, `replay` | Video transcoding and openpilot re-runs, when installed (see their modules). |
 
@@ -133,6 +135,7 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp\|dbc, file, path, deleted}`, from polling mtimes once a second. |
 | `GET /local/device` / `POST /local/device` | `{host, root}`. POST takes `{host, key?}` and sets the device until restart. The host is `[user@]host` and the user defaults to `comma`. It's validated so it can never be an ssh option. |
 | `GET /local/device/routes` | `{dongle, host, routes: [{route, log_id, segments: {n: {file: size}}, mtime, active: [n]}]}`, newest first. It comes from one `find` over ssh. |
+| `POST /local/webrtc/stream` | Body: webrtcd's stream request (`{sdp, cameras, enabled, ...}`). Forwards it to `127.0.0.1:<--webrtcd-port>/stream`, and nowhere else, and returns webrtcd's answer. |
 | `POST /local/device/pull` | Body `{route (or a bare log_id), segs?, kinds? (default rlog, qlog)}`. Starts a `pull` job that copies with `ssh cat` into `ycpe/device/...` in the shared cache; the `device` source serves from there. Segments still recording (with a `.lock`) are skipped. |
 
 The daemon never runs anything on a device except `cat` and `find`.

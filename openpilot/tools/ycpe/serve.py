@@ -33,6 +33,7 @@ def main():
   p.add_argument("--repo", action="append", default=[], help="openpilot checkout (default: this one)")
   p.add_argument("--device", default=os.environ.get("YCPE_DEVICE"), help="[user@]host of a comma device on the LAN")
   p.add_argument("--device-key", default=os.environ.get("YCPE_DEVICE_KEY"), help="ssh key for the device")
+  p.add_argument("--webrtcd-port", type=int, default=5001, help="port of this PC's webrtcd, for live data at /live/local")
   p.add_argument("--device-root", help=argparse.SUPPRESS)  # a stand-in realdata directory, for testing over ssh localhost
   args = p.parse_args()
 
@@ -54,6 +55,7 @@ def main():
     config.log_roots = [Paths.log_root(), *args.data_dir]
     config.repo_roots = args.repo or [str(ROOT.parents[2])]
     config.device, config.device_key, config.device_root = args.device, args.device_key, args.device_root
+    config.webrtcd_port = args.webrtcd_port
     server = make_server(args.port)
   print(f"http://localhost:{args.port}/" + ("" if args.static else "  (with the local daemon)"))
   try:
