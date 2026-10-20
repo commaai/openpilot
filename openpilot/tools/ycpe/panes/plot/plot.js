@@ -187,6 +187,10 @@ export function create(ctx, state = {}) {
     const g = gBase, [t0, t1] = xRange();
     const px = L, pw = W - L - R, ph0 = H - T - B;
     if (pw < 4 || ph0 < 4) return;
+    if (!st.curves.length) {  // the empty state is just the hint
+      frame = null;
+      return g.clearRect(0, 0, W, H);
+    }
     const p = prepare(t0, t1, pw);
     const stripH = p.blockMode ? ph0 / Math.max(1, p.rows.length) : Math.min(STRIP, ph0 / 4 / Math.max(1, p.rows.length));
     const py = T + (p.blockMode ? ph0 : p.rows.length * stripH), ph = T + ph0 - py;
@@ -292,12 +296,12 @@ export function create(ctx, state = {}) {
   function rebuildLegend() {
     rows = st.curves.map((c, k) => {
       const val = h("span", {class: "val"});
-      const row = h("div", {class: `row ${c.hidden ? "off" : ""}`, title: c.error || "",
+      const row = h("div", {class: `row ${c.hidden ? "off" : ""}`, title: c.error || label(c),
         onpointerenter: () => { st.hl = k; invalidate(); },
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
       h("i", {class: c.dash ? "dash" : "", style: `color:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
-      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, label(c)),
+      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, h("bdi", {}, label(c))),
       val,
       h("b", {class: "x", title: "remove", onclick: () => removeCurve(c)}, "×"));
       row.val = val;
@@ -359,7 +363,7 @@ export function create(ctx, state = {}) {
       const s = store.series(c.transform ? derivedPath(c.path, c.transform) : c.path);
       let v = s ? store.valueAt(s.path ?? c.path, tt - (c.shift || 0)) : undefined;
       if (typeof v === "number" && s.type !== "e") v = v * (c.scale ?? 1) + (c.offset ?? 0);
-      const text = fmtValue(v, s?.names);
+      const text = fmtValue(v, s?.names).slice(0, 100);
       if (row.val.textContent !== text) row.val.textContent = text;
     });
     if (st.stats) updateStats();
@@ -557,6 +561,7 @@ export function create(ctx, state = {}) {
     H = hgt;
     gBase = fitCanvas(base, W, H);
     gOver = fitCanvas(over, W, H);
+    el.classList.toggle("narrow", W < 260);  // legend names only
     invalidate();
   }
 

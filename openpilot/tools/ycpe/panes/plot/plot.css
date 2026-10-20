@@ -6,15 +6,20 @@
 .plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
 .plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
 
-.plot-pane .legend { position: absolute; top: 8px; right: 12px; max-width: 70%; max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
+.plot-pane .legend { position: absolute; top: 8px; right: 12px; max-width: min(70%, 440px); max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
   border: 1px solid var(--line); border-radius: 4px; background: color-mix(in srgb, var(--raised) 88%, transparent); font: 11px var(--mono); }
 .plot-pane .legend .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; align-items: center; gap: 6px; padding: 0 4px 0 6px; line-height: 17px; }
 .plot-pane .legend .row:hover { background: var(--hover); }
 .plot-pane .legend .row.off { opacity: .45; }
 .plot-pane .legend i { width: 10px; height: 3px; border-radius: 2px; background: currentColor; cursor: pointer; }
 .plot-pane .legend i.dash { border-radius: 0; background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 6px); }
-.plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-.plot-pane .legend .val { min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
+/* a long path loses its head, not its field name: the text runs right to left inside an ltr isolate */
+.plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; cursor: pointer; }
+/* a narrow pane keeps its y labels: the legend stays right of the gutter, with names only */
+.plot-pane.narrow .legend { max-width: calc(100% - 70px); }
+.plot-pane.narrow .legend .row { grid-template-columns: 10px minmax(0, 1fr) 14px; }
+.plot-pane.narrow .legend .val { display: none; }
+.plot-pane .legend .val { min-width: 5ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .plot-pane .legend .x { visibility: hidden; color: var(--muted); font-weight: 400; text-align: center; cursor: pointer; }
 .plot-pane .legend .row:hover .x { visibility: visible; }
 .plot-pane .legend .x:hover { color: var(--fg); }
@@ -37,7 +42,7 @@
 .browser .filter { flex: 1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
 .browser .filter:focus { border-color: var(--accent); }
 .browser label { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
-.browser .count { min-width: 3ch; text-align: right; font: 11px var(--mono); }
+.browser .count { min-width: 5ch; text-align: right; font: 11px var(--mono); }
 .browser .scroller { position: relative; flex: 1; min-height: 0; overflow: auto; }
 .browser .window { position: absolute; left: 0; right: 0; top: 0; }
 .browser .row { display: flex; align-items: center; height: 18px; padding-right: 6px; font: 11px var(--mono); white-space: nowrap; cursor: default; }
@@ -45,7 +50,7 @@
 .browser .row.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .browser .twisty { flex-shrink: 0; width: 12px; color: var(--muted); }
 .browser .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.browser .val { flex-shrink: 0; max-width: 45%; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
+.browser .val { flex-shrink: 0; max-width: 45%; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* custom series console */
 .plot-popup.plot-console { width: 460px; max-width: calc(100vw - 8px); max-height: calc(100vh - 8px); }

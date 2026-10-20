@@ -159,7 +159,7 @@ export function create(ctx, state = {}) {
       if (name.textContent !== node.name) name.textContent = node.name;
       const m = node.meta;
       r.title = m ? `${m.path}\n${m.type}${m.names ? `\n${m.names.map((s, i) => `${i} ${s}`).join("\n")}` : ""}` : node.path;
-      const text = m ? fmtValue(store.valueAt(m.path, clock.t), m.names) : "";
+      const text = m ? fmtValue(store.valueAt(m.path, clock.t), m.names).slice(0, 200) : "";  // long text only needs what shows
       if (val.textContent !== text) val.textContent = text;
     }
   }

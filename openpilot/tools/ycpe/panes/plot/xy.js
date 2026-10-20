@@ -30,7 +30,7 @@ export function create(ctx, state = {}) {
   ].filter(Boolean);
 
   const inputs = (c) => st.mode === "fft" ? [c.path] : [c.x, c.y];
-  const name = (c) => st.mode === "fft" ? c.path : `${c.y} vs ${c.x}`;
+  const name = (c) => st.mode === "fft" ? c.path.slice(1) : `${c.y.slice(1)} vs ${c.x.slice(1)}`;
 
   // one request in flight; a change while busy asks again when it lands
   function refresh() {
@@ -61,7 +61,7 @@ export function create(ctx, state = {}) {
 
   function rebuild() {
     legend.replaceChildren(...st.curves.map((c) => h("div", {class: "row"},
-      h("i", {style: `background:${c.color}`}), h("span", {class: "name", title: name(c)}, name(c)), h("span"),
+      h("i", {style: `background:${c.color}`}), h("span", {class: "name", title: name(c)}, h("bdi", {}, name(c))), h("span"),
       h("b", {class: "x", title: "remove", onclick: () => { st.curves.splice(st.curves.indexOf(c), 1); rebuild(); refresh(); }}, "×"))));
     legend.hidden = !st.curves.length;
     hint.hidden = st.curves.length && !pendingX;

@@ -212,9 +212,13 @@ export function axes(g, col, r, xt, X, fmtX, yt, Y) {
   g.fillStyle = col.text;
   g.textAlign = "center";
   g.textBaseline = "top";
+  // labels kept inside the pane; one that would touch the previous one is skipped
+  let end = -Infinity;
   for (const v of xt.values) {
-    const s = fmtX(v), w = g.measureText(s).width / 2;
-    g.fillText(s, Math.min(X(v), r.x + r.w + 6 - w), r.y + r.h + 5);
+    const s = fmtX(v), w = g.measureText(s).width / 2, x = Math.min(X(v), r.x + r.w + 6 - w);
+    if (x - w < end + 8) continue;
+    g.fillText(s, x, r.y + r.h + 5);
+    end = x + w;
   }
   g.textAlign = "right";
   g.textBaseline = "middle";
