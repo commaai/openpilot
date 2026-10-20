@@ -8,8 +8,12 @@ import {h, css, ask, fmt} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {isOnline, link} from "/app.js";
+import {userMode, cnIcon, cnModal, progress, linear} from "/pages/cnui.js";
 
 await css(new URL("./clips.css", import.meta.url));
+
+// an icon: connect's own in user mode (its name and size there), the theme's elsewhere
+const ic = (name, size, cnName = name, cnSize = size) => userMode() ? cnIcon(cnName, cnSize) : icon(name, size);
 
 const MAX_DURATION = 30 * 60, POLL = 1000;
 const CHUNKS = 3;  // chunk requests in flight at once
@@ -156,12 +160,12 @@ async function viewer(clip, blob, wanted) {
   const video = h("video", {src: url, controls: true, muted: true, playsinline: true, preload: "auto"});
   await new Promise((done) => { video.onloadeddata = video.onerror = done; setTimeout(done, 2000); });
   if (!wanted()) return URL.revokeObjectURL(url);
-  const el = h("dialog", {class: "clips-viewer", autofocus: true, onclose: () => { el.remove(); URL.revokeObjectURL(url); }},
+  const el = h("dialog", {class: `clips-viewer${userMode() ? " um" : ""}`, autofocus: true, onclose: () => { el.remove(); URL.revokeObjectURL(url); }},
     h("div", {class: "clips-viewer-head"},
       h("div", {class: "clips-viewer-title"}, h("b", {}, clipTitle(clip)),
         h("div", {class: "clips-meta"}, [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · "))),
-      h("button", {class: "clips-icon", title: "Download clip", "aria-label": "Download clip", onclick: () => save(blob, clip)}, icon("download", 24)),
-      h("button", {class: "clips-icon", title: "Close", "aria-label": "Close video", onclick: () => el.close()}, icon("close", 24))),
+      h("button", {class: "clips-icon", title: "Download clip", "aria-label": "Download clip", onclick: () => save(blob, clip)}, ic("download", 24)),
+      h("button", {class: "clips-icon", title: "Close", "aria-label": "Close video", onclick: () => el.close()}, ic("close", 24, "closeBold"))),
     video);
   el.addEventListener("click", (e) => { if (e.target === el) el.close(); });
   document.body.append(el);
@@ -183,9 +187,9 @@ function segmented(options, pick) {
 // a modal under its button, the button's top right corner its own, as connect's menu; full screen on a phone when it
 // creates. range() is the drive's selected range in route seconds
 function clipMenu(anchor, device, route = null, range = null) {
-  const dongle = device.dongle_id, online = isOnline(device), here = routeName(route);
+  const dongle = device.dongle_id, online = isOnline(device), here = routeName(route), um = userMode();
   const s = {clips: [], camera: "fcamera.hevc", bitrate: 5, speedup: 1, ranges: null, loading: online, creating: false, error: null,
-    autoOpen: null, downloaded: new Set(), previewing: null, progress: 0};
+    autoOpen: null, downloaded: new Set(), previewing: null, progress: 0, starts: new Map()};  // starts: the device's recent drives' start times (user mode)
   let poll = null, request = 0;  // request: the preview being downloaded, so a stale one doesn't open
   const changed = () => perf.invalidate(view);
 
@@ -200,9 +204,9 @@ function clipMenu(anchor, device, route = null, range = null) {
   const tooLong = h("p", {class: "clips-error"}, "Choose a range of 30 minutes or less.");
   const createBtn = h("button", {class: "clips-create", onclick: () => create()});
   const error = h("p", {class: "clips-error"}), list = h("div", {class: "clips-list"});
-  const close = h("button", {class: "clips-icon clips-close", title: "Close", "aria-label": "Close clip menu", onclick: () => menu.close()}, icon("close", 24));
+  const close = h("button", {class: "clips-icon clips-close", title: "Close", "aria-label": "Close clip menu", onclick: () => menu.close()}, ic("close", 24, "closeBold"));
 
-  const menu = h("dialog", {class: `clips-menu${route ? " creating" : ""}`, autofocus: true, "aria-label": route ? "Create a clip" : "Clips", onclose: () => {
+  const menu = h("dialog", {class: `clips-menu${route ? " creating" : ""}${um ? " um" : ""}`, autofocus: true, "aria-label": route ? "Create a clip" : "Clips", onclose: () => {
     clearTimeout(poll);
     request++;
     anchor.style.anchorName = "";
@@ -220,7 +224,7 @@ function clipMenu(anchor, device, route = null, range = null) {
     h("div", {class: "clips-section"},
       h("div", {class: "clips-section-head"}, "CLIPS ON THIS DEVICE",
         h("span", {class: "clips-info", tabindex: 0, title: "Clips are stored on your device and may be cleared to make room for more recent driving footage.",
-          "aria-label": "Clips are stored on your device and may be cleared to make room for more recent driving footage."}, icon("info", 16))),
+          "aria-label": "Clips are stored on your device and may be cleared to make room for more recent driving footage."}, ic("info", 16, "info", 18))),
       error, list)));
   menu.addEventListener("click", (e) => { if (e.target === menu) menu.close(); });  // the backdrop
 
@@ -280,10 +284,29 @@ function clipMenu(anchor, device, route = null, range = null) {
       await api.athena(dongle, "deleteClip", {filename: clip.filename});
       if (clip.filename === s.autoOpen) s.autoOpen = null;
       await load(false);
+      return true;
     } catch (e) {
       s.error = e.message || "Could not remove clip";
       changed();
+      return false;
     }
+  }
+
+  // connect's delete confirmation: it stays, its Delete spinning, until the device has deleted it
+  function confirmDelete(clip) {
+    let busy = false;
+    const {el, paper} = cnModal("Delete clip?", "clips-delete", () => {}, () => busy);
+    const cancel = h("button", {class: "cnui-btn", onclick: () => el.close()}, "Cancel");
+    const del = h("button", {class: "cnui-btn clips-delete-btn", onclick: async () => {
+      busy = cancel.disabled = del.disabled = true;
+      del.replaceChildren(progress(18));
+      const ok = await remove(clip);
+      busy = cancel.disabled = del.disabled = false;
+      if (ok) el.close();
+      else del.textContent = "Delete";
+    }}, "Delete");
+    paper.append(h("h2", {}, "Delete clip?"), h("p", {}, `${stem(clip.filename || "") || "this clip"} will be permanently deleted from your comma device.`),
+      h("div", {class: "clips-delete-actions"}, cancel, del));
   }
 
   // downloaded with its progress under it, then played
@@ -310,7 +333,9 @@ function clipMenu(anchor, device, route = null, range = null) {
   function row(clip) {
     const ready = clip.status === "ready", active = ACTIVE.has(clip.status), previewing = s.previewing === clip.filename;
     const downloaded = s.downloaded.has(clip.filename), path = `/${dongle}/${clip.route}`;
-    const where = clip.route === here ? "This route"
+    // (user mode as connect: when its drive started, if it's one of the device's recent ones, in words)
+    const start = um && s.starts.get(clip.route);
+    const where = clip.route === here ? "This route" : um ? (start ? new Date(start).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}) : clip.route)
       : h("a", {href: path, onclick: (e) => { menu.close(); link(path)(e); }}, clip.route);
     const play = downloaded ? "Play clip" : "Download clip", drop = active ? "Cancel clip" : "Delete clip";
     return h("div", {class: "clips-clip", "data-clip": clip.filename, "data-status": clip.status},
@@ -321,13 +346,14 @@ function clipMenu(anchor, device, route = null, range = null) {
           h("div", {class: "clips-meta"}, [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · "))),
         h("div", {class: "clips-actions"},
           ready && h("button", {class: "clips-icon", "data-focus": `play ${clip.filename}`, "aria-label": play, title: previewing ? "Downloading" : play,
-            disabled: previewing, onclick: () => preview(clip)}, icon(downloaded ? "play" : "download", 24)),
+            disabled: previewing, onclick: () => preview(clip)}, downloaded ? ic("play", 24, "play", 27) : ic("download", 24)),
           active && h("span", {class: "clips-meta"}, clip.status === "encoding" ? "Encoding" : "Queued"),
           h("button", {class: "clips-icon", "data-focus": `drop ${clip.filename}`, "aria-label": drop, title: drop, onclick: async () => {
+            if (um && !active) return confirmDelete(clip);
             if (active || await ask([h("b", {}, "Delete clip?"), h("br"), `${clipTitle(clip)} will be permanently deleted from your comma device.`], "Delete")) remove(clip);
-          }}, icon(active ? "close" : "trash", 22)))),
-      clip.status === "encoding" && h("div", {class: "clips-bar busy"}),
-      previewing && [h("div", {class: "clips-bar", style: `--p: ${s.progress}`}),
+          }}, active ? ic("close", 22, "closeBold", 24) : ic("trash", 22, "trash", 24)))),
+      clip.status === "encoding" && (um ? linear() : h("div", {class: "clips-bar busy"})),
+      previewing && [um ? linear(s.progress) : h("div", {class: "clips-bar", style: `--p: ${s.progress}`}),
         h("div", {class: "clips-transfer"}, `Downloading · ${Math.round(s.progress * 100)}%`)]);
   }
 
@@ -348,17 +374,24 @@ function clipMenu(anchor, device, route = null, range = null) {
       const busy = s.clips.some((c) => ACTIVE.has(c.status));
       createBtn.disabled = !online || s.loading || s.creating || busy || duration <= 0 || duration > MAX_DURATION || !validName(name.value)
         || (s.ranges && !covers(s.ranges, s.camera, t0, t1));
-      createBtn.replaceChildren(s.creating ? h("span", {class: "spinner"}) : !online ? "Device offline" : busy ? "Clip in progress" : "Create clip");
+      createBtn.replaceChildren(s.creating ? (um ? progress(18) : h("span", {class: "spinner"})) : !online ? "Device offline" : busy ? "Clip in progress" : "Create clip");
     }
     error.textContent = s.error || "";
     error.hidden = !s.error;
     // rebuilt, focus kept on the same control
     const focus = list.contains(document.activeElement) && document.activeElement.dataset.focus;
-    list.replaceChildren(...s.loading ? [h("div", {class: "clips-empty"}, h("span", {class: "spinner"}))]
+    list.replaceChildren(...s.loading ? [h("div", {class: "clips-empty"}, um ? progress(18) : h("span", {class: "spinner"}))]
       : !s.clips.length ? [h("p", {class: "clips-empty"}, online ? "No clips yet" : "Device offline")] : s.clips.map(row));
     if (focus) [...list.querySelectorAll("[data-focus]")].find((b) => b.dataset.focus === focus)?.focus();
   }};
 
+  // connect names a clip's drive by its start, for the drives its device page has (the same first page device.js asks for)
+  if (um) {
+    api.routes(dongle, undefined, Math.ceil(Date.now() / 3600e3) * 3600e3, 50).then((routes) => {
+      for (const r of routes) s.starts.set(routeName(r), r.start_time_utc_millis);
+      changed();
+    }, () => {});
+  }
   anchor.style.anchorName = "--clips";
   document.body.append(menu);
   view.render();
@@ -386,7 +419,7 @@ export function clipButton({route, clock}) {
 export function deviceClips(device) {
   const online = isOnline(device);
   const b = h("button", {class: "icon-btn clips-device", hidden: true, title: online ? "Clips" : "Device offline", "aria-label": "Clips",
-    "aria-haspopup": "dialog", disabled: !online, onclick: () => clipMenu(b, device)}, icon("cut", 16));
+    "aria-haspopup": "dialog", disabled: !online, onclick: () => clipMenu(b, device)}, ic("cut", 16, "cut", 24));
   supportsClips(device).then((ok) => { b.hidden = !ok; }, () => {});
   return b;
 }
