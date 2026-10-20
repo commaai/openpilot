@@ -309,29 +309,22 @@ def get_scons_nodes(nodes):
     if node in seen:
       continue
     seen.add(node)
-    executor = node.get_executor()
-    if executor is not None:
-      stack += executor.get_all_prerequisites()
-      for target in executor.get_all_targets():
-        # Only scan directories here; generated sources must be scanned after they are built.
-        stack += target.children(scan=isinstance(target, SCons.Node.FS.Dir))
+    # Only scan directories; generated sources are not ready yet.
+    stack += (node.prerequisites or []) + node.children(scan=isinstance(node, SCons.Node.FS.Dir))
 
   return seen
 
 progress_interval = 5
-progress_count = 0
 progress_nodes = get_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry))
 progress_total = max(1, len(progress_nodes))
 
 def progress_function(node):
-  global progress_count
   if node not in progress_nodes:
     return
   progress_nodes.remove(node)
-  progress_count += 1
-  if progress_count % progress_interval and progress_nodes:
+  if len(progress_nodes) % progress_interval:
     return
-  progress = round(100. * progress_count / progress_total, 1)
+  progress = round(100. * (1 - len(progress_nodes) / progress_total), 1)
   sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
   if progress == 100. and sys.stderr.isatty():
     sys.stderr.write("\n")
