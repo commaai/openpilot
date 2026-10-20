@@ -7,14 +7,14 @@ import {status} from "../status.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
-import {enumRef, service, times, unpack} from "./pack.js";
+import {BLOCK, enumRef, service, times, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
 const IN_USE = 5000;  // ms since last use that a column counts as in use (never evicted)
 // what a store without CAN (an overlay) has in place of its Can
 const NO_CAN = {bytes: 0, paths: () => [], series: () => null, ingest() {}, dispose() {}};
-const BLOCK = 16, FANOUT = 8;  // min/max pyramid: blocks of 16 samples, then 8 blocks per level up
+const FANOUT = 8;  // min/max pyramid: blocks of BLOCK samples, then 8 blocks per level up
 const NEAR = 3;  // segments from the focus on that, once in, let the worker pool shrink
 const MONO = "__logMonoTime";  // the message times as a series, as jotpluggler and PlotJuggler name it
 
@@ -42,11 +42,13 @@ export class Store {
     this.overlays = [];  // [{prefix, name, store}]: other logs on this clock (replays), their paths under prefix
     this.budget = budget;
     this.keep = keep;
+    this.kept = [];  // the lists asked for since, in order ({service: [globs]}); a parse notes how many it read with
     this.handlers = {};
     this.can = can ? new Can(this) : NO_CAN;  // an overlay's Can would share and resize the route's CAN lane
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.monos = new Map();  // /<service>/__logMonoTime → its series
     this.lists = new Map();  // long lists the workers skipped: path → longest length
+    this.listTypes = new Map();  // and → element type ("s": structs)
     this.missing = new Set();  // migrated paths that couldn't be computed
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
@@ -99,13 +101,15 @@ export class Store {
 
   // the options are taken when the parse starts, so it skips whatever was evicted by then
   load(seg, only, extra = {}) {
+    let kept;
     const opts = () => {
+      kept = this.kept.length;
       const skip = {};
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
       return {...seg.opts, keep: this.keep, skip, only, context: this.context, schema: this.schema, gen: this.gen, ...extra};
     };
     const loaded = this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this);
-    return loaded.then((p) => Object.assign(p, {full: !only}));  // every column, not just the ones asked for again
+    return loaded.then((p) => Object.assign(p, {full: !only, kept}));  // every column, not just the ones asked for again
   }
 
   // reads every loaded segment again with another schema; the columns in memory stay until each segment's new ones
@@ -294,12 +298,17 @@ export class Store {
       route.duration = last.status === "done" ? last.t1 : Math.max(route.duration, seg.t1, (route.segments.length - 1) * SEGMENT);
     }
     Object.assign(this.enums, p.enums);
-    for (const path in p.lists) this.lists.set(path, Math.max(this.lists.get(path) || 0, p.lists[path]));
+    let added = false;
+    for (const path in p.lists) {
+      if (p.lists[path] <= (this.lists.get(path) || 0)) continue;
+      this.lists.set(path, p.lists[path]);
+      this.listTypes.set(path, p.listTypes[path]);
+      added = true;
+    }
 
     const paths = p.paths ? p.paths.split("\n") : [];
     p.types = p.types.split("\n");
     p.live = p.counts.map(() => 0);
-    let added = false;
     for (let k = 0; k < paths.length; k++) {
       let e = this.entries.get(paths[k]);
       const ref = enumRef(p, k), names = ref >= 0 ? this.enums[ref] : undefined;
@@ -321,6 +330,7 @@ export class Store {
     p.n = seg.n;
     if (fresh) this.prune(seg, new Set(paths));
     if (p.gen !== this.gen) this.reread(seg);  // read with a schema that's since been replaced
+    else if (p.full && p.kept < this.kept.length) this.readOnly(seg, this.kept.slice(p.kept).reduce(merge, {}));  // lists asked for mid-parse
     p.live.forEach((n, s) => {
       if (!n) return drop(p, s);
       this.bytes += p.bufs[s].byteLength;
@@ -346,6 +356,12 @@ export class Store {
       out.push(names ? {path, type, names} : {path, type});
       const mono = path.match(/^(\/[^/]+)\/_?valid$/);  // every service has one
       if (mono) out.push({path: `${mono[1]}/${MONO}`, type: "f64", internal: true});
+    }
+    // the indexes of skipped long lists of values, loaded once plotted
+    for (const [list, n] of this.lists) {
+      const type = this.listTypes.get(list);
+      if (!type || type === "s" || type === "l") continue;
+      for (let i = 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
     }
     for (const o of this.overlays) for (const p of o.store.paths()) out.push({...p, path: o.prefix + p.path});
     return out;
@@ -396,13 +412,14 @@ export class Store {
     return m;
   }
 
-  // registers or replaces a derived series (transforms, /custom/*) as one chunk
+  // registers or replaces a derived series (transforms, /custom/*) as one chunk; "put" tells of every new version
   put(path, {type, t, v, names}) {
     const old = this.entries.get(path);
     const e = {path, type, ...(names && {names}), at: [], views: [{n: 0, t, v, tt: t}], version: (old?.version || 0) + 1, used: Infinity};
     e.series = {path, type, names, chunks: e.views, version: e.version};
     this.entries.set(path, e);
     if (!old) this.emit("paths");
+    this.emit("put", path);
   }
 
   // n min/max buckets over [t0, t1] read from the pyramids; the exact samples when there are no more than n
@@ -455,8 +472,18 @@ export class Store {
     return {t, min, max};
   }
 
-  // the last value at or before t
+  // the last value at or before t; an index of a skipped long list isn't loaded for it. A log's column unpacks
+  // only the chunks from t's segment back to the value
   valueAt(path, t) {
+    const e = this.entries.get(path);
+    if (e?.at.length) {
+      for (let n = Math.min(this.segmentAt(t)?.n, e.at.length - 1); n >= 0; n--) {
+        const c = e.at[n] && this.chunk(path, n), v = c && lastValue(c, t);
+        if (v !== undefined) return v;
+      }
+      return undefined;
+    }
+    if (!e && this.listOf(path)) return undefined;
     const s = this.series(path);
     if (!s) return undefined;
     const {chunks} = s;
@@ -466,8 +493,8 @@ export class Store {
       if (chunks[mid].tt[0] <= t) lo = mid + 1; else hi = mid;
     }
     for (let j = lo - 1; j >= 0; j--) {
-      const {tt, v} = chunks[j];
-      for (let k = upperBound(tt, t) - 1; k >= 0; k--) if (v[k] === v[k] && v[k] !== null) return v[k];
+      const v = lastValue(chunks[j], t);
+      if (v !== undefined) return v;
     }
     return undefined;
   }
@@ -483,12 +510,19 @@ export class Store {
 
   // a skipped long list is asked for by any of its indexes: keep it from now on and re-parse what's loaded
   request(path) {
-    const m = path.match(/^\/([^/]+)(\/.*)\/\d+(\/.*)?$/);
-    if (!m || !this.lists.has(`/${m[1]}${m[2]}`)) return;
+    const m = this.listOf(path);
+    if (!m) return;
     const glob = m[2], list = this.keep[m[1]] ||= [];
     if (list.includes(glob)) return;
     list.push(glob);
-    this.reparse({[m[1]]: [`${glob}/*`, `${glob}/*/*`]});
+    this.kept.push({[m[1]]: [`${glob}/*`, `${glob}/*/*`]});
+    this.reparse(this.kept.at(-1));
+  }
+
+  // the match of [, service, list] when path is an index into a skipped long list
+  listOf(path) {
+    const m = path.match(/^\/([^/]+)(\/.*)\/\d+(\/.*)?$/);
+    return m && this.lists.has(`/${m[1]}${m[2]}`) ? m : null;
   }
 
   reload(e) {
@@ -505,16 +539,18 @@ export class Store {
       queueMicrotask(() => {
         const only = this.wanted;
         this.wanted = null;
-        for (const seg of this.route.segments) {
-          if (seg.status !== "done") continue;
-          this.load(seg, only).then((p) => this.ingest(seg, p), () => {
-            seg.loading = null;
-            this.publish(seg);
-          });
-        }
+        for (const seg of this.route.segments) if (seg.status === "done") this.readOnly(seg, only);
       });
     }
-    for (const svc in only) (this.wanted[svc] ||= []).push(...only[svc]);
+    merge(this.wanted, only);
+  }
+
+  // reads just the columns only picks from a loaded segment again
+  readOnly(seg, only) {
+    this.load(seg, only).then((p) => this.ingest(seg, p), () => {
+      seg.loading = null;
+      this.publish(seg);
+    });
   }
 
   // drops the least recently used columns not in use until under 90% of the budget
@@ -604,6 +640,12 @@ export class Store {
   }
 }
 
+// adds {service: [globs]} b to a
+const merge = (a, b) => {
+  for (const svc in b) (a[svc] ||= []).push(...b[svc]);
+  return a;
+};
+
 const split = (path) => path.match(/^\/([^/]+)(.*)$/).slice(1);
 
 function drop(pack, s) {
@@ -611,12 +653,13 @@ function drop(pack, s) {
   if (pack.t) pack.t[s] = null;
 }
 
-// min/max per block of BLOCK samples, then per FANOUT blocks, up to one block per chunk; built on first need
+// min/max per block of BLOCK samples, then per FANOUT blocks, up to one block per chunk; built on first need from
+// the blocks the worker packed, when it did
 function pyramid(c) {
   if (c.pyramid) return c.pyramid;
-  const {v} = c, Arr = ArrayBuffer.isView(v) ? v.constructor : Float64Array;
-  const levels = [];
-  let lo = v, hi = v, size = BLOCK;
+  const {v, blocks} = c, Arr = ArrayBuffer.isView(v) ? v.constructor : Float64Array;
+  const levels = blocks ? [blocks] : [];
+  let lo = blocks?.lo ?? v, hi = blocks?.hi ?? v, size = blocks ? FANOUT : BLOCK;
   while (lo.length >= size) {
     const m = Math.ceil(lo.length / size), nlo = new Arr(m), nhi = new Arr(m);
     for (let b = 0; b < m; b++) {
@@ -634,6 +677,12 @@ function pyramid(c) {
     size = FANOUT;
   }
   return (c.pyramid = levels);
+}
+
+// a chunk's last value at or before t
+function lastValue({tt, v}, t) {
+  for (let k = upperBound(tt, t) - 1; k >= 0; k--) if (v[k] === v[k] && v[k] !== null) return v[k];
+  return undefined;
 }
 
 // the chunks overlapping [t0, t1], found by binary search: chunks follow each other in time

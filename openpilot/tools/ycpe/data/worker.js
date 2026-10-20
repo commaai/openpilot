@@ -76,6 +76,22 @@ async function load(key, url, progress, signal, head) {
   return {buf, cached: false, stored};
 }
 
+// the element type of the list at /service/path, from the schema: "s" for structs
+function elemType(schema, path) {
+  let [type, ref] = [];
+  for (const [k, part] of path.split("/").slice(1).entries()) {
+    if (type === "l") [type, ref] = ref;  // an index into a list
+    else if (!k || type === "s" || type === "g") {
+      const f = schema.structs[k ? ref : 0].fields.find((x) => x[0] === part);
+      if (!f) return null;
+      [type, ref] = [f[2], f[4]];
+    } else {
+      return null;
+    }
+  }
+  return type === "l" ? ref[0] : null;
+}
+
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
 
 // opts: {n, shift, keep, only, skip, context, schema, gen, migrate}; keep, only and skip are {service: [path globs]};
@@ -115,7 +131,8 @@ async function parse(buf, opts) {
   const can = frames?.finish();
   if (can) can.can.t0 += off;
   const unknown = {events: reader.unknown.events, services: [...reader.unknown.services]};
-  return {...out, ...migrated, unknown, gen: opts.gen, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
+  const listTypes = Object.fromEntries(Object.keys(out.lists).map((path) => [path, elemType(reader.schema, path)]));
+  return {...out, ...migrated, unknown, listTypes, gen: opts.gen, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
 // the last logs message() opened, decompressed and indexed: scrubbing within a segment decodes without reloading
