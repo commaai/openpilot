@@ -4,7 +4,7 @@
   {"url": "/(pages/pair|pages/prime|panes/clips)\\.js$", "file": "fixtures/um-pair.js"}
  ],
  "steps": [
-  {"waitFor": ".cn-shell .login-card"},
+  {"waitFor": ".cn-landing .cn-login"},
   {"assert": "location.pathname === '/connect' || `a first visit to / opens user mode, not ${location.pathname}`"},
   {"assert": "!document.querySelector('.topbar') && !!document.querySelector('#app > .cn-header') || 'user mode shows connect\\'s header'"},
   {"shot": "home-signed-out"},

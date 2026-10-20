@@ -35,6 +35,35 @@ export function version() {
     `, ${fmt.ago(c.time)}`);
 }
 
+// how long ago, as connect's dayjs says it ("a month ago")
+function fromNow(unixSeconds) {
+  const s = Date.now() / 1000 - unixSeconds, m = s / 60, hr = m / 60, d = hr / 24, mo = d / 30.4, y = d / 365;
+  const [n, unit] = s < 45 ? [0, "a few seconds"] : s < 90 ? [1, "minute"] : m < 45 ? [Math.round(m), "minute"] : m < 90 ? [1, "hour"]
+    : hr < 22 ? [Math.round(hr), "hour"] : hr < 36 ? [1, "day"] : d < 26 ? [Math.round(d), "day"] : d < 46 ? [1, "month"]
+    : mo < 11 ? [Math.round(mo), "month"] : mo < 18 ? [1, "year"] : [Math.round(y), "year"];
+  return `${!n ? unit : n === 1 ? `${unit === "hour" ? "an" : "a"} ${unit}` : `${n} ${unit}s`} ago`;
+}
+
+// user mode's account menu, connect's: who's signed in and the version, then referrals, useradmin and logging out
+export function connectMenu(me, close, go) {
+  const c = daemon.caps?.commit;
+  return h("div", {class: "menu-list cn-account"},
+    h("div", {class: "cn-account-head"},
+      h("span", {class: "cn-account-email"}, me?.email),
+      h("span", {}, me?.user_id),
+      h("span", {}, "Version: ", c ? [h("a", {href: `https://github.com/commaai/openpilot/commit/${c.sha}`, target: "_blank", rel: "noreferrer"},
+        c.sha.slice(0, 7)), `, ${fromNow(c.time)}`] : "dev")),
+    h("div", {class: "cn-account-line"}),
+    h("a", {href: "/connect/referrals", onclick: (e) => {
+      if (e.metaKey || e.ctrlKey || e.button !== 0) return;
+      e.preventDefault();
+      close();
+      go("/connect/referrals");
+    }}, "Referrals"),
+    h("a", {href: USERADMIN, target: "_blank", rel: "noreferrer", onclick: close}, "Manage account"),
+    h("button", {onclick: () => { close(); auth.signOut(); }}, "Log out"));
+}
+
 // the account menu's head: email, username, user id to copy
 export const accountHead = (me) => h("div", {class: "account-head"},
   h("b", {}, me.email || me.username || "signed in"),

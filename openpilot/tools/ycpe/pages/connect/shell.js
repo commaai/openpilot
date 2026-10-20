@@ -65,13 +65,18 @@ export function mount(main, {devices, dongle, signedIn}) {
   return content;
 }
 
-// a device: online dot, name and dongle id; its owner gets connect's settings gear (the device page's settings tab)
+// a device: online dot, name and dongle id; its owner gets connect's settings gear, which opens its settings modal
+// (pages/settings.js; the device page's settings tab when opened in a new tab)
 function deviceRow(d, on) {
   const path = `/connect/${d.dongle_id}`, settings = `${path}?tab=settings`;
   const row = h("div", {class: `cn-dev ${on ? "on" : ""}`},
     h("a", {href: path, onclick: link(path), onpointerenter: () => prefetchDevice(d.dongle_id), "aria-current": on ? "page" : null},
       onlineMark(d), h("span", {class: "cn-dev-name"}, h("b", {}, fmt.deviceName(d)), h("span", {class: "mono"}, d.dongle_id))));
-  canManage(d).then((ok) => ok && row.append(h("a", {class: "cn-hbtn cn-gear", href: settings, onclick: link(settings), title: "Device settings",
-    "aria-label": `${fmt.deviceName(d)} settings`}, icon("settings", 22))));
+  canManage(d).then((ok) => ok && row.append(h("a", {class: "cn-hbtn cn-gear", href: settings, title: "Device settings",
+    "aria-label": `${fmt.deviceName(d)} settings`, onclick: (e) => {
+      if (e.metaKey || e.ctrlKey || e.button !== 0) return;
+      e.preventDefault();
+      optional("/pages/settings.js", "settingsModal", d);
+    }}, icon("settings", 22))));
   return row;
 }

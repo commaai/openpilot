@@ -3,8 +3,9 @@
 import {auth} from "../api.js";
 import {daemon} from "../daemon.js";
 import {h} from "../dom.js";
-import {logo} from "../icons.js";
-import {go, link} from "../app.js";
+import {logo, icon} from "../icons.js";
+import {go, link, switchMode} from "../app.js";
+import {mode} from "./connect/mode.js";
 
 const RETURN_KEY = "ycpe_return_to";
 const DEVELOPER_KEY = "ycpe_developer_auth";  // this round trip mints a developer token rather than signing in
@@ -71,8 +72,28 @@ function tokenForm(next) {
     h("p", {class: "small muted"}, "From the account page where you're signed in, or ~/.comma/auth.json."), form, error);
 }
 
+// user mode's sign-in: connect's landing, over the whole window as connect has no header there. Its one addition is the
+// switch to developer mode, where the header has it
+const LANDING = [["google", "Google"], ["apple", "Apple"], ["github", "GitHub"]];
+function landing(next) {
+  const last = localStorage.getItem(LAST_KEY);
+  return h("div", {class: "cn-landing"},
+    h("button", {class: "cn-devmode", title: "Developer mode: this place with plots, CAN, files and logs", "aria-label": "Developer mode", onclick: switchMode},
+      icon("code", 18), h("span", {}, "Developer mode")),
+    h("div", {class: "cn-landing-body"},
+      h("div", {class: "cn-landing-logo"}, h("img", {alt: "comma", src: "/icons/comma-white.png"})),
+      h("div", {class: "cn-landing-gap"}),
+      h("p", {class: "cn-landing-title"}, "comma connect"),
+      h("p", {class: "cn-landing-lead"}, "Manage your comma device, view your drives, and use comma prime features"),
+      LANDING.map(([p, name]) => h("a", {class: "cn-login", href: auth.loginUrl(p), onclick: () => startSignIn(p, next)},
+        h("img", {src: `/icons/auth-${p}.png`, alt: ""}), h("p", {}, `Sign in with ${name}`),
+        p === last && h("span", {class: "cn-last-used"}, "Last used"))),
+      h("span", {class: "cn-landing-note"}, "Make sure to sign in with the same account if you have previously paired your comma device.")));
+}
+
 export function loginPage(params) {
   const next = safe(params.get("next") ?? params.get("r"));
+  if (mode() === "user" && !auth.isAuthenticated()) return landing(next);
   if (auth.isAuthenticated()) return card(h("p", {}, "You're signed in."), h("a", {class: "button primary", href: next, onclick: link(next)}, "Continue"));
   const last = localStorage.getItem(LAST_KEY);
   return card(
@@ -112,6 +133,7 @@ export function authPage(params) {
 // A device page is just /<dongle id>; anything deeper is a route.
 export function signInCard() {
   const signedIn = auth.isAuthenticated();
+  if (!signedIn && mode() === "user") return landing(here());  // connect shows its landing for anything private
   const device = /^(\/connect)?\/[0-9a-f]{16}\/?$/i.test(location.pathname);
   return card(
     h("p", {}, signedIn ? "This account doesn't have access to this." : device ? "Sign in to see this device's drives." : "Sign in to view this."),

@@ -64,6 +64,32 @@
 .token-form .field { flex: 1; min-width: 0; }
 .token-form .button { margin: 0; }
 .login-card > .login-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+/* user mode's toasts: MUI's Snackbar in connect's theme */
+body:has(.cn-shell, .cn-landing) .toast { bottom: 24px; min-width: 288px; box-sizing: border-box; padding: 14px 24px; border-radius: 4px; background: #303639; color: #fff;
+  font: 400 14px/20px "Inter", sans-serif; box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12); }
+@media (max-width: 599px) { body:has(.cn-shell, .cn-landing) .toast { right: 0; bottom: 0; left: 0; min-width: 0; border-radius: 0; transform: none; } }
+
+/* user mode's sign-in: connect's landing over the whole window, in its dark-only palette */
+/* no header there: the landing is the whole window */
+body:has(.cn-landing) #app > .cn-header { display: none; }
+.cn-landing { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; background: #1d2225; color: #fff; font: 400 16px/24px "Inter", sans-serif; }
+.cn-landing > .cn-devmode { position: absolute; top: 14px; right: 16px; border-color: rgba(255,255,255,.1); color: #fff; }
+.cn-landing > .cn-devmode:hover { background: rgba(255,255,255,.1); }
+.cn-landing-body { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding: 20px; }
+.cn-landing-body p { margin: 0; line-height: 1.46429em; }
+.cn-landing-logo { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 84px; height: 84px; border-radius: 16px; background: #1e2224; }
+.cn-landing-logo img { height: 45px; }
+.cn-landing-gap { flex-shrink: 2; height: 60px; }
+.cn-landing-title { font-size: 36px; font-weight: 800; text-align: center; }
+.cn-landing-lead { width: 380px; max-width: 90%; margin: 10px 0 30px !important; font-size: 18px; text-align: center; }
+.cn-login { position: relative; display: flex; align-items: center; justify-content: center; width: 400px; max-width: 90%; height: 80px; margin-bottom: 10px;
+  border-radius: 80px; background: #fff; text-decoration: none; cursor: pointer; }
+.cn-login:hover { background: #eee; }
+.cn-login img { height: 40px; }
+.cn-login p { width: 190px; color: #000; font-size: 18px; font-weight: 600; text-align: center; white-space: nowrap; }
+.cn-last-used { position: absolute; right: 22px; bottom: -8px; padding: 1px 10px; border: 3px solid #1d2225; border-radius: 99px; background: #e6ebee; color: #4a5861;
+  font-size: 11px; font-weight: 500; line-height: 16px; white-space: nowrap; pointer-events: none; }
+.cn-landing-note { max-width: 384px; margin: 8px 0 32px; font-size: 14px; line-height: 20px; text-align: center; }
 .login-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 10px; color: var(--muted); }
 .device-name { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; white-space: nowrap; }
 .device-name > span { overflow: hidden; text-overflow: ellipsis; }
