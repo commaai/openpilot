@@ -221,7 +221,7 @@ export async function settingsModal(device) {
       outlined("Unpair", () => unpairModal(device))),
     h("div", {class: "cn-modal-row"}, outlined("Uploads", () => uploadsModal(device)),
       device.commacare && h("a", {class: "cn-commacare", href: COMMACARE, target: "_blank", rel: "noreferrer"},
-        h("img", {src: "/icons/commacare.png", alt: ""}), "commacare")),
+        h("img", {src: "/icons/commacare.webp", alt: ""}), "commacare")),
     h("div", {class: "cn-form"}, error, h("div", {class: "cn-form-row"}, aliasRow, save.el), h("div", {class: "cn-form-row"}, shareRow, share.el)),
     h("div", {class: "cn-modal-buttons"}, contained("Close", () => el.close())));
   return el;

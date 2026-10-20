@@ -406,7 +406,7 @@ function deviceInfo(device, snapshots) {
   const name = fmt.deviceName(device);
   return h("div", {class: "cn-info"}, h("div", {class: "cn-info-row"},
     h("div", {class: "cn-info-name"},
-      device.commacare && h("img", {src: new URL("../icons/commacare.png", import.meta.url), alt: "commacare", width: 22}),
+      device.commacare && h("img", {src: new URL("../icons/commacare.webp", import.meta.url), alt: "commacare", width: 22}),
       h("h2", {}, name.length > 16 ? `${name.slice(0, 16)}...` : name)),
     buttons));
 }
