@@ -229,12 +229,11 @@ function topBar() {
 
 // who's signed in, then where to from there, as connect's account menu; its version at the foot. Its module loads with
 // the first click, not with the app. Both modes' bars have one (its links name no mode, so they stay in the one in use)
-export function accountButton(cls = "tbtn") {
-  const account = h("button", {class: cls, title: "Account", "aria-label": "Account"}, icon("account", cls === "tbtn" ? 16 : 34));
+function accountButton() {
+  const account = h("button", {class: "tbtn", title: "Account", "aria-label": "Account"}, icon("account", 16));
   account.addEventListener("click", async () => {
-    const {accountHead, version, USERADMIN, styled, connectMenu} = await import("/pages/account.js");
+    const {accountHead, version, USERADMIN, styled} = await import("/pages/account.js");
     await styled;
-    if (cls !== "tbtn") return menu(account, (close) => connectMenu(state.me, close, go));  // user mode's is connect's
     menu(account, (close) => {
       const row = (path, label) => h("a", {class: "menu-row", href: path, onclick: (e) => { close(); link(path)(e); }}, label);
       const signedIn = auth.isAuthenticated();
