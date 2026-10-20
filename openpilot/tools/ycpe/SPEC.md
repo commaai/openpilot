@@ -143,8 +143,44 @@ timestamps.
 - [ ] Local data: drop a route folder or log files onto the page, or open them with the File System
       Access API.
 
-Out of scope for v1: prime/billing, pairing, clips, body teleop, livestream, WebUSB panda, live device
-streams, and anything internal (god mode).
+Out of scope for v1: prime/billing, pairing, clips, body teleop, and anything internal (god mode). Live data is
+v1.1, below.
+
+## Live (v1.1)
+
+Everything the route views do, on data arriving now: plot, CAN, logs, inspector and video follow a live edge.
+Four sources, one sink:
+
+| URL | Source | Needs | Data |
+|---|---|---|---|
+| `/live/local` | the daemon subscribes to msgq on this PC (openpilot, sim, tools/replay) | daemon | every service |
+| `/live/device/<host>` | the daemon subscribes over ZMQ to a device on the LAN running `cereal/messaging/bridge` (as cabana's device stream) | daemon | every service |
+| `/live/panda` | WebUSB to a panda (Chrome desktop and Android), receive only: never sends CAN or changes the safety mode | nothing | CAN, panda health |
+| `/<dongle>/live` | athena `startStream` (WebRTC, as connect's livestream): works anywhere, on a phone | sign-in | wide camera, carState, deviceState (JSON) |
+
+A route opened live is a store whose last slot grows. Sources hand the sink what they have; the core turns it into
+columns. Times are route seconds from the first event's logMonoTime, as for logs. A session keeps the last 30
+minutes (or the memory budget) and can be saved as an rlog at any time.
+
+```js
+// data/live.js (track L1)
+source = {kind, label, start(sink), stop(), state /* connecting | live | error | closed */, detail, on("state", fn)}
+sink = {
+  events(bytes),                          // Uint8Array of whole capnp Events, rlog framing; any batch size
+  json(service, logMonoTime, valid, data),// a cereal message as webrtcd's to_json sends it
+  video(camera, track),                   // a MediaStreamTrack for qcamera|fcamera|ecamera|dcamera
+}
+// clock: live sessions add clock.live (true), clock.follow (playhead and range track the newest time;
+// a seek or zoom into the past turns it off, "Go live" or End turns it on) and duration grows.
+// data/live/encode.js: Event writer for sources that don't have capnp bytes (panda CAN frames, panda health)
+```
+
+Tracks (worktrees, branches `ycpe-live-<key>`): **L1 core** (data/live.js, store append and ring buffer, worker
+append, clock follow, playbar live edge, the /live pages and source picker, save as rlog, and an in-browser paced
+replay source for the harness), **L2 daemon** (daemon/live.py: msgq, ZMQ device and paced-rlog sources, streamed
+over one framed binary response; data/live/daemon.js), **L3 panda** (data/live/panda.js and encode.js: the USB
+protocol ported from panda's Python library), **L4 athena** (data/live/webrtc.js: startStream offer/answer, data
+channel to sink.json, video track to the camera pane).
 
 ## How the work is organized
 
