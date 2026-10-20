@@ -16,7 +16,7 @@ const SIM_SHOP = "https://comma.ai/shop/comma-prime-sim";
 const DATA_SIMS = ["blue", "magenta_new", "webbing"];
 const PLANS = {nodata: {name: "Lite", price: 14}, data: {name: "Standard", price: 24}};
 const other = (plan) => plan === "data" ? "nodata" : "data";
-const CARE_ICON = new URL("../icons/commacare.png", import.meta.url);
+const CARE_ICON = new URL("../icons/commacare.webp", import.meta.url);
 
 const LONG = new Intl.DateTimeFormat(undefined, {month: "long", day: "numeric", year: "numeric"});
 const SHORT = new Intl.DateTimeFormat(undefined, {month: "long", day: "numeric"});
