@@ -35,7 +35,7 @@
 
 /* omnibox dropdown */
 .omni { position: relative; display: inline-flex; flex-shrink: 1; min-width: 80px; }
-.omni-list { position: absolute; top: 28px; left: 6px; z-index: 60; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.omni-list { position: absolute; top: calc(100% + 4px); left: 6px; z-index: 60; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
 .omni-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 8px; border-radius: 4px; text-decoration: none; white-space: nowrap; }
 .omni-row:hover { background: var(--hover); }
 .omni-row.on { background: var(--active); }
@@ -164,9 +164,15 @@ a.drive-row:hover { background: var(--hover); }
   body:is(.in-ws, .loading) .topbar .views:empty { visibility: hidden; }
   /* the omnibox and the load pill shrink rather than wrapping the first row */
   body:is(.in-ws, .loading) .topbar :is(.omni, .load-pill) { flex: 1 1 0; min-width: 0; }
+  body:is(.in-ws, .loading) .topbar .omni { min-width: 32px; }  /* still a tap target */
+  body:is(.in-ws, .loading) .topbar .crumb { max-width: calc(100vw - 232px); }  /* so they fit on a 320px phone */
   body:is(.in-ws, .loading) .topbar .load-pill { max-width: fit-content; }
   body:is(.in-ws, .loading) .topbar .grow { display: none; }
-  body:is(.in-ws, .loading) .topbar .omnibox { width: 100%; }
+  body:is(.in-ws, .loading) .topbar .omnibox { width: 100%; min-width: 0; }
+  /* typing, the omnibox takes the whole first row, its list under it inside the window */
+  .topbar .omni:focus-within { position: absolute; top: 6px; left: 8px; right: 8px; z-index: 1; }
+  .topbar .omni:focus-within .omnibox { width: 100%; margin-left: 0; }
+  .omni-list { left: auto; right: 0; }
   .topbar :is(.views, .tabs) { order: 2; margin-left: 0; }
   .topbar .tabs { flex: 1; max-width: none; }
   .playbar > .tbtn:not(.play), .pb-wall { display: none; }
@@ -176,7 +182,9 @@ a.drive-row:hover { background: var(--hover); }
 /* fingers: every control in the bars at least 32 px tall */
 @media (pointer: coarse) {
   :root { --top: 44px; --head: 34px; }
-  .topbar :is(.brand, .crumb, .omnibox, .tbtn, .load-pill, .view, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
+  .topbar :is(.brand, .crumb, .tbtn, .load-pill, .view, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
+  .topbar .omnibox { min-height: 32px; }
   .pane-type { height: 32px; }
+  @container (max-width: 860px) { .topbar .hud { display: none; } }  /* the bigger buttons leave the omnibox no room */
   .divider::before { content: ""; position: absolute; z-index: 1; inset: -8px; }  /* a 20px grip, over the panes' edges */
 }

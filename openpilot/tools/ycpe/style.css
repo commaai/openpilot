@@ -46,7 +46,7 @@ button, input, select { font: inherit; color: inherit; }
 body.in-ws #main { overflow: hidden; }
 
 /* top bar */
-.topbar { display: flex; align-items: center; gap: 6px; height: var(--top); padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative; z-index: 20; }
+.topbar { display: flex; align-items: center; gap: 6px; height: var(--top); padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative; z-index: 20; container-type: inline-size; overflow-x: clip; }  /* never wider than the window, whatever it holds */
 .brand { display: flex; align-items: center; gap: 6px; padding: 0 6px 0 2px; font-weight: 800; font-size: 14px; letter-spacing: .02em; text-decoration: none; }
 .brand svg { display: block; color: var(--fg); }
 .crumb { display: flex; flex-shrink: 0; align-items: center; max-width: 180px; padding: 3px 2px 3px 6px; border: 0; border-radius: 4px; background: none; font-weight: 600; white-space: nowrap; cursor: pointer; }
@@ -61,12 +61,6 @@ body.in-ws #main { overflow: hidden; }
 .views:empty, .tabs:empty { display: none; }
 /* the tabs (they scroll) and the load pill (it ellipsizes) give way when the bar is full */
 .tabs { flex-shrink: 1; min-width: 100px; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
-.topbar { container-type: inline-size; }
-@container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem) { display: none; } }
-@container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
-@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 6px; } .topbar .load-pill { max-width: 150px; } }
-/* the device crumb goes as on phones: the route crumb's menu reaches the rest */
-@container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
@@ -111,6 +105,12 @@ body.in-ws #main { overflow: hidden; }
 .hud-ms { min-width: 4.2em; color: var(--muted); }
 .hud-drops { color: var(--muted); }
 .hud-spark { width: 40px; height: 18px; }
+/* a narrower bar sheds the least needed first (after the chips' own display) */
+@container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem) { display: none; } }
+@container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
+@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 6px; } .topbar .load-pill { max-width: 150px; } }
+/* the device crumb goes as on phones: the route crumb's menu reaches the rest */
+@container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
 .popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
 .menu-list { display: flex; flex-direction: column; }
 .menu-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 0; border-radius: 4px; background: none; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }
