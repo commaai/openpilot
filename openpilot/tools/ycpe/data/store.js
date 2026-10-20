@@ -414,6 +414,7 @@ export class Store {
     if (!e) return this.request(path), null;
     e.used = performance.now();
     if (e.evicted) this.reload(e);
+    this.partial(e);
     if (e.series?.version !== e.version) {
       const chunks = [];
       e.at.forEach((a, n) => a && chunks.push(e.views[n] ||= unpack(a.pack, a.k, n)));
@@ -451,6 +452,7 @@ export class Store {
     const e = this.entries.get(path);
     if (!e?.at.length) return this.series(path)?.chunks.find((c) => c.n === n);
     e.used = performance.now();
+    this.partial(e);
     const a = e.at[n];
     return a ? e.views[n] ||= unpack(a.pack, a.k, n) : undefined;
   }
@@ -585,6 +587,18 @@ export class Store {
     list.push(glob);
     this.kept.push({[m[1]]: [`${glob}/*`, `${glob}/*/*`]});
     this.reparse(this.kept.at(-1));
+  }
+
+  // an index column of a long list that only its short messages filled (/ubloxGnss/measurementReport/measurements/3/svId
+  // when some messages have more than MAX_LIST): asks for the whole list once; the columns are replaced as it loads
+  partial(e) {
+    if (e.lists !== this.lists.size) {
+      e.lists = this.lists.size;
+      e.list = !!this.listOf(e.path);
+    }
+    if (!e.list) return;
+    e.list = false;
+    this.request(e.path);
   }
 
   // the match of [, service, list] when path is an index into a skipped long list
