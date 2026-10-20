@@ -274,12 +274,20 @@ class Workspace {
     this.store = null;
     this.storeSubs = new Set();
     this.layouts = {};
+    this.written = {};  // view → its layout as this tab last saved it, or had it when another tab saved one
     this.clock = createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
     this.clock.seek(t);
     this.main = h("div", {class: "workspace"});
     this.playbar = playbar(this.ctx());
     this.el = h("div", {class: "ws"}, this.main, this.playbar.el);
     this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
+    // another browser tab saved a layout: this one's copy only replaces it once it changes
+    const stored = (e) => {
+      const view = e.key?.match(/^ycpe_layout_(.+)/)?.[1];
+      if (this.layouts[view]) this.written[view] = JSON.stringify(this.layouts[view].save());
+    };
+    addEventListener("storage", stored);
+    this.offs.push(() => removeEventListener("storage", stored));
     // .json/.xml layouts dropped on the workspace open as new tabs
     acceptLayoutFiles(this.main, (f) => this.openLayout(f));
     this.setView(view);
@@ -335,7 +343,7 @@ class Workspace {
       }
       if (usesData(model)) this.ensureStore();
       this.layouts[view] = new Layout(this.ctx(), model, (m) => {
-        localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(m));
+        localStorage.setItem(`ycpe_layout_${view}`, this.written[view] = JSON.stringify(m));
         if (usesData(m)) this.ensureStore();
       });
     }
@@ -356,9 +364,13 @@ class Workspace {
 
   resetLayout() { this.applyLayout(null); }
 
-  // panes change their own state (curves, filters) without an edit to the layout; saved whenever they could go away
+  // panes change their own state (curves, filters) without an edit to the layout; saved whenever they could go away,
+  // if they changed
   persist() {
-    for (const [view, layout] of Object.entries(this.layouts)) localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(layout.save()));
+    for (const [view, layout] of Object.entries(this.layouts)) {
+      const json = JSON.stringify(layout.save());
+      if (json !== this.written[view]) localStorage.setItem(`ycpe_layout_${view}`, this.written[view] = json);
+    }
   }
 
   // a layout file, URL or text (ours, jotpluggler's or PlotJuggler's), opened as new tabs
