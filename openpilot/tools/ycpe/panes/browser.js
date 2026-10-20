@@ -3,6 +3,7 @@
 // selection, right and left open and close a branch), Enter adds to the last used plot. Rows are virtualized:
 // only the visible ones exist in the DOM.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
@@ -20,6 +21,7 @@ export function create(ctx, state = {}) {
   const selected = new Set();
   let tree = null, stale = true, rows = [], anchor = null, H = 0, total = 0;  // anchor: the path a shift-click ranges from
   let cursor = null;  // the path the keyboard is at
+  let top = 0;  // the scroller's scrollTop, kept from its scroll events: reading it in render would force a layout
   let nodes = new Map();  // path → tree node, for every node in the tree
 
   const filter = h("input", {type: "search", class: "filter", placeholder: "filter, or /regex/", value: st.filter, spellcheck: false,
@@ -33,14 +35,15 @@ export function create(ctx, state = {}) {
     h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(true); }}), "deprecated");
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
-  const scroller = h("div", {class: "scroller", tabindex: 0, onscroll: () => perf.invalidate(pane), onkeydown: key}, spacer, win);
+  const scroller = h("div", {class: "scroller", tabindex: 0, onkeydown: key}, spacer, win);
   const note = h("div", {class: "note", hidden: true});
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), note, scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
+  scroller.addEventListener("scroll", () => { top = scroller.scrollTop; perf.invalidate(pane); }, {passive: true});
 
   // new paths arrive with segments and are added at most once a frame; a new DBC replaces the /dbc branch
   let all = null, done = 0;  // store.paths(), and how many of them the tree has been through
-  const changed = () => { all = null; stale = true; perf.invalidate(pane); };
+  const changed = () => { stale = true; perf.invalidate(pane); };
   const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)), store.on("progress", () => perf.invalidate(pane)),
     store.can?.on("dbc", () => { drop("/dbc"); changed(); })].filter(Boolean);
 
@@ -49,7 +52,8 @@ export function create(ctx, state = {}) {
   // fewer paths than before rebuilds it.
   function build(reset = false) {
     const end = performance.now() + BUILD_MS;
-    if (!all || reset) [all, done] = [store.paths(), 0];
+    const now = store.paths();  // appended to as paths arrive, so the tree goes on from where it was
+    if (now !== all || reset) [all, done] = [now, 0];
     if (reset || !tree || all.length < total) [tree, nodes, done] = [{depth: -1}, new Map(), 0];
     const touched = new Set();
     for (; done < all.length && (done % 256 || performance.now() < end); done++) {
@@ -169,8 +173,8 @@ export function create(ctx, state = {}) {
     cursor = rows[k].path;
     select(k, {shiftKey: extend});
     const y = k * ROW, height = scroller.clientHeight;
-    if (y < scroller.scrollTop) scroller.scrollTop = y;
-    else if (y + ROW > scroller.scrollTop + height) scroller.scrollTop = y + ROW - height;
+    if (y < top) scroller.scrollTop = top = y;
+    else if (y + ROW > top + height) scroller.scrollTop = top = y + ROW - height;
   }
 
   function dragstart(e, k) {
@@ -181,14 +185,17 @@ export function create(ctx, state = {}) {
     e.dataTransfer.effectAllowed = "copy";
   }
 
-  // a pool of row elements, refilled from the scroll position
+  // a pool of row elements, refilled from the scroll position; each remembers what it shows, so a frame writes only
+  // what changed
   const pool = [];
+  const flag = (r, cls, on) => { if (r.flags[cls] !== on) r.classList.toggle(cls, r.flags[cls] = on); };
   function rowEl(i) {
     if (!pool[i]) {
       const r = pool[i] = h("div", {class: "row", draggable: true,
         onclick: (e) => click(e, r.k), ondragstart: (e) => dragstart(e, r.k),
         ondblclick: () => { if (rows[r.k].meta) addToPlot([rows[r.k].path]); }},
-      h("span", {class: "twisty"}), h("span", {class: "name"}), h("span", {class: "val"}));
+      h("span", {class: "twisty"}, icon("chevron", 12)), h("span", {class: "name"}), h("span", {class: "val"}));
+      r.flags = {};
       win.append(r);
     }
     return pool[i];
@@ -196,23 +203,32 @@ export function create(ctx, state = {}) {
 
   function render() {
     if (stale) build();
-    const failure = !total && store.failure, text = failure ? `Couldn't load the logs: ${failure}` : "";
-    if (note.textContent !== text) [note.textContent, note.hidden] = [text, !failure];
-    const first = Math.floor(scroller.scrollTop / ROW), n = Math.min(rows.length - first, Math.ceil(H / ROW) + 1);
-    win.style.transform = `translateY(${first * ROW}px)`;
+    // why the list is empty
+    const failure = !total && store.failure, f = st.filter.trim();
+    const text = rows.length ? "" : failure ? `Couldn't load the logs: ${failure}` : f ? `No series match "${f}"` : store.loading ? "Loading logs…" : "";
+    if (note.textContent !== text) {
+      [note.textContent, note.hidden] = [text, !text];
+      note.classList.toggle("error", !!failure);
+    }
+    const first = Math.floor(top / ROW), n = Math.min(rows.length - first, Math.ceil(H / ROW) + 1);
+    const shift = `translateY(${first * ROW}px)`;
+    if (win.style.transform !== shift) win.style.transform = shift;
     for (let i = 0; i < Math.max(n, pool.length); i++) {
       const r = rowEl(i), k = first + i, node = rows[k];
-      r.hidden = !node;
+      if (r.hidden !== !node) r.hidden = !node;
       if (!node) continue;
       r.k = k;
-      const [twisty, name, val] = r.children;
-      r.style.paddingLeft = `${4 + node.depth * 12}px`;
-      r.classList.toggle("sel", selected.has(node.path));
-      r.classList.toggle("cur", node.path === cursor);
-      twisty.textContent = node.kids ? (st.filter || st.expanded.has(node.path) ? "▾" : "▸") : "";
-      if (name.textContent !== node.name) name.textContent = node.name;
-      const m = node.meta;
-      r.title = m ? `${m.path}\n${m.type}${m.names ? `\n${m.names.map((s, i) => `${i} ${s}`).join("\n")}` : ""}` : node.path;
+      const [, name, val] = r.children, m = node.meta;
+      if (r.node !== node || r.meta !== m) {
+        [r.node, r.meta] = [node, m];
+        r.style.paddingLeft = `${4 + node.depth * 12}px`;
+        name.textContent = node.name;
+        r.title = m ? `${m.path}\n${m.type}${m.names ? `\n${m.names.map((s, i) => `${i} ${s}`).join("\n")}` : ""}` : node.path;
+      }
+      flag(r, "sel", selected.has(node.path));
+      flag(r, "cur", node.path === cursor);
+      flag(r, "branch", !!node.kids);
+      flag(r, "open", !!node.kids && !!(st.filter || st.expanded.has(node.path)));
       const text = m ? fmtValue(store.valueAt(m.path, clock.t), m.names).slice(0, 200) : "";  // long text only needs what shows
       if (val.textContent !== text) val.textContent = text;
     }

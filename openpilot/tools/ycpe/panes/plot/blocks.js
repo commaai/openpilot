@@ -4,9 +4,11 @@
 const cache = new WeakMap();  // chunk values → {t: run starts, v: run values, end}
 
 function runs(c) {
+  const {tt} = c;
+  if ("c" in c) return {t: tt.subarray(0, 1), v: [c.c], end: tt[tt.length - 1]};  // a constant is one run
   let r = cache.get(c.v);
   if (r) return r;
-  const {tt} = c, t = [], v = [];
+  const t = [], v = [];
   for (let k = 0; k < tt.length; k++) {
     const x = c.v[k];
     if (x === null || x !== x) continue;

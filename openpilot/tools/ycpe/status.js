@@ -12,8 +12,6 @@ import {daemon} from "/daemon.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 
-export const STATES = ["missing", "idle", "queued", "loading", "disk", "ready", "error"];
-
 const kinds = new Map();  // name → source
 const notes = new Map();  // key → text: standing facts about what's loaded (the log's schema), shown in the pill
 const subs = new Set();
@@ -32,20 +30,18 @@ export const status = {
     changed();
     let removed = false;
     return {
-      // text: a note on the state, e.g. "retrying (2/6)"
-      seg(n, state, {loaded = 0, total = 0, source = null, text = null} = {}) {
-        const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0, source: null, text: null};
-        if (s.state === state && s.loaded === loaded && s.total === total && s.source === source && s.text === text) return;
-        s.state = state;
-        s.loaded = loaded;
-        s.total = total;
-        s.source = source;
-        s.text = text;
+      // text: a note on the state, e.g. "retrying (2/6)"; label: the segment's name in the panel (a range of a route
+      // names its route segments). Segments past count() are ignored: another loader of the source may have set it
+      seg(n, state, {loaded = 0, total = 0, source = null, text = null, label = n} = {}) {
+        if (n >= src.segs.length) return;
+        const s = src.segs[n];
+        if (s.state === state && s.loaded === loaded && s.total === total && s.source === source && s.text === text && s.label === label) return;
+        Object.assign(s, {state, loaded, total, source, text, label});
         changed();
       },
       count(n) {
         if (src.segs.length === n) return;
-        for (let i = 0; i < n; i++) src.segs[i] ||= {state: "idle", loaded: 0, total: 0};
+        for (let i = 0; i < n; i++) src.segs[i] ||= {state: "idle", loaded: 0, total: 0, source: null, text: null, label: i};
         src.segs.length = n;
         changed();
       },
@@ -107,7 +103,7 @@ export function drawLane(c, src, x0, y, w, hgt, segX = null) {
 function counts(src) {
   const n = {ready: 0, disk: 0, loading: 0, queued: 0, error: 0, total: 0};
   for (const s of src.segs) {
-    if (s.state === "missing") continue;
+    if (!s || s.state === "missing") continue;
     n.total++;
     if (s.state in n) n[s.state]++;
   }
@@ -189,7 +185,7 @@ function statusPanel(anchor, onClose) {
       rw = {canvas, info, tip, errors, retry, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info, " ", retry), canvas, tip, errors)};
       canvas.addEventListener("pointermove", (e) => {
         const i = Math.floor((e.offsetX / canvas.clientWidth) * k.segs.length), s = k.segs[i];
-        rw.tip.textContent = s ? `segment ${i}: ${describe(s)}` : "";
+        rw.tip.textContent = s ? `segment ${s.label}: ${describe(s)}` : "";
       });
       canvas.addEventListener("pointerleave", () => { rw.tip.textContent = ""; });
       rows.set(k.name, rw);
@@ -206,7 +202,7 @@ function statusPanel(anchor, onClose) {
         n.error && `${n.error} failed`, k.rate && `${fmtBytes(k.rate)}/s`, k.memory && `mem ${fmtBytes(k.memory)}`, k.disk && `disk ${fmtBytes(k.disk)}`,
         k.buffering && `waiting on ${k.buffering.text}`];
       info.textContent = ` ${n.total} segments · ${bits.filter(Boolean).join(" · ")}`;
-      const failed = k.segs.flatMap((s, i) => s.state === "error" ? [`segment ${i}: ${s.text || "failed"}`] : []).join("\n");
+      const failed = k.segs.flatMap((s) => s.state === "error" ? [`segment ${s.label}: ${s.text || "failed"}`] : []).join("\n");
       if (errors.textContent !== failed) errors.textContent = failed;
       const dpr = devicePixelRatio, w = canvas.clientWidth, hgt = 10;
       if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = hgt * dpr; }

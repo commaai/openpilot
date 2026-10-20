@@ -99,21 +99,18 @@ export const enumRef = (p, k) => p.recs[k * REC + 7];
 export const times = (p, s) => (p.t ||= [])[s] ||= new Float64Array(p.bufs[s], 0, p.counts[s]);
 
 // column k of a pack as a contract chunk {t, v, i?} plus tt, the time of each value, and the first pyramid level of
-// numbers (see blocks); a constant column gets a value at every message time, like any other dense column
+// numbers (see blocks). A constant column's chunk also has c, its value: its v (a value at every message time, like
+// any other dense column) is only filled in when read, and the store's readers that can read c do
 export function unpack(p, k, n) {
   const r = p.recs, o = k * REC, s = r[o], kind = r[o + 1], len = r[o + 3], buf = p.bufs[s];
   const t = times(p, s);
-  let v, i, blocks;
   if (kind === CONST) {
-    const c = p.types[k] === "t" ? p.consts[r[o + 6]] : r[o + 6];
-    if (typeof c === "string") {
-      v = new Array(t.length).fill(c);
-    } else {
-      v = new Float64Array(t.length).fill(c);
-      const b = new Float64Array(Math.ceil(t.length / BLOCK)).fill(c);
-      blocks = {lo: b, hi: b};
-    }
-  } else if (kind === TEXT) {
+    const c = constant(p, k);
+    let v;
+    return {n, t, tt: t, c, get v() { return v ||= typeof c === "string" ? new Array(t.length).fill(c) : new Float64Array(t.length).fill(c); }};
+  }
+  let v, i, blocks;
+  if (kind === TEXT) {
     const offs = new Uint32Array(buf, r[o + 2], len + 1), bytes = new Uint8Array(buf, r[o + 8], offs[len]);
     // one decode, cut at the byte offsets when they're also character offsets (ASCII); else one decode each
     const all = decoder.decode(bytes);
@@ -126,4 +123,11 @@ export function unpack(p, k, n) {
   }
   if (r[o + 4] >= 0) i = new ARRAYS[r[o + 4]](buf, r[o + 5], len);
   return {n, t, v, i, tt: i ? Float64Array.from(i, (j) => t[j]) : t, blocks};
+}
+
+// the value of column k when it's a constant, else undefined
+export function constant(p, k) {
+  const r = p.recs, o = k * REC;
+  if (r[o + 1] !== CONST) return undefined;
+  return p.types[k] === "t" ? p.consts[r[o + 6]] : r[o + 6];
 }

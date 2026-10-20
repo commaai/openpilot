@@ -11,7 +11,6 @@ import {exportPng} from "./export.js";
 import {compute} from "/data/transforms.js";
 
 const L = 58, R = 10, T = 8, B = 20;
-const SEGMENT_WAIT = 200;  // ms that segments arriving together wait to recompute as one
 
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
@@ -29,7 +28,7 @@ export function create(ctx, state = {}) {
   const offs = [
     clock.on("range", refresh),
     clock.on("t", () => st.mode === "xy" && perf.invalidate(pane)),  // spectra don't follow the playhead
-    store.on("segment", () => { timer ||= setTimeout(() => { timer = 0; refresh(); }, SEGMENT_WAIT); }),
+    store.on("segment", () => { timer ||= setTimeout(() => { timer = 0; refresh(); }, view.RECOMPUTE_DEBOUNCE_MS); }),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     store.can?.on("series", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
     // a new version of a custom series or a transform

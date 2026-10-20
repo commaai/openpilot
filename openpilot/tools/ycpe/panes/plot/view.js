@@ -9,11 +9,19 @@ let tracker = null;
 let touched = null;  // the plot pane the user last pressed in
 
 export function join(p) { panes.add(p); }
-export function leave(p) {
+// p is gone from clock's workspace: so are its undo entries, which would undo nothing and keep it alive
+export function leave(p, clock) {
   panes.delete(p);
   if (touched === p) touched = null;
+  const hist = histories.get(clock);
+  if (!hist) return;
+  for (const list of [hist.past, hist.future]) {
+    for (const s of list) s.views?.delete(p);
+    list.splice(0, Infinity, ...list.filter((s) => s.pane !== p));
+  }
 }
 export function touch(p) { touched = p; }
+export function each(fn) { for (const p of panes) fn(p); }
 
 // the time plot a series is sent to without a drag: the one last used, else the first on the page
 function target() {
@@ -75,6 +83,9 @@ export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b)
 // instead of stalling one: the time left in frame f, from its first redraw. A redraw starts with MIN_MS left
 const BUDGET_MS = 4;
 export const MIN_MS = 1.5;
+
+// ms that inputs changing together (segments arriving) wait to recompute derived series as one
+export const RECOMPUTE_DEBOUNCE_MS = 200;
 let budget = {frame: null, end: 0};
 export function left(f) {
   if (budget.frame !== f) budget = {frame: f, end: performance.now() + BUDGET_MS};

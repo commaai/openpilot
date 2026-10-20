@@ -7,7 +7,7 @@ import {status} from "../status.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
-import {BLOCK, enumRef, service, times, unpack} from "./pack.js";
+import {BLOCK, constant, enumRef, service, times, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
@@ -52,6 +52,7 @@ export class Store {
     this.missing = new Set();  // migrated paths that couldn't be computed
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
+    this.listed = null;  // what paths() has listed (see there)
     this.schema = null;  // the log's own schema ({key, text}, see schemas.js) or null for the bundled one
     this.gen = 0;  // bumped with every schema change; packs carry the generation they were parsed with
     this.unknown = {events: 0, services: new Set()};  // what the reads so far didn't know (capnp.js)
@@ -119,6 +120,7 @@ export class Store {
     this.schema = schema;
     this.gen++;
     this.enums = [];
+    this.listed = null;
     for (const e of this.entries.values()) if (e.evicted) this.entries.delete(e.path);
     this.evicted.clear();
     this.emit("schema", schema);
@@ -152,7 +154,10 @@ export class Store {
       e.version++;
       if (!e.at.some(Boolean)) removed = this.entries.delete(e.path);
     }
-    if (removed) this.emit("paths");
+    if (removed) {
+      this.listed = null;
+      this.emit("paths");
+    }
   }
 
   // outward from the focus segment
@@ -186,6 +191,13 @@ export class Store {
     if (ev.loaded !== undefined) {
       this.received.push([performance.now(), ev.loaded - (seg.loading?.loaded || 0)]);
       seg.loading = {loaded: ev.loaded, total: ev.total};
+      // the rate falls as the downloads stop: totals again every second until the last two seconds received nothing
+      this.ticker ||= setInterval(() => {
+        this.totals();
+        if (this.received.length) return;
+        clearInterval(this.ticker);
+        this.ticker = 0;
+      }, 1000);
     }
     if (ev.paused && seg.loading) seg.loading.paused = true;
     if (ev.parsing) seg.loading = {loaded: 1, total: 1};
@@ -200,7 +212,7 @@ export class Store {
       : seg.status === "done" && seg.bytes ? "ready"
       : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
     const text = state === "error" ? seg.error : seg.retry ? `retrying (${seg.retry})` : null;
-    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text});
+    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text, label: seg.real ?? seg.n});
     if (seg.n === this.focusSeg) this.buffering();
     this.totals();
   }
@@ -245,6 +257,12 @@ export class Store {
     for (const k in p.ms) pr.ms[k] += p.ms[k];
   }
 
+  // segments are still to load
+  get loading() {
+    const p = this.progress;
+    return p.done + p.failed < p.total;
+  }
+
   // why no segment loaded, once every one has failed; null while any is loaded or loading
   get failure() {
     const segs = this.route.segments.filter((s) => s.status !== "missing");
@@ -254,7 +272,7 @@ export class Store {
   failed(seg, e) {
     if (this.disposed) return;
     seg.status = "error";
-    seg.error = String(e?.message ?? e);
+    seg.error = String(e?.message ?? e).replace(/^decompress failed \(-\d+\)$/, "truncated or corrupt log");  // zstd's error codes
     seg.retry = 0;
     seg.loading = null;
     this.publish(seg);
@@ -316,9 +334,11 @@ export class Store {
         e = {path: paths[k], type: p.types[k], ...(names && {names}), at: [], views: [], version: 0, used: 0};
         this.entries.set(paths[k], e);
         added = true;
+        if (this.listOf(e.path)) this.listed = null;  // listed as an index of a long list until now
       } else if (fresh && (e.type !== p.types[k] || String(e.names) !== String(names))) {
         e.type = p.types[k];  // another schema can type or name a path differently
         e.names = names;
+        this.listed = null;
       }
       if (e.evicted) continue;  // not resident until asked for again
       if (e.at[seg.n]) this.release(e.at[seg.n]);
@@ -350,20 +370,37 @@ export class Store {
     perf.mark("ingest", `${ms.toFixed(1)} ms (max ${this.progress.ingestMax.toFixed(1)})`);
   }
 
+  // every path as {path, type, names?, internal?, lazy?}: the same array from call to call while paths are only
+  // added, with the new ones appended; a new one once any goes or changes (the browser keeps its place in it)
   paths() {
-    const out = this.can.paths();
+    if (this.listed?.dbc !== this.can.dbcVersion) this.listed = null;
+    const l = this.listed ||= {out: [], dbc: this.can.dbcVersion, can: 0, entries: 0, lists: new Map(), overlays: new Map()};
+    const {out} = l, can = this.can.paths();
+    for (; l.can < can.length; l.can++) out.push(can[l.can]);
+    let k = 0;
     for (const {path, type, names} of this.entries.values()) {
+      if (k++ < l.entries) continue;  // entries keep their order
       out.push(names ? {path, type, names} : {path, type});
-      const mono = path.match(/^(\/[^/]+)\/_?valid$/);  // every service has one
+      const mono = path.match(/^(\/[^/]+)\/valid$/);  // every service has one (and _valid only next to a field named valid)
       if (mono) out.push({path: `${mono[1]}/${MONO}`, type: "f64", internal: true});
     }
+    l.entries = k;
     // the indexes of skipped long lists of values, loaded once plotted
     for (const [list, n] of this.lists) {
       const type = this.listTypes.get(list);
       if (!type || type === "s" || type === "l") continue;
-      for (let i = 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
+      for (let i = l.lists.get(list) || 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
+      l.lists.set(list, n);
     }
-    for (const o of this.overlays) for (const p of o.store.paths()) out.push({...p, path: o.prefix + p.path});
+    for (const o of this.overlays) {
+      const theirs = o.store.paths(), [seen, from] = l.overlays.get(o.prefix) || [theirs, 0];
+      if (seen !== theirs) {  // its paths went or changed
+        this.listed = null;
+        return this.paths();
+      }
+      for (let i = from; i < theirs.length; i++) out.push({...theirs[i], path: o.prefix + theirs[i].path});
+      l.overlays.set(o.prefix, [theirs, theirs.length]);
+    }
     return out;
   }
 
@@ -383,6 +420,25 @@ export class Store {
       e.series = {path, type: e.type, names: e.names, chunks, version: e.version};
     }
     return e.series;
+  }
+
+  // a path's {type, names?} without unpacking it; null when unknown
+  meta(path) {
+    const o = this.overlays.length ? this.overlayOf(path) : null;
+    if (o) return o.store.meta(path.slice(o.prefix.length));
+    return this.entries.get(path) || this.series(path);
+  }
+
+  // the value of a log column that's the same constant in every loaded segment, else undefined
+  constant(path) {
+    let c;
+    for (const a of this.entries.get(path)?.at || []) {
+      if (!a) continue;
+      const x = constant(a.pack, a.k);
+      if (x === undefined || (c !== undefined && x !== c)) return undefined;
+      c = x;
+    }
+    return c;
   }
 
   // one segment's chunk of a path, unpacking only that segment's (series() unpacks them all, and text decodes)
@@ -433,7 +489,8 @@ export class Store {
       const t = [], v = [];
       for (const c of chunks) {
         for (let k = lowerBound(c.tt, t0), end = upperBound(c.tt, t1); k < end; k++) {
-          if (c.v[k] === c.v[k]) { t.push(c.tt[k]); v.push(c.v[k]); }
+          const x = "c" in c ? c.c : c.v[k];
+          if (x === x) { t.push(c.tt[k]); v.push(x); }
         }
       }
       const vals = Float64Array.from(v);
@@ -442,31 +499,37 @@ export class Store {
     const w = (t1 - t0) / n;
     const t = new Float64Array(n), min = new Float64Array(n).fill(Infinity), max = new Float64Array(n).fill(-Infinity);
     for (let b = 0; b < n; b++) t[b] = t0 + (b + 0.5) * w;
-    const add = (time, lo, hi) => {
-      const b = Math.min(n - 1, Math.floor((time - t0) / w));
-      if (lo < min[b]) min[b] = lo;
-      if (hi > max[b]) max[b] = hi;
-    };
     for (const c of chunks) {
-      const {tt, v} = c, k0 = lowerBound(tt, t0), k1 = upperBound(tt, t1);
+      const {tt} = c, k0 = lowerBound(tt, t0), k1 = upperBound(tt, t1);
       if (k1 <= k0) continue;
-      // the coarsest level whose blocks still fit four to a bucket
-      const perBucket = (k1 - k0) / Math.max(1, (tt[k1 - 1] - tt[k0]) / w);
-      const levels = perBucket >= 4 * BLOCK ? pyramid(c) : [];
+      if ("c" in c) {  // a constant: the value in each bucket with a sample, found by stepping (or bisecting) to bucket ends
+        for (let k = k0; k < k1;) {
+          const b = Math.min(n - 1, Math.floor((tt[k] - t0) / w)), end = b === n - 1 ? Infinity : t0 + (b + 1) * w;
+          if (c.c < min[b]) min[b] = c.c;
+          if (c.c > max[b]) max[b] = c.c;
+          let j = k + 1;
+          while (j < k1 && tt[j] < end && j < k + 8) j++;
+          k = j < k1 && tt[j] < end ? lowerBound(tt, end, j, k1) : j;
+        }
+        continue;
+      }
+      // the coarsest level whose blocks still fit two to a bucket
+      const {v} = c, perBucket = (k1 - k0) / Math.max(1, (tt[k1 - 1] - tt[k0]) / w);
+      const levels = perBucket >= 2 * BLOCK ? pyramid(c) : [];
       let level = -1, size = 1;
-      while (level + 1 < levels.length && (level < 0 ? BLOCK : size * FANOUT) * 4 <= perBucket) {
+      while (level + 1 < levels.length && (level < 0 ? BLOCK : size * FANOUT) * 2 <= perBucket) {
         size = level < 0 ? BLOCK : size * FANOUT;
         level++;
       }
       const b0 = Math.ceil(k0 / size), b1 = Math.floor(k1 / size);
       if (level < 0 || b1 <= b0) {
-        for (let k = k0; k < k1; k++) add(tt[k], v[k], v[k]);
+        bin(tt, v, v, k0, k1, 1, t0, w, min, max);
         continue;
       }
       const {lo, hi} = levels[level];
-      for (let k = k0; k < b0 * size; k++) add(tt[k], v[k], v[k]);
-      for (let b = b0; b < b1; b++) add(tt[b * size], lo[b], hi[b]);
-      for (let k = b1 * size; k < k1; k++) add(tt[k], v[k], v[k]);
+      bin(tt, v, v, k0, b0 * size, 1, t0, w, min, max);
+      bin(tt, lo, hi, b0, b1, size, t0, w, min, max);
+      bin(tt, v, v, b1 * size, k1, 1, t0, w, min, max);
     }
     for (let b = 0; b < n; b++) if (min[b] > max[b]) min[b] = max[b] = NaN;
     return {t, min, max};
@@ -600,6 +663,7 @@ export class Store {
     this.overlays.splice(this.overlays.indexOf(o), 1);
     for (const off of o.offs) off();
     o.store.dispose();
+    this.listed = null;
     this.emit("paths");
   }
 
@@ -632,6 +696,7 @@ export class Store {
   dispose() {
     for (const o of this.overlays) o.store.dispose();
     this.disposed = true;
+    clearInterval(this.ticker);
     removeEventListener("online", this.online);
     if (this.shared) this.loader.cancel(this);
     else this.loader.dispose();
@@ -679,8 +744,37 @@ function pyramid(c) {
   return (c.pyramid = levels);
 }
 
+// the min and max of lo[k] and hi[k], k in [k0, k1), into the buckets of width w from t0 (min.length of them) that
+// the times tt[k * size] fall in: the bucket's end is kept, so a sample costs two compares
+function bin(tt, lo, hi, k0, k1, size, t0, w, min, max) {
+  const last = min.length - 1;
+  let b = -1, end = -Infinity, a = 0, z = 0;
+  for (let k = k0; k < k1; k++) {
+    const time = tt[k * size];
+    if (time >= end) {
+      if (b >= 0) {
+        min[b] = a;
+        max[b] = z;
+      }
+      b = Math.min(last, Math.floor((time - t0) / w));
+      end = b === last ? Infinity : t0 + (b + 1) * w;
+      a = min[b];
+      z = max[b];
+    }
+    if (lo[k] < a) a = lo[k];
+    if (hi[k] > z) z = hi[k];
+  }
+  if (b >= 0) {
+    min[b] = a;
+    max[b] = z;
+  }
+}
+
 // a chunk's last value at or before t
-function lastValue({tt, v}, t) {
+function lastValue(chunk, t) {
+  const {tt} = chunk;
+  if ("c" in chunk) return upperBound(tt, t) ? chunk.c : undefined;
+  const {v} = chunk;
   for (let k = upperBound(tt, t) - 1; k >= 0; k--) if (v[k] === v[k] && v[k] !== null) return v[k];
   return undefined;
 }
@@ -697,9 +791,8 @@ function overlapping(chunks, t0, t1) {
   return chunks.slice(lo, end);
 }
 
-// first k with a[k] >= x
-function lowerBound(a, x) {
-  let lo = 0, hi = a.length;
+// first k in [lo, hi) with a[k] >= x
+function lowerBound(a, x, lo = 0, hi = a.length) {
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
     if (a[mid] < x) lo = mid + 1; else hi = mid;

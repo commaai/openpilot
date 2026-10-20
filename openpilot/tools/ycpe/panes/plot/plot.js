@@ -14,10 +14,9 @@ import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/t
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
-import {customsOf, specKey} from "/layouts/import.js";
+import {customsOf, plots, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
-const SEGMENT_WAIT = 200;  // ms that inputs changing together wait to recompute as one
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
@@ -47,7 +46,6 @@ function gapTest(maxDt, spans) {
   };
 }
 
-
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   let col = colors(ctx.theme);
@@ -60,20 +58,25 @@ export function create(ctx, state = {}) {
   let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
   let frame = null;    // geometry and prepared curves of the last base draw
   let gesture = null;  // the pointer gesture in progress
+  const pointers = new Map();  // pointer id → where it is, while it's down (two make a pinch)
   let rows = [];       // legend rows, parallel to st.curves
   let statsTimer = 0, statsKey = "", recomputeTimer = 0;
-  let failure = null;  // store.failure as the empty state shows it
-  const made = new Map();  // derived or custom path → input version it was computed from
+  const made = new Map();  // derived or custom path → the recipe it was computed from
   const busy = new Set();
-  const decimator = new Decimator(store);
+  const decimator = new Decimator(store, () => invalidate());
 
   const pane = {
-    name: "plot", el, render, resize, dispose, save, addCurves, compare,
+    name: "plot", el, store, render, resize, dispose, save, addCurves, compare, setCustom,
     has: (path) => st.curves.some((c) => c.path === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     get curves() { return structuredClone(st.curves); },
-    setCurves(curves) { st.curves = curves; rebuildLegend(); invalidate(); },
+    setCurves(curves) {
+      st.curves = curves;
+      for (const c of curves) if (c.custom) share(c);
+      rebuildLegend();
+      invalidate();
+    },
     overlay: () => perf.invalidate(pane),
   };
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
@@ -83,11 +86,13 @@ export function create(ctx, state = {}) {
     clock.on("t", pane.overlay),
     store.on("segment", invalidate),
     store.on("paths", invalidate),
-    store.on("progress", () => { if (!!store.failure !== !!failure) hint(); }),
+    store.on("put", (path) => { if (st.curves.some((c) => c.path === path)) invalidate(); }),  // a custom series computed by another plot
+    store.on("progress", hint),
     view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     // decoded DBC signals arrive after they're asked for
     store.can?.on("series", (path) => { if (st.curves.some((c) => c.path === path || c.custom?.inputs.includes(path))) invalidate(); }),
+    store.can?.on("moved", followDbc),
   ].filter(Boolean);
   view.join(pane);
 
@@ -107,6 +112,18 @@ export function create(ctx, state = {}) {
       ...(c.custom?.untrusted && {error: "custom code from an imported layout: click to review and run it"})};
   }
 
+  // curves and custom series' inputs follow a renamed DBC signal or message, and go with a removed one
+  function followDbc(move) {
+    const to = (path) => path.startsWith("/dbc/") ? move(path) : path;
+    const follow = (c) => c.custom ? {...c, custom: {...c.custom, inputs: c.custom.inputs.map(to)}} : {...c, path: to(c.path)};
+    const curves = st.curves.map(follow).filter((c) => c.path && !c.custom?.inputs.includes(null));
+    if (JSON.stringify(curves) === JSON.stringify(st.curves)) return;
+    view.rememberCurves(clock, pane);
+    st.curves = curves;
+    rebuildLegend();
+    invalidate();
+  }
+
   // removals can be undone in the plot, so it takes the focus
   function removeCurves(cs) {
     view.rememberCurves(clock, pane);
@@ -118,14 +135,15 @@ export function create(ctx, state = {}) {
 
   // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
   // change, off the draw and a moment later (inputs that change together, as segments arrive, recompute once);
-  // custom code from an untrusted layout waits until the user has reviewed it in the console
-  const inputsVersion = (inputs) => inputs.map((p) => store.series(p)?.version).join();
-  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== inputsVersion(inputs);
+  // custom code from an untrusted layout waits until the user has reviewed it in the console. A recipe is the inputs'
+  // versions and a custom series' code, so an undone edit of the code computes again
+  const recipe = (c, out, inputs) => (out === c.path && c.custom ? `${specKey(c.custom)}|` : "") + inputs.map((p) => store.series(p)?.version).join();
+  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== recipe(c, out, inputs);
   function source(c) {
     let src = c.path;
     steps(c, (out, inputs) => {
       src = out;
-      if (stale(c, out, inputs)) recomputeTimer ||= setTimeout(recompute, made.has(out) ? SEGMENT_WAIT : 0);
+      if (stale(c, out, inputs)) recomputeTimer ||= setTimeout(recompute, made.has(out) ? view.RECOMPUTE_DEBOUNCE_MS : 0);
     });
     return src;
   }
@@ -143,18 +161,19 @@ export function create(ctx, state = {}) {
       if (c.hidden) continue;
       steps(c, (out, inputs, run) => {
         if (!stale(c, out, inputs)) return;
-        const version = inputsVersion(inputs);
+        const from = recipe(c, out, inputs);
         busy.add(out);
-        run().then(() => { made.set(out, version); c.error = null; }, (e) => { made.set(out, version); c.error = e.message; })
+        run().then(() => { made.set(out, from); c.error = null; }, (e) => { made.set(out, from); c.error = e.message; })
           .finally(() => { busy.delete(out); rebuildLegend(); invalidate(); });
       });
     }
   }
 
-  // the empty state: where to drop series, or why there's nothing to plot
+  // the empty state: where to drop series, or why there's nothing to plot yet
   function hint() {
-    failure = store.failure;
-    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "Drag series here, or double-click one in Series · right-click for options";
+    const failure = store.failure;
+    const text = failure ? `Couldn't load the logs: ${failure}` : store.loading ? "Loading logs…" : "Drag series here, or double-click one in Series · right-click for options";
+    if (empty.textContent !== text) empty.textContent = text;
     empty.hidden = !failure && !!rows.length;
   }
 
@@ -170,6 +189,7 @@ export function create(ctx, state = {}) {
     const numeric = [], text = [];
     for (const c of st.curves) {
       if (c.hidden) continue;
+      if (view.left(f) <= 0) return null;  // a series' first use unpacks it
       const src = source(c), s = store.series(src);
       if (!s) continue;
       const item = {c, src, s, shift: c.shift || 0, scale: c.scale ?? 1, offset: c.offset ?? 0};
@@ -190,11 +210,13 @@ export function create(ctx, state = {}) {
       it.d = withEdges(d, it.src, a, b);
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
-    // valid=false spans of the services behind the plain curves
+    // valid=false spans of the services behind the plain curves; none where valid is always true
     const invalid = [];
     for (const svc of new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]))) {
       if (view.left(f) <= 0) return null;
-      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
+      const path = `/${svc}/valid`;
+      if (store.constant(path) === 1) continue;
+      const d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
       if (d) invalid.push(d);
     }
     return {rows, lines, blockMode, invalid};
@@ -300,7 +322,7 @@ export function create(ctx, state = {}) {
     const g = gOver;
     g.clearRect(0, 0, W, H);
     if (!frame) return;
-    const {px, pw, py, ph, X, Y, t0, t1} = frame, top = T, bottom = T + H - T - B;
+    const {px, pw, py, ph, X, Y, t0, t1} = frame, top = T, bottom = H - B;
     const vline = (t, color, dash) => {
       if (t < t0 || t > t1) return;
       const x = Math.round(X(t)) + 0.5;
@@ -418,23 +440,40 @@ export function create(ctx, state = {}) {
     const other = path !== c?.path && ctx.layout && customsOf(ctx.layout.save()).get(path);
     if (other && other !== specKey(custom)) throw new Error(`another custom series is named ${spec.name}: pick another name`);
     await evaluate(store, path, custom);
-    made.set(path, inputsVersion(custom.inputs));
+    made.set(path, recipe({path, custom}, path, custom.inputs));
     view.rememberCurves(clock, pane);
     if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
     else st.curves.push(normalize({path, label: spec.name, custom}));
+    share({path, custom});
     rebuildLegend();
     invalidate();
   });
+
+  // the other curves named like custom series c, in the plots on screen and the layout's other tabs, take its code
+  function share(c) {
+    view.each((p) => p.store === store && p.setCustom?.(c.path, c.custom));
+    if (ctx.layout) plots(ctx.layout.model, (curves) => { for (const x of curves) if (x.path === c.path && x.custom) x.custom = structuredClone(c.custom); });
+  }
+
+  // another curve's code for the custom series at path, which that curve computes into the store
+  function setCustom(path, custom) {
+    const cs = st.curves.filter((c) => c.path === path && c.custom && specKey(c.custom) !== specKey(custom));
+    if (!cs.length) return;
+    for (const c of cs) Object.assign(c, {custom: structuredClone(custom), error: null});
+    made.set(path, recipe(cs[0], path, custom.inputs));
+    rebuildLegend();
+    invalidate();
+  }
 
   function updateLegend() {
     const tt = view.getTracker() ?? clock.t;
     st.curves.forEach((c, k) => {
       const row = rows[k];
       if (!row) return;
-      const s = store.series(c.transform ? derivedPath(c.path, c.transform) : c.path);
-      let v = s ? store.valueAt(s.path ?? c.path, tt - (c.shift || 0)) : undefined;
-      if (typeof v === "number" && s.type !== "e") v = v * (c.scale ?? 1) + (c.offset ?? 0);
-      const text = fmtValue(v, s?.names).slice(0, 100);
+      const path = c.transform ? derivedPath(c.path, c.transform) : c.path, m = store.meta(path);
+      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined;
+      if (typeof v === "number" && m.type !== "e") v = v * (c.scale ?? 1) + (c.offset ?? 0);
+      const text = fmtValue(v, m?.names).slice(0, 100);
       if (row.val.textContent !== text) row.val.textContent = text;
     });
     if (st.stats) updateStats();
@@ -452,8 +491,8 @@ export function create(ctx, state = {}) {
       res.forEach((r, k) => {
         const row = rows[st.curves.indexOf(frame.lines[k]?.c)];
         if (!r || !row) return;
-        const f = fmtValue;
-        row.append(h("div", {class: "stats"}, `min ${f(r.min)}  max ${f(r.max)}  mean ${f(r.mean)}  std ${f(r.std)}  n ${r.count}  ${f(r.rate)} Hz`));
+        row.append(h("div", {class: "stats"},
+          `min ${fmtValue(r.min)}  max ${fmtValue(r.max)}  mean ${fmtValue(r.mean)}  std ${fmtValue(r.std)}  n ${r.count}  ${fmtValue(r.rate)} Hz`));
       });
     }, console.error), 120);
   }
@@ -482,18 +521,36 @@ export function create(ctx, state = {}) {
     invalidate();
   }
 
+  // a press: left drags a zoom box, others pan; one finger pans, two pinch time around their middle. The mouse's
+  // back button undoes the view, as in jotpluggler
   over.addEventListener("pointerdown", (e) => {
     view.touch(pane);
     if (!frame) return;
+    if (e.button === 3) return view.undo(clock);
     over.focus();
     over.setPointerCapture(e.pointerId);
     const p = local(e);
-    gesture = {button: e.button, zone: zone(p), start: p, range: [...xRange()], lo: frame.lo, hi: frame.hi, moved: false};
+    pointers.set(e.pointerId, p);
+    if (pointers.size === 2) {
+      const [f0, f1] = pointers.values(), [a, b] = xRange();
+      view.remember(clock);
+      gesture = {pinch: true, moved: true, span: b - a, apart: Math.max(10, Math.abs(f1.x - f0.x)), at: timeAt((f0.x + f1.x) / 2)};
+      return pane.overlay();
+    }
+    if (pointers.size > 2) return;
+    gesture = {button: e.button, touch: e.pointerType === "touch", zone: zone(p), start: p, range: [...xRange()], lo: frame.lo, hi: frame.hi, moved: false};
   });
+  over.addEventListener("mouseup", (e) => { if (e.button === 3) e.preventDefault(); });  // else the page goes back
 
   over.addEventListener("pointermove", (e) => {
     if (!frame) return;
     const p = local(e);
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, p);
+    if (gesture?.pinch) {
+      const [f0, f1] = pointers.values(), span = gesture.span * gesture.apart / Math.max(10, Math.abs(f1.x - f0.x));
+      const a = gesture.at - ((f0.x + f1.x) / 2 - frame.px) / frame.pw * span;
+      return setRange(a, a + span);
+    }
     view.track(zone(p) === "plot" && !(gesture?.moved && gesture.box === undefined) ? Math.max(frame.t0, timeAt(p.x)) : null);
     const tip = gesture ? "" : blockAt(p);
     if (over.title !== tip) over.title = tip;
@@ -502,8 +559,8 @@ export function create(ctx, state = {}) {
     if (!gesture.moved && Math.hypot(dx, dy) < DRAG) return;
     if (!gesture.moved) view.remember(clock);
     gesture.moved = true;
-    const {zone: z, button, range: [a, b], lo, hi} = gesture;
-    const panX = z === "x" || (z === "plot" && button !== 0), panY = z === "y" || (button !== 0 && st.y.min !== undefined);
+    const {zone: z, button, touch, range: [a, b], lo, hi} = gesture;
+    const panX = z === "x" || (z === "plot" && (button !== 0 || touch)), panY = z === "y" || (button !== 0 && st.y.min !== undefined);
     if (panX) {
       const dt = dx / frame.pw * (b - a);
       setRange(a - dt, b - dt);
@@ -513,7 +570,7 @@ export function create(ctx, state = {}) {
       st.y = {min: lo + dv, max: hi + dv};
       invalidate();
     }
-    if (z === "plot" && button === 0) {
+    if (z === "plot" && button === 0 && !touch) {
       const x0 = Math.max(frame.px, Math.min(p.x, gesture.start.x)), x1 = Math.min(frame.px + frame.pw, Math.max(p.x, gesture.start.x));
       const y0 = Math.max(frame.py, Math.min(p.y, gesture.start.y)), y1 = Math.min(frame.py + frame.ph, Math.max(p.y, gesture.start.y));
       // a flat box (or alt) zooms time only, a narrow one (or shift) zooms values only
@@ -524,9 +581,10 @@ export function create(ctx, state = {}) {
   });
 
   over.addEventListener("pointerup", (e) => {
+    pointers.delete(e.pointerId);
     const g = gesture;
     gesture = null;
-    if (!g || !frame) return;
+    if (!g || g.pinch || !frame) return;  // the finger left of a pinch doesn't start a gesture
     const p = local(e);
     if (!g.moved) {
       if (g.button === 0 && g.zone === "plot") clock.seek(timeAt(p.x));
@@ -540,16 +598,25 @@ export function create(ctx, state = {}) {
     pane.overlay();
   });
 
+  over.addEventListener("pointercancel", (e) => {
+    pointers.delete(e.pointerId);
+    gesture = null;
+    pane.overlay();
+  });
   over.addEventListener("pointerleave", () => gesture || view.track(null));
   // a legend highlight can outlive its pointerleave when a popup opens over the row
   over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
   // the context menu key (or shift+F10) opens the plot's menu at its middle; a right click opens it on release,
-  // or here in an empty plot (which has no gestures)
+  // or here in an empty plot (which has no gestures); a long press opens it here, unless the finger has moved
   over.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     const r = over.getBoundingClientRect();
     if (e.button === -1) paneMenu({clientX: r.left + r.width / 2, clientY: r.top + r.height / 2});
     else if (!frame) paneMenu(e);
+    else if (e.pointerType === "touch" && gesture && !gesture.moved) {
+      gesture = null;  // so lifting the finger doesn't seek
+      paneMenu(e);
+    }
   });
 
   over.addEventListener("wheel", (e) => {
@@ -651,10 +718,11 @@ export function create(ctx, state = {}) {
   }
 
   function dispose() {
-    for (const off of offs) off?.();
-    view.leave(pane);
+    for (const off of offs) off();
+    view.leave(pane, clock);
     clearTimeout(statsTimer);
     clearTimeout(recomputeTimer);
+    decimator.dispose();
     closeMenu();
   }
 

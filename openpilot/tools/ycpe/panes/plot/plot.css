@@ -44,12 +44,14 @@
 
 /* series browser */
 .browser { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.browser .bar { display: flex; align-items: center; gap: 6px; padding: 4px; border-bottom: 1px solid var(--line); }
+.browser .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px; border-bottom: 1px solid var(--line); }
 .browser .filter { flex: 1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
 .browser .filter:focus { border-color: var(--accent); }
+@container (max-width: 260px) { .browser .filter { flex-basis: 100%; min-width: 100px; } }
 .browser label { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
 .browser .count { min-width: 5ch; text-align: right; font: 11px var(--mono); }
-.browser .note { padding: 8px; color: var(--critical-fg); }
+.browser .note { padding: 8px; color: var(--muted); }
+.browser .note.error { color: var(--critical-fg); }
 .browser .scroller { position: relative; flex: 1; min-height: 0; overflow: auto; }
 .browser .window { position: absolute; left: 0; right: 0; top: 0; }
 .browser .row { display: flex; align-items: center; height: 18px; padding-right: 6px; font: 11px var(--mono); white-space: nowrap; cursor: default; }
@@ -57,7 +59,9 @@
 .browser .row.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .browser .scroller:focus-visible { outline: 0; }
 .browser .scroller:focus-visible .row.cur { box-shadow: inset 0 0 0 1px var(--accent); }
-.browser .twisty { flex-shrink: 0; width: 12px; color: var(--muted); }
+.browser .twisty { flex-shrink: 0; display: flex; width: 12px; color: var(--muted); }
+.browser .row:not(.branch) .twisty svg { visibility: hidden; }
+.browser .row.open .twisty svg { transform: rotate(90deg); }
 .browser .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .browser .val { flex-shrink: 0; max-width: 45%; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
 
