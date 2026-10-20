@@ -129,7 +129,7 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
 | `GET /local/repos/{id}/dbc/{name}` | `{name, text, mtime}` |
 | `PUT /local/repos/{id}/dbc/{name}[?mtime=]` | Body is the DBC text. Saves it atomically into opendbc's dbc directory, and only there: the name must match `[A-Za-z0-9_.-]+\.dbc`, and the path is confined. With the `mtime` from the read, it answers 409 if the file changed on disk since. |
-| `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp\|dbc, file, path, deleted}`, from polling mtimes once a second. |
+| `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp, file, path, deleted}` when cereal's `.capnp` files change, from polling their mtimes once a second. |
 | `GET /local/device` / `POST /local/device` | `{host, root}`. POST takes `{host, key?}` and sets the device until restart. The host is `[user@]host` and the user defaults to `comma`. It's validated so it can never be an ssh option. |
 | `GET /local/device/routes` | `{dongle, host, routes: [{route, log_id, segments: {n: {file: size}}, mtime, active: [n]}]}`, newest first. It comes from one `find` over ssh. |
 | `POST /local/webrtc/stream` | Body: webrtcd's stream request (`{sdp, cameras, enabled, ...}`). Forwards it to `127.0.0.1:<--webrtcd-port>/stream`, and nowhere else, and returns webrtcd's answer. |

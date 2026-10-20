@@ -53,19 +53,30 @@ def package_opendbc() -> Path | None:
   return None
 
 
+@cache  # asked once per checkout: the watcher lists roots every second
+def main_checkout(p: Path) -> Path | None:
+  common = git(p, "rev-parse", "--path-format=absolute", "--git-common-dir")
+  if common and Path(common).name == ".git" and Path(common).parent.resolve() != p:
+    return Path(common).parent.resolve()
+  return None
+
+
 def roots() -> list[Path]:
   out = []
   for r in config.repo_roots:
     p = Path(r).resolve()
     out.append(p)
-    common = git(p, "rev-parse", "--path-format=absolute", "--git-common-dir")
-    if common and Path(common).name == ".git" and Path(common).parent.resolve() != p:
-      out.append(Path(common).parent.resolve())  # a worktree's main checkout
+    if (main := main_checkout(p)):
+      out.append(main)  # a worktree's main checkout
   return list(dict.fromkeys(out))
 
 
+def cereal_dir(p: Path) -> Path | None:
+  return next((c for c in (p / "openpilot" / "cereal", p / "cereal") if (c / "log.capnp").is_file()), None)
+
+
 def checkout(p: Path, i: int) -> dict:
-  cereal = next((c for c in (p / "openpilot" / "cereal", p / "cereal") if (c / "log.capnp").is_file()), None)
+  cereal = cereal_dir(p)
   dbc = p / "opendbc_repo" / "opendbc" / "dbc"
   if not any(dbc.glob("*.dbc")):
     dbc = package_opendbc()
@@ -152,27 +163,23 @@ def dbc_write(req):
           "generated": p.name.endswith("_generated.dbc")}
 
 
-# change feed: mtimes polled once a second (no inotify dependency)
+# change feed: cereal's .capnp mtimes polled once a second (no inotify dependency), with no git calls
 
 _changes = Feed()
 _watch_lock = threading.Lock()
 _watcher: threading.Thread | None = None
 
 
-def _snapshot() -> dict[str, tuple[str, str, float]]:
+def _snapshot() -> dict[str, tuple[str, float]]:
   out = {}
-  for c in checkouts():
-    globs = []
-    if c["cereal"]:
-      globs.append(("capnp", Path(c["cereal"]), "**/*.capnp"))
-    if c["opendbc"]:
-      globs.append(("dbc", Path(c["opendbc"]["dbc"]), "*.dbc"))
-    for kind, d, g in globs:
-      for p in d.glob(g):
-        try:
-          out[str(p)] = (c["id"], kind, p.stat().st_mtime)
-        except OSError:
-          pass
+  for i, root in enumerate(roots()):
+    if (cereal := cereal_dir(root)) is None:
+      continue
+    for p in cereal.glob("**/*.capnp"):
+      try:
+        out[str(p)] = (str(i), p.stat().st_mtime)
+      except OSError:
+        pass
   return out
 
 
@@ -185,15 +192,15 @@ def _watch() -> None:
     now = _snapshot()
     for path in now.keys() | last.keys():
       if now.get(path) != last.get(path):
-        repo, kind, _ = now.get(path) or last[path]
-        ev = {"repo": repo, "kind": kind, "file": Path(path).name, "path": path, "deleted": path not in now}
+        repo, _ = now.get(path) or last[path]
+        ev = {"repo": repo, "kind": "capnp", "file": Path(path).name, "path": path, "deleted": path not in now}
         _changes.publish(ev)
     last = now
 
 
 @route("GET", "/local/repos/watch")
 def watch(req):
-  """SSE "change" events {repo, kind: capnp|dbc, file, path, deleted} when cereal or opendbc files change."""
+  """SSE "change" events {repo, kind: capnp, file, path, deleted} when cereal's schema files change."""
   global _watcher
   with _watch_lock:
     if _watcher is None:

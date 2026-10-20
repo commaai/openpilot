@@ -64,10 +64,10 @@ class TestRepos(DaemonCase):
   def test_watch(self):
     r = self.connect("/local/repos/watch")
     time.sleep(1.2)  # the watcher's first snapshot
-    p = DBC / "watched.dbc"
+    p = REPO / "openpilot" / "cereal" / "watched.capnp"
     p.write_text("a")
     os.utime(p, (time.time() + 5, time.time() + 5))  # noqa: TID251  a distinct mtime
-    self.assertIn(b'"kind":"dbc"', self.read_until(r, b"watched.dbc"))
+    self.assertIn(b'"kind":"capnp"', self.read_until(r, b"watched.capnp"))
 
 
 if __name__ == "__main__":
