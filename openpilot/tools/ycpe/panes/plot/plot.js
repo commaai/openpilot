@@ -79,7 +79,9 @@ export function create(ctx, state = {}) {
     store.on("paths", invalidate),
     view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
-  ];
+    // decoded DBC signals arrive after they're asked for
+    store.can?.on("series", (path) => { if (st.curves.some((c) => c.path === path || c.custom?.inputs.includes(path))) invalidate(); }),
+  ].filter(Boolean);
   view.join(pane);
 
   // ---- curves
