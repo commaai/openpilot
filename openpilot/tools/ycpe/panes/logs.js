@@ -196,10 +196,9 @@ function* segmentRows(store, n, edge) {
     yield null;
     return store.chunk(path, n);
   }
-  for (const path of ["/logMessage", "/errorLogMessage"]) {
-    const c = yield* chunk(path);
-    if (c) for (const [t, s] of pairs(c)) yield swaglog(t, s);
-  }
+  // logmessaged sends errors on both, and qlogs keep only errorLogMessage
+  const swag = (yield* chunk("/logMessage")) ?? (yield* chunk("/errorLogMessage"));
+  if (swag) for (const [t, s] of pairs(swag)) yield swaglog(t, s);
 
   const os = yield* chunk("/operatingSystemLog/message");
   if (os) {
