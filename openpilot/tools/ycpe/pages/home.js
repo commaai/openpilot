@@ -85,9 +85,10 @@ const localEntry = () => h("p", {class: "small muted local-entry"},
   h("a", {href: "/local", onclick: link("/local")}, "Open local logs…"), " (or drop rlog/qlog files anywhere) · ",
   h("a", {href: "/live", onclick: link("/live")}, "Live data…"));
 
-export function homePage(devices) {
+// empty: what an account without devices sees (pair.js noDevices, which app.js loads only then)
+export function homePage(devices, empty) {
   if (!auth.isAuthenticated()) return h("div", {class: "home-page"}, loginPage(new URLSearchParams()), localEntry(), recentSection(devices));
-  if (!devices?.length) return h("div", {class: "home-page"}, h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name."), localEntry()), recentSection(devices));
+  if (!devices?.length) return h("div", {class: "home-page"}, empty, localEntry(), recentSection(devices));
   return h("div", {class: "home-page"}, recentSection(devices), h("div", {class: "page"},
     h("table", {class: "list devices"},
       h("thead", {}, h("tr", {}, h("th"), h("th", {}, "device"), h("th", {}, "dongle id"), h("th", {}, "type"), h("th", {}, "version"), h("th", {}, "last seen"))),
@@ -98,5 +99,6 @@ export function homePage(devices) {
         h("td", {class: "muted"}, d.device_type && fmt.deviceType(d.device_type)),
         h("td", {class: "muted"}, d.openpilot_version || ""),
         h("td", {class: "muted"}, onlineMark(d, "ago")))))),
+    h("button", {class: "button small add-device", onclick: () => import("./pair.js").then((m) => m.openPair())}, icon("add", 14), "Add device"),
     localEntry()));
 }

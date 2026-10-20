@@ -193,7 +193,9 @@ function topBar() {
       onpointerenter: () => prefetchDevice(d.dongle_id)},
       onlineMark(d), h("span", {}, fmt.deviceName(d)), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
     !state.devices?.length && h("div", {class: "menu-row muted"},
-      !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
+      !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"),
+    auth.isAuthenticated() && h("button", {class: "menu-row", onclick: () => { close(); import("/pages/pair.js").then((m) => m.openPair()); }},
+      icon("add", 14), h("span", {}, "Add device")))));
   bar.route.addEventListener("click", () => {
     if (!ws || ws.session) return;
     hideAnatomy();
@@ -795,8 +797,9 @@ async function renderPage() {
   const to = !user && !q.has("url") && mode() === "user" && userPath(parts, location.search);
   if (to) return go(to, true);
   setMode(user ? "user" : "dev");
-  // connect's pairing link (pages/pair.js), in either mode
-  if (q.has("pair")) import("/pages/pair.js").then((m) => m.handlePairLink?.(q), () => {});
+  // a device's pair link (connect's ?pair=, pages/pair.js), in either mode: pairs over the page it names, through
+  // sign-in when signed out
+  if (q.has("pair") && (await import("/pages/pair.js")).handlePairLink(q)) return render();
   await modeBar(user);
   if (id !== navId) return;
   if (auth.isAuthenticated() && !state.devices) {
@@ -901,10 +904,10 @@ async function renderPage() {
       h("p", {class: "muted"}, !user && "Try a route name or dongle id in the box above, or ", h("a", {href: `${base}/`, onclick: link(`${base}/`)}, "go home"), ".")));
   } else if (state.devicesError) {
     root.replaceChildren(errorPage(state.devicesError, {retry: true}));
-  } else if (user && auth.isAuthenticated() && !state.devices?.length) {
-    // connect's page for an account without devices (pages/pair.js)
-    const page = await shell.optional("/pages/pair.js", "noDevices");
-    if (id === navId) root.replaceChildren(page || homePage(state.devices));
+  } else if (auth.isAuthenticated() && !state.devices?.length) {
+    // connect's page for an account without devices (pages/pair.js): all of it in user mode, under the home page in dev
+    const {noDevices} = await import("/pages/pair.js");
+    if (id === navId) root.replaceChildren(user ? noDevices() : homePage(state.devices, noDevices()));
   } else if (state.devices?.length === 1 || user && state.devices?.length && shell.wide.matches) {
     // connect opens on a device; a phone in user mode lists them first
     go(`${base}/${(user ? shell.lastDevice(state.devices) : state.devices[0]).dongle_id}`, true);
