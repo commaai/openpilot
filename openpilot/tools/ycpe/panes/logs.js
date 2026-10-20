@@ -16,6 +16,7 @@ export function create(ctx, state) {
   let minLevel = state.level ?? 1, source = state.source ?? "", text = state.text ?? "", follow = state.follow ?? true;
   let rows = [], view = [];  // every row and the rows that pass the filter, by time
   const sources = new Set(), indexed = new Set(), jobs = [];
+  const edges = new Map();  // segment → its alert and events at both ends (segmentRows)
   let job = null, untick = null, store = null, timer = 0, disposed = false;
   let height = 0, top = 0, expected = -1, current = -1, pool = [], shown = -1;
 
@@ -85,14 +86,20 @@ export function create(ctx, state) {
   }
 
   function* index(n) {
-    const block = [];
-    for (const row of segmentRows(store, n)) {
+    let block = [];
+    const edge = {heads: new Set(), tail: new Set()};
+    for (const row of segmentRows(store, n, edge)) {
       if (row) {
         block.push(row);
         sources.add(row.source);
       }
       yield;
     }
+    // what goes on across a segment boundary started once, in the earlier segment
+    edges.set(n, edge);
+    const before = edges.get(n - 1), after = edges.get(n + 1), cont = (tail, heads) => (r) => !(heads.has(r) && tail.has(r.key));
+    if (before) block = block.filter(cont(before.tail, edge.heads));
+    if (after?.heads.size) [rows, view] = [rows.filter(cont(edge.tail, after.heads)), view.filter(cont(edge.tail, after.heads))];
     if (!block.length) return;
     block.sort((a, b) => a.t - b.t);
     rows = splice(rows, block);
@@ -181,8 +188,9 @@ export function create(ctx, state) {
   return pane;
 }
 
-// one segment's rows, unsorted, and nulls between messages without one so that indexing can pause there
-function* segmentRows(store, n) {
+// one segment's rows, unsorted, and nulls between messages without one so that indexing can pause there. edge gets
+// the alert and event onsets at the segment's first message (heads) and the keys of those still on at its last (tail)
+function* segmentRows(store, n, edge) {
   // a step of its own each: decoding a segment's text takes a few ms
   function* chunk(path) {
     yield null;
@@ -206,11 +214,15 @@ function* segmentRows(store, n) {
   if (alert) {
     const text1 = values(yield* chunk("/selfdriveState/alertText1")), text2 = values(yield* chunk("/selfdriveState/alertText2"));
     const status = values(yield* chunk("/selfdriveState/alertStatus"));
-    let prev = "";
+    let prev = "", head = true;
     for (const [t, type] of pairs(alert)) {
-      yield type && type !== prev ? {t, level: ALERT[status(t)] ?? 1, source: "alert", text: `${text1(t) || ""} ${text2(t) || ""}`.trim() || type} : null;
+      const row = type && type !== prev ? {t, level: ALERT[status(t)] ?? 1, source: "alert", key: `alert ${type}`, text: `${text1(t) || ""} ${text2(t) || ""}`.trim() || type} : null;
+      if (row && head) edge.heads.add(row);
+      head = false;
       prev = type;
+      yield row;
     }
+    if (prev) edge.tail.add(`alert ${prev}`);
   }
 
   // onroad events where they start
@@ -232,11 +244,14 @@ function* segmentRows(store, n) {
         if (prev.has(name)) continue;
         const flags = it.flags.filter(([, v]) => v(t)).map(([f]) => f);
         const level = flags.some((f) => f.endsWith("Disable") && f !== "userDisable") ? 3 : flags.length ? 2 : 1;
-        yield {t, level, source: "event", text: flags.length ? `${name} (${flags.join(", ")})` : name};
+        const row = {t, level, source: "event", key: `event ${name}`, text: flags.length ? `${name} (${flags.join(", ")})` : name};
+        if (t === events.t[0]) edge.heads.add(row);
+        yield row;
       }
       prev = now;
       yield null;
     }
+    for (const name of prev) edge.tail.add(`event ${name}`);
   }
 }
 
