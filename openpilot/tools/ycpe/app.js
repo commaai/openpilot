@@ -10,6 +10,7 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
+import {homePage} from "/pages/home.js";
 import {create as routesPane} from "/panes/routes.js";
 
 const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
@@ -112,15 +113,40 @@ function updateTop() {
   bar.views.hidden = bar.tabs.hidden = !ws;
   if (!ws) return;
   const start = new Date(ws.route.start_time_utc_millis);
-  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})} · ${ws.route.fullname.split("|")[1]}`;
+  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`;
+  bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: () => { layout.selectTab(i); updateTop(); },
-    ondblclick: () => { const n = prompt("Tab name", t.name); if (n) { layout.renameTab(i, n); updateTop(); } },
+    ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
+    oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"));
+}
+
+function tabMenu(tabEl, i, name) {
+  const layout = ws.layout;
+  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { document.querySelector(".popover")?.remove(); fn(); updateTop(); }}, label);
+  menu(tabEl, () => h("div", {class: "menu-list"},
+    item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
+    item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
+    layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
+    item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
+}
+
+// double-click a tab to rename it in place
+function renameTab(tabEl, i, name) {
+  const input = h("input", {class: "tab-edit", value: name});
+  const done = (save) => {
+    if (save && input.value.trim()) ws.layout.renameTab(i, input.value.trim());
+    updateTop();
+  };
+  input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
+  input.addEventListener("blur", () => done(true));
+  tabEl.replaceChildren(input);
+  input.select();
 }
 
 // ---- route workspace: one clock, one store, one layout per view ----
@@ -194,6 +220,13 @@ class Workspace {
     this.layout.invalidateAll();
     this.syncUrl(true);
     updateTop();
+  }
+
+  resetLayout() {
+    localStorage.removeItem(`ycpe_layout_${this.view}`);
+    this.layout.dispose();
+    delete this.layouts[this.view];
+    this.setView(this.view);
   }
 
   openRoute(name) {
@@ -294,10 +327,10 @@ async function render() {
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch(errorPage);
     if (id === navId) main.replaceChildren(page);
-  } else if (state.devices?.length) {
+  } else if (state.devices?.length === 1) {
     go(`/${state.devices[0].dongle_id}`, true);
   } else {
-    main.replaceChildren(homePage());
+    main.replaceChildren(homePage(state.devices));
   }
 }
 
@@ -305,14 +338,6 @@ function errorPage(e) {
   console.error(e);
   const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
-}
-
-function homePage() {
-  return h("div", {class: "page-msg"},
-    h("h2", {}, "ycpe"),
-    h("p", {class: "muted"}, "Routes, plots, and CAN for openpilot drives."),
-    !auth.isAuthenticated() && h("p", {}, ["google", "github", "apple"].map((p) => h("a", {class: "button", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`))),
-    h("p", {}, h("a", {href: "/5beb9b58bd12b691/0000010a--a51155e496/drive", onclick: link("/5beb9b58bd12b691/0000010a--a51155e496/drive")}, "Open the demo route")));
 }
 
 document.getElementById("app").prepend(topBar());

@@ -41,6 +41,8 @@ export function playbar(ctx) {
 
   let width = 0, hover = null;
   const x2t = (x) => x / width * clock.duration;
+  const xOf = (e) => e.clientX - canvas.getBoundingClientRect().left;
+  const yOf = (e) => e.clientY - canvas.getBoundingClientRect().top;
   const t2x = (t) => t / clock.duration * width;
 
   const pane = {name: "playbar", render() {
@@ -63,8 +65,17 @@ export function playbar(ctx) {
     c.fillStyle = col("--driving");
     c.fillRect(0, spanY, width, SPAN_H);
     for (const s of spans) {
+      if (!SPAN_COLORS[s.kind]) continue;
       c.fillStyle = col(SPAN_COLORS[s.kind]);
       c.fillRect(t2x(s.start / 1000), spanY, Math.max(1, t2x((s.end - s.start) / 1000)), SPAN_H);
+    }
+    // bookmarks: a flag above the spans
+    c.fillStyle = col("--bookmark");
+    for (const s of spans) {
+      if (s.kind !== "bookmark") continue;
+      const x = Math.round(t2x(s.start / 1000));
+      c.fillRect(x, spanY - 3, 2, SPAN_H + 3);
+      c.fillRect(x, spanY - 3, 5, 3);
     }
     // loaded segments
     const segs = ctx.peekStore()?.route.segments;
@@ -98,15 +109,15 @@ export function playbar(ctx) {
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
-    const x0 = e.offsetX, t0 = x2t(x0);
+    const x0 = xOf(e), t0 = x2t(x0);
     const [r0, r1] = clock.range;
     let mode = "scrub";
-    if (e.offsetY < PAD + RANGE_H + 1) {
+    if (yOf(e) < PAD + RANGE_H + 1) {
       const edge = 5;
       mode = Math.abs(x0 - t2x(r0)) < edge ? "left" : Math.abs(x0 - t2x(r1)) < edge ? "right" : t0 > r0 && t0 < r1 ? "pan" : "new";
     }
     const move = (ev) => {
-      const t = Math.max(0, Math.min(clock.duration, x2t(ev.offsetX)));
+      const t = Math.max(0, Math.min(clock.duration, x2t(xOf(ev))));
       if (mode === "scrub") clock.seek(t);
       else if (mode === "pan") clock.setRange(r0 + t - t0, r1 + t - t0);
       else if (mode === "left") clock.setRange(Math.min(t, r1 - 0.1), r1);
@@ -118,10 +129,11 @@ export function playbar(ctx) {
     canvas.onpointerup = () => { canvas.onpointermove = null; canvas.onpointerup = null; };
   });
   canvas.addEventListener("pointermove", (e) => {
-    hover = x2t(e.offsetX);
+    const x = xOf(e);
+    hover = x2t(x);
     perf.invalidate(pane);
     tip.hidden = false;
-    tip.style.left = `${Math.max(0, Math.min(width - 136, e.offsetX - 68))}px`;
+    tip.style.left = `${Math.max(0, Math.min(width - 136, x - 68))}px`;
     const seg = Math.max(0, Math.floor(hover / 60));
     tip.firstChild.style.backgroundImage = `url(${api.segmentAsset(route, Math.min(seg, route.maxqlog ?? seg), "sprite.jpg")})`;
     tip.lastChild.textContent = `${clockText(hover, false)} · seg ${seg}`;
@@ -130,7 +142,7 @@ export function playbar(ctx) {
   // wheel zooms the visible range around the cursor
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const [r0, r1] = clock.range, t = x2t(e.offsetX);
+    const [r0, r1] = clock.range, t = x2t(xOf(e));
     const k = Math.exp(e.deltaY * 0.002);
     clock.setRange(t - (t - r0) * k, t + (r1 - t) * k);
   }, {passive: false});
