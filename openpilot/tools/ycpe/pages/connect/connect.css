@@ -1,99 +1,213 @@
-/* user mode, as connect's explorer: its header, the device list beside the page (a drawer under 1081px, as connect's),
-   and the pages in connect's palette (pages.css --cn-*). On a phone the pages keep their own phone look */
-[data-theme="dark"] { --cn-side: linear-gradient(#1b2023, #111516); --cn-on: rgba(0,0,0,.25); --cn-id: #74838e; }
-[data-theme="light"] { --cn-side: linear-gradient(#fff, #f4f6f8); --cn-on: rgba(0,0,0,.06); --cn-id: #5f6b74; }
+/* user mode, as connect's explorer (connect/src/components): its AppHeader, the DeviceList beside the page (a drawer up to
+   1080px wide), and its Dashboard. connect is dark only, so these are its colors whatever the theme (theme.hold) */
+.cn-header, .cn-shell, .cn-dialog { --cn-white30: rgba(255,255,255,.3); --cn-white10: rgba(255,255,255,.1);
+  font: 16px/1.5 var(--font); color: #fff; -webkit-tap-highlight-color: transparent; }
+.cn-header :is(p, h2), .cn-shell :is(p, h2), .cn-dialog p { margin: 0; }
 
-.cn-header { position: relative; z-index: 20; display: flex; flex-shrink: 0; align-items: center; gap: 8px; min-height: 64px; padding: 0 7.5px;
-  border-bottom: 1px solid var(--cn-line); background: var(--cn-bg); color: var(--cn-fg); font-size: 14px; }
-body.loading .cn-header::before { content: ""; position: absolute; left: 0; bottom: 0; width: 40%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  pointer-events: none; animation: scan 1s linear infinite; }
-.cn-brand { display: flex; align-items: center; color: var(--cn-fg); font-size: 20px; font-weight: 800; text-decoration: none; }
-.cn-brand svg { margin: 0 28px; }
-.cn-hbtn { position: relative; display: grid; flex-shrink: 0; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%;
-  background: none; color: var(--cn-muted); cursor: pointer; }
-.cn-hbtn:hover, .cn-hbtn.on { color: var(--cn-fg); }
-.cn-hbtn:hover { background: var(--cn-line); }
-.cn-gift-dot { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: #4c8dff; }
-.cn-devmode { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 12px; border: 1px solid var(--cn-line);
-  border-radius: 18px; background: none; color: var(--cn-fg); font-weight: 600; white-space: nowrap; cursor: pointer; }
-.cn-devmode:hover { background: var(--cn-line); }
-.cn-menu, .cn-side-head { display: none; }
+/* AppHeader: menu (or the logo) and "connect", then Developer mode, the referral gift and the account menu */
+.cn-header { position: relative; z-index: 1100; display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  padding: 7.5px; border-bottom: 1px solid var(--cn-white10); background: #1d2225;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2), 0 1px 1px rgba(0,0,0,.14), 0 2px 1px -1px rgba(0,0,0,.12); }
+.cn-title, .cn-actions { display: flex; align-items: center; }
+.cn-actions { gap: 8px; }
+.cn-logo { line-height: 0; color: #fff; }
+.cn-logo img { display: block; margin: 0 28px; }
+.cn-brand { color: #fff; font-size: 20px; font-weight: 800; line-height: 1.46429em; text-decoration: none; }
+.cn-hbtn { position: relative; display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0;
+  border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background-color 150ms cubic-bezier(.4,0,.2,1); }
+.cn-hbtn:hover { background: var(--cn-white10); }
+.cn-menu { display: none; margin-right: 12px; }
+.cn-gift svg, .cn-account svg { color: var(--cn-white30); }
+.cn-gift > svg:first-child, .cn-gift.on > svg:nth-child(2) { display: none; }
+.cn-gift.on > svg:first-child { display: block; color: #fff; }
+.cn-gift-dot { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: #5e8bff; }
+/* the one thing connect hasn't: back to developer mode, at this place */
+.cn-devmode { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 12px; border: 1px solid var(--cn-white10);
+  border-radius: 18px; background: none; color: rgba(255,255,255,.7); font: 600 14px/1 var(--font); white-space: nowrap; cursor: pointer;
+  transition: background-color 150ms cubic-bezier(.4,0,.2,1), color 150ms; }
+.cn-devmode:hover { background: var(--cn-white10); color: #fff; }
 
+/* AccountMenu */
+.cn-account-wrap { position: relative; }
+.cn-menu-scrim { position: fixed; inset: 0; z-index: 40; }
+.cn-menu-panel { position: absolute; top: 100%; right: 0; z-index: 50; width: 224px; margin-top: 4px; overflow: hidden; border-radius: 4px; background: #30373b;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); }
+@media (min-width: 640px) { .cn-menu-panel { width: 256px; } }
+.cn-menu-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 16px 16px; }
+.cn-menu-head > b { font-weight: 700; }
+.cn-menu-head > span { color: #ffffff66; font-size: 12px; line-height: 16px; }
+.cn-menu-head a { color: #54a2ff; text-decoration: underline; }
+.cn-menu-line { height: 1px; background: var(--cn-white10); }
+.cn-menu-row { display: block; width: 100%; padding: 12px 16px; border: 0; background: none; color: #fff; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.cn-menu-row:hover { background: var(--cn-white10); }
+
+/* the frame: the device list beside the page */
 #main:has(> .cn-shell) { overflow: hidden; }
-.cn-shell { display: flex; height: 100%; background: var(--cn-bg); color: var(--cn-fg);
-  --bg: var(--cn-bg); --panel: var(--cn-card); --raised: var(--cn-raised); --fg: var(--cn-fg); --muted: var(--cn-muted); --line: var(--cn-line); }
-.cn-side { display: flex; flex: 0 0 max(280px, 20vw); flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--cn-side); }
-.cn-shell.bare .cn-side, .cn-scrim { display: none; }
-.cn-content { position: relative; flex: 1; min-width: 0; overflow-y: auto; }
-.cn-dev { display: flex; flex-shrink: 0; align-items: center; padding-right: 20px; }
-.cn-dev:hover { background: var(--cn-line); }
-.cn-dev.on { background: var(--cn-on); }
-.cn-dev > a:first-child { display: flex; flex: 1; align-items: center; gap: 16px; min-width: 0; padding: 16px 0 16px 32px; text-decoration: none; }
-.cn-dev .dot { width: 6px; height: 6px; }
-.cn-dev-name { display: flex; flex-direction: column; min-width: 0; }
+.cn-shell { display: flex; height: 100%; background: #1d2225; }
+.cn-side { display: flex; flex: 0 0 max(280px, 20vw); flex-direction: column; min-height: 0; background: #30373b; }
+.cn-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; background: linear-gradient(180deg, #1b2023, #111516); scrollbar-color: rgba(255,255,255,.2) transparent; }
+.cn-shell.bare .cn-side, .cn-scrim, .cn-side-head { display: none; }
+.cn-content { position: relative; flex: 1; min-width: 0; overflow-y: auto; background: #1d2225; scrollbar-color: rgba(255,255,255,.2) transparent; }
+
+/* DeviceList: a row per device, its dot, name and dongle id, and for its owner the settings gear */
+.cn-dev { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px 16px 0; }
+.cn-dev.on { background: rgba(0,0,0,.25); }
+.cn-dev > a:first-child { display: flex; flex: 1; align-items: center; align-self: stretch; min-width: 0; margin: -16px 0; padding: 16px 0 16px 32px; color: #fff; text-decoration: none; }
+.cn-dev .dot { width: 6px; height: 6px; border-radius: 3px; background: #4b5559; box-shadow: none; }
+.cn-dev .dot.online { background: #178645; }
+.cn-dev-name { display: flex; flex-direction: column; justify-content: center; min-width: 0; margin-left: 16px; }
 .cn-dev-name > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cn-dev-name > b { font-size: 15px; font-weight: 600; }
-.cn-dev-name > .mono { color: var(--cn-id); font: 12px var(--font); }
-.cn-gear { width: 46px; height: 46px; }
-.cn-add { padding: 8px 20px 24px; }
-/* a narrower window: the list is a drawer over the page, from the menu button */
+.cn-dev-name > b { font-size: 14px; font-weight: 600; line-height: 1.46429em; }
+.cn-dev-name > span { color: #74838e; font-size: 12px; line-height: 1.375em; }
+.cn-gear { width: 46px; height: 46px; color: var(--cn-white30); transition: color 150ms cubic-bezier(.4,0,.2,1), background-color 150ms cubic-bezier(.4,0,.2,1); }
+.cn-gear:hover { color: #fff; }
+/* "add new device", a row as the devices are */
+.cn-add:hover { background: rgba(0,0,0,.25); }
+.cn-add > .button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 36px; margin: 0; padding: 16px 44px 16px 54px;
+  border: 0; border-radius: 0; background: transparent; color: #fff; font: 600 14px/1.4 var(--font); opacity: 1; }
+.cn-add > .button:hover { background: transparent; opacity: 1; }
+.cn-add > .button > svg { color: var(--cn-white30); opacity: 1; }
+.cn-add > .button > svg:not(:last-child) { display: none; }
+
+/* up to 1080px the list is a drawer over the page, from the menu button, with its own logo and name */
 @media (max-width: 1080px) {
-  .cn-menu { display: grid; }
-  .cn-header .cn-brand svg { display: none; }
-  .cn-header .cn-brand { padding-left: 12px; }
-  .cn-side { position: fixed; top: 0; bottom: 0; left: 0; z-index: 41; width: min(300px, 85vw); visibility: hidden; transform: translateX(-100%);
-    transition: transform .2s, visibility .2s; box-shadow: var(--shadow); }
-  .cn-side-head { display: flex; flex-shrink: 0; min-height: 64px; }
-  .cn-side-head svg { margin: 0 24px; }
-  .cn-shell.open .cn-side { visibility: visible; transform: none; }
-  .cn-shell.open .cn-scrim { position: fixed; inset: 0; z-index: 40; display: block; background: rgba(0,0,0,.5); }
+  .cn-menu { display: inline-flex; }
+  .cn-logo { display: none; }
+  .cn-side { position: fixed; top: 0; bottom: 0; left: 0; z-index: 1200; width: max(280px, 20vw); visibility: hidden; transform: translateX(-100%);
+    transition: transform 195ms cubic-bezier(.4,0,.6,1), visibility 0s 195ms;
+    box-shadow: 0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12); }
+  .cn-side-head { display: flex; flex-shrink: 0; align-items: center; min-height: 64px; padding: 0 8px; background: #1b2023; color: #fff;
+    font-size: 20px; font-weight: 800; line-height: 28px; text-decoration: none; }
+  .cn-side-head img { margin: 0 24px; }
+  .cn-shell.open .cn-side { visibility: visible; transform: none; transition: transform 225ms cubic-bezier(0,0,.2,1); }
+  .cn-scrim { position: fixed; inset: 0; z-index: 1199; display: block; visibility: hidden; background: rgba(0,0,0,.5); opacity: 0;
+    transition: opacity 195ms cubic-bezier(.4,0,.2,1), visibility 0s 195ms; }
+  .cn-shell.open .cn-scrim { visibility: visible; opacity: 1; transition: opacity 225ms cubic-bezier(.4,0,.2,1); }
+  .cn-header.bare .cn-menu { display: none; }
+  .cn-header.bare .cn-logo { display: block; }
 }
+/* a phone: Developer mode as an icon, as the header's others */
 @media (max-width: 480px) {
-  .cn-header { gap: 0; }
-  .cn-devmode { justify-content: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; }
+  .cn-devmode { justify-content: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; color: var(--cn-white30); }
+  .cn-devmode > svg { width: 24px; height: 24px; }
   .cn-devmode > span { display: none; }
-  .cn-header .cn-brand { padding-left: 4px; }
 }
 
 /* what's developer mode's alone: the route browser's local files and live links, the device's boot and crash logs */
 .cn-content :is(.local-entry, .page-tabs [data-tab=bootlogs], .page-tabs [data-tab=crashlogs]) { display: none; }
 
-/* a wider window: connect's dashboard. The device's map across the top, its name and totals under it, then the drives
-   as cards: when, how long and how far, from and to, an arrow, and the drive's strip along the bottom */
-@media (min-width: 761px) {
-  .cn-content .device-page { max-width: none; padding: 0 0 32px; font-size: 14px; --driving: var(--cn-driving); }
-  .cn-content .device-head { flex-direction: column; gap: 0; margin: 0; }
-  .cn-content .device-head .device-map { order: -1; width: 100%; height: 280px; border: 0; border-bottom: 1px solid var(--cn-line); border-radius: 0; }
-  .cn-content .device-map .map-btn { top: auto; bottom: 24px; }  /* clear of the referral promotion over the map's corner */
-  .cn-content .device-info { padding: 16px 32px 12px; }
-  .cn-content .device-info h2 { font-size: 22px; font-weight: 500; }
-  .cn-content .stats b { font-weight: 600; color: var(--cn-fg); }
-  .cn-content .device-page :is(.page-tabs, .tab-body) { margin-inline: 32px; }
-  .cn-content .drives { display: flex; flex-direction: column; gap: 12px; }
-  .cn-content .drive-row.head { display: none; }
-  .cn-content .drive-row { grid-template-columns: 26% 14% 22% 22% 1fr; grid-template-rows: none; grid-template-areas: "when dur from to arrow" "when dist from to arrow" "more more more more more" "strip strip strip strip strip";
-    gap: 0 12px; height: auto; padding: 18px 32px 0; overflow: hidden; border: 0; border-top: 1px solid var(--cn-line); border-radius: 8px;
-    background: linear-gradient(var(--cn-card), var(--cn-card-end)); line-height: 1.5; white-space: nowrap; contain-intrinsic-size: auto 132px; }
-  .cn-content a.drive-row:hover { filter: brightness(1.06); }
-  .cn-content :is(.dr-when > b, .dr-hours) { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--cn-fg); }
-  .cn-content .dr-when { grid-area: when; }
-  .cn-content .dr-when > b, .cn-content .dr-dur, .cn-content .dr-place > span:first-child { font-weight: 600; }
-  .cn-content .dr-dash::before { content: " to "; white-space: pre; }
-  .cn-content .dr-dur { grid-area: dur; text-align: left; }
-  .cn-content .dr-dist { grid-area: dist; text-align: left; }
-  .cn-content :is(.dr-engaged, .dr-version) { display: none; }
-  .cn-content .dr-places { display: contents; }
-  .cn-content .dr-place { display: flex; flex-direction: column; min-height: 2lh; }  /* its place's lines, before it comes */
-  .cn-content .dr-place.none { min-height: 0; }
-  .cn-content .dr-place > span { overflow: hidden; text-overflow: ellipsis; }
-  .cn-content .dr-place:empty::before { content: none; }
-  .cn-content .dr-detail { display: block; }
-  .cn-content .dr-from { grid-area: from; }
-  .cn-content .dr-to { grid-area: to; }
-  /* connect's arrow, drawn: the row is the link */
-  .cn-content .dr-arrow { grid-area: arrow; justify-self: center; align-self: center; width: 12px; height: 12px; overflow: hidden; border: solid var(--cn-dim);
-    border-width: 2.5px 2.5px 0 0; color: transparent; rotate: 45deg; }
-  .cn-content .dr-more { grid-area: more; flex-wrap: wrap; gap: 2px 12px; margin-top: 10px; padding: 0; color: var(--cn-muted); font-size: 13px; }
-  .cn-content .drive-row > .strip { grid-area: strip; --spans: 12px; height: 32px; margin: 18px -32px 0; border-radius: 0; }
-  .cn-content .drive-row .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
+/* connect's promotions over the map's top right (a phone's across it), the referral one as its Notification */
+.cn-content > :is(.ref-promo-slot, .prime-promo-slot) { position: relative; z-index: 4; max-width: none; height: 0; margin: 0; }
+.cn-content :is(.ref-promo, .prime-promo) { top: 8px; right: 10px; left: auto; }
+.cn-content .ref-promo { display: grid; grid-template: "head btn" auto "sub sub" auto / 1fr auto; gap: 0; align-items: start; box-sizing: border-box; width: 360px; padding: 12px 16px;
+  border: 1px solid #303639; border-radius: 22px; background: #424a4f; box-shadow: none; color: #fff; }
+.cn-content .ref-promo > div { display: contents; }
+.cn-content .ref-promo b { grid-area: head; margin-bottom: 10px; white-space: nowrap; font-size: 20px; font-weight: 600; line-height: 31px; }
+.cn-content .ref-promo p { grid-area: sub; margin: 0; color: rgba(255,255,255,.9); font-size: 14px; line-height: 1.46429em; }
+.cn-content .ref-promo .button { grid-area: btn; min-width: 90px; margin: 0 0 0 8px; padding: 6px 24px; border: 0; border-radius: 15px; background: #5e8bff; color: #fff;
+  font-size: 14px; line-height: 1.4em; text-align: center; text-transform: lowercase; }
+.cn-content .ref-promo .button:hover { background: #547de6; }
+.cn-content .ref-promo .icon-btn { position: absolute; top: -8px; left: -6px; width: 24px; height: 24px; min-width: 0; padding: 5px; border: 1px solid #394044;
+  border-radius: 12px; background: #1e2224; color: #fff; }
+.cn-content .ref-promo .icon-btn:hover { background: #303639; }
+@media (max-width: 599px) { .cn-content :is(.ref-promo, .prime-promo) { left: 8px; width: auto; } }
+
+/* the Dashboard: Navigation's map, DeviceInfo, then DriveList */
+.cn-dash { --driving: #175886; --engaged: #178645; --override: #919b95; --alert: #da6f25; --critical: #c92231; --bookmark: #e3d756; position: relative; display: flex;
+  flex-direction: column; min-height: 100%; }
+.cn-dash > .device-map { box-sizing: border-box; flex-shrink: 0; width: 100%; height: 200px; border: 0; border-bottom: 1px solid var(--cn-white10); border-radius: 0; background: #191a1a; }
+.cn-dash > .device-map .tilemap-credit { display: none; }  /* connect's map shows none */
+.cn-info { display: flex; flex-direction: column; justify-content: center; min-height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cn-white10); }
+.cn-info-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin: 16px 0; padding-left: 4px; }
+@media (min-width: 768px) { .cn-info-row { margin: 8px 0; } }
+.cn-info-name { display: flex; flex-shrink: 0; align-items: center; gap: 16px; }
+.cn-info-name > img { display: block; }
+.cn-info-name > h2 { font-size: 21px; font-weight: 500; line-height: 1.16667em; }
+.cn-info-btns { display: flex; flex-wrap: wrap; flex-shrink: 1; justify-content: flex-end; gap: 8px; min-width: 0; }
+.cn-pill, .cn-battery { position: relative; display: flex; align-items: center; padding: 5px 16px; border: 0; border-radius: 15px; text-align: center; }
+.cn-pill { background: #fff; color: #1e2224; font: inherit; cursor: pointer; }
+.cn-pill:hover { background: #ddd; }
+.cn-pill:disabled, .cn-pill:disabled:hover { background: #4b5559; color: #b8c0c4; cursor: default; }
+.cn-pill .spinner { width: 15px; height: 15px; border-color: rgba(30,34,36,.2); border-top-color: #525e66; }
+.cn-battery { background: #4b5559; }
+.cn-battery.ok { background: #178645; }
+.cn-battery.low { background: #861721; }
+.cn-battery.off { color: #b8c0c4; }
+.cn-battery > svg { margin-right: 4px; }
+.cn-battery p { font-size: 14px; font-weight: 500; line-height: 1.4em; }
+.cn-volts { width: 45px; }
+/* MUI's tooltip, under what it names */
+.cn-dash [data-tip]::after { content: attr(data-tip); position: absolute; top: calc(100% + 5px); left: 50%; z-index: 10; padding: 8px 16px; border: 1px solid var(--cn-white10);
+  border-radius: 22px; background: #272c2f; color: #fff; font-size: 12px; font-weight: 400; line-height: 1.4; white-space: nowrap; pointer-events: none;
+  opacity: 0; transform: translateX(-50%) scale(.75); transition: opacity 150ms, transform 150ms; }
+.cn-dash [data-tip]:hover::after { opacity: 1; transform: translateX(-50%); transition-delay: 100ms; }
+.cn-dash > .snapshot { margin: 0; padding: 0; border-bottom: 1px solid var(--cn-white10); }
+
+/* DriveList: the totals and Filter, the cards, and what's left */
+.cn-drivelist { display: flex; flex-direction: column; flex-grow: 1; padding: 8px 0; }
+.cn-drivelist-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 0 16px; padding-bottom: 8px; }
+.cn-stats { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 4px; }
+@media (min-width: 768px) { .cn-stats { gap: 32px; } }
+.cn-stats > div { display: flex; align-items: center; gap: 4px; }
+.cn-stats p, .cn-drive p, .cn-empty p, .cn-end p { font-size: 14px; line-height: 1.46429em; }
+.cn-b { font-weight: 600; }
+.cn-filter { display: flex; align-items: center; justify-content: center; width: 100%; padding: 4px 8px; border: 0; border-radius: 6px;
+  background: linear-gradient(to bottom, #30373b 0%, #1d2225 150%); color: #fff; font: 14px/1.46429 var(--font); white-space: nowrap; cursor: pointer; }
+.cn-filter:active { transform: scale(.98); }
+.cn-filter > svg { margin-right: 8px; }
+@media (min-width: 360px) { .cn-filter { width: fit-content; } }
+.cn-drives { flex: 1; padding: 0 16px; }
+.cn-more { height: 1px; }
+.cn-empty { padding: 16px 36px; }
+@media (max-width: 520px) { .cn-empty { padding: 16px; } }
+.cn-end { margin-bottom: 32px; padding: 8px; text-align: center; }
+.cn-empty:has(> p:empty), .cn-end:has(> p:empty) { display: none; }
+
+/* DriveListItem: date and times, duration and distance, from, to, the arrow; on a phone date and duration over from and to */
+.cn-drive { display: flex; flex-direction: column; margin-bottom: 12px; overflow: hidden; border-top: 1px solid rgba(255,255,255,.05); border-radius: 8px;
+  background: linear-gradient(to bottom, #30373b 0%, #1d2225 100%); color: #fff; text-decoration: none; transition: background .2s;
+  content-visibility: auto; contain-intrinsic-size: auto 110px; }
+.cn-drive-head { padding: 18px 32px; }
+.cn-drive p { min-height: 1lh; }  /* a place's lines before it comes, so a phone's card doesn't grow */
+.cn-drive-grid { display: flex; flex-wrap: wrap; }
+.cn-drive-grid > * { flex-grow: 1; min-width: 0; }
+.cn-c-date { order: 1; flex-basis: 26%; max-width: 28%; }
+.cn-c-dur { order: 2; flex-basis: 14%; max-width: 14%; }
+.cn-c-from { order: 3; flex-basis: 22%; max-width: 26%; }
+.cn-c-to { order: 4; flex-basis: 22%; max-width: 26%; }
+.cn-c-arrow { order: 5; flex-basis: 6%; max-width: 6%; }
+.cn-c-arrow > svg { display: block; margin-left: 25%; color: #424a4f; }
+.cn-narrow { display: none; }
+.cn-drive > .strip { --spans: 12px; flex-shrink: 0; height: 32px; border-radius: 0; background: #1d2225; }
+.cn-drive .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(rgba(0,0,0,0) 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+.cn-drive .strip-spans .bookmark { z-index: 1; }
+@media (max-width: 579px) {
+  .cn-drive { contain-intrinsic-size: auto 163px; }
+  .cn-drive-head { padding: 18px; }
+  .cn-c-date { flex-basis: 72%; max-width: 72%; margin-bottom: 12px; }
+  .cn-c-dur { flex-basis: 28%; max-width: 28%; margin-bottom: 12px; text-align: right; }
+  .cn-c-from { flex-basis: 50%; max-width: 50%; }
+  .cn-c-to { flex-basis: 50%; max-width: 50%; text-align: right; }
+  .cn-c-arrow, .cn-wide { display: none; }
+  .cn-narrow { display: inline; }
 }
+
+/* TimeSelect, over a dimmed page as MUI's Modal */
+.cn-dialog { max-width: none; max-height: none; padding: 0; overflow: visible; border: 0; background: none; outline: none; }
+.cn-dialog::backdrop { background: rgba(0,0,0,.5); animation: cn-fade 225ms cubic-bezier(.4,0,.2,1); }
+@keyframes cn-fade { from { opacity: 0; } }
+.cn-paper { padding: 16px; border-radius: 4px; outline: none; background: #30373b; color: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,.2), 0 2px 2px rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+.cn-paper hr { height: 1px; margin: 0; border: 0; background: rgba(255,255,255,.12); }
+.cn-ts-fields { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+@media (min-width: 480px) { .cn-ts-fields { flex-direction: row; } }
+.cn-ts-field { display: flex; flex-direction: column; gap: 6px; width: 120px; }
+.cn-ts-field input { box-sizing: border-box; width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; color-scheme: dark; }
+.cn-ts-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.cn-btn { min-width: 64px; min-height: 36px; padding: 8px 16px; border: 0; border-radius: 4px; font: 500 14px/1.4 var(--font); cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0,0,0,.2), 0 2px 2px rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); transition: background-color 250ms cubic-bezier(.4,0,.2,1); }
+.cn-btn-cancel { background: #5c696f; color: #fff; }
+.cn-btn-cancel:hover { background: #4b5559; }
+.cn-btn-save { background: #fff; color: #272c2f; }
+.cn-btn-save:hover { background: rgba(255,255,255,.7); }

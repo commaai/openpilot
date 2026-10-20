@@ -9,10 +9,14 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ycpe">
-  <script>document.documentElement.dataset.theme = localStorage.getItem("ycpe_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    // the mode the page will open in (pages/connect/mode.js), so the bar holding its place is that mode's size
-    document.documentElement.dataset.mode = /^\/connect(\/|$)/.test(location.pathname) || localStorage.getItem("ycpe_mode") !== "dev" &&
-      /^\/(([0-9a-f]{16})(\/[^/]+)?|account|referrals)?\/?$/i.test(location.pathname) && !location.search.includes("url=") ? "user" : "dev";</script>
+  <script>
+    // the mode the page will open in (pages/connect/mode.js), so the bar holding its place is that mode's size, and
+    // user mode (connect's, dark only: theme.js) never paints in the light theme first
+    const root = document.documentElement;
+    root.dataset.mode = /^\/connect(\/|$)/.test(location.pathname) || localStorage.getItem("ycpe_mode") !== "dev" &&
+      /^\/(([0-9a-f]{16})(\/[^/]+)?|account|referrals)?\/?$/i.test(location.pathname) && !location.search.includes("url=") ? "user" : "dev";
+    root.dataset.theme = root.dataset.mode === "user" ? "dark" : localStorage.getItem("ycpe_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  </script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://api.commadotai.com" crossorigin>
   <link rel="preconnect" href="https://commadata2.blob.core.windows.net" crossorigin>

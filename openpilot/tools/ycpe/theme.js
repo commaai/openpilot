@@ -4,6 +4,10 @@ import {h, listeners} from "/dom.js";
 const KEY = "ycpe_theme";
 const subs = listeners();
 const vars = {};  // theme → (name → value): a computed style read forces a style recalc
+const chosen = () => localStorage.getItem(KEY) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+// user mode is connect's, which is dark only: shown in place of the setting, which is kept for developer mode. Held from
+// the start on a page that opens in user mode (index.html guesses which), so it never paints light first
+let held = document.documentElement.dataset.mode === "user" ? "dark" : null;
 
 export const theme = {
   get name() { return document.documentElement.dataset.theme; },
@@ -16,15 +20,24 @@ export const theme = {
   },
   on: subs.on,
   set(name) {
-    document.documentElement.dataset.theme = name;
     localStorage.setItem(KEY, name);
-    paintBar();
-    subs.emit(name);
+    show(held || name);
   },
-  toggle() { theme.set(theme.name === "dark" ? "light" : "dark"); },
+  hold(name) {
+    held = name;
+    show(held || chosen());
+  },
+  toggle() { theme.set(chosen() === "dark" ? "light" : "dark"); },
 };
 
-document.documentElement.dataset.theme = localStorage.getItem(KEY) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+function show(name) {
+  if (name === theme.name) return;
+  document.documentElement.dataset.theme = name;
+  paintBar();
+  subs.emit(name);
+}
+
+document.documentElement.dataset.theme = held || chosen();
 // every variable of both themes, before there's a workspace to restyle (a pane's first read would pay for all of it),
 // from hidden elements carrying each: a switch then never reads a style it has just invalidated
 for (const name of ["light", "dark"]) {
