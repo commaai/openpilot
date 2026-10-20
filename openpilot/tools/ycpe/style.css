@@ -53,10 +53,11 @@ body.in-ws #main { overflow: hidden; }
 .omnibox:focus { border-color: var(--accent); }
 .views, .tabs { display: flex; flex-shrink: 0; align-items: center; gap: 1px; margin-left: 8px; }
 .views { padding: 2px; border-radius: 6px; background: var(--bg); }
-.tabs { flex-shrink: 0; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
+/* the tabs (they scroll) and the load pill (it ellipsizes) give way when the bar is full */
+.tabs { flex-shrink: 1; min-width: 90px; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
 .topbar { container-type: inline-size; }
 @container (max-width: 1400px) { .topbar .hud-spark { display: none; } }
-@container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } .topbar .tabs { flex-shrink: 1; min-width: 90px; } }
+@container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
 @container (max-width: 1100px) { .topbar .hud-mem { display: none; } .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 6px; } .topbar .load-pill { max-width: 150px; } }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
@@ -69,7 +70,7 @@ body.in-ws #main { overflow: hidden; }
 .tab .x:hover { background: var(--active); opacity: 1; }
 .tab.add { font-size: 14px; }
 .grow { flex: 1; }
-.load-pill { position: relative; flex-shrink: 0; padding: 2px 8px 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 11px var(--mono); white-space: nowrap; cursor: pointer; overflow: hidden; max-width: 240px; }
+.load-pill { position: relative; flex-shrink: 1; min-width: 70px; padding: 2px 8px 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: 11px var(--mono); white-space: nowrap; cursor: pointer; overflow: hidden; max-width: 240px; }
 .load-pill > span:first-child { display: block; overflow: hidden; text-overflow: ellipsis; }
 .load-pill.done { color: var(--muted); }
 .load-pill.buffering { border-color: var(--alert); color: var(--alert); }
