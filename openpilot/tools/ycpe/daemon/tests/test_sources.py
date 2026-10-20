@@ -54,7 +54,7 @@ os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import HTTPError, config
-from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 from openpilot.tools.lib import filereader
 
 filereader.DATA_ENDPOINT = os.environ["DATA_ENDPOINT"]  # in case filereader was imported before the env was set
@@ -83,11 +83,6 @@ class TestSources(DaemonCase):
     super().setUpClass()
     config.cache_root = CACHE + "/"
     config.log_roots = [LOGS]
-
-  def json(self, path, body=None):
-    r, data = self.req(path, method="POST" if body is not None else "GET", body=json.dumps(body) if body is not None else None)
-    self.assertEqual(r.status, 200, data)
-    return json.loads(data)
 
   def test_resolve(self):
     res = self.json("/local/sources/resolve", {"route": ROUTE, "segs": [0, 1, 2, 9], "kinds": ["log", "qcamera"], "sources": ONLY})
@@ -190,6 +185,8 @@ class TestSources(DaemonCase):
     out = self.json("/local/cache/evict", {"route": ROUTE, "segs": [0, 1], "kinds": ["qcamera"]})
     self.assertGreaterEqual(out["freed"], len(blob(0, "qcamera.ts")) + len(blob(1, "qcamera.ts")))
     self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 0, "qcamera.ts")))
+    for segs in (["x"], "01", [-1], 3):
+      self.json("/local/cache/evict", {"route": ROUTE, "segs": segs}, status=400)
 
   def test_fetch_for_modules(self):
     p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)

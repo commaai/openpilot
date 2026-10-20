@@ -19,7 +19,7 @@ from pathlib import Path
 from openpilot.tools.lib import filereader
 from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
-from openpilot.tools.ycpe.daemon.core import config, module, route
+from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
 
 API_BLOB = "https://commadata2.blob.core.windows.net"
 # device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
@@ -243,7 +243,7 @@ class Fill:
 
 _fills: dict[tuple[bool, Key], Fill] = {}
 _fills_lock = threading.Lock()
-stats = {"hits": 0, "misses": 0, "served": 0, "fetched": 0, "stale": 0}
+stats = {"hits": 0, "misses": 0, "fetched": 0, "stale": 0}
 
 
 # when a whole-file copy was last checked against its source, in an xattr on the file (a replaced file starts over);
@@ -481,14 +481,7 @@ def cache_evict(req):
   segs = body.get("segs")
   if segs is None:
     segs = range(Resolver(dongle, log_id, ["device", "local", "api"], None, False).known_segments() or 1000)
-  freed = sum(evict(Key(dongle, log_id, int(n), name)) for n in segs for kind in kinds for name in KINDS[kind])
+  elif not (isinstance(segs, list) and all(isinstance(n, int) and 0 <= n < 10000 for n in segs)):
+    raise HTTPError(400, "bad segs")
+  freed = sum(evict(Key(dongle, log_id, n, name)) for n in segs for kind in kinds for name in KINDS[kind])
   return {"freed": freed, **usage()}
-
-
-@route("POST", "/local/cache/prune")
-def cache_prune(req):
-  """Body {budget?}: sets the budget in bytes (for this run) and prunes to it."""
-  body = req.json() or {}
-  if body.get("budget"):
-    config.cache_budget = int(body["budget"])
-  return {**prune(), "budget": config.cache_budget}

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import http.client
-import json
 import os
 import subprocess
 import tempfile
@@ -8,9 +6,8 @@ import time
 import unittest
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import core
 from openpilot.tools.ycpe.daemon.core import config
-from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 REPO = Path(tempfile.mkdtemp())
 (REPO / "openpilot" / "cereal" / "include").mkdir(parents=True)
@@ -29,11 +26,6 @@ class TestRepos(DaemonCase):
   def setUpClass(cls):
     super().setUpClass()
     config.repo_roots = [str(REPO)]
-
-  def json(self, path, **kw):
-    r, data = self.req(path, **kw)
-    self.assertEqual(r.status, 200, data)
-    return json.loads(data)
 
   def test_list(self):
     [c] = self.json("/local/repos")
@@ -70,18 +62,12 @@ class TestRepos(DaemonCase):
     self.assertEqual(r.status, 404)
 
   def test_watch(self):
-    c = http.client.HTTPConnection("127.0.0.1", config.port, timeout=10)
-    c.request("GET", "/local/repos/watch", headers={"Host": f"localhost:{config.port}", core.TOKEN_HEADER: config.token})
-    r = c.getresponse()
+    r = self.connect("/local/repos/watch")
     time.sleep(1.2)  # the watcher's first snapshot
-    p = DBC / "watched.dbc"
+    p = REPO / "openpilot" / "cereal" / "watched.capnp"
     p.write_text("a")
     os.utime(p, (time.time() + 5, time.time() + 5))  # noqa: TID251  a distinct mtime
-    seen = b""
-    while b"watched.dbc" not in seen:
-      seen += r.read1(4096)
-    c.close()
-    self.assertIn(b'"kind":"dbc"', seen)
+    self.assertIn(b'"kind":"capnp"', self.read_until(r, b"watched.capnp"))
 
 
 if __name__ == "__main__":

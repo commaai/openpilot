@@ -1,11 +1,10 @@
 """Long tasks (prefetch, device pull, transcode, replay) as jobs in threads, with progress, cancel and an SSE feed."""
 import itertools
-import queue
 import threading
 import time
 import traceback
 
-from openpilot.tools.ycpe.daemon.core import HTTPError, module, route, sse
+from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, module, route
 
 KEEP = 200  # finished jobs remembered
 
@@ -58,15 +57,12 @@ class Job:
 
 _ids = itertools.count(1)
 _jobs: dict[str, Job] = {}
-_subs: set[queue.Queue] = set()
 _lock = threading.Lock()
+_feed = Feed()
 
 
 def _publish(job: Job) -> None:
-  data = job.json()
-  with _lock:
-    for q in _subs:
-      q.put(data)
+  _feed.publish(job.json())
 
 
 def start(kind: str, fn, title: str = "", **meta) -> Job:
@@ -101,48 +97,16 @@ def get(job_id: str) -> Job:
   return job
 
 
-def listen():
-  """A queue that receives every job update (as json dicts) until unlisten()."""
-  q: queue.Queue = queue.Queue()
-  with _lock:
-    _subs.add(q)
-  return q
-
-
-def unlisten(q) -> None:
-  with _lock:
-    _subs.discard(q)
-
-
 module("jobs")
-
-
-@route("GET", "/local/jobs")
-def list_jobs(req):
-  return [j.json() for j in _jobs.values()]
 
 
 @route("GET", "/local/jobs/events")
 def job_events(req):
   """SSE: one "job" event per running or recent job on connect, then one per update."""
-  def events():
-    q = listen()
-    try:
-      for j in list(_jobs.values()):
-        yield "job", j.json()
-      while True:
-        try:
-          yield "job", q.get(timeout=15)
-        except queue.Empty:
-          yield None
-    finally:
-      unlisten(q)
-  return sse(events())
-
-
-@route("GET", "/local/jobs/{id}")
-def job_get(req):
-  return get(req.params["id"]).json()
+  def current():
+    with _lock:  # start() drops old jobs from another thread
+      return [j.json() for j in _jobs.values()]
+  return _feed.stream("job", current)
 
 
 @route("POST", "/local/jobs/{id}/cancel")

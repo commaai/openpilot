@@ -2,10 +2,12 @@
 import json
 import mimetypes
 import os
+import queue
 import re
 import secrets
 import socket
 import struct
+import threading
 import time
 from dataclasses import dataclass, field
 from http import HTTPStatus
@@ -138,6 +140,38 @@ def sse(events, keepalive: float = 15.0):
       event, data = item
       yield f"event: {event}\ndata: {json.dumps(data, separators=(',', ':'))}\n\n".encode()
   return Stream(gen(), "text/event-stream", {"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+class Feed:
+  """Fans published data out to SSE listeners, one queue each."""
+  def __init__(self):
+    self.subs: set[queue.Queue] = set()
+    self.lock = threading.Lock()
+
+  def publish(self, data) -> None:
+    with self.lock:
+      for q in self.subs:
+        q.put(data)
+
+  def stream(self, event: str, first=tuple) -> Stream:
+    """SSE of everything published from now on as event, after first()'s items (taken once subscribed, so nothing
+    published in between is missed)."""
+    def events():
+      q: queue.Queue = queue.Queue()
+      with self.lock:
+        self.subs.add(q)
+      try:
+        for data in first():
+          yield event, data
+        while True:
+          try:
+            yield event, q.get(timeout=15)
+          except queue.Empty:
+            yield None
+      finally:
+        with self.lock:
+          self.subs.discard(q)
+    return sse(events())
 
 
 # routes

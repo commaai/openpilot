@@ -6,7 +6,7 @@ from unittest import mock
 
 from openpilot.tools.ycpe.daemon import athena
 from openpilot.tools.ycpe.daemon.core import config
-from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 DONGLE = "0123456789abcdef"
 AUTH = {"Authorization": "JWT a.b.c"}
