@@ -16,7 +16,10 @@ import {logSchema} from "/data/schemas.js";
 import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles, watchRouteStart} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
-import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
+import {loginPage, authPage, signInCard, loginPath, safe} from "/pages/login.js";
+import {accountHead, accountPage, version, USERADMIN} from "/pages/account.js";
+import {referralsPage, referralPromo, referralsNew} from "/pages/referrals.js";
+import {installPrompt} from "/pages/install.js";
 import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
@@ -78,6 +81,7 @@ function searchBox() {
   return omnibox({
     go: (path) => go(ws ? path.replace(/^(\/[0-9a-f]{16}\/[^/?]+(?:\/\d+\/\d+)?)(?=\?|$)/, `$1/${ws.view}`) : path),
     devices: () => state.devices,
+    me: () => state.me,
     onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
   });
 }
@@ -139,7 +143,7 @@ function menu(anchor, build) {
     document.addEventListener("pointerdown", outside);
     document.addEventListener("focusin", outside);
     document.addEventListener("keydown", escape);
-    (el.querySelector(".menu-list > .on") || el.querySelector("button, a[href], input, select"))?.focus();  // once the caller has filled it
+    (el.querySelector(".menu-list > .on") || rows()[0] || el.querySelector("button, a[href], input, select"))?.focus();  // once the caller has filled it
   });
   return el;
 }
@@ -159,6 +163,7 @@ const bar = {
   views: h("nav", {class: "views"}),
   tabs: h("nav", {class: "tabs", "aria-label": "Layouts"}),  // the tab list, then New tab and the layouts menu
   tablist: h("span", {class: "tablist", role: "tablist", "aria-label": "Layout tabs"}),
+  gift: h("button", {class: "tbtn gift", title: "Refer a friend", hidden: true}, icon("gift", 16), h("span", {class: "gift-dot"})),
 };
 
 function topBar() {
@@ -210,19 +215,27 @@ function topBar() {
   });
   bar.route.addEventListener("pointerleave", hideAnatomy);
   const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
-  account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
-    state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
-    auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
-    !auth.isAuthenticated() && daemon.hasJwt &&h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
-    auth.isAuthenticated()
-      ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
-      : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
+  // who's signed in, then where to from there, as connect's account menu; its version at the foot
+  account.addEventListener("click", () => menu(account, (close) => {
+    const row = (path, label) => h("a", {class: "menu-row", href: path, onclick: (e) => { close(); link(path)(e); }}, label);
+    const signedIn = auth.isAuthenticated();
+    return h("div", {class: "menu-list"},
+      state.me && accountHead(state.me),
+      auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
+      !signedIn && daemon.hasJwt && h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
+      signedIn && row("/account", "Account and developer token"),
+      signedIn && row("/referrals", "Referrals"),
+      signedIn && h("a", {class: "menu-row", href: USERADMIN, target: "_blank", rel: "noopener", onclick: close}, "Manage account"),
+      signedIn ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out") : row(loginPath(), "Sign in"),
+      h("div", {class: "menu-foot"}, version()));
+  }));
+  bar.gift.addEventListener("click", () => go("/referrals"));
   const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
   const helpBtn = h("button", {class: "tbtn help-btn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep", hidden: true}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), helpBtn, themeBtn, account);
+    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), helpBtn, themeBtn, bar.gift, account);
 }
 
 function updateTop() {
@@ -234,6 +247,11 @@ function updateTop() {
   bar.device.hidden = false;
   bar.route.hidden = bar.route.previousElementSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
+  // for anyone signed in, as connect has it (known before the devices are, so the bar doesn't shift); a route's bar
+  // has no room to spare
+  bar.gift.hidden = !!ws || !auth.isAuthenticated();
+  bar.gift.classList.toggle("on", location.pathname === "/referrals");
+  bar.gift.lastChild.hidden = !referralsNew();
   if (!ws) return bar.tabs.replaceChildren();  // the tabs' handlers would keep the closed workspace alive
   // the route's log id and the segment at the playhead, as one segment name; a live session: the device crumb names a
   // device's, else the source does
@@ -716,6 +734,8 @@ async function renderPage() {
     updateTop();
     return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
+  // connect's ?r=<path>: go there, through sign-in when signed out
+  if (q.has("r")) return go(auth.isAuthenticated() ? safe(q.get("r")) : loginPath(safe(q.get("r"))), true);
   if (auth.isAuthenticated() && !state.devices) {
     updateTop();
     document.body.classList.add("loading");
@@ -727,6 +747,14 @@ async function renderPage() {
   }
 
   if (parts[0] === "live" || (parts[1] === "live" && DONGLE_RE.test(parts[0]))) return openLiveSession(parts, q, main, id);
+  if (parts.length === 1 && (parts[0] === "account" || parts[0] === "referrals")) {
+    closeWorkspace();
+    updateTop();
+    const page = await (parts[0] === "account" ? accountPage : referralsPage)(state.me);
+    if (id !== navId) return;
+    main.replaceChildren(page);
+    return updateTop();  // the gift's dot goes once referrals are seen
+  }
   if (openLoose(parts, q, main)) return;
   const target = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
   const routeName = target?.name;
@@ -776,6 +804,8 @@ async function renderPage() {
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch((e) => errorPage(e, {device: parts[0]}));
     if (id === navId) main.replaceChildren(page);
+    const promo = await referralPromo(state.devices?.find((d) => d.dongle_id === parts[0]));
+    if (promo && id === navId) main.prepend(promo);
   } else if (parts.length) {
     main.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
       h("p", {class: "muted"}, "Try a route name or dongle id in the box above, or ", h("a", {href: "/", onclick: link("/")}, "go home"), ".")));
@@ -892,3 +922,4 @@ auth.on((reason) => {
   render();
 });
 render();
+installPrompt().then((el) => el && document.body.append(el));

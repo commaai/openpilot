@@ -1,0 +1,55 @@
+/* account, referrals, and the cards that point at them (the referral promotion, the iOS install hint) */
+.account-page { max-width: 640px; }
+.account-page h2, .referrals-page h2 { margin: 6px 0 10px; font-size: 20px; }
+.account-id { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+.account-id .mono { overflow: hidden; text-overflow: ellipsis; }
+.developer { margin-top: 18px; }
+.developer .fresh { margin: 12px 0 4px; font-weight: 600; }
+.jwt { display: flex; align-items: center; gap: 2px; }
+.jwt .field { flex: 1; min-width: 0; }
+.again { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 10px; }
+.again .button { margin: 0; }
+.account-foot { margin-top: 24px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* the account menu's head and foot */
+.account-head { display: flex; flex-direction: column; gap: 2px; max-width: 300px; padding: 6px 8px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.account-head b { overflow: hidden; text-overflow: ellipsis; }
+.account-head .account-id .mono { font-size: 11px; }
+.menu-foot { padding: 6px 8px 4px; margin-top: 4px; border-top: 1px solid var(--line); }
+.gift { position: relative; }
+.gift-dot { position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+.referrals-page { max-width: 480px; }
+.ref-steps { margin: 14px 0 18px; padding: 0; list-style: none; }
+.ref-steps li { display: flex; gap: 12px; padding-bottom: 12px; }
+.ref-steps p { margin: 2px 0 0; }
+.ref-n { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--fg); color: var(--bg); font-weight: 700; }
+.ref-share, .ref-claim { display: block; width: 100%; margin: 0; padding: 9px 14px; font-weight: 600; text-align: center; }
+.ref-link { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; color: var(--muted); font-size: 11px; }
+.ref-link .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ref-cash { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.ref-cash div { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; }
+.ref-cash div + div { border-top: 1px solid var(--line); }
+.ref-cash dt { color: var(--muted); }
+.ref-cash dd { margin: 0; font-size: 16px; font-weight: 700; }
+.ref-cash dd.earned { color: var(--engaged); }
+.ref-note { padding: 12px 14px; border-radius: 8px; background: var(--hover); text-align: center; }
+.ref-note p { margin: 0 0 6px; }
+.referrals-page > .small { margin-top: 18px; }
+
+/* a card over the device page's top right, as connect's promotions sit over its map; scrolls away with the page */
+.ref-promo-slot { position: relative; z-index: 5; max-width: 1280px; height: 0; margin: 0 auto; }
+.ref-promo { position: absolute; top: 10px; right: 16px; display: flex; align-items: center; gap: 10px; width: 340px; padding: 10px 8px 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); box-shadow: var(--shadow); }
+.ref-promo > div { flex: 1; }
+.ref-promo p { margin: 2px 0 0; }
+
+.install { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; z-index: 40; display: flex; align-items: flex-start; gap: 10px; padding: 12px 8px 12px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--raised); box-shadow: var(--shadow); font-size: 14px; }
+.install > div { flex: 1; }
+.install p { margin: 2px 0 0; font-size: 13px; }
+.install svg { vertical-align: text-bottom; }
+
+@media (max-width: 760px) {
+  .ref-promo { top: 8px; right: 8px; left: 8px; width: auto; border-color: var(--cn-line); background: var(--cn-card); color: var(--cn-fg); }
+  .ref-promo .muted { color: var(--cn-muted); }
+  .jwt .icon-btn { min-width: 32px; min-height: 32px; }
+}

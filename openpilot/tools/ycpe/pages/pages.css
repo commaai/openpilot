@@ -56,6 +56,8 @@
 .login-mark svg { color: var(--fg); }
 .providers { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 12px; }
 .providers .button { margin: 0; padding: 8px 14px; font-weight: 600; }
+.provider { position: relative; }
+.last-used { position: absolute; top: 50%; right: 8px; translate: 0 -50%; padding: 1px 7px; border-radius: 99px; background: var(--active); color: var(--muted); font-size: 10px; font-weight: 500; }
 .button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
 .button.primary:hover { background: var(--accent); filter: brightness(1.1); }
 .token { margin: 6px 0; text-align: left; }

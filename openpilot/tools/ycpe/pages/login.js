@@ -1,5 +1,5 @@
 // signing in: the /login page, the /auth OAuth callback, and the inline card shown when a page needs an account.
-// Where to land afterwards rides in ?next= and, across the OAuth round trip, in sessionStorage.
+// Where to land afterwards rides in ?next= (or connect's ?r=) and, across the OAuth round trip, in sessionStorage.
 import {auth} from "../api.js";
 import {daemon} from "../daemon.js";
 import {h} from "../dom.js";
@@ -7,12 +7,14 @@ import {logo} from "../icons.js";
 import {go, link} from "../app.js";
 
 const RETURN_KEY = "ycpe_return_to";
+const DEVELOPER_KEY = "ycpe_developer_auth";  // this round trip mints a developer token rather than signing in
+const LAST_KEY = "ycpe_last_provider";
 const DEMO = "/5beb9b58bd12b691/0000010a--a51155e496/drive";
-const PROVIDERS = {google: "Google", github: "GitHub", apple: "Apple"};
+export const PROVIDERS = {google: "Google", github: "GitHub", apple: "Apple"};
 
 const here = () => location.pathname + location.search;
 // only paths on this site, never "//host", "/\host" or a full URL: anything the browser would resolve elsewhere
-function safe(path) {
+export function safe(path) {
   try {
     const u = new URL(path || "/", location.origin);
     return u.origin === location.origin ? u.pathname + u.search + u.hash : "/";
@@ -21,6 +23,22 @@ function safe(path) {
   }
 }
 export const loginPath = (next = here()) => `/login?${new URLSearchParams({next})}`;
+
+// before leaving for the provider, which sends a code back to /auth. developer: the code becomes a new token to show,
+// as useradmin's "Get JWT" does, and this tab stays signed in as it was
+export function startSignIn(provider, next, developer = false) {
+  sessionStorage.setItem(RETURN_KEY, next);
+  if (developer) sessionStorage.setItem(DEVELOPER_KEY, "1"); else sessionStorage.removeItem(DEVELOPER_KEY);
+  localStorage.setItem(LAST_KEY, provider);
+}
+
+// the developer token /auth minted, handed over once: it's only ever kept in memory
+let minted = null;
+export function takeNewToken() {
+  const token = minted;
+  minted = null;
+  return token;
+}
 
 // serve.py has ~/.comma/auth.json, turned off from the account menu: one click turns it back on
 const daemonButton = (onclick) => daemon.hasJwt && !auth.isAuthenticated() &&
@@ -50,16 +68,18 @@ function tokenForm(next) {
   }}, input, button);
   return h("details", {class: "token"},
     h("summary", {}, "Developer: paste a JWT"),
-    h("p", {class: "small muted"}, "From useradmin's developer page or ~/.comma/auth.json."), form, error);
+    h("p", {class: "small muted"}, "From the account page where you're signed in, or ~/.comma/auth.json."), form, error);
 }
 
 export function loginPage(params) {
-  const next = safe(params.get("next"));
+  const next = safe(params.get("next") ?? params.get("r"));
   if (auth.isAuthenticated()) return card(h("p", {}, "You're signed in."), h("a", {class: "button primary", href: next, onclick: link(next)}, "Continue"));
+  const last = localStorage.getItem(LAST_KEY);
   return card(
     h("p", {class: "muted"}, "Sign in to see your devices and drives."),
     h("div", {class: "providers"}, daemonButton(() => go(next, true)), Object.entries(PROVIDERS).map(([p, name]) =>
-      h("a", {class: "button provider", href: auth.loginUrl(p), onclick: () => sessionStorage.setItem(RETURN_KEY, next)}, `Continue with ${name}`))),
+      h("a", {class: "button provider", href: auth.loginUrl(p), onclick: () => startSignIn(p, next)}, `Continue with ${name}`,
+        p === last && h("span", {class: "last-used"}, "Last used")))),
     tokenForm(next),
     h("p", {class: "small muted login-foot"}, "Public routes open without an account. ",
       h("a", {href: DEMO, onclick: link(DEMO)}, "Open the demo route")));
@@ -68,17 +88,19 @@ export function loginPage(params) {
 // the provider sent us back with a one-time code: trade it for a token, then return to where sign-in started.
 // Only if sign-in started in this tab, so a link with someone else's code can't sign you in to their account.
 export function authPage(params) {
-  const started = sessionStorage.getItem(RETURN_KEY);
+  const started = sessionStorage.getItem(RETURN_KEY), developer = sessionStorage.getItem(DEVELOPER_KEY);
   sessionStorage.removeItem(RETURN_KEY);
+  sessionStorage.removeItem(DEVELOPER_KEY);
   const next = safe(started);
-  const status = h("div", {class: "login-status"}, h("span", {class: "spinner"}), "Signing in…");
+  const status = h("div", {class: "login-status"}, h("span", {class: "spinner"}), developer ? "Getting a new token…" : "Signing in…");
   const el = card(status);
   const code = params.get("code"), provider = params.get("provider");
   const exchange = !code ? Promise.reject(new Error(params.get("error") || "no sign-in code was returned"))
     : started === null ? Promise.reject(new Error("Sign-in wasn't started here, so this sign-in link was ignored."))
+    : developer ? auth.newToken(code, provider).then((token) => { minted = token; })
     : auth.exchangeCode(code, provider);
   exchange.then(() => go(next, true), (err) => status.replaceWith(
-    h("p", {class: "error"}, "Sign-in failed."),
+    h("p", {class: "error"}, developer ? "Couldn't get a new token." : "Sign-in failed."),
     h("p", {class: "small muted"}, err.status ? `The server said ${err.status}. The code may have expired; signing in again usually works.` : err.message),
     h("div", {class: "providers"},
       h("a", {class: "button primary", href: loginPath(next), onclick: link(loginPath(next))}, "Try again"),
