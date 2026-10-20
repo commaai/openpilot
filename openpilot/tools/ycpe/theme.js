@@ -15,10 +15,18 @@ export const theme = {
   set(name) {
     document.documentElement.dataset.theme = name;
     localStorage.setItem(KEY, name);
-    cache.clear();
+    readAll();
     for (const fn of subs) fn(name);
   },
   toggle() { theme.set(theme.name === "dark" ? "light" : "dark"); },
 };
 
+// every variable in one read, before there's a workspace to restyle (a pane's first read would pay for all of it)
+function readAll() {
+  cache.clear();
+  const style = getComputedStyle(document.documentElement);
+  for (const name of style) if (name.startsWith("--")) cache.set(name, style.getPropertyValue(name).trim());
+}
+
 document.documentElement.dataset.theme = localStorage.getItem(KEY) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+readAll();
