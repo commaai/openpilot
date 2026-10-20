@@ -163,3 +163,32 @@ export function drawBlocks(g, blocks, X, y0, y1, names, c) {
     }
   }
 }
+
+// grid lines, the zero line and tick labels around the plot rect r = {x, y, w, h}
+export function axes(g, col, r, xt, X, fmtX, yt, Y) {
+  g.lineWidth = 1;
+  g.strokeStyle = col.grid;
+  g.beginPath();
+  for (const v of xt.values) { const x = Math.round(X(v)) + 0.5; g.moveTo(x, r.y); g.lineTo(x, r.y + r.h); }
+  for (const v of yt.values) { const y = Math.round(Y(v)) + 0.5; g.moveTo(r.x, y); g.lineTo(r.x + r.w, y); }
+  g.stroke();
+  const zero = Math.round(Y(0)) + 0.5;
+  if (yt.values.length && zero > r.y + 1 && zero < r.y + r.h - 1) {
+    g.strokeStyle = col.zero;
+    g.beginPath();
+    g.moveTo(r.x, zero);
+    g.lineTo(r.x + r.w, zero);
+    g.stroke();
+  }
+  g.font = col.font;
+  g.fillStyle = col.text;
+  g.textAlign = "center";
+  g.textBaseline = "top";
+  for (const v of xt.values) {
+    const s = fmtX(v), w = g.measureText(s).width / 2;
+    g.fillText(s, Math.min(X(v), r.x + r.w + 6 - w), r.y + r.h + 5);
+  }
+  g.textAlign = "right";
+  g.textBaseline = "middle";
+  for (const v of yt.values) g.fillText(fmtTick(v, yt.step), r.x - 6, Y(v));
+}

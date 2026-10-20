@@ -3,7 +3,7 @@
 // data changes; the overlay (playhead, tracker, zoom box) redraws on every cursor move. Per-frame work is
 // O(pixels): curves come from store.decimate and state blocks from cached runs.
 import {h} from "/dom.js";
-import {colors, fitCanvas, ticks, fmtTime, fmtTick, fmtValue, strokeSeries, drawBlocks, nextColor, ellipsize} from "./draw.js";
+import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
@@ -13,7 +13,6 @@ import {download, exportPng} from "./export.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
-export const PATHS_MIME = "application/x-ycpe-paths";
 
 
 export function create(ctx, state = {}) {
@@ -157,34 +156,9 @@ export function create(ctx, state = {}) {
     g.clearRect(0, 0, W, H);
     g.fillStyle = col.bg;
     g.fillRect(px, T, pw, ph0);
-    g.font = col.font;
-    g.lineWidth = 1;
 
-    // grid and tick labels
-    const xt = ticks(t0, t1, pw / 90);
-    g.strokeStyle = col.grid;
-    g.beginPath();
-    for (const t of xt.values) { const x = Math.round(X(t)) + 0.5; g.moveTo(x, T); g.lineTo(x, T + ph0); }
-    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34);
-    for (const v of yt.values) { const y = Math.round(Y(v)) + 0.5; g.moveTo(px, y); g.lineTo(px + pw, y); }
-    g.stroke();
-    if (!p.blockMode && lo < 0 && hi > 0) {
-      g.strokeStyle = col.zero;
-      g.beginPath();
-      g.moveTo(px, Math.round(Y(0)) + 0.5);
-      g.lineTo(px + pw, Math.round(Y(0)) + 0.5);
-      g.stroke();
-    }
-    g.fillStyle = col.text;
-    g.textAlign = "center";
-    g.textBaseline = "top";
-    for (const t of xt.values) {
-      const s = fmtTime(t, xt.step, t1 >= 120), w = g.measureText(s).width / 2;
-      g.fillText(s, Math.min(X(t), W - w - 1), T + ph0 + 5);
-    }
-    g.textAlign = "right";
-    g.textBaseline = "middle";
-    for (const v of yt.values) g.fillText(fmtTick(v, yt.step), px - 6, Y(v));
+    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34), xt = ticks(t0, t1, pw / 90);
+    axes(g, col, {x: px, y: T, w: pw, h: ph0}, xt, X, (t) => fmtTime(t, xt.step, t1 >= 120), yt, Y);
 
     // state block rows, labeled in the gutter
     g.save();
@@ -459,22 +433,7 @@ export function create(ctx, state = {}) {
     download(new Blob([text], {type: "text/csv"}), `${st.title || "plot"}.csv`);
   }
 
-  // ---- drop target for series dragged from the browser
-
-  el.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PATHS_MIME)) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    el.classList.add("drop");
-  });
-  el.addEventListener("dragleave", () => el.classList.remove("drop"));
-  el.addEventListener("drop", (e) => {
-    el.classList.remove("drop");
-    const data = e.dataTransfer.getData(PATHS_MIME);
-    if (!data) return;
-    e.preventDefault();
-    addCurves(JSON.parse(data));
-  });
+  view.acceptPaths(el, addCurves);
 
   // ---- pane contract
 

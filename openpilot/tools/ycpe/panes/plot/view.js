@@ -1,5 +1,6 @@
-// view state shared by every plot pane: the hover tracker and undo/redo of the view
+// shared by every plot pane: the hover tracker, undo/redo of the view, and the series drop target
 
+export const PATHS_MIME = "application/x-ycpe-paths";
 const panes = new Set();  // {overlay(), y, setY(y)}
 const past = [], future = [];
 let tracker = null, lastKey = null, lastAt = 0;
@@ -50,4 +51,22 @@ export function redo(clock) {
   past.push(snapshot(clock));
   restore(clock, s);
   lastKey = null;
+}
+
+// el accepts series dragged from the browser; fn(paths)
+export function acceptPaths(el, fn) {
+  el.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes(PATHS_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    el.classList.add("drop");
+  });
+  el.addEventListener("dragleave", () => el.classList.remove("drop"));
+  el.addEventListener("drop", (e) => {
+    el.classList.remove("drop");
+    const data = e.dataTransfer.getData(PATHS_MIME);
+    if (!data) return;
+    e.preventDefault();
+    fn(JSON.parse(data));
+  });
 }

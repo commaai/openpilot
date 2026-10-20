@@ -2,9 +2,9 @@
 // drag onto plots. Rows are virtualized: only the visible ones exist in the DOM.
 import {h} from "/dom.js";
 import {fmtValue} from "/panes/plot/draw.js";
+import {PATHS_MIME} from "/panes/plot/view.js";
 
 const ROW = 18;
-const MIME = "application/x-ycpe-paths";
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 const collator = new Intl.Collator(undefined, {numeric: true});
 
@@ -118,7 +118,7 @@ export function create(ctx, state = {}) {
   function dragstart(e, k) {
     const n = rows[k];
     const paths = n.meta && selected.has(n.path) ? [...selected] : leavesOf(n);
-    e.dataTransfer.setData(MIME, JSON.stringify(paths));
+    e.dataTransfer.setData(PATHS_MIME, JSON.stringify(paths));
     e.dataTransfer.setData("text/plain", paths.join("\n"));
     e.dataTransfer.effectAllowed = "copy";
   }
