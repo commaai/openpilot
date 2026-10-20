@@ -1,0 +1,9 @@
+{"name": "device", "url": "/", "auth": true,
+ "steps": [
+  {"waitFor": ".device-page"},
+  {"waitFor": "a.drive"},
+  {"shot": "loaded"},
+  {"wheel": {"dy": 1200}},
+  {"wait": 300},
+  {"shot": "scrolled"}
+ ]}

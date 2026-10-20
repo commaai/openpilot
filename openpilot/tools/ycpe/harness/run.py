@@ -1,7 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = ["playwright", "pillow", "numpy"]
+# ///
 """YCPE QA harness: drives scenarios/*.json in Chrome, records frame timing and UI lint, writes out/latest/report.{html,md}."""
 import argparse
 import json
+import os
 import re
 import shutil
 import socket
@@ -9,6 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
 
@@ -19,7 +24,7 @@ OUT = HERE / "out"
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
-DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8}
+DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None}
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
 # gpu: headless Chrome on the NVIDIA GPU through ANGLE/EGL; hardware raster and compositing, 60 Hz begin-frames
 # soft: headless SwiftShader; main-thread numbers are fine, raster/composite cost is inflated
@@ -33,7 +38,8 @@ PROBE_JS = (HERE / "probe.js").read_text()
 LINT_JS = (HERE / "lint.js").read_text()
 SETTLE_JS = "document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))"
 # noise that never points at a bug: cancelled loads, and Chrome's echo of an HTTP error we already record with its URL
-IGNORED_EVENTS = re.compile(r"net::ERR_ABORTED|^Failed to load resource")
+# (temporary) panes that aren't built yet: serve.py answers their module URL with index.html
+IGNORED_EVENTS = re.compile(r"net::ERR_ABORTED|^Failed to load resource|^Failed to load module script")
 
 
 def free_port():
@@ -72,7 +78,7 @@ def point(page, target, timeout):
   return [b["x"] + b["width"] / 2, b["y"] + b["height"] / 2]
 
 
-def do_step(page, step, timeout, take_shot):
+def do_step(page, step, timeout, take_shot, failures):
   op = next(k for k in step if k != "timeout")
   arg = step[op]
   timeout = step.get("timeout", timeout)
@@ -90,7 +96,8 @@ def do_step(page, step, timeout, take_shot):
     page.mouse.move(tx, ty, steps=arg.get("steps", 10))
     page.mouse.up()
   elif op == "wheel":
-    page.mouse.move(*point(page, arg.get("at", [DEFAULT_VIEWPORT["width"] / 2, 300]), timeout))
+    vp = page.viewport_size
+    page.mouse.move(*point(page, arg.get("at", [vp["width"] / 2, vp["height"] / 2]), timeout))
     page.mouse.wheel(arg.get("dx", 0), arg.get("dy", 0))
   elif op == "key":
     for _ in range(step.get("repeat", 1)):
@@ -101,8 +108,15 @@ def do_step(page, step, timeout, take_shot):
     page.locator(arg).first.wait_for(state="visible", timeout=timeout)
   elif op == "waitFor":
     page.wait_for_function(arg["fn"], timeout=timeout)
+  elif op == "select":
+    page.locator(arg[0]).first.select_option(arg[1], timeout=timeout)
+  elif op == "goto":
+    page.goto(urljoin(page.url, arg), wait_until="load")
   elif op == "eval":
     page.evaluate(arg)
+  elif op == "assert":
+    if not page.evaluate(arg):
+      failures.append({"rule": "assert", "detail": f"false: {arg}", "key": arg})
   elif op == "shot":
     take_shot(arg)
   else:
@@ -131,7 +145,7 @@ def run_scenario(browser, base, sc, out, token):
   ctx.add_init_script(PROBE_JS)
   if sc.get("auth"):
     if not token:
-      res["failures"].append("auth: no access_token in ~/.comma/auth.json")
+      res["failures"].append({"rule": "auth", "detail": "no access_token in ~/.comma/auth.json", "key": "auth"})
     ctx.add_init_script(f"localStorage.setItem('comma_jwt', {json.dumps(token or '')})")
   page = ctx.new_page()
   page.on("console", lambda m: m.type in ("error", "warning") and event(f"console-{m.type}", m.text))
@@ -142,37 +156,47 @@ def run_scenario(browser, base, sc, out, token):
     ctx.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": sc["cpu_throttle"]})
 
   shifts_seen = 0
+  paused = []  # [start, end] page times spent screenshotting and linting, excluded from frame stats
 
   def take_shot(name):
     nonlocal shifts_seen
+    start = page.evaluate("performance.now()")
     page.evaluate(SETTLE_JS)
     path = out / "shots" / sc["name"] / f"{name}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(path), animations="disabled", caret="hide")
     lint = page.evaluate(LINT_JS, {"ignore": ", ".join(sc.get("lint_ignore", [])), "shiftsFrom": shifts_seen})
     shifts_seen = lint["shifts"]
+    paused.append([start, page.evaluate("performance.now()")])
     res["shots"].append({"name": name, "path": str(path.relative_to(out)), "issues": lint["issues"], "cls": lint["cls"]})
 
   t0 = time.monotonic()
+  step = {"goto": sc["url"]}
   try:
     page.goto(base + sc["url"], wait_until="load")
     for step in sc.get("steps", []):
-      do_step(page, step, sc.get("timeout", 10000), take_shot)
+      do_step(page, step, sc.get("timeout", 10000), take_shot, res["failures"])
   except Exception as e:
-    res["failures"].append(f"step failed: {str(e).splitlines()[0]}")
-    take_shot("failure")
-  res["perf"] = collect_perf(page)
+    res["failures"].append({"rule": "step", "detail": f"{json.dumps(step)}: {str(e).splitlines()[0]}", "key": json.dumps(step)})
+    try:
+      take_shot("failure")
+    except Exception:
+      pass
+  res["perf"] = collect_perf(page, paused)
   res["duration"] = time.monotonic() - t0
   ctx.close()
   check(res, {**DEFAULT_BUDGETS, **sc.get("budgets", {})})
   return res
 
 
-def collect_perf(page):
+def collect_perf(page, paused):
   probe = page.evaluate("({raf: __probe.raf, loaf: __probe.loaf})")
   app = page.evaluate("window.__perf ? JSON.parse(JSON.stringify({frames: __perf.frames, longFrames: __perf.longFrames, drops: __perf.drops})) : null")
+  harness = lambda a, b: any(a < pe and b > ps for ps, pe in paused)  # noqa: E731
   raf = probe["raf"]
-  return {"t": raf[1:], "interval": [b - a for a, b in zip(raf, raf[1:], strict=False)], "loaf": probe["loaf"], "app": app}
+  frames = [(b, b - a) for a, b in zip(raf, raf[1:], strict=False) if not harness(a, b)]
+  return {"t": [f[0] for f in frames], "interval": [f[1] for f in frames], "paused": paused, "app": app,
+          "loaf": [e for e in probe["loaf"] if not harness(e["start"], e["start"] + e["duration"])]}
 
 
 def percentile(xs, p):
@@ -184,7 +208,8 @@ def check(res, budgets):
   perf = res["perf"]
   iv = perf["interval"]
   work = [f.get("work", 0) for f in (perf["app"] or {}).get("frames") or []]
-  res["stats"] = {
+  refresh = percentile(iv, 0.5) or 1000 / 60
+  s = res["stats"] = {
     "frames": len(iv),
     "worst_ms": max(iv, default=0),
     "p99_ms": percentile(iv, 0.99),
@@ -192,27 +217,33 @@ def check(res, budgets):
     "loaf_worst_ms": max((x["duration"] for x in perf["loaf"]), default=0),
     "work_p99_ms": percentile(work, 0.99) if work else None,
     "work_max_ms": max(work, default=None),
+    "drops": sum(round(v / refresh) - 1 for v in iv if v > refresh * 1.5),
+    "perf_js_drops": (perf["app"] or {}).get("drops"),
   }
-  s = res["stats"]
-  if s["loaf_worst_ms"] > budgets["loaf_ms"]:
-    res["failures"].append(f"budget: long animation frame {s['loaf_worst_ms']:.0f} ms > {budgets['loaf_ms']} ms")
+  fail = lambda rule, detail, key=None: res["failures"].append({"rule": rule, "detail": detail, "key": key or detail})  # noqa: E731
+  for e in perf["loaf"]:
+    if e["duration"] > budgets["loaf_ms"]:
+      top = sorted(e["scripts"], key=lambda x: -x["duration"])[:3]
+      who = ", ".join(f"{x['fn'] or x['invoker']}{'' if x['url'] == x['invoker'] else ' ' + x['url']}:{x['pos']} {x['duration']:.0f} ms" for x in top)
+      fail("long-frame", f"{e['duration']:.0f} ms frame at {e['start'] / 1000:.1f}s (blocking {e['blocking']:.0f} ms): {who or 'no script, so style/layout/paint'}",
+           key=" ".join(f"{x['fn'] or x['invoker']} {x['url']}" for x in top) or "no script")
   if s["work_p99_ms"] is not None and s["work_p99_ms"] > budgets["work_p99_ms"]:
-    res["failures"].append(f"budget: perf.js work p99 {s['work_p99_ms']:.1f} ms > {budgets['work_p99_ms']} ms")
-  for kind in ("blocked", "page-error", "console-error"):
-    if n := sum(e["kind"] == kind for e in res["events"]):
-      res["failures"].append(f"{n} {kind}")
-  res["pass"] = not res["failures"]
+    fail("frame-work", f"perf.js work p99 {s['work_p99_ms']:.1f} ms > {budgets['work_p99_ms']} ms (max {s['work_max_ms']:.1f})", key="p99")
+  if budgets["drops"] is not None and (s["drops"] or 0) > budgets["drops"]:
+    fail("drops", f"{s['drops']} dropped frames (perf.js counter: {s['perf_js_drops']}), budget {budgets['drops']}", key="drops")
+  res["pass"] = not res["failures"] and not any(e["kind"] in ("blocked", "page-error", "console-error") for e in res["events"])
 
 
 def main():
   ap = argparse.ArgumentParser(description=__doc__)
   ap.add_argument("-k", help="only scenarios whose name contains this")
   ap.add_argument("--mode", choices=MODES, default="gpu")
+  ap.add_argument("--slow", action="store_true", help="include scenarios marked slow")
   ap.add_argument("--bless", action="store_true", help="store this run's shots as the goldens")
   args = ap.parse_args()
 
   scenarios = [json.loads(p.read_text()) for p in sorted((HERE / "scenarios").glob("*.json"))]
-  scenarios = [s for s in scenarios if not args.k or args.k in s["name"]]
+  scenarios = [s for s in scenarios if (args.k in s["name"] if args.k else args.slow or not s.get("slow"))]
   auth_file = Path.home() / ".comma" / "auth.json"
   token = json.loads(auth_file.read_text()).get("access_token") if auth_file.exists() else None
 
@@ -234,7 +265,7 @@ def main():
       browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode], env=env)
       for sc in scenarios:
         r = run_scenario(browser, base, sc, latest, token)
-        print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<24} {r['duration']:5.1f}s  {'; '.join(r['failures'])}")
+        print(f"{'PASS' if r['pass'] else 'FAIL'} {r['name']:<24} {r['duration']:5.1f}s  {'; '.join(f['detail'][:90] for f in r['failures'])}")
         results.append(r)
       browser.close()
   finally:
@@ -242,7 +273,8 @@ def main():
     if xvfb:
       xvfb.kill()
 
-  (latest / "results.json").write_text(json.dumps({"mode": args.mode, "time": time.time(), "duration": time.monotonic() - t0, "scenarios": results}))
+  (latest / "results.json").write_text(json.dumps({"mode": args.mode, "time": time.time(), "duration": time.monotonic() - t0,
+                                                   "load": os.getloadavg()[0], "cpus": os.cpu_count(), "scenarios": results}))
   if args.bless:
     report.bless(latest)
   report.build(latest, prev)

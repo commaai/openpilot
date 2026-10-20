@@ -1,0 +1,6 @@
+{"name": "plot-repeat10", "url": "/5beb9b58bd12b691/0000010a--a51155e496/plot?repeat=10", "slow": true, "budgets": {"drops": 0}, "timeout": 300000,
+ "steps": [
+  {"waitFor": ".pane"},
+  {"waitFor": {"fn": "document.querySelector('.load-pill').hidden && document.querySelector('.load-pill').textContent"}},
+  {"shot": "loaded"}
+ ]}

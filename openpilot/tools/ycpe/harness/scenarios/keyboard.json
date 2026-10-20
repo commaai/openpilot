@@ -1,0 +1,21 @@
+{"name": "keyboard", "url": "/5beb9b58bd12b691/0000010a--a51155e496/drive",
+ "steps": [
+  {"waitFor": ".pane"},
+  {"wait": 500},
+  {"key": " "},
+  {"wait": 1000},
+  {"key": " "},
+  {"key": "ArrowRight", "repeat": 5},
+  {"key": "Shift+ArrowRight"},
+  {"key": "ArrowLeft"},
+  {"shot": "seeked"},
+  {"key": "2"},
+  {"wait": 800},
+  {"shot": "view-2"},
+  {"key": "3"},
+  {"wait": 800},
+  {"shot": "view-3"},
+  {"key": "1"},
+  {"wait": 500},
+  {"shot": "view-1"}
+ ]}
