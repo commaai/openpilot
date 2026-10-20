@@ -1,8 +1,9 @@
 // the global playback bar: transport, rate, time, and the route timeline (engagement, a lane per loader showing
 // what's loaded, visible range, loop, playhead, hover preview). Everything on the timeline is one canvas; time with
-// nothing loaded at all is faded.
+// nothing loaded at all is faded. A live session's timeline is its window, ending at the head of the data, with the
+// source's state, "Go live" (or that it's following) and saving the session as an rlog.
 import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
-import {h, fmt, parseClock} from "/dom.js";
+import {h, fmt, css, parseClock} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -16,7 +17,8 @@ const SPAN_LABELS = {engaged: "engaged", override: "override", alert: "alert", c
 const WALL = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false});
 
 export function playbar(ctx) {
-  const {clock, route} = ctx;
+  const {clock, route} = ctx, live = route.live;
+  if (live) css(new URL("./live.css", import.meta.url));
   let spans = [];
   // alerts last, so they're drawn over the engagement around them
   const isAlert = (s) => s.kind === "alert" || s.kind === "critical";
@@ -52,7 +54,7 @@ export function playbar(ctx) {
   goto.addEventListener("blur", () => { if (!goto.hidden) shown(); });
   const wall = h("span", {class: "pb-wall muted"});
   const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", "aria-pressed": "false", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, icon("loop", 16));
-  const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(0, clock.duration)}, icon("fit", 16));
+  const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(clock.start, clock.duration)}, icon("fit", 16));
   // the timeline is the playhead's slider for keyboards and screen readers
   const canvas = h("canvas", {class: "pb-canvas", role: "slider", tabindex: 0, "aria-label": "Playhead", "aria-valuemin": 0,
     "aria-valuemax": Math.floor(clock.duration), onkeydown: (e) => {
@@ -60,23 +62,58 @@ export function playbar(ctx) {
       const to = {ArrowLeft: -step, ArrowDown: -step, PageDown: -step, ArrowRight: step, ArrowUp: step, PageUp: step}[e.key];
       if (to === undefined && e.key !== "Home" && e.key !== "End") return;
       e.preventDefault();
-      clock.seek(e.key === "Home" ? 0 : e.key === "End" ? clock.duration : clock.t + to);
+      clock.seek(e.key === "Home" ? clock.start : e.key === "End" ? clock.duration : clock.t + to);
     }});
   const tip = h("div", {class: "pb-tip", hidden: true}, h("div", {class: "pb-thumb"}), h("span"));
   const track = h("div", {class: "pb-track"}, canvas, tip);
+  const liveBtn = live && h("button", {class: "pb-live", onclick: () => clock.goLive()});
+  const state = live && h("span", {class: "pb-state"});
+  const saveBtn = live && h("button", {class: "tbtn", title: "Save the session as an rlog", onclick: save}, icon("download", 16));
   const el = h("footer", {class: "playbar"},
     h("button", {class: "tbtn", title: "Back 1 s (←, shift: 10 s)", onclick: () => clock.seek(clock.t - 1)}, icon("rewind", 16)),
     playBtn,
     h("button", {class: "tbtn", title: "Forward 1 s (→, shift: 10 s)", onclick: () => clock.seek(clock.t + 1)}, icon("forward", 16)),
-    rate, h("span", {class: "pb-clock"}, time, goto, wall), track, loopBtn, fitBtn);
+    rate, h("span", {class: "pb-clock"}, time, goto, wall), liveBtn, state, track, loopBtn, fitBtn, saveBtn);
 
+  // the timeline spans the route, or a live session's window
   let width = 0, hover = null;
   // where the canvas is, read once as the pointer comes onto it (not on every move, after the tooltip's writes)
   let rect = null;
-  const x2t = (x) => x / width * clock.duration;
+  const x2t = (x) => clock.start + x / width * (clock.duration - clock.start);
   const xOf = (e) => e.clientX - (rect ||= canvas.getBoundingClientRect()).left;
   const yOf = (e) => e.clientY - (rect ||= canvas.getBoundingClientRect()).top;
-  const t2x = (t) => t / clock.duration * width;
+  const t2x = (t) => (t - clock.start) / (clock.duration - clock.start) * width;
+
+  // the session's events as rlog bytes, downloaded (raw: the codec here only decompresses)
+  async function save() {
+    saveBtn.disabled = true;
+    try {
+      const blob = new Blob([await live.save()], {type: "application/octet-stream"});
+      const a = h("a", {href: URL.createObjectURL(blob), download: `${live.name.replace(/\W+/g, "_")}--rlog`});
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
+
+  let shownLive = null, shownState = null;
+  function renderLive() {
+    if (shownLive !== clock.follow) {
+      shownLive = clock.follow;
+      liveBtn.classList.toggle("on", clock.follow);
+      liveBtn.textContent = clock.follow ? "live" : "go live";
+      liveBtn.title = clock.follow ? "Following the newest data" : "Back to the newest data (End)";
+    }
+    // the source's state when it isn't simply streaming; a source that needs a click to start (WebUSB) gets a button
+    const {source} = live, key = `${source.state} ${source.detail}`;
+    if (shownState === key) return;
+    shownState = key;
+    state.hidden = source.state === "live";
+    state.dataset.state = source.state;
+    state.replaceChildren(source.state === "error" ? `error: ${source.detail}` : source.detail || source.state,
+      source.connect && source.state !== "live" && h("button", {class: "chip", onclick: () => source.connect()}, "Connect"));
+  }
 
   let playing = null, second = null, wallSecond = null;  // what the play button, the slider and the wall clock show
   const pane = {name: "playbar", render() {
@@ -90,6 +127,7 @@ export function playbar(ctx) {
       canvas.setAttribute("aria-valuetext", fmt.clock(second));
     }
     time.textContent = `${fmt.clock(clock.t, true)} / ${fmt.clock(clock.duration)}`;
+    if (live) renderLive();
     const w = route.start_time_utc_millis ? Math.floor(route.start_time_utc_millis / 1000 + clock.t) : null;
     if (wallSecond !== w) wall.textContent = (wallSecond = w) === null ? "" : WALL.format(w * 1000);
 
@@ -113,7 +151,7 @@ export function playbar(ctx) {
     for (const s of spans) {
       if (!SPAN_COLORS[s.kind]) continue;
       c.fillStyle = col(SPAN_COLORS[s.kind]);
-      c.fillRect(t2x(s.start / 1000), spanY, Math.max(isAlert(s) ? 3 : 1, t2x((s.end - s.start) / 1000)), SPAN_H);  // a short alert still shows
+      c.fillRect(t2x(s.start / 1000), spanY, Math.max(isAlert(s) ? 3 : 1, t2x(s.end / 1000) - t2x(s.start / 1000)), SPAN_H);  // a short alert still shows
     }
     // bookmarks: a flag above the spans
     c.fillStyle = col("--bookmark");
@@ -128,7 +166,7 @@ export function playbar(ctx) {
     kinds.forEach((k, j) => drawLane(c, k, 0, segY + j * (LANE_H + 1), width, LANE_H, segX));
     c.fillStyle = col("--panel");
     c.globalAlpha = 0.6;
-    for (let i = 0; i * SEGMENT < clock.duration; i++) {
+    for (let i = Math.floor(clock.start / SEGMENT); i * SEGMENT < clock.duration; i++) {
       if (kinds.some((k) => ["ready", "disk", "loading"].includes(k.segs[i]?.state))) continue;
       const [a, b] = segX(i);
       c.fillRect(a, spanY, b - a, SPAN_H);
@@ -137,11 +175,11 @@ export function playbar(ctx) {
     // loop, visible range, hover, playhead
     if (clock.loop) {
       c.fillStyle = col("--loop");
-      c.fillRect(t2x(clock.loop[0]), 0, t2x(clock.loop[1] - clock.loop[0]), HEIGHT);
+      c.fillRect(t2x(clock.loop[0]), 0, t2x(clock.loop[1]) - t2x(clock.loop[0]), HEIGHT);
     }
     const [r0, r1] = clock.range;
     c.fillStyle = col("--range");
-    c.fillRect(t2x(r0), PAD, Math.max(3, t2x(r1 - r0)), RANGE_H);
+    c.fillRect(t2x(r0), PAD, Math.max(3, t2x(r1) - t2x(r0)), RANGE_H);
     if (hover !== null) {
       c.fillStyle = col("--muted");
       c.fillRect(Math.round(t2x(hover)), spanY, 1, HEIGHT - spanY - PAD);
@@ -151,8 +189,9 @@ export function playbar(ctx) {
     c.fillRect(px - 1, 0, 2, HEIGHT);
   }};
 
-  const offs = ["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane)));
+  const offs = ["t", "range", "play", "duration"].map((ev) => clock.on(ev, () => perf.invalidate(pane)));
   offs.push(status.on(() => perf.invalidate(pane)), theme.on(() => perf.invalidate(pane)));
+  if (live) offs.push(live.source.on("state", () => perf.invalidate(pane)));
   const resizer = new ResizeObserver(([e]) => { width = e.contentRect.width; rect = null; perf.invalidate(pane); });
   resizer.observe(track);
 
@@ -170,7 +209,7 @@ export function playbar(ctx) {
       mode = Math.abs(x0 - t2x(r0)) < edge ? "left" : Math.abs(x0 - t2x(r1)) < edge ? "right" : t0 > r0 && t0 < r1 ? "pan" : "new";
     }
     const move = (ev) => {
-      const t = Math.max(0, Math.min(clock.duration, x2t(xOf(ev))));
+      const t = Math.max(clock.start, Math.min(clock.duration, x2t(xOf(ev))));
       if (mode === "scrub") clock.seek(t);
       else if (mode === "pan") clock.setRange(r0 + t - t0, r1 + t - t0);
       else if (mode === "left") clock.setRange(Math.min(t, r1 - 0.1), r1);

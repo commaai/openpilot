@@ -122,7 +122,11 @@ function addSegment(n, c, off) {
   });
   segs.splice(segs.findLastIndex((x) => x.base < s.base) + 1, 0, s);
   counts.set(n, {base: s.base, frames: new Map(Array.from(c.keys, (k, m) => [k, c.start[m + 1] - c.start[m]]))});
-  // per message frame counts before each segment, for counts at t; evicted segments still count
+  recount();
+}
+
+// per message frame counts before each segment, for counts at t; evicted segments still count
+function recount() {
   const before = new Map(), at = new Map();
   for (const [x, {frames}] of [...counts].sort((a, b) => a[1].base - b[1].base)) {
     at.set(x, new Map(before));
@@ -402,7 +406,11 @@ if (import.meta.url.endsWith("?worker")) {
     add: ({n, can, off}) => { addSegment(n, can, off); },
     parse: ({name, text}) => new DBC(name, text).msgs,
     serialize: ({name, text, msgs}) => DBC.revive(name, text, msgs).serialize(),
-    drop: ({n}) => { dropSegment(n); },
+    // forget: a live session's slot left its window, so its counts go too
+    drop: ({n, forget}) => {
+      dropSegment(n);
+      if (forget && counts.delete(n)) recount();
+    },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
     heatmap: ({k, t0, t1}) => heatmap(k, t0, t1),
@@ -465,6 +473,7 @@ export class Can {
     this.bytes = 0;
     this.budget = BUDGET;
     this.resident = new Map();  // segment -> its bytes in the worker
+    this.counted = new Map();  // segment -> what it added to msgs: key -> [frames, t0, t1]
     this.evicted = new Set();
     this.reloading = new Set();
     this.at = 0;  // the playhead's segment
@@ -508,11 +517,13 @@ export class Can {
   }
   emit(event, ...args) { for (const fn of this.handlers[event] || []) fn(...args); }
 
-  // a segment's frames from the pipeline worker (route time = mono time + off); summaries stay here
+  // a segment's frames from the pipeline worker (route time = mono time + off); summaries stay here. A live session's
+  // growing slot comes again with all its frames so far, and replaces what it brought before
   ingest(n, can, off) {
     const {keys, start, t, len, stride} = can;
     // a reloaded segment is already in the summaries
     let named = false;  // a message the DBC knows showed up for the first time: its signals are new paths
+    const before = this.counted.get(n), now = new Map();  // key → [frames, t0, t1] of this segment's
     if (!this.evicted.delete(n)) keys.forEach((k, m) => {
       const a = start[m], b = start[m + 1];
       let s = this.msgs.get(k);
@@ -520,21 +531,25 @@ export class Can {
         this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, gaps: 0, span: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
         named ||= !!this.dbcMsg(k);
       }
-      s.count += b - a;
+      const was = before?.get(k);  // what the slot brought before, replaced
+      now.set(k, [b - a, can.t0 + off + t[a], can.t0 + off + t[b - 1]]);
+      s.count += b - a - (was?.[0] || 0);
       s.t0 = Math.min(s.t0, can.t0 + off + t[a]);
       s.t1 = Math.max(s.t1, can.t0 + off + t[b - 1]);
       s.size = Math.max(s.size, len[b - 1], stride[m] && s.size);
-      // within segments, so segments not loaded (or missing) in between don't count as silence; a message sent
-      // less than once a segment goes by first and last
-      s.gaps += b - a - 1;
-      s.span += t[b - 1] - t[a];
-      s.freq = s.span > 0 ? s.gaps / s.span : s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
+      s.gaps += b - a - 1 - (was ? was[0] - 1 : 0);
+      s.span += t[b - 1] - t[a] - (was ? was[2] - was[1] : 0);
+      s.freq = freq(s);
       s.segs.add(n);
     });
+    if (now.size) this.counted.set(n, now);
+    // the decoded signals take its frames again, keeping the old ones until then
+    if (before) for (const c of this.cache.values()) (c.redo ||= new Set()).add(n);
     const bytes = t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
     this.bytes += bytes - (this.resident.get(n) || 0);
     this.resident.set(n, bytes);
     this.call("add", {n, can, off}, [keys, can.start, stride, can.dstart, t, len, can.data].map((a) => a.buffer));
+    this.status?.count(Math.max(n + 1, this.store.route?.segments.length || 0));  // a live session's slots keep coming
     this.status?.seg(n, this.failed ? "error" : "ready", {text: this.failed});
     this.evict();
     this.status?.bytes({memory: this.bytes});
@@ -556,6 +571,36 @@ export class Can {
       this.call("drop", {n});
       this.status?.seg(n, "disk");
     }
+  }
+
+  // a live session's slot leaves the window: its frames and counts go
+  drop(n) {
+    for (const [k, [frames, t0, t1]] of this.counted.get(n) || []) {
+      const s = this.msgs.get(k);
+      s.segs.delete(n);
+      if (!s.segs.size) {
+        this.msgs.delete(k);
+        this.listed = null;  // its signals aren't paths anymore, and paths() counts on messages only being added
+        continue;
+      }
+      s.count -= frames;
+      s.gaps -= frames - 1;
+      s.span -= t1 - t0;
+      s.t0 = Math.min(...[...s.segs].map((m) => this.counted.get(m).get(k)[1]));
+      s.freq = freq(s);
+    }
+    this.counted.delete(n);
+    this.bytes -= this.resident.get(n) || 0;
+    this.resident.delete(n);
+    this.evicted.delete(n);
+    this.call("drop", {n, forget: true});
+    for (const c of this.cache.values()) {
+      if (c.chunks.delete(n)) c.version++;
+    }
+    this.status?.seg(n, "missing");
+    this.dataVersion++;
+    this.emit("messages");
+    if (!this.listed) this.store.emit?.("paths");
   }
 
   reload(n) {
@@ -767,7 +812,8 @@ export class Can {
 
   // ---- decoded signals as series: /dbc/<bus>/<Msg>/<Sig> ----
 
-  // appended to as messages arrive and the same array until the DBCs change, as store.paths() expects
+  // appended to as messages arrive and the same array until the DBCs change (or a live session drops a message), as
+  // store.paths() expects
   paths() {
     if (this.listed?.dbc !== this.dbcVersion) this.listed = {dbc: this.dbcVersion, out: [], n: 0};
     const l = this.listed;
@@ -820,7 +866,7 @@ export class Can {
   }
 
   async decode({k, m}, path, c) {
-    const only = [...(this.msgs.get(k)?.segs || [])].filter((n) => !c.chunks.has(n));
+    const only = [...(this.msgs.get(k)?.segs || [])].filter((n) => !c.chunks.has(n) || c.redo?.has(n));
     c.stale = false;
     if (!only.length) return;
     c.pending = true;
@@ -832,7 +878,10 @@ export class Can {
     for (const [name, chunks] of Object.entries(r)) {
       const sp = path.slice(0, path.lastIndexOf("/") + 1) + name, sc = sp === path ? c : this.cache.get(sp);
       if (!sc || sc.dbcVersion !== version) continue;
-      for (const ch of chunks) sc.chunks.set(ch.n, {t: ch.t, v: ch.v, tt: ch.t});
+      for (const ch of chunks) {
+        sc.chunks.set(ch.n, {t: ch.t, v: ch.v, tt: ch.t});
+        sc.redo?.delete(ch.n);
+      }
       sc.chunks = new Map([...sc.chunks].sort((a, b) => a[0] - b[0]));
       sc.version++;
       this.emit("series", sp);
@@ -850,6 +899,10 @@ export class Can {
 
 // a fingerprint's dbc_dict's DBC for every bus, as cabana's generate_dbc_json.py: powertrain, else main, else party
 export const carDbc = (dbcs) => dbcs && (dbcs.pt || dbcs.main || dbcs.party);
+
+// a message's rate within segments, so segments not loaded (or missing) in between don't count as silence; one sent
+// less than once a segment goes by first and last
+const freq = (s) => s.span > 0 ? s.gaps / s.span : s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
 
 // a message without derived references, for postMessage
 function plain(m) {

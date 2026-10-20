@@ -373,9 +373,10 @@ export class Store {
   // call while paths are only added, with the new ones appended; a new one once any goes or changes (the browser
   // keeps its place in it)
   paths() {
-    if (this.listed?.dbc !== this.can.dbcVersion) this.listed = null;
-    const l = this.listed ||= {out: [], dbc: this.can.dbcVersion, can: 0, entries: 0, lists: new Map(), overlays: new Map()};
-    const {out} = l, can = this.can.paths();
+    const can = this.can.paths();  // a new array when the DBCs change, or a live session's messages go
+    if (this.listed?.signals !== can) this.listed = null;
+    const l = this.listed ||= {out: [], signals: can, can: 0, entries: 0, lists: new Map(), overlays: new Map()};
+    const {out} = l;
     for (; l.can < can.length; l.can++) out.push(can[l.can]);
     let k = 0;
     for (const {path, type, names} of this.entries.values()) {

@@ -78,7 +78,8 @@ function recentSection(devices) {
 
 // files from this machine (pages/local.js); dropping them anywhere works too, but nothing else says so
 const localEntry = () => h("p", {class: "small muted local-entry"},
-  h("a", {href: "/local", onclick: link("/local")}, "Open local logs…"), " (or drop rlog/qlog files anywhere)");
+  h("a", {href: "/local", onclick: link("/local")}, "Open local logs…"), " (or drop rlog/qlog files anywhere) · ",
+  h("a", {href: "/live", onclick: link("/live")}, "Live data…"));
 
 export function homePage(devices) {
   if (!auth.isAuthenticated()) return h("div", {class: "home-page"}, loginPage(new URLSearchParams()), localEntry(), recentSection(devices));
