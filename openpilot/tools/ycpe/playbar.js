@@ -60,7 +60,8 @@ export function playbar(ctx) {
   async function save() {
     saveBtn.disabled = true;
     try {
-      const bytes = await live.save(), a = h("a", {href: URL.createObjectURL(new Blob([bytes])), download: `${live.name.replace(/\W+/g, "_")}--rlog`});
+      const blob = new Blob([await live.save()], {type: "application/octet-stream"});
+      const a = h("a", {href: URL.createObjectURL(blob), download: `${live.name.replace(/\W+/g, "_")}--rlog`});
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     } finally {

@@ -179,10 +179,11 @@ function updateTop() {
     return bar.tabs.replaceChildren();
   }
   const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
-  bar.route.firstChild.textContent = ws.session ? `live · ${ws.session.label}` : ws.route.start_time_utc_millis
+  // a live session: the device crumb names a device's, else the source does
+  bar.route.firstChild.textContent = ws.session ? (DONGLE_RE.test(ws.dongle) ? "live" : `live · ${ws.dongle}`) : ws.route.start_time_utc_millis
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
     : ws.route.fullname.split("|")[1];
-  bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
+  bar.route.title = ws.session ? ws.session.label : `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(ws.views).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
     "aria-current": k === ws.view && "page", "data-key": `view:${k}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
@@ -700,7 +701,7 @@ async function openLiveSession(parts, q, main, id) {
   if (!module) return main.replaceChildren(errorPage({status: 404}));
   let session;
   try {
-    session = await openLive(module, opts, {key: dongle || kind, path});
+    session = await openLive(module, opts, {key: dongle || kind, path, window: +q.get("window") || undefined});
   } catch (e) {
     return id === navId && main.replaceChildren(errorPage(new Error(`Couldn't open the ${kind} source: ${e.message}`)));
   }

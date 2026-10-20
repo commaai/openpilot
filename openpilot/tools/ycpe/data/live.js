@@ -11,11 +11,11 @@ const WINDOW = 30 * 60;  // seconds of the newest data kept
 const BUDGET = 1e9;  // column bytes in memory plus event bytes in the worker
 
 // the session of a source: {name, label, source, store, route, video(camera, fn), save(), stop()}. opts are the
-// source module's create() options; key names the session in the URL (/live/<key>, /<dongle>/live)
-export async function openLive(kind, opts, {key = kind, path} = {}) {
+// source module's create() options; key names the session, path is its URL; window: the seconds kept (testing)
+export async function openLive(kind, opts, {key = kind, path, window} = {}) {
   const {create} = await import(`./live/${kind}.js`);
   const source = create(opts);
-  const name = `live|${key}`, store = new LiveStore(name);
+  const name = `live|${key}`, store = new LiveStore(name, {window});
   const tracks = new Map(), videos = listeners();
   const session = {
     name, kind, path, source, store,
