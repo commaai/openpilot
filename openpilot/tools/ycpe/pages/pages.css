@@ -149,15 +149,25 @@ a.drive-row:hover { background: var(--hover); }
   .ws[data-view="drive"] .pane-body:has(> .info-pane) { contain: none; }
   .ws[data-view="drive"] .pane-body:has(> .files-pane) { flex: none; height: 70vh; }
   .ws[data-view="drive"] .info-pane { position: static; overflow: visible; }
-  .ws[data-view="drive"] .playbar > .tbtn:not(.play), .ws[data-view="drive"] .pb-wall { display: none; }
-  .ws[data-view="drive"] .pb-clock { min-width: 0; }
-  .topbar :is(.brand > span, .sep, .views, .tabs, .hud, .local-badge) { display: none; }
+}
+
+/* every view on a phone: the views and tabs on a row of their own under the bar, the timeline gets the playbar */
+@media (max-width: 760px) {
+  .topbar :is(.brand > span, .sep, .hud, .local-badge) { display: none; }
   .topbar > .crumb:first-of-type { display: none; }  /* the device: the route crumb's menu reaches the rest */
+  body.in-ws .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
+  body.in-ws .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
+  body.in-ws .topbar .omni { flex: 1; min-width: 0; }  /* it shrinks rather than wrapping the first row */
+  body.in-ws .topbar .omnibox { width: 100%; }
+  .topbar :is(.views, .tabs) { order: 2; margin-left: 0; }
+  .topbar .tabs { flex: 1; max-width: none; }
+  .playbar > .tbtn:not(.play), .pb-wall { display: none; }
+  .pb-clock { min-width: 0; }
 }
 
 /* fingers: every control in the bars at least 32 px tall */
 @media (pointer: coarse) {
   :root { --top: 44px; --head: 34px; }
-  .topbar :is(.brand, .crumb, .omnibox, .tbtn, .load-pill), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
+  .topbar :is(.brand, .crumb, .omnibox, .tbtn, .load-pill, .view, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
   .pane-type { height: 32px; }
 }
