@@ -159,8 +159,9 @@ function statusPanel(anchor, onClose) {
   const el = h("div", {class: "status-panel"}, h("div", {class: "status-head"}, h("b", {}, "Loading"), h("button", {class: "link", onclick: () => close()}, "close")), body);
   const r = anchor.getBoundingClientRect();
   el.style.top = `${r.bottom + 6}px`;
-  el.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+  el.style.width = "min(420px, calc(100vw - 16px))";  // under the anchor, but on screen
   document.body.append(el);
+  el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - el.offsetWidth - 8))}px`;
   const rows = new Map();
   function row(k) {
     let rw = rows.get(k.name);
