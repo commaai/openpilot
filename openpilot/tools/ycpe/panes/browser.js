@@ -35,9 +35,10 @@ export function create(ctx, state = {}) {
     h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(true); }}), "deprecated");
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
-  const scroller = h("div", {class: "scroller", tabindex: 0, onkeydown: key}, spacer, win);
+  // why the list is empty, inside it: showing or hiding it moves nothing
   const note = h("div", {class: "note", hidden: true});
-  const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), note, scroller);
+  const scroller = h("div", {class: "scroller", tabindex: 0, onkeydown: key}, note, spacer, win);
+  const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
   scroller.addEventListener("scroll", () => { top = scroller.scrollTop; perf.invalidate(pane); }, {passive: true});
 
