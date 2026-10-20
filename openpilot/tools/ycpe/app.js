@@ -11,6 +11,7 @@ import {playbar} from "/playbar.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
+import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {create as routesPane} from "/panes/routes.js";
 
 const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
@@ -90,19 +91,13 @@ function topBar() {
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
     auth.isAuthenticated()
-      ? h("button", {class: "menu-row", onclick: () => auth.logOut()}, "Sign out")
-      : ["google", "github", "apple"].map((p) => h("a", {class: "menu-row", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`)),
-    h("button", {class: "menu-row", onclick: () => { close(); pasteToken(); }}, "Use a JWT…"))));
+      ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
+      : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
   const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, "◐");
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
     h("span", {class: "grow"}), bar.pill, hud(), themeBtn, account);
-}
-
-function pasteToken() {
-  const jwt = prompt("Paste a comma JWT (from useradmin's developer page)");
-  if (jwt) { localStorage.setItem("comma_jwt", jwt.trim()); location.reload(); }
 }
 
 function updateTop() {
@@ -315,9 +310,12 @@ async function render() {
   const q = new URLSearchParams(location.search);
   document.querySelector(".popover")?.remove();
 
-  if (parts[0] === "auth") {
-    await auth.exchangeCode(q.get("code"), q.get("provider")).catch((e) => toast(String(e)));
-    return go("/", true);
+  if (parts[0] === "auth" || parts[0] === "login") {
+    ws?.dispose();
+    ws = null;
+    document.body.classList.remove("in-ws");
+    updateTop();
+    return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
   if (auth.isAuthenticated() && !state.devices) {
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
@@ -363,10 +361,18 @@ async function render() {
 
 function errorPage(e) {
   console.error(e);
+  if (e.status === 401 || e.status === 403) return signInCard();
   const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
 document.getElementById("app").prepend(topBar());
 window.addEventListener("popstate", render);
+// signing in or out re-renders the current page under the new account
+auth.on(() => {
+  state.me = state.devices = null;
+  ws?.dispose();
+  ws = null;
+  render();
+});
 render();

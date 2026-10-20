@@ -69,7 +69,9 @@ export function filesSection(route, device) {
   function build() {
     const kinds = Object.keys(KINDS);
     table.replaceChildren(
-      h("thead", {}, h("tr", {}, h("th", {}, "seg"), kinds.map((k) => h("th", {}, KINDS[k][0])), h("th"))),
+      h("thead", {}, h("tr", {}, h("th", {}, "seg"), kinds.map((k) => h("th", {}, KINDS[k][0],
+        canUpload && UPLOADABLE.includes(k) && h("button", {class: "icon-btn", title: `request every ${KINDS[k][0]} file`,
+          onclick: () => request(missing(keysOf(segments, [k])))}, icon("upload", 14)))), h("th"))),
       h("tbody", {}, segments.map((n) => h("tr", {},
         h("td", {class: "muted"}, n),
         kinds.map((k) => { const td = h("td"); cells.set(`${n}/${k}`, td); return td; }),
