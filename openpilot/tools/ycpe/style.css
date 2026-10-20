@@ -132,14 +132,16 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .divider:hover, .divider:active { background: var(--accent); }
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 .pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
-.pane-type { max-width: 130px; height: 18px; padding: 0 2px; border: 0; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
+/* as wide as the chosen type, its chevron right after it */
+.pane-type { field-sizing: content; max-width: 130px; height: 18px; padding: 0 14px 0 2px; border: 0; color: var(--muted); font-weight: 600; text-overflow: ellipsis; cursor: pointer;
+  appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M.5.5 4 4 7.5.5' fill='none' stroke='%238a939c'/%3E%3C/svg%3E") right 3px center no-repeat; }
 .pane-type:hover { color: var(--fg); }
 .pane-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-.pane-tools { display: flex; flex-shrink: 0; margin-left: auto; opacity: .35; transition: opacity .1s; }
+.pane-tools { display: flex; flex-shrink: 0; margin-left: auto; opacity: .75; transition: opacity .1s; }
 .pane-type { min-width: 0; flex-shrink: 1; }
 /* narrow panes keep only maximize and close */
 @container (max-width: 180px) { .pane-tools .pane-btn:nth-child(-n+2) { display: none; } }
-.pane:hover .pane-tools { opacity: 1; }
+.pane:is(:hover, :focus-within) .pane-tools { opacity: 1; }
 .pane-btn { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; line-height: 1; }
 .pane-btn:hover { background: var(--active); color: var(--fg); }
 .pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; contain: strict; }  /* a pane's changes never relayout the page */
