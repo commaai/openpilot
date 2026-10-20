@@ -3,6 +3,7 @@ import html
 import importlib
 import json
 import os
+import subprocess
 import sys
 import traceback
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -29,9 +30,18 @@ def load_modules() -> None:
       traceback.print_exc()
 
 
+def app_commit() -> dict | None:
+  """the commit the app is served from, and its time: the account menu's version"""
+  try:
+    out = subprocess.run(["git", "-C", str(APP), "log", "-1", "--format=%H %ct"], capture_output=True, text=True, timeout=5).stdout.split()
+  except (OSError, subprocess.TimeoutExpired):
+    return None
+  return {"sha": out[0], "time": int(out[1])} if len(out) == 2 else None
+
+
 @core.route("GET", "/local/caps", public=True)
 def caps(req):
-  return {"daemon": "ycpe", "version": 1, "modules": core.modules, "failed": failed}
+  return {"daemon": "ycpe", "version": 1, "modules": core.modules, "failed": failed, "commit": app_commit()}
 
 
 class Handler(SimpleHTTPRequestHandler):

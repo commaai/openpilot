@@ -34,6 +34,12 @@ class TestSecurity(DaemonCase):
     caps = json.loads(data)
     self.assertIn("auth", caps["modules"])
     self.assertIn("jobs", caps["modules"])
+    self.assertRegex(caps["commit"]["sha"], r"^[0-9a-f]{40}$")
+
+  def test_manifest_type(self):
+    r, data = self.req("/manifest.webmanifest", token=False)
+    self.assertEqual(r.getheader("Content-Type"), "application/manifest+json")
+    self.assertEqual(json.loads(data)["display"], "standalone")
 
   def test_wrong_host(self):
     for path in ("/local/caps", "/local/auth", "/", "/index.html", "/api.js"):
