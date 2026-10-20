@@ -117,7 +117,7 @@ const bar = {
   device: h("button", {class: "crumb", title: "Devices"}),
   route: h("button", {class: "crumb", title: "Routes on this device"}),
   views: h("nav", {class: "views"}),
-  tabs: h("nav", {class: "tabs"}),
+  tabs: h("nav", {class: "tabs", role: "tablist", "aria-label": "Layout tabs"}),
 };
 
 function topBar() {
@@ -174,19 +174,28 @@ function updateTop() {
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
     : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
-  bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
+  bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
+    "aria-current": k === ws.view && "page", title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
   if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
-  bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
-    onclick: (e) => {  // in place, so a double-click lands on the same button
+  const select = (tab) => {
+    for (const t of bar.tabs.children) {
+      t.classList.toggle("on", t === tab);
+      t.querySelector("[role=tab]")?.setAttribute("aria-selected", t === tab);
+    }
+  };
+  bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("span", {class: `tab ${i === layout.model.active ? "on" : ""}`,
+    onclick: (e) => {  // in place, so a double-click lands on the same tab
       if (i === layout.model.active) return;
       layout.selectTab(i);
-      for (const b of bar.tabs.children) b.classList.toggle("on", b === e.currentTarget);
+      select(e.currentTarget);
     },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
-    onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
-    layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
+    onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }},
+    h("button", {class: "tab-name", role: "tab", "aria-selected": i === layout.model.active}, t.name),
+    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "aria-label": `Close tab ${t.name}`,
+      onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
   h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
   // scrolled to on the next frame, when it lays out anyway, and only when the active tab or the tab set changed

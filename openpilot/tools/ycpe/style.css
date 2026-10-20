@@ -67,11 +67,14 @@ body.in-ws #main { overflow: hidden; }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
-.tab { display: flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tab { display: flex; align-items: center; height: 24px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tab:not(.add) { min-width: 64px; padding: 0; }
 .tab:hover { color: var(--fg); }
 .tab.on { color: var(--fg); border-bottom-color: var(--accent); }
-.tab .x { opacity: 0; padding: 0 2px; border-radius: 3px; }
-.tab:hover .x { opacity: .7; }
+.tab-name { flex: 1; align-self: stretch; padding: 0 8px; border: 0; background: none; color: inherit; text-align: left; cursor: inherit; }
+/* on the trailing edge, so a click on a short tab's middle selects it */
+.tab .x { display: flex; margin: 0 4px 0 -4px; padding: 0 2px; border: 0; border-radius: 3px; background: none; color: inherit; opacity: 0; cursor: pointer; }
+.tab:hover .x, .tab .x:focus-visible { opacity: .7; }
 .tab .x:hover { background: var(--active); opacity: 1; }
 .tab.add { font-size: 14px; }
 .grow { flex: 1; }
