@@ -17,7 +17,7 @@ import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, d
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
-import {omnibox, rememberRoute} from "/pages/omnibox.js";
+import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
@@ -593,6 +593,12 @@ async function render() {
     return updateTop();
   }
 
+  // whatever else the omnibox reads goes where it names: connect's "/<dongle>/<start ms>/<end ms>", "/<dongle>|<log id>"
+  if (parts.length >= 2 || parts.length && !DONGLE_RE.test(parts[0])) {
+    const path = await resolve(location.pathname.slice(1) + location.search).catch(() => null);
+    if (id !== navId) return;
+    if (path && path !== location.pathname + location.search) return go(path, true);
+  }
   closeWorkspace();
   updateTop();
   if (DONGLE_RE.test(parts[0] || "")) {
