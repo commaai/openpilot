@@ -19,6 +19,8 @@
 .plot-pane.narrow .legend { max-width: calc(100% - 70px); }
 .plot-pane.narrow .legend .row { grid-template-columns: 10px minmax(0, 1fr) 14px; }
 .plot-pane.narrow .legend .val { display: none; }
+.plot-pane.tiny .legend .name { display: none; }
+.plot-pane.tiny .legend .row { grid-template-columns: 10px 14px; }
 .plot-pane .legend .val { min-width: 5ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .plot-pane .legend .x { visibility: hidden; color: var(--muted); font-weight: 400; text-align: center; cursor: pointer; }
 .plot-pane .legend .row:hover .x { visibility: visible; }

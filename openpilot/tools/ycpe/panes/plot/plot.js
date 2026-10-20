@@ -562,6 +562,7 @@ export function create(ctx, state = {}) {
     gBase = fitCanvas(base, W, H);
     gOver = fitCanvas(over, W, H);
     el.classList.toggle("narrow", W < 260);  // legend names only
+    el.classList.toggle("tiny", W < 170);  // legend swatches only (names on hover)
     invalidate();
   }
 
