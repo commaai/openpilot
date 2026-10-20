@@ -134,7 +134,9 @@ export class Reader {
     this.fillers = [];
   }
 
-  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, seq, cols: Map(path → Column), lists})
+  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, seq, cols: Map(path → Column), lists}).
+  // What the schema doesn't know is counted in this.unknown: events of other services, and the services with structs
+  // bigger than the schema's (fields from a newer or forked cereal)
   // keep: {service: ["/speeds", "/laneLines/*/y"]} splits those long lists per index too; every other long list
   // is skipped and reported in lists (path → longest length) so it can be asked for later
   read(buf, {can = null, keep = {}} = {}) {
@@ -146,6 +148,7 @@ export class Reader {
     const validOff = this.ev.valid[3];
     const msgs = [];
     const counts = new Uint32Array(byDisc.length);
+    this.unknown = {events: 0, services: new Set()};
 
     // pass 1: message boundaries and service counts
     let m = 0;
@@ -165,6 +168,8 @@ export class Reader {
         if (byDisc[which]) {
           counts[which]++;
           msgs.push(m, which);
+        } else {
+          this.unknown.events++;
         }
       }
       m = next;
@@ -223,7 +228,7 @@ export class Reader {
   // the field plan of one struct at one path: a filler for its scalars, then groups, sub-structs, lists, texts
   plan(structIdx, path, svc, n) {
     const s = this.schema.structs[structIdx];
-    const p = {disc: s.disc, fill: this.filler(structIdx), cols: [], groups: [], structs: [], lists: [], texts: []};
+    const p = {disc: s.disc, size: s.data * 8, ptrs: s.ptrs, fill: this.filler(structIdx), cols: [], groups: [], structs: [], lists: [], texts: []};
     for (const [name, disc, type, off, ref] of s.fields) {
       const sub = `${path}/${name}`;
       if (type === "b" || SCALAR[type]) p.cols.push(this.col(svc, sub, type, n, type === "e" ? this.schema.enums[ref] : undefined).v);
@@ -264,6 +269,7 @@ export class Reader {
 
   walk(p, off, dataBytes, ptrs, i) {
     const which = p.disc >= 0 && p.disc * 2 < dataBytes ? U16[(off >> 1) + p.disc] : 0;
+    if (dataBytes > p.size || ptrs > p.ptrs) this.unknown.services.add(p.svc.name);
     p.fill(mem, p.cols, off, dataBytes, which, i);
     for (const g of p.groups) if (g.disc < 0 || g.disc === which) this.walk(g.plan, off, dataBytes, ptrs, i);
     const pbase = off + dataBytes;

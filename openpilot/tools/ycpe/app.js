@@ -12,6 +12,7 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
+import {logSchema} from "/data/schemas.js";
 import {routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
@@ -195,6 +196,8 @@ class Workspace {
   ensureStore() {
     if (this.store || !this.files) return this.store;
     this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
+    const schema = logSchema(this.store, this.route);  // switches to the log's own schema for forks and unknown fields
+    this.offs.push(() => schema.dispose());
     // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
     this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {

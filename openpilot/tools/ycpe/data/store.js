@@ -40,6 +40,9 @@ export class Store {
     this.missing = new Set();  // migrated paths that couldn't be computed
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
+    this.schema = null;  // the log's own schema ({key, text}, see schemas.js) or null for the bundled one
+    this.gen = 0;  // bumped with every schema change; packs carry the generation they were parsed with
+    this.unknown = {events: 0, services: new Set()};  // what the reads so far didn't know (capnp.js)
     this.bytes = 0;
     this.progress = {done: 0, failed: 0, total: 0, bytes: 0, raw: 0, cached: 0, ms: {fetch: 0, decompress: 0, read: 0, ingest: 0}, ingestMax: 0, start: performance.now()};
     this.t = t;
@@ -82,9 +85,46 @@ export class Store {
     const opts = () => {
       const skip = {};
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
-      return {...seg.opts, keep: this.keep, skip, only, context: this.context, ...extra};
+      return {...seg.opts, keep: this.keep, skip, only, context: this.context, schema: this.schema, gen: this.gen, ...extra};
     };
-    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev));
+    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev)).then((p) => Object.assign(p, {full: !only}));
+  }
+
+  // reads every loaded segment again with another schema; the columns in memory stay until each segment's new ones
+  // replace them. Evicted columns are forgotten: their paths may not exist in the new schema
+  setSchema(schema) {
+    if (schema?.key === this.schema?.key) return;
+    this.schema = schema;
+    this.gen++;
+    this.enums = [];
+    for (const e of this.entries.values()) if (e.evicted) this.entries.delete(e.path);
+    this.evicted.clear();
+    this.emit("schema", schema);
+    for (const seg of this.route.segments) if (seg.status === "done") this.reread(seg);
+  }
+
+  reread(seg) {
+    if (seg.reread === this.gen) return;
+    seg.reread = this.gen;
+    this.load(seg).then((p) => this.ingest(seg, p), () => {
+      seg.loading = null;
+      this.publish(seg);
+    });
+  }
+
+  // after a segment's first full parse with the schema in use, its columns of paths that parse didn't have go
+  prune(seg, paths) {
+    let removed = false;
+    for (const e of this.entries.values()) {
+      const a = e.at[seg.n];
+      if (!a || paths.has(e.path)) continue;
+      this.release(a);
+      delete e.at[seg.n];
+      e.views[seg.n] = null;
+      e.version++;
+      if (!e.at.some(Boolean)) removed = this.entries.delete(e.path);
+    }
+    if (removed) this.emit("paths");
   }
 
   // outward from the focus segment
@@ -182,6 +222,10 @@ export class Store {
     route.t0 ??= p.start;
     this.context ||= p.context;  // migrations fall back to it when a segment lacks initData or carParams
     for (const m of p.missing || []) this.missing.add(m);
+    this.unknown.events += p.unknown?.events || 0;
+    for (const s of p.unknown?.services || []) this.unknown.services.add(s);
+    const fresh = p.full && p.gen === this.gen && seg.gen !== this.gen;  // the first full read with this schema
+    if (fresh) seg.gen = this.gen;
     if (seg.status !== "done") {
       seg.t0 = p.t0;
       seg.t1 = p.t1;
@@ -199,11 +243,14 @@ export class Store {
     let added = false;
     for (let k = 0; k < paths.length; k++) {
       let e = this.entries.get(paths[k]);
+      const ref = enumRef(p, k), names = ref >= 0 ? this.enums[ref] : undefined;
       if (!e) {
-        const ref = enumRef(p, k);
-        e = {path: paths[k], type: p.types[k], ...(ref >= 0 && {names: this.enums[ref]}), at: [], views: [], version: 0, used: 0};
+        e = {path: paths[k], type: p.types[k], ...(names && {names}), at: [], views: [], version: 0, used: 0};
         this.entries.set(paths[k], e);
         added = true;
+      } else if (fresh && (e.type !== p.types[k] || String(e.names) !== String(names))) {
+        e.type = p.types[k];  // another schema can type or name a path differently
+        e.names = names;
       }
       if (e.evicted) continue;  // not resident until asked for again
       if (e.at[seg.n]) this.release(e.at[seg.n]);
@@ -213,6 +260,8 @@ export class Store {
       p.live[service(p, k)]++;
     }
     p.n = seg.n;
+    if (fresh) this.prune(seg, new Set(paths));
+    if (p.gen !== this.gen) this.reread(seg);  // read with a schema that's since been replaced
     p.live.forEach((n, s) => {
       if (!n) return drop(p, s);
       this.bytes += p.bufs[s].byteLength;

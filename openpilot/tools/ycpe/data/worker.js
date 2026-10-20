@@ -9,6 +9,14 @@ import {CanFrames} from "./can.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const ready = initCodec().then(() => new Reader(schema));
+// readers of the logs' own schemas (data/schemas.js), by key
+const readers = new Map();
+async function readerFor(log) {
+  const stock = await ready;  // the codec too
+  if (!log) return stock;
+  if (!readers.has(log.key)) readers.set(log.key, new Reader(JSON.parse(log.text)));
+  return readers.get(log.key);
+}
 
 const RETRIES = 6;  // 0.5 s, then doubling: about 30 s of trying before a segment fails
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,9 +61,10 @@ async function load(key, url, progress) {
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
 
-// opts: {n, shift, keep, only, skip, context}; keep, only and skip are {service: [path globs]}
+// opts: {n, shift, keep, only, skip, context, schema, gen}; keep, only and skip are {service: [path globs]}; schema is
+// the log's own ({key, text}), read as it is with no migrations, or null for the bundled one
 async function parse(buf, opts) {
-  const reader = await ready;
+  const reader = await readerFor(opts.schema);
   const t0 = performance.now();
   let t1, raw, migrated;
   const frames = opts.can ? new CanFrames(reader.schema) : null;  // CAN frames once, on a segment's first parse
@@ -64,7 +73,7 @@ async function parse(buf, opts) {
     t1 = performance.now();
     raw = bytes.byteLength;
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
-    migrated = migrate(read, opts.context, {keep: opts.keep});
+    if (!opts.schema) migrated = migrate(read, opts.context, {keep: opts.keep});
     return compact(read).services;
   });
 
@@ -85,7 +94,8 @@ async function parse(buf, opts) {
   const out = pack(services, reader.schema.enums, want);
   const can = frames?.finish();
   if (can) can.can.t0 += off;
-  return {...out, ...migrated, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
+  const unknown = {events: reader.unknown.events, services: [...reader.unknown.services]};
+  return {...out, ...migrated, unknown, gen: opts.gen, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
