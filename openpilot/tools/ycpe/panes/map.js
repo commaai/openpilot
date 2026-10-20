@@ -2,11 +2,11 @@
 // colored by engagement, a playhead marker, click to seek). Tiles decode off the main thread and every draw goes
 // through the frame scheduler, so the map never costs a frame. The trace comes from coords.json, or from the
 // store's GPS once logs are loading.
-import {MAPBOX_TOKEN} from "../geocode.js";
-import {routeCoords, routeEvents} from "../api.js";
-import {h, css} from "../dom.js";
-import {perf} from "../perf.js";
-import {theme} from "../theme.js";
+import {MAPBOX_TOKEN} from "/geocode.js";
+import {routeCoords, routeEvents} from "/api.js";
+import {h, css} from "/dom.js";
+import {perf} from "/perf.js";
+import {theme} from "/theme.js";
 
 await css(new URL("./map.css", import.meta.url));
 

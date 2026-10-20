@@ -49,12 +49,12 @@ export function create(ctx, state) {
   function showAlert() {
     const store = ctx.peekStore(), at = (f) => store.valueAt(`/selfdriveState/${f}`, ctx.clock.t);
     const text = store && at("alertSize") ? [at("alertText1"), at("alertText2")].filter(Boolean).join("\n") : "";
-    const status = text ? ALERT_STATUS[at("alertStatus")] || "normal" : "";
-    if (`${status} ${text}` === alerted) return;
-    alerted = `${status} ${text}`;
+    const alertStatus = text ? ALERT_STATUS[at("alertStatus")] || "normal" : "";
+    if (`${alertStatus} ${text}` === alerted) return;
+    alerted = `${alertStatus} ${text}`;
     alertEl.hidden = !text;
     alertEl.textContent = text;
-    alertEl.dataset.status = status;
+    alertEl.dataset.status = alertStatus;
   }
 
   // the overlay over the last frame, dimmed: text with a progress bar at f (0..1), text alone (f null), or nothing

@@ -1,12 +1,12 @@
 // files pane: a route's files per segment from the chosen source (data/sources.js), with sizes, downloads, upload
 // requests for what's still on the device, and per kind a download-all and a request-all. Rows are virtualized and
 // resolved as they scroll into view, so a 300+ segment route costs what's on screen.
-import {api} from "../api.js";
-import {h, css} from "../dom.js";
-import {icon} from "../icons.js";
-import {fmtBytes} from "../status.js";
-import {KINDS, API_KIND, SOURCES, AUTO, daemon, parseRange, resolveFiles, routeSource} from "../data/sources.js";
-import {uploads, uploadState, uploadNotice, uploadQueue, LABELS, UPLOADABLE} from "../pages/files.js";
+import {api} from "/api.js";
+import {h, css} from "/dom.js";
+import {icon} from "/icons.js";
+import {fmtBytes} from "/status.js";
+import {KINDS, API_KIND, SOURCES, AUTO, daemon, parseRange, resolveFiles, routeSource} from "/data/sources.js";
+import {uploads, uploadState, uploadNotice, uploadQueue, LABELS, UPLOADABLE} from "/pages/files.js";
 
 await css(new URL("./files.css", import.meta.url));
 

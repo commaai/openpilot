@@ -1,10 +1,10 @@
 // route info pane: what the route is, its public/preserved toggles, link sharing and bookmarks (files have their own pane)
-import {api, routeEvents} from "../api.js";
-import {h, fmt, css} from "../dom.js";
-import {routeKey} from "../data/sources.js";
-import {canManage} from "../pages/home.js";
+import {api, routeEvents} from "/api.js";
+import {h, fmt, css} from "/dom.js";
+import {routeKey} from "/data/sources.js";
+import {canManage} from "/pages/home.js";
 import {schemaRow} from "./schema.js";
-import {VIEWS} from "../views.js";
+import {VIEWS} from "/views.js";
 
 await css(new URL("./routeinfo.css", import.meta.url));
 
