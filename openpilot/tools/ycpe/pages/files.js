@@ -37,7 +37,7 @@ export function uploads(route, device, has, changed) {
     state: (key) => states.get(key),
     // the keys of these that can still be asked for
     missing: (keys) => keys.filter((k) => !has(k) && !states.get(k) && UPLOADABLE.includes(k.split("/")[1])),
-    request, cancel,
+    request, cancel: null,  // for those who manage the device
     dispose() { alive = false; clearTimeout(polling); },
   };
   const emit = (uploaded = false) => alive && changed({uploaded});
@@ -106,6 +106,7 @@ export function uploads(route, device, has, changed) {
 
   (async () => {
     up.canUpload = !!device && await canManage(device);
+    if (up.canUpload) up.cancel = cancel;
     emit();
     if (up.offline()) {
       if (up.canUpload) offlineQueue();
