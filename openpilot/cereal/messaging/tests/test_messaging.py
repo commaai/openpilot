@@ -148,7 +148,7 @@ class TestMessaging(OpenpilotTestCase):
     sub_sock = messaging.sub_sock(sock, timeout=round(sock_timeout*1000))
 
     # wait 5 socket timeouts and make sure it's still retrying
-    p = multiprocessing.Process(target=messaging.recv_one_retry, args=(sub_sock,))
+    p = multiprocessing.get_context("fork").Process(target=messaging.recv_one_retry, args=(sub_sock,))
     p.start()
     time.sleep(sock_timeout*5)
     assert p.is_alive()

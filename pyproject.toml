@@ -156,6 +156,9 @@ override-dependencies = [
   "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
 ]
 
+[tool.uv.extra-build-dependencies]
+pycapnp = ["cmake"]  # Python 3.14 needs a source build of 2.1.0
+
 [tool.uv.sources]
 # SCons owns the native build; an editable install would shadow it with a stale .so
 msgq-ipc = { path = "msgq_repo", package = false }

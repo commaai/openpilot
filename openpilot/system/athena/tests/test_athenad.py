@@ -1,6 +1,5 @@
 from functools import wraps
 import json
-import multiprocessing
 import os
 import requests
 import shutil
@@ -134,7 +133,7 @@ class TestAthenadMethods(OpenpilotTestCase):
     with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState", timeout=100)
 
-    end_event = multiprocessing.Event()
+    end_event = threading.Event()
 
     pub_sock = messaging.pub_sock("deviceState")
 
@@ -144,7 +143,7 @@ class TestAthenadMethods(OpenpilotTestCase):
         pub_sock.send(msg.to_bytes())
         time.sleep(0.01)
 
-    p = multiprocessing.Process(target=send_deviceState)
+    p = threading.Thread(target=send_deviceState)
     p.start()
     time.sleep(0.1)
     try:

@@ -5,7 +5,8 @@ import time
 import subprocess
 from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
-from multiprocessing import Process
+from multiprocessing import get_context
+from multiprocessing.process import BaseProcess
 
 from setproctitle import setproctitle
 
@@ -46,7 +47,7 @@ def nativelauncher(pargs: list[str], cwd: str, name: str) -> None:
   os.execvp(pargs[0], pargs)
 
 
-def join_process(process: Process, timeout: float) -> None:
+def join_process(process: BaseProcess, timeout: float) -> None:
   # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
   # We have to poll the exitcode instead
   t = time.monotonic()
@@ -58,7 +59,7 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   should_run: Callable[[bool, Params, car.CarParams], bool]
-  proc: Process | None = None
+  proc: BaseProcess | None = None
   enabled = True
   name = ""
   shutting_down = False
@@ -145,7 +146,7 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
-    self.proc = Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name))
+    self.proc = get_context("fork").Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name))
     self.proc.start()
     self.shutting_down = False
 
@@ -168,7 +169,8 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
+    # Processes inherit the environment, logging context, and replay hooks set by their caller.
+    self.proc = get_context("fork").Process(name=self.name, target=self.launcher, args=(self.module, self.name))
     self.proc.start()
     self.shutting_down = False
 
