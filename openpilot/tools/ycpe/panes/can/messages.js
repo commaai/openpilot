@@ -1,6 +1,6 @@
 // cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
 import {h} from "/dom.js";
-import {canOf, hex2, subs} from "./common.js";
+import {canOf, hex2, menuCheck, popup, subs} from "./common.js";
 import {dbcDialog, toolsMenu} from "./tools.js";
 
 const ROW = 20;
@@ -17,7 +17,7 @@ const COLS = [
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
-  const filters = {...state.filters};
+  const filters = {...state.filters}, hidden = new Set(state.hidden);
 
   const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
     sort = {col: c.id, dir: sort.col === c.id ? -sort.dir : 1};
@@ -37,9 +37,16 @@ export function create(ctx, state) {
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
     clearBtn, h("label", {class: "can-check", title: "Don't highlight bits of defined signals"}, suppressDefined, "Suppress signals"),
-    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"));
+    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
+    h("button", {class: "can-btn", title: "Columns", onclick: (e) => popup(e.currentTarget, COLS.slice(1).map((c) =>
+      menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); })))}, "⋯"));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
+
+  // hidden columns are a class per column on the pane, so rows never change for it
+  function columns() {
+    for (const c of COLS) el.classList.toggle(`can-hide-${c.id}`, hidden.has(c.id));
+  }
 
   function toolbar() {
     const files = can.dbcs.all();
@@ -150,7 +157,7 @@ export function create(ctx, state) {
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
-    save: () => ({sort, filters}),
+    save: () => ({sort, filters, hidden: [...hidden]}),
   };
   s.add(can.on("messages", refresh));
   s.add(can.on("dbc", refresh));
@@ -170,6 +177,7 @@ export function create(ctx, state) {
   document.addEventListener("keydown", undoKeys);
   s.add(() => document.removeEventListener("keydown", undoKeys));
   s.add(can.on("notice", toolbar));
+  columns();
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
   sizer.observe(body);
   s.add(() => sizer.disconnect());

@@ -11,6 +11,9 @@ const posOf = (row, col) => row * 8 + 7 - col;
 const cellOf = (pos) => [pos >> 3, 7 - (pos & 7)];
 const withAlpha = (hsl, a) => hsl.replace(")", ` / ${a})`);
 
+const DIR_KEY = "ycpe_can_drag";
+let dragDir = localStorage.getItem(DIR_KEY) || "msb";
+
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let mode = state.mode || "live", heat = null, heatKey = null, hover = null, drag = null, dpr = 1, width = 300;
@@ -20,9 +23,13 @@ export function create(ctx, state) {
   const modeBtn = h("select", {class: "can-select", title: "Heatmap: flips up to the playhead, or over the visible range",
     onchange: (e) => { mode = e.target.value; heat = null; requestHeat(); }},
     ["live", "range", "off"].map((v) => h("option", {value: v, selected: mode === v}, v)));
+  // cabana's drag direction setting, shared by every binary view
+  const dirBtn = h("select", {class: "can-select", title: "Endianness of a dragged signal",
+    onchange: (e) => { dragDir = e.target.value; localStorage.setItem(DIR_KEY, dragDir); }},
+    [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
   const scroller = h("div", {class: "can-binary-scroll"}, canvas);
   const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key},
-    h("div", {class: "can-toolbar"}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn), scroller, info);
+    h("div", {class: "can-toolbar"}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn), scroller, info);
 
   const k = () => can.selected;
   const msg = () => can.dbcMsg(k());
@@ -77,11 +84,13 @@ export function create(ctx, state) {
     return {row, col: Math.min(c, 7), hex: c >= 8};
   }
 
-  // cabana's getSelection: dragging toward lower bit positions makes a little endian signal
+  // cabana's getSelection: endianness from the drag direction setting (by default, dragging toward lower bit
+  // positions makes a little endian signal), or the resized signal's
   function selection({anchor, cur, resize}) {
     const a = posOf(anchor.row, anchor.col), b = posOf(cur.row, cur.col);
-    const le = resize ? resize.le : (cur.row * 8 + cur.col) < (anchor.row * 8 + anchor.col);
-    const start = le ? Math.min(a, b) : (cur.row * 8 + cur.col < anchor.row * 8 + anchor.col ? b : a);
+    const back = cur.row * 8 + cur.col < anchor.row * 8 + anchor.col;
+    const le = resize ? resize.le : {msb: back, lsb: !back, le: true, be: false}[dragDir];
+    const start = le ? Math.min(a, b) : back ? b : a;
     const size = le ? Math.abs(a - b) + 1 : Math.abs(flip(a) - flip(b)) + 1;
     return {start, size, le};
   }

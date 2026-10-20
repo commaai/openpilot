@@ -2,7 +2,7 @@
 import {h} from "/dom.js";
 import {DBC} from "/data/dbc.js";
 import {addrOf, hexId} from "/data/can.js";
-import {createSignal, dialog, download, field} from "./common.js";
+import {createSignal, dialog, download, field, menuItem, popup} from "./common.js";
 
 const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a, b) => a - b);
 
@@ -33,9 +33,14 @@ export function dbcDialog(can) {
     search.title = [local && `opendbc in ${local}`, label && `opendbc at ${label}`].filter(Boolean).join(", else ");
     results.replaceChildren(...(label || local ? [] : [h("div", {class: "can-muted"}, "Can't reach opendbc on GitHub")]),
       ...[...new Set([...fp, ...files])].filter((f) => f.includes(q)).map((f) =>
-        h("button", {class: "can-list-row", onclick: open(() => can.loadOpendbc(f, buses()))}, f, f === fp[0] && h("span", {class: "can-muted"}, " · this car"))));
+        h("button", {class: "can-list-row", onclick: open(() => can.loadOpendbc(f, buses()).then(() => remember(f, "opendbc")))},
+          f, f === fp[0] && h("span", {class: "can-muted"}, " · this car"))));
   }
   list();
+
+  const recents = recent();
+  const recentList = recents.length ? h("div", {class: "can-list can-recent"}, h("div", {class: "can-muted"}, "Recent"),
+    recents.map((r) => h("button", {class: "can-list-row", onclick: open(() => reopen(can, r, buses()))}, r.name, h("span", {class: "can-muted"}, ` · ${r.from}`)))) : null;
 
   // with the local daemon, DBCs also save into this machine's opendbc checkout
   const local = can.local();
@@ -59,7 +64,7 @@ export function dbcDialog(can) {
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),
     h("div", {class: "can-dbc-open"},
-      h("div", {class: "can-col-flex"}, search, results),
+      h("div", {class: "can-col-flex"}, recentList, search, results),
       h("div", {class: "can-col-flex"},
         h("div", {class: "can-row"},
           h("button", {class: "can-btn", onclick: open(() => openFile(can, buses()))}, "Open file…"),
@@ -83,6 +88,45 @@ async function openFile(can, buses) {
   const dbc = new DBC(name.replace(/\.dbc$/, ""), text);
   dbc.handle = handle;
   can.dbcs.open(buses, dbc);
+  if (handle) {
+    await handles("readwrite", (store) => store.put(handle, dbc.name));
+    remember(dbc.name, "file");
+  }
+}
+
+// ---- recent DBCs, as cabana's Open Recent: names in localStorage, and opened files' handles in IndexedDB (only it
+// can keep them)
+
+const RECENT = "ycpe_can_recent";
+const recent = () => JSON.parse(localStorage.getItem(RECENT) || "[]");
+
+function remember(name, from) {
+  const list = [{name, from}, ...recent().filter((r) => r.name !== name || r.from !== from)].slice(0, 10);
+  localStorage.setItem(RECENT, JSON.stringify(list));
+}
+
+async function reopen(can, {name, from}, buses) {
+  if (from === "opendbc") return can.loadOpendbc(name, buses);
+  const handle = await handles("readonly", (store) => store.get(name));
+  if (!handle || await handle.requestPermission({mode: "readwrite"}) === "denied") throw new Error(`${name}.dbc can't be reopened; open it again`);
+  const dbc = new DBC(name, await (await handle.getFile()).text());
+  dbc.handle = handle;
+  can.dbcs.open(buses, dbc);
+  remember(name, from);
+}
+
+// one IndexedDB request on the file handle store; resolves with its result
+function handles(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("ycpe-can", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const q = fn(req.result.transaction("handles", mode).objectStore("handles"));
+      q.onsuccess = () => resolve(q.result);
+      q.onerror = () => reject(q.error);
+    };
+  });
 }
 
 // writes back to the opened file when permitted, else asks where (or downloads)
@@ -126,17 +170,11 @@ async function saveLocal(can, dbc, note, error, force = false) {
 }
 
 export function toolsMenu(can, ctx, anchor) {
-  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { menu.hidePopover(); fn(); }}, label);
-  const menu = h("div", {class: "can-menu", popover: "auto", ontoggle: (e) => { if (e.newState === "closed") menu.remove(); }},
-    item("Find similar bits…", () => similarDialog(can)),
-    item("Find signal…", () => findDialog(can, ctx)),
-    item("Export CSV…", () => csvDialog(can, ctx)),
-    item("Route info…", () => segmentsDialog(ctx)));
-  document.body.append(menu);
-  const r = anchor.getBoundingClientRect();
-  menu.style.left = `${r.left}px`;
-  menu.style.top = `${r.bottom + 2}px`;
-  menu.showPopover();
+  popup(anchor, [
+    menuItem("Find similar bits…", () => similarDialog(can)),
+    menuItem("Find signal…", () => findDialog(can, ctx)),
+    menuItem("Export CSV…", () => csvDialog(can, ctx)),
+    menuItem("Route info…", () => segmentsDialog(ctx))]);
 }
 
 const table = (cols, rows, onRow) => h("div", {class: "can-table"},
