@@ -160,6 +160,8 @@ function topBar() {
 }
 
 function updateTop() {
+  // the focused control of the bar, focused again once rebuilt (or the active tab, after a tab closed)
+  const focused = document.activeElement?.closest?.(".topbar [data-key]")?.dataset.key;
   const dongle = ws?.dongle || location.pathname.split("/")[1];
   const device = state.devices?.find((d) => d.dongle_id === dongle);
   bar.device.textContent = device ? device.alias || dongle : DONGLE_RE.test(dongle || "") ? dongle : "devices";
@@ -175,9 +177,12 @@ function updateTop() {
     : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
-    "aria-current": k === ws.view && "page", title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
+    "aria-current": k === ws.view && "page", "data-key": `view:${k}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
-  if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
+  if (!layout) {  // the view is still waiting on its files
+    bar.tabs.replaceChildren();
+    return refocus(focused);
+  }
   const select = (tab) => {
     for (const t of bar.tabs.children) {
       t.classList.toggle("on", t === tab);
@@ -191,13 +196,14 @@ function updateTop() {
       select(e.currentTarget);
     },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
-    oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
+    oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget.firstChild, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }},
-    h("button", {class: "tab-name", role: "tab", "aria-selected": i === layout.model.active}, t.name),
-    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "aria-label": `Close tab ${t.name}`,
+    h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), "data-key": `tab:${i}`}, t.name),
+    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "data-key": "close", "aria-label": `Close tab ${t.name}`,
       onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
-  h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
-  h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+  h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
+  h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+  refocus(focused);
   // scrolled to on the next frame, when it lays out anyway, and only when the active tab or the tab set changed
   const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
   if (shown !== tabsShown) {
@@ -205,6 +211,11 @@ function updateTop() {
     tabsScrolled = false;
     requestAnimationFrame(showActiveTab);
   }
+}
+
+function refocus(key) {
+  if (!key) return;
+  (bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(".tab.on [role=tab]"))?.focus();
 }
 
 let tabsShown = "";        // the tabs and active tab the strip last scrolled to
@@ -235,7 +246,7 @@ function tabMenu(tabEl, i, name) {
 // double-click a tab to rename it in place
 function renameTab(tabEl, i, name) {
   const layout = ws.layout;
-  const input = h("input", {class: "tab-edit", value: name});
+  const input = h("input", {class: "tab-edit", value: name, "data-key": `tab:${i}`});
   let open = true;
   const done = (save) => {
     if (!open) return;

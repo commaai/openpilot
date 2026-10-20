@@ -193,20 +193,20 @@ export class Layout {
     const info = PANES[n.pane] || PANES.empty;
     const title = h("span", {class: "pane-title", hidden: true});
     // a closed picker would swap the pane on arrow keys or typing; only picking from the open list does
-    const types = h("select", {class: "pane-type", title: "Pane type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
+    const types = h("select", {class: "pane-type", title: "Pane type", "data-key": "type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
       onkeydown: (e) => {
         if (e.key === "Escape") e.target.blur();
         else if (!e.altKey && !["Enter", " ", "Tab", "F4"].includes(e.key)) e.preventDefault();
       }},
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
-    const btn = (name, tip, fn) => h("button", {class: "pane-btn", title: tip, onclick: fn}, icon(name, 14));
+    const btn = (name, tip, key, fn) => h("button", {class: "pane-btn", title: tip, "data-key": key, onclick: fn}, icon(name, 14));
     const head = h("div", {class: "pane-head", title: "Drag to move this pane"}, types, title,
       h("span", {class: "pane-tools"},
-        btn("splitRight", "Split right", () => this.split(n, "row")),
-        btn("splitDown", "Split down", () => this.split(n, "col")),
-        btn(this.maxPath ? "restore" : "maximize", this.maxPath ? "Restore" : "Maximize", () => this.maximize(n)),
-        btn("close", "Close pane", () => this.close(n))));
+        btn("splitRight", "Split right", "row", () => this.split(n, "row")),
+        btn("splitDown", "Split down", "col", () => this.split(n, "col")),
+        btn(this.maxPath ? "restore" : "maximize", this.maxPath ? "Restore" : "Maximize", "max", () => this.maximize(n)),
+        btn("close", "Close pane", "close", () => this.close(n))));
     head.addEventListener("pointerdown", (e) => this.drag(n, e));
     head.addEventListener("dblclick", (e) => { if (e.target === head || e.target === title) this.maximize(n); });
     const body = h("div", {class: "pane-body"});
@@ -261,17 +261,33 @@ export class Layout {
   }
 
   // structural edits run on a freshly saved model; get(n) maps a rendered node to its saved copy
+  // fn may return a node to focus instead (its pane type)
   edit(fn) {
     this.checkpoint();
     const map = new Map();
     const maxed = this.maxPath && at(this.tab.root, this.maxPath);
+    const focus = this.focused();
     this.model = this.save(map);
-    fn(this.tab, (n) => map.get(n));
+    const moved = fn(this.tab, (n) => map.get(n));
     // a maximized node stays maximized, along with anything split off it (which takes its place)
     const path = maxed && pathOf(this.tab.root, map.get(maxed));
     this.maxPath = path && (path.slice(0, this.maxPath.length).join() === this.maxPath.join() ? this.maxPath : path);
     this.render();
+    if (moved) this.focus(moved, "type"); else if (focus) this.focus(map.get(focus.node), focus.key);
     this.changed();
+  }
+
+  // the pane control with focus, as {node, key}: rendering replaces it
+  focused() {
+    const el = document.activeElement, box = el?.closest?.(".pane");
+    return box && this.el.contains(box) && el.dataset.key ? {node: box._node, key: el.dataset.key} : null;
+  }
+
+  // a narrow pane hides its split buttons: then its pane type
+  focus(node, key) {
+    while (node?.children) node = node.children[0];
+    const head = this.live.get(node)?.box.firstChild, el = head?.querySelector(`[data-key="${key}"]`);
+    (el?.checkVisibility() ? el : head?.querySelector("[data-key=type]"))?.focus();
   }
 
   split(n, dir) {
@@ -286,13 +302,19 @@ export class Layout {
 
   close(n) {
     this.edit((tab, get) => {
-      if (tab.root === get(n)) tab.root = {pane: "empty", state: {}};
-      else detach(tab, get(n));
+      if (tab.root === get(n)) {
+        tab.root = {pane: "empty", state: {}};
+        return tab.root;
+      }
+      const [p, i] = parentOf(tab.root, get(n));
+      const sibling = p.children[i ? i - 1 : 1];
+      detach(tab, get(n));
+      return sibling;
     });
   }
 
   replace(n, fresh) {
-    this.edit((tab, get) => Object.assign(get(n), fresh));  // in place: a maximized pane stays so
+    this.edit((tab, get) => { Object.assign(get(n), fresh); });  // in place: a maximized pane stays so
   }
 
   // a pane swapping itself for another (the empty pane's picker)
@@ -310,10 +332,11 @@ export class Layout {
   }
 
   maximize(n) {
-    const path = pathOf(this.tab.root, n);
-    this.model = this.save();
+    const path = pathOf(this.tab.root, n), focus = this.focused(), map = new Map();
+    this.model = this.save(map);
     this.maxPath = this.maxPath ? null : path;
     this.render();
+    if (focus) this.focus(map.get(focus.node), focus.key);
   }
 }
 
