@@ -141,10 +141,33 @@ export class Loader {
     job.ms = {fetch: performance.now() - t0};
   }
 
+  // a whole message, decoded by a worker of its own that keeps the last logs it opened (see worker.js)
+  message(key, url, service, mono) {
+    if (!this.inspector) {
+      const w = this.inspector = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
+      w.calls = 0;
+      w.onmessage = ({data}) => {
+        const call = this.calls.get(data.id);
+        this.calls.delete(data.id);
+        w.calls--;
+        if (data.error) call.reject(new Error(data.error));
+        else call.resolve(data.message);
+      };
+    }
+    clearTimeout(this.inspector.reap);
+    this.inspector.reap = setTimeout(() => {
+      if (this.inspector.calls) return;
+      this.inspector.terminate();
+      this.inspector = null;
+    }, 30000);
+    return this.call(this.inspector, {op: "message", key, url, service, mono});
+  }
+
   get pending() { return this.queue.length + this.fetching + this.ready.length + this.parsing; }
 
   dispose() {
     for (const w of this.workers) w.terminate();
+    this.inspector?.terminate();
     const err = new Error("disposed");
     for (const c of [...this.queue, ...this.ready, ...this.calls.values()]) c.reject(err);
     this.queue = [];

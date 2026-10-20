@@ -139,12 +139,17 @@ export class Store {
     this.status.bytes({memory: this.bytes + this.can.bytes, disk: Object.values(this.disk).reduce((a, b) => a + b, 0)});
   }
 
-  buffering() {
+  // the segment holding route time t
+  segmentAt(t) {
     const segs = this.route.segments;
-    let n = Math.min(segs.length - 1, Math.max(0, Math.floor(this.t / SEGMENT)));
-    while (n > 0 && segs[n].t0 > this.t) n--;
-    while (n < segs.length - 1 && segs[n].t1 <= this.t) n++;
-    const seg = segs[n];
+    let n = Math.min(segs.length - 1, Math.max(0, Math.floor(t / SEGMENT)));
+    while (n > 0 && segs[n].t0 > t) n--;
+    while (n < segs.length - 1 && segs[n].t1 <= t) n++;
+    return segs[n];
+  }
+
+  buffering() {
+    const seg = this.segmentAt(this.t), n = seg?.n;
     const waiting = seg && seg.status === "queued";
     this.status.buffering(waiting ? {n, text: `segment ${n}${seg.retry ? ` · retrying (${seg.retry})` : ""}`} : null);
   }
@@ -182,6 +187,7 @@ export class Store {
     route.t0 ??= p.start;
     this.context ||= p.context;  // migrations fall back to it when a segment lacks initData or carParams
     for (const m of p.missing || []) this.missing.add(m);
+    seg.start = p.start;  // logMonoTime of the route start, as this segment saw it
     if (seg.status !== "done") {
       seg.t0 = p.t0;
       seg.t1 = p.t1;
@@ -328,7 +334,14 @@ export class Store {
     return undefined;
   }
 
-  async message(service, t) { return null; }
+  // the whole decoded message of a service at or before t, from a worker that keeps the last logs decompressed
+  async message(service, t) {
+    const seg = this.segmentAt(t);
+    if (seg?.start === undefined) return null;
+    const mono = (t - seg.opts.shift + seg.start) * 1e9 + 1000;  // 1 µs over, for the round trip through route seconds
+    const ev = await this.loader.message(seg.key, seg.url, service, mono);
+    return ev?.[service] ?? null;
+  }
 
   // a skipped long list is asked for by any of its indexes: keep it from now on and re-parse what's loaded
   request(path) {

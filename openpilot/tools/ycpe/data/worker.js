@@ -88,9 +88,26 @@ async function parse(buf, opts) {
   return {...out, ...migrated, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
+// the last logs message() opened, decompressed and indexed: scrubbing within a segment decodes without reloading
+const opened = [];
+
+async function message(key, url, service, mono) {
+  const {index, messageAt} = await import("./message.js");
+  let log = opened.find((l) => l.key === key);
+  if (!log) {
+    await ready;
+    const bytes = withDecompressed(new Uint8Array((await load(key, url, () => {})).buf), (b) => b.slice());
+    opened.unshift(log = {key, bytes, idx: index(schema, bytes)});
+    opened.length = Math.min(opened.length, 2);
+  }
+  return messageAt(schema, log.bytes, log.idx, service, mono);
+}
+
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
   try {
-    if (op === "fetch") {
+    if (op === "message") {
+      postMessage({id, message: await message(key, url, opts.service, opts.mono)});
+    } else if (op === "fetch") {
       const r = await load(key, url, (progress) => postMessage({id, progress}));
       postMessage({id, ...r}, [r.buf]);
     } else {
