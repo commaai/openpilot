@@ -382,7 +382,13 @@ export function localRoute(files) {
 
 // a direct link to one log or camera file, as a one-segment route
 export function urlRoute(url) {
-  const p = URL.canParse(url) && place(decodeURIComponent(new URL(url).pathname));
+  const path = URL.canParse(url) ? new URL(url).pathname : "";
+  let p;
+  try {
+    p = place(decodeURIComponent(path));
+  } catch {
+    p = place(path);  // a malformed %-escape: the path as it is
+  }
   return p && looseRoute(p.route, new Map([[`${p.n}/${p.kind}`, {url, file: p.file, size: null, source: "url"}]]));
 }
 
