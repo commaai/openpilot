@@ -69,9 +69,11 @@ export function playbar(ctx) {
     rate, h("span", {class: "pb-clock"}, time, goto, wall), track, loopBtn, fitBtn);
 
   let width = 0, hover = null;
+  // where the canvas is, read once as the pointer comes onto it (not on every move, after the tooltip's writes)
+  let rect = null;
   const x2t = (x) => x / width * clock.duration;
-  const xOf = (e) => e.clientX - canvas.getBoundingClientRect().left;
-  const yOf = (e) => e.clientY - canvas.getBoundingClientRect().top;
+  const xOf = (e) => e.clientX - (rect ||= canvas.getBoundingClientRect()).left;
+  const yOf = (e) => e.clientY - (rect ||= canvas.getBoundingClientRect()).top;
   const t2x = (t) => t / clock.duration * width;
 
   let playing = null, second = null, wallSecond = null;  // what the play button, the slider and the wall clock show
@@ -149,7 +151,7 @@ export function playbar(ctx) {
 
   const offs = ["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane)));
   offs.push(status.on(() => perf.invalidate(pane)), theme.on(() => perf.invalidate(pane)));
-  const resizer = new ResizeObserver(([e]) => { width = e.contentRect.width; perf.invalidate(pane); });
+  const resizer = new ResizeObserver(([e]) => { width = e.contentRect.width; rect = null; perf.invalidate(pane); });
   resizer.observe(track);
 
   // dragging in the range strip pans/resizes the visible range; anywhere else scrubs the playhead
@@ -176,25 +178,32 @@ export function playbar(ctx) {
     canvas.onpointermove = move;
     canvas.onpointerup = () => { canvas.onpointermove = null; canvas.onpointerup = null; };
   });
+  // the tooltip: its time follows the pointer, the rest is rebuilt only when it changes
+  const hoverText = document.createTextNode("");
+  let tipText = "";
   canvas.addEventListener("pointermove", (e) => {
     const x = xOf(e);
-    hover = x2t(x);
+    hover = Math.max(0, Math.min(clock.duration, x2t(x)));  // a captured pointer goes past the ends
     perf.invalidate(pane);
     tip.hidden = false;
     tip.style.left = `${Math.max(0, Math.min(width - 136, x - 68))}px`;
     const slot = Math.max(0, Math.min(Math.floor(hover / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
     const n = segmentAt(route, slot);  // a range's slots map to its segments
-    const sprite = route.url && api.segmentAsset(route, n, "sprite.jpg");  // local files have none
-    tip.firstChild.hidden = !sprite;
-    if (sprite) tip.firstChild.style.backgroundImage = `url(${sprite})`;
     // the spans under the cursor, with the alert's text once logs are loaded
     const ms = hover * 1000, alert = ctx.peekStore()?.valueAt("/selfdriveState/alertText1", hover);
     const under = spans.filter((s) => SPAN_LABELS[s.kind] && s.start <= ms && ms < s.end)
-      .map((s) => h("div", {}, SPAN_LABELS[s.kind] + ((s.kind === "alert" || s.kind === "critical") && alert ? `: ${alert}` : "")));
-    tip.lastChild.replaceChildren(...under, `${fmt.clock(hover)} · segment ${n}`,
-      ...status.kinds().filter((k) => k.segs[slot]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[slot])}`)));
+      .map((s) => SPAN_LABELS[s.kind] + ((s.kind === "alert" || s.kind === "critical") && alert ? `: ${alert}` : ""));
+    const loads = status.kinds().filter((k) => k.segs[slot]).map((k) => `${k.label}: ${describe(k.segs[slot])}`);
+    hoverText.data = `${fmt.clock(hover)} · segment ${n}`;
+    const text = [n, ...under, ...loads].join("\n");
+    if (text === tipText) return;
+    tipText = text;
+    const sprite = route.url && api.segmentAsset(route, n, "sprite.jpg");  // local files have none
+    tip.firstChild.hidden = !sprite;
+    if (sprite) tip.firstChild.style.backgroundImage = `url(${sprite})`;
+    tip.lastChild.replaceChildren(...under.map((u) => h("div", {}, u)), hoverText, ...loads.map((l) => h("div", {class: "muted"}, l)));
   });
-  canvas.addEventListener("pointerleave", () => { hover = null; tip.hidden = true; perf.invalidate(pane); });
+  canvas.addEventListener("pointerleave", () => { hover = rect = null; tip.hidden = true; perf.invalidate(pane); });
   // wheel zooms the visible range around the cursor
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
