@@ -1,6 +1,8 @@
 // canvas plumbing shared by the plot panes and the series browser: crisp canvases, ticks, number formats,
 // curve marks, and their stylesheet
-document.head.append(Object.assign(document.createElement("link"), {rel: "stylesheet", href: new URL("./plot.css", import.meta.url).href}));
+import {css} from "/dom.js";
+
+css(new URL("./plot.css", import.meta.url));
 
 // categorical slots validated for the dark surface, assigned in order
 export const PALETTE = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"];
@@ -76,7 +78,7 @@ export function ellipsize(g, s, w) {
 
 export function fmtTick(v, step) {
   const a = Math.abs(step);
-  return a >= 1e6 || (a < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
+  return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
 export function fmtValue(v, names) {

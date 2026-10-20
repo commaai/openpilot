@@ -6,18 +6,18 @@
 .plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
 .plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
 
-.legend { position: absolute; top: 8px; right: 12px; max-width: 70%; max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
+.plot-pane .legend { position: absolute; top: 8px; right: 12px; max-width: 70%; max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
   border: 1px solid var(--line); border-radius: 4px; background: color-mix(in srgb, var(--raised) 88%, transparent); font: 11px var(--mono); }
-.legend .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; align-items: center; gap: 6px; padding: 0 4px 0 6px; line-height: 17px; }
-.legend .row:hover { background: var(--hover); }
-.legend .row.off { opacity: .45; }
-.legend i { width: 10px; height: 3px; border-radius: 2px; cursor: pointer; }
-.legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-.legend .val { min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
-.legend .x { visibility: hidden; color: var(--muted); font-weight: 400; text-align: center; cursor: pointer; }
-.legend .row:hover .x { visibility: visible; }
-.legend .x:hover { color: var(--fg); }
-.legend .stats { grid-column: 2 / -1; color: var(--muted); white-space: pre; }
+.plot-pane .legend .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; align-items: center; gap: 6px; padding: 0 4px 0 6px; line-height: 17px; }
+.plot-pane .legend .row:hover { background: var(--hover); }
+.plot-pane .legend .row.off { opacity: .45; }
+.plot-pane .legend i { width: 10px; height: 3px; border-radius: 2px; cursor: pointer; }
+.plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.plot-pane .legend .val { min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
+.plot-pane .legend .x { visibility: hidden; color: var(--muted); font-weight: 400; text-align: center; cursor: pointer; }
+.plot-pane .legend .row:hover .x { visibility: visible; }
+.plot-pane .legend .x:hover { color: var(--fg); }
+.plot-pane .legend .stats { grid-column: 2 / -1; color: var(--muted); white-space: pre; }
 
 .plot-popup { display: flex; flex-direction: column; gap: 4px; }
 .plot-popup .title { padding: 2px 4px 4px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

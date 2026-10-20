@@ -102,11 +102,25 @@ export function create(ctx, state = {}) {
     const lines = blockMode ? [] : numeric;
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
     for (const it of lines) {
-      const span = t1 - t0, n = Math.round(px * 1.1);
-      it.d = store.decimate(it.src, t0 - it.shift - span * 0.05, t1 - it.shift + span * 0.05, n);
+      const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
+      it.d = withEdges(store.decimate(it.src, a, b, Math.round(px * 1.1)), a, b, store.valueAt(it.src, a), store.valueAt(it.src, b));
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
     return {rows, lines, blockMode};
+  }
+
+  // held values at the query edges, so series sparser than the view still reach both sides
+  function withEdges(d, a, b, va, vb) {
+    if (!d) return d;
+    const n = d.t.length, pre = typeof va === "number" && !(d.t[0] <= a), post = typeof vb === "number" && !(d.t[n - 1] >= b);
+    if (!pre && !post) return d;
+    const m = n + pre + post, t = new Float64Array(m), min = new Float64Array(m), max = new Float64Array(m);
+    t.set(d.t, +pre);
+    min.set(d.min, +pre);
+    max.set(d.max, +pre);
+    if (pre) [t[0], min[0], max[0]] = [a, va, va];
+    if (post) [t[m - 1], min[m - 1], max[m - 1]] = [b, vb, vb];
+    return {t, min, max};
   }
 
   function yRange(lines, t0, t1) {
@@ -164,7 +178,10 @@ export function create(ctx, state = {}) {
     g.fillStyle = col.text;
     g.textAlign = "center";
     g.textBaseline = "top";
-    for (const t of xt.values) g.fillText(fmtTime(t, xt.step, t1 >= 120), X(t), T + ph0 + 5);
+    for (const t of xt.values) {
+      const s = fmtTime(t, xt.step, t1 >= 120), w = g.measureText(s).width / 2;
+      g.fillText(s, Math.min(X(t), W - w - 1), T + ph0 + 5);
+    }
     g.textAlign = "right";
     g.textBaseline = "middle";
     for (const v of yt.values) g.fillText(fmtTick(v, yt.step), px - 6, Y(v));
