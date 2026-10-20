@@ -30,7 +30,7 @@ export function create(ctx, state) {
   const scroller = h("div", {class: "can-binary-scroll"}, canvas, empty);
   // no toolbar until a message is selected: the empty hint says it
   const bar = h("div", {class: "can-toolbar", hidden: true}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
-  const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key}, bar, scroller, info);
+  const el = h("div", {class: "can-pane can-binary", tabindex: 0}, bar, scroller, info);
 
   const k = () => can.selected;
   const msg = () => can.dbcMsg(k());
@@ -138,14 +138,18 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   });
 
+  // the pointed-at signal's keys, whatever has the focus but a text box or a dialog, as cabana
   function key(e) {
-    if (!hover || e.ctrlKey || e.metaKey) return;
-    if (["x", "Delete", "Backspace"].includes(e.key)) removeSignal(can, k(), hover.name);
+    if (!hover || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !canvas.matches(":hover")) return;
+    if (e.target.closest?.("input, textarea, select, dialog")) return;
+    const chart = "pgc".includes(e.key);
+    if (chart) can.emit("chart", `/dbc/${busOf(k())}/${msg().name}/${hover.name}`);
+    else if (["x", "Delete", "Backspace"].includes(e.key)) removeSignal(can, k(), hover.name);
     else if (e.key === "e") updateSignal(can, k(), hover.name, {le: !hover.le});
     else if (e.key === "s") updateSignal(can, k(), hover.name, {signed: !hover.signed});
-    else if ("pgc".includes(e.key)) can.emit("chart", `/dbc/${busOf(k())}/${msg().name}/${hover.name}`);
     else return;
-    hover = null;
+    // an edit may move the signal from under the pointer; charting leaves it there
+    if (!chart) hover = null;
     e.preventDefault();
   }
 
@@ -270,6 +274,13 @@ export function create(ctx, state) {
   s.add(can.on("dbc", () => ctx.perf.invalidate(pane)));
   s.add(ctx.clock.on("range", () => { if (mode === "range") requestHeat(); }));
   s.add(ctx.theme.on(() => ctx.perf.invalidate(pane)));
+  // a signal hovered in the signal list lights up here too
+  s.add(can.on("hover", (name) => {
+    const sg = visible().find((x) => x.name === name) || null;
+    if (sg !== hover) { hover = sg; ctx.perf.invalidate(pane); }
+  }));
+  document.addEventListener("keydown", key);
+  s.add(() => document.removeEventListener("keydown", key));
   const sizer = new ResizeObserver(([e]) => { width = e.contentRect.width; ctx.perf.invalidate(pane); });
   sizer.observe(scroller);
   s.add(() => sizer.disconnect());
