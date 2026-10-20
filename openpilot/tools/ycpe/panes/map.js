@@ -369,7 +369,7 @@ export function create(ctx) {
   unsubs.push(ctx.onStore((store) => !disposed && unsubs.push(store.on("segment", () => {
     pending ??= setTimeout(() => {
       pending = null;
-      const track = storeTrack(store, duration);
+      const track = storeTrack(store, route.live ? store.route.duration : duration);  // a live session grows
       if (track?.length) { fromStore = true; events.then(() => !disposed && update(track)); }
     }, 2000);
   }))));

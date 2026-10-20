@@ -102,7 +102,8 @@ export function create(ctx, state) {
 
   function use(cam) {
     camera = picker.value = cam;
-    if (cam === "qcamera") show(qcamera(ctx, pane, ui));
+    if (ctx.route.live) show(liveVideo(ctx, pane, cam, ui));
+    else if (cam === "qcamera") show(qcamera(ctx, pane, ui));
     else show(fullres(ctx, pane, cam, fullresScreen(), {...ui, fail: (why) => show(qcamera(ctx, pane, ui), why)}));
   }
 
@@ -117,6 +118,19 @@ export function create(ctx, state) {
 
   use(camera);
   return pane;
+}
+
+// a live session's camera (data/live.js): its track as the source hands it over, as it comes, whatever the playhead
+function liveVideo(ctx, pane, camera, ui) {
+  const el = h("video", {autoplay: true, playsinline: true});
+  el.muted = true;
+  let track = null;
+  const off = ctx.route.live.video(camera, (t) => {
+    track = t;
+    el.srcObject = t && new MediaStream([t]);
+    ctx.perf.invalidate(pane);
+  });
+  return {el, render: () => ui.absent(track ? null : `no ${CAMERAS[camera]} stream`), dispose() { off(); el.srcObject = null; }};
 }
 
 function lane(camera) {
