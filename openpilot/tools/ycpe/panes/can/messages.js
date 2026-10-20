@@ -41,7 +41,7 @@ export function create(ctx, state) {
   // settings live in the ⋯ menu, so the toolbar stays one row
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
-    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools", icon("down", 14)),
+    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, h("span", {}, "Tools"), icon("down", 14)),
     h("span", {class: "can-spacer"}),
     h("button", {class: "can-btn", title: "Options", onclick: (e) => popup(e.currentTarget, [
       menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),

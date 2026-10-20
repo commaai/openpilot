@@ -14,7 +14,10 @@
 .can-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .can-dbc-btn { min-width: 7ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .can-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
-.can-btn > svg { vertical-align: middle; margin-right: -3px; }
+/* icons centred, and tucked in beside a label (a span); text-only buttons stay blocks so the DBC chip can ellipsize */
+.can-btn:has(> svg) { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
+.can-btn > svg:first-child:not(:only-child) { margin-left: -3px; }
+.can-btn > svg:last-child:not(:only-child) { margin-right: -3px; }
 .can-icon:hover { background: var(--active); color: var(--fg); }
 .can-icon.on { background: var(--active); color: var(--accent); }
 .can-check { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); white-space: nowrap; }
