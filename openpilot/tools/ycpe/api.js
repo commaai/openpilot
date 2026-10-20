@@ -7,8 +7,12 @@ const setting = (key) => globalThis.localStorage?.getItem(key);
 export const apiHost = () => setting("api_host") || "https://api.commadotai.com";
 // athena only answers CORS for *.comma.ai, connect previews and localhost:3000; elsewhere the daemon relays the calls
 const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
-// billing only answers CORS for *.comma.ai and localhost:3000, as athena
+// billing only answers CORS for *.comma.ai, localhost:3000 and connect's LAN and preview hosts, and nothing relays it:
+// elsewhere prime can't be managed (a billing_host setting says this origin reaches one)
 const billingHost = () => setting("billing_host") || "https://billing.comma.ai";
+const BILLING_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/(localhost|192\.168\.\d{1,3}\.\d{1,3}):3000|https:\/\/[\w.-]+\.connect-d5y\.pages\.dev)$/;
+export const billingReachable = () => !!setting("billing_host") || BILLING_ORIGINS.test(location.origin);
+const billing = (method, endpoint, opts) => request(method, endpoint, {...opts, host: billingHost()});
 const ATHENA_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/localhost:3000)$/;
 const athenaRelay = () => !setting("athena_host") && daemon.has("athena") && !ATHENA_ORIGINS.test(location.origin);
 
@@ -182,10 +186,20 @@ export const api = {
   leaveDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/del_user`, {body: {}}),
   unpairDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/unpair`),
   // the owner's comma prime billing; 403 and 404 mean there's none this account can see
-  primeSubscription: (dongleId) => get("v1/prime/subscription", {dongle_id: dongleId})
+  primeSubscription: (dongleId) => billing("GET", "v1/prime/subscription", {params: {dongle_id: dongleId}})
     .catch((e) => { if (e.status === 403 || e.status === 404) return null; throw e; }),
+  // prime's other billing calls, as connect makes them. Checkout and the portal answer {url} on Stripe, which comes back
+  // to <origin>/<dongle>/prime (from checkout with ?stripe_success=<session id> or ?stripe_cancelled=1)
+  prime: {
+    subscribeInfo: (dongle_id) => billing("GET", "v1/prime/subscribe_info", {params: {dongle_id}}),
+    checkout: (dongle_id, sim_id, plan) => billing("POST", "v1/prime/stripe_checkout", {body: {dongle_id, sim_id, plan}}),
+    session: (dongle_id, session_id) => billing("GET", "v1/prime/stripe_session", {params: {dongle_id, session_id}}),
+    portal: (dongle_id) => billing("GET", "v1/prime/stripe_portal", {params: {dongle_id}}),
+    switchPlan: (dongle_id, plan, sim_id = null) => billing("POST", "v1/prime/switch_plan", {body: {dongle_id, plan, sim_id}}),
+    cancel: (dongle_id) => billing("POST", "v1/prime/cancel", {body: {dongle_id}}),
+  },
   // the referral code and rewards; 403 for accounts that don't own a device eligible for them
-  referrals: () => request("GET", "v1/referrals", {host: billingHost()}),
+  referrals: () => billing("GET", "v1/referrals"),
   // signed blob urls, oldest first
   bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
   crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),
