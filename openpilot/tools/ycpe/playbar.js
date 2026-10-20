@@ -3,6 +3,7 @@
 // nothing loaded at all is faded.
 import {api, routeEvents, segmentAt} from "/api.js";
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 import {RATES} from "/clock.js";
@@ -30,15 +31,15 @@ export function playbar(ctx) {
     RATES.map((r) => h("option", {value: r, selected: r === clock.rate}, `${r}×`)));
   const time = h("span", {class: "pb-time"});
   const wall = h("span", {class: "pb-wall muted"});
-  const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, "⟲");
-  const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(0, clock.duration)}, "⤢");
+  const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, icon("loop", 16));
+  const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(0, clock.duration)}, icon("fit", 16));
   const canvas = h("canvas", {class: "pb-canvas"});
   const tip = h("div", {class: "pb-tip", hidden: true}, h("div", {class: "pb-thumb"}), h("span"));
   const track = h("div", {class: "pb-track"}, canvas, tip);
   const el = h("footer", {class: "playbar"},
-    h("button", {class: "tbtn", title: "Back 1 s (←, shift: 10 s)", onclick: () => clock.seek(clock.t - 1)}, "⏮"),
+    h("button", {class: "tbtn", title: "Back 1 s (←, shift: 10 s)", onclick: () => clock.seek(clock.t - 1)}, icon("rewind", 16)),
     playBtn,
-    h("button", {class: "tbtn", title: "Forward 1 s (→, shift: 10 s)", onclick: () => clock.seek(clock.t + 1)}, "⏭"),
+    h("button", {class: "tbtn", title: "Forward 1 s (→, shift: 10 s)", onclick: () => clock.seek(clock.t + 1)}, icon("forward", 16)),
     rate, h("span", {class: "pb-clock"}, time, wall), track, loopBtn, fitBtn);
 
   let width = 0, hover = null;
@@ -47,8 +48,9 @@ export function playbar(ctx) {
   const yOf = (e) => e.clientY - canvas.getBoundingClientRect().top;
   const t2x = (t) => t / clock.duration * width;
 
+  let playing = null;  // what the play button shows
   const pane = {name: "playbar", render() {
-    playBtn.textContent = clock.playing ? "❚❚" : "▶";
+    if (playing !== clock.playing) playBtn.replaceChildren(icon((playing = clock.playing) ? "pause" : "play", 16));
     rate.value = clock.rate;
     loopBtn.classList.toggle("on", !!clock.loop);
     time.textContent = `${clockText(clock.t)} / ${clockText(clock.duration, false)}`;

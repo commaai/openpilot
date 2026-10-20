@@ -4,6 +4,7 @@
 // Panes are rearranged by dragging their header onto another pane's edge (dock beside) or center (swap).
 // Structural edits (tabs, splits, docking, divider sizes) can be undone; a pane's own state is the pane's business.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {PANES, loadPane} from "/panes.js";
 
@@ -195,13 +196,13 @@ export class Layout {
       }},
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
-    const btn = (label, tip, fn) => h("button", {class: "pane-btn", title: tip, onclick: fn}, label);
+    const btn = (name, tip, fn) => h("button", {class: "pane-btn", title: tip, onclick: fn}, icon(name, 14));
     const head = h("div", {class: "pane-head", title: "Drag to move this pane"}, types, title,
       h("span", {class: "pane-tools"},
-        btn("⇥", "Split right", () => this.split(n, "row")),
-        btn("⤓", "Split down", () => this.split(n, "col")),
-        btn(this.maxPath ? "⤡" : "⤢", this.maxPath ? "Restore" : "Maximize", () => this.maximize(n)),
-        btn("×", "Close pane", () => this.close(n))));
+        btn("splitRight", "Split right", () => this.split(n, "row")),
+        btn("splitDown", "Split down", () => this.split(n, "col")),
+        btn(this.maxPath ? "restore" : "maximize", this.maxPath ? "Restore" : "Maximize", () => this.maximize(n)),
+        btn("close", "Close pane", () => this.close(n))));
     head.addEventListener("pointerdown", (e) => this.drag(n, e));
     head.addEventListener("dblclick", (e) => { if (e.target === head || e.target === title) this.maximize(n); });
     const body = h("div", {class: "pane-body"});

@@ -2,7 +2,7 @@ import {api, auth} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
 import {h} from "/dom.js";
-import {logo} from "/icons.js";
+import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
 import {createClock, RATES} from "/clock.js";
@@ -109,7 +109,7 @@ function topBar() {
     const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
     pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
   });
-  const account = h("button", {class: "tbtn", title: "Account"}, "●");
+  const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
     auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
@@ -117,7 +117,7 @@ function topBar() {
     auth.isAuthenticated()
       ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
       : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
-  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, "◐");
+  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
@@ -148,7 +148,7 @@ function updateTop() {
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
-    layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
+    layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
   h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
   showActiveTab();
