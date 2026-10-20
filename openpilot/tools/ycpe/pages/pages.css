@@ -157,9 +157,9 @@ a.drive-row:hover { background: var(--hover); }
 
 /* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
    a height of its own, the playbar docked below. A routes pane is hidden in every view: the route crumb has the list.
-   The files view keeps its one pane, which scrolls itself */
-@media (max-width: 760px) {
-  .ws:not([data-view="files"]) .workspace { display: block; overflow-y: auto; }
+   The files view keeps its one pane, which scrolls itself. A phone on its side too: tiled, its panes would be slivers */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  .ws:not([data-view="files"]) .workspace { display: block; overflow-y: auto; container-type: size; }
   .ws:not([data-view="files"]) .layout { display: block; }
   .ws:not([data-view="files"]) .split { flex-direction: column; gap: 4px; }
   .ws:not([data-view="files"]) .split > * { flex: none !important; }  /* over the layout's inline sizes */
@@ -167,12 +167,13 @@ a.drive-row:hover { background: var(--hover); }
   .ws:not([data-view="files"]) .pane-head { touch-action: auto; }  /* nothing to dock into: the page scrolls from it */
   .ws .pane:has(> .pane-body > .routes-pane) { display: none; }
   .ws:not([data-view="files"]) .pane-body { flex: none; height: 50vh; }
-  .ws:not([data-view="files"]) .pane-body:has(> .camera-pane) { height: auto; aspect-ratio: 526 / 330; }
+  /* the camera and plots no taller than the workspace shows, under their heads */
+  .ws:not([data-view="files"]) .pane-body:has(> .camera-pane) { height: auto; aspect-ratio: 526 / 330; max-height: calc(100cqh - var(--head)); }
   .ws:not([data-view="files"]) .pane-body:has(> .map-pane) { height: 45vh; }
   .ws:not([data-view="files"]) .pane-body:has(> .info-pane) { height: auto; contain: none; }
   .ws:not([data-view="files"]) .pane-body:has(> .files-pane) { height: 70vh; }
   .ws:not([data-view="files"]) .info-pane { position: static; overflow: visible; }
-  .ws:not([data-view="files"]) .pane-body:has(> .plot-pane) { height: max(200px, 40vh); }
+  .ws:not([data-view="files"]) .pane-body:has(> .plot-pane) { height: min(max(200px, 40vh), calc(100cqh - var(--head))); }
   /* the series browser is a drawer: its filter and a few rows, opening over the plots while it has the focus (a tap
      on a plot, or a double-tapped series going in, closes it) */
   .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser) { z-index: 2; }
