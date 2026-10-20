@@ -242,19 +242,14 @@ function swaglog(t, s) {
   return {t, level, source: m.ctx?.daemon || m.filename?.split("/").pop() || "", text: msg.replace(ANSI, "")};
 }
 
-// a constant chunk unpacks as v [c, c] at its first and last times, and holds c at every time
-const constant = (c) => c.i?.length === 2 && c.v.length === 2 && c.i[0] === 0 && c.i[1] === c.t.length - 1 && c.v[0] === c.v[1];
-
 // a chunk's [time, value] pairs
 function* pairs(c) {
-  if (constant(c)) for (const t of c.t) yield [t, c.v[0]];
-  else for (let k = 0; k < c.v.length; k++) yield [c.tt[k], c.v[k]];
+  for (let k = 0; k < c.v.length; k++) yield [c.tt[k], c.v[k]];
 }
 
 // a chunk's value at each of a rising sequence of message times; undefined where that message doesn't have it
 function values(c) {
   if (!c) return () => undefined;
-  if (constant(c)) return () => c.v[0];
   const {v, tt} = c;
   let p = 0;
   return (t) => {
