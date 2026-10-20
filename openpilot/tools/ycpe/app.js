@@ -155,7 +155,8 @@ class Workspace {
   constructor(route, files, view, {t = 0, repeat = 1}) {
     this.route = route;
     this.dongle = route.fullname.split("|")[0];
-    this.files = files;
+    this.files = null;  // the file list only matters once logs load; the drive view mounts without it
+    this.filesReady = files.then((f) => { this.files = f; });
     this.repeat = repeat;
     this.store = null;
     this.storeSubs = new Set();
@@ -179,9 +180,9 @@ class Workspace {
     };
   }
 
-  // logs load only once something needs them (the drive view doesn't)
+  // logs load only once something needs them (the drive view doesn't); null until the file list is in
   ensureStore() {
-    if (this.store) return this.store;
+    if (this.store || !this.files) return this.store;
     const urls = [];
     for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
     this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
@@ -210,6 +211,11 @@ class Workspace {
     if (!this.layouts[view]) {
       const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
+      if (usesData(model) && !this.files) {
+        this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
+        this.main.replaceChildren(h("div", {class: "pane-missing"}, "loading files…"));
+        return updateTop();
+      }
       if (usesData(model)) this.ensureStore();
       this.layouts[view] = new Layout(this.ctx(), model, (m) => {
         localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(m));
@@ -325,7 +331,9 @@ async function render() {
     }
     document.body.classList.add("loading");
     try {
-      const [route, files] = await Promise.all([api.route(routeName), api.routeFiles(routeName)]);
+      const files = api.routeFiles(routeName);
+      files.catch(() => {});
+      const route = await api.route(routeName);
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
