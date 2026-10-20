@@ -33,6 +33,12 @@ export async function dumpStore(name, urls) {
     svc.valid = svc.cols[valid];
     delete svc.cols[valid];
   }
+  // CAN frames from the CAN worker: {"bus:address": [[t, hex data], ...]} in time order
+  const can = {};
+  for (const m of store.can.messages()) {
+    const f = await store.can.call("frames", {k: m.key, t: Infinity, n: 1e7});
+    can[`${m.bus}:${m.address}`] = f.t.map((t, i) => [t, Array.from(f.data[i], (b) => b.toString(16).padStart(2, "0")).join("")]).reverse();
+  }
   store.dispose();
-  return JSON.stringify({failed: store.progress.failed, services: out});
+  return JSON.stringify({failed: store.progress.failed, services: out, can});
 }
