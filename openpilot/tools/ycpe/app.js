@@ -12,7 +12,7 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
-import {routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
+import {routeRecord, routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
@@ -354,9 +354,10 @@ async function render() {
     }
     document.body.classList.add("loading");
     try {
-      const files = routeLogs(routeName);
+      const record = routeRecord(routeName);
+      const files = routeLogs(routeName, record);
       files.catch(() => {});
-      const route = await api.route(routeName);
+      const route = await record;
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
