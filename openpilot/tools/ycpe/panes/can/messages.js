@@ -248,6 +248,7 @@ export function create(ctx, state) {
   s.add(() => document.removeEventListener("keydown", fileKeys));
   s.add(can.on("notice", toolbar));
   columns();
+  // the list's own height: the notice comes and goes and the toolbar wraps, so the pane's size doesn't tell it
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
   sizer.observe(body);
   s.add(() => sizer.disconnect());

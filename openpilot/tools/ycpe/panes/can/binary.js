@@ -302,6 +302,7 @@ export function create(ctx, state) {
   }));
   document.addEventListener("keydown", key);
   s.add(() => document.removeEventListener("keydown", key));
+  // the scroller's own width: its scrollbar comes with enough rows, so the pane's size doesn't tell it
   const sizer = new ResizeObserver(([e]) => { width = e.contentRect.width; ctx.perf.invalidate(pane); });
   sizer.observe(scroller);
   s.add(() => sizer.disconnect());
