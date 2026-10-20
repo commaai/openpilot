@@ -112,10 +112,10 @@ export function playbar(ctx) {
     c.fillRect(px - 1, 0, 2, HEIGHT);
   }};
 
-  for (const ev of ["t", "range", "play"]) clock.on(ev, () => perf.invalidate(pane));
-  status.on(() => perf.invalidate(pane));
-  theme.on(() => perf.invalidate(pane));
-  new ResizeObserver(([e]) => { width = e.contentRect.width; perf.invalidate(pane); }).observe(track);
+  const offs = ["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane)));
+  offs.push(status.on(() => perf.invalidate(pane)), theme.on(() => perf.invalidate(pane)));
+  const resizer = new ResizeObserver(([e]) => { width = e.contentRect.width; perf.invalidate(pane); });
+  resizer.observe(track);
 
   // dragging in the range strip pans/resizes the visible range; anywhere else scrubs the playhead
   canvas.addEventListener("pointerdown", (e) => {
@@ -164,5 +164,5 @@ export function playbar(ctx) {
   }, {passive: false});
 
   perf.invalidate(pane);
-  return el;
+  return {el, dispose() { for (const off of offs) off(); resizer.disconnect(); }};
 }

@@ -175,7 +175,8 @@ class Workspace {
     this.clock = createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
     this.clock.seek(t);
     this.main = h("div", {class: "workspace"});
-    this.el = h("div", {class: "ws"}, this.main, playbar(this.ctx()));
+    this.playbar = playbar(this.ctx());
+    this.el = h("div", {class: "ws"}, this.main, this.playbar.el);
     this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
     // .json/.xml layouts dropped on the workspace open as new tabs
     acceptLayoutFiles(this.main, (f) => this.openLayout(f));
@@ -281,6 +282,7 @@ class Workspace {
     this.disposed = true;
     clearTimeout(this.urlTimer);
     for (const off of this.offs) off();
+    this.playbar.dispose();
     this.clock.pause();
     for (const l of Object.values(this.layouts)) l.dispose();
     this.store?.dispose();
