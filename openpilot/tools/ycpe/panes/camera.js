@@ -54,7 +54,7 @@ export function create(ctx, state) {
   const ui = {
     say(text = "", title = "") {
       note.textContent = text;
-      note.title = title;
+      note.title = title || text;  // the note is cut to one line
       note.hidden = !text;
     },
     // the playhead waits on a segment: {text, f} with f the fraction loaded, or null
@@ -178,7 +178,7 @@ function qcamera(ctx, pane, {wait, absent}) {
 
 // a window of decoded frames around the playhead, filled by the decoder worker
 function fullres(ctx, pane, camera, {say, wait, absent, fail}) {
-  const canvas = h("canvas");
+  const canvas = h("canvas", {hidden: true});  // a canvas is black until its first frame
   const draw = frameRenderer(canvas, () => { shown = -1; ctx.perf.invalidate(pane); });
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
   const lanes = lane(camera);
@@ -287,6 +287,7 @@ function fullres(ctx, pane, camera, {say, wait, absent, fail}) {
       for (const k of frames.keys()) if (k <= n && k > best) best = k;
       if (best !== shown && best >= 0) {
         draw(frames.get(best));
+        canvas.hidden = false;
         shown = stats.shown = best;
         stats.drawn++;
       }
