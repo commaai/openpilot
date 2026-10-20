@@ -10,6 +10,8 @@ import {HEVC} from "/data/video/annexb.js";
 import {FPS, SEGMENT_FRAMES, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
 
+await css(new URL("./camera.css", import.meta.url));
+
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
 const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
 const SEGMENT = 60;       // seconds
@@ -26,7 +28,6 @@ const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or 
 export function create(ctx, state) {
   let camera = CAMERAS[state.camera] ? state.camera : "qcamera";
   let source = null;
-  css(new URL("./camera.css", import.meta.url));
   const note = h("div", {class: "camera-note", hidden: true});
   const bar = h("i");
   const waitText = h("span");

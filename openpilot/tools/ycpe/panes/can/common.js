@@ -1,10 +1,9 @@
 // what the CAN panes share: the route's store.can, following the playhead, dialogs and small formatters
-import {h} from "/dom.js";
+import {css, h} from "/dom.js";
 import {addrOf, busOf} from "/data/can.js";
 import {MUX, MUXED, NODE, cloneMsg, newSignal} from "/data/dbc.js";
 
-// the panes wait for their stylesheet, so an unstyled first frame doesn't shift the layout when it lands
-await new Promise((done) => document.head.append(h("link", {rel: "stylesheet", href: new URL("./can.css", import.meta.url), onload: done, onerror: done})));
+await css(new URL("./can.css", import.meta.url));
 
 // store.can, following the clock once per workspace: live bytes are recomputed (in the worker) as t moves
 export function canOf(ctx) {

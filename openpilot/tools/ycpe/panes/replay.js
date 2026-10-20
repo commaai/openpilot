@@ -5,10 +5,11 @@ import {daemon, needsDaemon} from "/daemon.js";
 import {onJobs, allJobs} from "/local.js";
 import {compare as plotCompare} from "/panes/plot/view.js";
 
+await css(new URL("./replay.css", import.meta.url));
+
 const SEGMENT = 60;
 
 export function create(ctx, state) {
-  css(new URL("./replay.css", import.meta.url));
   const el = h("div", {class: "replay-pane"});
   const pane = {name: "replay", el, render() {}, resize() {}, save: () => ({procs: [...picked], repo: repoSel.value || state.repo}), dispose};
   const offs = [];

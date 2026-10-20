@@ -3,13 +3,14 @@ import {h, css} from "../dom.js";
 import {logSchema, localRepos, repoLabel} from "../data/schemas.js";
 import {needsDaemon} from "../daemon.js";
 
+await css(new URL("./schema.css", import.meta.url));
+
 const MODES = [["auto", "auto"], ["stock", "stock (bundled, migrated)"], ["log", "log (its own commit)"]];
 
 const took = (ms) => ms < 10 ? "cached" : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
 
 // el, filled in once the route's logs start loading (the info pane doesn't load them itself); returns a dispose()
 export function schemaRow(ctx) {
-  css(new URL("./schema.css", import.meta.url));
   const el = h("span", {class: "schema-row muted"}, "loads with the logs");
   let off = null;
   ctx.onStore((store) => {

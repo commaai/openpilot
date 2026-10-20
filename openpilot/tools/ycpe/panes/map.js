@@ -8,7 +8,7 @@ import {h, css} from "../dom.js";
 import {perf} from "../perf.js";
 import {theme} from "../theme.js";
 
-css(new URL("./map.css", import.meta.url));
+await css(new URL("./map.css", import.meta.url));
 
 const STYLES = {dark: "commaai/cjj4yzqk201c52ss60ebmow0w", light: "mapbox/light-v10"};
 const TILE = 256;           // css px per tile; images are @2x

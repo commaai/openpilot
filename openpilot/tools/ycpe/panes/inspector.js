@@ -3,10 +3,11 @@
 // height, and playback only patches the value cells of the visible rows that changed.
 import {h, css} from "/dom.js";
 
+await css(new URL("./inspector.css", import.meta.url));
+
 const ROW = 18;  // px
 
 export function create(ctx, state) {
-  css(new URL("./inspector.css", import.meta.url));
   let service = state.service || "carState";
   const expanded = new Set(state.expanded || [""]);
   let store = null, tree = null, msg = null, asking = false, lines = [], pool = [], height = 0, top = 0, shown = -1, msgT = NaN;

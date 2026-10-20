@@ -4,6 +4,8 @@ import {h, fmt, css} from "../dom.js";
 import {canManage} from "../pages/home.js";
 import {schemaRow} from "./schema.js";
 
+await css(new URL("./routeinfo.css", import.meta.url));
+
 function toggle(label, value, enabled, set) {
   const box = h("input", {type: "checkbox", checked: value, disabled: !enabled});
   const status = h("span", {class: "small error"});
@@ -22,7 +24,6 @@ function toggle(label, value, enabled, set) {
 }
 
 export function create(ctx) {
-  css(new URL("./routeinfo.css", import.meta.url));
   const {route, clock} = ctx;
   const [dongleId, routeId] = route.fullname.split("|");
   const start = new Date(route.start_time_utc_millis);

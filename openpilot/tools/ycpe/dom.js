@@ -41,11 +41,11 @@ export const fmt = {
   miles: (mi) => `${mi.toFixed(1)} mi`,
 };
 
-// a module's own stylesheet, added once: css(new URL("./camera.css", import.meta.url))
-const sheets = new Set();
+// a module's own stylesheet, added once; resolves once it's applied, so a pane module can wait for it at the top
+// level (await css(new URL("./camera.css", import.meta.url))) and never show an unstyled first frame
+const sheets = new Map();
 export function css(href) {
   href = String(href);
-  if (sheets.has(href)) return;
-  sheets.add(href);
-  document.head.append(h("link", {rel: "stylesheet", href}));
+  if (!sheets.has(href)) sheets.set(href, new Promise((done) => document.head.append(h("link", {rel: "stylesheet", href, onload: done, onerror: done}))));
+  return sheets.get(href);
 }
