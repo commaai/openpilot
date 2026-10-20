@@ -37,8 +37,8 @@ button, input, select { font: inherit; color: inherit; }
 .button:hover { background: var(--hover); }
 .chip { padding: 4px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--raised); cursor: pointer; }
 .chip:hover { border-color: var(--accent); }
-.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
-.dot.online { background: #2ea44f; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--muted); flex-shrink: 0; }  /* offline: a ring */
+.dot.online { background: #2ea44f; box-shadow: none; }
 #app { display: flex; flex-direction: column; height: 100%; }
 #main { flex: 1; min-height: 0; overflow: auto; }
 body.in-ws #main { overflow: hidden; }
