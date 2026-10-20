@@ -35,6 +35,14 @@ export async function check(store) {
   expect(store.valueAt("/custom/ramp", 1.5) === 6, "put: valueAt");
   expect(store.paths().some((p) => p.path === "/custom/ramp"), "put: paths");
 
+  // sendcan is columns from the first parse on (only can goes to the CAN hook): demo segment 0 sent 5968 frames
+  let frames = 0;
+  for (let k = 0; store.series(`/sendcan/${k}/address`); k++) {
+    const c = store.series(`/sendcan/${k}/address`).chunks.find((c) => c.n === 0);
+    if (c) for (let j = 0; j < c.tt.length; j++) frames += c.v[j] === c.v[j];
+  }
+  expect(frames === 5968, `sendcan: ${frames} frames in segment 0`);
+
   // a skipped long list loads on demand
   const list = "/modelV2/position/x/32";
   expect(store.series(list) === null, "long list: not loaded yet");

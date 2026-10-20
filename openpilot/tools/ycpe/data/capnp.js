@@ -199,7 +199,7 @@ export class Reader {
         svc.plan ||= {text: this.col(svc, "", "t", counts[msgs[k + 1]])};
         svc.plan.text.v[i] = readText(ptr);
       } else if (f[2] === "l") {
-        if (can && (f[0] === "can" || f[0] === "sendcan")) can(f[0], svc.t[i], ptr);
+        if (can && f[0] === "can") can(f[0], svc.t[i], ptr);  // sendcan reads as columns
         else {
           svc.plan ||= this.listPlan(f[4], "", svc, counts[msgs[k + 1]]);
           this.walkList(svc.plan, ptr, i);
