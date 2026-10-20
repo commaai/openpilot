@@ -1,4 +1,4 @@
-{"name": "plot", "url": "/5beb9b58bd12b691/0000010a--a51155e496/plot", "budgets": {"drops": 0}, "timeout": 60000, "reference": ["jotpluggler-demo"],
+{"name": "plot", "url": "/5beb9b58bd12b691/0000010a--a51155e496/plot", "budgets": {"drops": 0}, "timeout": 60000, "reference": ["jotpluggler-longitudinal", "jotpluggler-demo"],
  "steps": [
   {"waitFor": ".pane"},
   {"shot": "loading"},
