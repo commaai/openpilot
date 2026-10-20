@@ -1,7 +1,7 @@
 {"name": "prime-checkout", "url": "/", "viewport": {"width": 1440, "height": 900}, "timeout": 15000,
  "routes": [
   {"url": "^https://api\\.commadotai\\.com/", "json": []},
-  {"url": "^https://billing\\.comma\\.ai/", "status": 404, "json": {"error": "not faked"}},
+  {"url": "(^https://billing\\.comma\\.ai/|/local/billing/)", "status": 404, "json": {"error": "not faked"}},
   {"url": "^https://api\\.commadotai\\.com/v1/me/$", "json": {"id": "0123456789abcdef", "user_id": "github_1234567", "email": "dev@example.com", "username": "devuser", "regdate": 1600000000, "superuser": false, "prime": false}},
   {"url": "^https://api\\.commadotai\\.com/v1/me/devices/$", "json": [
     {"dongle_id": "1111111111111111", "alias": "tici", "is_owner": true, "prime": false, "device_type": "threex", "openpilot_version": "0.10.1", "last_athena_ping": 0, "eligible_features": {"prime_data": true, "commacare": false}},

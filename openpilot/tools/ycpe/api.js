@@ -7,12 +7,13 @@ const setting = (key) => globalThis.localStorage?.getItem(key);
 export const apiHost = () => setting("api_host") || "https://api.commadotai.com";
 // athena only answers CORS for *.comma.ai, connect previews and localhost:3000; elsewhere the daemon relays the calls
 const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
-// billing only answers CORS for *.comma.ai, localhost:3000 and connect's LAN and preview hosts, and nothing relays it:
-// elsewhere prime can't be managed (a billing_host setting says this origin reaches one)
+// billing only answers CORS for *.comma.ai, localhost:3000 and connect's LAN and preview hosts. Elsewhere the daemon
+// relays the referrals read and nothing else, so prime can't be managed (a billing_host setting says this origin reaches one)
 const billingHost = () => setting("billing_host") || "https://billing.comma.ai";
 const BILLING_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/(localhost|192\.168\.\d{1,3}\.\d{1,3}):3000|https:\/\/[\w.-]+\.connect-d5y\.pages\.dev)$/;
 export const billingReachable = () => !!setting("billing_host") || BILLING_ORIGINS.test(location.origin);
 const billing = (method, endpoint, opts) => request(method, endpoint, {...opts, host: billingHost()});
+const billingRelay = () => !billingReachable() && daemon.has("billing");
 const ATHENA_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/localhost:3000)$/;
 const athenaRelay = () => !setting("athena_host") && daemon.has("athena") && !ATHENA_ORIGINS.test(location.origin);
 
@@ -173,7 +174,7 @@ export const api = {
     if (!auth.isAuthenticated()) throw new ApiError(401, "signed out");
     return fetched(await get(`v1.1/devices/${dongleId}/`));
   }, undefined, 60e3),  // its online state ages
-  deviceStats: (dongleId) => get(`v1.1/devices/${dongleId}/stats`),
+  deviceStats: memo((dongleId) => get(`v1.1/devices/${dongleId}/stats`), undefined, 60000),
   deviceLocation: memo((dongleId) => get(`v1/devices/${dongleId}/location`)),
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
   deviceUsers: (dongleId) => get(`v1/devices/${dongleId}/users`),
@@ -206,7 +207,8 @@ export const api = {
     cancel: (dongle_id) => billing("POST", "v1/prime/cancel", {body: {dongle_id}}),
   },
   // the referral code and rewards; 403 for accounts that don't own a device eligible for them
-  referrals: () => billing("GET", "v1/referrals"),
+  referrals: () => billingRelay() ? request("GET", "local/billing/referrals", {host: location.origin, headers: {...daemon.headers}})
+    : billing("GET", "v1/referrals"),
   // signed blob urls, oldest first
   bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
   crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),

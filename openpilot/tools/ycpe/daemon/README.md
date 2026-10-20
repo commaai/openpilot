@@ -34,6 +34,7 @@ What the daemon unlocks in the UI:
 | `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
 | `athena` | Relays the page's device calls (upload queue, upload requests, live streams) to athena on ports athena doesn't allow. |
+| `billing` | Relays the page's referrals read to billing, which allows the same few origins as athena. |
 | `webrtc` | Live data from a webrtcd on this PC (openpilot, a sim, replay) at `/live/local`: it passes the page's offer on. |
 | `jobs` | Progress and cancel for anything long, shown in the badge panel. |
 | `transcode`, `replay` | Video transcoding and openpilot re-runs, when installed (see their modules). |
@@ -73,6 +74,8 @@ The page finds the daemon through `<meta name="ycpe-daemon">` in index.html, plu
 - File reads go through `confine(path, roots)`, which resolves symlinks and rejects `..`.
 - The athena relay is POST only, to `https://athena.comma.ai/<dongle id>`, for the few JSON-RPC methods the app calls.
   It forwards the page's `Authorization` and nothing else, and limits body and answer sizes.
+- The billing relay is one GET, `https://billing.comma.ai/v1/referrals`, the same way. Prime's checkout, portal and
+  cancel aren't relayed.
 
 ## Writing a module
 

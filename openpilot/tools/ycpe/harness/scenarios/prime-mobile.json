@@ -1,7 +1,7 @@
 {"name": "prime-mobile", "url": "/", "viewport": {"width": 390, "height": 844, "mobile": true}, "timeout": 15000,
  "routes": [
   {"url": "^https://api\\.commadotai\\.com/", "json": []},
-  {"url": "^https://billing\\.comma\\.ai/", "status": 404, "json": {"error": "not faked"}},
+  {"url": "(^https://billing\\.comma\\.ai/|/local/billing/)", "status": 404, "json": {"error": "not faked"}},
   {"url": "^https://api\\.commadotai\\.com/v1/me/$", "json": {"id": "0123456789abcdef", "user_id": "github_1234567", "email": "dev@example.com", "username": "devuser", "regdate": 1600000000, "superuser": false, "prime": true}},
   {"url": "^https://api\\.commadotai\\.com/v1/me/devices/$", "json": [
     {"dongle_id": "6666666666666666", "alias": "lite car", "is_owner": true, "prime": true, "device_type": "threex", "openpilot_version": "0.10.1", "last_athena_ping": 0, "eligible_features": {"prime_data": true, "commacare": false}},

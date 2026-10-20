@@ -1,4 +1,4 @@
-{"name": "pair", "url": "/", "timeout": 15000,
+{"name": "pair", "url": "/", "timeout": 15000, "allow": ["zxing-wasm"],
  "routes": [
   {"url": "^https://api\\.commadotai\\.com/", "json": []},
   {"url": "^https://api\\.commadotai\\.com/v1/me/$", "json": {"id": "fffffffffffffff0", "user_id": "github_1234567", "email": "dev@example.com", "username": "devuser", "superuser": false}},
@@ -7,8 +7,9 @@
   {"url": "/v1\\.1/devices/0123456789abcdef/stats$", "json": {"all": {"routes": 3, "distance": 30.6, "minutes": 46}, "week": {"routes": 2, "distance": 20.4, "minutes": 31}}},
   {"url": "/v1/devices/0123456789abcdef/routes_segments", "file": "fixtures/fake-routes.json"},
   {"url": "/v1/prime/subscription", "status": 404, "body": ""},
-  {"url": "^https://billing\\.comma\\.ai/", "json": {"code": "ABC123", "limit_reached": false, "cash": {"claimed": 0, "pending": 0, "available": 0}, "referrals": []}},
+  {"url": "(^https://billing\\.comma\\.ai/|/local/billing/)", "json": {"code": "ABC123", "limit_reached": false, "cash": {"claimed": 0, "pending": 0, "available": 0}, "referrals": []}},
   {"url": "(/local/athena/|athena\\.comma\\.ai/)", "file": "fixtures/fake-athena.json"},
+  {"url": "^https://cdn\\.jsdelivr\\.net/npm/zxing-wasm@", "status": 404, "body": ""},
   {"url": "^https://api\\.commadotai\\.com/v2/pilotpair/$", "method": "POST", "json": {"first_pair": true, "dongle_id": "0123456789abcdef"}}
  ],
  "steps": [
@@ -25,7 +26,7 @@
   {"eval": "delete window.BarcodeDetector; navigator.mediaDevices.enumerateDevices = async () => []; true"},
   {"click": ".pair-add"},
   {"waitFor": ".pair-paste"},
-  {"assert": "document.querySelector('.pair-body').textContent.includes(\"This browser can't read QR codes\") || document.querySelector('.pair-body').textContent"},
+  {"assert": "document.querySelector('.pair-body').textContent.includes(\"Couldn't load the QR code reader\") || document.querySelector('.pair-body').textContent"},
   {"fill": [".pair-paste input", "not a pair link"]},
   {"click": ".pair-paste .button"},
   {"waitFor": {"fn": "document.querySelector('.pair-status:not([hidden])')?.textContent.includes(\"Error: invalid QR code detected\")"}, "timeout": 5000},

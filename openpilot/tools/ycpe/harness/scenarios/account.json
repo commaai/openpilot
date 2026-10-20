@@ -7,7 +7,7 @@
     {"dongle_id": "2222222222222222", "alias": "friend's car", "is_owner": false, "device_type": "mici", "openpilot_version": "0.10.1", "last_athena_ping": 0}]},
   {"url": "^https://api\\.commadotai\\.com/v1\\.1/devices/1111111111111111/stats", "json": {"all": {"routes": 3, "distance": 20, "minutes": 60}, "week": {"routes": 1, "distance": 4}}},
   {"url": "^https://api\\.commadotai\\.com/v2/auth/$", "json": {"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGl0eSI6IjAxMjM0NTY3ODlhYmNkZWYiLCJleHAiOjE5MjQ5OTk5OTksImlhdCI6MTc2MDkwMDAwMH0.bmV3LWZha2Utc2ln"}},
-  {"url": "^https://billing\\.comma\\.ai/v1/referrals$", "json": {"code": "ABC123", "limit_reached": false, "cash": {"claimed": 50, "pending": 100, "available": 100},
+  {"url": "(^https://billing\\.comma\\.ai/v1|/local/billing)/referrals$", "json": {"code": "ABC123", "limit_reached": false, "cash": {"claimed": 50, "pending": 100, "available": 100},
     "referrals": [{"status": "claimed", "ordered_at": 1750000000}, {"status": "pending", "ordered_at": 1760000000}, {"status": "pending", "ordered_at": 1760000000},
                   {"status": "available", "ordered_at": 1755000000}, {"status": "available", "ordered_at": 1755000000}]}}
  ],

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The athena relay, against a stand-in upstream: nothing here reaches athena."""
+"""The athena and billing relays, against a stand-in upstream: nothing here reaches either."""
 import json
 import unittest
 from unittest import mock
@@ -23,13 +23,17 @@ class FakeResponse:
     pass
 
 
-class TestAthena(DaemonCase):
+class RelayCase(DaemonCase):
+  """a stand-in upstream for the relays"""
   def setUp(self):
     self.pool = mock.Mock()
     self.pool.request.return_value = FakeResponse(b'{"id": 0, "jsonrpc": "2.0", "result": []}')
     patcher = mock.patch.object(athena.URLFile, "pool_manager", return_value=self.pool)
     patcher.start()
     self.addCleanup(patcher.stop)
+
+
+class TestAthena(RelayCase):
 
   def call(self, body, dongle=DONGLE, headers=AUTH, **kw):
     return self.req(f"/local/athena/{dongle}", method="POST", body=json.dumps(body) if not isinstance(body, bytes) else body,
@@ -109,6 +113,29 @@ class TestAthena(DaemonCase):
   def test_post_only(self):
     r, _ = self.req(f"/local/athena/{DONGLE}", headers=AUTH)
     self.assertEqual(r.status, 405)
+
+
+class TestBilling(RelayCase):
+  """the referrals read, on the same forwarding"""
+  def test_relays(self):
+    self.pool.request.return_value = FakeResponse(b'{"code": "ABC"}')
+    r, data = self.req("/local/billing/referrals", headers={**AUTH, "Origin": f"http://localhost:{config.port}", "Cookie": "c=1"})
+    self.assertEqual((r.status, data), (200, b'{"code": "ABC"}'))
+    (method, url), kw = self.pool.request.call_args
+    self.assertEqual((method, url, kw["headers"], kw["body"]), ("GET", "https://billing.comma.ai/v1/referrals", AUTH, None))
+
+  def test_only_referrals(self):
+    for path, method in (("/local/billing/referrals", "POST"), ("/local/billing/prime/stripe_checkout", "POST"),
+                         ("/local/billing/prime/stripe_portal", "GET"), ("/local/billing/referrals/x", "GET")):
+      r, _ = self.req(path, method=method, body=b"{}" if method == "POST" else None, headers=AUTH)
+      self.assertIn(r.status, (404, 405), path)
+    self.pool.request.assert_not_called()
+
+  def test_needs_jwt(self):
+    for headers in ({}, {"Authorization": "Bearer x"}):
+      r, _ = self.req("/local/billing/referrals", headers=headers)
+      self.assertEqual(r.status, 401, headers)
+    self.pool.request.assert_not_called()
 
 
 if __name__ == "__main__":

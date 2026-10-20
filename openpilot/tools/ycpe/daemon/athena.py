@@ -35,24 +35,28 @@ def rpc_body(body: bytes) -> bytes:
   return json.dumps(out).encode()
 
 
-@route("POST", "/local/athena/{dongle}", max_body=MAX_BODY)
-def athena(req):
-  dongle = req.params["dongle"]
-  if not DONGLE_RE.fullmatch(dongle):
-    raise HTTPError(400, "bad dongle id")
-  body = rpc_body(req.body)
+def forward(req, method: str, url: str, body: bytes | None = None, name: str = "athena") -> Response:
+  """the call to a fixed url with the page's own JWT and nothing else of the page's, its JSON answer size-limited"""
   authorization = req.headers.get("authorization", "")
   if not re.fullmatch(r"JWT [\w.-]+", authorization):
     raise HTTPError(401, "needs the page's JWT")
+  headers = {"Authorization": authorization} | ({"Content-Type": "application/json"} if body is not None else {})
   try:
-    r = URLFile.pool_manager().request("POST", f"{ATHENA}/{dongle}", body=body, preload_content=False, redirect=False, retries=False,
-                                       timeout=TIMEOUT, headers={"Authorization": authorization, "Content-Type": "application/json"})
+    r = URLFile.pool_manager().request(method, url, body=body, preload_content=False, redirect=False, retries=False, timeout=TIMEOUT, headers=headers)
     try:
       data = r.read(MAX_RESPONSE + 1)
     finally:
       r.release_conn()
   except UpstreamError as e:
-    raise HTTPError(502, f"athena: {type(e).__name__}") from e
+    raise HTTPError(502, f"{name}: {type(e).__name__}") from e
   if len(data) > MAX_RESPONSE:
-    raise HTTPError(502, "athena answer too large")
+    raise HTTPError(502, f"{name} answer too large")
   return Response(data, r.status, "application/json")
+
+
+@route("POST", "/local/athena/{dongle}", max_body=MAX_BODY)
+def athena(req):
+  dongle = req.params["dongle"]
+  if not DONGLE_RE.fullmatch(dongle):
+    raise HTTPError(400, "bad dongle id")
+  return forward(req, "POST", f"{ATHENA}/{dongle}", rpc_body(req.body))
