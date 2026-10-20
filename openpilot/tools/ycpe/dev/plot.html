@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ycpe plot dev</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { display: flex; flex-direction: column; height: 100vh; }
+    #bar { display: flex; gap: 12px; align-items: center; padding: 4px 8px; font: 11px var(--mono); border-bottom: 1px solid var(--line); }
+    #root { flex: 1; min-height: 0; display: flex; }
+  </style>
+</head>
+<body>
+  <div id="bar"><b>plot dev</b><span id="info" class="muted"></span></div>
+  <div id="root"></div>
+  <script type="module">
+    // the plot panes against either a synthetic 10-hour store (default) or a real route (?route=…&repeat=N).
+    // The synthetic store implements the store contract with a min/max pyramid, so decimation is O(pixels).
+    import {perf} from "/perf.js";
+    import {theme} from "/theme.js";
+    import {createClock} from "/clock.js";
+    import {Layout} from "/layout.js";
+    import {openRoute} from "/data/store.js";
+    import * as view from "/panes/plot/view.js";
+
+    const q = new URLSearchParams(location.search);
+    const FANOUT = 8;
+
+    function upper(t, x) {
+      let lo = 0, hi = t.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (t[m] <= x) lo = m + 1; else hi = m; }
+      return lo;
+    }
+
+    // min/max levels: level k holds blocks of FANOUT^(k+1) samples
+    function pyramid(v) {
+      const levels = [];
+      let min = v, max = v;
+      while (min.length > FANOUT) {
+        const n = Math.ceil(min.length / FANOUT), lo = new Float32Array(n), hi = new Float32Array(n);
+        for (let b = 0; b < n; b++) {
+          let a = Infinity, z = -Infinity;
+          for (let i = b * FANOUT, e = Math.min(min.length, i + FANOUT); i < e; i++) { if (min[i] < a) a = min[i]; if (max[i] > z) z = max[i]; }
+          lo[b] = a; hi[b] = z;
+        }
+        levels.push([lo, hi]);
+        min = lo; max = hi;
+      }
+      return levels;
+    }
+
+    // min and max of v[i0, i1) from whole aligned blocks: O(FANOUT · levels)
+    function rangeMinMax(s, i0, i1) {
+      let a = Infinity, z = -Infinity;
+      while (i0 < i1) {
+        let k = -1, size = 1;
+        while (k + 1 < s.levels.length && i0 % (size * FANOUT) === 0 && i0 + size * FANOUT <= i1) { k++; size *= FANOUT; }
+        const lo = k < 0 ? s.v[i0] : s.levels[k][0][i0 / size], hi = k < 0 ? s.v[i0] : s.levels[k][1][i0 / size];
+        if (lo < a) a = lo;
+        if (hi > z) z = hi;
+        i0 += size;
+      }
+      return [a, z];
+    }
+
+    function fakeStore(hours = 10) {
+      const duration = hours * 3600, handlers = {}, data = new Map();
+      const noise = (k) => (Math.sin(k * 12.9898) * 43758.5453) % 1;
+      const gen = (rate, f, {Arr = Float32Array, gaps = false} = {}) => {
+        const n = Math.floor(duration * rate), t = new Float64Array(n), v = new Arr(n);
+        let k = 0;
+        for (let i = 0; i < n; i++) {
+          const ti = i / rate;
+          if (gaps && ti % 3600 > 3000) continue;  // 10 minutes missing every hour
+          t[k] = ti;
+          v[k++] = f(ti, i);
+        }
+        return {t: t.subarray(0, k), v: Array.isArray(v) ? v.slice(0, k) : v.subarray(0, k)};
+      };
+      const STATES = ["disabled", "preEnabled", "enabled", "softDisabling", "overriding"];
+      const defs = {
+        "/carState/vEgo": ["f32", () => gen(100, (t) => Math.max(0, 15 + 12 * Math.sin(t / 97) + 4 * Math.sin(t / 7.3) + 0.3 * noise(t)))],
+        "/carState/steeringAngleDeg": ["f32", () => gen(100, (t) => 30 * Math.sin(t / 13) * Math.sin(t / 211) + 2 * noise(t * 7))],
+        "/carState/gasPressed": ["b", () => gen(100, (t) => +(Math.sin(t / 5.1) > 0.93))],
+        "/carState/valid": ["b", () => gen(100, (t) => +(t % 1800 > 3))],
+        "/deviceState/freeSpacePercent": ["u8", () => gen(2, (t) => Math.round(80 - t / 900))],
+        "/selfdriveState/state": ["e", () => gen(10, (t) => Math.abs(Math.floor(Math.sin(t / 37) * 2.5 + Math.sin(t / 3.1)))% STATES.length), STATES],
+        "/selfdriveState/alertText1": ["t", () => gen(10, (t) => Math.sin(t / 23) > 0.9 ? "TAKE CONTROL IMMEDIATELY" : Math.sin(t / 41) > 0.95 ? "Steer Assist Unavailable" : "", {Arr: Array})],
+        "/gpsLocationExternal/latitude": ["f64", () => gen(1, (t) => 32.7 + t * 1e-5, {Arr: Float64Array, gaps: true})],
+        "/carParams/steerRatio": ["f32", () => ({t: new Float64Array([0.5, duration - 1]), v: [15.3, 15.3], i: new Uint32Array([0, 1])})],
+      };
+      const load = (path) => {
+        if (!data.has(path)) {
+          const [type, make, names] = defs[path];
+          const {t, v, i} = make();
+          const s = {path, type, names, t, v, i, version: 1, levels: type === "t" || i ? [] : pyramid(v)};
+          s.chunks = [i ? {t, v, i, tt: Float64Array.from(i, (k) => t[k])} : {t, v, tt: t}];
+          data.set(path, s);
+        }
+        return data.get(path);
+      };
+      const store = {
+        route: {name: "synthetic", t0: 0, duration, segments: Array.from({length: duration / 60}, (_, n) => ({n, t0: n * 60, t1: n * 60 + 60, status: "done"}))},
+        on(ev, fn) { (handlers[ev] ||= new Set()).add(fn); return () => handlers[ev].delete(fn); },
+        emit(ev, x) { for (const fn of handlers[ev] || []) fn(x); },
+        paths: () => Object.entries(defs).map(([path, [type, , names]]) => ({path, type, ...(names && {names})})),
+        series: (path) => defs[path] ? load(path) : null,
+        put(path, {type, t, v, names}) {
+          const old = data.get(path);
+          const s = {path, type, names, t, v, version: (old?.version || 0) + 1, levels: type === "t" ? [] : pyramid(v)};
+          s.chunks = [{t, v, tt: t}];
+          defs[path] ||= [type, null, names];
+          data.set(path, s);
+          if (!old) store.emit("paths");
+        },
+        decimate(path, t0, t1, n) {
+          const s = store.series(path);
+          if (!s || s.type === "t") return null;
+          const T = s.i ? Float64Array.from(s.i, (k) => s.t[k]) : s.t;
+          const i0 = upper(T, t0 - 1e-12), i1 = upper(T, t1);
+          if (i1 - i0 <= n) {
+            const v = Float64Array.from(s.v.slice(i0, i1));
+            return {t: T.slice(i0, i1), min: v, max: v};
+          }
+          const t = new Float64Array(n), min = new Float64Array(n), max = new Float64Array(n), w = (t1 - t0) / n;
+          for (let b = 0, a = i0; b < n; b++) {
+            const e = b === n - 1 ? i1 : upper(T, t0 + (b + 1) * w);
+            t[b] = t0 + (b + 0.5) * w;
+            [min[b], max[b]] = e > a ? rangeMinMax(s, a, e) : [NaN, NaN];
+            a = e;
+          }
+          return {t, min, max};
+        },
+        valueAt(path, t) {
+          const s = store.series(path);
+          if (!s) return undefined;
+          const T = s.i ? Array.from(s.i, (k) => s.t[k]) : s.t, k = upper(T, t) - 1;
+          return k >= 0 ? s.v[k] : undefined;
+        },
+        async message() { return null; },
+        focus() {},
+      };
+      return store;
+    }
+
+    const route = q.get("route");
+    const store = route ? await openRoute(route, {repeat: +(q.get("repeat") || 1)}) : fakeStore(+(q.get("hours") || 10));
+    const clock = createClock(store.route.duration);
+    store.on("progress", () => clock.setDuration(store.route.duration));
+    window.store = store;
+    window.clock = clock;
+
+    const plot = (...paths) => ({pane: "plot", state: {curves: paths.map((path) => ({path}))}});
+    const col = (...children) => ({split: "col", sizes: children.map(() => 1 / children.length), children});
+    const model = {active: 0, tabs: [{name: "dev", root: {split: "row", sizes: [0.22, 0.78], children: [
+      {pane: "browser", state: {}},
+      route ? col(plot("/carState/vEgo", "/carState/aEgo"), plot("/carState/gasPressed", "/carState/brakePressed"), plot("/selfdriveState/state", "/selfdriveState/alertText1"), plot("/carState/steeringAngleDeg"))
+        : col(plot("/carState/vEgo", "/carState/steeringAngleDeg"), plot("/carState/gasPressed", "/deviceState/freeSpacePercent", "/carParams/steerRatio"),
+          plot("/selfdriveState/state", "/selfdriveState/alertText1"), plot("/gpsLocationExternal/latitude")),
+    ]}}]};
+    const ctx = {route: {fullname: store.route.name}, clock, perf, theme, store, peekStore: () => store, onStore: (fn) => fn(store), openRoute() {}};
+    const layout = window.layout = new Layout(ctx, JSON.parse(q.get("layout") || "null") || model, null);
+    document.getElementById("root").append(layout.el);
+    document.addEventListener("keydown", (e) => {
+      if (e.target.closest("input, textarea, select")) return;
+      if (e.key === "t") theme.toggle();
+      if (e.key === " ") clock.toggle();
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") (e.shiftKey ? view.redo : view.undo)(clock);
+    });
+    document.getElementById("info").textContent = `${store.route.name} · ${(store.route.duration / 3600).toFixed(2)} h · t theme · space play · ctrl+z view undo`;
+  </script>
+</body>
+</html>
