@@ -75,3 +75,90 @@
   color: var(--fg); font-size: 14px; }
 .cn-files { position: relative; height: min(70vh, 560px); }
 .connect-pane .cn-info .info-pane { position: static; overflow: visible; }
+
+/* user mode: connect's DriveView as connect draws it (DriveView, Timeline, Media, DriveVideo, TimeDisplay), in its
+   palette whatever our theme, and at its breakpoints (window widths: Tailwind's sm, md and 2xl) */
+.connect-pane.cn-user { --cn-bg: #1d2225; --cn-fg: #fff; --cn-line: rgba(255,255,255,.1); --driving: #175886; --engaged: #178645; --override: #919b95;
+  --alert: #da6f25; --critical: #c92231; --bookmark: #e3d756; color-scheme: dark; font: 16px/1.5 "Inter", sans-serif; }
+.cn-thumbs { display: none; }
+.cn-user .cn-thumbs { position: absolute; top: 12px; left: 0; z-index: 1; display: block; width: 100%; height: 20px; overflow: hidden; white-space: nowrap; pointer-events: none; }
+.cn-user .cn-thumbs > div { display: inline-block; height: 20px; background: 0 0 / auto 24px repeat-x; }
+.cn-user .cn-card { max-width: none; gap: 16px; margin: 16px; background: linear-gradient(#30373b 0%, #272d30 10%, #1d2225 100%); }
+.cn-user .cn-top { gap: 8px; margin-bottom: -16px; padding: 12px; }
+.cn-user .cn-icon { width: 48px; height: 48px; color: #fff; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
+.cn-user .cn-icon:hover { background: rgba(255,255,255,.08); }
+.cn-user .cn-icon:disabled { opacity: 1; color: rgba(255,255,255,.3); background: none; }
+.cn-user .cn-title { font-size: 18px; font-weight: 500; line-height: 28px; text-align: left; }
+.cn-user .cn-weekday { display: none; }
+@media (min-width: 640px) { .cn-user .cn-weekday { display: inline; } }
+
+/* the timeline: 12 px of spans on the drive's blue, 20 px of thumbnails, the 44 px ruler with what's after the
+   playhead dimmed behind a faint line (no head), and the hover bead under it. Only the ruler takes presses */
+.cn-user .cn-timeline { cursor: default; }
+.cn-user .cn-timeline .strip { --spans: 12px; height: 32px; background: none; }
+.cn-user .cn-timeline .strip-thumbs { display: none; }
+.cn-user .cn-timeline .strip-spans::after { background: linear-gradient(rgba(0,0,0,0) 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+.cn-user .cn-ruler { background: #25333d; cursor: pointer; touch-action: none; }
+.cn-user .cn-left { border-left: 1px solid #d8dddf; background: rgba(29,34,37,.9); opacity: .45; }
+.cn-user .cn-head { display: none; }
+.cn-user .cn-selection { top: 32px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.3); border-width: 0 1px; }
+.cn-user .cn-bead { top: 83px; bottom: auto; border-color: rgba(255,255,255,.1); background: #272c2f; font-size: 11.2px; line-height: 1.5; font-variant-numeric: normal; }
+.cn-user .cn-timeline:focus-visible { outline: none; }
+
+.cn-user .cn-body { gap: 16px; padding: 0 12px 12px; }
+@media (min-width: 768px) { .cn-user .cn-body { padding: 0 32px 32px; } }
+.cn-user .cn-bar { justify-content: space-between; gap: 0; }
+@media (min-width: 1536px) { .cn-user .cn-bar { justify-content: center; } }
+.cn-user .cn-options { align-items: center; width: max-content; border-color: rgba(255,255,255,.1); overflow: visible; }
+.cn-user .cn-options + .cn-options { margin-left: 0; }
+.cn-user .cn-option { display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 44px; min-height: 32px; padding: 0 15px;
+  border-right-color: rgba(255,255,255,.1); background: none; font-size: 12px; font-weight: 500; line-height: 17.57px; opacity: 1; }
+.cn-user .cn-option:hover, .cn-user .cn-options + .cn-options .cn-option[aria-pressed="true"] { background: none; }
+.cn-user .cn-options:first-child .cn-option[aria-pressed="false"] { opacity: .6; }
+.cn-user .cn-option[aria-disabled="true"] { opacity: .7; cursor: default; }
+.cn-user .cn-sheet { display: none; }
+
+/* the video with its overlay (connect's spinner, or why there's no video), and the map: 300 px tall alone, beside the
+   video from 2xl */
+.cn-user .cn-media { gap: 20px; }
+.cn-user .cn-box { flex: 0 1 100%; max-width: none; aspect-ratio: auto; overflow: visible; background: none; }
+.cn-user .cn-video { max-width: 964px; min-height: 200px; margin: 0 auto; aspect-ratio: 1.593; }
+.cn-user .cn-map { min-height: 300px; }
+.cn-user .cn-map .tilemap { cursor: default; }
+.cn-user .cn-map .tilemap-credit { display: none; }  /* connect turns the attribution off */
+@media (min-width: 1536px) { .cn-user .cn-video { flex-basis: 60%; margin: 0; } .cn-user .cn-video + .cn-map { flex-basis: 40%; } }
+.cn-user .camera-pane { background: none; }
+.cn-user .camera-pane :is(.camera-picker, .camera-note, .camera-alert) { display: none; }
+.cn-user .camera-pane.buffering :is(video, canvas) { opacity: 1; }
+.cn-user .camera-pane .camera-buffering { inset: 0; z-index: 50; min-width: 0; max-width: none; padding: 0; border-radius: 0; background: rgba(22,24,26,.667); color: #fff;
+  font-size: 14px; line-height: 1.46429; transform: none; }
+.cn-user .camera-pane .camera-buffering > * { display: none; }
+.cn-user .camera-pane .camera-buffering[data-kind="wait"]::before { content: ""; position: absolute; top: calc(50% - 25px); left: calc(50% - 25px); width: 50px; height: 50px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 22 44 44"><style>svg{animation:r 1.4s linear infinite;transform-origin:44px 44px}circle{stroke-dasharray:80px,200px;animation:d 1.4s ease-in-out infinite}@keyframes r{to{transform:rotate(360deg)}}@keyframes d{0%{stroke-dasharray:1px,200px;stroke-dashoffset:0}50%{stroke-dasharray:100px,200px;stroke-dashoffset:-15px}to{stroke-dasharray:100px,200px;stroke-dashoffset:-125px}}</style><circle cx="44" cy="44" r="20" fill="none" stroke="%23fff" stroke-width="4"/></svg>'); }
+.cn-user .camera-pane .camera-buffering[data-kind="absent"] > span { position: relative; top: calc(50% - 25px); display: block; padding: 0 8px; text-align: center; }
+.cn-user .camera-pane .camera-buffering[data-kind="absent"] > span::before { content: ""; display: block; width: 24px; height: 24px; margin: 0 auto 8px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path fill="%23fff" d="M480-280q14 0 24-9 9-10 9-24t-9-23q-10-10-24-10t-23 9q-10 10-10 24t9 23q10 10 24 10Zm-27-153h60v-253h-60v253Zm27 353q-82 0-155-31t-127-86q-55-55-86-128-32-73-32-155 0-83 32-156 31-73 86-127t127-85q73-32 156-32 82 0 155 32 73 31 127 85t86 127q31 73 31 156 0 82-31 155t-86 127q-54 55-127 86-73 32-156 32Zm1-60q141 0 240-99t99-241q0-142-99-241t-241-99q-141 0-240 99-100 99-100 241 0 141 100 241t241 99Zm-1-340Z"/></svg>'); }
+
+/* connect's pill (TimeDisplay, thin): 10 s back and forward, the wall clock and segment, its speed steps, mute and
+   play, each in its box of a 1 px rule */
+.cn-user .cn-pill { width: 400px; max-width: 100%; height: 50px; padding: 0 8px; border-radius: 32px; background: #0c0e0f; }
+@media (min-width: 1536px) { .cn-user .cn-pill { margin: 0 0 0 calc(30% - 206px); } }
+.cn-user .cn-pill button { position: relative; flex-shrink: 0; border-radius: 50%; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
+.cn-user .cn-pill button:hover:not(:disabled) { background-color: rgba(255,255,255,.08); }
+.cn-user :is(.cn-jump, .cn-mute, .cn-play)::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: #1e2224; }
+.cn-user .cn-jump { width: 40px; margin-right: 1px; border: 0 !important; color: #535f64; }
+.cn-user .cn-jump::after { right: -1px; }
+.cn-user .cn-jump svg { width: 32px; height: 32px; }
+.cn-user .cn-jump:hover { color: #535f64; }
+.cn-user .cn-now { flex: 1 1 0; margin: 0 8px; font-size: 15px; font-weight: 500; line-height: 21.96px; white-space: normal; overflow: visible; }
+.cn-user .cn-rate-box, .cn-speed { display: none; }
+.cn-user .cn-speed { display: flex; flex-direction: column; align-items: center; min-width: 40px; margin-right: 8px; }
+.cn-user .cn-pill .cn-step { width: 12px; height: 12px; color: #424a4f; }
+.cn-user .cn-step:disabled { visibility: hidden; }
+.cn-user .cn-speed-text { font-size: 14px; font-weight: 500; line-height: 24px; }
+.cn-user .cn-mute { width: 40px; margin-left: 1px; color: #fff; }
+.cn-user :is(.cn-mute, .cn-play)::after { left: -1px; }
+.cn-user .cn-mute svg { width: 32px; height: 32px; }
+.cn-user .cn-mute:disabled { color: #535f64; opacity: 1; cursor: default; }
+.cn-user .cn-pill .cn-play { width: 48px; height: 48px; margin-left: 1px; border: 0 !important; color: #fff; }
+.cn-user .cn-play::after { top: 1px; bottom: -1px; }
