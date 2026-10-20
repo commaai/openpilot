@@ -4,6 +4,7 @@
 // oldest dropped past the window or the budget. Camera tracks go to the camera panes as they are.
 import {SEGMENT} from "../api.js";
 import {listeners} from "../dom.js";
+import {service} from "./pack.js";
 import {client} from "./rpc.js";
 import {Store} from "./store.js";
 
@@ -60,6 +61,7 @@ export class LiveStore extends Store {
     this.start = 0;  // route time of the oldest slot kept
     this.newest = 0;  // route time of the newest message in
     this.held = 0;  // event bytes the worker holds
+    this.freed = [];  // pack buffers nothing here holds anymore, for the worker to free (release)
     this.pending = {bytes: new Uint8Array(1 << 16), len: 0, json: []};
     this.flusher = 0;
     this.worker = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
@@ -135,7 +137,18 @@ export class LiveStore extends Store {
     this.route.duration = this.newest;
     if (p.can) this.can.ingest(seg.n, p.can, 0);
     this.trim();
+    if (this.freed.length) this.worker.postMessage({op: "live-free", bufs: this.freed}, this.freed);
+    this.freed = [];
     this.emit("live", this.newest);
+  }
+
+  // each parse supersedes the open slot's whole pack, megabytes a few times a second: freed here, they piled up as
+  // young garbage until the main thread's GC swept them, 10-25 ms in a frame every few seconds. Their buffers go back
+  // to the worker instead (detached, a view still held reads as empty: logs indexing picks up where it stopped)
+  release(a) {
+    const s = service(a.pack, a.k), buf = a.pack.bufs[s];
+    super.release(a);
+    if (!a.pack.bufs[s]) this.freed.push(buf);
   }
 
   // re-reads (lists asked for later) come from the event bytes the worker keeps

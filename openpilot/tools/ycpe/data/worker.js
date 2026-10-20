@@ -163,7 +163,8 @@ async function boot(url) {
 const fetches = new Map();  // id → AbortController of a fetch in flight
 let live = null;  // a live session's slots (slots.js), in a worker of its own
 
-// a live session's ops; its packs go out unasked, as {live: pack}
+// a live session's ops; its packs go out unasked, as {live: pack}. live-free hands back the store's spent pack buffers,
+// so this thread's GC frees them, not the main thread's
 async function liveOp(op, {id, span, buf, msgs, n, opts}) {
   if (op === "live-start") {
     live = new Slots({span, schema, parse, post: (pack, transfer) => postMessage({live: pack}, transfer)});
