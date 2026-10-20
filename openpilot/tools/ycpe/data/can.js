@@ -759,13 +759,18 @@ export class Can {
 
   // ---- decoded signals as series: /dbc/<bus>/<Msg>/<Sig> ----
 
+  // appended to as messages arrive and the same array until the DBCs change, as store.paths() expects
   paths() {
-    const out = [];
+    if (this.listed?.dbc !== this.dbcVersion) this.listed = {dbc: this.dbcVersion, out: [], n: 0};
+    const l = this.listed;
+    let i = 0;
     for (const s of this.msgs.values()) {
+      if (i++ < l.n) continue;  // messages keep their order
       const m = this.dbcMsg(s.key);
-      if (m) for (const sig of m.sigs) out.push(this.meta(`/dbc/${s.bus}/${m.name}/${sig.name}`, sig));
+      if (m) for (const sig of m.sigs) l.out.push(this.meta(`/dbc/${s.bus}/${m.name}/${sig.name}`, sig));
     }
-    return out;
+    l.n = i;
+    return l.out;
   }
 
   // a signal's {path, type, precision, unit?, names?, states?}: its value descriptions are names keyed by physical value. Two or
