@@ -164,17 +164,16 @@ function stats(dongleId) {
   return el;
 }
 
-// a device page left for a drive comes back as it was (the drives loaded, the open tab, the scroll) for a few minutes
-// after leaving it; signing in or out forgets them. Pages leave on a navigation, which says where they were scrolled.
+// going back to a device page (from a drive, say) shows it as it was: the drives loaded, the open tab, the scroll. Any
+// other way there builds it afresh, and a kept page is dropped a few minutes after it was built, or on signing in or out.
+// Pages leave on a navigation, which says where they were scrolled.
 const KEEP = 5 * 60e3;
 const kept = new Map();  // dongle id → {el, tab, select, scroll, until}
+let traverse = false;  // the navigation under way goes back or forward through history
 auth.on(() => kept.clear());
-globalThis.navigation?.addEventListener("navigate", () => {
-  for (const k of kept.values()) {
-    if (!k.el.isConnected) continue;
-    k.scroll = k.el.parentElement.scrollTop;
-    k.until = Date.now() + KEEP;
-  }
+globalThis.navigation?.addEventListener("navigate", (e) => {
+  traverse = e.navigationType === "traverse";
+  for (const k of kept.values()) if (k.el.isConnected) k.scroll = k.el.parentElement.scrollTop;
 });
 
 function restore(k) {
@@ -188,7 +187,9 @@ function restore(k) {
 
 export async function devicePage(dongleId, devices) {
   for (const [id, k] of kept) if (k.until < Date.now()) kept.delete(id);
-  if (kept.has(dongleId)) return restore(kept.get(dongleId));
+  const back = traverse;
+  traverse = false;  // a render without a navigation (a retry, the device list changing) builds afresh
+  if (back && kept.has(dongleId)) return restore(kept.get(dongleId));
   const device = (devices || []).find((d) => d.dongle_id === dongleId) || await api.device(dongleId);
   // the account lost the device (unpaired, or access removed)
   const forget = () => {
