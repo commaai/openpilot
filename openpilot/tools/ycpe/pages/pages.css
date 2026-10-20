@@ -153,7 +153,8 @@ a.drive-row:hover { background: var(--hover); }
   .ws:not([data-view="files"]) .pane-body:has(> .files-pane) { height: 70vh; }
   .ws:not([data-view="files"]) .info-pane { position: static; overflow: visible; }
   .ws:not([data-view="files"]) .pane-body:has(> .plot-pane) { height: max(200px, 40vh); }
-  /* the series browser is a drawer: its filter and a few rows, opening over the plots while it has the focus */
+  /* the series browser is a drawer: its filter and a few rows, opening over the plots while it has the focus (a tap
+     on a plot, or a double-tapped series going in, closes it) */
   .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser) { z-index: 2; }
   .ws:not([data-view="files"]) .pane-body:has(> .browser) { height: 124px; }
   .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser):focus-within { margin-bottom: calc(124px - 60vh); box-shadow: var(--shadow); }

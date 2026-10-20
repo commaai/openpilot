@@ -7,7 +7,8 @@ import {icon} from "/icons.js";
 import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
-const ROW = matchMedia("(pointer: coarse)").matches ? 28 : 18, BUILD_MS = 2;  // px per row; plot.css agrees
+const COARSE = matchMedia("(pointer: coarse)").matches;
+const ROW = COARSE ? 28 : 18, BUILD_MS = 2;  // px per row; plot.css agrees
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 const order = (a, b) => {
@@ -194,7 +195,11 @@ export function create(ctx, state = {}) {
     if (!pool[i]) {
       const r = pool[i] = h("div", {class: "row", draggable: true,
         onclick: (e) => click(e, r.k), ondragstart: (e) => dragstart(e, r.k),
-        ondblclick: () => { if (rows[r.k].meta) addToPlot([rows[r.k].path]); }},
+        ondblclick: () => {
+          if (!rows[r.k].meta) return;
+          addToPlot([rows[r.k].path]);
+          if (COARSE) scroller.blur();  // a phone's series drawer (pages.css) closes over the plot that got it
+        }},
       h("span", {class: "twisty"}, icon("chevron", 12)), h("span", {class: "name"}), h("span", {class: "val"}));
       r.flags = {};
       win.append(r);
