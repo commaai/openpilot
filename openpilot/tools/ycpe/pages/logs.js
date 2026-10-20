@@ -160,6 +160,7 @@ function openBoot(url, name) {
   });
 
   readBoot(url, ctl.signal).then((b) => {
+    if (ctl.signal.aborted) return;
     sections = bootSections(b).map(([title, text, open]) => {
       const s = {title, lines: text ? text.trimEnd().split("\n") : [], pre: h("pre", {class: "log-text"}), count: h("span", {class: "muted small"})};
       s.el = h("details", {class: "boot-section", open},
