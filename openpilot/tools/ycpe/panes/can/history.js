@@ -89,8 +89,8 @@ export function create(ctx, state) {
       set(empty, can.selected === null ? "Select a message to see its history" : frames.t.length || busy ? "" : filters().length ? "No frames match the filter" : "No frames before the playhead");
       if (empty.hidden !== !empty.textContent) empty.hidden = !empty.textContent;
       const m = can.dbcMsg(can.selected), first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
-      for (let i = 0; i < n; i++) {
-        const j = first + i, r = pool[i] || (pool[i] = row()), on = j < frames.t.length;
+      for (let i = 0; i < Math.max(n, pool.length); i++) {
+        const j = first + i, r = pool[i] || (pool[i] = row()), on = i < n && j < frames.t.length;
         if (r.hidden !== !on) r.hidden = !on;
         if (!on) continue;
         r.i = j;

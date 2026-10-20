@@ -1,11 +1,10 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
 import {h} from "/dom.js";
-import {MUX, MUXED, format, raw, value} from "/data/dbc.js";
+import {MUX, MUXED, flip, format, raw, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
 import {canOf, createSignal, hex2, removeSignal, subs, updateSignal} from "./common.js";
 
 const ROW = 22;
-const flip = (b) => 8 * (b >> 3) + 7 - (b & 7);
 // bit position <-> grid cell: row = byte, column 0 = bit 7
 const posOf = (row, col) => row * 8 + 7 - col;
 const cellOf = (pos) => [pos >> 3, 7 - (pos & 7)];
@@ -29,8 +28,9 @@ export function create(ctx, state) {
     [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
   const empty = h("div", {class: "can-empty"}, "Select a message to see its bits");
   const scroller = h("div", {class: "can-binary-scroll"}, canvas, empty);
-  const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key},
-    h("div", {class: "can-toolbar"}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn), scroller, info);
+  // no toolbar until a message is selected: the empty hint says it
+  const bar = h("div", {class: "can-toolbar", hidden: true}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
+  const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key}, bar, scroller, info);
 
   const k = () => can.selected;
   const msg = () => can.dbcMsg(k());
@@ -126,12 +126,13 @@ export function create(ctx, state) {
     const d = drag;
     drag = null;
     if (!d) return;
-    if (d.moved || d.resize) {
+    // a click, even on an M/L edge, opens the editor
+    if (d.moved) {
       const sel = selection(d);
-      if (d.resize) updateSignal(can, k(), d.resize.name, {start: sel.start, size: sel.size, max: d.resize.max});
-      else can.emit("edit", createSignal(can, k(), sel));
+      if (!d.resize) can.emit("edit", createSignal(can, k(), sel));
+      else if (sel.start !== d.resize.start || sel.size !== d.resize.size) updateSignal(can, k(), d.resize.name, {start: sel.start, size: sel.size, max: d.resize.max});
     } else {
-      const sg = coverage(visible(), rows())[posOf(d.anchor.row, d.anchor.col)]?.at(-1);
+      const sg = d.resize || coverage(visible(), rows())[posOf(d.anchor.row, d.anchor.col)]?.at(-1);
       if (sg) can.emit("edit", sg.name);
     }
     ctx.perf.invalidate(pane);
@@ -152,7 +153,8 @@ export function create(ctx, state) {
     name: "can-binary", el,
     render() {
       const key = k(), n = key === null ? 0 : rows(), {col, x0} = geometry();
-      title.textContent = key === null ? "Select a message" : `${hexId(key)} ${msg()?.name || ""}`;
+      if (bar.hidden !== (key === null)) bar.hidden = key === null;
+      if (key !== null) title.textContent = `${hexId(key)} ${msg()?.name || ""}`;
       dpr = devicePixelRatio;
       const w = width, H = Math.max(n * ROW, 1);
       if (canvas.width !== w * dpr || canvas.height !== H * dpr) {

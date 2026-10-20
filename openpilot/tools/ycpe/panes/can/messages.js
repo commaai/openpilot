@@ -18,6 +18,7 @@ export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
   const filters = {...state.filters}, hidden = new Set(state.hidden);
+  let unseen = state.unseen ?? true;  // DBC messages never seen on the bus, as cabana's "Show inactive messages"
 
   const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
     sort = {col: c.id, dir: sort.col === c.id ? -sort.dir : 1};
@@ -34,13 +35,16 @@ export function create(ctx, state) {
   const redo = h("button", {class: "can-btn", title: "Redo (ctrl+shift+z)", onclick: () => can.dbcs.redo()}, "↷");
   const dbcBtn = h("button", {class: "can-btn can-dbc-btn", title: "DBC files", onclick: () => dbcDialog(can)});
   const clearBtn = h("button", {class: "can-btn", title: "Clear suppressed bytes", onclick: () => { can.suppressHighlighted(false); toolbar(); }});
-  const suppressDefined = h("input", {type: "checkbox", onchange: (e) => can.setSuppressDefined(e.target.checked)});
+  // settings live in the ⋯ menu, so the toolbar stays one row
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
-    clearBtn, h("label", {class: "can-check", title: "Don't highlight bits of defined signals"}, suppressDefined, "Suppress signals"),
-    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
-    h("button", {class: "can-btn", title: "Columns", onclick: (e) => popup(e.currentTarget, COLS.slice(1).map((c) =>
-      menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); })))}, "⋯"));
+    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
+    h("span", {class: "can-spacer"}),
+    h("button", {class: "can-btn", title: "Options", onclick: (e) => popup(e.currentTarget, [
+      menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
+      menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
+      h("hr"),
+      ...COLS.slice(1).map((c) => menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); }))])}, "⋯"));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 
@@ -60,7 +64,7 @@ export function create(ctx, state) {
     const n = [...can.suppressed.values()].reduce((a, m) => a + m.filter((x) => x).length, 0);
     clearBtn.textContent = n ? `Clear (${n})` : "Clear";
     clearBtn.disabled = !n;
-    notice.textContent = files.length ? "" : can.notice || "";
+    notice.textContent = can.failed ? `CAN failed: ${can.failed}` : files.length ? "" : can.notice || "";
     notice.hidden = !notice.textContent;
   }
 
@@ -89,7 +93,7 @@ export function create(ctx, state) {
   // append new messages below, so nothing moves under the user while a route loads; a re-sort keeps the selected row
   // at its place on screen.
   function refresh(resort = true) {
-    const all = [...can.messages(), ...can.unseen()].filter(match);
+    const all = [...can.messages(), ...(unseen ? can.unseen() : [])].filter(match);
     if (resort) {
       const col = COLS.find((c) => c.id === sort.col), before = rows.findIndex((m) => m.key === can.selected);
       // unnamed messages stay below named ones in either direction, as do ties by bus and address
@@ -107,7 +111,7 @@ export function create(ctx, state) {
     }
     head.querySelectorAll(".can-sort").forEach((x, i) => { x.textContent = COLS[i].id === sort.col ? (sort.dir > 0 ? " ▲" : " ▼") : ""; });
     spacer.style.height = `${rows.length * ROW}px`;
-    empty.textContent = rows.length ? "" : can.messages().length ? "No messages match the filters" : "Waiting for CAN frames…";
+    empty.textContent = rows.length ? "" : can.messages().length ? "No messages match the filters" : can.failed ? `CAN failed: ${can.failed}` : "Waiting for CAN frames…";
     empty.hidden = rows.length > 0;
     toolbar();
     ctx.perf.invalidate(pane);
@@ -144,8 +148,9 @@ export function create(ctx, state) {
     render() {
       const first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       const live = can.live, t = ctx.clock.t;
-      for (let i = 0; i < n; i++) {
-        const m = rows[first + i];
+      // rows past n are left from a taller pane
+      for (let i = 0; i < Math.max(n, pool.length); i++) {
+        const m = i < n && rows[first + i];
         if (!m) { if (pool[i] && !pool[i].hidden) pool[i].hidden = true; continue; }
         const r = pool[i] || (pool[i] = row());
         if (r.hidden) r.hidden = false;
@@ -175,7 +180,7 @@ export function create(ctx, state) {
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
-    save: () => ({sort, filters, hidden: [...hidden]}),
+    save: () => ({sort, filters, hidden: [...hidden], unseen}),
   };
   s.add(can.on("messages", () => refresh(false)));
   s.add(can.on("dbc", () => refresh()));
