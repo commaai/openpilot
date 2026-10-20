@@ -10,6 +10,7 @@ export const addrOf = (k) => k % 2 ** 32;
 export const hexId = (k) => `${busOf(k)}:${addrOf(k).toString(16).toUpperCase()}`;
 
 const FADE = 2;  // seconds a byte change stays highlighted, as in cabana
+const BUDGET = 512e6;  // frame bytes the CAN worker holds, ~90 segments
 
 // ---- pipeline worker: one segment's frames, grouped by message ----
 
@@ -89,21 +90,31 @@ export class CanFrames {
 
 // ---- CAN worker: frames of every segment and the scans over them ----
 
-const segs = [];  // by time; each the CanFrames payload plus {n, base, idx, flips, before}
+const segs = [];  // resident, by time; each the CanFrames payload plus {n, base, idx, flips, before}
+const counts = new Map();  // n -> {base, frames: Map(key -> count)} of every segment ever added, resident or not
 
 function addSegment(n, c, off) {
+  dropSegment(n);
   const s = {...c, n, base: c.t0 + off, idx: new Map(), flips: []};
   c.keys.forEach((k, m) => {
     s.idx.set(k, m);
     s.flips.push(flipCounts(s, m, c.start[m], c.start[m + 1]));
   });
   segs.splice(segs.findLastIndex((x) => x.base < s.base) + 1, 0, s);
-  // per message frame counts before each segment, for counts at t
-  const before = new Map();
-  for (const x of segs) {
-    x.before = new Map(before);
-    x.keys.forEach((k, m) => before.set(k, (before.get(k) || 0) + x.start[m + 1] - x.start[m]));
+  counts.set(n, {base: s.base, frames: new Map(Array.from(c.keys, (k, m) => [k, c.start[m + 1] - c.start[m]]))});
+  // per message frame counts before each segment, for counts at t; evicted segments still count
+  const before = new Map(), at = new Map();
+  for (const [x, {frames}] of [...counts].sort((a, b) => a[1].base - b[1].base)) {
+    at.set(x, new Map(before));
+    for (const [k, f] of frames) before.set(k, (before.get(k) || 0) + f);
   }
+  for (const x of segs) x.before = at.get(x.n);
+}
+
+// evicts a segment's frames; its counts stay
+function dropSegment(n) {
+  const j = segs.findIndex((s) => s.n === n);
+  if (j >= 0) segs.splice(j, 1);
 }
 
 // cabana's HeatmapCounts over frames [i0, i1) of message m: flips between neighbours, never against a byte that just appeared
@@ -352,6 +363,7 @@ function csv(keys, t0, t1, msg) {
 if (import.meta.url.endsWith("?worker")) {
   const ops = {
     add: ({n, can, off}) => { addSegment(n, can, off); },
+    drop: ({n}) => { dropSegment(n); },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
     heatmap: ({k, t0, t1}) => heatmap(k, t0, t1),
@@ -400,6 +412,21 @@ export class Can {
     this.selected = null;
     this.live = null;
     this.bytes = 0;
+    this.budget = BUDGET;
+    this.resident = new Map();  // segment -> its bytes in the worker
+    this.evicted = new Set();
+    this.reloading = new Set();
+    this.at = 0;  // the playhead's segment
+    // status.js touches the DOM, which this file's worker side can't import
+    import("../status.js").then(({status}) => {
+      if (this.disposed) return;
+      this.status = status.source("can", {label: "CAN", order: 3});
+      const segs = store.route?.segments || [];
+      this.status.count(segs.length);
+      for (const s of segs) if (s.status === "missing") this.status.seg(s.n, "missing");
+      for (const n of this.resident.keys()) this.status.seg(n, "ready");
+      this.status.bytes({memory: this.bytes});
+    });
     this.suppressed = new Map();  // key -> per-byte 0xff for suppressed bytes
     this.suppressDefined = false;
     this.autoDbc = store.on?.("segment", () => this.fingerprint());
@@ -422,7 +449,8 @@ export class Can {
   // a segment's frames from the pipeline worker (route time = mono time + off); summaries stay here
   ingest(n, can, off) {
     const {keys, start, t, len, stride} = can;
-    keys.forEach((k, m) => {
+    // a reloaded segment is already in the summaries
+    if (!this.evicted.delete(n)) keys.forEach((k, m) => {
       const a = start[m], b = start[m + 1];
       let s = this.msgs.get(k);
       if (!s) this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
@@ -433,11 +461,38 @@ export class Can {
       s.freq = s.count > 1 ? (s.count - 1) / (s.t1 - s.t0) : 0;
       s.segs.add(n);
     });
-    this.bytes += t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
+    const bytes = t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
+    this.bytes += bytes - (this.resident.get(n) || 0);
+    this.resident.set(n, bytes);
     this.call("add", {n, can, off}, [keys, can.start, stride, can.dstart, t, len, can.data].map((a) => a.buffer));
+    this.status?.seg(n, "ready");
+    this.evict();
+    this.status?.bytes({memory: this.bytes});
     this.dataVersion++;
     this.emit("messages");
     for (const c of this.cache.values()) c.stale = true;
+  }
+
+  // over budget, the segments farthest from the playhead go; their summaries stay, and they come back from the
+  // cached log when the playhead nears them
+  evict() {
+    const far = (n) => Math.abs(n - this.at);
+    for (const n of [...this.resident.keys()].filter((n) => far(n) > 1).sort((a, b) => far(b) - far(a))) {
+      if (this.bytes <= this.budget * 0.9) break;
+      this.bytes -= this.resident.get(n);
+      this.resident.delete(n);
+      this.evicted.add(n);
+      this.call("drop", {n});
+      this.status?.seg(n, "disk");
+    }
+  }
+
+  reload(n) {
+    if (!this.evicted.has(n) || this.reloading.has(n)) return;
+    this.reloading.add(n);
+    this.status?.seg(n, "loading");
+    this.store.load(this.store.route.segments[n], {}, {can: true}).then((p) => p.can && this.ingest(n, p.can, 0),
+      () => this.status?.seg(n, "disk")).finally(() => this.reloading.delete(n));
   }
 
   messages() { return [...this.msgs.values()]; }
@@ -454,6 +509,8 @@ export class Can {
 
   // live bytes at t, coalesced to one request in flight; emits "live"
   requestState(t) {
+    this.at = this.store.route?.segments.find((s) => t >= s.t0 && t < s.t1)?.n ?? this.at;
+    for (const n of [this.at - 1, this.at, this.at + 1]) this.reload(n);
     if (this.stateBusy) { this.stateNext = t; return; }
     this.stateBusy = true;
     this.call("state", {t}).then((r) => {
@@ -596,6 +653,8 @@ export class Can {
 
   dispose() {
     this.autoDbc?.();
+    this.status?.remove();
+    this.disposed = true;
     this.worker.terminate();
   }
 }
