@@ -10,8 +10,8 @@ import {blocks} from "./blocks.js";
 import {Decimator} from "./decimate.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
-import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/transforms.js";
-import {evaluate} from "/data/custom.js";
+import {TRANSFORMS, derivedPath, derive, compute, transformInputs, lease} from "/data/transforms.js";
+import {evaluate, lease as leaseCustom} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
 import {customsOf, plots, specKey} from "/layouts/import.js";
@@ -21,6 +21,7 @@ const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const HOW = matchMedia("(pointer: coarse)").matches ? "Double-tap a series in Series to plot it · long-press for options"
   : "Drag series here, or double-click one in Series · right-click for options";
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
+const derived = new WeakMap();  // store → the transformed series computed into it
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
 const spacing = new Map();  // path → {version, dt}
@@ -77,6 +78,7 @@ export function create(ctx, state = {}) {
   const pane = {
     name: "plot", el, store, render, resize, dispose, save, addCurves, compare, setCustom,
     has: (path) => st.curves.some((c) => c.path === path),
+    draws: (path) => st.curves.some((c) => c.transform && derivedPath(c.path, c.transform) === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     get curves() { return structuredClone(st.curves); },
@@ -145,9 +147,11 @@ export function create(ctx, state = {}) {
   // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
   // change, off the draw and a moment later (inputs that change together, as segments arrive, recompute once);
   // custom code from an untrusted layout waits until the user has reviewed it in the console. A recipe is the inputs'
-  // versions and a custom series' code, so an undone edit of the code computes again
+  // versions and a custom series' code, so an undone edit of the code computes again; a transform no curve showed
+  // any more is dropped from the store, and computed again when one does
   const recipe = (c, out, inputs) => (out === c.path && c.custom ? `${specKey(c.custom)}|` : "") + inputs.map((p) => store.series(p)?.version).join();
-  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== recipe(c, out, inputs);
+  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) &&
+    (made.get(out) !== recipe(c, out, inputs) || !store.series(out));
   function source(c) {
     let src = c.path;
     steps(c, (out, inputs) => {
@@ -172,6 +176,7 @@ export function create(ctx, state = {}) {
         if (!stale(c, out, inputs)) return;
         const from = recipe(c, out, inputs);
         busy.add(out);
+        if (out !== c.path) (derived.get(store) || derived.set(store, new Set()).get(store)).add(out);
         run().then(() => { made.set(out, from); c.error = null; }, (e) => { made.set(out, from); c.error = e.message; })
           .finally(() => { busy.delete(out); rebuildLegend(); invalidate(); });
       });
@@ -416,6 +421,21 @@ export function create(ctx, state = {}) {
     legend.hidden = !rows.length;
     hint();
     statsKey = "";
+    release();
+  }
+
+  // the workers keep what the curves read (their paths, transforms' inputs and outputs, custom series' inputs), and
+  // the store the transforms some plot shows
+  function release(curves = st.curves) {
+    lease(pane, store, curves.flatMap((c) => c.transform ? [c.path, derivedPath(c.path, c.transform), ...transformInputs(c.path, c.transform)] : [c.path]));
+    leaseCustom(pane, store, curves.flatMap((c) => c.custom?.inputs || []));
+    const shown = [];
+    view.each((p) => p.store === store && shown.push(p));
+    for (const out of derived.get(store) || []) {
+      if (busy.has(out) || shown.some((p) => p.draws?.(out))) continue;
+      derived.get(store).delete(out);
+      store.drop?.(out);
+    }
   }
 
   // the edits of one opening are one undo entry
@@ -789,6 +809,7 @@ export function create(ctx, state = {}) {
     clearTimeout(recomputeTimer);
     decimator.dispose();
     closeMenu();
+    release([]);
   }
 
   for (const c of state.curves || []) st.curves.push(normalize(c));

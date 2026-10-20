@@ -2,7 +2,7 @@
 // sandbox: the code can do what this page can, so code from an imported layout runs only once reviewed. Inputs are
 // store paths; every input after the first is resampled (sample-and-hold) onto the first one's times. The globals
 // block runs once per evaluation, so its variables persist across samples. The function body sees time, value, v1 … vN.
-import {Feed, receive, resample} from "./transforms.js";
+import {Feed, receive, resample, leases} from "./transforms.js";
 
 export const TEMPLATES = {
   Derivative: {globals: "let pt = NaN, pv = NaN;", code: "const d = (value - pv) / (time - pt);\npt = time;\npv = value;\nreturn d;"},
@@ -48,6 +48,8 @@ const hung = new WeakMap();  // store → the specs that timed out on it
 const TIMED_OUT = `timed out after ${TIMEOUT_MS / 1000} s`;
 const key = ({inputs, globals, code}) => JSON.stringify([inputs, globals, code]);
 const timedOut = ({store, spec}) => !!hung.get(store)?.has(key(spec));
+// the inputs each pane's custom series read (see transforms.js leases())
+export const lease = leases(() => feed);
 
 function post(job) {
   if (!worker) {

@@ -53,6 +53,8 @@ export function menu(x, y, items) {
   return popup(x, y, list);
 }
 
+const PARAM_MS = 300;  // a transform parameter's settling time
+
 const num = (label, value, set, step = "any") => h("label", {}, label,
   h("input", {type: "number", step, value, oninput: (e) => e.target.value !== "" && isFinite(e.target.value) && set(+e.target.value)}));
 
@@ -60,10 +62,17 @@ const num = (label, value, set, step = "any") => h("label", {}, label,
 // actions: [{label, fn}] run from buttons, after the editor closes
 export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
   const set = (k) => (v) => { curve[k] = v; change(); };
+  // each parameter value is a series of its own: one is computed once the value settles
   const param = h("span");
+  let paramTimer = 0;
+  const setParam = (v) => {
+    clearTimeout(paramTimer);
+    paramTimer = setTimeout(() => { curve.transform.param = v; change(); }, PARAM_MS);
+  };
   const showParam = () => {
+    clearTimeout(paramTimer);
     const spec = TRANSFORMS[curve.transform?.kind];
-    param.replaceChildren(spec?.param ? num(spec.param.label, curve.transform.param ?? spec.param.value, (v) => { curve.transform.param = v; change(); }) : "");
+    param.replaceChildren(spec?.param ? num(spec.param.label, curve.transform.param ?? spec.param.value, setParam) : "");
   };
   showParam();
   return popup(x, y,

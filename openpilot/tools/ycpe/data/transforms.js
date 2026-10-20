@@ -85,10 +85,15 @@ function rpy(_, [w, x, y, z], axis) {
 const stores = new Map();
 let series = null;  // the current request's store's
 
-// applies a message from Feed.feed() to the worker's copy; → its store's series, or null for a drop message
-export function receive({store, data, drop}) {
+// applies a message from Feed.feed() to the worker's copy; → its store's series, or null for a drop or release
+// message
+export function receive({store, data, drop, release}) {
   if (drop !== undefined) {
     stores.delete(drop);
+    return null;
+  }
+  if (release) {
+    for (const path of release) stores.get(store)?.delete(path);
     return null;
   }
   if (!stores.has(store)) stores.set(store, new Map());
@@ -302,7 +307,7 @@ export function copy({tt, v}, transfer) {
 }
 
 // what a worker holds of the stores' series, so a chunk crosses threads once. Each store has an id there, and
-// a store that's gone is dropped from the worker's copy (receive() takes the messages)
+// a store that's gone is dropped from the worker's copy, a released series too (receive() takes the messages)
 let lastStore = 0;
 const storeIds = new WeakMap();
 export class Feed {
@@ -336,7 +341,28 @@ export class Feed {
     }
     return {store: storeIds.get(store), data};
   }
+
+  // the worker forgets paths of store; they go again in full when next read
+  release(store, paths) {
+    const have = this.sent.get(store), gone = paths.filter((p) => have?.delete(p));
+    if (gone.length) this.worker.postMessage({store: storeIds.get(store), release: gone});
+  }
 }
+
+// the series each owner (a pane) reads in a worker, for that worker's feed(): owner → {store, paths}. Calling the
+// returned function with an owner's paths now (none when it's gone) releases what no owner reads any more
+export function leases(feed) {
+  const all = new Map();
+  return (owner, store, paths = []) => {
+    const old = all.get(owner);
+    if (paths.length) all.set(owner, {store, paths: new Set(paths)});
+    else all.delete(owner);
+    const others = [...all.values()].filter((l) => l.store === old?.store);
+    const gone = [...old?.paths || []].filter((p) => !others.some((l) => l.paths.has(p)));
+    if (gone.length) feed()?.release(old.store, gone);
+  };
+}
+export const lease = leases(() => feed);
 
 // runs op in the worker; `paths` are the store series it reads
 export function compute(store, op, args, paths) {
