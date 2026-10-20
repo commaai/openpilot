@@ -41,9 +41,9 @@
   };
 
   const els = [];
-  const modal = document.querySelector("dialog:modal");  // the page under a modal dialog is inert, nothing there to lint
+  const modal = document.querySelector("dialog:modal");  // the page under a modal dialog is inert, nothing there to lint (nor an inert subtree)
   for (const el of document.body.querySelectorAll("*")) {
-    if (el.ownerSVGElement || (cfg.ignore && el.closest(cfg.ignore)) || (modal && !modal.contains(el))) continue;
+    if (el.ownerSVGElement || (cfg.ignore && el.closest(cfg.ignore)) || (modal && !modal.contains(el)) || el.closest("[inert]")) continue;
     const r = el.getBoundingClientRect();
     const clip = style(el).position === "fixed" ? ALL : clipOf(el.parentElement);
     const vis = meet(meet(r, clip), VIEW);

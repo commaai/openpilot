@@ -21,6 +21,7 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
 
 ```js
 {name, url, viewport?: {width, height, mobile?}, auth?: true /* ~/.comma/auth.json JWT as comma_jwt */,
+ mode?: "dev" | "user" | "new" /* the remembered mode, default dev; new: a first visit */,
  cpu_throttle?: 4, timeout?: ms, slow?: true, allow?: [regex for expected errors],
  lint_ignore?: [css selectors], budgets?: {loaf_ms: 50, work_p99_ms: 8, drops: null},
  reference?: [reference names], routes?: [{url: regex, method?, rpc?, json | file | body, status?}], steps: [...]}

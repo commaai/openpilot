@@ -116,6 +116,10 @@ class Scenario:
     for r in sc.get("routes", []):  # registered later, so these answer before the guard
       self.ctx.route(re.compile(r["url"]), functools.partial(self.fulfill, r))
     self.ctx.add_init_script(PROBE_JS)
+    # the mode a link that names none opens in: developer unless the scenario says ("new": a first visit, user mode);
+    # set once, so the mode switch holds over reloads
+    if sc.get("mode", "dev") != "new":
+      self.ctx.add_init_script(f"localStorage.getItem('ycpe_mode') || localStorage.setItem('ycpe_mode', {json.dumps(sc.get('mode', 'dev'))})")
     if sc.get("auth"):
       if not token:
         self.fail("auth", "no access_token in ~/.comma/auth.json")
