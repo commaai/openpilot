@@ -65,7 +65,9 @@ timestamps.
 ## v1 feature set (the parity checklists are the acceptance spec)
 
 ### Route browser (connect + useradmin, user-facing only)
-- [ ] Sign in (Google/GitHub/Apple), sign out, and a JWT paste for developers. Public routes work signed out.
+- [ ] Its own polished login flow: a /login page (Google/GitHub/Apple, JWT paste, demo link), return-to after
+      OAuth, signing-in and error states, an inline "sign in to view" card on 401/403, sign out without leaving
+      the page, and a live account state in the top bar. Public routes work signed out.
 - [ ] Omnibox accepts a dongle id, a route name, a connect URL, a useradmin URL or a `cabana` route string.
 - [ ] Device list (alias, online dot, last seen, version) and device rename.
 - [ ] Device page: location map; route list (date, duration, distance, engaged %, thumbnails, paging back
