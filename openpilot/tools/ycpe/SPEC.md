@@ -214,13 +214,16 @@ store.route                    // {name, t0 (mono s), duration, segments: [{n, t
 store.on(event, fn)            // "segment" (n) | "paths" | "progress"
 store.paths()                  // [{path, type, names?}], type: f32 f64 i8..u64 b e t (enum names for e; ints keep their schema type)
 store.series(path)             // {path, type, names, chunks: [{t: Float64Array (route s), v, i?}], version}
-                               // chunk.i: sparse index into the service times, if present
+                               // chunk.i: sparse index into the service times, if present; chunk.tt: time of each v[k]
 store.decimate(path, t0, t1, n)// {t, min, max} with n buckets (min/max pyramid); exact samples if few
 store.valueAt(path, t)         // last value at or before t
 store.message(service, t)      // the full decoded message at t (for the inspector), async
 store.focus(t)                 // load outward from t
 store.put(path, {type, t, v, names?})  // register/replace a derived series (transforms, /custom/*): one chunk,
                                // new version, emits "paths" when new; then series/decimate/valueAt like any path
+store.lists                    // Map of long-list path -> length; series() of any index loads it on demand
+store.bytes, store.budget      // resident column bytes and the eviction budget (for the HUD/perf panel)
+                               // the event-level valid flag is /<svc>/valid, or /<svc>/_valid where a field is named valid
 store.can                      // owned by track 3: messages(), frames(bus, addr, t0, t1), ...
 ```
 
