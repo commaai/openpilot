@@ -130,11 +130,7 @@ function topBar() {
     bar.tabs.scrollLeft += e.deltaY;
     tabsScrolled = true;
   }, {passive: false});
-  // the bar's other items settle after the tabs: keep the active tab in view, unless the user scrolled the strip
-  new ResizeObserver(() => {
-    const on = bar.tabs.querySelector(".tab.on")?.getBoundingClientRect(), r = bar.tabs.getBoundingClientRect();
-    if (on && !tabsScrolled && (on.left < r.left || on.right > r.right)) showActiveTab();
-  }).observe(bar.tabs);
+  tabsObserver.observe(bar.tabs);
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
       href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
@@ -213,7 +209,8 @@ function updateTop() {
   if (shown !== tabsShown) {
     tabsShown = shown;
     tabsScrolled = false;
-    requestAnimationFrame(showActiveTab);
+    tabsMoved = true;
+    tabsObserver.observe(bar.tabs.querySelector(".tab.on"));  // reported once it's laid out
   }
 }
 
@@ -224,6 +221,20 @@ function refocus(key) {
 
 let tabsShown = "";        // the tabs and active tab the strip last scrolled to
 let tabsScrolled = false;  // the user scrolled the strip since
+let tabsMoved = false;     // the tabs changed since the strip scrolled to them
+
+// scrolls the strip to the active tab after the tabs change, and when the bar's other items settle after them (unless
+// the user scrolled it). It runs after layout, so its reads never force one.
+const tabsObserver = new ResizeObserver(() => {
+  if (tabsMoved) {
+    tabsMoved = false;
+    tabsObserver.disconnect();  // the tabs it was told of are gone or shown
+    tabsObserver.observe(bar.tabs);
+    return showActiveTab();
+  }
+  const on = bar.tabs.querySelector(".tab.on")?.getBoundingClientRect(), r = bar.tabs.getBoundingClientRect();
+  if (on && !tabsScrolled && (on.left < r.left || on.right > r.right)) showActiveTab();
+});
 
 // too many tabs scroll: show the buttons at the end if the active tab still fits, else the active tab
 function showActiveTab() {
