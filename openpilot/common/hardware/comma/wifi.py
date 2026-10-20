@@ -18,6 +18,7 @@ import sys
 import socket
 import subprocess
 import time
+from typing import TypedDict
 
 SOCKET = '/run/comma-wifi.sock'
 CONFIG = Path('/data/etc/wifi.json')
@@ -133,9 +134,16 @@ def stop_process(proc):
       proc.wait()
 
 
+class WifiConfig(TypedDict):
+  version: int
+  networks: dict[str, dict]
+  hotspot: dict
+
+
 class Wifi:
   def __init__(self, ctrl, config=CONFIG):
     self.ctrl, self.config = ctrl, config
+    self.data: WifiConfig
     if config.exists():
       self.data = json.loads(config.read_text())
       if self.data.get('version') != 1:
@@ -246,7 +254,7 @@ class Wifi:
         self.ctrl.call('ENABLE_NETWORK all')
     elif command == 'metered':
       ssid = self.snapshot.get('ssid')
-      if ssid in self.data['networks']:
+      if isinstance(ssid, str) and ssid in self.data['networks']:
         self.data['networks'][ssid] = validate_network(**{**self.data['networks'][ssid], 'metered': args['metered']})
         self.save()
     elif command == 'hotspot_config':
@@ -320,7 +328,7 @@ class Wifi:
           address = lease['ip']
       except (OSError, ValueError, KeyError):
         pass
-    if address and self.pending and self.pending['ssid'] == ssid:
+    if address and ssid and self.pending and self.pending['ssid'] == ssid:
       self.data['networks'][ssid] = self.pending
       self.pending = None
       self.save()
@@ -346,7 +354,7 @@ class Wifi:
     connecting = status.get('wpa_state', 'DISCONNECTED') not in ('DISCONNECTED', 'INACTIVE', 'INTERFACE_DISABLED')
     state = 2 if address else 1 if connecting or self.pending or self.hotspot else 0
     self.snapshot = {'ssid': (self.pending or {}).get('ssid') or ssid, 'status': state, 'ipv4_address': address,
-                     'metered': self.data['networks'].get(ssid, {}).get('metered', 0), 'saved': list(self.data['networks']),
+                     'metered': self.data['networks'].get(ssid or '', {}).get('metered', 0), 'saved': list(self.data['networks']),
                      'networks': list(networks.values()), 'hotspot': self.hotspot, 'hotspot_ssid': self.data['hotspot']['ssid'],
                      'auth_error': self.auth_error, 'error_id': self.error_id}
     atomic_json(STATE, self.snapshot, 0o644)
