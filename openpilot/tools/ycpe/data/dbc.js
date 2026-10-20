@@ -94,11 +94,14 @@ export function raw(s, d, o = 0, n = d.length - o) {
   if (mb === lb) v = (d[o + mb] >> (s.lsb & 7)) & ((1 << s.size) - 1);
   else {
     v = 0;
-    for (let i = mb, bits = s.size; i >= 0 && i < n && bits > 0; i += s.le ? -1 : 1) {
+    let bits = s.size;
+    for (let i = mb; i >= 0 && i < n && bits > 0; i += s.le ? -1 : 1) {
       const lo = i === lb ? s.lsb & 7 : 0, nb = (i === mb ? s.msb & 7 : 7) - lo + 1;
       v = v * (1 << nb) + ((d[o + i] >> lo) & ((1 << nb) - 1));
       bits -= nb;
     }
+    // a signal running past the end of the frame keeps its high bits in place, as opendbc's get_raw_value
+    v *= 2 ** bits;
   }
   return s.signed && v >= 2 ** (s.size - 1) ? v - 2 ** s.size : v;
 }
