@@ -1,4 +1,6 @@
-.camera-pane { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); container-type: size; }
+/* a black letterbox in both themes, and controls over the picture in fixed dark colors */
+.camera-pane { --raised: rgba(28, 33, 38, .85); --fg: #e3e7eb; --muted: #a3abb3; --line: rgba(255, 255, 255, .18);
+  position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; color: var(--fg); container-type: size; }
 .camera-pane video, .camera-pane canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .camera-pane .camera-picker { position: absolute; left: 6px; top: 6px; height: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: var(--fg); opacity: .85; }
 .camera-pane .camera-picker:hover { opacity: 1; }
