@@ -68,6 +68,15 @@ export const unloaded = () => unloadedSpans;
 export function onUnloaded(fn) { unloadedSubs.add(fn); return () => unloadedSubs.delete(fn); }
 export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b);
 
+// base redraws share BUDGET_MS a frame, so opening a layout or a segment landing spreads over a few frames
+// instead of stalling one: the time left in frame f, from its first redraw
+const BUDGET_MS = 4;
+let budget = {frame: null, end: 0};
+export function left(f) {
+  if (budget.frame !== f) budget = {frame: f, end: performance.now() + BUDGET_MS};
+  return budget.end - performance.now();
+}
+
 // call before a view change; changes with the same key within 400 ms (a wheel burst, one drag) are one entry
 export function remember(clock, key = null) {
   const now = performance.now();

@@ -124,7 +124,8 @@ export function create(ctx, state = {}) {
 
   // ---- drawing
 
-  function prepare(t0, t1, px) {
+  // null when frame f's budget ran out first (the curves done so far stay cached)
+  function prepare(t0, t1, px, f) {
     const numeric = [], text = [];
     for (const c of st.curves) {
       if (c.hidden) continue;
@@ -139,7 +140,8 @@ export function create(ctx, state = {}) {
     const rows = blockMode ? [...numeric, ...text] : text;
     const lines = blockMode ? [] : numeric;
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
-    for (const it of lines) {
+    for (const [k, it] of lines.entries()) {
+      if (k && view.left(f) <= 0) return null;
       const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
       const d = decimator.get(it.src, it.s.version, a, b, Math.round(px * 1.1));
       // buckets may be empty here and there, so a gap is also wider than a couple of them
@@ -183,15 +185,18 @@ export function create(ctx, state = {}) {
     return hi > lo ? [lo, hi] : [lo - 0.5, lo + 0.5];
   }
 
-  function drawBase() {
+  // false when it ran out of frame f's budget and left the canvas as it was
+  function drawBase(f) {
     const g = gBase, [t0, t1] = xRange();
     const px = L, pw = W - L - R, ph0 = H - T - B;
-    if (pw < 4 || ph0 < 4) return;
+    if (pw < 4 || ph0 < 4) return true;
     if (!st.curves.length) {  // the empty state is just the hint
       frame = null;
-      return g.clearRect(0, 0, W, H);
+      g.clearRect(0, 0, W, H);
+      return true;
     }
-    const p = prepare(t0, t1, pw);
+    const p = prepare(t0, t1, pw, f);
+    if (!p) return false;
     const stripH = p.blockMode ? ph0 / Math.max(1, p.rows.length) : Math.min(STRIP, ph0 / 4 / Math.max(1, p.rows.length));
     const py = T + (p.blockMode ? ph0 : p.rows.length * stripH), ph = T + ph0 - py;
     const [lo, hi] = p.blockMode ? [0, 1] : yRange(p.lines, t0, t1);
@@ -231,6 +236,7 @@ export function create(ctx, state = {}) {
     g.textAlign = "right";
     g.textBaseline = "middle";
     p.rows.forEach((it, k) => g.fillText(ellipsize(g, label(it.c).split("/").pop(), px - 10), px - 6, T + (k + 0.5) * stripH));
+    return true;
   }
 
   // valid=false spans of the services behind the curves, as a band along the bottom
@@ -546,12 +552,12 @@ export function create(ctx, state = {}) {
 
   // ---- pane contract
 
-  function render() {
+  // base redraws share the frame's budget: a pane past it keeps its picture this frame, and one that runs out
+  // between curves finishes on a later one
+  function render(f) {
     if (!gBase) return;
-    if (dirty) {
-      dirty = false;
-      drawBase();
-    }
+    if (dirty && view.left(f) > 0) dirty = !drawBase(f);
+    if (dirty) perf.invalidate(pane);
     drawOverlay();
     updateLegend();
   }
