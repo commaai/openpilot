@@ -155,7 +155,7 @@ function qcamera(ctx, pane, {say, wait}) {
 // a window of decoded frames around the playhead, filled by the decoder worker
 function fullres(ctx, pane, camera, {say, wait, fail}) {
   const canvas = h("canvas");
-  const draw = frameRenderer(canvas);
+  const draw = frameRenderer(canvas, () => { shown = -1; ctx.perf.invalidate(pane); });
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
   const lanes = lane(camera);
   const frames = new Map();  // n → VideoFrame, or I420 planes from the software decoder
