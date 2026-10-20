@@ -27,6 +27,7 @@ class Config:
   device: str | None = None  # [user@]host of a comma device for /local/device
   device_key: str | None = None
   device_root: str | None = None  # the device's realdata directory if not the usual one (tests use a stand-in)
+  webrtcd_port: int = 5001  # the webrtcd on this PC that /local/webrtc/stream forwards offers to
 
   @property
   def origins(self) -> set[str]:
