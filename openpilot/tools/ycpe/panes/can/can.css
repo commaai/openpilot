@@ -23,6 +23,8 @@
 .can-comment { width: 100%; color: var(--muted); white-space: pre-wrap; }
 
 /* messages */
+/* the DBC chip gives up its width before the toolbar wraps */
+.can-messages .can-dbc-btn { flex: 1 1 40px; max-width: max-content; }
 .can-msg-table { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .can-msg-head, .can-msg-filters, .can-msg-row { display: flex; padding: 0 4px; }
 .can-msg-head { height: 20px; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
