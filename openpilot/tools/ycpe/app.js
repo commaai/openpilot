@@ -173,17 +173,22 @@ function updateTop() {
   bar.device.hidden = false;
   bar.route.hidden = bar.route.previousElementSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
-  if (!ws) {  // the buttons' handlers would keep the closed workspace alive
-    bar.views.replaceChildren();
-    return bar.tabs.replaceChildren();
-  }
+  if (!ws) return bar.tabs.replaceChildren();  // the tabs' handlers would keep the closed workspace alive
   const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
   bar.route.firstChild.textContent = ws.route.start_time_utc_millis
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
     : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
-  bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
-    "aria-current": k === ws.view && "page", "data-key": `view:${k}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
+  // made once and kept, so a focused one stays focused: focusing a new one would lay the new view out in the click
+  if (!bar.views.childElementCount) {
+    bar.views.append(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: "view", "data-key": `view:${k}`,
+      title: `${v.title} (${i + 1})`, onclick: () => ws?.setView(k)}, v.title)));
+  }
+  for (const b of bar.views.children) {
+    const on = b.dataset.key === `view:${ws.view}`;
+    b.classList.toggle("on", on);
+    if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
   const layout = ws.layout;
   if (!layout) {  // the view is still waiting on its files
     bar.tabs.replaceChildren();
@@ -223,7 +228,8 @@ function updateTop() {
 
 function refocus(key) {
   if (!key) return;
-  (bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(".tab.on [role=tab]"))?.focus();
+  const el = bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(".tab.on [role=tab]");
+  if (el !== document.activeElement) el?.focus();
 }
 
 let tabsShown = "";        // the tabs and active tab the strip last scrolled to
