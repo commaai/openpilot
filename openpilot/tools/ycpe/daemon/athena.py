@@ -21,8 +21,6 @@ module("athena", "1", methods=sorted(METHODS))
 
 def rpc_body(body: bytes) -> bytes:
   """the call, rebuilt from only the JSON-RPC fields, if it's a single call to an allowed method"""
-  if len(body) > MAX_BODY:
-    raise HTTPError(413)
   try:
     call = json.loads(body)
   except ValueError as e:
@@ -36,7 +34,7 @@ def rpc_body(body: bytes) -> bytes:
   return json.dumps(out).encode()
 
 
-@route("POST", "/local/athena/{dongle}")
+@route("POST", "/local/athena/{dongle}", max_body=MAX_BODY)
 def athena(req):
   dongle = req.params["dongle"]
   if not DONGLE_RE.fullmatch(dongle):

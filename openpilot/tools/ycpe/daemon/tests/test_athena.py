@@ -64,6 +64,12 @@ class TestAthena(DaemonCase):
     self.assertEqual(r.status, 413)
     self.pool.request.assert_not_called()
 
+  def test_body_limit_before_reading(self):
+    # a body that never comes: refused on its Content-Length, not after waiting to read it
+    r, _ = self.call(b"{}", headers={**AUTH, "Content-Length": str(athena.MAX_BODY + 1)})
+    self.assertEqual(r.status, 413)
+    self.pool.request.assert_not_called()
+
   def test_bad_dongle(self):
     for dongle in ("0123456789ABCDEF", "0123456789abcde", "0123456789abcdef0", "..%2f..%2fv1", "0123456789abcdeg", "%2e%2e"):
       r, _ = self.call({"method": "listUploadQueue"}, dongle=dongle)

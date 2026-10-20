@@ -139,7 +139,8 @@ def sse(events, keepalive: float = 15.0):
 
 # routes
 
-_routes: list[tuple[str, re.Pattern, object, bool]] = []
+_routes: list[tuple[str, re.Pattern, object, bool, int]] = []
+MAX_BODY = 64 << 20
 modules: dict[str, dict] = {}  # name -> {version, ...info}, listed by /local/caps
 
 
@@ -151,11 +152,12 @@ def _compile(pattern: str) -> re.Pattern:
   return re.compile("^" + re.sub(r"\{(\w+)(?::(\w+))?\}", sub, pattern) + "$")
 
 
-def route(method: str, pattern: str, public: bool = False):
-  """Registers fn(req) for method and pattern under /local/. public routes skip the session token (only caps)."""
+def route(method: str, pattern: str, public: bool = False, max_body: int = MAX_BODY):
+  """Registers fn(req) for method and pattern under /local/. public routes skip the session token (only caps); a
+  request body over max_body bytes is refused before it's read."""
   assert pattern.startswith("/local/"), pattern
   def deco(fn):
-    _routes.append((method, _compile(pattern), fn, public))
+    _routes.append((method, _compile(pattern), fn, public, max_body))
     return fn
   return deco
 
@@ -167,10 +169,10 @@ def module(name: str, version: str = "1", **info):
 
 def match(method: str, path: str):
   allowed = False
-  for m, rx, fn, public in _routes:
+  for m, rx, fn, public, max_body in _routes:
     if (g := rx.match(path)):
       if m == method:
-        return fn, {k: unquote(v) for k, v in g.groupdict().items()}, public
+        return fn, {k: unquote(v) for k, v in g.groupdict().items()}, public, max_body
       allowed = True
   raise HTTPError(405) if allowed else NoRoute(404)
 

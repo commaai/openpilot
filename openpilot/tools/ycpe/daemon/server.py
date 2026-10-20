@@ -104,10 +104,10 @@ class Handler(SimpleHTTPRequestHandler):
     self.reply(Response(body, type="text/html; charset=utf-8"), head=method == "HEAD")
 
   def api(self, method: str, path: str, query: dict, headers: dict):
-    fn, params, public = core.match("GET" if method == "HEAD" else method, path)
+    fn, params, public, max_body = core.match("GET" if method == "HEAD" else method, path)
     core.check_local(headers, query, public)
     n = int(headers.get("content-length") or 0)
-    if n > 64 << 20:
+    if n > max_body:
       raise HTTPError(413)
     body = self.rfile.read(n) if n else b""
     req = core.Request(method, path, params, query, headers, body, self)
