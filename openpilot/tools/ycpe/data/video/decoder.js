@@ -4,7 +4,7 @@
 import {AnnexB} from "./annexb.js";
 import {openBackend} from "./backends.js";
 import {SEGMENT_FRAMES} from "./frames.js";
-import * as opfs from "./opfs.js";
+import * as opfs from "../opfs.js";
 
 const GAP = 40;   // decode forward through at most this many unwanted frames instead of restarting at a keyframe
 const KEEP = 3;   // segment files held in memory
@@ -145,10 +145,9 @@ async function scanned(s) {
 }
 
 async function save(n, bytes) {
-  if (!await opfs.write(keys[n], bytes)) return;
+  if (!await opfs.write(keys[n], bytes, "video")) return;
   disk.set(n, bytes.length);
-  const route = keys[n].split("/").slice(0, 2).join("/") + "/";
-  for (const k of await opfs.evict(route)) {
+  for (const k of await opfs.evict("video", keys[n].split("/").slice(0, 2).join("/"))) {
     const i = keys.indexOf(k);
     if (i >= 0) { disk.delete(i); if (!segs.has(i)) state(i, "idle"); }
   }
