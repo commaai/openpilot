@@ -1,11 +1,12 @@
 /* CAN panes (cabana). Colors come only from theme variables. */
 .can-pane { display: flex; flex-direction: column; min-height: 0; font-size: 12px; outline: none; }
+.can-pane:focus-visible, .can-sig-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .can-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .can-spacer { flex: 1; }
 .can-muted { color: var(--muted); }
 .can-notice { padding: 2px 6px; border-bottom: 1px solid var(--line); }
 .can-mono { font-family: var(--mono); }
-.can-error { color: var(--critical); }
+.can-error { color: var(--critical-fg); }
 .can-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .can-btn { height: 20px; padding: 0 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); cursor: pointer; white-space: nowrap; }
 .can-btn:hover:not(:disabled) { border-color: var(--accent); }

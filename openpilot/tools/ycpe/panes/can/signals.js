@@ -66,7 +66,8 @@ export function create(ctx, state) {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
-        h("div", {class: "can-sig-row", onclick: () => { open = open === sg.name ? null : sg.name; build(); }},
+        h("div", {class: "can-sig-row", role: "button", tabindex: 0, "aria-expanded": String(sg.name === open), onclick: () => toggle(sg.name),
+          onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
           swatch, name, spark, v,
           h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈"),
           h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, "✕")),
@@ -78,6 +79,13 @@ export function create(ctx, state) {
     }));
     mux = m.mux?.name;
     ctx.perf.invalidate(pane);
+  }
+
+  // opens or closes a signal's editor; from the keyboard, its row keeps focus
+  function toggle(name, focus = false) {
+    open = open === name ? null : name;
+    build();
+    if (focus) rows.get(name)?.row.firstChild.focus();
   }
 
   const shown = (m) => m.sigs.filter((sg) => sg.name.toLowerCase().includes(filter.toLowerCase()));
