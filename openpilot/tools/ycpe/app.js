@@ -380,7 +380,7 @@ function errorPage(e) {
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
-document.getElementById("app").prepend(topBar());
+document.querySelector("#app > .topbar").replaceWith(topBar());
 window.addEventListener("popstate", render);
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice)
