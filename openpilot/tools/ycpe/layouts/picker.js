@@ -106,8 +106,8 @@ export function layoutPicker({current, apply, close, name = "layout"}) {
       h("button", {onclick: () => download(new Blob([exportLayout(current())], {type: "application/json"}), `${name}.json`)}, "Export"),
       h("button", {title: "Copy a link that opens this page with this layout", onclick: async () => {
         await navigator.clipboard.writeText(shareUrl(current()));
-        status.textContent = "link copied (custom code in it opens untrusted)";
-      }}, "Copy link"),
+        status.textContent = "Link copied: opens this route at the playhead with these tabs. Custom series in it ask before they run.";
+      }}, "Copy link with these tabs"),
       file),
     h("div", {class: "picker-row"}, url, h("button", {onclick: go}, "Open")),
     status,
