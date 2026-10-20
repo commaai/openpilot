@@ -1,0 +1,53 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>tinygrad chat</title><style>
+  * { margin: 0 }
+  body { background: #212121; color: #e3e3e3; font-family: system-ui;
+         height: 100vh; display: flex; flex-direction: column }
+  #chat { flex: 1; overflow-y: auto; padding: 20px }
+  .msg { padding: 10px 16px; margin: 8px 0; white-space: pre-wrap; border-radius: 18px }
+  table { border-collapse: collapse; table-layout: fixed; width: 100%; overflow-wrap: anywhere }
+  th, td { border: 1px solid #555; padding: 6px 10px; text-align: left }
+  a { color: #8ab4f8 } hr { border: 0; border-top: 1px solid #555 }
+  .answer { white-space: normal; line-height: 1.65 } .answer > * { margin: 12px 0 }
+  pre, blockquote { background: #2f2f2f; padding: 12px 16px; border-radius: 8px } pre { white-space: pre-wrap }
+  .user { background: #2f2f2f; margin-left: auto; width: fit-content; max-width: 70% }
+  #input { max-width: 768px; width: 100%; margin: 20px auto; padding: 14px 20px;
+           background: #2f2f2f; color: inherit; font: inherit;
+           border: none; outline: none; resize: none; border-radius: 24px; field-sizing: content }
+</style></head><body><div id="chat"></div>
+<textarea id="input" rows="1" placeholder="Ask anything" autofocus></textarea>
+<script src="/assets/cdn.jsdelivr.net/npm/markdown-it@15.0.1/dist/browser/markdown-it.umd.min.js"></script>
+<script>
+  let generating = false;
+  input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault(); if (generating) return;
+    generating = true; send().finally(() => generating = false);
+  } };
+  const msgs = [];
+  const md = markdownit();
+  async function send() {
+    if (!input.value.trim()) return;
+    msgs.push({role: 'user', content: input.value.trim()});
+    chat.innerHTML += '<div class="msg user">' + input.value.trim().replace(/</g, '&lt;') + '</div>';
+    input.value = '';
+    const d = document.createElement('div'); d.className = 'msg'; chat.appendChild(d);
+    d.innerHTML = '<span style="color:#888"></span><div class="answer"></div>'; const [thinking, answer] = d.children;
+    const r = await fetch('/v1/chat/completions', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'llama', messages: msgs, stream: true, temperature: 0.7})});
+    let buf = '', txt = '', rsn = '';
+    for (const rd = r.body.getReader(), dec = new TextDecoder();;) {
+      const {done, value} = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const ln of lines)
+        if (ln.startsWith('data: ') && !ln.includes('[DONE]')) {
+          const dl = JSON.parse(ln.slice(6)).choices[0]?.delta;
+          if (dl?.reasoning_content) { rsn += dl.reasoning_content; thinking.textContent = rsn }
+          if (dl?.content) { txt += dl.content; answer.innerHTML = md.render(txt) }
+        }
+      chat.scrollTop = chat.scrollHeight;
+    }
+    const m = {role:'assistant', content:txt}; if (rsn) m.reasoning_content = rsn; msgs.push(m);
+  }
+</script></body></html>
