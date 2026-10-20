@@ -123,10 +123,11 @@ function topBar() {
       ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
       : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
   const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
+  const helpBtn = h("button", {class: "tbtn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), themeBtn, account);
+    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), helpBtn, themeBtn, account);
 }
 
 function updateTop() {
@@ -392,7 +393,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
   if (e.key === "?") return help();
-  if (!ws) return;
+  if (!ws || e.target.closest?.("dialog")) return;
   const c = ws.clock, step = e.shiftKey ? 10 : 1;
   const keys = {
     " ": () => c.toggle(),
@@ -415,23 +416,28 @@ document.addEventListener("keydown", (e) => {
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
   ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
-  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"], ["ctrl+z", "undo a layout change (shift: redo)"],
+  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
+  ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
 ];
 const GESTURES = [
+  ["double-click a series", "add it to a plot"], ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"],
+  ["right-drag in a plot", "pan"], ["right-click a plot", "options, custom series, export"], ["double-click a plot", "fit"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
-  ["wheel on the timeline", "zoom the visible range"],
+  ["wheel on the timeline", "zoom the visible range"], ["drop rlog or qlog files on the page", "open them"],
 ];
 
+// a modal: Escape, the close button, a click outside or ? again closes it
 function help() {
-  if (document.querySelector(".help")) return document.querySelector(".help").remove();
+  const open = document.querySelector(".help");
+  if (open) return open.close();
   const keys = (k) => k.split(" ").map((x) => x.split("+").map((y, i) => [i > 0 && "+", h("kbd", {}, y)]));
-  const el = h("div", {class: "help", onclick: () => el.remove()},
-    h("div", {class: "help-card", onclick: (e) => e.stopPropagation()},
-      h("b", {}, "Keyboard and mouse"),
+  const el = h("dialog", {class: "help", "aria-labelledby": "help-title", onclose: () => el.remove(), onclick: (e) => { if (e.target === el) el.close(); }},
+    h("div", {class: "help-card"},
+      h("div", {class: "help-head"}, h("h2", {id: "help-title"}, "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
       h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
         GESTURES.map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
   document.body.append(el);
-  addEventListener("keydown", function off(e) { if (e.key === "Escape") { el.remove(); removeEventListener("keydown", off); } });
+  el.showModal();
 }
 
 // ---- routing ----

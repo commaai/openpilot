@@ -183,8 +183,11 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
 .dock-hint { position: fixed; z-index: 45; border: 2px solid var(--accent); border-radius: 5px; background: var(--loop); pointer-events: none; transition: all .08s ease-out; }
 .tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }
-.help { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); }
-.help-card { min-width: 380px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); box-shadow: var(--shadow); }
+.help { padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+.help::backdrop { background: rgba(0,0,0,.35); }
+.help-card { min-width: 380px; padding: 14px 18px; }
+.help-head { display: flex; justify-content: space-between; align-items: baseline; }
+.help h2 { margin: 0; font-size: 13px; }
 .help dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 10px 0 0; }
 .help dt { text-align: right; white-space: nowrap; }
 .help dd { margin: 0; color: var(--muted); }
