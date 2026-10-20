@@ -1,10 +1,10 @@
 // route info pane: what the route is, its public/preserved toggles, link sharing and bookmarks (files have their own pane)
 import {api, routeEvents} from "/api.js";
 import {h, fmt, css} from "/dom.js";
-import {routeKey} from "/data/sources.js";
+import {parseRemote} from "/data/github.js";
 import {canManage} from "/pages/home.js";
 import {schemaRow} from "./schema.js";
-import {VIEWS} from "/views.js";
+import {shareUrl} from "/layouts/picker.js";
 
 await css(new URL("./routeinfo.css", import.meta.url));
 
@@ -30,7 +30,8 @@ export function create(ctx) {
   const [dongleId] = route.fullname.split("|");
   const start = new Date(route.start_time_utc_millis);
   const commit = route.git_commit?.slice(0, 8);
-  const github = route.git_remote?.includes("github.com") && commit ? `https://${route.git_remote.replace(/\.git$/, "")}/commit/${route.git_commit}` : null;
+  const repo = parseRemote(route.git_remote);  // the device says what its remote is: only a real GitHub repo is linked
+  const github = repo && commit ? `https://github.com/${repo}/commit/${route.git_commit}` : null;
   const schema = schemaRow(ctx);
   const rows = [
     ["route", h("span", {class: "mono"}, route.fullname)],
@@ -45,11 +46,9 @@ export function create(ctx) {
   ];
 
   const copied = h("span", {class: "small muted"});
-  // the view this pane is in, at the playhead
-  const shareUrl = () => {
-    const view = location.pathname.split("/").pop();
-    return `${location.origin}/${routeKey(route).replace("|", "/")}/${VIEWS[view] ? view : "drive"}${clock.t ? `?t=${clock.t.toFixed(1)}` : ""}`;
-  };
+  // the open view at the playhead and zoom; with plots, the Plot view as this browser has it
+  const link = () => location.origin + ctx.url();
+  const plotsLink = () => shareUrl(ctx.layoutOf("plot"), ctx.url("plot"));
   const copy = async (text, what) => {
     await navigator.clipboard.writeText(text);
     copied.textContent = `copied ${what}`;
@@ -72,9 +71,11 @@ export function create(ctx) {
   const el = h("div", {class: "info-pane"},
     h("table", {class: "kv-table"}, rows.filter(([, v]) => v).map(([k, v]) => h("tr", {}, h("th", {}, k), h("td", {}, v)))),
     h("div", {class: "actions"},
-      h("button", {class: "button small", title: "Link to this view of the route at the playhead", onclick: () => copy(shareUrl(), "link")}, "Copy link to this moment"),
+      h("button", {class: "button small", title: "Link to this view of the route at the playhead, zoomed as it is", onclick: () => copy(link(), "link")}, "Copy link to this time"),
+      h("button", {class: "button small", title: "Link to the Plot view at the playhead with your plots (custom series ask before they run)",
+        onclick: () => copy(plotsLink(), "link with your plots")}, "Copy link with my plots"),
       h("button", {class: "button small", onclick: () => copy(route.fullname, "route name")}, "Copy name"),
-      navigator.share && h("button", {class: "button small", onclick: () => navigator.share({title: route.fullname, url: shareUrl()}).catch(() => {})}, "Share"),
+      navigator.share && h("button", {class: "button small", onclick: () => navigator.share({title: route.fullname, url: link()}).catch(() => {})}, "Share"),
       toggles, copied),
     bookmarks);
   return {name: "info", el, render() {}, resize() {}, dispose: schema.dispose, save: () => ({})};

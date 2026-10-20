@@ -144,9 +144,10 @@ export function loadPill() {
       else if (!text.querySelector("svg")) text.replaceChildren(icon("check", 14));
     }
     el.classList.toggle("loaded", !text.textContent);
-    // read out: the playhead waiting, failures, and "ready" once neither is the case anymore
+    // read out: the playhead waiting (on which segment, not each percent or step of it), failures, and "ready" once
+    // neither is the case anymore
     const failed = each.reduce((a, e) => a + e.n.error, 0);
-    const say = waiting ? `buffering ${waiting.label}, ${waiting.buffering.text}` : failed ? `${failed} segment${failed > 1 ? "s" : ""} failed to load`
+    const say = waiting ? `buffering ${waiting.label}, ${waiting.buffering.text.split(" · ")[0]}` : failed ? `${failed} segment${failed > 1 ? "s" : ""} failed to load`
       : spoken && "ready";
     if (say !== spoken) live.textContent = spoken = say;
     const segs = active.flatMap((k) => k.segs.filter((s) => s.state !== "missing" && s.state !== "idle"));
@@ -213,14 +214,16 @@ function statusPanel(anchor, onClose) {
     }
   }
   const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
+  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
+  // however it closes, the document lets go of it
   const close = () => {
+    if (!el.isConnected) return;
     el.remove();
     document.removeEventListener("keydown", escape);
+    document.removeEventListener("pointerdown", outside);
     onClose();
   };
-  setTimeout(() => document.addEventListener("pointerdown", function off(e) {
-    if (!el.contains(e.target) && !anchor.contains(e.target)) { document.removeEventListener("pointerdown", off); if (el.isConnected) close(); }
-  }));
+  setTimeout(() => { if (el.isConnected) document.addEventListener("pointerdown", outside); });  // not the press that opened it
   document.addEventListener("keydown", escape);
   closeBtn.focus();
   update();
