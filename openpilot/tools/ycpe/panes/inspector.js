@@ -1,6 +1,6 @@
-// the inspector: one service's message at the playhead as a tree. It reads the loaded columns until store.message
-// returns whole decoded messages; either way the tree expands lazily, the rows are virtualized at a fixed height,
-// and playback only patches the value cells of the visible rows that changed.
+// the inspector: one service's message at the playhead as a tree, whole from store.message (decoded again from the
+// log), shown from the loaded columns until it arrives. The tree expands lazily, the rows are virtualized at a fixed
+// height, and playback only patches the value cells of the visible rows that changed.
 import {h, css} from "/dom.js";
 
 const ROW = 18;  // px
@@ -12,7 +12,7 @@ export function create(ctx, state) {
   let store = null, tree = null, msg = null, asking = false, lines = [], pool = [], height = 0, top = 0, shown = -1, msgT = NaN;
   const offs = [];
 
-  const picker = h("select", {title: "Service", onchange: (e) => { service = e.target.value; msg = null; build(); }});
+  const picker = h("select", {title: "Service", onchange: (e) => { service = e.target.value; msg = null; build(); ask(); }});
   const when = h("span", {class: "inspector-when"});
   const note = h("div", {class: "inspector-note"});
   const win = h("div", {class: "inspector-window"});
@@ -133,19 +133,17 @@ export function create(ctx, state) {
     }
   }
 
-  // a whole message once the store can decode them; the columns until then
+  // the whole message at the playhead's message time; one request at a time
   async function ask() {
-    if (asking || !store.message) return;
+    if (asking || msgT !== msgT) return;
     asking = true;
-    try {
-      const svc = service, m = await store.message(svc, msgT);
-      if (svc !== service) return;
-      msg = m;
-      flatten();
-      ctx.perf.invalidate(pane);
-    } finally {
-      asking = false;
-    }
+    const svc = service, t = msgT, m = await store.message(svc, t).catch(() => null);
+    asking = false;
+    if (svc !== service) return;
+    msg = m !== null && typeof m !== "object" ? {[svc]: m} : m;  // a text service is one field
+    flatten();
+    ctx.perf.invalidate(pane);
+    if (msgT !== t) ask();  // the playhead moved on meanwhile
   }
 
   function onclick(e) {
