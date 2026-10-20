@@ -1,7 +1,7 @@
 // the route info row for the schema the logs are read with (data/schemas.js): what's in use, why, and the choice
-import {h, css} from "../dom.js";
-import {logSchema, localRepos, repoLabel} from "../data/schemas.js";
-import {needsDaemon} from "../daemon.js";
+import {h, css} from "/dom.js";
+import {logSchema, localRepos, repoLabel} from "/data/schemas.js";
+import {needsDaemon} from "/daemon.js";
 
 await css(new URL("./schema.css", import.meta.url));
 

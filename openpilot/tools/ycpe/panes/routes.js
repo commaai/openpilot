@@ -1,14 +1,15 @@
 // the device's drives as a dense list; clicking one swaps the route under the current view
-import {api} from "/api.js";
+import {api, auth} from "/api.js";
 import {h, fmt} from "/dom.js";
 
-const DAY = 86400000;
+const DAY = 86400000, LIMIT = 50;
 
 export function create(ctx) {
   const dongle = ctx.route.dongle_id || ctx.route.fullname.split("|")[0];
   const list = h("div", {class: "route-list"});
   const more = h("button", {class: "link more", onclick: () => load()}, "older drives");
-  const el = h("div", {class: "routes-pane"}, list, more);
+  const failed = h("p", {class: "error center small", hidden: true});
+  const el = h("div", {class: "routes-pane"}, list, failed, more);
   let end = Math.ceil(Date.now() / 3600000) * 3600000;
   const seen = new Set();
 
@@ -30,21 +31,32 @@ export function create(ctx) {
     list.append(row(ctx.route, " · this drive"));
   }
 
+  // the device's list isn't visible (a public route opened signed out, or a device not shared with us): just this one
+  const alone = (why) => {
+    if (!pinned) list.append(row(ctx.route));
+    list.append(h("p", {class: "muted center small"}, why));
+    more.hidden = true;
+  };
+
+  // windows of 14 days back from `end`; a full window ends at its oldest drive, so the next one picks up there
   async function load() {
+    if (!auth.isAuthenticated()) return alone("Sign in to see this device's other drives.");
     more.disabled = true;
-    for (let tries = 0; tries < 6; tries++) {
-      const start = end - 14 * DAY;
-      const routes = await api.routes(dongle, start, end).catch(() => []);
-      end = start;
-      const fresh = routes.filter((r) => !seen.has(r.fullname));
-      for (const r of fresh) { seen.add(r.fullname); api.route.prime(r, r.fullname); }
-      list.append(...fresh.map((r) => row(r)));
-      if (fresh.length) break;
-    }
-    // a public route opened signed out: the device's list isn't visible, so show just this one
-    if (list.children.length === +pinned) {
-      if (!pinned) list.append(row(ctx.route));
-      list.append(h("p", {class: "muted center small"}, "Sign in to see this device's other drives."));
+    failed.hidden = true;
+    try {
+      for (let tries = 0; tries < 6; tries++) {
+        const start = end - 14 * DAY;
+        const routes = await api.routes(dongle, start, end, LIMIT);
+        end = routes.length === LIMIT ? Math.min(...routes.map((r) => r.start_time_utc_millis)) : start;
+        const fresh = routes.filter((r) => !seen.has(r.fullname));
+        for (const r of fresh) { seen.add(r.fullname); api.route.prime(r, r.fullname); }
+        list.append(...fresh.map((r) => row(r)));
+        if (fresh.length) break;
+      }
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) return alone("This device's other drives aren't shared with you.");
+      failed.replaceChildren(`Couldn't load drives: ${err.message} `, h("button", {class: "link", onclick: () => load()}, "Retry"));
+      failed.hidden = false;
     }
     more.disabled = false;
   }

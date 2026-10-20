@@ -21,8 +21,6 @@ export function clear(el) {
 }
 
 export const fmt = {
-  date: (ms) => new Date(ms).toLocaleString(undefined, {dateStyle: "medium", timeStyle: "short"}),
-  time: (ms) => new Date(ms).toLocaleTimeString(undefined, {timeStyle: "short"}),
   ago(unixSeconds) {
     if (!unixSeconds) return "never";
     const s = Date.now() / 1000 - unixSeconds;
@@ -34,9 +32,14 @@ export const fmt = {
     const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m ${String(s).padStart(2, "0")}s`;
   },
-  clock(sec) {
-    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-    return `${m}:${String(s).padStart(2, "0")}`;
+  // a time on the route: "1:15:03", or "1:15:03.25" withMs
+  clock(s, withMs = false) {
+    s = withMs ? Math.round(s * 100) / 100 : Math.trunc(s);  // to what's shown first: no "1:60.00" or "-0:00.00"
+    const sign = s < 0 ? "-" : "";
+    s = Math.abs(s);
+    const hr = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60;
+    const ss = withMs ? sec.toFixed(2).padStart(5, "0") : String(sec).padStart(2, "0");
+    return `${sign}${hr ? `${hr}:${String(m).padStart(2, "0")}` : m}:${ss}`;
   },
   miles: (mi) => `${mi.toFixed(1)} mi`,
 };

@@ -17,43 +17,54 @@ void main() {
   color = vec4(y + 1.596 * v, y - .391 * u - .813 * v, y + 2.018 * u, 1);
 }`;
 
-// restored() runs once a lost context (a GPU process reset) is back, to draw the frame again
+// restored() runs once a lost context (a GPU process reset) is back, to draw the frame again. The program links in
+// the background (KHR_parallel_shader_compile): anything that waits on it would block the main thread for 100-200 ms
+// on a cold shader cache, so draw() returns false until it's linked, and the caller tries again next frame.
 export function frameRenderer(canvas, restored) {
   const gl = canvas.getContext("webgl2", {alpha: false, antialias: false, depth: false});
-  let yuv, size = "";
+  let prog, linked, yuv, size = "", parallel;
   canvas.addEventListener("webglcontextlost", (e) => e.preventDefault());
   canvas.addEventListener("webglcontextrestored", () => { setup(); restored(); });
   setup();
 
   function setup() {
-    const prog = gl.createProgram();
+    parallel = gl.getExtension("KHR_parallel_shader_compile");
+    prog = gl.createProgram();
+    linked = false;
     for (const [type, src] of [[gl.VERTEX_SHADER, VERT], [gl.FRAGMENT_SHADER, FRAG]]) {
       const s = gl.createShader(type);
       gl.shaderSource(s, src);
       gl.compileShader(s);
       gl.attachShader(prog, s);
     }
+    gl.bindAttribLocation(prog, 0, "p");
     gl.linkProgram(prog);
-    gl.useProgram(prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    ["ty", "tu", "tv"].forEach((name, i) => {
+    for (let i = 0; i < 3; i++) {
       gl.activeTexture(gl.TEXTURE0 + i);
       gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.uniform1i(gl.getUniformLocation(prog, name), i);
-    });
-    yuv = gl.getUniformLocation(prog, "yuv");
+    }
     size = "";  // new textures need allocating
   }
 
-  // frame: a VideoFrame, or {width, height, data} with tightly packed I420 planes
+  function link() {
+    if (parallel && !gl.getProgramParameter(prog, parallel.COMPLETION_STATUS_KHR)) return false;
+    gl.useProgram(prog);
+    ["ty", "tu", "tv"].forEach((name, i) => gl.uniform1i(gl.getUniformLocation(prog, name), i));
+    yuv = gl.getUniformLocation(prog, "yuv");
+    return linked = true;
+  }
+
+  // frame: a VideoFrame, or {width, height, data} with tightly packed I420 planes; false while the program links
   return function draw(frame) {
+    if (!linked && !link()) return false;
     const w = frame.displayWidth ?? frame.width, h = frame.displayHeight ?? frame.height;
     const resized = size !== `${w}x${h}`;
     if (resized) [canvas.width, canvas.height, size] = [w, h, `${w}x${h}`];
@@ -72,5 +83,6 @@ export function frameRenderer(canvas, restored) {
     }
     gl.uniform1i(yuv, frame.data ? 1 : 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    return true;
   };
 }
