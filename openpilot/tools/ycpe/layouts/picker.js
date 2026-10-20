@@ -19,11 +19,19 @@ const refUrl = (tool, name) => `${REFS}/${tool}/layouts/${name}.${tool === "jotp
 
 // src: a File, a URL, or the layout text itself (as ?layout= may hold either) → {layout, warnings}
 export async function loadLayout(src) {
-  if (src instanceof Blob) return importLayout(await src.text());
+  if (src instanceof Blob) return named(importLayout(await src.text()), src.name);
   if (/^\s*[{<]/.test(src)) return importLayout(src);
   const r = await fetch(src);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return importLayout(await r.text());
+  return named(importLayout(await r.text()), new URL(src, location.href).pathname.split("/").pop());
+}
+
+// tabs with generic names ("tab1") are named after the layout's file instead
+function named(opened, file) {
+  const base = file?.replace(/\.(json|xml)$/i, "");
+  const generic = opened.layout.tabs.filter((t) => !t.name || /^tab\s*\d*$/i.test(t.name));
+  if (base) generic.forEach((t, i) => { t.name = generic.length > 1 ? `${base} ${i + 1}` : base; });
+  return opened;
 }
 
 // the view's model with an opened one: its tabs added after the view's own (the first selected), or instead of them
