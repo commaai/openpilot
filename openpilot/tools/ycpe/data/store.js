@@ -52,6 +52,7 @@ export class Store {
     this.missing = new Set();  // migrated paths that couldn't be computed
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
+    this.listed = null;  // what paths() has listed (see there)
     this.schema = null;  // the log's own schema ({key, text}, see schemas.js) or null for the bundled one
     this.gen = 0;  // bumped with every schema change; packs carry the generation they were parsed with
     this.unknown = {events: 0, services: new Set()};  // what the reads so far didn't know (capnp.js)
@@ -119,6 +120,7 @@ export class Store {
     this.schema = schema;
     this.gen++;
     this.enums = [];
+    this.listed = null;
     for (const e of this.entries.values()) if (e.evicted) this.entries.delete(e.path);
     this.evicted.clear();
     this.emit("schema", schema);
@@ -152,7 +154,10 @@ export class Store {
       e.version++;
       if (!e.at.some(Boolean)) removed = this.entries.delete(e.path);
     }
-    if (removed) this.emit("paths");
+    if (removed) {
+      this.listed = null;
+      this.emit("paths");
+    }
   }
 
   // outward from the focus segment
@@ -316,9 +321,11 @@ export class Store {
         e = {path: paths[k], type: p.types[k], ...(names && {names}), at: [], views: [], version: 0, used: 0};
         this.entries.set(paths[k], e);
         added = true;
+        if (this.listOf(e.path)) this.listed = null;  // listed as an index of a long list until now
       } else if (fresh && (e.type !== p.types[k] || String(e.names) !== String(names))) {
         e.type = p.types[k];  // another schema can type or name a path differently
         e.names = names;
+        this.listed = null;
       }
       if (e.evicted) continue;  // not resident until asked for again
       if (e.at[seg.n]) this.release(e.at[seg.n]);
@@ -350,20 +357,37 @@ export class Store {
     perf.mark("ingest", `${ms.toFixed(1)} ms (max ${this.progress.ingestMax.toFixed(1)})`);
   }
 
+  // every path as {path, type, names?, internal?, lazy?}: the same array from call to call while paths are only
+  // added, with the new ones appended; a new one once any goes or changes (the browser keeps its place in it)
   paths() {
-    const out = this.can.paths();
+    if (this.listed?.dbc !== this.can.dbcVersion) this.listed = null;
+    const l = this.listed ||= {out: [], dbc: this.can.dbcVersion, can: 0, entries: 0, lists: new Map(), overlays: new Map()};
+    const {out} = l, can = this.can.paths();
+    for (; l.can < can.length; l.can++) out.push(can[l.can]);
+    let k = 0;
     for (const {path, type, names} of this.entries.values()) {
+      if (k++ < l.entries) continue;  // entries keep their order
       out.push(names ? {path, type, names} : {path, type});
-      const mono = path.match(/^(\/[^/]+)\/_?valid$/);  // every service has one
+      const mono = path.match(/^(\/[^/]+)\/valid$/);  // every service has one (and _valid only next to a field named valid)
       if (mono) out.push({path: `${mono[1]}/${MONO}`, type: "f64", internal: true});
     }
+    l.entries = k;
     // the indexes of skipped long lists of values, loaded once plotted
     for (const [list, n] of this.lists) {
       const type = this.listTypes.get(list);
       if (!type || type === "s" || type === "l") continue;
-      for (let i = 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
+      for (let i = l.lists.get(list) || 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
+      l.lists.set(list, n);
     }
-    for (const o of this.overlays) for (const p of o.store.paths()) out.push({...p, path: o.prefix + p.path});
+    for (const o of this.overlays) {
+      const theirs = o.store.paths(), [seen, from] = l.overlays.get(o.prefix) || [theirs, 0];
+      if (seen !== theirs) {  // its paths went or changed
+        this.listed = null;
+        return this.paths();
+      }
+      for (let i = from; i < theirs.length; i++) out.push({...theirs[i], path: o.prefix + theirs[i].path});
+      l.overlays.set(o.prefix, [theirs, theirs.length]);
+    }
     return out;
   }
 
@@ -626,6 +650,7 @@ export class Store {
     this.overlays.splice(this.overlays.indexOf(o), 1);
     for (const off of o.offs) off();
     o.store.dispose();
+    this.listed = null;
     this.emit("paths");
   }
 
