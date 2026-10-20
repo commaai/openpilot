@@ -31,6 +31,8 @@ export function create(ctx, state = {}) {
     store.on("segment", () => { timer ||= setTimeout(() => { timer = 0; refresh(); }, SEGMENT_WAIT); }),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     store.can?.on("series", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
+    // a new version of a custom series or a transform
+    store.on("put", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
   ].filter(Boolean);
 
   const inputs = (c) => st.mode === "fft" ? [c.path] : [c.x, c.y];
@@ -41,6 +43,7 @@ export function create(ctx, state = {}) {
     stale = true;
     if (busy) return;
     const curves = st.curves.filter((c) => inputs(c).every((p) => store.series(p)));
+    showHint(st.curves.some((c) => inputs(c).some((p) => p.startsWith("/custom/") && !store.series(p))));
     if (!curves.length) { results = []; invalidate(); return; }
     busy = true;
     stale = false;
@@ -68,9 +71,15 @@ export function create(ctx, state = {}) {
       h("i", {style: `background:${c.color}`}), h("span", {class: "name", title: name(c)}, h("bdi", {}, name(c))), h("span"),
       h("b", {class: "x", title: "remove", onclick: () => { st.curves.splice(st.curves.indexOf(c), 1); rebuild(); refresh(); }}, "×"))));
     legend.hidden = !st.curves.length;
-    hint.hidden = st.curves.length && !pendingX;
-    hint.textContent = st.mode === "fft" ? "drop series for their spectrum over the visible range"
-      : pendingX ? `x = ${pendingX}, now drop the y series` : "drop an x series, then a y series (or two at once)";
+    showHint(false);
+  }
+
+  // what to drop next, or that a custom series isn't there: they're computed by the time plots that show them
+  function showHint(uncomputed) {
+    hint.hidden = st.curves.length && !pendingX && !uncomputed;
+    hint.textContent = uncomputed ? "custom series not computed: add it to a time plot"
+      : st.mode === "fft" ? "drop series for their spectrum over the visible range"
+        : pendingX ? `x = ${pendingX}, now drop the y series` : "drop an x series, then a y series (or two at once)";
   }
 
   // data bounds with 5% padding, widened to equal units per pixel when asked
