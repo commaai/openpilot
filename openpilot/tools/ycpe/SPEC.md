@@ -149,14 +149,15 @@ v1.1, below.
 ## Live (v1.1)
 
 Everything the route views do, on data arriving now: plot, CAN, logs, inspector and video follow a live edge.
-Four sources, one sink:
+Devices speak one transport, WebRTC, for live data and for their logs: the cloud only signals (athena
+startStream), and the data flows peer to peer. No ZMQ bridge.
 
-| URL | Source | Needs | Data |
+| URL | Source | Signaling | Data |
 |---|---|---|---|
-| `/live/local` | the daemon subscribes to msgq on this PC (openpilot, sim, tools/replay) | daemon | every service |
-| `/live/device/<host>` | the daemon subscribes over ZMQ to a device on the LAN running `cereal/messaging/bridge` (as cabana's device stream) | daemon | every service |
-| `/live/panda` | WebUSB to a panda (Chrome desktop and Android), receive only: never sends CAN or changes the safety mode | nothing | CAN, panda health |
-| `/<dongle>/live` | athena `startStream` (WebRTC, as connect's livestream): works anywhere, on a phone | sign-in | wide camera, carState, deviceState (JSON) |
+| `/<dongle>/live` | the device's webrtcd | athena startStream | camera tracks + cereal services |
+| `/live/local` | a webrtcd on this PC (openpilot, sim, tools/replay) | the daemon forwards the offer to 127.0.0.1:5001 | same |
+| `/live/panda` | WebUSB to a panda (Chrome desktop and Android), receive only: never sends CAN or changes the safety mode | none | CAN, panda health |
+| any route | device logs peer to peer: when the device is online, its segments' files come over WebRTC (a source in data/sources.js beside the API) | athena startStream | rlog, qlog, cameras |
 
 A route opened live is a store whose last slot grows. Sources hand the sink what they have; the core turns it into
 columns. Times are route seconds from the first event's logMonoTime, as for logs. A session keeps the last 30
@@ -167,7 +168,7 @@ minutes (or the memory budget) and can be saved as an rlog at any time.
 source = {kind, label, start(sink), stop(), state /* connecting | live | error | closed */, detail, on("state", fn)}
 sink = {
   events(bytes),                          // Uint8Array of whole capnp Events, rlog framing; any batch size
-  json(service, logMonoTime, valid, data),// a cereal message as webrtcd's to_json sends it
+  json(service, logMonoTime, valid, data),// a cereal message as webrtcd's to_json sends it (stock devices)
   video(camera, track),                   // a MediaStreamTrack for qcamera|fcamera|ecamera|dcamera
 }
 // clock: live sessions add clock.live (true), clock.follow (playhead and range track the newest time;
@@ -175,12 +176,26 @@ sink = {
 // data/live/encode.js: Event writer for sources that don't have capnp bytes (panda CAN frames, panda health)
 ```
 
+**Device protocol (track L2, openpilot system/webrtc + athenad; stock clients keep working).** The offer's
+request gains optional fields; a device without them answers as today (JSON carState/deviceState on "data"):
+
+```
+startStream(sdp, enabled, services?: [name], cameras?: [road|wideRoad|driver], files?: bool)
+data channel "data"    unchanged: JSON {type, logMonoTime, valid, data}, and the existing ping/pong/disconnect
+data channel "cereal"  binary, device → browser: one capnp Event per message, exactly as logged, for `services`
+data channel "files"   request/response, read-only, confined to the log root:
+  → {id, op: "list"}                              ← {id, routes: [{name, segments: [{n, files: {name: size}}]}]}
+  → {id, op: "read", path: "<route>--<n>/<file>", offset?, length?}
+  ← {id, size} then binary chunks (8-byte id + offset header, ≤64 KB), ← {id, done} | {id, error}
+  flow control on bufferedAmount; one read streams at a time per channel; cancel: → {id, op: "cancel"}
+```
+
 Tracks (worktrees, branches `ycpe-live-<key>`): **L1 core** (data/live.js, store append and ring buffer, worker
-append, clock follow, playbar live edge, the /live pages and source picker, save as rlog, and an in-browser paced
-replay source for the harness), **L2 daemon** (daemon/live.py: msgq, ZMQ device and paced-rlog sources, streamed
-over one framed binary response; data/live/daemon.js), **L3 panda** (data/live/panda.js and encode.js: the USB
-protocol ported from panda's Python library), **L4 athena** (data/live/webrtc.js: startStream offer/answer, data
-channel to sink.json, video track to the camera pane).
+append, clock follow, playbar live edge, the /live pages, save as rlog, an in-browser paced replay source for the
+harness), **L2 device** (the protocol above in webrtcd/athenad, with tests; its own commits so it can go to master
+as a separate PR), **L3 browser WebRTC** (data/live/webrtc.js for live, the P2P log source in data/sources.js,
+the daemon's signaling forward for /live/local, startStream in the relay allowlist), **L4 panda**
+(data/live/panda.js and encode.js: the USB protocol ported from panda's Python library).
 
 ## How the work is organized
 
