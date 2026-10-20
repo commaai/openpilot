@@ -81,6 +81,16 @@ timestamps.
       of a kind, the upload queue with cancel, and an offline notice when the device can't be reached.
 - [ ] Moving from any route view into plot or CAN keeps the same route, time and selection. Bookmarks
       (user flags) appear on the timeline.
+- [ ] Account: developer page with your JWT (masked, copy, expiry), "last used" sign-in badge, `?r=` and
+      `?next=` returns, account menu with user id and app version, search by your id/email/username,
+      installable app (manifest, icons, iOS prompt), referrals.
+- [ ] Devices: pretty type names, imei and uploads-ignored, public key, preserve from the drive list, drive
+      platform/git/segments/upload time, date range filter, battery voltage, snapshot (pre-0.11.2), metric
+      units by locale, an interactive location map (address, open in maps, your location), demo device.
+- [ ] Routes: qcamera audio with mute, setRouteViewed for owners, back steps out one zoom level, upload all
+      logs/files in the zoomed range, copy segment name, public confirmation and preserve-limit explanations,
+      every user-visible v1/route field.
+- [ ] Live stream: quality setting, screenshot, stats bar (fps, bitrate, rtt, loss), 1/2 camera keys.
 
 ### Plotting (jotpluggler + PlotJuggler)
 - [ ] Series browser: a tree of every path, filter/regex, values at the playhead, hiding of deprecated
