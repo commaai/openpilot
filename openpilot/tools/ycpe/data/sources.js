@@ -204,15 +204,54 @@ export async function resolveLogs(sr, segs, {sources = "auto", mode = sr.selecto
   return {logs, missing: need, errors};
 }
 
-// what the store loads for a route (a name, optionally with a range and selector), from the route's chosen source:
-// urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
-export async function routeLogs(name) {
+// the record a workspace opens a route with: the API's, or when the API doesn't have the route or won't show it, one
+// built from what the other sources have (openpilotci, commaCarSegments, ...), so those open without signing in
+export async function routeRecord(name) {
+  try {
+    return await api.route(name);
+  } catch (e) {
+    if (![401, 403, 404].includes(e.status)) throw e;
+    const files = await elsewhere(parseRange(name)).catch(() => new Map());
+    if (!files.size) throw e;
+    return looseRoute(name, files).route;
+  }
+}
+
+// every file of a route the sources other than the API have: "<n>/<kind>" → {url, file, size, source}
+async function elsewhere(sr) {
+  const served = daemon.sources();
+  if (served) {
+    const r = await daemon.resolve(sr, undefined, Object.keys(KINDS), served.filter((s) => s !== "api"));
+    return new Map(Object.entries(r.segments).flatMap(([n, byKind]) => Object.entries(byKind).map(([kind, f]) => [`${n}/${kind}`, f])));
+  }
+  const segs = [...new Set([...(await ccsTree(sr)).keys()].map((k) => +k.split("/")[0]))];
+  return (await resolveFiles(sr, segs, Object.keys(KINDS), ["carSegments"])).found;
+}
+
+// what the store loads for a route (a name, optionally with a range and selector) given its record (or the promise
+// of it), from the route's chosen source: urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
+export async function routeLogs(name, record) {
+  const route = await record;
+  if (route.loose) return looseLogs(route.files);
   const sr = parseRange(name);
-  const route = await api.route(sr.route).catch(() => null);
-  const {logs, errors} = await resolveLogs(sr, segIdxs(sr, route?.maxqlog), {sources: routeSource.list(routeSource.get(sr.route))});
+  const {logs, errors} = await resolveLogs(sr, segIdxs(sr, route.maxqlog), {sources: routeSource.list(routeSource.get(sr.route))});
   if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
   const urls = [];
   for (const [n, f] of logs) urls[n] = f;
+  return urls;
+}
+
+// a camera's file for each segment (camera: qcamera, fcamera, ecamera or dcamera), from the route's chosen source or
+// the files a loose route came with: urls[n] = {url, file, size, source}
+export async function routeCameraFiles(route, camera) {
+  const urls = [];
+  if (route.loose) {
+    for (const [key, f] of route.files) if (key.endsWith(`/${camera}`)) urls[parseInt(key)] = f;
+    return urls;
+  }
+  const sr = parseRange(route.fullname);
+  const {found} = await resolveFiles(sr, segIdxs(sr, route.maxqlog), [camera], routeSource.list(routeSource.get(sr.route)));
+  for (const [key, f] of found) urls[parseInt(key)] = f;
   return urls;
 }
 
@@ -223,18 +262,23 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
 // an API-shaped route record for files found outside the API, so a workspace can open them. files: Map "<n>/<kind>"
 // → {url, file, size, source}; the record carries them (route.files) and the store gets each segment's log.
 function looseRoute(name, files) {
-  const urls = [];
-  for (const [key, f] of files) {
-    const [n, kind] = key.split("/");
-    if (kind === "rlog" || kind === "qlog" && urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
-  }
   const ns = [...new Set([...files.keys()].map((k) => +k.split("/")[0]))].sort((a, b) => a - b);
   const t0 = Date.parse(name.split("|")[1].replace(/^(\d{4}-\d\d-\d\d)--(\d\d)-(\d\d)-(\d\d)$/, "$1T$2:$3:$4")) || 0;  // timestamp log ids only
   return {
     route: {fullname: name, dongle_id: name.split("|")[0], maxqlog: ns.at(-1), segment_numbers: ns, files, loose: true,
       start_time_utc_millis: t0, end_time_utc_millis: t0 + 60000 * (ns.at(-1) + 1)},
-    urls,
+    urls: looseLogs(files),
   };
+}
+
+// each segment's rlog, or its qlog when that's all there is
+function looseLogs(files) {
+  const urls = [];
+  for (const [key, f] of files) {
+    const [n, kind] = key.split("/");
+    if (kind === "rlog" || kind === "qlog" && urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
+  }
+  return urls;
 }
 
 // where a file belongs, from its path or URL: "<route>--<seg>--<file>" (explorer), "<dongle>/<log id>/<seg>/<file>",
