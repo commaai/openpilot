@@ -1,0 +1,15 @@
+{"name": "local-drop", "url": "/", "timeout": 60000,
+ "steps": [
+  {"eval": "fetch('https://api.commadotai.com/v1/route/5beb9b58bd12b691|0000010a--a51155e496/files').then((r) => r.json()).then((f) => fetch(f.logs[0])).then((r) => r.blob()).then((b) => { const dt = new DataTransfer(); dt.items.add(new File([b], '0000010a--a51155e496--0--rlog.zst')); document.body.dispatchEvent(new DragEvent('drop', {dataTransfer: dt, bubbles: true, cancelable: true})); })"},
+  {"waitFor": {"fn": "location.pathname.startsWith('/local/')"}},
+  {"waitFor": {"fn": "import('/status.js').then((m) => m.status.kinds().find((k) => k.name === 'logs')?.segs[0]?.state === 'ready')"}},
+  {"fill": [".browser .filter", "carState/aEgo"]},
+  {"waitFor": ".browser .row:has-text('aEgo')"},
+  {"click": ".browser .row:has-text('aEgo')"},
+  {"assert": "document.querySelector('.browser .row').draggable || `series rows can't be dragged: ${document.querySelector('.browser .row').outerHTML.match(/draggable=\"[^\"]*\"/)}`"},
+  {"dragTo":[".browser .row:has-text('aEgo')", ".plot-pane"]},
+  {"waitFor": {"fn": "/aEgo/.test(document.querySelector('.plot-pane')?.textContent)"}, "timeout": 5000},
+  {"shot": "plotted"},
+  {"wait": 3000},
+  {"assert": "!document.querySelector('.load-pill.buffering') || `a dropped rlog alone still shows ${document.querySelector('.load-pill').textContent}`"}
+ ]}
