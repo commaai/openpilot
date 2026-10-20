@@ -2,7 +2,7 @@
 // a playhead marker, click to seek). The trace comes from coords.json, or from the store's GPS once it's loaded.
 import {MAPBOX_TOKEN} from "../geocode.js";
 import {routeCoords, routeEvents} from "../api.js";
-import {h} from "../dom.js";
+import {h, css} from "../dom.js";
 import {theme} from "../theme.js";
 
 const STYLES = {dark: "mapbox://styles/commaai/cjj4yzqk201c52ss60ebmow0w", light: "mapbox://styles/mapbox/light-v10"};
@@ -65,6 +65,7 @@ function nearest(points, t) {
 }
 
 export function create(ctx) {
+  css(new URL("./map.css", import.meta.url));
   const {clock, route, perf} = ctx;
   const empty = h("p", {class: "map-empty muted", hidden: true}, "No GPS for this route");
   const el = h("div", {class: "map-pane"}, empty);

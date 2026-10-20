@@ -2,6 +2,7 @@
 import {api, engagedFraction, routeEvents} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {isOnline, link} from "../app.js";
+import {perf} from "../perf.js";
 import {reverseLookup} from "../geocode.js";
 import {deviceMap} from "../panes/map.js";
 import {deviceName} from "./home.js";
@@ -10,7 +11,7 @@ import {logsSection} from "./logs.js";
 
 const DAY = 86400000, HOUR = 3600000;
 const WINDOW = 14 * DAY, LIMIT = 50;
-const THUMB_W = 24;  // 18 px tall sprite thumbnails, 4:3
+const THUMBS = 16;  // sprite thumbnails per strip
 
 // the first window ends at the next hour boundary so prefetch and page share a cache key
 const firstWindowEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
@@ -31,64 +32,77 @@ function segmentAt(r, ms) {
   return n;
 }
 
-// engagement spans over sprite thumbnails, filled in when the row nears the viewport
-function strip(r, onSpans) {
+// engagement spans over sprite thumbnails, filled in when the row nears the viewport. One observer for every
+// strip, and a fixed thumbnail count, so filling one never reads layout.
+const fillers = new WeakMap();
+const queue = [];
+let draining = null;
+const nearby = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (!e.isIntersecting) continue;
+    nearby.unobserve(e.target);
+    queue.push(fillers.get(e.target));
+  }
+  // a few strips per frame, so a fast scroll through hundreds of drives stays smooth
+  draining ??= perf.tick(() => {
+    for (const fill of queue.splice(0, 3)) fill();
+    if (!queue.length) { draining(); draining = null; }
+  });
+}, {rootMargin: "400px"});
+
+function strip(r, onSpans, onVisible) {
   const spans = h("div", {class: "strip-spans"});
   const thumbs = h("div", {class: "strip-thumbs"});
-  const el = h("div", {class: "strip"}, spans, thumbs);
-  const io = new IntersectionObserver((entries) => {
-    if (!entries.some((e) => e.isIntersecting)) return;
-    io.disconnect();
-    const d = duration(r), n = Math.max(1, Math.floor(thumbs.clientWidth / THUMB_W));
-    const urls = Array.from({length: n}, (_, i) => api.segmentAsset(r, segmentAt(r, (i + 0.5) / n * d), "sprite.jpg"));
-    thumbs.replaceChildren(...urls.map((u) => h("span", {style: `background-image:url(${u})`})));
+  const el = h("div", {class: "strip"}, thumbs, spans);
+  fillers.set(el, () => {
+    onVisible();
+    const d = duration(r);
+    thumbs.replaceChildren(...Array.from({length: THUMBS}, (_, i) =>
+      h("span", {style: `background-image:url(${api.segmentAsset(r, segmentAt(r, (i + 0.5) / THUMBS * d), "sprite.jpg")})`})));
     routeEvents(r).then((list) => {
       const pct = (ms) => `${(100 * ms / d).toFixed(2)}%`;
       spans.replaceChildren(...list.map((s) => h("span", {class: s.kind, style: `left:${pct(s.start)};width:${pct(Math.max(s.end - s.start, d / 500))}`})));
       onSpans(list);
     }).catch(() => {});
-  }, {rootMargin: "400px"});
-  io.observe(el);
+  });
+  nearby.observe(el);
   return el;
 }
 
-function place(lng, lat) {
-  const el = h("span", {}, "–");
+function place(el, lng, lat) {
   reverseLookup(lng, lat).then((loc) => {
     if (!loc) return;
     el.textContent = loc.place || loc.details;
     el.title = [loc.place, loc.details].filter(Boolean).join(", ");
   });
-  return el;
 }
+
+const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
+const DAY_FMT = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "short", day: "numeric"});
+const OLD_DAY_FMT = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"});
 
 function driveRow(r) {
   const path = `/${r.fullname.replace("|", "/")}`;
   const start = new Date(r.start_time_utc_millis);
-  const engaged = h("td", {class: "num"}, "");
-  const hm = (d) => d.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
-  return h("tr", {class: "clickable", onclick: (e) => { if (!e.target.closest("a")) link(path)(e); }},
-    h("td", {class: "nowrap"}, h("a", {href: path, onclick: link(path)},
-      start.toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric",
-        ...(start.getFullYear() === new Date().getFullYear() ? {} : {year: "numeric"})})),
-      h("span", {class: "muted"}, ` ${hm(start)}–${hm(new Date(r.end_time_utc_millis))}`)),
-    h("td", {class: "num"}, fmt.minutes(duration(r))),
-    h("td", {class: "num"}, fmt.miles(r.distance ?? 0)),
+  const engaged = h("span", {class: "num"});
+  const from = h("span", {}, "–"), to = h("span", {}, "–");
+  return h("a", {class: "drive-row", href: path, onclick: link(path)},
+    h("span", {}, h("b", {}, (start.getFullYear() === new Date().getFullYear() ? DAY_FMT : OLD_DAY_FMT).format(start)),
+      h("span", {class: "muted"}, ` ${HM.format(start)}–${HM.format(r.end_time_utc_millis)}`)),
+    h("span", {class: "num"}, fmt.minutes(duration(r))),
+    h("span", {class: "num"}, fmt.miles(r.distance ?? 0)),
     engaged,
-    h("td", {class: "places"}, place(r.start_lng, r.start_lat), h("span", {class: "muted"}, " → "), place(r.end_lng, r.end_lat)),
-    h("td", {class: "strip-cell"}, strip(r, (spans) => { engaged.textContent = `${Math.round(100 * engagedFraction(spans, duration(r)))}%`; })),
-    h("td", {class: "muted small nowrap"}, r.version || ""));
+    h("span", {}, from, h("span", {class: "muted"}, " → "), to),
+    strip(r, (spans) => { engaged.textContent = `${Math.round(100 * engagedFraction(spans, duration(r)))}%`; },
+      () => { place(from, r.start_lng, r.start_lat); place(to, r.end_lng, r.end_lat); }),
+    h("span", {class: "muted"}, r.version || ""));
 }
 
-function drivesTable(rows) {
-  return h("table", {class: "list drives"},
-    h("thead", {}, h("tr", {}, ["drive", "time", "distance", "engaged", "from → to", "timeline", "version"].map((c) => h("th", {}, c)))),
-    rows);
-}
+const drivesHead = () => h("div", {class: "drive-row head"}, ["drive", "time", "distance", "engaged", "from → to", "timeline", "version"].map((c) => h("span", {}, c)));
 
 // newest first, a window at a time; a full window continues from its oldest drive
 function drivesSection(dongleId) {
-  const body = h("tbody");
+  const body = h("div", {class: "drives"});
   const more = h("button", {class: "button", onclick: loadMore}, "Older drives");
   const status = h("p", {class: "muted small"});
   let end = firstWindowEnd();
@@ -110,7 +124,7 @@ function drivesSection(dongleId) {
     status.textContent = `${body.children.length} drives since ${new Date(end).toLocaleDateString()}`;
   }
   loadMore();
-  return h("div", {}, drivesTable(body), h("div", {class: "list-foot"}, status, more));
+  return h("div", {}, drivesHead(), body, h("div", {class: "list-foot"}, status, more));
 }
 
 function preservedSection(dongleId) {
@@ -120,7 +134,7 @@ function preservedSection(dongleId) {
       r.start_time_utc_millis ??= Date.parse(r.start_time + "Z");
       r.end_time_utc_millis ??= Date.parse(r.end_time + "Z");
     }
-    el.replaceChildren(routes.length ? drivesTable(h("tbody", {}, routes.map(driveRow))) : h("p", {class: "muted"}, "No preserved drives."));
+    el.replaceChildren(...routes.length ? [drivesHead(), h("div", {class: "drives"}, routes.map(driveRow))] : [h("p", {class: "muted"}, "No preserved drives.")]);
   }).catch((err) => el.replaceChildren(h("p", {class: "error"}, err.message)));
   return el;
 }

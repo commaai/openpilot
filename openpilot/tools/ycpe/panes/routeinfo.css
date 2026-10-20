@@ -1,0 +1,21 @@
+/* route info pane: info table, actions, files and uploads */
+.info-pane h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.info-pane { overflow: auto; padding: 8px 10px; }
+.info-pane .kv-table { border-collapse: collapse; }
+.info-pane .kv-table th { padding: 1px 12px 1px 0; color: var(--muted); font-weight: 500; text-align: left; vertical-align: top; white-space: nowrap; }
+.info-pane .kv-table td { padding: 1px 0; overflow-wrap: anywhere; }
+.info-pane .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
+.info-pane .toggles { display: inline-flex; gap: 10px; margin-left: 6px; }
+.info-pane .check { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.info-pane .bookmarks { display: flex; flex-wrap: wrap; gap: 4px; }
+.info-pane .notice { display: flex; align-items: center; gap: 6px; margin: 6px 0; padding: 6px 8px; border: 1px solid var(--alert); border-radius: 5px; color: var(--fg); }
+.info-pane .notice[hidden] { display: none; }
+.info-pane .notice svg { color: var(--alert); flex-shrink: 0; }
+.info-pane .files-actions { display: flex; gap: 6px; margin: 6px 0; }
+.info-pane .files { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.info-pane .files th { position: sticky; top: -8px; padding: 3px 6px; background: var(--panel); color: var(--muted); font-weight: 500; }
+.info-pane .files td { height: 24px; padding: 0 6px; border-top: 1px solid var(--line); text-align: center; }
+.info-pane .files tbody tr { content-visibility: auto; contain-intrinsic-size: auto 25px; }
+.info-pane .dl { display: inline-flex; padding: 2px; border-radius: 4px; color: var(--accent); }
+.info-pane .dl:hover { background: var(--hover); }
+.info-pane .upload-queue progress { width: 120px; height: 6px; vertical-align: middle; accent-color: var(--accent); }

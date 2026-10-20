@@ -1,0 +1,4 @@
+/* map pane */
+.map-pane { background: var(--bg); }
+.map-pane .map-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; z-index: 1; pointer-events: none; }
+.map-pane .map-empty[hidden] { display: none; }
