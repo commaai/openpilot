@@ -8,7 +8,7 @@ import {colors, fitCanvas, ticks, axes, fmtTick, fmtValue, nextColor} from "./dr
 import * as view from "./view.js";
 import {menu} from "./menu.js";
 import {exportPng} from "./export.js";
-import {compute} from "/data/transforms.js";
+import {compute, lease} from "/data/transforms.js";
 
 const L = 58, R = 10, T = 8, B = 20;
 
@@ -43,6 +43,7 @@ export function create(ctx, state = {}) {
     stale = true;
     if (busy) return;
     const curves = st.curves.filter((c) => inputs(c).every((p) => store.series(p)));
+    lease(pane, store, st.curves.flatMap(inputs));  // the worker keeps these, and forgets what no pane reads
     showHint(st.curves.some((c) => inputs(c).some((p) => p.startsWith("/custom/") && !store.series(p))));
     if (!curves.length) { results = []; invalidate(); return; }
     busy = true;
@@ -228,6 +229,7 @@ export function create(ctx, state = {}) {
   function dispose() {
     clearTimeout(timer);
     for (const off of offs) off();
+    lease(pane, store);
   }
 
   rebuild();

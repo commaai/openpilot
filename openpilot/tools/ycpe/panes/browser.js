@@ -8,9 +8,10 @@ import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
 const COARSE = matchMedia("(pointer: coarse)").matches;
-const ROW = COARSE ? 28 : 18, BUILD_MS = 2;  // px per row; plot.css agrees
+const ROW = COARSE ? 28 : 18, BUILD_MS = 2;  // px per row (plot.css agrees); ms a frame spends on the tree and its rows
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
+let browsers = 0;  // ids for the rows' aria-activedescendant
 const order = (a, b) => {
   const x = +a, y = +b;
   return x === x && y === y ? x - y : a < b ? -1 : a > b ? 1 : 0;
@@ -20,43 +21,53 @@ export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   const st = {filter: state.filter || "", deprecated: !!state.deprecated, expanded: new Set(state.expanded || [])};
   const selected = new Set();
-  let tree = null, stale = true, rows = [], anchor = null, H = 0, total = 0;  // anchor: the path a shift-click ranges from
+  let tree = null, stale = true, fresh = true, rows = [], anchor = null, H = 0, total = 0;  // anchor: the path a shift-click ranges from
+  let walk = null, rewalk = true;  // the rows being listed, and whether they need listing (again)
   let cursor = null;  // the path the keyboard is at
   let top = 0;  // the scroller's scrollTop, kept from its scroll events: reading it in render would force a layout
   let nodes = new Map();  // path → tree node, for every node in the tree
 
   const filter = h("input", {type: "search", class: "filter", placeholder: "filter, or /regex/", value: st.filter, spellcheck: false,
-    oninput: () => { st.filter = filter.value; refresh(); },
+    oninput: () => { st.filter = filter.value; refresh(true); },
     onkeydown: (e) => {
-      if (e.key === "Escape") { filter.value = st.filter = ""; refresh(); }
+      if (e.key === "Escape") { filter.value = st.filter = ""; refresh(true); }
       if (e.key === "ArrowDown" && rows.length) { e.preventDefault(); scroller.focus(); move(0, false); }
     }});
   const count = h("span", {class: "muted count"});
   const depr = h("label", {class: "muted", title: "show deprecated fields and internal ones (__logMonoTime)"},
-    h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(true); }}), "deprecated");
+    h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; tree = null; changed(); }}), "deprecated");
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
   // why the list is empty, inside it: showing or hiding it moves nothing
   const note = h("div", {class: "note", hidden: true});
-  const scroller = h("div", {class: "scroller", tabindex: 0, onkeydown: key}, note, spacer, win);
+  // the keyboard's place shows on the way in
+  const scroller = h("div", {class: "scroller", tabindex: 0, role: "tree", "aria-label": "Series", "aria-multiselectable": "true", onkeydown: key,
+    onfocus: () => {
+      if (!rows.length || rows.some((r) => r.path === cursor)) return;
+      cursor = rows[0].path;
+      perf.invalidate(pane);
+    }}, note, spacer, win);
+  const id = `series-${++browsers}`;
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
   scroller.addEventListener("scroll", () => { top = scroller.scrollTop; perf.invalidate(pane); }, {passive: true});
 
   // new paths arrive with segments and are added at most once a frame; a new DBC replaces the /dbc branch
   let all = null, done = 0;  // store.paths(), and how many of them the tree has been through
-  const changed = () => { stale = true; perf.invalidate(pane); };
+  const changed = () => { stale = fresh = true; perf.invalidate(pane); };
   const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)), store.on("progress", () => perf.invalidate(pane)),
     store.can?.on("dbc", () => { drop("/dbc"); changed(); })].filter(Boolean);
 
-  // the path tree; a node is {name, path, depth, kids? (sorted), meta?}. New paths are added to the tree as they
-  // arrive, a few ms worth a frame (a DBC brings thousands), and only the branches they land in are re-sorted;
-  // fewer paths than before rebuilds it.
-  function build(reset = false) {
-    const end = performance.now() + BUILD_MS;
-    const now = store.paths();  // appended to as paths arrive, so the tree goes on from where it was
-    if (now !== all || reset) [all, done] = [now, 0];
-    if (reset || !tree || all.length < total) [tree, nodes, done] = [{depth: -1}, new Map(), 0];
+  // the path tree; a node is {name, path, lower (its path in lower case), depth, kids? (sorted), meta?}. New paths
+  // are added to the tree as they arrive, until frame deadline `end` (a DBC brings thousands), and only the branches
+  // they land in are re-sorted; fewer paths than before (or no tree) rebuilds it. store.paths() is asked again only
+  // once it has more.
+  function build(end) {
+    const now = fresh ? store.paths() : all;  // appended to as paths arrive, so the tree goes on from where it was
+    fresh = false;
+    if (now !== all) [all, done] = [now, 0];
+    const rebuilt = !tree || all.length < total;
+    if (rebuilt) [tree, nodes, done] = [{depth: -1}, new Map(), 0];
     const touched = new Set();
     for (; done < all.length && (done % 256 || performance.now() < end); done++) {
       const meta = all[done], known = nodes.get(meta.path);
@@ -66,7 +77,7 @@ export function create(ctx, state = {}) {
     for (const n of touched) n.kids.sort((a, b) => order(a.name, b.name));
     total = all.length;
     stale = done < all.length;
-    refresh();
+    if (rebuilt || touched.size) refresh();
   }
 
   // removes a top level branch
@@ -74,6 +85,7 @@ export function create(ctx, state = {}) {
     if (!tree?.kids) return;
     tree.kids = tree.kids.filter((k) => k.path !== path);
     for (const p of nodes.keys()) if (p === path || p.startsWith(`${path}/`)) nodes.delete(p);
+    refresh();
   }
 
   // the node at path, added with its missing parents; the parents that got kids go in touched
@@ -81,7 +93,7 @@ export function create(ctx, state = {}) {
     let n = nodes.get(path);
     if (n) return n;
     const i = path.lastIndexOf("/"), parent = i ? node(path.slice(0, i), touched) : tree;
-    n = {name: path.slice(i + 1), path, depth: parent.depth + 1};
+    n = {name: path.slice(i + 1), path, lower: path.toLowerCase(), depth: parent.depth + 1};
     (parent.kids ||= []).push(n);
     touched.add(parent);
     nodes.set(path, n);
@@ -92,35 +104,49 @@ export function create(ctx, state = {}) {
     const f = st.filter.trim();
     if (!f) return null;
     const re = f.length > 2 && f.startsWith("/") && f.endsWith("/") ? (() => { try { return new RegExp(f.slice(1, -1), "i"); } catch { return null; } })() : null;
-    if (re) return (p) => re.test(p);
-    const terms = f.toLowerCase().split(/\s+/);
-    return (p) => { const q = p.toLowerCase(); return terms.every((t) => q.includes(t)); };
+    if (re) return (n) => re.test(n.path);
+    // carState.aEgo is the path /carState/aEgo
+    const terms = f.toLowerCase().replace(/\./g, "/").split(/\s+/);
+    return (n) => terms.every((t) => n.lower.includes(t));
   }
 
-  // the visible rows: expanded branches, or with a filter every match and its ancestors
-  function refresh() {
-    rows = [];
-    let hits = 0;
-    const match = matcher();
-    const walk = (n) => {
-      for (const k of n.kids || []) {
-        if (match) {
-          const start = rows.length;
-          rows.push(k);
-          const hit = k.meta && match(k.path);
-          if (hit) hits++;
-          if (k.kids) walk(k);
-          if (!hit && rows.length === start + 1) rows.pop();
-        } else {
-          rows.push(k);
-          if (k.kids && st.expanded.has(k.path)) walk(k);
-        }
-      }
-    };
-    if (tree) walk(tree);
-    count.textContent = match ? `${hits}` : `${total}`;
-    spacer.style.height = `${rows.length * ROW}px`;
+  // the rows are listed again on the next frames; the list on screen stays until the new one is done. A new filter
+  // starts over at once, other changes after the listing in progress
+  function refresh(restart = false) {
+    rewalk = true;
+    if (restart) walk = null;
     perf.invalidate(pane);
+  }
+
+  // lists the visible rows until frame deadline `end`: expanded branches, or with a filter every match and its
+  // ancestors. A depth first walk that goes on where it stopped
+  function list(end) {
+    if (!walk) {
+      walk = {stack: [...tree?.kids || []].reverse(), rows: [], chain: [], hits: 0, match: matcher()};
+      rewalk = false;
+    }
+    const {stack, rows: out, chain, match} = walk;
+    for (let i = 1; stack.length && (i % 64 || performance.now() < end); i++) {
+      const n = stack.pop();
+      if (match) {
+        // a match brings its ancestors that aren't listed yet; chain[d]: the branch at depth d, until listed
+        chain.length = n.depth;
+        if (n.meta && match(n)) {
+          walk.hits++;
+          for (const a of chain) if (a) out.push(a);
+          chain.fill(null);
+          out.push(n);
+          chain.push(null);
+        } else chain.push(n);
+      } else out.push(n);
+      if (n.kids && (match || st.expanded.has(n.path))) for (let k = n.kids.length - 1; k >= 0; k--) stack.push(n.kids[k]);
+    }
+    if (stack.length) return perf.invalidate(pane);
+    rows = out;
+    count.textContent = match ? `${walk.hits} match${walk.hits === 1 ? "" : "es"}` : `${total} series`;
+    spacer.style.height = `${rows.length * ROW}px`;
+    walk = null;
+    if (rewalk) perf.invalidate(pane);
   }
 
   const leavesOf = (n, out = []) => {
@@ -191,9 +217,14 @@ export function create(ctx, state = {}) {
   // what changed
   const pool = [];
   const flag = (r, cls, on) => { if (r.flags[cls] !== on) r.classList.toggle(cls, r.flags[cls] = on); };
+  const attr = (el, name, v) => {
+    if ((el.attrs ||= {})[name] === v) return;
+    el.attrs[name] = v;
+    v === null ? el.removeAttribute(name) : el.setAttribute(name, v);
+  };
   function rowEl(i) {
     if (!pool[i]) {
-      const r = pool[i] = h("div", {class: "row", draggable: true,
+      const r = pool[i] = h("div", {class: "row", id: `${id}-${i}`, role: "treeitem", draggable: true,
         onclick: (e) => click(e, r.k), ondragstart: (e) => dragstart(e, r.k),
         ondblclick: () => {
           if (!rows[r.k].meta) return;
@@ -208,7 +239,9 @@ export function create(ctx, state = {}) {
   }
 
   function render() {
-    if (stale) build();
+    const now = performance.now();
+    if (stale) build(now + BUILD_MS / 2);
+    if (walk || rewalk) list(now + BUILD_MS);
     // why the list is empty
     const failure = !total && store.failure, f = st.filter.trim();
     const text = rows.length ? "" : failure ? `Couldn't load the logs: ${failure}` : f ? `No series match "${f}"` : store.loading ? "Loading logs…" : "";
@@ -219,6 +252,7 @@ export function create(ctx, state = {}) {
     const first = Math.floor(top / ROW), n = Math.min(rows.length - first, Math.ceil(H / ROW) + 1);
     const shift = `translateY(${first * ROW}px)`;
     if (win.style.transform !== shift) win.style.transform = shift;
+    let current = null;  // the cursor's row element
     for (let i = 0; i < Math.max(n, pool.length); i++) {
       const r = rowEl(i), k = first + i, node = rows[k];
       if (r.hidden !== !node) r.hidden = !node;
@@ -228,6 +262,7 @@ export function create(ctx, state = {}) {
       if (r.node !== node || r.meta !== m) {
         [r.node, r.meta] = [node, m];
         r.style.paddingLeft = `${4 + node.depth * 12}px`;
+        r.ariaLevel = node.depth + 1;
         name.textContent = node.name;
         // enum names and DBC value descriptions by value
         r.title = m ? [m.path, m.unit ? `${m.type}, ${m.unit}` : m.type, ...Object.entries(m.names || {}).map(([v, s]) => `${v} ${s}`)].join("\n") : node.path;
@@ -236,9 +271,13 @@ export function create(ctx, state = {}) {
       flag(r, "cur", node.path === cursor);
       flag(r, "branch", !!node.kids);
       flag(r, "open", !!node.kids && !!(st.filter || st.expanded.has(node.path)));
+      if (node.path === cursor) current = r;
+      attr(r, "aria-expanded", node.kids ? String(r.flags.open) : null);
+      attr(r, "aria-selected", node.meta ? String(r.flags.sel) : null);
       const text = m ? fmtValue(store.valueAt(m.path, clock.t), m).slice(0, 200) : "";  // long text only needs what shows
       if (val.textContent !== text) val.textContent = text;
     }
+    attr(scroller, "aria-activedescendant", current?.id ?? null);
   }
 
   function resize(w, hgt = el.clientHeight) {
@@ -254,6 +293,5 @@ export function create(ctx, state = {}) {
     for (const off of offs) off();
   }
 
-  build();
   return pane;
 }
