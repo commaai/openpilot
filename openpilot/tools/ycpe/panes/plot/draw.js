@@ -28,15 +28,17 @@ export function nextColor(used) {
   return PALETTE.find((c) => !used.includes(c)) || PALETTE[used.length % PALETTE.length];
 }
 
-// [color, fill alpha] of a state block: by meaning when its label has one, else by value (or a hash of text)
+// [color, fill alpha] of a state block: by meaning when its label has one, else by value (or a hash of text and
+// fractions)
 function stateStyle(v, label, col) {
   if (col.named[label]) return col.named[label];
-  if (typeof v === "string") {
+  if (!Number.isInteger(v)) {
+    v = String(v);
     let x = 0;
     for (let i = 0; i < v.length; i++) x = (x * 31 + v.charCodeAt(i)) | 0;
     v = x;
   }
-  return [STATE[Math.abs(Math.round(v)) % STATE.length], 0.26];  // DBC states can be fractional
+  return [STATE[Math.abs(v) % STATE.length], 0.26];
 }
 
 // sizes the backing store to the css size at devicePixelRatio; drawing stays in css px
