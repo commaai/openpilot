@@ -10,11 +10,12 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
-import {routeLogs} from "/data/sources.js";
+import {routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute} from "/pages/omnibox.js";
+import {localPage} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
@@ -312,6 +313,7 @@ async function render() {
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
   }
 
+  if (openLoose(parts, q, main)) return;
   const routeName = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? `${parts[0]}|${parts[1]}` : null;
   if (routeName) {
     if (ws?.route.fullname === routeName) {
@@ -350,6 +352,34 @@ async function render() {
     main.replaceChildren(homePage(state.devices));
   }
 }
+
+// logs outside the API (data/sources.js): files dropped anywhere on the page, or a direct link (?url=). False when the
+// path is neither.
+let dropped = null;
+function openLoose(parts, q, main) {
+  const loose = q.has("url") ? urlRoute(q.get("url")) : dropped?.route.fullname === `${parts[0]}|${parts[1]}` ? dropped : null;
+  if (!loose && parts[0] !== "local") return false;
+  if (loose && ws?.route.fullname === loose.route.fullname) {
+    if (parts[2] && parts[2] !== ws.view) ws.setView(parts[2]);
+    return true;
+  }
+  ws?.dispose();
+  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: +q.get("t") || 0});
+  document.body.classList.toggle("in-ws", !!ws);
+  main.replaceChildren(ws ? ws.el : localPage(openFiles));
+  updateTop();
+  return true;
+}
+function openFiles(files) {
+  dropped = localRoute(files);
+  if (dropped) go(`/${dropped.route.fullname.replace("|", "/")}/plot`);
+  else toast("No rlog, qlog or camera files there");
+}
+document.addEventListener("dragover", (e) => e.preventDefault());
+document.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  openFiles(await droppedFiles(e.dataTransfer));
+});
 
 function errorPage(e) {
   console.error(e);

@@ -52,6 +52,11 @@ export function create(ctx) {
       return h("option", {value: name, disabled: off}, off ? `${s.label} (needs the local daemon)` : s.label);
     }));
   picker.value = source;
+  if (route.loose) {  // dropped files or a direct link: nothing to resolve or upload
+    picker.hidden = true;
+    found = new Map(route.files);
+    asked = new Set(segs);
+  }
 
   function pick(name) {
     source = name;
@@ -80,8 +85,8 @@ export function create(ctx) {
     apiFiles = new Set(COLS.flatMap((kind) => (files[API_KIND[kind]] || []).map((u) => `${new URL(u).pathname.split("/").at(-2)}/${kind}`)));
     changed();
   }
-  loadApiFiles(false);
-  api.device(sr.dongle).catch(() => null).then((device) => {
+  if (!route.loose) loadApiFiles(false);
+  if (!route.loose) api.device(sr.dongle).catch(() => null).then((device) => {
     if (!alive) return;
     up = uploads(route, device, (k) => apiFiles.has(k), ({uploaded}) => {
       if (uploaded) {

@@ -216,30 +216,61 @@ export async function routeLogs(name) {
   return urls;
 }
 
-// ---- local files ----
+// ---- routes outside the API: local files and direct URLs ----
 
-// the segment and route each dropped or picked file belongs to, from its path: "<route>--<seg>--<file>" (explorer),
-// "<dongle>/<log id>/<seg>/<file>", "<route>--<seg>/<file>" or "<log id>--<seg>/<file>" (a device's realdata);
-// a lone file is segment 0
-const LOCAL = new RegExp(`(?:(${DONGLE})[|_/])?(${LOG_ID})(?:--|/)([0-9]+)(?:--|/)([^/]+)$`);
-export function localFiles(files) {
-  let route = null;
-  const segs = new Map();  // seg → Map kind → {url, file, size, source}
-  for (const f of files) {
-    const path = f.webkitRelativePath || f.relativePath || f.name;
-    const m = path.match(LOCAL);
-    const file = m ? m[4] : f.name, kind = KIND_OF[file];
-    if (!kind) continue;
-    if (m?.[1]) route ||= `${m[1]}|${m[2]}`;
-    const seg = m ? +m[3] : 0;
-    if (!segs.has(seg)) segs.set(seg, new Map());
-    segs.get(seg).set(kind, {url: URL.createObjectURL(f), file, size: f.size, source: "local"});
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
+
+// an API-shaped route record for files found outside the API, so a workspace can open them. files: Map "<n>/<kind>"
+// → {url, file, size, source}; the record carries them (route.files) and the store gets each segment's log.
+function looseRoute(name, files) {
+  const urls = [];
+  for (const [key, f] of files) {
+    const [n, kind] = key.split("/");
+    if (kind === "rlog" || kind === "qlog" && urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
   }
-  return {route, segs};
+  const ns = [...new Set([...files.keys()].map((k) => +k.split("/")[0]))].sort((a, b) => a - b);
+  const t0 = Date.parse(name.split("|")[1].replace(/^(\d{4}-\d\d-\d\d)--(\d\d)-(\d\d)-(\d\d)$/, "$1T$2:$3:$4")) || 0;  // timestamp log ids only
+  return {
+    route: {fullname: name, dongle_id: name.split("|")[0], maxqlog: ns.at(-1), segment_numbers: ns, files, loose: true,
+      start_time_utc_millis: t0, end_time_utc_millis: t0 + 60000 * (ns.at(-1) + 1)},
+    urls,
+  };
 }
 
-// every file under a drop, folders included
+// where a file belongs, from its path or URL: "<route>--<seg>--<file>" (explorer), "<dongle>/<log id>/<seg>/<file>",
+// "<route>--<seg>/<file>" or "<log id>--<seg>/<file>" (a device's realdata); a lone file is segment 0
+const PLACE = new RegExp(`(?:(${DONGLE})[|_/])?(${LOG_ID})(?:--|/)([0-9]+)(?:--|/)([^/]+)$`);
+function place(path) {
+  const m = path.match(PLACE), file = m ? m[4] : path.split("/").at(-1);
+  if (!KIND_OF[file]) return null;
+  return {file, kind: KIND_OF[file], n: m ? +m[3] : 0, route: m?.[1] ? `${m[1]}|${m[2]}` : `local|${slug(m ? m[2] : file)}`};
+}
+
+// dropped or picked files (a folder of segments, or single logs) as a route; files of other routes than the one
+// with the most are left out. null when none of them is a log or camera file.
+export function localRoute(files) {
+  const byRoute = new Map();
+  for (const f of files) {
+    const p = place(f.relativePath || f.webkitRelativePath || f.name);
+    if (!p) continue;
+    if (!byRoute.has(p.route)) byRoute.set(p.route, new Map());
+    byRoute.get(p.route).set(`${p.n}/${p.kind}`, {url: URL.createObjectURL(f), file: p.file, size: f.size, source: "local"});
+  }
+  const [name, found] = [...byRoute].sort((a, b) => b[1].size - a[1].size)[0] || [];
+  return name ? looseRoute(name, found) : null;
+}
+
+// a direct link to one log or camera file, as a one-segment route
+export function urlRoute(url) {
+  const p = URL.canParse(url) && place(decodeURIComponent(new URL(url).pathname));
+  return p && looseRoute(p.route, new Map([[`${p.n}/${p.kind}`, {url, file: p.file, size: null, source: "url"}]]));
+}
+
+// every file under a drop, folders included. The entries are taken before the first await, while the drop's
+// dataTransfer is still readable.
 export async function droppedFiles(dataTransfer) {
+  const entries = [...dataTransfer.items].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.length) return [...dataTransfer.files];
   const out = [];
   const walk = async (entry, dir) => {
     if (entry.isFile) {
@@ -253,6 +284,6 @@ export async function droppedFiles(dataTransfer) {
       }
     }
   };
-  for (const entry of [...dataTransfer.items].map((i) => i.webkitGetAsEntry?.()).filter(Boolean)) await walk(entry, "");
+  for (const entry of entries) await walk(entry, "");
   return out;
 }
