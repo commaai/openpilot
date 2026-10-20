@@ -26,6 +26,16 @@ body { font: 12px/1.4 var(--font); color: var(--fg); background: var(--bg); -web
 body.in-ws { overflow: hidden; }
 a { color: inherit; }
 button, input, select { font: inherit; color: inherit; }
+/* dropdowns draw their lists in the page (Chrome's customizable select), so the lists take the theme: a native one can
+   ignore the page's color-scheme (macOS draws its own) and highlights in the system's blue. Heights stay the panes' own */
+select, ::picker(select) { appearance: base-select; }
+select { display: inline-flex; gap: 6px; min-block-size: 0; min-inline-size: 0; }
+select::picker-icon { content: ""; align-self: center; width: 4px; height: 4px; margin: 0 1px 2px auto; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; rotate: 45deg; transition: none; }
+select:open::picker-icon { margin: 2px 1px 0 auto; rotate: 225deg; }
+::picker(select) { margin: 2px 0; padding: 3px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+option { min-block-size: 0; padding: 2px 12px 2px 6px; border-radius: 3px; color: var(--fg); font-weight: normal; white-space: nowrap; }
+option:hover, option:focus-visible { background: var(--hover); outline: none; }
+option::checkmark { color: var(--accent); }
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .muted { color: var(--muted); }
@@ -169,7 +179,8 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 /* dragged to dock the pane; a finger on it drags the pane, not the page */
 .pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; cursor: grab; touch-action: none; }
 /* as wide as the chosen type, its chevron (the next sibling) drawn over its right padding, so it opens the picker too */
-.pane-type { field-sizing: content; min-width: 0; max-width: 130px; flex-shrink: 1; height: 18px; padding: 0 14px 0 2px; border: 0; background: none; color: var(--muted); font-weight: 600; text-overflow: ellipsis; cursor: pointer; appearance: none; }
+.pane-type { field-sizing: content; min-width: 0; max-width: 130px; flex-shrink: 1; height: 18px; padding: 0 14px 0 2px; border: 0; background: none; color: var(--muted); font-weight: 600; text-overflow: ellipsis; cursor: pointer; }
+.pane-type::picker-icon { display: none; }  /* the svg after it is the chevron */
 .pane-type + svg { flex-shrink: 0; margin-left: -18px; color: var(--muted); pointer-events: none; }
 .pane-type:hover, .pane-type:hover + svg { color: var(--fg); }
 .pane-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }

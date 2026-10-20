@@ -5,6 +5,7 @@ import {canOf, hex2, menuCheck, popup, reveal, subs} from "./common.js";
 import {dbcDialog, save, toolsMenu} from "./tools.js";
 
 const ROW = matchMedia("(pointer: coarse)").matches ? 28 : 20;  // px per row; can.css agrees
+const OVER = 8;  // rows drawn past each edge of the view
 // bus, freq and count are null for DBC messages never seen: "N/A", sorted last, and never matching a number
 const COLS = [
   {id: "name", title: "Name", get: (m, can) => can.name(m.key), text: (m, can) => can.name(m.key) || "untitled"},
@@ -20,7 +21,7 @@ const text = (c, m, can) => String(c.text ? c.text(m, can) : c.get(m, can) ?? "N
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs(), uid = panes++;
-  let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
+  let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400, version = 0;  // version: of what rows show but live bytes
   const filters = {...state.filters}, hidden = new Set(state.hidden), shown = new Set(state.shown);
   let unseen = state.unseen ?? true;  // DBC messages never seen on the bus, as cabana's "Show inactive messages"
 
@@ -112,6 +113,7 @@ export function create(ctx, state) {
   // append new messages below, so nothing moves under the user while a route loads; a re-sort keeps the selected row
   // at its place on screen.
   function refresh(resort = true) {
+    version++;
     const all = [...can.messages(), ...(unseen ? can.unseen() : [])].filter(match);
     if (resort) {
       const col = COLS.find((c) => c.id === sort.col), before = rows.findIndex((m) => m.key === can.selected);
@@ -172,17 +174,21 @@ export function create(ctx, state) {
   const pane = {
     name: "can-messages", el,
     render() {
-      const first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
+      // OVER rows past either edge, so a fast wheel (scrolled by the compositor) doesn't show blank before this runs
+      const top = Math.floor(scrollTop / ROW), shown = Math.ceil(height / ROW) + 1;
+      const first = Math.max(0, top - OVER), n = shown + 2 * OVER;
       const live = can.live, t = ctx.clock.t;
       let current = "";
-      // rows past n are left from a taller pane
-      for (let i = 0; i < Math.max(n, pool.length); i++) {
-        const m = i < n && rows[first + i];
-        if (!m) { if (pool[i] && !pool[i].hidden) pool[i].hidden = true; continue; }
-        const r = pool[i] || (pool[i] = row());
+      // row `at` sits in slot at % n while it's in range, so a scroll rewrites and moves only the rows it brings in;
+      // slots past n are left from a taller pane
+      while (pool.length < n) pool.push(row());
+      for (let i = 0; i < pool.length; i++) {
+        const at = first + (((i - first) % n) + n) % n, m = i < n && rows[at];
+        if (!m) { if (!pool[i].hidden) pool[i].hidden = true; continue; }
+        const r = pool[i];
         if (r.hidden) r.hidden = false;
-        r.key = m.key;
-        if (r.top !== first + i) r.style.top = `${(r.top = first + i) * ROW}px`;
+        // a transform, not top: moving a row needs no layout (and isn't a layout shift)
+        if (r.top !== at) r.style.transform = `translateY(${(r.top = at) * ROW}px)`;
         if (r.sel !== (m.key === can.selected)) {
           r.classList.toggle("selected", r.sel = m.key === can.selected);
           r.setAttribute("aria-selected", String(r.sel));
@@ -190,6 +196,10 @@ export function create(ctx, state) {
         if (r.sel) current = r.id;
         const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
         if (r.active !== active) r.classList.toggle("inactive", !(r.active = active));
+        // its text and bytes change only with the message, the live bytes, or the list's data (rates, DBC names); the
+        // rows past the edges catch up on the live bytes once scrolled to
+        if (r.key === m.key && r.version === version && (r.live === live || at < top || at >= top + shown)) continue;
+        Object.assign(r, {key: m.key, live, version});
         COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], text(c, m, can)); });
         const dm = can.dbcMsg(m.key), named = !!dm;
         if (r.named !== named) r.cells[0].classList.toggle("can-muted", !(r.named = named));
@@ -203,7 +213,7 @@ export function create(ctx, state) {
           if (x >= len) return;
           const o = live.off[j] + x, a = Math.max(0, 1 - live.age[o] / 2);
           set(b, hex2(live.data[o]));
-          const cls = a > 0 ? `can-chg${live.kind[o]}` : "", av = a.toFixed(2);
+          const cls = a > 0 ? `can-chg${live.kind[o]}` : "", av = a.toFixed(1);  // a style change per tenth, not per frame
           if (b.className !== cls) b.className = cls;
           if (a > 0 && b.av !== av) b.style.setProperty("--a", b.av = av);
         });

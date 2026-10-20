@@ -67,7 +67,10 @@ export function create(ctx, state = {}) {
   for (const type of ["pointerdown", "contextmenu", "dblclick", "wheel"]) {
     grip.addEventListener(type, (e) => { if (!over.dispatchEvent(new e.constructor(type, e))) e.preventDefault(); });
   }
-  const el = h("div", {class: "plot-pane"}, base, over, grip, legend, empty);
+  // shown while the values are locked (by a y zoom or pan, or Y limits): back to fitting them, as a double-click does
+  const yauto = h("button", {class: "yauto", hidden: true, title: "The y-axis is locked: fit it to the visible values again (or double-click the y-axis)",
+    onclick: () => { view.remember(clock); st.y = {}; invalidate(); over.focus({preventScroll: true}); }}, "auto y");
+  const el = h("div", {class: "plot-pane"}, base, over, grip, yauto, legend, empty);
   let W = 0, H = 0, gBase = null, gBack = null, gOver = null, dirty = true, changes = 0;  // W, H: the size drawn at; changes: invalidations so far
   let size = null, settle = 0;  // the pane's new size {w, h, at} until the canvases take it
   let frame = null;    // geometry and prepared curves of the last base draw
@@ -708,9 +711,8 @@ export function create(ctx, state = {}) {
     if (z === "plot" && button === 0 && !touch) {
       const x0 = Math.max(frame.px, Math.min(p.x, gesture.start.x)), x1 = Math.min(frame.px + frame.pw, Math.max(p.x, gesture.start.x));
       const y0 = Math.max(frame.py, Math.min(p.y, gesture.start.y)), y1 = Math.min(frame.py + frame.ph, Math.max(p.y, gesture.start.y));
-      // a flat box (or alt) zooms time only, a narrow one (or shift) zooms values only
-      const xOnly = e.altKey || y1 - y0 < 12 || frame.blockMode, yOnly = !xOnly && (e.shiftKey || x1 - x0 < 12);
-      gesture.box = xOnly ? {x: x0, w: x1 - x0, y: frame.py, h: frame.ph, xOnly} : yOnly ? {x: frame.px, w: frame.pw, y: y0, h: y1 - y0, yOnly} : {x: x0, w: x1 - x0, y: y0, h: y1 - y0};
+      // time only, as jotpluggler, while the values fit what's visible; shift zooms the values instead (and locks them)
+      gesture.box = e.shiftKey && !frame.blockMode ? {x: frame.px, w: frame.pw, y: y0, h: y1 - y0, yOnly: true} : {x: x0, w: x1 - x0, y: frame.py, h: frame.ph, xOnly: true};
       pane.overlay();
     }
   });
@@ -868,6 +870,8 @@ export function create(ctx, state = {}) {
       for (const cv of [base, over]) stretch(cv, size);
     }
     if (!gBase) return;
+    const locked = st.y.min !== undefined || st.y.max !== undefined;
+    if (yauto.hidden === locked) yauto.hidden = !locked;
     if (dirty && view.left(f) >= view.MIN_MS) dirty = !drawBase(f);
     if (dirty) perf.invalidate(pane);
     drawOverlay();

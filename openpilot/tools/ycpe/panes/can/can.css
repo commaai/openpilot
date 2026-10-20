@@ -57,9 +57,10 @@
 .can-show-count .can-col-count, .can-show-bytes .can-col-bytes { display: block; }
 .can-col-name { min-width: 70px; }
 .can-col-bus, .can-col-freq, .can-col-count { text-align: right; font-variant-numeric: tabular-nums; }
-.can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+/* contained: a row's new text lays out the row alone, not the panes around the list */
+.can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; contain: strict; }
 .can-msg-spacer { position: relative; }
-.can-msg-row { position: absolute; left: 0; right: 0; height: 20px; align-items: center; cursor: pointer; }
+.can-msg-row { position: absolute; top: 0; left: 0; right: 0; height: 20px; align-items: center; cursor: pointer; contain: strict; }
 @media (pointer: coarse) { .can-msg-row { height: 28px; } }  /* fingers; messages.js agrees */
 .can-msg-row:hover { background: var(--hover); }
 .can-msg-row.selected { background: var(--active); box-shadow: inset 2px 0 var(--accent); }

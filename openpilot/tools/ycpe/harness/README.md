@@ -30,12 +30,13 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
 (`fixtures/`), or text, so a scenario needn't depend on what a real device has.
 
 Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by: [dx, dy], steps}}`,
-`{dragTo: [sel, sel]}` (HTML drag and drop), `{wheel: {at?, dx?, dy}}`, `{fill: [sel, text]}`, `{viewport: [w, h]}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,
+`{dragTo: [sel, sel]}` (HTML drag and drop), `{wheel: {at?, dx?, dy, every?: ms}, repeat?}`, `{fill: [sel, text]}`, `{viewport: [w, h]}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,
 `{waitFor: sel | {fn: js}}`, `{goto: path}`, `{eval: js}`, `{note: js}` (its value goes in the report), `{assert: js}`, `{shot: name}`,
 `{network: {down_kbps, up_kbps?, latency_ms?} | "online"}` (throttles the page and its workers),
 `{filmstrip: {name, every: ms, until: js, crop?: [sel]}}` (a screenshot every `every` ms until `until` holds, composed
 into `shots/<scenario>/<name>.strip.png` from the `crop` boxes). Any step takes `timeout`. An assert may return a
-promise; returning a string fails it with that string as the reason.
+promise; returning a string fails it with that string as the reason. An assert with `rule: "drops"` (or another perf rule)
+fails as that rule, so it only warns when the machine is too busy to measure.
 
 ## What fails a scenario
 
