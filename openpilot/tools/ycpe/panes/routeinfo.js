@@ -1,8 +1,7 @@
-// route info pane: what the route is, its public/preserved toggles, link sharing, bookmarks, and the files table
+// route info pane: what the route is, its public/preserved toggles, link sharing and bookmarks (files have their own pane)
 import {api, routeEvents} from "../api.js";
 import {h, fmt, css} from "../dom.js";
 import {canManage} from "../pages/home.js";
-import {filesSection} from "../pages/files.js";
 
 function toggle(label, value, enabled, set) {
   const box = h("input", {type: "checkbox", checked: value, disabled: !enabled});
@@ -57,9 +56,6 @@ export function create(ctx) {
   routeEvents(route).then((spans) => bookmarks.replaceChildren(...spans.filter((s) => s.kind === "bookmark").map((s) =>
     h("button", {class: "chip", title: "Seek to bookmark", onclick: () => clock.seek(s.start / 1000)}, `bookmark ${fmt.clock(s.start / 1000)}`)))).catch(() => {});
 
-  const files = h("div");
-  device.then((d) => files.replaceWith(filesSection(route, d)));
-
   const el = h("div", {class: "info-pane"},
     h("table", {class: "kv-table"}, rows.filter(([, v]) => v).map(([k, v]) => h("tr", {}, h("th", {}, k), h("td", {}, v)))),
     h("div", {class: "actions"},
@@ -67,8 +63,6 @@ export function create(ctx) {
       h("button", {class: "button small", onclick: () => copy(route.fullname, "route name")}, "Copy name"),
       navigator.share && h("button", {class: "button small", onclick: () => navigator.share({title: route.fullname, url: shareUrl()}).catch(() => {})}, "Share"),
       toggles, copied),
-    bookmarks,
-    h("h3", {}, "Files"),
-    files);
+    bookmarks);
   return {name: "info", el, render() {}, resize() {}, dispose() {}, save: () => ({})};
 }
