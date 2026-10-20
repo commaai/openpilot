@@ -1,8 +1,7 @@
 // which schema a route's logs are read with: the bundled one plus migrations ("stock"), the log's own exact schema
 // fetched from GitHub by the commit that wrote it ("log"), or a local checkout's, live, through the daemon
 // ("local:<repo id>"). "auto" picks log for forks and for logs the stock read finds unknown fields in.
-import {upstream} from "./remote.js";
-import {parseRemote} from "./github.js";
+import {parseRemote, upstream} from "./github.js";
 import {daemon} from "../daemon.js";
 
 const STOCK = "commaai/openpilot";

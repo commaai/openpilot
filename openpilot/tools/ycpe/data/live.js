@@ -4,6 +4,7 @@
 // oldest dropped past the window or the budget. Camera tracks go to the camera panes as they are.
 import {SEGMENT} from "../api.js";
 import {listeners} from "../dom.js";
+import {client} from "./rpc.js";
 import {Store} from "./store.js";
 
 const FLUSH = 100;  // ms between batches to the worker
@@ -60,24 +61,14 @@ export class LiveStore extends Store {
     this.pending = {bytes: new Uint8Array(1 << 16), len: 0, json: []};
     this.flusher = 0;
     this.worker = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
-    this.replies = new Map();
-    this.nextId = 0;
-    this.worker.onmessage = ({data}) => {
-      if (data.live) return this.arrived(data.live);
-      const r = this.replies.get(data.id);
-      this.replies.delete(data.id);
-      if (data.error) r?.reject(new Error(data.error)); else r?.resolve(data);
-    };
-    this.worker.onerror = (e) => this.status.buffering({n: 0, text: `the live worker failed: ${e.message || e.type}`});
-    this.worker.postMessage({op: "live-start", span: SEGMENT});
-  }
-
-  call(op, args = {}) {
-    const id = this.nextId++;
-    return new Promise((resolve, reject) => {
-      this.replies.set(id, {resolve, reject});
-      this.worker.postMessage({op, id, ...args});
+    this.call = client(this.worker, (e) => {
+      const why = `the live worker failed: ${e.message || e.type}`;
+      this.status.buffering({n: 0, text: why});
+      return why;
     });
+    // packs come unasked, as {live: pack}
+    this.worker.addEventListener("message", ({data}) => data.live && this.arrived(data.live));
+    this.worker.postMessage({op: "live-start", span: SEGMENT});
   }
 
   // whole capnp Events in rlog framing, copied: the source may reuse its buffer
@@ -199,14 +190,14 @@ export class LiveStore extends Store {
     const seg = this.segmentAt(t);
     if (seg?.start === undefined) return null;
     const mono = (t + seg.start) * 1e9 + 1000;  // 1 µs over, for the round trip through route seconds
-    const r = await this.call("live-message", {n: seg.n, opts: {service, mono}});
-    return r.message?.[service] ?? null;
+    const message = await this.call("live-message", {n: seg.n, opts: {service, mono}});
+    return message?.[service] ?? null;
   }
 
   // every event received in the window as an rlog
   async save() {
     this.flush();
-    return (await this.call("live-save")).bytes;
+    return this.call("live-save");
   }
 
   dispose() {

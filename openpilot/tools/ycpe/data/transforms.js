@@ -1,6 +1,7 @@
 // series math off the main thread: transforms, statistics, CSV, XY pairs and spectra. This module is both
 // the main-side API and, loaded as a module worker, the worker itself. The worker keeps the chunks of each
 // series it has seen and their concatenation, so a chunk crosses threads once.
+import {client} from "./rpc.js";
 
 // transform kinds: fn(t, v, param, inputs) → {t, v}; `inputs` are extra series resampled to t
 export const TRANSFORMS = {
@@ -296,8 +297,7 @@ if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
 
 // ---- main side
 
-let worker = null, feed = null, nextId = 0;
-const pending = new Map();
+let call = null, feed = null;
 
 // exact copies of chunks' samples: a view would clone its whole pack buffer. Their buffers go in transfer
 export function copy({tt, v}, transfer) {
@@ -366,22 +366,17 @@ export const lease = leases(() => feed);
 
 // runs op in the worker; `paths` are the store series it reads
 export function compute(store, op, args, paths) {
-  if (!worker) {
-    worker = new Worker(import.meta.url, {type: "module"});
-    worker.onmessage = ({data: {id, result, error}}) => {
-      const p = pending.get(id);
-      pending.delete(id);
-      error ? p.reject(new Error(error)) : p.resolve(result);
-    };
+  if (!call) {
+    const worker = new Worker(import.meta.url, {type: "module"});
+    call = client(worker);
     feed = new Feed(worker);
   }
-  const id = nextId++, transfer = [];
+  const transfer = [];
   try {
-    worker.postMessage({id, op, args, ...feed.feed(store, paths, transfer)}, transfer);
+    return call(op, {args, ...feed.feed(store, paths, transfer)}, transfer);
   } catch (e) {
     return Promise.reject(e);
   }
-  return new Promise((resolve, reject) => pending.set(id, {resolve, reject}));
 }
 
 // computes a transformed curve into the store under derivedPath(); resolves with that path

@@ -1,6 +1,7 @@
-// the worker behind remote.js: GitHub fetching, schema compiling and DBC generating, off the main thread
+// the worker behind github.js's upstream(): GitHub fetching, schema compiling and DBC generating, off the main thread
 import {schemaAt, opendbcFor} from "./upstream.js";
 import {compile} from "./capnpc.js";
+import {serve} from "./rpc.js";
 
 const opendbcs = new Map();  // "repo@commit" → opendbcFor()
 
@@ -28,10 +29,4 @@ const OPS = {
   },
 };
 
-onmessage = async ({data: {id, op, args}}) => {
-  try {
-    postMessage({id, result: await OPS[op](args)});
-  } catch (e) {
-    postMessage({id, error: e.message || String(e)});
-  }
-};
+serve(OPS);
