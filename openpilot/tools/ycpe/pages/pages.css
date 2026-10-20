@@ -65,6 +65,10 @@
 .device-name > span { overflow: hidden; text-overflow: ellipsis; }
 .device-info .device-name { white-space: normal; }
 .device-name .field { width: 180px; height: 22px; font-weight: 400; }
+@media (hover: hover) {  /* the device list's rename pencils show on the row being pointed at */
+  .list .device-name .icon-btn { opacity: 0; }
+  .list tr:hover .device-name .icon-btn, .list .device-name .icon-btn:focus-visible { opacity: 1; }
+}
 
 /* device page */
 .device-head { display: flex; gap: 16px; align-items: stretch; margin-bottom: 8px; }
