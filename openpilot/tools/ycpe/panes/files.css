@@ -1,8 +1,8 @@
 /* files pane: source bar, a virtualized segment table under a sticky header, the upload queue */
 .files-pane { display: flex; flex-direction: column; font-size: 12px; }
-.files-pane .fp-bar { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.files-pane .fp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .files-pane .fp-source { height: 22px; max-width: 280px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
-.files-pane .fp-summary { color: var(--muted); white-space: nowrap; }
+.files-pane .fp-summary { margin-right: auto; color: var(--muted); white-space: nowrap; }  /* the request-alls at the end */
 .files-pane .fp-notes { flex-shrink: 0; }
 .files-pane .fp-notes > * { margin: 4px 8px; }
 .files-pane .notice { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--alert); border-radius: 5px; }
