@@ -29,7 +29,7 @@ onmessage = async ({data}) => {
   pool.push(...data.buffers || []);
   if (data.urls) {
     ({urls, keys} = data);
-    await Promise.all(urls.map(async (u, n) => {
+    await Promise.all(Array.from(urls, async (u, n) => {  // holes too: segments without a file
       const f = u && keys[n] && await opfs.read(keys[n]);
       if (f) disk.set(n, f.size);
       state(n, !u ? "missing" : f ? "disk" : "idle");
