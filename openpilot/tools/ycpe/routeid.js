@@ -1,7 +1,8 @@
 // a route's name shown part by part, so comma's naming can be read off the name itself. A segment's full name is
-// "<dongle id>|<log id>--<segment>": the dongle id names the device; loggerd's log id is an 8 hex digit counter of the
-// device's routes, then 10 random hex digits that keep the name unique should the counter start over (older openpilot
-// named routes by their start time on the device's clock instead); segments are the route's minutes, from 0.
+// "<dongle id>/<log id>/<segment>" (formerly "<dongle id>|<log id>--<segment>"): the dongle id names the device;
+// loggerd's log id is an 8 hex digit counter of the device's routes, "--", then 10 random hex digits that keep the name
+// unique should the counter start over (older openpilot named routes by their start time on the device's clock
+// instead); segments are the route's minutes, from 0.
 import {h, css} from "/dom.js";
 
 css(new URL("./routeid.css", import.meta.url));
@@ -36,7 +37,7 @@ export function routeId(logId, segment = null) {
   return h("span", {class: "rid"}, parts.map((p, i) => [
     i > 0 && h("span", {class: "rid-sep"}, "--"),
     h("span", {class: `rid-${p.kind}`, title: `${p.label}: ${p.detail}`}, partText(p)),
-  ]), segment && [h("span", {class: "rid-sep"}, "--"), segment]);
+  ]), segment && [h("span", {class: "rid-sep"}, "/"), segment]);
 }
 
 // the whole name with each part labelled under it, then what each means: the crumb's hover card and its menu.
@@ -45,7 +46,8 @@ export function routeAnatomy(route, segment, facts = []) {
   const [dongle, logId] = route.fullname.split("|");
   const parts = [{kind: "dongle", text: dongle, label: "device", detail: "the dongle id: one per comma device"}, ...logIdParts(logId)];
   if (segment !== null) parts.push({kind: "segment", text: String(segment), label: "segment", detail: "routes are logged a minute at a time, numbered from 0; this one is at the playhead"});
-  const seps = ["|", ...parts.slice(2).map(() => "--")];
+  // the log id's own parts are joined by "--", the name's by "/"
+  const seps = parts.slice(1).map((p, i) => i === 0 || p.kind === "segment" ? "/" : "--");
   return h("div", {class: "rid-anatomy"},
     h("div", {class: "rid-diagram", style: `grid-template-columns: repeat(${2 * parts.length - 1}, auto)`},
       parts.map((p, i) => [i > 0 && h("span", {class: "rid-sep"}, seps[i - 1]), h("span", {class: `rid-${p.kind}`}, partText(p))]),
