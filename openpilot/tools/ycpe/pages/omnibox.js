@@ -53,8 +53,11 @@ export async function resolve(text) {
   }
   const d = s.match(DONGLE);
   if (d) return `/${d[0].toLowerCase()}`;
-  const recent = ROUTE_ID.test(s) && recentRoutes().find((r) => r.name.endsWith(`|${s}`));
-  return recent ? routePath(recent.name) : null;
+  // a bare route id: one opened before, else the device in view's
+  if (!ROUTE_ID.test(s)) return null;
+  const recent = recentRoutes().find((r) => r.name.endsWith(`|${s}`));
+  const here = location.pathname.split("/")[1];
+  return recent ? routePath(recent.name) : /^[0-9a-f]{16}$/i.test(here) ? routePath(`${here.toLowerCase()}|${s}`) : null;
 }
 
 const DATE = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false});
