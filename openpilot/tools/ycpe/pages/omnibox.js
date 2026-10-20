@@ -64,7 +64,9 @@ const DATE = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric",
 
 // go(path) navigates; devices() is the signed-in user's list; onMiss(text) is told when nothing matched
 export function omnibox({go, devices, onMiss}) {
-  const input = h("input", {type: "search", class: "omnibox", placeholder: "route, dongle id or URL  ( / )", spellcheck: false, autocomplete: "off",
+  // the "/" shortcut is only worth a mention with a keyboard
+  const placeholder = `route, dongle id or URL${matchMedia("(pointer: coarse)").matches ? "" : "  ( / )"}`;
+  const input = h("input", {type: "search", class: "omnibox", placeholder, spellcheck: false, autocomplete: "off",
     role: "combobox", "aria-label": "Open a route or device", "aria-expanded": "false", "aria-controls": "omni-list", "aria-autocomplete": "list"});
   const list = h("div", {class: "omni-list", id: "omni-list", role: "listbox", hidden: true});
   const el = h("span", {class: "omni"}, input, list);

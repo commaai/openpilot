@@ -205,6 +205,12 @@ a.drive-row:hover { background: var(--hover); }
   body:is(.in-ws, .loading) .topbar .load-pill { max-width: fit-content; }
   body:is(.in-ws, .loading) .topbar .grow { display: none; }
   body:is(.in-ws, .loading) .topbar .omnibox { width: 100%; min-width: 0; }
+  /* too narrow for its placeholder, it's a magnifier until tapped */
+  body:is(.in-ws, .loading) .topbar .omni { container-type: inline-size; }
+  @container (max-width: 120px) {
+    .omnibox:not(:focus):placeholder-shown { background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237a828a' stroke-width='1.6'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.3 10.3 14 14'/%3E%3C/svg%3E") center / 16px no-repeat; }
+    .omnibox:not(:focus)::placeholder { color: transparent; }
+  }
   /* typing, the omnibox takes the whole first row, its list under it inside the window */
   .topbar .omni:focus-within { position: absolute; top: 6px; left: 8px; right: 8px; z-index: 1; }
   .topbar .omni:focus-within .omnibox { width: 100%; margin-left: 0; }
