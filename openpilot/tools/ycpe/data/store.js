@@ -74,9 +74,7 @@ export class Store {
   // starts loading a segment's log; e = {url, file?, source?, seg?}
   start(seg, e, local = seg.n) {
     seg.real = e.seg ?? local;  // the route's segment, for a range of it (urls[k] then names its seg)
-    // sources other than the API (commaCarSegments, say) can hold different bytes under the same file name
-    const file = e.file ?? new URL(e.url, location.origin).pathname.split("/").at(-1);
-    seg.key = `${this.cacheDir}${seg.real}/${e.source && e.source !== "api" ? `${e.source}-` : ""}${file}`;
+    seg.key = `${this.cacheDir}${seg.real}/${e.file ?? new URL(e.url, location.origin).pathname.split("/").at(-1)}`;
     seg.url = e.url;
     seg.source = e.source;
     seg.opts = {n: seg.real, shift: (seg.n - seg.real) * SEGMENT, ...(!this.migrate && {migrate: false})};
