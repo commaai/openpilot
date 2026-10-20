@@ -41,6 +41,13 @@ export function mergeLayout(current, opened, how) {
   return {...current, active: current.tabs.length, tabs: [...current.tabs, ...opened.tabs]};
 }
 
+// this page with the layout in ?layout=
+export function shareUrl(layout) {
+  const url = new URL(location.href);
+  url.searchParams.set("layout", JSON.stringify({ycpe: 1, ...layout}));
+  return url.href;
+}
+
 // files dropped on el open as new tabs; open(file) does the rest (loadLayout, mergeLayout, apply)
 export function acceptLayoutFiles(el, open) {
   const isFile = (e) => e.dataTransfer?.types.includes("Files");
@@ -84,6 +91,10 @@ export function layoutPicker({current, apply, close, name = "layout"}) {
     h("div", {class: "picker-row"},
       h("button", {onclick: () => file.click()}, "Import file…"),
       h("button", {onclick: () => download(new Blob([exportLayout(current())], {type: "application/json"}), `${name}.json`)}, "Export"),
+      h("button", {title: "Copy a link that opens this page with this layout", onclick: async () => {
+        await navigator.clipboard.writeText(shareUrl(current()));
+        status.textContent = "link copied (custom code in it opens untrusted)";
+      }}, "Copy link"),
       file),
     h("div", {class: "picker-row"}, url, h("button", {onclick: go}, "Open")),
     status,
