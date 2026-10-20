@@ -157,14 +157,15 @@ export function playbar(ctx) {
   resizer.observe(track);
 
   // dragging in the range strip pans/resizes the visible range; anywhere else scrubs the playhead
+  const inStrip = (e) => yOf(e) < (e.pointerType === "touch" ? 14 : PAD + RANGE_H + 1);  // a finger gets a taller strip
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
     const x0 = xOf(e), t0 = x2t(x0);
     const [r0, r1] = clock.range;
     let mode = "scrub";
-    const touch = e.pointerType === "touch";  // a finger gets a taller strip and wider edges
-    if (yOf(e) < (touch ? 14 : PAD + RANGE_H + 1)) {
+    const touch = e.pointerType === "touch";  // and wider edges
+    if (inStrip(e)) {
       const edge = touch ? 16 : 5;
       mode = Math.abs(x0 - t2x(r0)) < edge ? "left" : Math.abs(x0 - t2x(r1)) < edge ? "right" : t0 > r0 && t0 < r1 ? "pan" : "new";
     }
@@ -182,7 +183,7 @@ export function playbar(ctx) {
   });
   // the tooltip: its time follows the pointer, the rest is rebuilt only when it changes
   const hoverText = document.createTextNode("");
-  let tipText = "";
+  let tipText = "", onStrip = false;
   canvas.addEventListener("pointermove", (e) => {
     const x = xOf(e);
     hover = Math.max(0, Math.min(clock.duration, x2t(x)));  // a captured pointer goes past the ends
@@ -196,6 +197,10 @@ export function playbar(ctx) {
     const under = spans.filter((s) => SPAN_LABELS[s.kind] && s.start <= ms && ms < s.end)
       .map((s) => SPAN_LABELS[s.kind] + (isAlert(s) && alert ? `: ${alert}` : ""));
     const loads = status.kinds().filter((k) => k.segs[slot]).map((k) => `${k.label}: ${describe(k.segs[slot])}`);
+    // over the range strip, what dragging it does
+    const strip = !e.buttons && inStrip(e);
+    if (strip !== onStrip) canvas.style.cursor = (onStrip = strip) ? "ew-resize" : "";
+    if (strip) loads.unshift("drag: pan or resize the visible window");
     hoverText.data = `${fmt.clock(hover)} · segment ${n}`;
     const text = [n, ...under, ...loads].join("\n");
     if (text === tipText) return;

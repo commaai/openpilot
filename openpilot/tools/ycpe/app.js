@@ -535,22 +535,32 @@ const SHORTCUTS = [
   ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
 ];
 const GESTURES = [
-  ["double-click a series", "add it to a plot"], ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"],
-  ["right-drag in a plot", "pan"], ["right-click a plot", "options, custom series, export"], ["double-click a plot", "fit"],
+  ["click in a plot or the timeline", "seek there"], ["double-click a series", "add it to a plot"],
+  ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"], ["right-drag in a plot", "pan"],
+  ["wheel in a plot", "zoom time (shift or on the y-axis: values)"], ["right-click a plot", "options, custom series, export"],
+  ["right-click a legend entry", "color, transform, remove that curve"], ["double-click a plot", "fit"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
-  ["wheel on the timeline", "zoom the visible range"], ["click the playback time", "type a time to go to (3:12 or 192)"], ["drop rlog or qlog files on the page", "open them"],
+  ["wheel on the timeline", "zoom the visible range"], ["drag the strip above the timeline", "pan / resize the visible window"],
+  ["click the playback time", "type a time to go to (3:12 or 192)"], ["drop rlog or qlog files on the page", "open them"],
+];
+const TOUCHES = [
+  ["tap a plot or the timeline", "seek there"], ["double-tap a series", "add it to a plot"], ["long-press a plot", "options, custom series, export"],
+  ["drag in a plot", "pan"], ["pinch a plot", "zoom time"], ["drag a plot's y-axis", "pan the values"],
+  ["drag the strip above the timeline", "pan / resize the visible window"], ["tap the playback time", "type a time to go to (3:12 or 192)"],
 ];
 
-// a modal: Escape, the close button, a click outside or ? again closes it
+// a modal: Escape, the close button, a click outside or ? again closes it. On a touch screen, the touch gestures
 function help() {
   const open = document.querySelector(".help");
   if (open) return open.close();
+  const touch = matchMedia("(pointer: coarse)").matches;
   const keys = (k) => k.split(" ").map((x) => x.split("+").map((y, i) => [i > 0 && "+", h("kbd", {}, y)]));
   const el = h("dialog", {class: "help", "aria-labelledby": "help-title", onclose: () => el.remove(), onclick: (e) => { if (e.target === el) el.close(); }},
     h("div", {class: "help-card"},
-      h("div", {class: "help-head"}, h("h2", {id: "help-title"}, "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
-      h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
-        GESTURES.map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
+      h("div", {class: "help-head"}, h("h2", {id: "help-title"}, touch ? "Touch and keyboard" : "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
+      h("dl", {}, (touch ? TOUCHES : []).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]),
+        SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
+        (touch ? [] : GESTURES).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
   document.body.append(el);
   el.showModal();
 }
