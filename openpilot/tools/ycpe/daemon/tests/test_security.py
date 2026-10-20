@@ -105,6 +105,19 @@ class TestSecurity(DaemonCase):
     self.assertEqual(r.status, 200)
     self.assertTrue(f'<meta name="ycpe-daemon" content="{config.token}">'.encode() in data)  # assertTrue: no token in failure output
 
+  def test_local_page_routes(self):
+    # the app's own /local/<name>/<view> pages: a navigation gets index.html, an API call a JSON 404
+    for headers in ({"Sec-Fetch-Mode": "navigate"}, {"Accept": "text/html,application/xhtml+xml"}):
+      r, data = self.req("/local/demo-rlog/plot?url=x", headers=headers, token=False)
+      self.assertEqual((r.status, r.getheader("Content-Type")), (200, "text/html; charset=utf-8"))
+      self.assertTrue(b'name="ycpe-daemon"' in data)
+    r, data = self.req("/local/demo-rlog/plot", headers={"Accept": "*/*", "Sec-Fetch-Mode": "cors"})
+    self.assertEqual((r.status, json.loads(data)), (404, {"error": "Not Found"}))
+    r, _ = self.req("/local/demo-rlog/plot", headers={"Sec-Fetch-Mode": "navigate"}, host="evil.example")
+    self.assertEqual(r.status, 403)  # the host check still comes first
+    r, _ = self.req("/local/jobs/nope", headers={"Sec-Fetch-Mode": "navigate"})
+    self.assertEqual(r.status, 404)  # a route's own 404 stays an API answer
+
   def test_traversal(self):
     for path in ("../secret.txt", "..%2fsecret.txt", "%2e%2e/secret.txt", "a/../../secret.txt", "/etc/passwd", "%2fetc%2fpasswd"):
       r, _ = self.req(f"/local/test/file/{path}")
