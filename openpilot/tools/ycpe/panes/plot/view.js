@@ -7,8 +7,21 @@ const panes = new Set();  // {overlay(), view, setView(view)}: view is a pane's 
 const past = [], future = [];
 let tracker = null, lastKey = null, lastAt = 0;
 
+let touched = null;  // the plot pane the user last pressed in
+
 export function join(p) { panes.add(p); }
 export function leave(p) { panes.delete(p); }
+export function touch(p) { touched = p; }
+
+// shows an overlay's run of path (prefix + path, e.g. a replay) against the original in a mounted time plot:
+// the one already showing path, else the one last used, else any; seeks to t if given. False when no plot is
+// mounted.
+export function compare(path, prefix, {t} = {}) {
+  const live = [...panes].filter((p) => p.compare && p.el.isConnected);
+  const p = live.find((p) => p.has(path)) || (live.includes(touched) ? touched : live[0]);
+  p?.compare(path, prefix, t);
+  return !!p;
+}
 
 // the hover time, mirrored in every pane; null when no pane is hovered
 export function getTracker() { return tracker; }

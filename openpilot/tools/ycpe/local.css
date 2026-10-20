@@ -10,6 +10,10 @@
 .local-bar > i { display: block; height: 100%; background: var(--accent); }
 .local-acts { display: flex; gap: 12px; margin-top: 3px; }
 .local-err { color: var(--critical); }
+.local-device { margin-bottom: 8px; }
+.local-device .local-acts { align-items: center; }
+.local-host { flex: 1; min-width: 0; height: 20px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); font: 11px var(--mono); }
+.local-routes { margin-top: 4px; }
 .local-job { display: flex; align-items: center; gap: 8px; padding: 2px 0; border-top: 1px solid var(--line); }
 .local-job.error .muted { color: var(--critical); }
 .local-job .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

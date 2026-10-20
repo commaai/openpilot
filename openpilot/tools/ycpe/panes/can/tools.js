@@ -24,11 +24,13 @@ export function dbcDialog(can) {
   const search = h("input", {placeholder: "Search opendbc", spellcheck: false, oninput: () => list()});
   const results = h("div", {class: "can-list"});
   async function list() {
-    const {files, fingerprints} = await index;
+    const {files, fingerprints, label} = await index;
     const fp = fingerprints[can.fingerprinted] ? [fingerprints[can.fingerprinted]] : [];
     const q = search.value.toLowerCase();
-    results.replaceChildren(...[...new Set([...fp, ...files])].filter((f) => f.includes(q)).map((f) =>
-      h("button", {class: "can-list-row", onclick: open(() => can.loadOpendbc(f, buses()))}, f, f === fp[0] && h("span", {class: "can-muted"}, " · this car"))));
+    search.title = label ? `opendbc at ${label}` : "";
+    results.replaceChildren(...(label ? [] : [h("div", {class: "can-muted"}, "Can't reach opendbc on GitHub")]),
+      ...[...new Set([...fp, ...files])].filter((f) => f.includes(q)).map((f) =>
+        h("button", {class: "can-list-row", onclick: open(() => can.loadOpendbc(f, buses()))}, f, f === fp[0] && h("span", {class: "can-muted"}, " · this car"))));
   }
   list();
 

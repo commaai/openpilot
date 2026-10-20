@@ -75,7 +75,14 @@ class Handler(SimpleHTTPRequestHandler):
     try:
       core.check_host(headers)  # every request, static too: index.html carries the token
       if path.startswith("/local/"):
-        return self.api(method, path, core.parse_query(qs), headers)
+        try:
+          return self.api(method, path, core.parse_query(qs), headers)
+        except core.NoRoute:
+          # the app has page routes under /local/ too (loose files): a reload of one gets the app, not an API 404
+          navigating = headers.get("sec-fetch-mode") == "navigate" or "text/html" in headers.get("accept", "")
+          if method in ("GET", "HEAD") and navigating:
+            return self.index(method)
+          raise
       if method not in ("GET", "HEAD"):
         raise HTTPError(405)
       if not Path(path).suffix and not (APP / path.lstrip("/")).is_file() or path == "/index.html":

@@ -1,7 +1,7 @@
 // the global playback bar: transport, rate, time, and the route timeline (engagement, a lane per loader showing
 // what's loaded, visible range, loop, playhead, hover preview). Everything on the timeline is one canvas; time with
 // nothing loaded at all is faded.
-import {api, routeEvents} from "/api.js";
+import {api, routeEvents, segmentAt} from "/api.js";
 import {h} from "/dom.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -147,10 +147,11 @@ export function playbar(ctx) {
     perf.invalidate(pane);
     tip.hidden = false;
     tip.style.left = `${Math.max(0, Math.min(width - 136, x - 68))}px`;
-    const seg = Math.max(0, Math.floor(hover / 60));
-    tip.firstChild.style.backgroundImage = `url(${api.segmentAsset(route, Math.min(seg, route.maxqlog ?? seg), "sprite.jpg")})`;
-    tip.lastChild.replaceChildren(`${clockText(hover, false)} · segment ${seg}`,
-      ...status.kinds().filter((k) => k.segs[seg]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[seg])}`)));
+    const slot = Math.max(0, Math.min(Math.floor(hover / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
+    const n = segmentAt(route, slot);  // a range's slots map to its segments
+    tip.firstChild.style.backgroundImage = `url(${api.segmentAsset(route, n, "sprite.jpg")})`;
+    tip.lastChild.replaceChildren(`${clockText(hover, false)} · segment ${n}`,
+      ...status.kinds().filter((k) => k.segs[slot]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[slot])}`)));
   });
   canvas.addEventListener("pointerleave", () => { hover = null; tip.hidden = true; perf.invalidate(pane); });
   // wheel zooms the visible range around the cursor

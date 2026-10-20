@@ -16,7 +16,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from openpilot.tools.lib.filereader import DATA_ENDPOINT
+from openpilot.tools.lib import filereader
 from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
@@ -52,7 +52,7 @@ def canonical_url(source: str, key: Key) -> str | None:
   """The query-less URL the shared cache knows this file by when it came from source."""
   path = f"{key.dongle}/{key.log_id}/{key.seg}/{key.file}"
   if source == "internal":
-    return f"{DATA_ENDPOINT.rstrip('/')}/{path}"
+    return f"{filereader.DATA_ENDPOINT.rstrip('/')}/{path}"
   if source == "api":
     container = "qlog" if key.file.startswith(("qlog", "qcamera")) else "commadata2"
     return f"{API_BLOB}/{container}/{path}"
@@ -115,6 +115,7 @@ def lookup(key: Key, sources=("device", "internal", "api", "openpilotci", "carSe
         for i in range(-(-length // CHUNK_SIZE)):
           out.write((root() / f"{h}_{float(i)}").read_bytes())
       os.replace(tmp, p)
+      account(length, 1)
       return source, p
     for comp in ("zst", "bz2"):
       if (p := root() / sha(f"decompressed-{comp}:{url}")).is_file():
@@ -139,14 +140,39 @@ def mirror_chunks(url: str, path: Path) -> None:
   # url_file prunes by its own manifest; list the chunks there so its accounting sees them
   manifest = root() / "manifest.txt"
   with _manifest_lock:
-    lines = manifest.read_text().splitlines() if manifest.exists() else []
+    old = manifest.stat().st_size if manifest.exists() else None
+    lines = manifest.read_text().splitlines() if old is not None else []
     now = int(time.time())  # noqa: TID251  url_file's manifest uses wall clock
     tmp = root() / f"{TMP}manifest"
     tmp.write_text("\n".join(lines + [f"{n} {now}" for n in names]))
     os.replace(tmp, manifest)
+    account(size + len(str(size)) + manifest.stat().st_size - (old or 0), len(names) + 1 + (old is None))
 
 
 _manifest_lock = threading.Lock()
+
+
+# usage: a running total, kept by downloads, evictions and prunes, and corrected by a full walk at most every RESCAN
+# seconds (other tools write here too). The page polls it, so reading it must not walk the directory.
+
+RESCAN = 60
+_usage = {"at": -RESCAN, "bytes": 0, "files": 0}
+_usage_lock = threading.Lock()
+
+
+def account(nbytes: int, nfiles: int) -> None:
+  with _usage_lock:
+    _usage["bytes"] += nbytes
+    _usage["files"] += nfiles
+
+
+def totals() -> tuple[int, int]:
+  """(bytes, files) in the cache directory."""
+  if time.monotonic() - _usage["at"] > RESCAN:
+    files = scan()
+    with _usage_lock:
+      _usage.update(at=time.monotonic(), bytes=sum(s for _, s, _ in files), files=len(files))
+  return _usage["bytes"], _usage["files"]
 
 
 # downloads: one per key at a time, readable while they run
@@ -186,8 +212,11 @@ class Fill:
         r.release_conn()
       if self.total is not None and self.done != self.total:
         raise OSError(f"short read {self.done}/{self.total}")
+      old = self.final.stat().st_size if self.final.exists() else None  # a stale copy being replaced
       os.replace(self.tmp, self.final)
+      mark_checked(self.final)
       stats["fetched"] += self.done
+      account(self.done - (old or 0), 0 if old is not None else 1)
       if self.key.file in LOGS:
         mirror_chunks(self.cache_url, self.final)
     except Exception as e:
@@ -200,13 +229,34 @@ class Fill:
       with _fills_lock:
         _fills.pop(self.key, None)
       self.finished.set()
-      stale()
       prune_soon()
 
 
 _fills: dict[Key, Fill] = {}
 _fills_lock = threading.Lock()
-stats = {"hits": 0, "misses": 0, "served": 0, "fetched": 0}
+stats = {"hits": 0, "misses": 0, "served": 0, "fetched": 0, "stale": 0}
+
+
+# when a whole-file copy was last checked against its source, in an xattr on the file (a replaced file starts over);
+# in memory where the filesystem has no user xattrs
+
+XATTR = "user.ycpe.checked"
+_checked: dict[str, float] = {}
+
+
+def checked_at(path: Path) -> float:
+  try:
+    return float(os.getxattr(path, XATTR))
+  except (OSError, ValueError):
+    return _checked.get(str(path), 0.0)
+
+
+def mark_checked(path: Path, when: float | None = None) -> None:
+  when = time.time() if when is None else when  # noqa: TID251  outlives the process
+  try:
+    os.setxattr(path, XATTR, str(when).encode())
+  except OSError:
+    _checked[str(path)] = when
 
 
 def fill(key: Key, source: str, url: str, cancelled=None) -> Fill:
@@ -262,34 +312,51 @@ def prune(budget: int | None = None) -> dict:
       total -= size
       freed += size
       removed += 1
-    stale()
+    with _usage_lock:
+      _usage.update(at=time.monotonic(), bytes=total, files=len(files) - removed)
     return {"removed": removed, "freed": freed, "bytes": total}
 
 
 def prune_soon() -> None:
+  """Prunes in a couple of seconds if the running total is over budget (several finishing downloads share one walk)."""
   global _prune_timer
-  if _prune_timer is None or not _prune_timer.is_alive():
+  if totals()[0] > config.cache_budget and (_prune_timer is None or not _prune_timer.is_alive()):
     _prune_timer = threading.Timer(2.0, prune)
     _prune_timer.daemon = True
     _prune_timer.start()
 
 
+def derived_copies(url: str) -> list[Path]:
+  """The other tools' forms of url's file: decompressed logs and url_file chunks (not the whole-file copy)."""
+  h = hash_url(url)
+  paths = [root() / sha(f"decompressed-zst:{url}"), root() / sha(f"decompressed-bz2:{url}")]
+  try:
+    length = int((root() / f"{h}_length").read_text())
+  except (OSError, ValueError):
+    return paths
+  return paths + [root() / f"{h}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))] + [root() / f"{h}_length"]
+
+
 def evict(key: Key) -> int:
   """Removes every cached copy of key; returns bytes freed."""
-  freed = 0
   paths = [device_path(key)]
   for source in ("internal", "api", "openpilotci", "carSegments"):
     url = canonical_url(source, key)
-    h = hash_url(url)
-    paths += [root() / sha(url), root() / sha(f"decompressed-zst:{url}"), root() / sha(f"decompressed-bz2:{url}"), root() / f"{h}_length"]
-    paths += list(root().glob(f"{h}_*.0"))
+    paths += [root() / sha(url), *derived_copies(url)]
+  return remove(paths)
+
+
+def remove(paths: list[Path]) -> int:
+  freed = removed = 0
   for p in paths:
     try:
-      freed += p.stat().st_size
+      size = p.stat().st_size
       p.unlink()
     except OSError:
-      pass
-  stale()
+      continue
+    freed += size
+    removed += 1
+  account(-freed, -removed)
   return freed
 
 
@@ -304,20 +371,9 @@ def fetch(dongle: str, log_id: str, seg: int, file: str, sources=None, job=None)
 module("cache", "1")
 
 
-_usage = (0.0, 0, 0)  # (monotonic time, bytes, files): the page polls this, so the directory walk is reused for 2 s
-
-
-def stale() -> None:
-  global _usage
-  _usage = (0.0, 0, 0)
-
-
 def usage() -> dict:
-  global _usage
-  if time.monotonic() - _usage[0] > 2:
-    files = scan()
-    _usage = (time.monotonic(), sum(s for _, s, _ in files), len(files))
-  return {"dir": str(root()), "budget": config.cache_budget, "bytes": _usage[1], "files": _usage[2],
+  b, n = totals()
+  return {"dir": str(root()), "budget": config.cache_budget, "bytes": b, "files": n,
           "fills": [{"key": str(f.key), "source": f.source, "done": f.done, "total": f.total} for f in list(_fills.values())], **stats}
 
 

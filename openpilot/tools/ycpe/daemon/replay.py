@@ -28,6 +28,7 @@ RUNNER = Path(__file__).with_name("replay_runner.py")
 DEFAULT_PROCS = ["controlsd", "plannerd", "radard"]
 SUBMODULES = ["msgq_repo", "opendbc_repo", "rednose_repo", "tinygrad_repo", "teleoprtc_repo"]
 ERROR_LINES = 30
+MAX_SEGS = 100  # segments in one replay: about 15 minutes of work for the default processes
 
 # what each process needs built, beyond plain Python: (description, globs relative to the checkout, any one will do)
 COMMON = [("msgq", ["msgq_repo/msgq/ipc_pyx*.so"]),
@@ -142,9 +143,15 @@ class Replay:
       rlogs = []
       for i, seg in enumerate(self.segs):
         report(i, len(self.segs), f"downloading segment {seg}", phase="download")
-        rlogs.append([seg, str(fetch(self.route, seg))])
+        try:
+          rlogs.append([seg, str(fetch(self.route, seg))])
+        except FileNotFoundError:  # past the end of the route, or never uploaded
+          if not rlogs:
+            raise
+          break
         if cancelled():
           raise InterruptedError("cancelled")
+      self.segs = [seg for seg, _ in rlogs]
       self._spawn(rlogs, report, cancelled, shims or self.dir.parent / "shims")
       self.diff = json.loads((self.dir / "diff.json").read_text())
       self.state, self.seconds = "done", time.monotonic() - self.t0
@@ -266,6 +273,8 @@ if route is not None:
       raise HTTPError(400, "bad route")
     if not (isinstance(segs, list) and len(segs) == 2 and all(isinstance(s, int) and 0 <= s < 10000 for s in segs) and segs[0] <= segs[1]):
       raise HTTPError(400, "segs must be [first, last]")
+    if segs[1] - segs[0] >= MAX_SEGS:
+      raise HTTPError(400, f"at most {MAX_SEGS} segments at once")
     if not set(procs) <= set(PROCS) | VISION:
       raise HTTPError(400, f"unknown process in {procs}")
     replay = Replay(root(), name, list(range(segs[0], segs[1] + 1)), procs, repo_arg(body.get("repo")))

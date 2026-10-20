@@ -194,7 +194,11 @@ export function footprint() {
   let disk = 0;
   // with the local daemon, its shared download cache counts too (that's where logs live then)
   const local = () => daemon.has("cache") ? daemon.json("/local/cache").then((s) => s.bytes, () => 0) : 0;
-  const poll = () => Promise.all([navigator.storage?.estimate().then((e) => e.usage || 0, () => 0), local()]).then(([a, b]) => { disk = a + b; });
+  const poll = () => Promise.all([navigator.storage?.estimate().then((e) => e.usage || 0, () => 0), local()]).then(([a, b]) => {
+    disk = a + b;
+    perf.mark("disk: browser (OPFS)", fmtBytes(a));
+    if (daemon.has("cache")) perf.mark("disk: daemon cache", fmtBytes(b));
+  });
   poll();
   setInterval(poll, 3000);
   setInterval(() => {

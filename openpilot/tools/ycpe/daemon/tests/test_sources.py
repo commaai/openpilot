@@ -23,8 +23,14 @@ class Upstream(SimpleHTTPRequestHandler):
   def __init__(self, *a, **kw):
     super().__init__(*a, directory=UPSTREAM, **kw)
 
+  heads: dict[str, int] = {}
+
   def log_message(self, *a):
     pass
+
+  def do_HEAD(self):
+    Upstream.heads[self.path] = Upstream.heads.get(self.path, 0) + 1
+    super().do_HEAD()
 
   def do_GET(self):
     if self.path.endswith("/3/rlog.zst"):
@@ -55,6 +61,9 @@ from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import config
 from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.lib import filereader
+
+filereader.DATA_ENDPOINT = os.environ["DATA_ENDPOINT"]  # in case filereader was imported before the env was set
 
 DONGLE, LOG = "0123456789abcdef", "00000001--abcdef0123"
 ROUTE = f"{DONGLE}|{LOG}"
@@ -112,7 +121,7 @@ class TestSources(DaemonCase):
     self.assertTrue((Path(CACHE) / cache.sha(canonical)).is_file())
     hits = cache.stats["hits"]
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
-    self.assertEqual((r.status, data), (206, blob(1, "rlog.zst")[5:10]))
+    self.assertEqual((r.status, data, r.getheader("X-Ycpe-Cache")), (206, blob(1, "rlog.zst")[5:10], "hit"))
     self.assertEqual(cache.stats["hits"], hits + 1)
     # the python tools read the same download from their chunk cache, without the network
     self.assertEqual(URLFile(canonical + "?sig=x").read(), blob(1, "rlog.zst"))
@@ -180,6 +189,57 @@ class TestSources(DaemonCase):
     p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)
     self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
 
+  def test_stale_refetch(self):
+    rel = f"/{DONGLE}/{LOG}/5/fcamera.hevc"
+    up = Path(UPSTREAM) / rel.lstrip("/")
+    up.parent.mkdir(parents=True, exist_ok=True)
+    old, new = b"a" * 1000, b"b" * 1500
+    up.write_bytes(old)
+    url = f"/local/file/internal{rel}"
+    self.assertEqual(self.req(url)[1], old)  # miss: downloaded, and counts as just checked
+    key = cache.Key(DONGLE, LOG, 5, "fcamera.hevc")
+    for _ in range(100):
+      if cache.lookup(key):
+        break
+      time.sleep(0.01)
+    heads = Upstream.heads.get(rel, 0)
+    self.assertEqual(self.req(url)[1], old)
+    time.sleep(0.1)
+    self.assertEqual(Upstream.heads.get(rel, 0), heads)  # checked within the day: no HEAD
+
+    up.write_bytes(new)  # the source changed under the same URL
+    path = cache.lookup(key)[1]
+    cache.mark_checked(path, 0.0)
+    stale = cache.stats["stale"]
+    r, data = self.req(url)
+    self.assertEqual(data, old)  # a hit never waits on the check
+    for _ in range(200):
+      r, data = self.req(url)
+      if data == new:
+        break
+      time.sleep(0.01)
+    self.assertEqual((data, r.getheader("X-Ycpe-Cache")), (new, "hit"))
+    self.assertEqual((cache.stats["stale"], Upstream.heads.get(rel, 0)), (stale + 1, heads + 1))
+    self.req(url)
+    time.sleep(0.1)
+    self.assertEqual(Upstream.heads.get(rel, 0), heads + 1)  # the new copy counts as checked
+
+  def test_usage_running_total(self):
+    cache._usage["at"] = -cache.RESCAN
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qcamera.ts"))
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
+    walk = lambda: (sum(s for _, s, _ in cache.scan()), len(cache.scan()))  # noqa: E731
+    self.assertEqual(cache.totals(), walk())
+    cache.fetch(DONGLE, LOG, 2, "qcamera.ts", sources=ONLY)
+    cache.fetch(DONGLE, LOG, 2, "qlog.zst", sources=ONLY)  # a log: also mirrored as url_file chunks
+    self.assertEqual(cache.totals(), walk())
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
+    self.assertEqual(cache.totals(), walk())
+    t = time.monotonic()
+    for _ in range(1000):
+      cache.usage()
+    self.assertLess((time.monotonic() - t) / 1000, 1e-4)  # polling never walks the directory
+
   def test_prune_lru(self):
     d = Path(tempfile.mkdtemp())
     old = config.cache_root
@@ -195,6 +255,7 @@ class TestSources(DaemonCase):
       self.assertEqual(out["bytes"], 3000)
     finally:
       config.cache_root = old
+      cache._usage["at"] = -cache.RESCAN
 
   def test_proxy(self):
     r, _ = self.req("/local/proxy?url=https://evil.example/")

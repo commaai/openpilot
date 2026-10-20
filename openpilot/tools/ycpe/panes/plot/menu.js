@@ -36,7 +36,8 @@ const num = (label, value, set, step = "any") => h("label", {}, label,
   h("input", {type: "number", step, value, oninput: (e) => e.target.value !== "" && isFinite(e.target.value) && set(+e.target.value)}));
 
 // edits one curve in place; change() after every edit
-export function curveEditor(x, y, curve, {change, remove, code}) {
+// actions: [{label, fn}] run from buttons, after the editor closes
+export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
   const set = (k) => (v) => { curve[k] = v; change(); };
   const param = h("span");
   const showParam = () => {
@@ -60,5 +61,6 @@ export function curveEditor(x, y, curve, {change, remove, code}) {
     }}, h("option", {value: ""}, "none"), Object.entries(TRANSFORMS).map(([k, s]) => h("option", {value: k, selected: curve.transform?.kind === k}, s.label)))),
     param,
     code && h("button", {onclick: code}, "Edit code…"),
+    actions.map(({label, fn}) => h("button", {onclick: () => { close(); fn(); }}, label)),
     h("button", {class: "danger", onclick: () => { close(); remove(); }}, "Remove curve"));
 }
