@@ -112,9 +112,8 @@ export function mount(main, {devices, dongle, signedIn}) {
     const drawn = shown = {devices, dongle};
     list.replaceChildren(...[...devices || []].sort(order).map((d) => deviceRow(d, d.dongle_id === dongle)));
     // connect's "add new device", from pages/pair.js
-    if (signedIn) optional("/pages/pair.js", "pairButton", "add new device").then((b) => {
+    if (signedIn) optional("/pages/pair.js", "pairButton", "add new device", true).then((b) => {
       if (!b || shown !== drawn) return;
-      b.append(cnIcon("addCircle", 24));
       list.append(h("div", {class: "cn-add"}, b));
     });
   }

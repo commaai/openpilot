@@ -263,8 +263,8 @@ function drivesSection(device, user) {
     near.observe(sentinel);
     const n = body.children.length;
     if (user) {
-      // connect says there are no more past five drives, loaded or not
-      status.textContent = !n ? "No routes found in selected time range." : n > 5 ? "There are no more routes found in selected time range." : "";
+      // connect says there are no more past five drives, once there aren't
+      status.textContent = !n ? "No routes found in selected time range." : !done ? "Loading..." : n > 5 ? "There are no more routes found in selected time range." : "";
       status.parentElement.className = !n ? "cn-empty" : "cn-end";
       return;
     }
