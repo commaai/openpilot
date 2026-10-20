@@ -56,7 +56,8 @@ function loop(now) {
   }
 
   const start = performance.now();
-  for (const fn of ticks) fn(frame);
+  // one that throws mustn't stop the frame: every pane after it would never render again
+  for (const fn of ticks) try { fn(frame); } catch (e) { console.error("tick", e); }
   const batch = [...dirty];
   dirty.clear();
   for (const pane of batch) {
