@@ -176,8 +176,8 @@ export const api = {
   // public routes need no share credentials
   qcameraUrl: (route) => `${apiHost()}/v1/route/${route.fullname}/qcamera.m3u8` +
     (route.share_sig ? "?" + new URLSearchParams({exp: route.share_exp, sig: route.share_sig}) : ""),
-  // per-segment derived assets live next to the route on the CDN
-  segmentAsset: (route, segment, name) => `${route.url}/${segment}/${name}`,
+  // per-segment derived assets live next to the route on the CDN; null for routes not in the API (no url)
+  segmentAsset: (route, segment, name) => route.url ? `${route.url}/${segment}/${name}` : null,
 };
 
 // the segment a timeline slot plays: a route opened with a range (data/sources.js routeRecord) plays its segments
@@ -189,7 +189,8 @@ const memoKey = (route) => `${route.fullname}/${route.range ?? ""}`;
 // a per-segment asset for each slot, with the seconds its times move by to land there
 const assets = (route, name) => Promise.all(Array.from({length: slots(route)}, async (_, slot) => {
   const n = segmentAt(route, slot);
-  const resp = await fetch(api.segmentAsset(route, n, name)).catch(() => null);
+  const url = api.segmentAsset(route, n, name);
+  const resp = url && await fetch(url).catch(() => null);
   return {shift: (slot - n) * 60, data: resp?.ok ? await resp.json() : []};
 }));
 

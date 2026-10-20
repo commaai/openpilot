@@ -12,12 +12,12 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
-import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
+import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles, watchRouteStart} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute} from "/pages/omnibox.js";
-import {localPage} from "/pages/local.js";
+import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 
@@ -196,6 +196,7 @@ class Workspace {
   ensureStore() {
     if (this.store || !this.files) return this.store;
     this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
+    this.offs.push(watchRouteStart(this.route, this.store));
     // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
     this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
@@ -368,7 +369,8 @@ async function render() {
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);
     } catch (e) {
-      main.replaceChildren(errorPage(e));
+      const card = [403, 404].includes(e.status) && await pullCard(routeName, render).catch(() => null);  // only on the LAN device
+      if (id === navId) main.replaceChildren(card || errorPage(e));
     } finally {
       document.body.classList.remove("loading");
     }
@@ -428,6 +430,7 @@ function errorPage(e) {
 }
 
 document.querySelector("#app > .topbar").replaceWith(topBar());
+addEventListener("ycpe:route-start", (e) => { if (ws?.route === e.detail) updateTop(); });
 window.addEventListener("popstate", render);
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice)
