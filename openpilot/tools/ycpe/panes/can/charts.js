@@ -166,6 +166,13 @@ export function create(ctx, state) {
     },
   };
   s.add(can.on("chart", (path) => { if (!charts.some((c) => c.pane.save().curves.some((x) => x.path === path))) add({curves: [curve(path)]}); }));
+  // curves follow a renamed signal or message, and go with a removed one
+  s.add(can.on("moved", (move) => {
+    tabs[active].charts = charts.map((c) => c.pane.save());
+    const moved = (st) => ({...st, curves: st.curves.flatMap((x) => (move(x.path) ? [{...x, path: move(x.path)}] : []))});
+    if (tabs.every((t) => t.charts.every((st) => st.curves.every((x) => move(x.path) === x.path)))) return;
+    rebuild(() => { for (const t of tabs) t.charts = t.charts.map(moved).filter((st) => st.curves.length); });
+  }));
   s.add(ctx.clock.on("t", follow));
   follow();
   for (const st of tabs[active].charts) add(st);

@@ -442,7 +442,12 @@ export class Can {
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
     this.dbcs = new Dbcs();
-    this.dbcs.on((what) => what !== "saved" && this.dbcChanged());
+    this.dbcs.on((what, change) => {
+      if (what === "saved") return;
+      this.dbcChanged();
+      const move = change && this.moved(change);
+      if (move) this.emit("moved", move);
+    });
     // leaving with unsaved DBC edits asks first
     this.unload = (e) => { if (this.dbcs.dirty) e.preventDefault(); };
     addEventListener("beforeunload", this.unload);
@@ -647,6 +652,22 @@ export class Can {
     if (this.suppressDefined) this.sendMasks();
     this.emit("dbc");
     this.store.emit?.("paths");
+  }
+
+  // an edit's renamed or removed signals as a map of paths: fn(path) is the path now, or null once it's gone. One
+  // signal out and one in is a rename, as only the signal editor does both
+  moved({dbc, from, to}) {
+    if (!from) return null;
+    const has = (m, name) => m.sigs.some((s) => s.name === name);
+    const gone = from.sigs.filter((s) => !to || !has(to, s.name)), added = to ? to.sigs.filter((s) => !has(from, s.name)) : [];
+    if (to && to.name === from.name && !gone.length) return null;
+    const renamed = gone.length === 1 && added.length === 1 ? [gone[0].name, added[0].name] : [];
+    return (path) => {
+      const [, , bus, msg, sig] = path.split("/");
+      if (msg !== from.name || this.dbcs.file(+bus) !== dbc) return path;
+      const now = sig === renamed[0] ? renamed[1] : sig;
+      return to && has(to, now) ? `/dbc/${bus}/${to.name}/${now}` : null;
+    };
   }
 
   // opendbc's DBC names and the fingerprint → DBC map

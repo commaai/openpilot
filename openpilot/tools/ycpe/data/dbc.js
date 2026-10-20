@@ -305,7 +305,7 @@ export class Dbcs {
   }
 
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
-  emit(what) { for (const fn of this.listeners) fn(what); }
+  emit(what, arg) { for (const fn of this.listeners) fn(what, arg); }
 
   // the files that opening a DBC on `buses` unloads
   replaced(buses) { return this.all().filter((f) => this.buses(f).every((b) => buses.includes(b))); }
@@ -346,9 +346,10 @@ export class Dbcs {
   }
   undo() { if (this.index > 0) this.apply(this.undos[--this.index], "before"); }
   redo() { if (this.index < this.undos.length) this.apply(this.undos[this.index++], "after"); }
+  // emits "msg" with the message as it was and as it is now
   apply(cmd, side) {
     cmd.dbc.setMsg(cmd.address, cloneMsg(cmd[side]));
-    this.emit("msg");
+    this.emit("msg", {dbc: cmd.dbc, from: cmd[side === "after" ? "before" : "after"], to: cmd[side]});
   }
   last(dbc) { return this.undos.slice(0, this.index).findLast((c) => c.dbc === dbc) || null; }
   isDirty(dbc) { return this.last(dbc) !== (this.clean.get(dbc) || null); }
