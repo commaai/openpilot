@@ -1,6 +1,7 @@
 // route info pane: what the route is, its public/preserved toggles, link sharing and bookmarks (files have their own pane)
 import {api, routeEvents} from "../api.js";
 import {h, fmt, css} from "../dom.js";
+import {routeKey} from "../data/sources.js";
 import {canManage} from "../pages/home.js";
 import {schemaRow} from "./schema.js";
 
@@ -25,7 +26,7 @@ function toggle(label, value, enabled, set) {
 
 export function create(ctx) {
   const {route, clock} = ctx;
-  const [dongleId, routeId] = route.fullname.split("|");
+  const [dongleId] = route.fullname.split("|");
   const start = new Date(route.start_time_utc_millis);
   const commit = route.git_commit?.slice(0, 8);
   const github = route.git_remote?.includes("github.com") && commit ? `https://${route.git_remote.replace(/\.git$/, "")}/commit/${route.git_commit}` : null;
@@ -38,11 +39,12 @@ export function create(ctx) {
     ["branch", route.git_branch && [route.git_branch, " @ ", github ? h("a", {href: github, target: "_blank", rel: "noopener"}, commit) : commit, route.git_dirty ? " (dirty)" : ""]],
     ["remote", route.git_remote],
     ["schema", schema.el],
-    ["segments", `${(route.maxqlog ?? -1) + 1}, ${fmt.miles(route.distance ?? 0)}`],
+    // a range shows its own segments; the distance is the whole route's
+    ["segments", route.range ? `${route.segment_numbers.length} of ${(route.maxqlog ?? -1) + 1}` : `${(route.maxqlog ?? -1) + 1}, ${fmt.miles(route.distance ?? 0)}`],
   ];
 
   const copied = h("span", {class: "small muted"});
-  const shareUrl = () => `${location.origin}/${dongleId}/${routeId}/drive${clock.t ? `?t=${clock.t.toFixed(1)}` : ""}`;
+  const shareUrl = () => `${location.origin}/${routeKey(route).replace("|", "/")}/drive${clock.t ? `?t=${clock.t.toFixed(1)}` : ""}`;
   const copy = async (text, what) => {
     await navigator.clipboard.writeText(text);
     copied.textContent = `copied ${what}`;
