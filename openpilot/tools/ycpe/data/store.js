@@ -7,7 +7,7 @@ import {status} from "../status.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
-import {enumRef, service, unpack} from "./pack.js";
+import {enumRef, service, times, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
@@ -16,6 +16,7 @@ const IN_USE = 5000;  // ms since last use that a column counts as in use (never
 const NO_CAN = {bytes: 0, paths: () => [], series: () => null, ingest() {}, dispose() {}};
 const BLOCK = 16, FANOUT = 8;  // min/max pyramid: blocks of 16 samples, then 8 blocks per level up
 const NEAR = 3;  // segments from the focus on that, once in, let the worker pool shrink
+const MONO = "__logMonoTime";  // the message times as a series, as jotpluggler and PlotJuggler name it
 
 // opens a route and starts loading its logs outward from t; repeat tiles the route for long-route tests
 export async function openRoute(name, opts) {
@@ -44,6 +45,7 @@ export class Store {
     this.handlers = {};
     this.can = can ? new Can(this) : NO_CAN;  // an overlay's Can would share and resize the route's CAN lane
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
+    this.monos = new Map();  // /<service>/__logMonoTime → its series
     this.lists = new Map();  // long lists the workers skipped: path → longest length
     this.missing = new Set();  // migrated paths that couldn't be computed
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
@@ -98,7 +100,8 @@ export class Store {
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
       return {...seg.opts, keep: this.keep, skip, only, context: this.context, schema: this.schema, gen: this.gen, ...extra};
     };
-    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev)).then((p) => Object.assign(p, {full: !only}));
+    const loaded = this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this);
+    return loaded.then((p) => Object.assign(p, {full: !only}));  // every column, not just the ones asked for again
   }
 
   // reads every loaded segment again with another schema; the columns in memory stay until each segment's new ones
@@ -154,7 +157,7 @@ export class Store {
     const n = Math.max(0, Math.floor(t / SEGMENT));
     if (n !== this.focusSeg) {
       this.focusSeg = n;
-      this.loader.reprioritize((m) => this.prio(m));
+      this.loader.reprioritize((m) => this.prio(m), this);
       this.pool();
     }
     this.buffering();
@@ -233,6 +236,7 @@ export class Store {
   }
 
   failed(seg, e) {
+    if (this.disposed) return;
     seg.status = "error";
     seg.error = String(e);
     seg.loading = null;
@@ -313,7 +317,11 @@ export class Store {
 
   paths() {
     const out = this.can.paths();
-    for (const {path, type, names} of this.entries.values()) out.push(names ? {path, type, names} : {path, type});
+    for (const {path, type, names} of this.entries.values()) {
+      out.push(names ? {path, type, names} : {path, type});
+      const mono = path.match(/^(\/[^/]+)\/_?valid$/);  // every service has one
+      if (mono) out.push({path: `${mono[1]}/${MONO}`, type: "f64", internal: true});
+    }
     for (const o of this.overlays) for (const p of o.store.paths()) out.push({...p, path: o.prefix + p.path});
     return out;
   }
@@ -323,6 +331,7 @@ export class Store {
     if (path.startsWith("/dbc/")) return this.can.series(path);
     const o = this.overlays.length ? this.overlayOf(path) : null;
     if (o) return this.overlaySeries(o, path);
+    if (path.endsWith(`/${MONO}`)) return this.monoSeries(path);
     const e = this.entries.get(path);
     if (!e) return this.request(path), null;
     e.used = performance.now();
@@ -333,6 +342,24 @@ export class Store {
       e.series = {path, type: e.type, names: e.names, chunks, version: e.version};
     }
     return e.series;
+  }
+
+  // /<service>/__logMonoTime: each message's logMonoTime in ns, from the service's times (they sit next to its valid column)
+  monoSeries(path) {
+    const svc = path.slice(0, -MONO.length - 1), src = this.entries.has(`${svc}/valid`) ? `${svc}/valid` : `${svc}/_valid`;
+    if (!this.series(src)) return null;  // keeps the times resident
+    const e = this.entries.get(src);
+    let m = this.monos.get(path);
+    if (m?.version !== e.version) {
+      const chunks = [];
+      e.at.forEach((a, n) => {
+        if (!a) return;
+        const seg = this.route.segments[n], t = times(a.pack, service(a.pack, a.k)), off = seg.start - seg.opts.shift;
+        chunks.push({n, t, tt: t, v: Float64Array.from(t, (x) => (x + off) * 1e9)});
+      });
+      this.monos.set(path, m = {path, type: "f64", chunks, version: e.version});
+    }
+    return m;
   }
 
   // registers or replaces a derived series (transforms, /custom/*) as one chunk
@@ -491,8 +518,6 @@ export class Store {
   attach(prefix, urls, {name = prefix} = {}) {
     let o = this.overlays.find((x) => x.prefix === prefix);
     if (o) return o.store.add(urls), o;
-    // the loader is shared: reprioritize() ranks the overlay's jobs with this store's fn, which is right because both
-    // tag jobs with the route's segment slot. detach() leaves its queued jobs to finish into the disposed store
     const store = new Store(name, urls, {loader: this.loader, t: this.t, lane: {name, label: name, order: 1}, can: false, migrate: false});
     o = {prefix, name, store, cache: new Map(), offs: ["paths", "progress"].map((ev) => store.on(ev, (a) => this.emit(ev, a)))};
     this.overlays.push(o);
@@ -536,7 +561,9 @@ export class Store {
 
   dispose() {
     for (const o of this.overlays) o.store.dispose();
-    if (!this.shared) this.loader.dispose();
+    this.disposed = true;
+    if (this.shared) this.loader.cancel(this);
+    else this.loader.dispose();
     this.can.dispose();
     this.status.remove();
   }
