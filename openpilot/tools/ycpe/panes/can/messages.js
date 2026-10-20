@@ -32,8 +32,8 @@ export function create(ctx, state) {
   const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; ctx.perf.invalidate(pane); }}, spacer, empty);
   const pool = [];
 
-  const undo = h("button", {class: "can-btn", title: "Undo (ctrl+z)", onclick: () => can.dbcs.undo()}, "↶");
-  const redo = h("button", {class: "can-btn", title: "Redo (ctrl+shift+z)", onclick: () => can.dbcs.redo()}, "↷");
+  const undo = h("button", {class: "can-btn", title: "Undo (ctrl+z)", onclick: () => can.dbcs.undo()}, icon("undo", 14));
+  const redo = h("button", {class: "can-btn", title: "Redo (ctrl+shift+z)", onclick: () => can.dbcs.redo()}, icon("redo", 14));
   const dbcBtn = h("button", {class: "can-btn can-dbc-btn", onclick: () => dbcDialog(can)});
   const clearBtn = h("button", {class: "can-btn", title: "Clear suppressed bytes", onclick: () => { can.suppressHighlighted(false); toolbar(); }});
   // settings live in the ⋯ menu, so the toolbar stays one row
@@ -45,7 +45,7 @@ export function create(ctx, state) {
       menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
       menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
       h("hr"),
-      ...COLS.slice(1).map((c) => menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); }))])}, "⋯"));
+      ...COLS.slice(1).map((c) => menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); }))])}, icon("more_horiz", 14)));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 

@@ -1,4 +1,4 @@
-// custom series: user JavaScript evaluated per sample in a worker of their own. That worker is same-origin, not a
+// custom series: user JavaScript evaluated per sample in a worker of its own. That worker is same-origin, not a
 // sandbox: the code can do what this page can, so code from an imported layout runs only once reviewed. Inputs are
 // store paths; every input after the first is resampled (sample-and-hold) onto the first one's times. The globals
 // block runs once per evaluation, so its variables persist across samples. The function body sees time, value, v1 … vN.

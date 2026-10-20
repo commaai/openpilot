@@ -51,8 +51,8 @@ export function create(ctx, state) {
         ondragstart: (e) => { dragging = c; e.dataTransfer.setData(PATHS_MIME, JSON.stringify(paths())); },
         // the curves landed on another chart: this one is merged away
         ondragend: (e) => { if (dragging === c && e.dataTransfer.dropEffect !== "none") remove(c); dragging = null; }},
-      "⠿", h("span", {class: "can-spacer"}),
-      h("button", {class: "can-icon", title: "Add or remove signals", onclick: () => picker((p) => replace(c, {...c.pane.save(), curves: p.map(curve)}), paths())}, "±"),
+      icon("drag_indicator", 14), h("span", {class: "can-spacer"}),
+      h("button", {class: "can-icon", title: "Add or remove signals", onclick: () => picker((p) => replace(c, {...c.pane.save(), curves: p.map(curve)}), paths())}, icon("edit", 12)),
       h("button", {class: "can-icon", title: "Split into one chart per signal", onclick: () => split(c)}, "⫼"),
       h("button", {class: "can-icon", title: "Remove chart", onclick: () => remove(c)}, icon("close", 12))), c.box);
     // dropped back onto itself: nothing to merge
@@ -111,7 +111,7 @@ export function create(ctx, state) {
     tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`, onclick: () => i !== active && open(i)},
       `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, `· ${count(t, i)}`),
       tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, icon("close", 12)))),
-      h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, "+"));
+      h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, icon("add", 14)));
   }
 
   // cabana's chart type: one series style for every chart, set on their curves
