@@ -59,6 +59,7 @@ export function create(ctx, state = {}) {
   let gesture = null;  // the pointer gesture in progress
   let rows = [];       // legend rows, parallel to st.curves
   let statsTimer = 0, statsKey = "";
+  let failure = null;  // store.failure as the empty state shows it
   const made = new Map();  // derived or custom path → input version it was computed from
   const busy = new Set();
   const decimator = new Decimator(store);
@@ -77,6 +78,7 @@ export function create(ctx, state = {}) {
     clock.on("t", pane.overlay),
     store.on("segment", invalidate),
     store.on("paths", invalidate),
+    store.on("progress", () => { if (!!store.failure !== !!failure) hint(); }),
     view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     // decoded DBC signals arrive after they're asked for
@@ -118,6 +120,13 @@ export function create(ctx, state = {}) {
         .finally(() => { busy.delete(src); rebuildLegend(); invalidate(); });
     }
     return src;
+  }
+
+  // the empty state: where to drop series, or why there's nothing to plot
+  function hint() {
+    failure = store.failure;
+    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "drag series here";
+    empty.hidden = !failure && !!rows.length;
   }
 
   const label = (c) => (c.label || c.path.replace(/^\//, "")) + (c.transform ? ` [${TRANSFORMS[c.transform.kind].label.toLowerCase()}]` : "");
@@ -315,7 +324,7 @@ export function create(ctx, state = {}) {
     });
     legend.replaceChildren(...rows);
     legend.hidden = !rows.length;
-    empty.hidden = !!rows.length;
+    hint();
     statsKey = "";
   }
 

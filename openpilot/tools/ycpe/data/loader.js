@@ -37,6 +37,7 @@ export class Loader {
     spare = null;
     w.calls = 0;
     w.onmessage = ({data}) => {
+      w.started = true;
       const call = this.calls.get(data.id);
       if (data.progress) return call.progress?.(data.progress);
       this.calls.delete(data.id);
@@ -44,7 +45,23 @@ export class Loader {
       if (data.error) call.reject(new Error(data.error));
       else call.resolve(data);
     };
+    w.onerror = w.onmessageerror = (e) => this.lost(w, w.started ? `the log worker failed: ${e.message || e.type}` : "couldn't start the log worker");
     return w;
+  }
+
+  // a worker that failed to load or broke: its calls fail and it leaves the pool
+  lost(w, error) {
+    w.lost = true;
+    for (const [id, call] of this.calls) {
+      if (call.w !== w) continue;
+      this.calls.delete(id);
+      call.reject(new Error(error));
+    }
+    w.terminate();
+    clearTimeout(w.reap);
+    for (const list of [this.workers, this.idle]) if (list.includes(w)) list.splice(list.indexOf(w), 1);
+    if (this.inspector === w) this.inspector = null;
+    if (spare === w) spare = null;
   }
 
   // a parse worker: an idle one, or a new one while under the pool size
@@ -55,6 +72,7 @@ export class Loader {
 
   // idle workers exit after a while, or at once while the pool is over size; the last one stays warm for longer
   release(w) {
+    if (w.lost) return;
     this.idle.push(w);
     w.used = performance.now();
     this.reap(w);
@@ -82,7 +100,7 @@ export class Loader {
 
   call(w, msg, transfer = [], progress = null) {
     const id = this.nextId++;
-    const p = new Promise((resolve, reject) => this.calls.set(id, {resolve, reject, progress}));
+    const p = new Promise((resolve, reject) => this.calls.set(id, {resolve, reject, progress, w}));
     w.calls++;
     w.postMessage({...msg, id}, transfer);
     return Object.assign(p, {id});

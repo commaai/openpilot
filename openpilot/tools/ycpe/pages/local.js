@@ -14,7 +14,7 @@ export function localPage(open) {
   return h("div", {class: "page-msg"},
     h("h2", {}, "Open local logs"),
     h("p", {class: "muted"}, "rlog, qlog and camera files, or a folder of segments. You can also drop them anywhere on the page."),
-    h("p", {}, picker("Choose files", {accept: ".zst,.bz2,.ts,.hevc"}), picker("Choose a folder", {webkitdirectory: true})));
+    h("p", {}, picker("Choose files"), picker("Choose a folder", {webkitdirectory: true})));  // no accept: logs may be uncompressed, without an extension
 }
 
 // for a route no source has: a card to pull it from the daemon's device when the device has it, else null. The

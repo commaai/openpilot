@@ -18,10 +18,13 @@ export const REFERENCES = {
 const refUrl = (tool, name) => `${REFS}/${tool}/layouts/${name}.${tool === "jotpluggler" ? "json" : "xml"}`;
 const TRUSTED = new Set(Object.entries(REFERENCES).flatMap(([tool, names]) => names.map((n) => refUrl(tool, n))));
 
-// src: a File, a URL, or the layout text itself (as ?layout= may hold either) → {layout, warnings}
+// src: a File, a URL, the layout text itself or a reference's name (as ?layout= may hold any of those, like
+// jotpluggler --layout takes a name) → {layout, warnings}
 export async function loadLayout(src) {
   if (src instanceof Blob) return named(importLayout(await src.text()), src.name);
   if (/^\s*[{<]/.test(src)) return importLayout(src);
+  const tool = Object.keys(REFERENCES).find((t) => REFERENCES[t].includes(src));
+  if (tool) src = refUrl(tool, src);
   const r = await fetch(src);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   const opened = named(importLayout(await r.text()), new URL(src, location.href).pathname.split("/").pop());

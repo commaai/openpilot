@@ -83,8 +83,9 @@ function localPanel(anchor, onClose) {
     mods, cache, here, dev, list);
   const r = anchor.getBoundingClientRect();
   el.style.top = `${r.bottom + 6}px`;
-  el.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+  el.style.width = "min(420px, calc(100vw - 16px))";  // under the anchor, but on screen
   document.body.append(el);
+  el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - el.offsetWidth - 8))}px`;
   const route = openRoute();
 
   const act = (label, fn) => h("button", {class: "link", onclick: async (e) => {

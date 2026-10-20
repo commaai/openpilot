@@ -10,7 +10,8 @@ export const KINDS = {
   fcamera: ["fcamera.hevc"], ecamera: ["ecamera.hevc"], dcamera: ["dcamera.hevc"],
 };
 export const API_KIND = {qlog: "qlogs", rlog: "logs", qcamera: "qcameras", fcamera: "cameras", ecamera: "ecameras", dcamera: "dcameras"};
-const KIND_OF = Object.fromEntries(Object.entries(KINDS).flatMap(([k, files]) => files.map((f) => [f, k])));
+// a file's kind by its name; uncompressed logs come only from this machine (dropped or picked)
+const KIND_OF = {...Object.fromEntries(Object.entries(KINDS).flatMap(([k, files]) => files.map((f) => [f, k]))), rlog: "rlog", qlog: "qlog"};
 
 // ---- names: route.py's RE, SegmentRange and logreader.parse_indirect ----
 
@@ -20,14 +21,17 @@ const ROUTE = `(${DONGLE})[|_/](${LOG_ID})`;
 const SLICE = /^(-?[0-9]+)?:?(-?[0-9]+)?:?(-?[0-9]+)?$/;
 const RANGE = new RegExp(`^${ROUTE}(?:(?:--|/)((?:-?[0-9]+)?:?(?:-?[0-9]+)?:?(?:-?[0-9]+)?))?(?:/([qra]))?$`);
 
-// useradmin and connect URLs to a segment range (connect's start and end seconds become segments)
+// useradmin and connect URLs (with or without https://) to a route or segment range; connect's start and end seconds
+// pick a time in the whole route, not segments
 export function parseIndirect(text) {
-  if (text.includes("useradmin.comma.ai")) return new URL(text).searchParams.get("onebox") || text;
-  if (!text.includes("connect.comma.ai")) return text;
-  const p = new URL(text).pathname.split("/").filter(Boolean);
+  if (!/(useradmin|connect)\.comma\.ai/.test(text)) return text;
+  let url;
+  try { url = new URL(/^[a-z]+:\/\//i.test(text) ? text : `https://${text}`); } catch { return text; }
+  if (url.hostname === "useradmin.comma.ai") return url.searchParams.get("onebox") || text;
+  const p = url.pathname.split("/").filter(Boolean);
   const route = p.slice(0, 2).join("/");
   if (p.length <= 3) return [route, ...p.slice(2)].join("/");
-  return `${route}/${Math.floor(p[2] / 60)}:${Math.floor(p[3] / 60) + 1}${p[4] ? `/${p[4]}` : ""}`;
+  return [route, ...p.slice(4)].join("/");
 }
 
 // "<dongle>|<log id>[--|/<slice>][/q|r|a]" → {route, dongle, logId, slice, selector}, or null
@@ -162,7 +166,7 @@ export const AUTO = ["internal", "api", "openpilotci", "carSegments"];
 
 // the source a route's files come from: "auto" (AUTO's order) or one SOURCES name, kept per route
 export const routeSource = {
-  get: (route) => setting(`ycpe_source:${route}`) || "auto",
+  get: (route) => SOURCES[setting(`ycpe_source:${route}`)] ? setting(`ycpe_source:${route}`) : "auto",
   set: (route, name) => name === "auto" ? localStorage.removeItem(`ycpe_source:${route}`) : localStorage.setItem(`ycpe_source:${route}`, name),
   list: (name) => name === "auto" ? "auto" : [name],
 };
@@ -241,9 +245,14 @@ export async function routeRecord(name) {
 export const routeKey = (route) => route.range ? `${route.fullname}/${route.range}` : route.fullname;
 
 // "/<dongle>/<log id>[/<slice>][/<q|r|a>][/<view>]" path parts → {name: "<dongle>|<log id>[/<slice>][/<selector>]",
-// view}, or null when they don't name a route
+// view}, or null when they don't name a route. Connect's "/<dongle>/<log id>/<start>/<end>" (seconds) is the whole
+// route, with t and range: [start, end]
 export function routeFromPath(parts) {
   const [dongle, log, ...rest] = parts;
+  if (/^\d+$/.test(rest[0]) && /^\d+$/.test(rest[1])) {
+    const [start, end] = rest.splice(0, 2).map(Number);
+    return parseRange(`${dongle}|${log}`) && {name: `${dongle}|${log}`, view: rest[0], t: start, range: [start, end]};
+  }
   const range = [];
   if (/^-?\d*(?::-?\d*){0,2}$/.test(rest[0] ?? "") && rest[0]) range.push(rest.shift());
   if (/^[qra]$/.test(rest[0] ?? "")) range.push(rest.shift());
@@ -271,8 +280,9 @@ export async function routeLogs(name, record) {
   const route = await record, sr = parseRange(name);
   if (route.loose) return slotted(route, looseLogs(route.files, sr?.selector));
   const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
-  const {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(routeSource.get(sr.route))});
+  const source = routeSource.get(sr.route), {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(source)});
   if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
+  if (!logs.size) throw new Error(source === "auto" ? "No source has this route's logs" : `${SOURCES[source].label} doesn't have this route's logs`);
   const urls = [];
   for (const [n, f] of logs) urls[n] = f;
   return slotted(route, urls);
@@ -350,17 +360,27 @@ function place(path) {
 }
 
 // dropped or picked files (a folder of segments, or single logs) as a route; files of other routes than the one
-// with the most are left out. null when none of them is a log or camera file.
+// with the most are left out. null when none of them is a log or camera file. The route replaces the last one, whose
+// blob URLs go.
+let localUrls = [];
 export function localRoute(files) {
   const byRoute = new Map();
   for (const f of files) {
     const p = place(f.relativePath || f.webkitRelativePath || f.name);
     if (!p) continue;
     if (!byRoute.has(p.route)) byRoute.set(p.route, new Map());
-    byRoute.get(p.route).set(`${p.n}/${p.kind}`, {url: URL.createObjectURL(f), file: p.file, size: f.size, source: "local"});
+    byRoute.get(p.route).set(`${p.n}/${p.kind}`, {file: p.file, size: f.size, source: "local", blob: f});
   }
   const [name, found] = [...byRoute].sort((a, b) => b[1].size - a[1].size)[0] || [];
-  return name ? looseRoute(name, found) : null;
+  if (!name) return null;
+  for (const url of localUrls) URL.revokeObjectURL(url);
+  localUrls = [];
+  for (const [key, {blob, ...f}] of found) {
+    const url = URL.createObjectURL(blob);
+    localUrls.push(url);
+    found.set(key, {...f, url});
+  }
+  return looseRoute(name, found);
 }
 
 // a direct link to one log or camera file, as a one-segment route

@@ -74,18 +74,21 @@ export const service = (p, k) => p.recs[k * REC];
 export const enumRef = (p, k) => p.recs[k * REC + 7];
 export const times = (p, s) => (p.t ||= [])[s] ||= new Float64Array(p.bufs[s], 0, p.counts[s]);
 
-// column k of a pack as a contract chunk {t, v, i?} plus tt, the time of each value
+// column k of a pack as a contract chunk {t, v, i?} plus tt, the time of each value; a constant column gets a value
+// at every message time, like any other dense column
 export function unpack(p, k, n) {
   const r = p.recs, o = k * REC, s = r[o], kind = r[o + 1], len = r[o + 3], buf = p.bufs[s];
   const t = times(p, s);
   let v, i;
   if (kind === CONST) {
     const c = p.types[k] === "t" ? p.consts[r[o + 6]] : r[o + 6];
-    v = [c, c];
-    i = Uint32Array.of(0, t.length - 1);
+    v = typeof c === "string" ? new Array(t.length).fill(c) : new Float64Array(t.length).fill(c);
   } else if (kind === TEXT) {
     const offs = new Uint32Array(buf, r[o + 2], len + 1), bytes = new Uint8Array(buf, r[o + 8], offs[len]);
-    v = Array.from({length: len}, (_, j) => decoder.decode(bytes.subarray(offs[j], offs[j + 1])));
+    // one decode, cut at the byte offsets when they're also character offsets (ASCII); else one decode each
+    const all = decoder.decode(bytes);
+    v = all.length === bytes.length ? Array.from({length: len}, (_, j) => all.slice(offs[j], offs[j + 1]))
+      : Array.from({length: len}, (_, j) => decoder.decode(bytes.subarray(offs[j], offs[j + 1])));
   } else {
     v = new ARRAYS[kind](buf, r[o + 2], len);
   }

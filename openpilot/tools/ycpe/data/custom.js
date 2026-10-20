@@ -1,7 +1,8 @@
-// custom series: user JavaScript evaluated per sample in a throwaway worker. Inputs are store paths; every
-// input after the first is resampled (sample-and-hold) onto the first one's times. The globals block runs
-// once, so its variables persist across samples. The function body sees time, value, v1 … vN.
-import {concat, resample} from "./transforms.js";
+// custom series: user JavaScript evaluated per sample in a worker of its own. That worker is same-origin, not a
+// sandbox: the code can do what this page can, so code from an imported layout runs only once reviewed. Inputs are
+// store paths; every input after the first is resampled (sample-and-hold) onto the first one's times. The globals
+// block runs once, so its variables persist across samples. The function body sees time, value, v1 … vN.
+import {concat, copy, resample} from "./transforms.js";
 
 export const TEMPLATES = {
   Derivative: {globals: "let pt = NaN, pv = NaN;", code: "const d = (value - pv) / (time - pt);\npt = time;\npv = value;\nreturn d;"},
@@ -39,11 +40,11 @@ if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
 // evaluates a custom series into the store at path
 export function evaluate(store, path, {inputs, globals = "", code}) {
   return new Promise((resolve, reject) => {
-    const data = {};
+    const data = {}, transfer = [];
     for (const p of inputs) {
       const s = store.series(p);
       if (!s) return reject(new Error(`no series ${p}`));
-      data[p] = s.chunks.map(({tt, v}) => ({tt, v}));
+      data[p] ||= s.chunks.map((c) => copy(c, transfer));
     }
     const w = new Worker(import.meta.url, {type: "module"});
     const timer = setTimeout(() => { w.terminate(); reject(new Error(`timed out after ${TIMEOUT_MS / 1000} s`)); }, TIMEOUT_MS);
@@ -55,6 +56,6 @@ export function evaluate(store, path, {inputs, globals = "", code}) {
       resolve(path);
     };
     w.onerror = (e) => { clearTimeout(timer); w.terminate(); reject(new Error(e.message)); };
-    w.postMessage({inputs, globals, code, data});
+    w.postMessage({inputs, globals, code, data}, transfer);
   });
 }

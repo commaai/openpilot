@@ -45,6 +45,7 @@
 .browser .filter:focus { border-color: var(--accent); }
 .browser label { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
 .browser .count { min-width: 5ch; text-align: right; font: 11px var(--mono); }
+.browser .note { padding: 8px; color: var(--critical); }
 .browser .scroller { position: relative; flex: 1; min-height: 0; overflow: auto; }
 .browser .window { position: absolute; left: 0; right: 0; top: 0; }
 .browser .row { display: flex; align-items: center; height: 18px; padding-right: 6px; font: 11px var(--mono); white-space: nowrap; cursor: default; }
@@ -56,6 +57,6 @@
 
 /* custom series console */
 .plot-popup.plot-console { width: 460px; max-width: calc(100vw - 8px); max-height: calc(100vh - 8px); }
-.plot-console textarea { height: auto; padding: 4px; font: 11px/1.4 var(--mono); resize: vertical; tab-size: 2; }
+.plot-console textarea { flex: none; height: auto; padding: 4px; font: 11px/1.4 var(--mono); resize: vertical; tab-size: 2; }
 .plot-console .hint { padding: 0 4px; color: var(--muted); font: 11px var(--mono); }
 .plot-console .error { min-height: 1.4em; padding: 0 4px; white-space: pre-wrap; }

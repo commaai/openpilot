@@ -16,6 +16,7 @@ export function create(ctx, state) {
   let minLevel = state.level ?? 1, source = state.source ?? "", text = state.text ?? "", follow = state.follow ?? true;
   let rows = [], view = [];  // every row and the rows that pass the filter, by time
   const sources = new Set(), indexed = new Set(), jobs = [];
+  const edges = new Map();  // segment → its alert and events at both ends (segmentRows)
   let job = null, untick = null, store = null, timer = 0, disposed = false;
   let height = 0, top = 0, expected = -1, current = -1, pool = [], shown = -1;
 
@@ -52,6 +53,7 @@ export function create(ctx, state) {
     save: () => ({level: minLevel, source, text, follow}),
   };
 
+  const work = () => ctx.perf.measure("logs indexing", slice);
   const offs = [ctx.clock.on("t", () => follow && ctx.perf.invalidate(pane))];
   ctx.onStore((s) => {
     if (disposed) return;
@@ -67,8 +69,6 @@ export function create(ctx, state) {
     jobs.push(index(n));
     untick ||= ctx.perf.tick(work);
   }
-
-  const work = () => ctx.perf.measure("logs indexing", slice);
 
   // runs queued indexing and filtering in slices of BUDGET ms
   function slice() {
@@ -86,12 +86,20 @@ export function create(ctx, state) {
   }
 
   function* index(n) {
-    const block = [];
-    for (const row of segmentRows(store, n)) {
-      block.push(row);
-      sources.add(row.source);
+    let block = [];
+    const edge = {heads: new Set(), tail: new Set()};
+    for (const row of segmentRows(store, n, edge)) {
+      if (row) {
+        block.push(row);
+        sources.add(row.source);
+      }
       yield;
     }
+    // what goes on across a segment boundary started once, in the earlier segment
+    edges.set(n, edge);
+    const before = edges.get(n - 1), after = edges.get(n + 1), cont = (tail, heads) => (r) => !(heads.has(r) && tail.has(r.key));
+    if (before) block = block.filter(cont(before.tail, edge.heads));
+    if (after?.heads.size) [rows, view] = [rows.filter(cont(edge.tail, after.heads)), view.filter(cont(edge.tail, after.heads))];
     if (!block.length) return;
     block.sort((a, b) => a.t - b.t);
     rows = splice(rows, block);
@@ -180,41 +188,50 @@ export function create(ctx, state) {
   return pane;
 }
 
-// one segment's rows, unsorted
-function* segmentRows(store, n) {
-  const chunk = (path) => store.series(path)?.chunks.find((c) => c.n === n);
+// one segment's rows, unsorted, and nulls between messages without one so that indexing can pause there. edge gets
+// the alert and event onsets at the segment's first message (heads) and the keys of those still on at its last (tail)
+function* segmentRows(store, n, edge) {
+  // a step of its own each: decoding a segment's text takes a few ms
+  function* chunk(path) {
+    yield null;
+    return store.chunk(path, n);
+  }
   for (const path of ["/logMessage", "/errorLogMessage"]) {
-    const c = chunk(path);
+    const c = yield* chunk(path);
     if (c) for (const [t, s] of pairs(c)) yield swaglog(t, s);
   }
 
-  const os = chunk("/operatingSystemLog/message");
+  const os = yield* chunk("/operatingSystemLog/message");
   if (os) {
-    const tag = values(chunk("/operatingSystemLog/tag")), priority = values(chunk("/operatingSystemLog/priority"));
+    const tag = values(yield* chunk("/operatingSystemLog/tag")), priority = values(yield* chunk("/operatingSystemLog/priority"));
     for (let [t, text] of pairs(os)) {
       try { text = String(JSON.parse(text).MESSAGE ?? text); } catch {}  // journal entries are JSON, android logs text
       yield {t, level: SYSLOG[priority(t)] ?? 1, source: tag(t) || "os", text};
     }
   }
 
-  const alert = chunk("/selfdriveState/alertType");
+  const alert = yield* chunk("/selfdriveState/alertType");
   if (alert) {
-    const text1 = values(chunk("/selfdriveState/alertText1")), text2 = values(chunk("/selfdriveState/alertText2"));
-    const status = values(chunk("/selfdriveState/alertStatus"));
-    let prev = "";
+    const text1 = values(yield* chunk("/selfdriveState/alertText1")), text2 = values(yield* chunk("/selfdriveState/alertText2"));
+    const status = values(yield* chunk("/selfdriveState/alertStatus"));
+    let prev = "", head = true;
     for (const [t, type] of pairs(alert)) {
-      if (type && type !== prev) yield {t, level: ALERT[status(t)] ?? 1, source: "alert", text: `${text1(t) || ""} ${text2(t) || ""}`.trim() || type};
+      const row = type && type !== prev ? {t, level: ALERT[status(t)] ?? 1, source: "alert", key: `alert ${type}`, text: `${text1(t) || ""} ${text2(t) || ""}`.trim() || type} : null;
+      if (row && head) edge.heads.add(row);
+      head = false;
       prev = type;
+      yield row;
     }
+    if (prev) edge.tail.add(`alert ${prev}`);
   }
 
   // onroad events where they start
-  const events = chunk("/onroadEvents/valid");
+  const events = yield* chunk("/onroadEvents/valid");
   if (events) {
     const items = [];
     for (let k = 0; store.series(`/onroadEvents/${k}/name`); k++) {
-      const flag = (f) => [f, values(chunk(`/onroadEvents/${k}/${f}`))];
-      items.push({name: values(chunk(`/onroadEvents/${k}/name`)), names: store.series(`/onroadEvents/${k}/name`).names,
+      const flag = (f) => [f, values(store.chunk(`/onroadEvents/${k}/${f}`, n))];
+      items.push({name: values(yield* chunk(`/onroadEvents/${k}/name`)), names: store.series(`/onroadEvents/${k}/name`).names,
         flags: ["immediateDisable", "softDisable", "noEntry", "userDisable", "warning"].map(flag)});
     }
     let prev = new Set();
@@ -227,10 +244,14 @@ function* segmentRows(store, n) {
         if (prev.has(name)) continue;
         const flags = it.flags.filter(([, v]) => v(t)).map(([f]) => f);
         const level = flags.some((f) => f.endsWith("Disable") && f !== "userDisable") ? 3 : flags.length ? 2 : 1;
-        yield {t, level, source: "event", text: flags.length ? `${name} (${flags.join(", ")})` : name};
+        const row = {t, level, source: "event", key: `event ${name}`, text: flags.length ? `${name} (${flags.join(", ")})` : name};
+        if (t === events.t[0]) edge.heads.add(row);
+        yield row;
       }
       prev = now;
+      yield null;
     }
+    for (const name of prev) edge.tail.add(`event ${name}`);
   }
 }
 
@@ -242,19 +263,14 @@ function swaglog(t, s) {
   return {t, level, source: m.ctx?.daemon || m.filename?.split("/").pop() || "", text: msg.replace(ANSI, "")};
 }
 
-// a constant chunk unpacks as v [c, c] at its first and last times, and holds c at every time
-const constant = (c) => c.i?.length === 2 && c.v.length === 2 && c.i[0] === 0 && c.i[1] === c.t.length - 1 && c.v[0] === c.v[1];
-
 // a chunk's [time, value] pairs
 function* pairs(c) {
-  if (constant(c)) for (const t of c.t) yield [t, c.v[0]];
-  else for (let k = 0; k < c.v.length; k++) yield [c.tt[k], c.v[k]];
+  for (let k = 0; k < c.v.length; k++) yield [c.tt[k], c.v[k]];
 }
 
 // a chunk's value at each of a rising sequence of message times; undefined where that message doesn't have it
 function values(c) {
   if (!c) return () => undefined;
-  if (constant(c)) return () => c.v[0];
   const {v, tt} = c;
   let p = 0;
   return (t) => {
@@ -280,6 +296,6 @@ function lastAtOrBefore(rows, t) {
 }
 
 function clock(t) {
-  const m = Math.floor(t / 60), s = t - m * 60;
-  return `${m}:${s.toFixed(3).padStart(6, "0")}`;
+  const ms = Math.round(Math.abs(t) * 1000), m = Math.floor(ms / 60000);
+  return `${t < 0 ? "-" : ""}${m}:${((ms - m * 60000) / 1000).toFixed(3).padStart(6, "0")}`;
 }

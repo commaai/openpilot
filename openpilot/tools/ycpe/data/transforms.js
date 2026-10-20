@@ -1,6 +1,6 @@
 // series math off the main thread: transforms, statistics, CSV, XY pairs and spectra. This module is both
-// the main-side API and, loaded as a module worker, the worker itself. The worker keeps a concatenated copy
-// of each series it has seen, so a series crosses threads once per store version.
+// the main-side API and, loaded as a module worker, the worker itself. The worker keeps the chunks of each
+// series it has seen and their concatenation, so a chunk crosses threads once.
 
 // transform kinds: fn(t, v, param, inputs) → {t, v}; `inputs` are extra series resampled to t
 export const TRANSFORMS = {
@@ -81,7 +81,7 @@ function rpy(_, [w, x, y, z], axis) {
 
 // ---- worker side
 
-const series = new Map();  // path → {version, t, v}
+const series = new Map();  // path → {version, chunks, t, v}
 
 // one {t, v} from store chunks ({tt, v}), without missing values
 export function concat(chunks) {
@@ -253,7 +253,10 @@ function fftInPlace(re, im) {
 
 if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
   onmessage = ({data: {id, op, args, data}}) => {
-    for (const [path, {version, chunks}] of Object.entries(data)) series.set(path, {version, ...concat(chunks)});
+    for (const [path, {version, chunks: sent}] of Object.entries(data)) {
+      const old = series.get(path)?.chunks, chunks = sent.map((c) => typeof c === "number" ? old[c] : c);
+      series.set(path, {version, chunks, ...concat(chunks)});
+    }
     try {
       const result = ops[op](args);
       postMessage({id, result}, Object.values(result || {}).filter(ArrayBuffer.isView).map((a) => a.buffer));
@@ -267,9 +270,17 @@ if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
 
 let worker = null, nextId = 0;
 const pending = new Map();
-const sent = new WeakMap();  // store → Map(path → version the worker holds)
+const sent = new WeakMap();  // store → Map(path → {version, at: WeakMap(chunk → its index in the worker's copy)})
 
-// runs op in the worker; `paths` are the store series it reads, shipped only when the worker's copy is stale
+// exact copies of chunks' samples: a view would clone its whole pack buffer. Their buffers go in transfer
+export function copy({tt, v}, transfer) {
+  const c = {tt: tt.slice(), v: ArrayBuffer.isView(v) ? v.slice() : v};
+  transfer.push(c.tt.buffer, ...ArrayBuffer.isView(c.v) ? [c.v.buffer] : []);
+  return c;
+}
+
+// runs op in the worker; `paths` are the store series it reads. Of a changed series only the chunks the
+// worker doesn't hold go, the others as their index in its copy
 export function compute(store, op, args, paths) {
   if (!worker) {
     worker = new Worker(import.meta.url, {type: "module"});
@@ -280,16 +291,22 @@ export function compute(store, op, args, paths) {
     };
   }
   if (!sent.has(store)) sent.set(store, new Map());
-  const have = sent.get(store), data = {};
-  for (const path of new Set(paths)) {
-    const s = store.series(path);
-    if (!s) return Promise.reject(new Error(`no series ${path}`));
-    if (have.get(path) === s.version) continue;
-    have.set(path, s.version);
-    data[path] = {version: s.version, chunks: s.chunks.map(({tt, v}) => ({tt, v}))};
+  const have = sent.get(store), data = {}, transfer = [];
+  const all = [...new Set(paths)].map((path) => [path, store.series(path)]), none = all.find(([, s]) => !s);
+  if (none) return Promise.reject(new Error(`no series ${none[0]}`));
+  for (const [path, s] of all) {
+    const old = have.get(path);
+    if (old?.version === s.version) continue;
+    const at = new WeakMap();
+    data[path] = {version: s.version, chunks: s.chunks.map((c, k) => {
+      const held = old?.at.get(c);
+      at.set(c, k);
+      return held ?? copy(c, transfer);
+    })};
+    have.set(path, {version: s.version, at});
   }
   const id = nextId++;
-  worker.postMessage({id, op, args, data});
+  worker.postMessage({id, op, args, data}, transfer);
   return new Promise((resolve, reject) => pending.set(id, {resolve, reject}));
 }
 

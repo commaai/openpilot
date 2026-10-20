@@ -67,6 +67,9 @@ export class Store {
     }, () => {});
     this.status = status.source(lane.name, lane);
     this.status.count(count);
+    this.status.retry(() => this.retry());
+    this.online = () => this.retry();
+    addEventListener("online", this.online);
 
     for (const seg of this.route.segments) {
       const local = seg.n % urls.length, e = typeof urls[local] === "string" ? {url: urls[local]} : urls[local];
@@ -78,6 +81,7 @@ export class Store {
 
   // starts loading a segment's log; e = {url, file?, source?, seg?}
   start(seg, e, local = seg.n) {
+    seg.entry = e;
     seg.real = e.seg ?? local;  // the route's segment, for a range of it (urls[k] then names its seg)
     seg.key = `${this.cacheDir}${seg.real}/${e.file ?? new URL(e.url, location.origin).pathname.split("/").at(-1)}`;
     seg.url = e.url;
@@ -157,6 +161,7 @@ export class Store {
     const n = Math.max(0, Math.floor(t / SEGMENT));
     if (n !== this.focusSeg) {
       this.focusSeg = n;
+      if (this.route.segments[n]?.status === "error") this.retry([this.route.segments[n]]);
       this.loader.reprioritize((m) => this.prio(m), this);
       this.pool();
     }
@@ -190,7 +195,8 @@ export class Store {
       : seg.loading && !seg.loading.paused ? "loading"
       : seg.status === "done" && seg.bytes ? "ready"
       : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
-    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text: seg.retry ? `retrying (${seg.retry})` : null});
+    const text = state === "error" ? seg.error : seg.retry ? `retrying (${seg.retry})` : null;
+    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text});
     if (seg.n === this.focusSeg) this.buffering();
     this.totals();
   }
@@ -235,14 +241,33 @@ export class Store {
     for (const k in p.ms) pr.ms[k] += p.ms[k];
   }
 
+  // why no segment loaded, once every one has failed; null while any is loaded or loading
+  get failure() {
+    const segs = this.route.segments.filter((s) => s.status !== "missing");
+    return segs.length && segs.every((s) => s.status === "error") ? segs[0].error : null;
+  }
+
   failed(seg, e) {
     if (this.disposed) return;
     seg.status = "error";
-    seg.error = String(e);
+    seg.error = String(e?.message ?? e);
+    seg.retry = 0;
     seg.loading = null;
     this.publish(seg);
     this.progress.failed++;
     this.emit("progress", this.progress);
+  }
+
+  // loads failed segments again: back online, at the playhead, or from the status panel's Retry
+  retry(segs = this.route.segments) {
+    for (const seg of segs) {
+      if (seg.status !== "error" || this.disposed) continue;
+      seg.status = "queued";
+      seg.error = null;
+      this.progress.failed--;
+      this.progress.total--;
+      this.start(seg, seg.entry, seg.real);
+    }
   }
 
   // registers a pack's columns: O(columns), no views and no copies
@@ -328,7 +353,7 @@ export class Store {
 
   // the chunks of a path; an unknown index of a skipped long list (/modelV2/position/x/32) starts loading it
   series(path) {
-    if (path.startsWith("/dbc/")) return this.can.series(path);
+    if (path.startsWith("/dbc/") && !this.entries.has(path)) return this.can.series(path);  // transforms of signals are put here
     const o = this.overlays.length ? this.overlayOf(path) : null;
     if (o) return this.overlaySeries(o, path);
     if (path.endsWith(`/${MONO}`)) return this.monoSeries(path);
@@ -342,6 +367,15 @@ export class Store {
       e.series = {path, type: e.type, names: e.names, chunks, version: e.version};
     }
     return e.series;
+  }
+
+  // one segment's chunk of a path, unpacking only that segment's (series() unpacks them all, and text decodes)
+  chunk(path, n) {
+    const e = this.entries.get(path);
+    if (!e?.at.length) return this.series(path)?.chunks.find((c) => c.n === n);
+    e.used = performance.now();
+    const a = e.at[n];
+    return a ? e.views[n] ||= unpack(a.pack, a.k, n) : undefined;
   }
 
   // /<service>/__logMonoTime: each message's logMonoTime in ns, from the service's times (they sit next to its valid column)
@@ -562,6 +596,7 @@ export class Store {
   dispose() {
     for (const o of this.overlays) o.store.dispose();
     this.disposed = true;
+    removeEventListener("online", this.online);
     if (this.shared) this.loader.cancel(this);
     else this.loader.dispose();
     this.can.dispose();
