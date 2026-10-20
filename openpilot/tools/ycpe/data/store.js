@@ -412,13 +412,14 @@ export class Store {
     return m;
   }
 
-  // registers or replaces a derived series (transforms, /custom/*) as one chunk
+  // registers or replaces a derived series (transforms, /custom/*) as one chunk; "put" tells of every new version
   put(path, {type, t, v, names}) {
     const old = this.entries.get(path);
     const e = {path, type, ...(names && {names}), at: [], views: [{n: 0, t, v, tt: t}], version: (old?.version || 0) + 1, used: Infinity};
     e.series = {path, type, names, chunks: e.views, version: e.version};
     this.entries.set(path, e);
     if (!old) this.emit("paths");
+    this.emit("put", path);
   }
 
   // n min/max buckets over [t0, t1] read from the pyramids; the exact samples when there are no more than n
