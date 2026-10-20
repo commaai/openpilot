@@ -113,6 +113,7 @@ export function create(opts = {}) {
     async start(s) {
       sink = s;
       usb = await usbReady;
+      if (sink !== s) return;  // stopped meanwhile
       if (!usb) return set("error", "this browser has no WebUSB (use Chrome on desktop or Android)");
       usb.addEventListener("connect", onConnect);
       usb.addEventListener("disconnect", onDisconnect);
@@ -164,6 +165,7 @@ export function create(opts = {}) {
       const versions = await control(d, 0xdd, 8);
       const hwType = (await control(d, 0xc1, 0x40)).getUint8(0);
       await d.controlTransferOut(vendor(0xc0));
+      if (!sink) return await d.close();  // stopped meanwhile
       device = d;
       const health = versions.getUint32(0, true) === HEALTH_VERSION;
       const warn = versions.getUint32(4, true) !== CAN_VERSION ? " (its CAN packet version differs from this page's; update panda)"
@@ -173,7 +175,8 @@ export function create(opts = {}) {
       if (health) poll(d, hwType);
     } catch (e) {
       await d.close().catch(() => {});
-      set("error", `couldn't open ${name}: ${e.message}${e.name === "NetworkError" || e.name === "SecurityError" ? " (is pandad or another tab using it?)" : ""}`);
+      const hint = {NetworkError: " (is pandad or another tab using it?)", SecurityError: " (on Linux, panda's udev rules give access)"}[e.name] || "";
+      set("error", `couldn't open ${name}: ${e.message}${hint}`);
     } finally {
       opening = null;
     }

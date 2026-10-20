@@ -155,6 +155,17 @@ test("unplugging waits, and a replug reconnects", async () => {
   assert.deepEqual(states, ["connecting", "live", "connecting", "connecting", "live", "closed"]);
 });
 
+test("stopping while it opens leaves the panda closed", async () => {
+  const usb = await fakeUsb({fixture}), source = create({usb});
+  const started = source.start({events() {}});
+  await source.stop();
+  await started;
+  await sleep(50);
+  assert.equal(source.state, "closed");
+  assert.equal(usb.device.opened, false);
+  assert.equal(source.stats.frames, 0);
+});
+
 test("an ungranted panda waits for connect()", async () => {
   const {usb, source} = await live({granted: false});
   assert.equal(source.state, "connecting");

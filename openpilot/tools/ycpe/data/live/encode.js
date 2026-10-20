@@ -4,7 +4,7 @@
 import schema from "../schema.json" with {type: "json"};
 
 const SIZE = {b: 0, i8: 1, u8: 1, i16: 2, u16: 2, e: 2, i32: 4, u32: 4, f32: 4, i64: 8, u64: 8, f64: 8};
-const LIST_SIZE = {0: 0, 1: 2, 2: 3, 4: 4, 8: 5};  // capnp list element size codes by byte size (bits: 1)
+const LIST_SIZE = {1: 2, 2: 3, 4: 4, 8: 5};  // capnp list element size codes by byte size (bools are 1)
 const SET = {i8: "setInt8", u8: "setUint8", i16: "setInt16", u16: "setUint16", e: "setUint16", i32: "setInt32", u32: "setUint32",
              f32: "setFloat32", f64: "setFloat64"};
 
