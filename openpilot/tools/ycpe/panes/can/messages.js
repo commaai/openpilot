@@ -38,7 +38,8 @@ export function create(ctx, state) {
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
     clearBtn, h("label", {class: "can-check", title: "Don't highlight bits of defined signals"}, suppressDefined, "Suppress signals"),
     h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"));
-  const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, h("div", {class: "can-msg-table"}, head, filterRow, body));
+  const notice = h("div", {class: "can-notice can-muted", hidden: true});
+  const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 
   function toolbar() {
     const files = can.dbcs.all();
@@ -48,6 +49,8 @@ export function create(ctx, state) {
     const n = [...can.suppressed.values()].reduce((a, m) => a + m.filter((x) => x).length, 0);
     clearBtn.textContent = n ? `Clear (${n})` : "Clear";
     clearBtn.disabled = !n;
+    notice.textContent = files.length ? "" : can.notice || "";
+    notice.hidden = !notice.textContent;
   }
 
   // filtering: text columns match substrings, numeric ones also take "a-b" ranges
@@ -143,6 +146,7 @@ export function create(ctx, state) {
   s.add(can.on("live", () => { if (filters.bytes || sort.col === "count") refresh(); else ctx.perf.invalidate(pane); }));
   s.add(can.on("select", () => ctx.perf.invalidate(pane)));
   s.add(can.dbcs.on(toolbar));
+  s.add(can.on("notice", toolbar));
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
   sizer.observe(body);
   s.add(() => sizer.disconnect());

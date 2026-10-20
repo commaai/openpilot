@@ -3,6 +3,8 @@
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, raw, value} from "./dbc.js";
+import {Checkout, parseRemote} from "./github.js";
+import {Opendbc, opendbcAt} from "./upstream.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -577,26 +579,46 @@ export class Can {
     this.store.emit?.("paths");
   }
 
+  // opendbc's DBC names and the fingerprint → DBC map
   async opendbc() {
-    return this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
+    this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
+    const [{fingerprints}, src] = await Promise.all([this.index, this.upstream()]);
+    return {fingerprints, files: src?.names || [], label: src?.co.label};
+  }
+
+  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master
+  upstream() {
+    const remote = parseRemote(this.store.valueAt?.("/initData/gitRemote", Infinity)), commit = this.store.valueAt?.("/initData/gitCommit", Infinity);
+    const at = remote && commit ? `${remote}@${commit}` : "master";
+    if (this.src?.at !== at) {
+      const open = (co) => co && Opendbc.open(co).catch(() => null);
+      this.src = {at, opendbc: (async () => (at !== "master" && await open(await opendbcAt(remote, commit).catch(() => null))) ||
+        await open(new Checkout("commaai/opendbc", "master")))()};
+    }
+    return this.src.opendbc;
   }
 
   async loadOpendbc(name, buses = [-1]) {
-    const text = await fetch(new URL(`./opendbc/${name}.dbc`, import.meta.url)).then((r) => {
-      if (!r.ok) throw new Error(`${name}.dbc: ${r.status}`);
-      return r.text();
-    });
-    this.dbcs.open(buses, new DBC(name, text));
+    const src = await this.upstream();
+    if (!src) {
+      this.src = null;  // try again next time
+      throw new Error("can't reach opendbc on GitHub");
+    }
+    this.dbcs.open(buses, new DBC(name, await src.text(name)));
   }
 
-  // the car's DBC from the fingerprint, once, unless a DBC is already open
+  // the car's DBC from the fingerprint, once, unless a DBC is already open; a failure is a notice, not an error
   async fingerprint() {
     if (this.fingerprinted || this.dbcs.all().length) return;
     const fp = this.store.valueAt?.("/carParams/carFingerprint", Infinity);
     if (!fp) return;
     this.fingerprinted = fp;
     const name = (await this.opendbc()).fingerprints[fp];
-    if (name && !this.dbcs.all().length) await this.loadOpendbc(name);
+    if (!name || this.dbcs.all().length) return;
+    await this.loadOpendbc(name).catch((e) => {
+      this.notice = `${name}.dbc didn't load: ${e.message}`;
+      this.emit("notice");
+    });
   }
 
   // ---- decoded signals as series: /dbc/<bus>/<Msg>/<Sig> ----

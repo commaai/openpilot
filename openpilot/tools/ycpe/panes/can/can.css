@@ -3,6 +3,7 @@
 .can-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .can-spacer { flex: 1; }
 .can-muted { color: var(--muted); }
+.can-notice { padding: 2px 6px; border-bottom: 1px solid var(--line); }
 .can-mono { font-family: var(--mono); }
 .can-error { color: var(--critical); }
 .can-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
