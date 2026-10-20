@@ -16,6 +16,7 @@ await css(new URL("./connect.css", import.meta.url));
 
 const MOVE_PX = 6;  // a press that moves this far selects a range to zoom into
 const started = new WeakSet();  // the clocks of routes this view opened playing, as connect does, the first time only
+const zooms = new WeakMap();  // each clock's ranges zoomed in from, which back steps out to one at a time as on connect
 const WIDE = matchMedia("(min-width: 1536px)");  // as connect, the map beside the video from here on
 // built once: a formatter per call costs ~7 ms of ICU setup the first time
 const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
@@ -34,9 +35,12 @@ export function create(ctx, state) {
   const {clock, route, perf} = ctx;
   const dongle = route.fullname.split("|")[0], start = route.start_time_utc_millis;
   const offs = [];
+  if (!zooms.has(clock)) zooms.set(clock, []);
+  const levels = zooms.get(clock);
 
   // the card's head: back out of a zoom, the times shown, close to the device
-  const back = h("button", {class: "cn-icon", title: "Show the whole drive", "aria-label": "Show the whole drive", onclick: () => zoom(0, clock.duration)}, icon("back", 24));
+  const back = h("button", {class: "cn-icon", title: "Zoom out", "aria-label": "Zoom out",
+    onclick: () => zoom(...(levels.pop() ?? [0, clock.duration]), false)}, icon("back", 24));
   const weekday = h("span", {class: "cn-weekday"}), times = h("span");
   const close = h("a", {class: "cn-icon", href: `/${dongle}`, onclick: link(`/${dongle}`), title: "Back to the device", "aria-label": "Close"}, icon("close", 24));
 
@@ -120,11 +124,15 @@ export function create(ctx, state) {
         h("div", {class: "cn-media"}, boxes.video, boxes.map),
         pill, boxes.files, boxes.info)));
 
-  // zooming in shows and loops just that range, as connect does; the whole drive undoes it
-  function zoom(t0, t1) {
+  // zooming in shows and loops just that range, as connect does; the whole drive undoes it. A selected range is a new
+  // level to step back out of; the wheel and back move within the one shown
+  function zoom(t0, t1, level = true) {
+    if (level) levels.push(clock.range);
     clock.setRange(t0, t1);
     [t0, t1] = clock.range;  // as clamped
-    clock.setLoop(t0 <= 0 && t1 >= clock.duration ? null : [t0, t1]);
+    const whole = t0 <= 0 && t1 >= clock.duration;
+    if (whole) levels.length = 0;
+    clock.setLoop(whole ? null : [t0, t1]);
     if (clock.t < t0 || clock.t > t1) clock.seek(t0);
   }
 
