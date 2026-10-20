@@ -24,5 +24,10 @@
   {"shot": "uploads"},
   {"click": "button[data-tab=settings]"},
   {"waitFor": ".list.settings"},
-  {"shot": "settings"}
+  {"shot": "settings"},
+  {"eval": "document.querySelector('.device-page').dataset.seen = 1; history.pushState(null, '', '/'); dispatchEvent(new PopStateEvent('popstate'))"},
+  {"waitFor": {"fn": "!document.querySelector('.device-page')"}},
+  {"eval": "history.pushState(null, '', '/5beb9b58bd12b691'); dispatchEvent(new PopStateEvent('popstate'))"},
+  {"waitFor": "a.drive-row"},
+  {"assert": "!document.querySelector('.device-page').dataset.seen || 'opening the device page again should build it afresh'"}
  ]}
