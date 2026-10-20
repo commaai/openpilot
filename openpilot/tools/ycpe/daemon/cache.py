@@ -22,7 +22,10 @@ from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
 
 API_BLOB = "https://commadata2.blob.core.windows.net"
-CAR_SEGMENTS = "https://huggingface.co/datasets/commaai/commaCarSegments/resolve/main/segments"
+# device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
+# (and local directories hold them too). commaCarSegments keeps filtered rlogs under the full rlog's name, so its copies
+# are a namespace of their own: never served for another source, and never stood in for by one.
+SHARED = ("device", "internal", "api", "openpilotci")
 LOGS = ("rlog.zst", "rlog.bz2", "qlog.zst", "qlog.bz2")
 TMP = "ycpe-tmp-"
 PREFETCH = 8  # downloads at once: one Azure blob stream gives ~5 MB/s here
@@ -59,8 +62,14 @@ def canonical_url(source: str, key: Key) -> str | None:
   if source == "openpilotci":
     return openpilotci_url(key.route, key.seg, key.file)
   if source == "carSegments":
-    return f"{CAR_SEGMENTS}/{path}"
+    from openpilot.tools.lib import comma_car_segments as ccs
+    return f"{ccs.COMMA_CAR_SEGMENTS_REPO}/resolve/{ccs.COMMA_CAR_SEGMENTS_BRANCH}/segments/{path}"
   return None
+
+
+def peers(source: str) -> tuple[str, ...]:
+  """The sources whose cached copies of a file have the bytes source would serve."""
+  return ("carSegments",) if source == "carSegments" else SHARED
 
 
 def sha(url: str) -> str:
@@ -98,8 +107,8 @@ def _chunks_complete(url: str) -> int | None:
   return length if length > 0 and all((root() / f"{h}_{float(i)}").is_file() for i in range(n)) else None
 
 
-def lookup(key: Key, sources=("device", "internal", "api", "openpilotci", "carSegments")) -> tuple[str, Path] | None:
-  """(source, path) of a cached copy of key, or None. A complete url_file chunk set is joined into a whole file
+def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
+  """(source, path) of a cached copy of key from one of sources, or None. A complete url_file chunk set is joined into a whole file
   first (which cabana then reuses too). A decompressed-only copy is served as is; the page's reader takes raw logs."""
   if "device" in sources and (p := device_path(key)).is_file():
     return "device", p
@@ -227,12 +236,12 @@ class Fill:
         pass
     finally:
       with _fills_lock:
-        _fills.pop(self.key, None)
+        _fills.pop(fill_id(self.source, self.key), None)
       self.finished.set()
       prune_soon()
 
 
-_fills: dict[Key, Fill] = {}
+_fills: dict[tuple[bool, Key], Fill] = {}
 _fills_lock = threading.Lock()
 stats = {"hits": 0, "misses": 0, "served": 0, "fetched": 0, "stale": 0}
 
@@ -262,15 +271,20 @@ def mark_checked(path: Path, when: float | None = None) -> None:
 def fill(key: Key, source: str, url: str, cancelled=None) -> Fill:
   """The download of key in flight, starting one in a thread if there's none. cancelled() can abort a new one."""
   with _fills_lock:
-    if (f := _fills.get(key)) is not None:
+    if (f := _fills.get(fill_id(source, key))) is not None:
       return f
-    f = _fills[key] = Fill(key, source, url, canonical_url(source, key) or url)
+    f = _fills[fill_id(source, key)] = Fill(key, source, url, canonical_url(source, key) or url)
   threading.Thread(target=f.run, args=(cancelled or (lambda: False),), daemon=True, name=f"fill {key}").start()
   return f
 
 
-def filling(key: Key) -> Fill | None:
-  return _fills.get(key)
+def filling(key: Key, source: str) -> Fill | None:
+  """The download in flight of key's bytes as source has them (from source or one of its peers)."""
+  return _fills.get(fill_id(source, key))
+
+
+def fill_id(source: str, key: Key) -> tuple[bool, Key]:
+  return source == "carSegments", key
 
 
 # budget
@@ -390,7 +404,8 @@ def cache_stats(req):
       have = {}
       for kind, names in KINDS.items():
         for name in names:
-          if (hit := lookup(Key(dongle, log_id, seg, name))):
+          key = Key(dongle, log_id, seg, name)
+          if (hit := lookup(key) or lookup(key, ["carSegments"])):
             have[kind] = {"file": name, "source": hit[0], "size": hit[1].stat().st_size}
             break
       segs[str(seg)] = have
