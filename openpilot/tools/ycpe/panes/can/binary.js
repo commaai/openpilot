@@ -125,12 +125,13 @@ export function create(ctx, state) {
     const d = drag;
     drag = null;
     if (!d) return;
-    if (d.moved || d.resize) {
+    // a click, even on an M/L edge, opens the editor
+    if (d.moved) {
       const sel = selection(d);
-      if (d.resize) updateSignal(can, k(), d.resize.name, {start: sel.start, size: sel.size, max: d.resize.max});
-      else can.emit("edit", createSignal(can, k(), sel));
+      if (!d.resize) can.emit("edit", createSignal(can, k(), sel));
+      else if (sel.start !== d.resize.start || sel.size !== d.resize.size) updateSignal(can, k(), d.resize.name, {start: sel.start, size: sel.size, max: d.resize.max});
     } else {
-      const sg = coverage(visible(), rows())[posOf(d.anchor.row, d.anchor.col)]?.at(-1);
+      const sg = d.resize || coverage(visible(), rows())[posOf(d.anchor.row, d.anchor.col)]?.at(-1);
       if (sg) can.emit("edit", sg.name);
     }
     ctx.perf.invalidate(pane);
