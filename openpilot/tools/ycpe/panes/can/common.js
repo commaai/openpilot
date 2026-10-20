@@ -27,7 +27,13 @@ export function subs() {
   return {add: (off) => offs.push(off), dispose: () => offs.splice(0).forEach((f) => f())};
 }
 
-export const hex2 = (x) => x.toString(16).toUpperCase().padStart(2, "0");
+// a phone stacks the view's panes in one scroll (pages.css): this scrolls the pane whose root has class cls into view
+export function reveal(el, cls) {
+  const layout = el.closest(".layout");
+  if (layout && getComputedStyle(layout).display === "block") layout.querySelector(`.${cls}`)?.closest(".pane").scrollIntoView({behavior: "smooth"});
+}
+
+export const hex2 =(x) => x.toString(16).toUpperCase().padStart(2, "0");
 // a signal color dark enough for text and lines on either theme
 export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
 

@@ -1,7 +1,7 @@
 // cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
-import {canOf, hex2, menuCheck, popup, subs} from "./common.js";
+import {canOf, hex2, menuCheck, popup, reveal, subs} from "./common.js";
 import {dbcDialog, save, toolsMenu} from "./tools.js";
 
 const ROW = 20;
@@ -152,7 +152,7 @@ export function create(ctx, state) {
 
   function row() {
     const cells = COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`}));
-    const r = h("div", {class: "can-msg-row", onclick: () => can.select(r.key)}, cells);
+    const r = h("div", {class: "can-msg-row", onclick: () => { can.select(r.key); reveal(el, "can-binary"); }}, cells);
     r.cells = cells;
     r.bytes = [];
     spacer.append(r);
