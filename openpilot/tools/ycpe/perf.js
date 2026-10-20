@@ -67,7 +67,9 @@ document.addEventListener("visibilitychange", () => { last = 0; });
 if (PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame")) {
   new PerformanceObserver((list) => {
     for (const e of list.getEntries()) {
+      // layout: style + layout + paint time at the frame's end, where DOM churn shows up
       longFrames.push({t: e.startTime, duration: e.duration, blocking: e.blockingDuration,
+        layout: e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0,
         scripts: e.scripts.map((s) => `${s.sourceFunctionName || s.invoker || "?"} ${s.sourceURL.split("/").pop()}:${s.sourceCharPosition} ${s.duration.toFixed(0)}ms`)});
       if (longFrames.length > 50) longFrames.shift();
     }
@@ -158,7 +160,7 @@ function perfPanel(onClose) {
       ...rows.map(([k, avg, max]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, avg.toFixed(2)), h("span", {class: max > BUDGET_MS ? "bad" : ""}, max.toFixed(2)))),
       ...Object.entries(marks).map(([k, v]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, String(v)), h("span"))));
     longs.replaceChildren(h("div", {class: "muted"}, `${longFrames.length} long frames`),
-      ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms  ${l.scripts.slice(0, 2).join(" · ")}`)));
+      ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms (layout ${l.layout.toFixed(0)})  ${l.scripts.slice(0, 2).join(" · ")}`)));
   };
   const timer = setInterval(update, 500);
   update();

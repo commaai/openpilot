@@ -116,7 +116,7 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .pane:hover .pane-tools { opacity: 1; }
 .pane-btn { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; line-height: 1; }
 .pane-btn:hover { background: var(--active); color: var(--fg); }
-.pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; contain: strict; }  /* a pane's changes never relayout the page */
 .pane-body > * { position: absolute; inset: 0; }
 .empty-pane { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 6px; padding: 12px; }
 .pane-missing { display: flex; align-items: center; justify-content: center; color: var(--muted); }
