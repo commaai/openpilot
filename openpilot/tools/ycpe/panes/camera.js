@@ -5,6 +5,7 @@
 import {SEGMENT, api, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
+import {onJobs} from "/local.js";
 import {status} from "/status.js";
 import {routeCameraFiles} from "/data/sources.js";
 import {HEVC} from "/data/video/annexb.js";
@@ -255,6 +256,7 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
   const stats = {shown: -1, exact: false, drawn: 0, lag: 0, fps: 0, held: 0, seekMs: null};
   let ready = false, transcoded = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, decoded = 0;
   let jumped = 0, settle = 0, scrubbing = false;  // when the playhead last jumped; a render once a scrub settles
+  let gone = false;
 
   const jobs = new Map();  // segment → {done, total} frames of the daemon's transcode
   const segState = [];     // the worker's last word on each segment
@@ -274,6 +276,7 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
 
   let real = [], have = [];  // each slot's segment, and whether it has a file
   sources(ctx.route, camera).then(({urls, keys, segs, ...src}) => {
+    if (gone) return;
     real = segs;
     have = segs.map((_, k) => !!urls[k]);
     if (!have.some(Boolean)) return fail(`no ${CAMERAS[camera]} camera files, showing qcamera`);
@@ -283,9 +286,9 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
     ctx.perf.invalidate(pane);
     if (!(transcoded = src.transcoded)) return;
     badge();
-    stopJobs = daemon.events("/local/jobs/events", (ev, job) => {
+    stopJobs = onJobs((job) => {
       const {route, camera: cam} = job.meta || {}, seg = real.indexOf(job.meta?.seg);  // its timeline slot
-      if (ev !== "job" || job.kind !== "transcode" || route !== ctx.route.fullname || cam !== camera || seg < 0) return;
+      if (job.kind !== "transcode" || route !== ctx.route.fullname || cam !== camera || seg < 0) return;
       if (job.state === "running") {
         jobs.set(seg, job);
         lanes.seg(seg, "loading", {loaded: job.done, total: job.total});
@@ -295,7 +298,7 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
       }
       if (waitingOn?.n === seg) buffering(waitingOn);
     });
-  }).catch(() => fail("camera files unavailable, showing qcamera"));
+  }).catch(() => gone || fail("camera files unavailable, showing qcamera"));
 
   worker.onmessage = ({data}) => {
     if (data.unbuilt) return fail(UNBUILT);
@@ -379,6 +382,7 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
       asked = key;
     },
     dispose() {
+      gone = true;
       stopJobs?.();
       lanes.remove();
       worker.terminate();
