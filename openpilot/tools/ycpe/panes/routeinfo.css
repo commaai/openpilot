@@ -1,9 +1,13 @@
-/* route info pane: info table, actions, bookmarks */
+/* route info pane: the Route, Car and Version tables side by side as they fit, actions, toggles, bookmarks */
 .info-pane { overflow: auto; padding: 8px 10px; }
+.info-pane .groups { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 24px; }
+.info-pane .groups section { min-width: 0; max-width: 100%; }
+.info-pane h4 { margin: 0 0 2px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .info-pane .kv-table { border-collapse: collapse; }
 .info-pane .kv-table th { padding: 1px 12px 1px 0; color: var(--muted); font-weight: 500; text-align: left; vertical-align: top; white-space: nowrap; }
 .info-pane .kv-table td { padding: 1px 0; overflow-wrap: anywhere; }
 .info-pane .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
-.info-pane .toggles { display: inline-flex; gap: 10px; margin-left: 6px; }
-.info-pane .check { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.info-pane .toggles { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.info-pane .check { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; min-height: 24px; cursor: pointer; }
+.info-pane .check input { align-self: center; margin: 0; }
 .info-pane .bookmarks { display: flex; flex-wrap: wrap; gap: 4px; }

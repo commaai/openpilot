@@ -1,5 +1,6 @@
-// route info pane: what the route is, its public/preserved toggles, link sharing and bookmarks (files have their own pane)
-import {api, routeEvents} from "/api.js";
+// route info pane: what the route is (every field of its API record useradmin shows, grouped as it does), its
+// public/preserved toggles, link sharing and bookmarks (files have their own pane)
+import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
 import {h, fmt, css} from "/dom.js";
 import {parseRemote} from "/data/github.js";
 import {canManage} from "/pages/home.js";
@@ -8,22 +9,30 @@ import {shareUrl} from "/layouts/picker.js";
 
 await css(new URL("./routeinfo.css", import.meta.url));
 
-function toggle(label, value, enabled, set) {
+// a checkbox that saves when changed, with what it means beside it; ask(v) may call the change off, and refused(v)
+// says why the API answered 403
+function toggle(label, value, enabled, set, {about, ask = () => true, refused = () => "not allowed"}) {
   const box = h("input", {type: "checkbox", checked: value, disabled: !enabled});
   const status = h("span", {class: "small error"});
   box.addEventListener("change", async () => {
-    box.disabled = true;
+    const v = box.checked;
     status.textContent = "";
+    if (!ask(v)) return void (box.checked = !v);
+    box.disabled = true;
     try {
-      await set(box.checked);
+      await set(v);
     } catch (err) {
-      box.checked = !box.checked;
-      status.textContent = err.status === 403 ? "not allowed" : err.message;
+      box.checked = !v;
+      status.textContent = err.status === 403 ? refused(v) : err.message;
     }
     box.disabled = false;
   });
-  return h("label", {class: "check"}, box, label, status);
+  return h("label", {class: "check"}, box, label, h("span", {class: "small muted"}, about), status);
 }
+
+// the API's times: unix seconds, or UTC without its "Z"
+const when = (t) => t && new Date(typeof t === "number" ? t * 1000 : `${t}Z`).toLocaleString();
+const place = (lat, lng) => lat != null && lng != null && `${lat}, ${lng}`;
 
 export function create(ctx) {
   const {route, clock} = ctx;
@@ -33,50 +42,80 @@ export function create(ctx) {
   const repo = parseRemote(route.git_remote);  // the device says what its remote is: only a real GitHub repo is linked
   const github = repo && commit ? `https://github.com/${repo}/commit/${route.git_commit}` : null;
   const schema = schemaRow(ctx);
-  const rows = [
-    ["route", h("span", {class: "mono"}, route.fullname)],
-    ["start", `${start.toLocaleString()} (${fmt.duration(route.end_time_utc_millis - route.start_time_utc_millis)})`],
-    ["car", [route.platform, route.make && `(${route.make})`].filter(Boolean).join(" ")],
-    ["openpilot", route.version],
-    ["branch", route.git_branch && [route.git_branch, " @ ", github ? h("a", {href: github, target: "_blank", rel: "noopener"}, commit) : commit, route.git_dirty ? " (dirty)" : ""]],
-    ["remote", route.git_remote],
-    ["schema", schema.el],
-    // a range shows its own segments; the distance is the whole route's
-    ["segments", route.range ? `${route.segment_numbers.length} of ${(route.maxqlog ?? -1) + 1}` : `${(route.maxqlog ?? -1) + 1}, ${fmt.miles(route.distance ?? 0)}`],
-  ];
+  const segments = (route.maxqlog ?? -1) + 1;
+  const groups = {
+    Route: [
+      ["route", h("span", {class: "mono"}, route.fullname)],
+      ["start", `${start.toLocaleString()} (${fmt.duration(route.end_time_utc_millis - route.start_time_utc_millis)})`],
+      ["end", new Date(route.end_time_utc_millis).toLocaleString()],
+      // a range shows its own segments; the distance is the whole route's
+      ["segments", route.range ? `${route.segment_numbers.length} of ${segments}` : `${segments}, ${fmt.miles(route.distance ?? 0)}`],
+      // comma's servers process each qlog as it arrives (events, coords, thumbnails)
+      ["processed", route.procqlog !== undefined && (route.procqlog === route.maxqlog ? "all segments" : `${(route.procqlog ?? -1) + 1} of ${segments} segments`)],
+      ["uploaded", route.create_time && h("span", {title: "when the route's first file reached comma's servers"}, when(route.create_time))],
+      ["from", place(route.start_lat, route.start_lng)],
+      ["to", place(route.end_lat, route.end_lng)],
+      ["user id", route.user_id && h("span", {class: "mono"}, route.user_id)],
+    ],
+    Car: [
+      ["car", [route.platform, route.make && `(${route.make})`].filter(Boolean).join(" ")],
+      ["vin", route.vin && h("span", {class: "mono"}, route.vin)],
+      ["car id", route.car_id],
+    ],
+    Version: [
+      ["openpilot", route.version],
+      ["branch", route.git_branch && [route.git_branch, " @ ", github ? h("a", {href: github, target: "_blank", rel: "noopener"}, commit) : commit, route.git_dirty ? " (dirty)" : ""]],
+      ["committed", when(route.git_commit_date)],
+      ["remote", route.git_remote],
+      ["version id", route.version_id],
+      ["schema", schema.el],
+    ],
+  };
 
   const copied = h("span", {class: "small muted"});
   // the open view at the playhead and zoom; with plots, the Plot view as this browser has it
   const link = () => location.origin + ctx.url();
   const plotsLink = () => shareUrl(ctx.layoutOf("plot"), ctx.url("plot"));
+  // "<dongle id>/<log id>/<segment>" at the playhead, as connect copies it
+  const segmentName = () => `${route.fullname.replace("|", "/")}/${segmentAt(route, Math.min(Math.floor(clock.t / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1))}`;
   const copy = async (text, what) => {
     await navigator.clipboard.writeText(text);
     copied.textContent = `copied ${what}`;
     setTimeout(() => { copied.textContent = ""; }, 2000);
   };
-  const toggles = h("span", {class: "toggles"});
+  const toggles = h("div", {class: "toggles"});
   const bookmarks = h("div", {class: "bookmarks"});
   const device = api.device(dongleId).catch(() => null);
   device.then(async (d) => {
     const owner = !!d && await canManage(d);
-    toggles.replaceChildren(toggle("public", route.is_public, owner, async (v) => { await api.setRoutePublic(route.fullname, v); route.is_public = v; }));
+    // useradmin's confirmation, connect's explanations, and useradmin's word for the preserve limit
+    toggles.replaceChildren(toggle("public", route.is_public, owner, async (v) => { await api.setRoutePublic(route.fullname, v); route.is_public = v; }, {
+      about: "anyone with the route name or link can read all its files",
+      ask: (v) => !v || confirm(`Make ${route.fullname} public? This will allow any comma user with the route name to access all route files.`)}));
     // a public route's record, as seen signed out, doesn't say whether it's preserved
     if (route.is_preserved !== undefined) {
-      toggles.append(toggle("preserved", route.is_preserved, owner, async (v) => { await api.setRoutePreserved(route.fullname, v); route.is_preserved = v; }));
+      toggles.append(toggle("preserved", route.is_preserved, owner, async (v) => { await api.setRoutePreserved(route.fullname, v); route.is_preserved = v; }, {
+        about: "kept from deletion; up to 10 routes, or 100 with comma prime",
+        refused: (v) => v ? "Maximum number of drives have been preserved. Unpreserve a drive and try again." : "not allowed"}));
     }
   });
   routeEvents(route).then((spans) => bookmarks.replaceChildren(...spans.filter((s) => s.kind === "bookmark").map((s) =>
     h("button", {class: "chip", title: "Seek to bookmark", onclick: () => clock.seek(s.start / 1000)}, `bookmark ${fmt.clock(s.start / 1000)}`)))).catch(() => {});
 
   const el = h("div", {class: "info-pane"},
-    h("table", {class: "kv-table"}, rows.filter(([, v]) => v).map(([k, v]) => h("tr", {}, h("th", {}, k), h("td", {}, v)))),
+    h("div", {class: "groups"}, Object.entries(groups).map(([title, rows]) => h("section", {},
+      h("h4", {}, title),
+      h("table", {class: "kv-table"}, rows.filter(([, v]) => v).map(([k, v]) => h("tr", {}, h("th", {}, k), h("td", {}, v))))))),
     h("div", {class: "actions"},
       h("button", {class: "button small", title: "Link to this view of the route at the playhead, zoomed as it is", onclick: () => copy(link(), "link")}, "Copy link to this time"),
       h("button", {class: "button small", title: "Link to the Plot view at the playhead with your plots (custom series ask before they run)",
         onclick: () => copy(plotsLink(), "link with your plots")}, "Copy link with my plots"),
-      h("button", {class: "button small", onclick: () => copy(route.fullname, "route name")}, "Copy name"),
+      h("button", {class: "button small", title: "The route's name, as the API has it", onclick: () => copy(route.fullname, "route name")}, "Copy route name"),
+      h("button", {class: "button small", title: "The name of the segment at the playhead: dongle id/log id/segment",
+        onclick: () => { const name = segmentName(); copy(name, name); }}, "Copy segment name"),
       navigator.share && h("button", {class: "button small", onclick: () => navigator.share({title: route.fullname, url: link()}).catch(() => {})}, "Share"),
-      toggles, copied),
+      copied),
+    toggles,
     bookmarks);
   return {name: "info", el, render() {}, resize() {}, dispose: schema.dispose, save: () => ({})};
 }
