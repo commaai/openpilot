@@ -134,6 +134,62 @@ export function uploadNotice(up, keys) {
     : "Device on a metered connection: uploads are paused until it's on wifi.");
 }
 
+// the device page's whole upload queue, refreshed every 2 s while it's on the page; resume() picks that up again when
+// the tab is shown. Offline, it's the requests waiting in athena for the device to come back.
+export function deviceUploads(device) {
+  const dongleId = device.dongle_id;
+  const el = h("div", {}, h("p", {class: "muted"}, "Loading…"));
+  const status = h("p", {class: "small error"});
+  const up = {queue: [], metered: false, cancelling: new Set(), offline: () => !isOnline(device), cancel};
+  let polling = 0, busy = false, first = true;
+
+  async function cancel(ids) {
+    for (const id of ids) up.cancelling.add(id);
+    status.textContent = "";
+    show();
+    try {
+      await api.athena(dongleId, "cancelUpload", {upload_id: ids});
+    } catch (err) {
+      status.textContent = `Cancel failed: ${err.message}`;
+    }
+    refresh();
+  }
+
+  function show() {
+    el.replaceChildren(uploadQueue(up), status);
+  }
+
+  async function load() {
+    if (up.offline()) {
+      const waiting = (await api.athenaOfflineQueue(dongleId)).filter((q) => q.expiry > Date.now() / 1000)
+        .flatMap((q) => q.method === "uploadFilesToUrls" ? q.params.files_data.map((f) => [f.fn, q.expiry]) : q.method === "uploadFileToUrl" ? [[q.params[0], q.expiry]] : []);
+      el.replaceChildren(h("p", {class: "muted"}, waiting.length ? "Device offline. These uploads start when it's back:" : "Device offline."));
+      if (waiting.length) {
+        el.append(h("table", {class: "list"},
+          h("tr", {}, h("th", {}, "file"), h("th", {}, "requested until")),
+          waiting.map(([fn, expiry]) => h("tr", {}, h("td", {class: "mono"}, fn), h("td", {class: "muted"}, new Date(expiry * 1000).toLocaleString())))));
+      }
+      return;
+    }
+    if (first) up.metered = await api.athena(dongleId, "getNetworkMetered").catch(() => false);
+    up.queue = await api.athena(dongleId, "listUploadQueue");
+    up.cancelling = new Set([...up.cancelling].filter((id) => up.queue.some((q) => q.id === id)));
+    show();
+  }
+
+  function refresh() {
+    clearTimeout(polling);
+    if (busy) return;
+    busy = true;
+    load().catch((err) => el.replaceChildren(h("p", {class: "error"}, err.message))).finally(() => {
+      busy = first = false;
+      if (!up.offline()) polling = setTimeout(() => el.isConnected && refresh(), POLL_MS);
+    });
+  }
+  el.resume = refresh;
+  return el;
+}
+
 export function uploadQueue(up) {
   if (up.offline()) return h("p", {class: "muted"}, "Device offline.");
   if (!up.queue.length) return h("p", {class: "muted"}, "No uploads.");

@@ -1,4 +1,4 @@
-// the device page: header with location map, then tabs for drives, preserved drives, users and logs
+// the device page: header with location map, then tabs for drives, preserved drives, uploads, users and logs
 import {api, auth, engagedFraction, routeEvents} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {isOnline, link} from "../app.js";
@@ -8,6 +8,7 @@ import {deviceMap} from "../panes/map.js";
 import {deviceName} from "./home.js";
 import {usersSection} from "./users.js";
 import {logsSection} from "./logs.js";
+import {deviceUploads} from "./files.js";
 
 const DAY = 86400000, HOUR = 3600000;
 const WINDOW = 14 * DAY, LIMIT = 50;
@@ -191,6 +192,7 @@ export async function devicePage(dongleId, devices) {
   const tabs = {
     drives: ["Drives", () => drivesSection(dongleId)],
     preserved: ["Preserved", () => preservedSection(dongleId)],
+    uploads: ["Uploads", () => deviceUploads(device)],
     users: ["Users", () => usersSection(device)],
     bootlogs: ["Boot logs", () => logsSection(dongleId, "boot")],
     crashlogs: ["Crash logs", () => logsSection(dongleId, "crash")],
@@ -204,6 +206,7 @@ export async function devicePage(dongleId, devices) {
     keep.tab = key;
     built[key] ||= tabs[key][1]();
     body.replaceChildren(built[key]);
+    built[key].resume?.();
     for (const b of bar.children) {
       b.classList.toggle("on", b.dataset.tab === key);
       b.setAttribute("aria-selected", b.dataset.tab === key);
