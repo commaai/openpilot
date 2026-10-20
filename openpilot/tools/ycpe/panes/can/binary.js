@@ -28,8 +28,9 @@ export function create(ctx, state) {
     [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
   const empty = h("div", {class: "can-empty"}, "Select a message to see its bits");
   const scroller = h("div", {class: "can-binary-scroll"}, canvas, empty);
-  const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key},
-    h("div", {class: "can-toolbar"}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn), scroller, info);
+  // no toolbar until a message is selected: the empty hint says it
+  const bar = h("div", {class: "can-toolbar", hidden: true}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
+  const el = h("div", {class: "can-pane can-binary", tabindex: 0, onkeydown: key}, bar, scroller, info);
 
   const k = () => can.selected;
   const msg = () => can.dbcMsg(k());
@@ -152,7 +153,8 @@ export function create(ctx, state) {
     name: "can-binary", el,
     render() {
       const key = k(), n = key === null ? 0 : rows(), {col, x0} = geometry();
-      title.textContent = key === null ? "Select a message" : `${hexId(key)} ${msg()?.name || ""}`;
+      if (bar.hidden !== (key === null)) bar.hidden = key === null;
+      if (key !== null) title.textContent = `${hexId(key)} ${msg()?.name || ""}`;
       dpr = devicePixelRatio;
       const w = width, H = Math.max(n * ROW, 1);
       if (canvas.width !== w * dpr || canvas.height !== H * dpr) {

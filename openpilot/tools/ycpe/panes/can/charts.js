@@ -102,8 +102,9 @@ export function create(ctx, state) {
   });
 
   function tabsChanged() {
+    const count = (t, i) => (i === active ? charts : t.charts).length;
     tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`, onclick: () => i !== active && open(i)},
-      `Tab ${i + 1}`, h("span", {class: "can-muted"}, ` ${(i === active ? charts : t.charts).length}`),
+      `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, `· ${count(t, i)}`),
       tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, "✕"))),
       h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, "+"));
   }

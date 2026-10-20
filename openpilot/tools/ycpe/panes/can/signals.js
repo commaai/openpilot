@@ -44,11 +44,11 @@ export function create(ctx, state) {
 
   function header() {
     const key = k(), m = msg();
-    title.textContent = key === null ? "Select a message" : `${hexId(key)} ${m?.name || "(no DBC message)"}`;
+    head.hidden = key === null;  // the empty list says to select one
+    title.textContent = key === null ? "" : `${hexId(key)} ${m?.name || "(no DBC message)"}`;
     meta.textContent = m ? ` ${m.size} bytes · ${m.transmitter}` : "";
     count.textContent = m ? `${m.sigs.length} signals` : "";
     for (const x of [meta, count, sparkSel, filterBox, removeBtn]) x.hidden = !m;
-    editBtn.hidden = key === null;
     editBtn.textContent = m ? "Edit message" : "Add to DBC";
     comment.textContent = m?.comment || "";
     comment.hidden = !m?.comment;

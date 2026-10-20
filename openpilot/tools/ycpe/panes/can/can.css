@@ -18,6 +18,8 @@
 .can-select, .can-filter { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-filter { width: 110px; }
 .can-empty { padding: 16px; color: var(--muted); text-align: center; }
+/* hidden wins over the flex and grid rows */
+.can-pane [hidden] { display: none; }
 .can-comment { width: 100%; color: var(--muted); white-space: pre-wrap; }
 
 /* messages */
@@ -44,11 +46,9 @@
 .can-msg-row:hover { background: var(--hover); }
 .can-msg-row.selected { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
 .can-msg-row.inactive { color: var(--muted); }
-.can-msg-row[hidden], .can-hist-row[hidden] { display: none; }
 .can-msg-row .can-col-id, .can-msg-row .can-col-bytes { font-family: var(--mono); }
 .can-col-bytes span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
 .can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
-.can-col-bytes span[hidden], .can-hist-row > span > span[hidden] { display: none; }
 /* byte changes: up, down, periodic; --a fades from 1 to 0 over two seconds */
 .can-chg1, .can-chg2, .can-chg3 { background: color-mix(in srgb, var(--c) calc(var(--a) * 55%), transparent); }
 .can-chg1 { --c: var(--accent); } .can-chg2 { --c: var(--critical); } .can-chg3 { --c: var(--muted); }
