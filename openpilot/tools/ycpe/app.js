@@ -102,7 +102,7 @@ function menu(anchor, build) {
     document.addEventListener("pointerdown", outside);
     document.addEventListener("focusin", outside);
     document.addEventListener("keydown", escape);
-    el.querySelector("button, a[href], input, select")?.focus();  // once the caller has filled it
+    (el.querySelector(".menu-list > .on") || el.querySelector("button, a[href], input, select"))?.focus();  // once the caller has filled it
   });
   return el;
 }
@@ -113,9 +113,11 @@ function closePopover() {
   if (open?._close) open._close(); else open?.remove();
 }
 
+// shown once updateTop() names them
+const crumb = (title) => h("button", {class: "crumb", title, hidden: true}, h("span"), icon("down", 16));
 const bar = {
-  device: h("button", {class: "crumb", title: "Devices"}),
-  route: h("button", {class: "crumb", title: "Routes on this device"}),
+  device: crumb("Devices"),
+  route: crumb("Routes on this device"),
   views: h("nav", {class: "views"}),
   tabs: h("nav", {class: "tabs", role: "tablist", "aria-label": "Layout tabs"}),
 };
@@ -134,7 +136,8 @@ function topBar() {
     if (on && !tabsScrolled && (on.left < r.left || on.right > r.right)) showActiveTab();
   }).observe(bar.tabs);
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
-    (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
+    (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
+      href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
       h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}), h("span", {}, d.alias || d.dongle_id), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
     !state.devices?.length && h("div", {class: "menu-row muted"}, auth.isAuthenticated() ? "No devices" : "Sign in to see your devices"))));
@@ -155,7 +158,7 @@ function topBar() {
   const helpBtn = h("button", {class: "tbtn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
-    bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
+    bar.device, h("span", {class: "sep", hidden: true}, "›"), bar.route, search, bar.views, bar.tabs,
     h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), helpBtn, themeBtn, account);
 }
 
@@ -164,15 +167,16 @@ function updateTop() {
   const focused = document.activeElement?.closest?.(".topbar [data-key]")?.dataset.key;
   const dongle = ws?.dongle || location.pathname.split("/")[1];
   const device = state.devices?.find((d) => d.dongle_id === dongle);
-  bar.device.textContent = device ? device.alias || dongle : DONGLE_RE.test(dongle || "") ? dongle : "devices";
-  bar.route.hidden = bar.route.previousSibling.hidden = !ws;
+  bar.device.firstChild.textContent = device ? device.alias || dongle : DONGLE_RE.test(dongle || "") ? dongle : "devices";
+  bar.device.hidden = false;
+  bar.route.hidden = bar.route.previousElementSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
   if (!ws) {  // the buttons' handlers would keep the closed workspace alive
     bar.views.replaceChildren();
     return bar.tabs.replaceChildren();
   }
   const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
-  bar.route.textContent = ws.route.start_time_utc_millis
+  bar.route.firstChild.textContent = ws.route.start_time_utc_millis
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
     : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
@@ -201,8 +205,8 @@ function updateTop() {
     h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), "data-key": `tab:${i}`}, t.name),
     layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "data-key": "close", "aria-label": `Close tab ${t.name}`,
       onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
-  h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
-  h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+  h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
+  h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
   refocus(focused);
   // scrolled to on the next frame, when it lays out anyway, and only when the active tab or the tab set changed
   const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
@@ -523,7 +527,11 @@ async function render() {
     return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
   if (auth.isAuthenticated() && !state.devices) {
+    updateTop();
+    document.body.classList.add("loading");
+    main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Loading devices…"));
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
+    document.body.classList.remove("loading");
   }
 
   if (openLoose(parts, q, main)) return;

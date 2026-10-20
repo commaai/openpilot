@@ -7,6 +7,7 @@
 //              error    failed
 // A segment may also say which source its bytes came from (api, internal, openpilotci, car segments, local, …).
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {daemon} from "/daemon.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -142,8 +143,10 @@ export function loadPill() {
       const k = active[0], n = counts(k);
       text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
-      text.textContent = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ") || "✓ loaded";
+      text.textContent = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ");
+      if (!text.textContent) text.replaceChildren(icon("check", 14));
     }
+    el.classList.toggle("loaded", !text.textContent);
     // read out: the playhead waiting, failures, and "ready" once neither is the case anymore
     const failed = each.reduce((a, e) => a + e.n.error, 0);
     const say = waiting ? `buffering ${waiting.label}, ${waiting.buffering.text}` : failed ? `${failed} segment${failed > 1 ? "s" : ""} failed to load`
