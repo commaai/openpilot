@@ -53,9 +53,10 @@ async function download(url, progress, signal, head = null) {
 }
 
 // the log from the OPFS cache, else downloaded and cached; key is logs/dongle/route/segment/file. The local daemon's
-// URLs come from the disk cache it shares with openpilot's tools, so OPFS would only store them twice
+// URLs come from the disk cache it shares with openpilot's tools, and dropped files (blob: URLs) are on disk already,
+// so OPFS would only store them twice
 async function load(key, url, progress, signal, head) {
-  if (url.startsWith("/local/")) {
+  if (url.startsWith("/local/") || url.startsWith("blob:")) {
     const {buf, hit} = await download(url, progress, signal, head);
     return {buf, cached: hit};
   }
