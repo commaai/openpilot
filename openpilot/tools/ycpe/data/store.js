@@ -7,7 +7,7 @@ import {status} from "../status.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
-import {BLOCK, enumRef, service, times, unpack} from "./pack.js";
+import {BLOCK, constant, enumRef, service, times, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
@@ -385,6 +385,25 @@ export class Store {
     return e.series;
   }
 
+  // a path's {type, names?} without unpacking it; null when unknown
+  meta(path) {
+    const o = this.overlays.length ? this.overlayOf(path) : null;
+    if (o) return o.store.meta(path.slice(o.prefix.length));
+    return this.entries.get(path) || this.series(path);
+  }
+
+  // the value of a log column that's the same constant in every loaded segment, else undefined
+  constant(path) {
+    let c;
+    for (const a of this.entries.get(path)?.at || []) {
+      if (!a) continue;
+      const x = constant(a.pack, a.k);
+      if (x === undefined || (c !== undefined && x !== c)) return undefined;
+      c = x;
+    }
+    return c;
+  }
+
   // one segment's chunk of a path, unpacking only that segment's (series() unpacks them all, and text decodes)
   chunk(path, n) {
     const e = this.entries.get(path);
@@ -433,7 +452,8 @@ export class Store {
       const t = [], v = [];
       for (const c of chunks) {
         for (let k = lowerBound(c.tt, t0), end = upperBound(c.tt, t1); k < end; k++) {
-          if (c.v[k] === c.v[k]) { t.push(c.tt[k]); v.push(c.v[k]); }
+          const x = "c" in c ? c.c : c.v[k];
+          if (x === x) { t.push(c.tt[k]); v.push(x); }
         }
       }
       const vals = Float64Array.from(v);
@@ -450,6 +470,14 @@ export class Store {
     for (const c of chunks) {
       const {tt, v} = c, k0 = lowerBound(tt, t0), k1 = upperBound(tt, t1);
       if (k1 <= k0) continue;
+      if ("c" in c) {  // a constant: the value in each bucket with a sample, found by bisecting at bucket ends
+        for (let k = k0; k < k1;) {
+          const b = Math.min(n - 1, Math.floor((tt[k] - t0) / w));
+          add(tt[k], c.c, c.c);
+          k = b === n - 1 ? k1 : lowerBound(tt, t0 + (b + 1) * w, k + 1, k1);
+        }
+        continue;
+      }
       // the coarsest level whose blocks still fit four to a bucket
       const perBucket = (k1 - k0) / Math.max(1, (tt[k1 - 1] - tt[k0]) / w);
       const levels = perBucket >= 4 * BLOCK ? pyramid(c) : [];
@@ -680,7 +708,10 @@ function pyramid(c) {
 }
 
 // a chunk's last value at or before t
-function lastValue({tt, v}, t) {
+function lastValue(chunk, t) {
+  const {tt} = chunk;
+  if ("c" in chunk) return upperBound(tt, t) ? chunk.c : undefined;
+  const {v} = chunk;
   for (let k = upperBound(tt, t) - 1; k >= 0; k--) if (v[k] === v[k] && v[k] !== null) return v[k];
   return undefined;
 }
@@ -697,9 +728,8 @@ function overlapping(chunks, t0, t1) {
   return chunks.slice(lo, end);
 }
 
-// first k with a[k] >= x
-function lowerBound(a, x) {
-  let lo = 0, hi = a.length;
+// first k in [lo, hi) with a[k] >= x
+function lowerBound(a, x, lo = 0, hi = a.length) {
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
     if (a[mid] < x) lo = mid + 1; else hi = mid;

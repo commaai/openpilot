@@ -170,6 +170,7 @@ export function create(ctx, state = {}) {
     const numeric = [], text = [];
     for (const c of st.curves) {
       if (c.hidden) continue;
+      if (view.left(f) <= 0) return null;  // a series' first use unpacks it
       const src = source(c), s = store.series(src);
       if (!s) continue;
       const item = {c, src, s, shift: c.shift || 0, scale: c.scale ?? 1, offset: c.offset ?? 0};
@@ -190,11 +191,13 @@ export function create(ctx, state = {}) {
       it.d = withEdges(d, it.src, a, b);
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
-    // valid=false spans of the services behind the plain curves
+    // valid=false spans of the services behind the plain curves; none where valid is always true
     const invalid = [];
     for (const svc of new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]))) {
       if (view.left(f) <= 0) return null;
-      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
+      const path = `/${svc}/valid`;
+      if (store.constant(path) === 1) continue;
+      const d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
       if (d) invalid.push(d);
     }
     return {rows, lines, blockMode, invalid};
@@ -431,10 +434,10 @@ export function create(ctx, state = {}) {
     st.curves.forEach((c, k) => {
       const row = rows[k];
       if (!row) return;
-      const s = store.series(c.transform ? derivedPath(c.path, c.transform) : c.path);
-      let v = s ? store.valueAt(s.path ?? c.path, tt - (c.shift || 0)) : undefined;
-      if (typeof v === "number" && s.type !== "e") v = v * (c.scale ?? 1) + (c.offset ?? 0);
-      const text = fmtValue(v, s?.names).slice(0, 100);
+      const path = c.transform ? derivedPath(c.path, c.transform) : c.path, m = store.meta(path);
+      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined;
+      if (typeof v === "number" && m.type !== "e") v = v * (c.scale ?? 1) + (c.offset ?? 0);
+      const text = fmtValue(v, m?.names).slice(0, 100);
       if (row.val.textContent !== text) row.val.textContent = text;
     });
     if (st.stats) updateStats();
