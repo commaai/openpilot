@@ -1,4 +1,4 @@
-import {api, auth} from "/api.js";
+import {SEGMENT, api, auth, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
 import {h, parseClock} from "/dom.js";
@@ -20,6 +20,7 @@ import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
+import {routeId, routeAnatomy} from "/routeid.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 import {uniqueCustoms} from "/layouts/import.js";
 
@@ -123,6 +124,7 @@ const crumb = (title) => h("button", {class: "crumb", title, hidden: true}, h("s
 const bar = {
   device: crumb("Devices"),
   route: crumb("Routes on this device"),
+  segment: h("span", {class: "rid-segment", title: "segment: the minute of the route at the playhead, from 0"}),
   views: h("nav", {class: "views"}),
   tabs: h("nav", {class: "tabs", "aria-label": "Layouts"}),  // the tab list, then New tab and the layouts menu
   tablist: h("span", {class: "tablist", role: "tablist", "aria-label": "Layout tabs"}),
@@ -159,9 +161,23 @@ function topBar() {
       !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
   bar.route.addEventListener("click", () => {
     if (!ws || ws.session) return;
-    const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
+    hideAnatomy();
+    const pop = menu(bar.route, () => h("div", {class: "route-pop"}, anatomy()));
     pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop._close(); ws.openRoute(name); }}).el);
   });
+  // the route's name explained while the pointer rests on it
+  let card = null, cardTimer = 0;
+  const hideAnatomy = () => { clearTimeout(cardTimer); card?.remove(); card = null; };
+  bar.route.addEventListener("pointerenter", (e) => {
+    if (e.pointerType !== "mouse" || !ws || ws.session) return;
+    cardTimer = setTimeout(() => {
+      if (document.querySelector(".popover")) return;
+      const r = bar.route.getBoundingClientRect();
+      card = h("div", {class: "rid-card", style: `left: ${Math.max(8, r.left)}px; top: ${r.bottom + 6}px`}, anatomy());
+      document.body.append(card);
+    }, 300);
+  });
+  bar.route.addEventListener("pointerleave", hideAnatomy);
   const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
@@ -188,12 +204,15 @@ function updateTop() {
   bar.route.hidden = bar.route.previousElementSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
   if (!ws) return bar.tabs.replaceChildren();  // the tabs' handlers would keep the closed workspace alive
-  const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
-  // a live session: the device crumb names a device's, else the source does
-  bar.route.firstChild.textContent = ws.session ? (DONGLE_RE.test(ws.dongle) ? "live" : `live · ${ws.dongle}`) : ws.route.start_time_utc_millis
-    ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
-    : ws.route.fullname.split("|")[1];
-  bar.route.title = ws.session ? ws.session.label : `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
+  // the route's log id and the segment at the playhead, as one segment name; a live session: the device crumb names a
+  // device's, else the source does
+  if (crumbShown !== ws.route.fullname) {
+    crumbShown = ws.route.fullname;
+    bar.route.firstChild.replaceChildren(ws.session ? (DONGLE_RE.test(ws.dongle) ? "live" : `live · ${ws.dongle}`) : routeId(ws.route.fullname.split("|")[1], bar.segment));
+    bar.route.title = ws.session ? ws.session.label : "";  // a route's has its card
+    bar.route.ariaLabel = ws.session ? null : `Route ${ws.route.fullname}: the routes on this device`;
+    showSegment();
+  }
   // made once per set of views (a live session has its own) and kept, so a focused one stays focused: focusing a new
   // one would lay the new view out in the click
   if (viewsShown !== ws.views) {
@@ -254,6 +273,7 @@ function refocus(key) {
 }
 
 let viewsShown = null;     // the set of views the bar has buttons for
+let crumbShown = null;     // the route the route crumb names
 let tabsShown = "";        // the tabs and active tab the strip last scrolled to
 let tabsScrolled = false;  // the user scrolled the strip since
 let tabsMoved = false;     // the tabs changed since the strip scrolled to them
@@ -311,6 +331,21 @@ function renameTab(tabEl, i, name) {
   input.select();
 }
 
+// the segment at the playhead, in the route crumb
+function showSegment() {
+  const n = ws && !ws.session ? String(segmentAt(ws.route, Math.min(Math.floor(ws.clock.t / SEGMENT), Math.ceil(ws.clock.duration / SEGMENT) - 1))) : "";
+  if (bar.segment.textContent !== n) bar.segment.textContent = n;
+}
+
+// the route crumb's card: its name part by part, and when, how long and what it is
+function anatomy() {
+  const r = ws.route, start = r.start_time_utc_millis && new Date(r.start_time_utc_millis);
+  return routeAnatomy(r, bar.segment.textContent || null, [
+    start && start.toLocaleString(undefined, {month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false}),
+    `${Math.ceil(ws.clock.duration / SEGMENT)} segment${ws.clock.duration > SEGMENT ? "s" : ""}`,
+    r.platform, r.version && `openpilot ${r.version}`]);
+}
+
 // ---- route workspace: one clock, one store, one layout per view ----
 
 class Workspace {
@@ -336,6 +371,7 @@ class Workspace {
     this.playbar = playbar(this.ctx());
     this.el = h("div", {class: "ws"}, this.main, this.playbar.el);
     this.offs = ["t", "play", "range"].map((ev) => this.clock.on(ev, () => this.syncUrl()));
+    this.offs.push(this.clock.on("t", () => ws === this && showSegment()));
     // another browser tab saved a layout: this one's copy only replaces it once it changes
     const stored = (e) => {
       const view = Object.keys(this.layouts).find((v) => e.key === `ycpe_layout_${this.layoutKey(v)}`);

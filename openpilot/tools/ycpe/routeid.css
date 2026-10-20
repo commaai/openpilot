@@ -1,0 +1,26 @@
+/* a route's name part by part (routeid.js): one color per part, the same in the top bar and its card */
+:root { --rid-dongle: #3aa99f; --rid-counter: #4c8df6; --rid-random: #a679ec; --rid-segment: #e09a35; }
+.rid { font: 600 12px var(--mono); letter-spacing: -.01em; }
+.rid-sep { color: var(--muted); opacity: .6; font-family: var(--mono); }
+.rid-dongle { color: var(--rid-dongle); }
+.rid-counter { color: var(--rid-counter); }
+.rid-counter > i { font-style: normal; opacity: .45; }
+.rid-random { color: var(--rid-random); }
+.rid-segment { color: var(--rid-segment); }
+.rid-time, .rid-other { color: var(--fg); }
+/* a narrow top bar shows the name without the counter's leading zeros or the segment, which the timeline shows */
+@container (max-width: 1200px) { .topbar .rid :is(.rid-counter > i, .rid-segment, .rid-sep:has(+ .rid-segment)) { display: none; } }
+
+.rid-anatomy { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
+/* each part over a bracket in its color with its label: the name read as a diagram */
+.rid-diagram { display: grid; column-gap: 2px; row-gap: 3px; align-items: end; font: 600 13px var(--mono); }
+.rid-label { padding-top: 4px; border-top: 2px solid; font: 500 10px var(--font); text-align: center; white-space: nowrap; }
+.rid-anatomy dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; font-size: 12px; }
+.rid-anatomy dt { font-weight: 600; white-space: nowrap; }
+.rid-anatomy dd { margin: 0; color: var(--muted); }
+.rid-anatomy p { margin: 0; }
+
+/* the card that shows under the route crumb while the pointer rests on it */
+.rid-card { position: fixed; z-index: 50; max-width: min(460px, calc(100vw - 16px)); border: 1px solid var(--line); border-radius: 8px;
+  background: var(--raised); box-shadow: var(--shadow); pointer-events: none; }
+.route-pop .rid-anatomy { border-bottom: 1px solid var(--line); }
