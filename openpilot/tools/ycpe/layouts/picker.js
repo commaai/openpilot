@@ -1,6 +1,6 @@
 // the layout picker: open a reference layout, import a file (ours, jotpluggler's or PlotJuggler's), open one
-// from a URL, or export the view's layout. Whatever custom code an opened layout carries stays untrusted until
-// the user reviews it in the code console.
+// from a URL, or export the view's layout. Custom code in an opened layout stays untrusted until the user
+// reviews it in the code console, except in the bundled references (commaai/openpilot's own layouts).
 import {h, css} from "/dom.js";
 import {importLayout, exportLayout} from "./import.js";
 import {download} from "/panes/plot/export.js";
@@ -16,6 +16,7 @@ export const REFERENCES = {
     "longitudinal", "max-torque-debug", "system_lag_debug", "thermal_debug", "torque-controller", "tuning", "ublox-debug"],
 };
 const refUrl = (tool, name) => `${REFS}/${tool}/layouts/${name}.${tool === "jotpluggler" ? "json" : "xml"}`;
+const TRUSTED = new Set(Object.entries(REFERENCES).flatMap(([tool, names]) => names.map((n) => refUrl(tool, n))));
 
 // src: a File, a URL, or the layout text itself (as ?layout= may hold either) → {layout, warnings}
 export async function loadLayout(src) {
@@ -23,7 +24,14 @@ export async function loadLayout(src) {
   if (/^\s*[{<]/.test(src)) return importLayout(src);
   const r = await fetch(src);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return named(importLayout(await r.text()), new URL(src, location.href).pathname.split("/").pop());
+  const opened = named(importLayout(await r.text()), new URL(src, location.href).pathname.split("/").pop());
+  if (TRUSTED.has(src)) trust(opened.layout);
+  return opened;
+}
+
+function trust(layout) {
+  const walk = (n) => n.children ? n.children.forEach(walk) : n.state?.curves?.forEach((c) => { if (c.custom) delete c.custom.untrusted; });
+  layout.tabs.forEach((t) => walk(t.root));
 }
 
 // tabs with generic names ("tab1") are named after the layout's file instead
