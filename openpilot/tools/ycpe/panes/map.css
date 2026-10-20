@@ -2,7 +2,7 @@
 .tilemap { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 .tilemap.panning { cursor: grabbing; }
 .device-map .tilemap { cursor: default; touch-action: auto; }  /* a picture: the page scrolls over it */
-/* the phone's stacked drive view scrolls: one finger scrolls it, two move the map */
-@media (max-width: 760px) { .ws[data-view="drive"] .tilemap { touch-action: pan-y; } }
+/* the phone's stacked views scroll: one finger scrolls them, two move the map */
+@media (max-width: 760px) { .ws:not([data-view="files"]) .tilemap { touch-action: pan-y; } }
 .tilemap-credit { position: absolute; right: 0; bottom: 0; padding: 0 4px; font-size: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
 .tilemap-credit a { color: var(--muted); text-decoration: none; }

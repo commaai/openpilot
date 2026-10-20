@@ -17,6 +17,9 @@ import {openConsole} from "./console.js";
 import {customsOf, plots, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
+// what an empty plot says to do, in the gestures there are
+const HOW = matchMedia("(pointer: coarse)").matches ? "Double-tap a series in Series to plot it · long-press for options"
+  : "Drag series here, or double-click one in Series · right-click for options";
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
@@ -54,7 +57,13 @@ export function create(ctx, state = {}) {
   const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
   const empty = h("div", {class: "empty"});
-  const el = h("div", {class: "plot-pane"}, base, over, legend, empty);
+  // the y-axis, where a drag pans the values, on a phone whose plots let the page scroll (plot.css): it hands its
+  // presses and wheel to the plot, which captures the pointer
+  const grip = h("div", {class: "ygrip", style: `width: ${L}px`});
+  for (const type of ["pointerdown", "contextmenu", "dblclick", "wheel"]) {
+    grip.addEventListener(type, (e) => { if (!over.dispatchEvent(new e.constructor(type, e))) e.preventDefault(); });
+  }
+  const el = h("div", {class: "plot-pane"}, base, over, grip, legend, empty);
   let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
   let frame = null;    // geometry and prepared curves of the last base draw
   let gesture = null;  // the pointer gesture in progress
@@ -172,7 +181,7 @@ export function create(ctx, state = {}) {
   // the empty state: where to drop series, or why there's nothing to plot yet
   function hint() {
     const failure = store.failure;
-    const text = failure ? `Couldn't load the logs: ${failure}` : store.loading ? "Loading logs…" : "Drag series here, or double-click one in Series · right-click for options";
+    const text = failure ? `Couldn't load the logs: ${failure}` : store.loading ? "Loading logs…" : HOW;
     if (empty.textContent !== text) empty.textContent = text;
     empty.hidden = !failure && !!rows.length;
   }

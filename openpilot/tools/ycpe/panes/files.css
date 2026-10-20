@@ -24,8 +24,22 @@
 .files-pane .fp-queue { flex-shrink: 0; max-height: 40%; overflow: auto; padding: 4px 8px; border-top: 1px solid var(--line); }
 .files-pane .fp-queue summary { color: var(--muted); cursor: pointer; }
 .files-pane .fp-queue progress { width: 120px; height: 6px; vertical-align: middle; }
+/* a phone: narrower columns, no source column when one source is picked (the picker says it), the segment number
+   pinned while the kinds scroll sideways */
+@media (max-width: 760px) {
+  .files-pane .fp-bar { gap: 8px; }
+  .files-pane .fp-source { min-width: 0; flex-shrink: 1; }
+  .files-pane .fp-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .files-pane .fp-row { grid-template-columns: 36px 96px repeat(6, minmax(84px, 1fr)); min-width: 708px; }
+  .files-pane .fp-body { min-width: 708px; }
+  .files-pane:not(:has(option[value="auto"]:checked)) .fp-row { grid-template-columns: 36px repeat(6, minmax(84px, 1fr)); min-width: 604px; }
+  .files-pane:not(:has(option[value="auto"]:checked)) .fp-body { min-width: 604px; }
+  .files-pane:not(:has(option[value="auto"]:checked)) .fp-src { display: none; }
+  .files-pane .fp-seg { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; margin-left: -8px; padding-left: 8px; background: var(--panel); }
+}
 @media (pointer: coarse) {
   .files-pane .fp-body > .fp-row { height: 36px; }
   .files-pane .fp-source { height: 32px; }
+  .files-pane .fp-head { height: 52px; }  /* the kinds' buttons and totals */
   .files-pane .icon-btn, .files-pane a.fp-cell { min-width: 32px; min-height: 32px; }
 }

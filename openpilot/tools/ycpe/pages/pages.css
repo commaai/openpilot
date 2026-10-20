@@ -138,21 +138,38 @@ a.drive-row:hover { background: var(--hover); }
   :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
 }
 
-/* the drive view on a phone: camera, map and route info stacked in one scroll, the routes list behind the route
-   crumb, the playbar docked below */
+/* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
+   a height of its own, the playbar docked below. A routes pane is hidden in every view: the route crumb has the list.
+   The files view keeps its one pane, which scrolls itself */
 @media (max-width: 760px) {
-  .ws[data-view="drive"] .workspace { display: block; overflow-y: auto; }
-  .ws[data-view="drive"] .layout { display: block; }
-  .ws[data-view="drive"] .split { flex-direction: column; gap: 4px; }
-  .ws[data-view="drive"] .split > * { flex: none !important; }  /* over the layout's inline sizes */
-  .ws[data-view="drive"] .divider, .ws[data-view="drive"] .pane-tools { display: none; }
-  .ws[data-view="drive"] .pane-head { touch-action: auto; }  /* nothing to dock into: the page scrolls from it */
-  .ws[data-view="drive"] .pane:has(> .pane-body > .routes-pane) { display: none; }
-  .ws[data-view="drive"] .pane-body:has(> .camera-pane) { flex: none; aspect-ratio: 526 / 330; }
-  .ws[data-view="drive"] .pane-body:has(> .map-pane) { flex: none; height: 45vh; }
-  .ws[data-view="drive"] .pane-body:has(> .info-pane) { contain: none; }
-  .ws[data-view="drive"] .pane-body:has(> .files-pane) { flex: none; height: 70vh; }
-  .ws[data-view="drive"] .info-pane { position: static; overflow: visible; }
+  .ws:not([data-view="files"]) .workspace { display: block; overflow-y: auto; }
+  .ws:not([data-view="files"]) .layout { display: block; }
+  .ws:not([data-view="files"]) .split { flex-direction: column; gap: 4px; }
+  .ws:not([data-view="files"]) .split > * { flex: none !important; }  /* over the layout's inline sizes */
+  .ws:not([data-view="files"]) :is(.divider, .pane-tools) { display: none; }
+  .ws:not([data-view="files"]) .pane-head { touch-action: auto; }  /* nothing to dock into: the page scrolls from it */
+  .ws .pane:has(> .pane-body > .routes-pane) { display: none; }
+  .ws:not([data-view="files"]) .pane-body { flex: none; height: 50vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .camera-pane) { height: auto; aspect-ratio: 526 / 330; }
+  .ws:not([data-view="files"]) .pane-body:has(> .map-pane) { height: 45vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .info-pane) { height: auto; contain: none; }
+  .ws:not([data-view="files"]) .pane-body:has(> .files-pane) { height: 70vh; }
+  .ws:not([data-view="files"]) .info-pane { position: static; overflow: visible; }
+  .ws:not([data-view="files"]) .pane-body:has(> .plot-pane) { height: max(200px, 40vh); }
+  /* the series browser is a drawer: its filter and a few rows, opening over the plots while it has the focus (a tap
+     on a plot, or a double-tapped series going in, closes it) */
+  .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser) { z-index: 2; }
+  .ws:not([data-view="files"]) .pane-body:has(> .browser) { height: 124px; }
+  .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser):focus-within { margin-bottom: calc(124px - 60vh); box-shadow: var(--shadow); }
+  .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser):focus-within > .pane-body { height: 60vh; }
+  /* cabana's list, then the selected message's bits, signals and history, then the charts */
+  .ws:not([data-view="files"]) .pane-body:has(> .can-messages) { height: 60vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-binary) { height: 260px; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-signals) { height: 45vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-history) { height: 40vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-charts) { height: 70vh; }
+  .ws[data-view="files"] .divider { display: none; }
+  .ws[data-view="files"] .split > * { flex: 1 1 0 !important; }  /* the files pane takes the routes list's width too */
 }
 
 /* every view on a phone: the views and tabs on a row of their own under the bar, the timeline gets the playbar */

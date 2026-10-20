@@ -1,8 +1,9 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {MUX, MUXED, flip, format, raw, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
-import {canOf, createSignal, hex2, removeSignal, subs, updateSignal} from "./common.js";
+import {canOf, createSignal, hex2, removeSignal, reveal, subs, updateSignal} from "./common.js";
 
 const ROW = 22;
 // bit position <-> grid cell: row = byte, column 0 = bit 7
@@ -28,8 +29,10 @@ export function create(ctx, state) {
     [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
   const empty = h("div", {class: "can-empty"}, "Select a message to see its bits");
   const scroller = h("div", {class: "can-binary-scroll"}, canvas, empty);
+  // back to the list, where a phone stacks the panes (can.css shows it there)
+  const backBtn = h("button", {class: "can-icon can-back", title: "Back to the messages", onclick: () => reveal(el, "can-messages")}, icon("back", 14));
   // no toolbar until a message is selected: the empty hint says it
-  const bar = h("div", {class: "can-toolbar", hidden: true}, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
+  const bar = h("div", {class: "can-toolbar", hidden: true}, backBtn, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
   const el = h("div", {class: "can-pane can-binary", tabindex: 0}, bar, scroller, info);
 
   const k = () => can.selected;
