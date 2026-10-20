@@ -4,5 +4,5 @@ The all-in-one openpilot route tool in the browser: route browser, plotting and 
 See [SPEC.md](PLAN.md).
 
 ```bash
-./serve.py 8000   # http://localhost:8000/
+./serve.py   # http://localhost:3000/ (athena CORS allows this port)
 ```

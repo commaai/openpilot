@@ -261,6 +261,7 @@ document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
+  if (e.key === "?") return help();
   if (!ws) return;
   const c = ws.clock, step = e.shiftKey ? 10 : 1;
   const keys = {
@@ -279,6 +280,24 @@ document.addEventListener("keydown", (e) => {
   Object.keys(VIEWS).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
 });
+
+const SHORTCUTS = [
+  ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
+  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3", "Drive / Plot / CAN"],
+  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
+  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
+  ["wheel on the timeline", "zoom the visible range"],
+];
+
+function help() {
+  if (document.querySelector(".help")) return document.querySelector(".help").remove();
+  const el = h("div", {class: "help", onclick: () => el.remove()},
+    h("div", {class: "help-card", onclick: (e) => e.stopPropagation()},
+      h("b", {}, "Keyboard and mouse"),
+      h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, k.split(" ").map((x) => h("kbd", {}, x))), h("dd", {}, v)]))));
+  document.body.append(el);
+  addEventListener("keydown", function off(e) { if (e.key === "Escape") { el.remove(); removeEventListener("keydown", off); } });
+}
 
 // ---- routing ----
 
