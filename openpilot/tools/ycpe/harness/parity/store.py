@@ -16,6 +16,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.ycpe.harness.parity.diff import by_time, compare
 from openpilot.tools.ycpe.harness.parity.dump import dump
+from openpilot.tools.ycpe.harness.parity.eras import FIXED
 
 SKIP = {"can", "sendcan"}  # CAN frames take their own path (data/can.js), compared by message
 
@@ -80,6 +81,9 @@ def run(port, log, urls, sources, rtol):
       # a fresh route name each run, so the OPFS cache never answers instead of the source
       entry, js = browser_dump(page, f"0000000000000000|{uuid.uuid4().hex[:8]}--{uuid.uuid4().hex[:10]}", spec)
       services = {name: by_time(svc) for name, svc in js["services"].items() if name not in SKIP}
+      for svc, path in FIXED:  # eras.py checks what python doesn't migrate
+        for side in (py, services):
+          side.get(svc, {}).get("cols", {}).pop(path, None)
       results[f"{label} ({entry['source']}: {entry['url']})"] = (js["failed"], compare(py, services, rtol), compare_can(py_can, js["can"]))
     browser.close()
   return py, sum(map(len, py_can.values())), results
