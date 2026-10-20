@@ -185,6 +185,8 @@ async function liveOp(op, {id, span, buf, msgs, n, opts}) {
   } else if (op === "live-save") {
     const bytes = live.save();
     postMessage({id, result: bytes}, [bytes.buffer]);
+  } else if (op === "live-free") {
+    // nothing to do: the buffers came with the message, and go with it
   }
 }
 
