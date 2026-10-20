@@ -420,6 +420,7 @@ export class Can {
   }
 
   messages() { return [...this.msgs.values()]; }
+  countAt(k) { const j = this.live?.index.get(k); return j === undefined ? 0 : this.live.count[j]; }
   msg(k) { return this.msgs.get(k); }
   dbcMsg(k) { return this.dbcs.msg(busOf(k), addrOf(k)); }
   name(k) { return this.dbcMsg(k)?.name || ""; }
@@ -532,8 +533,8 @@ export class Can {
   parse(path) {
     const [, dbc, bus, msg, sig] = path.split("/");
     if (dbc !== "dbc") return null;
-    const m = this.dbcs.file(+bus)?.msgByName(msg);
-    return m && m.sigs.find((s) => s.name === sig) ? {k: key(+bus, m.address), m, sig} : null;
+    const m = this.dbcs.file(+bus)?.msgByName(msg), s = m?.sigs.find((x) => x.name === sig);
+    return s ? {k: key(+bus, m.address), m, sig: s} : null;
   }
 
   // the store's series shape; decoding happens in the worker and "series" fires when chunks arrive

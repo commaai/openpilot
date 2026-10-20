@@ -1,0 +1,144 @@
+// cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
+import {h} from "/dom.js";
+import {canOf, hex2, subs} from "./common.js";
+import {dbcDialog, toolsMenu} from "./tools.js";
+
+const ROW = 20;
+const COLS = [
+  {id: "name", title: "Name", w: 3, get: (m, can) => can.name(m.key)},
+  {id: "bus", title: "Bus", w: 0.7, get: (m) => m.bus},
+  {id: "id", title: "ID", w: 1.2, get: (m) => m.address, text: (m) => m.address.toString(16).toUpperCase()},
+  {id: "node", title: "Node", w: 1.2, get: (m, can) => can.dbcMsg(m.key)?.transmitter || ""},
+  {id: "freq", title: "Freq", w: 0.9, get: (m) => m.freq, text: (m) => (m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2))},
+  {id: "count", title: "Count", w: 1.2, get: (m, can) => can.countAt(m.key)},
+  {id: "bytes", title: "Bytes", w: 4.5, get: (m) => m.size},
+];
+
+export function create(ctx, state) {
+  const can = canOf(ctx), s = subs();
+  let sort = state.sort || {col: "id", dir: 1}, rows = [], scrollTop = 0;
+  const filters = {...state.filters};
+
+  const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
+    sort = {col: c.id, dir: sort.col === c.id ? -sort.dir : 1};
+    refresh();
+  }}, c.title, h("span", {class: "can-sort"}))));
+  const filterRow = h("div", {class: "can-msg-filters"}, COLS.map((c) => h("input", {class: `can-col can-col-${c.id}`, placeholder: c.title,
+    value: filters[c.id] || "", spellcheck: false, oninput: (e) => { filters[c.id] = e.target.value; refresh(); }})));
+  const spacer = h("div", {class: "can-msg-spacer"});
+  const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; ctx.perf.invalidate(pane); }}, spacer);
+  const pool = [];
+
+  const undo = h("button", {class: "can-btn", title: "Undo (ctrl+z)", onclick: () => can.dbcs.undo()}, "↶");
+  const redo = h("button", {class: "can-btn", title: "Redo (ctrl+shift+z)", onclick: () => can.dbcs.redo()}, "↷");
+  const dbcBtn = h("button", {class: "can-btn can-dbc-btn", title: "DBC files", onclick: () => dbcDialog(can)});
+  const clearBtn = h("button", {class: "can-btn", title: "Clear suppressed bytes", onclick: () => { can.suppressHighlighted(false); toolbar(); }});
+  const suppressDefined = h("input", {type: "checkbox", onchange: (e) => can.setSuppressDefined(e.target.checked)});
+  const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
+    h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
+    clearBtn, h("label", {class: "can-check", title: "Don't highlight bits of defined signals"}, suppressDefined, "Suppress signals"),
+    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"));
+  const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, h("div", {class: "can-msg-table"}, head, filterRow, body));
+
+  function toolbar() {
+    const files = can.dbcs.all();
+    dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.dirty ? "*" : ""}`).join(", ") : "No DBC";
+    undo.disabled = can.dbcs.index === 0;
+    redo.disabled = can.dbcs.index === can.dbcs.undos.length;
+    const n = [...can.suppressed.values()].reduce((a, m) => a + m.filter((x) => x).length, 0);
+    clearBtn.textContent = n ? `Clear (${n})` : "Clear";
+    clearBtn.disabled = !n;
+  }
+
+  // filtering: text columns match substrings, numeric ones also take "a-b" ranges
+  function match(m) {
+    for (const c of COLS) {
+      const f = (filters[c.id] || "").trim().toLowerCase();
+      if (!f) continue;
+      const v = c.get(m, can), text = String(c.text ? c.text(m) : v).toLowerCase();
+      if (c.id === "bytes") {
+        const j = can.live?.index.get(m.key);
+        if (j === undefined || !Array.from(can.live.data.subarray(can.live.off[j], can.live.off[j + 1]), hex2).join("").toLowerCase().includes(f.replace(/\s/g, ""))) return false;
+        continue;
+      }
+      const range = /^(-?[\d.]+)\s*-\s*(-?[\d.]+)$/.exec(f);
+      if (range && typeof v === "number") { if (v < +range[1] || v > +range[2]) return false; } else if (!text.includes(f)) return false;
+    }
+    return true;
+  }
+
+  function refresh() {
+    const col = COLS.find((c) => c.id === sort.col);
+    rows = can.messages().filter(match).map((m) => ({m, v: col.get(m, can)}));
+    rows.sort((a, b) => (a.v < b.v ? -1 : a.v > b.v ? 1 : a.m.key - b.m.key) * sort.dir);
+    rows = rows.map((r) => r.m);
+    head.querySelectorAll(".can-sort").forEach((x, i) => { x.textContent = COLS[i].id === sort.col ? (sort.dir > 0 ? " ▲" : " ▼") : ""; });
+    spacer.style.height = `${rows.length * ROW}px`;
+    toolbar();
+    ctx.perf.invalidate(pane);
+  }
+
+  function key(e) {
+    if (e.target.tagName === "INPUT") return;
+    const i = rows.findIndex((m) => m.key === can.selected);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      const n = Math.max(0, Math.min(rows.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+      if (rows[n]) can.select(rows[n].key);
+      const top = n * ROW;
+      if (top < body.scrollTop) body.scrollTop = top;
+      else if (top + ROW > body.scrollTop + body.clientHeight) body.scrollTop = top + ROW - body.clientHeight;
+      e.preventDefault();
+    }
+  }
+
+  function row() {
+    const cells = COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`}));
+    const r = h("div", {class: "can-msg-row", onclick: () => can.select(r.key)}, cells);
+    r.cells = cells;
+    r.bytes = [];
+    spacer.append(r);
+    return r;
+  }
+
+  const set = (el, text) => { if (el.textContent !== text) el.textContent = text; };
+
+  const pane = {
+    name: "can-messages", el,
+    render() {
+      const first = Math.floor(scrollTop / ROW), n = Math.ceil((body.clientHeight || 400) / ROW) + 1;
+      const live = can.live, t = ctx.clock.t;
+      for (let i = 0; i < n; i++) {
+        const m = rows[first + i], r = pool[i] || (pool[i] = row());
+        r.hidden = !m;
+        if (!m) continue;
+        r.key = m.key;
+        r.style.top = `${(first + i) * ROW}px`;
+        r.classList.toggle("selected", m.key === can.selected);
+        const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
+        r.classList.toggle("inactive", !active);
+        COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], String(c.text ? c.text(m) : c.get(m, can) ?? "")); });
+        // live bytes with change highlighting: up, down or periodic, fading over 2 s as in cabana
+        const cell = r.cells.at(-1), len = j === undefined ? 0 : live.off[j + 1] - live.off[j];
+        while (r.bytes.length < len) cell.append(r.bytes[r.bytes.push(h("span")) - 1]);
+        r.bytes.forEach((b, x) => {
+          b.hidden = x >= len;
+          if (x >= len) return;
+          const o = live.off[j] + x, a = Math.max(0, 1 - live.age[o] / 2);
+          set(b, hex2(live.data[o]));
+          b.className = a > 0 ? `can-chg${live.kind[o]}` : "";
+          b.style.setProperty("--a", a.toFixed(2));
+        });
+      }
+    },
+    resize() { ctx.perf.invalidate(pane); },
+    dispose() { s.dispose(); },
+    save: () => ({sort, filters}),
+  };
+  s.add(can.on("messages", refresh));
+  s.add(can.on("dbc", refresh));
+  s.add(can.on("live", () => { if (filters.bytes || sort.col === "count") refresh(); else ctx.perf.invalidate(pane); }));
+  s.add(can.on("select", () => ctx.perf.invalidate(pane)));
+  s.add(can.dbcs.on(toolbar));
+  refresh();
+  return pane;
+}
