@@ -2,11 +2,12 @@
 """Replays openpilot processes over a range of segments with the checkout it runs from, for daemon/replay.py.
 
 It runs in the checkout's environment (PYTHONPATH points at that checkout), so it imports nothing from ycpe.
-argv[1] is JSON: {procs, segs: [[n, rlog path], ...], out, warm}. It writes <out>/<n>/rlog.zst per segment as soon
+argv[1] is JSON: {procs, segs: [[n, rlog path], ...], out, warm, videos: {n: {camera state: hevc path}}}. It writes <out>/<n>/rlog.zst per segment as soon
 as the replay is past it: the segment's original initData (so times line up with the route) plus every replayed
 message. Then <out>/diff.json compares replayed outputs to the originals. stdout carries one JSON event a line.
 With warm, the first segment only warms the processes up (engagement, calibration, learners): nothing of it is
-written or compared.
+written or compared. Vision processes (modeld, dmonitoringmodeld) are fed the segments' video frames, as in
+process_replay's model replay.
 """
 import bisect
 import json
@@ -14,7 +15,7 @@ import math
 import os
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 
 # services nothing replays from and that only cost memory
 DROP = {"thumbnail", "qRoadEncodeIdx", "roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "qRoadEncodeData", "logMessage",
@@ -22,6 +23,7 @@ DROP = {"thumbnail", "qRoadEncodeIdx", "roadEncodeIdx", "wideRoadEncodeIdx", "dr
 PAIRS = 3000      # message pairs per service compared, spread over the range
 TOP = 40          # signals in the diff summary
 LAG = int(2e9)    # ns of outputs past a segment's end before writing it: outputs trail their inputs
+ENCODE_IDX = {"narrowRoadEncodeIdx": "narrowRoadCameraState", "wideRoadEncodeIdx": "wideRoadCameraState", "cabinEncodeIdx": "cabinCameraState"}
 
 
 def emit(event: str, **data) -> None:
@@ -30,9 +32,10 @@ def emit(event: str, **data) -> None:
 
 def flatten(d, prefix: str, out: dict) -> None:
   """Numeric leaves of a message dict under store-style paths; lists of up to 16 numbers are split per index.
-  Deprecated fields and timestamps of other messages are left out: they differ by construction."""
+  Deprecated fields, timestamps of other messages and frame ids (replayed camera states count frames within their
+  segment) are left out: they differ by construction."""
   for k, v in d.items():
-    if "deprecated" in k.lower() or k.endswith("MonoTime") or k.startswith("timestamp"):
+    if "deprecated" in k.lower() or k.endswith("MonoTime") or k.startswith(("timestamp", "frameId")):
       continue
     path = f"{prefix}/{k}"
     if isinstance(v, dict):
@@ -172,8 +175,9 @@ def main() -> None:
     custom_params = pr.get_custom_params_from_lr(msgs, "first")
   except (AttributeError, AssertionError):
     custom_params = None
+  frs = videos(pr, cfgs, msgs, bounds, segs, {int(n): v for n, v in args.get("videos", {}).items()})
   emit("replay", procs=procs, messages=len(msgs))
-  output = pr.replay_process(cfgs, msgs, custom_params=custom_params, disable_progress=False)
+  output = pr.replay_process(cfgs, msgs, frs=frs, custom_params=custom_params, disable_progress=False)
   for i in range(len(segs)):
     if i not in written:
       write(i)
@@ -188,6 +192,46 @@ def main() -> None:
   with open(os.path.join(out, "diff.json"), "w") as f:
     json.dump(summary, f)
   emit("done", seconds=summary["seconds"], diverged=summary["diverged"])
+
+
+class Frames:
+  """One camera's frames over several segments, for process_replay's frs. Its camera states are renumbered to frame
+  indexes within their segment's video, so each get() takes the segment from the queue run_step filled."""
+  def __init__(self, paths: dict[int, str]):
+    from openpilot.tools.lib.framereader import FrameReader
+    self.reader = lambda n: FrameReader(paths[n], pix_fmt="nv12", cache_size=20)
+    self.paths, self.queue, self.open = paths, deque(), {}
+    first = self.reader(min(paths))
+    self.w, self.h, self.pix_fmt = first.w, first.h, first.pix_fmt
+
+  def get(self, fid: int):
+    n = self.queue.popleft()
+    if n not in self.open:
+      self.open = {n: self.reader(n)}  # segments go by in order: drop the last one's
+    return self.open[n].get(fid)
+
+
+def videos(pr, cfgs, msgs, bounds, segs, paths: dict[int, dict[str, str]]) -> dict | None:
+  """Frame sources for the vision processes, and a run_step that tells them which segment each camera state is from."""
+  cameras = {c for cfg in cfgs for c in cfg.vision_pubs}
+  if not cameras:
+    return None
+  # each camera state's video segment, from the encoder's index (logged with the original frame ids), else by time
+  encoded = {(ENCODE_IDX[m.which()], getattr(m, m.which()).frameId): getattr(m, m.which()).segmentNum for m in msgs if m.which() in ENCODE_IDX}
+  where = {}
+  for m in msgs:
+    if m.which() in cameras:
+      n = encoded.get((m.which(), getattr(m, m.which()).frameId))
+      where[(m.which(), m.logMonoTime)] = n if n is not None else segs[max(0, bisect.bisect_right(bounds, m.logMonoTime) - 1)][0]
+  frs = {c: Frames({n: v[c] for n, v in paths.items() if c in v}) for c in cameras if any(c in v for v in paths.values())}
+
+  original_run_step = pr.ProcessContainer.run_step
+  def run_step(self, msg, frs):
+    if self.vipc_server is not None and msg.which() in self.cfg.vision_pubs:  # it sends this one's frame at the end of the cycle
+      frs[msg.which()].queue.append(where[(msg.which(), msg.logMonoTime)])
+    return original_run_step(self, msg, frs)
+  pr.ProcessContainer.run_step = run_step
+  return frs
 
 
 def _save(path: str, msgs: list) -> None:
