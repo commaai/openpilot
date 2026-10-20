@@ -136,8 +136,9 @@ export function playbar(ctx) {
     const x0 = xOf(e), t0 = x2t(x0);
     const [r0, r1] = clock.range;
     let mode = "scrub";
-    if (yOf(e) < PAD + RANGE_H + 1) {
-      const edge = 5;
+    const touch = e.pointerType === "touch";  // a finger gets a taller strip and wider edges
+    if (yOf(e) < (touch ? 14 : PAD + RANGE_H + 1)) {
+      const edge = touch ? 16 : 5;
       mode = Math.abs(x0 - t2x(r0)) < edge ? "left" : Math.abs(x0 - t2x(r1)) < edge ? "right" : t0 > r0 && t0 < r1 ? "pan" : "new";
     }
     const move = (ev) => {
