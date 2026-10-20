@@ -12,6 +12,7 @@ const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 50
 const BUSY_MS = 30000, BUSY_RETRY_MS = 2000;  // a closed viewer's session lingers on the device until ICE gives up
 export const CAMERAS = ["road", "wideRoad", "driver"];
 
+const FAKE = new URLSearchParams(globalThis.location?.search).has("fake-webrtcd");  // a stand-in for this PC's webrtcd (fake-webrtcd.js)
 const text = new TextDecoder();
 const peers = new Map();  // "local" or a dongle id → Peer
 
@@ -62,7 +63,7 @@ class Peer {
     if (gen !== this.gen) return;
     this.gen++;
     this.pc?.close();
-    this.pc = this.files = this.ready = null;
+    this.pc = this.dc = this.files = this.ready = null;
     this.filesReady?.reject(new Error(detail || "the connection closed"));
     this.tracks.clear();
     this.set(state, detail);
@@ -101,7 +102,7 @@ class Peer {
     };
     this.filesReady = Promise.withResolvers();
     this.filesReady.promise.catch(() => {});
-    channel(pc.createDataChannel("data"));
+    channel(this.dc = pc.createDataChannel("data"));
     if (want.services.length) channel(pc.createDataChannel("cereal"));
     if (want.files) channel(pc.createDataChannel("files"));
     pc.ondatachannel = (e) => channel(e.channel);
@@ -141,6 +142,25 @@ class Peer {
     }
     if (msg.type === "disconnect") return this.close("closed", typeof msg.data === "string" ? msg.data : "the device ended the stream", gen);
     if (msg.logMonoTime != null) this.events.json.emit(msg);
+  }
+
+  // a JSON message to the device on "data", once that's open: connect's stream controls
+  send(type, data) {
+    const dc = this.dc, msg = JSON.stringify({type, data});
+    if (dc?.readyState === "open") dc.send(msg);
+    else if (dc?.readyState === "connecting") dc.addEventListener("open", () => dc.send(msg), {once: true});
+  }
+
+  // a stream of one video track shows whichever camera it's asked for (webrtcd's livestreamCameraSwitch, as connect's
+  // stream view switches road and cabin); the track is that camera's from then on
+  switchCamera(camera) {
+    if (this.tracks.size !== 1 || this.tracks.has(camera)) return;
+    const [[from, track]] = this.tracks;
+    this.send("livestreamCameraSwitch", {camera});
+    this.tracks.clear();
+    this.tracks.set(camera, track);
+    this.events.track.emit(from, null);
+    this.events.track.emit(camera, track);
   }
 
   // the files client, once its channel is open
@@ -204,6 +224,7 @@ async function signal(target, sdp, needs) {
 
 async function ask(target, sdp, {services, cameras, files}) {
   const enabled = !!(cameras.length || services.length);
+  if (target === "local" && FAKE) return import("./fake-webrtcd.js").then((m) => m.stream({sdp, cameras}));
   if (target === "local") {
     if (!daemon?.has("webrtc")) throw new Error("live data from this PC needs the local daemon (run tools/ycpe/serve.py)");
     // webrtcd's own errors are {error, message}: read here, as daemon.json would keep only the first
