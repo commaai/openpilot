@@ -600,8 +600,8 @@ export class Can {
   // opendbc's DBC names and the fingerprint → DBC map
   async opendbc() {
     this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
-    const [{fingerprints}, src] = await Promise.all([this.index, this.upstream()]);
-    return {fingerprints, files: src?.names || [], label: src?.co.label};
+    const [{fingerprints}, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
+    return {fingerprints, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
   }
 
   // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master
@@ -616,7 +616,41 @@ export class Can {
     return this.src.opendbc;
   }
 
+  // the opendbc checkout on this machine through the local daemon, when there is one: {daemon, id, dir, names}
+  local() {
+    return this.localDbc ||= import("../daemon.js").then(async ({daemon}) => {
+      if (!daemon.has("repos")) return null;
+      const [repo] = await daemon.json("/local/repos");
+      if (!repo?.opendbc) return null;
+      const files = await daemon.json(`/local/repos/${repo.id}/dbc`);
+      return {daemon, id: repo.id, dir: repo.opendbc.dbc, names: new Set(files.map((f) => f.name.replace(/\.dbc$/, "")))};
+    }).catch(() => null);
+  }
+
+  // saves into the local opendbc; a file changed on disk since it was read (or one that exists, for a DBC that
+  // didn't come from there) is a conflict unless forced. Returns {conflict} or the daemon's {path, generated}
+  async saveLocal(dbc, force = false) {
+    const local = await this.local();
+    const path = `/local/repos/${local.id}/dbc/${dbc.name}.dbc${force ? "" : `?mtime=${dbc.local?.mtime ?? 0}`}`;
+    const r = await fetch(local.daemon.url(path), {method: "PUT", body: dbc.serialize()});
+    if (r.status === 409) return {conflict: true};
+    if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `saving ${dbc.name}.dbc: ${r.status}`);
+    const out = await r.json();
+    dbc.local = {mtime: out.mtime};
+    local.names.add(dbc.name);
+    this.dbcs.saved();
+    return out;
+  }
+
+  // a DBC by name: from the local opendbc when the daemon has it (that's the copy to edit), else from GitHub
   async loadOpendbc(name, buses = [-1]) {
+    const local = await this.local();
+    if (local?.names.has(name)) {
+      const {text, mtime} = await local.daemon.json(`/local/repos/${local.id}/dbc/${name}.dbc`);
+      const dbc = new DBC(name, text);
+      dbc.local = {mtime};
+      return this.dbcs.open(buses, dbc);
+    }
     const src = await this.upstream();
     if (!src) {
       this.src = null;  // try again next time
