@@ -1,0 +1,53 @@
+// view state shared by every plot pane: the hover tracker and undo/redo of the view
+
+const panes = new Set();  // {overlay(), y, setY(y)}
+const past = [], future = [];
+let tracker = null, lastKey = null, lastAt = 0;
+
+export function join(p) { panes.add(p); }
+export function leave(p) { panes.delete(p); }
+
+// the hover time, mirrored in every pane; null when no pane is hovered
+export function getTracker() { return tracker; }
+export function track(t) {
+  if (t === tracker) return;
+  tracker = t;
+  for (const p of panes) p.overlay();
+}
+
+// call before a view change; changes with the same key within 400 ms (a wheel burst, one drag) are one entry
+export function remember(clock, key = null) {
+  const now = performance.now();
+  if (key !== null && key === lastKey && now - lastAt < 400) {
+    lastAt = now;
+    return;
+  }
+  lastKey = key;
+  lastAt = now;
+  past.push(snapshot(clock));
+  if (past.length > 100) past.shift();
+  future.length = 0;
+}
+
+const snapshot = (clock) => ({range: [...clock.range], ys: new Map([...panes].map((p) => [p, {...p.y}]))});
+
+function restore(clock, s) {
+  clock.setRange(...s.range);
+  for (const [p, y] of s.ys) if (panes.has(p)) p.setY(y);
+}
+
+export function undo(clock) {
+  const s = past.pop();
+  if (!s) return;
+  future.push(snapshot(clock));
+  restore(clock, s);
+  lastKey = null;
+}
+
+export function redo(clock) {
+  const s = future.pop();
+  if (!s) return;
+  past.push(snapshot(clock));
+  restore(clock, s);
+  lastKey = null;
+}

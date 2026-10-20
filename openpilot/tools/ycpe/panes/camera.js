@@ -1,14 +1,16 @@
-// the camera pane: qcamera through hls.js, or full-res road/wide/driver video decoded in a worker with WebCodecs.
-// It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
+// the camera pane: qcamera through hls.js, or full-res road/wide/driver video decoded in a worker (WebCodecs,
+// else wasm). It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
 import {api} from "/api.js";
 import {h, css} from "/dom.js";
 import {FPS, frameAt} from "/data/video/frames.js";
+import {frameRenderer} from "/data/video/gl.js";
 
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
 const FILES = {fcamera: "cameras", ecamera: "ecameras", dcamera: "dcameras"};
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
-const BACK = 19;          // frames kept behind the playhead for stepping backwards (one GOP)
+const BACK = 19;          // frames kept behind the playhead for stepping backwards while paused (one GOP)
 const MIN_RATE = 0.0625;  // the slowest <video> playbackRate; slower playback seeks frame by frame
+const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 
 export function create(ctx, state) {
   let camera = CAMERAS[state.camera] ? state.camera : "qcamera";
@@ -21,11 +23,16 @@ export function create(ctx, state) {
   const pane = {name: "camera", el, render: () => source.render(), resize() {}, save: () => ({camera}), dispose,
     stats: () => source.stats};
 
-  function show(src, why = "") {
+  const say = (text = "", title = "") => {
+    note.textContent = text;
+    note.title = title;
+    note.hidden = !text;
+  };
+
+  function show(src, why) {
     source?.dispose();
     source = src;
-    note.textContent = why;
-    note.hidden = !why;
+    say(why);
     el.replaceChildren(src.el, picker, note);
     ctx.perf.invalidate(pane);
   }
@@ -33,7 +40,7 @@ export function create(ctx, state) {
   function use(cam) {
     camera = picker.value = cam;
     if (cam === "qcamera") show(qcamera(ctx, pane));
-    else show(fullres(ctx, pane, cam, (why) => show(qcamera(ctx, pane), `${why}, showing qcamera`)));
+    else show(fullres(ctx, pane, cam, {say, fail: (why) => show(qcamera(ctx, pane), `${why}, showing qcamera`)}));
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
@@ -79,24 +86,29 @@ function qcamera(ctx, pane) {
 }
 
 // a window of decoded frames around the playhead, filled by the decoder worker
-function fullres(ctx, pane, camera, fail) {
+function fullres(ctx, pane, camera, {say, fail}) {
   const canvas = h("canvas");
-  const g = canvas.getContext("2d", {alpha: false});
+  const draw = frameRenderer(canvas);
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
-  const frames = new Map();  // n → VideoFrame
-  const stats = {shown: -1, fps: 0, held: 0, mb: 0, seekMs: null};
-  let shown = -1, last = -1, asked = "", missingSince = 0, statTime = performance.now(), statFrames = 0;
+  const frames = new Map();  // n → VideoFrame, or I420 planes from the software decoder
+  const stats = {shown: -1, drawn: 0, lag: 0, fps: 0, held: 0, mb: 0, seekMs: null};
+  let ready = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, statTime = performance.now(), statFrames = 0;
 
   api.routeFiles(ctx.route.fullname).then((files) => {
     const urls = [];
     for (const u of files[FILES[camera]] || []) urls[+new URL(u).pathname.split("/").at(-2)] = u;
     if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files`);
     worker.postMessage({urls});
+    ready = true;
     ctx.perf.invalidate(pane);
   }).catch(() => fail("camera files unavailable"));
 
   worker.onmessage = ({data}) => {
     if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}`);
+    if (data.backend) {
+      software = (stats.backend = data.backend) !== "hardware";
+      return software && say("software decode", SOFTWARE);
+    }
     frames.set(data.n, data.frame);
     const now = performance.now();
     if (now - statTime > 1000) {
@@ -104,6 +116,7 @@ function fullres(ctx, pane, camera, fail) {
       statTime = now;
       statFrames = data.decoded;
       ctx.perf.mark(`${camera} decode`, `${stats.fps} fps · ${stats.held} held · ${stats.mb} MB`);
+      if (software) say(`software decode${stats.fps ? ` · ${stats.fps} fps` : ""}`, SOFTWARE);
     }
     ctx.perf.invalidate(pane);
   };
@@ -112,13 +125,16 @@ function fullres(ctx, pane, camera, fail) {
     el: canvas,
     stats,
     render() {
-      const n = frameAt(ctx.peekStore?.(), camera, ctx.clock.t);
+      if (!ready) return;
+      const n = frameAt(ctx.peekStore(), camera, ctx.clock.t);
       const playing = ctx.clock.playing, back = n < last ? BACK : 0;
       last = n;
-      const closed = [];
+      // hardware decoders have few output buffers, so playback keeps only what's ahead
+      const lo = n - (playing ? 1 : BACK), closed = [], buffers = [];
       for (const [k, f] of frames) {
-        if (k >= n - BACK && k <= n + AHEAD) continue;
-        f.close();
+        if (k >= lo && k <= n + AHEAD) continue;
+        if (f.data) buffers.push(f.data.buffer);  // planes go back to the worker for reuse
+        else f.close();
         frames.delete(k);
         closed.push(k);
       }
@@ -127,11 +143,11 @@ function fullres(ctx, pane, camera, fail) {
       let best = -1;
       for (const k of frames.keys()) if (k <= n && k > best) best = k;
       if (best !== shown && best >= 0) {
-        const f = frames.get(best);
-        if (canvas.width !== f.displayWidth || canvas.height !== f.displayHeight) [canvas.width, canvas.height] = [f.displayWidth, f.displayHeight];
-        g.drawImage(f, 0, 0);
+        draw(frames.get(best));
         shown = stats.shown = best;
+        stats.drawn++;
       }
+      if (playing && best >= 0) stats.lag = Math.max(stats.lag, n - best);
       if (best === n && missingSince) {
         stats.seekMs = Math.round(performance.now() - missingSince);
         ctx.perf.mark(`${camera} seek`, `${stats.seekMs} ms`);
@@ -140,14 +156,14 @@ function fullres(ctx, pane, camera, fail) {
         missingSince = performance.now();
       }
 
-      const want = {at: n, to: n + (playing ? AHEAD : 2), back};
+      const want = {at: n, to: n + (playing ? AHEAD : 2), back, playing};
       const key = `${want.at} ${want.to}`;
-      if (key !== asked || closed.length) worker.postMessage({want, closed});
+      if (key !== asked || closed.length) worker.postMessage({want, closed, buffers}, buffers);
       asked = key;
     },
     dispose() {
       worker.terminate();
-      for (const f of frames.values()) f.close();
+      for (const f of frames.values()) f.close?.();
       frames.clear();
     },
   };

@@ -2,8 +2,9 @@
 // driven by schema.json (offsets from the capnp compiler). No per-event allocation: the walk follows
 // a lazily built tree of field plans whose leaves point straight at their output column.
 
-// views of the log being read; exported as live bindings for the can() hook
+// views of the log being read; exported as live bindings for the can() hook, and in mem for generated code
 export let U8, I8, U16, I16, U32, I32, F32, F64;
+const mem = {xorDefault};
 const segBase = new Int32Array(64);
 const f32 = new Float32Array(1), f32u = new Uint32Array(f32.buffer);
 const f64 = new Float64Array(1), f64u = new Uint32Array(f64.buffer);
@@ -21,6 +22,7 @@ function views(buf) {
   I32 = new Int32Array(b, o, n >> 2);
   F32 = new Float32Array(b, o, n >> 2);
   F64 = new Float64Array(b, o, n >> 3);
+  Object.assign(mem, {U8, I8, U16, I16, U32, I32, F32, F64});
 }
 
 // resolves the pointer at byte p (including far pointers); false for null or unsupported
@@ -88,14 +90,16 @@ function readText(p) {
   return decoder.decode(U8.subarray(rOff, rOff + n));
 }
 
-// scalar types: [size in bytes (0 = bit), reader(bytePos)]
+// scalar types: size in bytes, and the read of the value at byte expression p (as code, for generated fillers)
 const u64 = (p) => U32[p >> 2] + U32[(p >> 2) + 1] * 4294967296;
-const i64 = (p) => U32[p >> 2] + I32[(p >> 2) + 1] * 4294967296;
 const SCALAR = {
-  i8: [1, (p) => I8[p]], u8: [1, (p) => U8[p]], i16: [2, (p) => I16[p >> 1]], u16: [2, (p) => U16[p >> 1]],
-  i32: [4, (p) => I32[p >> 2]], u32: [4, (p) => U32[p >> 2]], i64: [8, i64], u64: [8, u64],
-  f32: [4, (p) => F32[p >> 2]], f64: [8, (p) => F64[p >> 3]], e: [2, (p) => U16[p >> 1]],
+  i8: [1, (p) => `I8[${p}]`], u8: [1, (p) => `U8[${p}]`], i16: [2, (p) => `I16[(${p}) >> 1]`], u16: [2, (p) => `U16[(${p}) >> 1]`],
+  i32: [4, (p) => `I32[(${p}) >> 2]`], u32: [4, (p) => `U32[(${p}) >> 2]`], f32: [4, (p) => `F32[(${p}) >> 2]`], f64: [8, (p) => `F64[(${p}) >> 3]`],
+  i64: [8, (p) => `U32[(${p}) >> 2] + I32[((${p}) >> 2) + 1] * 4294967296`], u64: [8, (p) => `U32[(${p}) >> 2] + U32[((${p}) >> 2) + 1] * 4294967296`],
+  e: [2, (p) => `U16[(${p}) >> 1]`],
 };
+const VIEWS = "const {U8, I8, U16, I16, U32, I32, F32, F64} = m;";
+const readers = Object.fromEntries(Object.entries(SCALAR).map(([type, [, at]]) => [type, new Function("m", "p", `${VIEWS} return ${at("p")};`)]));
 // non-zero defaults are stored XORed; only a handful of fields have them
 function xorDefault(type, raw, def) {
   if (type === "f32") { f32[0] = raw; f32u[0] ^= def; return f32[0]; }
@@ -127,9 +131,10 @@ export class Reader {
     this.schema = schema;
     this.event = schema.structs[0];
     this.ev = Object.fromEntries(this.event.fields.map((f) => [f[0], f]));
+    this.fillers = [];
   }
 
-  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, cols: Map(path → Column), lists})
+  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, seq, cols: Map(path → Column), lists})
   // keep: {service: ["/speeds", "/laneLines/*/y"]} splits those long lists per index too; every other long list
   // is skipped and reported in lists (path → longest length) so it can be asked for later
   read(buf, {can = null, keep = {}} = {}) {
@@ -168,7 +173,7 @@ export class Reader {
     for (let w = 0; w < counts.length; w++) {
       if (!counts[w]) continue;
       const f = byDisc[w];
-      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), plan: null,
+      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), seq: new Uint32Array(counts[w]), plan: null,
         cols: new Map(), keep: keep[f[0]] && pattern(keep[f[0]]), listPlans: [], lists: new Map()});
     }
 
@@ -182,6 +187,7 @@ export class Reader {
       follow(segBase[0]);
       const evOff = rOff, evData = rData;
       const i = svc.n++;
+      svc.seq[i] = k >> 1;  // log order, which migrations need where times tie or go backwards
       svc.t[i] = u64(evOff) / 1e9;
       svc.valid[i] = validOff >> 3 < evData ? ((U8[evOff + (validOff >> 3)] >> (validOff & 7)) & 1) ^ 1 : 1;
       const f = svc.field, ptr = evOff + evData + f[3] * 8;
@@ -214,17 +220,14 @@ export class Reader {
     return c;
   }
 
-  // the field plan of one struct at one path: scalars, groups, sub-structs, lists, texts
+  // the field plan of one struct at one path: a filler for its scalars, then groups, sub-structs, lists, texts
   plan(structIdx, path, svc, n) {
     const s = this.schema.structs[structIdx];
-    const p = {disc: s.disc, scalars: [], bools: [], groups: [], structs: [], lists: [], texts: []};
-    for (const [name, disc, type, off, ref, def] of s.fields) {
+    const p = {disc: s.disc, fill: this.filler(structIdx), cols: [], groups: [], structs: [], lists: [], texts: []};
+    for (const [name, disc, type, off, ref] of s.fields) {
       const sub = `${path}/${name}`;
-      if (type === "b") p.bools.push({disc, byte: off >> 3, bit: off & 7, def: def ? 1 : 0, col: this.col(svc, sub, "b", n)});
-      else if (SCALAR[type]) {
-        const [size, read] = SCALAR[type];
-        p.scalars.push({disc, pos: off * size, size, read, type, def: def || 0, col: this.col(svc, sub, type, n, type === "e" ? this.schema.enums[ref] : undefined)});
-      } else if (type === "g") p.groups.push({disc, plan: this.plan(ref, sub, svc, n)});
+      if (type === "b" || SCALAR[type]) p.cols.push(this.col(svc, sub, type, n, type === "e" ? this.schema.enums[ref] : undefined).v);
+      else if (type === "g") p.groups.push({disc, plan: this.plan(ref, sub, svc, n)});
       else if (type === "s") p.structs.push({disc, idx: off, ref, sub, plan: null});
       else if (type === "t") p.texts.push({disc, idx: off, col: this.col(svc, sub, "t", n)});
       else if (type === "l") p.lists.push({disc, idx: off, plan: this.listPlan(ref, sub, svc, n)});
@@ -232,6 +235,25 @@ export class Reader {
     p.svc = svc;
     p.n = n;
     return p;
+  }
+
+  // straight-line code that reads every scalar of a struct into its columns c (in field order), compiled once per
+  // struct: fill(mem, c, offset, data bytes, union discriminant, event index)
+  filler(structIdx) {
+    return (this.fillers[structIdx] ||= (() => {
+      const lines = [];
+      for (const [, disc, type, off, , def] of this.schema.structs[structIdx].fields) {
+        let read;
+        if (type === "b") read = `(d > ${off >> 3} ? (U8[o + ${off >> 3}] >> ${off & 7}) & 1 : 0) ^ ${def ? 1 : 0}`;
+        else if (SCALAR[type]) {
+          const [size, at] = SCALAR[type], pos = off * size;
+          read = `d >= ${pos + size} ? ${at(`o + ${pos}`)} : 0`;
+          if (def) read = `m.xorDefault("${type}", ${read}, ${def})`;
+        } else continue;
+        lines.push(`${disc >= 0 ? `if (w === ${disc}) ` : ""}c[${lines.length}][i] = ${read};`);
+      }
+      return new Function("m", "c", "o", "d", "w", "i", `${VIEWS}\n${lines.join("\n")}`);
+    })());
   }
 
   listPlan(elem, path, svc, n) {
@@ -242,16 +264,7 @@ export class Reader {
 
   walk(p, off, dataBytes, ptrs, i) {
     const which = p.disc >= 0 && p.disc * 2 < dataBytes ? U16[(off >> 1) + p.disc] : 0;
-    for (const f of p.scalars) {
-      if (f.disc >= 0 && f.disc !== which) continue;
-      let v = f.pos + f.size <= dataBytes ? f.read(off + f.pos) : 0;
-      if (f.def) v = xorDefault(f.type, v, f.def);
-      f.col.v[i] = v;
-    }
-    for (const f of p.bools) {
-      if (f.disc >= 0 && f.disc !== which) continue;
-      f.col.v[i] = (f.byte < dataBytes ? (U8[off + f.byte] >> f.bit) & 1 : 0) ^ f.def;
-    }
+    p.fill(mem, p.cols, off, dataBytes, which, i);
     for (const g of p.groups) if (g.disc < 0 || g.disc === which) this.walk(g.plan, off, dataBytes, ptrs, i);
     const pbase = off + dataBytes;
     for (const f of p.structs) {
@@ -290,10 +303,10 @@ export class Reader {
         item ||= lp.items[j] = this.col(lp.svc, `${lp.path}/${j}`, "b", lp.n);
         item.v[i] = (U8[base + (j >> 3)] >> (j & 7)) & 1;
       } else if (SCALAR[type]) {
-        const [size, read] = SCALAR[type];
+        const size = SCALAR[type][0];
         if ([0, 0, 1, 2, 4, 8][elem] !== size) return;
         item ||= lp.items[j] = this.col(lp.svc, `${lp.path}/${j}`, type, lp.n, type === "e" ? this.schema.enums[ref] : undefined);
-        item.v[i] = read(base + j * size);
+        item.v[i] = readers[type](mem, base + j * size);
       } else if (type === "t") {
         if (elem !== 6) return;
         item ||= lp.items[j] = this.col(lp.svc, `${lp.path}/${j}`, "t", lp.n);

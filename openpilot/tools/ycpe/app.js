@@ -8,9 +8,11 @@ import {Layout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
+import {status, loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
+import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {create as routesPane} from "/panes/routes.js";
 
 const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
@@ -70,7 +72,6 @@ const bar = {
   route: h("button", {class: "crumb", title: "Routes on this device"}),
   views: h("nav", {class: "views"}),
   tabs: h("nav", {class: "tabs"}),
-  pill: h("span", {class: "load-pill", hidden: true}),
 };
 
 function topBar() {
@@ -90,19 +91,13 @@ function topBar() {
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
     auth.isAuthenticated()
-      ? h("button", {class: "menu-row", onclick: () => auth.logOut()}, "Sign out")
-      : ["google", "github", "apple"].map((p) => h("a", {class: "menu-row", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`)),
-    h("button", {class: "menu-row", onclick: () => { close(); pasteToken(); }}, "Use a JWT…"))));
+      ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
+      : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
   const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, "◐");
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), bar.pill, hud(), themeBtn, account);
-}
-
-function pasteToken() {
-  const jwt = prompt("Paste a comma JWT (from useradmin's developer page)");
-  if (jwt) { localStorage.setItem("comma_jwt", jwt.trim()); location.reload(); }
+    h("span", {class: "grow"}), loadPill(), hud(footprint()), themeBtn, account);
 }
 
 function updateTop() {
@@ -191,14 +186,28 @@ class Workspace {
       clearTimeout(focusTimer);
       focusTimer = setTimeout(() => this.store.focus(this.clock.t), 150);
     }));
-    this.store.on("progress", (p) => {
+    // TODO(track 1): the store publishes to status itself, with download bytes per segment
+    const logs = status.source("logs", {order: 0});
+    const STATES = {queued: "queued", missing: "missing", done: "ready", error: "error"};
+    const publish = () => {
+      const segs = this.store.route.segments, p = this.store.progress;
+      logs.count(segs.length);
+      segs.forEach((s, n) => logs.seg(n, STATES[s.status] || "loading"));
+      logs.rate(p.bytes / ((performance.now() - p.start) / 1000));
+      logs.bytes({memory: this.store.bytes});
+      waiting();
+    };
+    // the playhead waits on its segment's logs
+    const waiting = () => {
+      const at = this.store.route.segments.find((s) => this.clock.t >= s.t0 && this.clock.t < s.t1);
+      logs.buffering(at && at.status !== "done" && at.status !== "missing" ? {n: at.n, text: `segment ${at.n}`} : null);
+    };
+    this.offs.push(logs.remove, this.clock.on("t", waiting));
+    this.store.on("progress", () => {
       if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
-      const mb = p.bytes / 1e6 / ((performance.now() - p.start) / 1000);
-      bar.pill.hidden = p.done + p.failed >= p.total;
-      bar.pill.textContent = `${p.done}/${p.total} segments · ${mb.toFixed(0)} MB/s`;
-      perf.mark("segments", `${p.done}/${p.total}`);
-      perf.mark("downloaded", `${(p.bytes / 1e6).toFixed(0)} MB`);
+      publish();
     });
+    publish();
     for (const fn of this.storeSubs) fn(this.store);
     return this.store;
   }
@@ -213,7 +222,7 @@ class Workspace {
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
       if (usesData(model) && !this.files) {
         this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
-        this.main.replaceChildren(h("div", {class: "pane-missing"}, "loading files…"));
+        this.main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Fetching the route's file list…"));
         return updateTop();
       }
       if (usesData(model)) this.ensureStore();
@@ -315,9 +324,12 @@ async function render() {
   const q = new URLSearchParams(location.search);
   document.querySelector(".popover")?.remove();
 
-  if (parts[0] === "auth") {
-    await auth.exchangeCode(q.get("code"), q.get("provider")).catch((e) => toast(String(e)));
-    return go("/", true);
+  if (parts[0] === "auth" || parts[0] === "login") {
+    ws?.dispose();
+    ws = null;
+    document.body.classList.remove("in-ws");
+    updateTop();
+    return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
   if (auth.isAuthenticated() && !state.devices) {
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
@@ -363,10 +375,20 @@ async function render() {
 
 function errorPage(e) {
   console.error(e);
+  if (e.status === 401 || e.status === 403) return signInCard();
   const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
 document.getElementById("app").prepend(topBar());
 window.addEventListener("popstate", render);
+// signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
+// again would spend the one-time code twice)
+auth.on(() => {
+  state.me = state.devices = null;
+  if (location.pathname.startsWith("/auth")) return;
+  ws?.dispose();
+  ws = null;
+  render();
+});
 render();

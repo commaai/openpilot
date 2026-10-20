@@ -6,13 +6,23 @@ export const apiHost = () => setting("api_host") || "https://api.commadotai.com"
 // athena only answers CORS for *.comma.ai, connect previews and localhost:3000
 const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
 
+// sign-in state: the token, the signed-in user (v1/me, cached), and subscribers to changes
+const authSubs = new Set();
+let user = null;
+
 export const auth = {
   token: () => setting(TOKEN_KEY),
   isAuthenticated: () => !!setting(TOKEN_KEY),
-  logOut() {
-    localStorage.removeItem(TOKEN_KEY);
-    location.href = "/";
+  user: () => (user ??= auth.isAuthenticated() ? get("v1/me/").catch(() => null) : Promise.resolve(null)),
+  on(fn) { authSubs.add(fn); return () => authSubs.delete(fn); },
+  setToken(token) {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+    user = null;
+    for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
+    for (const fn of authSubs) fn();
   },
+  signOut: () => auth.setToken(null),
 
   // the provider sends the code to the API, which redirects it back to <host>/auth/?code=..&provider=..
   loginUrl(provider) {
@@ -44,9 +54,17 @@ export const auth = {
       headers: {"Content-Type": "application/x-www-form-urlencoded"},
       body: new URLSearchParams({code, provider}),
     });
-    if (!resp.ok) throw new Error(`sign-in failed (${resp.status})`);
+    if (!resp.ok) throw new ApiError(resp.status, await resp.text());
     const {access_token} = await resp.json();
-    localStorage.setItem(TOKEN_KEY, access_token);
+    if (!access_token) throw new Error("no token in the sign-in response");
+    auth.setToken(access_token);
+  },
+
+  // a pasted developer JWT is kept only if the API accepts it
+  async useToken(token) {
+    const resp = await fetch(`${apiHost()}/v1/me/`, {headers: {Authorization: `JWT ${token}`}});
+    if (!resp.ok) throw new ApiError(resp.status, resp.status === 401 ? "that token isn't valid" : await resp.text());
+    auth.setToken(token);
   },
 };
 
@@ -66,15 +84,17 @@ export async function request(method, endpoint, {params, body, host = apiHost()}
   if (auth.token()) headers["Authorization"] = "JWT " + auth.token();
   if (body) headers["Content-Type"] = "application/json";
   const resp = await fetch(url, {method, headers, body: body ? JSON.stringify(body) : undefined});
-  if (resp.status === 401) auth.logOut();
+  if (resp.status === 401 && auth.isAuthenticated()) auth.signOut();
   if (!resp.ok) throw new ApiError(resp.status, await resp.text());
   return resp.json();
 }
 const get = (endpoint, params) => request("GET", endpoint, {params});
 
 // reads are cached for the session so revisits never wait on the network; failures are not kept
+const caches = new Set();
 function memo(fn, key = (...args) => JSON.stringify(args)) {
   const cache = new Map();
+  caches.add(cache);
   const wrapped = (...args) => {
     const k = key(...args);
     if (!cache.has(k)) cache.set(k, fn(...args).catch((e) => { cache.delete(k); throw e; }));
@@ -86,7 +106,7 @@ function memo(fn, key = (...args) => JSON.stringify(args)) {
 }
 
 export const api = {
-  me: memo(() => get("v1/me/")),
+  me: () => auth.user(),
   devices: () => get("v1/me/devices/"),
   device: memo((dongleId) => get(`v1.1/devices/${dongleId}/`)),
   deviceStats: (dongleId) => get(`v1.1/devices/${dongleId}/stats`),
