@@ -12,14 +12,14 @@ import math
 import os
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 # services nothing replays from and that only cost memory
 DROP = {"thumbnail", "qRoadEncodeIdx", "roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "qRoadEncodeData", "logMessage",
         "errLogMessage", "androidLog", "procLog", "qcomGnss", "rawAudioData", "soundPressure", "microphone", "uploaderState"}
 PAIRS = 3000      # message pairs per service compared, spread over the range
 TOP = 40          # signals in the diff summary
-LAG = 200         # external messages past a segment's end before writing it: outputs trail their inputs
+LAG = int(2e9)    # ns of outputs past a segment's end before writing it: outputs trail their inputs
 
 
 def emit(event: str, **data) -> None:
@@ -97,24 +97,24 @@ def main() -> None:
   from openpilot.tools.lib.logreader import LogReader
 
   cfgs = [pr.get_process_config(p) for p in procs]
-  pubs = {s for c in cfgs for s in c.pubs} - {s for c in cfgs for s in c.subs}
 
-  # the inputs, and where each segment's external messages end (the replay walks them in time order)
-  msgs, bounds, inits, ends = [], [], {}, []
+  # the inputs, and where each segment starts: its most frequent service's first message (a segment's log can hold
+  # a few messages from before its start)
+  msgs, bounds, inits = [], [], {}
   for i, (n, path) in enumerate(segs):
     emit("load", seg=n, i=i, count=len(segs))
     lr = [m for m in LogReader(path) if m.which() not in DROP]
     lr.sort(key=lambda m: m.logMonoTime)
     inits[n] = next((m for m in lr if m.which() == "initData"), None)
-    bounds.append(next((m.logMonoTime for m in lr if m.which() != "initData"), 0))
+    common = Counter(m.which() for m in lr if m.which() != "initData").most_common(1)
+    bounds.append(next((m.logMonoTime for m in lr if common and m.which() == common[0][0]), 0))
     msgs.extend(lr)
-    ends.append(sum(1 for m in lr if m.which() in pubs) + (ends[-1] if ends else 0))
   t0 = next((m.logMonoTime for m in inits.values() if m is not None), bounds[0])
 
-  # replayed messages, filed by segment as they come out; a segment is written once the replay is past it
+  # replayed messages, filed by segment by time; a segment is written once outputs are LAG past its end
   produced: dict[int, list] = defaultdict(list)
   written: set[int] = set()
-  totals = {"messages": 0}
+  latest = {"t": 0, "seg": 0}
 
   def write(i: int) -> None:
     n = segs[i][0]
@@ -132,10 +132,14 @@ def main() -> None:
     got = original_get(self, start_time)
     for m in got:
       i = max(0, bisect.bisect_right(bounds, m.logMonoTime) - 1)
-      while i in written and i < len(segs) - 1:  # a straggler: it goes with the next segment
+      while i in written and i < len(segs) - 1:  # a straggler past LAG: it goes with the next segment
         i += 1
       produced[i].append(m)
-    totals["messages"] += len(got)
+      latest["t"] = max(latest["t"], m.logMonoTime)
+    latest["seg"] = max(0, bisect.bisect_right(bounds, latest["t"]) - 1)
+    for i in range(latest["seg"]):
+      if i not in written and latest["t"] > bounds[i + 1] + LAG:
+        write(i)
     return got
   pr.ProcessContainer.get_output_msgs = get_output_msgs
 
@@ -146,15 +150,10 @@ def main() -> None:
 
     def update(self, k=1):
       self.n += k
-      seg = bisect.bisect_right(ends, self.n)
-      for i in range(seg):
-        if i not in written and self.n >= ends[i] + LAG:
-          write(i)
       now = time.monotonic()
       if now - self.sent > 0.25:
         self.sent = now
-        elapsed = now - started
-        emit("progress", done=self.n, total=self.total, seg=segs[min(seg, len(segs) - 1)][0], elapsed=elapsed)
+        emit("progress", done=self.n, total=self.total, seg=segs[latest["seg"]][0], elapsed=now - started)
 
     def close(self):
       pass

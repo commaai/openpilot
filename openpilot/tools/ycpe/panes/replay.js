@@ -3,6 +3,7 @@
 import {h, css, fmt} from "/dom.js";
 import {daemon, needsDaemon} from "/daemon.js";
 import {onJobs, allJobs} from "/local.js";
+import {compare as plotCompare} from "/panes/plot/view.js";
 
 const SEGMENT = 60;
 
@@ -135,7 +136,7 @@ export function create(ctx, state) {
   // the replayed segments as a store overlay, growing as they're written
   const attached = new Map();  // id → segments attached
   function attach(id, segs) {
-    const store = ctx.peekStore();
+    const store = ctx.store;  // replays are for plotting: this starts the route's logs too
     if (!store?.attach || !segs.length || attached.get(id) === segs.length) return;
     attached.set(id, segs.length);
     const urls = [];
@@ -147,7 +148,7 @@ export function create(ctx, state) {
     const d = m?.diff;
     if (!d) return diff.replaceChildren(h("div", {class: "muted"}, "no summary"));
     const svc = Object.entries(d.services).map(([s, c]) => `${s} ${c.replayed}/${c.original}`).join(" · ");
-    const rows = d.signals.map((s) => h("tr", {class: "replay-signal", title: "Compare in the plot and seek to the first difference", onclick: () => compare(m.id, s)},
+    const rows = d.signals.map((s) => h("tr", {class: "replay-signal", title: "Compare in the plot and seek to the first difference", onclick: () => compare(m, s)},
       h("td", {class: "mono path"}, s.path),
       h("td", {}, `${(100 * s.differ).toFixed(s.differ < 0.01 ? 2 : 0)}%`),
       h("td", {}, num(s.meanAbs)), h("td", {}, num(s.maxAbs)),
@@ -158,10 +159,10 @@ export function create(ctx, state) {
         h("tbody", {}, rows)) : h("div", {}, "identical to the original log"));
   }
 
-  // the plot pane listens for this to add the original and replayed series as a pair
-  function compare(id, s) {
-    if (s.first != null) ctx.clock.seek(s.first);
-    window.dispatchEvent(new CustomEvent("ycpe:compare", {detail: {path: s.path, replay: `/replay/${id}${s.path}`}}));
+  // the original and the replayed signal as a pair in a plot, at the first difference
+  function compare(m, s) {
+    attach(m.id, m.written);
+    if (!plotCompare(s.path, `/replay/${m.id}`, {t: s.first ?? undefined})) status.textContent = "open a plot pane to compare signals";
   }
 
   async function loadHistory() {

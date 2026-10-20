@@ -68,7 +68,8 @@ async function load(key, url, progress, signal, head) {
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
 
-// opts: {n, shift, keep, only, skip, context}; keep, only and skip are {service: [path globs]}
+// opts: {n, shift, keep, only, skip, context, migrate}; keep, only and skip are {service: [path globs]}; migrate: false
+// for logs written by current code (replays), where a migration would only invent services from the ones present
 async function parse(buf, opts) {
   const reader = await ready;
   const t0 = performance.now();
@@ -79,7 +80,7 @@ async function parse(buf, opts) {
     t1 = performance.now();
     raw = bytes.byteLength;
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
-    migrated = migrate(read, opts.context, {keep: opts.keep});
+    migrated = opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
     return compact(read).services;
   });
 
@@ -93,7 +94,8 @@ async function parse(buf, opts) {
   }
   const start = services.initData?.t[0] ?? lo - opts.n * 60;
   const off = opts.shift - start;
-  for (const s of Object.values(services)) for (let k = 0; k < s.t.length; k++) s.t[k] += off;
+  // migrated services can share their source's time array: shift each array once
+  for (const t of new Set(Object.values(services).map((s) => s.t))) for (let k = 0; k < t.length; k++) t[k] += off;
 
   const only = patterns(opts.only), skip = patterns(opts.skip);
   const want = (only || skip) && ((name, sub) => (!only || !!only[name]?.test(sub)) && !skip?.[name]?.test(sub));
