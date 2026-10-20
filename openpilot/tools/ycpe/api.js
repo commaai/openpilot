@@ -15,7 +15,7 @@ let refused = null;  // a token the API turned down (expired, revoked): not sent
 // fn(reason): reason is "expired" when the API refused the token, rather than the user signing in or out
 function authChanged(reason) {
   user = null;
-  for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
+  for (const cache of apiCaches) cache.clear();  // what one account could read isn't the next one's
   for (const k of Object.keys(sessionStorage)) if (k.startsWith("ycpe_")) sessionStorage.removeItem(k);
   for (const fn of authSubs) fn(reason);
 }
@@ -116,10 +116,10 @@ export async function request(method, endpoint, {params, body, host = apiHost()}
 const get = (endpoint, params) => request("GET", endpoint, {params});
 
 // a read kept in sessionStorage until expires(value) (ms), so a reload doesn't wait ~1 s on the API again
-async function sessionCached(key, fetch, expires) {
+async function sessionCached(key, load, expires) {
   const hit = JSON.parse(sessionStorage.getItem(key) || "null");
   if (hit && hit.until > Date.now()) return hit.value;
-  const value = await fetch();
+  const value = await load();
   sessionStorage.setItem(key, JSON.stringify({value, until: expires(value)}));
   return value;
 }
@@ -135,10 +135,10 @@ function signedUntil(files) {
 }
 
 // reads are cached for the session so revisits never wait on the network; failures are not kept
-const caches = new Set();
+const apiCaches = new Set();
 function memo(fn, key = (...args) => JSON.stringify(args)) {
   const cache = new Map();
-  caches.add(cache);
+  apiCaches.add(cache);
   const wrapped = (...args) => {
     const k = key(...args);
     if (!cache.has(k)) cache.set(k, fn(...args).catch((e) => { cache.delete(k); throw e; }));
@@ -162,8 +162,12 @@ export const api = {
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
   deviceUsers: (dongleId) => get(`v1/devices/${dongleId}/users`),
   addDeviceUser: (dongleId, email) => request("POST", `v1/devices/${dongleId}/add_user`, {body: {email}}),
-  // without an email this removes the signed-in user
-  removeDeviceUser: (dongleId, email) => request("POST", `v1/devices/${dongleId}/del_user`, {body: email ? {email} : {}}),
+  // an empty body removes the signed-in user, so that's its own call and never a missing email
+  removeDeviceUser: async (dongleId, email) => {
+    if (!email) throw new Error("removing a user needs their email");
+    return request("POST", `v1/devices/${dongleId}/del_user`, {body: {email}});
+  },
+  leaveDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/del_user`, {body: {}}),
   // signed blob urls, oldest first
   bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
   crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),
@@ -209,19 +213,23 @@ const slots = (route) => route.range ? route.segment_numbers.length : (route.max
 const memoKey = (route) => `${route.fullname}/${route.range ?? ""}`;
 
 // a per-segment asset for each slot, with the seconds its times move by to land there. A few requests at a time:
-// issuing one per segment at once is a long task on long routes
+// issuing one per segment at once is a long task on long routes. One starts now, and each answer adds another
+// worker up to 8, so no single task issues them all
 async function assets(route, name) {
   const out = new Array(slots(route));
+  const workers = [];
   let next = 0;
   const worker = async () => {
     while (next < out.length) {
       const slot = next++, n = segmentAt(route, slot);
       const url = api.segmentAsset(route, n, name);
       const resp = url && await fetch(url).catch(() => null);
+      if (workers.length < 8 && next < out.length) workers.push(worker());
       out[slot] = {shift: (slot - n) * 60, data: resp?.ok ? await resp.json() : []};
     }
   };
-  await Promise.all(Array.from({length: Math.min(8, out.length)}, worker));
+  workers.push(worker());
+  for (let i = 0; i < workers.length; i++) await workers[i];
   return out;
 }
 

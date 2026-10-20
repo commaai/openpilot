@@ -20,8 +20,12 @@ export const perf = {
 
   // pane.render(frame) runs once on the next frame
   invalidate(pane) { dirty.add(pane); },
-  // fn(frame) runs every frame until removed (playback, animations)
-  tick(fn) { ticks.add(fn); return () => ticks.delete(fn); },
+  // fn(frame) runs every frame until removed (playback, animations); with a name, its time shows like a pane's
+  tick(fn, name) {
+    const t = name ? (frame) => perf.measure(name, () => fn(frame)) : fn;
+    ticks.add(t);
+    return () => ticks.delete(t);
+  },
   measure(name, fn) {
     const t = performance.now();
     try { return fn(); } finally { add(current, name, performance.now() - t); }

@@ -31,7 +31,7 @@ export function usersSection(device) {
     const users = await canManage(device) ? await api.deviceUsers(dongleId).catch(() => null) : null;
     if (!users) {
       el.replaceChildren(h("p", {class: "muted"}, "You have read access to this device."),
-        armed("Remove my access", () => api.removeDeviceUser(dongleId).then(() => el.replaceChildren(h("p", {class: "muted"}, "Your access was removed.")), fail)),
+        armed("Remove my access", () => api.leaveDevice(dongleId).then(() => el.replaceChildren(h("p", {class: "muted"}, "Your access was removed.")), fail)),
         status);
       return;
     }
@@ -56,7 +56,9 @@ export function usersSection(device) {
         h("tbody", {}, users.map((u) => h("tr", {},
           h("td", {}, u.email || u.user_id),
           h("td", {class: "muted"}, u.permission.replace("_", " ")),
-          h("td", {class: "right"}, u.permission === "owner" ? "" : armed("Remove", () => api.removeDeviceUser(dongleId, u.email).then(load, fail))))))),
+          h("td", {class: "right"}, u.permission === "owner" ? "" : !u.email
+            ? h("button", {class: "button small", disabled: true, title: "The API removes users by email, and this one has none"}, "Remove")
+            : armed("Remove", () => api.removeDeviceUser(dongleId, u.email).then(load, fail))))))),
       h("h3", {}, "Share read access"), form, status);
   }
   load();

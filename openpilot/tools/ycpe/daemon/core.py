@@ -13,6 +13,7 @@ from urllib.parse import parse_qsl, unquote
 TOKEN_HEADER = "X-Ycpe-Token"
 TOKEN_PARAM = "tok"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
 CHUNK = 1 << 20
+TOKEN_FILE = Path.home() / ".cache" / "ycpe" / "token"
 
 
 @dataclass
@@ -37,6 +38,22 @@ class Config:
 
 
 config = Config()
+
+
+def session_token(path: Path = TOKEN_FILE) -> str:
+  """The session token kept across restarts (only this user can read it), so open tabs keep working."""
+  try:
+    if len(token := path.read_text().strip()) >= 32:
+      return token
+  except OSError:
+    pass
+  token = secrets.token_urlsafe(32)
+  path.parent.mkdir(parents=True, exist_ok=True)
+  tmp = path.with_name(f".token.{os.getpid()}")
+  with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+    f.write(token)
+  os.replace(tmp, path)
+  return token
 
 
 class HTTPError(Exception):

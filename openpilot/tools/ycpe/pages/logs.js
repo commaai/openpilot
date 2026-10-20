@@ -1,20 +1,9 @@
-// boot and crash logs: the signed file list, newest first, opened in a viewer dialog
+// boot and crash logs: the signed file list, newest first. Crash logs open in a text dialog; boot logs (capnp) download.
 import {api} from "../api.js";
 import {h} from "../dom.js";
 import {icon} from "../icons.js";
 
 const PAGE = 50;
-
-// bootlogs are capnp logs; the log pane registers itself here: viewers.boot = (url, name) => element
-export const viewers = {
-  boot: (url, name) => h("p", {class: "muted"}, `${name}: the log pane renders boot logs once it lands.`),
-  crash: (url) => {
-    const pre = h("pre", {class: "log-text"}, "Loading…");
-    fetch(url).then((r) => r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then((text) => { pre.textContent = text; }, (err) => { pre.textContent = String(err); });
-    return pre;
-  },
-};
 
 // "2026-08-16--02-07-04_e8fd3854_openpilot_system_loggerd_loggerd" → when, commit, executable
 function crashName(file) {
@@ -22,13 +11,16 @@ function crashName(file) {
   return m ? [`${m[1]} ${m[2]}:${m[3]}:${m[4]}`, m[5], m[6].replaceAll("_", "/")] : [file, "", ""];
 }
 
-export function openLog(kind, url, name) {
+function openCrash(url, name) {
+  const pre = h("pre", {class: "log-text"}, "Loading…");
+  fetch(url).then((r) => r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`)))
+    .then((text) => { pre.textContent = text; }, (err) => { pre.textContent = String(err); });
   const dialog = h("dialog", {class: "log-dialog", onclose: () => dialog.remove()},
     h("div", {class: "log-head"},
       h("span", {class: "mono"}, name),
       h("a", {class: "icon-btn", href: url, download: name, "aria-label": "Download"}, icon("download", 20)),
       h("button", {class: "icon-btn", "aria-label": "Close", onclick: () => dialog.close()}, icon("close", 20))),
-    viewers[kind](url, name));
+    pre);
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   document.body.append(dialog);
   dialog.showModal();
@@ -47,9 +39,10 @@ export function logsSection(dongleId, kind) {
     function show() {
       for (const {url, file} of files.slice(shown, shown + PAGE)) {
         const cells = kind === "boot" ? [file.replace(/\.zst$/, "")] : crashName(file);
-        table.append(h("tr", {class: "clickable", onclick: () => openLog(kind, url, file)},
+        const dl = h("a", {class: "dl", href: url, download: file, "aria-label": "Download", onclick: (e) => e.stopPropagation()}, icon("download", 18));
+        table.append(h("tr", {class: "clickable", onclick: () => kind === "boot" ? dl.click() : openCrash(url, file)},
           cells.map((c, i) => h("td", {class: i ? "mono muted" : "mono nowrap"}, c)),
-          h("td", {class: "right"}, h("a", {class: "dl", href: url, download: file, "aria-label": "Download", onclick: (e) => e.stopPropagation()}, icon("download", 18)))));
+          h("td", {class: "right"}, dl)));
       }
       shown += PAGE;
       more.hidden = shown >= files.length;

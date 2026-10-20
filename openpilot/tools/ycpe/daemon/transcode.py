@@ -359,7 +359,7 @@ if route is not None:
     global _transcoder
     with _transcoder_lock:
       if _transcoder is None:
-        _transcoder = Transcoder(cache.root() / "ycpe" / "transcode", resolve_source, run=run_as_job, written=cache.prune_soon)
+        _transcoder = Transcoder(cache.ycpe_dir("transcode"), resolve_source, run=run_as_job, written=cache.prune_soon)
       return _transcoder
 
   def _job(req) -> tuple[Encode, str]:
