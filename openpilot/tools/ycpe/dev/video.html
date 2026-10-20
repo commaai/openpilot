@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>ycpe video</title>
+  <link rel="stylesheet" href="/style.css">
   <style>
     body { background: #111; color: #ddd; font: 13px monospace; margin: 12px; }
     #bar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
@@ -23,13 +24,13 @@
   </div>
   <div id="panes"></div>
   <pre id="stats"></pre>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js"></script>
   <script type="module">
     import {api} from "/api.js";
     import {createClock, RATES} from "/clock.js";
     import {perf} from "/perf.js";
     import {Store} from "/data/store.js";
     import {create} from "/panes/camera.js";
+    import {loadPill} from "/status.js";
 
     const q = new URLSearchParams(location.search);
     const name = q.get("route") || "5beb9b58bd12b691|0000010a--a51155e496";
@@ -54,6 +55,7 @@
     const ctx = {route, clock, perf, peekStore: () => store, onStore: (fn) => store && fn(store)};
     const panes = (q.get("cams") || "qcamera,fcamera").split(",").map((camera) => create(ctx, {camera}));
     $("panes").append(...panes.map((p) => p.el));
+    $("bar").append(loadPill());
 
     const scrub = $("scrub");
     scrub.max = clock.duration;

@@ -26,7 +26,7 @@ async function cached(key) {
   }
 }
 
-// written beside the final name and moved into place, so a partial file is never read back
+// written beside the final name and moved into place, so a partial file is never read back; false if it couldn't be
 async function store(key, buf) {
   try {
     const part = await file(key + ".part", true), h = await part.createSyncAccessHandle();
@@ -38,17 +38,49 @@ async function store(key, buf) {
       h.close();
     }
     await part.move(key.split("/").at(-1));
-  } catch {}  // no OPFS, over quota, or another worker is writing it
+    return true;
+  } catch {
+    return false;  // no OPFS, over quota, or another worker is writing it
+  }
 }
 
-async function load(key, url) {
+const RETRIES = 6;  // 0.5 s, then doubling: about 30 s of trying before a segment fails
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// the download, streamed so progress({loaded, total}) can follow it (at most 10 a second); network errors and
+// 5xx/429 responses retry with backoff, telling progress({retry, error}) first
+async function download(url, progress) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw Object.assign(new Error(`HTTP ${resp.status}`), {transient: resp.status >= 500 || resp.status === 429});
+      const total = +resp.headers.get("content-length") || 0, chunks = [], reader = resp.body.getReader();
+      let loaded = 0, last = 0;
+      for (let r; !(r = await reader.read()).done;) {
+        chunks.push(r.value);
+        loaded += r.value.length;
+        if (performance.now() - last > 100) {
+          last = performance.now();
+          progress({loaded, total});
+        }
+      }
+      const buf = new Uint8Array(loaded);
+      for (let k = 0, at = 0; k < chunks.length; at += chunks[k++].length) buf.set(chunks[k], at);
+      return buf.buffer;
+    } catch (e) {
+      // fetch() rejects with a TypeError on network failures (ERR_NETWORK_CHANGED, resets, ...)
+      if (!(e.transient ?? e instanceof TypeError) || attempt > RETRIES) throw e;
+      progress({retry: attempt, error: e.message});
+      await sleep(500 * 2 ** (attempt - 1));
+    }
+  }
+}
+
+async function load(key, url, progress) {
   let buf = await cached(key);
   if (buf) return {buf, cached: true};
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`fetch ${resp.status}`);
-  buf = await resp.arrayBuffer();
-  await store(key, buf);
-  return {buf, cached: false};
+  buf = await download(url, progress);
+  return {buf, cached: false, stored: await store(key, buf)};
 }
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
@@ -91,7 +123,7 @@ async function parse(buf, opts) {
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
   try {
     if (op === "fetch") {
-      const r = await load(key, url);
+      const r = await load(key, url, (progress) => postMessage({id, progress}));
       postMessage({id, ...r}, [r.buf]);
     } else {
       const r = await parse(buf, opts);
