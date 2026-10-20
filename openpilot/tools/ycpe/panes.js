@@ -13,6 +13,7 @@ export const PANES = {
   browser: {title: "Series", src: "/panes/browser.js", data: true},
   logs: {title: "Logs", src: "/panes/logs.js", data: true},
   inspector: {title: "Inspector", src: "/panes/inspector.js", data: true},
+  replay: {title: "Re-run openpilot", src: "/panes/replay.js"},
   "can-messages": {title: "CAN messages", src: "/panes/can/messages.js", data: true},
   "can-binary": {title: "CAN binary", src: "/panes/can/binary.js", data: true},
   "can-signals": {title: "CAN signals", src: "/panes/can/signals.js", data: true},
