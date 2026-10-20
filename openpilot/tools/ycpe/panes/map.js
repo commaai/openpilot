@@ -39,7 +39,7 @@ function tile(style, z, x, y, onLoad, left) {
   if (!left.fetches) return left.more = true, null;
   left.fetches--;
   tiles.set(key, t = {bitmap: null, used: left.stamp});
-  fetch(`https://api.mapbox.com/styles/v1/${style}/tiles/${TILE}/${z}/${x}/${y}@2x?access_token=${MAPBOX_TOKEN}`)
+  t.loaded = fetch(`https://api.mapbox.com/styles/v1/${style}/tiles/${TILE}/${z}/${x}/${y}@2x?access_token=${MAPBOX_TOKEN}`)
     .then((r) => r.ok ? r.blob() : Promise.reject(r.status))
     .then((b) => { const px = tilePx(); return createImageBitmap(b, px < 2 * TILE ? {resizeWidth: px, resizeHeight: px, resizeQuality: "high"} : {}); })
     .then((bitmap) => {
@@ -97,7 +97,7 @@ class TileMap {
 
   get scale() { return TILE * 2 ** this.z; }  // css px per world
   toScreen(ux, uy) { return [(ux - this.cx) * this.scale + this.w / 2, (uy - this.cy) * this.scale + this.h / 2]; }
-  toUnit(px, py) { return [(px - this.w / 2) / this.scale + this.cx, (py - this.h / 2) / this.scale + this.cy]; }
+  toUnit(px, py, w = this.w, h = this.h) { return [(px - w / 2) / this.scale + this.cx, (py - h / 2) / this.scale + this.cy]; }
 
   view(lng, lat, z) {
     this.cx = unitX(lng);
@@ -177,6 +177,26 @@ class TileMap {
     c.addEventListener("pointerleave", () => this.onHover?.(-1, -1));
   }
 
+  // fn(style, z, x, y, tx, ty) for each tile a w × h view shows, x wrapped around the world
+  eachTile(w, h, fn) {
+    const style = STYLES[theme.name] || STYLES.dark;
+    const tz = Math.max(0, Math.min(MAX_Z, Math.round(this.z))), n = 2 ** tz;
+    const [ux0, uy0] = this.toUnit(0, 0, w, h), [ux1, uy1] = this.toUnit(w, h, w, h);
+    for (let ty = Math.max(0, Math.floor(uy0 * n)); ty <= Math.min(n - 1, Math.floor(uy1 * n)); ty++) {
+      for (let tx = Math.floor(ux0 * n); tx <= Math.floor(ux1 * n); tx++) fn(style, tz, ((tx % n) + n) % n, ty, tx, ty);
+    }
+  }
+
+  // the view's tiles at a size it isn't laid out at yet, fetched and decoded
+  preload(w, h) {
+    const left = {fetches: Infinity, stamp: renders}, loading = [];
+    this.eachTile(w, h, (style, z, x, y) => {
+      tile(style, z, x, y, () => {}, left);
+      loading.push(tiles.get(`${style}/${z}/${x}/${y}`)?.loaded);
+    });
+    return Promise.allSettled(loading);
+  }
+
   render() {
     const {w, h} = this;
     if (!w || !h) return;
@@ -184,25 +204,19 @@ class TileMap {
     ctx.fillStyle = theme.color("--bg");
     ctx.fillRect(0, 0, w, h);
 
-    const style = STYLES[theme.name] || STYLES.dark;
-    const tz = Math.max(0, Math.min(MAX_Z, Math.round(this.z))), n = 2 ** tz;
-    const size = this.scale / n;  // css px per tile at this zoom
-    const [ux0, uy0] = this.toUnit(0, 0), [ux1, uy1] = this.toUnit(w, h);
     const onLoad = () => this.invalidate(), left = {fetches: FETCHES, more: false, stamp: ++renders};
     let drawn = 0;
-    for (let ty = Math.max(0, Math.floor(uy0 * n)); ty <= Math.min(n - 1, Math.floor(uy1 * n)); ty++) {
-      for (let tx = Math.floor(ux0 * n); tx <= Math.floor(ux1 * n); tx++) {
-        const wx = ((tx % n) + n) % n;
-        tile(style, tz, wx, ty, onLoad, left);
-        drawn++;
-        const src = covering(style, tz, wx, ty, left.stamp);
-        if (!src) continue;
-        const [x, y] = this.toScreen(tx / n, ty / n);
-        // whole pixels on both edges, so neighbors meet without seams
-        const dx = Math.round(x), dy = Math.round(y);
-        ctx.drawImage(src[0], src[1], src[2], src[3], src[3], dx, dy, Math.round(x + size) - dx, Math.round(y + size) - dy);
-      }
-    }
+    this.eachTile(w, h, (style, z, x, y, tx, ty) => {
+      tile(style, z, x, y, onLoad, left);
+      drawn++;
+      const src = covering(style, z, x, y, left.stamp);
+      if (!src) return;
+      const n = 2 ** z, size = this.scale / n;  // css px per tile at this zoom
+      const [sx, sy] = this.toScreen(tx / n, ty / n);
+      // whole pixels on both edges, so neighbors meet without seams
+      const dx = Math.round(sx), dy = Math.round(sy);
+      ctx.drawImage(src[0], src[1], src[2], src[3], src[3], dx, dy, Math.round(sx + size) - dx, Math.round(sy + size) - dy);
+    });
     evict(Math.max(CACHE, 2 * drawn), left.stamp);  // room for this view and the one after a pan or zoom
     if (left.more) this.invalidate();  // the other requests next frame
     this.overlay?.(ctx);
@@ -227,7 +241,11 @@ export function deviceMap(device, locationPromise) {
   el.append(tip, card, locate || "");
   const at = (lng, lat) => ({lng, lat, x: unitX(lng), y: unitY(lat)});
   let car = null, me = null;
-  const sized = new ResizeObserver(([e]) => map.resize(e.contentRect.width, e.contentRect.height));
+  const sized = new ResizeObserver(([e]) => {
+    const first = !map.w;
+    map.resize(e.contentRect.width, e.contentRect.height);
+    if (first) map.render();  // before its first paint, with the tiles preloaded: it's never shown empty
+  });
   sized.observe(el);
   const offTheme = theme.on(() => map.invalidate());
   el.dispose = () => { sized.disconnect(); offTheme(); map.dispose(); };
@@ -282,10 +300,15 @@ export function deviceMap(device, locationPromise) {
     }, {enableHighAccuracy: true, timeout: 15000});
   }
 
-  Promise.resolve(locationPromise).then((loc) => {
-    if (!loc?.lat) return map.view(-117.16, 32.72, 5);
-    car = {...at(loc.lng, loc.lat), time: loc.time};
-    map.view(loc.lng, loc.lat, 13);
+  // ready once the view's tiles are in, at the size of the map this one replaces
+  el.ready = Promise.resolve(locationPromise).then((loc) => {
+    if (!loc?.lat) map.view(-117.16, 32.72, 5);
+    else {
+      car = {...at(loc.lng, loc.lat), time: loc.time};
+      map.view(loc.lng, loc.lat, 13);
+    }
+    const shown = document.querySelector(".device-map");
+    return shown && map.preload(shown.clientWidth, shown.clientHeight);
   });
   return el;
 }

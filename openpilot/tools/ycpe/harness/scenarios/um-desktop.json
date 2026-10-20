@@ -52,6 +52,6 @@
   {"shot": "drive-other-theme"},
   {"click": ".cn-dev a[href='/connect/fedcba9876543210']"},
   {"waitFor": {"fn": "location.pathname === '/connect/fedcba9876543210'"}},
-  {"assert": "!document.querySelector('.connect-pane') && document.querySelector('.cn-dev.on b').textContent === 'comma tizi' || 'a device from the list replaces the drive'"},
+  {"waitFor": {"fn": "!document.querySelector('.connect-pane') && document.querySelector('.cn-dev.on b').textContent === 'comma tizi'"}},
   {"assert": "__sent.filter((r) => /athena/.test(r.url)).every((r) => JSON.parse(r.body).method === 'setRouteViewed') || `only the drive's viewed mark was sent: ${JSON.stringify(__sent)}`"}
  ]}

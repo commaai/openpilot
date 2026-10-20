@@ -13,9 +13,10 @@ import {usersSection} from "./users.js";
 import {logsSection} from "./logs.js";
 import {deviceUploads} from "./files.js";
 import {settingsSection} from "./settings.js";
+import {mode} from "./connect/mode.js";
 
 const DAY = 86400000, HOUR = 3600000, LIMIT = 50;
-const DETAILS_KEY = "ycpe_drive_details";
+const READY_MS = 600;  // the longest a device page waits for its map, stats and drives before it's shown
 
 // the first page ends at the next hour boundary so prefetch and page share a cache key
 const firstPageEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
@@ -23,6 +24,7 @@ const firstPageEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
 export function prefetchDevice(dongleId) {
   api.routes(dongleId, undefined, firstPageEnd(), LIMIT).catch(() => {});
   api.deviceLocation(dongleId).catch(() => {});
+  api.deviceStats(dongleId).catch(() => {});
 }
 
 const duration = (r) => r.end_time_utc_millis - r.start_time_utc_millis;
@@ -78,8 +80,7 @@ const DAY_FMT = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "sh
 const OLD_DAY_FMT = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"});
 
 // a row of the drives table, or on a phone (pages.css) a card as connect's: when and how long over where from and to,
-// the strip along the bottom. Under it, shown with the list's details, what useradmin lists of
-// it
+// the strip along the bottom. Under it, in developer mode, what useradmin lists of it
 function driveRow(r, owner) {
   const path = `/${r.fullname.replace("|", "/")}`;
   const start = new Date(r.start_time_utc_millis);
@@ -154,7 +155,7 @@ const nDrives = (n) => `${n} drive${n === 1 ? "" : "s"}`;
 // from the end of its last day, down to the start of its first.
 function drivesSection(device) {
   const dongleId = device.dongle_id;
-  const body = h("div", {class: "drives"});
+  const body = h("div", {class: `drives ${mode() === "dev" ? "details" : ""}`});  // useradmin's details; connect has none
   const more = h("button", {class: "button more", onclick: () => loadMore()}, "Older drives");
   const foot = h("div", {class: "list-foot", hidden: true}, h("span"), more);  // shown with the first drives, so nothing shifts
   const status = h("p", {class: "muted small"});
@@ -173,13 +174,8 @@ function drivesSection(device) {
     to.min = yearAgo;
     restart();
   }}, icon("close", 14));
-  const details = h("input", {type: "checkbox", checked: localStorage.getItem(DETAILS_KEY) === "1", onchange: () => {
-    localStorage.setItem(DETAILS_KEY, details.checked ? "1" : "");
-    body.classList.toggle("details", details.checked);
-  }});
-  body.classList.toggle("details", details.checked);
   // a phone shows them under connect's Filter button (pages.css)
-  const opts = h("span", {class: "drive-opts muted small"}, h("label", {}, "from", from), h("label", {}, "to", to), clear, h("label", {}, details, "details"));
+  const opts = h("span", {class: "drive-opts muted small"}, h("label", {}, "from", from), h("label", {}, "to", to), clear);
   const filter = h("button", {class: "button filter", "aria-expanded": "false", onclick: () => filter.setAttribute("aria-expanded", opts.classList.toggle("open"))},
     icon("filter", 20), "Filter");
   let range = null, end = firstPageEnd(), gen = 0, done = false;
@@ -229,10 +225,9 @@ function drivesSection(device) {
     const span = !range ? "" : range[0] ? ` from ${DATE.format(range[0])} to ${DATE.format(range[1])}` : ` up to ${DATE.format(range[1])}`;
     status.textContent = !n ? `No drives${span}` : done ? `${nDrives(n)}${span}` : `${nDrives(n)} since ${DATE.format(end)}`;
   }
-  loadMore();
-  return h("div", {},
+  return Object.assign(h("div", {},
     h("div", {class: "list-foot"}, status, opts, filter),
-    drivesHead(), body, foot);
+    drivesHead(), body, foot), {ready: loadMore()});
 }
 
 // with their details, as useradmin lists them; asked for again each time the tab is shown, as drives come and go
@@ -250,7 +245,7 @@ function preservedSection(device) {
 function stats(dongleId) {
   const el = h("span", {class: "stats muted"});
   const stat = (n, unit) => h("span", {}, h("b", {}, n), ` ${unit}`);
-  api.deviceStats(dongleId).then(({all, week}) => {
+  el.ready = api.deviceStats(dongleId).then(({all, week}) => {
     const [dist, unit] = fmt.distanceIn(all.distance), [weekDist] = fmt.distanceIn(week.distance);
     el.replaceChildren(stat(all.routes, "drives"), " · ", stat(Math.round(dist), unit), " · ", stat(Math.round(all.minutes / 60), "h"),
       h("span", {class: "stats-week"}, ` — this week ${week.routes} drives · ${Math.round(weekDist)} ${unit}`));
@@ -321,6 +316,8 @@ function restore(k) {
   return k.el;
 }
 
+// shown once its map, stats and first drives are in (or after READY_MS), so the page it replaces stays until then
+// rather than flashing an empty one
 export async function devicePage(dongleId, devices) {
   for (const [id, k] of kept) if (k.until < Date.now()) drop(id);
   const back = traverse;
@@ -388,5 +385,7 @@ export async function devicePage(dongleId, devices) {
     snapshots, bar, body);
   drop(dongleId);
   kept.set(dongleId, Object.assign(keep, {el, select, until: Date.now() + KEEP, dispose: map.dispose}));
+  const ready = [map.ready, el.querySelector(".stats").ready, body.firstChild?.ready];
+  await Promise.race([Promise.allSettled(ready), new Promise((r) => setTimeout(r, READY_MS))]);
   return el;
 }

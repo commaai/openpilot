@@ -22,8 +22,7 @@
   {"assert": "__sent.some(([m, u, b]) => m === 'POST' && u.endsWith('/local/athena/0123456789abcdef') && b === JSON.stringify({id: 0, jsonrpc: '2.0', method: 'getMessage', params: {service: 'peripheralState', timeout: 5000}})) || JSON.stringify(__sent)"},
   {"shot": "header"},
 
-  {"click": ".drive-opts input[type=checkbox]"},
-  {"assert": "document.querySelector('.drives').classList.contains('details') || 'details should show'"},
+  {"assert": "document.querySelector('.drives').classList.contains('details') && !document.querySelector('.drive-opts input[type=checkbox]') || 'developer mode always shows the details'"},
   {"assert": "(() => { const t = document.querySelector('.drives > a .dr-more').textContent; return ['FORD_BRONCO_SPORT_MK1', 'commaai/openpilot', 'release3', '16 segments', 'uploaded', '00000003--cccccccccc'].every((s) => t.includes(s)) || t; })()"},
   {"assert": "document.querySelector('.drives > a .official')?.textContent === 'commaai/openpilot' && document.querySelectorAll('.drives .official').length === 2 || 'only comma remotes are marked official'"},
   {"shot": "details"},
