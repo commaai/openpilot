@@ -1,13 +1,15 @@
-// the global playback bar: transport, rate, time, and the route timeline (engagement, loaded segments,
-// visible range, loop, playhead, hover preview). Everything on the timeline is one canvas.
+// the global playback bar: transport, rate, time, and the route timeline (engagement, a lane per loader showing
+// what's loaded, visible range, loop, playhead, hover preview). Everything on the timeline is one canvas; time with
+// nothing loaded at all is faded.
 import {api, routeEvents} from "/api.js";
 import {h} from "/dom.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 import {RATES} from "/clock.js";
+import {status, drawLane, describe} from "/status.js";
 
-const RANGE_H = 7, SPAN_H = 14, SEG_H = 3, PAD = 3;
-const HEIGHT = PAD + RANGE_H + 2 + SPAN_H + 2 + SEG_H + PAD;
+const RANGE_H = 7, SPAN_H = 14, LANE_H = 3, PAD = 3;
+const SEGMENT = 60;  // nominal segment length; lanes index segments
 const SPAN_COLORS = {engaged: "--engaged", override: "--override", alert: "--alert", critical: "--critical"};
 
 export const clockText = (s, withMs = true) => {
@@ -52,9 +54,15 @@ export function playbar(ctx) {
     time.textContent = `${clockText(clock.t)} / ${clockText(clock.duration, false)}`;
     wall.textContent = route.start_time_utc_millis ? new Date(route.start_time_utc_millis + clock.t * 1000).toLocaleTimeString(undefined, {hour12: false}) : "";
 
+    const kinds = status.kinds();
+    const HEIGHT = PAD + RANGE_H + 2 + SPAN_H + 2 + kinds.length * (LANE_H + 1) + PAD;
     const dpr = devicePixelRatio;
     width = track.clientWidth;
-    if (canvas.width !== Math.round(width * dpr)) { canvas.width = Math.round(width * dpr); canvas.height = HEIGHT * dpr; }
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== HEIGHT * dpr) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = HEIGHT * dpr;
+      canvas.style.height = `${HEIGHT}px`;
+    }
     const c = canvas.getContext("2d");
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, width, HEIGHT);
@@ -77,11 +85,18 @@ export function playbar(ctx) {
       c.fillRect(x, spanY - 3, 2, SPAN_H + 3);
       c.fillRect(x, spanY - 3, 5, 3);
     }
-    // loaded segments
-    const segs = ctx.peekStore()?.route.segments;
-    if (segs) for (const s of segs) {
-      c.fillStyle = s.status === "done" ? col("--accent") : s.status === "error" ? col("--critical") : col("--line");
-      c.fillRect(t2x(s.t0) + 0.5, segY, Math.max(1, t2x(s.t1 - s.t0) - 1), SEG_H);
+    // what's loaded, a lane per loader; fade the time nothing has started on
+    const segX = (i) => [t2x(i * SEGMENT), t2x(Math.min(clock.duration, (i + 1) * SEGMENT))];
+    kinds.forEach((k, j) => drawLane(c, k, 0, segY + j * (LANE_H + 1), width, LANE_H, segX));
+    if (kinds.length) {
+      c.fillStyle = col("--panel");
+      c.globalAlpha = 0.6;
+      for (let i = 0; i * SEGMENT < clock.duration; i++) {
+        if (kinds.some((k) => ["ready", "disk", "loading"].includes(k.segs[i]?.state))) continue;
+        const [a, b] = segX(i);
+        c.fillRect(a, spanY, b - a, SPAN_H);
+      }
+      c.globalAlpha = 1;
     }
     // loop, visible range, hover, playhead
     if (clock.loop) {
@@ -93,7 +108,7 @@ export function playbar(ctx) {
     c.fillRect(t2x(r0), PAD, Math.max(3, t2x(r1 - r0)), RANGE_H);
     if (hover !== null) {
       c.fillStyle = col("--muted");
-      c.fillRect(Math.round(t2x(hover)), spanY, 1, SPAN_H + 2 + SEG_H);
+      c.fillRect(Math.round(t2x(hover)), spanY, 1, HEIGHT - spanY - PAD);
     }
     c.fillStyle = col("--fg");
     const px = Math.round(t2x(clock.t));
@@ -101,7 +116,7 @@ export function playbar(ctx) {
   }};
 
   for (const ev of ["t", "range", "play"]) clock.on(ev, () => perf.invalidate(pane));
-  ctx.onStore((store) => store.on("progress", () => perf.invalidate(pane)));
+  status.on(() => perf.invalidate(pane));
   theme.on(() => perf.invalidate(pane));
   new ResizeObserver(() => perf.invalidate(pane)).observe(track);
 
@@ -136,7 +151,8 @@ export function playbar(ctx) {
     tip.style.left = `${Math.max(0, Math.min(width - 136, x - 68))}px`;
     const seg = Math.max(0, Math.floor(hover / 60));
     tip.firstChild.style.backgroundImage = `url(${api.segmentAsset(route, Math.min(seg, route.maxqlog ?? seg), "sprite.jpg")})`;
-    tip.lastChild.textContent = `${clockText(hover, false)} · seg ${seg}`;
+    tip.lastChild.replaceChildren(`${clockText(hover, false)} · segment ${seg}`,
+      ...status.kinds().filter((k) => k.segs[seg]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[seg])}`)));
   });
   canvas.addEventListener("pointerleave", () => { hover = null; tip.hidden = true; perf.invalidate(pane); });
   // wheel zooms the visible range around the cursor
