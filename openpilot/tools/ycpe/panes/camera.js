@@ -20,7 +20,7 @@ const BACK = 19;          // frames kept behind the playhead for stepping backwa
 const SCRUB_MS = 100;     // seeks closer together than this are a scrub: keyframes only until it settles
 const MIN_RATE = 0.0625;  // the slowest <video> playbackRate; slower playback seeks frame by frame
 const QCAMERA_BYTES_PER_S = 37e3;
-const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js";
+const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.light.min.js";
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
 const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
@@ -94,7 +94,7 @@ function lane(camera) {
   return status.source(camera, {label, order});
 }
 
-// hls.js loads with the first qcamera pane, not with the page
+// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page
 let hlsReady = null;
 const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
   document.head.append(h("script", {src: HLS, onload: () => resolve(window.Hls), onerror: reject}));
