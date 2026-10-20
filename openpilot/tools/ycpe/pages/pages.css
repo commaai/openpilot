@@ -1,4 +1,11 @@
 /* route browser pages: home, device page, logs; the small controls here are shared with the info pane */
+/* connect's palette, for the connect view (panes/connect.css) and the pages on a phone; light is its daytime twin */
+[data-theme="dark"] { --cn-bg: #1d2225; --cn-card: #30373b; --cn-card-end: #1d2225; --cn-raised: #394044; --cn-fg: #fff; --cn-muted: rgba(255,255,255,.6);
+  --cn-line: rgba(255,255,255,.1); --cn-driving: #175886; --cn-ruler: #25333d; --cn-left: rgba(29,34,37,.9); --cn-head: #d8dddf;
+  --cn-pill: #0c0e0f; --cn-pill-line: #1e2224; --cn-dim: #6e7d84; --cn-shade: linear-gradient(transparent 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+[data-theme="light"] { --cn-bg: #eef0f2; --cn-card: #fff; --cn-card-end: #f4f6f8; --cn-raised: #e3e6e8; --cn-fg: #1c2024; --cn-muted: #5f666e;
+  --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de; --cn-ruler: #d3dde5; --cn-left: rgba(244,246,248,.85); --cn-head: #1c2024;
+  --cn-pill: #fff; --cn-pill-line: #dde1e5; --cn-dim: #77878f; --cn-shade: linear-gradient(transparent 60%, rgba(0,0,0,.08)); }
 .page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
 .page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .button.small { margin: 0; padding: 3px 8px; }
@@ -84,11 +91,17 @@ a.drive-row:hover { background: var(--hover); }
 .drives { isolation: isolate; }
 .drive-row.head { position: sticky; top: 0; z-index: 2; height: 26px; background: var(--bg); color: var(--muted); font-weight: 500; content-visibility: visible; }
 .drive-row .num { text-align: right; font-variant-numeric: tabular-nums; }
-.strip { position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); }
-.strip-spans { position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--driving); }
+.dr-detail, .online-pill, .list-foot .filter { display: none; }
+.dr-place:empty::before, .dr-dash::before { content: "–"; }
+.stats b { font-weight: inherit; }
+/* a drive's strip (panes/strip.js): spans over the segments' sprites, each repeated across its segment as connect does
+   (sized 120% tall so the sprite's black band falls outside) */
+.strip { --spans: 5px; position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); contain: strict; }
+.strip-track { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; }
+.strip-spans { position: absolute; left: 0; right: 0; top: 0; height: var(--spans); background: var(--driving); }
 .strip-spans span { position: absolute; top: 0; height: 100%; min-width: 1px; }
-.strip-thumbs { display: flex; height: 100%; padding-top: 5px; }
-.strip-thumbs span { flex: 1; background: center / cover; }
+.strip-thumbs { position: absolute; left: 0; right: 0; top: var(--spans); bottom: 0; }
+.strip-thumbs span { position: absolute; top: 0; height: 100%; background: 0 0 / auto 120% repeat-x; }
 .strip-spans .engaged { background: var(--engaged); }
 .strip-spans .override { background: var(--override); }
 .strip-spans .alert { background: var(--alert); }
@@ -128,14 +141,7 @@ a.drive-row:hover { background: var(--hover); }
 }
 @media (max-width: 760px) {
   .page { padding: 8px 12px 24px; }
-  .device-head { flex-direction: column; }
   .device-info h2 { font-size: 16px; }
-  .device-map { width: 100%; }
-  .drive-row { grid-template-columns: minmax(0, 1fr) 48px 56px 52px; gap: 4px 10px; height: 62px; padding: 6px 8px; contain-intrinsic-size: auto 62px; }
-  .drive-row > :nth-child(5) { display: none; }
-  .drive-row > .strip { grid-column: 1 / -1; }
-  .drive-row.head { height: 30px; padding: 0 8px; }
-  .drive-row.head > :nth-child(6) { display: none; }
   .list.devices { table-layout: fixed; }
   .list.devices :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5)) { display: none; }
   .list.devices :is(th, td):first-child { width: 24px; }
@@ -148,6 +154,57 @@ a.drive-row:hover { background: var(--hover); }
   .page-tabs .tab { height: 36px; }
   .page .icon-btn, .page .dl { min-width: 32px; min-height: 32px; justify-content: center; align-items: center; }
   :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
+}
+
+/* a phone's pages look like connect's: the device page under its map, the name with an online pill and the totals,
+   then the drives as cards (when and how long, where from and to, the strip full width along the bottom); home in
+   the same type and colors */
+@media (max-width: 760px) {
+  .topbar { background: var(--cn-bg); }
+  :is(.device-page, .home-page) { min-height: 100%; background: var(--cn-bg); color: var(--cn-fg); font-size: 15px; --driving: var(--cn-driving); }
+  .device-page { padding: 0 0 24px; }
+  .device-head { flex-direction: column; gap: 0; margin: 0; }
+  .device-head .device-map { order: -1; width: 100%; height: 160px; border: 0; border-bottom: 1px solid var(--cn-line); border-radius: 0; }
+  .device-info { gap: 8px; padding: 14px 16px 12px; }
+  .device-info h2 { gap: 10px; font-size: 22px; font-weight: 500; }
+  .device-info h2 > .dot, .device-info .kv, .stats-week { display: none; }
+  .device-info .device-name { min-width: 0; }
+  .online-pill { display: inline-flex; flex-shrink: 0; align-items: center; height: 40px; margin-left: auto; padding: 0 18px; border-radius: 20px;
+    background: var(--cn-raised); color: var(--cn-muted); font-size: 15px; font-weight: 500; }
+  .online-pill.online { color: #2ea44f; }
+  .stats { display: flex; gap: 12px; color: var(--cn-fg); } .stats b { font-weight: 600; }
+  .device-page .page-tabs { margin: 0 0 4px; padding: 0 8px; border-color: var(--cn-line); }
+  .device-page .tab-body { padding: 0 16px; }
+  .device-page .list-foot label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }  /* Filter opens it */
+  .list-foot .filter { display: inline-flex; align-items: center; gap: 8px; height: 40px; margin: 0; padding: 0 12px; border: 0; border-radius: 6px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end) 150%); color: var(--cn-fg); font-size: 15px; }
+  .drives { display: flex; flex-direction: column; gap: 12px; }
+  .drive-row.head { display: none; }
+  .drive-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "when dur" "when dist" "from to" "strip strip"; gap: 0 12px;
+    height: auto; padding: 18px 18px 0; overflow: hidden; border: 0; border-top: 1px solid var(--cn-line); border-radius: 8px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end)); line-height: 1.5; contain-intrinsic-size: auto 178px; }
+  a.drive-row:hover { background: linear-gradient(var(--cn-card), var(--cn-card-end)); }
+  a.drive-row:active { filter: brightness(1.1); }
+  .dr-when { grid-area: when; }
+  :is(.dr-when > b, .dr-hours) { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--cn-fg); }
+  .dr-dash::before { content: " to "; white-space: pre; }
+  .dr-dur { grid-area: dur; font-weight: 600; }
+  .dr-dist { grid-area: dist; }
+  :is(.dr-engaged, .dr-version, .dr-arrow) { display: none; }
+  .dr-places { display: contents; }
+  .dr-place { margin-top: 12px; font-weight: 600; }
+  .dr-place:empty { margin: 0; }
+  .dr-place:empty::before { content: none; }
+  .dr-place > span { display: block; overflow: hidden; text-overflow: ellipsis; }
+  .dr-detail { font-weight: 400; }
+  .dr-from { grid-area: from; }
+  .dr-to { grid-area: to; text-align: right; }
+  .drive-row > .strip { grid-area: strip; --spans: 12px; height: 32px; margin: 18px -18px 0; border-radius: 0; }
+  .drive-row .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
+  .home-page .page { padding: 8px 16px 24px; }
+  .home-page .list td { height: 52px; border-color: var(--cn-line); }
+  .home-page .list th { background: var(--cn-bg); border-color: var(--cn-line); }
+  .home-page .list.devices a { font-size: 17px; font-weight: 500; }
 }
 
 /* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
