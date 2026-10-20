@@ -81,6 +81,12 @@ const bar = {
 
 function topBar() {
   const search = searchBox();
+  bar.tabs.addEventListener("wheel", (e) => {
+    if (e.deltaX || !e.deltaY) return;
+    e.preventDefault();
+    bar.tabs.scrollLeft += e.deltaY;
+  }, {passive: false});
+  new ResizeObserver(showActiveTab).observe(bar.tabs);  // the bar's other items settle after the tabs
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
@@ -122,13 +128,24 @@ function updateTop() {
   const layout = ws.layout;
   if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
-    onclick: () => { layout.selectTab(i); updateTop(); },
+    onclick: (e) => {  // in place, so a double-click lands on the same button
+      if (i === layout.model.active) return;
+      layout.selectTab(i);
+      for (const b of bar.tabs.children) b.classList.toggle("on", b === e.currentTarget);
+    },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
   h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+  showActiveTab();
+}
+
+// too many tabs scroll: show the buttons at the end if the active tab still fits, else the active tab
+function showActiveTab() {
+  bar.tabs.lastChild?.scrollIntoView({block: "nearest", inline: "nearest"});
+  bar.tabs.querySelector(".tab.on")?.scrollIntoView({block: "nearest", inline: "nearest"});
 }
 
 function layoutMenu(anchor) {
@@ -142,20 +159,25 @@ function tabMenu(tabEl, i, name) {
     item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
-    item("Open layout…", () => setTimeout(() => layoutMenu(tabEl))),
+    item("Open layout…", () => setTimeout(() => layoutMenu(bar.tabs.children[i]))),
     item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
 }
 
 // double-click a tab to rename it in place
 function renameTab(tabEl, i, name) {
+  const layout = ws.layout;
   const input = h("input", {class: "tab-edit", value: name});
+  let open = true;
   const done = (save) => {
-    if (save && input.value.trim()) ws.layout.renameTab(i, input.value.trim());
+    if (!open) return;
+    open = false;
+    if (save && input.value.trim()) layout.renameTab(i, input.value.trim());
     updateTop();
   };
   input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
   input.addEventListener("blur", () => done(true));
-  tabEl.replaceChildren(input);
+  tabEl.replaceWith(input);  // not inside it: the tab button would take the input's clicks and keys
+  input.focus();
   input.select();
 }
 
