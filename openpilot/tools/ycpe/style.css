@@ -157,14 +157,14 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .split.col > .divider { cursor: row-resize; }
 .divider:hover, .divider:active { background: var(--accent); }
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
-.pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
-/* as wide as the chosen type, its chevron right after it */
-.pane-type { field-sizing: content; max-width: 130px; height: 18px; padding: 0 14px 0 2px; border: 0; color: var(--muted); font-weight: 600; text-overflow: ellipsis; cursor: pointer;
-  appearance: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M.5.5 4 4 7.5.5' fill='none' stroke='%238a939c'/%3E%3C/svg%3E") right 3px center no-repeat; }
-.pane-type:hover { color: var(--fg); }
+/* dragged to dock the pane; a finger on it drags the pane, not the page */
+.pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; cursor: grab; touch-action: none; }
+/* as wide as the chosen type, its chevron (the next sibling) drawn over its right padding, so it opens the picker too */
+.pane-type { field-sizing: content; min-width: 0; max-width: 130px; flex-shrink: 1; height: 18px; padding: 0 14px 0 2px; border: 0; background: none; color: var(--muted); font-weight: 600; text-overflow: ellipsis; cursor: pointer; appearance: none; }
+.pane-type + svg { flex-shrink: 0; margin-left: -18px; color: var(--muted); pointer-events: none; }
+.pane-type:hover, .pane-type:hover + svg { color: var(--fg); }
 .pane-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .pane-tools { display: flex; flex-shrink: 0; margin-left: auto; opacity: .75; transition: opacity .1s; }
-.pane-type { min-width: 0; flex-shrink: 1; }
 /* narrow panes keep only maximize and close */
 @container (max-width: 180px) { .pane-tools .pane-btn:nth-child(-n+2) { display: none; } }
 .pane:is(:hover, :focus-within) .pane-tools { opacity: 1; }
@@ -201,7 +201,6 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .page-msg h2 { font-size: 20px; margin: 0 0 8px; }
 
 /* pane docking */
-.pane-head { cursor: grab; touch-action: none; }  /* a finger on it drags the pane, not the page */
 body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
 .dock-hint { position: fixed; z-index: 45; border: 2px solid var(--accent); border-radius: 5px; background: var(--loop); pointer-events: none; transition: all .08s ease-out; }
 .tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }

@@ -221,7 +221,7 @@ export class Layout {
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
     const btn = (name, tip, key, fn) => h("button", {class: "pane-btn", title: tip, "data-key": key, onclick: fn}, icon(name, 14));
-    const head = h("div", {class: "pane-head", title: "Drag to move this pane"}, types, title,
+    const head = h("div", {class: "pane-head", title: "Drag to move this pane"}, types, icon("down", 14), title,
       h("span", {class: "pane-tools"},
         btn("splitRight", "Split right", "row", () => this.split(n, "row")),
         btn("splitDown", "Split down", "col", () => this.split(n, "col")),
