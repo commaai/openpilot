@@ -1,4 +1,5 @@
-// comma API client: a JWT in localStorage, plain fetch. Settings are read lazily so workers can import this.
+// comma API client: a JWT in localStorage (or the local daemon's), plain fetch. Settings are read lazily so workers can import this.
+import {daemon} from "./daemon.js";
 
 const TOKEN_KEY = "comma_jwt";
 const setting = (key) => globalThis.localStorage?.getItem(key);
@@ -11,18 +12,23 @@ const authSubs = new Set();
 let user = null;
 
 export const auth = {
-  token: () => setting(TOKEN_KEY),
-  isAuthenticated: () => !!setting(TOKEN_KEY),
+  token: () => setting(TOKEN_KEY) || daemon.jwt(),
+  isAuthenticated: () => !!auth.token(),
+  viaDaemon: () => !setting(TOKEN_KEY) && !!daemon.jwt(),  // ~/.comma/auth.json through serve.py
   user: () => (user ??= auth.isAuthenticated() ? get("v1/me/").catch(() => null) : Promise.resolve(null)),
   on(fn) { authSubs.add(fn); return () => authSubs.delete(fn); },
-  setToken(token) {
+  setToken(token, viaDaemon = false) {
     if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
+    else {
+      localStorage.removeItem(TOKEN_KEY);
+      daemon.useJwt(viaDaemon);
+    }
     user = null;
     for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
     for (const fn of authSubs) fn();
   },
   signOut: () => auth.setToken(null),
+  useDaemon: () => auth.setToken(null, true),
 
   // the provider sends the code to the API, which redirects it back to <host>/auth/?code=..&provider=..
   loginUrl(provider) {

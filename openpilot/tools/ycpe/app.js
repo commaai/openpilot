@@ -1,4 +1,6 @@
 import {api, auth} from "/api.js";
+import {daemon} from "/daemon.js";
+import {localBadge} from "/local.js";
 import {h} from "/dom.js";
 import {logo} from "/icons.js";
 import {perf, hud} from "/perf.js";
@@ -90,6 +92,8 @@ function topBar() {
   const account = h("button", {class: "tbtn", title: "Account"}, "●");
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
+    auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
+    !auth.isAuthenticated() && daemon.hasJwt &&h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
     auth.isAuthenticated()
       ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
       : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
@@ -97,7 +101,7 @@ function topBar() {
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), loadPill(), hud(footprint()), themeBtn, account);
+    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), themeBtn, account);
 }
 
 function updateTop() {
