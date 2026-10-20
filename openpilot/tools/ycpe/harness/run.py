@@ -35,7 +35,7 @@ RAF_SAMPLE_JS = """(n) => new Promise((r) => {
   const t = [], f = (now) => { t.push(now); t.length > n ? r(t) : requestAnimationFrame(f); };
   requestAnimationFrame(f);
 })"""
-DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None}
+DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None, "first_paint_ms": 150}
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
 # gpu: headless Chrome on the NVIDIA GPU through ANGLE/EGL; hardware raster and compositing, 60 Hz begin-frames
 # soft: headless SwiftShader; main-thread numbers are fine, raster/composite cost is inflated
@@ -277,13 +277,17 @@ class Scenario:
 
   def collect_perf(self):
     page = self.page
-    probe = page.evaluate("({raf: __probe.raf, loaf: __probe.loaf})")
+    # the page counts as loading until its first contentful paint (or perf.js's first frame, if it never paints)
+    probe = page.evaluate("""({raf: __probe.raf, loaf: __probe.loaf,
+      paint: performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? window.__perf?.frames[0]?.t ?? null})""")
     app = page.evaluate("window.__perf ? JSON.parse(JSON.stringify({frames: __perf.frames, longFrames: __perf.longFrames, drops: __perf.drops})) : null")
     harness = lambda a, b: any(a < pe and b > ps for ps, pe in self.paused)  # noqa: E731
     raf = probe["raf"]
-    frames = [(b, b - a) for a, b in itertools.pairwise(raf) if not harness(a, b)]
+    paint = probe["paint"] or 0
+    frames = [(b, b - a) for a, b in itertools.pairwise(raf) if a >= paint and not harness(a, b)]
+    loaf = [e for e in probe["loaf"] if not harness(e["start"], e["start"] + e["duration"])]
     return {"t": [f[0] for f in frames], "interval": [f[1] for f in frames], "paused": self.paused, "app": app, "steps": self.steps,
-            "loaf": [e for e in probe["loaf"] if not harness(e["start"], e["start"] + e["duration"])]}
+            "paint": probe["paint"], "loaf": [e for e in loaf if e["start"] >= paint], "load_loaf": [e for e in loaf if e["start"] < paint]}
 
 
 def percentile(xs, p):
@@ -306,8 +310,14 @@ def check(res, budgets):
     "work_max_ms": max(work, default=None),
     "drops": sum(round(v / refresh) - 1 for v in iv if v > refresh * 1.5),
     "perf_js_drops": (perf["app"] or {}).get("drops"),
+    "first_paint_ms": perf.get("paint"),
   }
   fail = lambda rule, detail, key: res["failures"].append({"rule": rule, "detail": detail, "key": key})  # noqa: E731
+  for e in perf.get("load_loaf", []):
+    if e["duration"] > budgets["loaf_ms"]:
+      fail("load-frame", f"{e['duration']:.0f} ms frame at {e['start'] / 1000:.1f}s, before the first paint", "load")
+  if s["first_paint_ms"] is not None and s["first_paint_ms"] > budgets["first_paint_ms"]:
+    fail("first-paint", f"first contentful paint at {s['first_paint_ms']:.0f} ms > {budgets['first_paint_ms']} ms", "first paint")
   for e in perf["loaf"]:
     if e["duration"] > budgets["loaf_ms"]:
       top = sorted(e["scripts"], key=lambda x: -x["duration"])[:3]
@@ -324,7 +334,9 @@ def check(res, budgets):
 
 
 def passed(res, perf=True):
-  return not any(perf or f["rule"] not in report.PERF_RULES for f in res["failures"]) and not any(e["kind"] in FATAL for e in res["events"])
+  """no failure counts (perf ones only when perf is on; info ones never) and no fatal event"""
+  counts = lambda f: (perf or f["rule"] not in report.PERF_RULES) and report.SEVERITY.get(f["rule"]) != report.INFO  # noqa: E731
+  return not any(map(counts, res["failures"])) and not any(e["kind"] in FATAL for e in res["events"])
 
 
 def baseline_jank(browser):
