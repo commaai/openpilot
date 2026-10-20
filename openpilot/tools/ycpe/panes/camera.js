@@ -1,6 +1,7 @@
 // the camera pane: qcamera through hls.js, or full-res road/wide/driver video decoded in a worker (WebCodecs,
 // else wasm). It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
 // Each open camera publishes its segments to status.js; while the playhead waits on one, the pane says so.
+// Once logs are loading, the onroad alert at the playhead shows over the picture, as in cabana.
 import {api, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
@@ -13,6 +14,7 @@ import {frameRenderer} from "/data/video/gl.js";
 await css(new URL("./camera.css", import.meta.url));
 
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
+const ALERT_STATUS = ["normal", "prompt", "critical"];  // selfdriveState.alertStatus
 const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
 const SEGMENT = 60;       // seconds
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
@@ -37,9 +39,23 @@ export function create(ctx, state) {
   let overlaid = "";
   const picker = h("select", {class: "camera-picker", title: "Camera", onchange: (e) => use(e.target.value)},
     Object.entries(CAMERAS).map(([k, label]) => h("option", {value: k}, label)));
+  const alertEl = h("div", {class: "camera-alert", hidden: true});
+  let alerted = "";
   const el = h("div", {class: "camera-pane"});
-  const pane = {name: "camera", el, render: () => source.render(), resize() {}, save: () => ({camera}), dispose,
+  const pane = {name: "camera", el, render() { source.render(); showAlert(); }, resize() {}, save: () => ({camera}), dispose,
     stats: () => source.stats};
+
+  // selfdriveState's alert at the playhead; the DOM changes only with it
+  function showAlert() {
+    const store = ctx.peekStore(), at = (f) => store.valueAt(`/selfdriveState/${f}`, ctx.clock.t);
+    const text = store && at("alertSize") ? [at("alertText1"), at("alertText2")].filter(Boolean).join("\n") : "";
+    const status = text ? ALERT_STATUS[at("alertStatus")] || "normal" : "";
+    if (`${status} ${text}` === alerted) return;
+    alerted = `${status} ${text}`;
+    alertEl.hidden = !text;
+    alertEl.textContent = text;
+    alertEl.dataset.status = status;
+  }
 
   // the overlay over the last frame, dimmed: text with a progress bar at f (0..1), text alone (f null), or nothing
   const cover = (text, f) => {
@@ -70,7 +86,7 @@ export function create(ctx, state) {
     source = src;
     ui.say(why);
     ui.absent(null);
-    el.replaceChildren(src.el, overlay, picker, note);
+    el.replaceChildren(src.el, alertEl, overlay, picker, note);
     ctx.perf.invalidate(pane);
   }
 
@@ -81,7 +97,10 @@ export function create(ctx, state) {
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
+  let disposed = false;
+  ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane))));  // its alerts
   function dispose() {
+    disposed = true;
     for (const off of offs) off();
     source.dispose();
   }
