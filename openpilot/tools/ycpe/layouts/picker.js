@@ -54,9 +54,9 @@ export function mergeLayout(current, opened, how) {
   return {...current, active: current.tabs.length, tabs: [...current.tabs, ...opened.tabs]};
 }
 
-// this page with the layout in ?layout=
-export function shareUrl(layout) {
-  const url = new URL(location.href);
+// this page (or href) with the layout in ?layout=
+export function shareUrl(layout, href = location.href) {
+  const url = new URL(href, location.href);
   url.searchParams.set("layout", JSON.stringify({ycpe: 1, ...layout}));
   return url.href;
 }

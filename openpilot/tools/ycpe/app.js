@@ -209,7 +209,7 @@ function updateTop() {
       // not on a double-click's second click: that's "+" (or another close button) clicked again after the strip moved
       onclick: (e) => { e.stopPropagation(); if (e.detail < 2) { layout.closeTab(i); updateTop(); } }}, icon("close", 12)))),
   h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
-  h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
+  h("button", {class: "tab add", title: "Layouts: open, import, export, share", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
   refocus(focused);
   // scrolled to once laid out (tabsObserver), and only when the active tab or the tab set changed
   const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
@@ -329,6 +329,9 @@ class Workspace {
         return () => this.storeSubs.delete(fn);
       },
       openRoute: (name) => this.openRoute(name),
+      // for links: this route at the playhead in a view (url), and a view's layout as it is now
+      url: (view) => this.url(view),
+      layoutOf: (view) => this.layouts[view]?.save() ?? savedLayout(view),
     };
   }
 
@@ -422,20 +425,23 @@ class Workspace {
     clearTimeout(this.urlTimer);
     const write = () => {
       if (this.disposed) return;  // left meanwhile
-      const q = new URLSearchParams(location.search);
-      q.set("t", this.clock.t.toFixed(1));
-      q.delete("layout");  // opened once, then it's part of the saved layout
-      if (this.clock.t === 0) q.delete("t");
-      if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
-      // a window narrower than the route stays in the path as connect's "/<start>/<end>" (whole seconds; not on a slice,
-      // which that form can't follow)
-      const [r0, r1] = this.clock.range;
-      const span = !this.route.range && (r0 > 0 || r1 < this.clock.duration) ? `/${Math.floor(r0)}/${Math.ceil(r1)}` : "";
-      const path = `/${routeKey(this.route).replace("|", "/")}${span}/${this.view}`;
-      this.href = `${path}${q.size ? `?${q}` : ""}`;
-      history.replaceState(null, "", this.href);
+      history.replaceState(null, "", this.href = this.url());
     };
     if (now) write(); else this.urlTimer = setTimeout(write, 400);
+  }
+
+  // the path and query of the route at the playhead, in view
+  url(view = this.view) {
+    const q = new URLSearchParams(location.search);
+    q.set("t", this.clock.t.toFixed(1));
+    q.delete("layout");  // opened once, then it's part of the saved layout
+    if (this.clock.t === 0) q.delete("t");
+    if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
+    // a window narrower than the route stays in the path as connect's "/<start>/<end>" (whole seconds; not on a slice,
+    // which that form can't follow)
+    const [r0, r1] = this.clock.range;
+    const span = !this.route.range && (r0 > 0 || r1 < this.clock.duration) ? `/${Math.floor(r0)}/${Math.ceil(r1)}` : "";
+    return `/${routeKey(this.route).replace("|", "/")}${span}/${view}${q.size ? `?${q}` : ""}`;
   }
 
   dispose() {
