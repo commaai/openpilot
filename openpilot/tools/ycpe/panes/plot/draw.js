@@ -15,23 +15,28 @@ export function colors(theme) {
     bg: theme.color("--panel"), grid: a(0.08), zero: a(0.2), text: theme.color("--muted"), fg: theme.color("--fg"),
     playhead: a(0.85), tracker: a(0.4), box: "rgba(252,190,40,.14)", boxEdge: "rgba(232,170,20,.8)",
     invalid: "rgba(201,34,49,.45)", mixed: a(0.12), font: `11px ${theme.color("--mono")}`,
+    // state blocks with a meaning of their own (selfdriveState/state); [color, fill alpha]
+    named: {enabled: [theme.color("--engaged"), 0.3], preEnabled: [theme.color("--engaged"), 0.12], overriding: [theme.color("--override"), 0.3],
+      softDisabling: [theme.color("--alert"), 0.3], disabled: [theme.color("--muted"), 0.14]},
   };
 }
 
-// jotpluggler's state block colors
-const STATE = ["#6f8faf", "#00a36c", "#ffc300", "#c70039", "#7b61ff", "#009688", "#d63031", "#8395a7"];
+// muted state block hues: light fills under --fg labels read in both themes
+const STATE = ["#6f8faf", "#5f9e80", "#b39a5a", "#a8647a", "#8a7fc0", "#4f9a9a", "#b07a5a", "#7f8c99"];
 
 export function nextColor(used) {
   return PALETTE.find((c) => !used.includes(c)) || PALETTE[used.length % PALETTE.length];
 }
 
-export function stateColor(v) {
+// [color, fill alpha] of a state block: by meaning when its label has one, else by value (or a hash of text)
+function stateStyle(v, label, col) {
+  if (col.named[label]) return col.named[label];
   if (typeof v === "string") {
     let x = 0;
     for (let i = 0; i < v.length; i++) x = (x * 31 + v.charCodeAt(i)) | 0;
     v = x;
   }
-  return STATE[Math.abs(v) % STATE.length];
+  return [STATE[Math.abs(v) % STATE.length], 0.26];
 }
 
 // sizes the backing store to the css size at devicePixelRatio; drawing stays in css px
@@ -81,11 +86,14 @@ export function fmtTick(v, step) {
   return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
+// a sample for display: enum names, text, integers as is, other numbers to 5 significant figures
 export function fmtValue(v, names) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
   if (names) return names[v] ?? String(v);
-  return Number.isInteger(v) ? String(v) : String(+v.toPrecision(6));
+  if (Number.isInteger(v) || !isFinite(v)) return String(v);
+  const a = Math.abs(v);
+  return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
 }
 
 // one decimated series ({t, min, max}) in a style; X and Y map time and value to css px
@@ -138,6 +146,7 @@ export function strokeSeries(g, d, X, Y, style, width) {
 
 // labeled state blocks in a row; mixed spans (several states inside a pixel) are gray
 export function drawBlocks(g, blocks, X, y0, y1, names, c) {
+  g.textAlign = "left";
   g.textBaseline = "middle";
   for (const b of blocks) {
     const x0 = X(b.a), x1 = Math.max(X(b.b), x0 + 1);
@@ -146,20 +155,16 @@ export function drawBlocks(g, blocks, X, y0, y1, names, c) {
       g.fillRect(x0, y0, x1 - x0, y1 - y0);
       continue;
     }
-    const color = stateColor(b.v);
-    g.globalAlpha = 0.22;
+    const label = fmtValue(b.v, names), [color, alpha] = stateStyle(b.v, label, c);
+    g.globalAlpha = alpha;
     g.fillStyle = color;
     g.fillRect(x0, y0, x1 - x0, y1 - y0);
     g.globalAlpha = 1;
     g.fillRect(x0, y0, 2, y1 - y0);
-    if (x1 - x0 > 16 && y1 - y0 > 9) {
-      g.save();
-      g.beginPath();
-      g.rect(x0 + 5, y0, x1 - x0 - 9, y1 - y0);
-      g.clip();
+    const text = x1 - x0 > 24 && y1 - y0 > 9 ? ellipsize(g, label, x1 - x0 - 10) : "";
+    if (text.length > 2) {
       g.fillStyle = c.fg;
-      g.fillText(fmtValue(b.v, names), x0 + 6, (y0 + y1) / 2);
-      g.restore();
+      g.fillText(text, x0 + 6, (y0 + y1) / 2);
     }
   }
 }

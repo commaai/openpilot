@@ -295,7 +295,7 @@ export function create(ctx, state = {}) {
       res.forEach((r, k) => {
         const row = rows[st.curves.indexOf(frame.lines[k]?.c)];
         if (!r || !row) return;
-        const f = (x) => fmtValue(+x.toPrecision(4));
+        const f = fmtValue;
         row.append(h("div", {class: "stats"}, `min ${f(r.min)}  max ${f(r.max)}  mean ${f(r.mean)}  std ${f(r.std)}  n ${r.count}  ${f(r.rate)} Hz`));
       });
     }, console.error), 120);
