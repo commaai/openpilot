@@ -1,7 +1,7 @@
 // where a route's files come from: the sources, order and selector syntax of the Python tools
 // (tools/lib/logreader.py, file_sources.py, route.py), plus local files. A source finds, for some segments of one
 // file kind, {url, file, size?}; file is the name the OPFS cache keys on, the same whichever source served it.
-import {api} from "../api.js";
+import {api, auth} from "../api.js";
 
 const setting = (key) => globalThis.localStorage?.getItem(key);
 
@@ -62,77 +62,62 @@ function pySlice(n, start, stop, step) {
   return out;
 }
 
-// ---- requests ----
+// ---- the local daemon (serve.py): sources a browser can't reach, resolved and served from localhost ----
 
-function once(fn) {
-  let p = null;
-  return () => p ||= fn();
-}
-
-// a few HEADs at a time; each URL is asked once. error: the request itself failed (offline, or refused by CORS)
-const heads = new Map();
-const queue = [];
-let inFlight = 0;
-export function head(url) {
-  if (!heads.has(url)) {
-    heads.set(url, new Promise((resolve) => queue.push({url, resolve})));
-    pump();
-  }
-  return heads.get(url);
-}
-function pump() {
-  while (inFlight < 8 && queue.length) {
-    const {url, resolve} = queue.shift();
-    inFlight++;
-    fetch(url, {method: "HEAD"})
-      .then((r) => ({ok: r.ok, size: r.ok ? +r.headers.get("content-length") || null : null, type: r.headers.get("content-type") || ""}),
-        () => ({ok: false, size: null, type: "", error: true}))
-      .then(resolve)
-      .finally(() => { inFlight--; pump(); });
-  }
-}
-
-// eval_source: the first candidate file that exists, per segment
-async function firstExisting(segs, candidates) {
-  const found = new Map();
-  await Promise.all(segs.map(async (seg) => {
-    for (const [file, url] of candidates(seg)) {
-      const r = await head(url);
-      if (r.ok) return found.set(seg, {url, file, size: r.size});
-    }
-  }));
-  return found;
-}
-
-// ---- the local daemon (tools/ycpe/daemon): the sources a browser can't reach, resolved and served from localhost ----
+// /daemon.js is there only when the daemon serves the page
+const local = await import("/daemon.js").then((m) => m.daemon, () => null);
 
 export const daemon = {
-  // its capabilities, or null when the page isn't served by it (a static host answers with index.html)
-  caps: once(async () => {
-    const r = await fetch("/local/caps").catch(() => null);
-    return r?.ok && r.headers.get("content-type")?.includes("json") ? r.json() : null;
-  }),
-  // {segments: {n: {kind: {url, file, size, source}}}, errors: {source: message}}
-  async resolve(sr, segs, kinds, sources) {
-    const r = await fetch("/local/sources/resolve", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({route: sr.route, segs, kinds, sources})});
-    if (!r.ok) throw new Error(`daemon: ${r.status} ${await r.text()}`);
-    return r.json();
-  },
+  // the sources it resolves, or null without it
+  sources: () => local?.present && local.has("sources") ? local.caps.modules.sources.sources : null,
+  // {segments: {n: {kind: {url, file, size, source, cached}}}, missing, errors: {source: message}}; the page's sign-in
+  // stands in for the daemon's own
+  resolve: (sr, segs, kinds, sources) => local.json("/local/sources/resolve", {method: "POST",
+    headers: auth.token() ? {Authorization: `JWT ${auth.token()}`} : {}, body: {route: sr.route, segs, kinds, sources}}),
 };
 
-// a source only the daemon reaches (no CORS, or an internal network); with the daemon, resolveFiles asks it instead
+// a source only the daemon reaches (no CORS, or not this machine's network); with it, resolveFiles asks it instead
 const daemonOnly = async () => {
   throw new Error("needs the local daemon");
 };
 
 // ---- the sources ----
 
+// commaCarSegments (comma_car_segments.py): a route's directory listing in one request, then one LFS batch call for
+// the download URLs of the files asked for. Both answer CORS for any origin (raw/ only for some).
 const ccsRepo = () => setting("ycpe_ccs_repo") || "https://huggingface.co/datasets/commaai/commaCarSegments";
 const ccsBranch = () => setting("ycpe_ccs_branch") || "main";
 const ccsLfs = () => setting("ycpe_ccs_lfs") || ccsRepo();
 
+// "<n>/<file>" → {size, lfs: {oid, size} | undefined}; empty when the route isn't in the dataset
+const ccsTrees = new Map();
+function ccsTree(sr) {
+  if (!ccsTrees.has(sr.route)) {
+    const url = `${ccsRepo().replace("huggingface.co/", "huggingface.co/api/")}/tree/${ccsBranch()}/segments/${sr.dongle}/${sr.logId}?recursive=true`;
+    ccsTrees.set(sr.route, fetch(url).then(async (r) => {
+      if (r.status === 404) return new Map();
+      if (!r.ok) throw new Error(`huggingface.co ${r.status}`);
+      return new Map((await r.json()).filter((e) => e.type === "file").map((e) => [e.path.split("/").slice(-2).join("/"), e]));
+    }, () => {
+      throw new Error("huggingface.co isn't reachable");
+    }));  // a refusal is kept too: asking again won't change it
+  }
+  return ccsTrees.get(sr.route);
+}
+
+async function lfsUrls(objects) {
+  const r = await fetch(`${ccsLfs()}.git/info/lfs/objects/batch`, {
+    method: "POST",
+    headers: {"Accept": "application/vnd.git-lfs+json", "Content-Type": "application/vnd.git-lfs+json"},
+    body: JSON.stringify({operation: "download", transfers: ["basic"], hash_algo: "sha256", objects}),
+  });
+  if (!r.ok) throw new Error(`LFS batch ${r.status}`);
+  return new Map((await r.json()).objects.filter((o) => !o.error).map((o) => [o.oid, o.actions.download.href]));
+}
+
 export const SOURCES = {
+  local: {label: "local disk", daemon: true, find: daemonOnly},
+  device: {label: "device", daemon: true, find: daemonOnly},
   internal: {label: "internal", daemon: true, find: daemonOnly},
   api: {
     label: "comma API",
@@ -148,30 +133,21 @@ export const SOURCES = {
   openpilotci: {label: "openpilotci", daemon: true, find: daemonOnly},
   carSegments: {
     label: "commaCarSegments",
-    // raw files are LFS pointers; one batch call turns them all into download URLs
     async find(sr, segs, kind) {
-      const raw = (seg, f) => `${ccsRepo()}/raw/${ccsBranch()}/segments/${sr.dongle}/${sr.logId}/${seg}/${f}`;
-      const found = await firstExisting(segs, (seg) => KINDS[kind].map((f) => [f, raw(seg, f)]));
-      if (!found.size && segs.length && (await head(raw(segs[0], KINDS[kind][0]))).error) {
-        throw new Error("huggingface.co refused this origin (it answers CORS for localhost:3000)");
+      const tree = await ccsTree(sr);
+      const found = new Map();
+      for (const n of segs) {
+        const file = KINDS[kind].find((f) => tree.has(`${n}/${f}`));
+        if (!file) continue;
+        const {size, lfs} = tree.get(`${n}/${file}`);
+        // a file not in LFS yet is served raw
+        found.set(n, {url: lfs ? null : `${ccsRepo()}/raw/${ccsBranch()}/segments/${sr.dongle}/${sr.logId}/${n}/${file}`, file, size: lfs?.size ?? size, lfs});
       }
-      const pointers = new Map();
-      await Promise.all([...found].map(async ([seg, f]) => {
-        if (!(await head(f.url)).type.startsWith("text/plain")) return;  // not in LFS yet: the raw file is the file
-        const m = (await (await fetch(f.url)).text()).match(/^version https:\/\/git-lfs\.github\.com\/spec\/v1\noid sha256:([0-9a-f]{64})\nsize (\d+)/);
-        if (m) pointers.set(seg, {oid: m[1], size: +m[2]});
-      }));
-      if (!pointers.size) return found;
-      const r = await fetch(`${ccsLfs()}.git/info/lfs/objects/batch`, {
-        method: "POST",
-        headers: {"Accept": "application/vnd.git-lfs+json", "Content-Type": "application/vnd.git-lfs+json"},
-        body: JSON.stringify({operation: "download", transfers: ["basic"], hash_algo: "sha256", objects: [...pointers.values()]}),
-      });
-      if (!r.ok) throw new Error(`LFS batch ${r.status}`);
-      const hrefs = new Map((await r.json()).objects.filter((o) => !o.error).map((o) => [o.oid, o.actions.download.href]));
-      for (const [seg, {oid, size}] of pointers) {
-        if (hrefs.has(oid)) found.set(seg, {...found.get(seg), url: hrefs.get(oid), size});
-        else found.delete(seg);
+      const pointers = [...found.values()].filter((f) => f.lfs);
+      const hrefs = pointers.length ? await lfsUrls(pointers.map(({lfs}) => ({oid: lfs.oid, size: lfs.size}))) : new Map();
+      for (const [n, {lfs, ...f}] of found) {
+        if (lfs && !hrefs.has(lfs.oid)) found.delete(n);
+        else found.set(n, lfs ? {...f, url: hrefs.get(lfs.oid)} : f);
       }
       return found;
     },
@@ -184,18 +160,20 @@ export const AUTO = ["internal", "api", "openpilotci", "carSegments"];
 export const routeSource = {
   get: (route) => setting(`ycpe_source:${route}`) || "auto",
   set: (route, name) => name === "auto" ? localStorage.removeItem(`ycpe_source:${route}`) : localStorage.setItem(`ycpe_source:${route}`, name),
-  list: (name) => name === "auto" ? AUTO : [name],
+  list: (name) => name === "auto" ? "auto" : [name],
 };
 
 // file_sources' walk: for each kind, each source in turn on the segments still without it. Partial results are kept,
-// not raised. → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
-export async function resolveFiles(sr, segs, kinds, sources = AUTO) {
+// not raised. "auto" is the daemon's order, or without it AUTO's sources a browser reaches.
+// → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
+export async function resolveFiles(sr, segs, kinds, sources = "auto") {
   const found = new Map(), errors = {};
-  if (await daemon.caps()) {
+  if (daemon.sources()) {
     const r = await daemon.resolve(sr, segs, kinds, sources);
     for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, f);
     return {found, errors: r.errors || {}};
   }
+  if (sources === "auto") sources = AUTO.filter((name) => !SOURCES[name].daemon);
   await Promise.all(kinds.map(async (kind) => {
     let need = segs;
     for (const name of sources) {
@@ -213,7 +191,7 @@ export async function resolveFiles(sr, segs, kinds, sources = AUTO) {
 
 // logreader.auto_source: rlogs (qlogs for /q) for every segment; /a, the default here, falls back to qlogs for what no
 // source has as an rlog. → {logs: Map n → {url, file, size, source, kind}, missing: [n], errors}
-export async function resolveLogs(sr, segs, {sources = AUTO, mode = sr.selector || "a"} = {}) {
+export async function resolveLogs(sr, segs, {sources = "auto", mode = sr.selector || "a"} = {}) {
   const logs = new Map(), errors = {};
   let need = segs;
   for (const kind of mode === "q" ? ["qlog"] : mode === "r" ? ["rlog"] : ["rlog", "qlog"]) {

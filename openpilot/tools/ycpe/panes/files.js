@@ -21,7 +21,8 @@ export function create(ctx) {
   const segs = route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
   let source = routeSource.get(route.fullname);
   let found = new Map(), errors = {}, asked = new Set(), gen = 0;  // gen drops answers for a source no longer picked
-  let up = null, apiFiles = new Set(), height = 0, dirty = true, alive = true;
+  let up = null, apiFiles = new Set(), height = 0, alive = true;
+  let dirty = true, stale = new Set();  // every row and the header redraw, or just these segments' rows
   const rows = new Map();  // row index → element on screen
   const saving = {};  // kind → "done/total" while a download-all runs
 
@@ -38,14 +39,19 @@ export function create(ctx) {
   const sized = new ResizeObserver(([e]) => { height = e.contentRect.height; perf.invalidate(pane); });
   sized.observe(scroller);
 
-  const changed = () => { dirty = true; perf.invalidate(pane); };
+  const changed = (ns) => {
+    if (ns) for (const n of ns) stale.add(n);
+    else dirty = true;
+    perf.invalidate(pane);
+  };
 
-  daemon.caps().then((caps) => {
-    picker.replaceChildren(h("option", {value: "auto"}, `auto (${AUTO.map(label).join(" → ")})`),
-      Object.entries(SOURCES).map(([name, s]) => h("option", {value: name, disabled: s.daemon && !caps},
-        s.daemon && !caps ? `${s.label} (needs the local daemon)` : s.label)));
-    picker.value = source;
-  });
+  const served = daemon.sources() || [];
+  picker.append(h("option", {value: "auto"}, served.length ? "auto" : `auto (${AUTO.filter((n) => !SOURCES[n].daemon).map(label).join(" → ")})`),
+    ...Object.entries(SOURCES).map(([name, s]) => {
+      const off = s.daemon && !served.includes(name);
+      return h("option", {value: name, disabled: off}, off ? `${s.label} (needs the local daemon)` : s.label);
+    }));
+  picker.value = source;
 
   function pick(name) {
     source = name;
@@ -64,7 +70,7 @@ export function create(ctx) {
     if (g !== gen) return;
     for (const [k, f] of r.found) found.set(k, f);
     Object.assign(errors, r.errors);
-    changed();
+    changed(batch);
   }
 
   // what's uploaded decides what can be requested, whichever source is shown
@@ -164,13 +170,14 @@ export function create(ctx) {
         row = body.appendChild(h("div", {class: "fp-row", style: `transform: translateY(${i * ROW}px)`}));
         rows.set(i, row);
         fill(row, segs[i]);
-      } else if (dirty) {
+      } else if (dirty || stale.has(segs[i])) {
         fill(row, segs[i]);
       }
       if (!asked.has(segs[i])) want.push(segs[i]);
     }
-    if (dirty) updateHead();
+    if (dirty || stale.size) updateHead();
     dirty = false;
+    stale.clear();
     if (want.length && height) resolve(want);
   }
 
