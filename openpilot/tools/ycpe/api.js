@@ -181,6 +181,13 @@ export const api = {
   },
   leaveDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/del_user`, {body: {}}),
   unpairDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/unpair`),
+  // a form post, as connect sends it; its 401 is the device's pair token failing, not ours, so never auth.expired
+  async pilotPair(pairToken) {
+    const resp = await fetch(`${apiHost()}/v2/pilotpair/`, {method: "POST", headers: {Authorization: `JWT ${auth.token()}`},
+      body: new URLSearchParams({pair_token: pairToken})});
+    if (!resp.ok) throw new ApiError(resp.status, await resp.text());
+    return resp.json();
+  },
   // the owner's comma prime billing; 403 and 404 mean there's none this account can see
   primeSubscription: (dongleId) => get("v1/prime/subscription", {dongle_id: dongleId})
     .catch((e) => { if (e.status === 403 || e.status === 404) return null; throw e; }),

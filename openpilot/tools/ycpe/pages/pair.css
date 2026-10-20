@@ -1,0 +1,45 @@
+/* pairing (pair.js): the add-device and pair-link dialogs, and the no-device screen */
+.pair-dialog { width: 400px; max-width: 90vw; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+.pair-dialog::backdrop { background: rgba(0,0,0,.5); }
+.pair-dialog:focus-visible { outline: none; }  /* it holds the focus only so that nothing in it is drawn focused */
+.pair-card { padding: 14px 16px 16px; }
+.pair-head { display: flex; align-items: baseline; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.pair-head h2 { margin: 0; font-size: 16px; }
+.pair-head .icon-btn { margin-left: auto; align-self: center; }
+.pair-body > p { margin: 0 0 8px; }
+.pair-body .button { margin: 0; }
+
+/* the camera, a square to hold the code in, and what pairing says over it */
+.pair-video { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 6px; background: #000; }
+.pair-video video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pair-frame { position: absolute; top: 50%; left: 50%; height: 66.67%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; }
+.pair-frame i { position: absolute; width: 25%; height: 25%; border: 0 solid #fff; }
+.pair-frame i:nth-child(1) { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.pair-frame i:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.pair-frame i:nth-child(3) { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+.pair-frame i:nth-child(4) { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.pair-status { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: rgba(0,0,0,.8); color: #fff; text-align: center; font-size: 14px; overflow-wrap: anywhere; }
+.pair-status[hidden] { display: none; }
+.pair-status p { margin: 0; }
+.pair-status .button { border-color: transparent; border-radius: 18px; background: #fff; color: #1c2024; }  /* connect's white pill */
+.pair-status .button:hover { background: rgba(255,255,255,.7); }
+.pair-status.inline { position: static; align-items: flex-start; padding: 8px 0 0; background: none; color: inherit; text-align: left; font-size: inherit; }
+.pair-status.inline .button { border-color: var(--line); background: var(--raised); color: var(--fg); }
+.spinner.big { width: 28px; height: 28px; border-width: 3px; }
+.pair-paste { display: flex; align-items: flex-end; gap: 6px; margin-top: 12px; }
+.pair-paste label { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.pair-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+
+/* connect's NoDeviceUpsell: the copy, then the device */
+.pair-empty { display: flex; flex-direction: column; align-items: center; padding: 64px 16px 32px; }
+.pair-copy { max-width: 384px; font-size: 14px; line-height: 1.6; }
+.pair-copy h2 { margin: 0 0 12px; font-size: 24px; text-align: center; }
+.pair-copy p { margin: 0 0 12px; }
+.pair-copy ul { margin: 0 0 12px; padding-left: 22px; }
+.pair-add { display: block; width: 100%; margin: 8px 0 0; padding: 8px 16px; border-color: var(--fg); border-radius: 18px; background: var(--fg); color: var(--bg); font-weight: 600; }  /* connect's white pill, dark by day */
+.pair-add:hover { background: var(--fg); opacity: .8; }
+.pair-add.row { display: flex; align-items: center; justify-content: space-between; margin: 0; border: 0; border-radius: 0; background: none; color: inherit; }
+.pair-add.row:hover { background: var(--hover); opacity: 1; }
+.pair-add.row svg { opacity: .3; }
+.pair-device { width: 100%; max-width: 768px; height: auto; margin-top: 16px; padding: 16px; }
+@media (max-width: 640px) { .pair-empty { padding-top: 16px; } }

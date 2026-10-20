@@ -192,7 +192,9 @@ function topBar() {
       onpointerenter: () => prefetchDevice(d.dongle_id)},
       onlineMark(d), h("span", {}, fmt.deviceName(d)), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
     !state.devices?.length && h("div", {class: "menu-row muted"},
-      !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
+      !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"),
+    auth.isAuthenticated() && h("button", {class: "menu-row", onclick: () => { close(); import("/pages/pair.js").then((m) => m.openPair()); }},
+      icon("add", 14), h("span", {}, "Add device")))));
   bar.route.addEventListener("click", () => {
     if (!ws || ws.session) return;
     hideAnatomy();
@@ -756,6 +758,8 @@ async function renderPage() {
   }
   // connect's ?r=<path>: go there, through sign-in when signed out
   if (q.has("r")) return go(auth.isAuthenticated() ? safe(q.get("r")) : loginPath(safe(q.get("r"))), true);
+  // a device's pair link (connect's ?pair=): pairs over the page it names, through sign-in when signed out
+  if (q.has("pair") && (await import("/pages/pair.js")).handlePairLink(q)) return render();
   if (auth.isAuthenticated() && !state.devices) {
     updateTop();
     document.body.classList.add("loading");
@@ -836,6 +840,9 @@ async function renderPage() {
     main.replaceChildren(errorPage(state.devicesError, {retry: true}));
   } else if (state.devices?.length === 1) {
     go(`/${state.devices[0].dongle_id}`, true);
+  } else if (auth.isAuthenticated() && !state.devices?.length) {
+    const {noDevices} = await import("/pages/pair.js");  // only accounts without a device see it
+    if (id === navId) main.replaceChildren(homePage(state.devices, noDevices()));
   } else {
     main.replaceChildren(homePage(state.devices));
   }
