@@ -116,7 +116,9 @@ function lane(camera) {
 
 // hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page.
 // It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash. It downloads right
-// away but runs in idle time: its ~20 ms evaluation would otherwise pile onto the busy frames of a cold load.
+// away but runs in idle time: its ~20 ms evaluation would otherwise pile onto the busy frames of a cold load. (Chrome's
+// native HLS would skip it, but its player stalls the compositor ~65 ms on every start, and hangs on a seek past the
+// video's last frame.)
 let hlsReady = null;
 const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
   const attrs = {integrity: HLS_SRI, crossorigin: "anonymous"};
@@ -126,7 +128,8 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
 // The segment's thumbnail stands in until the first frame arrives. Where the route has no qcamera file there's
-// nothing to wait for: the pane says so, and with none at all it doesn't load a player.
+// nothing to wait for: the pane says so, and with none at all it doesn't load a player. A segment that fails to
+// load stops the player until the next seek, play or reconnect.
 function qcamera(ctx, pane, {wait, absent}) {
   const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {muted: true, playsinline: true, preload: "auto", poster});
@@ -134,7 +137,8 @@ function qcamera(ctx, pane, {wait, absent}) {
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);
   const loading = new Set();
-  let hls = null, gone = false, files = null, list = null;  // files[k]: slot k's file, once known; list: our playlist's blob URL
+  let hls = null, gone = false, files = null, list = null, src = null;  // files[k]: slot k's file, once known; list: our playlist's blob URL
+  let failed = null, lastT = 0;  // failed: {n, t}, the segment that didn't load and the playhead then
 
   // segments the <video> has buffered, from its time ranges
   const update = () => {
@@ -145,9 +149,15 @@ function qcamera(ctx, pane, {wait, absent}) {
       let have = 0;
       for (let i = 0; i < r.length; i++) have += Math.max(0, Math.min(b, r.end(i)) - Math.max(a, r.start(i)));
       seconds += have;
-      lanes.seg(n, files && !files[n] ? "missing" : have >= 0.98 * (b - a) ? "ready" : loading.has(n) ? "loading" : "idle");
+      lanes.seg(n, files && !files[n] ? "missing" : have >= 0.98 * (b - a) ? "ready" : failed?.n === n ? "error" : loading.has(n) ? "loading" : "idle");
     }
     lanes.bytes({memory: seconds * QCAMERA_BYTES_PER_S});
+  };
+  const retry = () => {
+    if (!failed || gone) return;
+    failed = null;
+    hls.loadSource(src);  // hls.js skips a failed fragment as a gap for good: start over, and render() seeks back
+    update();
   };
   Promise.all([loadHls(), routeCameraFiles(ctx.route, "qcamera").catch(() => null)]).then(([Hls, found]) => {
     if (gone) return;
@@ -155,10 +165,20 @@ function qcamera(ctx, pane, {wait, absent}) {
     update();
     ctx.perf.invalidate(pane);
     if (files && !files.some(Boolean)) return;
-    const src = ctx.route.loose || ctx.route.range ? list = playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
+    src = ctx.route.loose || ctx.route.range ? list = playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
     hls = new Hls({maxBufferLength: 20});
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
     hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
+    hls.on(Hls.Events.ERROR, (e, data) => {
+      // a fragment out of retries isn't fatal when there's no other level to switch to, but it never loads
+      const {retryCount, retryConfig} = data.errorAction || {};
+      if (!data.fatal && !(data.frag && retryConfig && retryCount >= retryConfig.maxNumRetry)) return;  // hls.js retries
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) return hls.recoverMediaError();
+      failed = {n: data.frag?.sn ?? Math.floor(video.currentTime / SEGMENT), t: ctx.clock.t};
+      loading.clear();
+      update();
+      ctx.perf.invalidate(pane);
+    });
     hls.loadSource(src);
     hls.attachMedia(video);
   }, () => absent("hls.js failed to load"));
@@ -166,12 +186,17 @@ function qcamera(ctx, pane, {wait, absent}) {
   // a paused <video> keeps its poster up over the decoded frame until a seek or play
   video.addEventListener("loadeddata", () => video.removeAttribute("poster"), {once: true});
   video.addEventListener("progress", update);
+  const offPlay = ctx.clock.on("play", retry);
+  addEventListener("online", retry);
 
   return {
     el: video,
     render() {
       const {playing, rate} = ctx.clock, t = cameraTime(ctx.peekStore(), ctx.route, "qcamera", ctx.clock.t);
       const n = Math.floor(t / SEGMENT);
+      // a seek retries: any move while paused, a jump while playing
+      if (failed && (playing ? Math.abs(ctx.clock.t - lastT) > 1 : ctx.clock.t !== failed.t)) retry();
+      lastT = ctx.clock.t;
       if (files && !files[n]) {
         lanes.buffering(null);
         absent(files.some(Boolean) ? `no qcamera for segment ${segmentAt(ctx.route, n)}` : "no qcamera for this route");
@@ -179,6 +204,10 @@ function qcamera(ctx, pane, {wait, absent}) {
         return;
       }
       const stalled = video.readyState < 3 && (playing || video.seeking || video.readyState < 2);
+      if (failed && stalled) {
+        lanes.buffering(null);
+        return absent(`segment ${segmentAt(ctx.route, failed.n)} failed to load · seek or play to retry`);
+      }
       const b = stalled && {n, text: `segment ${segmentAt(ctx.route, n)}`};
       lanes.buffering(b || null);
       wait(b);
@@ -195,6 +224,8 @@ function qcamera(ctx, pane, {wait, absent}) {
     },
     dispose() {
       gone = true;
+      offPlay();
+      removeEventListener("online", retry);
       lanes.remove();
       hls?.destroy();
       if (list) URL.revokeObjectURL(list);
