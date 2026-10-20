@@ -1,7 +1,7 @@
 // device settings, as in connect: what the device is, its comma prime status, and (for the owner) unpairing
 import {api, auth} from "../api.js";
-import {h, fmt} from "../dom.js";
-import {isOnline} from "../app.js";
+import {h} from "../dom.js";
+import {onlineMark} from "../app.js";
 
 const DATE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "short", day: "numeric"});
 const day = (unixSeconds) => unixSeconds ? DATE.format(unixSeconds * 1000) : null;
@@ -57,7 +57,6 @@ function unpairSection(device, onUnpaired) {
 }
 
 export function settingsSection(device, onUnpaired) {
-  const online = isOnline(device);
   const access = h("span");
   auth.user().then((me) => { access.textContent = device.is_owner ? "owner" : me?.superuser ? "superuser" : "read"; });
   return h("div", {},
@@ -69,7 +68,7 @@ export function settingsSection(device, onUnpaired) {
       ["serial", device.serial && h("span", {class: "mono"}, device.serial)],
       ["openpilot", device.openpilot_version],
       ["SIM", device.sim_id && h("span", {class: "mono"}, device.sim_id)],
-      ["last seen", online ? "online" : fmt.ago(device.last_athena_ping)],
+      ["last seen", onlineMark(device, "ago")],
       ["your access", access],
     ]),
     h("h3", {}, "comma prime"),

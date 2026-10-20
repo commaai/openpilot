@@ -2,7 +2,7 @@
 import {api, auth, engagedFraction} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {icon} from "../icons.js";
-import {devicesChanged, go, isOnline, link} from "../app.js";
+import {devicesChanged, go, isOnline, link, onlineMark} from "../app.js";
 import {perf} from "../perf.js";
 import {reverseLookup} from "../geocode.js";
 import {deviceMap} from "../panes/map.js";
@@ -14,7 +14,7 @@ import {deviceUploads} from "./files.js";
 import {settingsSection} from "./settings.js";
 
 const DAY = 86400000, HOUR = 3600000;
-const WINDOW = 14 * DAY, LIMIT = 50;
+const WINDOW = 14 * DAY, LIMIT = 50, QUIET = 6;
 
 // the first window ends at the next hour boundary so prefetch and page share a cache key
 const firstWindowEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
@@ -90,8 +90,9 @@ function driveRow(r) {
 
 const drivesHead = () => h("div", {class: "drive-row head"}, ["drive", "time", "distance", "engaged", "from → to", "timeline", "version"].map((c) => h("span", {}, c)));
 
-// newest first, a window at a time; a full window continues from its oldest drive. A date restarts the list from
-// the end of that day, like connect's filter.
+// newest first, a window at a time; a full window continues from its oldest drive. The next window loads as the end
+// of the list scrolls near, until QUIET windows in a row had none (then the button asks for more). A date restarts the
+// list from the end of that day, like connect's filter.
 function drivesSection(dongleId) {
   const body = h("div", {class: "drives"});
   const more = h("button", {class: "button more", onclick: () => loadMore()}, "Older drives");
@@ -99,12 +100,15 @@ function drivesSection(dongleId) {
   const status = h("p", {class: "muted small"});
   const before = h("input", {type: "date", class: "field", title: "Drives up to this day", onchange: () => {
     end = top = before.value ? new Date(`${before.value}T00:00`).getTime() + DAY : firstWindowEnd();
+    quiet = 0;
     body.replaceChildren();
     seen.clear();
     loadMore(++gen);
   }});
-  let end = firstWindowEnd(), top = end, gen = 0;
+  let end = firstWindowEnd(), top = end, gen = 0, quiet = 0;
   const seen = new Set();
+  const near = new IntersectionObserver(([e]) => { if (e.isIntersecting && !more.disabled && quiet < QUIET) loadMore(); }, {rootMargin: "800px 0px"});
+  near.observe(more);
 
   async function loadMore(g = gen) {
     more.disabled = true;
@@ -119,8 +123,12 @@ function drivesSection(dongleId) {
       body.append(driveRow(r));
     }
     end = routes.length === LIMIT ? Math.min(...routes.map((r) => r.start_time_utc_millis)) : start;
+    quiet = routes.length ? 0 : quiet + 1;
     more.disabled = false;
     foot.hidden = false;
+    // observed afresh, it says whether the end is still near
+    near.unobserve(more);
+    near.observe(more);
     if (!routes.length && !body.children.length && top - end < 180 * DAY) return loadMore(g);
     const since = new Date(end).toLocaleDateString();
     status.textContent = body.children.length ? `${body.children.length} drives since ${since}` : `No drives since ${since}`;
@@ -228,13 +236,12 @@ export async function devicePage(dongleId, devices) {
   const el = h("div", {class: "page device-page"},
     h("div", {class: "device-head"},
       h("div", {class: "device-info"},
-        h("h2", {}, h("span", {class: `dot ${online ? "online" : ""}`}), deviceName(device),
-          h("span", {class: `online-pill ${online ? "online" : ""}`, title: online ? "" : `last seen ${fmt.ago(device.last_athena_ping)}`}, online ? "online" : "offline")),
+        h("h2", {}, onlineMark(device), deviceName(device), onlineMark(device, "pill")),
         h("div", {class: "kv"},
           h("span", {class: "mono"}, dongleId),
           device.device_type && h("span", {}, device.device_type),
           device.openpilot_version && h("span", {}, `openpilot ${device.openpilot_version}`),
-          h("span", {}, online ? "online" : `last seen ${fmt.ago(device.last_athena_ping)}`),
+          onlineMark(device, "seen"),
           online && h("a", {href: `/${dongleId}/live`, onclick: link(`/${dongleId}/live`), title: "Stream its cameras and messages"}, "live")),
         stats(dongleId)),
       deviceMap(api.deviceLocation(dongleId).catch(() => null))),

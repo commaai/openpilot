@@ -2,7 +2,7 @@
 import {api, auth} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {icon} from "../icons.js";
-import {isOnline, link} from "../app.js";
+import {link, onlineMark} from "../app.js";
 import {loginPage} from "./login.js";
 import {recentRoutes, routePath} from "./omnibox.js";
 
@@ -88,11 +88,11 @@ export function homePage(devices) {
     h("table", {class: "list devices"},
       h("thead", {}, h("tr", {}, h("th"), h("th", {}, "device"), h("th", {}, "dongle id"), h("th", {}, "type"), h("th", {}, "version"), h("th", {}, "last seen"))),
       h("tbody", {}, devices.map((d) => h("tr", {class: "clickable", onclick: (e) => { if (!e.target.closest("a")) link(`/${d.dongle_id}`)(e); }},
-        h("td", {}, h("span", {class: `dot ${isOnline(d) ? "online" : ""}`})),
+        h("td", {}, onlineMark(d)),
         h("td", {}, h("a", {href: `/${d.dongle_id}`, onclick: link(`/${d.dongle_id}`)}, deviceName(d))),
         h("td", {class: "mono muted"}, d.dongle_id),
         h("td", {class: "muted"}, d.device_type),
         h("td", {class: "muted"}, d.openpilot_version || ""),
-        h("td", {class: "muted"}, isOnline(d) ? "online" : fmt.ago(d.last_athena_ping)))))),
+        h("td", {class: "muted"}, onlineMark(d, "ago")))))),
     localEntry()));
 }

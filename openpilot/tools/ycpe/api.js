@@ -136,29 +136,35 @@ function signedUntil(files) {
   return until;
 }
 
-// reads are cached for the session so revisits never wait on the network; failures are not kept
+// reads are cached for the session (or ttl ms) so revisits never wait on the network; failures are not kept
 const apiCaches = new Set();
-function memo(fn, key = (...args) => JSON.stringify(args)) {
-  const cache = new Map();
+function memo(fn, key = (...args) => JSON.stringify(args), ttl = Infinity) {
+  const cache = new Map(), at = new Map();
   apiCaches.add(cache);
   const wrapped = (...args) => {
     const k = key(...args);
-    if (!cache.has(k)) cache.set(k, fn(...args).catch((e) => { cache.delete(k); throw e; }));
+    if (!cache.has(k) || performance.now() - at.get(k) > ttl) {
+      at.set(k, performance.now());
+      cache.set(k, fn(...args).catch((e) => { cache.delete(k); throw e; }));
+    }
     return cache.get(k);
   };
-  wrapped.prime = (value, ...args) => cache.set(key(...args), Promise.resolve(value));
+  wrapped.prime = (value, ...args) => { at.set(key(...args), performance.now()); cache.set(key(...args), Promise.resolve(value)); };
   wrapped.forget = (...args) => cache.delete(key(...args));
   return wrapped;
 }
 
+// a device record with when it was fetched (s): it says whether the device was online then (app.js isOnline)
+const fetched = (device) => ({...device, fetched_at: Date.now() / 1000});
+
 export const api = {
   me: () => auth.user(),
-  devices: () => get("v1/me/devices/"),
+  devices: () => get("v1/me/devices/").then((list) => list.map(fetched)),
   // signed out, a device is never readable: answer the API's 401 without asking
   device: memo(async (dongleId) => {
     if (!auth.isAuthenticated()) throw new ApiError(401, "signed out");
-    return get(`v1.1/devices/${dongleId}/`);
-  }),
+    return fetched(await get(`v1.1/devices/${dongleId}/`));
+  }, undefined, 60e3),  // its online state ages
   deviceStats: (dongleId) => get(`v1.1/devices/${dongleId}/stats`),
   deviceLocation: memo((dongleId) => get(`v1/devices/${dongleId}/location`)),
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
