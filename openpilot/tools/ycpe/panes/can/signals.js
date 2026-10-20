@@ -157,9 +157,12 @@ function sparkline(canvas, d, color) {
 // the signal in place, but for the field being edited.
 function editor(can, k, m, sg) {
   const commit = (props) => updateSignal(can, k, sg.name, props);
+  // size, start bit and mux value are whole numbers in range, or the field reverts
+  const ints = {size: () => [1, 64], start: () => [0, can.dbcMsg(k).size * 8 - 1], muxValue: () => [0, Infinity]};
   const num = (prop, attrs = {}) => h("input", {type: "number", "data-prop": prop, value: sg[prop], step: "any", ...attrs, onchange: (e) => {
-    const v = parseFloat(e.target.value);
-    if (Number.isFinite(v)) commit({[prop]: v});
+    const v = parseFloat(e.target.value), [lo, hi] = ints[prop]?.() || [-Infinity, Infinity];
+    if (Number.isFinite(v) && v >= lo && v <= hi && (!ints[prop] || Number.isInteger(v))) commit({[prop]: v});
+    else e.target.value = sg[prop];
   }});
   const text = (prop) => h("input", {"data-prop": prop, value: sg[prop], spellcheck: false, onchange: (e) => commit({[prop]: e.target.value.trim()})});
   const check = (prop) => h("input", {type: "checkbox", "data-prop": prop, checked: sg[prop], onchange: (e) => commit({[prop]: e.target.checked})});
@@ -211,6 +214,7 @@ function messageDialog(can, k) {
     field("Name", name), field("Size", size), field("Node", node), field("Comment", comment), error,
     h("button", {class: "can-btn primary", onclick: () => {
       if (!/^\w+$/.test(name.value)) { error.textContent = "Names are letters, digits and underscores"; return; }
+      if (!Number.isInteger(+size.value) || +size.value < 1 || +size.value > 64) { error.textContent = "Size is a whole number of bytes, 1 to 64"; return; }
       const other = can.dbcs.file(busOf(k))?.msgByName(name.value);
       if (other && other !== m) { error.textContent = `${name.value} already exists`; return; }
       editMsg(can, k, `edit message ${name.value}`, (x) => Object.assign(x, {name: name.value, size: +size.value, transmitter: node.value.trim(), comment: comment.value.trim()}));

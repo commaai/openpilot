@@ -54,14 +54,15 @@ export function dbcDialog(can) {
     return slot;
   };
 
+  const fail = (e) => { error.textContent = e.message; };
   const paste = h("textarea", {class: "can-paste", placeholder: "Paste DBC text", spellcheck: false});
   const files = h("div", {class: "can-files"}, can.dbcs.all().map((f) => h("div", {class: "can-file"},
     h("b", {}, f.name), h("span", {class: "can-muted"}, ` ${can.dbcs.buses(f).map((b) => (b < 0 ? "all buses" : `bus ${b}`)).join(", ")} · ${f.msgs.size} messages`),
     h("span", {class: "can-file-actions"},
-      h("button", {class: "can-btn", onclick: () => save(can, f)}, "Save"),
-      h("button", {class: "can-btn", onclick: () => save(can, f, true)}, "Save as"),
+      h("button", {class: "can-btn", onclick: () => save(can, f).catch(fail)}, "Save"),
+      h("button", {class: "can-btn", onclick: () => save(can, f, true).catch(fail)}, "Save as"),
       localSave(f),
-      h("button", {class: "can-btn", onclick: async (e) => navigator.clipboard.writeText(await can.serialize(f)).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
+      h("button", {class: "can-btn", onclick: (e) => can.serialize(f).then((text) => navigator.clipboard.writeText(text)).then(() => { e.target.textContent = "Copied"; }, fail)}, "Copy"),
       h("button", {class: "can-btn", onclick: () => { if (discard([f])) { can.dbcs.close(f); d.close(); } }}, "Close")))));
 
   const d = dialog("DBC files", files,

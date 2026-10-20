@@ -226,6 +226,8 @@ export class DBC {
   generate() {
     const bo = new Map(), cm = new Map(), val = new Map();
     for (const [address, m] of [...this.msgs].sort((a, b) => a[0] - b[0])) {
+      // a fraction would write a file that doesn't parse again
+      if (![m.size, ...m.sigs.flatMap((s) => [s.start, s.size, s.muxValue])].every(Number.isInteger)) fail(`${m.name} has a size or start bit that isn't a whole number`);
       let text = `BO_ ${address} ${m.name}: ${m.size} ${m.transmitter || NODE}\n`;
       if (m.comment) cm.set(`CM_ BO_ ${address}`, `CM_ BO_ ${address} "${quote(m.comment)}";\n`);
       for (const s of m.sigs) {
