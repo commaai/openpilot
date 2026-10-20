@@ -184,7 +184,12 @@ export class Layout {
   paneBox(n) {
     const info = PANES[n.pane] || PANES.empty;
     const title = h("span", {class: "pane-title", hidden: true});
-    const types = h("select", {class: "pane-type", title: "Pane type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}})},
+    // a closed picker would swap the pane on arrow keys or typing; only picking from the open list does
+    const types = h("select", {class: "pane-type", title: "Pane type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
+      onkeydown: (e) => {
+        if (e.key === "Escape") e.target.blur();
+        else if (!e.altKey && !["Enter", " ", "Tab", "F4"].includes(e.key)) e.preventDefault();
+      }},
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
     const btn = (label, tip, fn) => h("button", {class: "pane-btn", title: tip, onclick: fn}, label);
