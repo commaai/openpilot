@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // dumps a log through data/capnp.js in the same shape as dump.py: {service: {t, valid, cols: {path: [value|null]}}}
-// usage: dump.mjs <log> <out.json> [--migrate]
+// usage: dump.mjs <log> <out.json> [--migrate] [--all]
 import fs from "node:fs";
 
 const root = new URL("../../", import.meta.url);
@@ -24,5 +24,10 @@ const [file, dest] = process.argv.slice(2);
 await initCodec();
 const schema = JSON.parse(fs.readFileSync(new URL("data/schema.json", root)));
 const {services} = compact(new Reader(schema).read(decompress(new Uint8Array(fs.readFileSync(file)))));
-if (process.argv.includes("--migrate")) (await import(new URL("data/migrate.js", root))).migrate(services, {}, schema);
+if (process.argv.includes("--migrate")) {
+  const all = process.argv.includes("--all");
+  const {migrate} = await import(new URL("data/migrate.js", root));
+  const {missing} = migrate(services, {}, {managerStates: all, pandaStates: all, cameraStates: all});
+  if (missing.length) console.error(`unavailable: ${missing.join(", ")}`);
+}
 fs.writeFileSync(dest, JSON.stringify(dump(services)));

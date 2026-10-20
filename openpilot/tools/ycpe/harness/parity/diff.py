@@ -43,15 +43,23 @@ def compare(py, js, rtol=0.0):
   return bad, n
 
 
-def run(log, migrate, rtol):
+def by_time(svc):
+  order = sorted(range(len(svc["t"])), key=svc["t"].__getitem__)
+  return {k: [svc[k][i] for i in order] for k in ("t", "valid")} | {"cols": {p: [c[i] for i in order] for p, c in svc["cols"].items()}}
+
+
+def run(log, migrate, all_migrations, rtol):
   events = list(LogReader(log))
   if migrate:
     from openpilot.selfdrive.test.process_replay.migration import migrate_all
-    events = migrate_all(events)
+    events = migrate_all(events, manager_states=all_migrations, panda_states=all_migrations, camera_states=all_migrations)
   py = dump(events)
   with tempfile.NamedTemporaryFile(suffix=".json") as f:
-    subprocess.run(["node", HERE / "dump.mjs", log, f.name] + (["--migrate"] if migrate else []), check=True)
+    flags = (["--migrate"] if migrate else []) + (["--all"] if all_migrations else [])
+    subprocess.run(["node", HERE / "dump.mjs", log, f.name, *flags], check=True)
     js = json.load(f)
+  if migrate:  # migrate_all sorts the log by logMonoTime
+    js = {name: by_time(svc) for name, svc in js.items()}
   return py, compare(py, js, rtol)
 
 
@@ -59,13 +67,14 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("logs", nargs="+")
   parser.add_argument("--migrate", action="store_true")
+  parser.add_argument("--all", action="store_true", help="include the opt-in manager, panda and camera state migrations")
   parser.add_argument("--rtol", type=float, default=0.0, help="tolerance for numbers")
   parser.add_argument("--max", type=int, default=40, help="mismatching paths listed per log")
   args = parser.parse_args()
 
   failed = False
   for log in args.logs:
-    py, (bad, n) = run(log, args.migrate, args.rtol)
+    py, (bad, n) = run(log, args.migrate, args.all, args.rtol)
     print(f"{log}: {len(py)} services, {sum(len(s['cols']) for s in py.values())} paths, {n} values, {len(bad)} mismatching paths")
     for path, (count, i, a, b) in list(bad.items())[:args.max]:
       print(f"  {path}: {count} (first at {i}: py={a!r} js={b!r})")
