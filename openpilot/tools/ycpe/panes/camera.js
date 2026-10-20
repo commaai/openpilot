@@ -1,7 +1,7 @@
 // the camera pane: qcamera through hls.js, or full-res road/wide/driver video decoded in a worker (WebCodecs,
 // else wasm). It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
 // Each open camera publishes its segments to status.js; while the playhead waits on one, the pane says so.
-import {api} from "/api.js";
+import {api, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
 import {status} from "/status.js";
@@ -91,7 +91,7 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
 // The segment's thumbnail stands in until the first frame arrives.
 function qcamera(ctx, pane, {say, wait}) {
-  const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, Math.floor(ctx.clock.t / SEGMENT), "sprite.jpg");
+  const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {muted: true, playsinline: true, preload: "auto", poster});
   const lanes = lane("qcamera");
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
@@ -113,7 +113,7 @@ function qcamera(ctx, pane, {say, wait}) {
     lanes.bytes({memory: seconds * QCAMERA_BYTES_PER_S});
   };
   loadHls().then(async (Hls) => {
-    const src = ctx.route.loose ? await playlist(ctx.route) : api.qcameraUrl(ctx.route);
+    const src = ctx.route.loose || ctx.route.range ? await playlist(ctx.route) : api.qcameraUrl(ctx.route);
     if (gone) return;
     hls = new Hls({maxBufferLength: 20});
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
@@ -129,7 +129,7 @@ function qcamera(ctx, pane, {say, wait}) {
     render() {
       const {t, playing, rate} = ctx.clock;
       const n = Math.floor(t / SEGMENT), stalled = video.readyState < 3 && (playing || video.seeking || video.readyState < 2);
-      const b = stalled && {n, text: `segment ${n}`};
+      const b = stalled && {n, text: `segment ${segmentAt(ctx.route, n)}`};
       lanes.buffering(b || null);
       wait(b);
       if (video.readyState < 1 || video.seeking) return;  // "seeked" renders again with the latest t
@@ -171,7 +171,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
   let stopJobs = null, waitingOn = null;
   const waitText = (b) => {
     const job = jobs.get(b.n), f = job ? job.done / job.total : b.total ? b.loaded / b.total : 0;
-    return {n: b.n, text: `segment ${b.n}${job ? ` · transcoding${job.done ? "" : " · starting"}` : ""}${f ? ` · ${Math.round(100 * f)}%` : ""}`, f};
+    return {n: b.n, text: `segment ${segmentAt(ctx.route, b.n)}${job ? ` · transcoding${job.done ? "" : " · starting"}` : ""}${f ? ` · ${Math.round(100 * f)}%` : ""}`, f};
   };
   const buffering = (b) => {
     waitingOn = b;
@@ -180,7 +180,9 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     wait(w);
   };
 
-  sources(ctx.route, camera).then(({urls, keys, ...src}) => {
+  let real = [];  // each slot's segment
+  sources(ctx.route, camera).then(({urls, keys, segs, ...src}) => {
+    real = segs;
     if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files`);
     lanes.count(urls.length);
     worker.postMessage({urls, keys});
@@ -189,8 +191,8 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     if (!(transcoded = src.transcoded)) return;
     badge();
     stopJobs = daemon.events("/local/jobs/events", (ev, job) => {
-      const {route, seg, camera: cam} = job.meta || {};
-      if (ev !== "job" || job.kind !== "transcode" || route !== ctx.route.fullname || cam !== camera) return;
+      const {route, camera: cam} = job.meta || {}, seg = real.indexOf(job.meta?.seg);  // its timeline slot
+      if (ev !== "job" || job.kind !== "transcode" || route !== ctx.route.fullname || cam !== camera || seg < 0) return;
       if (job.state === "running") {
         jobs.set(seg, job);
         lanes.seg(seg, "loading", {loaded: job.done, total: job.total});
@@ -232,7 +234,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     stats,
     render() {
       if (!ready) return;
-      const n = frameAt(ctx.peekStore(), camera, ctx.clock.t);
+      const n = frameAt(ctx.peekStore(), ctx.route, camera, ctx.clock.t);
       const playing = ctx.clock.playing, back = n < last ? BACK : 0, now = performance.now();
       if (!playing && Math.abs(n - last) > 1) {
         scrubbing = now - jumped < SCRUB_MS;
@@ -288,25 +290,34 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
 
 // the camera's per-segment files from the route's source: the device's HEVC (cached in OPFS under the logs' key
 // scheme), or, when this browser can't decode HEVC in hardware, the local daemon's H.264 transcode, which the daemon
-// caches itself. Loose routes (dropped files, direct links) have just the files they came with.
+// caches itself. Loose routes (dropped files, direct links) have just the files they came with. All of it is by timeline
+// slot (a range plays its segments back to back); segs[k] is slot k's segment.
 async function sources(route, camera) {
   const files = await routeCameraFiles(route, camera), urls = [], keys = [];
-  files.forEach(({url, file}, n) => {
-    urls[n] = url;
-    keys[n] = `${route.fullname.replace("|", "/")}/${n}/${file}`;
+  const segs = Array.from({length: slots(route)}, (_, k) => segmentAt(route, k));
+  files.forEach(({url, file}, k) => {
+    urls[k] = url;
+    keys[k] = `${route.fullname.replace("|", "/")}/${segs[k]}/${file}`;
   });
   const hardware = (await VideoDecoder.isConfigSupported({codec: HEVC, hardwareAcceleration: "prefer-hardware"})).supported;
-  if (hardware || route.loose || !daemon.has("transcode")) return {urls, keys, transcoded: false};
+  if (hardware || route.loose || !daemon.has("transcode")) return {urls, keys, segs, transcoded: false};
   const [dongle, log] = route.fullname.split("|");
-  return {urls: urls.map((u, n) => u && daemon.url(`/local/video/${dongle}/${log}/${n}/${camera}.h264?preset=medium&ahead=2`)), keys: [], transcoded: true};
+  const transcode = (k) => daemon.url(`/local/video/${dongle}/${log}/${segs[k]}/${camera}.h264?preset=medium&ahead=2`);
+  return {urls: urls.map((u, k) => u && transcode(k)), keys: [], segs, transcoded: true};
 }
 
-// an HLS playlist of a loose route's qcamera files, which the API doesn't have; segments it lacks are gaps
+const slots = (route) => route.range ? route.segment_numbers.length : route.maxqlog + 1;
+
+// an HLS playlist of qcamera files by timeline slot, for a loose route (which the API doesn't have) or a range of
+// a route; segments it lacks are gaps, and a jump to a segment not next to the last restarts the timestamps
 async function playlist(route) {
   const files = await routeCameraFiles(route, "qcamera");
   const lines = ["#EXTM3U", "#EXT-X-VERSION:3", `#EXT-X-TARGETDURATION:${SEGMENT}`, "#EXT-X-PLAYLIST-TYPE:VOD"];
-  for (let n = 0; n <= route.maxqlog; n++) {
-    lines.push(`#EXTINF:${SEGMENT},`, ...files[n] ? [] : ["#EXT-X-GAP"], new URL(files[n]?.url ?? `gap${n}.ts`, location.href).href);
+  for (let k = 0, last = null; k < slots(route); k++) {
+    const n = segmentAt(route, k);
+    if (last !== null && n !== last + 1) lines.push("#EXT-X-DISCONTINUITY");
+    lines.push(`#EXTINF:${SEGMENT},`, ...files[k] ? [] : ["#EXT-X-GAP"], new URL(files[k]?.url ?? `gap${n}.ts`, location.href).href);
+    last = files[k] ? n : null;
   }
   lines.push("#EXT-X-ENDLIST");
   return URL.createObjectURL(new Blob([lines.join("\n")], {type: "application/vnd.apple.mpegurl"}));
