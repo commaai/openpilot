@@ -752,15 +752,22 @@ function bin(tt, lo, hi, k0, k1, size, t0, w, min, max) {
   for (let k = k0; k < k1; k++) {
     const time = tt[k * size];
     if (time >= end) {
-      if (b >= 0) [min[b], max[b]] = [a, z];
+      if (b >= 0) {
+        min[b] = a;
+        max[b] = z;
+      }
       b = Math.min(last, Math.floor((time - t0) / w));
       end = b === last ? Infinity : t0 + (b + 1) * w;
-      [a, z] = [min[b], max[b]];
+      a = min[b];
+      z = max[b];
     }
     if (lo[k] < a) a = lo[k];
     if (hi[k] > z) z = hi[k];
   }
-  if (b >= 0) [min[b], max[b]] = [a, z];
+  if (b >= 0) {
+    min[b] = a;
+    max[b] = z;
+  }
 }
 
 // a chunk's last value at or before t
