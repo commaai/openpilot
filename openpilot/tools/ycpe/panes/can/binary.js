@@ -155,6 +155,8 @@ export function create(ctx, state) {
       g.clearRect(0, 0, w, H);
       if (!n) return;
       const color = (x) => ctx.theme.color(x), fg = color("--fg"), muted = color("--muted"), line = color("--line"), accent = color("--accent"), mono = color("--mono");
+      // light text on dark needs dimmer signal fills
+      const fill = ctx.theme.name === "dark" ? [0.25, 0.4] : [0.38, 0.62];
       const d = bytes(), sigs = visible(), cells = coverage(sigs, n);
       const flips = heatKey === key && heat ? heat : new Uint32Array(0);
       const max = Math.max(1, ...flips);
@@ -178,7 +180,7 @@ export function create(ctx, state) {
             g.fillRect(x, y, col, ROW);
           } else if (cover.length) {
             for (const sg of cover) {
-              g.fillStyle = withAlpha(sg.color, 0.38 + heatA * 0.62);
+              g.fillStyle = withAlpha(sg.color, fill[0] + heatA * fill[1]);
               g.fillRect(x, y, col, ROW);
             }
             if (hover && cover.includes(hover)) { g.fillStyle = withAlpha(hover.color, 0.9); g.fillRect(x, y, col, ROW); }
