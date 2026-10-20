@@ -10,7 +10,7 @@ let open = null, opener = null;  // the popup, and what had the focus before it
 export function close() {
   if (open?.contains(document.activeElement)) opener?.focus({preventScroll: true});
   open?.remove();
-  open = null;
+  open = opener = null;
 }
 
 // a floating panel at client (x, y), kept on screen; closes on an outside press or Escape
