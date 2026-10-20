@@ -1,3 +1,5 @@
+export const HEVC = "hev1.1.6.L150.B0";  // the device's encoder: Main profile, level 5
+
 // Annex B elementary streams (the raw HEVC camera files, or H.264) split into access units as bytes arrive
 
 // [slice, first slice of a picture, keyframe, starts a new access unit when it follows a slice]
@@ -48,7 +50,7 @@ export class AnnexB {
   #detect(d, n) {
     this.hevc = ((d[n] >> 1) & 63) === 32 || ((d[n] >> 1) & 63) === 35;
     const hex = (b) => b.toString(16).padStart(2, "0");
-    this.codec = this.hevc ? "hev1.1.6.L150.B0" : (d[n] & 31) === 7 ? `avc1.${hex(d[n + 1])}${hex(d[n + 2])}${hex(d[n + 3])}` : "avc1.64001f";
+    this.codec = this.hevc ? HEVC : (d[n] & 31) === 7 ? `avc1.${hex(d[n + 1])}${hex(d[n + 2])}${hex(d[n + 3])}` : "avc1.64001f";
   }
 
   #close(end) {
