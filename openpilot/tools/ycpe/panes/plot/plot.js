@@ -3,7 +3,7 @@
 // data changes; the overlay (playhead, tracker, zoom box) redraws on every cursor move. Per-frame work is
 // O(pixels): curves come from store.decimate and state blocks from cached runs.
 import {h} from "/dom.js";
-import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, nextColor, ellipsize} from "./draw.js";
+import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
@@ -14,6 +14,33 @@ import {openConsole} from "./console.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
+
+// the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
+const spacing = new Map();  // path → {version, dt}
+function medianInterval(path, s) {
+  const hit = spacing.get(path);
+  if (hit?.version === s.version) return hit.dt;
+  const gaps = [];
+  for (const {tt} of s.chunks) {
+    const step = Math.max(1, (tt.length - 1) / 16);
+    for (let k = 0; k < tt.length - 1; k += step) gaps.push(tt[Math.floor(k) + 1] - tt[Math.floor(k)]);
+  }
+  gaps.sort((a, b) => a - b);
+  const dt = gaps.length ? gaps[gaps.length >> 1] : Infinity;
+  spacing.set(path, {version: s.version, dt});
+  return dt;
+}
+
+// lines break between points further apart than maxDt, or with unloaded time between them; called with
+// increasing times, so the span pointer only moves forward
+function gapTest(maxDt, spans) {
+  let j = 0;
+  return (a, b) => {
+    if (b - a > maxDt) return true;
+    while (j < spans.length && spans[j][1] <= a) j++;
+    return j < spans.length && spans[j][0] < b;
+  };
+}
 
 
 export function create(ctx, state = {}) {
@@ -46,6 +73,7 @@ export function create(ctx, state = {}) {
     clock.on("t", pane.overlay),
     store.on("segment", invalidate),
     store.on("paths", invalidate),
+    view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
   ];
   view.join(pane);
@@ -107,16 +135,23 @@ export function create(ctx, state = {}) {
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
     for (const it of lines) {
       const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
-      it.d = withEdges(store.decimate(it.src, a, b, Math.round(px * 1.1)), a, b, store.valueAt(it.src, a), store.valueAt(it.src, b));
+      const n = Math.round(px * 1.1), d = store.decimate(it.src, a, b, n);
+      // buckets are uniform and may be empty here and there, so a gap is also wider than a couple of them
+      const bucket = d && d.min !== d.max ? (b - a) / n : 0;
+      it.gap = gapTest(Math.max(5 * medianInterval(it.src, it.s), 1, 2.5 * bucket), view.unloaded());
+      it.d = withEdges(d, a, b, store.valueAt(it.src, a), store.valueAt(it.src, b));
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
     return {rows, lines, blockMode};
   }
 
-  // held values at the query edges, so series sparser than the view still reach both sides
+  // held values at the query edges, so series sparser than the view still reach both sides; only where the
+  // edge's logs are loaded, since an unknown span must not show the last value
   function withEdges(d, a, b, va, vb) {
     if (!d) return d;
-    const n = d.t.length, pre = typeof va === "number" && !(d.t[0] <= a), post = typeof vb === "number" && !(d.t[n - 1] >= b);
+    const n = d.t.length;
+    const pre = typeof va === "number" && !(d.t[0] <= a) && !view.isUnloaded(a);
+    const post = typeof vb === "number" && !(d.t[n - 1] >= b) && !view.isUnloaded(b);
     if (!pre && !post) return d;
     const m = n + pre + post, t = new Float64Array(m), min = new Float64Array(m), max = new Float64Array(m);
     t.set(d.t, +pre);
@@ -164,6 +199,7 @@ export function create(ctx, state = {}) {
 
     const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34), xt = ticks(t0, t1, pw / 90);
     axes(g, col, {x: px, y: T, w: pw, h: ph0}, xt, X, (t) => fmtTime(t, xt.step, t1 >= 120), yt, Y);
+    drawUnloaded(g, view.unloaded(), X, {x: px, y: T, w: pw, h: ph0}, col);
 
     // state block rows, labeled in the gutter
     g.save();
@@ -177,7 +213,7 @@ export function create(ctx, state = {}) {
       const {shift, scale, offset} = it;
       g.strokeStyle = g.fillStyle = it.c.color;
       g.globalAlpha = st.hl === undefined || st.curves[st.hl] === it.c ? 1 : 0.35;
-      strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5);
+      strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5, it.gap);
     }
     g.globalAlpha = 1;
     drawInvalid(g, p.lines, X, py + ph);

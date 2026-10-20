@@ -1,4 +1,6 @@
-// shared by every plot pane: the hover tracker, undo/redo of the view, and the series drop target
+// shared by every plot pane: the hover tracker, undo/redo of the view, the series drop target, and the time
+// whose logs aren't loaded
+import {status} from "/status.js";
 
 export const PATHS_MIME = "application/x-ycpe-paths";
 const panes = new Set();  // {overlay(), view, setView(view)}: view is a pane's own part ({y, range})
@@ -15,6 +17,28 @@ export function track(t) {
   tracker = t;
   for (const p of panes) p.overlay();
 }
+
+// route time whose logs aren't in memory, as sorted [t0, t1] spans (segment n is [60n, 60n + 60)); none
+// when nothing publishes log status. onUnloaded(fn) runs fn when the spans change.
+let unloadedSpans = [], unloadedKey = "";
+const unloadedSubs = new Set();
+status.on(() => {
+  const segs = status.kinds().find((k) => k.name === "logs")?.segs || [];
+  const key = segs.map((s) => +(s.state === "ready")).join("");
+  if (key === unloadedKey) return;
+  unloadedKey = key;
+  unloadedSpans = [];
+  segs.forEach((s, n) => {
+    if (s.state === "ready") return;
+    const last = unloadedSpans.at(-1);
+    if (last?.[1] === n * 60) last[1] += 60;
+    else unloadedSpans.push([n * 60, n * 60 + 60]);
+  });
+  for (const fn of unloadedSubs) fn();
+});
+export const unloaded = () => unloadedSpans;
+export function onUnloaded(fn) { unloadedSubs.add(fn); return () => unloadedSubs.delete(fn); }
+export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b);
 
 // call before a view change; changes with the same key within 400 ms (a wheel burst, one drag) are one entry
 export function remember(clock, key = null) {

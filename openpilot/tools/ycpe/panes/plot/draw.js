@@ -14,7 +14,7 @@ export function colors(theme) {
   return {
     bg: theme.color("--panel"), grid: a(0.08), zero: a(0.2), text: theme.color("--muted"), fg: theme.color("--fg"),
     playhead: a(0.85), tracker: a(0.4), box: "rgba(252,190,40,.14)", boxEdge: "rgba(232,170,20,.8)",
-    invalid: "rgba(201,34,49,.45)", mixed: a(0.12), font: `11px ${theme.color("--mono")}`,
+    invalid: "rgba(201,34,49,.45)", mixed: a(0.12), unloaded: a(0.035), hatch: a(0.07), font: `11px ${theme.color("--mono")}`,
     // state blocks with a meaning of their own (selfdriveState/state); [color, fill alpha]
     named: {enabled: [theme.color("--engaged"), 0.3], preEnabled: [theme.color("--engaged"), 0.12], overriding: [theme.color("--override"), 0.3],
       softDisabling: [theme.color("--alert"), 0.3], disabled: [theme.color("--muted"), 0.14]},
@@ -96,27 +96,29 @@ export function fmtValue(v, names) {
   return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
 }
 
-// one decimated series ({t, min, max}) in a style; X and Y map time and value to css px
-export function strokeSeries(g, d, X, Y, style, width) {
+// one decimated series ({t, min, max}) in a style; X and Y map time and value to css px, and the line
+// breaks between consecutive points ta, tb where gap(ta, tb)
+export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
   const {t, min, max} = d, n = t.length;
   if (style !== "dots" && style !== "sticks") {
     const steps = style === "steps";
     g.lineWidth = width;
     g.beginPath();
-    let py = NaN;
+    let py = NaN, pi = -1;
     for (let i = 0; i < n; i++) {
       const lo = min[i];
       if (lo !== lo) continue;
       const x = X(t[i]), a = Y(lo), b = Y(max[i]);
       // a bucket is a vertical span: enter it at the end nearer the previous point
       const [p, q] = Math.abs(a - py) <= Math.abs(b - py) ? [a, b] : [b, a];
-      if (py !== py) g.moveTo(x, p);
+      if (py !== py || gap(t[pi], t[i])) g.moveTo(x, p);
       else {
         if (steps) g.lineTo(x, py);
         g.lineTo(x, p);
       }
       if (q !== p) g.lineTo(x, q);
       py = q;
+      pi = i;
     }
     g.stroke();
   }
@@ -142,6 +144,27 @@ export function strokeSeries(g, d, X, Y, style, width) {
     }
     g.stroke();
   }
+}
+
+// time with no data loaded: a faint band with diagonal hatching, inside the box r
+export function drawUnloaded(g, spans, X, r, c) {
+  const xs = spans.map(([a, b]) => [Math.max(r.x, Math.round(X(a))), Math.min(r.x + r.w, Math.round(X(b)))]).filter(([a, b]) => b > a);
+  if (!xs.length) return;
+  g.save();
+  g.fillStyle = c.unloaded;
+  g.strokeStyle = c.hatch;
+  g.lineWidth = 1;
+  g.beginPath();
+  for (const [x0, x1] of xs) g.rect(x0, r.y, x1 - x0, r.h);
+  g.fill();
+  g.clip();
+  g.beginPath();
+  for (let x = r.x - r.h; x < r.x + r.w; x += 8) {
+    g.moveTo(x, r.y + r.h);
+    g.lineTo(x + r.h, r.y);
+  }
+  g.stroke();
+  g.restore();
 }
 
 // labeled state blocks in a row; mixed spans (several states inside a pixel) are gray
