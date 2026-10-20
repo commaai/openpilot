@@ -5,6 +5,7 @@
 //              idle     available, not asked  loading  downloading or decoding (with loaded/total bytes)
 //              disk     cached on disk only   ready    in memory
 //              error    failed
+// A segment may also say which source its bytes came from (api, internal, openpilotci, car segments, local, …).
 import {h} from "/dom.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -25,12 +26,13 @@ export const status = {
     kinds.set(name, src);
     changed();
     return {
-      seg(n, state, {loaded = 0, total = 0} = {}) {
-        const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0};
-        if (s.state === state && s.loaded === loaded && s.total === total) return;
+      seg(n, state, {loaded = 0, total = 0, source = null} = {}) {
+        const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0, source: null};
+        if (s.state === state && s.loaded === loaded && s.total === total && s.source === source) return;
         s.state = state;
         s.loaded = loaded;
         s.total = total;
+        s.source = source;
         changed();
       },
       count(n) {
@@ -92,7 +94,8 @@ function counts(src) {
 }
 
 const STATE_TEXT = {missing: "not available", idle: "not loaded", queued: "queued", loading: "loading", disk: "on disk", ready: "in memory", error: "failed"};
-export const describe = (s) => s.state === "loading" && s.total ? `${STATE_TEXT.loading} ${Math.round(100 * s.loaded / s.total)}% of ${fmtBytes(s.total)}` : STATE_TEXT[s.state];
+export const describe = (s) => (s.state === "loading" && s.total ? `${STATE_TEXT.loading} ${Math.round(100 * s.loaded / s.total)}% of ${fmtBytes(s.total)}` : STATE_TEXT[s.state])
+  + (s.source ? ` · from ${s.source}` : "");
 
 // the top-bar pill: what's loading or buffering right now, and a panel with every kind's segments
 export function loadPill() {

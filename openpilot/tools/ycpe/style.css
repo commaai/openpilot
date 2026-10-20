@@ -120,12 +120,15 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .split.row > .divider { cursor: col-resize; }
 .split.col > .divider { cursor: row-resize; }
 .divider:hover, .divider:active { background: var(--accent); }
-.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 .pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .pane-type { max-width: 130px; height: 18px; padding: 0 2px; border: 0; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .pane-type:hover { color: var(--fg); }
 .pane-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-.pane-tools { display: flex; margin-left: auto; opacity: .35; transition: opacity .1s; }
+.pane-tools { display: flex; flex-shrink: 0; margin-left: auto; opacity: .35; transition: opacity .1s; }
+.pane-type { min-width: 0; flex-shrink: 1; }
+/* narrow panes keep only maximize and close */
+@container (max-width: 180px) { .pane-tools .pane-btn:nth-child(-n+2) { display: none; } }
 .pane:hover .pane-tools { opacity: 1; }
 .pane-btn { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; line-height: 1; }
 .pane-btn:hover { background: var(--active); color: var(--fg); }

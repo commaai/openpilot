@@ -13,9 +13,9 @@ import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
+import {omnibox, rememberRoute} from "/pages/omnibox.js";
 import {create as routesPane} from "/panes/routes.js";
 
-const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
 export function go(path, replace = false) {
@@ -33,14 +33,13 @@ export function link(path) {
 
 export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
 
-// a route name, dongle id, connect or useradmin URL, typed or pasted anywhere
-function onebox(text) {
-  const s = decodeURIComponent(text.trim());
-  const m = s.match(ROUTE_RE);
-  if (m) return go(`/${m[1]}/${m[2]}${ws ? `/${ws.view}` : ""}`);
-  const d = s.match(/[0-9a-f]{16}/i);
-  if (d) return go(`/${d[0]}`);
-  toast("Enter a route name (dongle|time) or a dongle id");
+// the omnibox (pages/omnibox.js); switching routes keeps the open view
+function searchBox() {
+  return omnibox({
+    go: (path) => go(ws ? path.replace(/^(\/[0-9a-f]{16}\/[^/?]+)(?=\?|$)/, `$1/${ws.view}`) : path),
+    devices: () => state.devices,
+    onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
+  });
 }
 
 function toast(text) {
@@ -75,8 +74,7 @@ const bar = {
 };
 
 function topBar() {
-  const search = h("input", {type: "search", class: "omnibox", placeholder: "route or dongle id  ( / )", spellcheck: false,
-    onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; e.target.blur(); } else if (e.key === "Escape") e.target.blur(); }});
+  const search = searchBox();
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
@@ -112,6 +110,7 @@ function updateTop() {
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
+  if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: () => { layout.selectTab(i); updateTop(); },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
@@ -217,6 +216,7 @@ class Workspace {
   setView(view) {
     if (!VIEWS[view]) view = "drive";
     this.view = view;
+    this.el.dataset.view = view;
     if (!this.layouts[view]) {
       const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
@@ -349,6 +349,7 @@ async function render() {
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      rememberRoute(route);
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);
     } catch (e) {
@@ -380,7 +381,7 @@ function errorPage(e) {
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
-document.getElementById("app").prepend(topBar());
+document.querySelector("#app > .topbar").replaceWith(topBar());
 window.addEventListener("popstate", render);
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice)

@@ -28,8 +28,19 @@
 .list-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
 
 /* home */
+.recent { margin-bottom: 18px; }
+.recent h3 { margin-top: 0; }
 .home { max-width: 420px; margin: 14vh auto; padding: 0 16px; text-align: center; }
 .home h2 { margin: 0 0 6px; font-size: 20px; }
+
+/* omnibox dropdown */
+.omni { position: relative; display: inline-flex; flex-shrink: 1; min-width: 80px; }
+.omni-list { position: absolute; top: 28px; left: 6px; z-index: 60; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.omni-list[hidden] { display: none; }
+.omni-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 8px; border-radius: 4px; text-decoration: none; white-space: nowrap; }
+.omni-row:hover { background: var(--hover); }
+.omni-row.on { background: var(--active); }
+.omni-row .mono { overflow: hidden; text-overflow: ellipsis; }
 
 /* login, auth callback, sign-in card */
 .login { display: flex; justify-content: center; padding: 12vh 16px 32px; }
@@ -95,4 +106,22 @@ a.drive-row:hover { background: var(--hover); }
   .device-map { width: 100%; }
   .drive-row { grid-template-columns: 150px 56px 64px 52px minmax(120px, 1fr); }
   .drive-row > :nth-child(5), .drive-row > :nth-child(7) { display: none; }
+}
+
+/* the drive view on a phone: camera, map and route info stacked in one scroll, the routes list behind the route
+   crumb, the playbar docked below */
+@media (max-width: 760px) {
+  .ws[data-view="drive"] .workspace { display: block; overflow-y: auto; }
+  .ws[data-view="drive"] .layout { display: block; }
+  .ws[data-view="drive"] .split { flex-direction: column; gap: 4px; }
+  .ws[data-view="drive"] .split > * { flex: none !important; }  /* over the layout's inline sizes */
+  .ws[data-view="drive"] .divider, .ws[data-view="drive"] .pane-tools { display: none; }
+  .ws[data-view="drive"] .pane:has(> .pane-body > .routes-pane) { display: none; }
+  .ws[data-view="drive"] .pane-body:has(> .camera-pane) { flex: none; aspect-ratio: 526 / 330; }
+  .ws[data-view="drive"] .pane-body:has(> .map-pane) { flex: none; height: 45vh; }
+  .ws[data-view="drive"] .pane-body:has(> .info-pane) { contain: none; }
+  .ws[data-view="drive"] .info-pane { position: static; overflow: visible; }
+  .ws[data-view="drive"] .playbar > .tbtn:not(.play), .ws[data-view="drive"] .pb-wall { display: none; }
+  .ws[data-view="drive"] .pb-clock { min-width: 0; }
+  .topbar :is(.brand > span, .sep, .views, .tabs, .hud) { display: none; }
 }
