@@ -112,13 +112,22 @@ function openBoot(url, name) {
   const copyBtn = (text) => {
     const btn = h("button", {class: "icon-btn", title: "Copy what's shown", "aria-label": "Copy", onclick: async (e) => {
       e.preventDefault();  // in a section's summary, copying doesn't toggle it
-      await navigator.clipboard.writeText(text());
-      btn.replaceChildren(icon("check", 18));
-      setTimeout(() => btn.replaceChildren(icon("copy", 18)), 1500);
+      let ok = true;
+      try {
+        await navigator.clipboard.writeText(text());
+      } catch {
+        ok = false;
+      }
+      btn.title = ok ? "Copied" : "Couldn't copy: the clipboard was denied";
+      btn.replaceChildren(icon(ok ? "check" : "warning", 18));
+      setTimeout(() => {
+        btn.title = "Copy what's shown";
+        btn.replaceChildren(icon("copy", 18));
+      }, 1500);
     }}, icon("copy", 18));
     return btn;
   };
-  const save = h("a", {class: "icon-btn", "aria-label": "Download as text", title: "Download as text", download: name.replace(/\.zst$/, ".txt")}, icon("download", 20));
+  const save = h("a", {class: "icon-btn", "aria-label": "Download as text", title: "Download as text", download: name.replace(/\.zst$/, ".txt"), hidden: true}, icon("download", 20));
   const body = h("div", {class: "boot-body"}, h("p", {class: "muted"}, "Loading…"));
   let sections = [];
   const dump = (all) => sections.filter((s) => all || !s.el.hidden).map((s) => `==== ${s.title} ====\n${(all ? s.lines : s.shown).join("\n")}\n`).join("\n");
@@ -174,12 +183,14 @@ function openBoot(url, name) {
     });
     apply();
     save.href = URL.createObjectURL(new Blob([dump(true)], {type: "text/plain"}));
+    save.hidden = false;
     body.replaceChildren(bootSummary(b), ...sections.map((s) => s.el));
   }).catch((err) => {
     if (ctl.signal.aborted) return;
     for (const el of head.slice(0, 3)) el.hidden = true;
     // only the raw file is left to download, which may still be of use
     save.href = url;
+    save.hidden = false;
     save.download = name;
     save.title = "Download";
     save.setAttribute("aria-label", "Download");
