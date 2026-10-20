@@ -1,0 +1,16 @@
+{"name": "live-stream-mobile", "url": "/live/local/drive?fake-webrtcd", "timeout": 60000, "viewport": {"width": 390, "height": 844, "mobile": true},
+ "steps": [
+  {"waitFor": {"fn": "document.querySelector('.camera-pane video')?.videoWidth > 0"}, "timeout": 20000},
+  {"waitFor": {"fn": "/^\\d+ ms$/.test(document.querySelector('.live-status span')?.textContent)"}, "timeout": 5000},
+  {"click": ".live-status"},
+  {"wait": 2200},
+  {"shot": "stats"},
+  {"select": [".live-quality", "med"]},
+  {"wait": 200},
+  {"assert": "JSON.stringify(__webrtcd.received) === '[{\"type\":\"livestreamSettings\",\"data\":{\"quality\":\"med\"}}]' || JSON.stringify(__webrtcd.received)"},
+  {"select": [".camera-picker", "dcamera"]},
+  {"waitFor": {"fn": "__webrtcd.camera === 'driver'"}, "timeout": 3000},
+  {"wait": 500},
+  {"assert": "document.querySelector('.live-quality').value === 'med' || 'the quality picked should outlive a camera switch'"},
+  {"shot": "cabin"}
+ ]}

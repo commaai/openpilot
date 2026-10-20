@@ -12,6 +12,7 @@ const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 50
 const BUSY_MS = 30000, BUSY_RETRY_MS = 2000;  // a closed viewer's session lingers on the device until ICE gives up
 export const CAMERAS = ["road", "wideRoad", "driver"];
 
+const FAKE = new URLSearchParams(globalThis.location?.search).has("fake-webrtcd");  // a stand-in for this PC's webrtcd (fake-webrtcd.js)
 const text = new TextDecoder();
 const peers = new Map();  // "local" or a dongle id → Peer
 
@@ -223,6 +224,7 @@ async function signal(target, sdp, needs) {
 
 async function ask(target, sdp, {services, cameras, files}) {
   const enabled = !!(cameras.length || services.length);
+  if (target === "local" && FAKE) return import("./fake-webrtcd.js").then((m) => m.stream({sdp, cameras}));
   if (target === "local") {
     if (!daemon?.has("webrtc")) throw new Error("live data from this PC needs the local daemon (run tools/ycpe/serve.py)");
     // webrtcd's own errors are {error, message}: read here, as daemon.json would keep only the first
