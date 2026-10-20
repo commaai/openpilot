@@ -5,7 +5,6 @@ one's opendbc is <checkout>/opendbc_repo/opendbc/dbc, or the importable opendbc 
 """
 import importlib.util
 import os
-import queue
 import re
 import subprocess
 import threading
@@ -13,7 +12,7 @@ import time
 from functools import cache
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon.core import HTTPError, config, confine, module, route, sse
+from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, config, confine, module, route
 
 DBC_NAME = re.compile(r"^[A-Za-z0-9_.-]+\.dbc\Z")
 MAX_DBC = 8 << 20
@@ -155,7 +154,7 @@ def dbc_write(req):
 
 # change feed: mtimes polled once a second (no inotify dependency)
 
-_watch_subs: set[queue.Queue] = set()
+_changes = Feed()
 _watch_lock = threading.Lock()
 _watcher: threading.Thread | None = None
 
@@ -181,17 +180,14 @@ def _watch() -> None:
   last = _snapshot()
   while True:
     time.sleep(1.0)
-    with _watch_lock:
-      if not _watch_subs:
-        continue
+    if not _changes.subs:
+      continue
     now = _snapshot()
     for path in now.keys() | last.keys():
       if now.get(path) != last.get(path):
         repo, kind, _ = now.get(path) or last[path]
         ev = {"repo": repo, "kind": kind, "file": Path(path).name, "path": path, "deleted": path not in now}
-        with _watch_lock:
-          for q in _watch_subs:
-            q.put(ev)
+        _changes.publish(ev)
     last = now
 
 
@@ -203,18 +199,4 @@ def watch(req):
     if _watcher is None:
       _watcher = threading.Thread(target=_watch, daemon=True, name="repo watch")
       _watcher.start()
-  q: queue.Queue = queue.Queue()
-
-  def events():
-    with _watch_lock:
-      _watch_subs.add(q)
-    try:
-      while True:
-        try:
-          yield "change", q.get(timeout=15)
-        except queue.Empty:
-          yield None
-    finally:
-      with _watch_lock:
-        _watch_subs.discard(q)
-  return sse(events())
+  return _changes.stream("change")
