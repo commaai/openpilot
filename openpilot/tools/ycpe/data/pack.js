@@ -10,8 +10,9 @@ const REC = 9;
 const encoder = new TextEncoder(), decoder = new TextDecoder();
 const align = (x) => (x + 7) & ~7;
 
-// services from compact(); only: {service: RegExp} keeps just those columns; sentEnums: refs already sent
-export function pack(services, enums, only, sentEnums) {
+// services from compact(); only: {service: RegExp} keeps just those columns. The enum names a pack uses go with it:
+// they're small, and a worker may serve several stores
+export function pack(services, enums, only) {
   const out = {services: [], counts: [], bufs: [], paths: [], types: [], consts: [], enums: {}, lists: {}};
   const recs = [];
   for (const [name, s] of Object.entries(services)) {
@@ -28,10 +29,7 @@ export function pack(services, enums, only, sentEnums) {
     for (const [sub, c] of Object.entries(s.cols)) {
       if (only && !only[name].test(sub)) continue;
       const ref = c.names ? enums.indexOf(c.names) : -1;
-      if (ref >= 0 && !sentEnums.has(ref)) {
-        sentEnums.add(ref);
-        out.enums[ref] = c.names;
-      }
+      if (ref >= 0) out.enums[ref] = c.names;
       out.paths.push(`/${name}${sub}`);
       out.types.push(c.type);
       const r = [svc, CONST, 0, 0, -1, 0, 0, ref, 0];

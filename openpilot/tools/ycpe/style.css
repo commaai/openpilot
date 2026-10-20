@@ -1,6 +1,6 @@
 /* ycpe shell: themes, top bar, layout, panes, playback bar */
 :root {
-  --engaged: #178645; --override: #919b95; --alert: #da6f25; --critical: #c92231;
+  --engaged: #178645; --override: #919b95; --alert: #da6f25; --critical: #c92231; --bookmark: #e3b341;
   --font: "Inter", system-ui, sans-serif; --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
   --top: 36px; --head: 22px;
 }
@@ -116,7 +116,7 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .pane:hover .pane-tools { opacity: 1; }
 .pane-btn { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; line-height: 1; }
 .pane-btn:hover { background: var(--active); color: var(--fg); }
-.pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; contain: strict; }  /* a pane's changes never relayout the page */
 .pane-body > * { position: absolute; inset: 0; }
 .empty-pane { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 6px; padding: 12px; }
 .pane-missing { display: flex; align-items: center; justify-content: center; color: var(--muted); }
@@ -145,3 +145,15 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 /* simple pages */
 .page-msg { max-width: 520px; margin: 12vh auto; padding: 0 16px; text-align: center; }
 .page-msg h2 { font-size: 20px; margin: 0 0 8px; }
+
+/* pane docking */
+.pane-head { cursor: grab; }
+body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
+.dock-hint { position: fixed; z-index: 45; border: 2px solid var(--accent); border-radius: 5px; background: var(--loop); pointer-events: none; transition: all .08s ease-out; }
+.tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }
+.help { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); }
+.help-card { min-width: 380px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); box-shadow: var(--shadow); }
+.help dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 10px 0 0; }
+.help dt { text-align: right; white-space: nowrap; }
+.help dd { margin: 0; color: var(--muted); }
+kbd { display: inline-block; min-width: 18px; margin-left: 3px; padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg); font: 11px var(--mono); text-align: center; }

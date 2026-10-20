@@ -1,0 +1,5 @@
+.device-map { position: relative; overflow: hidden; }
+.tilemap { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.tilemap.panning { cursor: grabbing; }
+.tilemap-credit { position: absolute; right: 0; bottom: 0; padding: 0 4px; font-size: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
+.tilemap-credit a { color: var(--muted); text-decoration: none; }

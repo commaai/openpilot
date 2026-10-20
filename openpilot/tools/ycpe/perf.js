@@ -9,12 +9,13 @@ const dirty = new Set();
 const ticks = new Set();
 const frames = [];               // {t, interval, work, panes: {name: ms}}
 const longFrames = [];           // long-animation-frame entries, newest last
+const dropped = [];              // the frames that came late, newest last
 const marks = {};
 let last = 0, drops = 0, frameNo = 0;
 let refresh = 1000 / 60;         // learned display interval
 
 export const perf = {
-  frames, longFrames, marks,
+  frames, longFrames, dropped, marks,
   get drops() { return drops; },
 
   // pane.render(frame) runs once on the next frame
@@ -40,7 +41,11 @@ function loop(now) {
   last = now;
   if (interval < refresh * 1.2) refresh += (interval - refresh) * 0.05;
   const frame = current = {t: now, n: frameNo++, interval, work: 0, panes: {}};
-  if (interval > refresh * 1.5 && !document.hidden) drops += Math.round(interval / refresh) - 1;
+  if (interval > refresh * 1.5 && !document.hidden) {
+    drops += Math.round(interval / refresh) - 1;
+    dropped.push(frame);
+    if (dropped.length > 50) dropped.shift();
+  }
 
   const start = performance.now();
   for (const fn of ticks) fn(frame);
@@ -62,7 +67,9 @@ document.addEventListener("visibilitychange", () => { last = 0; });
 if (PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame")) {
   new PerformanceObserver((list) => {
     for (const e of list.getEntries()) {
+      // layout: style + layout + paint time at the frame's end, where DOM churn shows up
       longFrames.push({t: e.startTime, duration: e.duration, blocking: e.blockingDuration,
+        layout: e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0,
         scripts: e.scripts.map((s) => `${s.sourceFunctionName || s.invoker || "?"} ${s.sourceURL.split("/").pop()}:${s.sourceCharPosition} ${s.duration.toFixed(0)}ms`)});
       if (longFrames.length > 50) longFrames.shift();
     }
@@ -117,7 +124,7 @@ function perfPanel(onClose) {
   const longs = h("div", {class: "perf-longs"});
   const el = h("div", {class: "perf-panel"},
     h("div", {class: "perf-head"}, h("b", {}, "Performance"),
-      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = 0; }}, "reset"),
+      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = dropped.length = 0; }}, "reset"),
       h("button", {class: "link", onclick: () => close()}, "close")),
     chart, table, longs);
   document.body.append(el);
@@ -153,7 +160,7 @@ function perfPanel(onClose) {
       ...rows.map(([k, avg, max]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, avg.toFixed(2)), h("span", {class: max > BUDGET_MS ? "bad" : ""}, max.toFixed(2)))),
       ...Object.entries(marks).map(([k, v]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, String(v)), h("span"))));
     longs.replaceChildren(h("div", {class: "muted"}, `${longFrames.length} long frames`),
-      ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms  ${l.scripts.slice(0, 2).join(" · ")}`)));
+      ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms (layout ${l.layout.toFixed(0)})  ${l.scripts.slice(0, 2).join(" · ")}`)));
   };
   const timer = setInterval(update, 500);
   update();

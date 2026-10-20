@@ -2,16 +2,11 @@
 // columns. Bytes and columns cross to the main thread by transfer, never by copy.
 import {initCodec, withDecompressed} from "../codec/codec.js";
 import {Reader, compact, pattern} from "./capnp.js";
+import {migrate, withKeep} from "./migrate.js";
 import {pack} from "./pack.js";
+import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
-// track 2's column-level migrations plug in here
-const migrate = (services, context) => services;
-
-const ready = Promise.all([
-  initCodec(),
-  fetch(new URL("./schema.json", import.meta.url)).then((r) => r.json()).then((s) => new Reader(s)),
-]).then(([, reader]) => reader);
-const sentEnums = new Set();
+const ready = initCodec().then(() => new Reader(schema));
 
 // compressed logs in OPFS keyed route/segment/file (the signed URLs change), so a revisit makes no requests
 async function file(key, create) {
@@ -59,12 +54,14 @@ async function load(key, url) {
 async function parse(buf, opts) {
   const reader = await ready;
   const t0 = performance.now();
-  let t1, raw;
+  let t1, raw, migrated;
   // the reader walks the decompressed bytes in place, so they never leave wasm memory
   const services = withDecompressed(new Uint8Array(buf), (bytes) => {
     t1 = performance.now();
     raw = bytes.byteLength;
-    return compact(migrate(reader.read(bytes, {keep: opts.keep}), opts.context)).services;
+    const read = reader.read(bytes, {keep: withKeep(opts.keep)});
+    migrated = migrate(read, opts.context, {keep: opts.keep});
+    return compact(read).services;
   });
 
   // times leave in route seconds: every segment repeats the route's initData, whose time is the route start
@@ -80,8 +77,8 @@ async function parse(buf, opts) {
   for (const s of Object.values(services)) for (let k = 0; k < s.t.length; k++) s.t[k] += off;
 
   const only = opts.only && Object.fromEntries(Object.entries(opts.only).map(([name, globs]) => [name, pattern(globs)]));
-  const out = pack(services, reader.schema.enums, only, sentEnums);
-  return {...out, start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
+  const out = pack(services, reader.schema.enums, only);
+  return {...out, ...migrated, start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
