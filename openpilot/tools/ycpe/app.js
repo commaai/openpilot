@@ -17,6 +17,7 @@ import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute} from "/pages/omnibox.js";
 import {create as routesPane} from "/panes/routes.js";
+import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
@@ -121,7 +122,12 @@ function updateTop() {
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
-  h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"));
+  h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
+  h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+}
+
+function layoutMenu(anchor) {
+  menu(anchor, (close) => layoutPicker({current: () => ws.layout.save(), apply: (m) => ws.applyLayout(m), close, name: ws.view}));
 }
 
 function tabMenu(tabEl, i, name) {
@@ -131,6 +137,7 @@ function tabMenu(tabEl, i, name) {
     item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
+    item("Open layout…", () => setTimeout(() => layoutMenu(tabEl))),
     item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
 }
 
@@ -164,6 +171,8 @@ class Workspace {
     this.main = h("div", {class: "workspace"});
     this.el = h("div", {class: "ws"}, this.main, playbar(this.ctx()));
     this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
+    // .json/.xml layouts dropped on the workspace open as new tabs
+    acceptLayoutFiles(this.main, (f) => this.openLayout(f));
     this.setView(view);
   }
 
@@ -219,11 +228,27 @@ class Workspace {
     updateTop();
   }
 
-  resetLayout() {
-    localStorage.removeItem(`ycpe_layout_${this.view}`);
-    this.layout.dispose();
+  // install a whole new model for the view (null: back to the default)
+  applyLayout(model) {
+    if (model) localStorage.setItem(`ycpe_layout_${this.view}`, JSON.stringify(model));
+    else localStorage.removeItem(`ycpe_layout_${this.view}`);
+    this.layout?.dispose();
     delete this.layouts[this.view];
     this.setView(this.view);
+  }
+
+  resetLayout() { this.applyLayout(null); }
+
+  // a layout file, URL or text (ours, jotpluggler's or PlotJuggler's), opened as new tabs
+  async openLayout(src) {
+    try {
+      const {layout, warnings} = await loadLayout(src);
+      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${this.view}`) || "null");
+      this.applyLayout(mergeLayout(this.layout?.save() ?? (saved?.tabs?.length ? saved : VIEWS[this.view].layout), layout, "tab"));
+      if (warnings.length) toast(`Layout opened with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}: ${warnings[0]}${warnings.length > 1 ? " …" : ""}`);
+    } catch (e) {
+      toast(`Couldn't open the layout: ${e.message}`);
+    }
   }
 
   openRoute(name) {
@@ -235,6 +260,7 @@ class Workspace {
     const write = () => {
       const q = new URLSearchParams(location.search);
       q.set("t", this.clock.t.toFixed(1));
+      q.delete("layout");  // opened once, then it's part of the saved layout
       if (this.clock.t === 0) q.delete("t");
       const path = `/${this.route.fullname.replace("|", "/")}/${this.view}`;
       history.replaceState(null, "", `${path}${q.size ? `?${q}` : ""}`);
@@ -332,6 +358,7 @@ async function render() {
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
       rememberRoute(route);
+      if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);
     } catch (e) {
