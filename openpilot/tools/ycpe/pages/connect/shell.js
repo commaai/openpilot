@@ -121,14 +121,18 @@ export function mount(main, {devices, dongle, signedIn}) {
   return content;
 }
 
-// a device: online dot, name and dongle id; its owner (or a superuser) gets connect's settings gear (the device page's
-// settings tab)
+// a device: online dot, name and dongle id; its owner (or a superuser) gets connect's settings gear, which opens its
+// settings modal (pages/settings.js; the device page's settings tab when opened in a new tab)
 function deviceRow(d, on) {
   const path = `/connect/${d.dongle_id}`, settings = `${path}?tab=settings`;
   const row = h("div", {class: `cn-dev ${on ? "on" : ""}`},
     h("a", {href: path, onclick: link(path), onpointerenter: () => prefetchDevice(d.dongle_id), "aria-current": on ? "page" : null},
       onlineMark(d), h("span", {class: "cn-dev-name"}, h("b", {}, fmt.deviceName(d)), h("span", {}, d.dongle_id))));
-  const gear = (ok) => ok && row.append(h("a", {class: "cn-hbtn cn-gear", href: settings, onclick: link(settings), "aria-label": "device settings"}, cnIcon("settings", 24)));
+  const gear = (ok) => ok && row.append(h("a", {class: "cn-hbtn cn-gear", href: settings, "aria-label": "device settings", onclick: (e) => {
+    if (e.metaKey || e.ctrlKey || e.button !== 0) return;
+    e.preventDefault();
+    optional("/pages/settings.js", "settingsModal", d);
+  }}, cnIcon("settings", 24)));
   if (d.is_owner) gear(true); else auth.user().then((me) => gear(!!me?.superuser));
   return row;
 }

@@ -15,6 +15,19 @@
 .account-head { display: flex; flex-direction: column; gap: 2px; max-width: 300px; padding: 6px 8px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
 .account-head b { overflow: hidden; text-overflow: ellipsis; }
 .account-head .account-id .mono { font-size: 11px; }
+/* user mode's: connect's account menu, under the button's right edge */
+.popover:has(> .cn-account) { width: 256px; min-width: 0; max-width: none; max-height: none; padding: 0; overflow: hidden; border: 0; border-radius: 4px;
+  background: #30373b; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); translate: 1px 0; font: 400 16px/24px "Inter", sans-serif; }
+.cn-account-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 16px 16px; color: rgba(255,255,255,.4); font-size: 12px; line-height: 16px; }
+.cn-account-head .cn-account-email { color: #fff; font-size: 16px; font-weight: 700; line-height: 24px; }
+.cn-account-head a { color: #60a5fa; text-decoration: underline; }
+.cn-account-line { height: 1px; background: rgba(255,255,255,.1); }
+.cn-account > :is(a, button) { display: block; width: 100%; padding: 12px 16px; border: 0; background: none; color: #fff; font: inherit; text-align: left;
+  text-decoration: none; cursor: pointer; }
+.cn-account > :is(a, button):hover { background: rgba(255,255,255,.1); }
+.cn-account > :is(a, button):focus:not(:focus-visible) { outline: none; }
+@media (max-width: 639px) { .popover:has(> .cn-account) { width: 224px; } }
+
 .menu-foot { padding: 6px 8px 4px; margin-top: 4px; border-top: 1px solid var(--line); }
 .gift { position: relative; }
 .gift-dot { position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
@@ -36,6 +49,100 @@
 .ref-note { padding: 12px 14px; border-radius: 8px; background: var(--hover); text-align: center; }
 .ref-note p { margin: 0 0 6px; }
 .referrals-page > .small { margin-top: 18px; }
+
+/* user mode's referrals: connect's page (Tailwind's classes, written out) in its dark-only palette */
+.cn-referrals { box-sizing: border-box; width: calc(100% - 40px); max-width: 430px; margin: 0 auto 16px; color: #fff; font: 400 16px/1.5 "Inter", sans-serif; }
+.cn-referrals :is(h1, h2, p, ol, dl, dd) { margin: 0; padding: 0; }
+.cn-referrals h1 { margin: 32px 0; font-size: clamp(2.5rem, 12.5vw, 4rem); font-weight: 700; line-height: 1; letter-spacing: -.055em; }
+.cn-referrals ol { list-style: none; }
+.cn-referrals li { position: relative; display: flex; gap: 14px; padding-bottom: 18px; }
+.cn-referrals li:last-child { padding-bottom: 0; }
+.cn-referrals li > div:last-child { min-width: 0; padding-top: 2px; }
+.cn-referrals li h2 { font-size: 16px; font-weight: 700; line-height: 1.375; }
+.cn-referrals li p { margin-top: 2px; color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.45; }
+.cn-ref-n { position: relative; z-index: 1; display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%;
+  background: #fff; color: #16181a; font-size: 16px; font-weight: 700; line-height: 1; }
+.cn-ref-n span { display: block; line-height: .75; }
+.cn-referrals li:first-child .cn-ref-n span { position: relative; left: -1px; }
+.cn-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.cn-ref-share { position: relative; margin-top: 24px; }
+.cn-ref-hidden { visibility: hidden; pointer-events: none; }
+.cn-ref-white, .cn-ref-claim { box-sizing: border-box; display: block; width: 100%; padding: 12px 24px; border: 1px solid #fff; border-radius: 9999px; background: #fff;
+  color: #16181a; font: 700 16px/24px "Inter", sans-serif; text-align: center; text-decoration: none; cursor: pointer;
+  transition: transform .15s cubic-bezier(.4, 0, .2, 1), background-color .15s cubic-bezier(.4, 0, .2, 1); }
+:is(.cn-ref-white, .cn-ref-claim:not(.off, [aria-disabled=true])):hover { background: rgba(255,255,255,.9); transform: scale(1.02); }
+:is(.cn-ref-white, .cn-ref-claim:not(.off, [aria-disabled=true])):active { transform: scale(.98); }
+.cn-ref-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 0 16px; color: rgba(255,255,255,.45); font-size: 11px; line-height: 16px; }
+.cn-ref-link span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-ref-link button { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: rgba(255,255,255,.5); cursor: pointer; transition: color .15s, background-color .15s; }
+.cn-ref-link button:hover { background: rgba(255,255,255,.1); color: #fff; }
+.cn-ref-link button:active { background: rgba(255,255,255,.15); }
+.cn-ref-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.cn-ref-ring { display: inline-block; box-sizing: border-box; width: var(--size); height: var(--size); border: calc(var(--size) / 12) solid currentColor;
+  border-right-color: transparent; border-radius: 50%; color: #fff; animation: cn-ref-spin 1.4s linear infinite; }
+.cn-ref-claim .cn-ref-ring { color: #16181a; }
+@keyframes cn-ref-spin { to { transform: rotate(360deg); } }
+.cn-ref-unavailable { padding: 16px 0 !important; color: rgba(255,255,255,.55); font-size: 14px; line-height: 20px; text-align: center; }
+.cn-ref-yours { margin-top: 32px; }
+.cn-ref-yours h2 { font-size: 20px; font-weight: 600; line-height: 28px; }
+.cn-ref-mine { position: relative; margin-top: 12px; }
+.cn-ref-box { padding: 16px; border-radius: 14px; background: rgba(255,255,255,.05); text-align: center; }
+.cn-ref-box a, .cn-ref-foot a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.cn-ref-retry { height: 42px; margin-top: 16px; padding: 0 20px; border: 0; border-radius: 9999px; background: #fff; color: #16181a; font: 600 16px/24px "Inter", sans-serif; cursor: pointer; }
+.cn-ref-cash { overflow: hidden; border-radius: 14px; background: rgba(255,255,255,.05); }
+.cn-ref-cash dl > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 15px; }
+.cn-ref-cash dl > div + div { border-top: 1px solid rgba(255,255,255,.1); }
+.cn-ref-cash dt { color: rgba(255,255,255,.6); font-size: 13px; }
+.cn-ref-cash dd { font-size: 18px; font-weight: 700; line-height: 28px; }
+.cn-ref-cash dd.earned { color: oklch(.871 .15 154.449); }
+.cn-ref-claim { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding: 16px 24px; font-size: 18px; line-height: 28px; }
+.cn-ref-claim[aria-disabled=true] { cursor: wait; opacity: .8; }
+.cn-ref-claim.off { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.1); color: rgba(255,255,255,.35); cursor: not-allowed; }
+.cn-ref-foot { margin-top: 12px !important; color: rgba(255,255,255,.5); font-size: 12px; line-height: 16px; text-align: center; }
+/* connect is dark-only, whatever the theme */
+.cn-content:has(> .cn-referrals, > .account-page) { background: #1d2225; }
+
+/* user mode's account page (connect has none: useradmin's profile and token, in the referrals page's look) */
+.cn-content > .account-page { box-sizing: border-box; width: calc(100% - 48px); max-width: 430px; margin: 0 24px 16px; padding: 0; color: #fff;
+  font: 400 16px/1.5 "Inter", sans-serif; --fg: #fff; --muted: rgba(255,255,255,.6); --line: rgba(255,255,255,.1); --hover: rgba(255,255,255,.1); }
+.cn-content > .account-page :is(h2, h3) { margin: 32px 0 12px; color: #fff; font-size: 20px; font-weight: 600; line-height: 28px; letter-spacing: normal; text-transform: none; }
+.cn-content > .account-page .list.settings { display: block; overflow: hidden; border-radius: 14px; background: rgba(255,255,255,.05); }
+.cn-content > .account-page .list.settings tbody { display: block; }
+.cn-content > .account-page .list.settings tr { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 15px; }
+.cn-content > .account-page .list.settings tr + tr { border-top: 1px solid rgba(255,255,255,.1); }
+.cn-content > .account-page .list.settings td { display: flex; min-width: 0; height: auto; padding: 0; overflow: hidden; border: 0; font-size: 14px; }
+.cn-content > .account-page .list.settings td > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-content > .account-page .list.settings td.muted { flex-shrink: 0; color: rgba(255,255,255,.6); font-size: 13px; }
+.cn-content > .account-page .small { font-size: 12px; line-height: 16px; }
+.cn-content > .account-page .muted { color: rgba(255,255,255,.5); }
+.cn-content > .account-page .jwt { gap: 4px; margin: 12px 0 8px; }
+.cn-content > .account-page .jwt .field { height: 19px; padding: 12px 16px; border: 1px solid #272c2f; border-radius: 20px; background: none; color: #fff; font-size: 14px; }
+.cn-content > .account-page .icon-btn { width: 32px; height: 32px; border-radius: 50%; color: rgba(255,255,255,.5); }
+.cn-content > .account-page .icon-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+.cn-content > .account-page .again { margin-top: 16px; }
+.cn-content > .account-page .again .button { height: 42px; padding: 0 20px; border: 0; border-radius: 9999px; background: #fff; color: #16181a; font-size: 16px;
+  font-weight: 600; line-height: 42px; text-decoration: none; }
+.cn-content > .account-page .account-foot { margin-top: 32px; padding-top: 12px; border-color: rgba(255,255,255,.1); color: rgba(255,255,255,.5); font-size: 12px; }
+.cn-content > .account-page a:not(.button) { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+@media (max-width: 520px) { .cn-content > .account-page { width: calc(100% - 40px); margin: 0 auto 16px; } }
+@media (min-width: 521px) { .cn-referrals { width: calc(100% - 48px); } }
+@media (min-width: 1081px) { .cn-referrals { margin-inline: 24px; } }
+
+/* user mode's: connect's Notification over the map's top right */
+.cn-promo-slot { position: relative; z-index: 4; height: 0; }
+.cn-promo { position: absolute; top: 8px; right: 10px; box-sizing: border-box; width: 360px; padding: 12px 16px; border: 1px solid #303639; border-radius: 22px;
+  background: #424a4f; color: #fff; font: 400 16px/24px "Inter", sans-serif; }
+.cn-promo p { margin: 0; color: rgba(255,255,255,.9); font-size: 14px; line-height: 1.46429; }
+.cn-promo-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.cn-promo-head p { color: #fff; font-size: 20px; font-weight: 600; line-height: 31px; }
+.cn-promo-head a { box-sizing: border-box; min-width: 90px; margin-left: 8px; padding: 6px 24px; border-radius: 15px; background: #5e8bff; color: #fff;
+  font-size: 14px; font-weight: 500; line-height: 1.4; text-align: center; text-decoration: none; }
+.cn-promo-head a:hover { background: #547de6; }
+.cn-promo-x { position: absolute; top: -8px; left: -6px; display: grid; place-items: center; box-sizing: border-box; width: 24px; height: 24px; padding: 5px;
+  border: 1px solid #394044; border-radius: 12px; background: #1e2224; color: #fff; cursor: pointer; }
+.cn-promo-x:hover { background: #303639; }
+@media (max-width: 599px) { .cn-promo { left: 8px; width: auto; } }
 
 /* a card over the device page's top right, as connect's promotions sit over its map; scrolls away with the page */
 .ref-promo-slot { position: relative; z-index: 5; max-width: 1280px; height: 0; margin: 0 auto; }

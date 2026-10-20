@@ -232,8 +232,9 @@ function topBar() {
 export function accountButton(cls = "tbtn") {
   const account = h("button", {class: cls, title: "Account", "aria-label": "Account"}, icon("account", cls === "tbtn" ? 16 : 34));
   account.addEventListener("click", async () => {
-    const {accountHead, version, USERADMIN, styled} = await import("/pages/account.js");
+    const {accountHead, version, USERADMIN, styled, connectMenu} = await import("/pages/account.js");
     await styled;
+    if (cls !== "tbtn") return menu(account, (close) => connectMenu(state.me, close, go));  // user mode's is connect's
     menu(account, (close) => {
       const row = (path, label) => h("a", {class: "menu-row", href: path, onclick: (e) => { close(); link(path)(e); }}, label);
       const signedIn = auth.isAuthenticated();
@@ -907,6 +908,7 @@ async function renderPage() {
       (device?.is_owner && !device.prime ? await import("/pages/prime.js").then((m) => m.primeBanner([device])) : null);
     if (promo && id === navId) root.prepend(promo);
   } else if (parts.length) {
+    if (user) return go("/connect", true);  // connect has no "not found": it opens on a device
     root.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
       h("p", {class: "muted"}, !user && "Try a route name or dongle id in the box above, or ", h("a", {href: `${base}/`, onclick: link(`${base}/`)}, "go home"), ".")));
   } else if (state.devicesError) {
