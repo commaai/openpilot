@@ -753,12 +753,16 @@ export class Can {
     const fp = this.store.valueAt?.("/carParams/carFingerprint", Infinity);
     if (!fp) return;
     this.fingerprinted = fp;
-    const name = (await this.opendbc()).fingerprints[fp];
+    const dbcs = (await this.opendbc()).fingerprints[fp];
+    const name = carDbc(dbcs), radar = dbcs?.radar !== name && dbcs?.radar;
     if (!name || this.dbcs.all().length) return;
-    await this.loadOpendbc(name).catch((e) => {
+    const fail = (name) => (e) => {
       this.notice = `${name}.dbc didn't load: ${e.message}`;
       this.emit("notice");
-    });
+    };
+    await this.loadOpendbc(name).catch(fail(name));
+    // every port's radar parser reads bus 1
+    if (radar) await this.loadOpendbc(radar, [1]).catch(fail(radar));
   }
 
   // ---- decoded signals as series: /dbc/<bus>/<Msg>/<Sig> ----
@@ -841,6 +845,9 @@ export class Can {
     this.worker.terminate();
   }
 }
+
+// a fingerprint's dbc_dict's DBC for every bus, as cabana's generate_dbc_json.py: powertrain, else main, else party
+export const carDbc = (dbcs) => dbcs && (dbcs.pt || dbcs.main || dbcs.party);
 
 // a message without derived references, for postMessage
 function plain(m) {
