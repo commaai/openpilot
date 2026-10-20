@@ -36,8 +36,10 @@ button, input, select { font: inherit; color: inherit; }
 .error { color: var(--critical-fg); }
 .link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; }
 .link:hover { text-decoration: underline; }
+.link:focus-visible { outline-offset: 2px; border-radius: 3px; }  /* clear of the text */
 .button { display: inline-block; margin: 4px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised); text-decoration: none; cursor: pointer; }
 .button:hover { background: var(--hover); }
+.button:active { background: var(--active); }
 .chip { padding: 4px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--raised); cursor: pointer; }
 .chip:hover { border-color: var(--accent); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--muted); flex-shrink: 0; }  /* offline: a ring */
@@ -80,6 +82,7 @@ body.in-ws #main { overflow: hidden; }
 .grow { flex: 1; }
 /* the top bar's chips: the load pill, the local badge (local.css) and the HUD */
 .load-pill, .topbar .local-badge, .hud { display: flex; align-items: center; height: 22px; border-radius: 11px; }
+.load-pill:hover, .topbar .local-badge:hover, .hud:hover { border-color: var(--muted); }  /* before the warning borders, which stay */
 .load-pill { position: relative; flex-shrink: 1; min-width: 70px; padding: 0 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: 11px var(--mono); white-space: nowrap; cursor: pointer; overflow: hidden; max-width: 240px; }
 .load-pill > span:first-child { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .load-pill svg { display: block; }
@@ -99,6 +102,7 @@ body.in-ws #main { overflow: hidden; }
 .hud-mem { color: var(--muted); }
 .tbtn { min-width: 24px; height: 24px; padding: 0 5px; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
 .tbtn:hover { background: var(--hover); color: var(--fg); }
+.tbtn:active { background: var(--active); }
 .tbtn.on { color: var(--accent); }
 .hud { flex-shrink: 0; gap: 6px; padding: 0 8px; border: 1px solid var(--line); background: var(--bg); font: 11px var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
 .hud.bad { border-color: var(--critical); }
