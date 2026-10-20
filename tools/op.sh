@@ -91,6 +91,7 @@ function op_install_lfs() {
   local shim
   shim="$(op_lfs_shim)"
   cp "$OPENPILOT_ROOT/scripts/git-lfs" "$shim"
+  cp "$OPENPILOT_ROOT/scripts/lfs_refs.py" "$(dirname "$shim")/lfs_refs.py"
   chmod +x "$shim"
   git -C "$OPENPILOT_ROOT" config --local filter.lfs.clean "$shim clean -- %f"
   git -C "$OPENPILOT_ROOT" config --local filter.lfs.smudge "$shim smudge -- %f"
@@ -130,7 +131,8 @@ function op_check_git() {
   fi
 
   echo "Checking for git lfs..."
-  if cmp -s "$OPENPILOT_ROOT/scripts/git-lfs" "$(op_lfs_shim)"; then
+  if cmp -s "$OPENPILOT_ROOT/scripts/git-lfs" "$(op_lfs_shim)" && \
+     cmp -s "$OPENPILOT_ROOT/scripts/lfs_refs.py" "$(dirname "$(op_lfs_shim)")/lfs_refs.py"; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs shim installed."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs shim missing or outdated! Run 'op setup'"

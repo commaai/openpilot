@@ -32,6 +32,22 @@ source .venv/bin/activate
 scons -u
 ```
 
+## LFS uploads
+
+`op setup` installs a pre-push hook that uploads files with Git LFS, then commits
+their pointers to the HF repository's `lfs-history` branch before allowing the
+Git push. Objects stay referenced at `objects/<first two hash characters>/<sha256>`,
+including older versions. Keep this branch and its entries when cleaning up HF.
+
+The hook uses your Git credentials for HF; uploading new objects requires write
+access to the configured HF repository. Existing references need only read access.
+Downloads still use ordinary Git LFS. Forks using another HF LFS repository get
+their own `lfs-history` branch; other LFS hosts use the normal pre-push hook.
+Run `op setup` again in existing checkouts to install the hook. The CI reference
+check catches missing references when a push bypasses it.
+To repair such a push, run `python3 scripts/lfs_refs.py --sync <ref>` with HF write
+access (or pass `<base> <head>` to include intermediate versions in a commit range).
+
 ## WSL on Windows
 
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Linux. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
