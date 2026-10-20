@@ -471,10 +471,14 @@ export class Can {
   ingest(n, can, off) {
     const {keys, start, t, len, stride} = can;
     // a reloaded segment is already in the summaries
+    let named = false;  // a message the DBC knows showed up for the first time: its signals are new paths
     if (!this.evicted.delete(n)) keys.forEach((k, m) => {
       const a = start[m], b = start[m + 1];
       let s = this.msgs.get(k);
-      if (!s) this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
+      if (!s) {
+        this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
+        named ||= !!this.dbcMsg(k);
+      }
       s.count += b - a;
       s.t0 = Math.min(s.t0, can.t0 + off + t[a]);
       s.t1 = Math.max(s.t1, can.t0 + off + t[b - 1]);
@@ -491,6 +495,7 @@ export class Can {
     this.status?.bytes({memory: this.bytes});
     this.dataVersion++;
     this.emit("messages");
+    if (named) this.store.emit?.("paths");
     for (const c of this.cache.values()) c.stale = true;
   }
 
