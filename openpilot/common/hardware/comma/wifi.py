@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Wi-Fi policy over wpa_supplicant's control socket; no D-Bus or NetworkManager.
 
 The root daemon owns credentials, DHCP and hotspot processes. The UI sends one
