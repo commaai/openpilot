@@ -69,8 +69,9 @@ export function onUnloaded(fn) { unloadedSubs.add(fn); return () => unloadedSubs
 export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b);
 
 // base redraws share BUDGET_MS a frame, so opening a layout or a segment landing spreads over a few frames
-// instead of stalling one: the time left in frame f, from its first redraw
+// instead of stalling one: the time left in frame f, from its first redraw. A redraw starts with MIN_MS left
 const BUDGET_MS = 4;
+export const MIN_MS = 1.5;
 let budget = {frame: null, end: 0};
 export function left(f) {
   if (budget.frame !== f) budget = {frame: f, end: performance.now() + BUDGET_MS};

@@ -149,8 +149,8 @@ export function create(ctx, state = {}) {
     const rows = blockMode ? [...numeric, ...text] : text;
     const lines = blockMode ? [] : numeric;
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
-    for (const [k, it] of lines.entries()) {
-      if (k && view.left(f) <= 0) return null;
+    for (const it of lines) {
+      if (view.left(f) <= 0) return null;
       const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
       const d = decimator.get(it.src, it.s.version, a, b, Math.round(px * 1.1));
       // buckets may be empty here and there, so a gap is also wider than a couple of them
@@ -158,7 +158,14 @@ export function create(ctx, state = {}) {
       it.d = withEdges(d, it.src, a, b);
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
-    return {rows, lines, blockMode};
+    // valid=false spans of the services behind the plain curves
+    const invalid = [];
+    for (const svc of new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]))) {
+      if (view.left(f) <= 0) return null;
+      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
+      if (d) invalid.push(d);
+    }
+    return {rows, lines, blockMode, invalid};
   }
 
   // held values in empty edge buckets, so series sparser than the view still reach both sides; only where the
@@ -237,7 +244,7 @@ export function create(ctx, state = {}) {
     }
     g.globalAlpha = 1;
     g.setLineDash([]);
-    drawInvalid(g, p.lines, X, py + ph);
+    drawInvalid(g, p.invalid, X, py + ph);
     decimator.sweep();
     g.restore();
 
@@ -248,14 +255,10 @@ export function create(ctx, state = {}) {
     return true;
   }
 
-  // valid=false spans of the services behind the curves, as a band along the bottom
-  function drawInvalid(g, lines, X, bottom) {
-    const services = new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]));
+  // valid=false spans, as a band along the bottom
+  function drawInvalid(g, invalid, X, bottom) {
     g.fillStyle = col.invalid;
-    const [t0, t1] = xRange();
-    for (const svc of services) {
-      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
-      if (!d) continue;
+    for (const d of invalid) {
       const w = Math.max(2, X(d.w) - X(0));
       for (let i = 0; i < d.t.length; i++) if (d.min[i] === 0) g.fillRect(X(d.t[i]) - w / 2, bottom - 4, w, 4);
     }
@@ -561,11 +564,11 @@ export function create(ctx, state = {}) {
 
   // ---- pane contract
 
-  // base redraws share the frame's budget: a pane past it keeps its picture this frame, and one that runs out
-  // between curves finishes on a later one
+  // base redraws share the frame's budget: a pane starts only with MIN_MS of it left (else it keeps its picture
+  // this frame), and one that runs out between curves finishes on a later one
   function render(f) {
     if (!gBase) return;
-    if (dirty && view.left(f) > 0) dirty = !drawBase(f);
+    if (dirty && view.left(f) >= view.MIN_MS) dirty = !drawBase(f);
     if (dirty) perf.invalidate(pane);
     drawOverlay();
     updateLegend();
