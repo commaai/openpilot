@@ -3,7 +3,7 @@ import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
-import {canOf, dialog, editMsg, field, ink, removeSignal, subs, updateSignal} from "./common.js";
+import {canOf, dialog, editMsg, field, ink, newMsg, removeSignal, subs, updateSignal} from "./common.js";
 
 const SPARK_W = 80;  // sparkline width
 
@@ -227,11 +227,11 @@ function editor(can, k, m, sg) {
 }
 
 function messageDialog(can, k) {
-  const m = can.dbcMsg(k);
-  const name = h("input", {value: m?.name || `NEW_MSG_${(k % 2 ** 32).toString(16).toUpperCase()}`, spellcheck: false});
-  const size = h("input", {type: "number", min: 1, max: 64, value: m?.size || can.msg(k)?.size || 8});
-  const node = h("input", {value: m?.transmitter || "XXX", spellcheck: false});
-  const comment = h("textarea", {rows: 3}, m?.comment || "");
+  const m = can.dbcMsg(k), x = m || newMsg(can, k);
+  const name = h("input", {value: x.name, spellcheck: false});
+  const size = h("input", {type: "number", min: 1, max: 64, value: x.size});
+  const node = h("input", {value: x.transmitter, spellcheck: false});
+  const comment = h("textarea", {rows: 3}, x.comment);
   const error = h("div", {class: "can-error"});
   const d = dialog(m ? `Edit ${m.name}` : "New message", h("div", {class: "can-form"},
     field("Name", name), field("Size", size), field("Node", node), field("Comment", comment), error,
