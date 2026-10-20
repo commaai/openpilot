@@ -190,7 +190,8 @@ export class Store {
       : seg.loading && !seg.loading.paused ? "loading"
       : seg.status === "done" && seg.bytes ? "ready"
       : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
-    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text: seg.retry ? `retrying (${seg.retry})` : null});
+    const text = state === "error" ? seg.error : seg.retry ? `retrying (${seg.retry})` : null;
+    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text});
     if (seg.n === this.focusSeg) this.buffering();
     this.totals();
   }
@@ -235,10 +236,16 @@ export class Store {
     for (const k in p.ms) pr.ms[k] += p.ms[k];
   }
 
+  // why no segment loaded, once every one has failed; null while any is loaded or loading
+  get failure() {
+    const segs = this.route.segments.filter((s) => s.status !== "missing");
+    return segs.length && segs.every((s) => s.status === "error") ? segs[0].error : null;
+  }
+
   failed(seg, e) {
     if (this.disposed) return;
     seg.status = "error";
-    seg.error = String(e);
+    seg.error = String(e?.message ?? e);
     seg.loading = null;
     this.publish(seg);
     this.progress.failed++;

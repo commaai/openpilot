@@ -29,13 +29,14 @@ export function create(ctx, state = {}) {
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
   const scroller = h("div", {class: "scroller", onscroll: () => perf.invalidate(pane)}, spacer, win);
-  const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
+  const note = h("div", {class: "note", hidden: true});
+  const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), note, scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
 
   // new paths arrive with segments and are added at most once a frame; a new DBC replaces the /dbc branch
   let all = null, done = 0;  // store.paths(), and how many of them the tree has been through
   const changed = () => { all = null; stale = true; perf.invalidate(pane); };
-  const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)),
+  const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)), store.on("progress", () => perf.invalidate(pane)),
     store.can?.on("dbc", () => { drop("/dbc"); changed(); })].filter(Boolean);
 
   // the path tree; a node is {name, path, depth, kids? (sorted), meta?}. New paths are added to the tree as they
@@ -160,6 +161,8 @@ export function create(ctx, state = {}) {
 
   function render() {
     if (stale) build();
+    const failure = !total && store.failure, text = failure ? `Couldn't load the logs: ${failure}` : "";
+    if (note.textContent !== text) [note.textContent, note.hidden] = [text, !failure];
     const first = Math.floor(scroller.scrollTop / ROW), n = Math.min(rows.length - first, Math.ceil(H / ROW) + 1);
     win.style.transform = `translateY(${first * ROW}px)`;
     for (let i = 0; i < Math.max(n, pool.length); i++) {

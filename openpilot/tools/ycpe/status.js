@@ -129,12 +129,13 @@ export function loadPill() {
     const active = all.filter((k) => k.segs.some((s) => s.state === "loading" || s.state === "queued"));
     el.classList.toggle("buffering", !!waiting);
     el.classList.toggle("done", !waiting && !active.length);
-    const each = all.map((k) => { const n = counts(k); return {n, text: `${k.label} ${n.ready + n.disk}/${n.total}`}; });
+    const each = all.map((k) => { const n = counts(k); return {n, text: `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}`}; });
+    el.style.color = el.style.borderColor = each.some((e) => e.n.error) && !waiting ? "var(--critical)" : "";
     el.title = `${[...each.map((e) => e.text), ...extra].join(" · ")} (click for details)`;
     if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
     else if (active.length) {
       const k = active[0], n = counts(k);
-      text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
+      text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
       text.textContent = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ") || "✓ loaded";
     }
@@ -165,7 +166,8 @@ function statusPanel(anchor, onClose) {
       const canvas = h("canvas", {class: "status-lane"});
       const info = h("span", {class: "muted"});
       const tip = h("div", {class: "status-tip muted"});
-      rw = {canvas, info, tip, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info), canvas, tip)};
+      const errors = h("div", {class: "status-tip", style: "height: auto; color: var(--critical); white-space: pre-wrap"});
+      rw = {canvas, info, tip, errors, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info), canvas, tip, errors)};
       canvas.addEventListener("pointermove", (e) => {
         const i = Math.floor((e.offsetX / canvas.clientWidth) * k.segs.length), s = k.segs[i];
         rw.tip.textContent = s ? `segment ${i}: ${describe(s)}` : "";
@@ -179,11 +181,13 @@ function statusPanel(anchor, onClose) {
     const kinds = status.kinds();
     body.replaceChildren(...kinds.map((k) => row(k).el));
     for (const k of kinds) {
-      const {canvas, info} = row(k), n = counts(k);
+      const {canvas, info, errors} = row(k), n = counts(k);
       const bits = [`${n.ready} in memory`, n.disk && `${n.disk} on disk`, n.loading && `${n.loading} loading`, n.queued && `${n.queued} queued`,
         n.error && `${n.error} failed`, k.rate && `${fmtBytes(k.rate)}/s`, k.memory && `mem ${fmtBytes(k.memory)}`, k.disk && `disk ${fmtBytes(k.disk)}`,
         k.buffering && `waiting on ${k.buffering.text}`];
       info.textContent = ` ${n.total} segments · ${bits.filter(Boolean).join(" · ")}`;
+      const failed = k.segs.flatMap((s, i) => s.state === "error" ? [`segment ${i}: ${s.text || "failed"}`] : []).join("\n");
+      if (errors.textContent !== failed) errors.textContent = failed;
       const dpr = devicePixelRatio, w = canvas.clientWidth, hgt = 10;
       if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = hgt * dpr; }
       const c = canvas.getContext("2d");
