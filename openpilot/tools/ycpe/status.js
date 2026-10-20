@@ -112,7 +112,7 @@ export const describe = (s) => (s.state === "loading" && s.total ? `${STATE_TEXT
 export function loadPill() {
   const text = h("span");
   const bar = h("span", {class: "pill-bar"}, h("i"));
-  const el = h("button", {class: "load-pill", hidden: true, title: "Loading status (click for details)"}, text, bar);
+  const el = h("button", {class: "load-pill", hidden: true}, text, bar);
   let panel = null;
   const update = () => {
     const all = status.kinds();
@@ -121,11 +121,15 @@ export function loadPill() {
     const active = all.filter((k) => k.segs.some((s) => s.state === "loading" || s.state === "queued"));
     el.classList.toggle("buffering", !!waiting);
     el.classList.toggle("done", !waiting && !active.length);
+    const each = all.map((k) => { const n = counts(k); return {n, text: `${k.label} ${n.ready + n.disk}/${n.total}`}; });
+    el.title = `${each.map((e) => e.text).join(" · ")} (click for details)`;
     if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
     else if (active.length) {
       const k = active[0], n = counts(k);
       text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
-    } else text.textContent = all.map((k) => { const n = counts(k); return `${k.label} ${n.ready + n.disk}/${n.total}`; }).join(" · ");
+    } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
+      text.textContent = each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text).join(" · ") || "✓ loaded";
+    }
     const segs = active.flatMap((k) => k.segs.filter((s) => s.state !== "missing" && s.state !== "idle"));
     const f = segs.length ? segs.reduce((a, s) => a + fill(s), 0) / segs.length : 1;
     bar.hidden = !active.length && !waiting;
