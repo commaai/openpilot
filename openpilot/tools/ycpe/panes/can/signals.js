@@ -3,7 +3,7 @@ import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
-import {canOf, dialog, editMsg, field, removeSignal, subs, updateSignal} from "./common.js";
+import {canOf, dialog, editMsg, field, ink, removeSignal, subs, updateSignal} from "./common.js";
 
 const SPARK_W = 80;  // sparkline width
 
@@ -104,7 +104,7 @@ export function create(ctx, state) {
 
   function label(r, sg) {
     r.sg = sg;
-    r.swatch.style.background = sg.color;
+    r.swatch.style.background = ctx.theme.name === "light" ? ink(sg.color) : sg.color;  // as the charts draw it
     r.name.title = sg.comment || sg.name;
     r.name.textContent = sg.name + (sg.type === MUX ? " (M)" : sg.type === MUXED ? ` (m${sg.muxValue})` : "");
     return r;
@@ -146,6 +146,7 @@ export function create(ctx, state) {
   s.add(can.on("charted", charted));
   s.add(can.on("live", () => { requestSparks(); ctx.perf.invalidate(pane); }));
   s.add(can.on("hover", (name) => { for (const [n, r] of rows) r.row.classList.toggle("hover", n === name); }));
+  s.add(ctx.theme.on(() => { for (const r of rows.values()) label(r, r.sg); }));
   build();
   return pane;
 }
