@@ -767,15 +767,16 @@ export class Can {
     return out;
   }
 
-  // a signal's {path, type, unit?, names?, states?}: its value descriptions are names keyed by physical value, and
-  // ones that describe at least half its raw values make it states, plotted as blocks like an enum
+  // a signal's {path, type, unit?, names?, states?}: its value descriptions are names keyed by physical value. Two or
+  // more make it states, plotted as blocks like an enum, when it's a small integer field (gears, modes) or they
+  // describe at least half its raw values; wider fields with a few described sentinels stay numbers
   meta(path, sig) {
     const hit = this.metas.get(path);
     if (hit?.sig === sig) return hit.meta;
     const meta = {path, type: "f64", ...(sig.unit && {unit: sig.unit})};
     if (sig.vals.length) {
       meta.names = Object.fromEntries(sig.vals.map(([v, d]) => [v * sig.factor + sig.offset, d]));
-      if (sig.vals.length >= 2 && sig.vals.length * 2 >= 2 ** sig.size) meta.states = true;
+      if (sig.vals.length >= 2 && ((sig.factor === 1 && sig.size <= 5) || sig.vals.length * 2 >= 2 ** sig.size)) meta.states = true;
     }
     this.metas.set(path, {sig, meta});
     return meta;
