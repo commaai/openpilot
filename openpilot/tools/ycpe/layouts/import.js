@@ -160,16 +160,29 @@ function pjCurve(el, style, snippets, warnings) {
   const name = el.getAttribute("name"), out = {path: field(name), color: el.getAttribute("color")};
   if (style) out.style = style;
   if (snippets.has(name)) Object.assign(out, {path: `/custom/${name.replaceAll("/", "_")}`, label: name, custom: snippets.get(name)});
-  const t = el.querySelector("transform"), o = t?.querySelector("options");
-  if (t?.getAttribute("name") === "Derivative") {
-    out.transform = {kind: "derivative", param: o?.getAttribute("radioChecked") === "radioCustom" ? num(o, "lineEdit", 0) : 0};
-  } else if (t?.getAttribute("name") === "Scale/Offset") {
+  const t = el.querySelector("transform"), o = t?.querySelector("options"), kind = t?.getAttribute("name");
+  if (kind === "Scale/Offset") {
     Object.assign(out, {scale: num(o, "value_scale", 1), offset: num(o, "value_offset", 0), shift: num(o, "time_offset", 0)});
-  } else if (t && t.getAttribute("name") !== "noTransform") {
-    warnings.push(`${name}: transform "${t.getAttribute("name")}" is not supported`);
+  } else if (PJ_TRANSFORMS[kind]) {
+    const [transform, warning] = PJ_TRANSFORMS[kind](o);
+    out.transform = transform;
+    if (warning) warnings.push(`${name}: ${warning}`);
+  } else if (t && kind !== "noTransform") {
+    warnings.push(`${name}: transform "${kind}" is not supported`);
   }
   return out;
 }
+
+// PlotJuggler's transforms (by name, from their <options>) → [ours, a warning where it differs]
+const PJ_TRANSFORMS = {
+  "Derivative": (o) => [{kind: "derivative", param: o?.getAttribute("radioChecked") === "radioCustom" ? num(o, "lineEdit", 0) : 0}],
+  "Integral": (o) => [{kind: "integral"}, o?.getAttribute("radioChecked") === "radioCustom" && "integral over the sample times, not a fixed dt"],
+  "Absolute": () => [{kind: "abs"}],
+  "Moving Average": (o) => [{kind: "mean", param: num(o, "value", 10)}],
+  "Moving Root Mean Squared": (o) => [{kind: "rms", param: num(o, "value", 10)}],
+  "Moving Variance / Stdev": (o) => [{kind: "variance", param: num(o, "value", 10)}, o?.getAttribute("apply_sqrt") === "true" && "moving variance, not standard deviation"],
+  "Outlier Removal": () => [{kind: "outliers", param: 4}, "outliers removed beyond 4σ, not by PlotJuggler's spike factor"],
+};
 
 // ---- Python / Lua → JS for per-sample custom series
 
