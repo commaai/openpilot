@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <div>route <b id="route"></b> · ?route=&amp;cams=qcamera,fcamera&amp;t=&amp;local=&lt;base url of seg/camera.h264 stand-ins&gt;&amp;store=1</div>
+  <div>route <b id="route"></b> · ?route=&amp;cams=qcamera,fcamera&amp;t=&amp;local=&lt;base url of seg/camera.h264 stand-ins&gt;&amp;store=1&amp;loose=1</div>
   <div id="bar">
     <button id="play">play</button>
     <button id="prev">&lt; frame</button>
@@ -42,6 +42,15 @@
     if (q.get("local")) {
       const local = (kind, n) => Array.from({length: n}, (_, i) => `${q.get("local")}/${i}/${kind}.h264`);
       api.routeFiles.prime({...files, cameras: local("camera", 4), ecameras: local("ecamera", 2), dcameras: local("dcamera", 2)}, name);
+    }
+    // a loose route (as if dropped or linked) with the same files, which camera panes get from route.files
+    if (q.get("loose")) {
+      const primed = await api.routeFiles(name);
+      route.loose = true;
+      route.files = new Map();
+      for (const [kind, camera] of [["qcameras", "qcamera"], ["cameras", "fcamera"], ["ecameras", "ecamera"], ["dcameras", "dcamera"]]) {
+        primed[kind].forEach((url, n) => route.files.set(`${n}/${camera}`, {url, file: url.split("?")[0].split("/").at(-1), size: null, source: "url"}));
+      }
     }
     let store = null;
     if (q.get("store")) {

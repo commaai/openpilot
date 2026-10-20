@@ -5,13 +5,13 @@ import {api} from "/api.js";
 import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
 import {status} from "/status.js";
+import {routeCameraFiles} from "/data/sources.js";
 import {HEVC} from "/data/video/annexb.js";
 import {FPS, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
 
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
 const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
-const FILES = {fcamera: "cameras", ecamera: "ecameras", dcamera: "dcameras"};
 const SEGMENT = 60;       // seconds
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
 const BACK = 19;          // frames kept behind the playhead for stepping backwards while paused (one GOP)
@@ -91,7 +91,7 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
 // The segment's thumbnail stands in until the first frame arrives.
 function qcamera(ctx, pane, {say, wait}) {
-  const poster = api.segmentAsset(ctx.route, Math.floor(ctx.clock.t / SEGMENT), "sprite.jpg");
+  const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, Math.floor(ctx.clock.t / SEGMENT), "sprite.jpg");
   const video = h("video", {muted: true, playsinline: true, preload: "auto", poster});
   const lanes = lane("qcamera");
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
@@ -112,12 +112,13 @@ function qcamera(ctx, pane, {say, wait}) {
     }
     lanes.bytes({memory: seconds * QCAMERA_BYTES_PER_S});
   };
-  loadHls().then((Hls) => {
+  loadHls().then(async (Hls) => {
+    const src = ctx.route.loose ? await playlist(ctx.route) : api.qcameraUrl(ctx.route);
     if (gone) return;
     hls = new Hls({maxBufferLength: 20});
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
     hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
-    hls.loadSource(api.qcameraUrl(ctx.route));
+    hls.loadSource(src);
     hls.attachMedia(video);
   }, () => say("hls.js failed to load"));
   for (const ev of ["loadedmetadata", "seeked", "canplay", "waiting"]) video.addEventListener(ev, () => ctx.perf.invalidate(pane));
@@ -179,7 +180,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     wait(w);
   };
 
-  sources(ctx.route.fullname, camera).then(({urls, keys, ...src}) => {
+  sources(ctx.route, camera).then(({urls, keys, ...src}) => {
     if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files`);
     lanes.count(urls.length);
     worker.postMessage({urls, keys});
@@ -285,18 +286,28 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
   };
 }
 
-// the camera's per-segment files: the device's HEVC (cached in OPFS under the logs' key scheme), or, when this
-// browser can't decode HEVC in hardware, the local daemon's H.264 transcode, which the daemon caches itself
-async function sources(fullname, camera) {
-  const files = await api.routeFiles(fullname);
-  const urls = [], keys = [];
-  for (const u of files[FILES[camera]] || []) {
-    const path = new URL(u).pathname.split("/"), n = +path.at(-2);
-    urls[n] = u;
-    keys[n] = `${fullname.replace("|", "/")}/${n}/${path.at(-1)}`;
-  }
+// the camera's per-segment files from the route's source: the device's HEVC (cached in OPFS under the logs' key
+// scheme), or, when this browser can't decode HEVC in hardware, the local daemon's H.264 transcode, which the daemon
+// caches itself. Loose routes (dropped files, direct links) have just the files they came with.
+async function sources(route, camera) {
+  const files = await routeCameraFiles(route, camera), urls = [], keys = [];
+  files.forEach(({url, file}, n) => {
+    urls[n] = url;
+    keys[n] = `${route.fullname.replace("|", "/")}/${n}/${file}`;
+  });
   const hardware = (await VideoDecoder.isConfigSupported({codec: HEVC, hardwareAcceleration: "prefer-hardware"})).supported;
-  if (hardware || !daemon.has("transcode")) return {urls, keys, transcoded: false};
-  const [dongle, log] = fullname.split("|");
+  if (hardware || route.loose || !daemon.has("transcode")) return {urls, keys, transcoded: false};
+  const [dongle, log] = route.fullname.split("|");
   return {urls: urls.map((u, n) => u && daemon.url(`/local/video/${dongle}/${log}/${n}/${camera}.h264?preset=medium&ahead=2`)), keys: [], transcoded: true};
+}
+
+// an HLS playlist of a loose route's qcamera files, which the API doesn't have; segments it lacks are gaps
+async function playlist(route) {
+  const files = await routeCameraFiles(route, "qcamera");
+  const lines = ["#EXTM3U", "#EXT-X-VERSION:3", `#EXT-X-TARGETDURATION:${SEGMENT}`, "#EXT-X-PLAYLIST-TYPE:VOD"];
+  for (let n = 0; n <= route.maxqlog; n++) {
+    lines.push(`#EXTINF:${SEGMENT},`, ...files[n] ? [] : ["#EXT-X-GAP"], new URL(files[n]?.url ?? `gap${n}.ts`, location.href).href);
+  }
+  lines.push("#EXT-X-ENDLIST");
+  return URL.createObjectURL(new Blob([lines.join("\n")], {type: "application/vnd.apple.mpegurl"}));
 }
