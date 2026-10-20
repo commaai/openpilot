@@ -11,7 +11,7 @@ from openpilot.tools.ycpe.daemon.core import HTTPError, Response, module, route
 
 ATHENA = "https://athena.comma.ai"
 METHODS = {"listUploadQueue", "cancelUpload", "uploadFilesToUrls", "getNetworkMetered", "startStream", "getMessage", "takeSnapshot",
-           "setRouteViewed"}
+           "setRouteViewed", "getVersion", "getClipState", "createClip", "deleteClip", "getClipChunk"}
 DONGLE_RE = re.compile(r"[0-9a-f]{16}")
 MAX_BODY = 1 << 20  # a few hundred files_data entries
 MAX_RESPONSE = 4 << 20
