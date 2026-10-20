@@ -213,7 +213,9 @@ class TileMap {
 export function deviceMap(locationPromise) {
   const el = h("div", {class: "device-map"});
   const map = new TileMap(el, {interactive: false});
-  new ResizeObserver(([e]) => map.resize(e.contentRect.width, e.contentRect.height)).observe(el);
+  const sized = new ResizeObserver(([e]) => map.resize(e.contentRect.width, e.contentRect.height));
+  sized.observe(el);
+  el.dispose = () => { sized.disconnect(); map.dispose(); };
   Promise.resolve(locationPromise).then((loc) => {
     if (!loc?.lat) return map.view(-117.16, 32.72, 5);
     map.view(loc.lng, loc.lat, 13);

@@ -170,9 +170,11 @@ function stats(dongleId) {
 // other way there builds it afresh, and a kept page is dropped a few minutes after it was built, or on signing in or out.
 // Pages leave on a navigation, which says where they were scrolled.
 const KEEP = 5 * 60e3;
-const kept = new Map();  // dongle id → {el, tab, select, scroll, until}
+const kept = new Map();  // dongle id → {el, tab, select, scroll, until, dispose}
 let traverse = false;  // the navigation under way goes back or forward through history
-auth.on(() => kept.clear());
+// a page dropped, or replaced by one built afresh, lets go of its map
+const drop = (id) => { kept.get(id)?.dispose(); kept.delete(id); };
+auth.on(() => { for (const id of kept.keys()) drop(id); });
 globalThis.navigation?.addEventListener("navigate", (e) => {
   traverse = e.navigationType === "traverse";
   for (const k of kept.values()) if (k.el.isConnected) k.scroll = k.el.parentElement.scrollTop;
@@ -183,19 +185,19 @@ function restore(k) {
   const scroll = tab === k.tab ? k.scroll : 0;
   k.select(tab);
   // before the first frame that shows it
-  requestAnimationFrame(() => { if (k.el.isConnected) k.el.parentElement.scrollTop = scroll; });
+  perf.invalidate({name: "device-scroll", render: () => { if (k.el.isConnected) k.el.parentElement.scrollTop = scroll; }});
   return k.el;
 }
 
 export async function devicePage(dongleId, devices) {
-  for (const [id, k] of kept) if (k.until < Date.now()) kept.delete(id);
+  for (const [id, k] of kept) if (k.until < Date.now()) drop(id);
   const back = traverse;
   traverse = false;  // a render without a navigation (a retry, the device list changing) builds afresh
   if (back && kept.has(dongleId)) return restore(kept.get(dongleId));
   const device = (devices || []).find((d) => d.dongle_id === dongleId) || await api.device(dongleId);
   // the account lost the device (unpaired, or access removed)
   const forget = () => {
-    kept.delete(dongleId);
+    drop(dongleId);
     api.device.forget(dongleId);
     devicesChanged();
   };
@@ -225,7 +227,7 @@ export async function devicePage(dongleId, devices) {
     body.setAttribute("aria-labelledby", `device-tab-${key}`);
     // a phone's strip scrolls: bring the tab into it, once the page is shown
     const reveal = () => bar.querySelector(".on").scrollIntoView({inline: "nearest", block: "nearest"});
-    if (bar.isConnected) reveal(); else requestAnimationFrame(reveal);
+    if (bar.isConnected) reveal(); else perf.invalidate({name: "device-tabs", render: reveal});
     const url = new URL(location.href);
     if (key === "drives") url.searchParams.delete("tab"); else url.searchParams.set("tab", key);
     history.replaceState(history.state, "", url);
@@ -234,7 +236,7 @@ export async function devicePage(dongleId, devices) {
     "aria-controls": "device-tabpanel", "data-tab": key, onclick: () => select(key)}, label)));
   select(new URLSearchParams(location.search).get("tab"));
 
-  const online = isOnline(device);
+  const online = isOnline(device), map = deviceMap(api.deviceLocation(dongleId).catch(() => null));
   const el = h("div", {class: "page device-page"},
     h("div", {class: "device-head"},
       h("div", {class: "device-info"},
@@ -246,8 +248,9 @@ export async function devicePage(dongleId, devices) {
           onlineMark(device, "seen"),
           online && h("a", {href: `/${dongleId}/live`, onclick: link(`/${dongleId}/live`), title: "Stream its cameras and messages"}, "live")),
         stats(dongleId)),
-      deviceMap(api.deviceLocation(dongleId).catch(() => null))),
+      map),
     bar, body);
-  kept.set(dongleId, Object.assign(keep, {el, select, until: Date.now() + KEEP}));
+  drop(dongleId);
+  kept.set(dongleId, Object.assign(keep, {el, select, until: Date.now() + KEEP, dispose: map.dispose}));
   return el;
 }
