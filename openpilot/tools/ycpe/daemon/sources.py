@@ -365,7 +365,7 @@ def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
     revalidate(key, *hit, jwt)
     return hit[1]
   if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):
-    return Path(found[0])
+    return confine(found[0], config.log_roots)
   if (fill := cache.filling(key, space)) is None:
     r = Resolver(key.dongle, key.log_id, [s for s in srcs if s not in ("device", "local")], jwt, False)
     found = next(((s, f) for s in r.sources if (f := r.find(s, key))), None)

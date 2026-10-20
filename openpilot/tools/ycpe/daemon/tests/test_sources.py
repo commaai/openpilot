@@ -59,7 +59,7 @@ os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 
 from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
-from openpilot.tools.ycpe.daemon.core import config
+from openpilot.tools.ycpe.daemon.core import HTTPError, config
 from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
 from openpilot.tools.lib import filereader
 
@@ -167,6 +167,18 @@ class TestSources(DaemonCase):
     self.assertEqual(res["segments"]["0"]["qlog"]["source"], "local")
     r, data = self.req(f"/local/file/local/{DONGLE}/{LOG}/0/qlog.zst")
     self.assertEqual(data, b"local qlog")
+    self.assertEqual(cache.fetch(DONGLE, LOG, 0, "qlog.zst", sources=["local"]).read_bytes(), b"local qlog")
+
+  def test_local_symlink_confined(self):
+    outside = Path(tempfile.mkdtemp())
+    (outside / "qlog.zst").write_bytes(b"outside")
+    link = Path(LOGS) / f"{LOG}--5"
+    if not link.exists():
+      link.symlink_to(outside)
+    r, _ = self.req(f"/local/file/local/{DONGLE}/{LOG}/5/qlog.zst")
+    self.assertEqual(r.status, 403)
+    with self.assertRaises(HTTPError):
+      cache.fetch(DONGLE, LOG, 5, "qlog.zst", sources=["local"])
 
   def test_prefetch_and_evict(self):
     for seg in (0, 1):
