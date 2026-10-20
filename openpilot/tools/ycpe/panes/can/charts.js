@@ -5,7 +5,7 @@ import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {create as plot} from "/panes/plot/plot.js";
 import {PATHS_MIME} from "/panes/plot/view.js";
-import {canOf, dialog, subs} from "./common.js";
+import {canOf, dialog, ink, subs} from "./common.js";
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
@@ -35,8 +35,12 @@ export function create(ctx, state) {
     for (const e of entries) charts.find((c) => c.box === e.target)?.pane.resize(e.contentRect.width, e.contentRect.height);
   });
 
-  // decoded signals keep their DBC color
-  const curve = (path) => ({path, color: can.parse(path)?.sig.color, ...(style && {style})});
+  // decoded signals keep their DBC color, darkened on the light theme's white
+  const color = (path) => {
+    const c = can.parse(path)?.sig.color;
+    return c && ctx.theme.name === "light" ? ink(c) : c;
+  };
+  const curve = (path) => ({path, color: color(path), ...(style && {style})});
 
   function add(st) {
     const c = {pane: plot(ctx, st)};
@@ -174,6 +178,7 @@ export function create(ctx, state) {
     if (tabs.every((t) => t.charts.every((st) => st.curves.every((x) => move(x.path) === x.path)))) return;
     rebuild(() => { for (const t of tabs) t.charts = t.charts.map(moved).filter((st) => st.curves.length); });
   }));
+  s.add(ctx.theme.on(() => rebuild(() => { for (const t of tabs) for (const st of t.charts) for (const c of st.curves) c.color = color(c.path) || c.color; })));
   s.add(ctx.clock.on("t", follow));
   follow();
   for (const st of tabs[active].charts) add(st);
