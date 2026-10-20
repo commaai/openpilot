@@ -18,6 +18,7 @@ export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
   const filters = {...state.filters}, hidden = new Set(state.hidden);
+  let unseen = state.unseen ?? true;  // DBC messages never seen on the bus, as cabana's "Show inactive messages"
 
   const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
     sort = {col: c.id, dir: sort.col === c.id ? -sort.dir : 1};
@@ -40,6 +41,7 @@ export function create(ctx, state) {
     clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
     h("span", {class: "can-spacer"}),
     h("button", {class: "can-btn", title: "Options", onclick: (e) => popup(e.currentTarget, [
+      menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
       menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
       h("hr"),
       ...COLS.slice(1).map((c) => menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); }))])}, "⋯"));
@@ -91,7 +93,7 @@ export function create(ctx, state) {
   // append new messages below, so nothing moves under the user while a route loads; a re-sort keeps the selected row
   // at its place on screen.
   function refresh(resort = true) {
-    const all = [...can.messages(), ...can.unseen()].filter(match);
+    const all = [...can.messages(), ...(unseen ? can.unseen() : [])].filter(match);
     if (resort) {
       const col = COLS.find((c) => c.id === sort.col), before = rows.findIndex((m) => m.key === can.selected);
       // unnamed messages stay below named ones in either direction, as do ties by bus and address
@@ -178,7 +180,7 @@ export function create(ctx, state) {
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
-    save: () => ({sort, filters, hidden: [...hidden]}),
+    save: () => ({sort, filters, hidden: [...hidden], unseen}),
   };
   s.add(can.on("messages", () => refresh(false)));
   s.add(can.on("dbc", () => refresh()));
