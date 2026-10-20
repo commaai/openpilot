@@ -11,11 +11,21 @@ const MIN = 0.05;   // smallest split fraction
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
 const UNDO = 50;    // layout edits remembered
 
+// a saved model that isn't one (hand edited, an older format) throws
+export function checkLayout(model) {
+  const node = (n) => n && typeof n === "object" && (n.children
+    ? Array.isArray(n.children) && n.children.length && Array.isArray(n.sizes) && n.sizes.length === n.children.length && n.children.every(node)
+    : typeof n.pane === "string");
+  if (!Array.isArray(model?.tabs) || !model.tabs.length || !model.tabs.every((t) => node(t?.root))) throw new Error("not a layout");
+  return model;
+}
+
 export class Layout {
   constructor(ctx, model, onChange) {
     this.ctx = Object.create(ctx);  // panes see the shared ctx plus their layout
     this.ctx.layout = this;
-    this.model = structuredClone(model);
+    this.model = structuredClone(checkLayout(model));
+    this.model.active = Math.max(0, Math.min(this.model.tabs.length - 1, this.model.active | 0));
     this.onChange = onChange;
     this.el = h("div", {class: "layout"});
     this.live = new Map();  // rendered node -> {pane, box}

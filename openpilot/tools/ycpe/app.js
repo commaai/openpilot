@@ -6,7 +6,7 @@ import {logo} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
 import {createClock, RATES} from "/clock.js";
-import {Layout} from "/layout.js";
+import {Layout, checkLayout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
@@ -219,8 +219,7 @@ class Workspace {
     this.view = view;
     this.el.dataset.view = view;
     if (!this.layouts[view]) {
-      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
-      const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
+      const model = savedLayout(view);
       if (usesData(model) && !this.files) {
         this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
         this.main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Fetching the route's file list…"));
@@ -258,8 +257,7 @@ class Workspace {
   async openLayout(src) {
     try {
       const {layout, warnings} = await loadLayout(src);
-      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${this.view}`) || "null");
-      this.applyLayout(mergeLayout(this.layout?.save() ?? (saved?.tabs?.length ? saved : VIEWS[this.view].layout), layout, "tab"));
+      this.applyLayout(mergeLayout(this.layout?.save() ?? savedLayout(this.view), layout, "tab"));
       if (warnings.length) toast(`Layout opened with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}: ${warnings[0]}${warnings.length > 1 ? " …" : ""}`);
     } catch (e) {
       toast(`Couldn't open the layout: ${e.message}`);
@@ -294,6 +292,19 @@ class Workspace {
     for (const l of Object.values(this.layouts)) l.dispose();
     this.store?.dispose();
   }
+}
+
+// the view's saved layout, else its default; one that doesn't read as a layout anymore is dropped
+function savedLayout(view) {
+  const key = `ycpe_layout_${view}`;
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    if (saved?.tabs?.length) return checkLayout(saved);
+  } catch {
+    localStorage.removeItem(key);
+    toast(`The saved ${VIEWS[view].title} layout couldn't be read, so it's back to the default`);
+  }
+  return VIEWS[view].layout;
 }
 
 const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g)?.some((m) => PANES[m.slice(8, -1)]?.data);
