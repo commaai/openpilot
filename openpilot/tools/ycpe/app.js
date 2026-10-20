@@ -197,12 +197,13 @@ function updateTop() {
       layout.selectTab(i);
       select(e.currentTarget);
     },
-    ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
+    ondblclick: (e) => { if (!e.target.closest(".x")) renameTab(e.currentTarget, i, t.name); },
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget.firstChild, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }},
     h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), "data-key": `tab:${i}`}, t.name),
     layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "data-key": "close", "aria-label": `Close tab ${t.name}`,
-      onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
+      // not on a double-click's second click: that's "+" (or another close button) clicked again after the strip moved
+      onclick: (e) => { e.stopPropagation(); if (e.detail < 2) { layout.closeTab(i); updateTop(); } }}, icon("close", 12)))),
   h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
   h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
   refocus(focused);
