@@ -108,7 +108,10 @@ function xorDefault(type, raw, def) {
   if (type === "i64" || type === "u64") return Number(BigInt[type === "i64" ? "asIntN" : "asUintN"](64, BigInt(raw) ^ BigInt(def)));
   return type === "u32" ? (raw ^ def) >>> 0 : raw ^ def;
 }
-const MAX_LIST = 16;  // longer lists are not split into per-index columns
+const MAX_LIST = 16;  // longer lists are not split into per-index columns unless asked for
+
+// path globs: * matches one path component
+export const pattern = (globs) => new RegExp(`^(${globs.map((g) => g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]+")).join("|")})$`);
 
 // a column fills as events arrive; missing values stay NaN
 class Column {
@@ -126,8 +129,10 @@ export class Reader {
     this.ev = Object.fromEntries(this.event.fields.map((f) => [f[0], f]));
   }
 
-  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, cols: Map(path → Column)})
-  read(buf, {can = null} = {}) {
+  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, cols: Map(path → Column), lists})
+  // keep: {service: ["/speeds", "/laneLines/*/y"]} splits those long lists per index too; every other long list
+  // is skipped and reported in lists (path → longest length) so it can be asked for later
+  read(buf, {can = null, keep = {}} = {}) {
     views(buf);
     const {event} = this;
     const services = new Map();
@@ -163,7 +168,8 @@ export class Reader {
     for (let w = 0; w < counts.length; w++) {
       if (!counts[w]) continue;
       const f = byDisc[w];
-      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), plan: null, cols: new Map()});
+      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), plan: null,
+        cols: new Map(), keep: keep[f[0]] && pattern(keep[f[0]]), listPlans: [], lists: new Map()});
     }
 
     // pass 2: extraction
@@ -194,7 +200,11 @@ export class Reader {
         }
       }
     }
-    for (const svc of services.values()) delete svc.plan;
+    for (const svc of services.values()) {
+      for (const lp of svc.listPlans) if (lp.longest) svc.lists.set(lp.path, lp.longest);
+      delete svc.plan;
+      delete svc.listPlans;
+    }
     return services;
   }
 
@@ -225,7 +235,9 @@ export class Reader {
   }
 
   listPlan(elem, path, svc, n) {
-    return {elem, path, svc, n, items: []};
+    const lp = {elem, path, svc, n, items: [], keep: !!svc.keep?.test(path), longest: 0};
+    svc.listPlans.push(lp);
+    return lp;
   }
 
   walk(p, off, dataBytes, ptrs, i) {
@@ -260,7 +272,11 @@ export class Reader {
 
   // small lists become one column (or sub-struct) per index: /path/0, /path/1, ...
   walkList(lp, ptr, i) {
-    if (!follow(ptr) || rCount > MAX_LIST) return;
+    if (!follow(ptr)) return;
+    if (rCount > MAX_LIST && !lp.keep) {
+      if (rCount > lp.longest) lp.longest = rCount;
+      return;
+    }
     const [type, ref] = lp.elem;
     const count = rCount, base = rOff, elem = rElem, data = rData, ptrs = rPtrs;
     for (let j = 0; j < count; j++) {
@@ -307,7 +323,7 @@ export function compact(services) {
       if (col.i) transfer.push(col.i.buffer);
       cols[path] = col;
     }
-    out[svc.name] = {t: svc.t, cols};
+    out[svc.name] = {t: svc.t, cols, lists: svc.lists};
     transfer.push(svc.t.buffer);
   }
   return {services: out, transfer};
@@ -357,7 +373,7 @@ function compactText(v) {
   }
   if (!count) return null;
   if (count === n && constant && n > 1) return {c: first};
-  if (count * 2 >= n) return {v};
+  if (count === n) return {v};  // any gap makes it sparse, so text never holds nulls
   const i = indexArray(n, count), out = new Array(count);
   for (let k = 0, j = 0; k < n; k++) if (v[k] !== null) { i[j] = k; out[j++] = v[k]; }
   return {v: out, i};
