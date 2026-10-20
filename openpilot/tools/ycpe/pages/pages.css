@@ -107,3 +107,21 @@ a.drive-row:hover { background: var(--hover); }
   .drive-row { grid-template-columns: 150px 56px 64px 52px minmax(120px, 1fr); }
   .drive-row > :nth-child(5), .drive-row > :nth-child(7) { display: none; }
 }
+
+/* the drive view on a phone: camera, map and route info stacked in one scroll, the routes list behind the route
+   crumb, the playbar docked below */
+@media (max-width: 760px) {
+  .ws[data-view="drive"] .workspace { display: block; overflow-y: auto; }
+  .ws[data-view="drive"] .layout { display: block; }
+  .ws[data-view="drive"] .split { flex-direction: column; gap: 4px; }
+  .ws[data-view="drive"] .split > * { flex: none !important; }  /* over the layout's inline sizes */
+  .ws[data-view="drive"] .divider, .ws[data-view="drive"] .pane-tools { display: none; }
+  .ws[data-view="drive"] .pane:has(> .pane-body > .routes-pane) { display: none; }
+  .ws[data-view="drive"] .pane-body:has(> .camera-pane) { flex: none; aspect-ratio: 526 / 330; }
+  .ws[data-view="drive"] .pane-body:has(> .map-pane) { flex: none; height: 45vh; }
+  .ws[data-view="drive"] .pane-body:has(> .info-pane) { contain: none; }
+  .ws[data-view="drive"] .info-pane { position: static; overflow: visible; }
+  .ws[data-view="drive"] .playbar > .tbtn:not(.play), .ws[data-view="drive"] .pb-wall { display: none; }
+  .ws[data-view="drive"] .pb-clock { min-width: 0; }
+  .topbar :is(.brand > span, .sep, .views, .tabs, .hud) { display: none; }
+}
