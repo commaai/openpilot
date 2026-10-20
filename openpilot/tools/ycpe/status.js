@@ -7,6 +7,7 @@
 //              error    failed
 // A segment may also say which source its bytes came from (api, internal, openpilotci, car segments, local, …).
 import {h} from "/dom.js";
+import {daemon} from "/daemon.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 
@@ -191,7 +192,9 @@ function statusPanel(anchor, onClose) {
 export function footprint() {
   const el = h("span", {class: "hud-mem", title: "memory: loaded data + JS heap · disk: cached logs and video"});
   let disk = 0;
-  const poll = () => navigator.storage?.estimate().then((e) => { disk = e.usage || 0; }, () => {});
+  // with the local daemon, its shared download cache counts too (that's where logs live then)
+  const local = () => daemon.has("cache") ? daemon.json("/local/cache").then((s) => s.bytes, () => 0) : 0;
+  const poll = () => Promise.all([navigator.storage?.estimate().then((e) => e.usage || 0, () => 0), local()]).then(([a, b]) => { disk = a + b; });
   poll();
   setInterval(poll, 3000);
   setInterval(() => {
