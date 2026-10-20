@@ -3,7 +3,7 @@
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
 import {api} from "../api.js";
 import {Loader} from "./loader.js";
-import {service, unpack} from "./pack.js";
+import {enumRef, service, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
@@ -106,22 +106,23 @@ export class Store {
     const paths = p.paths ? p.paths.split("\n") : [];
     p.types = p.types.split("\n");
     p.live = p.counts.map(() => 0);
-    for (const b of p.bufs) this.bytes += b.byteLength;
     let added = false;
     for (let k = 0; k < paths.length; k++) {
       let e = this.entries.get(paths[k]);
       if (!e) {
-        const ref = p.recs[k * 9 + 7];
+        const ref = enumRef(p, k);
         e = {path: paths[k], type: p.types[k], ...(ref >= 0 && {names: this.enums[ref]}), at: [], views: [], version: 0, used: 0};
         this.entries.set(paths[k], e);
         added = true;
       }
+      if (e.evicted) continue;  // not resident until asked for again
       if (e.at[seg.n]) this.release(e.at[seg.n]);
       e.at[seg.n] = {pack: p, k};
       e.views[seg.n] = null;
       e.version++;
       p.live[service(p, k)]++;
     }
+    p.live.forEach((n, s) => n ? (this.bytes += p.bufs[s].byteLength) : drop(p, s));
     const ms = performance.now() - start;
     this.progress.ms.ingest += ms;
     this.progress.ingestMax = Math.max(this.progress.ingestMax, ms);
@@ -279,11 +280,16 @@ export class Store {
     const s = service(pack, k);
     if (--pack.live[s] === 0) {
       this.bytes -= pack.bufs[s].byteLength;
-      pack.bufs[s] = null;
+      drop(pack, s);
     }
   }
 
   dispose() { this.loader.dispose(); }
+}
+
+function drop(pack, s) {
+  pack.bufs[s] = null;
+  if (pack.t) pack.t[s] = null;
 }
 
 // min/max per block of BLOCK samples, then per FANOUT blocks, up to one block per chunk; built on first need

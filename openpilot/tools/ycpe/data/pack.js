@@ -71,8 +71,9 @@ export function pack(services, enums, only, sentEnums) {
   return out;
 }
 
-// the service of column k, its times as a view, and the column's resident bytes
+// the service and enum ref of column k, and the times of service s as a view
 export const service = (p, k) => p.recs[k * REC];
+export const enumRef = (p, k) => p.recs[k * REC + 7];
 export const times = (p, s) => (p.t ||= [])[s] ||= new Float64Array(p.bufs[s], 0, p.counts[s]);
 
 // column k of a pack as a contract chunk {t, v, i?} plus tt, the time of each value
