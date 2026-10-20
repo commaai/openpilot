@@ -37,7 +37,8 @@ export async function dumpStore(name, entry) {
     check();
   });
   const out = {};
-  for (const {path} of store.paths()) {
+  for (const {path, lazy} of store.paths()) {
+    if (lazy) continue;  // a skipped long list's index, not loaded
     const [, name, ...rest] = path.split("/"), s = store.series(path);
     const svc = out[name] ||= {t: s.chunks.flatMap((c) => Array.from(c.t)), valid: null, cols: {}};
     svc.cols[rest.length ? `/${rest.join("/")}` : ""] = s.chunks.flatMap(expand);
