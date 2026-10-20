@@ -1,5 +1,5 @@
 // the connect view: connect's route page built from our panes. A card with the drive's times, its timeline (the strip
-// of panes/strip.js over a ruler: tap to seek, drag to scrub, hold then drag to zoom into a range), Video | Map and
+// of panes/strip.js over a ruler: tap to seek, drag to zoom into a range), Video | Map and
 // Files | More info toggles, the camera or map pane, and connect's control pill. The camera, map, files and info panes
 // are mounted here as the layout mounts them. Everything that moves while scrubbing or playing is a transform or a
 // changed text, set in one render through the frame scheduler.
@@ -13,8 +13,8 @@ import {strip} from "./strip.js";
 
 await css(new URL("./connect.css", import.meta.url));
 
-const HOLD_MS = 400;  // a press held this long without moving selects a range to zoom into
-const MOVE_PX = 6;    // a press that moves this far first scrubs
+const MOVE_PX = 6;  // a press that moves this far selects a range to zoom into
+const started = new WeakSet();  // the clocks of routes this view opened playing, as connect does, the first time only
 const WIDE = matchMedia("(min-width: 1536px)");  // as connect, the map beside the video from here on
 // built once: a formatter per call costs ~7 ms of ICU setup the first time
 const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
@@ -126,7 +126,7 @@ export function create(ctx, state) {
     if (clock.t < t0 || clock.t > t1) clock.seek(t0);
   }
 
-  // a press: a tap seeks, a drag scrubs, a hold (or shift) then a drag selects a range to zoom into
+  // a press: a tap seeks, a drag selects a range to zoom into, as on connect
   // the timeline's left edge is read as the pointer arrives, not on every move (a read after a render forces a layout)
   let width = 0, edge = 0, hover = null, press = null;
   const xOf = (e) => Math.max(0, Math.min(width, e.clientX - edge));
@@ -137,8 +137,7 @@ export function create(ctx, state) {
     edge = timeline.getBoundingClientRect().left;
     timeline.setPointerCapture(e.pointerId);
     const x = xOf(e);
-    press = {id: e.pointerId, x0: x, x, mode: e.shiftKey ? "select" : "press"};
-    if (!e.shiftKey) press.timer = setTimeout(() => { press.mode = "select"; navigator.vibrate?.(10); perf.invalidate(pane); }, HOLD_MS);
+    press = {id: e.pointerId, x0: x, x, mode: "press"};
     perf.invalidate(pane);
   });
   timeline.addEventListener("pointermove", (e) => {
@@ -146,17 +145,12 @@ export function create(ctx, state) {
     if (e.pointerType === "mouse") hover = x;
     if (press?.id === e.pointerId) {
       press.x = x;
-      if (press.mode === "press" && Math.abs(x - press.x0) > MOVE_PX) {
-        clearTimeout(press.timer);
-        press.mode = "scrub";
-      }
-      if (press.mode === "scrub") clock.seek(tOf(x));
+      if (press.mode === "press" && Math.abs(x - press.x0) > MOVE_PX) press.mode = "select";
     }
     perf.invalidate(pane);
   });
   const release = (e) => {
     if (press?.id !== e.pointerId) return;
-    clearTimeout(press.timer);
     const {mode, x0, x} = press;
     press = null;
     if (e.type === "pointerup" && mode === "select" && Math.abs(x - x0) > 3) zoom(tOf(Math.min(x0, x)), tOf(Math.max(x0, x)));
@@ -202,7 +196,7 @@ export function create(ctx, state) {
         selection.style.transform = `translateX(${Math.min(press.x0, press.x)}px)`;
         selection.style.width = `${Math.abs(press.x - press.x0)}px`;
       }
-      // what's under the cursor, or under the finger while it scrubs or selects
+      // what's under the cursor, or under the finger while it selects
       const at = press && press.mode !== "press" ? press.x : hover;
       bead.hidden = at === null;
       if (at !== null) {
@@ -220,10 +214,13 @@ export function create(ctx, state) {
     }};
 
   offs.push(...["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane))));
+  if (!started.has(clock)) {
+    started.add(clock);
+    clock.play();
+  }
   function dispose() {
     disposed = true;
     for (const off of offs) off();
-    clearTimeout(press?.timer);
     sized.disconnect();
     timelineSize.disconnect();
     for (const p of Object.values(panes)) p?.dispose?.();

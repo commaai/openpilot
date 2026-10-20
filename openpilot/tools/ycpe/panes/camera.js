@@ -7,7 +7,7 @@ import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
 import {onJobs} from "/local.js";
 import {status} from "/status.js";
-import {routeCameraFiles} from "/data/sources.js";
+import {routeCameraFiles, routeCameras} from "/data/sources.js";
 import {HEVC} from "/data/video/annexb.js";
 import {FPS, SEGMENT_FRAMES, cameraTime, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
@@ -118,6 +118,16 @@ export function create(ctx, state) {
   }
 
   use(camera);
+  // a camera the route has no file of can't be picked; a live session's cameras are whatever the source sends
+  if (!ctx.route.live) {
+    routeCameras(ctx.route).then((have) => {
+      if (disposed) return;
+      for (const o of picker.options) {
+        o.disabled = !have.has(o.value);
+        o.textContent = `${CAMERAS[o.value]}${o.disabled ? ctx.route.loose ? " (no files)" : " (not uploaded)" : ""}`;
+      }
+    }, () => {});
+  }
   return pane;
 }
 
@@ -157,7 +167,8 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 // load stops the player until the next seek, play or reconnect.
 function qcamera(ctx, pane, {wait, absent}) {
   const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
-  const video = h("video", {muted: true, playsinline: true, preload: "auto", poster});
+  const video = h("video", {playsinline: true, preload: "auto", poster});
+  video.muted = true;  // the property: the attribute set after creation doesn't mute it, and only a muted video plays unasked
   const lanes = lane("qcamera");
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);

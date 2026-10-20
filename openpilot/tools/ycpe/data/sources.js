@@ -314,6 +314,16 @@ export async function routeCameraFiles(route, camera) {
   return slotted(route, urls);
 }
 
+// the cameras with a file for any of the route's segments
+export async function routeCameras(route) {
+  const cameras = ["qcamera", "fcamera", "ecamera", "dcamera"];
+  if (route.loose) return new Set(cameras.filter((c) => [...route.files.keys()].some((key) => key.endsWith(`/${c}`))));
+  const sr = parseRange(route.fullname);
+  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+  const {found} = await resolveFiles(sr, segs, cameras, routeSource.list(routeSource.get(sr.route)));
+  return new Set([...found.keys()].map((key) => key.split("/")[1]));
+}
+
 // ---- routes outside the API: local files and direct URLs ----
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
