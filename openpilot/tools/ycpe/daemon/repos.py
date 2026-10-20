@@ -15,7 +15,7 @@ from pathlib import Path
 
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, confine, module, route, sse
 
-DBC_NAME = re.compile(r"^[A-Za-z0-9_.-]+\.dbc$")
+DBC_NAME = re.compile(r"^[A-Za-z0-9_.-]+\.dbc\Z")
 MAX_DBC = 8 << 20
 GIT_TTL = 5.0
 

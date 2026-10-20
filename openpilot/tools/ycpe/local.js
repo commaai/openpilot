@@ -38,11 +38,13 @@ if (daemon.present) {
 export function localBadge() {
   if (!daemon.present) return null;
   css("/local.css");
-  const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs"}, "local");
+  const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs", "aria-expanded": "false"}, "local");
   let panel = null;
   onJobs(() => { el.classList.toggle("busy", allJobs().some((j) => j.state === "running")); panel?.update(); });
   el.addEventListener("click", () => {
-    if (panel) { panel.close(); panel = null; } else panel = localPanel(el, () => { panel = null; });
+    if (panel) return panel.close();
+    panel = localPanel(el, () => { panel = null; el.setAttribute("aria-expanded", "false"); });
+    el.setAttribute("aria-expanded", "true");
   });
   return el;
 }
@@ -52,7 +54,7 @@ const KINDS = {logs: ["log"], video: ["qcamera", "fcamera", "ecamera", "dcamera"
 // a comma device on the LAN: its routes over ssh, each pulled (read-only) into the shared cache
 function devicePart() {
   const out = h("div", {class: "local-routes"});
-  const host = h("input", {class: "local-host", placeholder: "device host or IP", title: "Comma device on your network (ssh)", spellcheck: false});
+  const host = h("input", {class: "local-host", placeholder: "device host or IP", title: "Comma device on your network (ssh)", "aria-label": "Device host or IP", spellcheck: false});
   const err = (e) => out.replaceChildren(h("div", {class: "local-err"}, String(e.message || e)));
   async function list() {
     out.replaceChildren(h("div", {class: "muted"}, "listing…"));
@@ -81,8 +83,9 @@ function localPanel(anchor, onClose) {
   const here = h("div", {class: "local-route"});
   const list = h("div", {class: "local-jobs"});
   const dev = daemon.has("device") ? devicePart() : null;
-  const el = h("div", {class: "local-panel"},
-    h("div", {class: "local-head"}, h("b", {}, "Local daemon"), h("button", {class: "link", onclick: () => close()}, "close")),
+  const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
+  const el = h("div", {class: "local-panel", role: "dialog", "aria-label": "Local daemon"},
+    h("div", {class: "local-head"}, h("b", {}, "Local daemon"), closeBtn),
     intro, cache, here, dev, list);
   const r = anchor.getBoundingClientRect();
   el.style.top = `${r.bottom + 6}px`;
@@ -130,10 +133,19 @@ function localPanel(anchor, onClose) {
       j.state === "running" && h("button", {class: "link", onclick: () => daemon.fetch(`/local/jobs/${j.id}/cancel`, {method: "POST"})}, "cancel"))));
   }
 
-  const close = () => { el.remove(); onClose(); };
-  setTimeout(() => document.addEventListener("pointerdown", function off(e) {
-    if (!el.contains(e.target) && !anchor.contains(e.target)) { document.removeEventListener("pointerdown", off); if (el.isConnected) close(); }
-  }));
+  // as the load panel: focus moves in, Escape takes it back to the badge, and however it closes the document lets go
+  const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
+  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
+  const close = () => {
+    if (!el.isConnected) return;
+    el.remove();
+    document.removeEventListener("keydown", escape);
+    document.removeEventListener("pointerdown", outside);
+    onClose();
+  };
+  setTimeout(() => { if (el.isConnected) document.addEventListener("pointerdown", outside); });  // not the press that opened it
+  document.addEventListener("keydown", escape);
+  closeBtn.focus();
   stats();
   update();
   let last = 0;

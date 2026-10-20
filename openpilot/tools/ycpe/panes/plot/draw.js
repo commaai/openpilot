@@ -53,12 +53,16 @@ export function fitCanvas(cv, w, hgt) {
   return g;
 }
 
-// 1-2-5 steps with about `count` ticks over [lo, hi]
-export function ticks(lo, hi, count) {
+// steps a clock reads well, in seconds
+const CLOCK = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
+
+// 1-2-5 steps with about `count` ticks over [lo, hi]; on a clock (m:ss) whole seconds go by CLOCK
+export function ticks(lo, hi, count, clock = false) {
   const raw = (hi - lo) / Math.max(1, count);
   if (!(raw > 0) || !isFinite(raw)) return {step: 1, values: []};
   const mag = 10 ** Math.floor(Math.log10(raw)), f = raw / mag;
-  const step = (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+  let step = (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+  if (clock && step >= 1 && raw < 5400) step = CLOCK.reduce((a, s) => Math.abs(Math.log(s / raw)) < Math.abs(Math.log(a / raw)) ? s : a);
   const values = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) values.push(Math.abs(v) < step * 1e-9 ? 0 : v);
   return {step, values};
@@ -89,19 +93,22 @@ export function fmtTick(v, step) {
   return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
-// a sample for display, by its path's meta m {names?, unit?, precision?}: enum names (or DBC value descriptions),
-// text, then numbers with their unit: DBC signals to their precision as cabana, integers as is, others to 5
-// significant figures
+// a sample for display, by its path's meta m {type?, names?, unit?, precision?}: enum names (or DBC value
+// descriptions), text, then numbers with their unit: DBC signals to their precision as cabana, integers as is (≈ past
+// 2^53, where a 64-bit one has lost its low digits), f64 log fields in full, f32 ones to the 7 digits they have,
+// others to 5 significant figures
 export function fmtValue(v, m) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
   if (m?.names?.[v] !== undefined) return m.names[v];
-  const s = m?.precision !== undefined && isFinite(v) ? v.toFixed(m.precision) : fmtNumber(v);
+  const s = m?.precision !== undefined && isFinite(v) ? v.toFixed(m.precision) : fmtNumber(v, m?.type);
   return m?.unit && v === v ? `${s} ${m.unit}` : s;
 }
 
-function fmtNumber(v) {
-  if (Number.isInteger(v) || !isFinite(v)) return String(v);
+function fmtNumber(v, type) {
+  if (Number.isInteger(v)) return Math.abs(v) > Number.MAX_SAFE_INTEGER && (type === "i64" || type === "u64") ? `≈${v}` : String(v);
+  if (!isFinite(v) || type === "f64") return String(v);
+  if (type === "f32") return String(+v.toPrecision(7));
   const a = Math.abs(v);
   return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
 }
@@ -120,7 +127,7 @@ export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
       if (lo !== lo) continue;
       const x = X(t[i]), a = Y(lo), b = Y(max[i]);
       // a bucket is a vertical span: enter it at the end nearer the previous point
-      const [p, q] = Math.abs(a - py) <= Math.abs(b - py) ? [a, b] : [b, a];
+      const near = Math.abs(a - py) <= Math.abs(b - py), p = near ? a : b, q = near ? b : a;
       if (py !== py || gap(t[pi], t[i])) g.moveTo(x, p);
       else {
         if (steps) g.lineTo(x, py);
@@ -194,8 +201,9 @@ export function drawBlocks(g, blocks, X, y0, y1, m, c) {
     g.fillRect(x0, y0, x1 - x0, y1 - y0);
     g.globalAlpha = 1;
     g.fillRect(x0, y0, 2, y1 - y0);
+    // a label cut down to a letter and its ellipsis says nothing
     const text = x1 - x0 > 24 && y1 - y0 > 9 ? ellipsize(g, label, x1 - x0 - 10) : "";
-    if (text.length > 2) {
+    if (text && !(text.endsWith("…") && text.length <= 2)) {
       g.fillStyle = c.fg;
       g.fillText(text, x0 + 6, (y0 + y1) / 2);
     }

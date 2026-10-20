@@ -208,7 +208,7 @@ export async function devicePage(dongleId, devices) {
   };
   const built = {};
   const keep = {tab: null, scroll: 0};
-  const body = h("div", {class: "tab-body", role: "tabpanel"});
+  const body = h("div", {class: "tab-body", role: "tabpanel", id: "device-tabpanel"});
   const bar = h("nav", {class: "page-tabs", role: "tablist"});
   const select = (key) => {
     if (!tabs[key]) key = "drives";
@@ -220,11 +220,16 @@ export async function devicePage(dongleId, devices) {
       b.classList.toggle("on", b.dataset.tab === key);
       b.setAttribute("aria-selected", b.dataset.tab === key);
     }
+    body.setAttribute("aria-labelledby", `device-tab-${key}`);
+    // a phone's strip scrolls: bring the tab into it, once the page is shown
+    const reveal = () => bar.querySelector(".on").scrollIntoView({inline: "nearest", block: "nearest"});
+    if (bar.isConnected) reveal(); else requestAnimationFrame(reveal);
     const url = new URL(location.href);
     if (key === "drives") url.searchParams.delete("tab"); else url.searchParams.set("tab", key);
     history.replaceState(history.state, "", url);
   };
-  bar.append(...Object.entries(tabs).map(([key, [label]]) => h("button", {class: "tab", role: "tab", "data-tab": key, onclick: () => select(key)}, label)));
+  bar.append(...Object.entries(tabs).map(([key, [label]]) => h("button", {class: "tab", role: "tab", id: `device-tab-${key}`,
+    "aria-controls": "device-tabpanel", "data-tab": key, onclick: () => select(key)}, label)));
   select(new URLSearchParams(location.search).get("tab"));
 
   const online = isOnline(device);

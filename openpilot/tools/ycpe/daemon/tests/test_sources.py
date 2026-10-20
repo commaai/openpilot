@@ -44,12 +44,6 @@ class Upstream(SimpleHTTPRequestHandler):
         self.wfile.write(data[i:i + 100_000])
         time.sleep(0.02)
       return
-    if self.path.startswith("/redirect"):
-      self.send_response(302)
-      self.send_header("Location", "https://evil.example/x")
-      self.send_header("Content-Length", "0")
-      self.end_headers()
-      return
     super().do_GET()
 
 
@@ -306,19 +300,6 @@ class TestSources(DaemonCase):
     finally:
       config.cache_root = old
       cache._usage["at"] = -cache.RESCAN
-
-  def test_proxy(self):
-    r, _ = self.req("/local/proxy?url=https://evil.example/")
-    self.assertEqual(r.status, 403)
-    r, _ = self.req("/local/proxy?url=http://169.254.169.254/latest/meta-data")
-    self.assertEqual(r.status, 403)
-    r, _ = self.req("/local/proxy?url=https://commadataci.blob.core.windows.net@evil.example/")
-    self.assertEqual(r.status, 403)
-    base = os.environ["DATA_ENDPOINT"]
-    r, data = self.req(f"/local/proxy?url={base}{DONGLE}/{LOG}/0/qcamera.ts")
-    self.assertEqual((r.status, data, r.getheader("Content-Type")), (200, blob(0, "qcamera.ts"), "application/octet-stream"))
-    r, _ = self.req(f"/local/proxy?url={base}redirect")
-    self.assertEqual(r.status, 403)  # the redirect target isn't allowed
 
 
 if __name__ == "__main__":

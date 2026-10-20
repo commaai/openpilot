@@ -29,6 +29,7 @@ button, input, select { font: inherit; color: inherit; }
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .muted { color: var(--muted); }
+::placeholder { color: var(--muted); opacity: 1; }  /* the browser's grey is under 4.5:1, and some fields have no other label */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mono { font-family: var(--mono); }
 .small { font-size: 11px; }
@@ -64,6 +65,7 @@ body.in-ws #main { overflow: hidden; }
 .views:empty, .tabs:empty { display: none; }
 /* the tabs (they scroll) and the load pill (it ellipsizes) give way when the bar is full */
 .tabs { flex-shrink: 1; min-width: 100px; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
+.tablist { display: flex; flex-shrink: 0; align-items: center; gap: 1px; }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
@@ -159,7 +161,7 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .divider { position: relative; flex: 0 0 4px; background: transparent; transition: background .1s; touch-action: none; }
 .split.row > .divider { cursor: col-resize; }
 .split.col > .divider { cursor: row-resize; }
-.divider:hover, .divider:active { background: var(--accent); }
+.divider:hover, .divider:active, .divider:focus-visible { background: var(--accent); outline: none; }
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 /* dragged to dock the pane; a finger on it drags the pane, not the page */
 .pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; cursor: grab; touch-action: none; }
@@ -184,6 +186,7 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .route-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-bottom: 1px solid var(--line); text-decoration: none; }
 .route-row:hover { background: var(--hover); }
 .route-row.current { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
+.route-row.current .muted { color: color-mix(in srgb, var(--muted), var(--fg) 35%); }  /* still 4.5:1 on the darker row */
 .route-thumb { width: 64px; height: 36px; border-radius: 3px; object-fit: cover; object-position: top; background: var(--bg); flex-shrink: 0; }  /* the sprite's 16:9 frame, not its black band */
 .route-when { display: flex; flex-direction: column; min-width: 0; white-space: nowrap; }
 .routes-pane .more { display: block; margin: 8px auto; }
@@ -195,6 +198,9 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .playbar .play:hover { background: var(--fg); color: var(--bg); opacity: .85; }
 .rate { height: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-variant-numeric: tabular-nums; }
 .pb-clock { display: flex; flex-direction: column; min-width: 120px; padding: 0 6px; font: 11px/1.3 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pb-time { width: 100%; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: text; }
+input.pb-time { outline: 1px solid var(--line); border-radius: 2px; }
+input.pb-time[aria-invalid] { outline-color: var(--critical); }
 .pb-track { position: relative; flex: 1; min-width: 0; }
 .pb-canvas { display: block; width: 100%; height: 32px; cursor: pointer; touch-action: none; }
 .pb-tip { position: absolute; bottom: calc(100% + 4px); width: 136px; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised); box-shadow: var(--shadow); text-align: center; font: 11px var(--mono); pointer-events: none; }

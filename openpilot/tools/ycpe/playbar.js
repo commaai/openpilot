@@ -3,7 +3,7 @@
 // nothing loaded at all is faded. A live session's timeline is its window, ending at the head of the data, with the
 // source's state, "Go live" (or that it's following) and saving the session as an rlog.
 import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
-import {h, fmt, css} from "/dom.js";
+import {h, fmt, css, parseClock} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -20,12 +20,38 @@ export function playbar(ctx) {
   const {clock, route} = ctx, live = route.live;
   if (live) css(new URL("./live.css", import.meta.url));
   let spans = [];
-  routeEvents(route).then((s) => { spans = s; perf.invalidate(pane); }).catch(() => {});
+  // alerts last, so they're drawn over the engagement around them
+  const isAlert = (s) => s.kind === "alert" || s.kind === "critical";
+  routeEvents(route).then((s) => { spans = [...s].sort((a, b) => isAlert(a) - isAlert(b)); perf.invalidate(pane); }).catch(() => {});
 
   const playBtn = h("button", {class: "tbtn play", title: "Play/pause (space)", onclick: () => clock.toggle()});
-  const rate = h("select", {class: "rate", title: "Playback rate ([ and ])", onchange: (e) => clock.setRate(+e.target.value)},
+  const rate = h("select", {class: "rate", title: "Playback rate ([ and ])", "aria-label": "Playback rate", onchange: (e) => clock.setRate(+e.target.value)},
     RATES.map((r) => h("option", {value: r, selected: r === clock.rate}, `${r}×`)));
-  const time = h("span", {class: "pb-time"});
+  // click the time to type one to go to
+  const time = h("button", {class: "pb-time", title: "Go to a time (3:12, 1:03:12 or seconds)", onclick: () => {
+    goto.value = fmt.clock(clock.t, true);
+    time.hidden = true;
+    goto.hidden = false;
+    goto.focus();
+    goto.select();
+  }});
+  const goto = h("input", {class: "pb-time", hidden: true, "aria-label": "Go to time", spellcheck: false});
+  const shown = () => {
+    const focused = document.activeElement === goto;
+    goto.hidden = true;
+    goto.removeAttribute("aria-invalid");
+    time.hidden = false;
+    if (focused) time.focus();
+  };
+  // Enter goes there (a time it can't read stays, to be fixed); Escape or leaving doesn't
+  goto.addEventListener("keydown", (e) => {
+    const t = parseClock(goto.value);
+    if (e.key === "Enter") e.preventDefault();  // not a click on the time button, focused again
+    if (e.key === "Enter" && Number.isNaN(t)) goto.setAttribute("aria-invalid", "true");
+    else if (e.key === "Enter") { clock.seek(t); shown(); }
+    else if (e.key === "Escape") shown();
+  });
+  goto.addEventListener("blur", () => { if (!goto.hidden) shown(); });
   const wall = h("span", {class: "pb-wall muted"});
   const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", "aria-pressed": "false", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, icon("loop", 16));
   const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(clock.start, clock.duration)}, icon("fit", 16));
@@ -47,13 +73,15 @@ export function playbar(ctx) {
     h("button", {class: "tbtn", title: "Back 1 s (←, shift: 10 s)", onclick: () => clock.seek(clock.t - 1)}, icon("rewind", 16)),
     playBtn,
     h("button", {class: "tbtn", title: "Forward 1 s (→, shift: 10 s)", onclick: () => clock.seek(clock.t + 1)}, icon("forward", 16)),
-    rate, h("span", {class: "pb-clock"}, time, wall), liveBtn, state, track, loopBtn, fitBtn, saveBtn);
+    rate, h("span", {class: "pb-clock"}, time, goto, wall), liveBtn, state, track, loopBtn, fitBtn, saveBtn);
 
   // the timeline spans the route, or a live session's window
   let width = 0, hover = null;
+  // where the canvas is, read once as the pointer comes onto it (not on every move, after the tooltip's writes)
+  let rect = null;
   const x2t = (x) => clock.start + x / width * (clock.duration - clock.start);
-  const xOf = (e) => e.clientX - canvas.getBoundingClientRect().left;
-  const yOf = (e) => e.clientY - canvas.getBoundingClientRect().top;
+  const xOf = (e) => e.clientX - (rect ||= canvas.getBoundingClientRect()).left;
+  const yOf = (e) => e.clientY - (rect ||= canvas.getBoundingClientRect()).top;
   const t2x = (t) => (t - clock.start) / (clock.duration - clock.start) * width;
 
   // the session's events as rlog bytes, downloaded (raw: the codec here only decompresses)
@@ -123,7 +151,7 @@ export function playbar(ctx) {
     for (const s of spans) {
       if (!SPAN_COLORS[s.kind]) continue;
       c.fillStyle = col(SPAN_COLORS[s.kind]);
-      c.fillRect(t2x(s.start / 1000), spanY, Math.max(1, t2x(s.end / 1000) - t2x(s.start / 1000)), SPAN_H);
+      c.fillRect(t2x(s.start / 1000), spanY, Math.max(isAlert(s) ? 3 : 1, t2x(s.end / 1000) - t2x(s.start / 1000)), SPAN_H);  // a short alert still shows
     }
     // bookmarks: a flag above the spans
     c.fillStyle = col("--bookmark");
@@ -164,18 +192,19 @@ export function playbar(ctx) {
   const offs = ["t", "range", "play", "duration"].map((ev) => clock.on(ev, () => perf.invalidate(pane)));
   offs.push(status.on(() => perf.invalidate(pane)), theme.on(() => perf.invalidate(pane)));
   if (live) offs.push(live.source.on("state", () => perf.invalidate(pane)));
-  const resizer = new ResizeObserver(([e]) => { width = e.contentRect.width; perf.invalidate(pane); });
+  const resizer = new ResizeObserver(([e]) => { width = e.contentRect.width; rect = null; perf.invalidate(pane); });
   resizer.observe(track);
 
   // dragging in the range strip pans/resizes the visible range; anywhere else scrubs the playhead
+  const inStrip = (e) => yOf(e) < (e.pointerType === "touch" ? 14 : PAD + RANGE_H + 1);  // a finger gets a taller strip
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
     const x0 = xOf(e), t0 = x2t(x0);
     const [r0, r1] = clock.range;
     let mode = "scrub";
-    const touch = e.pointerType === "touch";  // a finger gets a taller strip and wider edges
-    if (yOf(e) < (touch ? 14 : PAD + RANGE_H + 1)) {
+    const touch = e.pointerType === "touch";  // and wider edges
+    if (inStrip(e)) {
       const edge = touch ? 16 : 5;
       mode = Math.abs(x0 - t2x(r0)) < edge ? "left" : Math.abs(x0 - t2x(r1)) < edge ? "right" : t0 > r0 && t0 < r1 ? "pan" : "new";
     }
@@ -191,25 +220,36 @@ export function playbar(ctx) {
     canvas.onpointermove = move;
     canvas.onpointerup = () => { canvas.onpointermove = null; canvas.onpointerup = null; };
   });
+  // the tooltip: its time follows the pointer, the rest is rebuilt only when it changes
+  const hoverText = document.createTextNode("");
+  let tipText = "", onStrip = false;
   canvas.addEventListener("pointermove", (e) => {
     const x = xOf(e);
-    hover = x2t(x);
+    hover = Math.max(0, Math.min(clock.duration, x2t(x)));  // a captured pointer goes past the ends
     perf.invalidate(pane);
     tip.hidden = false;
     tip.style.left = `${Math.max(0, Math.min(width - 136, x - 68))}px`;
     const slot = Math.max(0, Math.min(Math.floor(hover / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
     const n = segmentAt(route, slot);  // a range's slots map to its segments
-    const sprite = route.url && api.segmentAsset(route, n, "sprite.jpg");  // local files have none
-    tip.firstChild.hidden = !sprite;
-    if (sprite) tip.firstChild.style.backgroundImage = `url(${sprite})`;
     // the spans under the cursor, with the alert's text once logs are loaded
     const ms = hover * 1000, alert = ctx.peekStore()?.valueAt("/selfdriveState/alertText1", hover);
     const under = spans.filter((s) => SPAN_LABELS[s.kind] && s.start <= ms && ms < s.end)
-      .map((s) => h("div", {}, SPAN_LABELS[s.kind] + ((s.kind === "alert" || s.kind === "critical") && alert ? `: ${alert}` : "")));
-    tip.lastChild.replaceChildren(...under, `${fmt.clock(hover)} · segment ${n}`,
-      ...status.kinds().filter((k) => k.segs[slot]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[slot])}`)));
+      .map((s) => SPAN_LABELS[s.kind] + (isAlert(s) && alert ? `: ${alert}` : ""));
+    const loads = status.kinds().filter((k) => k.segs[slot]).map((k) => `${k.label}: ${describe(k.segs[slot])}`);
+    // over the range strip, what dragging it does
+    const strip = !e.buttons && inStrip(e);
+    if (strip !== onStrip) canvas.style.cursor = (onStrip = strip) ? "ew-resize" : "";
+    if (strip) loads.unshift("drag: pan or resize the visible window");
+    hoverText.data = `${fmt.clock(hover)} · segment ${n}`;
+    const text = [n, ...under, ...loads].join("\n");
+    if (text === tipText) return;
+    tipText = text;
+    const sprite = route.url && api.segmentAsset(route, n, "sprite.jpg");  // local files have none
+    tip.firstChild.hidden = !sprite;
+    if (sprite) tip.firstChild.style.backgroundImage = `url(${sprite})`;
+    tip.lastChild.replaceChildren(...under.map((u) => h("div", {}, u)), hoverText, ...loads.map((l) => h("div", {class: "muted"}, l)));
   });
-  canvas.addEventListener("pointerleave", () => { hover = null; tip.hidden = true; perf.invalidate(pane); });
+  canvas.addEventListener("pointerleave", () => { hover = rect = null; tip.hidden = true; perf.invalidate(pane); });
   // wheel zooms the visible range around the cursor
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();

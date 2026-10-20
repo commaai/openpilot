@@ -32,7 +32,7 @@ function primeSection(device) {
 function unpairSection(device, onUnpaired) {
   const dongleId = device.dongle_id;
   const status = h("p", {class: "small"});
-  const input = h("input", {class: "field mono", placeholder: dongleId, autocomplete: "off", spellcheck: "false", "aria-label": "Dongle id to confirm",
+  const input = h("input", {class: "field mono", placeholder: "type the dongle id", autocomplete: "off", spellcheck: "false", "aria-label": "Dongle id to confirm",
     oninput: () => { button.disabled = input.value.trim().toLowerCase() !== dongleId; }});
   const button = h("button", {class: "button danger", disabled: true}, "Unpair");
   const form = h("form", {class: "inline-form", onsubmit: async (e) => {

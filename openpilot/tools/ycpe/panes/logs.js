@@ -21,7 +21,7 @@ export function create(ctx, state) {
   const queued = new Set(), again = new Set();  // segments with an indexing job, and those that grew since it started
   const edges = new Map();  // segment → its alert and events at both ends (segmentRows)
   let job = null, untick = null, store = null, timer = 0, disposed = false;
-  let height = 0, top = 0, expected = -1, current = -1, pool = [], shown = -1;
+  let height = 0, top = 0, expected = -1, current = -1, pool = [], shown = -1, drawn = "";
 
   const levelPick = h("select", {title: "Minimum level", onchange: (e) => filter({level: +e.target.value})},
     LEVELS.map((l, k) => h("option", {value: k, selected: k === minLevel}, l)));
@@ -36,7 +36,8 @@ export function create(ctx, state) {
   const win = h("div", {class: "logs-window"});
   const spacer = h("div", {class: "logs-spacer"}, win);
   const list = h("div", {class: "logs-list", onscroll, onclick}, spacer, note);
-  const el = h("div", {class: "logs-pane"}, h("div", {class: "logs-bar"}, levelPick, sourcePick, search, followBtn, count), list);
+  const detail = h("div", {class: "logs-detail", hidden: true, onclick: () => { detail.hidden = true; }});  // a tapped row in full
+  const el = h("div", {class: "logs-pane"}, h("div", {class: "logs-bar"}, levelPick, sourcePick, search, followBtn, count), list, detail);
 
   const pane = {
     name: "logs", el, render, dispose,
@@ -146,10 +147,15 @@ export function create(ctx, state) {
   }
 
   function render() {
-    spacer.style.height = `${view.length * ROW}px`;
-    count.textContent = `${view.length.toLocaleString()} / ${rows.length.toLocaleString()}`;
-    note.textContent = view.length ? "" : jobs.length || job ? "indexing…" : rows.length ? "no matches" : "no log messages";
-    followBtn.classList.toggle("on", follow);
+    // the bar and spacer change with the rows only: rewritten every frame, they made the scrollTop write force a layout
+    const bar = `${view.length} ${rows.length} ${!!(jobs.length || job)} ${follow}`;
+    if (bar !== drawn) {
+      drawn = bar;
+      spacer.style.height = `${view.length * ROW}px`;
+      count.textContent = `${view.length.toLocaleString()} / ${rows.length.toLocaleString()}`;
+      note.textContent = view.length ? "" : jobs.length || job ? "indexing…" : rows.length ? "no matches" : "no log messages";
+      followBtn.classList.toggle("on", follow);
+    }
     if (sourcePick.options.length !== sources.size + 1) {
       sourcePick.replaceChildren(h("option", {value: ""}, "all sources"),
         [...sources].sort().map((s) => h("option", {value: s, selected: s === source}, s || "(none)")));
@@ -189,9 +195,15 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   }
 
+  // seeks to the row and shows it whole below the list, or hides it again
+  let opened = null;
   function onclick(e) {
     const r = pool[e.target.closest(".logs-row")?.dataset.slot]?.row;
-    if (r) ctx.clock.seek(r.t);
+    if (!r) return;
+    ctx.clock.seek(r.t);
+    detail.hidden = r === opened && !detail.hidden;
+    detail.replaceChildren(h("span", {class: `logs-meta lv${r.level}`}, `${clock(r.t)} ${LEVELS[r.level]} ${r.source}`), " ", r.text);
+    opened = r;
   }
 
   function dispose() {
@@ -213,10 +225,9 @@ function* segmentRows(store, n, edge, from) {
     yield null;
     return store.chunk(path, n);
   }
-  for (const path of ["/logMessage", "/errorLogMessage"]) {
-    const c = yield* chunk(path);
-    if (c) for (const [t, s] of pairs(c, from)) yield swaglog(t, s);
-  }
+  // logmessaged sends errors on both, and qlogs keep only errorLogMessage
+  const swag = (yield* chunk("/logMessage")) ?? (yield* chunk("/errorLogMessage"));
+  if (swag) for (const [t, s] of pairs(swag, from)) yield swaglog(t, s);
 
   const os = yield* chunk("/operatingSystemLog/message");
   if (os) {

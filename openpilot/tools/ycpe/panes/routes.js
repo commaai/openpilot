@@ -16,7 +16,7 @@ export function create(ctx) {
   const row = (r, note = "") => {
     const start = new Date(r.start_time_utc_millis);
     const current = r.fullname === ctx.route.fullname;
-    return h("a", {class: `route-row ${current ? "current" : ""}`, href: `/${dongle}/${r.fullname.split("|")[1]}`,
+    return h("a", {class: `route-row ${current ? "current" : ""}`, href: `/${dongle}/${r.fullname.split("|")[1]}`, "aria-current": current && "page",
       onclick: (e) => { if (e.button || e.metaKey || e.ctrlKey) return; e.preventDefault(); ctx.openRoute(r.fullname); }},
       h("img", {class: "route-thumb", loading: "lazy", alt: "", src: api.segmentAsset(r, 0, "sprite.jpg")}),
       h("span", {class: "route-when"},

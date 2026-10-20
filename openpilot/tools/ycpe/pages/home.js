@@ -12,33 +12,37 @@ export const canManage = async (device) => device.is_owner || !!(await auth.user
 
 // the name, plus a pencil for those who may rename; Enter or blur saves, Escape cancels
 export function deviceName(device) {
-  const label = h("span", {}, device.alias || device.dongle_id);
-  const edit = h("button", {class: "icon-btn", title: "Rename", hidden: true, onclick: start}, icon("edit", 14));
+  const name = () => device.alias || device.dongle_id;
+  const label = h("span", {}, name());
+  const edit = h("button", {class: "icon-btn", title: "Rename", "aria-label": `Rename ${name()}`, hidden: true, onclick: start}, icon("edit", 14));
+  const failed = h("span", {class: "small error", role: "alert"});
   const el = h("span", {class: "device-name"}, label, edit);
   canManage(device).then((ok) => { edit.hidden = !ok; });
 
   function start(e) {
     e.preventDefault();
     e.stopPropagation();
-    const input = h("input", {class: "field", value: device.alias || "", placeholder: device.dongle_id, maxlength: 32,
+    const input = h("input", {class: "field", value: device.alias || "", placeholder: device.dongle_id, maxlength: 32, "aria-label": "Device name",
       onclick: (e) => { e.preventDefault(); e.stopPropagation(); }});
     let done = false;
     const finish = async (save) => {
       if (done) return;
       done = true;
+      const refocus = document.activeElement === input;  // Enter or Escape, not a click away
       const alias = input.value.trim();
+      failed.textContent = "";
       if (save && alias !== (device.alias || "")) {
         input.disabled = true;
         try {
           device.alias = (await api.setDeviceAlias(device.dongle_id, alias)).alias;
-          label.title = "";
         } catch (err) {
-          label.title = `Rename failed: ${err.message}`;
+          failed.textContent = `Rename failed: ${err.message}`;
         }
       }
-      label.classList.toggle("error", !!label.title);
-      label.textContent = device.alias || device.dongle_id;
-      el.replaceChildren(label, edit);
+      label.textContent = name();
+      edit.setAttribute("aria-label", `Rename ${name()}`);
+      el.replaceChildren(label, edit, failed);
+      if (refocus) edit.focus();
     };
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") finish(true);

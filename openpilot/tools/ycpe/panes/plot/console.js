@@ -11,15 +11,13 @@ export function openConsole(x, y, spec, run) {
   const inputs = h("textarea", {rows: 3, spellcheck: false, placeholder: "/carState/vEgo\n(one path per line, or drop series here)"}, (spec.inputs || []).join("\n"));
   const globals = h("textarea", {rows: 3, spellcheck: false, placeholder: "// runs once; its variables persist across samples"}, spec.globals || "");
   const code = h("textarea", {rows: 8, spellcheck: false, placeholder: "return value * 3.6;"}, spec.code || "");
-  const error = h("div", {class: "error"}), size = h("span"), warning = h("div", {class: "error"});
-  // all of the code shows, however it's padded, since it runs with this page's powers (see data/custom.js)
+  const error = h("div", {class: "error"}), size = h("span");
+  // all of the code shows, however it's padded, since it can send the series it reads anywhere (see data/custom.js)
   const fit = () => {
     const n = code.value.split("\n").length;
     globals.rows = Math.max(3, globals.value.split("\n").length);
     code.rows = Math.max(8, n);
     size.textContent = ` · ${n} line${n === 1 ? "" : "s"}`;
-    warning.textContent = /\b(fetch|import|importScripts|XMLHttpRequest|WebSocket|EventSource|eval|Function)\b/.test(globals.value + code.value)
-      ? "this code can reach the network or load more code: read all of it before running" : "";
   };
   globals.addEventListener("input", fit);
   code.addEventListener("input", fit);
@@ -36,7 +34,6 @@ export function openConsole(x, y, spec, run) {
 
   const el = popup(x, y,
     h("div", {class: "title"}, "Custom series"),
-    warning,
     h("label", {}, "name", name),
     h("label", {}, "template", h("select", {onchange: (e) => {
       const t = TEMPLATES[e.target.value];

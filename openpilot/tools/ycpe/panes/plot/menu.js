@@ -10,16 +10,18 @@ let open = null, opener = null;  // the popup, and what had the focus before it
 export function close() {
   if (open?.contains(document.activeElement)) opener?.focus({preventScroll: true});
   open?.remove();
-  open = null;
+  open = opener = null;
 }
 
-// a floating panel at client (x, y), kept on screen; closes on an outside press or Escape
+// a floating panel at client (x, y), kept on screen, that takes the focus; closes on an outside press or Escape
 export function popup(x, y, ...content) {
   close();
   opener = document.activeElement;
   const el = open = h("div", {class: "popover plot-popup", onpointerdown: (e) => e.stopPropagation()}, ...content);
   document.body.append(el);
-  return place(el, x, y);
+  place(el, x, y);
+  el.querySelector("input, select, textarea, button:enabled")?.focus({preventScroll: true});
+  return el;
 }
 
 // el at (x, y), moved on screen; again after a change of its size
@@ -33,9 +35,11 @@ addEventListener("pointerdown", close);
 addEventListener("blur", close);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && open) close(); });  // wherever the focus is (the plot, say)
 
-// items: [{label, fn, checked?, disabled?} | null (separator)]; it takes the focus, and the arrow keys move it
+// items: [{label, fn, checked?, disabled?} | null (separator)]; the arrow keys move the focus
 export function menu(x, y, items) {
-  const rows = items.map((it) => it ? h("button", {class: `menu-row ${it.disabled ? "muted" : ""}`, role: "menuitem", disabled: !!it.disabled, onclick: () => {
+  const check = (it) => it.checked !== undefined;
+  const rows = items.map((it) => it ? h("button", {class: `menu-row ${it.disabled ? "muted" : ""}`, role: check(it) ? "menuitemcheckbox" : "menuitem",
+    "aria-checked": check(it) && String(!!it.checked), disabled: !!it.disabled, onclick: () => {
     close();
     it.fn();
   }}, h("span", {class: "tick"}, it.checked && icon("check", 14)), it.label) : h("hr"));
@@ -46,10 +50,10 @@ export function menu(x, y, items) {
     e.preventDefault();
     live[(to + live.length) % live.length]?.focus();
   }}, rows);
-  const el = popup(x, y, list);
-  list.querySelector("button:enabled")?.focus();
-  return el;
+  return popup(x, y, list);
 }
+
+const PARAM_MS = 300;  // a transform parameter's settling time
 
 const num = (label, value, set, step = "any") => h("label", {}, label,
   h("input", {type: "number", step, value, oninput: (e) => e.target.value !== "" && isFinite(e.target.value) && set(+e.target.value)}));
@@ -58,13 +62,20 @@ const num = (label, value, set, step = "any") => h("label", {}, label,
 // actions: [{label, fn}] run from buttons, after the editor closes
 export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
   const set = (k) => (v) => { curve[k] = v; change(); };
+  // each parameter value is a series of its own: one is computed once the value settles
   const param = h("span");
+  let paramTimer = 0;
+  const setParam = (v) => {
+    clearTimeout(paramTimer);
+    paramTimer = setTimeout(() => { curve.transform.param = v; change(); }, PARAM_MS);
+  };
   const showParam = () => {
+    clearTimeout(paramTimer);
     const spec = TRANSFORMS[curve.transform?.kind];
-    param.replaceChildren(spec?.param ? num(spec.param.label, curve.transform.param ?? spec.param.value, (v) => { curve.transform.param = v; change(); }) : "");
+    param.replaceChildren(spec?.param ? num(spec.param.label, curve.transform.param ?? spec.param.value, setParam) : "");
   };
   showParam();
-  const el = popup(x, y,
+  return popup(x, y,
     h("div", {class: "title"}, curve.label || curve.path),
     h("label", {}, "label", h("input", {value: curve.label || "", placeholder: curve.path.slice(1), spellcheck: false, oninput: (e) => set("label")(e.target.value.trim() || undefined)})),
     h("label", {}, "color", h("input", {type: "color", value: curve.color, oninput: (e) => set("color")(e.target.value)})),
@@ -83,6 +94,4 @@ export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
     code && h("button", {onclick: code}, "Edit code…"),
     actions.map(({label, fn}) => h("button", {onclick: () => { close(); fn(); }}, label)),
     h("button", {class: "danger", onclick: () => { close(); remove(); }}, "Remove curve"));
-  el.querySelector("input").focus();
-  return el;
 }

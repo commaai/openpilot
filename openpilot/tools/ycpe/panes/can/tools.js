@@ -1,7 +1,7 @@
 // CAN dialogs: DBC files, find similar bits, find signal, CSV export, route segments
 import {h} from "/dom.js";
 import {DBC} from "/data/dbc.js";
-import {addrOf, hexId} from "/data/can.js";
+import {addrOf, carDbc, hexId} from "/data/can.js";
 import {createSignal, dialog, download, field, menuItem, popup} from "./common.js";
 
 const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a, b) => a - b);
@@ -32,7 +32,7 @@ export function dbcDialog(can, message = "") {
   const results = h("div", {class: "can-list"});
   async function list() {
     const {files, fingerprints, label, local} = await index;
-    const fp = fingerprints[can.fingerprinted] ? [fingerprints[can.fingerprinted]] : [];
+    const fp = [carDbc(fingerprints[can.fingerprinted])].filter(Boolean);
     const q = search.value.toLowerCase();
     search.title = [local && `opendbc in ${local}`, label && `opendbc at ${label}`].filter(Boolean).join(", else ");
     results.replaceChildren(...(label || local ? [] : [h("div", {class: "can-muted"}, "Can't reach opendbc on GitHub")]),

@@ -310,7 +310,7 @@ except ImportError:  # used as a library without the daemon
   route = None
 
 if route is not None:
-  NAME = re.compile(r"^[0-9a-zA-Z_-]+$")  # dongle ids and log ids
+  NAME = re.compile(r"^[0-9a-zA-Z_-]+\Z")  # dongle ids and log ids
   _transcoder: Transcoder | None = None
   _transcoder_lock = threading.Lock()
 

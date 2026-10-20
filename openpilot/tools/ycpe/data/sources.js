@@ -231,8 +231,12 @@ export async function routeRecord(name) {
   }
   if (!sr.slice && !sr.selector) return record;
   const have = new Set(record.segment_numbers ?? segIdxs({slice: ":"}, record.maxqlog));
-  const segs = segIdxs(sr, record.maxqlog).filter((n) => have.has(n));
-  if (!segs.length) throw new Error(`no segments in ${sr.slice}`);
+  const want = segIdxs(sr, record.maxqlog), segs = want.filter((n) => have.has(n));
+  if (!segs.length) {
+    if (!have.size) throw new Error(`no segments in ${sr.slice}`);
+    const lo = Math.min(...have), hi = Math.max(...have);
+    throw new Error(`segments ${sr.slice} ${want.every((n) => n > hi) ? "are past the end" : "aren't in the route"}: this route has segments ${lo}-${hi}`);
+  }
   const t0 = record.start_time_utc_millis + segs[0] * 60000;
   return {...record, range: [sr.slice, sr.selector].filter(Boolean).join("/"), segment_numbers: segs,
     start_time_utc_millis: t0, end_time_utc_millis: t0 + segs.length * 60000};

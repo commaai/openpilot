@@ -2,6 +2,7 @@
 // Fixed-height rows from a pool; a render only patches the text of visible cells.
 import {h} from "/dom.js";
 import {format, value} from "/data/dbc.js";
+import {fmtTime} from "/panes/plot/draw.js";
 import {canOf, hex2, ink, subs} from "./common.js";
 
 const PAGE = 500, ROW = 20;
@@ -10,8 +11,8 @@ export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let hex = state.hex || false, frames = {t: [], data: [], more: false}, busy = false, again = false;
   let cols = [], pool = [], scrollTop = 0, height = 300;
-  const filter = {sig: h("select", {class: "can-select"}), op: h("select", {class: "can-select"}, ["=", "!=", ">", ">=", "<", "<="].map((o) => h("option", {}, o))),
-                  v: h("input", {class: "can-filter", placeholder: "value", type: "number", step: "any"})};
+  const filter = {sig: h("select", {class: "can-select", "aria-label": "Signal"}), op: h("select", {class: "can-select", "aria-label": "Comparison"}, ["=", "!=", ">", ">=", "<", "<="].map((o) => h("option", {}, o))),
+                  v: h("input", {class: "can-filter", placeholder: "value", "aria-label": "Value", type: "number", step: "any"})};
   // the value applies as it's typed
   for (const x of [filter.sig, filter.op]) x.addEventListener("change", () => load());
   filter.v.addEventListener("input", () => load());
@@ -97,7 +98,7 @@ export function create(ctx, state) {
         if (!on) continue;
         r.i = j;
         if (r.top !== j) r.style.top = `${(r.top = j) * ROW}px`;
-        set(r.cells[0], frames.t[j].toFixed(3));
+        set(r.cells[0], fmtTime(frames.t[j], 0.001, true));
         if (!cols.length) hexCells(r, frames.data[j], frames.data[j + 1]);
         else cols.forEach((sg, c) => {
           const v = value(m, sg, frames.data[j]);

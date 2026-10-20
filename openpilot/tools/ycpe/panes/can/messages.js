@@ -15,21 +15,22 @@ const COLS = [
   {id: "count", title: "Count", get: (m, can) => (m.unseen ? null : can.countAt(m.key)), num: true},
   {id: "bytes", title: "Bytes", get: (m) => m.size},
 ];
+let panes = 0;  // for row ids
 const text = (c, m, can) => String(c.text ? c.text(m, can) : c.get(m, can) ?? "N/A");
 
 export function create(ctx, state) {
-  const can = canOf(ctx), s = subs();
+  const can = canOf(ctx), s = subs(), uid = panes++;
   let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
   const filters = {...state.filters}, hidden = new Set(state.hidden), shown = new Set(state.shown);
   let unseen = state.unseen ?? true;  // DBC messages never seen on the bus, as cabana's "Show inactive messages"
 
-  const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
+  const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("button", {class: `can-col can-col-${c.id}`, onclick: () => {
     sort = {col: c.id, dir: sort.col === c.id ? -sort.dir : 1};
     refresh();
   }}, c.title, h("span", {class: "can-sort"}))));
-  const filterRow = h("div", {class: "can-msg-filters"}, COLS.map((c) => h("input", {class: `can-col can-col-${c.id}`, placeholder: c.title,
+  const filterRow = h("div", {class: "can-msg-filters"}, COLS.map((c) => h("input", {class: `can-col can-col-${c.id}`, placeholder: c.title, "aria-label": c.title,
     value: filters[c.id] || "", spellcheck: false, oninput: (e) => { filters[c.id] = e.target.value; refresh(); }})));
-  const spacer = h("div", {class: "can-msg-spacer"});
+  const spacer = h("div", {class: "can-msg-spacer", role: "listbox", "aria-label": "Messages"});
   const empty = h("div", {class: "can-empty", hidden: true});
   const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; ctx.perf.invalidate(pane); }}, spacer, empty);
   const pool = [];
@@ -41,9 +42,9 @@ export function create(ctx, state) {
   // settings live in the ⋯ menu, so the toolbar stays one row
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
-    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, h("span", {}, "Tools"), icon("down", 14)),
+    clearBtn, h("button", {class: "can-btn", title: "Tools", "aria-haspopup": "menu", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, h("span", {}, "Tools"), icon("down", 14)),
     h("span", {class: "can-spacer"}),
-    h("button", {class: "can-btn", title: "Options", onclick: (e) => popup(e.currentTarget, [
+    h("button", {class: "can-btn", title: "Options", "aria-haspopup": "menu", onclick: (e) => popup(e.currentTarget, [
       menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
       menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
       h("hr"),
@@ -53,7 +54,8 @@ export function create(ctx, state) {
         columns();
       }))])}, icon("more_horiz", 14)));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
-  const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
+  // the arrow keys move the selection from anywhere in the pane; the selected row is its active descendant
+  const el = h("div", {class: "can-pane can-messages", tabindex: 0, role: "group", "aria-label": "CAN messages", onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 
   // hidden columns are a class per column on the pane, so rows never change for it. Narrow panes hide some columns
   // unless they were turned on: the menu shows which are showing
@@ -127,7 +129,13 @@ export function create(ctx, state) {
       const at = new Map(rows.map((m, i) => [m.key, i])), fresh = all.filter((m) => !at.has(m.key));
       rows = all.filter((m) => at.has(m.key)).sort((a, b) => at.get(a.key) - at.get(b.key)).concat(fresh.sort((a, b) => a.key - b.key));
     }
-    head.querySelectorAll(".can-sort").forEach((x, i) => { x.textContent = COLS[i].id === sort.col ? (sort.dir > 0 ? " ▲" : " ▼") : ""; });
+    head.querySelectorAll(".can-sort").forEach((x, i) => {
+      const on = COLS[i].id === sort.col;
+      x.textContent = on ? (sort.dir > 0 ? " ▲" : " ▼") : "";
+      // aria-sort is for table headers, which this list's aren't
+      if (on) x.parentNode.setAttribute("aria-label", `${COLS[i].title}, sorted ${sort.dir > 0 ? "ascending" : "descending"}`);
+      else x.parentNode.removeAttribute("aria-label");
+    });
     spacer.style.height = `${rows.length * ROW}px`;
     empty.textContent = rows.length ? "" : can.messages().length ? "No messages match the filters" : can.failed ? `CAN failed: ${can.failed}` : "Waiting for CAN frames…";
     empty.hidden = rows.length > 0;
@@ -152,7 +160,7 @@ export function create(ctx, state) {
 
   function row() {
     const cells = COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`}));
-    const r = h("div", {class: "can-msg-row", onclick: () => { can.select(r.key); reveal(el, "can-binary"); }}, cells);
+    const r = h("div", {class: "can-msg-row", id: `can-msg-${uid}-${pool.length}`, role: "option", "aria-selected": "false", onclick: () => { can.select(r.key); reveal(el, "can-binary"); }}, cells);
     r.cells = cells;
     r.bytes = [];
     spacer.append(r);
@@ -166,6 +174,7 @@ export function create(ctx, state) {
     render() {
       const first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       const live = can.live, t = ctx.clock.t;
+      let current = "";
       // rows past n are left from a taller pane
       for (let i = 0; i < Math.max(n, pool.length); i++) {
         const m = i < n && rows[first + i];
@@ -174,7 +183,11 @@ export function create(ctx, state) {
         if (r.hidden) r.hidden = false;
         r.key = m.key;
         if (r.top !== first + i) r.style.top = `${(r.top = first + i) * ROW}px`;
-        if (r.sel !== (m.key === can.selected)) r.classList.toggle("selected", r.sel = m.key === can.selected);
+        if (r.sel !== (m.key === can.selected)) {
+          r.classList.toggle("selected", r.sel = m.key === can.selected);
+          r.setAttribute("aria-selected", String(r.sel));
+        }
+        if (r.sel) current = r.id;
         const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
         if (r.active !== active) r.classList.toggle("inactive", !(r.active = active));
         COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], text(c, m, can)); });
@@ -194,6 +207,9 @@ export function create(ctx, state) {
           if (b.className !== cls) b.className = cls;
           if (a > 0 && b.av !== av) b.style.setProperty("--a", b.av = av);
         });
+      }
+      if (el.current !== current) {
+        if ((el.current = current)) el.setAttribute("aria-activedescendant", current); else el.removeAttribute("aria-activedescendant");
       }
     },
     resize() { ctx.perf.invalidate(pane); },

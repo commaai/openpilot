@@ -2,7 +2,8 @@
 // and text, and the view gestures. Two canvases: the base (grid, curves) redraws only when the view or the
 // data changes; the overlay (playhead, tracker, zoom box) redraws on every cursor move. Per-frame work is
 // O(pixels): curves come from store.decimate (cached on a bucket grid, so a pan only decimates the newly
-// exposed edge) and state blocks from cached runs.
+// exposed edge) and state blocks from cached runs. A redraw that doesn't fit the frame's budget is stroked over a
+// few frames on a back canvas, which then takes the base's place.
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {colors, fitCanvas, ticks, axes, fmtTick, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
@@ -10,17 +11,19 @@ import {blocks} from "./blocks.js";
 import {Decimator} from "./decimate.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
-import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/transforms.js";
-import {evaluate} from "/data/custom.js";
+import {TRANSFORMS, derivedPath, derive, compute, transformInputs, lease} from "/data/transforms.js";
+import {evaluate, lease as leaseCustom} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
 import {customsOf, plots, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
+const SETTLE_MS = 120;  // a new pane size is stretched to until it has held this long (a divider drag)
 // what an empty plot says to do, in the gestures there are
 const HOW = matchMedia("(pointer: coarse)").matches ? "Double-tap a series in Series to plot it · long-press for options"
   : "Drag series here, or double-click one in Series · right-click for options";
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
+const derived = new WeakMap();  // store → the transformed series computed into it
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
 const spacing = new Map();  // path → {version, dt}
@@ -54,7 +57,8 @@ export function create(ctx, state = {}) {
   let col = colors(ctx.theme);
   // range: the pane's own x-range when its x-axis is unlinked from the shared clock.range
   const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats, range: state.range || null};
-  const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
+  let base = h("canvas"), back = h("canvas");  // back: where a redraw over several frames goes
+  const over = h("canvas", {class: "over", tabindex: 0, role: "img"});
   const legend = h("div", {class: "legend"});
   const empty = h("div", {class: "empty"});
   // the y-axis, where a drag pans the values, on a phone whose plots let the page scroll (plot.css): it hands its
@@ -64,8 +68,11 @@ export function create(ctx, state = {}) {
     grip.addEventListener(type, (e) => { if (!over.dispatchEvent(new e.constructor(type, e))) e.preventDefault(); });
   }
   const el = h("div", {class: "plot-pane"}, base, over, grip, legend, empty);
-  let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
+  let W = 0, H = 0, gBase = null, gBack = null, gOver = null, dirty = true, changes = 0;  // W, H: the size drawn at; changes: invalidations so far
+  let size = null, settle = 0;  // the pane's new size {w, h, at} until the canvases take it
   let frame = null;    // geometry and prepared curves of the last base draw
+  let job = null;      // the base redraw in progress: {fr, g, k (lines stroked), direct, changes, points, ms (stroking)}
+  let msPerPoint = 2e-4;  // what stroking a decimated point has cost, to tell whether a redraw fits the frame
   let gesture = null;  // the pointer gesture in progress
   const pointers = new Map();  // pointer id → where it is, while it's down (two make a pinch)
   let rows = [];       // legend rows, parallel to st.curves
@@ -77,6 +84,7 @@ export function create(ctx, state = {}) {
   const pane = {
     name: "plot", el, store, render, resize, dispose, save, addCurves, compare, setCustom,
     has: (path) => st.curves.some((c) => c.path === path),
+    draws: (path) => st.curves.some((c) => c.transform && derivedPath(c.path, c.transform) === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     get curves() { return structuredClone(st.curves); },
@@ -88,7 +96,7 @@ export function create(ctx, state = {}) {
     },
     overlay: () => perf.invalidate(pane),
   };
-  const invalidate = () => { dirty = true; perf.invalidate(pane); };
+  const invalidate = () => { dirty = true; changes++; perf.invalidate(pane); };
 
   const offs = [
     clock.on("range", invalidate),
@@ -145,9 +153,11 @@ export function create(ctx, state = {}) {
   // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
   // change, off the draw and a moment later (inputs that change together, as segments arrive, recompute once);
   // custom code from an untrusted layout waits until the user has reviewed it in the console. A recipe is the inputs'
-  // versions and a custom series' code, so an undone edit of the code computes again
+  // versions and a custom series' code, so an undone edit of the code computes again; a transform no curve showed
+  // any more is dropped from the store, and computed again when one does
   const recipe = (c, out, inputs) => (out === c.path && c.custom ? `${specKey(c.custom)}|` : "") + inputs.map((p) => store.series(p)?.version).join();
-  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== recipe(c, out, inputs);
+  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) &&
+    (made.get(out) !== recipe(c, out, inputs) || !store.series(out));
   function source(c) {
     let src = c.path;
     steps(c, (out, inputs) => {
@@ -172,6 +182,7 @@ export function create(ctx, state = {}) {
         if (!stale(c, out, inputs)) return;
         const from = recipe(c, out, inputs);
         busy.add(out);
+        if (out !== c.path) (derived.get(store) || derived.set(store, new Set()).get(store)).add(out);
         run().then(() => { made.set(out, from); c.error = null; }, (e) => { made.set(out, from); c.error = e.message; })
           .finally(() => { busy.delete(out); rebuildLegend(); invalidate(); });
       });
@@ -264,30 +275,69 @@ export function create(ctx, state = {}) {
     return hi > lo ? [lo, hi] : [lo - 0.5, lo + 0.5];
   }
 
-  // false when it ran out of frame f's budget and left the canvas as it was
+  // false when it ran out of frame f's budget, or the view changed while it drew over several frames: the base keeps
+  // the last complete picture, and the redraw goes on next frame. One that fits the time left draws on the base
   function drawBase(f) {
-    const g = gBase, [t0, t1] = xRange();
-    const px = L, pw = W - L - R, ph0 = H - T - B;
-    if (pw < 4 || ph0 < 4) return true;
-    if (!st.curves.length) {  // the empty state is just the hint
-      frame = null;
-      g.clearRect(0, 0, W, H);
-      return true;
+    if (!job) {
+      const [t0, t1] = xRange(), pw = W - L - R, ph0 = H - T - B;
+      if (pw < 4 || ph0 < 4) return true;
+      if (!st.curves.length) {  // the empty state is just the hint
+        frame = null;
+        if (!fits(base)) gBase = fitCanvas(base, W, H);
+        gBase.clearRect(0, 0, W, H);
+        return true;
+      }
+      const p = prepare(t0, t1, pw, f);
+      if (!p) return false;
+      const fr = geometry(p, t0, t1, pw, ph0), points = p.lines.reduce((n, it) => n + (it.d?.t.length || 0), 0);
+      const direct = points * msPerPoint < view.left(f);
+      if (direct && !fits(base)) gBase = fitCanvas(base, W, H);
+      if (!direct && !fits(back)) gBack = fitCanvas(back, W, H);
+      job = {fr, g: direct ? gBase : gBack, k: 0, direct, changes, points, ms: 0};
+      paintStart(job.g, fr);
     }
-    const p = prepare(t0, t1, pw, f);
-    if (!p) return false;
+    const {fr, g} = job, t = performance.now();
+    while (job.k < fr.lines.length && (job.direct || job.k === 0 || view.left(f) > 0)) paintLine(g, fr, fr.lines[job.k++]);
+    job.ms += performance.now() - t;
+    if (job.k < fr.lines.length) return false;
+    paintEnd(g, fr);
+    if (job.points > 1000) msPerPoint += (job.ms / job.points - msPerPoint) * 0.3;
+    if (!job.direct) {  // the back canvas takes the base's place
+      base.replaceWith(back);
+      [base, back, gBase, gBack] = [back, base, gBack, gBase];
+      stretch(base, size || {w: W, h: H});
+    }
+    frame = fr;
+    decimator.sweep();
+    const done = job.changes === changes;
+    job = null;
+    return done;
+  }
+
+  const stretch = (cv, {w, h}) => { [cv.style.width, cv.style.height] = [`${w}px`, `${h}px`]; };
+  // whether canvas cv's backing store has the size drawn at (the base is stretched to it until then: see render())
+  const fits = (cv) => cv.width === Math.max(1, Math.round(W * devicePixelRatio)) && cv.height === Math.max(1, Math.round(H * devicePixelRatio));
+
+  // where things go on the base: the plot rect, the strips of state blocks above it, the value range
+  function geometry(p, t0, t1, pw, ph0) {
+    const px = L;
     const stripH = p.blockMode ? ph0 / Math.max(1, p.rows.length) : Math.min(STRIP, ph0 / 4 / Math.max(1, p.rows.length));
     const py = T + (p.blockMode ? ph0 : p.rows.length * stripH), ph = T + ph0 - py;
     const [lo, hi] = p.blockMode ? [0, 1] : yRange(p.lines, t0, t1);
     const X = (t) => px + (t - t0) / (t1 - t0) * pw, Y = (v) => py + (hi - v) / (hi - lo) * ph;
-    frame = {t0, t1, lo, hi, px, py, pw, ph, X, Y, stripH, ...p};
+    return {t0, t1, lo, hi, px, py, pw, ph, ph0, X, Y, stripH, ...p};
+  }
 
+  // the background, axes and state blocks; the curves go on clipped to the plot until paintEnd()
+  function paintStart(g, fr) {
+    const {t0, t1, lo, hi, px, pw, ph, ph0, X, Y, stripH} = fr;
     g.clearRect(0, 0, W, H);
     g.fillStyle = col.bg;
     g.fillRect(px, T, pw, ph0);
 
-    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34), xt = ticks(t0, t1, pw / 90);
-    axes(g, col, {x: px, y: T, w: pw, h: ph0}, xt, X, (t) => fmtTime(t, xt.step, t1 >= 120), yt, Y);
+    const xt = ticks(t0, t1, pw / 90, t1 >= 120);
+    fr.yt = fr.blockMode ? {values: []} : ticks(lo, hi, ph / 34);
+    axes(g, col, {x: px, y: T, w: pw, h: ph0}, xt, X, (t) => fmtTime(t, xt.step, t1 >= 120), fr.yt, Y);
     drawUnloaded(g, view.unloaded(), X, {x: px, y: T, w: pw, h: ph0}, col);
 
     // state block rows, labeled in the gutter
@@ -295,28 +345,30 @@ export function create(ctx, state = {}) {
     g.beginPath();
     g.rect(px, T, pw, ph0);
     g.clip();
-    p.rows.forEach((it, k) => drawBlocks(g, it.blocks, (t) => X(t + it.shift), T + k * stripH, T + (k + 1) * stripH - 1, it.s, col));
-    // curves
-    for (const it of p.lines) {
-      if (!it.d) continue;
-      const {shift, scale, offset} = it;
-      g.strokeStyle = g.fillStyle = it.c.color;
-      g.globalAlpha = st.hl === undefined || st.curves[st.hl] === it.c ? 1 : 0.35;
-      g.setLineDash(it.c.dash ? [5, 3] : []);
-      strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5, it.gap);
-    }
+    fr.rows.forEach((it, k) => drawBlocks(g, it.blocks, (t) => X(t + it.shift), T + k * stripH, T + (k + 1) * stripH - 1, it.s, col));
+  }
+
+  function paintLine(g, {X, Y}, it) {
+    if (!it.d) return;
+    const {shift, scale, offset} = it;
+    g.strokeStyle = g.fillStyle = it.c.color;
+    g.globalAlpha = st.hl === undefined || st.curves[st.hl] === it.c ? 1 : 0.35;
+    g.setLineDash(it.c.dash ? [5, 3] : []);
+    strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5, it.gap);
+  }
+
+  function paintEnd(g, fr) {
+    const {px, py, ph, stripH} = fr;
     g.globalAlpha = 1;
     g.setLineDash([]);
-    drawInvalid(g, p.invalid, X, py + ph);
-    decimator.sweep();
+    drawInvalid(g, fr.invalid, fr.X, py + ph);
     g.restore();
 
     g.fillStyle = col.text;
     g.textAlign = "right";
     g.textBaseline = "middle";
-    p.rows.forEach((it, k) => g.fillText(ellipsize(g, label(it.c).split("/").pop(), px - 10), px - 6, T + (k + 0.5) * stripH));
-    drawUnit(g, p.lines, yt, px, py + ph / 2, ph);
-    return true;
+    fr.rows.forEach((it, k) => g.fillText(ellipsize(g, label(it.c).split("/").pop(), px - 10), px - 6, T + (k + 0.5) * stripH));
+    drawUnit(g, fr.lines, fr.yt, px, py + ph / 2, ph);
   }
 
   // the y axis' unit, as cabana: when the curves share one and none is scaled (an offset keeps it), along the gutter
@@ -411,10 +463,26 @@ export function create(ctx, state = {}) {
       return row;
     });
     legend.replaceChildren(...rows);
+    over.ariaLabel = st.curves.length ? `Plot of ${st.curves.map(label).join(", ")}` : "Empty plot";
     if (at) (rows[at[0]] || rows.at(-1))?.children[at[1]]?.focus();
     legend.hidden = !rows.length;
     hint();
     statsKey = "";
+    release();
+  }
+
+  // the workers keep what the curves read (their paths, transforms' inputs and outputs, custom series' inputs), and
+  // the store the transforms some plot shows
+  function release(curves = st.curves) {
+    lease(pane, store, curves.flatMap((c) => c.transform ? [c.path, derivedPath(c.path, c.transform), ...transformInputs(c.path, c.transform)] : [c.path]));
+    leaseCustom(pane, store, curves.flatMap((c) => c.custom?.inputs || []));
+    const shown = [];
+    view.each((p) => p.store === store && shown.push(p));
+    for (const out of derived.get(store) || []) {
+      if (busy.has(out) || shown.some((p) => p.draws?.(out))) continue;
+      derived.get(store).delete(out);
+      store.drop?.(out);
+    }
   }
 
   // the edits of one opening are one undo entry
@@ -671,6 +739,39 @@ export function create(ctx, state = {}) {
     }
   }, {passive: false});
 
+  // from the keyboard: = and - zoom time around the playhead (shift: the values), ctrl+arrows pan, 0 fits
+  over.addEventListener("keydown", (e) => {
+    if (!frame || e.altKey) return;
+    const [a, b] = xRange(), mod = e.ctrlKey || e.metaKey, span = frame.hi - frame.lo;
+    const zoom = !mod && {Equal: 1 / 1.5, NumpadAdd: 1 / 1.5, Minus: 1.5, NumpadSubtract: 1.5}[e.code];
+    const pan = mod && {ArrowLeft: [-0.1, 0], ArrowRight: [0.1, 0], ArrowUp: [0, 0.1], ArrowDown: [0, -0.1]}[e.key];
+    if (zoom && e.shiftKey) {
+      view.remember(clock);
+      const v = frame.lo + span / 2;
+      st.y = {min: v - span / 2 * zoom, max: v + span / 2 * zoom};
+      invalidate();
+    } else if (zoom) {
+      view.remember(clock);
+      const t = clock.t >= a && clock.t <= b ? clock.t : (a + b) / 2;
+      setRange(t - (t - a) * zoom, t + (b - t) * zoom);
+    } else if (pan) {
+      view.remember(clock);
+      const [dx, dy] = pan;
+      if (dx) setRange(a + dx * (b - a), b + dx * (b - a));
+      if (dy) st.y = {min: frame.lo + dy * span, max: frame.hi + dy * span};
+      invalidate();
+    } else if (e.key === "0" && !mod) fit();
+    else return;
+    e.preventDefault();
+  });
+
+  function fit() {
+    view.remember(clock);
+    st.y = {};
+    setRange(0, clock.duration);
+    invalidate();
+  }
+
   over.addEventListener("dblclick", (e) => {
     view.remember(clock);
     st.y = {};
@@ -689,7 +790,7 @@ export function create(ctx, state = {}) {
   function paneMenu(e) {
     const locked = st.y.min !== undefined || st.y.max !== undefined;
     menu(e.clientX, e.clientY, [
-      {label: "Fit view", fn: () => { view.remember(clock); st.y = {}; setRange(0, clock.duration); invalidate(); }},
+      {label: "Fit view", fn: fit},
       {label: "Y auto-fit", checked: !locked, disabled: !frame && !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
       {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
@@ -724,8 +825,20 @@ export function create(ctx, state = {}) {
   // ---- pane contract
 
   // base redraws share the frame's budget: a pane starts only with MIN_MS of it left (else it keeps its picture
-  // this frame), and one that runs out between curves finishes on a later one
+  // this frame), and one that runs out between curves finishes on a later one. A new size stretches the canvases
+  // until it has held for SETTLE_MS: then the overlay takes it, and the base on its next redraw (one over several
+  // frames finishes at the size it began with), so a divider drag reallocates nothing
   function render(f) {
+    if (size && (!gBase || performance.now() - size.at >= SETTLE_MS)) {
+      [W, H, size] = [size.w, size.h, null];
+      gOver = fitCanvas(over, W, H);
+      gBase ||= fitCanvas(base, W, H);
+      stretch(base, {w: W, h: H});
+      dirty = true;
+      changes++;
+    } else if (size) {
+      for (const cv of [base, over]) stretch(cv, size);
+    }
     if (!gBase) return;
     if (dirty && view.left(f) >= view.MIN_MS) dirty = !drawBase(f);
     if (dirty) perf.invalidate(pane);
@@ -734,13 +847,13 @@ export function create(ctx, state = {}) {
   }
 
   function resize(w = el.clientWidth, hgt = el.clientHeight) {
-    W = w;
-    H = hgt;
-    gBase = fitCanvas(base, W, H);
-    gOver = fitCanvas(over, W, H);
-    el.classList.toggle("narrow", W < 260);  // legend names only
-    el.classList.toggle("tiny", W < 170);  // legend swatches only (names on hover)
-    invalidate();
+    if (!w || !hgt) return;
+    size = {w, h: hgt, at: performance.now()};
+    clearTimeout(settle);
+    settle = setTimeout(() => perf.invalidate(pane), SETTLE_MS);
+    el.classList.toggle("narrow", w < 260);  // legend names only
+    el.classList.toggle("tiny", w < 170);  // legend swatches only (names on hover)
+    perf.invalidate(pane);
   }
 
   function save() {
@@ -753,8 +866,10 @@ export function create(ctx, state = {}) {
     view.leave(pane, clock);
     clearTimeout(statsTimer);
     clearTimeout(recomputeTimer);
+    clearTimeout(settle);
     decimator.dispose();
     closeMenu();
+    release([]);
   }
 
   for (const c of state.curves || []) st.curves.push(normalize(c));

@@ -74,7 +74,7 @@ export function updateMsg(m) {
 
 function decimals(v) {
   let d = 0;
-  while (d < 6 && Math.abs(v - Math.round(v)) > 1e-9) { v *= 10; d++; }
+  while (d < 10 && Math.abs(v - Math.round(v)) > 1e-9) { v *= 10; d++; }
   return d;
 }
 

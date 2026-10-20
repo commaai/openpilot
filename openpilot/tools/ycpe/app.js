@@ -1,7 +1,7 @@
 import {api, auth} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h} from "/dom.js";
+import {h, parseClock} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -26,6 +26,7 @@ import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts
 import {uniqueCustoms} from "/layouts/import.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
+const LOG_RE = /^[0-9a-f]{8}--[0-9a-f]{10}$/i;
 
 export function go(path, replace = false) {
   history[replace ? "replaceState" : "pushState"](null, "", path);
@@ -125,7 +126,8 @@ const bar = {
   device: crumb("Devices"),
   route: crumb("Routes on this device"),
   views: h("nav", {class: "views"}),
-  tabs: h("nav", {class: "tabs", role: "tablist", "aria-label": "Layout tabs"}),
+  tabs: h("nav", {class: "tabs", "aria-label": "Layouts"}),  // the tab list, then New tab and the layouts menu
+  tablist: h("span", {class: "tablist", role: "tablist", "aria-label": "Layout tabs"}),
 };
 
 function topBar() {
@@ -137,6 +139,19 @@ function topBar() {
     tabsScrolled = true;
   }, {passive: false});
   tabsObserver.observe(bar.tabs);
+  // arrows move between the tabs (Enter or space opens one); Delete closes the focused one
+  bar.tablist.addEventListener("keydown", (e) => {
+    const tabs = [...bar.tablist.querySelectorAll("[role=tab]")], i = tabs.indexOf(e.target);
+    const to = {ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: tabs.length - 1}[e.key];
+    if (i < 0 || (to === undefined && e.key !== "Delete")) return;
+    e.preventDefault();
+    e.stopPropagation();  // not the playhead's arrows
+    if (to !== undefined) return tabs[(to + tabs.length) % tabs.length].focus();
+    if (tabs.length > 1) {
+      ws.layout.closeTab(i);
+      updateTop();
+    }
+  });
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
       href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
@@ -174,30 +189,38 @@ function updateTop() {
   bar.device.hidden = false;
   bar.route.hidden = bar.route.previousElementSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
-  if (!ws) {  // the buttons' handlers would keep the closed workspace alive
-    bar.views.replaceChildren();
-    return bar.tabs.replaceChildren();
-  }
+  if (!ws) return bar.tabs.replaceChildren();  // the tabs' handlers would keep the closed workspace alive
   const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
   // a live session: the device crumb names a device's, else the source does
   bar.route.firstChild.textContent = ws.session ? (DONGLE_RE.test(ws.dongle) ? "live" : `live · ${ws.dongle}`) : ws.route.start_time_utc_millis
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
     : ws.route.fullname.split("|")[1];
   bar.route.title = ws.session ? ws.session.label : `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
-  bar.views.replaceChildren(...Object.entries(ws.views).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
-    "aria-current": k === ws.view && "page", "data-key": `view:${k}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
+  // made once per set of views (a live session has its own) and kept, so a focused one stays focused: focusing a new
+  // one would lay the new view out in the click
+  if (viewsShown !== ws.views) {
+    viewsShown = ws.views;
+    bar.views.replaceChildren(...Object.entries(ws.views).map(([k, v], i) => h("button", {class: "view", "data-key": `view:${k}`,
+      title: `${v.title} (${i + 1})`, onclick: () => ws?.setView(k)}, v.title)));
+  }
+  for (const b of bar.views.children) {
+    const on = b.dataset.key === `view:${ws.view}`;
+    b.classList.toggle("on", on);
+    if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
   const layout = ws.layout;
   if (!layout) {  // the view is still waiting on its files
     bar.tabs.replaceChildren();
     return refocus(focused);
   }
   const select = (tab) => {
-    for (const t of bar.tabs.children) {
+    for (const t of bar.tablist.children) {
       t.classList.toggle("on", t === tab);
       t.querySelector("[role=tab]")?.setAttribute("aria-selected", t === tab);
+      t.querySelector("[role=tab]")?.setAttribute("tabindex", t === tab ? 0 : -1);
     }
   };
-  bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("span", {class: `tab ${i === layout.model.active ? "on" : ""}`,
+  bar.tablist.replaceChildren(...layout.model.tabs.map((t, i) => h("span", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: (e) => {  // in place, so a double-click lands on the same tab
       if (i === layout.model.active) return;
       layout.selectTab(i);
@@ -206,12 +229,15 @@ function updateTop() {
     ondblclick: (e) => { if (!e.target.closest(".x")) renameTab(e.currentTarget, i, t.name); },
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget.firstChild, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }},
-    h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), "data-key": `tab:${i}`}, t.name),
-    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab", "data-key": "close", "aria-label": `Close tab ${t.name}`,
+    h("button", {class: "tab-name", role: "tab", "aria-selected": String(i === layout.model.active), tabindex: i === layout.model.active ? 0 : -1,
+      "data-key": `tab:${i}`}, t.name),
+    // for the mouse: a tab list holds only tabs, and the keyboard closes one with Delete
+    layout.model.tabs.length > 1 && h("button", {class: "x", title: "Close tab (Delete)", tabindex: -1, "aria-hidden": "true",
       // not on a double-click's second click: that's "+" (or another close button) clicked again after the strip moved
-      onclick: (e) => { e.stopPropagation(); if (e.detail < 2) { layout.closeTab(i); updateTop(); } }}, icon("close", 12)))),
-  h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
-  h("button", {class: "tab add", title: "Open, import or export layouts", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
+      onclick: (e) => { e.stopPropagation(); if (e.detail < 2) { layout.closeTab(i); updateTop(); } }}, icon("close", 12)))));
+  bar.tabs.replaceChildren(bar.tablist,
+    h("button", {class: "tab add", title: "New tab", "data-key": "add", onclick: () => { layout.addTab(); updateTop(); }}, icon("add", 16)),
+    h("button", {class: "tab add", title: "Layouts: open, import, export, share", "data-key": "layouts", onclick: (e) => layoutMenu(e.currentTarget)}, icon("more_horiz", 16)));
   refocus(focused);
   // scrolled to once laid out (tabsObserver), and only when the active tab or the tab set changed
   const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
@@ -225,9 +251,11 @@ function updateTop() {
 
 function refocus(key) {
   if (!key) return;
-  (bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(".tab.on [role=tab]"))?.focus();
+  const el = bar.views.querySelector(`[data-key="${key}"]`) || bar.tabs.querySelector(`[data-key="${key}"]`) || bar.tablist.querySelector(".tab.on [role=tab]");
+  if (el !== document.activeElement) el?.focus();
 }
 
+let viewsShown = null;     // the set of views the bar has buttons for
 let tabsShown = "";        // the tabs and active tab the strip last scrolled to
 let tabsScrolled = false;  // the user scrolled the strip since
 let tabsMoved = false;     // the tabs changed since the strip scrolled to them
@@ -260,10 +288,10 @@ function tabMenu(tabEl, i, name) {
   const layout = ws.layout;
   const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { closePopover(); fn(); updateTop(); }}, label);
   menu(tabEl, () => h("div", {class: "menu-list"},
-    item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
+    item("Rename", () => setTimeout(() => renameTab(bar.tablist.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
-    item("Open layout…", () => setTimeout(() => layoutMenu(bar.tabs.children[i]))),
+    item("Open layout…", () => setTimeout(() => layoutMenu(bar.tablist.children[i]))),
     item(`Reset ${ws.views[ws.view].title} layout`, () => ws.resetLayout())));
 }
 
@@ -336,6 +364,9 @@ class Workspace {
         return () => this.storeSubs.delete(fn);
       },
       openRoute: (name) => this.openRoute(name),
+      // for links: this route at the playhead in a view (url), and a view's layout as it is now
+      url: (view) => this.url(view),
+      layoutOf: (view) => this.layouts[view]?.save() ?? savedLayout(this.layoutKey(view), this.views[view]),
     };
   }
 
@@ -439,24 +470,25 @@ class Workspace {
     clearTimeout(this.urlTimer);
     const write = () => {
       if (this.disposed) return;  // left meanwhile
-      if (this.session) {  // the source's path and options: a time there means nothing next time
-        this.href = `${this.session.path}/${this.view}${location.search}`;
-        return history.replaceState(null, "", this.href);
-      }
-      const q = new URLSearchParams(location.search);
-      q.set("t", this.clock.t.toFixed(1));
-      q.delete("layout");  // opened once, then it's part of the saved layout
-      if (this.clock.t === 0) q.delete("t");
-      if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
-      // a window narrower than the route stays in the path as connect's "/<start>/<end>" (whole seconds; not on a slice,
-      // which that form can't follow)
-      const [r0, r1] = this.clock.range;
-      const span = !this.route.range && (r0 > 0 || r1 < this.clock.duration) ? `/${Math.floor(r0)}/${Math.ceil(r1)}` : "";
-      const path = `/${routeKey(this.route).replace("|", "/")}${span}/${this.view}`;
-      this.href = `${path}${q.size ? `?${q}` : ""}`;
-      history.replaceState(null, "", this.href);
+      history.replaceState(null, "", this.href = this.url());
     };
     if (now) write(); else this.urlTimer = setTimeout(write, 400);
+  }
+
+  // the path and query of the route at the playhead, in view
+  url(view = this.view) {
+    // a live session: the source's path and options (a time there means nothing next time)
+    if (this.session) return `${this.session.path}/${view}${location.search}`;
+    const q = new URLSearchParams(location.search);
+    q.set("t", this.clock.t.toFixed(1));
+    q.delete("layout");  // opened once, then it's part of the saved layout
+    if (this.clock.t === 0) q.delete("t");
+    if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
+    // a window narrower than the route stays in the path as connect's "/<start>/<end>" (whole seconds; not on a slice,
+    // which that form can't follow)
+    const [r0, r1] = this.clock.range;
+    const span = !this.route.range && (r0 > 0 || r1 < this.clock.duration) ? `/${Math.floor(r0)}/${Math.ceil(r1)}` : "";
+    return `/${routeKey(this.route).replace("|", "/")}${span}/${view}${q.size ? `?${q}` : ""}`;
   }
 
   dispose() {
@@ -546,22 +578,32 @@ const SHORTCUTS = [
   ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
 ];
 const GESTURES = [
-  ["double-click a series", "add it to a plot"], ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"],
-  ["right-drag in a plot", "pan"], ["right-click a plot", "options, custom series, export"], ["double-click a plot", "fit"],
+  ["click in a plot or the timeline", "seek there"], ["double-click a series", "add it to a plot"],
+  ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"], ["right-drag in a plot", "pan"],
+  ["wheel in a plot", "zoom time (shift or on the y-axis: values)"], ["right-click a plot", "options, custom series, export"],
+  ["right-click a legend entry", "color, transform, remove that curve"], ["double-click a plot", "fit"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
-  ["wheel on the timeline", "zoom the visible range"], ["drop rlog or qlog files on the page", "open them"],
+  ["wheel on the timeline", "zoom the visible range"], ["drag the strip above the timeline", "pan / resize the visible window"],
+  ["click the playback time", "type a time to go to (3:12 or 192)"], ["drop rlog or qlog files on the page", "open them"],
+];
+const TOUCHES = [
+  ["tap a plot or the timeline", "seek there"], ["double-tap a series", "add it to a plot"], ["long-press a plot", "options, custom series, export"],
+  ["drag in a plot", "pan"], ["pinch a plot", "zoom time"], ["drag a plot's y-axis", "pan the values"],
+  ["drag the strip above the timeline", "pan / resize the visible window"], ["tap the playback time", "type a time to go to (3:12 or 192)"],
 ];
 
-// a modal: Escape, the close button, a click outside or ? again closes it
+// a modal: Escape, the close button, a click outside or ? again closes it. On a touch screen, the touch gestures
 function help() {
   const open = document.querySelector(".help");
   if (open) return open.close();
+  const touch = matchMedia("(pointer: coarse)").matches;
   const keys = (k) => k.split(" ").map((x) => x.split("+").map((y, i) => [i > 0 && "+", h("kbd", {}, y)]));
   const el = h("dialog", {class: "help", "aria-labelledby": "help-title", onclose: () => el.remove(), onclick: (e) => { if (e.target === el) el.close(); }},
     h("div", {class: "help-card"},
-      h("div", {class: "help-head"}, h("h2", {id: "help-title"}, "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
-      h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
-        GESTURES.map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
+      h("div", {class: "help-head"}, h("h2", {id: "help-title"}, touch ? "Touch and keyboard" : "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
+      h("dl", {}, (touch ? TOUCHES : []).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]),
+        SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
+        (touch ? [] : GESTURES).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
   document.body.append(el);
   el.showModal();
 }
@@ -592,10 +634,9 @@ async function renderPage() {
   const parts = location.pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(location.search);
   closePopover();
-  // the API names devices in lowercase: a typed /5BEB… is the same device
-  if (DONGLE_RE.test(parts[0] || "") && parts[0] !== parts[0].toLowerCase()) {
-    return go(location.pathname.replace(parts[0], parts[0].toLowerCase()) + location.search, true);
-  }
+  // the API names devices and routes in lowercase: a typed /5BEB…/0000010A--… is the same route
+  const lower = parts.map((p, i) => i === 0 && DONGLE_RE.test(p) || i === 1 && LOG_RE.test(p) ? p.toLowerCase() : p);
+  if (DONGLE_RE.test(parts[0] || "") && lower.join("/") !== parts.join("/")) return go(`/${lower.join("/")}${location.search}`, true);
   // leaving the route with unsaved DBC edits asks first, as closing the browser tab does; staying puts its URL back
   if (ws?.store?.can.dbcs?.dirty && !showsWorkspace(parts) && !confirm("The DBC files have unsaved changes. Leave and discard them?")) {
     return history.pushState(null, "", ws.href);
@@ -636,8 +677,9 @@ async function renderPage() {
       ws?.dispose();
       // ?repeat=n (a load test): the logs n times over, at most 50
       const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
-      ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat});
-      if (target.range) ws.showRange(target.range, !q.has("t"));
+      const t = urlTime(q);
+      ws = new Workspace(route, files, target.view || "drive", {t: t ?? 0, repeat});
+      if (target.range) ws.showRange(target.range, t === null);
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
@@ -713,6 +755,13 @@ async function openLiveSession(parts, q, main, id) {
   updateTop();
 }
 
+// ?t=, in seconds or as the playbar shows it (3:12); null when there's none, or it isn't a time (which is said)
+function urlTime(q) {
+  const t = q.has("t") ? parseClock(q.get("t")) : null;
+  if (Number.isNaN(t)) toast(`Couldn't read t=${q.get("t")}: give seconds or m:ss`);
+  return Number.isNaN(t) ? null : t;
+}
+
 // logs outside the API (data/sources.js): files dropped anywhere on the page, or a direct link (?url=). False when the
 // path is neither.
 let dropped = null;
@@ -724,7 +773,7 @@ function openLoose(parts, q, main) {
     return true;
   }
   ws?.dispose();
-  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: +q.get("t") || 0});
+  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: urlTime(q) ?? 0});
   document.body.classList.toggle("in-ws", !!ws);
   main.replaceChildren(ws ? ws.el : localPage(openFiles));
   updateTop();
