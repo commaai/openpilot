@@ -5,7 +5,7 @@
 import {api} from "../../api.js";
 import {peer} from "./peer.js";
 
-const IDLE_MS = 30000, LISTED_MS = 30000, ONLINE_S = 120;
+const IDLE_MS = 30000, LISTED_MS = 30000, KEPT_MS = 10 * 60e3, ONLINE_S = 120;
 const PAGE = crypto.randomUUID().slice(0, 8);  // URLs name the page that can read them
 const devices = new Map();  // dongle → {reads, idle, listed: {at, routes}}: this page's use of a device's connection
 
@@ -93,13 +93,22 @@ function online(dongle) {
   return seen.get(dongle).online;
 }
 
+// a route's segments as its device lists them, kept for the session like the API's file lists: a revisit whose logs are
+// in OPFS connects to nothing
+async function routeSegments({dongle, logId}) {
+  const key = `ycpe_p2p_${dongle}|${logId}`, hit = JSON.parse(sessionStorage.getItem(key) || "null");
+  if (hit?.until > Date.now()) return hit.segments;
+  const segments = (await listing(dongle)).find((r) => r.name === logId)?.segments || [];
+  sessionStorage.setItem(key, JSON.stringify({segments, until: Date.now() + KEPT_MS}));
+  return segments;
+}
+
 // SOURCES.p2p.find: for each segment, the first of names (a kind's file names) the device has; nothing while it's offline
 export async function find(sr, segs, names) {
   if (!await online(sr.dongle)) return new Map();
-  const [routes] = await Promise.all([listing(sr.dongle), serviceWorker()]);
-  const route = routes.find((r) => r.name === sr.logId), found = new Map();
+  const [segments] = await Promise.all([routeSegments(sr), serviceWorker()]), found = new Map();
   for (const n of segs) {
-    const seg = route?.segments.find((s) => s.n === n), file = seg && names.find((f) => seg.files[f] != null);
+    const seg = segments.find((s) => s.n === n), file = seg && names.find((f) => seg.files[f] != null);
     if (file) found.set(n, {url: `/p2p/${PAGE}/${sr.dongle}/${sr.logId}--${n}/${file}`, file, size: seg.files[file]});
   }
   return found;
