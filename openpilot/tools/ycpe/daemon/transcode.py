@@ -30,9 +30,9 @@ FFMPEG = shutil.which("ffmpeg", path="/usr/bin:/usr/local/bin") or shutil.which(
 
 # constant quality per backend family (nvenc -cq, vaapi -qp, x264 -crf)
 PRESETS = {
-  "low": {"nvenc": 33, "vaapi": 33, "x264": 30},
-  "medium": {"nvenc": 28, "vaapi": 28, "x264": 26},
-  "high": {"nvenc": 23, "vaapi": 23, "x264": 21},
+  "low": {"nvenc": 33, "vaapi": 33, "x264": 32},
+  "medium": {"nvenc": 28, "vaapi": 28, "x264": 28},
+  "high": {"nvenc": 23, "vaapi": 23, "x264": 24},
 }
 
 
