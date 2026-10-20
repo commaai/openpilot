@@ -1,6 +1,7 @@
 // the logs pane: swaglog (logMessage, errorLogMessage), alert and onroad event onsets, and the OS journal as one
-// list, filtered by level, source and text. Segments are indexed a few ms per frame as they arrive; the list is
-// virtualized with fixed rows, and following the playhead only patches the visible rows.
+// list, filtered by level, source and text. Segments are indexed a few ms per frame as they arrive (a live session's
+// growing slot again for what's new in it, and its window's oldest rows go); the list is virtualized with fixed rows,
+// and following the playhead only patches the visible rows.
 import {h, css} from "/dom.js";
 
 await css(new URL("./logs.css", import.meta.url));
@@ -15,7 +16,9 @@ const ANSI = /\x1b\[[0-9;]*m/g;
 export function create(ctx, state) {
   let minLevel = state.level ?? 1, source = state.source ?? "", text = state.text ?? "", follow = state.follow ?? true;
   let rows = [], view = [];  // every row and the rows that pass the filter, by time
-  const sources = new Set(), indexed = new Set(), jobs = [];
+  const sources = new Set(), jobs = [];
+  const indexed = new Map();  // segment → the time of its last row indexed
+  const queued = new Set(), again = new Set();  // segments with an indexing job, and those that grew since it started
   const edges = new Map();  // segment → its alert and events at both ends (segmentRows)
   let job = null, untick = null, store = null, timer = 0, disposed = false;
   let height = 0, top = 0, expected = -1, current = -1, pool = [], shown = -1;
@@ -58,16 +61,25 @@ export function create(ctx, state) {
   offs.push(ctx.onStore((s) => {
     if (disposed) return;
     store = s;
-    offs.push(s.on("segment", enqueue));
+    offs.push(s.on("segment", enqueue), s.on("window", slide));
     for (const seg of s.route.segments) if (seg.status === "done") enqueue(seg.n);
   }));
   void ctx.store;  // start loading
 
   function enqueue(n) {
-    if (indexed.has(n)) return;
-    indexed.add(n);
+    if (indexed.has(n) && !ctx.route.live) return;
+    if (queued.has(n)) return again.add(n);
+    queued.add(n);
     jobs.push(index(n));
     untick ||= ctx.perf.tick(work);
+  }
+
+  // a live session's window moved on to start
+  function slide(start) {
+    const cut = (list) => list.slice(lastAtOrBefore(list, start - 1e-9) + 1);
+    [rows, view] = [cut(rows), cut(view)];
+    for (const n of indexed.keys()) if (store.route.segments[n]?.status === "missing") indexed.delete(n);
+    ctx.perf.invalidate(pane);
   }
 
   // runs queued indexing and filtering in slices of BUDGET ms
@@ -85,16 +97,20 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   }
 
+  // the rows of segment n after the ones indexed before
   function* index(n) {
     let block = [];
-    const edge = {heads: new Set(), tail: new Set()};
-    for (const row of segmentRows(store, n, edge)) {
+    const from = indexed.get(n) ?? -Infinity, edge = {heads: new Set(), tail: new Set()};
+    for (const row of segmentRows(store, n, edge, from)) {
       if (row) {
         block.push(row);
         sources.add(row.source);
       }
       yield;
     }
+    indexed.set(n, block.reduce((t, r) => Math.max(t, r.t), from));
+    queued.delete(n);
+    if (again.delete(n)) enqueue(n);
     // what goes on across a segment boundary started once, in the earlier segment
     edges.set(n, edge);
     const before = edges.get(n - 1), after = edges.get(n + 1), cont = (tail, heads) => (r) => !(heads.has(r) && tail.has(r.key));
@@ -188,9 +204,10 @@ export function create(ctx, state) {
   return pane;
 }
 
-// one segment's rows, unsorted, and nulls between messages without one so that indexing can pause there. edge gets
-// the alert and event onsets at the segment's first message (heads) and the keys of those still on at its last (tail)
-function* segmentRows(store, n, edge) {
+// one segment's rows after time from, unsorted, and nulls between messages without one so that indexing can pause
+// there. edge gets the alert and event onsets at the segment's first message (heads) and the keys of those still on at
+// its last (tail)
+function* segmentRows(store, n, edge, from) {
   // a step of its own each: decoding a segment's text takes a few ms
   function* chunk(path) {
     yield null;
@@ -198,13 +215,13 @@ function* segmentRows(store, n, edge) {
   }
   for (const path of ["/logMessage", "/errorLogMessage"]) {
     const c = yield* chunk(path);
-    if (c) for (const [t, s] of pairs(c)) yield swaglog(t, s);
+    if (c) for (const [t, s] of pairs(c, from)) yield swaglog(t, s);
   }
 
   const os = yield* chunk("/operatingSystemLog/message");
   if (os) {
     const tag = values(yield* chunk("/operatingSystemLog/tag")), priority = values(yield* chunk("/operatingSystemLog/priority"));
-    for (let [t, text] of pairs(os)) {
+    for (let [t, text] of pairs(os, from)) {
       try { text = String(JSON.parse(text).MESSAGE ?? text); } catch {}  // journal entries are JSON, android logs text
       yield {t, level: SYSLOG[priority(t)] ?? 1, source: tag(t) || "os", text};
     }
@@ -220,7 +237,7 @@ function* segmentRows(store, n, edge) {
       if (row && head) edge.heads.add(row);
       head = false;
       prev = type;
-      yield row;
+      yield row?.t > from ? row : null;
     }
     if (prev) edge.tail.add(`alert ${prev}`);
   }
@@ -246,7 +263,7 @@ function* segmentRows(store, n, edge) {
         const level = flags.some((f) => f.endsWith("Disable") && f !== "userDisable") ? 3 : flags.length ? 2 : 1;
         const row = {t, level, source: "event", key: `event ${name}`, text: flags.length ? `${name} (${flags.join(", ")})` : name};
         if (t === events.t[0]) edge.heads.add(row);
-        yield row;
+        if (t > from) yield row;
       }
       prev = now;
       yield null;
@@ -263,9 +280,19 @@ function swaglog(t, s) {
   return {t, level, source: m.ctx?.daemon || m.filename?.split("/").pop() || "", text: msg.replace(ANSI, "")};
 }
 
-// a chunk's [time, value] pairs
-function* pairs(c) {
-  for (let k = 0; k < c.v.length; k++) yield [c.tt[k], c.v[k]];
+// a chunk's [time, value] pairs after time from
+function* pairs(c, from = -Infinity) {
+  for (let k = upper(c.tt, from); k < c.v.length; k++) yield [c.tt[k], c.v[k]];
+}
+
+// the first index of the rising times tt after t
+function upper(tt, t) {
+  let lo = 0, hi = tt.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (tt[mid] <= t) lo = mid + 1; else hi = mid;
+  }
+  return lo;
 }
 
 // a chunk's value at each of a rising sequence of message times; undefined where that message doesn't have it
