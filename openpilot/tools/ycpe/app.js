@@ -813,6 +813,9 @@ async function renderPage() {
     updateTop();
     document.body.classList.add("loading");
     main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Loading devices…"));
+    // a route's record is asked for alongside them, not after (api.route keeps it for the workspace)
+    const early = DONGLE_RE.test(parts[0] || "") && !q.has("url") && routeFromPath(parts);
+    if (early) api.route(early.name.split("/")[0]).catch(() => {});
     // a failed list stays null, so the next page asks again
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null),
       api.devices().then((d) => { state.devicesError = null; devicesAt = performance.now(); return d; }, (e) => { state.devicesError = e; return null; })]);
