@@ -194,8 +194,9 @@ export function drawBlocks(g, blocks, X, y0, y1, m, c) {
     g.fillRect(x0, y0, x1 - x0, y1 - y0);
     g.globalAlpha = 1;
     g.fillRect(x0, y0, 2, y1 - y0);
+    // a label cut down to a letter and its ellipsis says nothing
     const text = x1 - x0 > 24 && y1 - y0 > 9 ? ellipsize(g, label, x1 - x0 - 10) : "";
-    if (text.length > 2) {
+    if (text && !(text.endsWith("…") && text.length <= 2)) {
       g.fillStyle = c.fg;
       g.fillText(text, x0 + 6, (y0 + y1) / 2);
     }
