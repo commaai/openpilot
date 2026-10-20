@@ -163,7 +163,11 @@ onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
       const r = await load(key, url, (progress) => postMessage({id, progress}), ctl.signal, buf && new Uint8Array(buf)).finally(() => fetches.delete(id));
       postMessage({id, ...r}, [r.buf]);
     } else {
-      const r = await parse(buf, opts);
+      // a cached log that doesn't parse is dropped, so a retry downloads it again
+      const r = await parse(buf, opts).catch(async (e) => {
+        if (key) await opfs.remove(key);
+        throw e;
+      });
       postMessage({id, ...r}, [...r.bufs, r.recs.buffer, ...r.canBufs]);
     }
   } catch (e) {
