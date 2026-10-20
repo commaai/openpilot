@@ -10,6 +10,10 @@
   .ws:not([data-view="files"]) .plot-pane canvas.over { touch-action: pan-y; }
   .ws:not([data-view="files"]) .plot-pane .ygrip { display: block; }
 }
+/* in the corner under the y-axis, while its values are locked */
+.plot-pane .yauto { position: absolute; left: 3px; bottom: 2px; height: 16px; padding: 0 5px; border: 1px solid var(--line); border-radius: 3px;
+  background: var(--raised); color: var(--muted); font: 10px var(--font); cursor: pointer; }
+.plot-pane .yauto:hover { border-color: var(--accent); color: var(--fg); }
 .plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
 .plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: none; }
 

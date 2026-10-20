@@ -648,9 +648,9 @@ const SHORTCUTS = [
 ];
 const GESTURES = [
   ["click in a plot or the timeline", "seek there"], ["double-click a series", "add it to a plot"],
-  ["drag in a plot", "zoom to the box (alt: time only, shift: values only)"], ["right-drag in a plot", "pan"],
-  ["wheel in a plot", "zoom time (shift or on the y-axis: values)"], ["right-click a plot", "options, custom series, export"],
-  ["right-click a legend entry", "color, transform, remove that curve"], ["double-click a plot", "fit"],
+  ["drag in a plot", "zoom time to the box; the values fit what's visible (shift: zoom the values)"], ["right-drag in a plot", "pan"],
+  ["wheel in a plot", "zoom time (shift or on the y-axis: zoom the values, until auto y)"], ["right-click a plot", "options, custom series, export"],
+  ["right-click a legend entry", "color, transform, remove that curve"], ["double-click a plot", "fit (on the y-axis: fit the values)"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
   ["wheel on the timeline", "zoom the visible range"], ["drag the strip above the timeline", "pan / resize the visible window"],
   ["click the playback time", "type a time to go to (3:12 or 192)"], ["drop rlog or qlog files on the page", "open them"],
