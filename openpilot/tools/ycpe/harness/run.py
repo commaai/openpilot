@@ -56,8 +56,7 @@ PROBE_JS = (HERE / "probe.js").read_text()
 LINT_JS = (HERE / "lint.js").read_text()
 SETTLE_JS = "document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))"
 # noise that never points at a bug: cancelled loads, and Chrome's echo of an HTTP error we already record with its URL
-# (temporary) panes that aren't built yet: serve.py answers their module URL with index.html
-IGNORED_EVENTS = re.compile(r"net::ERR_ABORTED|^Failed to load resource|^Failed to load module script")
+IGNORED_EVENTS = re.compile(r"net::ERR_ABORTED|^Failed to load resource")
 
 
 def start_server(static=False):
