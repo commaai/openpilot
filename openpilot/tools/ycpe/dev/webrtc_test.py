@@ -181,7 +181,11 @@ def main():
     for proc in procs:
       proc.terminate()
     for proc in procs:
-      proc.wait()
+      try:
+        proc.wait(5)
+      except subprocess.TimeoutExpired:  # a deadlocked webrtcd doesn't get to its SIGTERM handler
+        proc.kill()
+        proc.wait()
     shutil.rmtree(tmp, ignore_errors=True)
     shutil.rmtree(f"/dev/shm/msgq_{prefix}", ignore_errors=True)
   if failed:
