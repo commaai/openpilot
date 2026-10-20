@@ -478,10 +478,12 @@ window.addEventListener("popstate", render);
 addEventListener("pagehide", () => ws?.persist());
 document.addEventListener("visibilitychange", () => { if (document.hidden) ws?.persist(); });
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
-// again would spend the one-time code twice)
-auth.on(() => {
+// again would spend the one-time code twice). A token the API refused leaves an open route as it is: it's loaded.
+auth.on((reason) => {
   state.me = state.devices = null;
   if (location.pathname.startsWith("/auth")) return;
+  if (reason === "expired") toast("Your session expired. Sign in again to see private routes and devices.");
+  if (reason === "expired" && ws) return updateTop();
   ws?.dispose();
   ws = null;
   render();

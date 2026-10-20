@@ -10,11 +10,23 @@ const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
 // sign-in state: the token, the signed-in user (v1/me, cached), and subscribers to changes
 const authSubs = new Set();
 let user = null;
+let refused = null;  // a token the API turned down (expired, revoked): not sent again until signing in
+
+// fn(reason): reason is "expired" when the API refused the token, rather than the user signing in or out
+function authChanged(reason) {
+  user = null;
+  for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
+  for (const k of Object.keys(sessionStorage)) if (k.startsWith("ycpe_")) sessionStorage.removeItem(k);
+  for (const fn of authSubs) fn(reason);
+}
 
 export const auth = {
-  token: () => setting(TOKEN_KEY) || daemon.jwt(),
+  token() {
+    const token = setting(TOKEN_KEY) || daemon.jwt();
+    return token !== refused ? token : null;
+  },
   isAuthenticated: () => !!auth.token(),
-  viaDaemon: () => !setting(TOKEN_KEY) && !!daemon.jwt(),  // ~/.comma/auth.json through serve.py
+  viaDaemon: () => !setting(TOKEN_KEY) && auth.isAuthenticated(),  // ~/.comma/auth.json through serve.py
   user: () => (user ??= auth.isAuthenticated() ? get("v1/me/").catch(() => null) : Promise.resolve(null)),
   on(fn) { authSubs.add(fn); return () => authSubs.delete(fn); },
   setToken(token, viaDaemon = false) {
@@ -23,13 +35,18 @@ export const auth = {
       localStorage.removeItem(TOKEN_KEY);
       daemon.useJwt(viaDaemon);
     }
-    user = null;
-    for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
-    for (const k of Object.keys(sessionStorage)) if (k.startsWith("ycpe_")) sessionStorage.removeItem(k);
-    for (const fn of authSubs) fn();
+    refused = null;
+    authChanged();
   },
   signOut: () => auth.setToken(null),
   useDaemon: () => auth.setToken(null, true),
+  // the API answered 401 to this token; the daemon's stays on for the next page load, in case it's renewed
+  expired(token) {
+    if (token !== auth.token()) return;  // already handled
+    refused = token;
+    if (setting(TOKEN_KEY) === token) localStorage.removeItem(TOKEN_KEY);
+    authChanged("expired");
+  },
 
   // the provider sends the code to the API, which redirects it back to <host>/auth/?code=..&provider=..
   loginUrl(provider) {
@@ -88,10 +105,11 @@ export async function request(method, endpoint, {params, body, host = apiHost()}
     if (v !== undefined && v !== null) url.searchParams.set(k, v);
   }
   const headers = {};
-  if (auth.token()) headers["Authorization"] = "JWT " + auth.token();
+  const token = auth.token();
+  if (token) headers["Authorization"] = "JWT " + token;
   if (body) headers["Content-Type"] = "application/json";
   const resp = await fetch(url, {method, headers, body: body ? JSON.stringify(body) : undefined});
-  if (resp.status === 401 && auth.isAuthenticated()) auth.signOut();
+  if (resp.status === 401 && token) auth.expired(token);
   if (!resp.ok) throw new ApiError(resp.status, await resp.text());
   return resp.json();
 }
