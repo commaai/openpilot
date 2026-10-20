@@ -191,6 +191,13 @@ export class Store {
     if (ev.loaded !== undefined) {
       this.received.push([performance.now(), ev.loaded - (seg.loading?.loaded || 0)]);
       seg.loading = {loaded: ev.loaded, total: ev.total};
+      // the rate falls as the downloads stop: totals again every second until the last two seconds received nothing
+      this.ticker ||= setInterval(() => {
+        this.totals();
+        if (this.received.length) return;
+        clearInterval(this.ticker);
+        this.ticker = 0;
+      }, 1000);
     }
     if (ev.paused && seg.loading) seg.loading.paused = true;
     if (ev.parsing) seg.loading = {loaded: 1, total: 1};
@@ -205,7 +212,7 @@ export class Store {
       : seg.status === "done" && seg.bytes ? "ready"
       : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
     const text = state === "error" ? seg.error : seg.retry ? `retrying (${seg.retry})` : null;
-    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text});
+    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text, label: seg.real ?? seg.n});
     if (seg.n === this.focusSeg) this.buffering();
     this.totals();
   }
@@ -265,7 +272,7 @@ export class Store {
   failed(seg, e) {
     if (this.disposed) return;
     seg.status = "error";
-    seg.error = String(e?.message ?? e);
+    seg.error = String(e?.message ?? e).replace(/^decompress failed \(-\d+\)$/, "truncated or corrupt log");  // zstd's error codes
     seg.retry = 0;
     seg.loading = null;
     this.publish(seg);
@@ -689,6 +696,7 @@ export class Store {
   dispose() {
     for (const o of this.overlays) o.store.dispose();
     this.disposed = true;
+    clearInterval(this.ticker);
     removeEventListener("online", this.online);
     if (this.shared) this.loader.cancel(this);
     else this.loader.dispose();
