@@ -90,10 +90,21 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   }
 
+  // the full-res canvas and its renderer outlive a switch of camera: a new WebGL context costs ~13 ms
+  let screen = null;
+  function fullresScreen() {
+    if (!screen) {
+      const canvas = h("canvas");
+      screen = {canvas, restored: () => {}, draw: frameRenderer(canvas, () => screen.restored())};
+    }
+    screen.canvas.hidden = true;  // a canvas is black until its first frame, or shows the last camera's
+    return screen;
+  }
+
   function use(cam) {
     camera = picker.value = cam;
     if (cam === "qcamera") show(qcamera(ctx, pane, ui));
-    else show(fullres(ctx, pane, cam, {...ui, fail: (why) => show(qcamera(ctx, pane, ui), why)}));
+    else show(fullres(ctx, pane, cam, fullresScreen(), {...ui, fail: (why) => show(qcamera(ctx, pane, ui), why)}));
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
@@ -236,9 +247,9 @@ function qcamera(ctx, pane, {wait, absent}) {
 }
 
 // a window of decoded frames around the playhead, filled by the decoder worker
-function fullres(ctx, pane, camera, {say, wait, absent, fail}) {
-  const canvas = h("canvas", {hidden: true});  // a canvas is black until its first frame
-  const draw = frameRenderer(canvas, () => { shown = -1; ctx.perf.invalidate(pane); });
+function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
+  const {canvas, draw} = screen;
+  screen.restored = () => { shown = -1; ctx.perf.invalidate(pane); };
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
   const lanes = lane(camera);
   const frames = new Map();  // n → VideoFrame, or I420 planes from the software decoder
@@ -345,10 +356,13 @@ function fullres(ctx, pane, camera, {say, wait, absent, fail}) {
       let best = -1;
       for (const k of frames.keys()) if (k <= n && k > best) best = k;
       if (best !== shown && best >= 0) {
-        draw(frames.get(best));
-        canvas.hidden = false;
-        shown = stats.shown = best;
-        stats.drawn++;
+        if (draw(frames.get(best))) {
+          canvas.hidden = false;
+          shown = stats.shown = best;
+          stats.drawn++;
+        } else {
+          ctx.perf.invalidate(pane);  // the shaders are still linking
+        }
       }
       stats.exact = best === n;  // else a keyframe (or older frame) stands in until the exact one decodes
       if (playing && best >= 0) stats.lag = Math.max(stats.lag, n - best);
