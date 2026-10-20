@@ -24,6 +24,7 @@ import {routeId, routeAnatomy} from "/routeid.js";
 import {undoHistory} from "/history.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 import {uniqueCustoms} from "/layouts/import.js";
+import {mode, setMode, userPath, devPath} from "/pages/connect/mode.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 const LOG_RE = /^[0-9a-f]{8}--[0-9a-f]{10}$/i;
@@ -212,9 +213,20 @@ function topBar() {
     }, 300);
   });
   bar.route.addEventListener("pointerleave", hideAnatomy);
-  const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
-  // who's signed in, then where to from there, as connect's account menu; its version at the foot
-  // its module loads with the first click, not with the app
+  bar.gift.addEventListener("click", () => go("/referrals"));
+  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
+  const helpBtn = h("button", {class: "tbtn help-btn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
+  const simple = h("button", {class: "tbtn mode-btn", title: "The simple view, as connect shows this place", onclick: switchMode}, "Simple", h("span", {}, " view"));
+  return h("header", {class: "topbar"},
+    h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
+    bar.device, h("span", {class: "sep", hidden: true}, "›"), bar.route, search, bar.views, bar.tabs,
+    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), simple, helpBtn, themeBtn, bar.gift, accountButton());
+}
+
+// who's signed in, then where to from there, as connect's account menu; its version at the foot. Its module loads with
+// the first click, not with the app. Both modes' bars have one (its links name no mode, so they stay in the one in use)
+export function accountButton(cls = "tbtn") {
+  const account = h("button", {class: cls, title: "Account", "aria-label": "Account"}, icon("account", cls === "tbtn" ? 16 : 34));
   account.addEventListener("click", async () => {
     const {accountHead, version, USERADMIN, styled} = await import("/pages/account.js");
     await styled;
@@ -232,13 +244,16 @@ function topBar() {
         h("div", {class: "menu-foot"}, version()));
     });
   });
-  bar.gift.addEventListener("click", () => go("/referrals"));
-  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
-  const helpBtn = h("button", {class: "tbtn help-btn", title: "Keyboard and mouse help (?)", onclick: help}, icon("help", 16));
-  return h("header", {class: "topbar"},
-    h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
-    bar.device, h("span", {class: "sep", hidden: true}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), helpBtn, themeBtn, bar.gift, account);
+  return account;
+}
+
+// the other mode at the same place: the device, or the drive at its time and zoom (developer mode in the view it was
+// last in there). Chosen, so "/" and links that name no mode open in it from now on
+export function switchMode() {
+  const user = mode() !== "user", parts = location.pathname.split("/").filter(Boolean);
+  setMode(user ? "user" : "dev", true);
+  if (ws && !ws.session && !ws.route.loose) return go(ws.url(user ? "connect" : ws.devView, user));
+  go(user ? userPath(parts, location.search) ?? "/connect" : parts[0] === "connect" ? devPath(parts, location.search) : "/");
 }
 
 function updateTop() {
@@ -402,9 +417,11 @@ function anatomy() {
 
 class Workspace {
   // session: a live one (data/live.js), whose route record this is
-  constructor(route, files, view, {t = 0, repeat = 1, session = null}) {
+  constructor(route, files, view, {t = 0, repeat = 1, session = null, user = false}) {
     this.route = route;
     this.session = session;
+    this.user = user;  // shown in user mode: its URL is connect's, under /connect
+    this.devView = "drive";  // the view developer mode was last in, for the mode switch
     this.views = session ? LIVE_VIEWS : VIEWS;
     this.dongle = session ? route.dongle_id : route.fullname.split("|")[0];
     // each segment's log from the route's source (data/sources.js); the drive view mounts without it
@@ -450,6 +467,7 @@ class Workspace {
         return () => this.storeSubs.delete(fn);
       },
       openRoute: (name) => this.openRoute(name),
+      get user() { return self.user; },
       // for links: this route at the playhead in a view (url), and a view's layout as it is now
       url: (view) => this.url(view),
       layoutOf: (view) => this.layouts[view]?.save() ?? savedLayout(this.layoutKey(view), this.views[view]),
@@ -490,6 +508,7 @@ class Workspace {
     if (!this.views[view]) view = this.session ? "plot" : "drive";
     if (view !== this.view) this.persist();
     this.view = view;
+    if (!this.user && view !== "connect") this.devView = view;
     this.el.dataset.view = view;
     if (!this.layouts[view]) {
       const model = savedLayout(this.layoutKey(view), this.views[view]);
@@ -551,7 +570,7 @@ class Workspace {
   }
 
   openRoute(name) {
-    go(`/${name.replace("|", "/")}/${this.view}`);
+    go(this.user ? `/connect/${name.replace("|", "/")}` : `/${name.replace("|", "/")}/${this.view}`);
   }
 
   syncUrl(now = false) {
@@ -563,8 +582,8 @@ class Workspace {
     if (now) write(); else this.urlTimer = setTimeout(write, 400);
   }
 
-  // the path and query of the route at the playhead, in view
-  url(view = this.view) {
+  // the path and query of the route at the playhead, in view; in user mode connect's (no view, under /connect)
+  url(view = this.view, user = this.user && view === this.view) {
     // a live session: the source's path and options (a time there means nothing next time)
     if (this.session) return `${this.session.path}/${view}${location.search}`;
     const q = new URLSearchParams(location.search);
@@ -576,7 +595,8 @@ class Workspace {
     // which that form can't follow)
     const [r0, r1] = this.clock.range;
     const span = !this.route.range && (r0 > 0 || r1 < this.clock.duration) ? `/${Math.floor(r0)}/${Math.ceil(r1)}` : "";
-    return `/${routeKey(this.route).replace("|", "/")}${span}/${view}${q.size ? `?${q}` : ""}`;
+    const path = `/${routeKey(this.route).replace("|", "/")}${span}`;
+    return `${user ? `/connect${path}` : `${path}/${view}`}${q.size ? `?${q}` : ""}`;
   }
 
   dispose() {
@@ -638,7 +658,7 @@ addEventListener("keydown", (e) => {
 // the global keys, for whatever a pane didn't handle itself
 document.addEventListener("keydown", (e) => {
   if (e.defaultPrevented || e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
+  if (e.key === "/" && document.querySelector(".omnibox")) { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
   if (e.key === "?") return help();
   if (!ws || e.target.closest?.("dialog")) return;
@@ -656,7 +676,7 @@ document.addEventListener("keydown", (e) => {
     Home: () => c.seek(c.start),
     End: () => c.seek(c.duration),  // live: following again
   };
-  Object.keys(ws.views).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });
+  if (!ws.user) Object.keys(ws.views).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });  // user mode has one
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
 });
 
@@ -729,15 +749,27 @@ function render() {
 }
 
 let navId = 0, leaving = false;  // leaving: the unsaved DBC edits were let go
+let shell = null;  // user mode's frame (pages/connect/shell.js), loaded with the first page shown in it
+
+// the page's bar: connect's header in user mode, ours in developer mode
+async function modeBar(user) {
+  if (user) shell ??= await import("/pages/connect/shell.js");
+  const want = user ? shell.header : devBar, have = document.querySelector("#app > header");
+  if (have !== want) have.replaceWith(want);
+}
+
 async function renderPage() {
   const id = ++navId;
   const main = document.getElementById("main");
-  const parts = location.pathname.split("/").filter(Boolean);
+  let parts = location.pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(location.search);
   closePopover();
+  // user mode's pages are connect's under /connect; past here the parts name the place, in either mode
+  const user = parts[0] === "connect", base = user ? "/connect" : "";
+  if (user) parts = parts.slice(1);
   // the API names devices and routes in lowercase: a typed /5BEB…/0000010A--… is the same route
   const lower = parts.map((p, i) => i === 0 && DONGLE_RE.test(p) || i === 1 && LOG_RE.test(p) ? p.toLowerCase() : p);
-  if (DONGLE_RE.test(parts[0] || "") && lower.join("/") !== parts.join("/")) return go(`/${lower.join("/")}${location.search}`, true);
+  if (DONGLE_RE.test(parts[0] || "") && lower.join("/") !== parts.join("/")) return go(`${base}/${lower.join("/")}${location.search}`, true);
   // leaving the route with unsaved DBC edits asks first, as closing the browser tab does: its URL is back while it
   // asks, and leaving goes on to where it was going
   if (ws?.store?.can.dbcs?.dirty && !leaving && !showsWorkspace(parts)) {
@@ -749,13 +781,24 @@ async function renderPage() {
   }
   leaving = false;
 
+  // sign-in, live and local pages are the same in both modes
+  if (user && /^(auth|login|live|local)$/.test(parts[0] || "")) return go(`/${parts.join("/")}${location.search}`, true);
   if (parts[0] === "auth" || parts[0] === "login") {
     closeWorkspace();
+    await modeBar(mode() === "user");
     updateTop();
-    return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
+    return id === navId && main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
   // connect's ?r=<path>: go there, through sign-in when signed out
   if (q.has("r")) return go(auth.isAuthenticated() ? safe(q.get("r")) : loginPath(safe(q.get("r"))), true);
+  // a path that names no mode opens in the one in use, else the one last chosen
+  const to = !user && !q.has("url") && mode() === "user" && userPath(parts, location.search);
+  if (to) return go(to, true);
+  setMode(user ? "user" : "dev");
+  // connect's pairing link (pages/pair.js), in either mode
+  if (q.has("pair")) import("/pages/pair.js").then((m) => m.handlePairLink?.(q), () => {});
+  await modeBar(user);
+  if (id !== navId) return;
   if (auth.isAuthenticated() && !state.devices) {
     updateTop();
     document.body.classList.add("loading");
@@ -764,26 +807,46 @@ async function renderPage() {
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null),
       api.devices().then((d) => { state.devicesError = null; devicesAt = performance.now(); return d; }, (e) => { state.devicesError = e; return null; })]);
     document.body.classList.remove("loading");
+    if (id !== navId) return;
   }
+  // the page's container: user mode's sits beside its device list
+  const dongle = DONGLE_RE.test(parts[0] || "") ? parts[0] : null;
+  const root = user ? shell.mount(main, {devices: state.devices, dongle, signedIn: auth.isAuthenticated()}) : main;
 
-  if (parts[0] === "live" || (parts[1] === "live" && DONGLE_RE.test(parts[0]))) return openLiveSession(parts, q, main, id);
+  if (!user && (parts[0] === "live" || (parts[1] === "live" && DONGLE_RE.test(parts[0])))) return openLiveSession(parts, q, main, id);
   if (parts.length === 1 && (parts[0] === "account" || parts[0] === "referrals")) {
     closeWorkspace();
     updateTop();
     const page = await (parts[0] === "account" ? import("/pages/account.js").then((m) => m.accountPage(state.me))
       : import("/pages/referrals.js").then((m) => m.referralsPage(state.me)));
     if (id !== navId) return;
-    main.replaceChildren(page);
+    root.replaceChildren(page);
+    if (user) shell.mount(main, {devices: state.devices, dongle, signedIn: auth.isAuthenticated()});  // its gift's dot goes too
     return updateTop();  // the gift's dot goes once referrals are seen
   }
-  if (openLoose(parts, q, main)) return;
-  const target = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
+  // connect's prime page for a device (pages/prime.js)
+  if (user && dongle && parts[1] === "prime" && parts.length === 2) {
+    closeWorkspace();
+    const device = state.devices?.find((d) => d.dongle_id === dongle) ?? await api.device(dongle).catch(() => null);
+    const page = device && await shell.optional("/pages/prime.js", "primePage", device);
+    if (id !== navId) return;
+    return root.replaceChildren(page || errorPage({status: 404}, {device: dongle}));
+  }
+  if (!user && openLoose(parts, q, main)) return;
+  const target = parts.length >= 2 && dongle ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
   const routeName = target?.name;
   if (routeName) {
+    const view = user ? "connect" : target.view;  // user mode's drive view is connect's
     if (ws && routeKey(ws.route) === routeName) {
-      if (target.view && target.view !== ws.view) ws.setView(target.view);
+      ws.user = user;
+      if (view && view !== ws.view) ws.setView(view);
       if (target.range) ws.showRange(target.range);
-      return;
+      // from the other mode: the same workspace, in this mode's frame
+      if (ws.el.parentElement !== root) {
+        root.replaceChildren(ws.el);
+        document.body.classList.add("in-ws");
+      }
+      return updateTop();
     }
     document.body.classList.add("loading");
     try {
@@ -796,18 +859,19 @@ async function renderPage() {
       // ?repeat=n (a load test): the logs n times over, at most 50
       const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
       const t = urlTime(q);
-      ws = new Workspace(route, files, target.view || "connect", {t: t ?? 0, repeat});  // connect's urls name no view
+      ws = new Workspace(route, files, view || "connect", {t: t ?? 0, repeat, user});  // connect's urls name no view
       if (target.range) ws.showRange(target.range, t === null);
+      ws.syncUrl(true);  // with the range (a playing clock holds off its later writes)
       rememberRoute(route);
       markViewed(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
-      main.replaceChildren(ws.el);
+      root.replaceChildren(ws.el);
     } catch (e) {
       const card = [403, 404].includes(e.status) && await pullCard(routeName, render).catch(() => null);  // only on the LAN device
       if (id === navId) {
         closeWorkspace();
-        main.replaceChildren(card || errorPage(e, {route: routeName}));
+        root.replaceChildren(card || errorPage(e, {route: routeName}));
       }
     } finally {
       document.body.classList.remove("loading");
@@ -816,28 +880,36 @@ async function renderPage() {
   }
 
   // whatever else the omnibox reads goes where it names: connect's "/<dongle>/<start ms>/<end ms>", "/<dongle>|<log id>"
-  if (parts.length >= 2 || parts.length && !DONGLE_RE.test(parts[0])) {
+  if (parts.length >= 2 || parts.length && !dongle) {
     const path = await resolve(location.pathname.slice(1) + location.search).catch(() => null);
     if (id !== navId) return;
     if (path && path !== location.pathname + location.search) return go(path, true);
   }
   closeWorkspace();
   updateTop();
-  if (DONGLE_RE.test(parts[0] || "")) {
-    const page = await devicePage(parts[0], state.devices).catch((e) => errorPage(e, {device: parts[0]}));
-    if (id === navId) main.replaceChildren(page);
+  if (dongle) {
+    const page = await devicePage(dongle, state.devices).catch((e) => errorPage(e, {device: dongle}));
+    if (id !== navId) return;
+    root.replaceChildren(page);
+    const device = state.devices?.find((d) => d.dongle_id === dongle);
+    if (user && device && page.classList.contains("device-page")) shell.dashboard(page, device, state.devices);
     const {referralPromo} = await import("/pages/referrals.js");
-    const promo = await referralPromo(state.devices?.find((d) => d.dongle_id === parts[0]));
-    if (promo && id === navId) main.prepend(promo);
+    const promo = await referralPromo(device);
+    if (promo && id === navId) root.prepend(promo);
   } else if (parts.length) {
-    main.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
-      h("p", {class: "muted"}, "Try a route name or dongle id in the box above, or ", h("a", {href: "/", onclick: link("/")}, "go home"), ".")));
+    root.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
+      h("p", {class: "muted"}, !user && "Try a route name or dongle id in the box above, or ", h("a", {href: `${base}/`, onclick: link(`${base}/`)}, "go home"), ".")));
   } else if (state.devicesError) {
-    main.replaceChildren(errorPage(state.devicesError, {retry: true}));
-  } else if (state.devices?.length === 1) {
-    go(`/${state.devices[0].dongle_id}`, true);
+    root.replaceChildren(errorPage(state.devicesError, {retry: true}));
+  } else if (user && auth.isAuthenticated() && !state.devices?.length) {
+    // connect's page for an account without devices (pages/pair.js)
+    const page = await shell.optional("/pages/pair.js", "noDevices");
+    if (id === navId) root.replaceChildren(page || homePage(state.devices));
+  } else if (state.devices?.length === 1 || user && state.devices?.length && shell.wide.matches) {
+    // connect opens on a device; a phone in user mode lists them first
+    go(`${base}/${(user ? shell.lastDevice(state.devices) : state.devices[0]).dongle_id}`, true);
   } else {
-    main.replaceChildren(homePage(state.devices));
+    root.replaceChildren(user && !auth.isAuthenticated() ? loginPage(q) : homePage(state.devices));
   }
 }
 
@@ -925,11 +997,12 @@ function errorPage(e, {route, device, retry} = {}) {
     : route ? [`Route ${route.replace("|", "/")} not found`, "Check the name, or it may not be uploaded or shared with you. "]
     : device ? [`Device ${device} not found`, "It may not be shared with this account. "]
     : ["Not found.", ""];
-  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, why, "Try a route name or dongle id in the box above."),
+  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, why, mode() === "user" ? "" : "Try a route name or dongle id in the box above."),
     retry && h("button", {class: "button", onclick: () => render()}, "Retry"));
 }
 
-document.querySelector("#app > .topbar").replaceWith(topBar());
+const devBar = topBar();  // kept while user mode shows connect's header
+document.querySelector("#app > .topbar").replaceWith(devBar);
 addEventListener("ycpe:route-start", (e) => { if (ws?.route === e.detail) updateTop(); });
 window.addEventListener("popstate", render);
 addEventListener("pagehide", () => ws?.persist());

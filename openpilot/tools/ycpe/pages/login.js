@@ -112,7 +112,7 @@ export function authPage(params) {
 // A device page is just /<dongle id>; anything deeper is a route.
 export function signInCard() {
   const signedIn = auth.isAuthenticated();
-  const device = /^\/[0-9a-f]{16}\/?$/i.test(location.pathname);
+  const device = /^(\/connect)?\/[0-9a-f]{16}\/?$/i.test(location.pathname);
   return card(
     h("p", {}, signedIn ? "This account doesn't have access to this." : device ? "Sign in to see this device's drives." : "Sign in to view this."),
     h("p", {class: "small muted"}, signedIn ? "Ask the device owner to share it with you, or sign in with another account."

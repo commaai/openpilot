@@ -1,0 +1,98 @@
+/* user mode, as connect's explorer: its header, the device list beside the page (a drawer under 1081px, as connect's),
+   and the pages in connect's palette (pages.css --cn-*). On a phone the pages keep their own phone look */
+[data-theme="dark"] { --cn-side: linear-gradient(#1b2023, #111516); --cn-on: rgba(0,0,0,.25); --cn-id: #74838e; }
+[data-theme="light"] { --cn-side: linear-gradient(#fff, #f4f6f8); --cn-on: rgba(0,0,0,.06); --cn-id: #5f6b74; }
+
+.cn-header { position: relative; z-index: 20; display: flex; flex-shrink: 0; align-items: center; gap: 8px; min-height: 64px; padding: 0 7.5px;
+  border-bottom: 1px solid var(--cn-line); background: var(--cn-bg); color: var(--cn-fg); font-size: 14px; }
+body.loading .cn-header::before { content: ""; position: absolute; left: 0; bottom: 0; width: 40%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  pointer-events: none; animation: scan 1s linear infinite; }
+.cn-brand { display: flex; align-items: center; color: var(--cn-fg); font-size: 20px; font-weight: 800; text-decoration: none; }
+.cn-brand svg { margin: 0 28px; }
+.cn-hbtn { position: relative; display: grid; flex-shrink: 0; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--cn-muted); cursor: pointer; }
+.cn-hbtn:hover, .cn-hbtn.on { color: var(--cn-fg); }
+.cn-hbtn:hover { background: var(--cn-line); }
+.cn-gift-dot { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: #4c8dff; }
+.cn-devmode { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 12px; border: 1px solid var(--cn-line);
+  border-radius: 18px; background: none; color: var(--cn-fg); font-weight: 600; white-space: nowrap; cursor: pointer; }
+.cn-devmode:hover { background: var(--cn-line); }
+.cn-menu, .cn-side-head { display: none; }
+
+#main:has(> .cn-shell) { overflow: hidden; }
+.cn-shell { display: flex; height: 100%; background: var(--cn-bg); color: var(--cn-fg);
+  --bg: var(--cn-bg); --panel: var(--cn-card); --raised: var(--cn-raised); --fg: var(--cn-fg); --muted: var(--cn-muted); --line: var(--cn-line); }
+.cn-side { display: flex; flex: 0 0 max(280px, 20vw); flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--cn-side); }
+.cn-shell.bare .cn-side, .cn-scrim { display: none; }
+.cn-content { position: relative; flex: 1; min-width: 0; overflow-y: auto; }
+.cn-dev { display: flex; flex-shrink: 0; align-items: center; padding-right: 20px; }
+.cn-dev:hover { background: var(--cn-line); }
+.cn-dev.on { background: var(--cn-on); }
+.cn-dev > a:first-child { display: flex; flex: 1; align-items: center; gap: 16px; min-width: 0; padding: 16px 0 16px 32px; text-decoration: none; }
+.cn-dev .dot { width: 6px; height: 6px; }
+.cn-dev-name { display: flex; flex-direction: column; min-width: 0; }
+.cn-dev-name > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-dev-name > b { font-size: 15px; font-weight: 600; }
+.cn-dev-name > .mono { color: var(--cn-id); font: 12px var(--font); }
+.cn-gear { width: 46px; height: 46px; }
+.cn-add { padding: 8px 20px 24px; }
+/* a narrower window: the list is a drawer over the page, from the menu button */
+@media (max-width: 1080px) {
+  .cn-menu { display: grid; }
+  .cn-header .cn-brand svg { display: none; }
+  .cn-header .cn-brand { padding-left: 12px; }
+  .cn-side { position: fixed; top: 0; bottom: 0; left: 0; z-index: 41; width: min(300px, 85vw); visibility: hidden; transform: translateX(-100%);
+    transition: transform .2s, visibility .2s; box-shadow: var(--shadow); }
+  .cn-side-head { display: flex; flex-shrink: 0; min-height: 64px; }
+  .cn-side-head svg { margin: 0 24px; }
+  .cn-shell.open .cn-side { visibility: visible; transform: none; }
+  .cn-shell.open .cn-scrim { position: fixed; inset: 0; z-index: 40; display: block; background: rgba(0,0,0,.5); }
+}
+@media (max-width: 480px) {
+  .cn-header { gap: 0; }
+  .cn-devmode { justify-content: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; }
+  .cn-devmode > span { display: none; }
+  .cn-header .cn-brand { padding-left: 4px; }
+}
+
+/* what's developer mode's alone: the route browser's local files and live links, the device's boot and crash logs */
+.cn-content :is(.local-entry, .page-tabs [data-tab=bootlogs], .page-tabs [data-tab=crashlogs]) { display: none; }
+
+/* a wider window: connect's dashboard. The device's map across the top, its name and totals under it, then the drives
+   as cards: when, how long and how far, from and to, an arrow, and the drive's strip along the bottom */
+@media (min-width: 761px) {
+  .cn-content .device-page { max-width: none; padding: 0 0 32px; font-size: 14px; --driving: var(--cn-driving); }
+  .cn-content .device-head { flex-direction: column; gap: 0; margin: 0; }
+  .cn-content .device-head .device-map { order: -1; width: 100%; height: 280px; border: 0; border-bottom: 1px solid var(--cn-line); border-radius: 0; }
+  .cn-content .device-map .map-btn { top: auto; bottom: 24px; }  /* clear of the referral promotion over the map's corner */
+  .cn-content .device-info { padding: 16px 32px 12px; }
+  .cn-content .device-info h2 { font-size: 22px; font-weight: 500; }
+  .cn-content .stats b { font-weight: 600; color: var(--cn-fg); }
+  .cn-content .device-page :is(.page-tabs, .tab-body) { margin-inline: 32px; }
+  .cn-content .drives { display: flex; flex-direction: column; gap: 12px; }
+  .cn-content .drive-row.head { display: none; }
+  .cn-content .drive-row { grid-template-columns: 26% 14% 22% 22% 1fr; grid-template-rows: none; grid-template-areas: "when dur from to arrow" "when dist from to arrow" "more more more more more" "strip strip strip strip strip";
+    gap: 0 12px; height: auto; padding: 18px 32px 0; overflow: hidden; border: 0; border-top: 1px solid var(--cn-line); border-radius: 8px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end)); line-height: 1.5; white-space: nowrap; contain-intrinsic-size: auto 132px; }
+  .cn-content a.drive-row:hover { filter: brightness(1.06); }
+  .cn-content :is(.dr-when > b, .dr-hours) { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--cn-fg); }
+  .cn-content .dr-when { grid-area: when; }
+  .cn-content .dr-when > b, .cn-content .dr-dur, .cn-content .dr-place > span:first-child { font-weight: 600; }
+  .cn-content .dr-dash::before { content: " to "; white-space: pre; }
+  .cn-content .dr-dur { grid-area: dur; text-align: left; }
+  .cn-content .dr-dist { grid-area: dist; text-align: left; }
+  .cn-content :is(.dr-engaged, .dr-version) { display: none; }
+  .cn-content .dr-places { display: contents; }
+  .cn-content .dr-place { display: flex; flex-direction: column; }
+  .cn-content .dr-place > span { overflow: hidden; text-overflow: ellipsis; }
+  .cn-content .dr-place:empty::before { content: none; }
+  .cn-content .dr-detail { display: block; }
+  .cn-content .dr-from { grid-area: from; }
+  .cn-content .dr-to { grid-area: to; }
+  /* connect's arrow, drawn: the row is the link */
+  .cn-content .dr-arrow { grid-area: arrow; justify-self: center; align-self: center; width: 12px; height: 12px; overflow: hidden; border: solid var(--cn-dim);
+    border-width: 2.5px 2.5px 0 0; color: transparent; rotate: 45deg; }
+  .cn-content .dr-more { grid-area: more; flex-wrap: wrap; gap: 2px 12px; margin-top: 10px; padding: 0; color: var(--cn-muted); font-size: 13px; }
+  .cn-content .drive-row > .strip { grid-area: strip; --spans: 12px; height: 32px; margin: 18px -32px 0; border-radius: 0; }
+  .cn-content .drive-row .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
+}

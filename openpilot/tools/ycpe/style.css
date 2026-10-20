@@ -138,6 +138,13 @@ body.in-ws #main { overflow: hidden; }
 .tbtn:hover { background: var(--hover); color: var(--fg); }
 .tbtn:active { background: var(--active); }
 .tbtn.on { color: var(--accent); }
+.tbtn.mode-btn { flex-shrink: 0; padding: 0 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--fg); font-weight: 600; white-space: nowrap; }  /* to user mode */
+/* a phone: "Simple", and in a route at the end of the views' row (its tabs scroll in what's left), the first row full */
+@media (max-width: 760px) {
+  .topbar .mode-btn > span { display: none; }
+  body.in-ws .topbar .mode-btn { order: 2; }
+  body.in-ws .topbar .tabs { min-width: 56px; }
+}
 .hud { flex-shrink: 0; gap: 6px; padding: 0 8px; border: 1px solid var(--line); background: var(--bg); font: 11px var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
 .hud.bad { border-color: var(--critical); }
 .hud-fps { min-width: 3.6em; }
@@ -145,9 +152,9 @@ body.in-ws #main { overflow: hidden; }
 .hud-drops { color: var(--muted); }
 .hud-spark { width: 40px; height: 18px; }
 /* a narrower bar sheds the least needed first (after the chips' own display) */
-@container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem) { display: none; } }
+@container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem, .mode-btn > span) { display: none; } }
 @container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
-@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 5px; } .topbar .load-pill { max-width: 150px; } .topbar .tabs { min-width: 80px; } }
+@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 5px; } .topbar .load-pill { max-width: 150px; } .topbar .tabs { min-width: 80px; } .topbar .mode-btn { padding: 0 5px; } }
 /* the device crumb goes as on phones: the route crumb's menu reaches the rest */
 @container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
 .popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }

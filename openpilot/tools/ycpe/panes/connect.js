@@ -92,6 +92,8 @@ export function create(ctx, state) {
     if (sheet) mount(sheet);
   });
   boxes.files.hidden = boxes.info.hidden = true;
+  // in user mode connect's Clip leads them (panes/clips.js, once it's there)
+  if (ctx.user) import("/panes/clips.js").then(async (m) => { const b = await m.clipButton?.(ctx); if (b && !disposed) sheetOptions.el.prepend(b); }, () => {});
   function showMedia() {
     const both = WIDE.matches;
     mediaOptions.el.hidden = both;
