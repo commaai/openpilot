@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import http.client
 import json
 import os
 import socket
@@ -8,8 +7,9 @@ import threading
 import unittest
 from unittest import mock
 
-from openpilot.tools.ycpe.daemon import core, jobs, server
+from openpilot.tools.ycpe.daemon import core, jobs
 from openpilot.tools.ycpe.daemon.core import File, config, confine, route
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 
 @route("GET", "/local/test/file/{path:path}")
@@ -18,36 +18,10 @@ def _test_file(req):
 
 
 _root = tempfile.mkdtemp()
-
-
-class DaemonCase(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    config.log_roots = [_root]
-    server.Handler.log_message = lambda *a: None
-    cls.srv = server.make_server(0)
-    config.port = cls.srv.server_address[1]
-    threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
-    with open(os.path.join(_root, "data.bin"), "wb") as f:
-      f.write(bytes(range(256)) * 100)
-    with open(os.path.join(os.path.dirname(_root), "secret.txt"), "w") as f:
-      f.write("secret")
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.srv.shutdown()
-    cls.srv.server_close()
-
-  def req(self, path, method="GET", host=None, headers=None, token=True, body=None):
-    c = http.client.HTTPConnection("127.0.0.1", config.port, timeout=10)
-    h = {"Host": host or f"localhost:{config.port}", **(headers or {})}
-    if token:
-      h[core.TOKEN_HEADER] = config.token
-    c.request(method, path, body=body, headers=h)
-    r = c.getresponse()
-    data = r.read()
-    c.close()
-    return r, data
+with open(os.path.join(_root, "data.bin"), "wb") as f:
+  f.write(bytes(range(256)) * 100)
+with open(os.path.join(os.path.dirname(_root), "secret.txt"), "w") as f:
+  f.write("secret")
 
 
 class TestSecurity(DaemonCase):
@@ -213,15 +187,10 @@ class TestStreaming(DaemonCase):
     self.assertEqual(j2.result, {"n": 1})
 
   def test_job_events(self):
-    c = http.client.HTTPConnection("127.0.0.1", config.port, timeout=10)
-    c.request("GET", "/local/jobs/events", headers={"Host": f"localhost:{config.port}", core.TOKEN_HEADER: config.token})
-    r = c.getresponse()
+    r = self.connect("/local/jobs/events")
     self.assertEqual(r.getheader("Content-Type"), "text/event-stream")
     jobs.start("evt", lambda job: 42)
-    seen = b""
-    while b'"result":42' not in seen:
-      seen += r.read1(4096)
-    c.close()
+    self.read_until(r, b'"result":42')
 
 
 if __name__ == "__main__":

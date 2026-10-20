@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from openpilot.tools.ycpe.daemon import webrtc
 from openpilot.tools.ycpe.daemon.core import config
-from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 OFFER = {"sdp": "v=0\r\n", "cameras": ["road"], "enabled": True, "bridge_services_out": ["carState"]}
 

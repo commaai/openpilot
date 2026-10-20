@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Device pull over real ssh to localhost, against a stand-in realdata directory (never a real device)."""
 import getpass
-import json
 import os
 import subprocess
 import tempfile
@@ -11,7 +10,7 @@ from pathlib import Path
 
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import config
-from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 DONGLE, LOG = "fedcba9876543210", "0000002a--0123456789"
 FAKE = Path(tempfile.mkdtemp())
@@ -47,11 +46,6 @@ class TestDevice(DaemonCase):
     config.cache_root = tempfile.mkdtemp() + "/"
     config.device, config.device_root = f"{getpass.getuser()}@localhost", str(REALDATA)
     cls.before = tree()
-
-  def json(self, path, body=None, status=200):
-    r, data = self.req(path, method="POST" if body is not None else "GET", body=json.dumps(body) if body is not None else None)
-    self.assertEqual(r.status, status, data)
-    return json.loads(data)
 
   def test_list_pull_resolve(self):
     info = self.json("/local/device/routes")

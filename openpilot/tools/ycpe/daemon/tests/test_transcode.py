@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-import http.client
 import json
 import re
 import subprocess
 import tempfile
-import threading
 import time
 import unittest
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import core, server, transcode
-from openpilot.tools.ycpe.daemon.core import config
+from openpilot.tools.ycpe.daemon import transcode
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 from openpilot.tools.ycpe.daemon.transcode import Encode, Pictures, Transcoder, backends, encode
 
 FRAMES = 50  # 2.5 s at 20 fps: a few GOPs and a short last one
@@ -130,15 +128,12 @@ class TestTranscoder(unittest.TestCase):
       t.close()
 
 
-class TestRoute(unittest.TestCase):
+class TestRoute(DaemonCase):
   @classmethod
   def setUpClass(cls):
     cls.dir = Path(tempfile.mkdtemp())
     cls.src = hevc_clip(cls.dir / "src.hevc", 200)
-    server.Handler.log_message = lambda *a: None
-    cls.srv = server.make_server(0)
-    config.port = cls.srv.server_address[1]
-    threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+    super().setUpClass()
     transcode._transcoder = Transcoder(cls.dir / "cache", lambda d, r, seg, cam: str(cls.src) if seg < 2 else cls.missing(seg),
                                        run=transcode.run_as_job)
 
@@ -149,36 +144,26 @@ class TestRoute(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     transcode._transcoder.close()
-    cls.srv.shutdown()
-    cls.srv.server_close()
-
-  def get(self, path):
-    c = http.client.HTTPConnection("127.0.0.1", config.port, timeout=60)
-    c.request("GET", path, headers={"Host": f"localhost:{config.port}", core.TOKEN_HEADER: config.token})
-    r = c.getresponse()
-    return r, r.read()
+    super().tearDownClass()
 
   def test_streams_then_serves_ranges(self):
     start = time.monotonic()
-    r, data = self.get("/local/video/d/r/0/fcamera.h264?ahead=1")
+    r, data = self.req("/local/video/d/r/0/fcamera.h264?ahead=1")
     self.assertEqual(r.status, 200)
     self.assertEqual(len([t for t in nal_types(data) if t in (1, 5)]), 200)
     self.assertLess(time.monotonic() - start, 60)
-    r, info = self.get("/local/video/d/r/0/fcamera.json")
+    r, info = self.req("/local/video/d/r/0/fcamera.json")
     self.assertEqual(json.loads(info)["state"], "done")
-    r, part = self.get("/local/video/d/r/0/fcamera.mp4")
+    r, part = self.req("/local/video/d/r/0/fcamera.mp4")
     self.assertEqual(r.status, 200)
-    c = http.client.HTTPConnection("127.0.0.1", config.port, timeout=60)
-    c.request("GET", "/local/video/d/r/0/fcamera.mp4", headers={"Host": f"localhost:{config.port}", core.TOKEN_HEADER: config.token,
-                                                                   "Range": "bytes=0-99"})
-    rr = c.getresponse()
-    self.assertEqual((rr.status, rr.read()), (206, part[:100]))
+    r, head = self.req("/local/video/d/r/0/fcamera.mp4", headers={"Range": "bytes=0-99"})
+    self.assertEqual((r.status, head), (206, part[:100]))
 
   def test_errors(self):
-    self.assertEqual(self.get("/local/video/d/r/7/fcamera.h264")[0].status, 404)
-    self.assertEqual(self.get("/local/video/d/r/0/qcamera.h264")[0].status, 404)
-    self.assertEqual(self.get("/local/video/d/r/0/fcamera.exe")[0].status, 404)
-    self.assertEqual(self.get("/local/video/d/r/0/fcamera.h264?preset=ultra")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/7/fcamera.h264")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/0/qcamera.h264")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/0/fcamera.exe")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/0/fcamera.h264?preset=ultra")[0].status, 404)
 
 
 if __name__ == "__main__":
