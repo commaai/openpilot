@@ -71,9 +71,9 @@ export const daemon = {
   // the sources it resolves, or null without it
   sources: () => local?.present && local.has("sources") ? local.caps.modules.sources.sources : null,
   // {segments: {n: {kind: {url, file, size, source, cached}}}, missing, errors: {source: message}}; the page's sign-in
-  // stands in for the daemon's own
-  resolve: (sr, segs, kinds, sources) => local.json("/local/sources/resolve", {method: "POST",
-    headers: auth.token() ? {Authorization: `JWT ${auth.token()}`} : {}, body: {route: sr.route, segs, kinds, sources}}),
+  // stands in for the daemon's own. sizes: HEAD the API's files too (other sources always know theirs).
+  resolve: (sr, segs, kinds, sources, sizes = false) => local.json("/local/sources/resolve", {method: "POST",
+    headers: auth.token() ? {Authorization: `JWT ${auth.token()}`} : {}, body: {route: sr.route, segs, kinds, sources, sizes}}),
 };
 
 // a source only the daemon reaches (no CORS, or not this machine's network); with it, resolveFiles asks it instead
@@ -166,10 +166,10 @@ export const routeSource = {
 // file_sources' walk: for each kind, each source in turn on the segments still without it. Partial results are kept,
 // not raised. "auto" is the daemon's order, or without it AUTO's sources a browser reaches.
 // → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
-export async function resolveFiles(sr, segs, kinds, sources = "auto") {
+export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = false} = {}) {
   const found = new Map(), errors = {};
   if (daemon.sources()) {
-    const r = await daemon.resolve(sr, segs, kinds, sources);
+    const r = await daemon.resolve(sr, segs, kinds, sources, sizes);
     for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, f);
     return {found, errors: r.errors || {}};
   }
