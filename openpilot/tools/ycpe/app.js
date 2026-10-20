@@ -8,7 +8,7 @@ import {Layout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
-import {status, loadPill, footprint} from "/status.js";
+import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
@@ -180,33 +180,11 @@ class Workspace {
     const urls = [];
     for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
     this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
-    let focusTimer = 0;
-    this.offs.push(this.clock.on("t", () => {
-      clearTimeout(focusTimer);
-      focusTimer = setTimeout(() => this.store.focus(this.clock.t), 150);
-    }));
-    // TODO(track 1): the store publishes to status itself, with download bytes per segment
-    const logs = status.source("logs", {order: 0});
-    const STATES = {queued: "queued", missing: "missing", done: "ready", error: "error"};
-    const publish = () => {
-      const segs = this.store.route.segments, p = this.store.progress;
-      logs.count(segs.length);
-      segs.forEach((s, n) => logs.seg(n, STATES[s.status] || "loading"));
-      logs.rate(p.bytes / ((performance.now() - p.start) / 1000));
-      logs.bytes({memory: this.store.bytes});
-      waiting();
-    };
-    // the playhead waits on its segment's logs
-    const waiting = () => {
-      const at = this.store.route.segments.find((s) => this.clock.t >= s.t0 && this.clock.t < s.t1);
-      logs.buffering(at && at.status !== "done" && at.status !== "missing" ? {n: at.n, text: `segment ${at.n}`} : null);
-    };
-    this.offs.push(logs.remove, this.clock.on("t", waiting));
+    // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
+    this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
       if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
-      publish();
     });
-    publish();
     for (const fn of this.storeSubs) fn(this.store);
     return this.store;
   }
