@@ -568,6 +568,10 @@ async function renderPage() {
   const parts = location.pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(location.search);
   closePopover();
+  // the API names devices in lowercase: a typed /5BEB… is the same device
+  if (DONGLE_RE.test(parts[0] || "") && parts[0] !== parts[0].toLowerCase()) {
+    return go(location.pathname.replace(parts[0], parts[0].toLowerCase()) + location.search, true);
+  }
   // leaving the route with unsaved DBC edits asks first, as closing the browser tab does; staying puts its URL back
   if (ws?.store?.can.dbcs?.dirty && !showsWorkspace(parts) && !confirm("The DBC files have unsaved changes. Leave and discard them?")) {
     return history.pushState(null, "", ws.href);
