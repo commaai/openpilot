@@ -508,7 +508,7 @@ document.addEventListener("drop", async (e) => {
 function errorPage(e) {
   console.error(e);
   if (e.status === 401 || e.status === 403) return signInCard();
-  const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
+  const msg = e.status === 404 ? "Not found." : String(e.message || e);
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
