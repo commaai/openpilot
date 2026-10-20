@@ -44,8 +44,11 @@ export function create(ctx, state) {
   function toolbar() {
     const files = can.dbcs.all();
     dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.dirty ? "*" : ""}`).join(", ") : "No DBC";
-    undo.disabled = can.dbcs.index === 0;
-    redo.disabled = can.dbcs.index === can.dbcs.undos.length;
+    const {undos, index} = can.dbcs;
+    undo.disabled = index === 0;
+    redo.disabled = index === undos.length;
+    undo.title = index ? `Undo ${undos[index - 1].text} (ctrl+z)` : "Undo (ctrl+z)";
+    redo.title = index < undos.length ? `Redo ${undos[index].text} (ctrl+shift+z)` : "Redo (ctrl+shift+z)";
     const n = [...can.suppressed.values()].reduce((a, m) => a + m.filter((x) => x).length, 0);
     clearBtn.textContent = n ? `Clear (${n})` : "Clear";
     clearBtn.disabled = !n;
@@ -53,7 +56,7 @@ export function create(ctx, state) {
     notice.hidden = !notice.textContent;
   }
 
-  // filtering: text columns match substrings, numeric ones also take "a-b" ranges
+  // filtering as cabana: substrings, "a-b" and "a-" ranges for numbers (hex for IDs), and names match signal names too
   function match(m) {
     for (const c of COLS) {
       const f = (filters[c.id] || "").trim().toLowerCase();
@@ -64,8 +67,12 @@ export function create(ctx, state) {
         if (j === undefined || !Array.from(can.live.data.subarray(can.live.off[j], can.live.off[j + 1]), hex2).join("").toLowerCase().includes(f.replace(/\s/g, ""))) return false;
         continue;
       }
-      const range = /^(-?[\d.]+)\s*-\s*(-?[\d.]+)$/.exec(f);
-      if (range && typeof v === "number") { if (v < +range[1] || v > +range[2]) return false; } else if (!text.includes(f)) return false;
+      if (c.id === "name" && can.dbcMsg(m.key)?.sigs.some((sg) => sg.name.toLowerCase().includes(f))) continue;
+      const hex = c.id === "id", range = (hex ? /^(?:0x)?([\da-f]+)\s*-\s*(?:0x)?([\da-f]*)$/ : /^(-?[\d.]+)\s*-\s*(-?[\d.]*)$/).exec(f);
+      if (range && typeof v === "number") {
+        const num = (x) => (hex ? parseInt(x, 16) : +x);
+        if (v < num(range[1]) || (range[2] && v > num(range[2]))) return false;
+      } else if (!(hex ? text.slice(2).includes(f.replace(/^0x/, "")) : text.includes(f))) return false;
     }
     return true;
   }
@@ -85,8 +92,10 @@ export function create(ctx, state) {
   function key(e) {
     if (e.target.tagName === "INPUT") return;
     const i = rows.findIndex((m) => m.key === can.selected);
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      const n = Math.max(0, Math.min(rows.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+    const page = Math.max(1, Math.floor(height / ROW) - 1);
+    const step = {ArrowDown: 1, ArrowUp: -1, PageDown: page, PageUp: -page, Home: -Infinity, End: Infinity}[e.key];
+    if (step) {
+      const n = Math.max(0, Math.min(rows.length - 1, i + step));
       if (rows[n]) can.select(rows[n].key);
       const top = n * ROW;
       if (top < body.scrollTop) body.scrollTop = top;
@@ -121,8 +130,10 @@ export function create(ctx, state) {
         const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
         if (r.active !== active) r.classList.toggle("inactive", !(r.active = active));
         COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], String(c.text ? c.text(m, can) : c.get(m, can))); });
-        const named = !!can.name(m.key);
+        const dm = can.dbcMsg(m.key), named = !!dm;
         if (r.named !== named) r.cells[0].classList.toggle("can-muted", !(r.named = named));
+        const tip = dm ? (dm.comment ? `${dm.name}\n${dm.comment}` : dm.name) : "";
+        if (r.cells[0].title !== tip) r.cells[0].title = tip;
         // live bytes with change highlighting: up, down or periodic, fading over 2 s as in cabana
         const cell = r.cells.at(-1), len = j === undefined ? 0 : live.off[j + 1] - live.off[j];
         while (r.bytes.length < len) cell.append(r.bytes[r.bytes.push(h("span")) - 1]);
@@ -146,6 +157,14 @@ export function create(ctx, state) {
   s.add(can.on("live", () => { if (filters.bytes || sort.col === "count") refresh(); else ctx.perf.invalidate(pane); }));
   s.add(can.on("select", () => ctx.perf.invalidate(pane)));
   s.add(can.dbcs.on(toolbar));
+  // DBC undo/redo anywhere but in a text box, as cabana
+  const undoKeys = (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.target.closest?.("input, textarea, select")) return;
+    e.preventDefault();
+    if (e.shiftKey) can.dbcs.redo(); else can.dbcs.undo();
+  };
+  document.addEventListener("keydown", undoKeys);
+  s.add(() => document.removeEventListener("keydown", undoKeys));
   s.add(can.on("notice", toolbar));
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
   sizer.observe(body);

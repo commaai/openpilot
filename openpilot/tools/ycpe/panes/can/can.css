@@ -41,6 +41,7 @@
 .can-msg-row.inactive { color: var(--muted); }
 .can-msg-row .can-col-id, .can-msg-row .can-col-bytes { font-family: var(--mono); }
 .can-col-bytes span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
+.can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
 /* byte changes: up, down, periodic; --a fades from 1 to 0 over two seconds */
 .can-chg1, .can-chg2, .can-chg3 { background: color-mix(in srgb, var(--c) calc(var(--a) * 55%), transparent); }
 .can-chg1 { --c: var(--accent); } .can-chg2 { --c: var(--critical); } .can-chg3 { --c: var(--muted); }

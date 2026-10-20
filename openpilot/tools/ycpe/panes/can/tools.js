@@ -11,7 +11,10 @@ export function dbcDialog(can) {
   const target = h("select", {}, h("option", {value: "-1"}, "all buses"), busList(can).map((b) => h("option", {value: b}, `bus ${b}`)));
   const buses = () => [+target.value];
   const error = h("div", {class: "can-error"}), note = h("div", {class: "can-muted"});
+  // opening or closing a DBC drops the undo history, so unsaved edits are confirmed first, as cabana
+  const discard = () => !can.dbcs.dirty || confirm("The DBC has unsaved changes. Discard them?");
   const open = (fn) => async () => {
+    if (!discard()) return;
     try {
       await fn();
       d.close();
@@ -51,7 +54,7 @@ export function dbcDialog(can) {
       h("button", {class: "can-btn", onclick: () => save(can, f, true)}, "Save as"),
       localSave(f),
       h("button", {class: "can-btn", onclick: (e) => navigator.clipboard.writeText(f.serialize()).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
-      h("button", {class: "can-btn", onclick: () => { can.dbcs.close(f); d.close(); }}, "Close")))));
+      h("button", {class: "can-btn", onclick: () => { if (discard()) { can.dbcs.close(f); d.close(); } }}, "Close")))));
 
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),
@@ -128,7 +131,7 @@ export function toolsMenu(can, ctx, anchor) {
     item("Find similar bits…", () => similarDialog(can)),
     item("Find signal…", () => findDialog(can, ctx)),
     item("Export CSV…", () => csvDialog(can, ctx)),
-    item("Route segments…", () => segmentsDialog(ctx)));
+    item("Route info…", () => segmentsDialog(ctx)));
   document.body.append(menu);
   const r = anchor.getBoundingClientRect();
   menu.style.left = `${r.left}px`;
@@ -226,8 +229,9 @@ function csvDialog(can, ctx) {
     }}, "Export")));
 }
 
+// cabana's route info: the fingerprint and each segment; a row seeks there (the Files view lists every file)
 function segmentsDialog(ctx) {
-  const segs = ctx.store.route.segments;
-  dialog("Route segments", h("div", {class: "can-muted"}, ctx.route.fullname),
-    table(["Segment", "Start", "End", "Status"], segs.map((s) => ({src: s, cells: [s.n, s.t0.toFixed(1), s.t1.toFixed(1), s.status]})), (s) => ctx.clock.seek(s.t0)));
+  const segs = ctx.store.route.segments, fp = ctx.store.valueAt("/carParams/carFingerprint", Infinity);
+  dialog("Route info", h("div", {class: "can-muted"}, ctx.route.fullname, fp ? ` · ${fp}` : ""),
+    table(["Segment", "Start", "End", "Log"], segs.map((s) => ({src: s, cells: [s.n, s.t0.toFixed(1), s.t1.toFixed(1), s.status]})), (s) => ctx.clock.seek(s.t0)));
 }

@@ -7,7 +7,7 @@ import {canOf, subs} from "./common.js";
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
-  let cols = state.cols || 1, charts = [], dragging = null;
+  let cols = state.cols || 1, style = state.style || "", charts = [], dragging = null;
   const tabs = state.tabs || [{charts: state.charts || []}];  // the open tab's charts live in `charts`
   let active = Math.min(state.active || 0, tabs.length - 1);
   const tabBar = h("div", {class: "can-tabs"});
@@ -19,6 +19,8 @@ export function create(ctx, state) {
   const el = h("div", {class: "can-pane can-charts"},
     h("div", {class: "can-toolbar"}, h("span", {class: "can-muted"}, "Drop signals here; drag a chart's handle onto another to merge"),
       h("span", {class: "can-spacer"}),
+      h("select", {class: "can-select", title: "Series type of every chart", onchange: (e) => restyle(e.target.value)},
+        [["", "auto"], ["line", "line"], ["steps", "step"], ["dots", "scatter"]].map(([v, n]) => h("option", {value: v, selected: v === style}, n))),
       h("select", {class: "can-select", title: "Columns", onchange: (e) => { cols = +e.target.value; layout(); }},
         [1, 2, 3].map((n) => h("option", {value: n, selected: n === cols}, `${n} col`))),
       h("button", {class: "can-btn", onclick: () => { for (const c of [...charts]) remove(c); }}, "Clear")), tabBar, grid);
@@ -27,7 +29,7 @@ export function create(ctx, state) {
   });
 
   // decoded signals keep their DBC color
-  const curve = (path) => ({path, color: can.parse(path)?.sig.color});
+  const curve = (path) => ({path, color: can.parse(path)?.sig.color, ...(style && {style})});
 
   function add(st) {
     const c = {pane: plot(ctx, st)};
@@ -67,6 +69,15 @@ export function create(ctx, state) {
       h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, "+"));
   }
 
+  // cabana's chart type: one series style for every chart, set on their curves
+  function restyle(v) {
+    style = v;
+    tabs[active].charts = charts.map((c) => c.pane.save());
+    for (const c of [...charts]) remove(c);
+    for (const t of tabs) for (const st of t.charts) for (const c of st.curves) c.style = style || undefined;
+    for (const st of tabs[active].charts) add(st);
+  }
+
   function closeTab(i) {
     if (i === active) for (const c of [...charts]) remove(c);
     tabs.splice(i, 1);
@@ -88,7 +99,7 @@ export function create(ctx, state) {
     dispose() { s.dispose(); resizer.disconnect(); for (const c of charts) c.pane.dispose(); },
     save: () => {
       tabs[active].charts = charts.map((c) => c.pane.save());
-      return {cols, tabs, active};
+      return {cols, style, tabs, active};
     },
   };
   s.add(can.on("chart", (path) => { if (!charts.some((c) => c.pane.save().curves.some((x) => x.path === path))) add({curves: [curve(path)]}); }));
