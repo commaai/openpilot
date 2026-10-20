@@ -149,7 +149,9 @@ export function playbar(ctx) {
     tip.style.left = `${Math.max(0, Math.min(width - 136, x - 68))}px`;
     const slot = Math.max(0, Math.min(Math.floor(hover / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
     const n = segmentAt(route, slot);  // a range's slots map to its segments
-    tip.firstChild.style.backgroundImage = `url(${api.segmentAsset(route, n, "sprite.jpg")})`;
+    const sprite = route.url && api.segmentAsset(route, n, "sprite.jpg");  // local files have none
+    tip.firstChild.hidden = !sprite;
+    if (sprite) tip.firstChild.style.backgroundImage = `url(${sprite})`;
     tip.lastChild.replaceChildren(`${clockText(hover, false)} · segment ${n}`,
       ...status.kinds().filter((k) => k.segs[slot]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[slot])}`)));
   });
