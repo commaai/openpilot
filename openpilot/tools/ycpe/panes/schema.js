@@ -13,7 +13,7 @@ const took = (ms) => ms < 10 ? "cached" : ms < 1000 ? `${Math.round(ms)} ms` : `
 export function schemaRow(ctx) {
   const el = h("span", {class: "schema-row muted"}, "loads with the logs");
   let off = null;
-  ctx.onStore((store) => {
+  const unsub = ctx.onStore((store) => {
     const ls = logSchema(store, ctx.route);
     const select = h("select", {class: "schema-select", title: "The schema this route's logs are read with", onchange: () => ls.set(select.value)},
       MODES.map(([v, label]) => h("option", {value: v}, label)));
@@ -34,5 +34,5 @@ export function schemaRow(ctx) {
     el.className = "schema-row";
     el.replaceChildren(what, select, note);
   });
-  return {el, dispose: () => off?.()};
+  return {el, dispose: () => { off?.(); unsub?.(); }};
 }

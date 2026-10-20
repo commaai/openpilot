@@ -98,10 +98,10 @@ export function create(ctx, state) {
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
   let disposed = false;
-  ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane))));  // its alerts
+  offs.push(ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane)))));  // its alerts
   function dispose() {
     disposed = true;
-    for (const off of offs) off();
+    for (const off of offs) off?.();
     source.dispose();
   }
 

@@ -55,12 +55,12 @@ export function create(ctx, state) {
 
   const work = () => ctx.perf.measure("logs indexing", slice);
   const offs = [ctx.clock.on("t", () => follow && ctx.perf.invalidate(pane))];
-  ctx.onStore((s) => {
+  offs.push(ctx.onStore((s) => {
     if (disposed) return;
     store = s;
     offs.push(s.on("segment", enqueue));
     for (const seg of s.route.segments) if (seg.status === "done") enqueue(seg.n);
-  });
+  }));
   void ctx.store;  // start loading
 
   function enqueue(n) {
@@ -182,7 +182,7 @@ export function create(ctx, state) {
     disposed = true;
     clearTimeout(timer);
     untick?.();
-    for (const off of offs) off();
+    for (const off of offs) off?.();
   }
 
   return pane;

@@ -304,13 +304,13 @@ export function create(ctx) {
   // once logs are loading, rebuild from the store's GPS at most every 2 s
   const duration = (route.end_time_utc_millis - route.start_time_utc_millis) / 1000;
   const unsubs = [clock.on("t", () => map.invalidate()), theme.on(() => map.invalidate())];
-  ctx.onStore((store) => !disposed && unsubs.push(store.on("segment", () => {
+  unsubs.push(ctx.onStore((store) => !disposed && unsubs.push(store.on("segment", () => {
     pending ??= setTimeout(() => {
       pending = null;
       const track = storeTrack(store, duration);
       if (track?.length) { fromStore = true; events.then(() => !disposed && update(track)); }
     }, 2000);
-  })));
+  }))));
 
   return {
     name: "map", el,

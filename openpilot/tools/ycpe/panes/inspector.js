@@ -39,12 +39,12 @@ export function create(ctx, state) {
   };
 
   offs.push(ctx.clock.on("t", () => ctx.perf.invalidate(pane)));
-  ctx.onStore((s) => {
+  offs.push(ctx.onStore((s) => {
     if (!offs.length) return;  // disposed
     store = s;
     offs.push(s.on("paths", build), s.on("progress", () => ctx.perf.invalidate(pane)));
     build();
-  });
+  }));
   void ctx.store;
 
   // the column tree of the service: {kids: Map(key → node), series?, list?: length of a long list not loaded}
@@ -160,7 +160,7 @@ export function create(ctx, state) {
   }
 
   function dispose() {
-    for (const off of offs.splice(0)) off();
+    for (const off of offs.splice(0)) off?.();
   }
 
   return pane;
