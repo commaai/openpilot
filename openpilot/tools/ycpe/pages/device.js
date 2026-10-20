@@ -66,10 +66,10 @@ function driveStrip(r, onSpans, onVisible) {
   return s.el;
 }
 
-// the neighborhood, and under it (on a phone's card) the city
+// the neighborhood, and under it (on a phone's card) the city; none, the card gives up the lines it kept for them
 function place(el, lng, lat) {
   reverseLookup(lng, lat).then((loc) => {
-    if (!loc) return;
+    if (!loc) return el.classList.add("none");
     el.replaceChildren(h("span", {}, loc.place || loc.details), loc.place && h("span", {class: "dr-detail"}, loc.details));
     el.title = [loc.place, loc.details].filter(Boolean).join(", ");
   });

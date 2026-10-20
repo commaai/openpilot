@@ -80,6 +80,9 @@ input[type=color]::-webkit-color-swatch { border: 0; border-radius: 2px; }
 body.in-ws #main { overflow: hidden; }
 
 /* top bar */
+/* user mode's header comes with its module: until then the bar is its size, and shows none of developer mode's */
+[data-mode="user"] #app > .topbar { height: 64px; background: var(--cn-bg); }
+[data-mode="user"] #app > .topbar > * { visibility: hidden; }
 .topbar { display: flex; align-items: center; gap: 6px; height: var(--top); padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative; z-index: 20; container-type: inline-size; overflow-x: clip; }  /* never wider than the window, whatever it holds */
 .brand { display: flex; align-items: center; gap: 6px; padding: 0 6px 0 2px; font-weight: 800; font-size: 14px; letter-spacing: .02em; text-decoration: none; }
 .brand svg { display: block; color: var(--fg); }

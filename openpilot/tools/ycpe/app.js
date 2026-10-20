@@ -745,7 +745,7 @@ const showsWorkspace = (parts) => ws.session ? `/${parts.join("/")}/`.startsWith
 // a page that throws shows the error rather than its spinner forever
 function render() {
   return renderPage().catch((e) => {
-    document.body.classList.remove("loading");
+    document.body.classList.remove("loading", "opening");
     document.getElementById("main").replaceChildren(errorPage(e));
   });
 }
@@ -756,6 +756,7 @@ let shell = null;  // user mode's frame (pages/connect/shell.js), loaded with th
 // the page's bar: connect's header in user mode, ours in developer mode
 async function modeBar(user) {
   if (user) shell ??= await import("/pages/connect/shell.js");
+  document.documentElement.dataset.mode = user ? "user" : "dev";
   const want = user ? shell.header : devBar, have = document.querySelector("#app > header");
   if (have !== want) have.replaceWith(want);
 }
@@ -852,7 +853,7 @@ async function renderPage() {
       }
       return updateTop();
     }
-    document.body.classList.add("loading");
+    document.body.classList.add("loading", "opening");  // opening: a route, whose bar is the workspace's (pages.css)
     try {
       const record = routeRecord(routeName);
       const files = routeLogs(routeName, record);
@@ -878,7 +879,7 @@ async function renderPage() {
         root.replaceChildren(card || errorPage(e, {route: routeName}));
       }
     } finally {
-      document.body.classList.remove("loading");
+      document.body.classList.remove("loading", "opening");
     }
     return updateTop();
   }

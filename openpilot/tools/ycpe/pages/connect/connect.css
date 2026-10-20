@@ -83,7 +83,8 @@ body.loading .cn-header::before { content: ""; position: absolute; left: 0; bott
   .cn-content .dr-dist { grid-area: dist; text-align: left; }
   .cn-content :is(.dr-engaged, .dr-version) { display: none; }
   .cn-content .dr-places { display: contents; }
-  .cn-content .dr-place { display: flex; flex-direction: column; }
+  .cn-content .dr-place { display: flex; flex-direction: column; min-height: 2lh; }  /* its place's lines, before it comes */
+  .cn-content .dr-place.none { min-height: 0; }
   .cn-content .dr-place > span { overflow: hidden; text-overflow: ellipsis; }
   .cn-content .dr-place:empty::before { content: none; }
   .cn-content .dr-detail { display: block; }

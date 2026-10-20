@@ -95,6 +95,7 @@ a.drive-row:hover { background: var(--hover); }
 .drive-row .num { text-align: right; font-variant-numeric: tabular-nums; }
 .dr-detail, .online-pill, .list-foot .filter { display: none; }
 .dr-place:empty::before, .dr-dash::before { content: "–"; }
+.stats { min-height: 1lh; }  /* its line is there before the numbers, so nothing under it moves */
 .stats b { font-weight: inherit; }
 /* a drive's details: a second line across its row, with the list's details on */
 .dr-more { display: none; grid-column: 1 / -1; align-items: center; gap: 0 14px; padding-bottom: 6px; font-size: 11px; }
@@ -241,8 +242,8 @@ a.drive-row:hover { background: var(--hover); }
   .dr-dist { grid-area: dist; }
   :is(.dr-engaged, .dr-version, .dr-arrow) { display: none; }
   .dr-places { display: contents; }
-  .dr-place { margin-top: 12px; font-weight: 600; }
-  .dr-place:empty { margin: 0; }
+  .dr-place { min-height: 2lh; margin-top: 12px; font-weight: 600; }  /* the lines its place will take, so the card doesn't grow */
+  .dr-place.none { min-height: 0; margin: 0; }
   .dr-place:empty::before { content: none; }
   .dr-place > span { display: block; overflow: hidden; text-overflow: ellipsis; }
   .dr-detail { font-weight: 400; }
@@ -304,20 +305,20 @@ a.drive-row:hover { background: var(--hover); }
   .topbar :is(.brand > span, .sep, .hud, .local-badge) { display: none; }
   .topbar > .crumb:first-of-type { display: none; }  /* the device: the route crumb's menu reaches the rest */
   /* from the route's load on, so the row is there before the views and nothing shifts when they fill in */
-  body:is(.in-ws, .loading) .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
-  body:is(.in-ws, .loading) .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
-  body:is(.in-ws, .loading) .topbar .views { display: flex; min-height: calc(var(--top) - 8px); }
-  body:is(.in-ws, .loading) .topbar .views:empty { visibility: hidden; }
+  body:is(.in-ws, .opening) .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
+  body:is(.in-ws, .opening) .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
+  body:is(.in-ws, .opening) .topbar .views { display: flex; min-height: calc(var(--top) - 8px); }
+  body:is(.in-ws, .opening) .topbar .views:empty { visibility: hidden; }
   /* the omnibox is a search button until it's tapped; the load pill shrinks rather than wrapping the first row */
-  body:is(.in-ws, .loading) .topbar .load-pill { flex: 1 1 0; min-width: 0; }
-  body:is(.in-ws, .loading) .topbar .omni { flex: 0 0 40px; min-width: 40px; }
-  body:is(.in-ws, .loading) .topbar .omnibox:not(:focus) { margin-left: 0; padding: 0; border-color: transparent; color: transparent; background: center / 20px no-repeat
+  body:is(.in-ws, .opening) .topbar .load-pill { flex: 1 1 0; min-width: 0; }
+  body:is(.in-ws, .opening) .topbar .omni { flex: 0 0 40px; min-width: 40px; }
+  body:is(.in-ws, .opening) .topbar .omnibox:not(:focus) { margin-left: 0; padding: 0; border-color: transparent; color: transparent; background: center / 20px no-repeat
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238a939c' d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E"); }
-  body:is(.in-ws, .loading) .topbar .omnibox:not(:focus)::placeholder { color: transparent; }
-  body:is(.in-ws, .loading) .topbar .crumb { max-width: calc(100vw - 232px); }  /* so they fit on a 320px phone */
-  body:is(.in-ws, .loading) .topbar .load-pill { max-width: fit-content; }
-  body:is(.in-ws, .loading) .topbar .grow { min-width: 0; }  /* holds the buttons at the end while the load pill comes and goes */
-  body:is(.in-ws, .loading) .topbar .omnibox { width: 100%; min-width: 0; }
+  body:is(.in-ws, .opening) .topbar .omnibox:not(:focus)::placeholder { color: transparent; }
+  body:is(.in-ws, .opening) .topbar .crumb { max-width: calc(100vw - 232px); }  /* so they fit on a 320px phone */
+  body:is(.in-ws, .opening) .topbar .load-pill { max-width: fit-content; }
+  body:is(.in-ws, .opening) .topbar .grow { min-width: 0; }  /* holds the buttons at the end while the load pill comes and goes */
+  body:is(.in-ws, .opening) .topbar .omnibox { width: 100%; min-width: 0; }
   /* typing, the omnibox takes the whole first row, its list under it inside the window */
   .topbar .omni:focus-within { position: absolute; top: 6px; left: 8px; right: 8px; z-index: 1; }
   .topbar .omni:focus-within .omnibox { width: 100%; margin-left: 0; }
