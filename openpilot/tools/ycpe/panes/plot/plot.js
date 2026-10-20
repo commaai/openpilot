@@ -93,6 +93,7 @@ export function create(ctx, state = {}) {
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     // decoded DBC signals arrive after they're asked for
     store.can?.on("series", (path) => { if (st.curves.some((c) => c.path === path || c.custom?.inputs.includes(path))) invalidate(); }),
+    store.can?.on("moved", followDbc),
   ].filter(Boolean);
   view.join(pane);
 
@@ -110,6 +111,18 @@ export function create(ctx, state = {}) {
   function normalize(c) {
     return {...c, color: c.color || nextColor(st.curves.map((x) => x.color)),
       ...(c.custom?.untrusted && {error: "custom code from an imported layout: click to review and run it"})};
+  }
+
+  // curves and custom series' inputs follow a renamed DBC signal or message, and go with a removed one
+  function followDbc(move) {
+    const to = (path) => path.startsWith("/dbc/") ? move(path) : path;
+    const follow = (c) => c.custom ? {...c, custom: {...c.custom, inputs: c.custom.inputs.map(to)}} : {...c, path: to(c.path)};
+    const curves = st.curves.map(follow).filter((c) => c.path && !c.custom?.inputs.includes(null));
+    if (JSON.stringify(curves) === JSON.stringify(st.curves)) return;
+    view.rememberCurves(clock, pane);
+    st.curves = curves;
+    rebuildLegend();
+    invalidate();
   }
 
   // removals can be undone in the plot, so it takes the focus
