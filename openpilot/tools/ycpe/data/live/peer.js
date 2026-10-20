@@ -11,6 +11,7 @@ const STUN = [{urls: "stun:stun.l.google.com:19302"}];  // as the device's side 
 const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 5000;
 export const CAMERAS = ["road", "wideRoad", "driver"];
 
+const text = new TextDecoder();
 const peers = new Map();  // "local" or a dongle id → Peer
 
 export const peer = (target) => peers.get(target) || peers.set(target, new Peer(target)).get(target);
@@ -72,19 +73,22 @@ class Peer {
     this.want = want;
     this.set("connecting", this.target === "local" ? "asking this PC's webrtcd" : "asking the device through athena");
     const live = () => gen === this.gen;
-    // video m-lines answer in the order the cameras were asked for; a track's id names its camera when the device
-    // sets it (teleoprtc's "<camera>:<uuid>"), which also covers devices that pick their own camera
+    // video m-lines answer in the order the cameras were asked for, unless the answer names the camera (devices that
+    // pick their own: stock ones send wideRoad)
     const transceivers = want.cameras.map(() => pc.addTransceiver("video", {direction: "recvonly"}));
     pc.ontrack = ({track, transceiver}) => {
       if (!live()) return;
-      const named = track.id.split(":")[0], camera = CAMERAS.includes(named) ? named : want.cameras[transceivers.indexOf(transceiver)];
+      const camera = cameraOf(pc.remoteDescription?.sdp, transceiver.mid) || want.cameras[transceivers.indexOf(transceiver)];
       if (!camera) return;
       this.tracks.set(camera, track);
       this.events.track.emit(camera, track);
     };
     // the browser opens every channel ("data" is what teleoprtc listens for); a device may also open its own
     const channel = (ch) => {
-      if (ch.label === "data") ch.onmessage = (e) => live() && this.data(e.data, gen);
+      if (ch.label === "data") {
+        ch.binaryType = "arraybuffer";  // webrtcd sends its JSON as bytes
+        ch.onmessage = (e) => live() && this.data(typeof e.data === "string" ? e.data : text.decode(e.data), gen);
+      }
       if (ch.label === "cereal") {
         ch.binaryType = "arraybuffer";
         ch.onmessage = (e) => live() && typeof e.data !== "string" && this.events.cereal.emit(new Uint8Array(e.data));
@@ -143,6 +147,14 @@ class Peer {
     await this.ready;
     return this.filesReady.promise;
   }
+}
+
+// the camera an answer's m-line carries: teleoprtc names its tracks "<camera>:<uuid>" in the msid, which Chrome doesn't
+// take for the track's id
+function cameraOf(sdp = "", mid) {
+  const media = sdp.split(/\nm=/).find((m) => m.split(/\r?\n/).includes(`a=mid:${mid}`));
+  const named = media?.match(/msid:\S+ (\w+):/)?.[1];
+  return CAMERAS.includes(named) ? named : null;
 }
 
 // webrtcd takes no trickled candidates, so the offer goes once gathering is done, or soon after the first
