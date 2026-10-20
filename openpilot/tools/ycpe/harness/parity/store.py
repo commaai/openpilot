@@ -73,7 +73,7 @@ def run(port, log, urls, sources, rtol):
   with sync_playwright() as p:
     browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=False, args=["--headless=new"])
     page = browser.new_page()
-    page.goto(f"http://localhost:{port}/harness/parity/store.js")
+    page.goto(f"http://localhost:{port}/")  # index.html carries the daemon session token
     page.evaluate("document.body.append(Object.assign(document.createElement('input'), {type: 'file', id: 'log'}))")
     page.set_input_files("#log", log)
     specs = {"drop": {"drop": True}} | {url: {"url": url, "file": Path(log).name} for url in urls} | {s: source_spec(s) for s in sources}
