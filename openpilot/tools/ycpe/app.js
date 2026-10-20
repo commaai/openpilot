@@ -135,7 +135,10 @@ function updateTop() {
   bar.device.textContent = device ? device.alias || dongle : DONGLE_RE.test(dongle || "") ? dongle : "devices";
   bar.route.hidden = bar.route.previousSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
-  if (!ws) return;
+  if (!ws) {  // the buttons' handlers would keep the closed workspace alive
+    bar.views.replaceChildren();
+    return bar.tabs.replaceChildren();
+  }
   const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
   bar.route.textContent = ws.route.start_time_utc_millis
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
@@ -238,7 +241,12 @@ class Workspace {
       route: this.route, clock: this.clock, perf, theme,
       get store() { return self.ensureStore(); },
       peekStore: () => this.store,
-      onStore: (fn) => { this.storeSubs.add(fn); if (this.store) fn(this.store); },
+      // fn(store) once the logs load; returns its unsubscribe
+      onStore: (fn) => {
+        if (this.store) { fn(this.store); return () => {}; }
+        this.storeSubs.add(fn);
+        return () => this.storeSubs.delete(fn);
+      },
       openRoute: (name) => this.openRoute(name),
     };
   }
@@ -257,6 +265,7 @@ class Workspace {
       if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
     });
     for (const fn of this.storeSubs) fn(this.store);
+    this.storeSubs.clear();  // they've had it; holding them would hold every pane tree rendered since
     return this.store;
   }
 
