@@ -1,6 +1,7 @@
 // XY plot: y against x over the visible time range, with the playhead as a moving point; or, in FFT mode,
 // the amplitude spectrum of each series over the visible range. The pairing and the spectra are computed in
-// the transforms worker; the main thread draws at most a few thousand points per curve.
+// the transforms worker; the main thread draws at most a few thousand points per curve, on a base canvas that
+// redraws only when the results or the view change. The playhead points go on an overlay.
 import {h} from "/dom.js";
 import {colors, fitCanvas, ticks, axes, fmtTick, fmtValue, nextColor} from "./draw.js";
 import * as view from "./view.js";
@@ -9,23 +10,26 @@ import {exportPng} from "./export.js";
 import {compute} from "/data/transforms.js";
 
 const L = 58, R = 10, T = 8, B = 20;
+const SEGMENT_WAIT = 200;  // ms that segments arriving together wait to recompute as one
 
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   let col = colors(ctx.theme);
   const st = {mode: state.mode === "fft" ? "fft" : "xy", curves: state.curves || [], equal: !!state.equal, view: state.view || null};
-  let pendingX = null, results = [], busy = false, stale = true, W = 0, H = 0, g = null, frame = null, drag = null;
+  let pendingX = null, results = [], busy = false, stale = true, W = 0, H = 0, g = null, gOver = null, frame = null, drag = null;
+  let dirty = true, timer = 0;
 
-  const cv = h("canvas", {class: "over", tabindex: 0});
+  const base = h("canvas"), cv = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
   const hint = h("div", {class: "empty"});
-  const el = h("div", {class: "plot-pane xy"}, cv, legend, hint);
+  const el = h("div", {class: "plot-pane xy"}, base, cv, legend, hint);
   const pane = {name: "xy", el, render, resize, dispose, save};
+  const invalidate = () => { dirty = true; perf.invalidate(pane); };
   const offs = [
     clock.on("range", refresh),
-    clock.on("t", () => perf.invalidate(pane)),
-    store.on("segment", refresh),
-    ctx.theme.on(() => { col = colors(ctx.theme); perf.invalidate(pane); }),
+    clock.on("t", () => st.mode === "xy" && perf.invalidate(pane)),  // spectra don't follow the playhead
+    store.on("segment", () => { timer ||= setTimeout(() => { timer = 0; refresh(); }, SEGMENT_WAIT); }),
+    ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     store.can?.on("series", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
   ].filter(Boolean);
 
@@ -37,14 +41,14 @@ export function create(ctx, state = {}) {
     stale = true;
     if (busy) return;
     const curves = st.curves.filter((c) => inputs(c).every((p) => store.series(p)));
-    if (!curves.length) { results = []; perf.invalidate(pane); return; }
+    if (!curves.length) { results = []; invalidate(); return; }
     busy = true;
     stale = false;
     const [t0, t1] = clock.range;
     Promise.all(curves.map((c) => st.mode === "fft" ? compute(store, "fft", {path: c.path, t0, t1}, [c.path])
       : compute(store, "xy", {x: c.x, y: c.y, t0, t1}, [c.x, c.y])))
       .then((rs) => { results = rs.map((r, k) => ({c: curves[k], ...r})); }, console.error)
-      .finally(() => { busy = false; if (stale) refresh(); perf.invalidate(pane); });
+      .finally(() => { busy = false; if (stale) refresh(); invalidate(); });
   }
 
   function addPaths(paths) {
@@ -89,9 +93,15 @@ export function create(ctx, state = {}) {
 
   function render() {
     if (!g) return;
+    if (dirty) drawBase();
+    dirty = false;
+    drawOverlay();
+  }
+
+  function drawBase() {
     const [x0, x1, y0, y1] = bounds(), r = {x: L, y: T, w: W - L - R, h: H - T - B};
     const X = (v) => r.x + (v - x0) / (x1 - x0) * r.w, Y = (v) => r.y + (y1 - v) / (y1 - y0) * r.h;
-    frame = {x0, x1, y0, y1, r};
+    frame = {x0, x1, y0, y1, r, X, Y};
     g.clearRect(0, 0, W, H);
     g.fillStyle = col.bg;
     g.fillRect(r.x, r.y, r.w, r.h);
@@ -108,18 +118,30 @@ export function create(ctx, state = {}) {
       g.beginPath();
       for (let i = st.mode === "fft" ? 1 : 0; i < xs.length; i++) g.lineTo(X(xs[i]), Y(ys[i]));
       g.stroke();
-      if (st.mode === "xy") {
-        const px = store.valueAt(res.c.x, clock.t), py = store.valueAt(res.c.y, clock.t);
-        if (typeof px !== "number" || typeof py !== "number") continue;
-        g.fillStyle = col.bg;
-        g.beginPath();
-        g.arc(X(px), Y(py), 5.5, 0, 2 * Math.PI);
-        g.fill();
-        g.fillStyle = res.c.color;
-        g.beginPath();
-        g.arc(X(px), Y(py), 4, 0, 2 * Math.PI);
-        g.fill();
-      }
+    }
+    g.restore();
+  }
+
+  // the playhead's point on each XY curve, and the legend's values there
+  function drawOverlay() {
+    gOver.clearRect(0, 0, W, H);
+    if (st.mode !== "xy") return;
+    const {r, X, Y} = frame, g = gOver;
+    g.save();
+    g.beginPath();
+    g.rect(r.x, r.y, r.w, r.h);
+    g.clip();
+    for (const res of results) {
+      const px = store.valueAt(res.c.x, clock.t), py = store.valueAt(res.c.y, clock.t);
+      if (typeof px !== "number" || typeof py !== "number") continue;
+      g.fillStyle = col.bg;
+      g.beginPath();
+      g.arc(X(px), Y(py), 5.5, 0, 2 * Math.PI);
+      g.fill();
+      g.fillStyle = res.c.color;
+      g.beginPath();
+      g.arc(X(px), Y(py), 4, 0, 2 * Math.PI);
+      g.fill();
     }
     g.restore();
     legend.querySelectorAll(".row").forEach((row, k) => {
@@ -138,7 +160,7 @@ export function create(ctx, state = {}) {
     e.preventDefault();
     const [x, y] = at(local(e)), f = Math.exp(e.deltaY * (e.deltaMode ? 33 : 1) * 0.002), [x0, x1, y0, y1] = bounds();
     st.view = [x - (x - x0) * f, x + (x1 - x) * f, y - (y - y0) * f, y + (y1 - y) * f];
-    perf.invalidate(pane);
+    invalidate();
   }, {passive: false});
   cv.addEventListener("pointerdown", (e) => {
     if (!frame || e.button === 2) return;
@@ -150,20 +172,20 @@ export function create(ctx, state = {}) {
     const [x, y] = local(e), [x0, x1, y0, y1] = drag.view;
     const dx = (x - drag.p[0]) / frame.r.w * (x1 - x0), dy = (y - drag.p[1]) / frame.r.h * (y1 - y0);
     st.view = [x0 - dx, x1 - dx, y0 + dy, y1 + dy];
-    perf.invalidate(pane);
+    invalidate();
   });
   cv.addEventListener("pointerup", () => { drag = null; });
-  cv.addEventListener("dblclick", () => { st.view = null; perf.invalidate(pane); });
+  cv.addEventListener("dblclick", () => { st.view = null; invalidate(); });
   cv.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     menu(e.clientX, e.clientY, [
       {label: "XY", checked: st.mode === "xy", fn: () => setMode("xy")},
       {label: "FFT of the visible range", checked: st.mode === "fft", fn: () => setMode("fft")},
       null,
-      {label: "Equal axes", checked: st.equal, disabled: st.mode !== "xy", fn: () => { st.equal = !st.equal; st.view = null; perf.invalidate(pane); }},
+      {label: "Equal axes", checked: st.equal, disabled: st.mode !== "xy", fn: () => { st.equal = !st.equal; st.view = null; invalidate(); }},
       {label: "Swap X and Y", disabled: st.mode !== "xy", fn: () => { for (const c of st.curves) [c.x, c.y] = [c.y, c.x]; st.view = null; rebuild(); refresh(); }},
-      {label: "Fit", fn: () => { st.view = null; perf.invalidate(pane); }},
-      {label: "Export PNG", fn: () => exportPng([cv], st.curves.map((c) => ({color: c.color, name: name(c), value: ""})), col.bg, col.fg, col.font, st.mode)},
+      {label: "Fit", fn: () => { st.view = null; invalidate(); }},
+      {label: "Export PNG", fn: () => exportPng([base, cv], st.curves.map((c) => ({color: c.color, name: name(c), value: ""})), col.bg, col.fg, col.font, st.mode)},
       {label: "Remove all", disabled: !st.curves.length, fn: () => { st.curves = []; pendingX = null; rebuild(); refresh(); }},
     ]);
   });
@@ -183,8 +205,9 @@ export function create(ctx, state = {}) {
   function resize(w = el.clientWidth, hgt = el.clientHeight) {
     W = w;
     H = hgt;
-    g = fitCanvas(cv, W, H);
-    perf.invalidate(pane);
+    g = fitCanvas(base, W, H);
+    gOver = fitCanvas(cv, W, H);
+    invalidate();
   }
 
   function save() {
@@ -192,6 +215,7 @@ export function create(ctx, state = {}) {
   }
 
   function dispose() {
+    clearTimeout(timer);
     for (const off of offs) off();
   }
 
