@@ -4,8 +4,10 @@ import {daemon} from "./daemon.js";
 const TOKEN_KEY = "comma_jwt";
 const setting = (key) => globalThis.localStorage?.getItem(key);
 export const apiHost = () => setting("api_host") || "https://api.commadotai.com";
-// athena only answers CORS for *.comma.ai, connect previews and localhost:3000
+// athena only answers CORS for *.comma.ai, connect previews and localhost:3000; elsewhere the daemon relays the calls
 const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
+const ATHENA_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/localhost:3000)$/;
+const athenaRelay = () => !setting("athena_host") && daemon.has("athena") && !ATHENA_ORIGINS.test(location.origin);
 
 // sign-in state: the token, the signed-in user (v1/me, cached), and subscribers to changes
 const authSubs = new Set();
@@ -99,12 +101,11 @@ export class ApiError extends Error {
   }
 }
 
-export async function request(method, endpoint, {params, body, host = apiHost()} = {}) {
+export async function request(method, endpoint, {params, body, host = apiHost(), headers = {}} = {}) {
   const url = new URL(endpoint, host + "/");
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null) url.searchParams.set(k, v);
   }
-  const headers = {};
   const token = auth.token();
   if (token) headers["Authorization"] = "JWT " + token;
   if (body) headers["Content-Type"] = "application/json";
@@ -194,7 +195,9 @@ export const api = {
   athenaOfflineQueue: (dongleId) => get(`v1/devices/${dongleId}/athena_offline_queue`),
   // JSON-RPC on the device; with an expiry, athena queues the call while the device is offline
   async athena(dongleId, method, params, expiry) {
-    const resp = await request("POST", dongleId, {host: athenaHost(), body: {id: 0, jsonrpc: "2.0", method, params, expiry}});
+    const body = {id: 0, jsonrpc: "2.0", method, params, expiry};
+    const resp = await (athenaRelay() ? request("POST", `local/athena/${dongleId}`, {host: location.origin, body, headers: {...daemon.headers}})
+      : request("POST", dongleId, {host: athenaHost(), body}));
     if (resp.error) throw new Error(resp.error.data?.message || resp.error.message || String(resp.error));
     return resp.result;
   },

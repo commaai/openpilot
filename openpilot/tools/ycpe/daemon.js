@@ -23,6 +23,7 @@ export const daemon = {
   caps,
   has: (name) => !!caps?.modules?.[name],
   hasJwt: !!jwt,
+  headers,  // the session token, for requests made elsewhere (api.js's athena relay)
   // the comma JWT from ~/.comma/auth.json, unless the user signed out here
   jwt:() => (jwt && !globalThis.localStorage?.getItem(AUTH_OFF) ? jwt : null),
   useJwt(on) { on ? localStorage.removeItem(AUTH_OFF) : localStorage.setItem(AUTH_OFF, "1"); },

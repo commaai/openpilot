@@ -9,7 +9,8 @@ small local server that does what a browser can't on its own.
 .venv/bin/python openpilot/tools/ycpe/serve.py          # open http://localhost:3000/
 ```
 
-- **Port.** Use port 3000. The default is the one athena (device RPC from the browser) allows.
+- **Port.** Any port works. athena (device RPC from the browser) only allows port 3000 itself, so on other ports the
+  daemon relays those calls (the `athena` module).
 - **Static only.** `--static`, or running without openpilot's venv, gives the plain static app.
 - **Status.** A **local** badge in the top bar means the daemon is on. Click it for the disk cache, the
   device, and running jobs.
@@ -32,6 +33,7 @@ What the daemon unlocks in the UI:
 | `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
 | `proxy` | Reaches log hosts that browsers can't (openpilotci, huggingface). |
+| `athena` | Relays the page's device calls (upload queue, upload requests) to athena on ports athena doesn't allow. |
 | `jobs` | Progress and cancel for anything long, shown in the badge panel. |
 | `transcode`, `replay` | Video transcoding and openpilot re-runs, when installed (see their modules). |
 
@@ -42,7 +44,8 @@ Without the daemon these features are disabled, with a short note saying they ne
 2. Every API call needs a random token that only the page `serve.py` served carries. Other websites can't get it, because
    cross-origin requests get no CORS headers and are rejected, and no other site may frame the app.
 3. It reads files only from the cache, your data dirs and your checkouts, and it writes only to the cache and to opendbc's DBC folder.
-4. It never modifies anything on a comma device or in your comma account. The only commands it runs on a device are `cat` and `find`.
+4. On its own it never modifies anything on a comma device or in your comma account. The only commands it runs on a device
+   are `cat` and `find`. The athena relay passes on the page's own upload calls, with the page's sign-in.
 5. Your JWT and the session token are never logged.
 
 ## For developers
@@ -65,6 +68,8 @@ The page finds the daemon through `<meta name="ycpe-daemon">` in index.html, plu
   puts the token in index.html, and the request log never prints query strings.
 - File reads go through `confine(path, roots)`, which resolves symlinks and rejects `..`.
 - The proxy only reaches an allowlist of hosts.
+- The athena relay is POST only, to `https://athena.comma.ai/<dongle id>`, for the few JSON-RPC methods the app calls.
+  It forwards the page's `Authorization` and nothing else, and limits body and answer sizes.
 
 ## Writing a module
 

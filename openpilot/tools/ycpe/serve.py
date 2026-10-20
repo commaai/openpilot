@@ -26,7 +26,7 @@ class StaticHandler(SimpleHTTPRequestHandler):
 
 def main():
   p = argparse.ArgumentParser(description=__doc__)
-  p.add_argument("port", nargs="?", type=int, default=3000, help="athena only answers CORS for localhost:3000")
+  p.add_argument("port", nargs="?", type=int, default=3000, help="athena allows localhost:3000; elsewhere the daemon relays its calls")
   p.add_argument("--static", action="store_true", help="no daemon, static files only")
   p.add_argument("--cache-budget", type=float, default=20, help="GB the shared download cache may use (LRU pruned)")
   p.add_argument("--data-dir", action="append", default=[], help="local route directory the daemon may read (repeatable)")

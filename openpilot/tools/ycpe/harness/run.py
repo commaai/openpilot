@@ -25,6 +25,8 @@ OUT = HERE / "out"
 REPO = HERE.parents[3]
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
+# athena, directly or through the daemon's relay (daemon/athena.py)
+ATHENA = re.compile(r"^(https://athena\.comma\.ai/|http://localhost:\d+/local/athena/)")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
 # athena calls are JSON-RPC POSTs; these only read the device's state, so they pass
 ATHENA_READS = {"getNetworkMetered", "getNetworkType", "getNetworks", "getVersion", "getSimInfo", "listUploadQueue", "listDataDirectory"}
@@ -96,7 +98,7 @@ def start_xvfb():
 
 def athena_rpc(req):
   """the method of a single JSON-RPC call to athena, else None"""
-  if not req.url.startswith("https://athena.comma.ai/"):
+  if not ATHENA.match(req.url):
     return None
   try:
     body = json.loads(req.post_data or "")
@@ -126,6 +128,7 @@ class Scenario:
     self.ctx = browser.new_context(viewport={"width": vp["width"], "height": vp["height"]}, is_mobile=vp.get("mobile", False),
                                    has_touch=vp.get("mobile", False), device_scale_factor=1)
     self.ctx.route(COMMA_API, self.guard)
+    self.ctx.route(ATHENA, self.guard)
     self.ctx.add_init_script(PROBE_JS)
     if sc.get("auth"):
       if not token:
