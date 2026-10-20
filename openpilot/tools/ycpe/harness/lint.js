@@ -41,7 +41,7 @@
   };
 
   const els = [];
-  const modal = document.querySelector("dialog:modal");  // the page under a modal dialog is inert, nothing there to lint (nor an inert subtree)
+  const modal = [...document.querySelectorAll("dialog:modal")].at(-1);  // the page (and any modal) under the top modal dialog is inert, nothing there to lint (nor an inert subtree)
   for (const el of document.body.querySelectorAll("*")) {
     if (el.ownerSVGElement || (cfg.ignore && el.closest(cfg.ignore)) || (modal && !modal.contains(el)) || el.closest("[inert]")) continue;
     const r = el.getBoundingClientRect();
