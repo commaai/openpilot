@@ -8,6 +8,7 @@ import {Layout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
+import {status, loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
@@ -70,7 +71,6 @@ const bar = {
   route: h("button", {class: "crumb", title: "Routes on this device"}),
   views: h("nav", {class: "views"}),
   tabs: h("nav", {class: "tabs"}),
-  pill: h("span", {class: "load-pill", hidden: true}),
 };
 
 function topBar() {
@@ -95,7 +95,7 @@ function topBar() {
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), bar.pill, hud(), themeBtn, account);
+    h("span", {class: "grow"}), loadPill(), hud(footprint()), themeBtn, account);
 }
 
 function updateTop() {
@@ -185,14 +185,28 @@ class Workspace {
       clearTimeout(focusTimer);
       focusTimer = setTimeout(() => this.store.focus(this.clock.t), 150);
     }));
-    this.store.on("progress", (p) => {
+    // TODO(track 1): the store publishes to status itself, with download bytes per segment
+    const logs = status.source("logs", {order: 0});
+    const STATES = {queued: "queued", missing: "missing", done: "ready", error: "error"};
+    const publish = () => {
+      const segs = this.store.route.segments, p = this.store.progress;
+      logs.count(segs.length);
+      segs.forEach((s, n) => logs.seg(n, STATES[s.status] || "loading"));
+      logs.rate(p.bytes / ((performance.now() - p.start) / 1000));
+      logs.bytes({memory: this.store.bytes});
+      waiting();
+    };
+    // the playhead waits on its segment's logs
+    const waiting = () => {
+      const at = this.store.route.segments.find((s) => this.clock.t >= s.t0 && this.clock.t < s.t1);
+      logs.buffering(at && at.status !== "done" && at.status !== "missing" ? {n: at.n, text: `segment ${at.n}`} : null);
+    };
+    this.offs.push(logs.remove, this.clock.on("t", waiting));
+    this.store.on("progress", () => {
       if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
-      const mb = p.bytes / 1e6 / ((performance.now() - p.start) / 1000);
-      bar.pill.hidden = p.done + p.failed >= p.total;
-      bar.pill.textContent = `${p.done}/${p.total} segments · ${mb.toFixed(0)} MB/s`;
-      perf.mark("segments", `${p.done}/${p.total}`);
-      perf.mark("downloaded", `${(p.bytes / 1e6).toFixed(0)} MB`);
+      publish();
     });
+    publish();
     for (const fn of this.storeSubs) fn(this.store);
     return this.store;
   }
@@ -208,7 +222,7 @@ class Workspace {
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
       if (usesData(model) && !this.files) {
         this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
-        this.main.replaceChildren(h("div", {class: "pane-missing"}, "loading files…"));
+        this.main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Fetching the route's file list…"));
         return updateTop();
       }
       if (usesData(model)) this.ensureStore();
@@ -367,7 +381,7 @@ function errorPage(e) {
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
-document.getElementById("app").prepend(topBar());
+document.querySelector("#app > .topbar").replaceWith(topBar());
 window.addEventListener("popstate", render);
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice)
