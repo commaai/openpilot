@@ -13,9 +13,7 @@ await css(new URL("./map.css", import.meta.url));
 const STYLES = {dark: "commaai/cjj4yzqk201c52ss60ebmow0w", light: "mapbox/light-v10"};
 const TILE = 256;           // css px per tile; images are @2x
 const CACHE = 96;           // decoded tiles kept (up to 1 MB each)
-const FRESH = 4;            // tiles composed per frame
 const FETCHES = 8;          // tile requests started per frame (~0.15 ms each)
-const EMPTY = 0, STAND_IN = 1, EXACT = 2;  // what a base shows of a tile: nothing, an ancestor or other zoom, the tile
 const MIN_Z = 1, MAX_Z = 19;
 const GPS = ["gpsLocationExternal", "gpsLocation"];
 const BUCKETS = 2000;
@@ -61,18 +59,6 @@ function covering(style, z, x, y) {
   return null;
 }
 
-// what an old base shows of tile (x, y) at zoom z: as much at the same zoom, else a stand-in where it covers all of it
-function carried(old, z, x, y) {
-  const at = (x, y) => x < old.x0 || y < old.y0 || x >= old.x0 + old.nx || y >= old.y0 + old.ny ? EMPTY : old.state[(y - old.y0) * old.nx + x - old.x0];
-  if (old.z === z) return at(x, y);
-  if (old.z < z) return Math.min(STAND_IN, at(x >> (z - old.z), y >> (z - old.z)));
-  const d = old.z - z;
-  for (let j = 0; j < 1 << d; j++) for (let i = 0; i < 1 << d; i++) if (!at((x << d) + i, (y << d) + j)) return EMPTY;
-  return STAND_IN;
-}
-
-// The tiles of the integer zoom nearest z are composed into an offscreen canvas as they arrive, a few per frame, and
-// each frame draws that with one scaled drawImage: scaling ~50 tile images a frame took 50 ms on a large map.
 class TileMap {
   constructor(el, {interactive = true} = {}) {
     this.name = "map";
@@ -83,7 +69,6 @@ class TileMap {
     this.cx = this.cy = 0.5;
     this.z = 3;
     this.overlay = null;      // fn(ctx) drawing on top, in css px
-    this.base = null;         // {style, z, x0, y0, nx, ny, P, canvas, g, state}: tiles x0.. and y0.. at zoom z, P px each
     if (interactive) this.interact();
     el.append(h("div", {class: "tilemap-credit"},
       h("a", {href: "https://www.mapbox.com/about/maps/", target: "_blank"}, "© Mapbox"), " ",
@@ -160,20 +145,6 @@ class TileMap {
     });
   }
 
-  // a new base for tiles x0.. and y0.. at zoom z, starting from what the old one shows of them
-  rebase(style, z, x0, y0, nx, ny) {
-    const P = tilePx(), old = this.base;
-    const canvas = h("canvas", {width: nx * P, height: ny * P});
-    const b = this.base = {style, z, x0, y0, nx, ny, P, canvas, g: canvas.getContext("2d"), state: new Uint8Array(nx * ny)};
-    if (old?.style === style && Math.abs(old.z - z) <= 2) {
-      const f = 2 ** (z - old.z);
-      b.g.drawImage(old.canvas, (old.x0 * f - x0) * P, (old.y0 * f - y0) * P, old.nx * f * P, old.ny * f * P);
-      for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) b.state[y * nx + x] = carried(old, z, x0 + x, y0 + y);
-    }
-    if (old) old.canvas.width = 0;  // frees it now, not at the next GC
-    return b;
-  }
-
   render() {
     const {ctx, w, h} = this;
     if (!w || !h) return;
@@ -183,40 +154,27 @@ class TileMap {
 
     const style = STYLES[theme.name] || STYLES.dark;
     const tz = Math.max(0, Math.min(MAX_Z, Math.round(this.z))), n = 2 ** tz;
+    const size = this.scale / n;  // css px per tile at this zoom
     const [ux0, uy0] = this.toUnit(0, 0), [ux1, uy1] = this.toUnit(w, h);
-    const x0 = Math.floor(ux0 * n), x1 = Math.floor(ux1 * n), y0 = Math.max(0, Math.floor(uy0 * n)), y1 = Math.min(n - 1, Math.floor(uy1 * n));
-    if (y0 <= y1) {
-      let b = this.base;
-      // a tile of margin, so small pans and zooms keep the base
-      if (b?.style !== style || b.z !== tz || x0 < b.x0 || y0 < b.y0 || x1 >= b.x0 + b.nx || y1 >= b.y0 + b.ny) {
-        const by0 = Math.max(0, y0 - 1);
-        b = this.rebase(style, tz, x0 - 1, by0, x1 - x0 + 3, Math.min(n - 1, y1 + 1) - by0 + 1);
+    const onLoad = () => this.invalidate(), left = {fetches: FETCHES, more: false};
+    for (let ty = Math.max(0, Math.floor(uy0 * n)); ty <= Math.min(n - 1, Math.floor(uy1 * n)); ty++) {
+      for (let tx = Math.floor(ux0 * n); tx <= Math.floor(ux1 * n); tx++) {
+        const wx = ((tx % n) + n) % n;
+        tile(style, tz, wx, ty, onLoad, left);
+        const src = covering(style, tz, wx, ty);
+        if (!src) continue;
+        const [x, y] = this.toScreen(tx / n, ty / n);
+        // whole pixels on both edges, so neighbors meet without seams
+        const dx = Math.round(x), dy = Math.round(y);
+        ctx.drawImage(src[0], src[1], src[2], src[3], src[3], dx, dy, Math.round(x + size) - dx, Math.round(y + size) - dy);
       }
-      const onLoad = () => this.invalidate(), left = {fetches: FETCHES, draws: FRESH, more: false};
-      for (let ty = y0; ty <= y1; ty++) {
-        for (let tx = x0; tx <= x1; tx++) {
-          const wx = ((tx % n) + n) % n, i = (ty - b.y0) * b.nx + tx - b.x0;
-          const exact = tile(style, tz, wx, ty, onLoad, left);
-          if (b.state[i] === EXACT) continue;
-          const src = exact ? [exact, 0, 0, exact.width] : !b.state[i] && covering(style, tz, wx, ty);
-          if (!src) continue;
-          if (!left.draws) { left.more = true; continue; }
-          left.draws--;
-          b.g.drawImage(src[0], src[1], src[2], src[3], src[3], (tx - b.x0) * b.P, (ty - b.y0) * b.P, b.P, b.P);
-          b.state[i] = exact ? EXACT : STAND_IN;
-        }
-      }
-      const [x, y] = this.toScreen(b.x0 / n, b.y0 / n), size = this.scale / n;  // css px per tile
-      ctx.drawImage(b.canvas, x, y, b.nx * size, b.ny * size);
-      if (left.more) this.invalidate();  // the rest next frame
     }
+    if (left.more) this.invalidate();  // the other requests next frame
     this.overlay?.(ctx);
   }
 
   dispose() {
     this.overlay = this.onClick = null;
-    if (this.base) this.base.canvas.width = 0;
-    this.base = null;
   }
 }
 
