@@ -135,6 +135,9 @@ export class DBC {
     this.parse(text);
   }
 
+  // a DBC parsed elsewhere (the CAN worker) arrives as a structured clone: plain data, shared references intact
+  static revive(data) { return Object.setPrototypeOf(data, DBC.prototype); }
+
   msg(address) { return this.msgs.get(address); }
   msgByName(name) { for (const m of this.msgs.values()) if (m.name === name) return m; }
   get empty() { return this.msgs.size === 0; }

@@ -1,9 +1,10 @@
 // what the CAN panes share: the route's store.can, following the playhead, dialogs and small formatters
-import {css, h} from "/dom.js";
+import {h} from "/dom.js";
 import {addrOf, busOf} from "/data/can.js";
 import {MUX, MUXED, NODE, cloneMsg, newSignal} from "/data/dbc.js";
 
-css(new URL("./can.css", import.meta.url));
+// the panes wait for their stylesheet, so an unstyled first frame doesn't shift the layout when it lands
+await new Promise((done) => document.head.append(h("link", {rel: "stylesheet", href: new URL("./can.css", import.meta.url), onload: done, onerror: done})));
 
 // store.can, following the clock once per workspace: live bytes are recomputed (in the worker) as t moves
 export function canOf(ctx) {
@@ -39,6 +40,19 @@ export function dialog(title, ...body) {
   el.showModal();
   return el;
 }
+
+// a popover menu under anchor; rows are menuItem()s or any element (a checkbox row keeps it open)
+export function popup(anchor, rows) {
+  const menu = h("div", {class: "can-menu", popover: "auto", ontoggle: (e) => { if (e.newState === "closed") menu.remove(); }}, rows);
+  document.body.append(menu);
+  const r = anchor.getBoundingClientRect();
+  menu.style.left = `${r.left}px`;
+  menu.style.top = `${r.bottom + 2}px`;
+  menu.showPopover();
+  return menu;
+}
+export const menuItem = (label, fn) => h("button", {class: "menu-row", onclick: (e) => { e.currentTarget.closest("[popover]").hidePopover(); fn(); }}, label);
+export const menuCheck = (label, checked, fn) => h("label", {class: "menu-row"}, h("input", {type: "checkbox", checked, onchange: (e) => fn(e.target.checked)}), label);
 
 // a labelled input row for forms
 export const field = (label, input, hint) => h("label", {class: "can-field", title: hint || ""}, h("span", {}, label), input);

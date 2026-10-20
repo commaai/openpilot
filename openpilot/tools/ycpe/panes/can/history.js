@@ -16,11 +16,12 @@ export function create(ctx, state) {
   const hexBox = h("input", {type: "checkbox", checked: hex, onchange: (e) => { hex = e.target.checked; columns(); }});
   const head = h("div", {class: "can-hist-row can-hist-head"});
   const spacer = h("div", {class: "can-msg-spacer"});
+  const empty = h("div", {class: "can-empty"});
   const body = h("div", {class: "can-msg-body", onscroll: () => {
     scrollTop = body.scrollTop;
     if (frames.more && !busy && scrollTop + height > frames.t.length * ROW - ROW * 20) load(true);
     ctx.perf.invalidate(pane);
-  }}, spacer);
+  }}, spacer, empty);
   const el = h("div", {class: "can-pane can-history"},
     h("div", {class: "can-toolbar"}, h("label", {class: "can-check"}, hexBox, "Hex"), h("span", {class: "can-spacer"}), "filter ", filter.sig, filter.op, filter.v), head, body);
 
@@ -85,6 +86,8 @@ export function create(ctx, state) {
   const pane = {
     name: "can-history", el,
     render() {
+      set(empty, can.selected === null ? "Select a message to see its history" : frames.t.length || busy ? "" : filters().length ? "No frames match the filter" : "No frames before the playhead");
+      if (empty.hidden !== !empty.textContent) empty.hidden = !empty.textContent;
       const m = can.dbcMsg(can.selected), first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       for (let i = 0; i < n; i++) {
         const j = first + i, r = pool[i] || (pool[i] = row()), on = j < frames.t.length;

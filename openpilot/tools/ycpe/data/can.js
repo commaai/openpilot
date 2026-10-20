@@ -383,6 +383,7 @@ function csv(keys, t0, t1, msg) {
 if (import.meta.url.endsWith("?worker")) {
   const ops = {
     add: ({n, can, off}) => { addSegment(n, can, off); },
+    parse: ({name, text}) => new DBC(name, text),
     drop: ({n}) => { dropSegment(n); },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
@@ -404,7 +405,7 @@ if (import.meta.url.endsWith("?worker")) {
       if (op === "decode") [r, transfer] = r;
       postMessage({id, r}, transfer);
     } catch (e) {
-      postMessage({id, error: String(e.stack || e)});
+      postMessage({id, error: e.message || String(e), stack: e.stack});
     }
   };
 }
@@ -417,10 +418,10 @@ export class Can {
     this.worker = new Worker(new URL("./can.js?worker", import.meta.url), {type: "module"});
     this.calls = new Map();
     this.nextId = 0;
-    this.worker.onmessage = ({data: {id, r, error}}) => {
+    this.worker.onmessage = ({data: {id, r, error, stack}}) => {
       const c = this.calls.get(id);
       this.calls.delete(id);
-      if (error) c.reject(new Error(error)); else c.resolve(r);
+      if (error) c.reject(Object.assign(new Error(error), {stack})); else c.resolve(r);
     };
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
@@ -658,12 +659,15 @@ export class Can {
     return out;
   }
 
+  // DBC text parsed in the worker, as a big one takes tens of ms
+  async parseDbc(name, text) { return DBC.revive(await this.call("parse", {name, text})); }
+
   // a DBC by name: from the local opendbc when the daemon has it (that's the copy to edit), else from GitHub
   async loadOpendbc(name, buses = [-1]) {
     const local = await this.local();
     if (local?.names.has(name)) {
       const {text, mtime} = await local.daemon.json(`/local/repos/${local.id}/dbc/${name}.dbc`);
-      const dbc = new DBC(name, text);
+      const dbc = await this.parseDbc(name, text);
       dbc.local = {mtime};
       return this.dbcs.open(buses, dbc);
     }
@@ -672,7 +676,7 @@ export class Can {
       this.src = null;  // try again next time
       throw new Error("can't reach opendbc on GitHub");
     }
-    this.dbcs.open(buses, new DBC(name, await src.text(name)));
+    this.dbcs.open(buses, await this.parseDbc(name, await src.text(name)));
   }
 
   // the car's DBC from the fingerprint, once, unless a DBC is already open; a failure is a notice, not an error
