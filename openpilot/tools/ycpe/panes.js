@@ -33,7 +33,7 @@ export async function loadPane(type) {
     console.error(e);
     return (ctx, state) => failedPane(ctx, type, state, e);
   }
-  return mod.create || ((ctx, state) => missingPane(type));
+  return mod.create;
 }
 
 // an empty slot offers every pane type
@@ -42,10 +42,6 @@ function emptyPane(ctx) {
     Object.entries(PANES).filter(([, p]) => !p.hidden).map(([type, p]) =>
       h("button", {class: "chip", onclick: () => ctx.layout.replaceSelf(el, {pane: type, state: {}})}, p.title)));
   return {name: "empty", el, render() {}};
-}
-
-function missingPane(type) {
-  return {name: type, el: h("div", {class: "pane-missing"}, `${PANES[type].title} isn't built yet`), render() {}};
 }
 
 function failedPane(ctx, type, state, error) {

@@ -57,7 +57,7 @@
 .token-form { display: flex; gap: 6px; }
 .token-form .field { flex: 1; min-width: 0; }
 .token-form .button { margin: 0; }
-.login-foot { margin-top: 14px !important; padding-top: 10px; border-top: 1px solid var(--line); }
+.login-card > .login-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
 .login-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 10px; color: var(--muted); }
 .device-name { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; white-space: nowrap; }
 .device-name > span { overflow: hidden; text-overflow: ellipsis; }
