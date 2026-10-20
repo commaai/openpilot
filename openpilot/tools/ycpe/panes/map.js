@@ -236,6 +236,26 @@ function dot(ctx, x, y, r, fill) {
   ctx.stroke();
 }
 
+// an arrowhead pointing at angle (radians, clockwise from east)
+function arrow(ctx, x, y, angle, fill) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(9, 0);
+  ctx.lineTo(-6, 7);
+  ctx.lineTo(-3, 0);
+  ctx.lineTo(-6, -7);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = theme.color("--bg");
+  ctx.stroke();
+  ctx.restore();
+}
+
 // the store's GPS columns as decimated {t, lat, lng} points: O(buckets), not O(samples)
 function storeTrack(store, duration) {
   const svc = GPS.find((s) => store.series(`/${s}/latitude`));
@@ -294,15 +314,21 @@ export function create(ctx) {
       g.strokeStyle = colors[on];
       g.stroke();
     }
-    const i = nearest(tr, clock.t);
-    const [px, py] = map.toScreen(tr.x[i], tr.y[i]);
+    // the playhead between the trace's points, pointing along the GPS bearing once logs are loading, else the trace
+    const i = nearest(tr, clock.t), a = Math.max(0, i - 1);
+    const f = i > a ? Math.max(0, Math.min(1, (clock.t - tr.t[a]) / (tr.t[i] - tr.t[a]))) : 0;
+    const ux = tr.x[a] + f * (tr.x[i] - tr.x[a]), uy = tr.y[a] + f * (tr.y[i] - tr.y[a]);
+    const [px, py] = map.toScreen(ux, uy);
     // follow the playhead off the edge while playing
     if (clock.playing && (px < 0 || py < 0 || px > map.w || py > map.h)) {
-      map.cx = tr.x[i];
-      map.cy = tr.y[i];
+      map.cx = ux;
+      map.cy = uy;
       return map.invalidate();
     }
-    dot(g, px, py, 6, theme.color("--fg"));
+    const store = ctx.peekStore(), bearing = store ? GPS.map((s) => store.valueAt(`/${s}/bearingDeg`, clock.t)).find((v) => v !== undefined) : undefined;
+    const j = Math.max(1, Math.min(tr.n - 1, i));  // the trace's step under the playhead, for its direction
+    const angle = bearing !== undefined ? (bearing - 90) * Math.PI / 180 : Math.atan2(tr.y[j] - tr.y[j - 1], tr.x[j] - tr.x[j - 1]) || 0;
+    arrow(g, px, py, angle, theme.color("--fg"));
   };
 
   map.onClick = (px, py) => {
