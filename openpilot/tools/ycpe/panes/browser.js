@@ -69,7 +69,8 @@ export function create(ctx, state = {}) {
     const rebuilt = !tree || all.length < total;
     if (rebuilt) [tree, nodes, done] = [{depth: -1}, new Map(), 0];
     const touched = new Set();
-    for (; done < all.length && (done % 256 || performance.now() < end); done++) {
+    // 256 at a time, the first whatever the clock says: store.paths() alone may have used the time up
+    for (let i = 0; done < all.length && (++i % 256 || performance.now() < end); done++) {
       const meta = all[done], known = nodes.get(meta.path);
       if (known) known.meta = meta;
       else if (st.deprecated || !(meta.internal || deprecated(meta.path))) node(meta.path, touched).meta = meta;
@@ -78,6 +79,7 @@ export function create(ctx, state = {}) {
     total = all.length;
     stale = done < all.length;
     if (rebuilt || touched.size) refresh();
+    else if (stale) perf.invalidate(pane);
   }
 
   // removes a top level branch
