@@ -4,17 +4,20 @@
 // O(pixels): curves come from store.decimate (cached on a bucket grid, so a pan only decimates the newly
 // exposed edge) and state blocks from cached runs.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
 import {Decimator} from "./decimate.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
-import {TRANSFORMS, derivedPath, derive, compute} from "/data/transforms.js";
+import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/transforms.js";
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
+import {customsOf, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
+const SEGMENT_WAIT = 200;  // ms that inputs changing together wait to recompute as one
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
@@ -52,13 +55,13 @@ export function create(ctx, state = {}) {
   const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats, range: state.range || null};
   const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
-  const empty = h("div", {class: "empty"}, "drag series here");
+  const empty = h("div", {class: "empty"});
   const el = h("div", {class: "plot-pane"}, base, over, legend, empty);
   let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
   let frame = null;    // geometry and prepared curves of the last base draw
   let gesture = null;  // the pointer gesture in progress
   let rows = [];       // legend rows, parallel to st.curves
-  let statsTimer = 0, statsKey = "";
+  let statsTimer = 0, statsKey = "", recomputeTimer = 0;
   let failure = null;  // store.failure as the empty state shows it
   const made = new Map();  // derived or custom path → input version it was computed from
   const busy = new Set();
@@ -69,6 +72,8 @@ export function create(ctx, state = {}) {
     has: (path) => st.curves.some((c) => c.path === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
+    get curves() { return structuredClone(st.curves); },
+    setCurves(curves) { st.curves = curves; rebuildLegend(); invalidate(); },
     overlay: () => perf.invalidate(pane),
   };
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
@@ -89,7 +94,10 @@ export function create(ctx, state = {}) {
   // ---- curves
 
   function addCurves(paths) {
-    for (const path of paths) if (!st.curves.some((c) => c.path === path && !c.transform && !c.custom)) st.curves.push(normalize({path}));
+    const added = paths.filter((path, k) => paths.indexOf(path) === k && !st.curves.some((c) => c.path === path && !c.transform && !c.custom));
+    if (!added.length) return;
+    view.rememberCurves(clock, pane);
+    for (const path of added) st.curves.push(normalize({path}));
     rebuildLegend();
     invalidate();
   }
@@ -99,37 +107,61 @@ export function create(ctx, state = {}) {
       ...(c.custom?.untrusted && {error: "custom code from an imported layout: click to review and run it"})};
   }
 
-  function removeCurve(c) {
-    st.curves.splice(st.curves.indexOf(c), 1);
+  // removals can be undone in the plot, so it takes the focus
+  function removeCurves(cs) {
+    view.rememberCurves(clock, pane);
+    st.curves = st.curves.filter((c) => !cs.includes(c));
     rebuildLegend();
     invalidate();
+    over.focus({preventScroll: true});
   }
 
-  // the store path a curve draws; transforms and custom series are (re)computed when their inputs change
+  // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
+  // change, off the draw and a moment later (inputs that change together, as segments arrive, recompute once);
   // custom code from an untrusted layout waits until the user has reviewed it in the console
   const inputsVersion = (inputs) => inputs.map((p) => store.series(p)?.version).join();
+  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== inputsVersion(inputs);
   function source(c) {
-    if (!c.transform && !c.custom) return c.path;
-    const src = c.custom ? c.path : derivedPath(c.path, c.transform);
-    const inputs = c.custom ? c.custom.inputs : [c.path];
-    const version = inputsVersion(inputs);
-    if (!c.custom?.untrusted && inputs.every((p) => store.series(p)) && made.get(src) !== version && !busy.has(src)) {
-      busy.add(src);
-      const job = c.custom ? evaluate(store, c.path, c.custom) : derive(store, c.path, c.transform);
-      job.then(() => { made.set(src, version); c.error = null; }, (e) => { made.set(src, version); c.error = e.message; })
-        .finally(() => { busy.delete(src); rebuildLegend(); invalidate(); });
-    }
+    let src = c.path;
+    steps(c, (out, inputs) => {
+      src = out;
+      if (stale(c, out, inputs)) recomputeTimer ||= setTimeout(recompute, made.has(out) ? SEGMENT_WAIT : 0);
+    });
     return src;
+  }
+
+  // the computed series behind a curve, in order: fn(store path, its inputs, run) for its custom series, then for
+  // its transform (of that, or of its path)
+  function steps(c, fn) {
+    if (c.custom) fn(c.path, c.custom.inputs, () => evaluate(store, c.path, c.custom));
+    if (c.transform) fn(derivedPath(c.path, c.transform), transformInputs(c.path, c.transform), () => derive(store, c.path, c.transform));
+  }
+
+  function recompute() {
+    recomputeTimer = 0;
+    for (const c of st.curves) {
+      if (c.hidden) continue;
+      steps(c, (out, inputs, run) => {
+        if (!stale(c, out, inputs)) return;
+        const version = inputsVersion(inputs);
+        busy.add(out);
+        run().then(() => { made.set(out, version); c.error = null; }, (e) => { made.set(out, version); c.error = e.message; })
+          .finally(() => { busy.delete(out); rebuildLegend(); invalidate(); });
+      });
+    }
   }
 
   // the empty state: where to drop series, or why there's nothing to plot
   function hint() {
     failure = store.failure;
-    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "drag series here";
+    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "Drag series here, or double-click one in Series · right-click for options";
     empty.hidden = !failure && !!rows.length;
   }
 
-  const label = (c) => (c.label || c.path.replace(/^\//, "")) + (c.transform ? ` [${TRANSFORMS[c.transform.kind].label.toLowerCase()}]` : "");
+  // a curve's name, with its transform, scale, offset and time shift where it has them
+  const signed = (x) => `${x < 0 ? "−" : "+"}${Math.abs(x)}`;
+  const label = (c) => (c.label || c.path.replace(/^\//, "")) + (c.transform ? ` [${TRANSFORMS[c.transform.kind].label.toLowerCase()}]` : "") +
+    ((c.scale ?? 1) !== 1 ? ` ×${c.scale}` : "") + (c.offset ? ` ${signed(c.offset)}` : "") + (c.shift ? ` (${signed(c.shift)} s)` : "");
 
   // ---- drawing
 
@@ -149,8 +181,8 @@ export function create(ctx, state = {}) {
     const rows = blockMode ? [...numeric, ...text] : text;
     const lines = blockMode ? [] : numeric;
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
-    for (const [k, it] of lines.entries()) {
-      if (k && view.left(f) <= 0) return null;
+    for (const it of lines) {
+      if (view.left(f) <= 0) return null;
       const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
       const d = decimator.get(it.src, it.s.version, a, b, Math.round(px * 1.1));
       // buckets may be empty here and there, so a gap is also wider than a couple of them
@@ -158,7 +190,14 @@ export function create(ctx, state = {}) {
       it.d = withEdges(d, it.src, a, b);
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
-    return {rows, lines, blockMode};
+    // valid=false spans of the services behind the plain curves
+    const invalid = [];
+    for (const svc of new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]))) {
+      if (view.left(f) <= 0) return null;
+      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
+      if (d) invalid.push(d);
+    }
+    return {rows, lines, blockMode, invalid};
   }
 
   // held values in empty edge buckets, so series sparser than the view still reach both sides; only where the
@@ -237,7 +276,7 @@ export function create(ctx, state = {}) {
     }
     g.globalAlpha = 1;
     g.setLineDash([]);
-    drawInvalid(g, p.lines, X, py + ph);
+    drawInvalid(g, p.invalid, X, py + ph);
     decimator.sweep();
     g.restore();
 
@@ -248,14 +287,10 @@ export function create(ctx, state = {}) {
     return true;
   }
 
-  // valid=false spans of the services behind the curves, as a band along the bottom
-  function drawInvalid(g, lines, X, bottom) {
-    const services = new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]));
+  // valid=false spans, as a band along the bottom
+  function drawInvalid(g, invalid, X, bottom) {
     g.fillStyle = col.invalid;
-    const [t0, t1] = xRange();
-    for (const svc of services) {
-      const path = `/${svc}/valid`, d = decimator.get(path, store.series(path)?.version, t0, t1, Math.round(W / 2));
-      if (!d) continue;
+    for (const d of invalid) {
       const w = Math.max(2, X(d.w) - X(0));
       for (let i = 0; i < d.t.length; i++) if (d.min[i] === 0) g.fillRect(X(d.t[i]) - w / 2, bottom - 4, w, 4);
     }
@@ -308,39 +343,56 @@ export function create(ctx, state = {}) {
 
   // ---- legend
 
+  // where a popup for click e opens: at the pointer, or under the control when it came from a key
+  const from = (e) => e.detail ? e : (({left, bottom}) => ({clientX: left, clientY: bottom}))(e.currentTarget.getBoundingClientRect());
+
   function rebuildLegend() {
+    // the keyboard focus stays on the same control of the same row
+    const f = document.activeElement, at = legend.contains(f) && [rows.indexOf(f.parentElement), [...f.parentElement.children].indexOf(f)];
     rows = st.curves.map((c, k) => {
-      const val = h("span", {class: "val"});
-      const row = h("div", {class: `row ${c.hidden ? "off" : ""}`, title: c.error || label(c),
+      const val = h("span", {class: "val"}), name = label(c);
+      const row = h("div", {class: `row ${c.hidden ? "off" : ""}`, title: c.error || name,
         onpointerenter: () => { st.hl = k; invalidate(); },
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
-      h("i", {class: c.dash ? "dash" : "", style: `color:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
-      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, h("bdi", {}, label(c))),
+      h("button", {class: `swatch ${c.dash ? "dash" : ""}`, style: `color:${c.color}`, title: "show/hide", "aria-label": `${c.hidden ? "Show" : "Hide"} ${name}`,
+        onclick: () => { view.rememberCurves(clock, pane); c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
+      h("button", {class: `name ${c.error ? "error" : ""}`, "aria-label": `Edit ${name}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, from(e))}, h("bdi", {}, name)),
       val,
-      h("b", {class: "x", title: "remove", onclick: () => removeCurve(c)}, "×"));
+      h("button", {class: "x", title: "remove", "aria-label": `Remove ${name}`, onclick: () => removeCurves([c])}, icon("close", 12)));
       row.val = val;
       return row;
     });
     legend.replaceChildren(...rows);
+    if (at) (rows[at[0]] || rows.at(-1))?.children[at[1]]?.focus();
     legend.hidden = !rows.length;
     hint();
     statsKey = "";
   }
 
-  const editCurve = (c, e) => curveEditor(e.clientX, e.clientY, c, {
-    change: () => { rebuildLegend(); invalidate(); },
-    remove: () => removeCurve(c),
-    code: c.custom && (() => editCode(c, e)),
-    actions: c.custom || c.transform ? [] : (store.overlays || [])
-      .filter((o) => !c.path.startsWith(o.prefix) && store.series(o.prefix + c.path))
-      .map((o) => ({label: `Compare with ${o.name}`, fn: () => compare(c.path, o.prefix)})),
-  });
+  // the edits of one opening are one undo entry
+  function editCurve(c, e) {
+    let before = pane.curves;
+    curveEditor(e.clientX, e.clientY, c, {
+      change: () => {
+        if (before) view.rememberCurves(clock, pane, before);
+        before = null;
+        rebuildLegend();
+        invalidate();
+      },
+      remove: () => removeCurves([c]),
+      code: c.custom && (() => editCode(c, e)),
+      actions: c.custom || c.transform ? [] : (store.overlays || [])
+        .filter((o) => !c.path.startsWith(o.prefix) && store.series(o.prefix + c.path))
+        .map((o) => ({label: `Compare with ${o.name}`, fn: () => compare(c.path, o.prefix)})),
+    });
+  }
 
   // an overlay's run of path (a replay) next to the original: dashed in the original's color, plus their
   // difference in a color of its own (hidden until toggled on); t, if given, is seeked to and brought into view
   function compare(path, prefix, t) {
     const name = (store.overlays || []).find((o) => o.prefix === prefix)?.name || prefix.split("/").pop();
+    view.rememberCurves(clock, pane);
     let orig = st.curves.find((c) => c.path === path && !c.transform && !c.custom);
     if (!orig) st.curves.push(orig = normalize({path}));
     const replay = prefix + path, tail = path.slice(1);
@@ -359,11 +411,15 @@ export function create(ctx, state = {}) {
     invalidate();
   }
 
-  // creates (c undefined) or edits a custom series; the curve changes only once the code has run
-  const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.label, ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
+  // creates (c undefined) or edits a custom series; the curve changes only once the code has run. A name is one
+  // piece of code across the layout, since other custom series read it by name
+  const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.path.slice("/custom/".length), ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
     const path = `/custom/${spec.name}`, custom = {inputs: spec.inputs, globals: spec.globals, code: spec.code};
+    const other = path !== c?.path && ctx.layout && customsOf(ctx.layout.save()).get(path);
+    if (other && other !== specKey(custom)) throw new Error(`another custom series is named ${spec.name}: pick another name`);
     await evaluate(store, path, custom);
     made.set(path, inputsVersion(custom.inputs));
+    view.rememberCurves(clock, pane);
     if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
     else st.curves.push(normalize({path, label: spec.name, custom}));
     rebuildLegend();
@@ -487,7 +543,14 @@ export function create(ctx, state = {}) {
   over.addEventListener("pointerleave", () => gesture || view.track(null));
   // a legend highlight can outlive its pointerleave when a popup opens over the row
   over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
-  over.addEventListener("contextmenu", (e) => e.preventDefault());
+  // the context menu key (or shift+F10) opens the plot's menu at its middle; a right click opens it on release,
+  // or here in an empty plot (which has no gestures)
+  over.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    const r = over.getBoundingClientRect();
+    if (e.button === -1) paneMenu({clientX: r.left + r.width / 2, clientY: r.top + r.height / 2});
+    else if (!frame) paneMenu(e);
+  });
 
   over.addEventListener("wheel", (e) => {
     if (!frame) return;
@@ -517,7 +580,8 @@ export function create(ctx, state = {}) {
     invalidate();
   });
 
-  over.addEventListener("keydown", (e) => {
+  // the view's and the curves' undo, from the plot or its legend
+  el.addEventListener("keydown", (e) => {
     const k = e.key.toLowerCase();
     if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y")) return;
     e.preventDefault();
@@ -528,19 +592,19 @@ export function create(ctx, state = {}) {
     const locked = st.y.min !== undefined || st.y.max !== undefined;
     menu(e.clientX, e.clientY, [
       {label: "Fit view", fn: () => { view.remember(clock); st.y = {}; setRange(0, clock.duration); invalidate(); }},
-      {label: "Y auto-fit", checked: !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
+      {label: "Y auto-fit", checked: !locked, disabled: !frame && !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
       {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
-      {label: "Undo view", fn: () => view.undo(clock)},
-      {label: "Redo view", fn: () => view.redo(clock)},
+      {label: "Undo", fn: () => view.undo(clock)},
+      {label: "Redo", fn: () => view.redo(clock)},
       null,
       {label: "Statistics", checked: st.stats, fn: () => { st.stats = !st.stats; rebuildLegend(); perf.invalidate(pane); }},
-      {label: "Export CSV", disabled: !frame.lines.length, fn: exportCsv},
+      {label: "Export CSV", disabled: !frame?.lines.length, fn: exportCsv},
       {label: "Export PNG", fn: () => exportPng([base, over], st.curves.filter((c) => !c.hidden).map((c) => ({color: c.color, name: label(c), value: rows[st.curves.indexOf(c)].val.textContent})),
         col.bg, col.fg, col.font, st.title || "plot")},
       null,
       {label: "Custom series…", fn: () => editCode(undefined, e)},
-      {label: "Remove all curves", disabled: !st.curves.length, fn: () => { st.curves = []; rebuildLegend(); invalidate(); }},
+      {label: "Remove all curves", disabled: !st.curves.length, fn: () => removeCurves(st.curves)},
     ]);
   }
 
@@ -561,11 +625,11 @@ export function create(ctx, state = {}) {
 
   // ---- pane contract
 
-  // base redraws share the frame's budget: a pane past it keeps its picture this frame, and one that runs out
-  // between curves finishes on a later one
+  // base redraws share the frame's budget: a pane starts only with MIN_MS of it left (else it keeps its picture
+  // this frame), and one that runs out between curves finishes on a later one
   function render(f) {
     if (!gBase) return;
-    if (dirty && view.left(f) > 0) dirty = !drawBase(f);
+    if (dirty && view.left(f) >= view.MIN_MS) dirty = !drawBase(f);
     if (dirty) perf.invalidate(pane);
     drawOverlay();
     updateLegend();
@@ -590,6 +654,7 @@ export function create(ctx, state = {}) {
     for (const off of offs) off?.();
     view.leave(pane);
     clearTimeout(statsTimer);
+    clearTimeout(recomputeTimer);
     closeMenu();
   }
 

@@ -81,7 +81,24 @@ function rpy(_, [w, x, y, z], axis) {
 
 // ---- worker side
 
-const series = new Map();  // path → {version, chunks, t, v}
+// the worker's copy of store series, per store id: id → Map(path → {version, chunks, t, v})
+const stores = new Map();
+let series = null;  // the current request's store's
+
+// applies a message from Feed.feed() to the worker's copy; → its store's series, or null for a drop message
+export function receive({store, data, drop}) {
+  if (drop !== undefined) {
+    stores.delete(drop);
+    return null;
+  }
+  if (!stores.has(store)) stores.set(store, new Map());
+  const held = stores.get(store);
+  for (const [path, {version, chunks: sent}] of Object.entries(data)) {
+    const old = held.get(path)?.chunks, chunks = sent.map((c) => typeof c === "number" ? old[c] : c);
+    held.set(path, {version, chunks, ...concat(chunks)});
+  }
+  return held;
+}
 
 // one {t, v} from store chunks ({tt, v}), without missing values
 export function concat(chunks) {
@@ -123,6 +140,8 @@ export function resample(ref, t, v) {
   }
   return out;
 }
+
+const MAX_FFT = 65536;  // samples a spectrum is computed from at most
 
 // sample index range [a, b) of s over [t0, t1]
 function range(s, t0, t1) {
@@ -200,22 +219,28 @@ const ops = {
     return {x: Float64Array.from(ox), y: Float64Array.from(oy), bounds: [x0, x1, y0, y1], count: tx.length};
   },
 
-  // single-sided amplitude spectrum of the range, resampled to a uniform grid and Hann windowed
+  // single-sided amplitude spectrum of the range: interpolated onto a uniform grid at the median sample interval
+  // (so it ends at the series' own Nyquist frequency), Hann windowed and zero-padded to a power of two
   fft({path, t0, t1}) {
     const s = series.get(path), [a, b] = range(s, t0, t1), count = b - a;
     if (count < 4) return {f: new Float64Array(0), mag: new Float64Array(0), bounds: [0, 1, 0, 1]};
-    const n = 2 ** Math.min(16, Math.ceil(Math.log2(count)));
-    const dt = (s.t[b - 1] - s.t[a]) / (n - 1);
-    const grid = Float64Array.from({length: n}, (_, i) => s.t[a] + i * dt);
-    const re = resample(grid, s.t.subarray(a, b), s.v.subarray(a, b)), im = new Float64Array(n);
+    const gaps = s.t.subarray(a + 1, b).map((x, i) => x - s.t[a + i]).sort(), span = s.t[b - 1] - s.t[a];
+    const dt = Math.max(gaps[gaps.length >> 1], span / (MAX_FFT - 1)), m = Math.floor(span / dt) + 1;
+    const n = 2 ** Math.ceil(Math.log2(m)), re = new Float64Array(n), im = new Float64Array(n);
     let mean = 0;
-    for (let i = 0; i < n; i++) mean += re[i] / n;
-    for (let i = 0; i < n; i++) re[i] = (re[i] - mean) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1)));
+    for (let i = 0, k = a; i < m; i++) {
+      const t = s.t[a] + i * dt;
+      while (k < b - 2 && s.t[k + 1] <= t) k++;
+      const w = Math.min(1, (t - s.t[k]) / (s.t[k + 1] - s.t[k]) || 0);
+      re[i] = s.v[k] + (s.v[k + 1] - s.v[k]) * w;
+      mean += re[i] / m;
+    }
+    for (let i = 0; i < m; i++) re[i] = (re[i] - mean) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (m - 1)));
     fftInPlace(re, im);
     const half = n / 2 + 1, f = new Float64Array(half), mag = new Float64Array(half);
     for (let k = 0; k < half; k++) {
       f[k] = k / (n * dt);
-      mag[k] = 4 * Math.hypot(re[k], im[k]) / n;  // ×2 single-sided, ×2 Hann gain
+      mag[k] = 4 * Math.hypot(re[k], im[k]) / m;  // ×2 single-sided, ×2 Hann gain
     }
     let top = 0;
     for (let k = 1; k < half; k++) top = Math.max(top, mag[k]);
@@ -252,11 +277,9 @@ function fftInPlace(re, im) {
 }
 
 if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
-  onmessage = ({data: {id, op, args, data}}) => {
-    for (const [path, {version, chunks: sent}] of Object.entries(data)) {
-      const old = series.get(path)?.chunks, chunks = sent.map((c) => typeof c === "number" ? old[c] : c);
-      series.set(path, {version, chunks, ...concat(chunks)});
-    }
+  onmessage = ({data: msg}) => {
+    const {id, op, args} = msg;
+    if (!(series = receive(msg))) return;
     try {
       const result = ops[op](args);
       postMessage({id, result}, Object.values(result || {}).filter(ArrayBuffer.isView).map((a) => a.buffer));
@@ -268,9 +291,8 @@ if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
 
 // ---- main side
 
-let worker = null, nextId = 0;
+let worker = null, feed = null, nextId = 0;
 const pending = new Map();
-const sent = new WeakMap();  // store → Map(path → {version, at: WeakMap(chunk → its index in the worker's copy)})
 
 // exact copies of chunks' samples: a view would clone its whole pack buffer. Their buffers go in transfer
 export function copy({tt, v}, transfer) {
@@ -279,8 +301,44 @@ export function copy({tt, v}, transfer) {
   return c;
 }
 
-// runs op in the worker; `paths` are the store series it reads. Of a changed series only the chunks the
-// worker doesn't hold go, the others as their index in its copy
+// what a worker holds of the stores' series, so a chunk crosses threads once. Each store has an id there, and
+// a store that's gone is dropped from the worker's copy (receive() takes the messages)
+let lastStore = 0;
+const storeIds = new WeakMap();
+export class Feed {
+  constructor(worker) {
+    this.worker = worker;
+    this.sent = new WeakMap();  // store → Map(path → {version, at: WeakMap(chunk → its index in the worker's copy)})
+    this.gone = new FinalizationRegistry((id) => this.worker.postMessage({drop: id}));
+  }
+
+  // the fields of a message for a worker that reads `paths` of store: of a changed series only the chunks the
+  // worker doesn't hold go, the others as their index in its copy. Their buffers go in transfer
+  feed(store, paths, transfer) {
+    const all = [...new Set(paths)].map((path) => [path, store.series(path)]), none = all.find(([, s]) => !s);
+    if (none) throw new Error(`no series ${none[0]}`);
+    if (!storeIds.has(store)) storeIds.set(store, ++lastStore);
+    if (!this.sent.has(store)) {
+      this.sent.set(store, new Map());
+      this.gone.register(store, storeIds.get(store));
+    }
+    const have = this.sent.get(store), data = {};
+    for (const [path, s] of all) {
+      const old = have.get(path);
+      if (old?.version === s.version) continue;
+      const at = new WeakMap();
+      data[path] = {version: s.version, chunks: s.chunks.map((c, k) => {
+        const held = old?.at.get(c);
+        at.set(c, k);
+        return held ?? copy(c, transfer);
+      })};
+      have.set(path, {version: s.version, at});
+    }
+    return {store: storeIds.get(store), data};
+  }
+}
+
+// runs op in the worker; `paths` are the store series it reads
 export function compute(store, op, args, paths) {
   if (!worker) {
     worker = new Worker(import.meta.url, {type: "module"});
@@ -289,24 +347,14 @@ export function compute(store, op, args, paths) {
       pending.delete(id);
       error ? p.reject(new Error(error)) : p.resolve(result);
     };
+    feed = new Feed(worker);
   }
-  if (!sent.has(store)) sent.set(store, new Map());
-  const have = sent.get(store), data = {}, transfer = [];
-  const all = [...new Set(paths)].map((path) => [path, store.series(path)]), none = all.find(([, s]) => !s);
-  if (none) return Promise.reject(new Error(`no series ${none[0]}`));
-  for (const [path, s] of all) {
-    const old = have.get(path);
-    if (old?.version === s.version) continue;
-    const at = new WeakMap();
-    data[path] = {version: s.version, chunks: s.chunks.map((c, k) => {
-      const held = old?.at.get(c);
-      at.set(c, k);
-      return held ?? copy(c, transfer);
-    })};
-    have.set(path, {version: s.version, at});
+  const id = nextId++, transfer = [];
+  try {
+    worker.postMessage({id, op, args, ...feed.feed(store, paths, transfer)}, transfer);
+  } catch (e) {
+    return Promise.reject(e);
   }
-  const id = nextId++;
-  worker.postMessage({id, op, args, data}, transfer);
   return new Promise((resolve, reject) => pending.set(id, {resolve, reject}));
 }
 

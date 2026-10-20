@@ -4,17 +4,18 @@
 .plot-pane canvas { position: absolute; left: 0; top: 0; }
 .plot-pane canvas.over { cursor: crosshair; touch-action: none; }
 .plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
-.plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
+.plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: none; }
 
 .plot-pane .legend { position: absolute; top: 8px; right: 12px; max-width: min(70%, 440px); max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
   border: 1px solid var(--line); border-radius: 4px; background: color-mix(in srgb, var(--raised) 88%, transparent); font: 11px var(--mono); }
 .plot-pane .legend .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; align-items: center; gap: 6px; padding: 0 4px 0 6px; line-height: 17px; }
 .plot-pane .legend .row:hover { background: var(--hover); }
 .plot-pane .legend .row.off { opacity: .45; }
-.plot-pane .legend i { width: 10px; height: 3px; border-radius: 2px; background: currentColor; cursor: pointer; }
-.plot-pane .legend i.dash { border-radius: 0; background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 6px); }
+.plot-pane .legend button { min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; }
+.plot-pane .legend .swatch { height: 17px; background: linear-gradient(currentColor, currentColor) center / 10px 3px no-repeat; }
+.plot-pane .legend .swatch.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 6px) center / 10px 3px no-repeat; }
 /* a long path loses its head, not its field name: the text runs right to left inside an ltr isolate */
-.plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; cursor: pointer; }
+.plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
 /* a narrow pane keeps its y labels: the legend stays right of the gutter, with names only */
 .plot-pane.narrow .legend { max-width: calc(100% - 70px); }
 .plot-pane.narrow .legend .row { grid-template-columns: 10px minmax(0, 1fr) 14px; }
@@ -22,8 +23,8 @@
 .plot-pane.tiny .legend .name { display: none; }
 .plot-pane.tiny .legend .row { grid-template-columns: 10px 14px; }
 .plot-pane .legend .val { min-width: 5ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
-.plot-pane .legend .x { visibility: hidden; color: var(--muted); font-weight: 400; text-align: center; cursor: pointer; }
-.plot-pane .legend .row:hover .x { visibility: visible; }
+.plot-pane .legend .x { display: grid; place-items: center; height: 17px; visibility: hidden; color: var(--muted); }
+.plot-pane .legend .row:is(:hover, :focus-within) .x { visibility: visible; }
 .plot-pane .legend .x:hover { color: var(--fg); }
 .plot-pane .legend .stats { grid-column: 2 / -1; color: var(--muted); white-space: pre; }
 
@@ -32,11 +33,14 @@
 .plot-popup label { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 6px; padding: 0 4px; color: var(--muted); }
 .plot-popup input, .plot-popup select, .plot-popup textarea { min-width: 0; height: 22px; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
 .plot-popup input[type=color] { padding: 0 2px; }
-.plot-popup .tick { display: inline-block; width: 1em; }
+.plot-popup:has(> .menu-list) { gap: 0; padding: 4px; }
+.plot-popup .tick { display: inline-flex; width: 14px; }
+.plot-popup .menu-row.muted { cursor: default; }
+.plot-popup .menu-row.muted:hover { background: none; }
 .plot-popup hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
-.plot-popup button { height: 24px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); cursor: pointer; }
-.plot-popup button:hover { background: var(--hover); }
-.plot-popup button.danger { color: var(--critical); }
+.plot-popup > button { height: 24px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); cursor: pointer; }
+.plot-popup > button:hover { background: var(--hover); }
+.plot-popup > button.danger { color: var(--critical-fg); }
 
 /* series browser */
 .browser { position: absolute; inset: 0; display: flex; flex-direction: column; }
@@ -45,12 +49,14 @@
 .browser .filter:focus { border-color: var(--accent); }
 .browser label { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
 .browser .count { min-width: 5ch; text-align: right; font: 11px var(--mono); }
-.browser .note { padding: 8px; color: var(--critical); }
+.browser .note { padding: 8px; color: var(--critical-fg); }
 .browser .scroller { position: relative; flex: 1; min-height: 0; overflow: auto; }
 .browser .window { position: absolute; left: 0; right: 0; top: 0; }
 .browser .row { display: flex; align-items: center; height: 18px; padding-right: 6px; font: 11px var(--mono); white-space: nowrap; cursor: default; }
 .browser .row:hover { background: var(--hover); }
 .browser .row.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.browser .scroller:focus-visible { outline: 0; }
+.browser .scroller:focus-visible .row.cur { box-shadow: inset 0 0 0 1px var(--accent); }
 .browser .twisty { flex-shrink: 0; width: 12px; color: var(--muted); }
 .browser .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .browser .val { flex-shrink: 0; max-width: 45%; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }

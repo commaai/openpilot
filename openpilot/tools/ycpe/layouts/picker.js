@@ -2,7 +2,7 @@
 // from a URL, or export the view's layout. Custom code in an opened layout stays untrusted until the user
 // reviews it in the code console, except in the bundled references (commaai/openpilot's own layouts).
 import {h, css} from "/dom.js";
-import {importLayout, exportLayout} from "./import.js";
+import {importLayout, exportLayout, uniqueCustoms, customsOf} from "./import.js";
 import {download} from "/panes/plot/export.js";
 
 css(new URL("./picker.css", import.meta.url));
@@ -45,9 +45,11 @@ function named(opened, file) {
   return opened;
 }
 
-// the view's model with an opened one: its tabs added after the view's own (the first selected), or instead of them
+// the view's model with an opened one: its tabs added after the view's own (the first selected), or instead of them.
+// Opened custom series named like different ones are renamed
 export function mergeLayout(current, opened, how) {
   if (!opened.tabs.length) throw new Error("the layout has no tabs");
+  uniqueCustoms(opened, how === "replace" ? new Map() : customsOf(current));
   if (how === "replace") return opened;
   return {...current, active: current.tabs.length, tabs: [...current.tabs, ...opened.tabs]};
 }
@@ -104,8 +106,8 @@ export function layoutPicker({current, apply, close, name = "layout"}) {
       h("button", {onclick: () => download(new Blob([exportLayout(current())], {type: "application/json"}), `${name}.json`)}, "Export"),
       h("button", {title: "Copy a link that opens this page with this layout", onclick: async () => {
         await navigator.clipboard.writeText(shareUrl(current()));
-        status.textContent = "link copied (custom code in it opens untrusted)";
-      }}, "Copy link"),
+        status.textContent = "Link copied: opens this route at the playhead with these tabs. Custom series in it ask before they run.";
+      }}, "Copy link with these tabs"),
       file),
     h("div", {class: "picker-row"}, url, h("button", {onclick: go}, "Open")),
     status,

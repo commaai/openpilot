@@ -66,9 +66,10 @@ const decimals = (step) => Math.max(0, Math.min(9, -Math.floor(Math.log10(step) 
 
 // route seconds: plain seconds, or m:ss / h:mm:ss on a clock
 export function fmtTime(t, step = 0.001, clock = Math.abs(t) >= 120) {
-  const d = decimals(step);
-  if (!clock) return t.toFixed(d);
-  const sign = t < 0 ? "-" : "", a = Math.round(Math.abs(t) * 10 ** d) / 10 ** d;  // 119.997 is 2:00.00, not 1:60.00
+  // the sign of the rounded value: -0.001 is 0.00, not -0.00
+  const d = decimals(step), a = Math.round(Math.abs(t) * 10 ** d) / 10 ** d;  // 119.997 is 2:00.00, not 1:60.00
+  const sign = t < 0 && a ? "-" : "";
+  if (!clock) return sign + a.toFixed(d);
   const hh = Math.floor(a / 3600), mm = Math.floor(a / 60) % 60, ss = (a % 60).toFixed(d).padStart(d ? d + 3 : 2, "0");
   return hh ? `${sign}${hh}:${String(mm).padStart(2, "0")}:${ss}` : `${sign}${mm}:${ss}`;
 }

@@ -24,6 +24,47 @@ function untrusted({active = 0, tabs = []}) {
   return {active, tabs: tabs.map((t) => ({...t, root: walk(t.root)}))};
 }
 
+// ---- custom series names: a custom series computes into the store at /custom/<name>, which other custom series
+// read as an input, so a name means one piece of code
+
+// what a custom series computes
+export const specKey = ({inputs, globals = "", code}) => JSON.stringify([inputs, globals, code]);
+
+// fn(curves) for every time plot in a layout model
+function plots({tabs}, fn) {
+  const walk = (n) => n.children ? n.children.forEach(walk) : n.pane === "plot" && fn(n.state?.curves || []);
+  tabs.forEach((t) => walk(t.root));
+}
+
+// path → specKey of the custom series in a layout model
+export function customsOf(layout) {
+  const out = new Map();
+  plots(layout, (curves) => { for (const c of curves) if (c.custom) out.set(c.path, specKey(c.custom)); });
+  return out;
+}
+
+// renames, in place, the custom series of layout whose name another one (earlier in it, or in taken: path → specKey)
+// has with different code: x becomes x_2. The inputs of the custom series after it in its plot follow
+export function uniqueCustoms(layout, taken = new Map()) {
+  plots(layout, (curves) => {
+    const renamed = new Map();
+    for (const c of curves) {
+      if (!c.custom) continue;
+      c.custom.inputs = c.custom.inputs.map((p) => renamed.get(p) ?? p);
+      const key = specKey(c.custom);
+      let path = c.path;
+      for (let n = 2; taken.has(path) && taken.get(path) !== key; n++) path = `${c.path}_${n}`;
+      if (path !== c.path) {
+        renamed.set(c.path, path);
+        if (c.label === c.path.slice("/custom/".length)) c.label = path.slice("/custom/".length);
+        c.path = path;
+      }
+      taken.set(path, key);
+    }
+  });
+  return layout;
+}
+
 // PlotJuggler's per-message fields: /<service>/__valid is our /<service>/valid (__logMonoTime is the same path)
 function field(path) {
   const m = path?.match(/^(\/[^/]+)\/__valid$/);
@@ -119,16 +160,29 @@ function pjCurve(el, style, snippets, warnings) {
   const name = el.getAttribute("name"), out = {path: field(name), color: el.getAttribute("color")};
   if (style) out.style = style;
   if (snippets.has(name)) Object.assign(out, {path: `/custom/${name.replaceAll("/", "_")}`, label: name, custom: snippets.get(name)});
-  const t = el.querySelector("transform"), o = t?.querySelector("options");
-  if (t?.getAttribute("name") === "Derivative") {
-    out.transform = {kind: "derivative", param: o?.getAttribute("radioChecked") === "radioCustom" ? num(o, "lineEdit", 0) : 0};
-  } else if (t?.getAttribute("name") === "Scale/Offset") {
+  const t = el.querySelector("transform"), o = t?.querySelector("options"), kind = t?.getAttribute("name");
+  if (kind === "Scale/Offset") {
     Object.assign(out, {scale: num(o, "value_scale", 1), offset: num(o, "value_offset", 0), shift: num(o, "time_offset", 0)});
-  } else if (t && t.getAttribute("name") !== "noTransform") {
-    warnings.push(`${name}: transform "${t.getAttribute("name")}" is not supported`);
+  } else if (PJ_TRANSFORMS[kind]) {
+    const [transform, warning] = PJ_TRANSFORMS[kind](o);
+    out.transform = transform;
+    if (warning) warnings.push(`${name}: ${warning}`);
+  } else if (t && kind !== "noTransform") {
+    warnings.push(`${name}: transform "${kind}" is not supported`);
   }
   return out;
 }
+
+// PlotJuggler's transforms (by name, from their <options>) → [ours, a warning where it differs]
+const PJ_TRANSFORMS = {
+  "Derivative": (o) => [{kind: "derivative", param: o?.getAttribute("radioChecked") === "radioCustom" ? num(o, "lineEdit", 0) : 0}],
+  "Integral": (o) => [{kind: "integral"}, o?.getAttribute("radioChecked") === "radioCustom" && "integral over the sample times, not a fixed dt"],
+  "Absolute": () => [{kind: "abs"}],
+  "Moving Average": (o) => [{kind: "mean", param: num(o, "value", 10)}],
+  "Moving Root Mean Squared": (o) => [{kind: "rms", param: num(o, "value", 10)}],
+  "Moving Variance / Stdev": (o) => [{kind: "variance", param: num(o, "value", 10)}, o?.getAttribute("apply_sqrt") === "true" && "moving variance, not standard deviation"],
+  "Outlier Removal": () => [{kind: "outliers", param: 4}, "outliers removed beyond 4σ, not by PlotJuggler's spike factor"],
+};
 
 // ---- Python / Lua → JS for per-sample custom series
 

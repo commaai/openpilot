@@ -1,6 +1,7 @@
 // series browser: every store path as a tree with a filter, values at the playhead, multi-select and
-// drag onto plots (or double-click into the last used one). Rows are virtualized: only the visible ones
-// exist in the DOM.
+// drag onto plots (or double-click into the last used one). From the keyboard: arrows move (shift extends the
+// selection, right and left open and close a branch), Enter adds to the last used plot. Rows are virtualized:
+// only the visible ones exist in the DOM.
 import {h} from "/dom.js";
 import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
@@ -18,17 +19,21 @@ export function create(ctx, state = {}) {
   const st = {filter: state.filter || "", deprecated: !!state.deprecated, expanded: new Set(state.expanded || [])};
   const selected = new Set();
   let tree = null, stale = true, rows = [], anchor = null, H = 0, total = 0;  // anchor: the path a shift-click ranges from
+  let cursor = null;  // the path the keyboard is at
   let nodes = new Map();  // path → tree node, for every node in the tree
 
   const filter = h("input", {type: "search", class: "filter", placeholder: "filter, or /regex/", value: st.filter, spellcheck: false,
     oninput: () => { st.filter = filter.value; refresh(); },
-    onkeydown: (e) => { if (e.key === "Escape") { filter.value = st.filter = ""; refresh(); } }});
+    onkeydown: (e) => {
+      if (e.key === "Escape") { filter.value = st.filter = ""; refresh(); }
+      if (e.key === "ArrowDown" && rows.length) { e.preventDefault(); scroller.focus(); move(0, false); }
+    }});
   const count = h("span", {class: "muted count"});
   const depr = h("label", {class: "muted", title: "show deprecated fields and internal ones (__logMonoTime)"},
     h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(true); }}), "deprecated");
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
-  const scroller = h("div", {class: "scroller", onscroll: () => perf.invalidate(pane)}, spacer, win);
+  const scroller = h("div", {class: "scroller", tabindex: 0, onscroll: () => perf.invalidate(pane), onkeydown: key}, spacer, win);
   const note = h("div", {class: "note", hidden: true});
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), note, scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
@@ -120,11 +125,18 @@ export function create(ctx, state = {}) {
 
   function click(e, k) {
     const n = rows[k];
+    cursor = n.path;
     if (n.kids && !e.shiftKey && !e.ctrlKey && !e.metaKey && !st.filter) {
       st.expanded.has(n.path) ? st.expanded.delete(n.path) : st.expanded.add(n.path);
       return refresh();
     }
-    if (!n.meta) return;
+    select(k, e);
+  }
+
+  // selects row k like a click with e's modifier keys
+  function select(k, e) {
+    const n = rows[k];
+    if (!n.meta) return perf.invalidate(pane);
     const a = e.shiftKey ? rows.findIndex((r) => r.path === anchor) : -1;  // rows change as branches open and close
     if (a >= 0) {
       for (let i = Math.min(a, k); i <= Math.max(a, k); i++) if (rows[i].meta) selected.add(rows[i].path);
@@ -137,6 +149,28 @@ export function create(ctx, state = {}) {
       anchor = n.path;
     }
     perf.invalidate(pane);
+  }
+
+  function key(e) {
+    const k = rows.findIndex((r) => r.path === cursor), n = rows[k];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") move(Math.max(0, Math.min(rows.length - 1, k + (e.key === "ArrowDown" ? 1 : -1))), e.shiftKey);
+    else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && n?.kids && !st.filter) {
+      st.expanded[e.key === "ArrowRight" ? "add" : "delete"](n.path);
+      refresh();
+    } else if (e.key === "Enter" && n?.meta) addToPlot(selected.has(n.path) ? [...selected] : [n.path]);
+    else if (e.key === "Enter" && n?.kids) click({}, k);
+    else return;
+    e.preventDefault();
+  }
+
+  // the keyboard to row k, scrolled into view; a series there is selected (added to the selection with extend)
+  function move(k, extend) {
+    if (!rows[k]) return;
+    cursor = rows[k].path;
+    select(k, {shiftKey: extend});
+    const y = k * ROW, height = scroller.clientHeight;
+    if (y < scroller.scrollTop) scroller.scrollTop = y;
+    else if (y + ROW > scroller.scrollTop + height) scroller.scrollTop = y + ROW - height;
   }
 
   function dragstart(e, k) {
@@ -174,6 +208,7 @@ export function create(ctx, state = {}) {
       const [twisty, name, val] = r.children;
       r.style.paddingLeft = `${4 + node.depth * 12}px`;
       r.classList.toggle("sel", selected.has(node.path));
+      r.classList.toggle("cur", node.path === cursor);
       twisty.textContent = node.kids ? (st.filter || st.expanded.has(node.path) ? "▾" : "▸") : "";
       if (name.textContent !== node.name) name.textContent = node.name;
       const m = node.meta;
