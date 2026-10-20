@@ -236,7 +236,8 @@ export async function devicePage(dongleId, devices) {
           h("span", {class: "mono"}, dongleId),
           device.device_type && h("span", {}, device.device_type),
           device.openpilot_version && h("span", {}, `openpilot ${device.openpilot_version}`),
-          h("span", {}, online ? "online" : `last seen ${fmt.ago(device.last_athena_ping)}`)),
+          h("span", {}, online ? "online" : `last seen ${fmt.ago(device.last_athena_ping)}`),
+          online && h("a", {href: `/${dongleId}/live`, onclick: link(`/${dongleId}/live`), title: "Stream its cameras and messages"}, "live")),
         stats(dongleId)),
       deviceMap(api.deviceLocation(dongleId).catch(() => null))),
     bar, body);

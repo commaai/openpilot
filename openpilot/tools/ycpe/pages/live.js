@@ -1,7 +1,7 @@
 // /live: what can stream into the page. This computer's webrtcd (through the local daemon), a panda over WebUSB, the
 // account's devices (an online one streams through athena), and a demo route's log played back as if live.
 import {auth} from "../api.js";
-import {h, fmt} from "../dom.js";
+import {h, fmt, css} from "../dom.js";
 import {isOnline, link} from "../app.js";
 import {daemon, needsDaemon} from "../daemon.js";
 import {loginPath} from "./login.js";
@@ -18,6 +18,7 @@ function row(path, dot, name, detail, why = null) {
 }
 
 export function livePage(devices) {
+  css(new URL("./live.css", import.meta.url));
   const demo = `/live/replay?route=${encodeURIComponent(DEMO_ROUTE)}`;
   return h("div", {class: "page live-page"},
     h("h3", {}, "On this computer"),
