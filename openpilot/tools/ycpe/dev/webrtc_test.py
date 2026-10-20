@@ -12,7 +12,6 @@ import os
 import re
 import shutil
 import signal
-import socket
 import subprocess
 import sys
 import tempfile
@@ -23,35 +22,12 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[3]
+sys.path.insert(0, str(HERE.parent / "harness"))
+from procs import REPO, free_port, openpilot_venv, wait_port
+
 DONGLE, LOG_ID = "0123456789abcdef", "00000001--0123456789"
 ROUTE = f"{DONGLE}|{LOG_ID}"
 ROUTE_URL = f"{DONGLE}(?:\\||%7C){LOG_ID}"  # as the page puts it in API URLs
-
-
-def venv_python():
-  common = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--path-format=absolute", "--git-common-dir"], capture_output=True, text=True)
-  venv = next(v for v in (REPO / ".venv", Path(common.stdout.strip()).parent / ".venv") if v.exists())
-  return str(venv / "bin" / "python")
-
-
-def free_port(ports):
-  for port in ports:
-    with socket.socket() as a, socket.socket() as b:
-      if a.connect_ex(("127.0.0.1", port)) and b.connect_ex(("127.0.0.1", port + 1000)):
-        return port
-  raise RuntimeError("no free port")
-
-
-def wait_port(port, proc, what):
-  for _ in range(100):
-    if proc.poll() is not None:
-      raise RuntimeError(f"{what} exited")
-    with socket.socket() as s:
-      if not s.connect_ex(("127.0.0.1", port)):
-        return
-    time.sleep(0.2)
-  raise RuntimeError(f"{what} isn't listening on {port}")
 
 
 def stats(xs):
@@ -114,8 +90,8 @@ def main():
   args = ap.parse_args()
   sys.stdout.reconfigure(line_buffering=True)
   signal.signal(signal.SIGTERM, lambda *_: sys.exit("terminated"))  # still stops what it started
-  port = args.port or free_port(range(8560, 8570))
-  webrtcd, prefix, python = port + 1000, f"ycpe-webrtc-test-{port}", venv_python()
+  port = args.port or free_port(range(8560, 8570), (0, 1000))
+  webrtcd, prefix, python = port + 1000, f"ycpe-webrtc-test-{port}", str(openpilot_venv() / "bin" / "python")
   tmp = Path(tempfile.mkdtemp(prefix="ycpe-webrtc-"))
   env = {**os.environ, "OPENPILOT_PREFIX": prefix, "LOG_ROOT": str(tmp / "realdata"),
          "PYTHONPATH": os.pathsep.join(str(REPO / d) for d in ("", "msgq_repo", "opendbc_repo"))}
@@ -130,8 +106,8 @@ def main():
     device = subprocess.Popen([python, str(HERE / "webrtc_device.py"), "--log-root", env["LOG_ROOT"], "--log-id", LOG_ID, "--seconds", "300"],
                               env=env, stdout=subprocess.PIPE, text=True)
     procs.append(device)
-    wait_port(webrtcd, procs[0], "webrtcd")
-    wait_port(port, procs[1], "serve.py")
+    wait_port(webrtcd, procs[0], "webrtcd", timeout=20)
+    wait_port(port, procs[1], "serve.py", timeout=20)
     video = int(device.stdout.readline().split()[1])
     wall = device.stdout.readline().split()[1]
     run, failed = Run(port, webrtcd), []
