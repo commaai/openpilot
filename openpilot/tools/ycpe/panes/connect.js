@@ -92,6 +92,8 @@ export function create(ctx, state) {
     if (sheet) mount(sheet);
   });
   boxes.files.hidden = boxes.info.hidden = true;
+  // connect's Clip before them, once the device says it cuts clips (loaded after the view)
+  import("./clips.js").then(({clipButton}) => disposed || sheetOptions.el.prepend(clipButton(ctx)));
   function showMedia() {
     const both = WIDE.matches;
     mediaOptions.el.hidden = both;
