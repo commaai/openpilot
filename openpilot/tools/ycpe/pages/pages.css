@@ -148,6 +148,7 @@ a.drive-row:hover { background: var(--hover); }
   .ws[data-view="drive"] .split { flex-direction: column; gap: 4px; }
   .ws[data-view="drive"] .split > * { flex: none !important; }  /* over the layout's inline sizes */
   .ws[data-view="drive"] .divider, .ws[data-view="drive"] .pane-tools { display: none; }
+  .ws[data-view="drive"] .pane-head { touch-action: auto; }  /* nothing to dock into: the page scrolls from it */
   .ws[data-view="drive"] .pane:has(> .pane-body > .routes-pane) { display: none; }
   .ws[data-view="drive"] .pane-body:has(> .camera-pane) { flex: none; aspect-ratio: 526 / 330; }
   .ws[data-view="drive"] .pane-body:has(> .map-pane) { flex: none; height: 45vh; }

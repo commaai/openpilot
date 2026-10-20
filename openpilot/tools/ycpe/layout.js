@@ -236,12 +236,14 @@ export class Layout {
   }
 
   // dragging a pane header: a hint shows where it lands; edges dock beside, the center swaps
+  // (not in the phone's stacked drive view: nothing docks there, and its headers scroll the page)
   drag(n, e) {
-    if (e.button !== 0 || e.target.closest("button, select, input")) return;
+    if (e.button !== 0 || e.target.closest("button, select, input") || getComputedStyle(this.el).display === "block") return;
+    e.currentTarget.setPointerCapture(e.pointerId);
     const x0 = e.clientX, y0 = e.clientY;
     let hint = null, drop = null;
     const move = (ev) => {
-      if (!hint && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+      if (ev.pointerId !== e.pointerId || (!hint && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5)) return;
       hint ||= document.body.appendChild(h("div", {class: "dock-hint"}));
       document.body.classList.add("docking");
       const box = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".pane");
@@ -253,17 +255,21 @@ export class Layout {
         Object.assign(hint.style, {left: `${z === "right" ? r.right - w : r.left}px`, top: `${z === "bottom" ? r.bottom - ht : r.top}px`, width: `${w}px`, height: `${ht}px`});
       }
     };
+    // only a release docks: a cancelled gesture (a touch the browser took over) or Escape doesn't
     const end = (ev) => {
+      if (ev && ev.pointerId !== e.pointerId) return;
       removeEventListener("pointermove", move);
       removeEventListener("pointerup", end);
+      removeEventListener("pointercancel", end);
       removeEventListener("keydown", cancel);
       hint?.remove();
       document.body.classList.remove("docking");
-      if (ev && drop) this.dock(n, drop.node, drop.zone);
+      if (ev?.type === "pointerup" && drop) this.dock(n, drop.node, drop.zone);
     };
-    const cancel = (ev) => { if (ev.key === "Escape") { drop = null; end(); } };
+    const cancel = (ev) => { if (ev.key === "Escape") end(); };
     addEventListener("pointermove", move);
     addEventListener("pointerup", end);
+    addEventListener("pointercancel", end);
     addEventListener("keydown", cancel);
   }
 
