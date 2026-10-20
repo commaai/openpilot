@@ -11,6 +11,7 @@ const posOf = (row, col) => row * 8 + 7 - col;
 const cellOf = (pos) => [pos >> 3, 7 - (pos & 7)];
 const withAlpha = (hsl, a) => hsl.replace(")", ` / ${a})`);
 
+const COARSE = matchMedia("(pointer: coarse)").matches;
 const DIR_KEY = "ycpe_can_drag";
 let dragDir = localStorage.getItem(DIR_KEY) || "msb";
 
@@ -20,11 +21,11 @@ export function create(ctx, state) {
   const canvas = h("canvas", {class: "can-binary-canvas"});
   const info = h("div", {class: "can-binary-info"});
   const title = h("span", {class: "can-binary-title"});
-  const modeBtn = h("select", {class: "can-select", title: "Heatmap: flips up to the playhead, or over the visible range",
+  const modeBtn = h("select", {class: "can-select", "aria-label": "Heatmap", title: "Heatmap: flips up to the playhead, or over the visible range",
     onchange: (e) => { mode = e.target.value; heat = null; requestHeat(); }},
     ["live", "range", "off"].map((v) => h("option", {value: v, selected: mode === v}, v)));
   // cabana's drag direction setting, shared by every binary view
-  const dirBtn = h("select", {class: "can-select", title: "Endianness of a dragged signal",
+  const dirBtn = h("select", {class: "can-select", "aria-label": "Drag direction", title: "Endianness of a dragged signal",
     onchange: (e) => { dragDir = e.target.value; localStorage.setItem(DIR_KEY, dragDir); }},
     [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
   const empty = h("div", {class: "can-empty"}, "Select a message to see its bits");
@@ -103,20 +104,30 @@ export function create(ctx, state) {
     const c = at(e);
     if (!c || c.hex || e.button) return;
     canvas.setPointerCapture(e.pointerId);
-    drag = {anchor: c, cur: c, moved: false, resize: null};
+    // a finger may be scrolling the page (touch-action: pan-y): it drags once it moves sideways or holds still
+    drag = {anchor: c, cur: c, moved: false, resize: null, x: e.clientX, armed: e.pointerType !== "touch"};
+    if (!drag.armed) drag.timer = setTimeout(() => { if (drag) { drag.armed = true; ctx.perf.invalidate(pane); } }, 400);
     // grabbing a signal's first or last bit resizes it from the other end
     const pos = posOf(c.row, c.col);
     for (const sg of coverage(visible(), rows())[pos]) {
       if (pos === sg.lsb || pos === sg.msb) {
         const [row, col] = cellOf(pos === sg.lsb ? sg.msb : sg.lsb);
-        drag = {anchor: {row, col}, cur: c, moved: false, resize: sg};
+        Object.assign(drag, {anchor: {row, col}, resize: sg});
         break;
       }
     }
   });
+  // once a finger drags, the page mustn't scroll under it
+  canvas.addEventListener("touchmove", (e) => { if (drag?.armed) e.preventDefault(); }, {passive: false});
+  canvas.addEventListener("pointercancel", () => {
+    clearTimeout(drag?.timer);
+    drag = null;
+    ctx.perf.invalidate(pane);
+  });
   canvas.addEventListener("pointermove", (e) => {
     const c = at(e);
-    if (drag) {
+    if (drag && !drag.armed && Math.abs(e.clientX - drag.x) > 8) drag.armed = true;
+    if (drag?.armed) {
       if (c && (c.row !== drag.cur.row || c.col !== drag.cur.col)) drag.moved = true;
       if (c) drag.cur = c;
     }
@@ -129,6 +140,7 @@ export function create(ctx, state) {
     const d = drag;
     drag = null;
     if (!d) return;
+    clearTimeout(d.timer);
     // a click, even on an M/L edge, opens the editor
     if (d.moved) {
       const sel = selection(d);
@@ -141,18 +153,31 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   });
 
-  // the pointed-at signal's keys, whatever has the focus but a text box or a dialog, as cabana
+  // the pointed-at signal's keys, whatever has the focus but a text box or a dialog, as cabana. With the pane focused,
+  // the arrow keys pick the signal instead
   function key(e) {
-    if (!hover || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !canvas.matches(":hover")) return;
+    const focused = el.contains(document.activeElement);
+    if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !(focused || canvas.matches(":hover"))) return;
     if (e.target.closest?.("input, textarea, select, dialog")) return;
+    const sigs = visible(), i = sigs.indexOf(hover), step = {ArrowDown: 1, ArrowUp: -1}[e.key];
+    const pick = (sg) => { hover = sg; can.emit("hover", sg?.name); ctx.perf.invalidate(pane); };
+    if (focused && step && sigs.length) {
+      pick(sigs[i < 0 ? 0 : (i + step + sigs.length) % sigs.length]);
+      return e.preventDefault();
+    }
+    if (!hover) return;
     const chart = "pgc".includes(e.key);
     if (chart) can.emit("chart", `/dbc/${busOf(k())}/${msg().name}/${hover.name}`);
     else if (["x", "Delete", "Backspace"].includes(e.key)) removeSignal(can, k(), hover.name);
     else if (e.key === "e") updateSignal(can, k(), hover.name, {le: !hover.le});
     else if (e.key === "s") updateSignal(can, k(), hover.name, {signed: !hover.signed});
     else return;
-    // an edit may move the signal from under the pointer; charting leaves it there
-    if (!chart) hover = null;
+    // an edit may move the signal from under the pointer; charting leaves it there. From the keyboard, the same
+    // signal stays picked, or a removed one's neighbour
+    if (focused) {
+      const now = visible();
+      pick(chart ? hover : now.find((sg) => sg.name === hover.name) || now[Math.min(i, now.length - 1)] || null);
+    } else if (!chart) hover = null;
     e.preventDefault();
   }
 
@@ -181,7 +206,7 @@ export function create(ctx, state) {
       const d = bytes(), sigs = visible(), cells = coverage(sigs, n);
       const flips = heatKey === key && heat ? heat : new Uint32Array(0);
       const max = Math.max(1, ...flips);
-      const sel = drag && (drag.moved || drag.resize) ? selection(drag) : null;
+      const sel = drag?.armed && (drag.moved || drag.resize) ? selection(drag) : null;
       const selected = new Set();
       if (sel) for (let j = 0; j < sel.size; j++) selected.add(sel.le ? sel.start + j : flip(flip(sel.start) + j));
       g.font = `12px ${mono}`;
@@ -251,7 +276,8 @@ export function create(ctx, state) {
       for (let r = 0; r <= n; r++) { g.moveTo(x0, r * ROW + 0.5); g.lineTo(x0 + 9 * col, r * ROW + 0.5); }
       g.stroke();
       for (const sg of sigs) outline(g, sg, cells, n, x0, col, hover === sg);
-      info.textContent = hover ? describe(hover) : warnings(d, cells) || (msg() ? `${sigs.length} signals · drag to add, drag an M/L edge to resize · x delete, e endianness, s sign, c chart` : "drag across bits to create a signal");
+      info.textContent = hover ? describe(hover) : warnings(d, cells) || (COARSE ? (msg() ? `${sigs.length} signals · tap a signal to edit it, hold and drag to add` : "hold and drag across bits to create a signal")
+        : msg() ? `${sigs.length} signals · drag to add, drag an M/L edge to resize · x delete, e endianness, s sign, c chart` : "drag across bits to create a signal");
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },

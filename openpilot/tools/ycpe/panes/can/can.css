@@ -38,17 +38,20 @@
 .can-msg-table { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .can-msg-head, .can-msg-filters, .can-msg-row { display: flex; padding: 0 4px; }
 .can-msg-head { height: 20px; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+/* sort buttons; :where() leaves the numeric columns their right alignment */
+:where(.can-msg-head > button) { height: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .can-msg-filters { padding-bottom: 3px; border-bottom: 1px solid var(--line); gap: 2px; }
 .can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
 .can-col-name { flex: 1 1 140px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
 .can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { flex: 0 1 158px; }
-/* narrow panes drop node and count, then bus and freq, then the bytes, but for columns turned on in the menu */
+/* narrow panes drop node and count, then freq, then the bytes, but for columns turned on in the menu; the bus stays, as
+   one ID is often on several */
 .can-messages { container-type: inline-size; }
 .can-hide-bus .can-col-bus, .can-hide-id .can-col-id, .can-hide-node .can-col-node, .can-hide-freq .can-col-freq,
 .can-hide-count .can-col-count, .can-hide-bytes .can-col-bytes { display: none; }
 @container (max-width: 560px) { .can-col-node, .can-col-count { display: none; } }
-@container (max-width: 400px) { .can-col-bus, .can-col-freq { display: none; } }
+@container (max-width: 400px) { .can-col-freq { display: none; } }
 @container (max-width: 300px) { .can-col-bytes { display: none; } }
 .can-show-bus .can-col-bus, .can-show-node .can-col-node, .can-show-freq .can-col-freq,
 .can-show-count .can-col-count, .can-show-bytes .can-col-bytes { display: block; }
@@ -71,7 +74,8 @@
 /* binary view */
 .can-binary-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .can-binary-scroll { flex: 1; min-height: 0; overflow: auto; }
-.can-binary-canvas { display: block; width: 100%; cursor: crosshair; touch-action: none; }
+/* fingers scroll the page across it; binary.js starts their drag on a sideways move or a hold */
+.can-binary-canvas { display: block; width: 100%; cursor: crosshair; touch-action: pan-y; }
 .can-binary-info { flex-shrink: 0; padding: 2px 6px; border-top: 1px solid var(--line); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .can-binary-info:empty { display: none; }
 
@@ -116,6 +120,7 @@
 
 /* charts */
 .can-tabs { display: flex; align-items: center; gap: 2px; padding: 0 4px; border-bottom: 1px solid var(--line); }
+.can-tablist { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .can-tab { display: inline-flex; align-items: center; color: var(--muted); border-bottom: 2px solid transparent; }
 .can-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .can-tab:not(.active):hover { color: var(--fg); }
@@ -155,6 +160,7 @@
 .can-menu { margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
 .can-menu .menu-row { width: 100%; }
 .can-menu hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
+.can-menu .tick { display: inline-flex; width: 14px; }
 .can-picker { width: 420px; height: 320px; }
 .can-picker .can-list-row { display: flex; align-items: center; gap: 6px; padding: 1px 6px; }
 .can-picker .can-list-row input { height: auto; margin: 0; }

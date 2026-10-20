@@ -3,7 +3,7 @@ import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
-import {canOf, dialog, editMsg, field, ink, newMsg, removeSignal, subs, updateSignal} from "./common.js";
+import {canOf, createSignal, dialog, editMsg, field, ink, newMsg, removeSignal, subs, updateSignal} from "./common.js";
 
 const SPARK_W = 80;  // sparkline width
 
@@ -12,7 +12,7 @@ export function create(ctx, state) {
   let open = state.open || null, filter = "", spark = state.spark || 15;  // seconds of history, cabana's default
   // the toolbar is built once and updated, so the filter box keeps focus while the list rebuilds
   const title = h("span", {class: "can-binary-title"}), meta = h("span", {class: "can-muted"}), count = h("span", {class: "can-muted"});
-  const sparkSel = h("select", {class: "can-select", title: "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
+  const sparkSel = h("select", {class: "can-select", title: "Sparkline range", "aria-label": "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
     [1, 5, 15, 30].map((x) => h("option", {value: x, selected: x === spark}, `${x} s`)));
   const filterBox = h("input", {class: "can-filter", placeholder: "Filter signals", oninput: (e) => { filter = e.target.value; build(); }});
   const editBtn = h("button", {class: "can-btn", title: "Edit message", onclick: () => messageDialog(can, k())});
@@ -20,8 +20,18 @@ export function create(ctx, state) {
     const m = msg();
     can.dbcs.edit(busOf(k()), m.address, null, `remove message ${m.name}`);
   }}, "Remove message");
+  // the keyboard's way to a new signal: one bit at the first bit no signal covers, its editor open
+  const addBtn = h("button", {class: "can-btn", title: "Add a signal at the first free bit", onclick: () => {
+    const m = msg(), n = (m?.size || can.msg(k())?.size || 8) * 8;
+    let pos = 0;
+    while (pos < n && (m?.mask[pos >> 3] >> (pos & 7)) & 1) pos++;
+    filter = filterBox.value = "";
+    const name = createSignal(can, k(), {start: pos < n ? pos : 0, size: 1, le: true});
+    can.emit("edit", name);
+    rows.get(name)?.ed.querySelector("input").focus();
+  }}, "Add signal");
   const comment = h("div", {class: "can-comment"});
-  const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "can-spacer"}), count, sparkSel, filterBox, editBtn, removeBtn, comment);
+  const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "can-spacer"}), count, sparkSel, filterBox, addBtn, editBtn, removeBtn, comment);
   const list = h("div", {class: "can-sig-list"});
   const el = h("div", {class: "can-pane can-signals"}, head, list);
   const k = () => can.selected;
@@ -72,7 +82,13 @@ export function create(ctx, state) {
           onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
           swatch, name, spark, v,
           plot,
-          h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, icon("close", 12))),
+          h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => {
+            e.stopPropagation();
+            // focus moves to the row that takes its place, else the one before, else the filter
+            const i = [...rows.keys()].indexOf(sg.name);
+            removeSignal(can, k(), sg.name);
+            ([...rows.values()][Math.min(i, rows.size - 1)]?.row.firstChild || filterBox).focus();
+          }}, icon("close", 12))),
         ed);
       row.draggable = true;
       row.addEventListener("dragstart", (e) => e.dataTransfer.setData("application/x-ycpe-paths", JSON.stringify([path(sg)])));

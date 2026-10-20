@@ -517,14 +517,18 @@ export class Can {
       const a = start[m], b = start[m + 1];
       let s = this.msgs.get(k);
       if (!s) {
-        this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
+        this.msgs.set(k, s = {key: k, bus: busOf(k), address: addrOf(k), id: hexId(k), count: 0, gaps: 0, span: 0, t0: Infinity, t1: -Infinity, size: 0, segs: new Set()});
         named ||= !!this.dbcMsg(k);
       }
       s.count += b - a;
       s.t0 = Math.min(s.t0, can.t0 + off + t[a]);
       s.t1 = Math.max(s.t1, can.t0 + off + t[b - 1]);
       s.size = Math.max(s.size, len[b - 1], stride[m] && s.size);
-      s.freq = s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
+      // within segments, so segments not loaded (or missing) in between don't count as silence; a message sent
+      // less than once a segment goes by first and last
+      s.gaps += b - a - 1;
+      s.span += t[b - 1] - t[a];
+      s.freq = s.span > 0 ? s.gaps / s.span : s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
       s.segs.add(n);
     });
     const bytes = t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
@@ -749,23 +753,32 @@ export class Can {
     const fp = this.store.valueAt?.("/carParams/carFingerprint", Infinity);
     if (!fp) return;
     this.fingerprinted = fp;
-    const name = (await this.opendbc()).fingerprints[fp];
+    const dbcs = (await this.opendbc()).fingerprints[fp];
+    const name = carDbc(dbcs), radar = dbcs?.radar !== name && dbcs?.radar;
     if (!name || this.dbcs.all().length) return;
-    await this.loadOpendbc(name).catch((e) => {
+    const fail = (name) => (e) => {
       this.notice = `${name}.dbc didn't load: ${e.message}`;
       this.emit("notice");
-    });
+    };
+    await this.loadOpendbc(name).catch(fail(name));
+    // every port's radar parser reads bus 1
+    if (radar) await this.loadOpendbc(radar, [1]).catch(fail(radar));
   }
 
   // ---- decoded signals as series: /dbc/<bus>/<Msg>/<Sig> ----
 
+  // appended to as messages arrive and the same array until the DBCs change, as store.paths() expects
   paths() {
-    const out = [];
+    if (this.listed?.dbc !== this.dbcVersion) this.listed = {dbc: this.dbcVersion, out: [], n: 0};
+    const l = this.listed;
+    let i = 0;
     for (const s of this.msgs.values()) {
+      if (i++ < l.n) continue;  // messages keep their order
       const m = this.dbcMsg(s.key);
-      if (m) for (const sig of m.sigs) out.push(this.meta(`/dbc/${s.bus}/${m.name}/${sig.name}`, sig));
+      if (m) for (const sig of m.sigs) l.out.push(this.meta(`/dbc/${s.bus}/${m.name}/${sig.name}`, sig));
     }
-    return out;
+    l.n = i;
+    return l.out;
   }
 
   // a signal's {path, type, precision, unit?, names?, states?}: its value descriptions are names keyed by physical value. Two or
@@ -832,6 +845,9 @@ export class Can {
     this.worker.terminate();
   }
 }
+
+// a fingerprint's dbc_dict's DBC for every bus, as cabana's generate_dbc_json.py: powertrain, else main, else party
+export const carDbc = (dbcs) => dbcs && (dbcs.pt || dbcs.main || dbcs.party);
 
 // a message without derived references, for postMessage
 function plain(m) {
