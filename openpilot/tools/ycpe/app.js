@@ -112,8 +112,10 @@ function updateTop() {
   bar.route.hidden = bar.route.previousSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
   if (!ws) return;
-  const start = new Date(ws.route.start_time_utc_millis);
-  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`;
+  const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
+  bar.route.textContent = ws.route.start_time_utc_millis
+    ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
+    : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
@@ -161,8 +163,8 @@ function renameTab(tabEl, i, name) {
 class Workspace {
   constructor(route, files, view, {t = 0, repeat = 1}) {
     this.route = route;
+    this.dongle = route.fullname.split("|")[0];
     this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
-    this.files = null;  // the file list only matters once logs load; the drive view mounts without it
     this.filesReady = files.then((f) => { this.files = f; });
     this.repeat = repeat;
     this.store = null;
@@ -306,7 +308,7 @@ document.addEventListener("keydown", (e) => {
 
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
-  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3", "Drive / Plot / CAN"],
+  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
   ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
   ["wheel on the timeline", "zoom the visible range"],
@@ -406,8 +408,11 @@ function openFiles(files) {
   if (dropped) go(`/${dropped.route.fullname.replace("|", "/")}/plot`);
   else toast("No rlog, qlog or camera files there");
 }
-document.addEventListener("dragover", (e) => e.preventDefault());
+// files dropped anywhere a pane didn't take them (layouts on the workspace, say) open as a local route
+const carriesFiles = (e) => e.dataTransfer?.types.includes("Files");
+document.addEventListener("dragover", (e) => { if (carriesFiles(e)) e.preventDefault(); });
 document.addEventListener("drop", async (e) => {
+  if (e.defaultPrevented || !carriesFiles(e)) return;
   e.preventDefault();
   openFiles(await droppedFiles(e.dataTransfer));
 });
