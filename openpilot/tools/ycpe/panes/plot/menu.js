@@ -13,7 +13,7 @@ export function close() {
 // a floating panel at client (x, y), kept on screen; closes on an outside press or Escape
 export function popup(x, y, ...content) {
   close();
-  const el = open = h("div", {class: "popover plot-popup", onpointerdown: (e) => e.stopPropagation(), onkeydown: (e) => e.key === "Escape" && close()}, ...content);
+  const el = open = h("div", {class: "popover plot-popup", onpointerdown: (e) => e.stopPropagation()}, ...content);
   document.body.append(el);
   const r = el.getBoundingClientRect();
   el.style.left = `${Math.max(4, Math.min(x, innerWidth - r.width - 4))}px`;
@@ -22,6 +22,7 @@ export function popup(x, y, ...content) {
 }
 addEventListener("pointerdown", close);
 addEventListener("blur", close);
+addEventListener("keydown", (e) => { if (e.key === "Escape" && open) close(); });  // wherever the focus is (the plot, say)
 
 // items: [{label, fn, checked?, disabled?} | null (separator)]
 export function menu(x, y, items) {
