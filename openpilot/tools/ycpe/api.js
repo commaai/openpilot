@@ -180,17 +180,27 @@ export const api = {
   segmentAsset: (route, segment, name) => `${route.url}/${segment}/${name}`,
 };
 
-const assets = (route, name) => Promise.all(Array.from({length: (route.maxqlog ?? -1) + 1}, async (_, n) => {
+// the segment a timeline slot plays: a route opened with a range (data/sources.js routeRecord) plays its segments
+// back to back, so slot k is segment_numbers[k]; otherwise the slot is the segment
+export const segmentAt = (route, slot) => route.range ? route.segment_numbers[slot] : slot;
+const slots = (route) => route.range ? route.segment_numbers.length : (route.maxqlog ?? -1) + 1;
+const memoKey = (route) => `${route.fullname}/${route.range ?? ""}`;
+
+// a per-segment asset for each slot, with the seconds its times move by to land there
+const assets = (route, name) => Promise.all(Array.from({length: slots(route)}, async (_, slot) => {
+  const n = segmentAt(route, slot);
   const resp = await fetch(api.segmentAsset(route, n, name)).catch(() => null);
-  return resp?.ok ? resp.json() : [];
+  return {shift: (slot - n) * 60, data: resp?.ok ? await resp.json() : []};
 }));
 
 // GPS fixes [{t (route seconds), lat, lng, speed, dist}] from the per-segment coords.json
-export const routeCoords = memo(async (route) => (await assets(route, "coords.json")).flat(), (route) => route.fullname);
+export const routeCoords = memo(async (route) => (await assets(route, "coords.json")).flatMap(({shift, data}) =>
+  shift ? data.map((c) => ({...c, t: c.t + shift})) : data), memoKey);
 
 // engaged, alert, override and bookmark spans from the per-segment events, in route milliseconds
 export const routeEvents = memo(async (route) => {
-  const events = (await assets(route, "events.json")).flat().sort((a, b) => a.route_offset_millis - b.route_offset_millis);
+  const events = (await assets(route, "events.json")).flatMap(({shift, data}) => data.map((ev) => shift ? {...ev, route_offset_millis: ev.route_offset_millis + shift * 1000} : ev))
+    .sort((a, b) => a.route_offset_millis - b.route_offset_millis);
   const spans = [];
   const open = {};
   const track = (kind, active, t) => {
@@ -214,7 +224,7 @@ export const routeEvents = memo(async (route) => {
   const duration = route.end_time_utc_millis - route.start_time_utc_millis;
   for (const s of spans) if (s.end === null) s.end = duration;
   return spans;
-}, (route) => route.fullname);
+}, memoKey);
 
 export function engagedFraction(spans, duration) {
   const ms = spans.reduce((sum, s) => sum + (s.kind === "engaged" ? s.end - s.start : 0), 0);
