@@ -291,8 +291,8 @@ except ImportError:  # used as a library without the daemon
   route = None
 
 if route is not None:
-  ID = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
-  ROUTE = re.compile(r"^[0-9a-f]{16}\|[0-9a-zA-Z_-]+$")
+  ID = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}\Z")
+  ROUTE = re.compile(r"^[0-9a-f]{16}\|[0-9a-zA-Z_-]+\Z")
   _running: dict[str, Replay] = {}
 
   module("replay", "1", procs=PROCS, default=DEFAULT_PROCS)

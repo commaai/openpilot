@@ -14,10 +14,10 @@ from openpilot.tools.ycpe.daemon.cache import Key
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
 from openpilot.tools.ycpe.daemon.sources import FILES, KINDS, parse_route
 
-HOST = re.compile(r"^(?:[a-z_][a-z0-9_-]*@)?[A-Za-z0-9][A-Za-z0-9.:-]*$")  # [user@]host, never an ssh option
+HOST = re.compile(r"^(?:[a-z_][a-z0-9_-]*@)?[A-Za-z0-9][A-Za-z0-9.:-]*\Z")  # [user@]host, never an ssh option
 REALDATA = "/data/media/0/realdata"
 DONGLE_FILE = "../../../params/d/DongleId"  # from realdata: /data/params/d/DongleId
-SEG_DIR = re.compile(rf"^{RE.LOG_ID}--(?P<seg>\d+)$")  # LOG_ID is the log_id group
+SEG_DIR = re.compile(rf"^{RE.LOG_ID}--(?P<seg>\d+)\Z")  # LOG_ID is the log_id group
 
 module("device", "1")
 _lock = threading.Lock()

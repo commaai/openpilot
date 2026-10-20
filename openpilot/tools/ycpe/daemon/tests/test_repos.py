@@ -58,7 +58,7 @@ class TestRepos(DaemonCase):
     self.assertFalse(out["generated"])
 
   def test_dbc_write_rejects(self):
-    for name in ("..%2fsecret.dbc", "..%2f..%2fsecret.dbc", "x.txt", "%2etmp", "a%2fb.dbc", "..", "x.dbc%00"):
+    for name in ("..%2fsecret.dbc", "..%2f..%2fsecret.dbc", "x.txt", "%2etmp", "a%2fb.dbc", "..", "x.dbc%00", "x.dbc%0A"):
       r, _ = self.req(f"/local/repos/0/dbc/{name}", method="PUT", body=b"pwned")
       self.assertIn(r.status, (403, 404), name)
     self.assertEqual((REPO / "secret.dbc").read_text(), "outside")
