@@ -17,3 +17,13 @@ export const VIEWS = {
     split("col", [0.6, 0.4], pane("can-charts"), pane("camera", {camera: "qcamera"})))),
   files: view("Files", split("row", [0.2, 0.8], pane("routes"), pane("files"))),
 };
+
+// a live session's: plot and CAN as for routes (sharing their saved layouts), drive without the route's own panes,
+// and logs. key: where the layout is saved, when that isn't the view's name
+export const LIVE_VIEWS = {
+  drive: {...view("Drive", split("row", [0.68, 0.32],
+    pane("camera", {camera: "ecamera"}), split("col", [0.5, 0.5], pane("map"), pane("logs")))), key: "live-drive"},
+  plot: VIEWS.plot,
+  can: VIEWS.can,
+  logs: {...view("Logs", split("row", [0.62, 0.38], pane("logs"), pane("inspector"))), key: "live-logs"},
+};

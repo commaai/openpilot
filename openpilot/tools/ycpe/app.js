@@ -8,10 +8,11 @@ import {theme} from "/theme.js";
 import {createClock, RATES} from "/clock.js";
 import {Layout, checkLayout} from "/layout.js";
 import {PANES} from "/panes.js";
-import {VIEWS} from "/views.js";
+import {VIEWS, LIVE_VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {status, loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
+import {openLive} from "/data/live.js";
 import {logSchema} from "/data/schemas.js";
 import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles, watchRouteStart} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
@@ -19,6 +20,7 @@ import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
+import {livePage} from "/pages/live.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 import {uniqueCustoms} from "/layouts/import.js";
@@ -143,7 +145,7 @@ function topBar() {
     !state.devices?.length && h("div", {class: "menu-row muted"},
       !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
   bar.route.addEventListener("click", () => {
-    if (!ws) return;
+    if (!ws || ws.session) return;
     const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
     pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop._close(); ws.openRoute(name); }}).el);
   });
@@ -177,11 +179,11 @@ function updateTop() {
     return bar.tabs.replaceChildren();
   }
   const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
-  bar.route.firstChild.textContent = ws.route.start_time_utc_millis
+  bar.route.firstChild.textContent = ws.session ? `live · ${ws.session.label}` : ws.route.start_time_utc_millis
     ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
     : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
-  bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
+  bar.views.replaceChildren(...Object.entries(ws.views).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`,
     "aria-current": k === ws.view && "page", "data-key": `view:${k}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
   if (!layout) {  // the view is still waiting on its files
@@ -261,7 +263,7 @@ function tabMenu(tabEl, i, name) {
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
     item("Open layout…", () => setTimeout(() => layoutMenu(bar.tabs.children[i]))),
-    item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
+    item(`Reset ${ws.views[ws.view].title} layout`, () => ws.resetLayout())));
 }
 
 // double-click a tab to rename it in place
@@ -285,10 +287,14 @@ function renameTab(tabEl, i, name) {
 // ---- route workspace: one clock, one store, one layout per view ----
 
 class Workspace {
-  constructor(route, files, view, {t = 0, repeat = 1}) {
+  // session: a live one (data/live.js), whose route record this is
+  constructor(route, files, view, {t = 0, repeat = 1, session = null}) {
     this.route = route;
-    this.dongle = route.fullname.split("|")[0];
-    this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
+    this.session = session;
+    this.views = session ? LIVE_VIEWS : VIEWS;
+    this.dongle = session ? route.dongle_id : route.fullname.split("|")[0];
+    // each segment's log from the route's source (data/sources.js); the drive view mounts without it
+    this.files = session ? [] : null;
     this.filesReady = files.then((f) => { this.files = f; });
     this.filesReady.catch(() => {});  // a view that needs the logs shows the failure; until then it's not an error
     this.repeat = repeat;
@@ -297,21 +303,22 @@ class Workspace {
     this.storeSubs = new Set();
     this.layouts = {};
     this.written = {};  // view → its layout as this tab last saved it, or had it when another tab saved one
-    this.clock = createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
-    this.clock.seek(t);
+    this.clock = session ? createClock(0, {live: true}) : createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
+    if (!session) this.clock.seek(t);
     this.main = h("div", {class: "workspace"});
     this.playbar = playbar(this.ctx());
     this.el = h("div", {class: "ws"}, this.main, this.playbar.el);
     this.offs = ["t", "play", "range"].map((ev) => this.clock.on(ev, () => this.syncUrl()));
     // another browser tab saved a layout: this one's copy only replaces it once it changes
     const stored = (e) => {
-      const view = e.key?.match(/^ycpe_layout_(.+)/)?.[1];
-      if (this.layouts[view]) this.written[view] = JSON.stringify(this.layouts[view].save());
+      const view = Object.keys(this.layouts).find((v) => e.key === `ycpe_layout_${this.layoutKey(v)}`);
+      if (view) this.written[view] = JSON.stringify(this.layouts[view].save());
     };
     addEventListener("storage", stored);
     this.offs.push(() => removeEventListener("storage", stored));
     // .json/.xml layouts dropped on the workspace open as new tabs
     acceptLayoutFiles(this.main, (f) => this.openLayout(f));
+    if (session) this.ensureStore();
     this.setView(view);
   }
 
@@ -331,8 +338,15 @@ class Workspace {
     };
   }
 
-  // logs load only once something needs them (the drive view doesn't); null until the file list is in
+  // logs load only once something needs them (the drive view doesn't); null until the file list is in. A live
+  // session's store is there from the start, and moves the clock's head and window
   ensureStore() {
+    if (!this.store && this.session) {
+      this.store = this.session.store;
+      this.offs.push(this.store.on("live", (t) => this.clock.setEdge(t)), this.store.on("window", (s) => this.clock.setStart(s)));
+      for (const fn of this.storeSubs) fn(this.store);
+      this.storeSubs.clear();
+    }
     if (this.store || !this.files) return this.store;
     this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
     this.offs.push(watchRouteStart(this.route, this.store));
@@ -351,13 +365,16 @@ class Workspace {
 
   get layout() { return this.layouts[this.view]; }
 
+  // the view's layout is saved under this name
+  layoutKey(view) { return this.views[view].key || view; }
+
   setView(view) {
-    if (!VIEWS[view]) view = "drive";
+    if (!this.views[view]) view = this.session ? "plot" : "drive";
     if (view !== this.view) this.persist();
     this.view = view;
     this.el.dataset.view = view;
     if (!this.layouts[view]) {
-      const model = savedLayout(view);
+      const model = savedLayout(this.layoutKey(view), this.views[view]);
       if (usesData(model) && !this.files) {
         this.filesReady.then(() => { if (!this.disposed && this.view === view) this.setView(view); },
           (e) => { if (!this.disposed) this.main.replaceChildren(errorPage(e)); });
@@ -366,7 +383,7 @@ class Workspace {
       }
       if (usesData(model)) this.ensureStore();
       this.layouts[view] = new Layout(this.ctx(), model, (m) => {
-        localStorage.setItem(`ycpe_layout_${view}`, this.written[view] = JSON.stringify(m));
+        localStorage.setItem(`ycpe_layout_${this.layoutKey(view)}`, this.written[view] = JSON.stringify(m));
         if (usesData(m)) this.ensureStore();
       });
     }
@@ -378,8 +395,8 @@ class Workspace {
 
   // install a whole new model for the view (null: back to the default)
   applyLayout(model) {
-    if (model) localStorage.setItem(`ycpe_layout_${this.view}`, JSON.stringify(checkLayout(model)));
-    else localStorage.removeItem(`ycpe_layout_${this.view}`);
+    if (model) localStorage.setItem(`ycpe_layout_${this.layoutKey(this.view)}`, JSON.stringify(checkLayout(model)));
+    else localStorage.removeItem(`ycpe_layout_${this.layoutKey(this.view)}`);
     this.layout?.dispose();
     delete this.layouts[this.view];
     this.setView(this.view);
@@ -392,7 +409,7 @@ class Workspace {
   persist() {
     for (const [view, layout] of Object.entries(this.layouts)) {
       const json = JSON.stringify(layout.save());
-      if (json !== this.written[view]) localStorage.setItem(`ycpe_layout_${view}`, this.written[view] = json);
+      if (json !== this.written[view]) localStorage.setItem(`ycpe_layout_${this.layoutKey(view)}`, this.written[view] = json);
     }
   }
 
@@ -400,7 +417,7 @@ class Workspace {
   async openLayout(src) {
     try {
       const {layout, warnings} = await loadLayout(src);
-      this.applyLayout(mergeLayout(this.layout?.save() ?? savedLayout(this.view), layout, "tab"));
+      this.applyLayout(mergeLayout(this.layout?.save() ?? savedLayout(this.layoutKey(this.view), this.views[this.view]), layout, "tab"));
       if (warnings.length) toast(`Layout opened with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}: ${warnings[0]}${warnings.length > 1 ? " …" : ""}`);
     } catch (e) {
       toast(`Couldn't open the layout: ${e.message}`);
@@ -421,6 +438,10 @@ class Workspace {
     clearTimeout(this.urlTimer);
     const write = () => {
       if (this.disposed) return;  // left meanwhile
+      if (this.session) {  // the source's path and options: a time there means nothing next time
+        this.href = `${this.session.path}/${this.view}${location.search}`;
+        return history.replaceState(null, "", this.href);
+      }
       const q = new URLSearchParams(location.search);
       q.set("t", this.clock.t.toFixed(1));
       q.delete("layout");  // opened once, then it's part of the saved layout
@@ -443,24 +464,26 @@ class Workspace {
     for (const off of this.offs) off();
     this.playbar.dispose();
     this.clock.pause();
+    this.clock.dispose();
     this.persist();
     for (const l of Object.values(this.layouts)) l.dispose();
-    this.store?.dispose();
+    if (this.session) this.session.stop();
+    else this.store?.dispose();
   }
 }
 
-// the view's saved layout, else its default; one that doesn't read as a layout anymore is dropped
-function savedLayout(view) {
-  const key = `ycpe_layout_${view}`;
+// the view's layout saved under name, else the view's default; one that doesn't read as a layout anymore is dropped
+function savedLayout(name, view) {
+  const key = `ycpe_layout_${name}`;
   try {
     const saved = JSON.parse(localStorage.getItem(key) || "null");
     // custom series named alike were saved with different code before names had to be unique: they're renamed
     if (saved?.tabs?.length) return uniqueCustoms(checkLayout(saved));
   } catch {
     localStorage.removeItem(key);
-    toast(`The saved ${VIEWS[view].title} layout couldn't be read, so it's back to the default`);
+    toast(`The saved ${view.title} layout couldn't be read, so it's back to the default`);
   }
-  return VIEWS[view].layout;
+  return view.layout;
 }
 
 const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g)?.some((m) => PANES[m.slice(8, -1)]?.data);
@@ -506,18 +529,18 @@ document.addEventListener("keydown", (e) => {
     "[": () => c.setRate(RATES[Math.max(0, RATES.indexOf(c.rate) - 1)]),
     "]": () => c.setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(c.rate) + 1)]),
     l: () => c.setLoop(c.loop ? null : [...c.range]),
-    f: () => c.setRange(0, c.duration),
-    Home: () => c.seek(0),
-    End: () => c.seek(c.duration),
+    f: () => c.setRange(c.start, c.duration),
+    Home: () => c.seek(c.start),
+    End: () => c.seek(c.duration),  // live: following again
   };
-  Object.keys(VIEWS).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });
+  Object.keys(ws.views).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
 });
 
 // keys are space separated; "+" joins a combination
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
-  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
+  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end (live: follow)"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
   ["/", "search routes and devices"], ["ctrl+f", "filter the series"], ["t", "light / dark"], ["?", "this help"],
   ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
 ];
@@ -551,7 +574,7 @@ function closeWorkspace() {
 }
 
 // the path still names the open workspace's route (or loose logs), whatever the view
-const showsWorkspace = (parts) => [parts.length >= 2 && routeFromPath(parts)?.name, `${parts[0]}|${parts[1]}`].includes(routeKey(ws.route));
+const showsWorkspace = (parts) => ws.session ? `/${parts.join("/")}/`.startsWith(`${ws.session.path}/`) : [parts.length >= 2 && routeFromPath(parts)?.name, `${parts[0]}|${parts[1]}`].includes(routeKey(ws.route));
 
 // a page that throws shows the error rather than its spinner forever
 function render() {
@@ -592,6 +615,7 @@ async function renderPage() {
     document.body.classList.remove("loading");
   }
 
+  if (parts[0] === "live" || (parts[1] === "live" && DONGLE_RE.test(parts[0]))) return openLiveSession(parts, q, main, id);
   if (openLoose(parts, q, main)) return;
   const target = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
   const routeName = target?.name;
@@ -650,6 +674,42 @@ async function renderPage() {
   } else {
     main.replaceChildren(homePage(state.devices));
   }
+}
+
+// a live session (data/live.js): /live lists the sources; /live/local (this computer's webrtcd), /live/panda,
+// /live/replay?route=&rate= (a log played back as if live) and /<dongle>/live (a device through athena), each with an
+// optional view after it
+async function openLiveSession(parts, q, main, id) {
+  const dongle = parts[0] === "live" ? null : parts[0], kind = dongle ? "device" : parts[1];
+  const path = dongle ? `/${dongle}/live` : `/live/${kind}`, view = parts[2];
+  if (!kind) {
+    closeWorkspace();
+    updateTop();
+    return main.replaceChildren(livePage(state.devices));
+  }
+  if (ws?.session?.path === path) {
+    if (view && view !== ws.view) ws.setView(view);
+    return;
+  }
+  const [module, opts] = {
+    device: ["webrtc", {dongle}], local: ["webrtc", {local: true}], panda: ["panda", {}],
+    replay: ["replay", {route: q.get("route") || "", rate: +q.get("rate") || 1}],
+  }[kind] || [];
+  closeWorkspace();
+  updateTop();
+  if (!module) return main.replaceChildren(errorPage({status: 404}));
+  let session;
+  try {
+    session = await openLive(module, opts, {key: dongle || kind, path});
+  } catch (e) {
+    return id === navId && main.replaceChildren(errorPage(new Error(`Couldn't open the ${kind} source: ${e.message}`)));
+  }
+  if (id !== navId) return session.stop();
+  ws = new Workspace(session.route, Promise.resolve([]), view || "plot", {session});
+  window.__live = ws;  // for the harness
+  document.body.classList.add("in-ws");
+  main.replaceChildren(ws.el);
+  updateTop();
 }
 
 // logs outside the API (data/sources.js): files dropped anywhere on the page, or a direct link (?url=). False when the
