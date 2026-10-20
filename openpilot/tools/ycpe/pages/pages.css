@@ -146,9 +146,14 @@ a.drive-row:hover { background: var(--hover); }
   .list.crashes td:nth-child(3) { word-break: break-all; }
   .list td { height: 36px; }
   .page-tabs .tab { height: 36px; }
+  /* the strip scrolls: its right edge fades out until it's scrolled to the end */
+  .page-tabs { mask: linear-gradient(to right, #000 calc(100% - 32px), transparent) 0 0 / calc(100% + 32px) 100% no-repeat;
+    animation: tabs-more linear both; animation-timeline: scroll(self inline); }
   .page .icon-btn, .page .dl { min-width: 32px; min-height: 32px; justify-content: center; align-items: center; }
   :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
 }
+
+@keyframes tabs-more { from { mask-size: 100% 100%; } }
 
 /* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
    a height of its own, the playbar docked below. A routes pane is hidden in every view: the route crumb has the list.
