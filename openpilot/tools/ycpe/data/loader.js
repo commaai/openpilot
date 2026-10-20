@@ -143,7 +143,7 @@ export class Loader {
       this.parsing++;
       job.report({parsing: true});
       const opts = typeof job.opts === "function" ? job.opts() : job.opts;
-      this.call(worker, {op: "parse", buf: job.buf, opts}, [job.buf])
+      this.call(worker, {op: "parse", key: job.key, buf: job.buf, opts}, [job.buf])
         .then((r) => this.cancelled.has(job.owner) ? job.reject(new Error("cancelled"))
           : job.resolve({...r, bytes: job.bytes, cached: job.cached, stored: job.stored, ms: {...job.ms, ...r.ms}}), job.reject)
         .finally(() => {

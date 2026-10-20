@@ -80,6 +80,17 @@ export async function list(prefix) {
   return out;
 }
 
+// drops a cached file and its index entry
+export async function remove(key) {
+  const parts = key.split("/");
+  try {
+    let dir = await navigator.storage.getDirectory();
+    for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
+    await dir.removeEntry(parts.at(-1));
+  } catch {}  // already gone
+  await idb("files", "readwrite", (s) => s.delete(key)).catch(() => {});
+}
+
 // trims a kind to its share, least recently used first, skipping any key under the open route (dongle/route);
 // returns the keys removed
 export async function evict(kind, route) {
@@ -98,13 +109,7 @@ export async function evict(kind, route) {
   for (const [key, f] of files.sort((a, b) => a[1].used - b[1].used)) {
     if (total <= budget) break;
     if (key.includes(`${route}/`)) continue;
-    const parts = key.split("/");
-    try {
-      let dir = await navigator.storage.getDirectory();
-      for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
-      await dir.removeEntry(parts.at(-1));
-    } catch {}  // already gone
-    await idb("files", "readwrite", (s) => s.delete(key));
+    await remove(key);
     total -= f.bytes;
     removed.push(key);
   }
