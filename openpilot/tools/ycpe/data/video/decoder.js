@@ -4,13 +4,13 @@
 import {AnnexB} from "./annexb.js";
 import {openBackend} from "./backends.js";
 import {SEGMENT_FRAMES} from "./frames.js";
-import * as opfs from "./opfs.js";
+import * as opfs from "../opfs.js";
 
 const GAP = 40;   // decode forward through at most this many unwanted frames instead of restarting at a keyframe
 const KEEP = 3;   // segment files held in memory
 const AHEAD = 2;  // segments downloaded to disk ahead of the playhead while playing
 
-let urls = [], keys = [];
+let urls = [], keys = [];  // keys[n] names a segment in the OPFS cache; none for files that shouldn't be cached
 const segs = new Map();  // n → {n, data, length, au: AnnexB, done, failed, abort}: the files in memory
 const disk = new Map();  // n → bytes of the files cached on disk
 const fetching = new Set();
@@ -30,7 +30,7 @@ onmessage = async ({data}) => {
   if (data.urls) {
     ({urls, keys} = data);
     await Promise.all(urls.map(async (u, n) => {
-      const f = u && await opfs.read(keys[n]);
+      const f = u && keys[n] && await opfs.read(keys[n]);
       if (f) disk.set(n, f.size);
       state(n, !u ? "missing" : f ? "disk" : "idle");
     }));
@@ -62,7 +62,7 @@ setInterval(() => {
 
 // the playhead's segment isn't here yet: s, or null once it is
 function waiting(s) {
-  const b = s && {n: s.n, loaded: s.length, total: s.data?.length || 0};
+  const b = s && {n: s.n, loaded: s.length, total: s.total || 0};
   if (JSON.stringify(b) !== JSON.stringify(waitingOn)) postMessage({buffering: b});
   waitingOn = b;
 }
@@ -101,7 +101,7 @@ function segment(n) {
 
 async function load(s) {
   try {
-    const cached = await opfs.read(keys[s.n]);
+    const cached = keys[s.n] && await opfs.read(keys[s.n]);
     if (cached) {
       s.data = new Uint8Array(await cached.arrayBuffer());
       s.length = s.data.length;
@@ -110,7 +110,8 @@ async function load(s) {
       fetching.add(s.n);
       const resp = await fetch(urls[s.n], {signal: s.abort.signal});
       if (!resp.ok) throw new Error(`${resp.status}`);
-      s.data = new Uint8Array(+resp.headers.get("content-length") || 64 << 20);
+      s.total = +resp.headers.get("content-length") || 0;  // none while the file is still being written
+      s.data = new Uint8Array(s.total || 64 << 20);
       for await (const chunk of resp.body) {
         if (s.length + chunk.length > s.data.length) {
           const grown = new Uint8Array(2 * (s.length + chunk.length));
@@ -120,7 +121,7 @@ async function load(s) {
         s.data.set(chunk, s.length);
         s.length += chunk.length;
         received += chunk.length;
-        state(s.n, "loading", s.length, s.data.length);
+        state(s.n, "loading", s.length, s.total);
         await scanned(s);
       }
       fetching.delete(s.n);
@@ -145,10 +146,9 @@ async function scanned(s) {
 }
 
 async function save(n, bytes) {
-  if (!await opfs.write(keys[n], bytes)) return;
+  if (!keys[n] || !await opfs.write(keys[n], bytes, "video")) return;
   disk.set(n, bytes.length);
-  const route = keys[n].split("/").slice(0, 2).join("/") + "/";
-  for (const k of await opfs.evict(route)) {
+  for (const k of await opfs.evict("video", keys[n].split("/").slice(0, 2).join("/"))) {
     const i = keys.indexOf(k);
     if (i >= 0) { disk.delete(i); if (!segs.has(i)) state(i, "idle"); }
   }
@@ -156,7 +156,7 @@ async function save(n, bytes) {
 
 // download to disk only, one at a time behind every other download, to ride out the network during playback
 async function prefetch(n) {
-  if (!urls[n] || segs.has(n) || disk.has(n) || fetching.size) return;
+  if (!keys[n] || segs.has(n) || disk.has(n) || fetching.size) return;
   fetching.add(n);
   state(n, "queued");
   try {

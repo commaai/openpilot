@@ -1,4 +1,5 @@
-// comma API client: a JWT in localStorage, plain fetch. Settings are read lazily so workers can import this.
+// comma API client: a JWT in localStorage (or the local daemon's), plain fetch. Settings are read lazily so workers can import this.
+import {daemon} from "./daemon.js";
 
 const TOKEN_KEY = "comma_jwt";
 const setting = (key) => globalThis.localStorage?.getItem(key);
@@ -11,18 +12,24 @@ const authSubs = new Set();
 let user = null;
 
 export const auth = {
-  token: () => setting(TOKEN_KEY),
-  isAuthenticated: () => !!setting(TOKEN_KEY),
+  token: () => setting(TOKEN_KEY) || daemon.jwt(),
+  isAuthenticated: () => !!auth.token(),
+  viaDaemon: () => !setting(TOKEN_KEY) && !!daemon.jwt(),  // ~/.comma/auth.json through serve.py
   user: () => (user ??= auth.isAuthenticated() ? get("v1/me/").catch(() => null) : Promise.resolve(null)),
   on(fn) { authSubs.add(fn); return () => authSubs.delete(fn); },
-  setToken(token) {
+  setToken(token, viaDaemon = false) {
     if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
+    else {
+      localStorage.removeItem(TOKEN_KEY);
+      daemon.useJwt(viaDaemon);
+    }
     user = null;
     for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
+    for (const k of Object.keys(sessionStorage)) if (k.startsWith("ycpe_")) sessionStorage.removeItem(k);
     for (const fn of authSubs) fn();
   },
   signOut: () => auth.setToken(null),
+  useDaemon: () => auth.setToken(null, true),
 
   // the provider sends the code to the API, which redirects it back to <host>/auth/?code=..&provider=..
   loginUrl(provider) {
@@ -90,6 +97,25 @@ export async function request(method, endpoint, {params, body, host = apiHost()}
 }
 const get = (endpoint, params) => request("GET", endpoint, {params});
 
+// a read kept in sessionStorage until expires(value) (ms), so a reload doesn't wait ~1 s on the API again
+async function sessionCached(key, fetch, expires) {
+  const hit = JSON.parse(sessionStorage.getItem(key) || "null");
+  if (hit && hit.until > Date.now()) return hit.value;
+  const value = await fetch();
+  sessionStorage.setItem(key, JSON.stringify({value, until: expires(value)}));
+  return value;
+}
+
+// signed URLs carry their expiry (se=); a file list is good until the first one lapses, less a margin
+function signedUntil(files) {
+  let until = Date.now() + 10 * 60e3;
+  for (const urls of Object.values(files)) for (const u of urls || []) {
+    const se = Date.parse(new URL(u).searchParams.get("se") || "");
+    if (se) until = Math.min(until, se - 5 * 60e3);
+  }
+  return until;
+}
+
 // reads are cached for the session so revisits never wait on the network; failures are not kept
 const caches = new Set();
 function memo(fn, key = (...args) => JSON.stringify(args)) {
@@ -133,7 +159,7 @@ export const api = {
     route.end_time_utc_millis ??= Date.parse(route.end_time + "Z");
     return route;
   }),
-  routeFiles: memo((routeName) => get(`v1/route/${routeName}/files`)),
+  routeFiles: memo((routeName) => sessionCached(`ycpe_files_${routeName}`, () => get(`v1/route/${routeName}/files`), signedUntil)),
   setRoutePublic: (routeName, isPublic) => request("PATCH", `v1/route/${routeName}/`, {body: {is_public: isPublic}}),
   setRoutePreserved: (routeName, preserved) => request(preserved ? "POST" : "DELETE", `v1/route/${routeName}/preserve`),
 

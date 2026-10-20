@@ -29,13 +29,15 @@ export const status = {
     changed();
     let removed = false;
     return {
-      seg(n, state, {loaded = 0, total = 0, source = null} = {}) {
-        const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0, source: null};
-        if (s.state === state && s.loaded === loaded && s.total === total && s.source === source) return;
+      // text: a note on the state, e.g. "retrying (2/6)"
+      seg(n, state, {loaded = 0, total = 0, source = null, text = null} = {}) {
+        const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0, source: null, text: null};
+        if (s.state === state && s.loaded === loaded && s.total === total && s.source === source && s.text === text) return;
         s.state = state;
         s.loaded = loaded;
         s.total = total;
         s.source = source;
+        s.text = text;
         changed();
       },
       count(n) {
@@ -103,7 +105,7 @@ function counts(src) {
 
 const STATE_TEXT = {missing: "not available", idle: "not loaded", queued: "queued", loading: "loading", disk: "on disk", ready: "in memory", error: "failed"};
 export const describe = (s) => (s.state === "loading" && s.total ? `${STATE_TEXT.loading} ${Math.round(100 * s.loaded / s.total)}% of ${fmtBytes(s.total)}` : STATE_TEXT[s.state])
-  + (s.source ? ` · from ${s.source}` : "");
+  + (s.text ? ` · ${s.text}` : "") + (s.source ? ` · from ${s.source}` : "");
 
 // the top-bar pill: what's loading or buffering right now, and a panel with every kind's segments
 export function loadPill() {

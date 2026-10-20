@@ -4,7 +4,8 @@
 import {api} from "../api.js";
 import {perf} from "../perf.js";
 import {status} from "../status.js";
-import {Loader, POOL, logCache} from "./loader.js";
+import {Loader, POOL} from "./loader.js";
+import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
 import {enumRef, service, unpack} from "./pack.js";
 
@@ -46,6 +47,11 @@ export class Store {
     this.received = [];  // [time, bytes] of recent downloads, for the rate
     // OPFS keys name the route, segment and file; the signed URLs change
     this.cacheDir = `logs/${name.replace("|", "/")}/`;
+    this.disk = {};  // key → bytes of this route's cached logs
+    opfs.list(this.cacheDir).then((d) => {
+      Object.assign(this.disk, d);
+      for (const seg of this.route.segments) this.publish(seg);
+    }, () => {});
     this.status = status.source("logs", {order: 0});
     this.status.count(count);
 
@@ -63,6 +69,7 @@ export class Store {
       this.publish(seg);
       this.progress.total++;
       this.load(seg, undefined, {can: true}).then((p) => {  // CAN frames come out of the first parse only
+        if (p.cached || p.stored) this.disk[seg.key] = p.bytes;
         this.count(p);
         this.ingest(seg, p);
         if (p.can) this.can.ingest(seg.n, p.can, 0);
@@ -101,9 +108,9 @@ export class Store {
     this.loader.resize(near.every((s) => s.status !== "queued") ? Math.max(2, POOL >> 1) : POOL);
   }
 
-  // a load's progress: {loaded, total} downloading, {retry, error} before a retry, {parsing}
+  // a load's progress: {loaded, total} downloading, {retry, of, error} before a retry, {parsing}
   report(seg, ev) {
-    if (ev.retry) Object.assign(seg, {retry: ev.retry, error: ev.error});
+    if (ev.retry) Object.assign(seg, {retry: `${ev.retry}/${ev.of}`, error: ev.error});
     else seg.retry = 0;
     if (ev.loaded !== undefined) {
       this.received.push([performance.now(), ev.loaded - (seg.loading?.loaded || 0)]);
@@ -115,12 +122,12 @@ export class Store {
 
   // a segment's status: on disk when cached but not (or no longer) in memory
   publish(seg) {
-    const cached = seg.key && logCache.has(seg.key);
+    const cached = seg.key in this.disk;
     const state = seg.status === "missing" || seg.status === "error" ? seg.status
       : seg.loading ? "loading"
       : seg.status === "done" && seg.bytes ? "ready"
       : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
-    this.status.seg(seg.n, state, {...seg.loading, source: seg.source});
+    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text: seg.retry ? `retrying (${seg.retry})` : null});
     if (seg.n === this.focusSeg) this.buffering();
     this.totals();
   }
@@ -129,7 +136,7 @@ export class Store {
     const now = performance.now();
     while (this.received.length && now - this.received[0][0] > 2000) this.received.shift();
     this.status.rate(this.received.reduce((a, [, b]) => a + b, 0) / 2);
-    this.status.bytes({memory: this.bytes + this.can.bytes, disk: logCache.bytes(this.cacheDir)});
+    this.status.bytes({memory: this.bytes + this.can.bytes, disk: Object.values(this.disk).reduce((a, b) => a + b, 0)});
   }
 
   buffering() {
@@ -139,7 +146,7 @@ export class Store {
     while (n < segs.length - 1 && segs[n].t1 <= this.t) n++;
     const seg = segs[n];
     const waiting = seg && seg.status === "queued";
-    this.status.buffering(waiting ? {n, text: `segment ${n}${seg.retry ? ` · retrying (${seg.retry}: ${seg.error})` : ""}`} : null);
+    this.status.buffering(waiting ? {n, text: `segment ${n}${seg.retry ? ` · retrying (${seg.retry})` : ""}`} : null);
   }
 
   on(event, fn) {

@@ -17,7 +17,7 @@ export function compile(inputs, globals, code) {
   return new Function(`"use strict";\n${globals}\nreturn function (${args.join(", ")}) {\n${code}\n};`)();
 }
 
-if (typeof window === "undefined" && self.location.href === import.meta.url) {
+if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
   onmessage = ({data: {inputs, globals, code, data}}) => {
     try {
       const [first, ...rest] = inputs.map((p) => concat(data[p]));

@@ -1,0 +1,83 @@
+// the layout picker: open a reference layout, import a file (ours, jotpluggler's or PlotJuggler's), open one
+// from a URL, or export the view's layout. Whatever custom code an opened layout carries stays untrusted until
+// the user reviews it in the code console.
+import {h, css} from "/dom.js";
+import {importLayout, exportLayout} from "./import.js";
+import {download} from "/panes/plot/export.js";
+
+css(new URL("./picker.css", import.meta.url));
+
+const REFS = "https://raw.githubusercontent.com/commaai/openpilot/master/openpilot/tools";
+export const REFERENCES = {
+  jotpluggler: ["cameras-and-map", "camera-timings", "CAN-bus-debug", "can-states", "controls_mismatch_debug", "driver-monitoring-debug",
+    "gps", "gps_vs_llk", "locationd_debug", "longitudinal", "max-torque-debug", "new-layout", "system_lag_debug", "thermal_debug",
+    "torque-controller", "tuning", "ublox-debug"],
+  plotjuggler: ["camera-timings", "CAN-bus-debug", "can-states", "controls_mismatch_debug", "gps_vs_llk", "gps", "locationd_debug",
+    "longitudinal", "max-torque-debug", "system_lag_debug", "thermal_debug", "torque-controller", "tuning", "ublox-debug"],
+};
+const refUrl = (tool, name) => `${REFS}/${tool}/layouts/${name}.${tool === "jotpluggler" ? "json" : "xml"}`;
+
+// src: a File, a URL, or the layout text itself (as ?layout= may hold either) → {layout, warnings}
+export async function loadLayout(src) {
+  if (src instanceof Blob) return importLayout(await src.text());
+  if (/^\s*[{<]/.test(src)) return importLayout(src);
+  const r = await fetch(src);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return importLayout(await r.text());
+}
+
+// the view's model with an opened one: its tabs added after the view's own (the first selected), or instead of them
+export function mergeLayout(current, opened, how) {
+  if (!opened.tabs.length) throw new Error("the layout has no tabs");
+  if (how === "replace") return opened;
+  return {...current, active: current.tabs.length, tabs: [...current.tabs, ...opened.tabs]};
+}
+
+// files dropped on el open as new tabs; open(file) does the rest (loadLayout, mergeLayout, apply)
+export function acceptLayoutFiles(el, open) {
+  const isFile = (e) => e.dataTransfer?.types.includes("Files");
+  el.addEventListener("dragover", (e) => { if (isFile(e)) e.preventDefault(); });
+  el.addEventListener("drop", (e) => {
+    const files = [...(e.dataTransfer?.files || [])].filter((f) => /\.(json|xml)$/i.test(f.name));
+    if (!files.length) return;
+    e.preventDefault();
+    for (const f of files) open(f);
+  });
+}
+
+// the picker's panel. current(): the view's layout model; apply(model): installs a new one; close(): dismisses
+export function layoutPicker({current, apply, close, name = "layout"}) {
+  let how = "tab";
+  const status = h("div", {class: "picker-status"});
+  async function open(label, src) {
+    status.textContent = `opening ${label}…`;
+    try {
+      const {layout, warnings} = await loadLayout(src);
+      apply(mergeLayout(current(), layout, how));
+      if (!warnings.length) return close();
+      status.replaceChildren(`opened ${label} with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}:`,
+        h("ul", {}, warnings.map((w) => h("li", {}, w))));
+    } catch (e) {
+      status.textContent = `${label}: ${e.message}`;
+    }
+  }
+
+  const mode = (value, label) => h("label", {}, h("input", {type: "radio", name: "picker-how", value, checked: value === how,
+    onchange: () => { how = value; }}), label);
+  const file = h("input", {type: "file", accept: ".json,.xml", hidden: true,
+    onchange: () => { if (file.files[0]) open(file.files[0].name, file.files[0]); }});
+  const url = h("input", {type: "url", placeholder: "layout URL", onkeydown: (e) => { if (e.key === "Enter") go(); }});
+  const go = () => url.value.trim() && open(url.value.trim(), url.value.trim());
+  const group = (tool, title) => [h("div", {class: "picker-group"}, title),
+    REFERENCES[tool].map((n) => h("button", {class: "menu-row", onclick: () => open(n, refUrl(tool, n))}, n))];
+
+  return h("div", {class: "layout-picker"},
+    h("div", {class: "picker-how"}, "open as", mode("tab", "new tabs"), mode("replace", "this view")),
+    h("div", {class: "picker-row"},
+      h("button", {onclick: () => file.click()}, "Import file…"),
+      h("button", {onclick: () => download(new Blob([exportLayout(current())], {type: "application/json"}), `${name}.json`)}, "Export"),
+      file),
+    h("div", {class: "picker-row"}, url, h("button", {onclick: go}, "Open")),
+    status,
+    h("div", {class: "picker-refs"}, group("jotpluggler", "jotpluggler layouts"), group("plotjuggler", "PlotJuggler layouts")));
+}
