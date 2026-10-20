@@ -44,17 +44,20 @@ export function track(t) {
 }
 
 // route time whose logs aren't in memory, as sorted [t0, t1] spans (segment n is [60n, 60n + 60)); none
-// when nothing publishes log status. onUnloaded(fn) runs fn when the spans change.
-let unloadedSpans = [], unloadedKey = "";
+// when nothing publishes log status. A segment that was ready and is being parsed again (a newly requested
+// list) keeps its data meanwhile, so it still counts as loaded. onUnloaded(fn) runs fn when the spans change.
+let unloadedSpans = [], unloadedKey = "", logs = null, held = [];
 const unloadedSubs = new Set();
 status.on(() => {
-  const segs = status.kinds().find((k) => k.name === "logs")?.segs || [];
-  const key = segs.map((s) => +(s.state === "ready")).join("");
+  const src = status.kinds().find((k) => k.name === "logs"), segs = src?.segs || [];
+  if (src !== logs) [logs, held] = [src, []];
+  segs.forEach((s, n) => { held[n] = s.state === "ready" || (held[n] && (s.state === "loading" || s.state === "queued")); });
+  const key = held.map(Number).join("");
   if (key === unloadedKey) return;
   unloadedKey = key;
   unloadedSpans = [];
   segs.forEach((s, n) => {
-    if (s.state === "ready") return;
+    if (held[n]) return;
     const last = unloadedSpans.at(-1);
     if (last?.[1] === n * 60) last[1] += 60;
     else unloadedSpans.push([n * 60, n * 60 + 60]);
