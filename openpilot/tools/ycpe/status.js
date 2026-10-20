@@ -169,7 +169,7 @@ function statusPanel(anchor, onClose) {
       const canvas = h("canvas", {class: "status-lane"});
       const info = h("span", {class: "muted"});
       const tip = h("div", {class: "status-tip muted"});
-      const errors = h("div", {class: "status-tip", style: "height: auto; color: var(--critical); white-space: pre-wrap"});
+      const errors = h("div", {class: "status-tip status-errors"});
       const retry = h("button", {class: "link", hidden: true, onclick: () => k.retry?.()}, "Retry");
       rw = {canvas, info, tip, errors, retry, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info, " ", retry), canvas, tip, errors)};
       canvas.addEventListener("pointermove", (e) => {
