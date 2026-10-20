@@ -3,8 +3,8 @@
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
-import {parseRemote} from "./github.js";
-import {upstream as github} from "./remote.js";
+import {parseRemote, upstream as github} from "./github.js";
+import {client, serve} from "./rpc.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -415,7 +415,11 @@ if (import.meta.url.endsWith("?worker")) {
     state: ({t}) => state(t),
     heatmap: ({k, t0, t1}) => heatmap(k, t0, t1),
     frames: ({k, t, n, msg, filters}) => frames(k, t, n, msg, filters),
-    decode: ({k, msg, only}) => decode(k, msg, only),
+    decode: ({k, msg, only}, transfer) => {
+      const [r, bufs] = decode(k, msg, only);
+      transfer.push(...bufs);
+      return r;
+    },
     decimate: ({k, msg, names, t0, t1, n}) => decimate(k, msg, names, t0, t1, n),
     similar: ({k, byte, bit, bus, equal, min}) => similarBits(k, byte, bit, bus, equal, min),
     findInit: (q) => { findInit(q); return find.history[0].length; },
@@ -425,15 +429,7 @@ if (import.meta.url.endsWith("?worker")) {
     csv: ({keys, t0, t1, msg}) => csv(keys, t0, t1, msg),
     memory: () => segs.reduce((b, s) => b + s.t.byteLength + s.len.byteLength + s.data.byteLength + s.keys.byteLength * 4, 0),
   };
-  globalThis.onmessage = ({data: {id, op, ...args}}) => {
-    try {
-      let r = ops[op](args), transfer = [];
-      if (op === "decode") [r, transfer] = r;
-      postMessage({id, r}, transfer);
-    } catch (e) {
-      postMessage({id, error: e.message || String(e), stack: e.stack});
-    }
-  };
+  serve(ops);
 }
 
 // ---- main thread: store.can ----
@@ -442,15 +438,7 @@ export class Can {
   constructor(store) {
     this.store = store;
     this.worker = new Worker(new URL("./can.js?worker", import.meta.url), {type: "module"});
-    this.calls = new Map();
-    this.nextId = 0;
-    this.worker.onmessage = ({data: {id, r, error, stack}}) => {
-      const c = this.calls.get(id);
-      this.calls.delete(id);
-      if (error) c.reject(Object.assign(new Error(error), {stack})); else c.resolve(r);
-    };
-    // a worker that doesn't load, or a reply that can't be read, would leave calls waiting forever
-    this.worker.onerror = this.worker.onmessageerror = (e) => this.fail(e.message || "the CAN worker didn't load");
+    this.call = client(this.worker, (e) => this.fail(e.message || "the CAN worker didn't load"));
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
     this.dbcs = new Dbcs();
@@ -492,23 +480,12 @@ export class Can {
     this.autoDbc = store.on?.("segment", () => this.fingerprint());
   }
 
-  call(op, args = {}, transfer = []) {
-    if (this.failed) return Promise.reject(new Error(this.failed));
-    return new Promise((resolve, reject) => {
-      const id = this.nextId++;
-      this.calls.set(id, {resolve, reject});
-      this.worker.postMessage({id, op, ...args}, transfer);
-    });
-  }
-
-  // every call fails from here on; the segments show it, and the message list says why
+  // every call fails from here on (rpc.js); the segments show it, and the message list says why
   fail(reason) {
-    if (this.failed) return;
     this.failed = reason;
-    for (const c of this.calls.values()) c.reject(new Error(reason));
-    this.calls.clear();
     for (const n of this.resident.keys()) this.status?.seg(n, "error", {text: reason});
     this.emit("notice");
+    return reason;
   }
 
   on(event, fn) {
@@ -733,7 +710,7 @@ export class Can {
   }
 
   // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master. The
-  // fetching and generating happen in remote.js's worker: {names, co: {label}, text(name)}, or null offline
+  // fetching and generating happen in upstream-worker.js: {names, co: {label}, text(name)}, or null offline
   upstream() {
     const remote = parseRemote(this.store.valueAt?.("/initData/gitRemote", Infinity)), commit = this.store.valueAt?.("/initData/gitCommit", Infinity);
     const at = remote && commit ? `${remote}@${commit}` : "master";

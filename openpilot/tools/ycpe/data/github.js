@@ -1,6 +1,7 @@
 // read-only GitHub access for workers: files of a repo at a commit, through symlinks and submodules, cached forever
 // when keyed by a commit SHA. raw.githubusercontent.com and jsDelivr are unmetered; api.github.com (60 requests an
 // hour signed out) is only asked for submodule SHAs, which .gitmodules can't give.
+import {client} from "./rpc.js";
 
 const RAW = "https://raw.githubusercontent.com";
 const API = "https://api.github.com";
@@ -152,3 +153,7 @@ function join(path, target) {
   }
   return parts.join("/");
 }
+
+// the main thread's way in: upstream-worker.js, one worker started on first use, for everything fetched from GitHub
+let call = null;
+export const upstream = (op, args) => (call ||= client(new Worker(new URL("./upstream-worker.js", import.meta.url), {type: "module"})))(op, args);

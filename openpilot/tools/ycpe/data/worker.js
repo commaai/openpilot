@@ -177,13 +177,13 @@ async function liveOp(op, {id, span, buf, msgs, n, opts}) {
     live.keep = opts.keep;
   } else if (op === "live-read") {
     const r = await live.read(n, opts.only, opts.can);
-    postMessage({id, ...r}, [...r.bufs, r.recs.buffer, ...r.canBufs]);
+    postMessage({id, result: r}, [...r.bufs, r.recs.buffer, ...r.canBufs]);
   } else if (op === "live-message") {
     const bytes = live.bytes(n), {schema: s} = await ready;
-    postMessage({id, message: messageAt(s, bytes, index(s, bytes), opts.service, opts.mono)});
+    postMessage({id, result: messageAt(s, bytes, index(s, bytes), opts.service, opts.mono)});
   } else if (op === "live-save") {
     const bytes = live.save();
-    postMessage({id, bytes}, [bytes.buffer]);
+    postMessage({id, result: bytes}, [bytes.buffer]);
   }
 }
 
