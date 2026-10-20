@@ -36,7 +36,7 @@ promise; returning a string fails it with that string as the reason.
 
 ## What fails a scenario
 
-- a mutating request (POST/PATCH/PUT/DELETE) to the comma API or athena; it is blocked and recorded, and `allow`
+- a mutating request (POST/PATCH/PUT/DELETE) to the comma API or athena (directly or through the daemon's relay); it is blocked and recorded, and `allow`
   can't hide it. Athena's read-only RPCs (`ATHENA_READS` in run.py) pass.
 - a page error, a console error, a failed step or assert
 - a long animation frame over `loaf_ms`, perf.js work p99 over `work_p99_ms`, dropped frames over `drops`, a first
