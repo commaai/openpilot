@@ -38,7 +38,7 @@ export const daemon = {
   // a URL that carries the token, for places that can't set headers (media elements, worker fetches)
   url(path) {
     const u = new URL(path, location.origin);
-    u.searchParams.set("t", token);
+    u.searchParams.set("tok", token);
     return u.pathname + u.search;
   },
   // server-sent events over fetch (EventSource can't send the token header); fn(event, data); returns a close()
