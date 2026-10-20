@@ -15,7 +15,7 @@ let refused = null;  // a token the API turned down (expired, revoked): not sent
 // fn(reason): reason is "expired" when the API refused the token, rather than the user signing in or out
 function authChanged(reason) {
   user = null;
-  for (const cache of caches) cache.clear();  // what one account could read isn't the next one's
+  for (const cache of apiCaches) cache.clear();  // what one account could read isn't the next one's
   for (const k of Object.keys(sessionStorage)) if (k.startsWith("ycpe_")) sessionStorage.removeItem(k);
   for (const fn of authSubs) fn(reason);
 }
@@ -116,10 +116,10 @@ export async function request(method, endpoint, {params, body, host = apiHost()}
 const get = (endpoint, params) => request("GET", endpoint, {params});
 
 // a read kept in sessionStorage until expires(value) (ms), so a reload doesn't wait ~1 s on the API again
-async function sessionCached(key, fetch, expires) {
+async function sessionCached(key, load, expires) {
   const hit = JSON.parse(sessionStorage.getItem(key) || "null");
   if (hit && hit.until > Date.now()) return hit.value;
-  const value = await fetch();
+  const value = await load();
   sessionStorage.setItem(key, JSON.stringify({value, until: expires(value)}));
   return value;
 }
@@ -135,10 +135,10 @@ function signedUntil(files) {
 }
 
 // reads are cached for the session so revisits never wait on the network; failures are not kept
-const caches = new Set();
+const apiCaches = new Set();
 function memo(fn, key = (...args) => JSON.stringify(args)) {
   const cache = new Map();
-  caches.add(cache);
+  apiCaches.add(cache);
   const wrapped = (...args) => {
     const k = key(...args);
     if (!cache.has(k)) cache.set(k, fn(...args).catch((e) => { cache.delete(k); throw e; }));

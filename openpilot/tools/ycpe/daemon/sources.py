@@ -90,7 +90,7 @@ def local_dirs(log_id: str) -> dict[int, Path]:
 
 
 def device_segs(dongle: str, log_id: str) -> dict[int, Path]:
-  d = cache.root() / "ycpe" / "device" / dongle / log_id
+  d = cache.device_dir(dongle, log_id)
   return {int(p.name): p for p in d.iterdir() if p.name.isdigit()} if d.is_dir() else {}
 
 

@@ -87,7 +87,7 @@ class Handler(SimpleHTTPRequestHandler):
           raise
       if method not in ("GET", "HEAD"):
         raise HTTPError(405)
-      if not Path(path).suffix and not (APP / path.lstrip("/")).is_file() or path == "/index.html":
+      if (not Path(path).suffix and not (APP / path.lstrip("/")).is_file()) or path == "/index.html":
         return self.index(method)
       if "/." in path:
         raise HTTPError(404)

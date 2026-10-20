@@ -298,7 +298,7 @@ if route is not None:
   module("replay", "1", procs=PROCS, default=DEFAULT_PROCS)
 
   def root() -> Path:
-    return cache.root() / "ycpe" / "replay"
+    return cache.ycpe_dir("replay")
 
   def checkouts() -> list[str]:
     try:

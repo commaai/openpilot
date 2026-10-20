@@ -19,7 +19,7 @@ from pathlib import Path
 from openpilot.tools.lib import filereader
 from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
-from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
+from openpilot.tools.ycpe.daemon.core import config, module, route
 
 API_BLOB = "https://commadata2.blob.core.windows.net"
 # device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
@@ -76,18 +76,18 @@ def sha(url: str) -> str:
   return hashlib.sha256(url.split("?", 1)[0].encode()).hexdigest()
 
 
-def derived(name: str) -> Path:
-  """A path under ycpe/ for files the daemon makes (device pulls, transcodes, replays); counted in the budget."""
-  p = (root() / "ycpe" / name).resolve()
-  if not str(p).startswith(str((root() / "ycpe").resolve()) + os.sep):
-    raise HTTPError(403, "path traversal")
-  p.parent.mkdir(parents=True, exist_ok=True)
-  return p
+def ycpe_dir(name: str) -> Path:
+  """The directory under ycpe/ for one kind of file the daemon makes (device, transcode, replay); counted in the budget."""
+  return root() / "ycpe" / name
+
+
+def device_dir(dongle: str, log_id: str) -> Path:
+  """Where a route's logs pulled from a device live, one directory per segment (the caller validates the names)."""
+  return ycpe_dir("device") / dongle / log_id
 
 
 def device_path(key: Key) -> Path:
-  """Where a log pulled from a device lives (fields of a Key are validated by the caller)."""
-  return root() / "ycpe" / "device" / str(key)
+  return device_dir(key.dongle, key.log_id) / str(key.seg) / key.file
 
 
 def touch(path: Path) -> None:
