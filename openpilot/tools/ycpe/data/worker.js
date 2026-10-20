@@ -116,15 +116,15 @@ async function parse(buf, opts) {
 // the last logs message() opened, decompressed and indexed: scrubbing within a segment decodes without reloading
 const opened = [];
 
-async function message(key, url, service, mono) {
-  let log = opened.find((l) => l.key === key);
+async function message(key, url, service, mono, own) {
+  const s = (await readerFor(own)).schema;
+  let log = opened.find((l) => l.key === key && l.schema === s);
   if (!log) {
-    await ready;
     const bytes = withDecompressed(new Uint8Array((await load(key, url, () => {})).buf), (b) => b.slice());
-    opened.unshift(log = {key, bytes, idx: index(schema, bytes)});
+    opened.unshift(log = {key, schema: s, bytes, idx: index(s, bytes)});
     opened.length = Math.min(opened.length, 2);
   }
-  return messageAt(schema, log.bytes, log.idx, service, mono);
+  return messageAt(s, log.bytes, log.idx, service, mono);
 }
 
 const fetches = new Map();  // id → AbortController of a fetch in flight
@@ -132,7 +132,7 @@ const fetches = new Map();  // id → AbortController of a fetch in flight
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
   try {
     if (op === "message") {
-      postMessage({id, message: await message(key, url, opts.service, opts.mono)});
+      postMessage({id, message: await message(key, url, opts.service, opts.mono, opts.schema)});
     } else if (op === "abort") {
       fetches.get(id)?.abort();
     } else if (op === "fetch") {

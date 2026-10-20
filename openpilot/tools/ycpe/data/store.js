@@ -392,7 +392,7 @@ export class Store {
     const seg = this.segmentAt(t);
     if (seg?.start === undefined) return null;
     const mono = (t - seg.opts.shift + seg.start) * 1e9 + 1000;  // 1 µs over, for the round trip through route seconds
-    const ev = await this.loader.message(seg.key, seg.url, service, mono);
+    const ev = await this.loader.message(seg.key, seg.url, service, mono, this.schema);
     return ev?.[service] ?? null;
   }
 
