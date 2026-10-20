@@ -532,8 +532,16 @@ function closeWorkspace() {
 // the path still names the open workspace's route (or loose logs), whatever the view
 const showsWorkspace = (parts) => [parts.length >= 2 && routeFromPath(parts)?.name, `${parts[0]}|${parts[1]}`].includes(routeKey(ws.route));
 
+// a page that throws shows the error rather than its spinner forever
+function render() {
+  return renderPage().catch((e) => {
+    document.body.classList.remove("loading");
+    document.getElementById("main").replaceChildren(errorPage(e));
+  });
+}
+
 let navId = 0;
-async function render() {
+async function renderPage() {
   const id = ++navId;
   const main = document.getElementById("main");
   const parts = location.pathname.split("/").filter(Boolean);
