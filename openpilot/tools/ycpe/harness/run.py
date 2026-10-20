@@ -54,6 +54,11 @@ MODES = {
 # every run has a fresh profile, so the GPU process writes each new shader to its disk cache; on this busy disk a write
 # held a frame for 680 ms in a trace. Real users have that cache warm.
 CHROME_ARGS = ["--disable-gpu-shader-disk-cache"]
+# Playwright's --disable-dev-shm-usage (for small docker /dev/shm) puts Chrome's shared memory in /tmp files, on this
+# busy disk: writes to them waited on the ext4 journal (off-cpu stacks in jbd2), stalling the GPU process and the
+# renderer's compositor, and frames of up to 880 ms dropped with no script running. Chrome keeps it in /dev/shm for
+# real users
+CHROME_IGNORED = ["--disable-dev-shm-usage"]
 PROBE_JS = (HERE / "probe.js").read_text()
 LINT_JS = (HERE / "lint.js").read_text()
 SETTLE_JS = "document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))"
@@ -447,7 +452,7 @@ def main():
   ok = True
   try:
     with sync_playwright() as p:
-      browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode] + CHROME_ARGS, env=env)
+      browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode] + CHROME_ARGS, ignore_default_args=CHROME_IGNORED, env=env)
       runs = itertools.count(1) if args.loop == 0 else range(1, (args.loop or 1) + 1)
       for n in runs:
         t0 = time.monotonic()
