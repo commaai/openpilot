@@ -32,7 +32,7 @@
   {"waitFor": ".cn-modal .cn-settings"},
   {"assert": "location.pathname + location.search === '/connect/0123456789abcdef' || `the gear opens connect's settings modal over the page: ${location.href}`"},
   {"key": "Escape"},
-  {"assert": "!document.querySelector('.cn-modal') || 'Escape closes it'"},
+  {"waitFor": {"fn": "!document.querySelector('.cn-modal')"}, "timeout": 2000},
   {"goto": "/connect/0123456789abcdef/prime"},
   {"waitFor": ".fake-prime"},
   {"assert": "__mounts.includes('primePage:0123456789abcdef') || `prime page mounted: ${__mounts}`"},

@@ -101,7 +101,31 @@
 .cn-ref-claim.off { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.1); color: rgba(255,255,255,.35); cursor: not-allowed; }
 .cn-ref-foot { margin-top: 12px !important; color: rgba(255,255,255,.5); font-size: 12px; line-height: 16px; text-align: center; }
 /* connect is dark-only, whatever the theme */
-.cn-content:has(> .cn-referrals) { background: #1d2225; }
+.cn-content:has(> .cn-referrals, > .account-page) { background: #1d2225; }
+
+/* user mode's account page (connect has none: useradmin's profile and token, in the referrals page's look) */
+.cn-content > .account-page { box-sizing: border-box; width: calc(100% - 48px); max-width: 430px; margin: 0 24px 16px; padding: 0; color: #fff;
+  font: 400 16px/1.5 "Inter", sans-serif; --fg: #fff; --muted: rgba(255,255,255,.6); --line: rgba(255,255,255,.1); --hover: rgba(255,255,255,.1); }
+.cn-content > .account-page :is(h2, h3) { margin: 32px 0 12px; color: #fff; font-size: 20px; font-weight: 600; line-height: 28px; letter-spacing: normal; text-transform: none; }
+.cn-content > .account-page .list.settings { display: block; overflow: hidden; border-radius: 14px; background: rgba(255,255,255,.05); }
+.cn-content > .account-page .list.settings tbody { display: block; }
+.cn-content > .account-page .list.settings tr { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 15px; }
+.cn-content > .account-page .list.settings tr + tr { border-top: 1px solid rgba(255,255,255,.1); }
+.cn-content > .account-page .list.settings td { display: flex; min-width: 0; height: auto; padding: 0; overflow: hidden; border: 0; font-size: 14px; }
+.cn-content > .account-page .list.settings td > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-content > .account-page .list.settings td.muted { flex-shrink: 0; color: rgba(255,255,255,.6); font-size: 13px; }
+.cn-content > .account-page .small { font-size: 12px; line-height: 16px; }
+.cn-content > .account-page .muted { color: rgba(255,255,255,.5); }
+.cn-content > .account-page .jwt { gap: 4px; margin: 12px 0 8px; }
+.cn-content > .account-page .jwt .field { height: 19px; padding: 12px 16px; border: 1px solid #272c2f; border-radius: 20px; background: none; color: #fff; font-size: 14px; }
+.cn-content > .account-page .icon-btn { width: 32px; height: 32px; border-radius: 50%; color: rgba(255,255,255,.5); }
+.cn-content > .account-page .icon-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+.cn-content > .account-page .again { margin-top: 16px; }
+.cn-content > .account-page .again .button { height: 42px; padding: 0 20px; border: 0; border-radius: 9999px; background: #fff; color: #16181a; font-size: 16px;
+  font-weight: 600; line-height: 42px; text-decoration: none; }
+.cn-content > .account-page .account-foot { margin-top: 32px; padding-top: 12px; border-color: rgba(255,255,255,.1); color: rgba(255,255,255,.5); font-size: 12px; }
+.cn-content > .account-page a:not(.button) { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+@media (max-width: 520px) { .cn-content > .account-page { width: calc(100% - 40px); margin: 0 auto 16px; } }
 @media (min-width: 521px) { .cn-referrals { width: calc(100% - 48px); } }
 @media (min-width: 1081px) { .cn-referrals { margin-inline: 24px; } }
 
