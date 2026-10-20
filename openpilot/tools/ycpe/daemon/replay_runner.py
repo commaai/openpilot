@@ -2,9 +2,11 @@
 """Replays openpilot processes over a range of segments with the checkout it runs from, for daemon/replay.py.
 
 It runs in the checkout's environment (PYTHONPATH points at that checkout), so it imports nothing from ycpe.
-argv[1] is JSON: {procs, segs: [[n, rlog path], ...], out}. It writes <out>/<n>/rlog.zst per segment as soon as
-the replay is past it: the segment's original initData (so times line up with the route) plus every replayed
+argv[1] is JSON: {procs, segs: [[n, rlog path], ...], out, warm}. It writes <out>/<n>/rlog.zst per segment as soon
+as the replay is past it: the segment's original initData (so times line up with the route) plus every replayed
 message. Then <out>/diff.json compares replayed outputs to the originals. stdout carries one JSON event a line.
+With warm, the first segment only warms the processes up (engagement, calibration, learners): nothing of it is
+written or compared.
 """
 import bisect
 import json
@@ -91,7 +93,7 @@ def diff(orig: list, new: list, t0: int, ignore: set[str]) -> dict:
 
 def main() -> None:
   args = json.loads(sys.argv[1])
-  procs, segs, out = args["procs"], args["segs"], args["out"]
+  procs, segs, out, warm = args["procs"], args["segs"], args["out"], bool(args.get("warm"))
   started = time.monotonic()
   from openpilot.selfdrive.test.process_replay import process_replay as pr
   from openpilot.tools.lib.logreader import LogReader
@@ -110,6 +112,7 @@ def main() -> None:
     bounds.append(next((m.logMonoTime for m in lr if common and m.which() == common[0][0]), 0))
     msgs.extend(lr)
   t0 = next((m.logMonoTime for m in inits.values() if m is not None), bounds[0])
+  start = bounds[1] if warm and len(segs) > 1 else 0  # outputs before it are the warm-up's
 
   # replayed messages, filed by segment by time; a segment is written once outputs are LAG past its end
   produced: dict[int, list] = defaultdict(list)
@@ -118,12 +121,15 @@ def main() -> None:
 
   def write(i: int) -> None:
     n = segs[i][0]
+    written.add(i)
+    if warm and i == 0:
+      emit("warmed", seg=n)
+      return
     os.makedirs(os.path.join(out, str(n)), exist_ok=True)
     seg_msgs = ([inits[n]] if inits[n] is not None else []) + sorted(produced.pop(i, []), key=lambda m: m.logMonoTime)
     path = os.path.join(out, str(n), "rlog.zst")
     _save(path + ".tmp", seg_msgs)
     os.replace(path + ".tmp", path)
-    written.add(i)
     emit("segment", seg=n, messages=len(seg_msgs))
 
   original_get = pr.ProcessContainer.get_output_msgs
@@ -131,11 +137,13 @@ def main() -> None:
   def get_output_msgs(self, start_time):
     got = original_get(self, start_time)
     for m in got:
+      latest["t"] = max(latest["t"], m.logMonoTime)
+      if m.logMonoTime < start:
+        continue
       i = max(0, bisect.bisect_right(bounds, m.logMonoTime) - 1)
       while i in written and i < len(segs) - 1:  # a straggler past LAG: it goes with the next segment
         i += 1
       produced[i].append(m)
-      latest["t"] = max(latest["t"], m.logMonoTime)
     latest["seg"] = max(0, bisect.bisect_right(bounds, latest["t"]) - 1)
     for i in range(latest["seg"]):
       if i not in written and latest["t"] > bounds[i + 1] + LAG:
@@ -153,7 +161,7 @@ def main() -> None:
       now = time.monotonic()
       if now - self.sent > 0.25:
         self.sent = now
-        emit("progress", done=self.n, total=self.total, seg=segs[latest["seg"]][0], elapsed=now - started)
+        emit("progress", done=self.n, total=self.total, seg=segs[latest["seg"]][0], warm=warm and latest["seg"] == 0, elapsed=now - started)
 
     def close(self):
       pass
@@ -172,9 +180,11 @@ def main() -> None:
 
   emit("diffing")
   ignore = {"/" + f.replace(".", "/") for c in cfgs for f in c.ignore}
+  output = [m for m in output if m.logMonoTime >= start]
   replayed = {m.which() for m in output}
-  summary = diff([m for m in msgs if m.which() in replayed], output, t0, ignore)
-  summary.update(procs=procs, segments=[n for n, _ in segs], seconds=time.monotonic() - started, outputs=len(output))
+  summary = diff([m for m in msgs if m.which() in replayed and m.logMonoTime >= start], output, t0, ignore)
+  summary.update(procs=procs, segments=[n for n, _ in segs[int(warm):]], warm=segs[0][0] if warm else None,
+                 seconds=time.monotonic() - started, outputs=len(output))
   with open(os.path.join(out, "diff.json"), "w") as f:
     json.dump(summary, f)
   emit("done", seconds=summary["seconds"], diverged=summary["diverged"])

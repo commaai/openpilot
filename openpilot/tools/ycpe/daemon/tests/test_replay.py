@@ -20,9 +20,12 @@ FAKE_RUNNER = textwrap.dedent("""
     ev("load", seg=n, i=i, count=len(args["segs"]))
   ev("replay", procs=args["procs"], messages=100)
   for i, (n, _) in enumerate(args["segs"]):
-    ev("progress", done=50 * i + 25, total=100, seg=n, elapsed=0.1)
+    warm = args["warm"] and i == 0
+    ev("progress", done=50 * i + 25, total=100, seg=n, warm=warm, elapsed=0.1)
     if os.environ.get("FAKE_HANG"):
       time.sleep(60)
+    if warm:
+      continue
     os.makedirs(os.path.join(args["out"], str(n)))
     open(os.path.join(args["out"], str(n), "rlog.zst"), "wb").write(b"x")
     ev("segment", seg=n, messages=1)
@@ -114,10 +117,13 @@ class TestReplay(unittest.TestCase):
   def test_runs_and_writes_a_manifest(self):
     r = self.start()
     m = r.run(lambda route, seg: f"/logs/{seg}", self.report)
-    self.assertEqual((m["state"], m["written"]), ("done", [3, 4]))
+    self.assertEqual((m["state"], m["segs"], m["warm"], m["written"]), ("done", [3, 4], 2, [3, 4]))
     self.assertEqual(json.loads((r.dir / "manifest.json").read_text())["state"], "done")
+    self.assertFalse((r.dir / "2").exists())
     texts = [t for _, _, t, _ in self.reports if t]
+    self.assertIn("downloading segment 2 to warm up on", texts)
     self.assertIn("downloading segment 3", texts)
+    self.assertTrue(any(t.startswith("warming up on segment 2 · ") for t in texts))
     self.assertIn("replaying controlsd", texts)
     self.assertTrue(any(t.startswith("segment 3 · 0/2 written") for t in texts))
     self.assertEqual(self.reports[-1][3].get("phase"), "diff")
@@ -128,7 +134,17 @@ class TestReplay(unittest.TestCase):
         raise FileNotFoundError(seg)
       return f"/logs/{seg}"
     m = self.start().run(fetch, self.report)
-    self.assertEqual((m["segs"], m["written"]), ([3], [3]))
+    self.assertEqual((m["segs"], m["warm"], m["written"]), ([3], 2, [3]))
+
+  def test_cold_start_without_a_segment_before(self):
+    def fetch(route, seg):
+      if seg == 2:
+        raise FileNotFoundError(seg)
+      return f"/logs/{seg}"
+    m = self.start().run(fetch, self.report)
+    self.assertEqual((m["segs"], m["warm"], m["written"]), ([3, 4], None, [3, 4]))
+    m = Replay(self.dir / "out", "a" * 16 + "|r", [0], ["controlsd"], self.repo).run(lambda route, seg: f"/logs/{seg}", self.report)
+    self.assertEqual((m["warm"], m["written"]), (None, [0]))
 
   def test_failure_carries_the_error_tail(self):
     os.environ["FAKE_FAIL"] = "1"

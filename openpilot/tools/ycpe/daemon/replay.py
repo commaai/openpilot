@@ -2,7 +2,8 @@
 
 A replay is a daemon job running replay_runner.py in the checkout's environment. It writes one rlog per segment,
 holding the segment's original initData plus everything the processes published, so the page loads it like any
-route log on the same clock, plus a diff summary against the original log.
+route log on the same clock, plus a diff summary against the original log. A replay starting mid-route runs over
+the segment before too, without writing it, so engagement, calibration and learners are warm when the range starts.
 
 GET  /local/replay/procs?repo=<path>     the replayable processes and what each is missing in that checkout
 POST /local/replay                       {route, segs: [first, last], procs, repo} → the replay's manifest
@@ -117,12 +118,13 @@ class Replay:
     self.dir = root / self.id
     self.route, self.segs, self.procs, self.repo = route, segs, procs, repo
     self.written: list[int] = []
+    self.warm: int | None = None  # the segment replayed only to warm up
     self.state, self.error, self.diff = "running", "", None
     self.started, self.seconds = time.time(), None  # noqa: TID251  a wall-clock date for the list of replays
     self.t0 = time.monotonic()
 
   def manifest(self) -> dict:
-    return {"id": self.id, "route": self.route, "segs": self.segs, "procs": self.procs, "repo": str(self.repo), "commit": commit(self.repo),
+    return {"id": self.id, "route": self.route, "segs": self.segs, "warm": self.warm, "procs": self.procs, "repo": str(self.repo), "commit": commit(self.repo),
             "state": self.state, "error": self.error, "written": self.written, "started": self.started, "seconds": self.seconds,
             "diff": self.diff}
 
@@ -141,17 +143,24 @@ class Replay:
         raise RuntimeError(f"{self.repo} is missing native parts; build them with scons there first: " +
                            "; ".join(f"{k}: {', '.join(v)}" for k, v in gaps.items()))
       rlogs = []
+      if self.segs[0] > 0:
+        report(0, len(self.segs), f"downloading segment {self.segs[0] - 1} to warm up on", phase="download")
+        try:
+          rlogs.append([self.segs[0] - 1, str(fetch(self.route, self.segs[0] - 1))])
+          self.warm = self.segs[0] - 1
+        except FileNotFoundError:  # never uploaded: start cold
+          pass
       for i, seg in enumerate(self.segs):
         report(i, len(self.segs), f"downloading segment {seg}", phase="download")
         try:
           rlogs.append([seg, str(fetch(self.route, seg))])
         except FileNotFoundError:  # past the end of the route, or never uploaded
-          if not rlogs:
+          if len(rlogs) == (self.warm is not None):
             raise
           break
         if cancelled():
           raise InterruptedError("cancelled")
-      self.segs = [seg for seg, _ in rlogs]
+      self.segs = [seg for seg, _ in rlogs if seg != self.warm]
       self._spawn(rlogs, report, cancelled, shims or self.dir.parent / "shims")
       self.diff = json.loads((self.dir / "diff.json").read_text())
       self.state, self.seconds = "done", time.monotonic() - self.t0
@@ -168,7 +177,7 @@ class Replay:
 
   def _spawn(self, rlogs, report, cancelled, shims: Path) -> None:
     python, env = environment(self.repo, shims)
-    args = json.dumps({"procs": self.procs, "segs": rlogs, "out": str(self.dir)})
+    args = json.dumps({"procs": self.procs, "segs": rlogs, "out": str(self.dir), "warm": self.warm is not None})
     cmd = ["nice", "-n", "10", python, str(RUNNER), args]
     p = subprocess.Popen(cmd, cwd=self.dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
     tail: deque[str] = deque(maxlen=ERROR_LINES)
@@ -191,13 +200,15 @@ class Replay:
           continue
         kind, segs = ev.pop("event"), len(self.segs)
         if kind == "load":
-          report(ev["i"], segs, f"reading segment {ev['seg']}", phase="load")
+          report(ev["i"], len(rlogs), f"reading segment {ev['seg']}", phase="load")
         elif kind == "replay":
+          start = time.monotonic()
           report(0, ev["messages"], f"replaying {', '.join(ev['procs'])}", phase="replay")
         elif kind == "progress":
           done, total = ev["done"], ev["total"]
-          eta = (time.monotonic() - start) * (total - done) / max(done, 1)
-          report(done, total, f"segment {ev['seg']} · {len(self.written)}/{segs} written · {eta:.0f} s left", phase="replay", eta=eta, seg=ev["seg"])
+          eta = (time.monotonic() - start) * (total - done) / done if done * 50 >= total else None  # too early to tell
+          where = f"warming up on segment {ev['seg']}" if ev.get("warm") else f"segment {ev['seg']} · {len(self.written)}/{segs} written"
+          report(done, total, where + ("" if eta is None else f" · {eta:.0f} s left"), phase="replay", eta=eta, seg=ev["seg"])
         elif kind == "segment":
           self.written.append(ev["seg"])
           self.save()
