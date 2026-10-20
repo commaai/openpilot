@@ -423,6 +423,8 @@ export class Can {
       this.calls.delete(id);
       if (error) c.reject(Object.assign(new Error(error), {stack})); else c.resolve(r);
     };
+    // a worker that doesn't load, or a reply that can't be read, would leave calls waiting forever
+    this.worker.onerror = this.worker.onmessageerror = (e) => this.fail(e.message || "the CAN worker didn't load");
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
     this.dbcs = new Dbcs();
@@ -432,6 +434,7 @@ export class Can {
     this.cache = new Map();  // series path -> {series, msgVersion, have: Set(n), pending}
     this.selected = null;
     this.live = null;
+    this.failed = null;  // why the CAN worker failed, if it did
     this.bytes = 0;
     this.budget = BUDGET;
     this.resident = new Map();  // segment -> its bytes in the worker
@@ -445,7 +448,7 @@ export class Can {
       const segs = store.route?.segments || [];
       this.status.count(segs.length);
       for (const s of segs) if (s.status === "missing") this.status.seg(s.n, "missing");
-      for (const n of this.resident.keys()) this.status.seg(n, "ready");
+      for (const n of this.resident.keys()) this.status.seg(n, this.failed ? "error" : "ready", {text: this.failed});
       this.status.bytes({memory: this.bytes});
     });
     this.suppressed = new Map();  // key -> per-byte 0xff for suppressed bytes
@@ -454,11 +457,22 @@ export class Can {
   }
 
   call(op, args = {}, transfer = []) {
+    if (this.failed) return Promise.reject(new Error(this.failed));
     return new Promise((resolve, reject) => {
       const id = this.nextId++;
       this.calls.set(id, {resolve, reject});
       this.worker.postMessage({id, op, ...args}, transfer);
     });
+  }
+
+  // every call fails from here on; the segments show it, and the message list says why
+  fail(reason) {
+    if (this.failed) return;
+    this.failed = reason;
+    for (const c of this.calls.values()) c.reject(new Error(reason));
+    this.calls.clear();
+    for (const n of this.resident.keys()) this.status?.seg(n, "error", {text: reason});
+    this.emit("notice");
   }
 
   on(event, fn) {
@@ -490,7 +504,7 @@ export class Can {
     this.bytes += bytes - (this.resident.get(n) || 0);
     this.resident.set(n, bytes);
     this.call("add", {n, can, off}, [keys, can.start, stride, can.dstart, t, len, can.data].map((a) => a.buffer));
-    this.status?.seg(n, "ready");
+    this.status?.seg(n, this.failed ? "error" : "ready", {text: this.failed});
     this.evict();
     this.status?.bytes({memory: this.bytes});
     this.dataVersion++;

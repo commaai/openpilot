@@ -60,7 +60,7 @@ export function create(ctx, state) {
     const n = [...can.suppressed.values()].reduce((a, m) => a + m.filter((x) => x).length, 0);
     clearBtn.textContent = n ? `Clear (${n})` : "Clear";
     clearBtn.disabled = !n;
-    notice.textContent = files.length ? "" : can.notice || "";
+    notice.textContent = can.failed ? `CAN failed: ${can.failed}` : files.length ? "" : can.notice || "";
     notice.hidden = !notice.textContent;
   }
 
@@ -107,7 +107,7 @@ export function create(ctx, state) {
     }
     head.querySelectorAll(".can-sort").forEach((x, i) => { x.textContent = COLS[i].id === sort.col ? (sort.dir > 0 ? " ▲" : " ▼") : ""; });
     spacer.style.height = `${rows.length * ROW}px`;
-    empty.textContent = rows.length ? "" : can.messages().length ? "No messages match the filters" : "Waiting for CAN frames…";
+    empty.textContent = rows.length ? "" : can.messages().length ? "No messages match the filters" : can.failed ? `CAN failed: ${can.failed}` : "Waiting for CAN frames…";
     empty.hidden = rows.length > 0;
     toolbar();
     ctx.perf.invalidate(pane);
