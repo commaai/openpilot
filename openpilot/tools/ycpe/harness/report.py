@@ -12,6 +12,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
+import triage
+
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "golden"
 REFERENCE = HERE / "out" / "reference"
@@ -79,7 +81,7 @@ def collect(out, scenarios, noisy):
   groups = {}
 
   def add(key, rule, detail, where, selector=None):
-    f = groups.setdefault((rule, key), {"rule": rule, "detail": detail, "selector": selector, "where": []})
+    f = groups.setdefault((rule, key), {"id": f"{rule}|{key}", "rule": rule, "key": key, "detail": detail, "selector": selector, "where": []})
     f["where"].append(where)
 
   for sc in scenarios:
@@ -150,6 +152,16 @@ def build(out, prev_dir=None):
   if prev_dir and (prev_dir / "results.json").exists():
     prev = {s["name"]: s for s in json.loads((prev_dir / "results.json").read_text())["scenarios"]}
   found = collect(out, scenarios, bool(res["noisy"]))
+  triage.annotate(found)
+  before = json.loads((prev_dir / "findings.json").read_text()) if prev_dir and (prev_dir / "findings.json").exists() else []
+  for f in found:
+    f["scenarios"] = sorted({w["scenario"] for w in f["where"]})
+  changes = triage.diff(found, before, {sc["name"] for sc in scenarios})
+  keep = ("id", "n", "rule", "severity", "detail", "selector", "file", "track", "scenarios")
+  (out / "findings.json").write_text(json.dumps([{**{k: f[k] for k in keep}, "count": len(f["where"])} for f in found], indent=1))
+  for sc in scenarios:
+    for film in sc.get("films", []):
+      film["strip"] = filmstrip(out, sc["name"], film)
 
   marks = {}
   for f in found:
@@ -176,11 +188,46 @@ def build(out, prev_dir=None):
   title = f"{passed}/{len(scenarios)} passed · {len(found)} findings · mode {res['mode']} · {res['duration']:.0f} s · peak load {res['load']:.0f}/{res['cpus']}"
   if res["noisy"]:
     title += f" · NOISY: {res['noisy']}, so perf budgets only warn"
-  write_md(out, title, head, rows, found, scenarios)
-  write_html(out, title, head, rows, found, scenarios, prev)
+  write_md(out, title, head, rows, found, scenarios, changes)
+  write_html(out, title, head, rows, found, scenarios, prev, changes)
+  return changes
 
 
-def write_md(out, title, head, rows, found, scenarios):
+def filmstrip(out, scenario, film):
+  """one image: per frame, its time and the crops (or a thumbnail when there are none), top to bottom"""
+  rows = []
+  for f in film["frames"]:
+    img = Image.open(out / f["path"]).convert("RGB")
+    parts = [img.crop((b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"])) for b in f["boxes"]] or [img.resize((img.width // 3, img.height // 3))]
+    row = Image.new("RGB", (60 + max(p.width for p in parts), sum(p.height for p in parts) + 2 * (len(parts) - 1)), (22, 25, 27))
+    y = 0
+    for p in parts:
+      row.paste(p, (60, y))
+      y += p.height + 2
+    ImageDraw.Draw(row).text((4, 4), f"{f['t']:.2f}s", fill=(220, 220, 220))
+    rows.append(row)
+  strip = Image.new("RGB", (max(r.width for r in rows), sum(r.height + 4 for r in rows)), (60, 60, 60))
+  y = 0
+  for r in rows:
+    strip.paste(r, (0, y))
+    y += r.height + 4
+  path = f"shots/{scenario}/{film['name']}.strip.png"
+  strip.save(out / path)
+  return path
+
+
+def by_owner(items):
+  """markdown lines for findings grouped by track, then file"""
+  lines = []
+  for t in sorted({f["track"] for f in items}):
+    lines.append(f"- track {t}")
+    for file in sorted({f["file"] or "?" for f in items if f["track"] == t}):
+      lines.append(f"  - {file}")
+      lines += [f"    - #{f['n']} [{f['severity']}] {f['rule']}: {f['detail'][:160]}" for f in items if f["track"] == t and (f["file"] or "?") == file]
+  return lines
+
+
+def write_md(out, title, head, rows, found, scenarios, changes):
   md = [f"# YCPE harness: {title}", "", "| " + " | ".join(head) + " |", "|" + "---|" * len(head),
         *("| " + " | ".join(map(str, r)) + " |" for r in rows), "",
         "## Findings", "",
@@ -192,24 +239,33 @@ def write_md(out, title, head, rows, found, scenarios):
     sel = f" `{f['selector']}`" if f["selector"] else ""
     where = ", ".join(where_text(w, len(f["where"]) > 1) + (f" {w['box']}" if w.get("box") else "") for w in f["where"][:MAX_WHERE])
     more = f" and {len(f['where']) - MAX_WHERE} more" if len(f["where"]) > MAX_WHERE else ""
-    md.append(f"{f['n']}. [{f['severity']}] {f['rule']} ×{len(f['where'])}: {f['detail']}{sel}\n   - in {where}{more}")
+    owner = f"track {f['track']}" + (f" · {f['file']}" if f["file"] else "")
+    md.append(f"{f['n']}. [{f['severity']}] {f['rule']} ×{len(f['where'])}: {f['detail']}{sel}\n   - in {where}{more}\n   - owner: {owner}")
+  md += ["", f"## Since the previous run: {len(changes['new'])} new, {len(changes['fixed'])} fixed, {len(changes['still'])} still open", "",
+         "### New", "", *by_owner(changes["new"]), "", "### Fixed (numbers from the previous run)", "", *by_owner(changes["fixed"]), "",
+         "### Still open", "", *by_owner(changes["still"])]
   md += ["", "## Screenshots", ""]
   for sc in scenarios:
     md.append(f"- {sc['name']} ({sc['url']}) findings {sc['findings']}")
     for s in sc["shots"]:
       d = f" · diff {s['diff']:.2%} {out / s['path'].replace('.png', '.diff.png')}" if "diff" in s else ""
       md.append(f"  - {s['name']}: {out / s['annotated']}{d}")
+    md += [f"  - filmstrip {film['name']} ({len(film['frames'])} frames): {out / film['strip']}" for film in sc.get("films", [])]
     md += [f"  - reference {r}: {REFERENCE / r}.png" for r in sc["reference"] if (REFERENCE / f"{r}.png").exists()]
   (out / "report.md").write_text("\n".join(md) + "\n")
 
 
-def write_html(out, title, head, rows, found, scenarios, prev):
+def write_html(out, title, head, rows, found, scenarios, prev, changes):
   e = html.escape
   table = "".join(f'<tr class="{r[1].split()[0].lower()}">' + "".join(f"<td>{e(str(c))}</td>" for c in r) + "</tr>" for r in rows)
+  new = {f["id"] for f in changes["new"]}
   items = "".join(
-    f'<li value="{f["n"]}" class="{f["severity"]}"><b>{e(f["rule"])}</b> ×{len(f["where"])} {e(f["detail"])}'
+    f'<li value="{f["n"]}" class="{f["severity"]}">{"<i>new</i> " if f["id"] in new else ""}<b>{e(f["rule"])}</b> ×{len(f["where"])} {e(f["detail"])}'
     + (f' <code>{e(f["selector"])}</code>' if f["selector"] else "")
-    + f'<div class="where">{e(", ".join(dict.fromkeys(where_text(w) for w in f["where"])))}</div></li>' for f in found)
+    + f'<div class="where">{e(", ".join(dict.fromkeys(where_text(w) for w in f["where"])))}'
+    + f' · <span class="owner">track {e(f["track"])}{" · " + e(f["file"]) if f["file"] else ""}</span></div></li>' for f in found)
+  fixed = "".join(f'<li>{e(f["rule"])}: {e(f["detail"][:160])} <span class="owner">track {e(f["track"])} · {e(f["file"] or "?")}</span></li>'
+                  for f in changes["fixed"])
   fig = lambda href, cap: f'<figure><a href="{href}"><img src="{href}" loading="lazy"></a><figcaption>{cap}</figcaption></figure>'  # noqa: E731
   sections = []
   for sc in scenarios:
@@ -217,10 +273,11 @@ def write_html(out, title, head, rows, found, scenarios, prev):
     diff = lambda s: f' · <a href="{s["path"].replace(".png", ".diff.png")}">diff {s["diff"]:.2%}</a>' if "diff" in s else ""  # noqa: E731
     shots = "".join(fig(s["annotated"], e(s["name"]) + diff(s)) for s in sc["shots"])
     refs = "".join(fig(f"../reference/{r}.png", f"reference: {e(r)}") for r in sc["reference"] if (REFERENCE / f"{r}.png").exists())
+    films = "".join(fig(f["strip"], f"filmstrip {e(f['name'])}, {len(f['frames'])} frames") for f in sc.get("films", []))
     findings = ", ".join(map(str, sc["findings"])) or "none"
-    title = f'<h2>{e(sc["name"])} <span class="{status}">{status.upper()}</span> <small>{e(sc["url"])} · findings {findings}</small></h2>'
+    heading = f'<h2>{e(sc["name"])} <span class="{status}">{status.upper()}</span> <small>{e(sc["url"])} · findings {findings}</small></h2>'
     svg = chart(sc["perf"], prev.get(sc["name"], {}).get("perf"))
-    sections.append(f'<section id="{e(sc["name"])}">{title}{svg}<div class="sheet">{shots}{refs}</div></section>')
+    sections.append(f'<section id="{e(sc["name"])}">{heading}{svg}<div class="sheet">{shots}{refs}{films}</div></section>')
   (out / "report.html").write_text(f"""<!doctype html><meta charset="utf-8"><title>YCPE harness</title>
 <style>
 body {{ font: 13px/1.45 system-ui, sans-serif; background: #16191b; color: #ddd; margin: 20px; }}
@@ -231,12 +288,15 @@ ol li {{ margin-bottom: 4px; }} li.error b {{ color: #ff6369; }} li.warn b {{ co
 .where {{ color: #8ab4f8; font-size: 12px; }} code {{ color: #ccc; background: #262a2d; padding: 0 3px; }}
 .sheet {{ display: flex; flex-wrap: wrap; gap: 12px; }} figure {{ margin: 0; }}
 figure img {{ max-width: 460px; max-height: 340px; border: 1px solid #333; display: block; }} figcaption {{ color: #aaa; }}
-a {{ color: #8ab4f8; }} .chart text {{ fill: #8b9096; font-size: 10px; }}
+a {{ color: #8ab4f8; }} i {{ color: #16191b; background: #f5a623; padding: 0 4px; border-radius: 3px; font-style: normal; }} .owner {{ color: #aaa; }}
+.chart text {{ fill: #8b9096; font-size: 10px; }}
 </style>
 <h1>YCPE harness <small>{e(title)}</small></h1>
 <table><tr>{"".join(f"<th>{e(h)}</th>" for h in head)}</tr>{table}</table>
 <p><a href="report.md">report.md</a></p>
-<h2>Findings</h2><ol>{items}</ol>
+<h2>Findings <small>{len(changes["new"])} new, {len(changes["fixed"])} fixed, {len(changes["still"])} still open since the previous run</small></h2>
+<ol>{items}</ol>
+<details><summary>Fixed since the previous run ({len(changes["fixed"])})</summary><ul>{fixed}</ul></details>
 {"".join(sections)}
 """)
 
