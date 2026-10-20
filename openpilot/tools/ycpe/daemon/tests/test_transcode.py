@@ -93,6 +93,18 @@ class TestTranscoder(unittest.TestCase):
       raise FileNotFoundError(f"no segment {seg}")
     return str(self.src)
 
+  def test_unwatched_prefetches_are_dropped(self):
+    t = Transcoder(self.dir / "cache", self.resolve, workers=1)
+    try:
+      t.prefetch("d", "r", [1, 2], "fcamera")  # nothing asked for this route's camera recently
+      for _ in range(100):
+        if not t.jobs:
+          break
+        time.sleep(0.01)
+      self.assertEqual((t.jobs, self.resolved), ({}, []))
+    finally:
+      t.close()
+
   def test_cache_prefetch_and_missing(self):
     t = Transcoder(self.dir / "cache", self.resolve, workers=1)
     try:

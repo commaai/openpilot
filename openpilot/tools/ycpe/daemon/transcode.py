@@ -25,7 +25,9 @@ FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
 GOP = 20                     # frames per keyframe: a seek decodes at most a second
 CONCURRENT = 2               # encodes at once; the GPU and the CPUs are shared
-AHEAD = 2                    # segments encoded ahead of the one asked for
+AHEAD = 2                    # segments encoded ahead of the one asked for (at most MAX_AHEAD)
+MAX_AHEAD = 5
+STALE = 60                   # seconds without a request for a route's camera after which its queued prefetches are dropped
 FFMPEG = shutil.which("ffmpeg", path="/usr/bin:/usr/local/bin") or shutil.which("ffmpeg") or "ffmpeg"
 
 # constant quality per backend family (nvenc -cq, vaapi -qp, x264 -crf)
@@ -197,6 +199,7 @@ class Transcoder:
     self.queue: list[tuple[float, int, str]] = []
     self.lock = threading.Condition()
     self.order = itertools.count()
+    self.asked: dict[tuple[str, str, str], float] = {}  # (dongle, log_id, cam) → last direct request
     self.stopped = False
     self._clean()
     for i in range(workers):
@@ -209,6 +212,8 @@ class Transcoder:
     key = f"{dongle}/{log_id}/{seg}/{cam}-{preset}"
     base = self.root / key
     with self.lock:
+      if priority == 0:
+        self.asked[(dongle, log_id, cam)] = time.monotonic()
       job = self.jobs.get(key)
       outputs = [base.with_suffix(s) for s in (".h264", ".mp4", ".json")]
       cached = all(f.exists() for f in outputs)
@@ -251,6 +256,10 @@ class Transcoder:
         job = self.jobs.get(key)
         if job is None or job.state != "queued":
           continue  # left over from a priority bump
+        dongle, log_id, _, name = key.split("/")
+        if job.priority > 0 and time.monotonic() - self.asked.get((dongle, log_id, name.split("-")[0]), 0) > STALE:
+          del self.jobs[key]  # a prefetch for a view nobody's watching anymore
+          continue
         job.state = "running"
       try:
         if isinstance(job.src, tuple):
@@ -362,7 +371,7 @@ if route is not None:
     try:
       t = transcoder()
       job = t.get(p["dongle"], p["log_id"], seg, stem, preset)
-      t.prefetch(p["dongle"], p["log_id"], range(seg + 1, seg + 1 + req.arg("ahead", AHEAD, int)), stem, preset)
+      t.prefetch(p["dongle"], p["log_id"], range(seg + 1, seg + 1 + max(0, min(MAX_AHEAD, req.arg("ahead", AHEAD, int)))), stem, preset)
     except ValueError as e:
       raise HTTPError(404, str(e)) from e
     return job, ext
