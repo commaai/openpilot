@@ -2,8 +2,13 @@
 .plot-pane { position: absolute; inset: 0; overflow: hidden; user-select: none; }
 .plot-pane canvas { position: absolute; left: 0; top: 0; }
 .plot-pane canvas.over { cursor: crosshair; touch-action: none; }
-/* the phone's stacked views scroll: a finger moving up or down scrolls them, sideways it pans, two pinch time */
-@media (max-width: 760px) { .ws:not([data-view="files"]) .plot-pane canvas.over { touch-action: pan-y; } }
+/* the phone's stacked views scroll: a finger moving up or down scrolls them, sideways it pans, two pinch time; on
+   the y-axis it pans the values */
+.plot-pane .ygrip { display: none; position: absolute; left: 0; top: 0; bottom: 0; touch-action: none; }
+@media (max-width: 760px) {
+  .ws:not([data-view="files"]) .plot-pane canvas.over { touch-action: pan-y; }
+  .ws:not([data-view="files"]) .plot-pane .ygrip { display: block; }
+}
 .plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
 .plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: none; }
 

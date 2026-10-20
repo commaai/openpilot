@@ -57,7 +57,13 @@ export function create(ctx, state = {}) {
   const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
   const empty = h("div", {class: "empty"});
-  const el = h("div", {class: "plot-pane"}, base, over, legend, empty);
+  // the y-axis, where a drag pans the values, on a phone whose plots let the page scroll (plot.css): it hands its
+  // presses and wheel to the plot, which captures the pointer
+  const grip = h("div", {class: "ygrip", style: `width: ${L}px`});
+  for (const type of ["pointerdown", "contextmenu", "dblclick", "wheel"]) {
+    grip.addEventListener(type, (e) => { if (!over.dispatchEvent(new e.constructor(type, e))) e.preventDefault(); });
+  }
+  const el = h("div", {class: "plot-pane"}, base, over, grip, legend, empty);
   let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
   let frame = null;    // geometry and prepared curves of the last base draw
   let gesture = null;  // the pointer gesture in progress
