@@ -2,11 +2,11 @@ import {api, auth} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
 import {h} from "/dom.js";
-import {logo} from "/icons.js";
+import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
 import {createClock, RATES} from "/clock.js";
-import {Layout} from "/layout.js";
+import {Layout, checkLayout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
@@ -59,16 +59,28 @@ let ws = null;  // the open route workspace
 
 // ---- top bar ----
 
+// a popover under anchor; clicking the anchor again, clicking elsewhere or Escape closes it. Null when it was open.
 function menu(anchor, build) {
-  document.querySelector(".popover")?.remove();
-  const el = h("div", {class: "popover"}, build(() => el.remove()));
+  const open = document.querySelector(".popover");
+  open?.remove();
+  if (open?._anchor === anchor) return null;
+  const close = () => {
+    el.remove();
+    document.removeEventListener("pointerdown", outside);
+    document.removeEventListener("keydown", escape);
+  };
+  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
+  const escape = (e) => { if (e.key === "Escape") close(); };
+  const el = h("div", {class: "popover"}, build(close));
+  el._anchor = anchor;
   const r = anchor.getBoundingClientRect();
   el.style.left = `${Math.min(r.left, innerWidth - 340)}px`;
   el.style.top = `${r.bottom + 4}px`;
   document.body.append(el);
-  setTimeout(() => document.addEventListener("pointerdown", function off(e) {
-    if (!el.contains(e.target)) { el.remove(); document.removeEventListener("pointerdown", off); }
-  }));
+  setTimeout(() => {
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+  });
   return el;
 }
 
@@ -81,6 +93,12 @@ const bar = {
 
 function topBar() {
   const search = searchBox();
+  bar.tabs.addEventListener("wheel", (e) => {
+    if (e.deltaX || !e.deltaY) return;
+    e.preventDefault();
+    bar.tabs.scrollLeft += e.deltaY;
+  }, {passive: false});
+  new ResizeObserver(showActiveTab).observe(bar.tabs);  // the bar's other items settle after the tabs
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
@@ -89,9 +107,9 @@ function topBar() {
   bar.route.addEventListener("click", () => {
     if (!ws) return;
     const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
-    pop.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
+    pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
   });
-  const account = h("button", {class: "tbtn", title: "Account"}, "●");
+  const account = h("button", {class: "tbtn", title: "Account"}, icon("account", 16));
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
     auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
@@ -99,7 +117,7 @@ function topBar() {
     auth.isAuthenticated()
       ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
       : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
-  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, "◐");
+  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, icon("theme", 16));
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
@@ -122,13 +140,24 @@ function updateTop() {
   const layout = ws.layout;
   if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
-    onclick: () => { layout.selectTab(i); updateTop(); },
+    onclick: (e) => {  // in place, so a double-click lands on the same button
+      if (i === layout.model.active) return;
+      layout.selectTab(i);
+      for (const b of bar.tabs.children) b.classList.toggle("on", b === e.currentTarget);
+    },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
-    layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
+    layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
   h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+  showActiveTab();
+}
+
+// too many tabs scroll: show the buttons at the end if the active tab still fits, else the active tab
+function showActiveTab() {
+  bar.tabs.lastChild?.scrollIntoView({block: "nearest", inline: "nearest"});
+  bar.tabs.querySelector(".tab.on")?.scrollIntoView({block: "nearest", inline: "nearest"});
 }
 
 function layoutMenu(anchor) {
@@ -142,20 +171,25 @@ function tabMenu(tabEl, i, name) {
     item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
-    item("Open layout…", () => setTimeout(() => layoutMenu(tabEl))),
+    item("Open layout…", () => setTimeout(() => layoutMenu(bar.tabs.children[i]))),
     item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
 }
 
 // double-click a tab to rename it in place
 function renameTab(tabEl, i, name) {
+  const layout = ws.layout;
   const input = h("input", {class: "tab-edit", value: name});
+  let open = true;
   const done = (save) => {
-    if (save && input.value.trim()) ws.layout.renameTab(i, input.value.trim());
+    if (!open) return;
+    open = false;
+    if (save && input.value.trim()) layout.renameTab(i, input.value.trim());
     updateTop();
   };
   input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
   input.addEventListener("blur", () => done(true));
-  tabEl.replaceChildren(input);
+  tabEl.replaceWith(input);  // not inside it: the tab button would take the input's clicks and keys
+  input.focus();
   input.select();
 }
 
@@ -175,7 +209,8 @@ class Workspace {
     this.clock = createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
     this.clock.seek(t);
     this.main = h("div", {class: "workspace"});
-    this.el = h("div", {class: "ws"}, this.main, playbar(this.ctx()));
+    this.playbar = playbar(this.ctx());
+    this.el = h("div", {class: "ws"}, this.main, this.playbar.el);
     this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
     // .json/.xml layouts dropped on the workspace open as new tabs
     acceptLayoutFiles(this.main, (f) => this.openLayout(f));
@@ -214,11 +249,11 @@ class Workspace {
 
   setView(view) {
     if (!VIEWS[view]) view = "drive";
+    if (view !== this.view) this.persist();
     this.view = view;
     this.el.dataset.view = view;
     if (!this.layouts[view]) {
-      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
-      const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
+      const model = savedLayout(view);
       if (usesData(model) && !this.files) {
         this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
         this.main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Fetching the route's file list…"));
@@ -247,12 +282,16 @@ class Workspace {
 
   resetLayout() { this.applyLayout(null); }
 
+  // panes change their own state (curves, filters) without an edit to the layout; saved whenever they could go away
+  persist() {
+    for (const [view, layout] of Object.entries(this.layouts)) localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(layout.save()));
+  }
+
   // a layout file, URL or text (ours, jotpluggler's or PlotJuggler's), opened as new tabs
   async openLayout(src) {
     try {
       const {layout, warnings} = await loadLayout(src);
-      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${this.view}`) || "null");
-      this.applyLayout(mergeLayout(this.layout?.save() ?? (saved?.tabs?.length ? saved : VIEWS[this.view].layout), layout, "tab"));
+      this.applyLayout(mergeLayout(this.layout?.save() ?? savedLayout(this.view), layout, "tab"));
       if (warnings.length) toast(`Layout opened with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}: ${warnings[0]}${warnings.length > 1 ? " …" : ""}`);
     } catch (e) {
       toast(`Couldn't open the layout: ${e.message}`);
@@ -266,6 +305,7 @@ class Workspace {
   syncUrl(now = false) {
     clearTimeout(this.urlTimer);
     const write = () => {
+      if (this.disposed) return;  // left meanwhile
       const q = new URLSearchParams(location.search);
       q.set("t", this.clock.t.toFixed(1));
       q.delete("layout");  // opened once, then it's part of the saved layout
@@ -277,11 +317,28 @@ class Workspace {
   }
 
   dispose() {
+    this.disposed = true;
+    clearTimeout(this.urlTimer);
     for (const off of this.offs) off();
+    this.playbar.dispose();
     this.clock.pause();
+    this.persist();
     for (const l of Object.values(this.layouts)) l.dispose();
     this.store?.dispose();
   }
+}
+
+// the view's saved layout, else its default; one that doesn't read as a layout anymore is dropped
+function savedLayout(view) {
+  const key = `ycpe_layout_${view}`;
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    if (saved?.tabs?.length) return checkLayout(saved);
+  } catch {
+    localStorage.removeItem(key);
+    toast(`The saved ${VIEWS[view].title} layout couldn't be read, so it's back to the default`);
+  }
+  return VIEWS[view].layout;
 }
 
 const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g)?.some((m) => PANES[m.slice(8, -1)]?.data);
@@ -299,8 +356,9 @@ addEventListener("keydown", (e) => {
   updateTop();
 });
 
+// the global keys, for whatever a pane didn't handle itself
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.defaultPrevented || e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
   if (e.key === "t") return theme.toggle();
   if (e.key === "?") return help();
@@ -323,25 +381,36 @@ document.addEventListener("keydown", (e) => {
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
 });
 
+// keys are space separated; "+" joins a combination
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
   ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
-  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
-  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["ctrl z", "undo a layout change (shift: redo)"], ["double-click a divider", "even out the split"],
+  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"], ["ctrl+z", "undo a layout change (shift: redo)"],
+];
+const GESTURES = [
+  ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
   ["wheel on the timeline", "zoom the visible range"],
 ];
 
 function help() {
   if (document.querySelector(".help")) return document.querySelector(".help").remove();
+  const keys = (k) => k.split(" ").map((x) => x.split("+").map((y, i) => [i > 0 && "+", h("kbd", {}, y)]));
   const el = h("div", {class: "help", onclick: () => el.remove()},
     h("div", {class: "help-card", onclick: (e) => e.stopPropagation()},
       h("b", {}, "Keyboard and mouse"),
-      h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, k.split(" ").map((x) => h("kbd", {}, x))), h("dd", {}, v)]))));
+      h("dl", {}, SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
+        GESTURES.map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
   document.body.append(el);
   addEventListener("keydown", function off(e) { if (e.key === "Escape") { el.remove(); removeEventListener("keydown", off); } });
 }
 
 // ---- routing ----
+
+function closeWorkspace() {
+  ws?.dispose();
+  ws = null;
+  document.body.classList.remove("in-ws");
+}
 
 let navId = 0;
 async function render() {
@@ -352,9 +421,7 @@ async function render() {
   document.querySelector(".popover")?.remove();
 
   if (parts[0] === "auth" || parts[0] === "login") {
-    ws?.dispose();
-    ws = null;
-    document.body.classList.remove("in-ws");
+    closeWorkspace();
     updateTop();
     return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
@@ -385,16 +452,17 @@ async function render() {
       main.replaceChildren(ws.el);
     } catch (e) {
       const card = [403, 404].includes(e.status) && await pullCard(routeName, render).catch(() => null);  // only on the LAN device
-      if (id === navId) main.replaceChildren(card || errorPage(e));
+      if (id === navId) {
+        closeWorkspace();
+        main.replaceChildren(card || errorPage(e));
+      }
     } finally {
       document.body.classList.remove("loading");
     }
     return updateTop();
   }
 
-  ws?.dispose();
-  ws = null;
-  document.body.classList.remove("in-ws");
+  closeWorkspace();
   updateTop();
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch(errorPage);
@@ -440,20 +508,23 @@ document.addEventListener("drop", async (e) => {
 function errorPage(e) {
   console.error(e);
   if (e.status === 401 || e.status === 403) return signInCard();
-  const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
+  const msg = e.status === 404 ? "Not found." : String(e.message || e);
   return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
 }
 
 document.querySelector("#app > .topbar").replaceWith(topBar());
 addEventListener("ycpe:route-start", (e) => { if (ws?.route === e.detail) updateTop(); });
 window.addEventListener("popstate", render);
+addEventListener("pagehide", () => ws?.persist());
+document.addEventListener("visibilitychange", () => { if (document.hidden) ws?.persist(); });
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
-// again would spend the one-time code twice)
-auth.on(() => {
+// again would spend the one-time code twice). A token the API refused leaves an open route as it is: it's loaded.
+auth.on((reason) => {
   state.me = state.devices = null;
   if (location.pathname.startsWith("/auth")) return;
-  ws?.dispose();
-  ws = null;
+  if (reason === "expired") toast("Your session expired. Sign in again to see private routes and devices.");
+  if (reason === "expired" && ws) return updateTop();
+  closeWorkspace();
   render();
 });
 render();

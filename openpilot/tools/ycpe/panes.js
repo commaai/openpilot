@@ -21,10 +21,19 @@ export const PANES = {
   "can-charts": {title: "CAN charts", src: "/panes/can/charts.js", data: true},
 };
 
+// the browser remembers a failed import for good, so a retry asks for the module under a fresh URL
+const retries = {};
+
 export async function loadPane(type) {
   if (type === "empty" || !PANES[type]) return emptyPane;
-  const mod = await import(PANES[type].src).catch(() => null);
-  return mod?.create || ((ctx, state) => missingPane(type));
+  let mod;
+  try {
+    mod = await import(PANES[type].src + (retries[type] || ""));
+  } catch (e) {
+    console.error(e);
+    return (ctx, state) => failedPane(ctx, type, state, e);
+  }
+  return mod.create || ((ctx, state) => missingPane(type));
 }
 
 // an empty slot offers every pane type
@@ -37,4 +46,13 @@ function emptyPane(ctx) {
 
 function missingPane(type) {
   return {name: type, el: h("div", {class: "pane-missing"}, `${PANES[type].title} isn't built yet`), render() {}};
+}
+
+function failedPane(ctx, type, state, error) {
+  const retry = () => {
+    retries[type] = `?retry=${Date.now()}`;
+    ctx.layout.replaceSelf(el, {pane: type, state});
+  };
+  const el = h("div", {class: "pane-missing"}, `${PANES[type].title} didn't load: ${error.message} `, h("button", {class: "chip", onclick: retry}, "Retry"));
+  return {name: type, el, render() {}, save: () => state};
 }

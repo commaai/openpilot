@@ -4,18 +4,30 @@
 // Panes are rearranged by dragging their header onto another pane's edge (dock beside) or center (swap).
 // Structural edits (tabs, splits, docking, divider sizes) can be undone; a pane's own state is the pane's business.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {PANES, loadPane} from "/panes.js";
 
 const MIN = 0.05;   // smallest split fraction
+const MIN_PX = {row: 120, col: 60};  // smallest pane, across and down, so a layout saved on a big screen stays usable
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
 const UNDO = 50;    // layout edits remembered
+
+// a saved model that isn't one (hand edited, an older format) throws
+export function checkLayout(model) {
+  const node = (n) => n && typeof n === "object" && (n.children
+    ? Array.isArray(n.children) && n.children.length && Array.isArray(n.sizes) && n.sizes.length === n.children.length && n.children.every(node)
+    : typeof n.pane === "string");
+  if (!Array.isArray(model?.tabs) || !model.tabs.length || !model.tabs.every((t) => node(t?.root))) throw new Error("not a layout");
+  return model;
+}
 
 export class Layout {
   constructor(ctx, model, onChange) {
     this.ctx = Object.create(ctx);  // panes see the shared ctx plus their layout
     this.ctx.layout = this;
-    this.model = structuredClone(model);
+    this.model = structuredClone(checkLayout(model));
+    this.model.active = Math.max(0, Math.min(this.model.tabs.length - 1, this.model.active | 0));
     this.onChange = onChange;
     this.el = h("div", {class: "layout"});
     this.live = new Map();  // rendered node -> {pane, box}
@@ -130,6 +142,7 @@ export class Layout {
       if (i) box.append(this.divider(n, i, box));
       const child = this.node(c);
       child.style.flex = `${n.sizes[i]} 1 0`;
+      child.style[n.split === "row" ? "minWidth" : "minHeight"] = `${minPx(c, n.split)}px`;
       box.append(child);
     });
     return box;
@@ -144,11 +157,12 @@ export class Layout {
       const total = n.split === "row" ? rect.width : rect.height;
       const start = n.split === "row" ? e.clientX : e.clientY;
       const [a, b] = [n.sizes[i - 1], n.sizes[i]];
+      const [minA, minB] = [n.children[i - 1], n.children[i]].map((c, j) => Math.min([a, b][j], Math.max(MIN, minPx(c, n.split) / total)));
       const kids = [...box.children].filter((c) => !c.classList.contains("divider"));
       const before = structuredClone(this.save());
       el.onpointermove = (ev) => {
         const d = ((n.split === "row" ? ev.clientX : ev.clientY) - start) / total;
-        const da = Math.max(MIN - a, Math.min(b - MIN, d));
+        const da = Math.max(minA - a, Math.min(b - minB, d));
         n.sizes[i - 1] = a + da;
         n.sizes[i] = b - da;
         kids[i - 1].style.flex = `${n.sizes[i - 1]} 1 0`;
@@ -161,10 +175,11 @@ export class Layout {
         this.changed();
       };
     });
+    // in place, like the drag: rendering again would rebuild the panes from the model
     el.addEventListener("dblclick", () => {
       this.checkpoint();
       n.sizes = n.sizes.map(() => 1 / n.sizes.length);
-      this.render();
+      for (const c of box.children) if (!c.classList.contains("divider")) c.style.flex = `${1 / n.sizes.length} 1 0`;
       this.changed();
     });
     return el;
@@ -173,16 +188,21 @@ export class Layout {
   paneBox(n) {
     const info = PANES[n.pane] || PANES.empty;
     const title = h("span", {class: "pane-title", hidden: true});
-    const types = h("select", {class: "pane-type", title: "Pane type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}})},
+    // a closed picker would swap the pane on arrow keys or typing; only picking from the open list does
+    const types = h("select", {class: "pane-type", title: "Pane type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
+      onkeydown: (e) => {
+        if (e.key === "Escape") e.target.blur();
+        else if (!e.altKey && !["Enter", " ", "Tab", "F4"].includes(e.key)) e.preventDefault();
+      }},
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
-    const btn = (label, tip, fn) => h("button", {class: "pane-btn", title: tip, onclick: fn}, label);
+    const btn = (name, tip, fn) => h("button", {class: "pane-btn", title: tip, onclick: fn}, icon(name, 14));
     const head = h("div", {class: "pane-head", title: "Drag to move this pane"}, types, title,
       h("span", {class: "pane-tools"},
-        btn("⇥", "Split right", () => this.split(n, "row")),
-        btn("⤓", "Split down", () => this.split(n, "col")),
-        btn(this.maxPath ? "⤡" : "⤢", this.maxPath ? "Restore" : "Maximize", () => this.maximize(n)),
-        btn("×", "Close pane", () => this.close(n))));
+        btn("splitRight", "Split right", () => this.split(n, "row")),
+        btn("splitDown", "Split down", () => this.split(n, "col")),
+        btn(this.maxPath ? "restore" : "maximize", this.maxPath ? "Restore" : "Maximize", () => this.maximize(n)),
+        btn("close", "Close pane", () => this.close(n))));
     head.addEventListener("pointerdown", (e) => this.drag(n, e));
     head.addEventListener("dblclick", (e) => { if (e.target === head || e.target === title) this.maximize(n); });
     const body = h("div", {class: "pane-body"});
@@ -240,9 +260,12 @@ export class Layout {
   edit(fn) {
     this.checkpoint();
     const map = new Map();
+    const maxed = this.maxPath && at(this.tab.root, this.maxPath);
     this.model = this.save(map);
     fn(this.tab, (n) => map.get(n));
-    this.maxPath = null;
+    // a maximized node stays maximized, along with anything split off it (which takes its place)
+    const path = maxed && pathOf(this.tab.root, map.get(maxed));
+    this.maxPath = path && (path.slice(0, this.maxPath.length).join() === this.maxPath.join() ? this.maxPath : path);
     this.render();
     this.changed();
   }
@@ -259,7 +282,7 @@ export class Layout {
   }
 
   replace(n, fresh) {
-    this.edit((tab, get) => replaceNode(tab, get(n), fresh));
+    this.edit((tab, get) => Object.assign(get(n), fresh));  // in place: a maximized pane stays so
   }
 
   // a pane swapping itself for another (the empty pane's picker)
@@ -282,6 +305,13 @@ export class Layout {
     this.maxPath = this.maxPath ? null : path;
     this.render();
   }
+}
+
+// the smallest a node can be along dir: panes side by side add up
+function minPx(n, dir) {
+  if (!n.children) return MIN_PX[dir];
+  const mins = n.children.map((c) => minPx(c, dir));
+  return n.split === dir ? mins.reduce((x, y) => x + y) : Math.max(...mins);
 }
 
 function zoneOf(r, e) {
