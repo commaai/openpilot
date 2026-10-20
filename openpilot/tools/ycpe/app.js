@@ -368,9 +368,11 @@ function errorPage(e) {
 
 document.getElementById("app").prepend(topBar());
 window.addEventListener("popstate", render);
-// signing in or out re-renders the current page under the new account
+// signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
+// again would spend the one-time code twice)
 auth.on(() => {
   state.me = state.devices = null;
+  if (location.pathname.startsWith("/auth")) return;
   ws?.dispose();
   ws = null;
   render();
