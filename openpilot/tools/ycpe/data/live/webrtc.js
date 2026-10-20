@@ -53,7 +53,7 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
   const again = (why) => {
     if (/another device has connected/i.test(why)) return set("closed", why);
     const ms = RETRY_MS[Math.min(retries++, RETRY_MS.length - 1)];
-    set("error", `${why}; trying again in ${ms / 1000} s`);
+    set("error", `${why.replace(/\.$/, "")}; trying again in ${ms / 1000} s`);
     retry = setTimeout(connect, ms);
   };
 
