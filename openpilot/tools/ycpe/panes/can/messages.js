@@ -9,7 +9,7 @@ const COLS = [
   {id: "bus", title: "Bus", get: (m) => m.bus},
   {id: "id", title: "ID", get: (m) => m.address, text: (m) => `0x${m.address.toString(16).toUpperCase()}`},
   {id: "node", title: "Node", get: (m, can) => can.dbcMsg(m.key)?.transmitter || ""},
-  {id: "freq", title: "Freq", get: (m) => m.freq, text: (m) => (m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2))},
+  {id: "freq", title: "Freq", get: (m) => m.freq, text: (m) => (m.unseen ? "N/A" : m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2))},
   {id: "count", title: "Count", get: (m, can) => can.countAt(m.key)},
   {id: "bytes", title: "Bytes", get: (m) => m.size},
 ];
@@ -79,7 +79,7 @@ export function create(ctx, state) {
 
   function refresh() {
     const col = COLS.find((c) => c.id === sort.col);
-    rows = can.messages().filter(match).map((m) => ({m, v: col.get(m, can)}));
+    rows = [...can.messages(), ...can.unseen()].filter(match).map((m) => ({m, v: col.get(m, can)}));
     // unnamed messages stay below named ones in either direction, as do ties by bus and address
     rows.sort((a, b) => (sort.col === "name" && !a.v !== !b.v ? (a.v ? -1 : 1) : (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) * sort.dir) || a.m.key - b.m.key);
     rows = rows.map((r) => r.m);

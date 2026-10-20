@@ -1,7 +1,7 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
 import {h} from "/dom.js";
 import {MUX, MUXED, format, raw, value} from "/data/dbc.js";
-import {hexId} from "/data/can.js";
+import {busOf, hexId} from "/data/can.js";
 import {canOf, createSignal, hex2, removeSignal, subs, updateSignal} from "./common.js";
 
 const ROW = 22;
@@ -132,7 +132,7 @@ export function create(ctx, state) {
     if (["x", "Delete", "Backspace"].includes(e.key)) removeSignal(can, k(), hover.name);
     else if (e.key === "e") updateSignal(can, k(), hover.name, {le: !hover.le});
     else if (e.key === "s") updateSignal(can, k(), hover.name, {signed: !hover.signed});
-    else if ("pgc".includes(e.key)) can.emit("chart", `/dbc/${can.msg(k()).bus}/${msg().name}/${hover.name}`);
+    else if ("pgc".includes(e.key)) can.emit("chart", `/dbc/${busOf(k())}/${msg().name}/${hover.name}`);
     else return;
     hover = null;
     e.preventDefault();
