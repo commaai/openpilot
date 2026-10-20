@@ -3,7 +3,9 @@
 
 const FETCHES = 6;  // downloads in flight; the first two run alone so the focus segment gets the bandwidth
 const IDLE = 3000;  // ms before an idle worker exits; each holds ~140 MB at its high-water mark
+const WARM = 30000;  // ms the last one stays, so a scrub or route switch parses with JIT-warm code
 const byPrio = (a, b) => a.prio - b.prio;
+let spare = null;  // a disposed loader's warm worker, for the next one (the route switched)
 export const POOL = Math.min(8, Math.max(1, (navigator.hardwareConcurrency || 4) - 2));
 
 export class Loader {
@@ -23,7 +25,16 @@ export class Loader {
   }
 
   spawn() {
-    const w = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
+    const w = this.worker();
+    this.workers.push(w);
+    this.release(w);
+    return w;
+  }
+
+  worker() {
+    const w = spare || new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
+    clearTimeout(w.reap);
+    spare = null;
     w.calls = 0;
     w.onmessage = ({data}) => {
       const call = this.calls.get(data.id);
@@ -33,8 +44,6 @@ export class Loader {
       if (data.error) call.reject(new Error(data.error));
       else call.resolve(data);
     };
-    this.workers.push(w);
-    this.release(w);
     return w;
   }
 
@@ -44,28 +53,30 @@ export class Loader {
     return this.idle.pop();
   }
 
-  // idle workers exit after a while, or at once while the pool is over size
+  // idle workers exit after a while, or at once while the pool is over size; the last one stays warm for longer
   release(w) {
     this.idle.push(w);
-    this.reap(w, this.workers.length > this.size ? 0 : IDLE);
+    w.used = performance.now();
+    this.reap(w);
   }
 
-  reap(w, after = IDLE) {
+  reap(w) {
     clearTimeout(w.reap);
+    const left = () => this.workers.length > this.size ? 0 : (this.workers.length > 1 ? IDLE : WARM) - (performance.now() - w.used);
     w.reap = setTimeout(() => {
       if (!this.idle.includes(w)) return;
-      if (w.calls || (after < IDLE && this.workers.length <= this.size)) return this.reap(w);  // still fetching, or needed
+      if (w.calls || left() > 0) return this.reap(w);  // still fetching, or not idle long enough
       w.terminate();
       this.idle.splice(this.idle.indexOf(w), 1);
       this.workers.splice(this.workers.indexOf(w), 1);
-    }, after);
+    }, w.calls ? IDLE : Math.max(left(), 0));
   }
 
   // fewer parse workers once the focus area is in: each holds its high-water memory until it exits
   resize(size) {
     if (size === this.size) return;
     this.size = size;
-    for (const w of this.idle) this.reap(w, this.workers.length > size ? 0 : IDLE);
+    for (const w of this.idle) this.reap(w);
     this.pump();
   }
 
@@ -143,30 +154,26 @@ export class Loader {
 
   // a whole message, decoded by a worker of its own that keeps the last logs it opened (see worker.js)
   message(key, url, service, mono) {
-    if (!this.inspector) {
-      const w = this.inspector = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
-      w.calls = 0;
-      w.onmessage = ({data}) => {
-        const call = this.calls.get(data.id);
-        this.calls.delete(data.id);
-        w.calls--;
-        if (data.error) call.reject(new Error(data.error));
-        else call.resolve(data.message);
-      };
-    }
+    this.inspector ??= this.worker();
     clearTimeout(this.inspector.reap);
     this.inspector.reap = setTimeout(() => {
       if (this.inspector.calls) return;
       this.inspector.terminate();
       this.inspector = null;
     }, 30000);
-    return this.call(this.inspector, {op: "message", key, url, service, mono});
+    return this.call(this.inspector, {op: "message", key, url, opts: {service, mono}}).then((r) => r.message);
   }
 
   get pending() { return this.queue.length + this.fetching + this.ready.length + this.parsing; }
 
   dispose() {
-    for (const w of this.workers) w.terminate();
+    const warm = this.idle.find((w) => !w.calls);
+    if (warm && !spare) {
+      spare = warm;
+      clearTimeout(warm.reap);
+      warm.reap = setTimeout(() => { warm.terminate(); spare = null; }, WARM);
+    }
+    for (const w of this.workers) if (w !== spare) w.terminate();
     this.inspector?.terminate();
     const err = new Error("disposed");
     for (const c of [...this.queue, ...this.ready, ...this.calls.values()]) c.reject(err);
