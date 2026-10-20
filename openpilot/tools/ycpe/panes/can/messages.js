@@ -144,8 +144,9 @@ export function create(ctx, state) {
     render() {
       const first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       const live = can.live, t = ctx.clock.t;
-      for (let i = 0; i < n; i++) {
-        const m = rows[first + i];
+      // rows past n are left from a taller pane
+      for (let i = 0; i < Math.max(n, pool.length); i++) {
+        const m = i < n && rows[first + i];
         if (!m) { if (pool[i] && !pool[i].hidden) pool[i].hidden = true; continue; }
         const r = pool[i] || (pool[i] = row());
         if (r.hidden) r.hidden = false;

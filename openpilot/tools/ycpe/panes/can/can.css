@@ -44,6 +44,7 @@
 .can-msg-row:hover { background: var(--hover); }
 .can-msg-row.selected { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
 .can-msg-row.inactive { color: var(--muted); }
+.can-msg-row[hidden], .can-hist-row[hidden] { display: none; }
 .can-msg-row .can-col-id, .can-msg-row .can-col-bytes { font-family: var(--mono); }
 .can-col-bytes span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
 .can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
