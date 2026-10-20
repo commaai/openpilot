@@ -47,6 +47,7 @@ export function create(ctx, state) {
     procs, lacking,
     h("div", {class: "replay-row"}, "segments ", first, " to ", last,
       h("button", {class: "link", title: "The segments of the visible x-range", onclick: visible}, "visible range"), h("span", {class: "grow"}), start),
+    h("div", {class: "muted"}, "Processes start fresh at the first segment, with the log's calibration and learned params; engagement isn't carried in."),
     progress, status, errors,
     h("h3", {}, "Diverged signals"), diff,
     h("h3", {}, "Replays of this route"), history);

@@ -160,8 +160,13 @@ def main() -> None:
       pass
   pr.tqdm = Progress
 
+  # learned state (calibration, vehicle and torque params) starts where the log had it, not from scratch
+  try:
+    custom_params = pr.get_custom_params_from_lr(msgs, "first")
+  except (AttributeError, AssertionError):
+    custom_params = None
   emit("replay", procs=procs, messages=len(msgs))
-  output = pr.replay_process(cfgs, msgs, disable_progress=False)
+  output = pr.replay_process(cfgs, msgs, custom_params=custom_params, disable_progress=False)
   for i in range(len(segs)):
     if i not in written:
       write(i)

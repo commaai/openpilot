@@ -122,6 +122,14 @@ class TestReplay(unittest.TestCase):
     self.assertTrue(any(t.startswith("segment 3 · 0/2 written") for t in texts))
     self.assertEqual(self.reports[-1][3].get("phase"), "diff")
 
+  def test_stops_at_the_end_of_the_route(self):
+    def fetch(route, seg):
+      if seg > 3:
+        raise FileNotFoundError(seg)
+      return f"/logs/{seg}"
+    m = self.start().run(fetch, self.report)
+    self.assertEqual((m["segs"], m["written"]), ([3], [3]))
+
   def test_failure_carries_the_error_tail(self):
     os.environ["FAKE_FAIL"] = "1"
     r = self.start()
