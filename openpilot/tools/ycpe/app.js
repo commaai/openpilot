@@ -1,4 +1,6 @@
 import {api, auth} from "/api.js";
+import {daemon} from "/daemon.js";
+import {localBadge} from "/local.js";
 import {h} from "/dom.js";
 import {logo} from "/icons.js";
 import {perf, hud} from "/perf.js";
@@ -8,14 +10,17 @@ import {Layout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
-import {status, loadPill, footprint} from "/status.js";
+import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
+import {routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
+import {omnibox, rememberRoute} from "/pages/omnibox.js";
+import {localPage} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
+import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 
-const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
 export function go(path, replace = false) {
@@ -33,14 +38,13 @@ export function link(path) {
 
 export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
 
-// a route name, dongle id, connect or useradmin URL, typed or pasted anywhere
-function onebox(text) {
-  const s = decodeURIComponent(text.trim());
-  const m = s.match(ROUTE_RE);
-  if (m) return go(`/${m[1]}/${m[2]}${ws ? `/${ws.view}` : ""}`);
-  const d = s.match(/[0-9a-f]{16}/i);
-  if (d) return go(`/${d[0]}`);
-  toast("Enter a route name (dongle|time) or a dongle id");
+// the omnibox (pages/omnibox.js); switching routes keeps the open view
+function searchBox() {
+  return omnibox({
+    go: (path) => go(ws ? path.replace(/^(\/[0-9a-f]{16}\/[^/?]+)(?=\?|$)/, `$1/${ws.view}`) : path),
+    devices: () => state.devices,
+    onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
+  });
 }
 
 function toast(text) {
@@ -75,8 +79,7 @@ const bar = {
 };
 
 function topBar() {
-  const search = h("input", {type: "search", class: "omnibox", placeholder: "route or dongle id  ( / )", spellcheck: false,
-    onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; e.target.blur(); } else if (e.key === "Escape") e.target.blur(); }});
+  const search = searchBox();
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
@@ -90,6 +93,8 @@ function topBar() {
   const account = h("button", {class: "tbtn", title: "Account"}, "●");
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
     state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
+    auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
+    !auth.isAuthenticated() && daemon.hasJwt &&h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
     auth.isAuthenticated()
       ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out")
       : h("a", {class: "menu-row", href: loginPath(), onclick: (e) => { close(); link(loginPath())(e); }}, "Sign in"))));
@@ -97,7 +102,7 @@ function topBar() {
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), loadPill(), hud(footprint()), themeBtn, account);
+    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), themeBtn, account);
 }
 
 function updateTop() {
@@ -107,18 +112,26 @@ function updateTop() {
   bar.route.hidden = bar.route.previousSibling.hidden = !ws;
   bar.views.hidden = bar.tabs.hidden = !ws;
   if (!ws) return;
-  const start = new Date(ws.route.start_time_utc_millis);
-  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`;
+  const start = new Date(ws.route.start_time_utc_millis);  // 0 for local files without a timestamp: show the name
+  bar.route.textContent = ws.route.start_time_utc_millis
+    ? `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`
+    : ws.route.fullname.split("|")[1];
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
+  if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: () => { layout.selectTab(i); updateTop(); },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
     oncontextmenu: (e) => { e.preventDefault(); tabMenu(e.currentTarget, i, t.name); },
     onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
-  h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"));
+  h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
+  h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
+}
+
+function layoutMenu(anchor) {
+  menu(anchor, (close) => layoutPicker({current: () => ws.layout.save(), apply: (m) => ws.applyLayout(m), close, name: ws.view}));
 }
 
 function tabMenu(tabEl, i, name) {
@@ -128,6 +141,7 @@ function tabMenu(tabEl, i, name) {
     item("Rename", () => setTimeout(() => renameTab(bar.tabs.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
+    item("Open layout…", () => setTimeout(() => layoutMenu(tabEl))),
     item(`Reset ${VIEWS[ws.view].title} layout`, () => ws.resetLayout())));
 }
 
@@ -150,7 +164,7 @@ class Workspace {
   constructor(route, files, view, {t = 0, repeat = 1}) {
     this.route = route;
     this.dongle = route.fullname.split("|")[0];
-    this.files = null;  // the file list only matters once logs load; the drive view mounts without it
+    this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
     this.filesReady = files.then((f) => { this.files = f; });
     this.repeat = repeat;
     this.store = null;
@@ -161,6 +175,8 @@ class Workspace {
     this.main = h("div", {class: "workspace"});
     this.el = h("div", {class: "ws"}, this.main, playbar(this.ctx()));
     this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
+    // .json/.xml layouts dropped on the workspace open as new tabs
+    acceptLayoutFiles(this.main, (f) => this.openLayout(f));
     this.setView(view);
   }
 
@@ -178,36 +194,12 @@ class Workspace {
   // logs load only once something needs them (the drive view doesn't); null until the file list is in
   ensureStore() {
     if (this.store || !this.files) return this.store;
-    const urls = [];
-    for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
-    this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
-    let focusTimer = 0;
-    this.offs.push(this.clock.on("t", () => {
-      clearTimeout(focusTimer);
-      focusTimer = setTimeout(() => this.store.focus(this.clock.t), 150);
-    }));
-    // TODO(track 1): the store publishes to status itself, with download bytes per segment
-    const logs = status.source("logs", {order: 0});
-    const STATES = {queued: "queued", missing: "missing", done: "ready", error: "error"};
-    const publish = () => {
-      const segs = this.store.route.segments, p = this.store.progress;
-      logs.count(segs.length);
-      segs.forEach((s, n) => logs.seg(n, STATES[s.status] || "loading"));
-      logs.rate(p.bytes / ((performance.now() - p.start) / 1000));
-      logs.bytes({memory: this.store.bytes});
-      waiting();
-    };
-    // the playhead waits on its segment's logs
-    const waiting = () => {
-      const at = this.store.route.segments.find((s) => this.clock.t >= s.t0 && this.clock.t < s.t1);
-      logs.buffering(at && at.status !== "done" && at.status !== "missing" ? {n: at.n, text: `segment ${at.n}`} : null);
-    };
-    this.offs.push(logs.remove, this.clock.on("t", waiting));
+    this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
+    // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
+    this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
       if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
-      publish();
     });
-    publish();
     for (const fn of this.storeSubs) fn(this.store);
     return this.store;
   }
@@ -217,6 +209,7 @@ class Workspace {
   setView(view) {
     if (!VIEWS[view]) view = "drive";
     this.view = view;
+    this.el.dataset.view = view;
     if (!this.layouts[view]) {
       const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
@@ -237,11 +230,27 @@ class Workspace {
     updateTop();
   }
 
-  resetLayout() {
-    localStorage.removeItem(`ycpe_layout_${this.view}`);
-    this.layout.dispose();
+  // install a whole new model for the view (null: back to the default)
+  applyLayout(model) {
+    if (model) localStorage.setItem(`ycpe_layout_${this.view}`, JSON.stringify(model));
+    else localStorage.removeItem(`ycpe_layout_${this.view}`);
+    this.layout?.dispose();
     delete this.layouts[this.view];
     this.setView(this.view);
+  }
+
+  resetLayout() { this.applyLayout(null); }
+
+  // a layout file, URL or text (ours, jotpluggler's or PlotJuggler's), opened as new tabs
+  async openLayout(src) {
+    try {
+      const {layout, warnings} = await loadLayout(src);
+      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${this.view}`) || "null");
+      this.applyLayout(mergeLayout(this.layout?.save() ?? (saved?.tabs?.length ? saved : VIEWS[this.view].layout), layout, "tab"));
+      if (warnings.length) toast(`Layout opened with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}: ${warnings[0]}${warnings.length > 1 ? " …" : ""}`);
+    } catch (e) {
+      toast(`Couldn't open the layout: ${e.message}`);
+    }
   }
 
   openRoute(name) {
@@ -253,6 +262,7 @@ class Workspace {
     const write = () => {
       const q = new URLSearchParams(location.search);
       q.set("t", this.clock.t.toFixed(1));
+      q.delete("layout");  // opened once, then it's part of the saved layout
       if (this.clock.t === 0) q.delete("t");
       const path = `/${this.route.fullname.replace("|", "/")}/${this.view}`;
       history.replaceState(null, "", `${path}${q.size ? `?${q}` : ""}`);
@@ -298,7 +308,7 @@ document.addEventListener("keydown", (e) => {
 
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
-  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3", "Drive / Plot / CAN"],
+  ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
   ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
   ["drag a pane header", "move the pane (edges dock, center swaps)"], ["double-click a divider", "even out the split"],
   ["wheel on the timeline", "zoom the visible range"],
@@ -335,6 +345,7 @@ async function render() {
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
   }
 
+  if (openLoose(parts, q, main)) return;
   const routeName = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? `${parts[0]}|${parts[1]}` : null;
   if (routeName) {
     if (ws?.route.fullname === routeName) {
@@ -343,12 +354,14 @@ async function render() {
     }
     document.body.classList.add("loading");
     try {
-      const files = api.routeFiles(routeName);
+      const files = routeLogs(routeName);
       files.catch(() => {});
       const route = await api.route(routeName);
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      rememberRoute(route);
+      if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);
     } catch (e) {
@@ -372,6 +385,37 @@ async function render() {
     main.replaceChildren(homePage(state.devices));
   }
 }
+
+// logs outside the API (data/sources.js): files dropped anywhere on the page, or a direct link (?url=). False when the
+// path is neither.
+let dropped = null;
+function openLoose(parts, q, main) {
+  const loose = q.has("url") ? urlRoute(q.get("url")) : dropped?.route.fullname === `${parts[0]}|${parts[1]}` ? dropped : null;
+  if (!loose && parts[0] !== "local") return false;
+  if (loose && ws?.route.fullname === loose.route.fullname) {
+    if (parts[2] && parts[2] !== ws.view) ws.setView(parts[2]);
+    return true;
+  }
+  ws?.dispose();
+  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: +q.get("t") || 0});
+  document.body.classList.toggle("in-ws", !!ws);
+  main.replaceChildren(ws ? ws.el : localPage(openFiles));
+  updateTop();
+  return true;
+}
+function openFiles(files) {
+  dropped = localRoute(files);
+  if (dropped) go(`/${dropped.route.fullname.replace("|", "/")}/plot`);
+  else toast("No rlog, qlog or camera files there");
+}
+// files dropped anywhere a pane didn't take them (layouts on the workspace, say) open as a local route
+const carriesFiles = (e) => e.dataTransfer?.types.includes("Files");
+document.addEventListener("dragover", (e) => { if (carriesFiles(e)) e.preventDefault(); });
+document.addEventListener("drop", async (e) => {
+  if (e.defaultPrevented || !carriesFiles(e)) return;
+  e.preventDefault();
+  openFiles(await droppedFiles(e.dataTransfer));
+});
 
 function errorPage(e) {
   console.error(e);

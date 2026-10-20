@@ -4,6 +4,9 @@ import {h, fmt} from "../dom.js";
 import {icon} from "../icons.js";
 import {isOnline, link} from "../app.js";
 import {loginPage} from "./login.js";
+import {recentRoutes, routePath} from "./omnibox.js";
+
+const WHEN = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false});
 
 export const canManage = async (device) => device.is_owner || !!(await auth.user())?.superuser;
 
@@ -49,10 +52,30 @@ export function deviceName(device) {
   return el;
 }
 
+// the last routes opened here, newest first
+function recentSection(devices) {
+  const routes = recentRoutes();
+  if (!routes.length) return null;
+  const alias = (dongle) => devices?.find((d) => d.dongle_id === dongle)?.alias || dongle;
+  return h("div", {class: "page recent"},
+    h("h3", {}, "Recent routes"),
+    h("table", {class: "list"},
+      h("tbody", {}, routes.map((r) => {
+        const path = routePath(r.name), dongle = r.name.split("|")[0];
+        return h("tr", {class: "clickable", onclick: (e) => { if (!e.target.closest("a")) link(path)(e); }},
+          h("td", {class: "nowrap"}, h("a", {href: path, onclick: link(path)}, WHEN.format(r.start))),
+          h("td", {}, alias(dongle)),
+          h("td", {class: "num"}, fmt.minutes(r.end - r.start)),
+          h("td", {class: "num"}, fmt.miles(r.distance ?? 0)),
+          h("td", {class: "muted"}, r.platform || ""),
+          h("td", {class: "mono muted"}, r.name));
+      }))));
+}
+
 export function homePage(devices) {
-  if (!auth.isAuthenticated()) return loginPage(new URLSearchParams());
-  if (!devices?.length) return h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name."));
-  return h("div", {class: "page"},
+  if (!auth.isAuthenticated()) return h("div", {}, loginPage(new URLSearchParams()), recentSection(devices));
+  if (!devices?.length) return h("div", {}, h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name.")), recentSection(devices));
+  return h("div", {}, recentSection(devices), h("div", {class: "page"},
     h("table", {class: "list devices"},
       h("thead", {}, h("tr", {}, h("th"), h("th", {}, "device"), h("th", {}, "dongle id"), h("th", {}, "type"), h("th", {}, "version"), h("th", {}, "last seen"))),
       h("tbody", {}, devices.map((d) => h("tr", {class: "clickable", onclick: (e) => { if (!e.target.closest("a")) link(`/${d.dongle_id}`)(e); }},
@@ -61,5 +84,5 @@ export function homePage(devices) {
         h("td", {class: "mono muted"}, d.dongle_id),
         h("td", {class: "muted"}, d.device_type),
         h("td", {class: "muted"}, d.openpilot_version || ""),
-        h("td", {class: "muted"}, isOnline(d) ? "online" : fmt.ago(d.last_athena_ping)))))));
+        h("td", {class: "muted"}, isOnline(d) ? "online" : fmt.ago(d.last_athena_ping))))))));
 }

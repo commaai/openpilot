@@ -3,7 +3,9 @@
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
 import {api} from "../api.js";
 import {perf} from "../perf.js";
-import {Loader} from "./loader.js";
+import {status} from "../status.js";
+import {Loader, POOL} from "./loader.js";
+import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
 import {enumRef, service, unpack} from "./pack.js";
 
@@ -11,6 +13,7 @@ const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span
 const BUDGET = 1.5e9;  // resident column bytes
 const IN_USE = 5000;  // ms since last use that a column counts as in use (never evicted)
 const BLOCK = 16, FANOUT = 8;  // min/max pyramid: blocks of 16 samples, then 8 blocks per level up
+const NEAR = 3;  // segments from the focus on that, once in, let the worker pool shrink
 
 // opens a route and starts loading its logs outward from t; repeat tiles the route for long-route tests
 export async function openRoute(name, opts) {
@@ -21,7 +24,7 @@ export async function openRoute(name, opts) {
 }
 
 export class Store {
-  // urls[n]: the log of segment n; keep: {service: [list path globs]} to split long lists from the start
+  // urls[n]: the log of segment n, a URL or {url, file, source} (file names the cache entry when the URL doesn't); keep: {service: [list path globs]} to split long lists from the start
   constructor(name, urls, {t = 0, repeat = 1, keep = {}, loader, budget = BUDGET} = {}) {
     const count = urls.length * repeat;
     this.route = {name, t0: null, duration: 0, segments: Array.from({length: count}, (_, n) => ({
@@ -39,17 +42,34 @@ export class Store {
     this.enums = [];
     this.bytes = 0;
     this.progress = {done: 0, failed: 0, total: 0, bytes: 0, raw: 0, cached: 0, ms: {fetch: 0, decompress: 0, read: 0, ingest: 0}, ingestMax: 0, start: performance.now()};
+    this.t = t;
     this.focusSeg = Math.floor(t / SEGMENT);
+    this.received = [];  // [time, bytes] of recent downloads, for the rate
+    // OPFS keys name the route, segment and file; the signed URLs change
+    this.cacheDir = `logs/${name.replace("|", "/")}/`;
+    this.disk = {};  // key → bytes of this route's cached logs
+    opfs.list(this.cacheDir).then((d) => {
+      Object.assign(this.disk, d);
+      for (const seg of this.route.segments) this.publish(seg);
+    }, () => {});
+    this.status = status.source("logs", {order: 0});
+    this.status.count(count);
 
     for (const seg of this.route.segments) {
-      const local = seg.n % urls.length, url = urls[local];
-      if (!url) continue;
-      // OPFS keys name the route, segment and file; the signed URLs change
-      seg.key = `${name.replace("|", "/")}/${local}/${new URL(url).pathname.split("/").at(-1)}`;
-      seg.url = url;
+      const local = seg.n % urls.length, e = typeof urls[local] === "string" ? {url: urls[local]} : urls[local];
+      seg.bytes = 0;  // resident
+      if (!e) {
+        this.publish(seg);
+        continue;
+      }
+      seg.key = `${this.cacheDir}${local}/${e.file ?? new URL(e.url).pathname.split("/").at(-1)}`;
+      seg.url = e.url;
+      seg.source = e.source;
       seg.opts = {n: local, shift: (seg.n - local) * SEGMENT};
+      this.publish(seg);
       this.progress.total++;
       this.load(seg, undefined, {can: true}).then((p) => {  // CAN frames come out of the first parse only
+        if (p.cached || p.stored) this.disk[seg.key] = p.bytes;
         this.count(p);
         this.ingest(seg, p);
         if (p.can) this.can.ingest(seg.n, p.can, 0);
@@ -64,15 +84,69 @@ export class Store {
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
       return {...seg.opts, keep: this.keep, skip, only, context: this.context, ...extra};
     };
-    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n);
+    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev));
   }
 
   // outward from the focus segment
   prio(n) { return Math.abs(n - this.focusSeg); }
 
+  // the playhead: loading ranks outward from it, and it buffers while its segment isn't in. Cheap to call every frame
   focus(t) {
-    this.focusSeg = Math.max(0, Math.floor(t / SEGMENT));
-    this.loader.reprioritize((n) => this.prio(n));
+    this.t = t;
+    const n = Math.max(0, Math.floor(t / SEGMENT));
+    if (n !== this.focusSeg) {
+      this.focusSeg = n;
+      this.loader.reprioritize((m) => this.prio(m));
+      this.pool();
+    }
+    this.buffering();
+  }
+
+  // the whole pool while the focus area loads, half of it after
+  pool() {
+    const near = this.route.segments.slice(this.focusSeg, this.focusSeg + NEAR);
+    this.loader.resize(near.every((s) => s.status !== "queued") ? Math.max(2, POOL >> 1) : POOL);
+  }
+
+  // a load's progress: {loaded, total} downloading, {retry, of, error} before a retry, {parsing}
+  report(seg, ev) {
+    if (ev.retry) Object.assign(seg, {retry: `${ev.retry}/${ev.of}`, error: ev.error});
+    else seg.retry = 0;
+    if (ev.loaded !== undefined) {
+      this.received.push([performance.now(), ev.loaded - (seg.loading?.loaded || 0)]);
+      seg.loading = {loaded: ev.loaded, total: ev.total};
+    }
+    if (ev.parsing) seg.loading = {loaded: 1, total: 1};
+    this.publish(seg);
+  }
+
+  // a segment's status: on disk when cached but not (or no longer) in memory
+  publish(seg) {
+    const cached = seg.key in this.disk;
+    const state = seg.status === "missing" || seg.status === "error" ? seg.status
+      : seg.loading ? "loading"
+      : seg.status === "done" && seg.bytes ? "ready"
+      : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
+    this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text: seg.retry ? `retrying (${seg.retry})` : null});
+    if (seg.n === this.focusSeg) this.buffering();
+    this.totals();
+  }
+
+  totals() {
+    const now = performance.now();
+    while (this.received.length && now - this.received[0][0] > 2000) this.received.shift();
+    this.status.rate(this.received.reduce((a, [, b]) => a + b, 0) / 2);
+    this.status.bytes({memory: this.bytes + this.can.bytes, disk: Object.values(this.disk).reduce((a, b) => a + b, 0)});
+  }
+
+  buffering() {
+    const segs = this.route.segments;
+    let n = Math.min(segs.length - 1, Math.max(0, Math.floor(this.t / SEGMENT)));
+    while (n > 0 && segs[n].t0 > this.t) n--;
+    while (n < segs.length - 1 && segs[n].t1 <= this.t) n++;
+    const seg = segs[n];
+    const waiting = seg && seg.status === "queued";
+    this.status.buffering(waiting ? {n, text: `segment ${n}${seg.retry ? ` · retrying (${seg.retry})` : ""}`} : null);
   }
 
   on(event, fn) {
@@ -96,6 +170,8 @@ export class Store {
   failed(seg, e) {
     seg.status = "error";
     seg.error = String(e);
+    seg.loading = null;
+    this.publish(seg);
     this.progress.failed++;
     this.emit("progress", this.progress);
   }
@@ -136,7 +212,15 @@ export class Store {
       e.version++;
       p.live[service(p, k)]++;
     }
-    p.live.forEach((n, s) => n ? (this.bytes += p.bufs[s].byteLength) : drop(p, s));
+    p.n = seg.n;
+    p.live.forEach((n, s) => {
+      if (!n) return drop(p, s);
+      this.bytes += p.bufs[s].byteLength;
+      seg.bytes += p.bufs[s].byteLength;
+    });
+    seg.loading = null;
+    this.publish(seg);
+    this.pool();
     const ms = performance.now() - start;
     this.progress.ms.ingest += ms;
     this.progress.ingestMax = Math.max(this.progress.ingestMax, ms);
@@ -271,7 +355,11 @@ export class Store {
         const only = this.wanted;
         this.wanted = null;
         for (const seg of this.route.segments) {
-          if (seg.status === "done") this.load(seg, only).then((p) => this.ingest(seg, p), () => {});
+          if (seg.status !== "done") continue;
+          this.load(seg, only).then((p) => this.ingest(seg, p), () => {
+            seg.loading = null;
+            this.publish(seg);
+          });
         }
       });
     }
@@ -300,12 +388,19 @@ export class Store {
   release({pack, k}) {
     const s = service(pack, k);
     if (--pack.live[s] === 0) {
+      const seg = this.route.segments[pack.n];
       this.bytes -= pack.bufs[s].byteLength;
+      seg.bytes -= pack.bufs[s].byteLength;
       drop(pack, s);
+      if (!seg.bytes) this.publish(seg);
     }
   }
 
-  dispose() { this.loader.dispose(); this.can.dispose(); }
+  dispose() {
+    this.loader.dispose();
+    this.can.dispose();
+    this.status.remove();
+  }
 }
 
 const split = (path) => path.match(/^\/([^/]+)(.*)$/).slice(1);
