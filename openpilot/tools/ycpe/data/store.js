@@ -67,6 +67,9 @@ export class Store {
     }, () => {});
     this.status = status.source(lane.name, lane);
     this.status.count(count);
+    this.status.retry(() => this.retry());
+    this.online = () => this.retry();
+    addEventListener("online", this.online);
 
     for (const seg of this.route.segments) {
       const local = seg.n % urls.length, e = typeof urls[local] === "string" ? {url: urls[local]} : urls[local];
@@ -78,6 +81,7 @@ export class Store {
 
   // starts loading a segment's log; e = {url, file?, source?, seg?}
   start(seg, e, local = seg.n) {
+    seg.entry = e;
     seg.real = e.seg ?? local;  // the route's segment, for a range of it (urls[k] then names its seg)
     seg.key = `${this.cacheDir}${seg.real}/${e.file ?? new URL(e.url, location.origin).pathname.split("/").at(-1)}`;
     seg.url = e.url;
@@ -157,6 +161,7 @@ export class Store {
     const n = Math.max(0, Math.floor(t / SEGMENT));
     if (n !== this.focusSeg) {
       this.focusSeg = n;
+      if (this.route.segments[n]?.status === "error") this.retry([this.route.segments[n]]);
       this.loader.reprioritize((m) => this.prio(m), this);
       this.pool();
     }
@@ -246,10 +251,23 @@ export class Store {
     if (this.disposed) return;
     seg.status = "error";
     seg.error = String(e?.message ?? e);
+    seg.retry = 0;
     seg.loading = null;
     this.publish(seg);
     this.progress.failed++;
     this.emit("progress", this.progress);
+  }
+
+  // loads failed segments again: back online, at the playhead, or from the status panel's Retry
+  retry(segs = this.route.segments) {
+    for (const seg of segs) {
+      if (seg.status !== "error" || this.disposed) continue;
+      seg.status = "queued";
+      seg.error = null;
+      this.progress.failed--;
+      this.progress.total--;
+      this.start(seg, seg.entry, seg.real);
+    }
   }
 
   // registers a pack's columns: O(columns), no views and no copies
@@ -578,6 +596,7 @@ export class Store {
   dispose() {
     for (const o of this.overlays) o.store.dispose();
     this.disposed = true;
+    removeEventListener("online", this.online);
     if (this.shared) this.loader.cancel(this);
     else this.loader.dispose();
     this.can.dispose();

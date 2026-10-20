@@ -54,6 +54,8 @@ export const status = {
         src.buffering = b;
         changed();
       },
+      // fn() loads the failed segments again (the panel's Retry)
+      retry(fn) { src.retry = fn; },
       bytes({memory = src.memory, disk = src.disk}) { src.memory = memory; src.disk = disk; changed(); },
       rate(bytesPerSec) { src.rate = bytesPerSec; changed(); },
       remove() {
@@ -167,7 +169,8 @@ function statusPanel(anchor, onClose) {
       const info = h("span", {class: "muted"});
       const tip = h("div", {class: "status-tip muted"});
       const errors = h("div", {class: "status-tip", style: "height: auto; color: var(--critical); white-space: pre-wrap"});
-      rw = {canvas, info, tip, errors, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info), canvas, tip, errors)};
+      const retry = h("button", {class: "link", hidden: true, onclick: () => k.retry?.()}, "Retry");
+      rw = {canvas, info, tip, errors, retry, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info, " ", retry), canvas, tip, errors)};
       canvas.addEventListener("pointermove", (e) => {
         const i = Math.floor((e.offsetX / canvas.clientWidth) * k.segs.length), s = k.segs[i];
         rw.tip.textContent = s ? `segment ${i}: ${describe(s)}` : "";
@@ -181,7 +184,8 @@ function statusPanel(anchor, onClose) {
     const kinds = status.kinds();
     body.replaceChildren(...kinds.map((k) => row(k).el));
     for (const k of kinds) {
-      const {canvas, info, errors} = row(k), n = counts(k);
+      const {canvas, info, errors, retry} = row(k), n = counts(k);
+      retry.hidden = !n.error || !k.retry;
       const bits = [`${n.ready} in memory`, n.disk && `${n.disk} on disk`, n.loading && `${n.loading} loading`, n.queued && `${n.queued} queued`,
         n.error && `${n.error} failed`, k.rate && `${fmtBytes(k.rate)}/s`, k.memory && `mem ${fmtBytes(k.memory)}`, k.disk && `disk ${fmtBytes(k.disk)}`,
         k.buffering && `waiting on ${k.buffering.text}`];
