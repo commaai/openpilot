@@ -178,7 +178,8 @@ function lane(camera) {
   return status.source(camera, {label, order});
 }
 
-// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page.
+// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, or ahead of it as a
+// pointer comes over a drive (prefetch), not with the page.
 // It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash. It downloads right
 // away but runs in idle time: its ~20 ms evaluation would otherwise pile onto the busy frames of a cold load. (Chrome's
 // native HLS would skip it, but its player stalls the compositor ~65 ms on every start, and hangs on a seek past the
@@ -189,13 +190,14 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
   document.head.append(h("link", {rel: "preload", as: "script", href: HLS, ...attrs}));
   requestIdleCallback(() => document.head.append(h("script", {src: HLS, ...attrs, onload: () => resolve(window.Hls), onerror: reject})), {timeout: 1000});
 });
+export const prefetch = () => loadHls().catch(() => {});
 
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
 // The segment's thumbnail stands in until the first frame arrives. Where the route has no qcamera file there's
-// nothing to wait for: the pane says so, and with none at all it doesn't load a player. A segment that fails to
+// nothing to wait for: the pane says so, and with none at all it drops its player. A segment that fails to
 // load stops the player until the next seek, play or reconnect.
 function qcamera(ctx, pane, {wait, absent}) {
-  const poster = ctx.route.loose || ctx.user ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
+  const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {playsinline: true, preload: "auto", poster});
   video.muted = sound.silent();  // the property: the attribute set after creation doesn't mute it, and only a muted video plays unasked
   const lanes = lane("qcamera");
@@ -219,18 +221,26 @@ function qcamera(ctx, pane, {wait, absent}) {
     lanes.bytes({memory: seconds * QCAMERA_BYTES_PER_S});
   };
   const retry = () => {
-    if (!failed || gone) return;
+    if (!failed || gone || !hls) return;
     // connect keeps saying a segment is missing through a seek, until a fragment plays
     failed = ctx.user && failed.missing ? {...failed, t: ctx.clock.t} : null;
     hls.loadSource(src);  // hls.js skips a failed fragment as a gap for good: start over, and render() seeks back
     update();
   };
-  Promise.all([loadHls(), routeCameraFiles(ctx.route, "qcamera").catch(() => null)]).then(([Hls, found]) => {
+  const listed = routeCameraFiles(ctx.route, "qcamera").catch(() => null).then((found) => {
     if (gone) return;
     files = found;
+    if (hls && files && !files.some(Boolean)) {  // a player started on the API's playlist, with nothing to play
+      hls.destroy();
+      hls = null;
+    }
     update();
     ctx.perf.invalidate(pane);
-    if (files && !files.some(Boolean)) return;
+  });
+  // the API's playlist doesn't wait on the listing, which only says what's missing (the daemon's walk of the sources
+  // takes ~0.6 s); a range's or loose files' playlist is made from it
+  Promise.all([loadHls(), (ctx.route.loose || ctx.route.range) && listed]).then(([Hls]) => {
+    if (gone || files && !files.some(Boolean)) return;
     src = ctx.route.loose || ctx.route.range ? list = playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
     hls = new Hls({maxBufferLength: 20});
     // the codecs hls.js finds say whether there's sound, as connect reads it
