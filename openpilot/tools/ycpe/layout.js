@@ -256,9 +256,12 @@ export class Layout {
   edit(fn) {
     this.checkpoint();
     const map = new Map();
+    const maxed = this.maxPath && at(this.tab.root, this.maxPath);
     this.model = this.save(map);
     fn(this.tab, (n) => map.get(n));
-    this.maxPath = null;
+    // a maximized node stays maximized, along with anything split off it (which takes its place)
+    const path = maxed && pathOf(this.tab.root, map.get(maxed));
+    this.maxPath = path && (path.slice(0, this.maxPath.length).join() === this.maxPath.join() ? this.maxPath : path);
     this.render();
     this.changed();
   }
@@ -275,7 +278,7 @@ export class Layout {
   }
 
   replace(n, fresh) {
-    this.edit((tab, get) => replaceNode(tab, get(n), fresh));
+    this.edit((tab, get) => Object.assign(get(n), fresh));  // in place: a maximized pane stays so
   }
 
   // a pane swapping itself for another (the empty pane's picker)
