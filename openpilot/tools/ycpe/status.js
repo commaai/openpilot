@@ -1,0 +1,190 @@
+// what's loaded where. Every loader (logs, each camera, CAN) publishes the state of each segment, whether the
+// playhead is waiting on it, and the bytes it holds; the playbar, the load pill and the HUD draw from here.
+//
+//   state      missing  no such file          queued   requested
+//              idle     available, not asked  loading  downloading or decoding (with loaded/total bytes)
+//              disk     cached on disk only   ready    in memory
+//              error    failed
+import {h} from "/dom.js";
+import {perf} from "/perf.js";
+import {theme} from "/theme.js";
+
+export const STATES = ["missing", "idle", "queued", "loading", "disk", "ready", "error"];
+
+const kinds = new Map();  // name → source
+const subs = new Set();
+
+// listeners run at most once a frame, however many segments change
+const notify = {name: "status", render() { for (const fn of subs) fn(); }};
+const changed = () => perf.invalidate(notify);
+
+export const status = {
+  // a loader's handle; order sorts the playbar lanes
+  source(name, {label = name, order = 10} = {}) {
+    const src = {name, label, order, segs: [], buffering: null, memory: 0, disk: 0, rate: 0};
+    kinds.set(name, src);
+    changed();
+    return {
+      seg(n, state, {loaded = 0, total = 0} = {}) {
+        const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0};
+        if (s.state === state && s.loaded === loaded && s.total === total) return;
+        s.state = state;
+        s.loaded = loaded;
+        s.total = total;
+        changed();
+      },
+      count(n) {
+        if (src.segs.length === n) return;
+        for (let i = 0; i < n; i++) src.segs[i] ||= {state: "idle", loaded: 0, total: 0};
+        src.segs.length = n;
+        changed();
+      },
+      // the playhead is waiting: {n, text} (e.g. "segment 12"), or null once it has what it needs
+      buffering(b) {
+        if (src.buffering?.text === b?.text) return;
+        src.buffering = b;
+        changed();
+      },
+      bytes({memory = src.memory, disk = src.disk}) { src.memory = memory; src.disk = disk; changed(); },
+      rate(bytesPerSec) { src.rate = bytesPerSec; changed(); },
+      remove() { kinds.delete(name); changed(); },
+    };
+  },
+  kinds: () => [...kinds.values()].sort((a, b) => a.order - b.order),
+  on(fn) { subs.add(fn); return () => subs.delete(fn); },
+};
+
+// fraction of a segment that's usable or on its way, for drawing
+export const fill = (s) => s.state === "ready" ? 1 : s.state === "loading" ? (s.total ? s.loaded / s.total : 0.05) : s.state === "disk" ? 1 : 0;
+
+export const fmtBytes = (b) => b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(0)} MB` : `${Math.round(b / 1e3)} kB`;
+
+const COLORS = {ready: "--accent", disk: "--accent", loading: "--accent", error: "--critical"};
+
+// one kind's segments as a strip of cells: solid when in memory, faint when only on disk, filling while loading
+export function drawLane(c, src, x0, y, w, hgt, segX = null) {
+  const col = (v) => theme.color(v);
+  const n = src.segs.length;
+  src.segs.forEach((s, i) => {
+    const [a, b] = segX ? segX(i) : [x0 + i * w / n, x0 + (i + 1) * w / n];
+    const cw = Math.max(1, b - a - (b - a > 4 ? 1 : 0));
+    if (s.state === "missing") return;
+    c.globalAlpha = s.state === "idle" ? 0.35 : 1;
+    c.fillStyle = col("--line");
+    c.fillRect(a, y, cw, hgt);
+    const f = fill(s);
+    if (!f && s.state !== "error") return;
+    c.globalAlpha = s.state === "disk" ? 0.45 : 1;
+    c.fillStyle = col(COLORS[s.state]);
+    c.fillRect(a, y, s.state === "error" ? cw : cw * f, hgt);
+  });
+  c.globalAlpha = 1;
+}
+
+function counts(src) {
+  const n = {ready: 0, disk: 0, loading: 0, queued: 0, error: 0, total: 0};
+  for (const s of src.segs) {
+    if (s.state === "missing") continue;
+    n.total++;
+    if (s.state in n) n[s.state]++;
+  }
+  return n;
+}
+
+const STATE_TEXT = {missing: "not available", idle: "not loaded", queued: "queued", loading: "loading", disk: "on disk", ready: "in memory", error: "failed"};
+export const describe = (s) => s.state === "loading" && s.total ? `${STATE_TEXT.loading} ${Math.round(100 * s.loaded / s.total)}% of ${fmtBytes(s.total)}` : STATE_TEXT[s.state];
+
+// the top-bar pill: what's loading or buffering right now, and a panel with every kind's segments
+export function loadPill() {
+  const text = h("span");
+  const bar = h("span", {class: "pill-bar"}, h("i"));
+  const el = h("button", {class: "load-pill", hidden: true, title: "Loading status (click for details)"}, text, bar);
+  let panel = null;
+  const update = () => {
+    const all = status.kinds();
+    el.hidden = !all.length;
+    const waiting = all.find((k) => k.buffering);
+    const active = all.filter((k) => k.segs.some((s) => s.state === "loading" || s.state === "queued"));
+    el.classList.toggle("buffering", !!waiting);
+    el.classList.toggle("done", !waiting && !active.length);
+    if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
+    else if (active.length) {
+      const k = active[0], n = counts(k);
+      text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
+    } else text.textContent = all.map((k) => { const n = counts(k); return `${k.label} ${n.ready + n.disk}/${n.total}`; }).join(" · ");
+    const segs = active.flatMap((k) => k.segs.filter((s) => s.state !== "missing" && s.state !== "idle"));
+    const f = segs.length ? segs.reduce((a, s) => a + fill(s), 0) / segs.length : 1;
+    bar.hidden = !active.length && !waiting;
+    bar.firstChild.style.width = `${(100 * f).toFixed(1)}%`;
+    panel?.update();
+  };
+  status.on(update);
+  el.addEventListener("click", () => {
+    if (panel) { panel.close(); panel = null; } else panel = statusPanel(el, () => { panel = null; });
+  });
+  return el;
+}
+
+function statusPanel(anchor, onClose) {
+  const body = h("div", {class: "status-rows"});
+  const el = h("div", {class: "status-panel"}, h("div", {class: "status-head"}, h("b", {}, "Loading"), h("button", {class: "link", onclick: () => close()}, "close")), body);
+  const r = anchor.getBoundingClientRect();
+  el.style.top = `${r.bottom + 6}px`;
+  el.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+  document.body.append(el);
+  const rows = new Map();
+  function row(k) {
+    let rw = rows.get(k.name);
+    if (!rw) {
+      const canvas = h("canvas", {class: "status-lane"});
+      const info = h("span", {class: "muted"});
+      const tip = h("div", {class: "status-tip muted"});
+      rw = {canvas, info, tip, el: h("div", {class: "status-row"}, h("div", {class: "status-title"}, h("b", {}, k.label), info), canvas, tip)};
+      canvas.addEventListener("pointermove", (e) => {
+        const i = Math.floor((e.offsetX / canvas.clientWidth) * k.segs.length), s = k.segs[i];
+        rw.tip.textContent = s ? `segment ${i}: ${describe(s)}` : "";
+      });
+      canvas.addEventListener("pointerleave", () => { rw.tip.textContent = ""; });
+      rows.set(k.name, rw);
+    }
+    return rw;
+  }
+  function update() {
+    const kinds = status.kinds();
+    body.replaceChildren(...kinds.map((k) => row(k).el));
+    for (const k of kinds) {
+      const {canvas, info} = row(k), n = counts(k);
+      const bits = [`${n.ready} in memory`, n.disk && `${n.disk} on disk`, n.loading && `${n.loading} loading`, n.queued && `${n.queued} queued`,
+        n.error && `${n.error} failed`, k.rate && `${fmtBytes(k.rate)}/s`, k.memory && `mem ${fmtBytes(k.memory)}`, k.disk && `disk ${fmtBytes(k.disk)}`,
+        k.buffering && `waiting on ${k.buffering.text}`];
+      info.textContent = ` ${n.total} segments · ${bits.filter(Boolean).join(" · ")}`;
+      const dpr = devicePixelRatio, w = canvas.clientWidth, hgt = 10;
+      if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = hgt * dpr; }
+      const c = canvas.getContext("2d");
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, w, hgt);
+      drawLane(c, k, 0, 0, w, hgt);
+    }
+  }
+  const close = () => { el.remove(); onClose(); };
+  setTimeout(() => document.addEventListener("pointerdown", function off(e) {
+    if (!el.contains(e.target) && !anchor.contains(e.target)) { document.removeEventListener("pointerdown", off); if (el.isConnected) close(); }
+  }));
+  update();
+  return {update, close};
+}
+
+// memory and disk in the HUD: what the loaders hold plus the JS heap, and the origin's storage (OPFS caches)
+export function footprint() {
+  const el = h("span", {class: "hud-mem", title: "memory: loaded data + JS heap · disk: cached logs and video"});
+  let disk = 0;
+  const poll = () => navigator.storage?.estimate().then((e) => { disk = e.usage || 0; }, () => {});
+  poll();
+  setInterval(poll, 3000);
+  setInterval(() => {
+    const data = status.kinds().reduce((a, k) => a + k.memory, 0), heap = performance.memory?.usedJSHeapSize || 0;
+    const text = `${fmtBytes(data + heap)} · ${fmtBytes(disk)} disk`;
+    if (el.textContent !== text) el.textContent = text;
+  }, 500);
+  return el;
+}

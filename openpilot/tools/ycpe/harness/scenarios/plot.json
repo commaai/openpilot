@@ -1,0 +1,10 @@
+{"name": "plot", "url": "/5beb9b58bd12b691/0000010a--a51155e496/plot", "budgets": {"drops": 0}, "timeout": 60000, "reference": ["jotpluggler-longitudinal", "jotpluggler-demo"],
+ "steps": [
+  {"waitFor": ".pane"},
+  {"shot": "loading"},
+  {"waitFor": {"fn": "document.querySelector('.load-pill').hidden && document.querySelector('.load-pill').textContent"}},
+  {"shot": "light"},
+  {"key": "t"},
+  {"wait": 300},
+  {"shot": "dark"}
+ ]}

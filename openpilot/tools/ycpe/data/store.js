@@ -2,9 +2,10 @@
 // Columns stay packed as the workers sent them and become views on first use. Over the memory budget, the least
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
 import {api} from "../api.js";
+import {perf} from "../perf.js";
 import {Loader} from "./loader.js";
 import {Can} from "./can.js";
-import {service, unpack} from "./pack.js";
+import {enumRef, service, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
@@ -33,6 +34,8 @@ export class Store {
     this.can = new Can(this);
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.lists = new Map();  // long lists the workers skipped: path → longest length
+    this.missing = new Set();  // migrated paths that couldn't be computed
+    this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
     this.bytes = 0;
     this.progress = {done: 0, failed: 0, total: 0, bytes: 0, raw: 0, cached: 0, ms: {fetch: 0, decompress: 0, read: 0, ingest: 0}, ingestMax: 0, start: performance.now()};
@@ -46,7 +49,7 @@ export class Store {
       seg.url = url;
       seg.opts = {n: local, shift: (seg.n - local) * SEGMENT};
       this.progress.total++;
-      this.load(seg, {keep: this.keep, can: true}).then((p) => {
+      this.load(seg, undefined, {can: true}).then((p) => {  // CAN frames come out of the first parse only
         this.count(p);
         this.ingest(seg, p);
         if (p.can) this.can.ingest(seg.n, p.can, 0);
@@ -54,8 +57,14 @@ export class Store {
     }
   }
 
-  load(seg, opts) {
-    return this.loader.load(seg.key, seg.url, {...seg.opts, ...opts}, this.prio(seg.n), seg.n);
+  // the options are taken when the parse starts, so it skips whatever was evicted by then
+  load(seg, only, extra = {}) {
+    const opts = () => {
+      const skip = {};
+      for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
+      return {...seg.opts, keep: this.keep, skip, only, context: this.context, ...extra};
+    };
+    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n);
   }
 
   // outward from the focus segment
@@ -95,6 +104,8 @@ export class Store {
   ingest(seg, p) {
     const start = performance.now(), route = this.route;
     route.t0 ??= p.start;
+    this.context ||= p.context;  // migrations fall back to it when a segment lacks initData or carParams
+    for (const m of p.missing || []) this.missing.add(m);
     if (seg.status !== "done") {
       seg.t0 = p.t0;
       seg.t1 = p.t1;
@@ -109,22 +120,23 @@ export class Store {
     const paths = p.paths ? p.paths.split("\n") : [];
     p.types = p.types.split("\n");
     p.live = p.counts.map(() => 0);
-    for (const b of p.bufs) this.bytes += b.byteLength;
     let added = false;
     for (let k = 0; k < paths.length; k++) {
       let e = this.entries.get(paths[k]);
       if (!e) {
-        const ref = p.recs[k * 9 + 7];
+        const ref = enumRef(p, k);
         e = {path: paths[k], type: p.types[k], ...(ref >= 0 && {names: this.enums[ref]}), at: [], views: [], version: 0, used: 0};
         this.entries.set(paths[k], e);
         added = true;
       }
+      if (e.evicted) continue;  // not resident until asked for again
       if (e.at[seg.n]) this.release(e.at[seg.n]);
       e.at[seg.n] = {pack: p, k};
       e.views[seg.n] = null;
       e.version++;
       p.live[service(p, k)]++;
     }
+    p.live.forEach((n, s) => n ? (this.bytes += p.bufs[s].byteLength) : drop(p, s));
     const ms = performance.now() - start;
     this.progress.ms.ingest += ms;
     this.progress.ingestMax = Math.max(this.progress.ingestMax, ms);
@@ -132,6 +144,8 @@ export class Store {
     this.emit("segment", seg.n);
     this.emit("progress", this.progress);
     if (this.bytes > this.budget) this.evict();
+    perf.mark("store", `${(this.bytes / 1e6).toFixed(0)} / ${(this.budget / 1e6).toFixed(0)} MB, ${this.entries.size} paths`);
+    perf.mark("ingest", `${ms.toFixed(1)} ms (max ${this.progress.ingestMax.toFixed(1)})`);
   }
 
   paths() {
@@ -244,7 +258,8 @@ export class Store {
 
   reload(e) {
     e.evicted = false;
-    const [, svc, sub] = e.path.match(/^\/([^/]+)(.*)$/);
+    const [svc, sub] = split(e.path);
+    this.evicted.get(svc).delete(sub);
     this.reparse({[svc]: [sub]});
   }
 
@@ -256,7 +271,7 @@ export class Store {
         const only = this.wanted;
         this.wanted = null;
         for (const seg of this.route.segments) {
-          if (seg.status === "done") this.load(seg, {keep: this.keep, only}).then((p) => this.ingest(seg, p), () => {});
+          if (seg.status === "done") this.load(seg, only).then((p) => this.ingest(seg, p), () => {});
         }
       });
     }
@@ -275,6 +290,9 @@ export class Store {
       e.series = null;
       e.evicted = true;
       e.version++;
+      const [svc, sub] = split(e.path);
+      if (!this.evicted.has(svc)) this.evicted.set(svc, new Set());
+      this.evicted.get(svc).add(sub);
     }
   }
 
@@ -283,11 +301,18 @@ export class Store {
     const s = service(pack, k);
     if (--pack.live[s] === 0) {
       this.bytes -= pack.bufs[s].byteLength;
-      pack.bufs[s] = null;
+      drop(pack, s);
     }
   }
 
   dispose() { this.loader.dispose(); this.can.dispose(); }
+}
+
+const split = (path) => path.match(/^\/([^/]+)(.*)$/).slice(1);
+
+function drop(pack, s) {
+  pack.bufs[s] = null;
+  if (pack.t) pack.t[s] = null;
 }
 
 // min/max per block of BLOCK samples, then per FANOUT blocks, up to one block per chunk; built on first need
