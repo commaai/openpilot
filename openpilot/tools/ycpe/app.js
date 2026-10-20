@@ -776,6 +776,16 @@ async function renderPage() {
     main.replaceChildren(page);
     return updateTop();  // the gift's dot goes once referrals are seen
   }
+  // comma prime at connect's /<dongle>/prime, where billing sends Stripe back to
+  const prime = parts.slice(parts[0] === "connect" ? 1 : 0);
+  if (prime.length === 2 && prime[1] === "prime" && DONGLE_RE.test(prime[0])) {
+    closeWorkspace();
+    updateTop();
+    const page = await Promise.all([import("/pages/prime.js"), state.devices?.find((d) => d.dongle_id === prime[0]) ?? api.device(prime[0])])
+      .then(([m, device]) => m.primePage(device)).catch((e) => errorPage(e, {device: prime[0]}));
+    if (id === navId) main.replaceChildren(page);
+    return;
+  }
   if (openLoose(parts, q, main)) return;
   const target = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? routeFromPath(parts) : null;  // "/<dongle>/<log>[/2:5][/q][/<view>]"
   const routeName = target?.name;
@@ -826,8 +836,10 @@ async function renderPage() {
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch((e) => errorPage(e, {device: parts[0]}));
     if (id === navId) main.replaceChildren(page);
-    const {referralPromo} = await import("/pages/referrals.js");
-    const promo = await referralPromo(state.devices?.find((d) => d.dongle_id === parts[0]));
+    // connect shows the referral card, else the prime sign-up one
+    const device = state.devices?.find((d) => d.dongle_id === parts[0]);
+    const promo = await import("/pages/referrals.js").then((m) => m.referralPromo(device)) ??
+      (device?.is_owner && !device.prime ? await import("/pages/prime.js").then((m) => m.primeBanner([device])) : null);
     if (promo && id === navId) main.prepend(promo);
   } else if (parts.length) {
     main.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
