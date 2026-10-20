@@ -1,13 +1,13 @@
-// column-level port of selfdrive/test/process_replay/migration.py. It rewrites one segment's compacted services
-// (capnp.js compact()) into the current schema in place, with aliased and derived columns and no capnp re-encoding.
+// column-level port of selfdrive/test/process_replay/migration.py. It rewrites one segment's reader output (dense
+// columns, before compact()) into the current schema in place, with aliased and derived columns and no capnp
+// re-encoding.
 //
 // Route context: migrations that need initData or carParams read them from the segment if it has them, otherwise
-// from routeContext. The loader keeps context(services) of the first segment that has them and passes it to every
-// segment. Python migrates each log on its own, so the parity test passes {}.
+// from routeContext, which the loader fills from the context migrate() returns for an earlier segment. Python
+// migrates each log on its own, so the parity test passes {}.
 //
-// Some migrations read lists longer than capnp.js's per-index limit: sensorEventsDEPRECATED, longitudinalPlan speeds,
-// modelV2 position and laneLines. They need the reader to keep those lists; without their columns, the derived paths
-// are skipped and reported in `missing`.
+// Some migrations read lists longer than capnp.js's per-index limit; read with {keep: KEEP} to have them. When the
+// reader skipped one (svc.lists), the derived paths are skipped and reported in `missing`.
 import schema from "./schema.json" with {type: "json"};
 import tables from "./migrate.json" with {type: "json"};
 
@@ -17,9 +17,15 @@ const WIDE = new Set(["f64", "i64", "u64", "u32", "i32"]);
 const MAX_LIST = 16;  // capnp.js
 const T_IDXS = Array.from({length: 33}, (_, i) => 10 * (i / 32) ** 2);  // ModelConstants.T_IDXS
 
-let fresh;  // buffers created by this run, for the transfer list
+// the long lists the migrations read, as a reader keep option
+export const KEEP = {
+  sensorEventsDEPRECATED: [""],
+  longitudinalPlan: ["/speeds", "/accels"],
+  modelV2: ["/position/x", "/position/y", "/position/z", "/laneLines/*/y"],
+};
 
-const at = (col, i) => col === undefined ? undefined : "c" in col ? col.c : col.v[i];
+const at = (col, i) => col?.v[i];
+const dropped = (svc, path) => svc.lists?.has(path);  // a long list the reader skipped (not in KEEP)
 const has = (col, i) => { const x = at(col, i); return x !== undefined && x !== null && x === x; };
 const field = (st, name) => st.fields.find((f) => f[0] === name);
 const names = (st, name) => schema.enums[field(st, name)[4]];
@@ -28,20 +34,14 @@ const ns = (svc) => svc.t.length;
 function column(type, n, fn, enumNames) {
   const v = type === "t" ? new Array(n) : new (WIDE.has(type) ? Float64Array : Float32Array)(n);
   for (let i = 0; i < n; i++) v[i] = fn(i) ?? (type === "t" ? null : NaN);
-  if (type !== "t") fresh.push(v.buffer);
   return enumNames ? {type, names: enumNames, v} : {type, v};
 }
 
-function ones(n) {
-  const v = new Uint8Array(n).fill(1);
-  fresh.push(v.buffer);
-  return v;
-}
+const ones = (n) => new Uint8Array(n).fill(1);
 
 function pick(arr, idx) {
   const v = new arr.constructor(idx.length);
   for (let k = 0; k < idx.length; k++) v[k] = arr[idx[k]];
-  fresh.push(v.buffer);
   return v;
 }
 
@@ -54,7 +54,7 @@ function present(cols, prefix, n) {
 // one field of a new message: a source column, a function of the event index, or a constant
 function value(v, type, n, enumNames) {
   if (typeof v === "function") return column(type, n, v, enumNames);
-  if (typeof v !== "object") return enumNames ? {type, names: enumNames, c: v} : {type, c: v};
+  if (typeof v !== "object") return column(type, n, () => v, enumNames);
   if (v.type !== type) return column(type, n, (i) => at(v, i), enumNames);
   return enumNames ? {...v, names: enumNames} : v;
 }
@@ -98,8 +98,9 @@ export function context(services) {
 const SENSORS = {acceleration: "accelerometer", gyro: "gyroscope", gyroUncalibrated: "gyroscope", light: "lightSensor", proximity: "lightSensor",
                  magnetic: "magnetometer", magneticUncalibrated: "magnetometer", temperature: "temperatureSensor"};
 
-function sensorEvents(s) {
+function sensorEvents(s, ctx, missing) {
   const src = s.sensorEventsDEPRECATED, n = ns(src), st = STRUCTS.SensorEventData;
+  if (dropped(src, "")) missing.push("sensorEventsDEPRECATED");
   const members = st.fields.filter((f) => f[1] >= 0).map((f) => f[0]), first = st.fields.find((f) => f[1] === 0)[0];
   const paths = Object.keys(src.cols);
   // the union's active member is the one with values (the reader writes no others), else a null first member
@@ -126,9 +127,9 @@ function sensorEvents(s) {
     }
     if (SENSORS[first] === name && entries.some((e) => e[2])) {  // a null member copies as a struct of defaults
       const defaults = struct(schema.structs[field(st, first)[4]], `/${first}`, entries.length);
-      for (const [p, {type, c}] of Object.entries(defaults)) {
+      for (const [p, {type, v}] of Object.entries(defaults)) {
         const col = cols[p];
-        cols[p] = column(type, entries.length, (k) => entries[k][2] ? c : at(col, k));
+        cols[p] = column(type, entries.length, (k) => entries[k][2] ? v[k] : at(col, k));
       }
     }
     const idx = entries.map(([i]) => i);
@@ -165,7 +166,7 @@ function gpsLocation(s) {
 
 function deviceState(s, ctx) {
   if (!s.deviceState || ctx.deviceType === undefined) return;
-  s.deviceState.cols["/deviceType"] = {type: "e", names: names(STRUCTS.DeviceState, "deviceType"), c: ctx.deviceType};
+  s.deviceState.cols["/deviceType"] = value(ctx.deviceType, "e", ns(s.deviceState), names(STRUCTS.DeviceState, "deviceType"));
 }
 
 function carOutput(s) {
@@ -258,7 +259,7 @@ function drivingModelData(s, ctx, missing) {
     Object.assign(cols, struct(STRUCTS["DrivingModelData.LaneLineMeta"], "/laneLineMeta", n, {
       "/leftY": val("/laneLines/1/y/0"), "/leftProb": val("/laneLineProbs/1"), "/rightY": val("/laneLines/2/y/0"), "/rightProb": val("/laneLineProbs/2"),
     }));
-  } else if (src["/laneLineProbs/0"]) {
+  } else if (dropped(m, "/laneLines/1/y")) {
     missing.push("drivingModelData/laneLineMeta");
   }
 
@@ -271,7 +272,7 @@ function drivingModelData(s, ctx, missing) {
         cols[`/path/${a}Coefficients/${d}`] = column("f32", n, (i) => ok[i] ? row.reduce((acc, w, k) => acc + w * at(xs[k], i), 0) : NaN);
       });
     }
-  } else {
+  } else if (dropped(m, "/position/x")) {
     missing.push("drivingModelData/path");
   }
   s.drivingModelData = {t: m.t, valid: m.valid, cols};
@@ -354,7 +355,7 @@ function longitudinalPlan(s, ctx, missing) {
   const lp = s.longitudinalPlan, n = lp && ns(lp);
   if (!lp || ctx.carFingerprint === undefined || !lp.t.every((_, i) => at(lp.cols["/aTarget"], i) === 0)) return;
   const speed = (j) => lp.cols[`/speeds/${j}`], accel0 = lp.cols["/accels/0"];
-  if (!speed(0)) return missing.push("longitudinalPlan/aTarget");  // dropped by the reader, or empty
+  if (dropped(lp, "/speeds") || dropped(lp, "/accels")) return missing.push("longitudinalPlan/aTarget");
   // get_accel_from_plan with action_t = DT_MDL, which only needs speeds 0, 5 and 6
   const full = (i) => has(speed(CONTROL_N - 1), i) && !has(speed(CONTROL_N), i);
   const aTarget = new Float64Array(n);
@@ -382,7 +383,7 @@ function pandaStates(s, ctx) {
   const old = s.pandaStateDEPRECATED;
   if (old) {
     const cols = Object.fromEntries(Object.entries(old.cols).map(([p, c]) => [`/0${p}`, c]));
-    cols["/0/safetyParam"] = {type: "u16", c: sp};
+    cols["/0/safetyParam"] = value(sp, "u16", ns(old));
     s.pandaStates = {t: old.t, valid: old.valid, cols};
     delete s.pandaStateDEPRECATED;
     return;
@@ -455,17 +456,17 @@ const OPTIONAL = {
   cameraStates: [[["narrowRoadCameraState", "wideRoadCameraState", "cabinCameraState"], null, cameraStates]],
 };
 
-// migrates services in place; returns the new buffers to add to the transfer list and the derived paths that
-// could not be computed
+// migrates the reader's Map(which → {name, t, valid, cols: Map}) in place. Returns this segment's context, for
+// routeContext of later segments, and the derived paths that could not be computed.
 export function migrate(services, routeContext = {}, options = {}) {
-  fresh = [];
-  const missing = [];
-  const ctx = {...routeContext, ...context(services)};
-  const original = new Set(Object.keys(services));
+  const s = {};
+  for (const svc of services.values()) s[svc.name] = {...svc, cols: Object.fromEntries(svc.cols)};
+  const own = context(s), ctx = {...routeContext, ...own}, missing = [], original = new Set(Object.keys(s));
   const migrations = [...MIGRATIONS, ...Object.keys(OPTIONAL).filter((k) => options[k]).flatMap((k) => OPTIONAL[k])];
   for (const [inputs, product, fn] of migrations) {
-    if (original.has(product) || !inputs.some((name) => original.has(name))) continue;
-    fn(services, ctx, missing);
+    if (!original.has(product) && inputs.some((name) => original.has(name))) fn(s, ctx, missing);
   }
-  return {transfer: fresh, missing};
+  services.clear();
+  for (const [name, svc] of Object.entries(s)) services.set(name, {...svc, name, cols: new Map(Object.entries(svc.cols))});
+  return {context: own, missing};
 }
