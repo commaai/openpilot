@@ -9,5 +9,7 @@
 .inspector-pane .inspector-window { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
 .inspector-pane .inspector-row { display: flex; height: 18px; white-space: pre; overflow: hidden; }
 .inspector-pane .inspector-row:hover { background: var(--hover); }
+.inspector-pane .inspector-list:focus-visible { outline: 0; }
+.inspector-pane .inspector-list:focus-visible .inspector-row.cur { box-shadow: inset 0 0 0 1px var(--accent); }
 .inspector-pane .inspector-key { flex: none; width: 45%; overflow: hidden; text-overflow: ellipsis; color: var(--muted); cursor: default; }
 .inspector-pane .inspector-value { flex: 1; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
