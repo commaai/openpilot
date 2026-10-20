@@ -67,3 +67,13 @@ export function css(href) {
   if (!sheets.has(href)) sheets.set(href, new Promise((done) => document.head.append(h("link", {rel: "stylesheet", href, onload: done, onerror: done}))));
   return sheets.get(href);
 }
+
+// sizes canvas cv's backing store to w×hgt css px at devicePixelRatio, only when that changed (reallocating clears
+// it); returns its context, drawing in css px. The css size is the caller's
+export function fitCanvas(cv, w, hgt) {
+  const r = devicePixelRatio || 1, bw = Math.max(1, Math.round(w * r)), bh = Math.max(1, Math.round(hgt * r));
+  if (cv.width !== bw || cv.height !== bh) [cv.width, cv.height] = [bw, bh];
+  const g = cv.getContext("2d");
+  g.setTransform(r, 0, 0, r, 0, 0);
+  return g;
+}

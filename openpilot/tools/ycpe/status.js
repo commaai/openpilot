@@ -6,7 +6,7 @@
 //              disk     cached on disk only   ready    in memory
 //              error    failed
 // A segment may also say which source its bytes came from (api, internal, openpilotci, car segments, local, …).
-import {h, listeners} from "/dom.js";
+import {h, listeners, fitCanvas} from "/dom.js";
 import {icon} from "/icons.js";
 import {daemon} from "/daemon.js";
 import {perf} from "/perf.js";
@@ -175,6 +175,10 @@ function statusPanel(anchor, onClose) {
   document.body.append(el);
   el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - el.offsetWidth - 8))}px`;
   const rows = new Map();
+  // the lanes' width (the body's), kept from its observer: read in update, it forced a layout on every status change
+  let width = 0;
+  const sized = new ResizeObserver(([e]) => { width = e.contentRect.width; update(); });
+  sized.observe(body);
   function row(k) {
     let rw = rows.get(k.name);
     if (!rw) {
@@ -205,12 +209,9 @@ function statusPanel(anchor, onClose) {
       info.textContent = ` ${n.total} segments · ${bits.filter(Boolean).join(" · ")}`;
       const failed = k.segs.flatMap((s) => s.state === "error" ? [`segment ${s.label}: ${s.text || "failed"}`] : []).join("\n");
       if (errors.textContent !== failed) errors.textContent = failed;
-      const dpr = devicePixelRatio, w = canvas.clientWidth, hgt = 10;
-      if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = hgt * dpr; }
-      const c = canvas.getContext("2d");
-      c.setTransform(dpr, 0, 0, dpr, 0, 0);
-      c.clearRect(0, 0, w, hgt);
-      drawLane(c, k, 0, 0, w, hgt);
+      const c = fitCanvas(canvas, width, 10);
+      c.clearRect(0, 0, width, 10);
+      drawLane(c, k, 0, 0, width, 10);
     }
   }
   const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
@@ -219,6 +220,7 @@ function statusPanel(anchor, onClose) {
   const close = () => {
     if (!el.isConnected) return;
     el.remove();
+    sized.disconnect();
     document.removeEventListener("keydown", escape);
     document.removeEventListener("pointerdown", outside);
     onClose();

@@ -1,6 +1,6 @@
 // canvas plumbing shared by the plot panes and the series browser: crisp canvases, ticks, number formats,
 // curve marks, and their stylesheet
-import {css} from "/dom.js";
+import {css, fitCanvas as fitBacking} from "/dom.js";
 
 css(new URL("./plot.css", import.meta.url));
 
@@ -41,16 +41,11 @@ function stateStyle(v, label, col) {
   return [STATE[Math.abs(v) % STATE.length], 0.26];
 }
 
-// sizes the backing store to the css size at devicePixelRatio; drawing stays in css px
+// dom.js's fitCanvas, setting the css size too: a plot stretches its canvases while a new size settles (plot.js)
 export function fitCanvas(cv, w, hgt) {
-  const r = devicePixelRatio || 1;
-  cv.width = Math.max(1, Math.round(w * r));
-  cv.height = Math.max(1, Math.round(hgt * r));
   cv.style.width = `${w}px`;
   cv.style.height = `${hgt}px`;
-  const g = cv.getContext("2d");
-  g.setTransform(r, 0, 0, r, 0, 0);
-  return g;
+  return fitBacking(cv, w, hgt);
 }
 
 // steps a clock reads well, in seconds

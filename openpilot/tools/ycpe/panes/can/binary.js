@@ -1,5 +1,5 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
-import {h} from "/dom.js";
+import {h, fitCanvas} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, flip, format, raw, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
@@ -17,7 +17,7 @@ let dragDir = localStorage.getItem(DIR_KEY) || "msb";
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
-  let mode = state.mode || "live", heat = null, heatKey = null, hover = null, drag = null, dpr = 1, width = 300;
+  let mode = state.mode || "live", heat = null, heatKey = null, hover = null, drag = null, width = 300;
   const canvas = h("canvas", {class: "can-binary-canvas"});
   const info = h("div", {class: "can-binary-info"});
   const title = h("span", {class: "can-binary-title"});
@@ -187,16 +187,8 @@ export function create(ctx, state) {
       const key = k(), n = key === null ? 0 : rows(), {col, x0} = geometry();
       if (bar.hidden !== (key === null)) bar.hidden = key === null;
       if (key !== null) title.textContent = `${hexId(key)} ${msg()?.name || ""}`;
-      dpr = devicePixelRatio;
-      // fractional sizes round to the backing store's, or it would be reallocated every frame
-      const w = width, H = Math.max(n * ROW, 1), bw = Math.round(w * dpr), bh = Math.round(H * dpr);
-      if (canvas.width !== bw || canvas.height !== bh) {
-        canvas.width = bw;
-        canvas.height = bh;
-        canvas.style.height = `${H}px`;
-      }
-      const g = canvas.getContext("2d");
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = width, H = Math.max(n * ROW, 1), g = fitCanvas(canvas, w, H);
+      if (canvas.style.height !== `${H}px`) canvas.style.height = `${H}px`;
       g.clearRect(0, 0, w, H);
       if (empty.hidden !== n > 0) empty.hidden = n > 0;
       if (!n) return;
@@ -310,6 +302,7 @@ export function create(ctx, state) {
   }));
   document.addEventListener("keydown", key);
   s.add(() => document.removeEventListener("keydown", key));
+  // the scroller's own width: its scrollbar comes with enough rows, so the pane's size doesn't tell it
   const sizer = new ResizeObserver(([e]) => { width = e.contentRect.width; ctx.perf.invalidate(pane); });
   sizer.observe(scroller);
   s.add(() => sizer.disconnect());

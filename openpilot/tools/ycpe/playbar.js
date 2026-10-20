@@ -3,7 +3,7 @@
 // nothing loaded at all is faded. A live session's timeline is its window, ending at the head of the data, with the
 // source's state, "Go live" (or that it's following) and saving the session as an rlog.
 import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
-import {h, fmt, css, parseClock} from "/dom.js";
+import {h, fmt, css, parseClock, fitCanvas} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -115,10 +115,10 @@ export function playbar(ctx) {
       source.connect && source.state !== "live" && h("button", {class: "chip", onclick: () => source.connect()}, "Connect"));
   }
 
-  let playing = null, second = null, wallSecond = null;  // what the play button, the slider and the wall clock show
+  let playing = null, shownRate = null, second = null, wallSecond = null;  // what the play button, the rate, the slider and the wall clock show
   const pane = {name: "playbar", render() {
     if (playing !== clock.playing) playBtn.replaceChildren(icon((playing = clock.playing) ? "pause" : "play", 16));
-    rate.value = clock.rate;
+    if (shownRate !== clock.rate) rate.value = shownRate = clock.rate;
     loopBtn.classList.toggle("on", !!clock.loop);
     if (loopBtn.ariaPressed !== String(!!clock.loop)) loopBtn.ariaPressed = String(!!clock.loop);
     if (second !== Math.trunc(clock.t)) {
@@ -133,14 +133,8 @@ export function playbar(ctx) {
 
     const kinds = status.kinds();
     const HEIGHT = PAD + RANGE_H + 2 + SPAN_H + 2 + kinds.length * (LANE_H + 1) + PAD;
-    const dpr = devicePixelRatio;
-    if (canvas.width !== Math.round(width * dpr) || canvas.height !== HEIGHT * dpr) {
-      canvas.width = Math.round(width * dpr);
-      canvas.height = HEIGHT * dpr;
-      canvas.style.height = `${HEIGHT}px`;
-    }
-    const c = canvas.getContext("2d");
-    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const c = fitCanvas(canvas, width, HEIGHT);
+    if (canvas.style.height !== `${HEIGHT}px`) canvas.style.height = `${HEIGHT}px`;
     c.clearRect(0, 0, width, HEIGHT);
     const col = (v) => theme.color(v);
     const spanY = PAD + RANGE_H + 2, segY = spanY + SPAN_H + 2;

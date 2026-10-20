@@ -21,7 +21,7 @@ export function create(ctx) {
   const segs = route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
   let source = routeSource.get(route.fullname);
   let found = new Map(), errors = {}, asked = new Set(), gen = 0;  // gen drops answers for a source no longer picked
-  let up = null, apiFiles = new Set(), height = 0, alive = true;
+  let up = null, apiFiles = new Set(), height = 0, top = 0, alive = true;
   const stop = new AbortController();  // download-alls end with the pane
   let dirty = true, stale = new Set();  // every row and the header redraw, or just these segments' rows
   const rows = new Map();  // row index → {el, src, cells, shown} on screen
@@ -32,12 +32,15 @@ export function create(ctx) {
   const notes = h("div", {class: "fp-notes"});
   const head = h("div", {class: "fp-row fp-head"});
   const body = h("div", {class: "fp-body", style: `height: ${segs.length * ROW}px`});
-  const scroller = h("div", {class: "fp-scroll", onscroll: () => perf.invalidate(pane)}, head, body);
+  const scroller = h("div", {class: "fp-scroll", onscroll: () => { top = scroller.scrollTop; perf.invalidate(pane); }}, head, body);
   const queueTitle = h("summary", {}, "Upload queue");
   const queueEl = h("div", {class: "fp-queue-list"});
   const el = h("div", {class: "files-pane"}, h("div", {class: "fp-bar"}, picker, summary), notes, scroller,
     h("details", {class: "fp-queue"}, queueTitle, queueEl));
-  const sized = new ResizeObserver(([e]) => { height = e.contentRect.height; perf.invalidate(pane); });
+  // the scroller's own size: the notes and the upload queue above and below it change it, not just the pane's. Its
+  // scrollTop is kept from here and its scroll events (a reattached scroller starts at 0), as reading it in render
+  // would force a layout
+  const sized = new ResizeObserver(([e]) => { height = e.contentRect.height; top = scroller.scrollTop; perf.invalidate(pane); });
   sized.observe(scroller);
 
   const changed = (ns) => {
@@ -189,7 +192,6 @@ export function create(ctx) {
   }
 
   function render() {
-    const top = scroller.scrollTop;
     const first = Math.max(0, Math.floor(top / ROW) - OVERSCAN), last = Math.min(segs.length, Math.ceil((top + height) / ROW) + OVERSCAN);
     for (const [i, row] of rows) if (i < first || i >= last) { row.el.remove(); rows.delete(i); }
     const want = [];
