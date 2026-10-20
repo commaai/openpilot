@@ -24,7 +24,7 @@ export const VIEWS = {
 // and logs. key: where the layout is saved, when that isn't the view's name
 export const LIVE_VIEWS = {
   drive: {...view("Drive", split("row", [0.68, 0.32],
-    pane("camera", {camera: "ecamera"}), split("col", [0.5, 0.5], pane("map"), pane("logs")))), key: "live-drive"},
+    pane("camera", {camera: "fcamera"}), split("col", [0.5, 0.5], pane("map"), pane("logs")))), key: "live-drive"},
   plot: VIEWS.plot,
   can: VIEWS.can,
   logs: {...view("Logs", split("row", [0.62, 0.38], pane("logs"), pane("inspector"))), key: "live-logs"},

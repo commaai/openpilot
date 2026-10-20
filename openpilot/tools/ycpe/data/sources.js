@@ -135,7 +135,7 @@ export const SOURCES = {
       return new Map(segs.filter((s) => bySeg.has(s)).map((s) => [s, bySeg.get(s)]));
     },
   },
-  // the device itself while it's online: its files over WebRTC (data/live/p2p.js), uploaded or not
+  // the device itself while it's online: its files over WebRTC (data/live/p2p.js), uploaded or not. Picked by hand only
   p2p: {
     label: "device (peer to peer)",
     find: async (sr, segs, kind) => (await import("./live/p2p.js")).find(sr, segs, KINDS[kind]),
@@ -164,7 +164,8 @@ export const SOURCES = {
   },
 };
 
-export const AUTO = ["internal", "api", "p2p", "openpilotci", "carSegments"];
+// not p2p: it starts a stream on the device, which ends any other viewer's, so it's only ever picked by hand
+export const AUTO = ["internal", "api", "openpilotci", "carSegments"];
 
 // the source a route's files come from: "auto" (AUTO's order) or one SOURCES name, kept per route
 export const routeSource = {
@@ -178,7 +179,7 @@ export const routeSource = {
 const cacheName = (f) => f.source === "carSegments" && !f.file.startsWith("ccs-") ? {...f, file: `ccs-${f.file}`} : f;
 
 // file_sources' walk: for each kind, each source in turn on the segments still without it. Partial results are kept,
-// not raised. "auto" is the daemon's order then the device peer to peer, or without it AUTO's sources a browser reaches.
+// not raised. "auto" is the daemon's order, or without it AUTO's sources a browser reaches.
 // → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
 export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = false} = {}) {
   const found = new Map(), errors = {}, served = daemon.sources();
