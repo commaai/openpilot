@@ -112,10 +112,16 @@ export class Store {
     for (const seg of this.route.segments) if (seg.status === "done") this.reread(seg);
   }
 
+  // one re-read per segment at a time: a queued one parses with whatever schema is current when it starts, and one
+  // that was already parsing with a replaced schema is dropped on arrival and read again (see ingest)
   reread(seg) {
-    if (seg.reread === this.gen) return;
-    seg.reread = this.gen;
-    this.load(seg).then((p) => this.ingest(seg, p), () => {
+    if (seg.rereading) return;
+    seg.rereading = true;
+    this.load(seg).then((p) => {
+      seg.rereading = false;
+      this.ingest(seg, p);
+    }, () => {
+      seg.rereading = false;
       seg.loading = null;
       this.publish(seg);
     });
@@ -235,6 +241,10 @@ export class Store {
 
   // registers a pack's columns: O(columns), no views and no copies
   ingest(seg, p) {
+    if (p.gen !== this.gen && seg.status === "done") {  // superseded: what's in memory stays until the new schema's read
+      seg.loading = null;
+      return this.reread(seg);
+    }
     const start = performance.now(), route = this.route;
     route.t0 ??= p.start;
     this.context ||= p.context;  // migrations fall back to it when a segment lacks initData or carParams
