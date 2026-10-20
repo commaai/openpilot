@@ -149,7 +149,7 @@ def _compile(pattern: str) -> re.Pattern:
   def sub(m):
     name, kind = m.group(1), m.group(2)
     return f"(?P<{name}>.+)" if kind == "path" else f"(?P<{name}>[^/]+)"
-  return re.compile("^" + re.sub(r"\{(\w+)(?::(\w+))?\}", sub, pattern) + "$")
+  return re.compile("^" + re.sub(r"\{(\w+)(?::(\w+))?\}", sub, pattern) + r"\Z")
 
 
 def route(method: str, pattern: str, public: bool = False, max_body: int = MAX_BODY):
