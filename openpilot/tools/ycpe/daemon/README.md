@@ -19,7 +19,7 @@ PYTHONPATH=$PWD .venv/bin/python -m unittest openpilot.tools.ycpe.daemon.tests.t
 - `/local/*` rejects any `Origin` other than the daemon's own, and any `Sec-Fetch-Site` other than
   `same-origin` or `none`. It never sends CORS headers.
 - Every `/local/*` route except `caps` needs the per-process session token. It goes in the `X-Ycpe-Token`
-  header, or in `?t=` for URLs the page can't set headers on (media elements, worker fetches). serve.py
+  header, or in `?tok=` for URLs the page can't set headers on (media elements, worker fetches). serve.py
   puts the token in index.html, and the request log never prints query strings.
 - File reads go through `confine(path, roots)`, which resolves symlinks and rejects `..`.
 - The proxy only reaches an allowlist of hosts.

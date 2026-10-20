@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, unquote
 
 TOKEN_HEADER = "X-Ycpe-Token"
-TOKEN_PARAM = "t"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
+TOKEN_PARAM = "tok"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
 CHUNK = 1 << 20
 
 
