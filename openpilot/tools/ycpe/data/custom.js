@@ -1,8 +1,9 @@
-// custom series: user JavaScript evaluated per sample in a worker of its own. That worker is same-origin, not a
-// sandbox: the code can do what this page can, so code from an imported layout runs only once reviewed. Inputs are
-// store paths; every input after the first is resampled (sample-and-hold) onto the first one's times. The globals
-// block runs once per evaluation, so its variables persist across samples. The function body sees time, value, v1 … vN.
-import {Feed, receive, resample, leases} from "./transforms.js";
+// custom series: user JavaScript evaluated per sample in a worker of its own. That worker starts in a sandboxed frame,
+// so its origin is opaque: the code can't read this origin's pages, the daemon or the sign-in, only the series it's
+// given (which it could still send anywhere, so code from an imported layout runs only once reviewed). Inputs are store
+// paths; every input after the first is resampled (sample-and-hold) onto the first one's times. The globals block
+// runs once per evaluation, so its variables persist across samples. The function body sees time, value, v1 … vN.
+import {Feed, receive, concat, resample, leases} from "./transforms.js";
 
 export const TEMPLATES = {
   Derivative: {globals: "let pt = NaN, pv = NaN;", code: "const d = (value - pv) / (time - pt);\npt = time;\npv = value;\nreturn d;"},
@@ -18,24 +19,43 @@ export function compile(inputs, globals, code) {
   return new Function(`"use strict";\n${globals}\nreturn function (${args.join(", ")}) {\n${code}\n};`)();
 }
 
-if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
-  onmessage = ({data: msg}) => {
-    const series = receive(msg);
-    if (!series) return;
-    try {
-      const {inputs, globals, code} = msg, [first, ...rest] = inputs.map((p) => series.get(p));
-      const extra = rest.map((s) => resample(first.t, s.t, s.v));
-      const fn = compile(inputs, globals, code), t = first.t.slice(), v = new Float64Array(t.length), args = new Array(2 + extra.length);
-      for (let i = 0; i < t.length; i++) {
-        args[0] = t[i];
-        args[1] = first.v[i];
-        for (let k = 0; k < extra.length; k++) args[2 + k] = extra[k][i];
-        v[i] = +fn(...args);
-      }
-      postMessage({t, v}, [t.buffer, v.buffer]);
-    } catch (e) {
-      postMessage({error: `${e.name}: ${e.message}`});
+// the worker's side: the page talks to it over the port it's sent first
+function run() {
+  onmessage = ({ports: [port]}) => { port.onmessage = ({data: msg}) => job(msg, port); };
+}
+
+function job(msg, port) {
+  const series = receive(msg);
+  if (!series) return;
+  try {
+    const {inputs, globals, code} = msg, [first, ...rest] = inputs.map((p) => series.get(p));
+    const extra = rest.map((s) => resample(first.t, s.t, s.v));
+    const fn = compile(inputs, globals, code), t = first.t.slice(), v = new Float64Array(t.length), args = new Array(2 + extra.length);
+    for (let i = 0; i < t.length; i++) {
+      args[0] = t[i];
+      args[1] = first.v[i];
+      for (let k = 0; k < extra.length; k++) args[2 + k] = extra[k][i];
+      v[i] = +fn(...args);
     }
+    port.postMessage({t, v}, [t.buffer, v.buffer]);
+  } catch (e) {
+    port.postMessage({error: `${e.name}: ${e.message}`});
+  }
+}
+
+// the worker's script, from the functions it runs; the frame starts it and hands it a port to this page
+const SCRIPT = `"use strict";\nconst stores = new Map();\n${[receive, concat, resample, compile, job, run].join("\n")}\nrun();\n`;
+const FRAME = `<script>onmessage = (e) => new Worker(URL.createObjectURL(new Blob([${JSON.stringify(SCRIPT).replaceAll("</", "<\\/")}]))).postMessage(0, e.ports);</script>`;
+
+// a worker's postMessage, onmessage and terminate, in a frame of its own
+function sandboxed() {
+  const frame = document.createElement("iframe"), {port1, port2} = new MessageChannel();
+  Object.assign(frame, {sandbox: "allow-scripts", srcdoc: FRAME, hidden: true, onload: () => frame.contentWindow.postMessage(0, "*", [port2])});
+  document.body.append(frame);
+  return {
+    postMessage: (m, transfer) => port1.postMessage(m, transfer),
+    set onmessage(fn) { port1.onmessage = fn; },
+    terminate() { port1.close(); frame.remove(); },
   };
 }
 
@@ -53,9 +73,8 @@ export const lease = leases(() => feed);
 
 function post(job) {
   if (!worker) {
-    worker = new Worker(import.meta.url, {type: "module"});
+    worker = sandboxed();
     worker.onmessage = ({data: r}) => finish(r.error ? new Error(r.error) : r);
-    worker.onerror = (e) => restart(new Error(e.message));
     feed = new Feed(worker);
   }
   const transfer = [];
