@@ -161,10 +161,11 @@ export class Layout {
         this.changed();
       };
     });
+    // in place, like the drag: rendering again would rebuild the panes from the model
     el.addEventListener("dblclick", () => {
       this.checkpoint();
       n.sizes = n.sizes.map(() => 1 / n.sizes.length);
-      this.render();
+      for (const c of box.children) if (!c.classList.contains("divider")) c.style.flex = `${1 / n.sizes.length} 1 0`;
       this.changed();
     });
     return el;
