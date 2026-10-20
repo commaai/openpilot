@@ -17,7 +17,7 @@ export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   const st = {filter: state.filter || "", deprecated: !!state.deprecated, expanded: new Set(state.expanded || [])};
   const selected = new Set();
-  let tree = null, stale = true, rows = [], anchor = -1, H = 0, total = 0;
+  let tree = null, stale = true, rows = [], anchor = null, H = 0, total = 0;  // anchor: the path a shift-click ranges from
   let nodes = new Map();  // path → tree node, for every node in the tree
 
   const filter = h("input", {type: "search", class: "filter", placeholder: "filter, or /regex/", value: st.filter, spellcheck: false,
@@ -125,15 +125,16 @@ export function create(ctx, state = {}) {
       return refresh();
     }
     if (!n.meta) return;
-    if (e.shiftKey && anchor >= 0) {
-      for (let i = Math.min(anchor, k); i <= Math.max(anchor, k); i++) if (rows[i].meta) selected.add(rows[i].path);
+    const a = e.shiftKey ? rows.findIndex((r) => r.path === anchor) : -1;  // rows change as branches open and close
+    if (a >= 0) {
+      for (let i = Math.min(a, k); i <= Math.max(a, k); i++) if (rows[i].meta) selected.add(rows[i].path);
     } else if (e.ctrlKey || e.metaKey) {
       selected.has(n.path) ? selected.delete(n.path) : selected.add(n.path);
-      anchor = k;
+      anchor = n.path;
     } else {
       selected.clear();
       selected.add(n.path);
-      anchor = k;
+      anchor = n.path;
     }
     perf.invalidate(pane);
   }
