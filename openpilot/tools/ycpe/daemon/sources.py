@@ -28,6 +28,7 @@ KINDS = {
 FILES = {f: k for k, fs in KINDS.items() for f in fs}
 API_KINDS = {"logs": "rlog", "qlogs": "qlog", "cameras": "fcamera", "ecameras": "ecamera", "dcameras": "dcamera", "qcameras": "qcamera"}
 ROUTE_RE = re.compile(RE.SEGMENT_RANGE)
+HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
 
 module("sources", "1", sources=SOURCES, kinds=[*KINDS, "log"])
@@ -261,11 +262,11 @@ def serve_file(req):
     found = Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)
     if not found:
       raise HTTPError(404)
-    return File(str(confine(found[0], config.log_roots)))
+    return File(str(confine(found[0], config.log_roots)), headers=HIT)
   if (hit := cache.lookup(key)):
     cache.stats["hits"] += 1
     cache.touch(hit[1])
-    return File(str(hit[1]))
+    return File(str(hit[1]), headers=HIT)
   if source == "device":
     raise HTTPError(404)
   cache.stats["misses"] += 1
@@ -282,10 +283,10 @@ def serve_file(req):
       fh = open(fill.tmp, "rb")
     except FileNotFoundError:
       continue
-    return Stream(file_chunks(fh, 0, fill.total, fill.running), headers={"Accept-Ranges": "bytes"}, length=fill.total)
+    return Stream(file_chunks(fh, 0, fill.total, fill.running), headers={"Accept-Ranges": "bytes", **MISS}, length=fill.total)
   if fill.error:
     raise HTTPError(502, fill.error)
-  return File(str(fill.final))
+  return File(str(fill.final), headers=MISS)
 
 
 def proxy_range(url: str, rng: str) -> Stream:
@@ -293,7 +294,7 @@ def proxy_range(url: str, rng: str) -> Stream:
   if r.status not in (200, 206):
     r.release_conn()
     raise HTTPError(502, f"upstream {r.status}")
-  headers = {"Accept-Ranges": "bytes"}
+  headers = {"Accept-Ranges": "bytes", **MISS}
   if (cr := r.headers.get("content-range")):
     headers["Content-Range"] = cr
 

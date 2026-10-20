@@ -112,7 +112,7 @@ class TestSources(DaemonCase):
     self.assertTrue((Path(CACHE) / cache.sha(canonical)).is_file())
     hits = cache.stats["hits"]
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
-    self.assertEqual((r.status, data), (206, blob(1, "rlog.zst")[5:10]))
+    self.assertEqual((r.status, data, r.getheader("X-Ycpe-Cache")), (206, blob(1, "rlog.zst")[5:10], "hit"))
     self.assertEqual(cache.stats["hits"], hits + 1)
     # the python tools read the same download from their chunk cache, without the network
     self.assertEqual(URLFile(canonical + "?sig=x").read(), blob(1, "rlog.zst"))

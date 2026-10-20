@@ -79,6 +79,13 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `POST /local/cache/prune` | Body `{budget?}`. Applies the LRU budget now. |
 | `GET /local/proxy?url=` | GET-only access to the hosts that send no CORS headers: commadataci, huggingface (and `*.hf.co` redirects), and the internal endpoint. Redirects are checked against the same allowlist, the response is always `application/octet-stream` with `CSP: sandbox`, and no credentials are added. |
 
+| `GET /local/repos` | `[{id, name, path, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default), plus a worktree's main checkout. |
+| `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
+| `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
+| `GET /local/repos/{id}/dbc/{name}` | `{name, text, mtime}` |
+| `PUT /local/repos/{id}/dbc/{name}[?mtime=]` | Body is the DBC text. Saves it atomically into opendbc's dbc directory, and only there: the name must match `[A-Za-z0-9_.-]+\.dbc`, and the path is confined. With the `mtime` from the read, it answers 409 if the file changed on disk since. |
+| `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp\|dbc, file, path, deleted}`, from polling mtimes once a second. |
+
 Resolve parameters:
 - `route` uses LogReader's syntax: `dongle|log_id[/slice][/q|r|a]`.
 - `kinds` is a list of `rlog qlog qcamera fcamera ecamera dcamera log`. `log` means rlog, qlog, or rlog falling back to qlog for each segment, according to `mode`.

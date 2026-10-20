@@ -106,12 +106,16 @@ def list_repos(req):
 
 @route("GET", "/local/repos/{id}/capnp")
 def capnp(req):
-  """Every .capnp under the checkout's cereal, by path relative to it (includes include/c++.capnp)."""
+  """The checkout's schema as {import path: text}: every .capnp under cereal (include/c++.capnp too) plus opendbc's
+  car/*.capnp, which log.capnp imports as "/car.capnp". Event is the struct log.capnp names Event."""
   c = get(req.params["id"])
   if not c["cereal"]:
     raise HTTPError(404, "no cereal in this checkout")
   root = Path(c["cereal"])
   files = {str(p.relative_to(root)): p.read_text() for p in sorted(root.rglob("*.capnp")) if confine(p, [str(root)])}
+  if c["opendbc"]:
+    car = Path(c["opendbc"]["dbc"]).parent / "car"
+    files.update({p.name: p.read_text() for p in sorted(car.glob("*.capnp")) if p.name not in files})
   return {"repo": c["id"], "cereal": str(root), "git": c["git"], "files": files}
 
 
