@@ -13,7 +13,9 @@ export function create(ctx, state) {
   let cols = state.cols || 1, style = state.style || "", span = state.span || 0, charts = [], dragging = null, shown = null;
   const tabs = state.tabs || [{charts: state.charts || []}];  // the open tab's charts live in `charts`
   let active = Math.min(state.active || 0, tabs.length - 1);
-  const tabBar = h("div", {class: "can-tabs", role: "tablist"});
+  // the tabs, then the new tab button outside the tablist
+  const tabBar = h("div", {class: "can-tablist", role: "tablist"});
+  const newTab = h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, icon("add", 14));
   const empty = h("div", {class: "can-empty"}, "Plot a signal from the signal list, or drop signals here");
   const grid = h("div", {class: "can-charts-grid", ondragover: (e) => e.preventDefault(), ondrop: (e) => {
     const data = e.dataTransfer.getData(PATHS_MIME);
@@ -22,7 +24,7 @@ export function create(ctx, state) {
     e.preventDefault();
     if (dragging) move(dragging, e); else add({curves: JSON.parse(data).map(curve)});
   }}, empty);
-  const select = (title, options, value, fn) => h("select", {class: "can-select", title, onchange: (e) => fn(e.target.value)},
+  const select = (title, options, value, fn) => h("select", {class: "can-select", title, "aria-label": title.split(":")[0], onchange: (e) => fn(e.target.value)},
     options.map(([v, n]) => h("option", {value: v, selected: v === value}, n)));
   const el = h("div", {class: "can-pane can-charts"},
     h("div", {class: "can-toolbar"},
@@ -33,7 +35,7 @@ export function create(ctx, state) {
       select("Series type of every chart", [["", "auto"], ["line", "line"], ["steps", "step"], ["dots", "scatter"]], style, restyle),
       select("Columns", [1, 2, 3].map((n) => [String(n), `${n} col`]), String(cols), (v) => { cols = +v; layout(); }),
       h("button", {class: "can-btn", title: "Remove every chart in this tab", onclick: () => { for (const c of [...charts]) remove(c); }}, "Clear")),
-    tabBar, grid);
+    h("div", {class: "can-tabs"}, tabBar, newTab), grid);
   const resizer = new ResizeObserver((entries) => {
     for (const e of entries) charts.find((c) => c.box === e.target)?.pane.resize(e.contentRect.width, e.contentRect.height);
   });
@@ -132,8 +134,7 @@ export function create(ctx, state) {
     tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`},
       h("button", {class: "can-tab-name", role: "tab", "aria-selected": String(i === active), onclick: () => i !== active && open(i)},
         `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, ` · ${count(t, i)}`)),
-      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: () => closeTab(i)}, icon("close", 12)))),
-      h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, icon("add", 14)));
+      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: () => closeTab(i)}, icon("close", 12)))));
   }
 
   // cabana's chart type: one series style for every chart, set on their curves

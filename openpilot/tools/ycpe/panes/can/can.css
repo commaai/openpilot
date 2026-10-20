@@ -38,6 +38,8 @@
 .can-msg-table { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .can-msg-head, .can-msg-filters, .can-msg-row { display: flex; padding: 0 4px; }
 .can-msg-head { height: 20px; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+/* sort buttons; :where() leaves the numeric columns their right alignment */
+:where(.can-msg-head > button) { height: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .can-msg-filters { padding-bottom: 3px; border-bottom: 1px solid var(--line); gap: 2px; }
 .can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
@@ -118,6 +120,7 @@
 
 /* charts */
 .can-tabs { display: flex; align-items: center; gap: 2px; padding: 0 4px; border-bottom: 1px solid var(--line); }
+.can-tablist { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .can-tab { display: inline-flex; align-items: center; color: var(--muted); border-bottom: 2px solid transparent; }
 .can-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .can-tab:not(.active):hover { color: var(--fg); }
@@ -157,6 +160,7 @@
 .can-menu { margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
 .can-menu .menu-row { width: 100%; }
 .can-menu hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
+.can-menu .tick { display: inline-flex; width: 14px; }
 .can-picker { width: 420px; height: 320px; }
 .can-picker .can-list-row { display: flex; align-items: center; gap: 6px; padding: 1px 6px; }
 .can-picker .can-list-row input { height: auto; margin: 0; }

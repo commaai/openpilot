@@ -12,7 +12,7 @@ export function create(ctx, state) {
   let open = state.open || null, filter = "", spark = state.spark || 15;  // seconds of history, cabana's default
   // the toolbar is built once and updated, so the filter box keeps focus while the list rebuilds
   const title = h("span", {class: "can-binary-title"}), meta = h("span", {class: "can-muted"}), count = h("span", {class: "can-muted"});
-  const sparkSel = h("select", {class: "can-select", title: "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
+  const sparkSel = h("select", {class: "can-select", title: "Sparkline range", "aria-label": "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
     [1, 5, 15, 30].map((x) => h("option", {value: x, selected: x === spark}, `${x} s`)));
   const filterBox = h("input", {class: "can-filter", placeholder: "Filter signals", oninput: (e) => { filter = e.target.value; build(); }});
   const editBtn = h("button", {class: "can-btn", title: "Edit message", onclick: () => messageDialog(can, k())});

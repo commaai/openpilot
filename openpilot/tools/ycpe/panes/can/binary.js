@@ -21,11 +21,11 @@ export function create(ctx, state) {
   const canvas = h("canvas", {class: "can-binary-canvas"});
   const info = h("div", {class: "can-binary-info"});
   const title = h("span", {class: "can-binary-title"});
-  const modeBtn = h("select", {class: "can-select", title: "Heatmap: flips up to the playhead, or over the visible range",
+  const modeBtn = h("select", {class: "can-select", "aria-label": "Heatmap", title: "Heatmap: flips up to the playhead, or over the visible range",
     onchange: (e) => { mode = e.target.value; heat = null; requestHeat(); }},
     ["live", "range", "off"].map((v) => h("option", {value: v, selected: mode === v}, v)));
   // cabana's drag direction setting, shared by every binary view
-  const dirBtn = h("select", {class: "can-select", title: "Endianness of a dragged signal",
+  const dirBtn = h("select", {class: "can-select", "aria-label": "Drag direction", title: "Endianness of a dragged signal",
     onchange: (e) => { dragDir = e.target.value; localStorage.setItem(DIR_KEY, dragDir); }},
     [["msb", "MSB first"], ["lsb", "LSB first"], ["le", "always LE"], ["be", "always BE"]].map(([v, n]) => h("option", {value: v, selected: v === dragDir}, n)));
   const empty = h("div", {class: "can-empty"}, "Select a message to see its bits");
