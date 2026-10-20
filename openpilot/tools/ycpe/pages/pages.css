@@ -136,8 +136,9 @@ a.drive-row:hover { background: var(--hover); }
   :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
 }
 
-/* the drive, plot and can views on a phone: their panes stacked in one scroll, each a height of its own, the routes
-   list behind the route crumb, the playbar docked below. The files view keeps its one pane, which scrolls itself */
+/* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
+   a height of its own, the playbar docked below. A routes pane is hidden in every view: the route crumb has the list.
+   The files view keeps its one pane, which scrolls itself */
 @media (max-width: 760px) {
   .ws:not([data-view="files"]) .workspace { display: block; overflow-y: auto; }
   .ws:not([data-view="files"]) .layout { display: block; }
