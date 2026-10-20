@@ -44,17 +44,21 @@ export function customsOf(layout) {
 }
 
 // renames, in place, the custom series of layout whose name another one (earlier in it, or in taken: path → specKey)
-// has with different code: x becomes x_2. Every curve and input that reads it follows, in any plot
+// has with different code: x becomes x_2. A curve or input that reads it follows the definition in its own plot, else
+// the layout's when there is just one
 export function uniqueCustoms(layout, taken = new Map()) {
-  const renamed = new Map(), follow = (p) => renamed.get(p) ?? p;
+  const own = new Map(), defs = new Map();  // curves → (name → where its plot's definition went); name → where every definition went
+  const follow = (curves, p) => own.get(curves).get(p) ?? (defs.get(p)?.size === 1 ? [...defs.get(p)][0] : p);
   plots(layout, (curves) => {
+    own.set(curves, new Map());
     for (const c of curves) {
       if (!c.custom) continue;
-      const key = specKey({...c.custom, inputs: c.custom.inputs.map(follow)});
+      const key = specKey({...c.custom, inputs: c.custom.inputs.map((p) => follow(curves, p))});
       let path = c.path;
       for (let n = 2; taken.has(path) && taken.get(path) !== key; n++) path = `${c.path}_${n}`;
+      if (!own.get(curves).has(c.path)) own.get(curves).set(c.path, path);
+      defs.set(c.path, (defs.get(c.path) || new Set()).add(path));
       if (path !== c.path) {
-        renamed.set(c.path, path);
         if (c.label === c.path.slice("/custom/".length)) c.label = path.slice("/custom/".length);
         c.path = path;
       }
@@ -64,8 +68,8 @@ export function uniqueCustoms(layout, taken = new Map()) {
   // then whatever reads them, before or after
   plots(layout, (curves) => {
     for (const c of curves) {
-      if (c.custom) c.custom.inputs = c.custom.inputs.map(follow);
-      else c.path = follow(c.path);
+      if (c.custom) c.custom.inputs = c.custom.inputs.map((p) => follow(curves, p));
+      else c.path = follow(curves, c.path);
     }
   });
   return layout;
