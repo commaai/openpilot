@@ -52,6 +52,7 @@ export function create(ctx, state) {
     save: () => ({level: minLevel, source, text, follow}),
   };
 
+  const work = () => ctx.perf.measure("logs indexing", slice);
   const offs = [ctx.clock.on("t", () => follow && ctx.perf.invalidate(pane))];
   ctx.onStore((s) => {
     if (disposed) return;
@@ -67,8 +68,6 @@ export function create(ctx, state) {
     jobs.push(index(n));
     untick ||= ctx.perf.tick(work);
   }
-
-  const work = () => ctx.perf.measure("logs indexing", slice);
 
   // runs queued indexing and filtering in slices of BUDGET ms
   function slice() {
