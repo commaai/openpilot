@@ -266,6 +266,7 @@ class Workspace {
   syncUrl(now = false) {
     clearTimeout(this.urlTimer);
     const write = () => {
+      if (this.disposed) return;  // left meanwhile
       const q = new URLSearchParams(location.search);
       q.set("t", this.clock.t.toFixed(1));
       q.delete("layout");  // opened once, then it's part of the saved layout
@@ -277,6 +278,8 @@ class Workspace {
   }
 
   dispose() {
+    this.disposed = true;
+    clearTimeout(this.urlTimer);
     for (const off of this.offs) off();
     this.clock.pause();
     for (const l of Object.values(this.layouts)) l.dispose();
