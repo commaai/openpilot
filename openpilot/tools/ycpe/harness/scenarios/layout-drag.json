@@ -1,6 +1,7 @@
 {"name": "layout-drag", "url": "/5beb9b58bd12b691/0000010a--a51155e496/drive",
  "steps": [
   {"waitFor": ".camera-pane video, .camera-pane canvas"},
+  {"eval": "import('/layout.js').then(({Layout}) => { const timed = (name, f) => function (...a) { const t = performance.now(); try { return f.apply(this, a); } finally { performance.measure(name, {start: t}); } }; const {save, changed} = Layout.prototype; Layout.prototype.changed = timed('changed', changed); Layout.prototype.save = function (map) { for (const [n, l] of this.live) if (l.pane?.save && !l.pane.save.timed) l.pane.save = Object.assign(timed(`save ${n.pane}`, l.pane.save), {timed: true}); return timed('save', save).call(this, map); }; })"},
   {"wait": 2000},
   {"drag": {"from": ".split.row > .divider", "by": [150, 0], "steps": 20}},
   {"drag": {"from": ".split.row > .divider", "by": [-150, 0], "steps": 20}},
@@ -11,5 +12,7 @@
   {"drag": {"from": ".split.col > .divider", "by": [0, 120], "steps": 20}},
   {"drag": {"from": ".split.col > .divider", "by": [0, -120], "steps": 20}},
   {"wait": 500},
+  {"note": "window.__saves = Object.entries(Object.groupBy(performance.getEntriesByType('measure').filter((m) => /^(save|changed)/.test(m.name)), (m) => m.name)).map(([k, v]) => `${k} ×${v.length} max ${Math.max(...v.map((m) => m.duration)).toFixed(1)} ms`).join(', ')"},
+  {"assert": "performance.getEntriesByType('measure').every((m) => !/^(save|changed)/.test(m.name) || m.duration < 16) || `pointerup work over 16 ms: ${__saves}`"},
   {"shot": "dragged"}
  ]}

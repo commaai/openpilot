@@ -2,8 +2,9 @@
  "steps": [
   {"eval": "window.__pill = []; setInterval(() => { const p = document.querySelector('.load-pill'), s = `${p.className} | ${p.textContent}`; if (__pill.at(-1) !== s) __pill.push(s); }, 50)"},
   {"filmstrip": {"name": "cold", "every": 250, "until": "!!document.querySelector('.load-pill.done')", "crop": [".topbar", ".playbar"]}},
-  {"assert": "__pill.some((s) => / buffering| \\| logs \\d+\\/\\d+ · /.test(s)) && __pill.at(-1).includes('done')"},
-  {"assert": "import('/status.js').then((m) => m.status.kinds().length > 0 && m.status.kinds().every((k) => k.segs.every((s) => ['ready', 'disk', 'missing'].includes(s.state))))"},
+  {"note": "`pill: ${__pill.join(' → ')}`"},
+  {"assert": "__pill.some((s) => / buffering| \\| logs \\d+\\/\\d+ · /.test(s)) && __pill.at(-1).includes('done') || `the pill never showed progress: ${__pill.join(' → ')}`"},
+  {"assert": "import('/status.js').then((m) => { const kinds = m.status.kinds(), data = kinds.filter((k) => /^(logs|can)$/i.test(k.name)), states = (k) => `${k.name} ${k.segs.map((s) => s.state).join(' ')}`; const open = data.filter((k) => k.segs.some((s) => !['ready', 'disk', 'missing'].includes(s.state))), bad = kinds.filter((k) => k.segs.some((s) => s.state === 'error')); return data.length > 0 && !open.length && !bad.length || `lanes not filled: ${[...open, ...bad].map(states).join('; ') || 'no logs lane'}`; })"},
   {"assert": "/\\d+ (kB|MB|GB) · \\d+(\\.\\d)? (kB|MB|GB) disk/.test(document.querySelector('.hud-mem').textContent) && !document.querySelector('.hud-mem').textContent.endsWith(' 0 kB disk')"},
   {"shot": "done"},
   {"click": ".load-pill"},

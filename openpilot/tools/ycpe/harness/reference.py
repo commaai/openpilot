@@ -19,11 +19,10 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from run import COMMA_API, READ_METHODS, start_xvfb
+from run import COMMA_API, READ_METHODS, REPO, openpilot_venv, start_xvfb
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out" / "reference"
-REPO = HERE.parents[3]
 DEMO = "5beb9b58bd12b691/0000010a--a51155e496"
 W, H = 1440, 900
 REFS = {
@@ -49,9 +48,7 @@ def connect(name, url, viewport=None):
 
 
 def native_env(root, display):
-  main_checkout = lambda r: Path(subprocess.run(["git", "-C", str(r), "rev-parse", "--path-format=absolute", "--git-common-dir"],  # noqa: E731
-                                                capture_output=True, text=True).stdout.strip()).parent
-  venv = next((v for v in (root / ".venv", main_checkout(root) / ".venv", main_checkout(REPO) / ".venv") if v.exists()), None)
+  venv = openpilot_venv(root) or openpilot_venv()
   path = f"{venv / 'bin'}:{os.environ['PATH']}" if venv else os.environ["PATH"]
   return {**os.environ, "DISPLAY": display, "PYTHONPATH": str(root), "PATH": path, "PWD": str(root)}
 

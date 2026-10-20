@@ -4,6 +4,9 @@
 ./run.py                 # every scenario except slow ones, ~40 s; out/latest/report.{html,md}, previous run in out/prev
 ./run.py -k plot -k can  # scenarios whose name contains "plot" or "can" (slow ones included)
 ./run.py --loop 5        # run 5 times (--loop 0: until ^C), each diffed against the one before
+./run.py --trace         # also a Chrome trace per scenario: out/latest/traces/<scenario>.json, opens in ui.perfetto.dev
+./trace.py out/latest/traces/layout-drag.json  # the longest frame's events by self time, and the panes it laid out and painted
+./run.py --static        # serve.py without the local daemon (default: with it, through the openpilot venv)
 ./run.py --slow          # include scenarios marked "slow" (e.g. plot-repeat10)
 ./run.py --bless         # also store this run's shots as goldens (harness/golden/); later runs diff against them
 ./report.py              # rebuild the report from out/latest/results.json
@@ -24,8 +27,8 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
 ```
 
 Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by: [dx, dy], steps}}`,
-`{wheel: {at?, dx?, dy}}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,
-`{waitFor: sel | {fn: js}}`, `{goto: path}`, `{eval: js}`, `{assert: js}`, `{shot: name}`,
+`{dragTo: [sel, sel]}` (HTML drag and drop), `{wheel: {at?, dx?, dy}}`, `{fill: [sel, text]}`, `{viewport: [w, h]}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,
+`{waitFor: sel | {fn: js}}`, `{goto: path}`, `{eval: js}`, `{note: js}` (its value goes in the report), `{assert: js}`, `{shot: name}`,
 `{network: {down_kbps, up_kbps?, latency_ms?} | "online"}` (throttles the page and its workers),
 `{filmstrip: {name, every: ms, until: js, crop?: [sel]}}` (a screenshot every `every` ms until `until` holds, composed
 into `shots/<scenario>/<name>.strip.png` from the `crop` boxes). Any step takes `timeout`. An assert may return a
@@ -33,9 +36,14 @@ promise; returning a string fails it with that string as the reason.
 
 ## What fails a scenario
 
-- a mutating request (POST/PATCH/PUT/DELETE) to the comma API or athena; it is blocked and recorded
+- a mutating request (POST/PATCH/PUT/DELETE) to the comma API or athena; it is blocked and recorded, and `allow`
+  can't hide it. Athena's read-only RPCs (`ATHENA_READS` in run.py) pass.
 - a page error, a console error, a failed step or assert
-- a long animation frame over `loaf_ms`, perf.js work p99 over `work_p99_ms`, dropped frames over `drops`
+- a long animation frame over `loaf_ms`, perf.js work p99 over `work_p99_ms`, dropped frames over `drops`, a first
+  contentful paint later than `first_paint_ms` (150). Frames before the first paint are page load: they are listed
+  as info and left out of the frame stats.
+
+Scenarios run signed out unless they set `auth`, even though the daemon offers `~/.comma/auth.json`'s JWT.
 
 Time spent taking screenshots and linting is excluded from the frame stats (shaded in the charts). When an empty page
 drops frames or the load average exceeds the cpu count, the perf budgets only warn. A scenario that hits a network flake

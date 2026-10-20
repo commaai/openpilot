@@ -18,11 +18,11 @@ HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "golden"
 REFERENCE = HERE / "out" / "reference"
 ERROR, WARN, INFO = "error", "warn", "info"
-PERF_RULES = ("long-frame", "frame-work", "drops")  # budgets that only warn when the machine is too busy to measure
+PERF_RULES = ("long-frame", "frame-work", "drops", "first-paint")  # budgets that only warn when the machine is too busy to measure
 SEVERITY = {
-  "blocked": ERROR, "page-error": ERROR, "console-error": ERROR, "long-frame": ERROR, "frame-work": ERROR, "drops": ERROR,
+  "blocked": ERROR, "page-error": ERROR, "console-error": ERROR, "long-frame": ERROR, "frame-work": ERROR, "drops": ERROR, "first-paint": ERROR,
   "step": ERROR, "assert": ERROR, "auth": ERROR,
-  "text-ellipsis": INFO, "small-target": INFO, "network-flake": INFO,
+  "text-ellipsis": INFO, "small-target": INFO, "network-flake": INFO, "load-frame": INFO,
 }
 ORDER = [ERROR, WARN, INFO]
 DIFF_THRESHOLD = 0.1  # pixelmatch's default: fraction of the max YIQ distance
@@ -173,16 +173,17 @@ def build(out, prev_dir=None):
       shot["annotated"] = shot["path"].replace(".png", ".annot.png")
       annotate(out / shot["path"], out / shot["annotated"], marks.get((sc["name"], shot["name"]), []))
 
-  head = ["scenario", "result", "frames", "worst frame ms (Δprev)", "p99 frame ms (Δprev)", "long frames (worst ms)", "perf.js work p99 ms",
-          "drops", "findings", "time"]
+  head = ["scenario", "result", "first paint ms (Δprev)", "frames", "worst frame ms (Δprev)", "p99 frame ms (Δprev)", "long frames (worst ms)",
+          "perf.js work p99 ms", "drops", "findings", "time"]
   rows = []
   for sc in scenarios:
     s, p = sc["stats"], prev.get(sc["name"], {}).get("stats", {})
     mine = [f["n"] for f in found if any(w["scenario"] == sc["name"] for w in f["where"])]
     sc["findings"] = mine
     result = ("PASS" if sc["pass"] else "FAIL") + (" (retried)" if sc.get("retried") else "")
-    rows.append([sc["name"], result, s["frames"], num(s["worst_ms"], p.get("worst_ms")), num(s["p99_ms"], p.get("p99_ms")),
-                 f"{s['loaf']} ({s['loaf_worst_ms']:.0f})", num(s["work_p99_ms"], fmt="{:.1f}"), num(s["drops"]), len(mine), f"{sc['duration']:.1f}s"])
+    rows.append([sc["name"], result, num(s.get("first_paint_ms"), p.get("first_paint_ms")), s["frames"],
+                 num(s["worst_ms"], p.get("worst_ms")), num(s["p99_ms"], p.get("p99_ms")), f"{s['loaf']} ({s['loaf_worst_ms']:.0f})",
+                 num(s["work_p99_ms"], fmt="{:.1f}"), num(s["drops"]), len(mine), f"{sc['duration']:.1f}s"])
 
   passed = sum(sc["pass"] for sc in scenarios)
   title = f"{passed}/{len(scenarios)} passed · {len(found)} findings · mode {res['mode']} · {res['duration']:.0f} s · peak load {res['load']:.0f}/{res['cpus']}"
@@ -250,6 +251,7 @@ def write_md(out, title, head, rows, found, scenarios, changes):
     for s in sc["shots"]:
       d = f" · diff {s['diff']:.2%} {out / s['path'].replace('.png', '.diff.png')}" if "diff" in s else ""
       md.append(f"  - {s['name']}: {out / s['annotated']}{d}")
+    md += [f"  - note: {n}" for n in sc.get("notes", [])]
     md += [f"  - filmstrip {film['name']} ({len(film['frames'])} frames): {out / film['strip']}" for film in sc.get("films", [])]
     md += [f"  - reference {r}: {REFERENCE / r}.png" for r in sc["reference"] if (REFERENCE / f"{r}.png").exists()]
   (out / "report.md").write_text("\n".join(md) + "\n")
