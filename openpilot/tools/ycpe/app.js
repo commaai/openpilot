@@ -54,7 +54,7 @@ function toast(text) {
   setTimeout(() => el.remove(), 3000);
 }
 
-const state = {me: null, devices: null};
+const state = {me: null, devices: null, devicesError: null};
 let ws = null;  // the open route workspace
 
 // ---- top bar ----
@@ -137,7 +137,8 @@ function topBar() {
       href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
       h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}), h("span", {}, d.alias || d.dongle_id), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
-    !state.devices?.length && h("div", {class: "menu-row muted"}, auth.isAuthenticated() ? "No devices" : "Sign in to see your devices"))));
+    !state.devices?.length && h("div", {class: "menu-row muted"},
+      !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
   bar.route.addEventListener("click", () => {
     if (!ws) return;
     const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
@@ -551,7 +552,9 @@ async function render() {
     updateTop();
     document.body.classList.add("loading");
     main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Loading devices…"));
-    [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
+    // a failed list stays null, so the next page asks again
+    [state.me, state.devices] = await Promise.all([api.me().catch(() => null),
+      api.devices().then((d) => { state.devicesError = null; return d; }, (e) => { state.devicesError = e; return null; })]);
     document.body.classList.remove("loading");
   }
 
@@ -598,6 +601,8 @@ async function render() {
   } else if (parts.length) {
     main.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
       h("p", {class: "muted"}, "Try a route name or dongle id in the box above, or ", h("a", {href: "/", onclick: link("/")}, "go home"), ".")));
+  } else if (state.devicesError) {
+    main.replaceChildren(errorPage(state.devicesError, {retry: true}));
   } else if (state.devices?.length === 1) {
     go(`/${state.devices[0].dongle_id}`, true);
   } else {
@@ -636,15 +641,16 @@ document.addEventListener("drop", async (e) => {
   openFiles(await droppedFiles(e.dataTransfer));
 });
 
-// route or device: what the page was for, to say what wasn't found
-function errorPage(e, {route, device} = {}) {
+// route or device: what the page was for, to say what wasn't found; retry: a button that renders the page again
+function errorPage(e, {route, device, retry} = {}) {
   console.error(e);
   if (e.status === 401 || e.status === 403) return signInCard();
   const [msg, why] = e.status !== 404 ? [String(e.message || e), ""]
     : route ? [`Route ${route.replace("|", "/")} not found`, "Check the name, or it may not be uploaded or shared with you. "]
     : device ? [`Device ${device} not found`, "It may not be shared with this account. "]
     : ["Not found.", ""];
-  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, why, "Try a route name or dongle id in the box above."));
+  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, why, "Try a route name or dongle id in the box above."),
+    retry && h("button", {class: "button", onclick: () => render()}, "Retry"));
 }
 
 document.querySelector("#app > .topbar").replaceWith(topBar());
@@ -655,7 +661,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) ws?.p
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice). A token the API refused leaves an open route as it is: it's loaded.
 auth.on((reason) => {
-  state.me = state.devices = null;
+  state.me = state.devices = state.devicesError = null;
   if (location.pathname.startsWith("/auth")) return;
   if (reason === "expired") toast("Your session expired. Sign in again to see private routes and devices.");
   if (reason === "expired" && ws) return updateTop();
