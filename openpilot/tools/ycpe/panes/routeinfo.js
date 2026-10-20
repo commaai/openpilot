@@ -2,6 +2,7 @@
 import {api, routeEvents} from "../api.js";
 import {h, fmt, css} from "../dom.js";
 import {canManage} from "../pages/home.js";
+import {schemaRow} from "./schema.js";
 
 function toggle(label, value, enabled, set) {
   const box = h("input", {type: "checkbox", checked: value, disabled: !enabled});
@@ -27,6 +28,7 @@ export function create(ctx) {
   const start = new Date(route.start_time_utc_millis);
   const commit = route.git_commit?.slice(0, 8);
   const github = route.git_remote?.includes("github.com") && commit ? `https://${route.git_remote.replace(/\.git$/, "")}/commit/${route.git_commit}` : null;
+  const schema = schemaRow(ctx);
   const rows = [
     ["route", h("span", {class: "mono"}, route.fullname)],
     ["start", `${start.toLocaleString()} (${fmt.duration(route.end_time_utc_millis - route.start_time_utc_millis)})`],
@@ -34,6 +36,7 @@ export function create(ctx) {
     ["openpilot", route.version],
     ["branch", route.git_branch && [route.git_branch, " @ ", github ? h("a", {href: github, target: "_blank", rel: "noopener"}, commit) : commit, route.git_dirty ? " (dirty)" : ""]],
     ["remote", route.git_remote],
+    ["schema", schema.el],
     ["segments", `${(route.maxqlog ?? -1) + 1}, ${fmt.miles(route.distance ?? 0)}`],
   ];
 
@@ -64,5 +67,5 @@ export function create(ctx) {
       navigator.share && h("button", {class: "button small", onclick: () => navigator.share({title: route.fullname, url: shareUrl()}).catch(() => {})}, "Share"),
       toggles, copied),
     bookmarks);
-  return {name: "info", el, render() {}, resize() {}, dispose() {}, save: () => ({})};
+  return {name: "info", el, render() {}, resize() {}, dispose: schema.dispose, save: () => ({})};
 }
