@@ -20,7 +20,8 @@ const BACK = 19;          // frames kept behind the playhead for stepping backwa
 const SCRUB_MS = 100;     // seeks closer together than this are a scrub: keyframes only until it settles
 const MIN_RATE = 0.0625;  // the slowest <video> playbackRate; slower playback seeks frame by frame
 const QCAMERA_BYTES_PER_S = 37e3;
-const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.light.min.js";
+const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.light.min.js";  // 348 KB, too big to vendor
+const HLS_SRI = "sha384-voUqi4Z0V5OBtD0Fe5jaAgsk8ZD/RDweFf6rHo9CrwrIyfJh304PNzV/VxKIWfMG";
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
 const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
@@ -94,10 +95,11 @@ function lane(camera) {
   return status.source(camera, {label, order});
 }
 
-// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page
+// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page.
+// It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash.
 let hlsReady = null;
 const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
-  document.head.append(h("script", {src: HLS, onload: () => resolve(window.Hls), onerror: reject}));
+  document.head.append(h("script", {src: HLS, integrity: HLS_SRI, crossorigin: "anonymous", onload: () => resolve(window.Hls), onerror: reject}));
 });
 
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
