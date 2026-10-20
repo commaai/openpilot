@@ -7,8 +7,8 @@ with the Python and C++ tools, local repos, and pulling logs from a device. The 
 (`serve.py --static`, or any static host), and the features that need it say so.
 
 ```bash
-PYTHONPATH=$PWD .venv/bin/python openpilot/tools/ycpe/serve.py            # http://localhost:3000/ (athena wants :3000)
-PYTHONPATH=$PWD .venv/bin/python -m unittest openpilot.tools.ycpe.daemon.tests.test_security
+.venv/bin/python openpilot/tools/ycpe/serve.py [port] [--device <host>]   # http://localhost:3000/ (athena wants :3000)
+PYTHONPATH=$PWD .venv/bin/python -m unittest discover -s openpilot/tools/ycpe/daemon/tests -t .   # device tests need ssh to localhost
 ```
 
 ## Security
@@ -78,6 +78,19 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
 | `POST /local/cache/prune` | Body `{budget?}`. Applies the LRU budget now. |
 | `GET /local/proxy?url=` | GET-only access to the hosts that send no CORS headers: commadataci, huggingface (and `*.hf.co` redirects), and the internal endpoint. Redirects are checked against the same allowlist, the response is always `application/octet-stream` with `CSP: sandbox`, and no credentials are added. |
+
+| `GET /local/repos` | `[{id, name, path, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default), plus a worktree's main checkout. |
+| `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
+| `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
+| `GET /local/repos/{id}/dbc/{name}` | `{name, text, mtime}` |
+| `PUT /local/repos/{id}/dbc/{name}[?mtime=]` | Body is the DBC text. Saves it atomically into opendbc's dbc directory, and only there: the name must match `[A-Za-z0-9_.-]+\.dbc`, and the path is confined. With the `mtime` from the read, it answers 409 if the file changed on disk since. |
+| `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp\|dbc, file, path, deleted}`, from polling mtimes once a second. |
+
+| `GET /local/device` / `POST /local/device` | `{host, root}`. POST takes `{host, key?}` and sets the device until restart. The host is `[user@]host` and the user defaults to `comma`. It's validated so it can never be an ssh option. |
+| `GET /local/device/routes` | `{dongle, host, routes: [{route, log_id, segments: {n: {file: size}}, mtime, active: [n]}]}`, newest first. It comes from one `find` over ssh. |
+| `POST /local/device/pull` | Body `{route (or a bare log_id), segs?, kinds? (default rlog, qlog)}`. Starts a `pull` job that copies with `ssh cat` into `ycpe/device/...` in the shared cache; the `device` source serves from there. Segments still recording (with a `.lock`) are skipped. |
+
+The daemon never runs anything on a device except `cat` and `find`.
 
 Resolve parameters:
 - `route` uses LogReader's syntax: `dongle|log_id[/slice][/q|r|a]`.

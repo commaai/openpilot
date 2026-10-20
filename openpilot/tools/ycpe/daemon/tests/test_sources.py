@@ -55,6 +55,9 @@ from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import config
 from openpilot.tools.ycpe.daemon.tests.test_security import DaemonCase
+from openpilot.tools.lib import filereader
+
+filereader.DATA_ENDPOINT = os.environ["DATA_ENDPOINT"]  # in case filereader was imported before the env was set
 
 DONGLE, LOG = "0123456789abcdef", "00000001--abcdef0123"
 ROUTE = f"{DONGLE}|{LOG}"
@@ -112,7 +115,7 @@ class TestSources(DaemonCase):
     self.assertTrue((Path(CACHE) / cache.sha(canonical)).is_file())
     hits = cache.stats["hits"]
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
-    self.assertEqual((r.status, data), (206, blob(1, "rlog.zst")[5:10]))
+    self.assertEqual((r.status, data, r.getheader("X-Ycpe-Cache")), (206, blob(1, "rlog.zst")[5:10], "hit"))
     self.assertEqual(cache.stats["hits"], hits + 1)
     # the python tools read the same download from their chunk cache, without the network
     self.assertEqual(URLFile(canonical + "?sig=x").read(), blob(1, "rlog.zst"))
@@ -180,6 +183,22 @@ class TestSources(DaemonCase):
     p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)
     self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
 
+  def test_usage_running_total(self):
+    cache._usage["at"] = -cache.RESCAN
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qcamera.ts"))
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
+    walk = lambda: (sum(s for _, s, _ in cache.scan()), len(cache.scan()))  # noqa: E731
+    self.assertEqual(cache.totals(), walk())
+    cache.fetch(DONGLE, LOG, 2, "qcamera.ts", sources=ONLY)
+    cache.fetch(DONGLE, LOG, 2, "qlog.zst", sources=ONLY)  # a log: also mirrored as url_file chunks
+    self.assertEqual(cache.totals(), walk())
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
+    self.assertEqual(cache.totals(), walk())
+    t = time.monotonic()
+    for _ in range(1000):
+      cache.usage()
+    self.assertLess((time.monotonic() - t) / 1000, 1e-4)  # polling never walks the directory
+
   def test_prune_lru(self):
     d = Path(tempfile.mkdtemp())
     old = config.cache_root
@@ -195,6 +214,7 @@ class TestSources(DaemonCase):
       self.assertEqual(out["bytes"], 3000)
     finally:
       config.cache_root = old
+      cache._usage["at"] = -cache.RESCAN
 
   def test_proxy(self):
     r, _ = self.req("/local/proxy?url=https://evil.example/")

@@ -14,9 +14,10 @@ export const allJobs = () => [...jobs.values()];
 
 const lanes = new Map();  // job id → status source
 function lane(job) {
-  if (job.kind !== "prefetch" || !job.meta?.segs) return;
+  const label = {prefetch: "disk cache", pull: "device pull"}[job.kind];
+  if (!label || !job.meta?.segs) return;
   let src = lanes.get(job.id);
-  if (!src) lanes.set(job.id, src = status.source(`prefetch-${job.id}`, {label: "disk cache", order: 5}));
+  if (!src) lanes.set(job.id, src = status.source(`${job.kind}-${job.id}`, {label, order: 5}));
   const segs = job.meta.segs, n = Math.max(0, ...Object.keys(segs).map((k) => +k + 1));
   src.count(n);
   for (let i = 0; i < n; i++) src.seg(i, segs[i] ?? "missing");
@@ -47,14 +48,39 @@ export function localBadge() {
 
 const KINDS = {logs: ["log"], video: ["qcamera", "fcamera", "ecamera", "dcamera"]};
 
+// a comma device on the LAN: its routes over ssh, each pulled (read-only) into the shared cache
+function devicePart() {
+  const out = h("div", {class: "local-routes"});
+  const host = h("input", {class: "local-host", placeholder: "device host or IP", spellcheck: false});
+  const err = (e) => out.replaceChildren(h("div", {class: "local-err"}, String(e.message || e)));
+  async function list() {
+    out.replaceChildren(h("div", {class: "muted"}, "listing…"));
+    try {
+      if (host.value.trim()) await daemon.json("/local/device", {method: "POST", body: {host: host.value.trim()}});
+      const {dongle, routes} = await daemon.json("/local/device/routes");
+      out.replaceChildren(...routes.slice(0, 8).map((r) => {
+        const segs = Object.values(r.segments), bytes = segs.reduce((a, s) => a + (s["rlog.zst"] ?? s["rlog.bz2"] ?? 0) + (s["qlog.zst"] ?? 0), 0);
+        const name = r.route || `${dongle}|${r.log_id}`;
+        return h("div", {class: "local-job"}, h("span", {class: "grow mono"}, r.log_id),
+          h("span", {class: "muted"}, `${segs.length} seg · ${fmtBytes(bytes)}${r.active.length ? " · recording" : ""}`),
+          h("button", {class: "link", onclick: () => daemon.json("/local/device/pull", {method: "POST", body: {route: name}}).catch(err)}, "pull"));
+      }), routes.length ? "" : h("div", {class: "muted"}, "no routes on the device"));
+    } catch (e) { err(e); }
+  }
+  daemon.json("/local/device").then((d) => { host.value = d.host || ""; }, () => {});
+  return h("div", {class: "local-device"},
+    h("div", {class: "local-acts"}, h("span", {}, "device"), host, h("button", {class: "link", onclick: list}, "list routes")), out);
+}
+
 function localPanel(anchor, onClose) {
   const mods = h("div", {class: "local-mods muted"}, Object.entries(daemon.caps.modules).map(([k, v]) => `${k} ${v.version}`).join(" · "));
   const cache = h("div", {class: "local-cache"});
   const here = h("div", {class: "local-route"});
   const list = h("div", {class: "local-jobs"});
+  const dev = daemon.has("device") ? devicePart() : null;
   const el = h("div", {class: "local-panel"},
     h("div", {class: "local-head"}, h("b", {}, "Local daemon"), h("button", {class: "link", onclick: () => close()}, "close")),
-    mods, cache, here, list);
+    mods, cache, here, dev, list);
   const r = anchor.getBoundingClientRect();
   el.style.top = `${r.bottom + 6}px`;
   el.style.right = `${Math.max(8, innerWidth - r.right)}px`;
