@@ -41,7 +41,7 @@ async function download(url, progress, signal, head = null) {
           progress({loaded, total});
         }
       }
-      return {buf: concat(chunks).buffer, hit: resp.headers.get("x-ycpe-cache") === "hit"};
+      return {buf: concat(chunks).buffer, hit: /^(hit|stale-refetch)$/.test(resp.headers.get("x-ycpe-cache"))};  // the daemon's disk
     } catch (e) {
       if (signal?.aborted) throw {partial: concat(chunks).buffer};
       // fetch() rejects with a TypeError on network failures (ERR_NETWORK_CHANGED, resets, ...)
