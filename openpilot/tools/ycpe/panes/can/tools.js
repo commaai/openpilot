@@ -11,15 +11,19 @@ export function dbcDialog(can) {
   const target = h("select", {}, h("option", {value: "-1"}, "all buses"), busList(can).map((b) => h("option", {value: b}, `bus ${b}`)));
   const buses = () => [+target.value];
   const error = h("div", {class: "can-error"}), note = h("div", {class: "can-muted"});
-  // opening or closing a DBC drops the undo history, so unsaved edits are confirmed first, as cabana
-  const discard = () => !can.dbcs.dirty || confirm("The DBC has unsaved changes. Discard them?");
+  // a file that opening or closing a DBC unloads drops its edits, so unsaved ones are confirmed first, as cabana
+  const discard = (files) => {
+    const dirty = files.filter((f) => can.dbcs.isDirty(f)).map((f) => f.name);
+    return !dirty.length || confirm(`${dirty.join(", ")} has unsaved changes. Discard them?`);
+  };
   const open = (fn) => async () => {
-    if (!discard()) return;
+    if (!discard(can.dbcs.replaced(buses()))) return;
     try {
       await fn();
       d.close();
     } catch (e) {
-      error.textContent = e.message;
+      // a cancelled file picker
+      if (e.name !== "AbortError") error.textContent = e.message;
     }
   };
 
@@ -51,15 +55,16 @@ export function dbcDialog(can) {
     return slot;
   };
 
+  const fail = (e) => { error.textContent = e.message; };
   const paste = h("textarea", {class: "can-paste", placeholder: "Paste DBC text", spellcheck: false});
   const files = h("div", {class: "can-files"}, can.dbcs.all().map((f) => h("div", {class: "can-file"},
     h("b", {}, f.name), h("span", {class: "can-muted"}, ` ${can.dbcs.buses(f).map((b) => (b < 0 ? "all buses" : `bus ${b}`)).join(", ")} · ${f.msgs.size} messages`),
     h("span", {class: "can-file-actions"},
-      h("button", {class: "can-btn", onclick: () => save(can, f)}, "Save"),
-      h("button", {class: "can-btn", onclick: () => save(can, f, true)}, "Save as"),
+      h("button", {class: "can-btn", onclick: () => save(can, f).catch(fail)}, "Save"),
+      h("button", {class: "can-btn", onclick: () => save(can, f, true).catch(fail)}, "Save as"),
       localSave(f),
-      h("button", {class: "can-btn", onclick: (e) => navigator.clipboard.writeText(f.serialize()).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
-      h("button", {class: "can-btn", onclick: () => { if (discard()) { can.dbcs.close(f); d.close(); } }}, "Close")))));
+      h("button", {class: "can-btn", onclick: (e) => can.serialize(f).then((text) => navigator.clipboard.writeText(text)).then(() => { e.target.textContent = "Copied"; }, fail)}, "Copy"),
+      h("button", {class: "can-btn", title: "Stop decoding with this DBC", onclick: () => { if (discard([f])) { can.dbcs.close(f); d.close(); } }}, "Unload")))));
 
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),
@@ -131,7 +136,7 @@ function handles(mode, fn) {
 
 // writes back to the opened file when permitted, else asks where (or downloads)
 async function save(can, dbc, as = false) {
-  const text = dbc.serialize();
+  const text = await can.serialize(dbc);
   try {
     if (as || !dbc.handle) {
       if (!window.showSaveFilePicker) return download(`${dbc.name}.dbc`, text);
@@ -141,7 +146,7 @@ async function save(can, dbc, as = false) {
     const w = await dbc.handle.createWritable();
     await w.write(text);
     await w.close();
-    can.dbcs.saved();
+    can.dbcs.saved(dbc);
   } catch (e) {
     if (e.name !== "AbortError") throw e;
   }
@@ -261,8 +266,8 @@ function csvDialog(can, ctx) {
     h("button", {class: "can-btn primary", onclick: async () => {
       const [a, b] = range.value === "all" ? [-Infinity, Infinity] : [t0, t1];
       const keys = what.value === "all" ? can.messages().map((m) => m.key) : [sel];
-      const text = await can.csv(keys, a, b, what.value === "decoded");
-      download(`${ctx.route.fullname.replace("|", "_")}_${what.value === "all" ? "can" : hexId(sel).replace(":", "_")}.csv`, text);
+      const blob = await can.csv(keys, a, b, what.value === "decoded");
+      download(`${ctx.route.fullname.replace("|", "_")}_${what.value === "all" ? "can" : hexId(sel).replace(":", "_")}.csv`, blob);
       d.close();
     }}, "Export")));
 }

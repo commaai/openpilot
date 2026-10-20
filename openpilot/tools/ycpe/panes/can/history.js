@@ -12,7 +12,9 @@ export function create(ctx, state) {
   let cols = [], pool = [], scrollTop = 0, height = 300;
   const filter = {sig: h("select", {class: "can-select"}), op: h("select", {class: "can-select"}, ["=", "!=", ">", ">=", "<", "<="].map((o) => h("option", {}, o))),
                   v: h("input", {class: "can-filter", placeholder: "value", type: "number", step: "any"})};
-  for (const x of Object.values(filter)) x.addEventListener("change", () => load());
+  // the value applies as it's typed
+  for (const x of [filter.sig, filter.op]) x.addEventListener("change", () => load());
+  filter.v.addEventListener("input", () => load());
   const hexBox = h("input", {type: "checkbox", checked: hex, onchange: (e) => { hex = e.target.checked; columns(); }});
   const head = h("div", {class: "can-hist-row can-hist-head"});
   const spacer = h("div", {class: "can-msg-spacer"});

@@ -2,9 +2,10 @@
 // dropping signals on a chart adds them, and dragging a chart's handle onto another merges the two. Only the open
 // tab has live plots. Charts show the shared view range, or, as cabana, a window that pages along with the playhead.
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {create as plot} from "/panes/plot/plot.js";
 import {PATHS_MIME} from "/panes/plot/view.js";
-import {canOf, dialog, subs} from "./common.js";
+import {canOf, dialog, ink, subs} from "./common.js";
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
@@ -34,8 +35,12 @@ export function create(ctx, state) {
     for (const e of entries) charts.find((c) => c.box === e.target)?.pane.resize(e.contentRect.width, e.contentRect.height);
   });
 
-  // decoded signals keep their DBC color
-  const curve = (path) => ({path, color: can.parse(path)?.sig.color, ...(style && {style})});
+  // decoded signals keep their DBC color, darkened on the light theme's white
+  const color = (path) => {
+    const c = can.parse(path)?.sig.color;
+    return c && ctx.theme.name === "light" ? ink(c) : c;
+  };
+  const curve = (path) => ({path, color: color(path), ...(style && {style})});
 
   function add(st) {
     const c = {pane: plot(ctx, st)};
@@ -49,7 +54,7 @@ export function create(ctx, state) {
       "⠿", h("span", {class: "can-spacer"}),
       h("button", {class: "can-icon", title: "Add or remove signals", onclick: () => picker((p) => replace(c, {...c.pane.save(), curves: p.map(curve)}), paths())}, "±"),
       h("button", {class: "can-icon", title: "Split into one chart per signal", onclick: () => split(c)}, "⫼"),
-      h("button", {class: "can-icon", title: "Close", onclick: () => remove(c)}, "✕")), c.box);
+      h("button", {class: "can-icon", title: "Remove chart", onclick: () => remove(c)}, icon("close", 12))), c.box);
     // dropped back onto itself: nothing to merge
     c.el.addEventListener("drop", (e) => { if (dragging === c) { e.stopPropagation(); dragging = null; } }, true);
     charts.push(c);
@@ -105,7 +110,7 @@ export function create(ctx, state) {
     const count = (t, i) => (i === active ? charts : t.charts).length;
     tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`, onclick: () => i !== active && open(i)},
       `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, `· ${count(t, i)}`),
-      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, "✕"))),
+      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, icon("close", 12)))),
       h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, "+"));
   }
 
@@ -134,6 +139,9 @@ export function create(ctx, state) {
     grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     empty.hidden = charts.length > 0;
     tabsChanged();
+    // the plot buttons show what the open tab charts
+    can.charted = new Set(charts.flatMap((c) => c.pane.save().curves.map((x) => x.path)));
+    can.emit("charted");
   }
 
   // cabana's signal selector: every decoded signal, filtered, picked by checkbox
@@ -159,13 +167,33 @@ export function create(ctx, state) {
   const pane = {
     name: "can-charts", el,
     render() {},
-    dispose() { s.dispose(); resizer.disconnect(); for (const c of charts) c.pane.dispose(); },
+    dispose() {
+      s.dispose();
+      resizer.disconnect();
+      for (const c of charts) c.pane.dispose();
+      can.charted = new Set();
+      can.emit("charted");
+    },
     save: () => {
       tabs[active].charts = charts.map((c) => c.pane.save());
       return {cols, style, span, tabs, active};
     },
   };
-  s.add(can.on("chart", (path) => { if (!charts.some((c) => c.pane.save().curves.some((x) => x.path === path))) add({curves: [curve(path)]}); }));
+  // a signal's plot button charts it, or takes it off its chart
+  s.add(can.on("chart", (path) => {
+    const c = charts.find((x) => x.pane.save().curves.some((y) => y.path === path));
+    if (!c) return add({curves: [curve(path)]});
+    const st = c.pane.save();
+    replace(c, {...st, curves: st.curves.filter((x) => x.path !== path)});
+  }));
+  // curves follow a renamed signal or message, and go with a removed one
+  s.add(can.on("moved", (move) => {
+    tabs[active].charts = charts.map((c) => c.pane.save());
+    const moved = (st) => ({...st, curves: st.curves.flatMap((x) => (move(x.path) ? [{...x, path: move(x.path)}] : []))});
+    if (tabs.every((t) => t.charts.every((st) => st.curves.every((x) => move(x.path) === x.path)))) return;
+    rebuild(() => { for (const t of tabs) t.charts = t.charts.map(moved).filter((st) => st.curves.length); });
+  }));
+  s.add(ctx.theme.on(() => rebuild(() => { for (const t of tabs) for (const st of t.charts) for (const c of st.curves) c.color = color(c.path) || c.color; })));
   s.add(ctx.clock.on("t", follow));
   follow();
   for (const st of tabs[active].charts) add(st);

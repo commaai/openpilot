@@ -1,5 +1,6 @@
 // the selected message's signals: values at the playhead, sparklines, and the signal and message editors
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
 import {canOf, dialog, editMsg, field, removeSignal, subs, updateSignal} from "./common.js";
@@ -18,7 +19,7 @@ export function create(ctx, state) {
   const removeBtn = h("button", {class: "can-btn", title: "Remove message", onclick: () => {
     const m = msg();
     can.dbcs.edit(busOf(k()), m.address, null, `remove message ${m.name}`);
-  }}, "Remove");
+  }}, "Remove message");
   const comment = h("div", {class: "can-comment"});
   const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "can-spacer"}), count, sparkSel, filterBox, editBtn, removeBtn, comment);
   const list = h("div", {class: "can-sig-list"});
@@ -65,19 +66,38 @@ export function create(ctx, state) {
     list.replaceChildren(...shown(m).map((sg) => {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
+      const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈");
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
-        h("div", {class: "can-sig-row", onclick: () => { open = open === sg.name ? null : sg.name; build(); }},
+        h("div", {class: "can-sig-row", role: "button", tabindex: 0, "aria-expanded": String(sg.name === open), onclick: () => toggle(sg.name),
+          onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
           swatch, name, spark, v,
-          h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈"),
-          h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, "✕")),
+          plot,
+          h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, icon("close", 12))),
         ed);
       row.draggable = true;
       row.addEventListener("dragstart", (e) => e.dataTransfer.setData("application/x-ycpe-paths", JSON.stringify([path(sg)])));
-      rows.set(sg.name, label({row, v, spark, swatch, name, ed}, sg));
+      rows.set(sg.name, label({row, v, spark, swatch, name, ed, plot}, sg));
       return row;
     }));
     mux = m.mux?.name;
+    charted();
     ctx.perf.invalidate(pane);
+  }
+
+  // opens or closes a signal's editor; from the keyboard, its row keeps focus
+  function toggle(name, focus = false) {
+    open = open === name ? null : name;
+    build();
+    if (focus) rows.get(name)?.row.firstChild.focus();
+  }
+
+  function charted() {
+    for (const r of rows.values()) {
+      const on = !!can.charted?.has(path(r.sg));
+      r.plot.classList.toggle("on", on);
+      r.plot.setAttribute("aria-pressed", on);
+      r.plot.title = on ? "Remove from the charts" : "Plot";
+    }
   }
 
   const shown = (m) => m.sigs.filter((sg) => sg.name.toLowerCase().includes(filter.toLowerCase()));
@@ -99,6 +119,7 @@ export function create(ctx, state) {
     if (ed && (sg.type !== rows.get(open).sg.type || m.mux?.name !== mux)) return false;
     header();
     for (const x of sigs) label(rows.get(x.name), x);
+    charted();
     if (ed) ed.update(sg);
     ctx.perf.invalidate(pane);
     return true;
@@ -122,6 +143,7 @@ export function create(ctx, state) {
   s.add(can.on("select", () => { open = null; sparks = null; build(); requestSparks(); }));
   s.add(can.on("dbc", () => { if (!patch()) build(); requestSparks(); }));
   s.add(can.on("edit", (name) => { open = name; build(); rows.get(name)?.row.scrollIntoView({block: "nearest"}); }));
+  s.add(can.on("charted", charted));
   s.add(can.on("live", () => { requestSparks(); ctx.perf.invalidate(pane); }));
   s.add(can.on("hover", (name) => { for (const [n, r] of rows) r.row.classList.toggle("hover", n === name); }));
   build();
@@ -157,9 +179,12 @@ function sparkline(canvas, d, color) {
 // the signal in place, but for the field being edited.
 function editor(can, k, m, sg) {
   const commit = (props) => updateSignal(can, k, sg.name, props);
+  // size, start bit and mux value are whole numbers in range, or the field reverts
+  const ints = {size: () => [1, 64], start: () => [0, can.dbcMsg(k).size * 8 - 1], muxValue: () => [0, Infinity]};
   const num = (prop, attrs = {}) => h("input", {type: "number", "data-prop": prop, value: sg[prop], step: "any", ...attrs, onchange: (e) => {
-    const v = parseFloat(e.target.value);
-    if (Number.isFinite(v)) commit({[prop]: v});
+    const v = parseFloat(e.target.value), [lo, hi] = ints[prop]?.() || [-Infinity, Infinity];
+    if (Number.isFinite(v) && v >= lo && v <= hi && (!ints[prop] || Number.isInteger(v))) commit({[prop]: v});
+    else e.target.value = sg[prop];
   }});
   const text = (prop) => h("input", {"data-prop": prop, value: sg[prop], spellcheck: false, onchange: (e) => commit({[prop]: e.target.value.trim()})});
   const check = (prop) => h("input", {type: "checkbox", "data-prop": prop, checked: sg[prop], onchange: (e) => commit({[prop]: e.target.checked})});
@@ -169,11 +194,16 @@ function editor(can, k, m, sg) {
   const valsText = (x) => x.vals.map(([v, d]) => `${v} "${d}"`).join(" ");
   const vals = h("input", {value: valsText(sg), spellcheck: false, placeholder: '0 "off" 1 "on"',
     onchange: (e) => commit({vals: [...e.target.value.matchAll(/(-?[\d.]+)\s+"([^"]*)"/g)].map(([, v, d]) => [+v, d])})});
+  const error = h("div", {class: "can-error"});
   const el = h("div", {class: "can-sig-editor"},
     field("Name", h("input", {value: sg.name, spellcheck: false, onchange: (e) => {
       const name = e.target.value.trim();
-      if (/^\w+$/.test(name)) { commit({name}); can.emit("edit", name); } else e.target.value = sg.name;
+      error.textContent = !/^\w+$/.test(name) ? "Names are letters, digits and underscores"
+        : name !== sg.name && !commit({name}) ? "There is already a signal with the same name" : "";
+      if (error.textContent) e.target.value = sg.name;
+      else if (name !== sg.name) can.emit("edit", name);
     }})),
+    error,
     field("Size", num("size", {min: 1, max: 64, step: 1})),
     field("Start bit", num("start", {min: 0, max: 511, step: 1})),
     h("div", {class: "can-field"}, h("span"), h("span", {class: "can-row"}, h("label", {class: "can-check"}, check("le"), "Little endian"), h("label", {class: "can-check"}, check("signed"), "Signed"))),
@@ -206,6 +236,7 @@ function messageDialog(can, k) {
     field("Name", name), field("Size", size), field("Node", node), field("Comment", comment), error,
     h("button", {class: "can-btn primary", onclick: () => {
       if (!/^\w+$/.test(name.value)) { error.textContent = "Names are letters, digits and underscores"; return; }
+      if (!Number.isInteger(+size.value) || +size.value < 1 || +size.value > 64) { error.textContent = "Size is a whole number of bytes, 1 to 64"; return; }
       const other = can.dbcs.file(busOf(k))?.msgByName(name.value);
       if (other && other !== m) { error.textContent = `${name.value} already exists`; return; }
       editMsg(can, k, `edit message ${name.value}`, (x) => Object.assign(x, {name: name.value, size: +size.value, transmitter: node.value.trim(), comment: comment.value.trim()}));

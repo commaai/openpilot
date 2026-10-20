@@ -1,5 +1,6 @@
 // cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
 import {h} from "/dom.js";
+import {icon} from "/icons.js";
 import {canOf, hex2, menuCheck, popup, subs} from "./common.js";
 import {dbcDialog, toolsMenu} from "./tools.js";
 
@@ -33,12 +34,12 @@ export function create(ctx, state) {
 
   const undo = h("button", {class: "can-btn", title: "Undo (ctrl+z)", onclick: () => can.dbcs.undo()}, "↶");
   const redo = h("button", {class: "can-btn", title: "Redo (ctrl+shift+z)", onclick: () => can.dbcs.redo()}, "↷");
-  const dbcBtn = h("button", {class: "can-btn can-dbc-btn", title: "DBC files", onclick: () => dbcDialog(can)});
+  const dbcBtn = h("button", {class: "can-btn can-dbc-btn", onclick: () => dbcDialog(can)});
   const clearBtn = h("button", {class: "can-btn", title: "Clear suppressed bytes", onclick: () => { can.suppressHighlighted(false); toolbar(); }});
   // settings live in the ⋯ menu, so the toolbar stays one row
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
-    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
+    clearBtn, h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools", icon("down", 14)),
     h("span", {class: "can-spacer"}),
     h("button", {class: "can-btn", title: "Options", onclick: (e) => popup(e.currentTarget, [
       menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
@@ -55,7 +56,8 @@ export function create(ctx, state) {
 
   function toolbar() {
     const files = can.dbcs.all();
-    dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.dirty ? "*" : ""}`).join(", ") : "No DBC";
+    dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.isDirty(f) ? "*" : ""}`).join(", ") : "No DBC";
+    dbcBtn.title = files.length ? `DBC: ${dbcBtn.textContent} (click to open, change or save)` : "No DBC loaded: click to open one";
     const {undos, index} = can.dbcs;
     undo.disabled = index === 0;
     redo.disabled = index === undos.length;

@@ -1,19 +1,22 @@
 /* CAN panes (cabana). Colors come only from theme variables. */
 .can-pane { display: flex; flex-direction: column; min-height: 0; font-size: 12px; outline: none; }
+.can-pane:focus-visible, .can-sig-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .can-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .can-spacer { flex: 1; }
 .can-muted { color: var(--muted); }
 .can-notice { padding: 2px 6px; border-bottom: 1px solid var(--line); }
 .can-mono { font-family: var(--mono); }
-.can-error { color: var(--critical); }
+.can-error { color: var(--critical-fg); }
 .can-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .can-btn { height: 20px; padding: 0 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); cursor: pointer; white-space: nowrap; }
 .can-btn:hover:not(:disabled) { border-color: var(--accent); }
 .can-btn:disabled { opacity: .45; cursor: default; }
 .can-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
-.can-dbc-btn { max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-.can-icon { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+.can-dbc-btn { min-width: 7ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.can-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+.can-btn > svg { vertical-align: middle; margin-right: -3px; }
 .can-icon:hover { background: var(--active); color: var(--fg); }
+.can-icon.on { background: var(--active); color: var(--accent); }
 .can-check { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); white-space: nowrap; }
 .can-select, .can-filter { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-filter { width: 110px; }
@@ -24,14 +27,14 @@
 
 /* messages */
 /* the DBC chip gives up its width before the toolbar wraps */
-.can-messages .can-dbc-btn { flex: 1 1 40px; max-width: max-content; }
+.can-messages .can-dbc-btn { flex: 1 1 7ch; max-width: calc-size(max-content, min(size, 24ch)); }
 .can-msg-table { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .can-msg-head, .can-msg-filters, .can-msg-row { display: flex; padding: 0 4px; }
 .can-msg-head { height: 20px; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
 .can-msg-filters { padding-bottom: 3px; border-bottom: 1px solid var(--line); gap: 2px; }
 .can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
-.can-col-name { flex: 1 1 100px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { width: 64px; }
+.can-col-name { flex: 1 1 140px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
 .can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { width: 158px; }
 /* narrow panes drop node and count, then bus and freq, then the bytes */
 .can-messages { container-type: inline-size; }
@@ -76,7 +79,8 @@
 .can-field > span:first-child { flex: 0 0 64px; color: var(--muted); }
 .can-field input:not([type=checkbox]), .can-field select, .can-field textarea { flex: 1; min-width: 0; height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
-.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1) { grid-column: 1 / -1; }
+.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1), .can-sig-editor .can-error { grid-column: 1 / -1; }
+.can-sig-editor .can-error:empty { display: none; }
 /* narrow panes: no sparklines (as cabana's compact layout), and the editor in one column */
 .can-signals { container-type: inline-size; }
 @container (max-width: 360px) {
@@ -114,7 +118,7 @@
 .can-dialog.can-wide { width: 820px; }
 .can-dialog::backdrop { background: rgba(0, 0, 0, .3); }
 .can-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--line); }
-.can-x { width: 22px; height: 22px; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; }
+.can-x { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; }
 .can-dialog-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; max-height: calc(86vh - 40px); overflow: auto; }
 .can-form { display: flex; flex-direction: column; gap: 5px; }
 .can-form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

@@ -2,7 +2,7 @@
 // (CanFrames) and hands them over by transfer; a dedicated CAN worker (this file loaded as "can.js?worker")
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
-import {DBC, Dbcs, bits, raw, value} from "./dbc.js";
+import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
 import {parseRemote} from "./github.js";
 import {upstream as github} from "./remote.js";
 
@@ -247,12 +247,15 @@ function heatmap(k, t0, t1) {
   return out;
 }
 
+// a scaled value equal to v as shown: within half a step of the signal
+const near = (x, v, sig) => Math.abs(x - v) < Math.abs(sig.factor) / 2;
+
 // up to n frames of k at or before t, newest first, optionally only those passing filter(msg, d, o, len)
 function frames(k, t, n, msg, filters) {
   const out = {t: [], data: [], more: false};
   const pass = (s, m, i) => !filters?.length || filters.every(({sig, op, v}) => {
-    const x = value(msg, msg.sigs.find((q) => q.name === sig), s.data, dataAt(s, m, i), s.len[i]);
-    return op === "=" ? x === v : op === "!=" ? x !== v : op === ">" ? x > v : op === ">=" ? x >= v : op === "<" ? x < v : x <= v;
+    const sg = msg.sigs.find((q) => q.name === sig), x = value(msg, sg, s.data, dataAt(s, m, i), s.len[i]);
+    return op === "=" ? near(x, v, sg) : op === "!=" ? !near(x, v, sg) : op === ">" ? x > v : op === ">=" ? x >= v : op === "<" ? x < v : x <= v;
   });
   for (let j = segAt(t); j >= 0; j--) {
     const s = segs[j], m = s.idx.get(k);
@@ -340,7 +343,8 @@ function findInit({buses, addresses, t0, t1, minSize, maxSize, le, signed, facto
     if (!f || f[0].base + f[0].t[f[2]] < t0) continue;
     const total = f[0].len[f[2]] * 8;
     for (let size = minSize; size <= maxSize; size++) {
-      for (let start = 0; start <= total - size; start++) cands.push({key: k, sig: bits({start, size, le, signed, factor, offset}), t: t0, values: []});
+      // every in-frame placement; a big endian one's start is its MSB, counted from the frame's first bit in flipped order
+      for (let i = 0; i <= total - size; i++) cands.push({key: k, sig: bits({start: le ? i : flip(i), size, le, signed, factor, offset}), t: t0, values: []});
     }
   }
   find.t1 = t1;
@@ -348,8 +352,8 @@ function findInit({buses, addresses, t0, t1, minSize, maxSize, le, signed, facto
 }
 
 function findNext(op, v1, v2) {
-  const cmp = {"=": (v) => v === v1, ">": (v) => v > v1, ">=": (v) => v >= v1, "!=": (v) => v !== v1, "<": (v) => v < v1, "<=": (v) => v <= v1,
-               between: (v) => v >= v1 && v <= v2}[op];
+  const cmp = {"=": (v, sig) => near(v, v1, sig), ">": (v) => v > v1, ">=": (v) => v >= v1, "!=": (v, sig) => !near(v, v1, sig), "<": (v) => v < v1,
+               "<=": (v) => v <= v1, between: (v) => v >= v1 && v <= v2}[op];
   const next = [];
   for (const c of find.history.at(-1)) {
     let hit = null;
@@ -358,7 +362,7 @@ function findNext(op, v1, v2) {
       if (m === undefined || hit) continue;
       for (let i = upper(s, m, c.t), end = upper(s, m, find.t1); i < end; i++) {
         const v = raw(c.sig, s.data, dataAt(s, m, i), s.len[i]) * c.sig.factor + c.sig.offset;
-        if (cmp(v)) { hit = {...c, t: time(s, i), values: [...c.values, [time(s, i), v]]}; break; }
+        if (cmp(v, c.sig)) { hit = {...c, t: time(s, i), values: [...c.values, [time(s, i), v]]}; break; }
       }
     }
     if (hit) next.push(hit);
@@ -367,23 +371,37 @@ function findNext(op, v1, v2) {
   return next;
 }
 
-// raw frames of the given messages as CSV, in time order
+const HEX = Array.from({length: 256}, (_, i) => i.toString(16).toUpperCase().padStart(2, "0"));
+
+// the given messages' frames in time order as cabana's CSV: raw bytes, or the signals of msg. A Blob, built in parts,
+// as a whole route runs to hundreds of MB
 function csv(keys, t0, t1, msg) {
   const rows = [];
-  for (const k of keys) each(k, t0, t1, (s, m, i) => rows.push([time(s, i), k, s.data.subarray(dataAt(s, m, i), dataAt(s, m, i) + s.len[i]), s.len[i]]));
+  for (const k of keys) each(k, t0, t1, (s, m, i) => rows.push([time(s, i), k, s.data, dataAt(s, m, i), s.len[i]]));
   rows.sort((a, b) => a[0] - b[0]);
-  const hex = (d) => [...d].map((x) => x.toString(16).padStart(2, "0")).join("");
-  if (msg) {
-    return [["time", ...msg.sigs.map((s) => s.name)].join(","),
-            ...rows.map(([t, , d, len]) => [t.toFixed(6), ...msg.sigs.map((s) => value(msg, s, d, 0, len))].join(","))].join("\n") + "\n";
+  const cell = (sg, v) => (Number.isNaN(v) ? "" : v.toFixed(sg.precision));
+  const line = ([t, k, d, o, len]) => {
+    let x = `${t.toFixed(6)},0x${addrOf(k).toString(16)},${busOf(k)},`;
+    if (msg) return x + msg.sigs.map((sg) => cell(sg, value(msg, sg, d, o, len))).join(",") + "\n";
+    x += "0x";
+    for (let b = o; b < o + len; b++) x += HEX[d[b]];
+    return x + "\n";
+  };
+  const parts = [["time,addr,bus", ...(msg ? msg.sigs.map((sg) => sg.name) : ["data"])].join(",") + "\n"];
+  let part = "";
+  for (const r of rows) {
+    part += line(r);
+    if (part.length > 1 << 20) { parts.push(part); part = ""; }
   }
-  return ["time,addr,bus,data", ...rows.map(([t, k, d]) => `${t.toFixed(6)},0x${addrOf(k).toString(16)},${busOf(k)},${hex(d)}`)].join("\n") + "\n";
+  parts.push(part);
+  return new Blob(parts, {type: "text/csv"});
 }
 
 if (import.meta.url.endsWith("?worker")) {
   const ops = {
     add: ({n, can, off}) => { addSegment(n, can, off); },
-    parse: ({name, text}) => new DBC(name, text),
+    parse: ({name, text}) => new DBC(name, text).msgs,
+    serialize: ({name, text, msgs}) => DBC.revive(name, text, msgs).serialize(),
     drop: ({n}) => { dropSegment(n); },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
@@ -428,7 +446,15 @@ export class Can {
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
     this.dbcs = new Dbcs();
-    this.dbcs.on(() => this.dbcChanged());
+    this.dbcs.on((what, change) => {
+      if (what === "saved") return;
+      this.dbcChanged();
+      const move = change && this.moved(change);
+      if (move) this.emit("moved", move);
+    });
+    // leaving with unsaved DBC edits asks first
+    this.unload = (e) => { if (this.dbcs.dirty) e.preventDefault(); };
+    addEventListener("beforeunload", this.unload);
     this.dbcVersion = 0;
     this.dataVersion = 0;  // bumps on new frames or DBC edits
     this.cache = new Map();  // series path -> {series, msgVersion, have: Set(n), pending}
@@ -632,6 +658,22 @@ export class Can {
     this.store.emit?.("paths");
   }
 
+  // an edit's renamed or removed signals as a map of paths: fn(path) is the path now, or null once it's gone. One
+  // signal out and one in is a rename, as only the signal editor does both
+  moved({dbc, from, to}) {
+    if (!from) return null;
+    const has = (m, name) => m.sigs.some((s) => s.name === name);
+    const gone = from.sigs.filter((s) => !to || !has(to, s.name)), added = to ? to.sigs.filter((s) => !has(from, s.name)) : [];
+    if (to && to.name === from.name && !gone.length) return null;
+    const renamed = gone.length === 1 && added.length === 1 ? [gone[0].name, added[0].name] : [];
+    return (path) => {
+      const [, , bus, msg, sig] = path.split("/");
+      if (msg !== from.name || this.dbcs.file(+bus) !== dbc) return path;
+      const now = sig === renamed[0] ? renamed[1] : sig;
+      return to && has(to, now) ? `/dbc/${bus}/${to.name}/${now}` : null;
+    };
+  }
+
   // opendbc's DBC names and the fingerprint → DBC map
   async opendbc() {
     this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
@@ -668,18 +710,19 @@ export class Can {
   async saveLocal(dbc, force = false) {
     const local = await this.local();
     const path = `/local/repos/${local.id}/dbc/${dbc.name}.dbc${force ? "" : `?mtime=${dbc.local?.mtime ?? 0}`}`;
-    const r = await fetch(local.daemon.url(path), {method: "PUT", body: dbc.serialize()});
+    const r = await fetch(local.daemon.url(path), {method: "PUT", body: await this.serialize(dbc)});
     if (r.status === 409) return {conflict: true};
     if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `saving ${dbc.name}.dbc: ${r.status}`);
     const out = await r.json();
     dbc.local = {mtime: out.mtime};
     local.names.add(dbc.name);
-    this.dbcs.saved();
+    this.dbcs.saved(dbc);
     return out;
   }
 
-  // DBC text parsed in the worker, as a big one takes tens of ms
-  async parseDbc(name, text) { return DBC.revive(await this.call("parse", {name, text})); }
+  // DBC text parsed and serialized in the worker, as a big one takes tens of ms
+  async parseDbc(name, text) { return DBC.revive(name, text, await this.call("parse", {name, text})); }
+  serialize(dbc) { return this.call("serialize", {name: dbc.name, text: dbc.text, msgs: dbc.msgs}); }
 
   // a DBC by name: from the local opendbc when the daemon has it (that's the copy to edit), else from GitHub
   async loadOpendbc(name, buses = [-1]) {
@@ -766,6 +809,7 @@ export class Can {
 
   dispose() {
     this.autoDbc?.();
+    removeEventListener("beforeunload", this.unload);
     this.status?.remove();
     this.disposed = true;
     this.worker.terminate();

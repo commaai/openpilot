@@ -1,5 +1,6 @@
 // what the CAN panes share: the route's store.can, following the playhead, dialogs and small formatters
 import {css, h} from "/dom.js";
+import {icon} from "/icons.js";
 import {addrOf, busOf} from "/data/can.js";
 import {MUX, MUXED, NODE, cloneMsg, flip, newSignal} from "/data/dbc.js";
 
@@ -33,21 +34,23 @@ export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
 // a modal dialog; close() removes it
 export function dialog(title, ...body) {
   const el = h("dialog", {class: "can-dialog", onclose: () => el.remove()},
-    h("div", {class: "can-dialog-head"}, h("b", {}, title), h("button", {class: "can-x", title: "Close", onclick: () => el.close()}, "×")),
+    h("div", {class: "can-dialog-head"}, h("b", {}, title), h("button", {class: "can-x", title: "Close", onclick: () => el.close()}, icon("close", 14))),
     h("div", {class: "can-dialog-body"}, body));
   document.body.append(el);
   el.showModal();
   return el;
 }
 
-// a popover menu under anchor; rows are menuItem()s or any element (a checkbox row keeps it open)
+// a popover menu under anchor, focused on its first row; rows are menuItem()s or any element (a checkbox row keeps it
+// open). Focus goes back to anchor when it closes
 export function popup(anchor, rows) {
   const menu = h("div", {class: "can-menu", popover: "auto", ontoggle: (e) => { if (e.newState === "closed") menu.remove(); }}, rows);
   document.body.append(menu);
   const r = anchor.getBoundingClientRect();
   menu.style.left = `${r.left}px`;
   menu.style.top = `${r.bottom + 2}px`;
-  menu.showPopover();
+  menu.showPopover({source: anchor});
+  menu.querySelector("button, input")?.focus();
   return menu;
 }
 export const menuItem = (label, fn) => h("button", {class: "menu-row", onclick: (e) => { e.currentTarget.closest("[popover]").hidePopover(); fn(); }}, label);
@@ -56,8 +59,9 @@ export const menuCheck = (label, checked, fn) => h("label", {class: "menu-row"},
 // a labelled input row for forms
 export const field = (label, input, hint) => h("label", {class: "can-field", title: hint || ""}, h("span", {}, label), input);
 
-export function download(name, text) {
-  const a = h("a", {href: URL.createObjectURL(new Blob([text], {type: "text/plain"})), download: name});
+// text or a Blob as a file
+export function download(name, data) {
+  const a = h("a", {href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type: "text/plain"})), download: name});
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -74,13 +78,15 @@ export function alpha(color, a) {
   return v.replace(/rgba?\(([^)]+?)(,\s*[\d.]+)?\)/, `rgba($1,${a})`);
 }
 
-// edits message k through the undo stack: fn(m) changes a copy (a new message if k has none)
+// edits message k through the undo stack: fn(m) changes a copy (a new message if k has none), or returns false to
+// change nothing. Returns whether it changed
 export function editMsg(can, k, text, fn) {
   const address = addrOf(k);
   const m = cloneMsg(can.dbcMsg(k)) || {address, name: `NEW_MSG_${address.toString(16).toUpperCase()}`, size: can.msg(k)?.size || 8,
                                          transmitter: NODE, comment: "", sigs: []};
-  if (fn(m) === false) return;
+  if (fn(m) === false) return false;
   can.dbcs.edit(busOf(k), address, m, text);
+  return true;
 }
 
 export function createSignal(can, k, props) {
@@ -103,7 +109,7 @@ export function removeSignal(can, k, name) {
 }
 
 export function updateSignal(can, k, name, props) {
-  editMsg(can, k, `edit signal ${name}`, (m) => {
+  return editMsg(can, k, `edit signal ${name}`, (m) => {
     const i = m.sigs.findIndex((x) => x.name === name);
     if (i < 0 || (props.name !== undefined && props.name !== name && m.sigs.some((x) => x.name === props.name))) return false;
     // a new endianness keeps the signal on its bytes, as cabana's saveSignal
