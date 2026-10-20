@@ -9,7 +9,18 @@ const SPARK_W = 80;  // sparkline width
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let open = state.open || null, filter = "", spark = state.spark || 15;  // seconds of history, cabana's default
-  const head = h("div", {class: "can-toolbar"});
+  // the toolbar is built once and updated, so the filter box keeps focus while the list rebuilds
+  const title = h("span", {class: "can-binary-title"}), meta = h("span", {class: "can-muted"}), count = h("span", {class: "can-muted"});
+  const sparkSel = h("select", {class: "can-select", title: "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
+    [1, 5, 15, 30].map((x) => h("option", {value: x, selected: x === spark}, `${x} s`)));
+  const filterBox = h("input", {class: "can-filter", placeholder: "Filter signals", oninput: (e) => { filter = e.target.value; build(); }});
+  const editBtn = h("button", {class: "can-btn", title: "Edit message", onclick: () => messageDialog(can, k())});
+  const removeBtn = h("button", {class: "can-btn", title: "Remove message", onclick: () => {
+    const m = msg();
+    can.dbcs.edit(busOf(k()), m.address, null, `remove message ${m.name}`);
+  }}, "Remove");
+  const comment = h("div", {class: "can-comment"});
+  const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "can-spacer"}), count, sparkSel, filterBox, editBtn, removeBtn, comment);
   const list = h("div", {class: "can-sig-list"});
   const el = h("div", {class: "can-pane can-signals"}, head, list);
   const k = () => can.selected;
@@ -31,24 +42,26 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   }
 
+  function header() {
+    const key = k(), m = msg();
+    title.textContent = key === null ? "Select a message" : `${hexId(key)} ${m?.name || "(no DBC message)"}`;
+    meta.textContent = m ? ` ${m.size} bytes · ${m.transmitter}` : "";
+    count.textContent = m ? `${m.sigs.length} signals` : "";
+    for (const x of [meta, count, sparkSel, filterBox, removeBtn]) x.hidden = !m;
+    editBtn.hidden = key === null;
+    editBtn.textContent = m ? "Edit message" : "Add to DBC";
+    comment.textContent = m?.comment || "";
+    comment.hidden = !m?.comment;
+  }
+
   function build() {
     rows = new Map();
     const key = k(), m = msg();
-    head.replaceChildren(...[
-      h("span", {class: "can-binary-title"}, key === null ? "Select a message" : `${hexId(key)} ${m?.name || "(no DBC message)"}`),
-      key !== null && m && h("span", {class: "can-muted"}, ` ${m.size} bytes · ${m.transmitter}`),
-      h("span", {class: "can-spacer"}),
-      key !== null && m && h("span", {class: "can-muted"}, `${m.sigs.length} signals`),
-      key !== null && m && h("select", {class: "can-select", title: "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
-        [1, 5, 15, 30].map((x) => h("option", {value: x, selected: x === spark}, `${x} s`))),
-      key !== null && m && h("input", {class: "can-filter", placeholder: "Filter signals", value: filter, oninput: (e) => { filter = e.target.value; build(); }}),
-      key !== null && h("button", {class: "can-btn", title: "Edit message", onclick: () => messageDialog(can, key)}, m ? "Edit message" : "Add to DBC"),
-      key !== null && m && h("button", {class: "can-btn", title: "Remove message", onclick: () => can.dbcs.edit(busOf(key), m.address, null, `remove message ${m.name}`)}, "Remove")].filter(Boolean));
+    header();
     if (!m) {
       list.replaceChildren(h("div", {class: "can-empty"}, key === null ? "Select a message to edit its signals" : "Drag across bits in the binary view to create a signal."));
       return;
     }
-    if (m.comment) head.append(h("div", {class: "can-comment"}, m.comment));
     list.replaceChildren(...m.sigs.filter((sg) => sg.name.toLowerCase().includes(filter.toLowerCase())).map((sg) => {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
