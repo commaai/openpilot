@@ -6,11 +6,11 @@ import {createSignal, dialog, download, field, menuItem, popup} from "./common.j
 
 const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a, b) => a - b);
 
-// open, save, copy and close DBCs, each for all buses or a chosen set
-export function dbcDialog(can) {
+// open, save, copy and close DBCs, each for all buses or a chosen set; message is an error to show
+export function dbcDialog(can, message = "") {
   const target = h("select", {}, h("option", {value: "-1"}, "all buses"), busList(can).map((b) => h("option", {value: b}, `bus ${b}`)));
   const buses = () => [+target.value];
-  const error = h("div", {class: "can-error"}), note = h("div", {class: "can-muted"});
+  const error = h("div", {class: "can-error"}, message), note = h("div", {class: "can-muted"});
   // a file that opening or closing a DBC unloads drops its edits, so unsaved ones are confirmed first, as cabana
   const discard = (files) => {
     const dirty = files.filter((f) => can.dbcs.isDirty(f)).map((f) => f.name);
@@ -135,7 +135,7 @@ function handles(mode, fn) {
 }
 
 // writes back to the opened file when permitted, else asks where (or downloads)
-async function save(can, dbc, as = false) {
+export async function save(can, dbc, as = false) {
   const text = await can.serialize(dbc);
   try {
     if (as || !dbc.handle) {

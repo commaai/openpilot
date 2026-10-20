@@ -2,7 +2,7 @@
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {canOf, hex2, menuCheck, popup, subs} from "./common.js";
-import {dbcDialog, toolsMenu} from "./tools.js";
+import {dbcDialog, save, toolsMenu} from "./tools.js";
 
 const ROW = 20;
 // bus, freq and count are null for DBC messages never seen: "N/A", sorted last, and never matching a number
@@ -217,6 +217,19 @@ export function create(ctx, state) {
   };
   document.addEventListener("keydown", undoKeys);
   s.add(() => document.removeEventListener("keydown", undoKeys));
+  // cabana's file keys, rather than the browser's: ctrl+s saves the DBC with edits (or the only one), ctrl+shift+s
+  // saves it as, and ctrl+o or more than one to pick from opens the DBC dialog
+  const fileKeys = (e) => {
+    const k = e.key.toLowerCase();
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || (k !== "s" && k !== "o") || e.defaultPrevented || !el.isConnected || e.target.closest?.("dialog")) return;
+    e.preventDefault();
+    const files = can.dbcs.all(), dirty = files.filter((f) => can.dbcs.isDirty(f));
+    const f = k === "s" && (dirty.length === 1 ? dirty[0] : files.length === 1 ? files[0] : null);
+    if (f) save(can, f, e.shiftKey).catch((err) => dbcDialog(can, err.message));
+    else dbcDialog(can);
+  };
+  document.addEventListener("keydown", fileKeys);
+  s.add(() => document.removeEventListener("keydown", fileKeys));
   s.add(can.on("notice", toolbar));
   columns();
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
