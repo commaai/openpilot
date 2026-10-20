@@ -442,7 +442,10 @@ export class Can {
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
     this.dbcs = new Dbcs();
-    this.dbcs.on(() => this.dbcChanged());
+    this.dbcs.on((what) => what !== "saved" && this.dbcChanged());
+    // leaving with unsaved DBC edits asks first
+    this.unload = (e) => { if (this.dbcs.dirty) e.preventDefault(); };
+    addEventListener("beforeunload", this.unload);
     this.dbcVersion = 0;
     this.dataVersion = 0;  // bumps on new frames or DBC edits
     this.cache = new Map();  // series path -> {series, msgVersion, have: Set(n), pending}
@@ -688,7 +691,7 @@ export class Can {
     const out = await r.json();
     dbc.local = {mtime: out.mtime};
     local.names.add(dbc.name);
-    this.dbcs.saved();
+    this.dbcs.saved(dbc);
     return out;
   }
 
@@ -781,6 +784,7 @@ export class Can {
 
   dispose() {
     this.autoDbc?.();
+    removeEventListener("beforeunload", this.unload);
     this.status?.remove();
     this.disposed = true;
     this.worker.terminate();

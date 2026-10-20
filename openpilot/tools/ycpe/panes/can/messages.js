@@ -55,7 +55,7 @@ export function create(ctx, state) {
 
   function toolbar() {
     const files = can.dbcs.all();
-    dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.dirty ? "*" : ""}`).join(", ") : "No DBC";
+    dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.isDirty(f) ? "*" : ""}`).join(", ") : "No DBC";
     const {undos, index} = can.dbcs;
     undo.disabled = index === 0;
     redo.disabled = index === undos.length;

@@ -291,28 +291,38 @@ export function newSignalName(m) {
   for (let i = 1; ; i++) if (!m.sigs.some((s) => s.name === `NEW_SIGNAL_${i}`)) return `NEW_SIGNAL_${i}`;
 }
 
-// a DBC per bus, falling back to the "all buses" file, with one undo stack for every edit
+// a DBC per bus, falling back to the "all buses" file, with one undo stack for every edit. A file is clean while its
+// last applied edit is the one it was saved (or opened) at
 export class Dbcs {
   constructor() {
     this.files = new Map();  // bus (-1 = all) -> DBC
     this.undos = [];
     this.index = 0;
-    this.clean = 0;
+    this.clean = new Map();  // DBC -> its last applied edit when saved
     this.listeners = new Set();
   }
 
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   emit(what) { for (const fn of this.listeners) fn(what); }
 
+  // the files that opening a DBC on `buses` unloads
+  replaced(buses) { return this.all().filter((f) => this.buses(f).every((b) => buses.includes(b))); }
   open(buses, dbc) {
+    const gone = this.replaced(buses);
     for (const b of buses) this.files.set(b, dbc);
-    this.undos = [];
-    this.index = this.clean = 0;
+    for (const f of gone) this.forget(f);
     this.emit("file");
   }
   close(dbc) {
     for (const [b, f] of this.files) if (f === dbc) this.files.delete(b);
+    this.forget(dbc);
     this.emit("file");
+  }
+  // an unloaded file's edits leave the undo stack
+  forget(dbc) {
+    this.index -= this.undos.slice(0, this.index).filter((c) => c.dbc === dbc).length;
+    this.undos = this.undos.filter((c) => c.dbc !== dbc);
+    this.clean.delete(dbc);
   }
   file(bus) { return this.files.get(bus) || this.files.get(-1); }
   buses(dbc) { return [...this.files].filter(([, f]) => f === dbc).map(([b]) => b); }
@@ -323,7 +333,6 @@ export class Dbcs {
   edit(bus, address, m, text) {
     const dbc = this.file(bus) || this.ensure();
     this.undos.length = this.index;
-    if (this.clean > this.index) this.clean = -1;
     const cmd = {dbc, address, before: cloneMsg(dbc.msg(address)), after: cloneMsg(m), text};
     this.undos.push(cmd);
     this.redo();
@@ -339,6 +348,8 @@ export class Dbcs {
     cmd.dbc.setMsg(cmd.address, cloneMsg(cmd[side]));
     this.emit("msg");
   }
-  get dirty() { return this.index !== this.clean; }
-  saved() { this.clean = this.index; this.emit("msg"); }
+  last(dbc) { return this.undos.slice(0, this.index).findLast((c) => c.dbc === dbc) || null; }
+  isDirty(dbc) { return this.last(dbc) !== (this.clean.get(dbc) || null); }
+  get dirty() { return this.all().some((f) => this.isDirty(f)); }
+  saved(dbc) { this.clean.set(dbc, this.last(dbc)); this.emit("saved"); }
 }

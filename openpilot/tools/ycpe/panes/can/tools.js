@@ -11,10 +11,13 @@ export function dbcDialog(can) {
   const target = h("select", {}, h("option", {value: "-1"}, "all buses"), busList(can).map((b) => h("option", {value: b}, `bus ${b}`)));
   const buses = () => [+target.value];
   const error = h("div", {class: "can-error"}), note = h("div", {class: "can-muted"});
-  // opening or closing a DBC drops the undo history, so unsaved edits are confirmed first, as cabana
-  const discard = () => !can.dbcs.dirty || confirm("The DBC has unsaved changes. Discard them?");
+  // a file that opening or closing a DBC unloads drops its edits, so unsaved ones are confirmed first, as cabana
+  const discard = (files) => {
+    const dirty = files.filter((f) => can.dbcs.isDirty(f)).map((f) => f.name);
+    return !dirty.length || confirm(`${dirty.join(", ")} has unsaved changes. Discard them?`);
+  };
   const open = (fn) => async () => {
-    if (!discard()) return;
+    if (!discard(can.dbcs.replaced(buses()))) return;
     try {
       await fn();
       d.close();
@@ -59,7 +62,7 @@ export function dbcDialog(can) {
       h("button", {class: "can-btn", onclick: () => save(can, f, true)}, "Save as"),
       localSave(f),
       h("button", {class: "can-btn", onclick: async (e) => navigator.clipboard.writeText(await can.serialize(f)).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
-      h("button", {class: "can-btn", onclick: () => { if (discard()) { can.dbcs.close(f); d.close(); } }}, "Close")))));
+      h("button", {class: "can-btn", onclick: () => { if (discard([f])) { can.dbcs.close(f); d.close(); } }}, "Close")))));
 
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),
@@ -141,7 +144,7 @@ async function save(can, dbc, as = false) {
     const w = await dbc.handle.createWritable();
     await w.write(text);
     await w.close();
-    can.dbcs.saved();
+    can.dbcs.saved(dbc);
   } catch (e) {
     if (e.name !== "AbortError") throw e;
   }
