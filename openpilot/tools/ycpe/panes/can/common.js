@@ -33,7 +33,7 @@ export function reveal(el, cls) {
   if (layout && getComputedStyle(layout).display === "block") layout.querySelector(`.${cls}`)?.closest(".pane").scrollIntoView({behavior: "smooth"});
 }
 
-export const hex2 =(x) => x.toString(16).toUpperCase().padStart(2, "0");
+export const hex2 = (x) => x.toString(16).toUpperCase().padStart(2, "0");
 // a signal color dark enough for text and lines on either theme
 export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
 
