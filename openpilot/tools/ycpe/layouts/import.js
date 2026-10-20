@@ -31,7 +31,7 @@ function untrusted({active = 0, tabs = []}) {
 export const specKey = ({inputs, globals = "", code}) => JSON.stringify([inputs, globals, code]);
 
 // fn(curves) for every time plot in a layout model
-function plots({tabs}, fn) {
+export function plots({tabs}, fn) {
   const walk = (n) => n.children ? n.children.forEach(walk) : n.pane === "plot" && fn(n.state?.curves || []);
   tabs.forEach((t) => walk(t.root));
 }

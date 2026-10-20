@@ -14,7 +14,7 @@ import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/t
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
-import {customsOf, specKey} from "/layouts/import.js";
+import {customsOf, plots, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const SEGMENT_WAIT = 200;  // ms that inputs changing together wait to recompute as one
@@ -67,12 +67,17 @@ export function create(ctx, state = {}) {
   const decimator = new Decimator(store, () => invalidate());
 
   const pane = {
-    name: "plot", el, render, resize, dispose, save, addCurves, compare,
+    name: "plot", el, store, render, resize, dispose, save, addCurves, compare, setCustom,
     has: (path) => st.curves.some((c) => c.path === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     get curves() { return structuredClone(st.curves); },
-    setCurves(curves) { st.curves = curves; rebuildLegend(); invalidate(); },
+    setCurves(curves) {
+      st.curves = curves;
+      for (const c of curves) if (c.custom) share(c);
+      rebuildLegend();
+      invalidate();
+    },
     overlay: () => perf.invalidate(pane),
   };
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
@@ -82,6 +87,7 @@ export function create(ctx, state = {}) {
     clock.on("t", pane.overlay),
     store.on("segment", invalidate),
     store.on("paths", invalidate),
+    store.on("put", (path) => { if (st.curves.some((c) => c.path === path)) invalidate(); }),  // a custom series computed by another plot
     store.on("progress", hint),
     view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
@@ -426,9 +432,26 @@ export function create(ctx, state = {}) {
     view.rememberCurves(clock, pane);
     if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
     else st.curves.push(normalize({path, label: spec.name, custom}));
+    share({path, custom});
     rebuildLegend();
     invalidate();
   });
+
+  // the other curves named like custom series c, in the plots on screen and the layout's other tabs, take its code
+  function share(c) {
+    view.each((p) => p.store === store && p.setCustom?.(c.path, c.custom));
+    if (ctx.layout) plots(ctx.layout.model, (curves) => { for (const x of curves) if (x.path === c.path && x.custom) x.custom = structuredClone(c.custom); });
+  }
+
+  // another curve's code for the custom series at path, which that curve computes into the store
+  function setCustom(path, custom) {
+    const cs = st.curves.filter((c) => c.path === path && c.custom && specKey(c.custom) !== specKey(custom));
+    if (!cs.length) return;
+    for (const c of cs) Object.assign(c, {custom: structuredClone(custom), error: null});
+    made.set(path, recipe(cs[0], path, custom.inputs));
+    rebuildLegend();
+    invalidate();
+  }
 
   function updateLegend() {
     const tt = view.getTracker() ?? clock.t;

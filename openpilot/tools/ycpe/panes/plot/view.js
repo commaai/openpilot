@@ -14,6 +14,7 @@ export function leave(p) {
   if (touched === p) touched = null;
 }
 export function touch(p) { touched = p; }
+export function each(fn) { for (const p of panes) fn(p); }
 
 // the time plot a series is sent to without a drag: the one last used, else the first on the page
 function target() {
