@@ -543,12 +543,13 @@ export function create(ctx, state = {}) {
   over.addEventListener("pointerleave", () => gesture || view.track(null));
   // a legend highlight can outlive its pointerleave when a popup opens over the row
   over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
-  // the context menu key (or shift+F10) opens the plot's menu at its middle; a right click opens it on release
+  // the context menu key (or shift+F10) opens the plot's menu at its middle; a right click opens it on release,
+  // or here in an empty plot (which has no gestures)
   over.addEventListener("contextmenu", (e) => {
     e.preventDefault();
-    if (e.button !== -1 || !frame) return;
     const r = over.getBoundingClientRect();
-    paneMenu({clientX: r.left + r.width / 2, clientY: r.top + r.height / 2});
+    if (e.button === -1) paneMenu({clientX: r.left + r.width / 2, clientY: r.top + r.height / 2});
+    else if (!frame) paneMenu(e);
   });
 
   over.addEventListener("wheel", (e) => {
@@ -591,14 +592,14 @@ export function create(ctx, state = {}) {
     const locked = st.y.min !== undefined || st.y.max !== undefined;
     menu(e.clientX, e.clientY, [
       {label: "Fit view", fn: () => { view.remember(clock); st.y = {}; setRange(0, clock.duration); invalidate(); }},
-      {label: "Y auto-fit", checked: !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
+      {label: "Y auto-fit", checked: !locked, disabled: !frame && !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
       {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
       {label: "Undo", fn: () => view.undo(clock)},
       {label: "Redo", fn: () => view.redo(clock)},
       null,
       {label: "Statistics", checked: st.stats, fn: () => { st.stats = !st.stats; rebuildLegend(); perf.invalidate(pane); }},
-      {label: "Export CSV", disabled: !frame.lines.length, fn: exportCsv},
+      {label: "Export CSV", disabled: !frame?.lines.length, fn: exportCsv},
       {label: "Export PNG", fn: () => exportPng([base, over], st.curves.filter((c) => !c.hidden).map((c) => ({color: c.color, name: label(c), value: rows[st.curves.indexOf(c)].val.textContent})),
         col.bg, col.fg, col.font, st.title || "plot")},
       null,
