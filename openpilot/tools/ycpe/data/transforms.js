@@ -81,7 +81,24 @@ function rpy(_, [w, x, y, z], axis) {
 
 // ---- worker side
 
-const series = new Map();  // path → {version, chunks, t, v}
+// the worker's copy of store series, per store id: id → Map(path → {version, chunks, t, v})
+const stores = new Map();
+let series = null;  // the current request's store's
+
+// applies a message from Feed.feed() to the worker's copy; → its store's series, or null for a drop message
+export function receive({store, data, drop}) {
+  if (drop !== undefined) {
+    stores.delete(drop);
+    return null;
+  }
+  if (!stores.has(store)) stores.set(store, new Map());
+  const held = stores.get(store);
+  for (const [path, {version, chunks: sent}] of Object.entries(data)) {
+    const old = held.get(path)?.chunks, chunks = sent.map((c) => typeof c === "number" ? old[c] : c);
+    held.set(path, {version, chunks, ...concat(chunks)});
+  }
+  return held;
+}
 
 // one {t, v} from store chunks ({tt, v}), without missing values
 export function concat(chunks) {
@@ -252,11 +269,9 @@ function fftInPlace(re, im) {
 }
 
 if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
-  onmessage = ({data: {id, op, args, data}}) => {
-    for (const [path, {version, chunks: sent}] of Object.entries(data)) {
-      const old = series.get(path)?.chunks, chunks = sent.map((c) => typeof c === "number" ? old[c] : c);
-      series.set(path, {version, chunks, ...concat(chunks)});
-    }
+  onmessage = ({data: msg}) => {
+    const {id, op, args} = msg;
+    if (!(series = receive(msg))) return;
     try {
       const result = ops[op](args);
       postMessage({id, result}, Object.values(result || {}).filter(ArrayBuffer.isView).map((a) => a.buffer));
@@ -268,9 +283,8 @@ if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
 
 // ---- main side
 
-let worker = null, nextId = 0;
+let worker = null, feed = null, nextId = 0;
 const pending = new Map();
-const sent = new WeakMap();  // store → Map(path → {version, at: WeakMap(chunk → its index in the worker's copy)})
 
 // exact copies of chunks' samples: a view would clone its whole pack buffer. Their buffers go in transfer
 export function copy({tt, v}, transfer) {
@@ -279,8 +293,44 @@ export function copy({tt, v}, transfer) {
   return c;
 }
 
-// runs op in the worker; `paths` are the store series it reads. Of a changed series only the chunks the
-// worker doesn't hold go, the others as their index in its copy
+// what a worker holds of the stores' series, so a chunk crosses threads once. Each store has an id there, and
+// a store that's gone is dropped from the worker's copy (receive() takes the messages)
+let lastStore = 0;
+const storeIds = new WeakMap();
+export class Feed {
+  constructor(worker) {
+    this.worker = worker;
+    this.sent = new WeakMap();  // store → Map(path → {version, at: WeakMap(chunk → its index in the worker's copy)})
+    this.gone = new FinalizationRegistry((id) => this.worker.postMessage({drop: id}));
+  }
+
+  // the fields of a message for a worker that reads `paths` of store: of a changed series only the chunks the
+  // worker doesn't hold go, the others as their index in its copy. Their buffers go in transfer
+  feed(store, paths, transfer) {
+    const all = [...new Set(paths)].map((path) => [path, store.series(path)]), none = all.find(([, s]) => !s);
+    if (none) throw new Error(`no series ${none[0]}`);
+    if (!storeIds.has(store)) storeIds.set(store, ++lastStore);
+    if (!this.sent.has(store)) {
+      this.sent.set(store, new Map());
+      this.gone.register(store, storeIds.get(store));
+    }
+    const have = this.sent.get(store), data = {};
+    for (const [path, s] of all) {
+      const old = have.get(path);
+      if (old?.version === s.version) continue;
+      const at = new WeakMap();
+      data[path] = {version: s.version, chunks: s.chunks.map((c, k) => {
+        const held = old?.at.get(c);
+        at.set(c, k);
+        return held ?? copy(c, transfer);
+      })};
+      have.set(path, {version: s.version, at});
+    }
+    return {store: storeIds.get(store), data};
+  }
+}
+
+// runs op in the worker; `paths` are the store series it reads
 export function compute(store, op, args, paths) {
   if (!worker) {
     worker = new Worker(import.meta.url, {type: "module"});
@@ -289,24 +339,14 @@ export function compute(store, op, args, paths) {
       pending.delete(id);
       error ? p.reject(new Error(error)) : p.resolve(result);
     };
+    feed = new Feed(worker);
   }
-  if (!sent.has(store)) sent.set(store, new Map());
-  const have = sent.get(store), data = {}, transfer = [];
-  const all = [...new Set(paths)].map((path) => [path, store.series(path)]), none = all.find(([, s]) => !s);
-  if (none) return Promise.reject(new Error(`no series ${none[0]}`));
-  for (const [path, s] of all) {
-    const old = have.get(path);
-    if (old?.version === s.version) continue;
-    const at = new WeakMap();
-    data[path] = {version: s.version, chunks: s.chunks.map((c, k) => {
-      const held = old?.at.get(c);
-      at.set(c, k);
-      return held ?? copy(c, transfer);
-    })};
-    have.set(path, {version: s.version, at});
+  const id = nextId++, transfer = [];
+  try {
+    worker.postMessage({id, op, args, ...feed.feed(store, paths, transfer)}, transfer);
+  } catch (e) {
+    return Promise.reject(e);
   }
-  const id = nextId++;
-  worker.postMessage({id, op, args, data}, transfer);
   return new Promise((resolve, reject) => pending.set(id, {resolve, reject}));
 }
 

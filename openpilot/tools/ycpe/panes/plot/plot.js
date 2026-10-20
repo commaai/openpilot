@@ -9,12 +9,13 @@ import {blocks} from "./blocks.js";
 import {Decimator} from "./decimate.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
-import {TRANSFORMS, derivedPath, derive, compute} from "/data/transforms.js";
+import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/transforms.js";
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
+const SEGMENT_WAIT = 200;  // ms that inputs changing together wait to recompute as one
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
@@ -58,7 +59,7 @@ export function create(ctx, state = {}) {
   let frame = null;    // geometry and prepared curves of the last base draw
   let gesture = null;  // the pointer gesture in progress
   let rows = [];       // legend rows, parallel to st.curves
-  let statsTimer = 0, statsKey = "";
+  let statsTimer = 0, statsKey = "", recomputeTimer = 0;
   let failure = null;  // store.failure as the empty state shows it
   const made = new Map();  // derived or custom path → input version it was computed from
   const busy = new Set();
@@ -105,21 +106,39 @@ export function create(ctx, state = {}) {
     invalidate();
   }
 
-  // the store path a curve draws; transforms and custom series are (re)computed when their inputs change
+  // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
+  // change, off the draw and a moment later (inputs that change together, as segments arrive, recompute once);
   // custom code from an untrusted layout waits until the user has reviewed it in the console
   const inputsVersion = (inputs) => inputs.map((p) => store.series(p)?.version).join();
+  const stale = (c, out, inputs) => !c.custom?.untrusted && !busy.has(out) && inputs.every((p) => store.series(p)) && made.get(out) !== inputsVersion(inputs);
   function source(c) {
-    if (!c.transform && !c.custom) return c.path;
-    const src = c.custom ? c.path : derivedPath(c.path, c.transform);
-    const inputs = c.custom ? c.custom.inputs : [c.path];
-    const version = inputsVersion(inputs);
-    if (!c.custom?.untrusted && inputs.every((p) => store.series(p)) && made.get(src) !== version && !busy.has(src)) {
-      busy.add(src);
-      const job = c.custom ? evaluate(store, c.path, c.custom) : derive(store, c.path, c.transform);
-      job.then(() => { made.set(src, version); c.error = null; }, (e) => { made.set(src, version); c.error = e.message; })
-        .finally(() => { busy.delete(src); rebuildLegend(); invalidate(); });
-    }
+    let src = c.path;
+    steps(c, (out, inputs) => {
+      src = out;
+      if (stale(c, out, inputs)) recomputeTimer ||= setTimeout(recompute, made.has(out) ? SEGMENT_WAIT : 0);
+    });
     return src;
+  }
+
+  // the computed series behind a curve, in order: fn(store path, its inputs, run) for its custom series, then for
+  // its transform (of that, or of its path)
+  function steps(c, fn) {
+    if (c.custom) fn(c.path, c.custom.inputs, () => evaluate(store, c.path, c.custom));
+    if (c.transform) fn(derivedPath(c.path, c.transform), transformInputs(c.path, c.transform), () => derive(store, c.path, c.transform));
+  }
+
+  function recompute() {
+    recomputeTimer = 0;
+    for (const c of st.curves) {
+      if (c.hidden) continue;
+      steps(c, (out, inputs, run) => {
+        if (!stale(c, out, inputs)) return;
+        const version = inputsVersion(inputs);
+        busy.add(out);
+        run().then(() => { made.set(out, version); c.error = null; }, (e) => { made.set(out, version); c.error = e.message; })
+          .finally(() => { busy.delete(out); rebuildLegend(); invalidate(); });
+      });
+    }
   }
 
   // the empty state: where to drop series, or why there's nothing to plot
@@ -593,6 +612,7 @@ export function create(ctx, state = {}) {
     for (const off of offs) off?.();
     view.leave(pane);
     clearTimeout(statsTimer);
+    clearTimeout(recomputeTimer);
     closeMenu();
   }
 
