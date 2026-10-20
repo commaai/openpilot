@@ -207,7 +207,7 @@ function state(t) {
     last[j] = time(s, i);
     data.set(d.subarray(cur, cur + len), off[j]);
     // walk back over the fade window, comparing every byte at once
-    const n = s.start[m + 1] - s.start[m], freq = n > 1 ? (n - 1) / (time(s, s.start[m + 1] - 1) - time(s, s.start[m])) : 0;
+    const n = s.start[m + 1] - s.start[m], span = time(s, s.start[m + 1] - 1) - time(s, s.start[m]), freq = n > 1 && span > 0 ? (n - 1) / span : 0;
     let open = 0;
     const changed = new Float64Array(len).fill(NaN);
     for (let b = 0; b < len; b++) if (!mask || mask[b] !== 0xff) open++;
@@ -483,7 +483,7 @@ export class Can {
       s.t0 = Math.min(s.t0, can.t0 + off + t[a]);
       s.t1 = Math.max(s.t1, can.t0 + off + t[b - 1]);
       s.size = Math.max(s.size, len[b - 1], stride[m] && s.size);
-      s.freq = s.count > 1 ? (s.count - 1) / (s.t1 - s.t0) : 0;
+      s.freq = s.count > 1 && s.t1 > s.t0 ? (s.count - 1) / (s.t1 - s.t0) : 0;
       s.segs.add(n);
     });
     const bytes = t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
