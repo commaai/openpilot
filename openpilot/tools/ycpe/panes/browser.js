@@ -17,45 +17,55 @@ export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   const st = {filter: state.filter || "", deprecated: !!state.deprecated, expanded: new Set(state.expanded || [])};
   const selected = new Set();
-  let tree = null, stale = true, rows = [], anchor = -1, H = 0;
+  let tree = null, stale = true, rows = [], anchor = -1, H = 0, total = 0;
+  let leaves = new Map();  // path → tree node, for the paths already in the tree
 
   const filter = h("input", {type: "search", class: "filter", placeholder: "filter, or /regex/", value: st.filter, spellcheck: false,
     oninput: () => { st.filter = filter.value; refresh(); },
     onkeydown: (e) => { if (e.key === "Escape") { filter.value = st.filter = ""; refresh(); } }});
   const count = h("span", {class: "muted count"});
   const depr = h("label", {class: "muted", title: "show deprecated fields and internal ones (__logMonoTime)"},
-    h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(); }}), "deprecated");
+    h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(true); }}), "deprecated");
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
   const scroller = h("div", {class: "scroller", onscroll: () => perf.invalidate(pane)}, spacer, win);
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
 
-  // new paths arrive with segments; the tree rebuilds at most once a frame
-  const offs = [store.on("paths", () => { stale = true; perf.invalidate(pane); }), clock.on("t", () => perf.invalidate(pane))];
+  // new paths arrive with segments and are added at most once a frame; a new DBC replaces its signals
+  const changed = () => { stale = true; perf.invalidate(pane); };
+  const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)),
+    store.can?.on("dbc", () => { tree = null; changed(); })].filter(Boolean);
 
-  // the path tree; a node is {name, path, depth, children?, meta?}
-  function build() {
-    const root = {children: new Map()};
-    for (const meta of store.paths()) {
+  // the path tree; a node is {name, path, depth, children?, kids? (sorted), meta?}. New paths are added to the
+  // tree as they arrive, and only the branches they land in are re-sorted; fewer paths than before rebuilds it.
+  function build(reset = false) {
+    const all = store.paths();
+    if (reset || !tree || all.length < total) {
+      tree = {children: new Map(), depth: -1};
+      leaves = new Map();
+    }
+    const touched = new Set();
+    for (const meta of all) {
+      const leaf = leaves.get(meta.path);
+      if (leaf) { leaf.meta = meta; continue; }
       if (!st.deprecated && (meta.internal || deprecated(meta.path))) continue;
-      let node = root, prefix = "";
+      let node = tree, prefix = "";
       for (const part of meta.path.slice(1).split("/")) {
         prefix += `/${part}`;
-        if (!node.children) node.children = new Map();
-        if (!node.children.has(part)) node.children.set(part, {name: part, path: prefix});
-        node = node.children.get(part);
+        node.children ||= new Map();
+        let next = node.children.get(part);
+        if (!next) {
+          node.children.set(part, next = {name: part, path: prefix, depth: node.depth + 1});
+          touched.add(node);
+        }
+        node = next;
       }
       node.meta = meta;
+      leaves.set(meta.path, node);
     }
-    const sort = (n, depth) => {
-      n.depth = depth;
-      if (!n.children) return;
-      n.kids = [...n.children.values()].sort((a, b) => order(a.name, b.name));
-      for (const k of n.kids) sort(k, depth + 1);
-    };
-    sort(root, -1);
-    tree = root;
+    for (const n of touched) n.kids = [...n.children.values()].sort((a, b) => order(a.name, b.name));
+    total = all.length;
     stale = false;
     refresh();
   }
@@ -72,7 +82,7 @@ export function create(ctx, state = {}) {
   // the visible rows: expanded branches, or with a filter every match and its ancestors
   function refresh() {
     rows = [];
-    let leaves = 0;
+    let hits = 0;
     const match = matcher();
     const walk = (n) => {
       for (const k of n.kids || []) {
@@ -80,18 +90,17 @@ export function create(ctx, state = {}) {
           const start = rows.length;
           rows.push(k);
           const hit = k.meta && match(k.path);
-          if (hit) leaves++;
+          if (hit) hits++;
           if (k.kids) walk(k);
           if (!hit && rows.length === start + 1) rows.pop();
         } else {
           rows.push(k);
-          if (k.meta) leaves++;
           if (k.kids && st.expanded.has(k.path)) walk(k);
         }
       }
     };
     if (tree) walk(tree);
-    count.textContent = match ? `${leaves}` : `${store.paths().length}`;
+    count.textContent = match ? `${hits}` : `${total}`;
     spacer.style.height = `${rows.length * ROW}px`;
     perf.invalidate(pane);
   }
