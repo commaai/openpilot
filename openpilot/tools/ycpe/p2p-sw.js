@@ -28,6 +28,7 @@ async function serve(url, req) {
       resolve(response);
     };
     self.clients.matchAll({type: "window"}).then((windows) => {
+      if (!windows.length) settle(null, fail(503, "no page is reading this device's files"));
       for (const w of windows) {
         const {port1, port2} = new MessageChannel();
         ports.push(port1);
