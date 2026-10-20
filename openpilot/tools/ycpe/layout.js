@@ -275,7 +275,13 @@ export class Layout {
   }
 
   split(n, dir) {
-    this.edit((tab, get) => insertBeside(tab, get(n), {pane: "empty", state: {}}, dir, false));
+    // the maximized pane splits on its own, rather than into a parent that isn't shown
+    const wrap = this.maxPath && at(this.tab.root, this.maxPath) === n;
+    this.edit((tab, get) => {
+      const fresh = {pane: "empty", state: {}};
+      if (wrap) replaceNode(tab, get(n), {split: dir, sizes: [0.5, 0.5], children: [get(n), fresh]});
+      else insertBeside(tab, get(n), fresh, dir, false);
+    });
   }
 
   close(n) {
