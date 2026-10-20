@@ -19,14 +19,19 @@
 .logs-pane .lv2 .logs-lv { color: var(--alert-fg); }
 .logs-pane .lv3 .logs-lv, .logs-pane .lv4 .logs-lv, .logs-pane .lv4 .logs-msg { color: var(--critical-fg); }
 .logs-pane .logs-note { position: absolute; left: 0; right: 0; top: 40%; color: var(--muted); text-align: center; pointer-events: none; }
-/* narrow panes leave the message the room: the metadata narrows, then the level becomes a coloured edge */
+.logs-pane .logs-detail { position: absolute; left: 0; right: 0; bottom: 0; max-height: 50%; overflow: auto; padding: 6px 8px; border-top: 1px solid var(--line);
+  background: var(--raised); font: 12px/18px var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; cursor: pointer; }
+.logs-pane .logs-meta { color: var(--muted); }
+.logs-pane .logs-meta.lv2 { color: var(--alert-fg); }
+.logs-pane .logs-meta.lv3, .logs-pane .logs-meta.lv4 { color: var(--critical-fg); }
+/* narrow panes leave the message the room: the level becomes a coloured edge, then the source goes (a tap shows both) */
 @container (max-width: 480px) {
-  .logs-pane .logs-lv { width: 5ch; overflow: hidden; text-overflow: ellipsis; }
+  .logs-pane .logs-lv { display: none; }
   .logs-pane .logs-src { width: 10ch; }
-}
-@container (max-width: 360px) {
-  .logs-pane .logs-lv, .logs-pane .logs-src { display: none; }
   .logs-pane .logs-row { padding-left: 4px; border-left: 2px solid transparent; }
   .logs-pane .logs-row.lv2 { border-left-color: var(--alert); }
   .logs-pane .logs-row.lv3, .logs-pane .logs-row.lv4 { border-left-color: var(--critical); }
+}
+@container (max-width: 360px) {
+  .logs-pane .logs-src { display: none; }
 }

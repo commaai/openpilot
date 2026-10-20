@@ -33,7 +33,8 @@ export function create(ctx, state) {
   const win = h("div", {class: "logs-window"});
   const spacer = h("div", {class: "logs-spacer"}, win);
   const list = h("div", {class: "logs-list", onscroll, onclick}, spacer, note);
-  const el = h("div", {class: "logs-pane"}, h("div", {class: "logs-bar"}, levelPick, sourcePick, search, followBtn, count), list);
+  const detail = h("div", {class: "logs-detail", hidden: true, onclick: () => { detail.hidden = true; }});  // a tapped row in full
+  const el = h("div", {class: "logs-pane"}, h("div", {class: "logs-bar"}, levelPick, sourcePick, search, followBtn, count), list, detail);
 
   const pane = {
     name: "logs", el, render, dispose,
@@ -178,9 +179,15 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   }
 
+  // seeks to the row and shows it whole below the list, or hides it again
+  let opened = null;
   function onclick(e) {
     const r = pool[e.target.closest(".logs-row")?.dataset.slot]?.row;
-    if (r) ctx.clock.seek(r.t);
+    if (!r) return;
+    ctx.clock.seek(r.t);
+    detail.hidden = r === opened && !detail.hidden;
+    detail.replaceChildren(h("span", {class: `logs-meta lv${r.level}`}, `${clock(r.t)} ${LEVELS[r.level]} ${r.source}`), " ", r.text);
+    opened = r;
   }
 
   function dispose() {
