@@ -1,0 +1,15 @@
+{"name": "load-buffering", "url": "/5beb9b58bd12b691/0000010a--a51155e496/plot", "timeout": 45000,
+ "steps": [
+  {"network": {"down_kbps": 20000, "latency_ms": 50}},
+  {"waitFor": ".load-pill"},
+  {"wait": 1000},
+  {"key": "End"},
+  {"waitFor": {"fn": "document.querySelector('.load-pill.buffering')?.textContent.includes('segment 15')"}, "timeout": 5000},
+  {"shot": "buffering"},
+  {"eval": "import('/status.js').then((m) => { const logs = m.status.kinds().find((k) => k.name === 'logs'); window.__order = []; setInterval(() => logs.segs.forEach((s, i) => s.state === 'ready' && !__order.includes(i) && __order.push(i)), 50); })"},
+  {"waitFor": {"fn": "__order.includes(15) || __order.length > 2"}, "timeout": 20000},
+  {"assert": "__order[0] === 15 || `after seeking to segment 15, logs loaded segments ${__order} first`"},
+  {"waitFor": {"fn": "!document.querySelector('.load-pill.buffering')"}},
+  {"shot": "caught-up"},
+  {"network": "online"}
+ ]}
