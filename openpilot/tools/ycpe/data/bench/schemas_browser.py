@@ -61,6 +61,11 @@ def open_route(ctx, base):
   return page, errors, api
 
 
+def pill(page):
+  """the load pill's notes and counts (its title has them all)"""
+  return page.locator(".load-pill").get_attribute("title") or ""
+
+
 def drops(page):
   return page.evaluate("window.__perf.drops")
 
@@ -75,8 +80,8 @@ if __name__ == "__main__":
     ctx = browser.new_context(viewport={"width": 1600, "height": 1000})
     page, errors, api = open_route(ctx, base)
     wait(page, "auto settles", lambda: "fetching" not in schema_row(page))
-    print(f"demo, auto: {schema_row(page)}")
-    ok &= "stock" in schema_row(page).split(" auto")[0]
+    print(f"demo, auto: {schema_row(page)}; pill: {pill(page)!r}")
+    ok &= "stock" in schema_row(page).split(" auto")[0] and "schema" not in pill(page)
     stock_only, log_only = paths(page, "narrowRoadCameraState/frameId"), paths(page, "roadCameraState/integLines")
     local = page.locator(".schema-row option[value^='local:']")
     if local.count():  # the daemon's checkout of this branch
@@ -92,10 +97,19 @@ if __name__ == "__main__":
     print(f"  paths: narrowRoadCameraState/frameId {stock_only} → {paths(page, 'narrowRoadCameraState/frameId')},",
           f"roadCameraState/integLines {log_only} → {paths(page, 'roadCameraState/integLines')}")
     ok &= paths(page, "roadCameraState/integLines") > 0 and paths(page, "narrowRoadCameraState/frameId") == 0
+    # a switch while the last one's re-reads are still going: they're superseded, never run beside the new ones
+    if local.count():
+      d0 = drops(page)
+      page.select_option(".schema-row select", local.first.get_attribute("value"))
+      page.wait_for_timeout(150)
+      page.select_option(".schema-row select", "log")
+      wait(page, "log again", lambda: schema_row(page).startswith("commaai/openpilot@") and "fetching" not in schema_row(page))
+      page.wait_for_timeout(3000)
+      print(f"demo, local then log at once: {drops(page) - d0} dropped frames")
     page.select_option(".schema-row select", "auto")
     page.wait_for_timeout(500)
-    print(f"demo, back to auto: {schema_row(page)}; errors: {errors or 'none'}")
-    ok &= not errors
+    print(f"demo, back to auto: {schema_row(page)}; pill: {pill(page)!r}; errors: {errors or 'none'}")
+    ok &= not errors and "schema" not in pill(page)
     ctx.close()
 
     # the fork: segment 0 replaced, the route's git remote rewritten
@@ -114,7 +128,13 @@ if __name__ == "__main__":
     sp = paths(page, "selfdriveStateSP/mads")
     print(f"fork, auto: {schema_row(page)} ({took:.1f} s after the route opened); selfdriveStateSP/mads paths: {sp},",
           f"carStateSP: {paths(page, 'carStateSP/speedLimit')}; dropped frames {drops(page)}; GitHub API calls {len(api)}; errors: {errors or 'none'}")
-    ok &= sp >= 4 and not errors
+    note = f"sunnypilot/sunnypilot@{fork_commit[:7]} schema"
+    print(f"fork, pill: {pill(page)!r}")
+    ok &= sp >= 4 and not errors and note in pill(page)
+    page.evaluate("history.pushState(null, '', '/'); dispatchEvent(new PopStateEvent('popstate'))")  # in-app, off the route
+    page.wait_for_timeout(1000)
+    print(f"fork, route closed, pill: {pill(page)!r}")
+    ok &= note not in pill(page)
     print(json.dumps({"ok": bool(ok)}))
     browser.close()
     sys.exit(0 if ok else 1)
