@@ -94,10 +94,11 @@ function menu(anchor, build) {
   });
   anchor.setAttribute("aria-haspopup", "true");
   anchor.setAttribute("aria-expanded", "true");
+  // under the anchor, inside the window
   const r = anchor.getBoundingClientRect();
-  el.style.left = `${Math.min(r.left, innerWidth - 340)}px`;
   el.style.top = `${r.bottom + 4}px`;
   document.body.append(el);
+  el.style.left = `${Math.max(8, Math.min(r.left, innerWidth - el.offsetWidth - 8))}px`;
   setTimeout(() => {
     document.addEventListener("pointerdown", outside);
     document.addEventListener("focusin", outside);

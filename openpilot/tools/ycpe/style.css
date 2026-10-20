@@ -111,13 +111,13 @@ body.in-ws #main { overflow: hidden; }
 .hud-ms { min-width: 4.2em; color: var(--muted); }
 .hud-drops { color: var(--muted); }
 .hud-spark { width: 40px; height: 18px; }
-.popover { position: fixed; z-index: 50; min-width: 220px; max-width: 340px; max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
 .menu-list { display: flex; flex-direction: column; }
 .menu-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 0; border-radius: 4px; background: none; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .menu-row:hover { background: var(--hover); }
 .menu-row.on { background: var(--active); }
 .menu-row .mono { margin-left: auto; }
-.route-pop { width: 320px; height: 60vh; }
+.route-pop { width: 320px; max-width: 100%; height: 60vh; }
 .toast { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 60; padding: 8px 14px; border-radius: 6px; background: var(--fg); color: var(--bg); box-shadow: var(--shadow); }
 body.loading .topbar { background-image: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 40% 2px; background-repeat: no-repeat; background-position-y: bottom; animation: scan 1s linear infinite; }
 @keyframes scan { from { background-position-x: -40%; } to { background-position-x: 140%; } }
