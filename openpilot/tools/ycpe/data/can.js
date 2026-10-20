@@ -789,7 +789,9 @@ export class Can {
     if (hit?.sig === sig) return hit.meta;
     const meta = {path, type: "f64", precision: sig.precision, ...(sig.unit && {unit: sig.unit})};
     if (sig.vals.length) {
-      meta.names = Object.fromEntries(sig.vals.map(([v, d]) => [v * sig.factor + sig.offset, d]));
+      // made when first read: a DBC brings thousands of signals, and only the ones on screen are ever named
+      let names = null;
+      Object.defineProperty(meta, "names", {enumerable: true, get: () => names ||= Object.fromEntries(sig.vals.map(([v, d]) => [v * sig.factor + sig.offset, d]))});
       if (sig.vals.length >= 2 && ((sig.factor === 1 && sig.size <= 5) || sig.vals.length * 2 >= 2 ** sig.size)) meta.states = true;
     }
     this.metas.set(path, {sig, meta});
