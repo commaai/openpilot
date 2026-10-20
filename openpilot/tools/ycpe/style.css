@@ -57,7 +57,7 @@ body.in-ws #main { overflow: hidden; }
 .topbar { container-type: inline-size; }
 @container (max-width: 1400px) { .topbar .hud-spark { display: none; } }
 @container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } .topbar .tabs { flex-shrink: 1; min-width: 90px; } }
-@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 6px; } .topbar .load-pill { max-width: 150px; } }
+@container (max-width: 1100px) { .topbar .hud-mem { display: none; } .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 6px; } .topbar .load-pill { max-width: 150px; } }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }

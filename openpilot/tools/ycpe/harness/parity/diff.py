@@ -10,6 +10,7 @@ from pathlib import Path
 
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.ycpe.harness.parity.dump import dump
+from openpilot.tools.ycpe.harness.parity.eras import FIXED
 
 HERE = Path(__file__).parent
 
@@ -58,8 +59,11 @@ def run(log, migrate, all_migrations, rtol):
     flags = (["--migrate"] if migrate else []) + (["--all"] if all_migrations else [])
     subprocess.run(["node", HERE / "dump.mjs", log, f.name, *flags], check=True)
     js = json.load(f)
-  if migrate:  # migrate_all sorts the log by logMonoTime
+  if migrate:  # migrate_all sorts the log by logMonoTime; eras.py checks what python doesn't migrate
     js = {name: by_time(svc) for name, svc in js.items()}
+    for svc, path in FIXED:
+      for side in (py, js):
+        side.get(svc, {}).get("cols", {}).pop(path, None)
   return py, compare(py, js, rtol)
 
 

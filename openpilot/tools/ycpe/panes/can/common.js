@@ -3,7 +3,7 @@ import {css, h} from "/dom.js";
 import {addrOf, busOf} from "/data/can.js";
 import {MUX, MUXED, NODE, cloneMsg, newSignal} from "/data/dbc.js";
 
-css(new URL("./can.css", import.meta.url));
+await css(new URL("./can.css", import.meta.url));
 
 // store.can, following the clock once per workspace: live bytes are recomputed (in the worker) as t moves
 export function canOf(ctx) {
@@ -27,7 +27,8 @@ export function subs() {
 }
 
 export const hex2 = (x) => x.toString(16).toUpperCase().padStart(2, "0");
-export const hexBytes = (d, sep = " ") => Array.from(d, hex2).join(sep);
+// a signal color dark enough for text and lines on either theme
+export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
 
 // a modal dialog; close() removes it
 export function dialog(title, ...body) {
@@ -38,6 +39,19 @@ export function dialog(title, ...body) {
   el.showModal();
   return el;
 }
+
+// a popover menu under anchor; rows are menuItem()s or any element (a checkbox row keeps it open)
+export function popup(anchor, rows) {
+  const menu = h("div", {class: "can-menu", popover: "auto", ontoggle: (e) => { if (e.newState === "closed") menu.remove(); }}, rows);
+  document.body.append(menu);
+  const r = anchor.getBoundingClientRect();
+  menu.style.left = `${r.left}px`;
+  menu.style.top = `${r.bottom + 2}px`;
+  menu.showPopover();
+  return menu;
+}
+export const menuItem = (label, fn) => h("button", {class: "menu-row", onclick: (e) => { e.currentTarget.closest("[popover]").hidePopover(); fn(); }}, label);
+export const menuCheck = (label, checked, fn) => h("label", {class: "menu-row"}, h("input", {type: "checkbox", checked, onchange: (e) => fn(e.target.checked)}), label);
 
 // a labelled input row for forms
 export const field = (label, input, hint) => h("label", {class: "can-field", title: hint || ""}, h("span", {}, label), input);

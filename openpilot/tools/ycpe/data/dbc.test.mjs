@@ -1,11 +1,12 @@
-// node --test data/dbc.test.mjs (OPENDBC=<dir of .dbc files>, defaults to the repo's opendbc and data/opendbc/)
+// node --test data/dbc.test.mjs (OPENDBC=<dirs of .dbc files, colon-separated>, defaults to the repo's opendbc; add the
+// generated DBCs with `gen_opendbc.py <dir>`)
 import assert from "node:assert/strict";
 import {readdirSync, readFileSync, existsSync} from "node:fs";
 import {test} from "node:test";
 import {DBC, Dbcs, MUX, MUXED, cloneMsg, encode, format, newSignal, num, raw, value} from "./dbc.js";
 
 const here = new URL(".", import.meta.url).pathname;
-const dirs = [process.env.OPENDBC || `${here}../../../../opendbc_repo/opendbc/dbc`, `${here}opendbc`].filter((d) => existsSync(d));
+const dirs = (process.env.OPENDBC || `${here}../../../../opendbc_repo/opendbc/dbc`).split(":").filter((d) => existsSync(d));
 const files = dirs.flatMap((d) => readdirSync(d).filter((f) => f.endsWith(".dbc")).map((f) => `${d}/${f}`));
 const load = (f) => new DBC(f.split("/").pop().slice(0, -4), readFileSync(f, "utf8"));
 // %.15g rounds huge limits, as in cabana

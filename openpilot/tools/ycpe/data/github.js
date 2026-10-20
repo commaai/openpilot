@@ -91,9 +91,15 @@ export class Checkout {
   // a file's text, or null if it doesn't exist; symlinks and submodules are followed
   read(path) { return this.get(this.prefix + path); }
 
-  async get(path, depth = 0) {
+  // a file in this repo itself, not looking into submodules, or null
+  async raw(path) {
     const text = await cached(this.ref, `raw/${this.repo}/${this.ref}/${path}`, async () => (await get(`${RAW}/${this.repo}/${this.ref}/${path}`)) ?? MISSING);
-    if (text !== MISSING) {
+    return text === MISSING ? null : text;
+  }
+
+  async get(path, depth = 0) {
+    const text = await this.raw(path);
+    if (text !== null) {
       // raw serves a symlink as its target path
       if (depth < 4 && text.length < 256 && /^[\w./-]+$/.test(text) && text.includes("/")) return this.get(join(path, text), depth + 1);
       return text;
@@ -121,11 +127,10 @@ export class Checkout {
     });
   }
 
-  // every file path in the repo (not its submodules), from jsDelivr
+  // every file path in the repo (not its submodules), from jsDelivr, which lists repos up to 50 MB
   async files() {
     const text = await cached(this.ref, `ls/${this.repo}/${this.ref}`, () => get(`${JSDELIVR}/${this.repo}@${this.ref}?structure=flat`));
-    if (!text) return null;
-    return JSON.parse(text).files.map((f) => f.name.slice(1));
+    return text && JSON.parse(text).files.map((f) => f.name.slice(1));
   }
 }
 

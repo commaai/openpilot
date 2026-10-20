@@ -3,6 +3,8 @@
 // virtualized with fixed rows, and following the playhead only patches the visible rows.
 import {h, css} from "/dom.js";
 
+await css(new URL("./logs.css", import.meta.url));
+
 const ROW = 18;      // px
 const BUDGET = 3;    // ms of indexing or filtering per frame
 const LEVELS = ["debug", "info", "warning", "error", "critical"];
@@ -11,7 +13,6 @@ const ALERT = [1, 2, 4];                   // alertStatus normal, userPrompt, cr
 const ANSI = /\x1b\[[0-9;]*m/g;
 
 export function create(ctx, state) {
-  css(new URL("./logs.css", import.meta.url));
   let minLevel = state.level ?? 1, source = state.source ?? "", text = state.text ?? "", follow = state.follow ?? true;
   let rows = [], view = [];  // every row and the rows that pass the filter, by time
   const sources = new Set(), indexed = new Set(), jobs = [];

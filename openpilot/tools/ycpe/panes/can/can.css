@@ -29,9 +29,14 @@
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
 .can-col-name { flex: 1 1 100px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { width: 64px; }
 .can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { width: 158px; }
-/* narrow panes drop the node and count columns */
+/* narrow panes drop node and count, then bus and freq, then the bytes */
 .can-messages { container-type: inline-size; }
+.can-hide-bus .can-col-bus, .can-hide-id .can-col-id, .can-hide-node .can-col-node, .can-hide-freq .can-col-freq,
+.can-hide-count .can-col-count, .can-hide-bytes .can-col-bytes { display: none; }
 @container (max-width: 560px) { .can-col-node, .can-col-count { display: none; } }
+@container (max-width: 400px) { .can-col-bus, .can-col-freq { display: none; } }
+@container (max-width: 300px) { .can-col-bytes { display: none; } }
+.can-col-name { min-width: 70px; }
 .can-col-bus, .can-col-freq, .can-col-count { text-align: right; font-variant-numeric: tabular-nums; }
 .can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 .can-msg-spacer { position: relative; }
@@ -41,6 +46,8 @@
 .can-msg-row.inactive { color: var(--muted); }
 .can-msg-row .can-col-id, .can-msg-row .can-col-bytes { font-family: var(--mono); }
 .can-col-bytes span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
+.can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
+.can-col-bytes span[hidden], .can-hist-row > span > span[hidden] { display: none; }
 /* byte changes: up, down, periodic; --a fades from 1 to 0 over two seconds */
 .can-chg1, .can-chg2, .can-chg3 { background: color-mix(in srgb, var(--c) calc(var(--a) * 55%), transparent); }
 .can-chg1 { --c: var(--accent); } .can-chg2 { --c: var(--critical); } .can-chg3 { --c: var(--muted); }
@@ -66,6 +73,13 @@
 .can-field input:not([type=checkbox]), .can-field select, .can-field textarea { flex: 1; min-width: 0; height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
 .can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1) { grid-column: 1 / -1; }
+/* narrow panes: no sparklines (as cabana's compact layout), and the editor in one column */
+.can-signals { container-type: inline-size; }
+@container (max-width: 360px) {
+  .can-spark { display: none; }
+  .can-sig-value { flex-basis: 76px; }
+  .can-sig-editor { grid-template-columns: 1fr; padding-left: 8px; }
+}
 
 /* history */
 .can-hist-row { display: grid; gap: 6px; height: 20px; align-items: center; padding: 0 6px; white-space: nowrap; }
@@ -83,6 +97,9 @@
 .can-table-row:hover { background: var(--hover); }
 
 /* charts */
+.can-tabs { display: flex; align-items: center; gap: 2px; padding: 0 4px; border-bottom: 1px solid var(--line); }
+.can-tab { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+.can-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .can-charts-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-auto-rows: 200px; gap: 4px; padding: 4px; }
 .can-chart { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 4px; }
 .can-chart-bar { display: flex; align-items: center; height: 16px; padding: 0 2px 0 6px; color: var(--muted); cursor: grab; }
@@ -108,8 +125,14 @@
 .can-dbc-open { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .can-col-flex { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .can-list { height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 4px; }
+.can-recent { height: auto; max-height: 110px; flex-shrink: 0; }
+.can-recent > .can-muted { padding: 2px 6px; }
 .can-list-row { display: block; width: 100%; padding: 3px 6px; border: 0; background: none; text-align: left; cursor: pointer; }
 .can-list-row:hover { background: var(--hover); }
 .can-paste { flex: 1; min-height: 200px; padding: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 11px var(--mono); resize: none; }
 .can-menu { margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
 .can-menu .menu-row { width: 100%; }
+.can-picker { width: 420px; height: 320px; }
+.can-picker .can-list-row { display: flex; align-items: center; gap: 6px; padding: 1px 6px; }
+.can-picker .can-list-row input { height: auto; margin: 0; }
+.can-dialog .can-filter { width: 100%; box-sizing: border-box; }

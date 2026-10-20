@@ -1,6 +1,6 @@
 // cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
 import {h} from "/dom.js";
-import {canOf, hex2, subs} from "./common.js";
+import {canOf, hex2, menuCheck, popup, subs} from "./common.js";
 import {dbcDialog, toolsMenu} from "./tools.js";
 
 const ROW = 20;
@@ -9,7 +9,7 @@ const COLS = [
   {id: "bus", title: "Bus", get: (m) => m.bus},
   {id: "id", title: "ID", get: (m) => m.address, text: (m) => `0x${m.address.toString(16).toUpperCase()}`},
   {id: "node", title: "Node", get: (m, can) => can.dbcMsg(m.key)?.transmitter || ""},
-  {id: "freq", title: "Freq", get: (m) => m.freq, text: (m) => (m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2))},
+  {id: "freq", title: "Freq", get: (m) => m.freq, text: (m) => (m.unseen ? "N/A" : m.freq >= 0.95 ? Math.round(m.freq) : m.freq.toFixed(2))},
   {id: "count", title: "Count", get: (m, can) => can.countAt(m.key)},
   {id: "bytes", title: "Bytes", get: (m) => m.size},
 ];
@@ -17,7 +17,7 @@ const COLS = [
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let sort = state.sort || {col: "name", dir: 1}, rows = [], scrollTop = 0, height = 400;
-  const filters = {...state.filters};
+  const filters = {...state.filters}, hidden = new Set(state.hidden);
 
   const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
     sort = {col: c.id, dir: sort.col === c.id ? -sort.dir : 1};
@@ -26,7 +26,8 @@ export function create(ctx, state) {
   const filterRow = h("div", {class: "can-msg-filters"}, COLS.map((c) => h("input", {class: `can-col can-col-${c.id}`, placeholder: c.title,
     value: filters[c.id] || "", spellcheck: false, oninput: (e) => { filters[c.id] = e.target.value; refresh(); }})));
   const spacer = h("div", {class: "can-msg-spacer"});
-  const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; ctx.perf.invalidate(pane); }}, spacer);
+  const empty = h("div", {class: "can-empty", hidden: true});
+  const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; ctx.perf.invalidate(pane); }}, spacer, empty);
   const pool = [];
 
   const undo = h("button", {class: "can-btn", title: "Undo (ctrl+z)", onclick: () => can.dbcs.undo()}, "↶");
@@ -37,15 +38,25 @@ export function create(ctx, state) {
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
     clearBtn, h("label", {class: "can-check", title: "Don't highlight bits of defined signals"}, suppressDefined, "Suppress signals"),
-    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"));
+    h("button", {class: "can-btn", title: "Tools", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, "Tools ▾"),
+    h("button", {class: "can-btn", title: "Columns", onclick: (e) => popup(e.currentTarget, COLS.slice(1).map((c) =>
+      menuCheck(c.title, !hidden.has(c.id), (on) => { if (on) hidden.delete(c.id); else hidden.add(c.id); columns(); })))}, "⋯"));
   const notice = h("div", {class: "can-notice can-muted", hidden: true});
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
+
+  // hidden columns are a class per column on the pane, so rows never change for it
+  function columns() {
+    for (const c of COLS) el.classList.toggle(`can-hide-${c.id}`, hidden.has(c.id));
+  }
 
   function toolbar() {
     const files = can.dbcs.all();
     dbcBtn.textContent = files.length ? files.map((f) => `${f.name}${can.dbcs.dirty ? "*" : ""}`).join(", ") : "No DBC";
-    undo.disabled = can.dbcs.index === 0;
-    redo.disabled = can.dbcs.index === can.dbcs.undos.length;
+    const {undos, index} = can.dbcs;
+    undo.disabled = index === 0;
+    redo.disabled = index === undos.length;
+    undo.title = index ? `Undo ${undos[index - 1].text} (ctrl+z)` : "Undo (ctrl+z)";
+    redo.title = index < undos.length ? `Redo ${undos[index].text} (ctrl+shift+z)` : "Redo (ctrl+shift+z)";
     const n = [...can.suppressed.values()].reduce((a, m) => a + m.filter((x) => x).length, 0);
     clearBtn.textContent = n ? `Clear (${n})` : "Clear";
     clearBtn.disabled = !n;
@@ -53,7 +64,7 @@ export function create(ctx, state) {
     notice.hidden = !notice.textContent;
   }
 
-  // filtering: text columns match substrings, numeric ones also take "a-b" ranges
+  // filtering as cabana: substrings, "a-b" and "a-" ranges for numbers (hex for IDs), and names match signal names too
   function match(m) {
     for (const c of COLS) {
       const f = (filters[c.id] || "").trim().toLowerCase();
@@ -64,20 +75,40 @@ export function create(ctx, state) {
         if (j === undefined || !Array.from(can.live.data.subarray(can.live.off[j], can.live.off[j + 1]), hex2).join("").toLowerCase().includes(f.replace(/\s/g, ""))) return false;
         continue;
       }
-      const range = /^(-?[\d.]+)\s*-\s*(-?[\d.]+)$/.exec(f);
-      if (range && typeof v === "number") { if (v < +range[1] || v > +range[2]) return false; } else if (!text.includes(f)) return false;
+      if (c.id === "name" && can.dbcMsg(m.key)?.sigs.some((sg) => sg.name.toLowerCase().includes(f))) continue;
+      const hex = c.id === "id", range = (hex ? /^(?:0x)?([\da-f]+)\s*-\s*(?:0x)?([\da-f]*)$/ : /^(-?[\d.]+)\s*-\s*(-?[\d.]*)$/).exec(f);
+      if (range && typeof v === "number") {
+        const num = (x) => (hex ? parseInt(x, 16) : +x);
+        if (v < num(range[1]) || (range[2] && v > num(range[2]))) return false;
+      } else if (!(hex ? text.slice(2).includes(f.replace(/^0x/, "")) : text.includes(f))) return false;
     }
     return true;
   }
 
-  function refresh() {
-    const col = COLS.find((c) => c.id === sort.col);
-    rows = can.messages().filter(match).map((m) => ({m, v: col.get(m, can)}));
-    // unnamed messages stay below named ones in either direction, as do ties by bus and address
-    rows.sort((a, b) => (sort.col === "name" && !a.v !== !b.v ? (a.v ? -1 : 1) : (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) * sort.dir) || a.m.key - b.m.key);
-    rows = rows.map((r) => r.m);
+  // Sorting happens only on an explicit change (column, filter, DBC). Frames arriving keep every row where it is and
+  // append new messages below, so nothing moves under the user while a route loads; a re-sort keeps the selected row
+  // at its place on screen.
+  function refresh(resort = true) {
+    const all = [...can.messages(), ...can.unseen()].filter(match);
+    if (resort) {
+      const col = COLS.find((c) => c.id === sort.col), before = rows.findIndex((m) => m.key === can.selected);
+      // unnamed messages stay below named ones in either direction, as do ties by bus and address
+      rows = all.map((m) => ({m, v: col.get(m, can)}))
+        .sort((a, b) => (sort.col === "name" && !a.v !== !b.v ? (a.v ? -1 : 1) : (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) * sort.dir) || a.m.key - b.m.key)
+        .map((r) => r.m);
+      const after = rows.findIndex((m) => m.key === can.selected);
+      if (before >= 0 && after >= 0 && before * ROW >= scrollTop && before * ROW < scrollTop + height) {
+        spacer.style.height = `${rows.length * ROW}px`;
+        body.scrollTop = scrollTop = Math.max(0, scrollTop + (after - before) * ROW);
+      }
+    } else {
+      const at = new Map(rows.map((m, i) => [m.key, i])), fresh = all.filter((m) => !at.has(m.key));
+      rows = all.filter((m) => at.has(m.key)).sort((a, b) => at.get(a.key) - at.get(b.key)).concat(fresh.sort((a, b) => a.key - b.key));
+    }
     head.querySelectorAll(".can-sort").forEach((x, i) => { x.textContent = COLS[i].id === sort.col ? (sort.dir > 0 ? " ▲" : " ▼") : ""; });
     spacer.style.height = `${rows.length * ROW}px`;
+    empty.textContent = rows.length ? "" : can.messages().length ? "No messages match the filters" : "Waiting for CAN frames…";
+    empty.hidden = rows.length > 0;
     toolbar();
     ctx.perf.invalidate(pane);
   }
@@ -85,8 +116,10 @@ export function create(ctx, state) {
   function key(e) {
     if (e.target.tagName === "INPUT") return;
     const i = rows.findIndex((m) => m.key === can.selected);
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      const n = Math.max(0, Math.min(rows.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+    const page = Math.max(1, Math.floor(height / ROW) - 1);
+    const step = {ArrowDown: 1, ArrowUp: -1, PageDown: page, PageUp: -page, Home: -Infinity, End: Infinity}[e.key];
+    if (step) {
+      const n = Math.max(0, Math.min(rows.length - 1, i + step));
       if (rows[n]) can.select(rows[n].key);
       const top = n * ROW;
       if (top < body.scrollTop) body.scrollTop = top;
@@ -112,17 +145,20 @@ export function create(ctx, state) {
       const first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       const live = can.live, t = ctx.clock.t;
       for (let i = 0; i < n; i++) {
-        const m = rows[first + i], r = pool[i] || (pool[i] = row());
-        if (r.hidden !== !m) r.hidden = !m;
-        if (!m) continue;
+        const m = rows[first + i];
+        if (!m) { if (pool[i] && !pool[i].hidden) pool[i].hidden = true; continue; }
+        const r = pool[i] || (pool[i] = row());
+        if (r.hidden) r.hidden = false;
         r.key = m.key;
         if (r.top !== first + i) r.style.top = `${(r.top = first + i) * ROW}px`;
         if (r.sel !== (m.key === can.selected)) r.classList.toggle("selected", r.sel = m.key === can.selected);
         const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
         if (r.active !== active) r.classList.toggle("inactive", !(r.active = active));
         COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], String(c.text ? c.text(m, can) : c.get(m, can))); });
-        const named = !!can.name(m.key);
+        const dm = can.dbcMsg(m.key), named = !!dm;
         if (r.named !== named) r.cells[0].classList.toggle("can-muted", !(r.named = named));
+        const tip = dm ? (dm.comment ? `${dm.name}\n${dm.comment}` : dm.name) : "";
+        if (r.cells[0].title !== tip) r.cells[0].title = tip;
         // live bytes with change highlighting: up, down or periodic, fading over 2 s as in cabana
         const cell = r.cells.at(-1), len = j === undefined ? 0 : live.off[j + 1] - live.off[j];
         while (r.bytes.length < len) cell.append(r.bytes[r.bytes.push(h("span")) - 1]);
@@ -139,14 +175,27 @@ export function create(ctx, state) {
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
-    save: () => ({sort, filters}),
+    save: () => ({sort, filters, hidden: [...hidden]}),
   };
-  s.add(can.on("messages", refresh));
-  s.add(can.on("dbc", refresh));
-  s.add(can.on("live", () => { if (filters.bytes || sort.col === "count") refresh(); else ctx.perf.invalidate(pane); }));
+  s.add(can.on("messages", () => refresh(false)));
+  s.add(can.on("dbc", () => refresh()));
+  s.add(can.on("live", () => { if (filters.bytes) refresh(false); else ctx.perf.invalidate(pane); }));
   s.add(can.on("select", () => ctx.perf.invalidate(pane)));
   s.add(can.dbcs.on(toolbar));
+  // DBC undo/redo anywhere but in a text box, as cabana, while this view shows and it has an edit to undo; otherwise
+  // the keys go on to a focused plot or the layout
+  const undoKeys = (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.defaultPrevented || !el.isConnected) return;
+    if (e.target.closest?.("input, textarea, select")) return;
+    const d = can.dbcs;
+    if (e.shiftKey ? d.index >= d.undos.length : d.index === 0) return;
+    e.preventDefault();
+    if (e.shiftKey) d.redo(); else d.undo();
+  };
+  document.addEventListener("keydown", undoKeys);
+  s.add(() => document.removeEventListener("keydown", undoKeys));
   s.add(can.on("notice", toolbar));
+  columns();
   const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
   sizer.observe(body);
   s.add(() => sizer.disconnect());

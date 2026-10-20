@@ -10,6 +10,14 @@ import {CanFrames} from "./can.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const ready = initCodec().then(() => new Reader(schema));
+// readers of the logs' own schemas (data/schemas.js), by key
+const readers = new Map();
+async function readerFor(log) {
+  const stock = await ready;  // the codec too
+  if (!log) return stock;
+  if (!readers.has(log.key)) readers.set(log.key, new Reader(JSON.parse(log.text)));
+  return readers.get(log.key);
+}
 
 const RETRIES = 6;  // 0.5 s, then doubling: about 30 s of trying before a segment fails
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -68,10 +76,11 @@ async function load(key, url, progress, signal, head) {
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
 
-// opts: {n, shift, keep, only, skip, context, migrate}; keep, only and skip are {service: [path globs]}; migrate: false
+// opts: {n, shift, keep, only, skip, context, schema, gen, migrate}; keep, only and skip are {service: [path globs]};
+// schema is the log's own ({key, text}), read as it is with no migrations, or null for the bundled one; migrate: false
 // for logs written by current code (replays), where a migration would only invent services from the ones present
 async function parse(buf, opts) {
-  const reader = await ready;
+  const reader = await readerFor(opts.schema);
   const t0 = performance.now();
   let t1, raw, migrated;
   const frames = opts.can ? new CanFrames(reader.schema) : null;  // CAN frames once, on a segment's first parse
@@ -80,7 +89,7 @@ async function parse(buf, opts) {
     t1 = performance.now();
     raw = bytes.byteLength;
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
-    migrated = opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
+    migrated = opts.schema || opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
     return compact(read).services;
   });
 
@@ -102,21 +111,22 @@ async function parse(buf, opts) {
   const out = pack(services, reader.schema.enums, want);
   const can = frames?.finish();
   if (can) can.can.t0 += off;
-  return {...out, ...migrated, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
+  const unknown = {events: reader.unknown.events, services: [...reader.unknown.services]};
+  return {...out, ...migrated, unknown, gen: opts.gen, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
 // the last logs message() opened, decompressed and indexed: scrubbing within a segment decodes without reloading
 const opened = [];
 
-async function message(key, url, service, mono) {
-  let log = opened.find((l) => l.key === key);
+async function message(key, url, service, mono, own) {
+  const s = (await readerFor(own)).schema;
+  let log = opened.find((l) => l.key === key && l.schema === s);
   if (!log) {
-    await ready;
     const bytes = withDecompressed(new Uint8Array((await load(key, url, () => {})).buf), (b) => b.slice());
-    opened.unshift(log = {key, bytes, idx: index(schema, bytes)});
+    opened.unshift(log = {key, schema: s, bytes, idx: index(s, bytes)});
     opened.length = Math.min(opened.length, 2);
   }
-  return messageAt(schema, log.bytes, log.idx, service, mono);
+  return messageAt(s, log.bytes, log.idx, service, mono);
 }
 
 const fetches = new Map();  // id → AbortController of a fetch in flight
@@ -124,7 +134,7 @@ const fetches = new Map();  // id → AbortController of a fetch in flight
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
   try {
     if (op === "message") {
-      postMessage({id, message: await message(key, url, opts.service, opts.mono)});
+      postMessage({id, message: await message(key, url, opts.service, opts.mono, opts.schema)});
     } else if (op === "abort") {
       fetches.get(id)?.abort();
     } else if (op === "fetch") {

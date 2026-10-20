@@ -1,0 +1,16 @@
+{"name": "topbar-narrow", "url": "/5beb9b58bd12b691/0000010a--a51155e496/plot", "viewport": {"width": 1280, "height": 800},
+ "steps": [
+  {"eval": "window.__topbar = () => { const els = [...document.querySelector('.topbar').children].filter((e) => !e.hidden && e.offsetWidth && !e.classList.contains('grow')), name = (e) => e.classList[0] || e.tagName.toLowerCase(), bad = []; els.forEach((a, i) => { const r = a.getBoundingClientRect(); if (r.right > innerWidth + 0.5) bad.push(`${name(a)} ends at ${Math.round(r.right)}px`); for (const b of els.slice(i + 1)) { const s = b.getBoundingClientRect(), w = Math.min(r.right, s.right) - Math.max(r.left, s.left); if (w > 0.5 && Math.min(r.bottom, s.bottom) > Math.max(r.top, s.top)) bad.push(`${name(a)} overlaps ${name(b)} by ${Math.round(w)}px`); } }); return !bad.length || `top bar at ${innerWidth}px: ${bad.join(', ')}`; }"},
+  {"waitFor": ".load-pill"},
+  {"assert": "__topbar()"},
+  {"shot": "1280-loading"},
+  {"viewport": [1024, 768]},
+  {"assert": "__topbar()"},
+  {"shot": "1024-loading"},
+  {"waitFor": {"fn": "!!document.querySelector('.load-pill.done')"}, "timeout": 60000},
+  {"assert": "__topbar()"},
+  {"shot": "1024-done"},
+  {"viewport": [1280, 800]},
+  {"assert": "__topbar()"},
+  {"shot": "1280-done"}
+ ]}

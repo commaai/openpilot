@@ -149,6 +149,9 @@ without its query, so signed URLs of one file share an entry.
   - `sha256(url)`, the whole file
   - `sha256("decompressed-zst:" + url)`
   - complete `md5(url)_<n>.0` chunks, which are joined into the whole file
+- **Namespaces.** device, internal, api and openpilotci copies of a file have the same bytes, so a copy from any one of them
+  serves the others. commaCarSegments rlogs are filtered copies with the full rlog's name, so they're keyed by their HF URL
+  only. They're served only for `carSegments` requests, and in `auto` only when every other source missed.
 - **Writes.** Downloads land as `sha256(url)`. Logs are also mirrored as url_file chunks plus the manifest, so `LogReader`
   then reads them with no network.
 - **Budget.** The whole directory is LRU-pruned on mtime down to `--cache-budget` (20 GB by default). Temporary files and

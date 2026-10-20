@@ -57,7 +57,6 @@ export function playbar(ctx) {
     const kinds = status.kinds();
     const HEIGHT = PAD + RANGE_H + 2 + SPAN_H + 2 + kinds.length * (LANE_H + 1) + PAD;
     const dpr = devicePixelRatio;
-    width = track.clientWidth;
     if (canvas.width !== Math.round(width * dpr) || canvas.height !== HEIGHT * dpr) {
       canvas.width = Math.round(width * dpr);
       canvas.height = HEIGHT * dpr;
@@ -116,7 +115,7 @@ export function playbar(ctx) {
   for (const ev of ["t", "range", "play"]) clock.on(ev, () => perf.invalidate(pane));
   status.on(() => perf.invalidate(pane));
   theme.on(() => perf.invalidate(pane));
-  new ResizeObserver(() => perf.invalidate(pane)).observe(track);
+  new ResizeObserver(([e]) => { width = e.contentRect.width; perf.invalidate(pane); }).observe(track);
 
   // dragging in the range strip pans/resizes the visible range; anywhere else scrubs the playhead
   canvas.addEventListener("pointerdown", (e) => {

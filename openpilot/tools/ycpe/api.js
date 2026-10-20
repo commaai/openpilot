@@ -134,7 +134,11 @@ function memo(fn, key = (...args) => JSON.stringify(args)) {
 export const api = {
   me: () => auth.user(),
   devices: () => get("v1/me/devices/"),
-  device: memo((dongleId) => get(`v1.1/devices/${dongleId}/`)),
+  // signed out, a device is never readable: answer the API's 401 without asking
+  device: memo(async (dongleId) => {
+    if (!auth.isAuthenticated()) throw new ApiError(401, "signed out");
+    return get(`v1.1/devices/${dongleId}/`);
+  }),
   deviceStats: (dongleId) => get(`v1.1/devices/${dongleId}/stats`),
   deviceLocation: memo((dongleId) => get(`v1/devices/${dongleId}/location`)),
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
@@ -152,7 +156,7 @@ export const api = {
   // the device listing carries the share credentials and utc times; v1/route is the fallback for public routes
   route: memo(async (routeName) => {
     const dongleId = routeName.split("|")[0];
-    const [r] = await get(`v1/devices/${dongleId}/routes_segments`, {route_str: routeName}).catch(() => []);
+    const [r] = auth.isAuthenticated() ? await get(`v1/devices/${dongleId}/routes_segments`, {route_str: routeName}).catch(() => []) : [];
     if (r) return r;
     const route = await get(`v1/route/${routeName}/`);
     route.start_time_utc_millis ??= Date.parse(route.start_time + "Z");

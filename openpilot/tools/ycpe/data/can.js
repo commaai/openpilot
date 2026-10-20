@@ -3,8 +3,8 @@
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, raw, value} from "./dbc.js";
-import {Checkout, parseRemote} from "./github.js";
-import {Opendbc, opendbcAt} from "./upstream.js";
+import {parseRemote} from "./github.js";
+import {upstream as github} from "./remote.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -383,6 +383,7 @@ function csv(keys, t0, t1, msg) {
 if (import.meta.url.endsWith("?worker")) {
   const ops = {
     add: ({n, can, off}) => { addSegment(n, can, off); },
+    parse: ({name, text}) => new DBC(name, text),
     drop: ({n}) => { dropSegment(n); },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
@@ -404,7 +405,7 @@ if (import.meta.url.endsWith("?worker")) {
       if (op === "decode") [r, transfer] = r;
       postMessage({id, r}, transfer);
     } catch (e) {
-      postMessage({id, error: String(e.stack || e)});
+      postMessage({id, error: e.message || String(e), stack: e.stack});
     }
   };
 }
@@ -417,10 +418,10 @@ export class Can {
     this.worker = new Worker(new URL("./can.js?worker", import.meta.url), {type: "module"});
     this.calls = new Map();
     this.nextId = 0;
-    this.worker.onmessage = ({data: {id, r, error}}) => {
+    this.worker.onmessage = ({data: {id, r, error, stack}}) => {
       const c = this.calls.get(id);
       this.calls.delete(id);
-      if (error) c.reject(new Error(error)); else c.resolve(r);
+      if (error) c.reject(Object.assign(new Error(error), {stack})); else c.resolve(r);
     };
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
     this.handlers = {};
@@ -516,6 +517,21 @@ export class Can {
   }
 
   messages() { return [...this.msgs.values()]; }
+
+  // DBC messages never seen on any bus, listed as cabana does so they can still be edited; keyed on their DBC's bus
+  unseen() {
+    const seen = new Set(Array.from(this.msgs.values(), (s) => s.address)), out = [];
+    for (const [b, f] of this.dbcs.files) {
+      const bus = Math.max(b, 0);
+      for (const m of f.msgs.values()) {
+        if (seen.has(m.address)) continue;
+        seen.add(m.address);
+        const k = key(bus, m.address);
+        out.push({key: k, bus, address: m.address, id: hexId(k), count: 0, freq: 0, size: m.size, t0: Infinity, t1: -Infinity, segs: new Set(), unseen: true});
+      }
+    }
+    return out;
+  }
   countAt(k) { const j = this.live?.index.get(k); return j === undefined ? 0 : this.live.count[j]; }
   msg(k) { return this.msgs.get(k); }
   dbcMsg(k) { return this.dbcs.msg(busOf(k), addrOf(k)); }
@@ -600,29 +616,67 @@ export class Can {
   // opendbc's DBC names and the fingerprint → DBC map
   async opendbc() {
     this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
-    const [{fingerprints}, src] = await Promise.all([this.index, this.upstream()]);
-    return {fingerprints, files: src?.names || [], label: src?.co.label};
+    const [fingerprints, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
+    return {fingerprints, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
   }
 
-  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master
+  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master. The
+  // fetching and generating happen in remote.js's worker: {names, co: {label}, text(name)}, or null offline
   upstream() {
     const remote = parseRemote(this.store.valueAt?.("/initData/gitRemote", Infinity)), commit = this.store.valueAt?.("/initData/gitCommit", Infinity);
     const at = remote && commit ? `${remote}@${commit}` : "master";
     if (this.src?.at !== at) {
-      const open = (co) => co && Opendbc.open(co).catch(() => null);
-      this.src = {at, opendbc: (async () => (at !== "master" && await open(await opendbcAt(remote, commit).catch(() => null))) ||
-        await open(new Checkout("commaai/opendbc", "master")))()};
+      const args = remote && commit ? {repo: remote, commit} : {};
+      this.src = {at, opendbc: github("dbcs", args).then(({label, names}) => ({names, co: {label},
+        text: (name) => github("dbc", {...args, name}).then((r) => r.text)}), () => null)};
     }
     return this.src.opendbc;
   }
 
+  // the opendbc checkout on this machine through the local daemon, when there is one: {daemon, id, dir, names}
+  local() {
+    return this.localDbc ||= import("../daemon.js").then(async ({daemon}) => {
+      if (!daemon.has("repos")) return null;
+      const [repo] = await daemon.json("/local/repos");
+      if (!repo?.opendbc) return null;
+      const files = await daemon.json(`/local/repos/${repo.id}/dbc`);
+      return {daemon, id: repo.id, dir: repo.opendbc.dbc, names: new Set(files.map((f) => f.name.replace(/\.dbc$/, "")))};
+    }).catch(() => null);
+  }
+
+  // saves into the local opendbc; a file changed on disk since it was read (or one that exists, for a DBC that
+  // didn't come from there) is a conflict unless forced. Returns {conflict} or the daemon's {path, generated}
+  async saveLocal(dbc, force = false) {
+    const local = await this.local();
+    const path = `/local/repos/${local.id}/dbc/${dbc.name}.dbc${force ? "" : `?mtime=${dbc.local?.mtime ?? 0}`}`;
+    const r = await fetch(local.daemon.url(path), {method: "PUT", body: dbc.serialize()});
+    if (r.status === 409) return {conflict: true};
+    if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `saving ${dbc.name}.dbc: ${r.status}`);
+    const out = await r.json();
+    dbc.local = {mtime: out.mtime};
+    local.names.add(dbc.name);
+    this.dbcs.saved();
+    return out;
+  }
+
+  // DBC text parsed in the worker, as a big one takes tens of ms
+  async parseDbc(name, text) { return DBC.revive(await this.call("parse", {name, text})); }
+
+  // a DBC by name: from the local opendbc when the daemon has it (that's the copy to edit), else from GitHub
   async loadOpendbc(name, buses = [-1]) {
+    const local = await this.local();
+    if (local?.names.has(name)) {
+      const {text, mtime} = await local.daemon.json(`/local/repos/${local.id}/dbc/${name}.dbc`);
+      const dbc = await this.parseDbc(name, text);
+      dbc.local = {mtime};
+      return this.dbcs.open(buses, dbc);
+    }
     const src = await this.upstream();
     if (!src) {
       this.src = null;  // try again next time
       throw new Error("can't reach opendbc on GitHub");
     }
-    this.dbcs.open(buses, new DBC(name, await src.text(name)));
+    this.dbcs.open(buses, await this.parseDbc(name, await src.text(name)));
   }
 
   // the car's DBC from the fingerprint, once, unless a DBC is already open; a failure is a notice, not an error

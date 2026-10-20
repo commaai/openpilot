@@ -2,7 +2,7 @@
 import {h} from "/dom.js";
 import {DBC} from "/data/dbc.js";
 import {addrOf, hexId} from "/data/can.js";
-import {createSignal, dialog, download, field} from "./common.js";
+import {createSignal, dialog, download, field, menuItem, popup} from "./common.js";
 
 const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a, b) => a - b);
 
@@ -10,8 +10,11 @@ const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a,
 export function dbcDialog(can) {
   const target = h("select", {}, h("option", {value: "-1"}, "all buses"), busList(can).map((b) => h("option", {value: b}, `bus ${b}`)));
   const buses = () => [+target.value];
-  const error = h("div", {class: "can-error"});
+  const error = h("div", {class: "can-error"}), note = h("div", {class: "can-muted"});
+  // opening or closing a DBC drops the undo history, so unsaved edits are confirmed first, as cabana
+  const discard = () => !can.dbcs.dirty || confirm("The DBC has unsaved changes. Discard them?");
   const open = (fn) => async () => {
+    if (!discard()) return;
     try {
       await fn();
       d.close();
@@ -24,15 +27,29 @@ export function dbcDialog(can) {
   const search = h("input", {placeholder: "Search opendbc", spellcheck: false, oninput: () => list()});
   const results = h("div", {class: "can-list"});
   async function list() {
-    const {files, fingerprints, label} = await index;
+    const {files, fingerprints, label, local} = await index;
     const fp = fingerprints[can.fingerprinted] ? [fingerprints[can.fingerprinted]] : [];
     const q = search.value.toLowerCase();
-    search.title = label ? `opendbc at ${label}` : "";
-    results.replaceChildren(...(label ? [] : [h("div", {class: "can-muted"}, "Can't reach opendbc on GitHub")]),
+    search.title = [local && `opendbc in ${local}`, label && `opendbc at ${label}`].filter(Boolean).join(", else ");
+    results.replaceChildren(...(label || local ? [] : [h("div", {class: "can-muted"}, "Can't reach opendbc on GitHub")]),
       ...[...new Set([...fp, ...files])].filter((f) => f.includes(q)).map((f) =>
-        h("button", {class: "can-list-row", onclick: open(() => can.loadOpendbc(f, buses()))}, f, f === fp[0] && h("span", {class: "can-muted"}, " · this car"))));
+        h("button", {class: "can-list-row", onclick: open(() => can.loadOpendbc(f, buses()).then(() => remember(f, "opendbc")))},
+          f, f === fp[0] && h("span", {class: "can-muted"}, " · this car"))));
   }
   list();
+
+  const recents = recent();
+  const recentList = recents.length ? h("div", {class: "can-list can-recent"}, h("div", {class: "can-muted"}, "Recent"),
+    recents.map((r) => h("button", {class: "can-list-row", onclick: open(() => reopen(can, r, buses()))}, r.name, h("span", {class: "can-muted"}, ` · ${r.from}`)))) : null;
+
+  // with the local daemon, DBCs also save into this machine's opendbc checkout
+  const local = can.local();
+  const localSave = (f) => {
+    const slot = h("span");
+    local.then((l) => l && slot.replaceWith(h("button", {class: "can-btn", title: `Write ${f.name}.dbc into ${l.dir}`,
+      onclick: () => saveLocal(can, f, note, error)}, "Save to opendbc")));
+    return slot;
+  };
 
   const paste = h("textarea", {class: "can-paste", placeholder: "Paste DBC text", spellcheck: false});
   const files = h("div", {class: "can-files"}, can.dbcs.all().map((f) => h("div", {class: "can-file"},
@@ -40,19 +57,20 @@ export function dbcDialog(can) {
     h("span", {class: "can-file-actions"},
       h("button", {class: "can-btn", onclick: () => save(can, f)}, "Save"),
       h("button", {class: "can-btn", onclick: () => save(can, f, true)}, "Save as"),
+      localSave(f),
       h("button", {class: "can-btn", onclick: (e) => navigator.clipboard.writeText(f.serialize()).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
-      h("button", {class: "can-btn", onclick: () => { can.dbcs.close(f); d.close(); }}, "Close")))));
+      h("button", {class: "can-btn", onclick: () => { if (discard()) { can.dbcs.close(f); d.close(); } }}, "Close")))));
 
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),
     h("div", {class: "can-dbc-open"},
-      h("div", {class: "can-col-flex"}, search, results),
+      h("div", {class: "can-col-flex"}, recentList, search, results),
       h("div", {class: "can-col-flex"},
         h("div", {class: "can-row"},
           h("button", {class: "can-btn", onclick: open(() => openFile(can, buses()))}, "Open file…"),
           h("button", {class: "can-btn", onclick: open(() => can.dbcs.open(buses(), new DBC("untitled", "")))}, "New")),
-        paste, h("button", {class: "can-btn", onclick: open(() => can.dbcs.open(buses(), new DBC("pasted", paste.value)))}, "Open pasted"))),
-    error);
+        paste, h("button", {class: "can-btn", onclick: open(async () => can.dbcs.open(buses(), await can.parseDbc("pasted", paste.value)))}, "Open pasted"))),
+    error, note);
   d.classList.add("can-dbc-dialog");
 }
 
@@ -67,9 +85,48 @@ async function openFile(can, buses) {
     const file = await new Promise((resolve) => { input.onchange = () => resolve(input.files[0]); input.click(); });
     [text, name] = [await file.text(), file.name];
   }
-  const dbc = new DBC(name.replace(/\.dbc$/, ""), text);
+  const dbc = await can.parseDbc(name.replace(/\.dbc$/, ""), text);
   dbc.handle = handle;
   can.dbcs.open(buses, dbc);
+  if (handle) {
+    await handles("readwrite", (store) => store.put(handle, dbc.name));
+    remember(dbc.name, "file");
+  }
+}
+
+// ---- recent DBCs, as cabana's Open Recent: names in localStorage, and opened files' handles in IndexedDB (only it
+// can keep them)
+
+const RECENT = "ycpe_can_recent";
+const recent = () => JSON.parse(localStorage.getItem(RECENT) || "[]");
+
+function remember(name, from) {
+  const list = [{name, from}, ...recent().filter((r) => r.name !== name || r.from !== from)].slice(0, 10);
+  localStorage.setItem(RECENT, JSON.stringify(list));
+}
+
+async function reopen(can, {name, from}, buses) {
+  if (from === "opendbc") return can.loadOpendbc(name, buses);
+  const handle = await handles("readonly", (store) => store.get(name));
+  if (!handle || await handle.requestPermission({mode: "readwrite"}) === "denied") throw new Error(`${name}.dbc can't be reopened; open it again`);
+  const dbc = await can.parseDbc(name, await (await handle.getFile()).text());
+  dbc.handle = handle;
+  can.dbcs.open(buses, dbc);
+  remember(name, from);
+}
+
+// one IndexedDB request on the file handle store; resolves with its result
+function handles(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("ycpe-can", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const q = fn(req.result.transaction("handles", mode).objectStore("handles"));
+      q.onsuccess = () => resolve(q.result);
+      q.onerror = () => reject(q.error);
+    };
+  });
 }
 
 // writes back to the opened file when permitted, else asks where (or downloads)
@@ -90,18 +147,34 @@ async function save(can, dbc, as = false) {
   }
 }
 
+// into the local opendbc; when the file changed on disk (or exists and wasn't read from there), asks first
+async function saveLocal(can, dbc, note, error, force = false) {
+  const r = await can.saveLocal(dbc, force).catch((e) => { error.textContent = e.message; });
+  if (!r) return;
+  if (r.conflict) {
+    const buses = can.dbcs.buses(dbc);
+    const d = dialog(`${dbc.name}.dbc changed on disk`,
+      h("p", {}, dbc.local ? "It was modified since it was loaded." : "A file with this name is already in opendbc."),
+      h("div", {class: "can-row"},
+        h("button", {class: "can-btn", onclick: () => { d.close(); saveLocal(can, dbc, note, error, true); }}, "Overwrite"),
+        dbc.local && h("button", {class: "can-btn", title: "Discards your edits", onclick: async () => {
+          d.close();
+          can.dbcs.close(dbc);
+          await can.loadOpendbc(dbc.name, buses);
+          note.textContent = `Reloaded ${dbc.name}.dbc`;
+        }}, "Reload from disk"),
+        h("button", {class: "can-btn", onclick: () => d.close()}, "Cancel")));
+    return;
+  }
+  note.textContent = `Saved ${r.path}${r.generated ? " · a generated DBC: the generator will overwrite it, edit its source in generator/" : ""}`;
+}
+
 export function toolsMenu(can, ctx, anchor) {
-  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { menu.hidePopover(); fn(); }}, label);
-  const menu = h("div", {class: "can-menu", popover: "auto", ontoggle: (e) => { if (e.newState === "closed") menu.remove(); }},
-    item("Find similar bits…", () => similarDialog(can)),
-    item("Find signal…", () => findDialog(can, ctx)),
-    item("Export CSV…", () => csvDialog(can, ctx)),
-    item("Route segments…", () => segmentsDialog(ctx)));
-  document.body.append(menu);
-  const r = anchor.getBoundingClientRect();
-  menu.style.left = `${r.left}px`;
-  menu.style.top = `${r.bottom + 2}px`;
-  menu.showPopover();
+  popup(anchor, [
+    menuItem("Find similar bits…", () => similarDialog(can)),
+    menuItem("Find signal…", () => findDialog(can, ctx)),
+    menuItem("Export CSV…", () => csvDialog(can, ctx)),
+    menuItem("Route info…", () => segmentsDialog(ctx))]);
 }
 
 const table = (cols, rows, onRow) => h("div", {class: "can-table"},
@@ -194,8 +267,9 @@ function csvDialog(can, ctx) {
     }}, "Export")));
 }
 
+// cabana's route info: the fingerprint and each segment; a row seeks there (the Files view lists every file)
 function segmentsDialog(ctx) {
-  const segs = ctx.store.route.segments;
-  dialog("Route segments", h("div", {class: "can-muted"}, ctx.route.fullname),
-    table(["Segment", "Start", "End", "Status"], segs.map((s) => ({src: s, cells: [s.n, s.t0.toFixed(1), s.t1.toFixed(1), s.status]})), (s) => ctx.clock.seek(s.t0)));
+  const segs = ctx.store.route.segments, fp = ctx.store.valueAt("/carParams/carFingerprint", Infinity);
+  dialog("Route info", h("div", {class: "can-muted"}, ctx.route.fullname, fp ? ` · ${fp}` : ""),
+    table(["Segment", "Start", "End", "Log"], segs.map((s) => ({src: s, cells: [s.n, s.t0.toFixed(1), s.t1.toFixed(1), s.status]})), (s) => ctx.clock.seek(s.t0)));
 }

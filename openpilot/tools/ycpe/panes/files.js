@@ -8,9 +8,9 @@ import {fmtBytes} from "../status.js";
 import {KINDS, API_KIND, SOURCES, AUTO, daemon, parseRange, resolveFiles, routeSource} from "../data/sources.js";
 import {uploads, uploadState, uploadNotice, uploadQueue, LABELS, UPLOADABLE} from "../pages/files.js";
 
-css(new URL("./files.css", import.meta.url));
+await css(new URL("./files.css", import.meta.url));
 
-const ROW = 26;  // px per segment row
+const ROW = matchMedia("(pointer: coarse)").matches ? 36 : 26;  // px per segment row; files.css agrees
 const OVERSCAN = 8;  // rows drawn and resolved beyond the viewport
 const COLS = Object.keys(KINDS);
 const label = (source) => SOURCES[source]?.label ?? source;

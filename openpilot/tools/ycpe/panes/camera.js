@@ -7,8 +7,10 @@ import {h, css} from "/dom.js";
 import {status} from "/status.js";
 import {routeCameraFiles} from "/data/sources.js";
 import {HEVC} from "/data/video/annexb.js";
-import {FPS, frameAt} from "/data/video/frames.js";
+import {FPS, SEGMENT_FRAMES, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
+
+await css(new URL("./camera.css", import.meta.url));
 
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
 const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
@@ -21,42 +23,52 @@ const QCAMERA_BYTES_PER_S = 37e3;
 const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js";
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
+const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
 
 export function create(ctx, state) {
   let camera = CAMERAS[state.camera] ? state.camera : "qcamera";
   let source = null;
-  css(new URL("./camera.css", import.meta.url));
   const note = h("div", {class: "camera-note", hidden: true});
   const bar = h("i");
   const waitText = h("span");
-  const overlay = h("div", {class: "camera-buffering", hidden: true}, waitText, h("div", {class: "camera-progress"}, bar));
+  const progress = h("div", {class: "camera-progress"}, bar);
+  const overlay = h("div", {class: "camera-buffering", hidden: true}, waitText, progress);
+  let overlaid = "";
   const picker = h("select", {class: "camera-picker", title: "Camera", onchange: (e) => use(e.target.value)},
     Object.entries(CAMERAS).map(([k, label]) => h("option", {value: k}, label)));
   const el = h("div", {class: "camera-pane"});
   const pane = {name: "camera", el, render: () => source.render(), resize() {}, save: () => ({camera}), dispose,
     stats: () => source.stats};
 
+  // the overlay over the last frame, dimmed: text with a progress bar at f (0..1), text alone (f null), or nothing
+  const cover = (text, f) => {
+    const key = text === null ? "" : `${text} ${f}`;
+    if (key === overlaid) return;  // renders run every frame while playing
+    overlaid = key;
+    overlay.hidden = text === null;
+    el.classList.toggle("buffering", text !== null);
+    if (text === null) return;
+    waitText.textContent = text;
+    progress.hidden = f === null;
+    bar.style.width = `${(100 * (f || 0)).toFixed(1)}%`;
+  };
   const ui = {
     say(text = "", title = "") {
       note.textContent = text;
-      note.title = title;
+      note.title = title || text;  // the note is cut to one line
       note.hidden = !text;
     },
-    // the playhead waits on a segment: {text, f} with f the fraction loaded, or null; the last frame stays, dimmed
-    wait(b) {
-      overlay.hidden = !b;
-      el.classList.toggle("buffering", !!b);
-      if (!b) return;
-      waitText.textContent = `buffering ${b.text}`;
-      bar.style.width = `${(100 * (b.f || 0)).toFixed(1)}%`;
-    },
+    // the playhead waits on a segment: {text, f} with f the fraction loaded, or null
+    wait: (b) => cover(b ? `buffering ${b.text}` : null, b?.f || 0),
+    // the playhead is where the camera has no file: why, or null
+    absent: (why) => cover(why, null),
   };
 
   function show(src, why) {
     source?.dispose();
     source = src;
     ui.say(why);
-    ui.wait(null);
+    ui.absent(null);
     el.replaceChildren(src.el, overlay, picker, note);
     ctx.perf.invalidate(pane);
   }
@@ -64,7 +76,7 @@ export function create(ctx, state) {
   function use(cam) {
     camera = picker.value = cam;
     if (cam === "qcamera") show(qcamera(ctx, pane, ui));
-    else show(fullres(ctx, pane, cam, {...ui, fail: (why) => show(qcamera(ctx, pane, ui), `${why}, showing qcamera`)}));
+    else show(fullres(ctx, pane, cam, {...ui, fail: (why) => show(qcamera(ctx, pane, ui), why)}));
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
@@ -89,15 +101,16 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 });
 
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
-// The segment's thumbnail stands in until the first frame arrives.
-function qcamera(ctx, pane, {say, wait}) {
+// The segment's thumbnail stands in until the first frame arrives. Where the route has no qcamera file there's
+// nothing to wait for: the pane says so, and with none at all it doesn't load a player.
+function qcamera(ctx, pane, {wait, absent}) {
   const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {muted: true, playsinline: true, preload: "auto", poster});
   const lanes = lane("qcamera");
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);
   const loading = new Set();
-  let hls = null, gone = false;
+  let hls = null, gone = false, files = null;  // files[k]: slot k's file, once known
 
   // segments the <video> has buffered, from its time ranges
   const update = () => {
@@ -108,19 +121,23 @@ function qcamera(ctx, pane, {say, wait}) {
       let have = 0;
       for (let i = 0; i < r.length; i++) have += Math.max(0, Math.min(b, r.end(i)) - Math.max(a, r.start(i)));
       seconds += have;
-      lanes.seg(n, have >= 0.98 * (b - a) ? "ready" : loading.has(n) ? "loading" : "idle");
+      lanes.seg(n, files && !files[n] ? "missing" : have >= 0.98 * (b - a) ? "ready" : loading.has(n) ? "loading" : "idle");
     }
     lanes.bytes({memory: seconds * QCAMERA_BYTES_PER_S});
   };
-  loadHls().then(async (Hls) => {
-    const src = ctx.route.loose || ctx.route.range ? await playlist(ctx.route) : api.qcameraUrl(ctx.route);
+  Promise.all([loadHls(), routeCameraFiles(ctx.route, "qcamera").catch(() => null)]).then(([Hls, found]) => {
     if (gone) return;
+    files = found;
+    update();
+    ctx.perf.invalidate(pane);
+    if (files && !files.some(Boolean)) return;
+    const src = ctx.route.loose || ctx.route.range ? playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
     hls = new Hls({maxBufferLength: 20});
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
     hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
     hls.loadSource(src);
     hls.attachMedia(video);
-  }, () => say("hls.js failed to load"));
+  }, () => absent("hls.js failed to load"));
   for (const ev of ["loadedmetadata", "seeked", "canplay", "waiting"]) video.addEventListener(ev, () => ctx.perf.invalidate(pane));
   video.addEventListener("progress", update);
 
@@ -128,7 +145,14 @@ function qcamera(ctx, pane, {say, wait}) {
     el: video,
     render() {
       const {t, playing, rate} = ctx.clock;
-      const n = Math.floor(t / SEGMENT), stalled = video.readyState < 3 && (playing || video.seeking || video.readyState < 2);
+      const n = Math.floor(t / SEGMENT);
+      if (files && !files[n]) {
+        lanes.buffering(null);
+        absent(files.some(Boolean) ? `no qcamera for segment ${segmentAt(ctx.route, n)}` : "no qcamera for this route");
+        if (!video.paused) video.pause();
+        return;
+      }
+      const stalled = video.readyState < 3 && (playing || video.seeking || video.readyState < 2);
       const b = stalled && {n, text: `segment ${segmentAt(ctx.route, n)}`};
       lanes.buffering(b || null);
       wait(b);
@@ -154,8 +178,8 @@ function qcamera(ctx, pane, {say, wait}) {
 }
 
 // a window of decoded frames around the playhead, filled by the decoder worker
-function fullres(ctx, pane, camera, {say, wait, fail}) {
-  const canvas = h("canvas");
+function fullres(ctx, pane, camera, {say, wait, absent, fail}) {
+  const canvas = h("canvas", {hidden: true});  // a canvas is black until its first frame
   const draw = frameRenderer(canvas, () => { shown = -1; ctx.perf.invalidate(pane); });
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
   const lanes = lane(camera);
@@ -180,11 +204,12 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     wait(w);
   };
 
-  let real = [];  // each slot's segment
+  let real = [], have = [];  // each slot's segment, and whether it has a file
   sources(ctx.route, camera).then(({urls, keys, segs, ...src}) => {
     real = segs;
-    if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files`);
-    lanes.count(urls.length);
+    have = segs.map((_, k) => !!urls[k]);
+    if (!have.some(Boolean)) return fail(`no ${CAMERAS[camera]} camera files, showing qcamera`);
+    lanes.count(segs.length);
     worker.postMessage({urls, keys});
     ready = true;
     ctx.perf.invalidate(pane);
@@ -202,10 +227,11 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
       }
       if (waitingOn?.n === seg) buffering(waitingOn);
     });
-  }).catch(() => fail("camera files unavailable"));
+  }).catch(() => fail("camera files unavailable, showing qcamera"));
 
   worker.onmessage = ({data}) => {
-    if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}`);
+    if (data.unbuilt) return fail(UNBUILT);
+    if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}, showing qcamera`);
     if (data.backend) {
       software = (stats.backend = data.backend) !== "hardware";
       badge();
@@ -234,7 +260,9 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     stats,
     render() {
       if (!ready) return;
-      const n = frameAt(ctx.peekStore(), ctx.route, camera, ctx.clock.t);
+      const n = frameAt(ctx.peekStore(), ctx.route, camera, ctx.clock.t), slot = Math.floor(n / SEGMENT_FRAMES);
+      if (!have[slot]) absent(`no ${CAMERAS[camera]} camera for segment ${segmentAt(ctx.route, slot)}`);
+      else wait(waitingOn && waitText(waitingOn));
       const playing = ctx.clock.playing, back = n < last ? BACK : 0, now = performance.now();
       if (!playing && Math.abs(n - last) > 1) {
         scrubbing = now - jumped < SCRUB_MS;
@@ -260,6 +288,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
       for (const k of frames.keys()) if (k <= n && k > best) best = k;
       if (best !== shown && best >= 0) {
         draw(frames.get(best));
+        canvas.hidden = false;
         shown = stats.shown = best;
         stats.drawn++;
       }
@@ -295,6 +324,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
 async function sources(route, camera) {
   const files = await routeCameraFiles(route, camera), urls = [], keys = [];
   const segs = Array.from({length: slots(route)}, (_, k) => segmentAt(route, k));
+  urls.length = keys.length = segs.length;
   files.forEach(({url, file}, k) => {
     urls[k] = url;
     keys[k] = `${route.fullname.replace("|", "/")}/${segs[k]}/${file}`;
@@ -310,14 +340,14 @@ const slots = (route) => route.range ? route.segment_numbers.length : route.maxq
 
 // an HLS playlist of qcamera files by timeline slot, for a loose route (which the API doesn't have) or a range of
 // a route; segments it lacks are gaps, and a jump to a segment not next to the last restarts the timestamps
-async function playlist(route) {
-  const files = await routeCameraFiles(route, "qcamera");
+function playlist(route, files) {
   const lines = ["#EXTM3U", "#EXT-X-VERSION:3", `#EXT-X-TARGETDURATION:${SEGMENT}`, "#EXT-X-PLAYLIST-TYPE:VOD"];
   for (let k = 0, last = null; k < slots(route); k++) {
     const n = segmentAt(route, k);
     if (last !== null && n !== last + 1) lines.push("#EXT-X-DISCONTINUITY");
-    lines.push(`#EXTINF:${SEGMENT},`, ...files[k] ? [] : ["#EXT-X-GAP"], new URL(files[k]?.url ?? `gap${n}.ts`, location.href).href);
-    last = files[k] ? n : null;
+    const f = files?.[k];
+    lines.push(`#EXTINF:${SEGMENT},`, ...f ? [] : ["#EXT-X-GAP"], new URL(f?.url ?? `gap${n}.ts`, location.href).href);
+    last = f ? n : null;
   }
   lines.push("#EXT-X-ENDLIST");
   return URL.createObjectURL(new Blob([lines.join("\n")], {type: "application/vnd.apple.mpegurl"}));

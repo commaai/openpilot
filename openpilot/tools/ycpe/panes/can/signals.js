@@ -4,11 +4,11 @@ import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
 import {canOf, dialog, editMsg, field, removeSignal, subs, updateSignal} from "./common.js";
 
-const SPARK = 15, SPARK_W = 80;  // seconds of history in a sparkline (cabana's default), and its width
+const SPARK_W = 80;  // sparkline width
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
-  let open = state.open || null, filter = "";
+  let open = state.open || null, filter = "", spark = state.spark || 15;  // seconds of history, cabana's default
   const head = h("div", {class: "can-toolbar"});
   const list = h("div", {class: "can-sig-list"});
   const el = h("div", {class: "can-pane can-signals"}, head, list);
@@ -24,7 +24,7 @@ export function create(ctx, state) {
     if (sparkBusy || !m) return;
     sparkBusy = true;
     const t = ctx.clock.t, names = m.sigs.map((sg) => sg.name);
-    const r = await can.decimate(key, names, t - SPARK, t, SPARK_W);
+    const r = await can.decimate(key, names, t - spark, t, SPARK_W);
     sparkBusy = false;
     if (key !== k()) return;
     sparks = Object.fromEntries(names.map((n, i) => [n, r[i]]));
@@ -38,11 +38,14 @@ export function create(ctx, state) {
       h("span", {class: "can-binary-title"}, key === null ? "Select a message" : `${hexId(key)} ${m?.name || "(no DBC message)"}`),
       key !== null && m && h("span", {class: "can-muted"}, ` ${m.size} bytes · ${m.transmitter}`),
       h("span", {class: "can-spacer"}),
+      key !== null && m && h("span", {class: "can-muted"}, `${m.sigs.length} signals`),
+      key !== null && m && h("select", {class: "can-select", title: "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
+        [1, 5, 15, 30].map((x) => h("option", {value: x, selected: x === spark}, `${x} s`))),
       key !== null && m && h("input", {class: "can-filter", placeholder: "Filter signals", value: filter, oninput: (e) => { filter = e.target.value; build(); }}),
       key !== null && h("button", {class: "can-btn", title: "Edit message", onclick: () => messageDialog(can, key)}, m ? "Edit message" : "Add to DBC"),
       key !== null && m && h("button", {class: "can-btn", title: "Remove message", onclick: () => can.dbcs.edit(busOf(key), m.address, null, `remove message ${m.name}`)}, "Remove")].filter(Boolean));
     if (!m) {
-      list.replaceChildren(h("div", {class: "can-empty"}, key === null ? "" : "Drag across bits in the binary view to create a signal."));
+      list.replaceChildren(h("div", {class: "can-empty"}, key === null ? "Select a message to edit its signals" : "Drag across bits in the binary view to create a signal."));
       return;
     }
     if (m.comment) head.append(h("div", {class: "can-comment"}, m.comment));
@@ -77,7 +80,7 @@ export function create(ctx, state) {
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
-    save: () => ({open}),
+    save: () => ({open, spark}),
   };
   s.add(can.on("select", () => { open = null; sparks = null; build(); requestSparks(); }));
   s.add(can.on("dbc", () => { build(); requestSparks(); }));
