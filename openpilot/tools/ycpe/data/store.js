@@ -93,7 +93,7 @@ export class Store {
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
       return {...seg.opts, keep: this.keep, skip, only, context: this.context, ...extra};
     };
-    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev));
+    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this);
   }
 
   // outward from the focus segment
@@ -106,7 +106,7 @@ export class Store {
     const n = Math.max(0, Math.floor(t / SEGMENT));
     if (n !== this.focusSeg) {
       this.focusSeg = n;
-      this.loader.reprioritize((m) => this.prio(m));
+      this.loader.reprioritize((m) => this.prio(m), this);
       this.pool();
     }
     this.buffering();
@@ -185,6 +185,7 @@ export class Store {
   }
 
   failed(seg, e) {
+    if (this.disposed) return;
     seg.status = "error";
     seg.error = String(e);
     seg.loading = null;
@@ -430,8 +431,6 @@ export class Store {
   attach(prefix, urls, {name = prefix} = {}) {
     let o = this.overlays.find((x) => x.prefix === prefix);
     if (o) return o.store.add(urls), o;
-    // the loader is shared: reprioritize() ranks the overlay's jobs with this store's fn, which is right because both
-    // tag jobs with the route's segment slot. detach() leaves its queued jobs to finish into the disposed store
     const store = new Store(name, urls, {loader: this.loader, t: this.t, lane: {name, label: name, order: 1}, can: false, migrate: false});
     o = {prefix, name, store, cache: new Map(), offs: ["paths", "progress"].map((ev) => store.on(ev, (a) => this.emit(ev, a)))};
     this.overlays.push(o);
@@ -475,7 +474,9 @@ export class Store {
 
   dispose() {
     for (const o of this.overlays) o.store.dispose();
-    if (!this.shared) this.loader.dispose();
+    this.disposed = true;
+    if (this.shared) this.loader.cancel(this);
+    else this.loader.dispose();
     this.can.dispose();
     this.status.remove();
   }

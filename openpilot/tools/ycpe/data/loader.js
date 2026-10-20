@@ -18,6 +18,7 @@ export class Loader {
     this.queue = [];  // waiting to fetch
     this.ready = [];  // fetched, waiting for a worker
     this.fetching = new Set();  // jobs downloading (or reading the cache)
+    this.cancelled = new WeakSet();  // owners whose jobs are dropped
     this.parsing = 0;
     this.downloads = new Map();  // key → fetch in flight, so a repeated segment waits and then reads the cache
     this.next = 0;
@@ -88,21 +89,31 @@ export class Loader {
   }
 
   // parses the log cached at key (or downloaded from url) with worker options opts (or opts() when it starts);
-  // resolves with the worker's pack plus {bytes, cached, stored, ms}. tag identifies the load to reprioritize(), and
+  // resolves with the worker's pack plus {bytes, cached, stored, ms}. tag identifies the load to reprioritize(), owner
+  // to reprioritize() and cancel() (stores sharing a loader each touch only their own loads), and
   // report(event) hears {loaded, total} while downloading, {retry, of, error} before a retry, {paused: true} when a
   // better job took its place, and {parsing: true}
-  load(key, url, opts, prio = 0, tag = key, report = () => {}) {
+  load(key, url, opts, prio = 0, tag = key, report = () => {}, owner = null) {
     return new Promise((resolve, reject) => {
-      this.queue.push({key, url, opts, prio, tag, report, resolve, reject});
+      this.queue.push({key, url, opts, prio, tag, report, owner, resolve, reject});
       queueMicrotask(() => this.pump());  // a burst of loads is ranked before any starts
     });
   }
 
-  // re-ranks waiting jobs; fn(tag) gives the new prio
-  reprioritize(fn) {
-    for (const j of this.queue) j.prio = fn(j.tag);
-    for (const j of this.ready) j.prio = fn(j.tag);
-    for (const j of this.fetching) j.prio = fn(j.tag);
+  // re-ranks owner's jobs; fn(tag) gives the new prio
+  reprioritize(fn, owner = null) {
+    for (const j of [...this.queue, ...this.ready, ...this.fetching]) if (j.owner === owner) j.prio = fn(j.tag);
+    this.pump();
+  }
+
+  // drops owner's jobs: waiting ones at once, downloads by aborting them, parses by ignoring their result
+  cancel(owner) {
+    const mine = (j) => j.owner === owner, err = new Error("cancelled");
+    for (const j of [...this.queue, ...this.ready].filter(mine)) j.reject(err);
+    this.queue = this.queue.filter((j) => !mine(j));
+    this.ready = this.ready.filter((j) => !mine(j));
+    for (const j of this.fetching) if (mine(j)) j.pause?.();
+    this.cancelled.add(owner);
     this.pump();
   }
 
@@ -115,7 +126,8 @@ export class Loader {
       job.report({parsing: true});
       const opts = typeof job.opts === "function" ? job.opts() : job.opts;
       this.call(worker, {op: "parse", buf: job.buf, opts}, [job.buf])
-        .then((r) => job.resolve({...r, bytes: job.bytes, cached: job.cached, stored: job.stored, ms: {...job.ms, ...r.ms}}), job.reject)
+        .then((r) => this.cancelled.has(job.owner) ? job.reject(new Error("cancelled"))
+          : job.resolve({...r, bytes: job.bytes, cached: job.cached, stored: job.stored, ms: {...job.ms, ...r.ms}}), job.reject)
         .finally(() => {
           this.parsing--;
           this.release(worker);
@@ -133,7 +145,8 @@ export class Loader {
     for (let n = running.length; n < limit && this.ready.length < this.size && this.queue.length; n++) {
       const job = this.queue.shift();
       this.fetching.add(job);
-      this.fetch(job).then((done) => (done ? this.ready : this.queue).push(job), job.reject).finally(() => {
+      this.fetch(job).then((done) => this.cancelled.has(job.owner) ? job.reject(new Error("cancelled"))
+        : (done ? this.ready : this.queue).push(job), job.reject).finally(() => {
         this.fetching.delete(job);
         this.pump();
       });
