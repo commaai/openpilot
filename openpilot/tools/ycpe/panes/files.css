@@ -7,10 +7,10 @@
 .files-pane .fp-notes > * { margin: 4px 8px; }
 .files-pane .notice { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--alert); border-radius: 5px; }
 .files-pane .notice svg { color: var(--alert); flex-shrink: 0; }
-.files-pane .fp-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; }
+.files-pane .fp-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; contain: strict; }
 .files-pane .fp-row { display: grid; grid-template-columns: 44px 120px repeat(6, minmax(92px, 1fr)); column-gap: 8px; align-items: center; min-width: 776px; height: 26px; padding: 0 8px; border-bottom: 1px solid var(--line); }
 .files-pane .fp-body { position: relative; min-width: 792px; }
-.files-pane .fp-body > .fp-row { position: absolute; top: 0; left: 0; right: 0; contain: layout style; }
+.files-pane .fp-body > .fp-row { position: absolute; top: 0; left: 0; right: 0; contain: strict; }
 .files-pane .fp-body > .fp-row:hover { background: var(--hover); }
 .files-pane .fp-head { position: sticky; top: 0; z-index: 1; height: 40px; background: var(--panel); color: var(--muted); font-weight: 600; }
 .files-pane .fp-head .fp-cell { flex-direction: column; align-items: flex-start; gap: 0; }
