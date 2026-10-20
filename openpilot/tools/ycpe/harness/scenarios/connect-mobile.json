@@ -1,4 +1,4 @@
-{"name": "connect-mobile", "url": "/5beb9b58bd12b691/0000010a--a51155e496", "viewport": {"width": 390, "height": 844, "mobile": true},
+{"name": "connect-mobile", "mode": "user", "url": "/connect/5beb9b58bd12b691/0000010a--a51155e496", "viewport": {"width": 390, "height": 844, "mobile": true},
  "reference": ["connect-route-demo-mobile"], "budgets": {"drops": 0},
  "steps": [
   {"waitFor": ".connect-pane .camera-pane"},

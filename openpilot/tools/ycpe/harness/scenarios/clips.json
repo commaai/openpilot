@@ -1,4 +1,4 @@
-{"name": "clips", "url": "/5beb9b58bd12b691/0000010a--a51155e496/120/300", "auth": true, "timeout": 20000,
+{"name": "clips", "mode": "user", "url": "/connect/5beb9b58bd12b691/0000010a--a51155e496/120/300", "auth": true, "timeout": 20000,
  "routes": [
   {"url": "/v1\\.1/devices/5beb9b58bd12b691/$", "json": {"dongle_id": "5beb9b58bd12b691", "alias": "Bronco", "device_type": "three", "openpilot_version": "0.11.2",
    "is_owner": true, "is_paired": true, "prime": false, "last_athena_ping": 4102444800}},

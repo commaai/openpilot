@@ -27,6 +27,8 @@ import {uniqueCustoms} from "/layouts/import.js";
 import {mode, setMode, userPath, devPath} from "/pages/connect/mode.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
+// the views developer mode offers: connect's is user mode's alone
+const devViews = (views) => Object.entries(views).filter(([, v]) => !v.user);
 const LOG_RE = /^[0-9a-f]{8}--[0-9a-f]{10}$/i;
 
 export function go(path, replace = false) {
@@ -286,7 +288,7 @@ function updateTop() {
   // one would lay the new view out in the click
   if (viewsShown !== ws.views) {
     viewsShown = ws.views;
-    bar.views.replaceChildren(...Object.entries(ws.views).map(([k, v], i) => h("button", {class: "view", "data-key": `view:${k}`,
+    bar.views.replaceChildren(...devViews(ws.views).map(([k, v], i) => h("button", {class: "view", "data-key": `view:${k}`,
       title: `${v.title} (${i + 1})`, onclick: () => ws?.setView(k)}, v.title)));
   }
   for (const b of bar.views.children) {
@@ -507,7 +509,7 @@ class Workspace {
   layoutKey(view) { return this.views[view].key || view; }
 
   setView(view) {
-    if (!this.views[view]) view = this.session ? "plot" : "drive";
+    if (!this.views[view] || this.views[view].user && !this.user) view = this.session ? "plot" : "drive";
     if (view !== this.view) this.persist();
     this.view = view;
     if (!this.user && view !== "connect") this.devView = view;
@@ -678,7 +680,7 @@ document.addEventListener("keydown", (e) => {
     Home: () => c.seek(c.start),
     End: () => c.seek(c.duration),  // live: following again
   };
-  if (!ws.user) Object.keys(ws.views).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });  // user mode has one
+  if (!ws.user) devViews(ws.views).forEach(([v], i) => { keys[String(i + 1)] = () => ws.setView(v); });  // user mode has one
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
 });
 
@@ -844,7 +846,9 @@ async function renderPage() {
     const view = user ? "connect" : target.view;  // user mode's drive view is connect's
     if (ws && routeKey(ws.route) === routeName) {
       ws.user = user;
-      if (view && view !== ws.view) ws.setView(view);
+      // from user mode with no view named: the one developer mode was last in
+      const to = view || (ws.views[ws.view].user && !user ? ws.devView : ws.view);
+      if (to !== ws.view) ws.setView(to);
       if (target.range) ws.showRange(target.range);
       // from the other mode: the same workspace, in this mode's frame
       if (ws.el.parentElement !== root) {
@@ -864,7 +868,7 @@ async function renderPage() {
       // ?repeat=n (a load test): the logs n times over, at most 50
       const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
       const t = urlTime(q);
-      ws = new Workspace(route, files, view || "connect", {t: t ?? 0, repeat, user});  // connect's urls name no view
+      ws = new Workspace(route, files, view || "drive", {t: t ?? 0, repeat, user});  // connect's urls name no view
       if (target.range) ws.showRange(target.range, t === null);
       ws.syncUrl(true);  // with the range (a playing clock holds off its later writes)
       rememberRoute(route);

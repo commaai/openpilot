@@ -1,4 +1,4 @@
-{"name": "connect-audio", "url": "/5beb9b58bd12b691/0000010a--a51155e496", "viewport": {"width": 390, "height": 844, "mobile": true},
+{"name": "connect-audio", "mode": "user", "url": "/connect/5beb9b58bd12b691/0000010a--a51155e496", "viewport": {"width": 390, "height": 844, "mobile": true},
  "routes": [
   {"url": "/qcamera\\.m3u8", "body": "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:4\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:4,\nhttps://ycpe-fixture.invalid/qcamera-audio.ts\n#EXT-X-ENDLIST\n"},
   {"url": "^https://ycpe-fixture.invalid/qcamera-audio.ts$", "file": "fixtures/qcamera-audio.ts"}
@@ -16,7 +16,7 @@
   {"assert": "localStorage.getItem('ycpe_muted') === '0' || 'unmuting is remembered'"},
   {"assert": "document.querySelector('.cn-mute').ariaLabel === 'Mute' || 'with sound, the button mutes'"},
   {"shot": "unmuted"},
-  {"goto": "/5beb9b58bd12b691/0000010a--a51155e496"},
+  {"goto": "/connect/5beb9b58bd12b691/0000010a--a51155e496"},
   {"waitFor": {"fn": "document.querySelector('.cn-mute')?.disabled === false"}, "timeout": 15000},
   {"waitFor": {"fn": "!document.querySelector('.connect-pane video').paused"}},
   {"note": "'(an evaluate is a user gesture to Chrome, so playing muted until the first click is only checked by hand)'"},

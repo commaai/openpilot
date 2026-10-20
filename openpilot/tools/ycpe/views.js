@@ -16,8 +16,8 @@ export const VIEWS = {
     split("col", [0.38, 0.37, 0.25], pane("can-binary"), pane("can-signals"), pane("can-history")),  // as cabana's detail view
     split("col", [0.6, 0.4], pane("can-charts"), pane("camera", {camera: "qcamera"})))),
   files: view("Files", split("row", [0.2, 0.8], pane("routes"), pane("files"))),
-  // connect's route page, the default for a route opened without a view (style.css drops its pane's chrome)
-  connect: {...view("Connect", pane("connect")), bare: true},
+  // connect's route page: user mode's drive view, and only its (style.css drops its pane's chrome)
+  connect: {...view("Connect", pane("connect")), bare: true, user: true},
 };
 
 // a live session's: plot and CAN as for routes (sharing their saved layouts), drive without the route's own panes,
