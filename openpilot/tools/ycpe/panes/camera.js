@@ -7,7 +7,7 @@ import {h, css} from "/dom.js";
 import {status} from "/status.js";
 import {routeCameraFiles} from "/data/sources.js";
 import {HEVC} from "/data/video/annexb.js";
-import {FPS, SEGMENT_FRAMES, frameAt} from "/data/video/frames.js";
+import {FPS, SEGMENT_FRAMES, cameraTime, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
 
 await css(new URL("./camera.css", import.meta.url));
@@ -144,7 +144,7 @@ function qcamera(ctx, pane, {wait, absent}) {
   return {
     el: video,
     render() {
-      const {t, playing, rate} = ctx.clock;
+      const {playing, rate} = ctx.clock, t = cameraTime(ctx.peekStore(), ctx.route, "qcamera", ctx.clock.t);
       const n = Math.floor(t / SEGMENT);
       if (files && !files[n]) {
         lanes.buffering(null);
