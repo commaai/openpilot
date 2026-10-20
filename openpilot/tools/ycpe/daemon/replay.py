@@ -8,7 +8,6 @@ the segment before too, without writing it, so engagement, calibration and learn
 GET  /local/replay/procs?repo=<path>     the replayable processes and what each is missing in that checkout
 POST /local/replay                       {route, segs: [first, last], procs, repo} → the replay's manifest
 GET  /local/replay?route=<dongle|log_id> replays of a route, newest first
-GET  /local/replay/<id>                  manifest: state, segments written, diff summary when done
 GET  /local/replay/<id>/<seg>/rlog.zst   a replayed segment
 """
 import ctypes.util
@@ -26,6 +25,8 @@ import time
 from collections import deque
 from functools import cache as memo
 from pathlib import Path
+
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, module, route
 
 RUNNER = Path(__file__).with_name("replay_runner.py")
 DEFAULT_PROCS = ["controlsd", "plannerd", "radard"]
@@ -285,104 +286,101 @@ def load_manifest(path: Path) -> dict | None:
 
 # the daemon side
 
-try:
-  from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, module, route
-except ImportError:  # used as a library without the daemon
-  route = None
+ID = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}\Z")
+ROUTE = re.compile(r"^[0-9a-f]{16}\|[0-9a-zA-Z_-]+\Z")
+_running: dict[str, Replay] = {}
 
-if route is not None:
-  ID = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}\Z")
-  ROUTE = re.compile(r"^[0-9a-f]{16}\|[0-9a-zA-Z_-]+\Z")
-  _running: dict[str, Replay] = {}
+module("replay", "1", procs=PROCS, default=DEFAULT_PROCS)
 
-  module("replay", "1", procs=PROCS, default=DEFAULT_PROCS)
 
-  def root() -> Path:
-    return cache.ycpe_dir("replay")
+def root() -> Path:
+  return cache.ycpe_dir("replay")
 
-  def checkouts() -> list[str]:
-    try:
-      from openpilot.tools.ycpe.daemon import repos
-      return [c["path"] for c in repos.checkouts()]
-    except ImportError:
-      return list(config.repo_roots)
 
-  def repo_arg(path: str | None) -> Path:
-    roots = checkouts()
-    if not path:
-      if not roots:
-        raise HTTPError(400, "no checkouts configured")
-      path = roots[0]
-    if os.path.realpath(path) not in {os.path.realpath(r) for r in roots}:
-      raise HTTPError(403, "not a known checkout")
-    return confine(path, roots)
+def checkouts() -> list[str]:
+  try:
+    from openpilot.tools.ycpe.daemon import repos
+    return [c["path"] for c in repos.checkouts()]
+  except ImportError:
+    return list(config.repo_roots)
 
-  @route("GET", "/local/replay/procs")
-  def replay_procs(req):
-    repo = repo_arg(req.query.get("repo"))
-    gaps = missing(repo, PROCS + sorted(VISION))
-    return {"repo": str(repo), "commit": commit(repo), "default": DEFAULT_PROCS, "missing": gaps.get("all", []),
-            "procs": [{"name": p, "missing": gaps.get(p, []), "videos": sorted(VISION.get(p, {}).values())} for p in PROCS + sorted(VISION)]}
 
-  @route("POST", "/local/replay")
-  def replay_start(req):
-    body = req.json() or {}
-    name, segs, procs = body.get("route", ""), body.get("segs"), body.get("procs") or DEFAULT_PROCS
-    if not ROUTE.match(name):
-      raise HTTPError(400, "bad route")
-    if not (isinstance(segs, list) and len(segs) == 2 and all(isinstance(s, int) and 0 <= s < 10000 for s in segs) and segs[0] <= segs[1]):
-      raise HTTPError(400, "segs must be [first, last]")
-    if segs[1] - segs[0] >= MAX_SEGS:
-      raise HTTPError(400, f"at most {MAX_SEGS} segments at once")
-    if not set(procs) <= set(PROCS) | set(VISION):
-      raise HTTPError(400, f"unknown process in {procs}")
-    replay = Replay(root(), name, list(range(segs[0], segs[1] + 1)), procs, repo_arg(body.get("repo")))
-    _running[replay.id] = replay
+def repo_arg(path: str | None) -> Path:
+  roots = checkouts()
+  if not path:
+    if not roots:
+      raise HTTPError(400, "no checkouts configured")
+    path = roots[0]
+  if os.path.realpath(path) not in {os.path.realpath(r) for r in roots}:
+    raise HTTPError(403, "not a known checkout")
+  return confine(path, roots)
 
-    def body_fn(job):
-      def report(done, total, text, **meta):
-        job.progress(done, total, text=text, unit="segments" if meta.get("phase") in ("download", "load") else "messages", **meta)
-      def fetch(name, seg, file):
-        if file != "rlog":
-          return cache.fetch(*name.split("|"), seg, file, job=job)
-        try:
-          return cache.fetch(*name.split("|"), seg, "rlog.zst", job=job)
-        except FileNotFoundError:
-          return cache.fetch(*name.split("|"), seg, "rlog.bz2", job=job)  # older routes
+
+@route("GET", "/local/replay/procs")
+def replay_procs(req):
+  repo = repo_arg(req.query.get("repo"))
+  gaps = missing(repo, PROCS + sorted(VISION))
+  return {"repo": str(repo), "commit": commit(repo), "default": DEFAULT_PROCS, "missing": gaps.get("all", []),
+          "procs": [{"name": p, "missing": gaps.get(p, []), "videos": sorted(VISION.get(p, {}).values())} for p in PROCS + sorted(VISION)]}
+
+
+@route("POST", "/local/replay")
+def replay_start(req):
+  body = req.json() or {}
+  name, segs, procs = body.get("route", ""), body.get("segs"), body.get("procs") or DEFAULT_PROCS
+  if not ROUTE.match(name):
+    raise HTTPError(400, "bad route")
+  if not (isinstance(segs, list) and len(segs) == 2 and all(isinstance(s, int) and 0 <= s < 10000 for s in segs) and segs[0] <= segs[1]):
+    raise HTTPError(400, "segs must be [first, last]")
+  if segs[1] - segs[0] >= MAX_SEGS:
+    raise HTTPError(400, f"at most {MAX_SEGS} segments at once")
+  if not set(procs) <= set(PROCS) | set(VISION):
+    raise HTTPError(400, f"unknown process in {procs}")
+  replay = Replay(root(), name, list(range(segs[0], segs[1] + 1)), procs, repo_arg(body.get("repo")))
+  _running[replay.id] = replay
+
+  def body_fn(job):
+    def report(done, total, text, **meta):
+      job.progress(done, total, text=text, unit="segments" if meta.get("phase") in ("download", "load") else "messages", **meta)
+    def fetch(name, seg, file):
+      if file != "rlog":
+        return cache.fetch(*name.split("|"), seg, file, job=job)
       try:
-        return replay.run(fetch, report, lambda: job.cancelled)
-      except InterruptedError as e:
-        raise jobs.Cancelled from e
-      finally:
-        _running.pop(replay.id, None)
-        cache.prune_soon()
+        return cache.fetch(*name.split("|"), seg, "rlog.zst", job=job)
+      except FileNotFoundError:
+        return cache.fetch(*name.split("|"), seg, "rlog.bz2", job=job)  # older routes
+    try:
+      return replay.run(fetch, report, lambda: job.cancelled)
+    except InterruptedError as e:
+      raise jobs.Cancelled from e
+    finally:
+      _running.pop(replay.id, None)
+      cache.prune_soon()
 
-    job = jobs.start("replay", body_fn, title=f"replay {', '.join(procs)} on {name} {segs[0]}–{segs[1]}", replay=replay.id, route=name,
-                     segs=replay.segs, procs=procs, written=[])
-    return {**replay.manifest(), "job": job.id}
+  job = jobs.start("replay", body_fn, title=f"replay {', '.join(procs)} on {name} {segs[0]}–{segs[1]}", replay=replay.id, route=name,
+                   segs=replay.segs, procs=procs, written=[])
+  return {**replay.manifest(), "job": job.id}
 
-  @route("GET", "/local/replay")
-  def replay_list(req):
-    want = req.query.get("route")
-    out = [m for p in root().glob("*/manifest.json") if (m := load_manifest(p)) and (not want or m["route"] == want)]
-    for m in out:
-      if m["state"] == "running" and m["id"] not in _running:
-        m["state"] = "interrupted"  # the daemon restarted under it
-    return sorted(out, key=lambda m: m["started"], reverse=True)
 
-  def _replay_dir(rid: str) -> Path:
-    if not ID.match(rid) or not (root() / rid / "manifest.json").exists():
-      raise HTTPError(404, "no such replay")
-    return root() / rid
+@route("GET", "/local/replay")
+def replay_list(req):
+  want = req.query.get("route")
+  out = [m for p in root().glob("*/manifest.json") if (m := load_manifest(p)) and (not want or m["route"] == want)]
+  for m in out:
+    if m["state"] == "running" and m["id"] not in _running:
+      m["state"] = "interrupted"  # the daemon restarted under it
+  return sorted(out, key=lambda m: m["started"], reverse=True)
 
-  @route("GET", "/local/replay/{id}")
-  def replay_get(req):
-    rid = req.params["id"]
-    return _running[rid].manifest() if rid in _running else load_manifest(_replay_dir(rid) / "manifest.json")
 
-  @route("GET", "/local/replay/{id}/{seg}/rlog.zst")
-  def replay_log(req):
-    d, seg = _replay_dir(req.params["id"]), req.params["seg"]
-    if not seg.isdigit() or not (d / seg / "rlog.zst").exists():
-      raise HTTPError(404, "segment not replayed (yet)")
-    return File(str(d / seg / "rlog.zst"), "application/octet-stream")
+def _replay_dir(rid: str) -> Path:
+  if not ID.match(rid) or not (root() / rid / "manifest.json").exists():
+    raise HTTPError(404, "no such replay")
+  return root() / rid
+
+
+@route("GET", "/local/replay/{id}/{seg}/rlog.zst")
+def replay_log(req):
+  d, seg = _replay_dir(req.params["id"]), req.params["seg"]
+  if not seg.isdigit() or not (d / seg / "rlog.zst").exists():
+    raise HTTPError(404, "segment not replayed (yet)")
+  return File(str(d / seg / "rlog.zst"), "application/octet-stream")

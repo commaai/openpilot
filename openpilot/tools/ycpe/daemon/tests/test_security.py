@@ -83,27 +83,27 @@ class TestSecurity(DaemonCase):
 
   def test_wrong_origin(self):
     for origin in ("http://evil.example", f"http://localhost:{config.port + 1}", "null", f"https://localhost:{config.port}"):
-      for path in ("/local/caps", "/local/auth", "/local/jobs"):
+      for path in ("/local/caps", "/local/auth", "/local/repos"):
         r, _ = self.req(path, headers={"Origin": origin})
         self.assertEqual(r.status, 403, (path, origin))
-    r, _ = self.req("/local/jobs", headers={"Origin": f"http://localhost:{config.port}"})
+    r, _ = self.req("/local/repos", headers={"Origin": f"http://localhost:{config.port}"})
     self.assertEqual(r.status, 200)
 
   def test_cross_site_fetch(self):
-    r, _ = self.req("/local/jobs", headers={"Sec-Fetch-Site": "cross-site"})
+    r, _ = self.req("/local/repos", headers={"Sec-Fetch-Site": "cross-site"})
     self.assertEqual(r.status, 403)
-    r, _ = self.req("/local/jobs", headers={"Sec-Fetch-Site": "same-site"})
+    r, _ = self.req("/local/repos", headers={"Sec-Fetch-Site": "same-site"})
     self.assertEqual(r.status, 403)
 
   def test_missing_token(self):
-    for path in ("/local/auth", "/local/jobs", "/local/test/file/data.bin"):
+    for path in ("/local/auth", "/local/repos", "/local/test/file/data.bin"):
       r, _ = self.req(path, token=False)
       self.assertEqual(r.status, 403, path)
       r, _ = self.req(path, token=False, headers={core.TOKEN_HEADER: "x" * len(config.token)})
       self.assertEqual(r.status, 403, path)
 
   def test_token_param(self):
-    r, _ = self.req(f"/local/jobs?{core.TOKEN_PARAM}={config.token}", token=False)
+    r, _ = self.req(f"/local/repos?{core.TOKEN_PARAM}={config.token}", token=False)
     self.assertEqual(r.status, 200)
 
   def test_auth_no_leak(self):
@@ -127,7 +127,7 @@ class TestSecurity(DaemonCase):
     self.assertEqual((r.status, json.loads(data)), (404, {"error": "Not Found"}))
     r, _ = self.req("/local/demo-rlog/plot", headers={"Sec-Fetch-Mode": "navigate"}, host="evil.example")
     self.assertEqual(r.status, 403)  # the host check still comes first
-    r, _ = self.req("/local/jobs/nope", headers={"Sec-Fetch-Mode": "navigate"})
+    r, _ = self.req("/local/repos/nope/dbc", headers={"Sec-Fetch-Mode": "navigate"})
     self.assertEqual(r.status, 404)  # a route's own 404 stays an API answer
 
   def test_traversal(self):
@@ -197,8 +197,7 @@ class TestStreaming(DaemonCase):
           job.check()
       return {"ok": True}
     j = jobs.start("test", work)
-    r, data = self.req(f"/local/jobs/{j.id}")
-    self.assertEqual(json.loads(data)["state"], "running")
+    self.assertEqual(j.state, "running")
     r, data = self.req(f"/local/jobs/{j.id}/cancel", method="POST")
     gate.set()
     for _ in range(100):

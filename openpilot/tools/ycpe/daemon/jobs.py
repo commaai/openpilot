@@ -117,11 +117,6 @@ def unlisten(q) -> None:
 module("jobs")
 
 
-@route("GET", "/local/jobs")
-def list_jobs(req):
-  return [j.json() for j in _jobs.values()]
-
-
 @route("GET", "/local/jobs/events")
 def job_events(req):
   """SSE: one "job" event per running or recent job on connect, then one per update."""
@@ -138,11 +133,6 @@ def job_events(req):
     finally:
       unlisten(q)
   return sse(events())
-
-
-@route("GET", "/local/jobs/{id}")
-def job_get(req):
-  return get(req.params["id"]).json()
 
 
 @route("POST", "/local/jobs/{id}/cancel")

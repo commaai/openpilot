@@ -107,10 +107,8 @@ def fn(job):
 
 | endpoint | |
 |---|---|
-| `GET /local/jobs` | every job: `{id, kind, title, state: running\|done\|error\|cancelled, done, total, unit, text, result, error, started, ended, meta}` |
-| `GET /local/jobs/{id}` | one job |
+| `GET /local/jobs/events` | SSE `event: job`, the current jobs on connect and then every update: `{id, kind, title, state: running\|done\|error\|cancelled, done, total, unit, text, result, error, started, ended, meta}` |
 | `POST /local/jobs/{id}/cancel` | asks the job to stop |
-| `GET /local/jobs/events` | SSE `event: job`, the current jobs on connect and then every update |
 
 On the page, `daemon.js` exports `daemon.{present, caps, has(module), fetch(path, opts), json(path, opts),
 url(path), events(path, fn)}` and `needsDaemon(what)`.
@@ -126,7 +124,6 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `GET /local/cache[?route=&segs=]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
-| `POST /local/cache/prune` | Body `{budget?}`. Applies the LRU budget now. |
 | `GET /local/repos` | `[{id, name, path, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default), plus a worktree's main checkout. |
 | `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
 | `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |

@@ -21,6 +21,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route
+
 FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
 GOP = 20                     # frames per keyframe: a seek decodes at most a second
@@ -304,97 +306,92 @@ class Transcoder:
 
 # the daemon side
 
-try:
-  from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route
-except ImportError:  # used as a library without the daemon
-  route = None
+NAME = re.compile(r"^[0-9a-zA-Z_-]+\Z")  # dongle ids and log ids
+_transcoder: Transcoder | None = None
+_transcoder_lock = threading.Lock()
 
-if route is not None:
-  NAME = re.compile(r"^[0-9a-zA-Z_-]+\Z")  # dongle ids and log ids
-  _transcoder: Transcoder | None = None
-  _transcoder_lock = threading.Lock()
+module("transcode", "1", presets=list(PRESETS), default="medium", gop=GOP, fps=FPS, formats=["h264", "mp4"])
 
-  module("transcode", "1", presets=list(PRESETS), default="medium", gop=GOP, fps=FPS, formats=["h264", "mp4"])
+_files: dict[str, tuple[float, dict]] = {}
 
-  _files: dict[str, tuple[float, dict]] = {}
 
-  def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
-    """A copy in the shared cache, else the comma API's URL (with the ~/.comma sign-in for private routes), which
-    ffmpeg streams. The signed URLs last an hour; the listing is reused for ten minutes."""
-    if (hit := cache.lookup(cache.Key(dongle, log_id, seg, f"{cam}.hevc"))):
-      return str(hit[1])
-    from openpilot.tools.lib.api import CommaApi
-    from openpilot.tools.lib.auth_config import get_token
-    name = f"{dongle}|{log_id}"
-    when, files = _files.get(name, (0.0, {}))
-    if time.monotonic() - when > 600:
-      files = CommaApi(get_token()).get(f"v1/route/{name}/files")
-      _files[name] = (time.monotonic(), files)
-    kind = {"fcamera": "cameras", "ecamera": "ecameras", "dcamera": "dcameras"}[cam]
-    for url in files.get(kind, []):
-      if url.split("?")[0].split("/")[-2] == str(seg):
-        return url
-    raise FileNotFoundError(f"no {cam} for segment {seg}")
+def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
+  """A copy in the shared cache, else the comma API's URL (with the ~/.comma sign-in for private routes), which
+  ffmpeg streams. The signed URLs last an hour; the listing is reused for ten minutes."""
+  if (hit := cache.lookup(cache.Key(dongle, log_id, seg, f"{cam}.hevc"))):
+    return str(hit[1])
+  from openpilot.tools.lib.api import CommaApi
+  from openpilot.tools.lib.auth_config import get_token
+  name = f"{dongle}|{log_id}"
+  when, files = _files.get(name, (0.0, {}))
+  if time.monotonic() - when > 600:
+    files = CommaApi(get_token()).get(f"v1/route/{name}/files")
+    _files[name] = (time.monotonic(), files)
+  kind = {"fcamera": "cameras", "ecamera": "ecameras", "dcamera": "dcameras"}[cam]
+  for url in files.get(kind, []):
+    if url.split("?")[0].split("/")[-2] == str(seg):
+      return url
+  raise FileNotFoundError(f"no {cam} for segment {seg}")
 
-  def run_as_job(enc: Encode, fn) -> None:
-    """Runs the encode as a daemon job, so the page sees its progress and can cancel it."""
-    ended = threading.Event()
-    def body(job):
-      job.progress(0, enc.total, text="starting", unit="frames")  # the total is known before the first frame
-      try:
-        return fn(lambda: job.cancelled, lambda e: job.progress(e.frames, e.total, text=e.backend, unit="frames"))
-      except InterruptedError as e:
-        enc.error = "cancelled"
-        raise jobs.Cancelled from e
-      finally:
-        ended.set()
-    dongle, log_id, seg, cam = enc.key.split("/")
-    camera = cam.split("-")[0]
-    jobs.start("transcode", body, title=f"{camera} {seg} → h264", route=f"{dongle}|{log_id}", seg=int(seg), camera=camera, preset=enc.preset)
-    ended.wait()
-    if enc.state != "done":
-      enc.state = "error"
 
-  def transcoder() -> Transcoder:
-    global _transcoder
-    with _transcoder_lock:
-      if _transcoder is None:
-        _transcoder = Transcoder(cache.ycpe_dir("transcode"), resolve_source, run=run_as_job, written=cache.prune_soon)
-      return _transcoder
-
-  def _job(req) -> tuple[Encode, str]:
-    p = req.params
-    stem, _, ext = p["file"].rpartition(".")
-    if not (NAME.match(p["dongle"]) and NAME.match(p["log_id"]) and p["seg"].isdigit() and ext in ("h264", "mp4", "json")):
-      raise HTTPError(404)
-    preset, seg = req.query.get("preset", "medium"), int(p["seg"])
+def run_as_job(enc: Encode, fn) -> None:
+  """Runs the encode as a daemon job, so the page sees its progress and can cancel it."""
+  ended = threading.Event()
+  def body(job):
+    job.progress(0, enc.total, text="starting", unit="frames")  # the total is known before the first frame
     try:
-      t = transcoder()
-      job = t.get(p["dongle"], p["log_id"], seg, stem, preset)
-      t.prefetch(p["dongle"], p["log_id"], range(seg + 1, seg + 1 + max(0, min(MAX_AHEAD, req.arg("ahead", AHEAD, int)))), stem, preset)
-    except ValueError as e:
-      raise HTTPError(404, str(e)) from e
-    return job, ext
+      return fn(lambda: job.cancelled, lambda e: job.progress(e.frames, e.total, text=e.backend, unit="frames"))
+    except InterruptedError as e:
+      enc.error = "cancelled"
+      raise jobs.Cancelled from e
+    finally:
+      ended.set()
+  dongle, log_id, seg, cam = enc.key.split("/")
+  camera = cam.split("-")[0]
+  jobs.start("transcode", body, title=f"{camera} {seg} → h264", route=f"{dongle}|{log_id}", seg=int(seg), camera=camera, preset=enc.preset)
+  ended.wait()
+  if enc.state != "done":
+    enc.state = "error"
 
-  @route("GET", "/local/video/{dongle}/{log_id}/{seg}/{file}")
-  def video(req):
-    """The transcoded segment, followed as it's written while the encode runs. .json is its state or summary."""
-    job, ext = _job(req)
-    if ext == "json":
-      return job.json()
-    while not job.writing.wait(0.25):
-      if job.state in ("error", "missing"):
-        raise HTTPError(404 if job.state == "missing" else 502, job.error)
-    path = job.base.with_suffix(f".{ext}")
-    for _ in range(100):  # the mp4 muxer creates its file a moment after starting
-      if path.exists() or job.state == "error":
-        break
-      time.sleep(0.02)
-    if job.state == "error":
-      raise HTTPError(502, job.error)
-    return File(str(path), "video/mp4" if ext == "mp4" else "video/h264", {"X-Frames": str(job.total)},
-                growing=lambda: job.state in ("queued", "running"))
 
-  @route("GET", "/local/video/backends")
-  def video_backends(req):
-    return {"backends": [b.name for b in backends()], "presets": PRESETS, "gop": GOP, "concurrent": CONCURRENT}
+def transcoder() -> Transcoder:
+  global _transcoder
+  with _transcoder_lock:
+    if _transcoder is None:
+      _transcoder = Transcoder(cache.ycpe_dir("transcode"), resolve_source, run=run_as_job, written=cache.prune_soon)
+    return _transcoder
+
+
+def _job(req) -> tuple[Encode, str]:
+  p = req.params
+  stem, _, ext = p["file"].rpartition(".")
+  if not (NAME.match(p["dongle"]) and NAME.match(p["log_id"]) and p["seg"].isdigit() and ext in ("h264", "mp4", "json")):
+    raise HTTPError(404)
+  preset, seg = req.query.get("preset", "medium"), int(p["seg"])
+  try:
+    t = transcoder()
+    job = t.get(p["dongle"], p["log_id"], seg, stem, preset)
+    t.prefetch(p["dongle"], p["log_id"], range(seg + 1, seg + 1 + max(0, min(MAX_AHEAD, req.arg("ahead", AHEAD, int)))), stem, preset)
+  except ValueError as e:
+    raise HTTPError(404, str(e)) from e
+  return job, ext
+
+
+@route("GET", "/local/video/{dongle}/{log_id}/{seg}/{file}")
+def video(req):
+  """The transcoded segment, followed as it's written while the encode runs. .json is its state or summary."""
+  job, ext = _job(req)
+  if ext == "json":
+    return job.json()
+  while not job.writing.wait(0.25):
+    if job.state in ("error", "missing"):
+      raise HTTPError(404 if job.state == "missing" else 502, job.error)
+  path = job.base.with_suffix(f".{ext}")
+  for _ in range(100):  # the mp4 muxer creates its file a moment after starting
+    if path.exists() or job.state == "error":
+      break
+    time.sleep(0.02)
+  if job.state == "error":
+    raise HTTPError(502, job.error)
+  return File(str(path), "video/mp4" if ext == "mp4" else "video/h264", {"X-Frames": str(job.total)},
+              growing=lambda: job.state in ("queued", "running"))
