@@ -2,7 +2,7 @@
 // (writes need a sync access handle). Files are keyed by route, segment and name (the signed URLs change). One LRU
 // index in IndexedDB records every file's kind, size and last use, and each kind is trimmed to its share of the
 // budget, oldest use first, never touching the open route.
-export const SHARES = {logs: 5e9, video: 10e9};  // bytes; setShare() overrides, per origin
+export const SHARES = {logs: 5e9, video: 10e9};  // bytes
 
 async function handle(key, create) {
   let dir = await navigator.storage.getDirectory();
@@ -11,15 +11,12 @@ async function handle(key, create) {
   return dir.getFileHandle(parts.at(-1), {create});
 }
 
-// the index: "files" maps key → {kind, bytes, used}, "shares" maps kind → bytes
+// the index: "files" maps key → {kind, bytes, used}
 let db = null;
 function open() {
   return db ||= new Promise((resolve, reject) => {
     const r = indexedDB.open("ycpe-opfs", 1);
-    r.onupgradeneeded = () => {
-      r.result.createObjectStore("files");
-      r.result.createObjectStore("shares");
-    };
+    r.onupgradeneeded = () => r.result.createObjectStore("files");
     r.onsuccess = () => resolve(r.result);
     r.onerror = () => reject(r.error);
   });
@@ -83,13 +80,10 @@ export async function list(prefix) {
   return out;
 }
 
-export const share = async (kind) => (await idb("shares", "readonly", (s) => s.get(kind)).catch(() => null)) ?? SHARES[kind];
-export const setShare = (kind, bytes) => idb("shares", "readwrite", (s) => s.put(bytes, kind));
-
 // trims a kind to its share, least recently used first, skipping any key under the open route (dongle/route);
 // returns the keys removed
 export async function evict(kind, route) {
-  const budget = await share(kind), files = [];
+  const budget = SHARES[kind], files = [];
   await idb("files", "readonly", (s) => {
     const req = s.openCursor();
     req.onsuccess = () => {
