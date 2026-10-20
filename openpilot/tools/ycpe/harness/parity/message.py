@@ -72,4 +72,5 @@ if __name__ == "__main__":
   p.add_argument("logs", nargs="+")
   p.add_argument("--step", type=int, default=1)
   args = p.parse_args()
-  sys.exit(0 if all([run(log, args.step) for log in args.logs]) else 1)
+  results = [run(log, args.step) for log in args.logs]
+  sys.exit(0 if all(results) else 1)
