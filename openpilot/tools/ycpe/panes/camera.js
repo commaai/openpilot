@@ -1,18 +1,20 @@
 // the camera pane: qcamera through hls.js, or full-res road/wide/driver video decoded in a worker (WebCodecs,
 // else wasm). It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
 // Each open camera publishes its segments to status.js; while the playhead waits on one, the pane says so.
+// Once logs are loading, the onroad alert at the playhead shows over the picture, as in cabana.
 import {api, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
 import {status} from "/status.js";
 import {routeCameraFiles} from "/data/sources.js";
 import {HEVC} from "/data/video/annexb.js";
-import {FPS, SEGMENT_FRAMES, frameAt} from "/data/video/frames.js";
+import {FPS, SEGMENT_FRAMES, cameraTime, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
 
 await css(new URL("./camera.css", import.meta.url));
 
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
+const ALERT_STATUS = ["normal", "prompt", "critical"];  // selfdriveState.alertStatus
 const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
 const SEGMENT = 60;       // seconds
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
@@ -20,7 +22,8 @@ const BACK = 19;          // frames kept behind the playhead for stepping backwa
 const SCRUB_MS = 100;     // seeks closer together than this are a scrub: keyframes only until it settles
 const MIN_RATE = 0.0625;  // the slowest <video> playbackRate; slower playback seeks frame by frame
 const QCAMERA_BYTES_PER_S = 37e3;
-const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.light.min.js";
+const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.light.min.js";  // 348 KB, too big to vendor
+const HLS_SRI = "sha384-voUqi4Z0V5OBtD0Fe5jaAgsk8ZD/RDweFf6rHo9CrwrIyfJh304PNzV/VxKIWfMG";
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
 const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
@@ -36,9 +39,23 @@ export function create(ctx, state) {
   let overlaid = "";
   const picker = h("select", {class: "camera-picker", title: "Camera", onchange: (e) => use(e.target.value)},
     Object.entries(CAMERAS).map(([k, label]) => h("option", {value: k}, label)));
+  const alertEl = h("div", {class: "camera-alert", hidden: true});
+  let alerted = "";
   const el = h("div", {class: "camera-pane"});
-  const pane = {name: "camera", el, render: () => source.render(), resize() {}, save: () => ({camera}), dispose,
+  const pane = {name: "camera", el, render() { source.render(); showAlert(); }, resize() {}, save: () => ({camera}), dispose,
     stats: () => source.stats};
+
+  // selfdriveState's alert at the playhead; the DOM changes only with it
+  function showAlert() {
+    const store = ctx.peekStore(), at = (f) => store.valueAt(`/selfdriveState/${f}`, ctx.clock.t);
+    const text = store && at("alertSize") ? [at("alertText1"), at("alertText2")].filter(Boolean).join("\n") : "";
+    const status = text ? ALERT_STATUS[at("alertStatus")] || "normal" : "";
+    if (`${status} ${text}` === alerted) return;
+    alerted = `${status} ${text}`;
+    alertEl.hidden = !text;
+    alertEl.textContent = text;
+    alertEl.dataset.status = status;
+  }
 
   // the overlay over the last frame, dimmed: text with a progress bar at f (0..1), text alone (f null), or nothing
   const cover = (text, f) => {
@@ -69,7 +86,7 @@ export function create(ctx, state) {
     source = src;
     ui.say(why);
     ui.absent(null);
-    el.replaceChildren(src.el, overlay, picker, note);
+    el.replaceChildren(src.el, alertEl, overlay, picker, note);
     ctx.perf.invalidate(pane);
   }
 
@@ -80,7 +97,10 @@ export function create(ctx, state) {
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
+  let disposed = false;
+  ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane))));  // its alerts
   function dispose() {
+    disposed = true;
     for (const off of offs) off();
     source.dispose();
   }
@@ -94,10 +114,11 @@ function lane(camera) {
   return status.source(camera, {label, order});
 }
 
-// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page
+// hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page.
+// It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash.
 let hlsReady = null;
 const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
-  document.head.append(h("script", {src: HLS, onload: () => resolve(window.Hls), onerror: reject}));
+  document.head.append(h("script", {src: HLS, integrity: HLS_SRI, crossorigin: "anonymous", onload: () => resolve(window.Hls), onerror: reject}));
 });
 
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.
@@ -110,7 +131,7 @@ function qcamera(ctx, pane, {wait, absent}) {
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);
   const loading = new Set();
-  let hls = null, gone = false, files = null;  // files[k]: slot k's file, once known
+  let hls = null, gone = false, files = null, list = null;  // files[k]: slot k's file, once known; list: our playlist's blob URL
 
   // segments the <video> has buffered, from its time ranges
   const update = () => {
@@ -131,7 +152,7 @@ function qcamera(ctx, pane, {wait, absent}) {
     update();
     ctx.perf.invalidate(pane);
     if (files && !files.some(Boolean)) return;
-    const src = ctx.route.loose || ctx.route.range ? playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
+    const src = ctx.route.loose || ctx.route.range ? list = playlist(ctx.route, files) : api.qcameraUrl(ctx.route);
     hls = new Hls({maxBufferLength: 20});
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
     hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
@@ -139,12 +160,14 @@ function qcamera(ctx, pane, {wait, absent}) {
     hls.attachMedia(video);
   }, () => absent("hls.js failed to load"));
   for (const ev of ["loadedmetadata", "seeked", "canplay", "waiting"]) video.addEventListener(ev, () => ctx.perf.invalidate(pane));
+  // a paused <video> keeps its poster up over the decoded frame until a seek or play
+  video.addEventListener("loadeddata", () => video.removeAttribute("poster"), {once: true});
   video.addEventListener("progress", update);
 
   return {
     el: video,
     render() {
-      const {t, playing, rate} = ctx.clock;
+      const {playing, rate} = ctx.clock, t = cameraTime(ctx.peekStore(), ctx.route, "qcamera", ctx.clock.t);
       const n = Math.floor(t / SEGMENT);
       if (files && !files[n]) {
         lanes.buffering(null);
@@ -171,6 +194,7 @@ function qcamera(ctx, pane, {wait, absent}) {
       gone = true;
       lanes.remove();
       hls?.destroy();
+      if (list) URL.revokeObjectURL(list);
       video.removeAttribute("src");
       video.load();
     },
