@@ -10,8 +10,15 @@ const DEMO = "/5beb9b58bd12b691/0000010a--a51155e496/drive";
 const PROVIDERS = {google: "Google", github: "GitHub", apple: "Apple"};
 
 const here = () => location.pathname + location.search;
-// only same-site paths, never "//host" or a full URL
-const safe = (path) => (path?.startsWith("/") && !path.startsWith("//") ? path : "/");
+// only paths on this site, never "//host", "/\host" or a full URL: anything the browser would resolve elsewhere
+function safe(path) {
+  try {
+    const u = new URL(path || "/", location.origin);
+    return u.origin === location.origin ? u.pathname + u.search + u.hash : "/";
+  } catch {
+    return "/";
+  }
+}
 export const loginPath = (next = here()) => `/login?${new URLSearchParams({next})}`;
 
 function card(...children) {
