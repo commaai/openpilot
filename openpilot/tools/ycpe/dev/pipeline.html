@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ycpe pipeline</title>
+  <style>
+    body { background: #111; color: #ddd; font: 13px monospace; margin: 16px; }
+    canvas { display: block; width: 100%; height: 240px; background: #1a1a1a; margin: 12px 0; }
+    .seg { display: inline-block; width: 14px; height: 14px; margin: 1px; background: #333; }
+    .seg.done { background: #4a4; } .seg.error { background: #a44; } .seg.parsed { background: #aa4; }
+  </style>
+</head>
+<body>
+  <div>route <b id="route"></b> · ?route=&amp;repeat=&amp;t=&amp;path=</div>
+  <div id="segs"></div>
+  <pre id="stats"></pre>
+  <canvas id="plot"></canvas>
+  <pre id="log"></pre>
+  <script type="module">
+    import {openRoute} from "../data/store.js";
+
+    const q = new URLSearchParams(location.search);
+    const name = q.get("route") || "5beb9b58bd12b691|0000010a--a51155e496";
+    const path = q.get("path") || "/carState/vEgo";
+    const $ = (id) => document.getElementById(id);
+    $("route").textContent = name;
+
+    const t0 = performance.now();
+    const store = window.store = await openRoute(name, {t: +(q.get("t") || 0), repeat: +(q.get("repeat") || 1)});
+    let first = null;
+    const mb = (b) => (b / 1e6).toFixed(1);
+
+    function draw() {
+      const {segments, duration} = store.route;
+      $("segs").innerHTML = segments.map((s) => `<span class="seg ${s.status}" title="${s.n} ${s.status}"></span>`).join("");
+      const p = store.progress, s = (performance.now() - t0) / 1000, per = (k) => (p.ms[k] / Math.max(1, p.done)).toFixed(0);
+      $("stats").textContent = [
+        `segments ${p.done}/${p.total} failed ${p.failed} · ${s.toFixed(2)} s · ${(p.done / s).toFixed(1)} seg/s · first data ${first ?? "-"} ms`,
+        `fetched ${mb(p.bytes)} MB (${mb(p.bytes / s)} MB/s) raw ${mb(p.raw)} MB · per segment: fetch ${per("fetch")} decompress ${per("decompress")} read ${per("read")} ms`,
+        `${store.paths().length} paths · workers ${store.loader.workers.length} · pending ${store.loader.pending}`,
+      ].join("\n");
+
+      const c = $("plot"), w = c.width = c.clientWidth * devicePixelRatio, h = c.height = c.clientHeight * devicePixelRatio;
+      const ctx = c.getContext("2d");
+      const d = store.decimate(path, 0, duration, w);
+      if (!d) return;
+      let lo = Infinity, hi = -Infinity;
+      for (let i = 0; i < d.t.length; i++) if (d.min[i] === d.min[i]) { lo = Math.min(lo, d.min[i]); hi = Math.max(hi, d.max[i]); }
+      const x = (t) => t / duration * w, y = (v) => h - 4 - (v - lo) / (hi - lo || 1) * (h - 8);
+      ctx.strokeStyle = "#5af";
+      ctx.beginPath();
+      for (let i = 0; i < d.t.length; i++) {
+        if (d.min[i] !== d.min[i]) continue;
+        ctx.moveTo(x(d.t[i]), y(d.min[i]));
+        ctx.lineTo(x(d.t[i]), y(d.max[i]) - 1);
+      }
+      ctx.stroke();
+      ctx.fillStyle = "#888";
+      ctx.fillText(`${path} [${lo.toFixed(2)}, ${hi.toFixed(2)}] · valueAt(60) = ${store.valueAt(path, 60)}`, 6, 14);
+    }
+
+    let queued = false;
+    const redraw = () => queued || (queued = requestAnimationFrame(() => { queued = false; draw(); }));
+    store.on("segment", (n) => {
+      first ??= (performance.now() - t0).toFixed(0);
+      $("log").textContent += `segment ${n} at ${(performance.now() - t0).toFixed(0)} ms\n`;
+      redraw();
+    });
+    store.on("progress", redraw);
+    redraw();
+  </script>
+</body>
+</html>
