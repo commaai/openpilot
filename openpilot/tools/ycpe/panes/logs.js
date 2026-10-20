@@ -7,7 +7,7 @@ import {h, css} from "/dom.js";
 await css(new URL("./logs.css", import.meta.url));
 
 const ROW = 18;      // px
-const BUDGET = 3;    // ms of indexing or filtering per frame
+const ROOM = 2;      // ms of the frame's budget indexing and filtering leave to the panes
 const LEVELS = ["debug", "info", "warning", "error", "critical"];
 const SYSLOG = [4, 4, 4, 3, 2, 1, 1, 0];  // journal priority → level
 const ALERT = [1, 2, 4];                   // alertStatus normal, userPrompt, critical → level
@@ -83,10 +83,9 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   }
 
-  // runs queued indexing and filtering in slices of BUDGET ms
+  // runs queued indexing and filtering a step at least each frame, until ROOM ms of its budget are left
   function slice() {
-    const end = performance.now() + BUDGET;
-    while (performance.now() < end) {
+    do {
       job ||= jobs.shift();
       if (!job) {
         untick();
@@ -94,7 +93,7 @@ export function create(ctx, state) {
         break;
       }
       if (job.next().done) job = null;
-    }
+    } while (ctx.perf.left() > ROOM);
     ctx.perf.invalidate(pane);
   }
 

@@ -38,10 +38,12 @@ const nearby = new IntersectionObserver((entries) => {
     nearby.unobserve(e.target);
     queue.push(fillers.get(e.target));
   }
-  // ~2 ms of strips per frame, so a fast scroll through hundreds of drives stays smooth
+  // strips until 2 ms of the frame's budget are left, so a fast scroll through hundreds of drives stays smooth
   draining ??= perf.tick(() => {
-    const end = performance.now() + 2;
-    while (queue.length && performance.now() < end) queue.shift()();
+    while (queue.length) {
+      queue.shift()();
+      if (perf.left() <= 2) break;
+    }
     if (!queue.length) { draining(); draining = null; }
   }, "drives");
 }, {rootMargin: "400px"});

@@ -8,7 +8,7 @@ import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
 const COARSE = matchMedia("(pointer: coarse)").matches;
-const ROW = COARSE ? 28 : 18, BUILD_MS = 2;  // px per row (plot.css agrees); ms a frame spends on the tree and its rows
+const ROW = COARSE ? 28 : 18, ROOM_MS = 2;  // px per row (plot.css agrees); ms of the frame's budget the tree and its rows leave to the plots
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 let browsers = 0;  // ids for the rows' aria-activedescendant
@@ -241,9 +241,9 @@ export function create(ctx, state = {}) {
   }
 
   function render() {
-    const now = performance.now();
-    if (stale) build(now + BUILD_MS / 2);
-    if (walk || rewalk) list(now + BUILD_MS);
+    const now = performance.now(), ms = perf.left() - ROOM_MS;
+    if (stale) build(now + ms / 2);
+    if (walk || rewalk) list(now + ms);
     // why the list is empty
     const failure = !total && store.failure, f = st.filter.trim();
     const text = rows.length ? "" : failure ? `Couldn't load the logs: ${failure}` : f ? `No series match "${f}"` : store.loading ? "Loading logs…" : "";

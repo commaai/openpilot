@@ -3,7 +3,7 @@
 import {h} from "/dom.js";
 
 const HISTORY = 600;             // frames kept for the panel and the harness (~10 s at 60 Hz)
-const BUDGET_MS = 4;             // main-thread render budget per frame
+const BUDGET_MS = 4;             // main-thread budget per frame, shared by ticks and panes (perf.left)
 
 const dirty = new Set();
 const ticks = new Set();
@@ -11,7 +11,7 @@ const frames = [];               // {t, interval, work, panes: {name: ms}}
 const longFrames = [];           // long-animation-frame entries, newest last
 const dropped = [];              // the frames that came late, newest last
 const marks = {};
-let last = 0, drops = 0, frameNo = 0;
+let last = 0, drops = 0, frameNo = 0, frameStart = 0;
 let refresh = 1000 / 60;         // learned display interval
 
 export const perf = {
@@ -31,6 +31,9 @@ export const perf = {
     try { return fn(); } finally { add(current, name, performance.now() - t); }
   },
   mark(name, value) { marks[name] = value; },
+  // ms of BUDGET_MS left in this frame, counted from its start: work that spreads over frames stops at 0 (or
+  // earlier, to leave room for what renders after it). Outside a frame, a whole budget
+  left() { return current ? frameStart + BUDGET_MS - performance.now() : BUDGET_MS; },
 };
 window.__perf = perf;
 
@@ -45,6 +48,7 @@ function add(f, name, ms) {
 
 function loop(now) {
   requestAnimationFrame(loop);
+  const start = frameStart = performance.now();
   const interval = last ? now - last : refresh;
   last = now;
   if (interval < refresh * 1.2) refresh += (interval - refresh) * 0.05;
@@ -55,7 +59,6 @@ function loop(now) {
     if (dropped.length > 50) dropped.shift();
   }
 
-  const start = performance.now();
   for (const fn of ticks) fn(frame);
   const batch = [...dirty];
   dirty.clear();
