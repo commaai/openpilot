@@ -20,14 +20,17 @@ const ROUTE = `(${DONGLE})[|_/](${LOG_ID})`;
 const SLICE = /^(-?[0-9]+)?:?(-?[0-9]+)?:?(-?[0-9]+)?$/;
 const RANGE = new RegExp(`^${ROUTE}(?:(?:--|/)((?:-?[0-9]+)?:?(?:-?[0-9]+)?:?(?:-?[0-9]+)?))?(?:/([qra]))?$`);
 
-// useradmin and connect URLs to a segment range (connect's start and end seconds become segments)
+// useradmin and connect URLs (with or without https://) to a route or segment range; connect's start and end seconds
+// pick a time in the whole route, not segments
 export function parseIndirect(text) {
-  if (text.includes("useradmin.comma.ai")) return new URL(text).searchParams.get("onebox") || text;
-  if (!text.includes("connect.comma.ai")) return text;
-  const p = new URL(text).pathname.split("/").filter(Boolean);
+  if (!/(useradmin|connect)\.comma\.ai/.test(text)) return text;
+  let url;
+  try { url = new URL(/^[a-z]+:\/\//i.test(text) ? text : `https://${text}`); } catch { return text; }
+  if (url.hostname === "useradmin.comma.ai") return url.searchParams.get("onebox") || text;
+  const p = url.pathname.split("/").filter(Boolean);
   const route = p.slice(0, 2).join("/");
   if (p.length <= 3) return [route, ...p.slice(2)].join("/");
-  return `${route}/${Math.floor(p[2] / 60)}:${Math.floor(p[3] / 60) + 1}${p[4] ? `/${p[4]}` : ""}`;
+  return [route, ...p.slice(4)].join("/");
 }
 
 // "<dongle>|<log id>[--|/<slice>][/q|r|a]" → {route, dongle, logId, slice, selector}, or null
@@ -241,9 +244,14 @@ export async function routeRecord(name) {
 export const routeKey = (route) => route.range ? `${route.fullname}/${route.range}` : route.fullname;
 
 // "/<dongle>/<log id>[/<slice>][/<q|r|a>][/<view>]" path parts → {name: "<dongle>|<log id>[/<slice>][/<selector>]",
-// view}, or null when they don't name a route
+// view}, or null when they don't name a route. Connect's "/<dongle>/<log id>/<start>/<end>" (seconds) is the whole
+// route, with t and range: [start, end]
 export function routeFromPath(parts) {
   const [dongle, log, ...rest] = parts;
+  if (/^\d+$/.test(rest[0]) && /^\d+$/.test(rest[1])) {
+    const [start, end] = rest.splice(0, 2).map(Number);
+    return parseRange(`${dongle}|${log}`) && {name: `${dongle}|${log}`, view: rest[0], t: start, range: [start, end]};
+  }
   const range = [];
   if (/^-?\d*(?::-?\d*){0,2}$/.test(rest[0] ?? "") && rest[0]) range.push(rest.shift());
   if (/^[qra]$/.test(rest[0] ?? "")) range.push(rest.shift());
