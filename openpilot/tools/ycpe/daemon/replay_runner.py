@@ -30,7 +30,7 @@ def flatten(d, prefix: str, out: dict) -> None:
   """Numeric leaves of a message dict under store-style paths; lists of up to 16 numbers are split per index.
   Deprecated fields and timestamps of other messages are left out: they differ by construction."""
   for k, v in d.items():
-    if "deprecated" in k.lower() or k.endswith("MonoTime"):
+    if "deprecated" in k.lower() or k.endswith("MonoTime") or k.startswith("timestamp"):
       continue
     path = f"{prefix}/{k}"
     if isinstance(v, dict):

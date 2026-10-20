@@ -117,15 +117,6 @@ class TestTranscoder(unittest.TestCase):
     finally:
       t.close()
 
-  def test_budget(self):
-    t = Transcoder(self.dir / "cache", self.resolve, workers=1, budget=1)
-    try:
-      for seg in (0, 1):
-        self.assertTrue(t.get("d", "r", seg, "fcamera").finished.wait(60))
-      self.assertEqual(list((self.dir / "cache").glob("*/*/*/*.json")), [self.dir / "cache/d/r/1/fcamera-medium.json"])  # only the newest
-    finally:
-      t.close()
-
 
 class TestRoute(unittest.TestCase):
   @classmethod

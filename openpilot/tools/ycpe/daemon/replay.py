@@ -19,7 +19,6 @@ import secrets
 import signal
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 from collections import deque
@@ -118,7 +117,8 @@ class Replay:
     self.route, self.segs, self.procs, self.repo = route, segs, procs, repo
     self.written: list[int] = []
     self.state, self.error, self.diff = "running", "", None
-    self.started, self.seconds = time.time(), None
+    self.started, self.seconds = time.time(), None  # noqa: TID251  a wall-clock date for the list of replays
+    self.t0 = time.monotonic()
 
   def manifest(self) -> dict:
     return {"id": self.id, "route": self.route, "segs": self.segs, "procs": self.procs, "repo": str(self.repo), "commit": commit(self.repo),
@@ -147,16 +147,16 @@ class Replay:
           raise InterruptedError("cancelled")
       self._spawn(rlogs, report, cancelled, shims or self.dir.parent / "shims")
       self.diff = json.loads((self.dir / "diff.json").read_text())
-      self.state, self.seconds = "done", time.time() - self.started
+      self.state, self.seconds = "done", time.monotonic() - self.t0
       return self.manifest()
     except InterruptedError:
       self.state = "cancelled"
       raise
     except Exception as e:
-      self.state, self.error = "error", str(e)
+      self.state, self.error = ("cancelled", "") if cancelled() else ("error", str(e))
       raise
     finally:
-      self.seconds = time.time() - self.started
+      self.seconds = time.monotonic() - self.t0
       self.save()
 
   def _spawn(self, rlogs, report, cancelled, shims: Path) -> None:
@@ -220,7 +220,7 @@ def load_manifest(path: Path) -> dict | None:
 # the daemon side
 
 try:
-  from openpilot.tools.ycpe.daemon import File, HTTPError, config, confine, jobs, module, route
+  from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, module, route
 except ImportError:  # used as a library without the daemon
   route = None
 
@@ -232,7 +232,7 @@ if route is not None:
   module("replay", "1", procs=PROCS, default=DEFAULT_PROCS)
 
   def root() -> Path:
-    return Path(config.cache_root or tempfile.gettempdir()) / "ycpe" / "replay"
+    return cache.root() / "ycpe" / "replay"
 
   def checkouts() -> list[str]:
     try:
@@ -250,32 +250,6 @@ if route is not None:
     if os.path.realpath(path) not in {os.path.realpath(r) for r in roots}:
       raise HTTPError(403, "not a known checkout")
     return confine(path, roots)
-
-  def fetch(route_name: str, seg: int) -> Path:
-    """The segment's rlog from the shared cache, downloading it if needed."""
-    dongle, log_id = route_name.split("|")
-    try:
-      from openpilot.tools.ycpe.daemon import cache
-      return cache.fetch(dongle, log_id, seg, "rlog.zst")
-    except ImportError:
-      pass
-    import requests
-    from openpilot.tools.lib.api import CommaApi
-    from openpilot.tools.lib.auth_config import get_token
-    dest = root() / "rlogs" / dongle / log_id / str(seg) / "rlog.zst"
-    if not dest.exists():
-      files = CommaApi(get_token()).get(f"v1/route/{route_name}/files")
-      url = next((u for u in files.get("logs", []) if u.split("?")[0].split("/")[-2] == str(seg)), None)
-      if url is None:
-        raise FileNotFoundError(f"no rlog for segment {seg}")
-      dest.parent.mkdir(parents=True, exist_ok=True)
-      with requests.get(url, stream=True, timeout=60) as r:
-        r.raise_for_status()
-        with open(f"{dest}.part", "wb") as f:
-          for chunk in r.iter_content(1 << 20):
-            f.write(chunk)
-      os.replace(f"{dest}.part", dest)
-    return dest
 
   @route("GET", "/local/replay/procs")
   def replay_procs(req):
@@ -300,12 +274,18 @@ if route is not None:
     def body_fn(job):
       def report(done, total, text, **meta):
         job.progress(done, total, text=text, unit="segments" if meta.get("phase") in ("download", "load") else "messages", **meta)
+      def fetch(name, seg):
+        try:
+          return cache.fetch(*name.split("|"), seg, "rlog.zst", job=job)
+        except FileNotFoundError:
+          return cache.fetch(*name.split("|"), seg, "rlog.bz2", job=job)  # older routes
       try:
         return replay.run(fetch, report, lambda: job.cancelled)
       except InterruptedError as e:
         raise jobs.Cancelled from e
       finally:
         _running.pop(replay.id, None)
+        cache.prune_soon()
 
     job = jobs.start("replay", body_fn, title=f"replay {', '.join(procs)} on {name} {segs[0]}–{segs[1]}", replay=replay.id, route=name,
                      segs=replay.segs, procs=procs, written=[])

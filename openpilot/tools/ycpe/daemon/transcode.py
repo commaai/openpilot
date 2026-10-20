@@ -26,7 +26,6 @@ CAMERAS = ("fcamera", "ecamera", "dcamera")
 GOP = 20                     # frames per keyframe: a seek decodes at most a second
 CONCURRENT = 2               # encodes at once; the GPU and the CPUs are shared
 AHEAD = 2                    # segments encoded ahead of the one asked for
-BUDGET = 10 * 1000 ** 3      # bytes of cached output
 FFMPEG = shutil.which("ffmpeg", path="/usr/bin:/usr/local/bin") or shutil.which("ffmpeg") or "ffmpeg"
 
 # constant quality per backend family (nvenc -cq, vaapi -qp, x264 -crf)
@@ -184,14 +183,16 @@ def _size(src: str) -> int | None:
 
 
 class Transcoder:
-  """Encodes on request and ahead of it into root under a byte budget, CONCURRENT at a time, nearest first.
+  """Encodes on request and ahead of it into root, CONCURRENT at a time, nearest first. The shared cache prunes
+  root by file mtime, so outputs are touched on use and an encode counts as cached only while all three files exist.
   resolve(dongle, log_id, seg, cam) gives the source .hevc as a local path or URL (ffmpeg streams URLs, so the
-  first frames come out before the download finishes). run(job, fn) runs fn() for job, e.g. as a daemon job."""
-  def __init__(self, root: str | os.PathLike, resolve, budget: int = BUDGET, workers: int = CONCURRENT, run=None):
+  first frames come out before the download finishes). run(job, fn) runs fn() for job, e.g. as a daemon job;
+  written() is called after each finished encode, e.g. to prune the cache."""
+  def __init__(self, root: str | os.PathLike, resolve, workers: int = CONCURRENT, run=None, written=lambda: None):
     self.root = Path(root)
     self.resolve = resolve
-    self.budget = budget
     self.run = run or (lambda job, fn: fn(lambda: False, lambda job: None))
+    self.written = written
     self.jobs: dict[str, Encode] = {}
     self.queue: list[tuple[float, int, str]] = []
     self.lock = threading.Condition()
@@ -209,9 +210,11 @@ class Transcoder:
     base = self.root / key
     with self.lock:
       job = self.jobs.get(key)
-      if job is not None and job.state == "done" and not base.with_suffix(".json").exists():
-        job = None  # evicted
-      if job is None and base.with_suffix(".json").exists():
+      outputs = [base.with_suffix(s) for s in (".h264", ".mp4", ".json")]
+      cached = all(f.exists() for f in outputs)
+      if job is not None and job.state == "done" and not cached:
+        job = None  # pruned
+      if job is None and cached:
         job = self.jobs[key] = Encode(key, base, preset, priority, state="done", info=json.loads(base.with_suffix(".json").read_text()))
         job.frames = job.total = job.info["frames"]
         job.writing.set()
@@ -224,7 +227,8 @@ class Transcoder:
         job.priority = priority
         self._push(job)
       if job.state == "done":
-        os.utime(base.with_suffix(".json"))  # recently used
+        for f in outputs:  # recently used
+          os.utime(f)
       return job
 
   def prefetch(self, dongle: str, log_id: str, segs, cam: str, preset: str = "medium") -> None:
@@ -256,9 +260,9 @@ class Transcoder:
         job.state, job.error = "missing", str(e)
       except Exception as e:
         job.state, job.error = "error", job.error or str(e)
-      if job.state == "done":
-        self._evict(keep=job.base)
       job.finished.set()
+      if job.state == "done":
+        self.written()
 
   def _encode(self, job: Encode, cancelled, progress) -> dict:
     errors = []
@@ -276,27 +280,12 @@ class Transcoder:
     raise RuntimeError(job.error)
 
   def _clean(self) -> None:
-    """Drops outputs without a .json: encodes cut short by a restart."""
+    """Drops what's left of encodes cut short by a restart or partly pruned."""
     for f in self.root.glob("*/*/*/*.h264"):
-      if not f.with_suffix(".json").exists():
-        f.unlink(missing_ok=True)
-        f.with_suffix(".mp4").unlink(missing_ok=True)
-
-  def _evict(self, keep: Path) -> None:
-    """Deletes the least recently used finished encodes but keep until the cache fits the budget."""
-    done = []
-    for meta in self.root.glob("*/*/*/*.json"):
-      if meta.with_suffix("") == keep:
-        continue
-      files = [meta.with_suffix(s) for s in (".h264", ".mp4", ".json")]
-      done.append((meta.stat().st_mtime, sum(f.stat().st_size for f in files if f.exists()), files))
-    total = sum(size for _, size, _ in done)
-    for _, size, files in sorted(done, key=lambda d: d[0]):
-      if total <= self.budget:
-        break
-      for f in files:
-        f.unlink(missing_ok=True)
-      total -= size
+      outputs = [f.with_suffix(s) for s in (".h264", ".mp4", ".json")]
+      if not all(o.exists() for o in outputs):
+        for o in outputs:
+          o.unlink(missing_ok=True)
 
   def close(self) -> None:
     with self.lock:
@@ -307,7 +296,7 @@ class Transcoder:
 # the daemon side
 
 try:
-  from openpilot.tools.ycpe.daemon import File, HTTPError, config, jobs, module, route
+  from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route
 except ImportError:  # used as a library without the daemon
   route = None
 
@@ -320,9 +309,11 @@ if route is not None:
 
   _files: dict[str, tuple[float, dict]] = {}
 
-  def resolve_api(dongle: str, log_id: str, seg: int, cam: str) -> str:
-    """The camera file's URL from the comma API, with the ~/.comma sign-in for private routes. The signed URLs
-    last an hour; the listing is reused for ten minutes."""
+  def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
+    """A copy in the shared cache, else the comma API's URL (with the ~/.comma sign-in for private routes), which
+    ffmpeg streams. The signed URLs last an hour; the listing is reused for ten minutes."""
+    if (hit := cache.lookup(cache.Key(dongle, log_id, seg, f"{cam}.hevc"))):
+      return str(hit[1])
     from openpilot.tools.lib.api import CommaApi
     from openpilot.tools.lib.auth_config import get_token
     name = f"{dongle}|{log_id}"
@@ -359,8 +350,7 @@ if route is not None:
     global _transcoder
     with _transcoder_lock:
       if _transcoder is None:
-        root = Path(config.cache_root or tempfile.gettempdir()) / "ycpe" / "transcode"
-        _transcoder = Transcoder(root, resolve_api, run=run_as_job)
+        _transcoder = Transcoder(cache.root() / "ycpe" / "transcode", resolve_source, run=run_as_job, written=cache.prune_soon)
       return _transcoder
 
   def _job(req) -> tuple[Encode, str]:

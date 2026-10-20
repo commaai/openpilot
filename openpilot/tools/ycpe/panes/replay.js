@@ -70,6 +70,7 @@ export function create(ctx, state) {
       lacking.textContent = e.message;
       return;
     }
+    if (!repoSel.options.length) repoSel.append(h("option", {value: info.repo}, info.repo.split("/").at(-1)));  // no repos module: the daemon's checkout
     commit.textContent = info.commit ? info.commit.slice(0, 8) : "";
     known = Object.fromEntries(info.procs.map((p) => [p.name, p.missing]));
     procs.replaceChildren(...info.procs.map(({name, missing}) => {
@@ -158,7 +159,6 @@ export function create(ctx, state) {
 
   // the plot pane listens for this to add the original and replayed series as a pair
   function compare(id, s) {
-    attach(id, (m) => m);
     if (s.first != null) ctx.clock.seek(s.first);
     window.dispatchEvent(new CustomEvent("ycpe:compare", {detail: {path: s.path, replay: `/replay/${id}${s.path}`}}));
   }

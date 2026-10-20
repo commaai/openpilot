@@ -1,0 +1,28 @@
+/* re-run openpilot pane: checkout, processes, range, progress, diverged signals, past replays */
+.replay-pane { overflow: auto; padding: 8px 10px; font-size: 12px; }
+.replay-pane h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.replay-pane .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.replay-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.replay-repo { max-width: 260px; }
+.replay-seg { width: 56px; }
+.replay-procs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0; }
+.replay-proc { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-family: var(--mono); }
+.replay-proc.lacking { color: var(--critical); }
+.replay-missing { color: var(--critical); overflow-wrap: anywhere; }
+.replay-missing:empty { display: none; }
+.replay-start:disabled { opacity: .5; cursor: default; }
+.replay-bar { height: 3px; margin: 6px 0 2px; background: var(--line); }
+.replay-bar[hidden] { display: none; }
+.replay-bar > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.replay-status { min-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.replay-error { max-height: 180px; margin: 6px 0; padding: 6px; overflow: auto; border: 1px solid var(--critical); border-radius: 4px; font: 11px var(--mono); white-space: pre-wrap; }
+.replay-error[hidden] { display: none; }
+.replay-diff table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.replay-diff th { padding: 2px 6px; color: var(--muted); font-weight: 500; text-align: right; white-space: nowrap; }
+.replay-diff td { padding: 1px 6px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.replay-diff th:first-child, .replay-diff td.path { max-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.replay-signal { cursor: pointer; }
+.replay-signal:hover { background: var(--hover); }
+.replay-past { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.replay-past.error .muted { color: var(--critical); }
+.replay-note { padding: 12px; }
