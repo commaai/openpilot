@@ -340,6 +340,7 @@ if route is not None:
     """Runs the encode as a daemon job, so the page sees its progress and can cancel it."""
     ended = threading.Event()
     def body(job):
+      job.progress(0, enc.total, text="starting", unit="frames")  # the total is known before the first frame
       try:
         return fn(lambda: job.cancelled, lambda e: job.progress(e.frames, e.total, text=e.backend, unit="frames"))
       except InterruptedError as e:
