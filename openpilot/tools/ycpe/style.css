@@ -19,6 +19,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }  /* over the classes that set a display */
 html, body { margin: 0; height: 100%; }
 body { font: 12px/1.4 var(--font); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
 body.in-ws { overflow: hidden; }
@@ -48,7 +49,6 @@ body.in-ws #main { overflow: hidden; }
 .topbar { display: flex; align-items: center; gap: 6px; height: var(--top); padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative; z-index: 20; }
 .brand { display: flex; align-items: center; gap: 6px; padding: 0 6px 0 2px; font-weight: 800; font-size: 14px; letter-spacing: .02em; text-decoration: none; }
 .brand svg { display: block; color: var(--fg); }
-.topbar [hidden] { display: none !important; }
 .crumb { display: flex; flex-shrink: 0; align-items: center; max-width: 180px; padding: 3px 2px 3px 6px; border: 0; border-radius: 4px; background: none; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .crumb > span { overflow: hidden; text-overflow: ellipsis; }
 .crumb > svg { flex-shrink: 0; color: var(--muted); }

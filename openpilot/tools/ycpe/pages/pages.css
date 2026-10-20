@@ -9,7 +9,6 @@
 .field:focus { border-color: var(--accent); }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; text-decoration: none; }
 .icon-btn:hover { background: var(--hover); color: var(--fg); }
-.icon-btn[hidden] { display: none; }
 .nowrap { white-space: nowrap; }
 .right { text-align: right; }
 .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle; }
@@ -26,7 +25,6 @@
 .dl { display: inline-flex; padding: 2px; border-radius: 4px; color: var(--accent); }
 .dl:hover { background: var(--hover); }
 .list-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
-.list-foot[hidden] { display: none; }
 
 /* home */
 .recent { margin-bottom: 18px; }
@@ -38,7 +36,6 @@
 /* omnibox dropdown */
 .omni { position: relative; display: inline-flex; flex-shrink: 1; min-width: 80px; }
 .omni-list { position: absolute; top: 28px; left: 6px; z-index: 60; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
-.omni-list[hidden] { display: none; }
 .omni-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 8px; border-radius: 4px; text-decoration: none; white-space: nowrap; }
 .omni-row:hover { background: var(--hover); }
 .omni-row.on { background: var(--active); }
