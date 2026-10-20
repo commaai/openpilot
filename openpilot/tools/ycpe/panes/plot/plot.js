@@ -5,7 +5,7 @@
 // exposed edge) and state blocks from cached runs.
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
-import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
+import {colors, fitCanvas, ticks, axes, fmtTick, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
 import {Decimator} from "./decimate.js";
 import * as view from "./view.js";
@@ -205,8 +205,8 @@ export function create(ctx, state = {}) {
       if (s.type === "t") text.push(item);
       else numeric.push(item);
     }
-    // enums alone become rows of state blocks, like text; mixed with numbers they plot as steps
-    const blockMode = numeric.length > 0 && numeric.every((it) => it.s.type === "e");
+    // states alone become rows of state blocks, like text; mixed with numbers they plot as steps
+    const blockMode = numeric.length > 0 && numeric.every((it) => it.s.type === "e" || it.s.states);
     const rows = blockMode ? [...numeric, ...text] : text;
     const lines = blockMode ? [] : numeric;
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
@@ -217,7 +217,7 @@ export function create(ctx, state = {}) {
       // buckets may be empty here and there, so a gap is also wider than a couple of them
       it.gap = gapTest(Math.max(5 * medianInterval(it.src, it.s), 1, 2.5 * (d?.w || 0)), view.unloaded());
       it.d = withEdges(d, it.src, a, b);
-      it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
+      it.style = it.c.style || (STEPPED.has(it.s.type) || it.s.names ? "steps" : "line");  // described values step like enums
     }
     // valid=false spans of the services behind the plain curves; none where valid is always true
     const invalid = [];
@@ -295,7 +295,7 @@ export function create(ctx, state = {}) {
     g.beginPath();
     g.rect(px, T, pw, ph0);
     g.clip();
-    p.rows.forEach((it, k) => drawBlocks(g, it.blocks, (t) => X(t + it.shift), T + k * stripH, T + (k + 1) * stripH - 1, it.s.names, col));
+    p.rows.forEach((it, k) => drawBlocks(g, it.blocks, (t) => X(t + it.shift), T + k * stripH, T + (k + 1) * stripH - 1, it.s, col));
     // curves
     for (const it of p.lines) {
       if (!it.d) continue;
@@ -315,7 +315,23 @@ export function create(ctx, state = {}) {
     g.textAlign = "right";
     g.textBaseline = "middle";
     p.rows.forEach((it, k) => g.fillText(ellipsize(g, label(it.c).split("/").pop(), px - 10), px - 6, T + (k + 0.5) * stripH));
+    drawUnit(g, p.lines, yt, px, py + ph / 2, ph);
     return true;
+  }
+
+  // the y axis' unit, as cabana: when the curves share one and none is scaled (an offset keeps it), along the gutter
+  // left of the tick labels if it fits there
+  function drawUnit(g, lines, yt, right, y, len) {
+    const units = new Set(lines.map((it) => it.scale === 1 ? it.s.unit : undefined)), [unit] = units;
+    if (units.size !== 1 || !unit) return;
+    const x = right - 14 - Math.max(0, ...yt.values.map((v) => g.measureText(fmtTick(v, yt.step)).width));
+    if (x < 7) return;
+    g.save();
+    g.translate(x, y);
+    g.rotate(-Math.PI / 2);
+    g.textAlign = "center";
+    g.fillText(ellipsize(g, unit, len - 8), 0, 0);
+    g.restore();
   }
 
   // valid=false spans, as a band along the bottom
@@ -480,9 +496,14 @@ export function create(ctx, state = {}) {
       const row = rows[k];
       if (!row) return;
       const path = c.transform ? derivedPath(c.path, c.transform) : c.path, m = store.meta(path);
-      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined;
-      if (typeof v === "number" && m.type !== "e") v = v * (c.scale ?? 1) + (c.offset ?? 0);
-      const text = fmtValue(v, m?.names).slice(0, 100);
+      const scale = c.scale ?? 1, offset = c.offset ?? 0;
+      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined, fm = m;
+      // names stand for the sample as it is; other numbers are scaled and offset, and keep their unit unless scaled
+      if (typeof v === "number" && m.type !== "e" && m.names?.[v] === undefined && (scale !== 1 || offset)) {
+        v = v * scale + offset;
+        fm = scale === 1 ? {unit: m.unit} : null;
+      }
+      const text = fmtValue(v, fm).slice(0, 100);
       if (row.val.textContent !== text) row.val.textContent = text;
     });
     if (st.stats) updateStats();
@@ -518,7 +539,8 @@ export function create(ctx, state = {}) {
     if (!it || p.x < frame.px) return "";
     const t = timeAt(p.x) - it.shift, b = it.blocks.find((b) => b.a <= t && t < b.b);
     if (!b) return "";
-    const what = b.mixed ? "several states (zoom in)" : fmtValue(b.v, it.s.names) + (it.s.names ? ` (${b.v})` : "");
+    const name = b.mixed ? undefined : it.s.names?.[b.v];
+    const what = b.mixed ? "several states (zoom in)" : name !== undefined ? `${name} (${b.v})` : fmtValue(b.v, it.s);
     return `${label(it.c)}: ${what}\n${b.a.toFixed(2)} s → ${b.b.toFixed(2)} s, ${(b.b - b.a).toFixed(2)} s`;
   }
   const valueAt = (y) => frame.hi - (y - frame.py) / frame.ph * (frame.hi - frame.lo);

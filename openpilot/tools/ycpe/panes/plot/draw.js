@@ -28,10 +28,12 @@ export function nextColor(used) {
   return PALETTE.find((c) => !used.includes(c)) || PALETTE[used.length % PALETTE.length];
 }
 
-// [color, fill alpha] of a state block: by meaning when its label has one, else by value (or a hash of text)
+// [color, fill alpha] of a state block: by meaning when its label has one, else by value (or a hash of text and
+// fractions)
 function stateStyle(v, label, col) {
   if (col.named[label]) return col.named[label];
-  if (typeof v === "string") {
+  if (!Number.isInteger(v)) {
+    v = String(v);
     let x = 0;
     for (let i = 0; i < v.length; i++) x = (x * 31 + v.charCodeAt(i)) | 0;
     v = x;
@@ -87,11 +89,18 @@ export function fmtTick(v, step) {
   return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
-// a sample for display: enum names, text, integers as is, other numbers to 5 significant figures
-export function fmtValue(v, names) {
+// a sample for display, by its path's meta m {names?, unit?, precision?}: enum names (or DBC value descriptions),
+// text, then numbers with their unit: DBC signals to their precision as cabana, integers as is, others to 5
+// significant figures
+export function fmtValue(v, m) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
-  if (names) return names[v] ?? String(v);
+  if (m?.names?.[v] !== undefined) return m.names[v];
+  const s = m?.precision !== undefined && isFinite(v) ? v.toFixed(m.precision) : fmtNumber(v);
+  return m?.unit && v === v ? `${s} ${m.unit}` : s;
+}
+
+function fmtNumber(v) {
   if (Number.isInteger(v) || !isFinite(v)) return String(v);
   const a = Math.abs(v);
   return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
@@ -169,7 +178,7 @@ export function drawUnloaded(g, spans, X, r, c) {
 }
 
 // labeled state blocks in a row; mixed spans (several states inside a pixel) are gray
-export function drawBlocks(g, blocks, X, y0, y1, names, c) {
+export function drawBlocks(g, blocks, X, y0, y1, m, c) {
   g.textAlign = "left";
   g.textBaseline = "middle";
   for (const b of blocks) {
@@ -179,7 +188,7 @@ export function drawBlocks(g, blocks, X, y0, y1, names, c) {
       g.fillRect(x0, y0, x1 - x0, y1 - y0);
       continue;
     }
-    const label = fmtValue(b.v, names), [color, alpha] = stateStyle(b.v, label, c);
+    const label = fmtValue(b.v, m), [color, alpha] = stateStyle(b.v, label, c);
     g.globalAlpha = alpha;
     g.fillStyle = color;
     g.fillRect(x0, y0, x1 - x0, y1 - y0);

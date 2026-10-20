@@ -458,6 +458,7 @@ export class Can {
     this.dbcVersion = 0;
     this.dataVersion = 0;  // bumps on new frames or DBC edits
     this.cache = new Map();  // series path -> {series, msgVersion, have: Set(n), pending}
+    this.metas = new Map();  // series path -> {sig, meta}
     this.selected = null;
     this.live = null;
     this.failed = null;  // why the CAN worker failed, if it did
@@ -653,6 +654,7 @@ export class Can {
     this.dbcVersion++;
     this.dataVersion++;
     for (const c of this.cache.values()) c.stale = true;
+    this.metas.clear();
     if (this.suppressDefined) this.sendMasks();
     this.emit("dbc");
     this.store.emit?.("paths");
@@ -761,9 +763,24 @@ export class Can {
     const out = [];
     for (const s of this.msgs.values()) {
       const m = this.dbcMsg(s.key);
-      if (m) for (const sig of m.sigs) out.push({path: `/dbc/${s.bus}/${m.name}/${sig.name}`, type: "f64"});
+      if (m) for (const sig of m.sigs) out.push(this.meta(`/dbc/${s.bus}/${m.name}/${sig.name}`, sig));
     }
     return out;
+  }
+
+  // a signal's {path, type, precision, unit?, names?, states?}: its value descriptions are names keyed by physical value. Two or
+  // more make it states, plotted as blocks like an enum, when it's a small integer field (gears, modes) or they
+  // describe at least half its raw values; wider fields with a few described sentinels stay numbers
+  meta(path, sig) {
+    const hit = this.metas.get(path);
+    if (hit?.sig === sig) return hit.meta;
+    const meta = {path, type: "f64", precision: sig.precision, ...(sig.unit && {unit: sig.unit})};
+    if (sig.vals.length) {
+      meta.names = Object.fromEntries(sig.vals.map(([v, d]) => [v * sig.factor + sig.offset, d]));
+      if (sig.vals.length >= 2 && ((sig.factor === 1 && sig.size <= 5) || sig.vals.length * 2 >= 2 ** sig.size)) meta.states = true;
+    }
+    this.metas.set(path, {sig, meta});
+    return meta;
   }
 
   parse(path) {
@@ -784,7 +801,7 @@ export class Can {
       c.stale = true;
     }
     if (c.stale && !c.pending) this.decode(p, path, c);
-    return {path, type: "f64", chunks: [...c.chunks.values()], version: c.version};
+    return {...this.meta(path, p.sig), chunks: [...c.chunks.values()], version: c.version};
   }
 
   async decode({k, m}, path, c) {

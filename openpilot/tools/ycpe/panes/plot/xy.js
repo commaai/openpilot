@@ -154,10 +154,12 @@ export function create(ctx, state = {}) {
     }
     g.restore();
     legend.querySelectorAll(".row").forEach((row, k) => {
-      const c = st.curves[k], v = st.mode === "xy" ? `${fmtValue(store.valueAt(c.x, clock.t))}, ${fmtValue(store.valueAt(c.y, clock.t))}` : "";
+      const c = st.curves[k], v = st.mode === "xy" ? `${sample(c.x)}, ${sample(c.y)}` : "";
       if (row.children[2].textContent !== v) row.children[2].textContent = v;
     });
   }
+
+  const sample = (path) => fmtValue(store.valueAt(path, clock.t), store.meta(path));
 
   // ---- gestures: a local view (pan, wheel zoom); double-click returns to auto-fit
 

@@ -229,13 +229,14 @@ export function create(ctx, state = {}) {
         [r.node, r.meta] = [node, m];
         r.style.paddingLeft = `${4 + node.depth * 12}px`;
         name.textContent = node.name;
-        r.title = m ? `${m.path}\n${m.type}${m.names ? `\n${m.names.map((s, i) => `${i} ${s}`).join("\n")}` : ""}` : node.path;
+        // enum names and DBC value descriptions by value
+        r.title = m ? [m.path, m.unit ? `${m.type}, ${m.unit}` : m.type, ...Object.entries(m.names || {}).map(([v, s]) => `${v} ${s}`)].join("\n") : node.path;
       }
       flag(r, "sel", selected.has(node.path));
       flag(r, "cur", node.path === cursor);
       flag(r, "branch", !!node.kids);
       flag(r, "open", !!node.kids && !!(st.filter || st.expanded.has(node.path)));
-      const text = m ? fmtValue(store.valueAt(m.path, clock.t), m.names).slice(0, 200) : "";  // long text only needs what shows
+      const text = m ? fmtValue(store.valueAt(m.path, clock.t), m).slice(0, 200) : "";  // long text only needs what shows
       if (val.textContent !== text) val.textContent = text;
     }
   }
