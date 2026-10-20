@@ -7,6 +7,7 @@
   {"wait": 2000},
   {"assert": "document.querySelector('.connect-pane video')?.paused === false || 'the route should open playing'"},
   {"shot": "loaded"},
+  {"assert": "document.querySelector('.cn-mute').disabled && document.querySelector('.cn-mute').title.includes('Record and Upload Microphone Audio') || 'a qcamera without sound says how to record it'"},
   {"drag": {"from": ".cn-ruler", "by": [150, 0], "steps": 60}},
   {"waitFor": {"fn": "!document.querySelector('.cn-top .cn-icon').disabled"}, "timeout": 2000},
   {"shot": "zoomed"},

@@ -10,6 +10,7 @@ import {RATES} from "/clock.js";
 import {loadPane} from "/panes.js";
 import {link} from "/app.js";
 import {strip} from "./strip.js";
+import {sound, muteButton} from "./camera.js";
 
 await css(new URL("./connect.css", import.meta.url));
 
@@ -104,10 +105,11 @@ export function create(ctx, state) {
   const rate = h("select", {class: "cn-rate", title: "Playback rate ([ and ])", onchange: (e) => clock.setRate(+e.target.value)},
     RATES.map((r) => h("option", {value: r}, `${r}×`)));
   const now = h("span", {class: "cn-now"});
+  const mute = muteButton("cn-mute", 24);  // the camera pane's sound (its own button is hidden here)
   const pill = h("div", {class: "cn-pill"},
     h("button", {class: "cn-jump", title: "Back 10 s", "aria-label": "Back 10 seconds", onclick: () => clock.seek(clock.t - 10)}, icon("replay10", 30)),
     h("button", {class: "cn-jump", title: "Forward 10 s", "aria-label": "Forward 10 seconds", onclick: () => clock.seek(clock.t + 10)}, icon("forward10", 30)),
-    now, h("label", {class: "cn-rate-box"}, icon("up", 16), rate, icon("down", 16)), playBtn);
+    now, h("label", {class: "cn-rate-box"}, icon("up", 16), rate, icon("down", 16)), mute.el, playBtn);
 
   const el = h("div", {class: "connect-pane"},
     h("div", {class: "cn-card"},
@@ -210,10 +212,11 @@ export function create(ctx, state) {
         timeline.setAttribute("aria-valuenow", second);
       }
       if (playing !== clock.playing) playBtn.replaceChildren(icon((playing = clock.playing) ? "pause" : "play", 40));
+      mute.show(!!panes.video?.audio);
       if (rate.value !== String(clock.rate)) rate.value = clock.rate;
     }};
 
-  offs.push(...["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane))));
+  offs.push(...["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane))), sound.on(() => perf.invalidate(pane)));
   if (!started.has(clock)) {
     started.add(clock);
     clock.play();
