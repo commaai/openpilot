@@ -8,6 +8,7 @@ import {perf} from "/perf.js";
 import {PANES, loadPane} from "/panes.js";
 
 const MIN = 0.05;   // smallest split fraction
+const MIN_PX = {row: 120, col: 60};  // smallest pane, across and down, so a layout saved on a big screen stays usable
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
 const UNDO = 50;    // layout edits remembered
 
@@ -140,6 +141,7 @@ export class Layout {
       if (i) box.append(this.divider(n, i, box));
       const child = this.node(c);
       child.style.flex = `${n.sizes[i]} 1 0`;
+      child.style[n.split === "row" ? "minWidth" : "minHeight"] = `${minPx(c, n.split)}px`;
       box.append(child);
     });
     return box;
@@ -154,11 +156,12 @@ export class Layout {
       const total = n.split === "row" ? rect.width : rect.height;
       const start = n.split === "row" ? e.clientX : e.clientY;
       const [a, b] = [n.sizes[i - 1], n.sizes[i]];
+      const [minA, minB] = [n.children[i - 1], n.children[i]].map((c, j) => Math.min([a, b][j], Math.max(MIN, minPx(c, n.split) / total)));
       const kids = [...box.children].filter((c) => !c.classList.contains("divider"));
       const before = structuredClone(this.save());
       el.onpointermove = (ev) => {
         const d = ((n.split === "row" ? ev.clientX : ev.clientY) - start) / total;
-        const da = Math.max(MIN - a, Math.min(b - MIN, d));
+        const da = Math.max(minA - a, Math.min(b - minB, d));
         n.sizes[i - 1] = a + da;
         n.sizes[i] = b - da;
         kids[i - 1].style.flex = `${n.sizes[i - 1]} 1 0`;
@@ -301,6 +304,13 @@ export class Layout {
     this.maxPath = this.maxPath ? null : path;
     this.render();
   }
+}
+
+// the smallest a node can be along dir: panes side by side add up
+function minPx(n, dir) {
+  if (!n.children) return MIN_PX[dir];
+  const mins = n.children.map((c) => minPx(c, dir));
+  return n.split === dir ? mins.reduce((x, y) => x + y) : Math.max(...mins);
 }
 
 function zoneOf(r, e) {
