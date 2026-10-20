@@ -112,7 +112,8 @@ function updateTop() {
   bar.views.hidden = bar.tabs.hidden = !ws;
   if (!ws) return;
   const start = new Date(ws.route.start_time_utc_millis);
-  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})} · ${ws.route.fullname.split("|")[1]}`;
+  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})}`;
+  bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,

@@ -45,14 +45,15 @@ body.in-ws #main { overflow: hidden; }
 .topbar { display: flex; align-items: center; gap: 6px; height: var(--top); padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative; z-index: 20; }
 .brand { display: flex; align-items: center; gap: 6px; padding: 0 6px 0 2px; font-weight: 800; font-size: 14px; letter-spacing: .02em; text-decoration: none; }
 .brand svg { display: block; color: var(--fg); }
-.crumb { max-width: 220px; padding: 3px 6px; border: 0; border-radius: 4px; background: none; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.crumb { flex-shrink: 0; max-width: 180px; padding: 3px 6px; border: 0; border-radius: 4px; background: none; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .crumb::after { content: " ▾"; color: var(--muted); font-weight: 400; }
 .crumb:hover { background: var(--hover); }
 .sep { color: var(--muted); }
-.omnibox { width: 220px; height: 24px; margin-left: 6px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
+.omnibox { width: 200px; min-width: 80px; flex-shrink: 1; height: 24px; margin-left: 6px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
 .omnibox:focus { border-color: var(--accent); }
-.views, .tabs { display: flex; align-items: center; gap: 1px; margin-left: 8px; }
+.views, .tabs { display: flex; flex-shrink: 0; align-items: center; gap: 1px; margin-left: 8px; }
 .views { padding: 2px; border-radius: 6px; background: var(--bg); }
+.tabs { flex-shrink: 1; min-width: 40px; overflow-x: auto; scrollbar-width: none; }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
