@@ -206,16 +206,45 @@ export async function resolveLogs(sr, segs, {sources = "auto", mode = sr.selecto
 
 // the record a workspace opens a route with: the API's, or when the API doesn't have the route or won't show it, one
 // built from what the other sources have (openpilotci, commaCarSegments, ...), so those open without signing in
+// With a range ("<route>/2:5/q"), the record is of those segments played back to back: range is "2:5/q",
+// segment_numbers the segments in timeline order (slot k plays segment_numbers[k]), and the start and end times span
+// just them.
 export async function routeRecord(name) {
+  const sr = parseRange(name);
+  let record;
   try {
-    return await api.route(name);
+    record = await api.route(sr.route);
   } catch (e) {
     if (![401, 403, 404].includes(e.status)) throw e;
-    const files = await elsewhere(parseRange(name)).catch(() => new Map());
+    const files = await elsewhere(sr).catch(() => new Map());
     if (!files.size) throw e;
-    return looseRoute(name, files).route;
+    record = looseRoute(sr.route, files).route;
   }
+  if (!sr.slice && !sr.selector) return record;
+  const have = new Set(record.segment_numbers ?? segIdxs({slice: ":"}, record.maxqlog));
+  const segs = segIdxs(sr, record.maxqlog).filter((n) => have.has(n));
+  if (!segs.length) throw new Error(`no segments in ${sr.slice}`);
+  const t0 = record.start_time_utc_millis + segs[0] * 60000;
+  return {...record, range: [sr.slice, sr.selector].filter(Boolean).join("/"), segment_numbers: segs,
+    start_time_utc_millis: t0, end_time_utc_millis: t0 + segs.length * 60000};
 }
+
+// the route a record opens, with its range: what a path or the workspace names it by
+export const routeKey = (route) => route.range ? `${route.fullname}/${route.range}` : route.fullname;
+
+// "/<dongle>/<log id>[/<slice>][/<q|r|a>][/<view>]" path parts → {name: "<dongle>|<log id>[/<slice>][/<selector>]",
+// view}, or null when they don't name a route
+export function routeFromPath(parts) {
+  const [dongle, log, ...rest] = parts;
+  const range = [];
+  if (/^-?\d*(?::-?\d*){0,2}$/.test(rest[0] ?? "") && rest[0]) range.push(rest.shift());
+  if (/^[qra]$/.test(rest[0] ?? "")) range.push(rest.shift());
+  const name = [`${dongle}|${log}`, ...range].join("/");
+  return parseRange(name) && {name, view: rest[0]};
+}
+
+// a range's files in timeline slots, each with its real segment number; all of them as they are without one
+const slotted = (route, urls) => route.range ? route.segment_numbers.map((n) => urls[n] && {...urls[n], seg: n}) : urls;
 
 // every file of a route the sources other than the API have: "<n>/<kind>" → {url, file, size, source}
 async function elsewhere(sr) {
@@ -231,14 +260,14 @@ async function elsewhere(sr) {
 // what the store loads for a route (a name, optionally with a range and selector) given its record (or the promise
 // of it), from the route's chosen source: urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
 export async function routeLogs(name, record) {
-  const route = await record;
-  if (route.loose) return looseLogs(route.files);
-  const sr = parseRange(name);
-  const {logs, errors} = await resolveLogs(sr, segIdxs(sr, route.maxqlog), {sources: routeSource.list(routeSource.get(sr.route))});
+  const route = await record, sr = parseRange(name);
+  if (route.loose) return slotted(route, looseLogs(route.files, sr?.selector));
+  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+  const {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(routeSource.get(sr.route))});
   if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
   const urls = [];
   for (const [n, f] of logs) urls[n] = f;
-  return urls;
+  return slotted(route, urls);
 }
 
 // a camera's file for each segment (camera: qcamera, fcamera, ecamera or dcamera), from the route's chosen source or
@@ -247,12 +276,13 @@ export async function routeCameraFiles(route, camera) {
   const urls = [];
   if (route.loose) {
     for (const [key, f] of route.files) if (key.endsWith(`/${camera}`)) urls[parseInt(key)] = f;
-    return urls;
+    return slotted(route, urls);
   }
   const sr = parseRange(route.fullname);
-  const {found} = await resolveFiles(sr, segIdxs(sr, route.maxqlog), [camera], routeSource.list(routeSource.get(sr.route)));
+  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+  const {found} = await resolveFiles(sr, segs, [camera], routeSource.list(routeSource.get(sr.route)));
   for (const [key, f] of found) urls[parseInt(key)] = f;
-  return urls;
+  return slotted(route, urls);
 }
 
 // ---- routes outside the API: local files and direct URLs ----
@@ -271,12 +301,13 @@ function looseRoute(name, files) {
   };
 }
 
-// each segment's rlog, or its qlog when that's all there is
-function looseLogs(files) {
+// each segment's rlog, or its qlog when that's all there is (/r and /q take only that kind)
+function looseLogs(files, selector) {
   const urls = [];
   for (const [key, f] of files) {
     const [n, kind] = key.split("/");
-    if (kind === "rlog" || kind === "qlog" && urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
+    if (kind !== "rlog" && kind !== "qlog" || selector === "r" && kind !== "rlog" || selector === "q" && kind !== "qlog") continue;
+    if (kind === "rlog" || urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
   }
   return urls;
 }
