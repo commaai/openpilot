@@ -56,6 +56,7 @@
 .can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 .can-msg-spacer { position: relative; }
 .can-msg-row { position: absolute; left: 0; right: 0; height: 20px; align-items: center; cursor: pointer; }
+@media (pointer: coarse) { .can-msg-row { height: 28px; } }  /* fingers; messages.js agrees */
 .can-msg-row:hover { background: var(--hover); }
 .can-msg-row.selected { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
 .can-msg-row.inactive { color: var(--muted); }

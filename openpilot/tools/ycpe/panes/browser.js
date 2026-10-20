@@ -7,7 +7,7 @@ import {icon} from "/icons.js";
 import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
-const ROW = 18, BUILD_MS = 2;
+const ROW = matchMedia("(pointer: coarse)").matches ? 28 : 18, BUILD_MS = 2;  // px per row; plot.css agrees
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 const order = (a, b) => {

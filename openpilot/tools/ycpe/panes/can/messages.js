@@ -4,7 +4,7 @@ import {icon} from "/icons.js";
 import {canOf, hex2, menuCheck, popup, reveal, subs} from "./common.js";
 import {dbcDialog, save, toolsMenu} from "./tools.js";
 
-const ROW = 20;
+const ROW = matchMedia("(pointer: coarse)").matches ? 28 : 20;  // px per row; can.css agrees
 // bus, freq and count are null for DBC messages never seen: "N/A", sorted last, and never matching a number
 const COLS = [
   {id: "name", title: "Name", get: (m, can) => can.name(m.key), text: (m, can) => can.name(m.key) || "untitled"},
