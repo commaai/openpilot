@@ -65,17 +65,19 @@ export function loginPage(params) {
       h("a", {href: DEMO, onclick: link(DEMO)}, "Open the demo route")));
 }
 
-// the provider sent us back with a one-time code: trade it for a token, then return to where sign-in started
+// the provider sent us back with a one-time code: trade it for a token, then return to where sign-in started.
+// Only if sign-in started in this tab, so a link with someone else's code can't sign you in to their account.
 export function authPage(params) {
-  const next = safe(sessionStorage.getItem(RETURN_KEY));
+  const started = sessionStorage.getItem(RETURN_KEY);
+  sessionStorage.removeItem(RETURN_KEY);
+  const next = safe(started);
   const status = h("div", {class: "login-status"}, h("span", {class: "spinner"}), "Signing in…");
   const el = card(status);
   const code = params.get("code"), provider = params.get("provider");
-  const exchange = code ? auth.exchangeCode(code, provider) : Promise.reject(new Error(params.get("error") || "no sign-in code was returned"));
-  exchange.then(() => {
-    sessionStorage.removeItem(RETURN_KEY);
-    go(next, true);
-  }, (err) => status.replaceWith(
+  const exchange = !code ? Promise.reject(new Error(params.get("error") || "no sign-in code was returned"))
+    : started === null ? Promise.reject(new Error("Sign-in wasn't started here, so this sign-in link was ignored."))
+    : auth.exchangeCode(code, provider);
+  exchange.then(() => go(next, true), (err) => status.replaceWith(
     h("p", {class: "error"}, "Sign-in failed."),
     h("p", {class: "small muted"}, err.status ? `The server said ${err.status}. The code may have expired; signing in again usually works.` : err.message),
     h("div", {class: "providers"},

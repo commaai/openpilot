@@ -53,15 +53,20 @@ export async function resolve(text) {
   }
   const d = s.match(DONGLE);
   if (d) return `/${d[0].toLowerCase()}`;
-  const recent = ROUTE_ID.test(s) && recentRoutes().find((r) => r.name.endsWith(`|${s}`));
-  return recent ? routePath(recent.name) : null;
+  // a bare route id: one opened before, else the device in view's
+  if (!ROUTE_ID.test(s)) return null;
+  const recent = recentRoutes().find((r) => r.name.endsWith(`|${s}`));
+  const here = location.pathname.split("/")[1];
+  return recent ? routePath(recent.name) : /^[0-9a-f]{16}$/i.test(here) ? routePath(`${here.toLowerCase()}|${s}`) : null;
 }
 
 const DATE = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false});
 
 // go(path) navigates; devices() is the signed-in user's list; onMiss(text) is told when nothing matched
 export function omnibox({go, devices, onMiss}) {
-  const input = h("input", {type: "search", class: "omnibox", placeholder: "route, dongle id or URL  ( / )", spellcheck: false, autocomplete: "off",
+  // the "/" shortcut is only worth a mention with a keyboard
+  const placeholder = `route, dongle id or URL${matchMedia("(pointer: coarse)").matches ? "" : "  ( / )"}`;
+  const input = h("input", {type: "search", class: "omnibox", placeholder, spellcheck: false, autocomplete: "off",
     role: "combobox", "aria-label": "Open a route or device", "aria-expanded": "false", "aria-controls": "omni-list", "aria-autocomplete": "list"});
   const list = h("div", {class: "omni-list", id: "omni-list", role: "listbox", hidden: true});
   const el = h("span", {class: "omni"}, input, list);

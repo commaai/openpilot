@@ -12,8 +12,10 @@ function crashName(file) {
   return m ? [`${m[1]} ${m[2]}:${m[3]}:${m[4]}`, m[5], m[6].replaceAll("_", "/")] : [file, "", ""];
 }
 
+// closing returns the focus to what opened it
 function logDialog(name, head, body) {
-  const dialog = h("dialog", {class: "log-dialog", onclose: () => dialog.remove()},
+  const opener = document.activeElement;
+  const dialog = h("dialog", {class: "log-dialog", onclose: () => { dialog.remove(); opener?.focus(); }},
     h("div", {class: "log-head"},
       h("span", {class: "mono"}, name),
       head,
@@ -232,8 +234,9 @@ export function logsSection(dongleId, kind) {
       for (const {url, file} of files.slice(shown, shown + PAGE)) {
         const cells = kind === "boot" ? [file.replace(/\.zst$/, "")] : crashName(file);
         const dl = h("a", {class: "dl", href: url, download: file, "aria-label": "Download", onclick: (e) => e.stopPropagation()}, icon("download", 18));
+        // the whole row opens it; the name's a button for the keyboard, its click bubbling to the row
         table.append(h("tr", {class: "clickable", onclick: () => (kind === "boot" ? openBoot : openCrash)(url, file)},
-          cells.map((c, i) => h("td", {class: i ? "mono muted" : "mono nowrap"}, c)),
+          cells.map((c, i) => h("td", {class: i ? "mono muted" : "mono nowrap"}, i ? c : h("button", {class: "link mono"}, c))),
           h("td", {class: "right"}, dl)));
       }
       shown += PAGE;

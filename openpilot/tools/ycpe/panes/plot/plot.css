@@ -5,7 +5,7 @@
 /* the phone's stacked views scroll: a finger moving up or down scrolls them, sideways it pans, two pinch time; on
    the y-axis it pans the values */
 .plot-pane .ygrip { display: none; position: absolute; left: 0; top: 0; bottom: 0; touch-action: none; }
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
   .ws:not([data-view="files"]) .plot-pane canvas.over { touch-action: pan-y; }
   .ws:not([data-view="files"]) .plot-pane .ygrip { display: block; }
 }
