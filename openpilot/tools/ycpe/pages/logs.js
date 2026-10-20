@@ -91,13 +91,15 @@ function marked(line, q) {
   return out;
 }
 
-// one section's shown lines, for filter q (lowercase): all of them, or the ones with q in them, q marked
-function render(s, q) {
+// one section's shown lines, for filter q (lowercase): all of them, or the ones with q in them, each block handed to
+// mark(block, lines) to have q marked later
+function render(s, q, mark) {
   const shown = q ? s.lines.filter((l) => l.toLowerCase().includes(q)) : s.lines;
   const blocks = [];
   for (let k = 0; k < shown.length; k += CHUNK) {
-    const lines = shown.slice(k, k + CHUNK);
-    blocks.push(q ? h("div", {}, lines.map((l, j) => [j ? "\n" : "", marked(l, q)])) : h("div", {}, lines.join("\n")));
+    const lines = shown.slice(k, k + CHUNK), block = h("div", {}, lines.join("\n"));
+    if (q) mark(block, lines);
+    blocks.push(block);
   }
   s.pre.replaceChildren(...(s.lines.length ? blocks : ["(empty)"]));
   s.pre.classList.toggle("muted", !s.lines.length);
@@ -133,8 +135,21 @@ function openBoot(url, name) {
   const dump = (all) => sections.filter((s) => all || !s.el.hidden).map((s) => `==== ${s.title} ====\n${(all ? s.lines : s.shown).join("\n")}\n`).join("\n");
   const head = [filter, matches, copyBtn(() => dump(false)), save];
   const dialog = logDialog(name, head, body);
+  // a block gets its marks as it comes into view: a common letter matches thousands of lines, more than a frame can mark
+  const unmarked = new Map();  // block → [lines, q]
+  const io = new IntersectionObserver((entries) => {
+    for (const {target, isIntersecting} of entries) {
+      const pending = unmarked.get(target);  // none for a block a later filter already replaced
+      if (!isIntersecting || !pending) continue;
+      const [lines, q] = pending;
+      unmarked.delete(target);
+      io.unobserve(target);
+      target.replaceChildren(...lines.flatMap((l, j) => [j ? "\n" : "", ...marked(l, q)]));
+    }
+  }, {root: body, rootMargin: "50% 0px"});
   dialog.addEventListener("close", () => {
     ctl.abort();
+    io.disconnect();
     URL.revokeObjectURL(save.href);
   });
   dialog.addEventListener("keydown", (e) => {
@@ -157,8 +172,13 @@ function openBoot(url, name) {
     const q = filter.value.toLowerCase();
     if (q && !was) was = sections.map((s) => s.el.open);
     let n = 0;
+    io.disconnect();
+    unmarked.clear();
     sections.forEach((s, k) => {
-      s.shown = render(s, q);
+      s.shown = render(s, q, (block, lines) => {
+        unmarked.set(block, [lines, q]);
+        io.observe(block);
+      });
       s.el.hidden = !!q && !s.shown.length;
       if (q) s.el.open = true;
       else if (was) s.el.open = was[k];
