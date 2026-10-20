@@ -15,6 +15,7 @@ const FILES = {fcamera: "cameras", ecamera: "ecameras", dcamera: "dcameras"};
 const SEGMENT = 60;       // seconds
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
 const BACK = 19;          // frames kept behind the playhead for stepping backwards while paused (one GOP)
+const SCRUB_MS = 100;     // seeks closer together than this are a scrub: keyframes only until it settles
 const MIN_RATE = 0.0625;  // the slowest <video> playbackRate; slower playback seeks frame by frame
 const QCAMERA_BYTES_PER_S = 37e3;
 const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js";
@@ -158,8 +159,9 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
   const lanes = lane(camera);
   const frames = new Map();  // n → VideoFrame, or I420 planes from the software decoder
-  const stats = {shown: -1, drawn: 0, lag: 0, fps: 0, held: 0, seekMs: null};
+  const stats = {shown: -1, exact: false, drawn: 0, lag: 0, fps: 0, held: 0, seekMs: null};
   let ready = false, transcoded = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, decoded = 0;
+  let jumped = 0, settle = 0, scrubbing = false;  // when the playhead last jumped; a render once a scrub settles
 
   const jobs = new Map();  // segment → {done, total} frames of the daemon's transcode
   const segState = [];     // the worker's last word on each segment
@@ -168,7 +170,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
   let stopJobs = null, waitingOn = null;
   const waitText = (b) => {
     const job = jobs.get(b.n), f = job ? job.done / job.total : b.total ? b.loaded / b.total : 0;
-    return {n: b.n, text: `segment ${b.n}${job ? " · transcoding" : ""}${f ? ` · ${Math.round(100 * f)}%` : ""}`, f};
+    return {n: b.n, text: `segment ${b.n}${job ? ` · transcoding${job.done ? "" : " · starting"}` : ""}${f ? ` · ${Math.round(100 * f)}%` : ""}`, f};
   };
   const buffering = (b) => {
     waitingOn = b;
@@ -230,7 +232,15 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
     render() {
       if (!ready) return;
       const n = frameAt(ctx.peekStore(), camera, ctx.clock.t);
-      const playing = ctx.clock.playing, back = n < last ? BACK : 0;
+      const playing = ctx.clock.playing, back = n < last ? BACK : 0, now = performance.now();
+      if (!playing && Math.abs(n - last) > 1) {
+        scrubbing = now - jumped < SCRUB_MS;
+        jumped = now;
+        clearTimeout(settle);
+        settle = setTimeout(() => ctx.perf.invalidate(pane), SCRUB_MS);
+      } else if (now - jumped >= SCRUB_MS) {
+        scrubbing = false;
+      }
       last = n;
       // hardware decoders have few output buffers, so playback keeps only what's ahead
       const lo = n - (playing ? 1 : BACK), closed = [], buffers = [];
@@ -250,6 +260,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
         shown = stats.shown = best;
         stats.drawn++;
       }
+      stats.exact = best === n;  // else a keyframe (or older frame) stands in until the exact one decodes
       if (playing && best >= 0) stats.lag = Math.max(stats.lag, n - best);
       if (best === n && missingSince) {
         stats.seekMs = Math.round(performance.now() - missingSince);
@@ -259,8 +270,8 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
         missingSince = performance.now();
       }
 
-      const want = {at: n, to: n + (playing ? AHEAD : 2), back, playing};
-      const key = `${want.at} ${want.to}`;
+      const want = {at: n, to: n + (playing ? AHEAD : 2), back, playing, keyOnly: scrubbing};
+      const key = `${want.at} ${want.to} ${scrubbing}`;
       if (key !== asked || closed.length) worker.postMessage({want, closed, buffers}, buffers);
       asked = key;
     },

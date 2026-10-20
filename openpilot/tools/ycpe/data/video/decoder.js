@@ -7,7 +7,7 @@ import {SEGMENT_FRAMES} from "./frames.js";
 import * as opfs from "../opfs.js";
 
 const GAP = 40;   // decode forward through at most this many unwanted frames instead of restarting at a keyframe
-const KEEP = 3;   // segment files held in memory
+const MEMORY = 120e6;  // bytes of segment files held in memory, nearest the playhead first
 const AHEAD = 2;  // segments downloaded to disk ahead of the playhead while playing
 
 let urls = [], keys = [];  // keys[n] names a segment in the OPFS cache; none for files that shouldn't be cached
@@ -15,7 +15,7 @@ const segs = new Map();  // n → {n, data, length, au: AnnexB, done, failed, ab
 const disk = new Map();  // n → bytes of the files cached on disk
 const fetching = new Set();
 let backend = null;      // null until the first segment's codec is known
-let want = null;         // {at, to, back, playing}: send frames [at - back, to], decoding toward at first
+let want = null;         // {at, to, back, playing, keyOnly}: send frames [at - back, to], decoding toward at first
 let next = -1;           // the next frame to feed, -1 to restart at the keyframe before want.at
 let out = 0;             // the next frame the decoder will output
 let key = -1;            // the keyframe of the current run, always sent so scrubbing shows something at once
@@ -37,8 +37,8 @@ onmessage = async ({data}) => {
   }
   if (data.want) {
     want = data.want;
-    // restart unless the decoder is already headed to at, or the page has it
-    if (want.at < out ? !sent.has(want.at) : want.at > next + GAP) next = -1;
+    // restart unless the decoder is already headed to at, or the page has it; scrubbing decodes just the keyframe
+    if (want.keyOnly || (want.at < out ? !sent.has(want.at) : want.at > next + GAP)) next = -1;
     pump();
   }
 };
@@ -89,14 +89,23 @@ function segment(n) {
     s = {n, data: null, length: 0, au: new AnnexB(), done: false, failed: !urls[n], abort: new AbortController()};
     segs.set(n, s);
     if (!s.failed) load(s);
-    const far = [...segs.values()].sort((a, b) => Math.abs(b.n - n) - Math.abs(a.n - n));
-    for (const f of far.slice(0, Math.max(0, segs.size - KEEP))) {
-      f.abort.abort();
-      segs.delete(f.n);
-      if (urls[f.n]) state(f.n, disk.has(f.n) ? "disk" : "idle");
-    }
   }
   return s;
+}
+
+// drops the files farthest from the playhead until the rest fit in MEMORY; a download more than half done
+// finishes into the disk cache rather than being thrown away
+function trim() {
+  const at = Math.floor(want.at / SEGMENT_FRAMES);
+  let total = 0;
+  for (const s of segs.values()) total += s.data?.byteLength || 0;
+  for (const f of [...segs.values()].sort((a, b) => Math.abs(b.n - at) - Math.abs(a.n - at))) {
+    if (total <= MEMORY || f.n === at) break;
+    total -= f.data?.byteLength || 0;
+    segs.delete(f.n);
+    if (!f.done && !(f.length > f.total / 2)) f.abort.abort();
+    if (urls[f.n]) state(f.n, disk.has(f.n) ? "disk" : "idle");
+  }
 }
 
 async function load(s) {
@@ -105,6 +114,7 @@ async function load(s) {
     if (cached) {
       s.data = new Uint8Array(await cached.arrayBuffer());
       s.length = s.data.length;
+      trim();
       await scanned(s);
     } else {
       fetching.add(s.n);
@@ -112,6 +122,7 @@ async function load(s) {
       if (!resp.ok) throw new Error(`${resp.status}`);
       s.total = +resp.headers.get("content-length") || 0;  // none while the file is still being written
       s.data = new Uint8Array(s.total || 64 << 20);
+      trim();
       for await (const chunk of resp.body) {
         if (s.length + chunk.length > s.data.length) {
           const grown = new Uint8Array(2 * (s.length + chunk.length));
@@ -125,7 +136,7 @@ async function load(s) {
         await scanned(s);
       }
       fetching.delete(s.n);
-      save(s.n, s.data.subarray(0, s.length));
+      save(s.n, s.data.subarray(0, s.length)).then(() => segs.get(s.n) !== s && state(s.n, disk.has(s.n) ? "disk" : "idle"));
     }
     s.au.scan(s.data, s.length, true);
     s.done = true;
@@ -195,7 +206,7 @@ function pump() {
   }
   if (!backend) return waiting(s.done || s.failed ? null : s);
   if (next < 0 && !restart()) return;
-  while (next <= want.to && backend.ready()) {
+  while (next <= (want.keyOnly ? key : want.to) && backend.ready()) {
     const s = segment(Math.floor(next / SEGMENT_FRAMES)), i = next % SEGMENT_FRAMES;
     if (s.failed || (s.done && i >= s.au.aus.length)) {  // missing or short segment: the next one starts with a keyframe
       if (s.n >= urls.length) return;
