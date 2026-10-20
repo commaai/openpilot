@@ -594,7 +594,7 @@ struct PandaState @0xa7649e2575e4591e {
     selfTestRam @10;
     selfTestFlash @11;
     ecc @12;
-    interruptRateUart5 @13;
+    outputReadback @13;
     pvd @14;
     interruptRateUsb @15;
     clock @16;
@@ -605,9 +605,11 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateTick @21;
     interruptRateExti @22;
     interruptRateSpi @23;
-    interruptRateUart7 @24;
+    adc @24;
     sirenMalfunction @25;
     heartbeatLoopWatchdog @26;
+    interruptRateSoundDma @27;
+    timer @28;
     # Update max fault type in boardd when adding faults
   }
 
