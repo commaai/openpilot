@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.filereader import DATA_ENDPOINT, internal_source_available
+from openpilot.tools.lib import filereader
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.url_file import URLFile
 from openpilot.tools.ycpe.daemon import cache
@@ -114,7 +114,7 @@ class Resolver:
     self._api = None
     self._local = local_dirs(log_id) if "local" in sources else {}
     self._device = device_segs(dongle, log_id) if "device" in sources else {}
-    if "internal" in sources and not internal_source_available(DATA_ENDPOINT):
+    if "internal" in sources and not filereader.internal_source_available(filereader.DATA_ENDPOINT):
       self.sources = [s for s in sources if s != "internal"]
       self.errors["internal"] = "not reachable"
 

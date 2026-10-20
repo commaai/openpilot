@@ -16,7 +16,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from openpilot.tools.lib.filereader import DATA_ENDPOINT
+from openpilot.tools.lib import filereader
 from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
@@ -52,7 +52,7 @@ def canonical_url(source: str, key: Key) -> str | None:
   """The query-less URL the shared cache knows this file by when it came from source."""
   path = f"{key.dongle}/{key.log_id}/{key.seg}/{key.file}"
   if source == "internal":
-    return f"{DATA_ENDPOINT.rstrip('/')}/{path}"
+    return f"{filereader.DATA_ENDPOINT.rstrip('/')}/{path}"
   if source == "api":
     container = "qlog" if key.file.startswith(("qlog", "qcamera")) else "commadata2"
     return f"{API_BLOB}/{container}/{path}"

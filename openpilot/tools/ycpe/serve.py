@@ -33,6 +33,7 @@ def main():
   p.add_argument("--repo", action="append", default=[], help="openpilot checkout (default: this one)")
   p.add_argument("--device", default=os.environ.get("YCPE_DEVICE"), help="[user@]host of a comma device on the LAN")
   p.add_argument("--device-key", default=os.environ.get("YCPE_DEVICE_KEY"), help="ssh key for the device")
+  p.add_argument("--device-root", help=argparse.SUPPRESS)  # a stand-in realdata directory, for testing over ssh localhost
   args = p.parse_args()
 
   if not args.static:
@@ -50,7 +51,7 @@ def main():
     config.cache_budget = int(args.cache_budget * 1000 ** 3)
     config.log_roots = [Paths.log_root(), *args.data_dir]
     config.repo_roots = args.repo or [str(ROOT.parents[2])]
-    config.device, config.device_key = args.device, args.device_key
+    config.device, config.device_key, config.device_root = args.device, args.device_key, args.device_root
     server = make_server(args.port)
   print(f"http://localhost:{args.port}/" + ("" if args.static else "  (with the local daemon)"))
   try:

@@ -2,7 +2,7 @@
 open relay. Nothing from the page is forwarded except Range, and no credentials are added."""
 from urllib.parse import urljoin, urlparse
 
-from openpilot.tools.lib.filereader import DATA_ENDPOINT
+from openpilot.tools.lib import filereader
 from openpilot.tools.lib.url_file import URLFile
 from openpilot.tools.ycpe.daemon.core import HTTPError, Stream, module, route
 
@@ -10,7 +10,7 @@ HTTPS_HOSTS = {"commadataci.blob.core.windows.net", "huggingface.co"}
 HTTPS_SUFFIXES = (".hf.co",)  # huggingface LFS redirects to its CDN (cas-bridge.xethub.hf.co, cdn-lfs.hf.co)
 REDIRECTS = 5
 
-module("proxy", "1", hosts=sorted(HTTPS_HOSTS) + [f"*{s}" for s in HTTPS_SUFFIXES] + [urlparse(DATA_ENDPOINT).hostname])
+module("proxy", "1", hosts=sorted(HTTPS_HOSTS) + [f"*{s}" for s in HTTPS_SUFFIXES] + [urlparse(filereader.DATA_ENDPOINT).hostname])
 
 
 def allowed(url: str) -> bool:
@@ -20,7 +20,7 @@ def allowed(url: str) -> bool:
   if u.scheme == "https":
     host = (u.hostname or "").lower()
     return u.port in (None, 443) and (host in HTTPS_HOSTS or host.endswith(HTTPS_SUFFIXES))
-  return u.scheme == "http" and u.netloc == urlparse(DATA_ENDPOINT).netloc  # the internal endpoint, exactly
+  return u.scheme == "http" and u.netloc == urlparse(filereader.DATA_ENDPOINT).netloc  # the internal endpoint, exactly
 
 
 @route("GET", "/local/proxy")
