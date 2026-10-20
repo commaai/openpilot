@@ -1,7 +1,7 @@
 // shared by every plot pane: the hover tracker, undo/redo of the view, and the series drop target
 
 export const PATHS_MIME = "application/x-ycpe-paths";
-const panes = new Set();  // {overlay(), y, setY(y)}
+const panes = new Set();  // {overlay(), view, setView(view)}: view is a pane's own part ({y, range})
 const past = [], future = [];
 let tracker = null, lastKey = null, lastAt = 0;
 
@@ -30,11 +30,11 @@ export function remember(clock, key = null) {
   future.length = 0;
 }
 
-const snapshot = (clock) => ({range: [...clock.range], ys: new Map([...panes].map((p) => [p, {...p.y}]))});
+const snapshot = (clock) => ({range: [...clock.range], views: new Map([...panes].map((p) => [p, p.view]))});
 
 function restore(clock, s) {
   clock.setRange(...s.range);
-  for (const [p, y] of s.ys) if (panes.has(p)) p.setY(y);
+  for (const [p, v] of s.views) if (panes.has(p)) p.setView(v);
 }
 
 export function undo(clock) {

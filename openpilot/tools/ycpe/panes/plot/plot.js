@@ -19,7 +19,8 @@ const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64"
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   let col = colors(ctx.theme);
-  const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats};
+  // range: the pane's own x-range when its x-axis is unlinked from the shared clock.range
+  const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats, range: state.range || null};
   const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
   const empty = h("div", {class: "empty"}, "drag series here");
@@ -34,8 +35,8 @@ export function create(ctx, state = {}) {
 
   const pane = {
     name: "plot", el, render, resize, dispose, save, addCurves,
-    get y() { return st.y; },
-    setY(y) { st.y = {...y}; invalidate(); },
+    get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
+    setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     overlay: () => perf.invalidate(pane),
   };
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
@@ -147,7 +148,7 @@ export function create(ctx, state = {}) {
   }
 
   function drawBase() {
-    const g = gBase, [t0, t1] = clock.range;
+    const g = gBase, [t0, t1] = xRange();
     const px = L, pw = W - L - R, ph0 = H - T - B;
     if (pw < 4 || ph0 < 4) return;
     const p = prepare(t0, t1, pw);
@@ -192,7 +193,7 @@ export function create(ctx, state = {}) {
   function drawInvalid(g, lines, X, bottom) {
     const services = new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]));
     g.fillStyle = col.invalid;
-    const [t0, t1] = clock.range;
+    const [t0, t1] = xRange();
     for (const svc of services) {
       const d = store.decimate(`/${svc}/valid`, t0, t1, Math.round(W / 2));
       if (!d) continue;
@@ -301,7 +302,7 @@ export function create(ctx, state = {}) {
 
   // statistics over the visible range, computed in the worker shortly after the view settles
   function updateStats() {
-    const [t0, t1] = clock.range, curves = frame?.lines.map((it) => ({path: it.src, shift: it.shift, scale: it.scale, offset: it.offset})) || [];
+    const [t0, t1] = xRange(), curves = frame?.lines.map((it) => ({path: it.src, shift: it.shift, scale: it.scale, offset: it.offset})) || [];
     const key = JSON.stringify([t0, t1, curves, curves.map((c) => store.series(c.path)?.version)]);
     if (key === statsKey) return;
     statsKey = key;
@@ -323,14 +324,20 @@ export function create(ctx, state = {}) {
   const zone = ({x, y}) => x < L ? "y" : y > H - B ? "x" : "plot";
   const timeAt = (x) => frame.t0 + (x - frame.px) / frame.pw * (frame.t1 - frame.t0);
   const valueAt = (y) => frame.hi - (y - frame.py) / frame.ph * (frame.hi - frame.lo);
-  const setRange = (a, b) => clock.setRange(a, b);
+  const xRange = () => st.range || clock.range;
+  function setRange(a, b) {
+    if (!st.range) return clock.setRange(a, b);
+    const span = Math.max(0.01, Math.min(clock.duration, b - a)), t0 = Math.max(0, Math.min(clock.duration - span, a));
+    st.range = [t0, t0 + span];
+    invalidate();
+  }
 
   over.addEventListener("pointerdown", (e) => {
     if (!frame) return;
     over.focus();
     over.setPointerCapture(e.pointerId);
     const p = local(e);
-    gesture = {button: e.button, zone: zone(p), start: p, range: [...clock.range], lo: frame.lo, hi: frame.hi, moved: false};
+    gesture = {button: e.button, zone: zone(p), start: p, range: [...xRange()], lo: frame.lo, hi: frame.hi, moved: false};
   });
 
   over.addEventListener("pointermove", (e) => {
@@ -381,13 +388,15 @@ export function create(ctx, state = {}) {
   });
 
   over.addEventListener("pointerleave", () => gesture || view.track(null));
+  // a legend highlight can outlive its pointerleave when a popup opens over the row
+  over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
   over.addEventListener("contextmenu", (e) => e.preventDefault());
 
   over.addEventListener("wheel", (e) => {
     if (!frame) return;
     e.preventDefault();
     const p = local(e), scale = e.deltaMode ? 33 : 1;
-    const [a, b] = clock.range;
+    const [a, b] = xRange();
     if (zone(p) === "y" || e.shiftKey) {
       view.remember(clock, "wheel-y");
       const f = Math.exp((e.deltaY || e.deltaX) * scale * 0.002), v = valueAt(p.y);
@@ -424,6 +433,7 @@ export function create(ctx, state = {}) {
       {label: "Fit view", fn: () => { view.remember(clock); st.y = {}; setRange(0, clock.duration); invalidate(); }},
       {label: "Y auto-fit", checked: !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
+      {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
       {label: "Undo view", fn: () => view.undo(clock)},
       {label: "Redo view", fn: () => view.redo(clock)},
       null,
@@ -444,7 +454,7 @@ export function create(ctx, state = {}) {
   }
 
   async function exportCsv() {
-    const [t0, t1] = clock.range;
+    const [t0, t1] = xRange();
     const curves = frame.lines.map((it) => ({path: it.src, label: label(it.c), shift: it.shift, scale: it.scale, offset: it.offset}));
     const text = await compute(store, "csv", {curves, t0, t1}, curves.map((c) => c.path));
     download(new Blob([text], {type: "text/csv"}), `${st.title || "plot"}.csv`);
@@ -474,7 +484,7 @@ export function create(ctx, state = {}) {
 
   function save() {
     const curves = st.curves.map(({error, ...c}) => c);
-    return {title: st.title, curves, y: st.y, ...(st.stats && {stats: true})};
+    return {title: st.title, curves, y: st.y, ...(st.stats && {stats: true}), ...(st.range && {range: st.range})};
   }
 
   function dispose() {
