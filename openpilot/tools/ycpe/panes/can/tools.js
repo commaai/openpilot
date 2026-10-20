@@ -58,7 +58,7 @@ export function dbcDialog(can) {
       h("button", {class: "can-btn", onclick: () => save(can, f)}, "Save"),
       h("button", {class: "can-btn", onclick: () => save(can, f, true)}, "Save as"),
       localSave(f),
-      h("button", {class: "can-btn", onclick: (e) => navigator.clipboard.writeText(f.serialize()).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
+      h("button", {class: "can-btn", onclick: async (e) => navigator.clipboard.writeText(await can.serialize(f)).then(() => { e.target.textContent = "Copied"; })}, "Copy"),
       h("button", {class: "can-btn", onclick: () => { if (discard()) { can.dbcs.close(f); d.close(); } }}, "Close")))));
 
   const d = dialog("DBC files", files,
@@ -131,7 +131,7 @@ function handles(mode, fn) {
 
 // writes back to the opened file when permitted, else asks where (or downloads)
 async function save(can, dbc, as = false) {
-  const text = dbc.serialize();
+  const text = await can.serialize(dbc);
   try {
     if (as || !dbc.handle) {
       if (!window.showSaveFilePicker) return download(`${dbc.name}.dbc`, text);

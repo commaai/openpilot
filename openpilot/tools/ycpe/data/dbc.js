@@ -134,13 +134,15 @@ export function format(s, v, unit = true) {
 export class DBC {
   constructor(name = "untitled", text = "") {
     this.name = name;
+    this.text = text;
     this.msgs = new Map();
     this.items = [];  // source statements: {text} or {key, text, canon}
     this.parse(text);
   }
 
-  // a DBC parsed elsewhere (the CAN worker) arrives as a structured clone: plain data, shared references intact
-  static revive(data) { return Object.setPrototypeOf(data, DBC.prototype); }
+  // a DBC parsed elsewhere (the CAN worker): its messages arrive as a structured clone, shared references intact. The
+  // source statements stay behind, as cloning them costs a frame; serialize() parses the text again for them
+  static revive(name, text, msgs) { return Object.assign(Object.create(DBC.prototype), {name, text, msgs}); }
 
   msg(address) { return this.msgs.get(address); }
   msgByName(name) { for (const m of this.msgs.values()) if (m.name === name) return m; }
@@ -240,9 +242,9 @@ export class DBC {
 
   // original text for unchanged statements; changed ones are regenerated in place, new ones join their kind
   serialize() {
-    const gen = this.generate(), used = new Set(), after = new Map();
+    const items = this.items || new DBC(this.name, this.text).items, gen = this.generate(), used = new Set(), after = new Map();
     const kind = (key) => key.slice(0, 3), addr = (key) => key.split(" ")[kind(key) === "CM_" ? 2 : 1];
-    const out = this.items.map((it) => {
+    const out = items.map((it) => {
       if (!it.key) return it.text;
       const g = gen.get(it.key);
       if (g === it.canon) {
@@ -257,12 +259,12 @@ export class DBC {
     for (const [key, text] of gen) {
       if (used.has(key)) continue;
       const live = (it) => it.key && kind(it.key) === kind(key) && gen.has(it.key);
-      let at = this.items.findLastIndex((it) => live(it) && addr(it.key) === addr(key));
-      if (at < 0) at = this.items.findLastIndex(live);
+      let at = items.findLastIndex((it) => live(it) && addr(it.key) === addr(key));
+      if (at < 0) at = items.findLastIndex(live);
       // comments and values must follow their message's definition
       if (kind(key) !== "BO_") {
-        const bo = this.items.findLastIndex((it) => it.key === `BO_ ${addr(key)}`);
-        at = Math.max(at, bo >= 0 ? bo : this.items.findLastIndex((it) => it.key?.startsWith("BO_ ")));
+        const bo = items.findLastIndex((it) => it.key === `BO_ ${addr(key)}`);
+        at = Math.max(at, bo >= 0 ? bo : items.findLastIndex((it) => it.key?.startsWith("BO_ ")));
       }
       after.set(at, (after.get(at) || "") + (at >= 0 && kind(key) === "BO_" ? "\n" + text.slice(0, -1) : text));
     }

@@ -383,7 +383,8 @@ function csv(keys, t0, t1, msg) {
 if (import.meta.url.endsWith("?worker")) {
   const ops = {
     add: ({n, can, off}) => { addSegment(n, can, off); },
-    parse: ({name, text}) => new DBC(name, text),
+    parse: ({name, text}) => new DBC(name, text).msgs,
+    serialize: ({name, text, msgs}) => DBC.revive(name, text, msgs).serialize(),
     drop: ({n}) => { dropSegment(n); },
     masks: ({entries}) => { masks.clear(); for (const [k, v] of entries) masks.set(k, v); },
     state: ({t}) => state(t),
@@ -668,7 +669,7 @@ export class Can {
   async saveLocal(dbc, force = false) {
     const local = await this.local();
     const path = `/local/repos/${local.id}/dbc/${dbc.name}.dbc${force ? "" : `?mtime=${dbc.local?.mtime ?? 0}`}`;
-    const r = await fetch(local.daemon.url(path), {method: "PUT", body: dbc.serialize()});
+    const r = await fetch(local.daemon.url(path), {method: "PUT", body: await this.serialize(dbc)});
     if (r.status === 409) return {conflict: true};
     if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `saving ${dbc.name}.dbc: ${r.status}`);
     const out = await r.json();
@@ -678,8 +679,9 @@ export class Can {
     return out;
   }
 
-  // DBC text parsed in the worker, as a big one takes tens of ms
-  async parseDbc(name, text) { return DBC.revive(await this.call("parse", {name, text})); }
+  // DBC text parsed and serialized in the worker, as a big one takes tens of ms
+  async parseDbc(name, text) { return DBC.revive(name, text, await this.call("parse", {name, text})); }
+  serialize(dbc) { return this.call("serialize", {name: dbc.name, text: dbc.text, msgs: dbc.msgs}); }
 
   // a DBC by name: from the local opendbc when the daemon has it (that's the copy to edit), else from GitHub
   async loadOpendbc(name, buses = [-1]) {
