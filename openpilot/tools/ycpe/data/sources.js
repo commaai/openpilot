@@ -21,22 +21,19 @@ const ROUTE = `(${DONGLE})[|_/](${LOG_ID})`;
 const SLICE = /^(-?[0-9]+)?:?(-?[0-9]+)?:?(-?[0-9]+)?$/;
 const RANGE = new RegExp(`^${ROUTE}(?:(?:--|/)((?:-?[0-9]+)?:?(?:-?[0-9]+)?:?(?:-?[0-9]+)?))?(?:/([qra]))?$`);
 
-// useradmin and connect URLs (with or without https://) to a route or segment range; connect's start and end seconds
-// pick a time in the whole route, not segments
+// useradmin and connect URLs (with or without https://) to a route or segment range. Connect's start and end seconds
+// pick a time in the whole route, not segments: they stay, as "<dongle>/<log id>/<start>/<end>" (see routeFromPath)
 export function parseIndirect(text) {
   if (!/(useradmin|connect)\.comma\.ai/.test(text)) return text;
   let url;
   try { url = new URL(/^[a-z]+:\/\//i.test(text) ? text : `https://${text}`); } catch { return text; }
   if (url.hostname === "useradmin.comma.ai") return url.searchParams.get("onebox") || text;
-  const p = url.pathname.split("/").filter(Boolean);
-  const route = p.slice(0, 2).join("/");
-  if (p.length <= 3) return [route, ...p.slice(2)].join("/");
-  return [route, ...p.slice(4)].join("/");
+  return url.pathname.split("/").filter(Boolean).join("/");
 }
 
 // "<dongle>|<log id>[--|/<slice>][/q|r|a]" → {route, dongle, logId, slice, selector}, or null
 export function parseRange(text) {
-  const m = parseIndirect(text.trim()).match(RANGE);
+  const m = parseIndirect(text.trim()).replace(/^([^/]+\/[^/]+)\/\d+\/\d+$/, "$1").match(RANGE);
   return m && {route: `${m[1]}|${m[2]}`, dongle: m[1], logId: m[2], slice: m[3] || "", selector: m[4] || null};
 }
 

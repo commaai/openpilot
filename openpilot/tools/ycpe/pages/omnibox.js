@@ -2,7 +2,7 @@
 // connect, useradmin and cabana URLs, segment ranges and selectors), with a dropdown of matching recent routes and devices
 import {api} from "../api.js";
 import {h} from "../dom.js";
-import {parseRange} from "../data/sources.js";
+import {parseIndirect, parseRange} from "../data/sources.js";
 
 const RECENT_KEY = "ycpe_recent_routes";
 const RECENT_MAX = 10;
@@ -35,6 +35,9 @@ export async function resolve(text) {
     return `/local/url/plot?url=${encodeURIComponent(s)}`;  // a direct link to a file opens it on its own
   }
   try { s = decodeURIComponent(s); } catch { /* keep it as typed */ }
+  // a connect time range ("connect.comma.ai/<dongle>/<log id>/<start>/<end>"), opened as it is
+  const span = parseIndirect(s).match(/^[0-9a-f]{16}\/[^/]+\/\d+\/\d+$/i);
+  if (span && parseRange(span[0])) return `/${span[0]}`;
   // a segment range or selector, as the Python tools take them ("<route>/2:5/q"); "<route>--3" stays a seek
   const r = parseRange(s);
   if (r && (r.selector || r.slice && !s.endsWith(`--${r.slice}`))) return `/${r.dongle}/${r.logId}/${[r.slice, r.selector].filter(Boolean).join("/")}`;

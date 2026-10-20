@@ -42,7 +42,7 @@ export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_
 // the omnibox (pages/omnibox.js); switching routes keeps the open view
 function searchBox() {
   return omnibox({
-    go: (path) => go(ws ? path.replace(/^(\/[0-9a-f]{16}\/[^/?]+)(?=\?|$)/, `$1/${ws.view}`) : path),
+    go: (path) => go(ws ? path.replace(/^(\/[0-9a-f]{16}\/[^/?]+(?:\/\d+\/\d+)?)(?=\?|$)/, `$1/${ws.view}`) : path),
     devices: () => state.devices,
     onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
   });
@@ -313,6 +313,12 @@ class Workspace {
     }
   }
 
+  // a connect time range: the playhead at its start, and only it in view
+  showRange([t0, t1]) {
+    this.clock.seek(t0);
+    this.clock.setRange(t0, t1);
+  }
+
   openRoute(name) {
     go(`/${name.replace("|", "/")}/${this.view}`);
   }
@@ -450,6 +456,7 @@ async function render() {
   if (routeName) {
     if (ws && routeKey(ws.route) === routeName) {
       if (target.view && target.view !== ws.view) ws.setView(target.view);
+      if (target.range) ws.showRange(target.range);
       return;
     }
     document.body.classList.add("loading");
@@ -461,6 +468,7 @@ async function render() {
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      if (target.range) ws.showRange(target.range);
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
