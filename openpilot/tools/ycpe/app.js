@@ -561,7 +561,7 @@ async function render() {
       const card = [403, 404].includes(e.status) && await pullCard(routeName, render).catch(() => null);  // only on the LAN device
       if (id === navId) {
         closeWorkspace();
-        main.replaceChildren(card || errorPage(e));
+        main.replaceChildren(card || errorPage(e, {route: routeName}));
       }
     } finally {
       document.body.classList.remove("loading");
@@ -572,8 +572,11 @@ async function render() {
   closeWorkspace();
   updateTop();
   if (DONGLE_RE.test(parts[0] || "")) {
-    const page = await devicePage(parts[0], state.devices).catch(errorPage);
+    const page = await devicePage(parts[0], state.devices).catch((e) => errorPage(e, {device: parts[0]}));
     if (id === navId) main.replaceChildren(page);
+  } else if (parts.length) {
+    main.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
+      h("p", {class: "muted"}, "Try a route name or dongle id in the box above, or ", h("a", {href: "/", onclick: link("/")}, "go home"), ".")));
   } else if (state.devices?.length === 1) {
     go(`/${state.devices[0].dongle_id}`, true);
   } else {
@@ -612,11 +615,15 @@ document.addEventListener("drop", async (e) => {
   openFiles(await droppedFiles(e.dataTransfer));
 });
 
-function errorPage(e) {
+// route or device: what the page was for, to say what wasn't found
+function errorPage(e, {route, device} = {}) {
   console.error(e);
   if (e.status === 401 || e.status === 403) return signInCard();
-  const msg = e.status === 404 ? "Not found." : String(e.message || e);
-  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
+  const [msg, why] = e.status !== 404 ? [String(e.message || e), ""]
+    : route ? [`Route ${route.replace("|", "/")} not found`, "Check the name, or it may not be uploaded or shared with you. "]
+    : device ? [`Device ${device} not found`, "It may not be shared with this account. "]
+    : ["Not found.", ""];
+  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, why, "Try a route name or dongle id in the box above."));
 }
 
 document.querySelector("#app > .topbar").replaceWith(topBar());
