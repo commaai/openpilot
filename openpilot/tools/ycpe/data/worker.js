@@ -10,7 +10,7 @@ import {CanFrames} from "./can.js";
 import {bootLog} from "./boot.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
-const ready = initCodec().then(() => new Reader(schema));
+const codec = initCodec(), ready = codec.then(() => new Reader(schema));
 const readers = new Map();  // key → reader of a log's own schema (data/schemas.js)
 
 // the reader of a log's own schema, or the bundled one for null; either way once the codec is ready
@@ -153,7 +153,7 @@ async function message(key, url, service, mono, own) {
 // a boot log read as text for the viewer, downloaded each time: they're small, and rarely opened twice
 async function boot(url) {
   const {buf} = await download(url, () => {});
-  await ready;
+  await codec;  // decode() reads by the schema itself, no Reader
   return withDecompressed(new Uint8Array(buf), (bytes) => bootLog(schema, bytes));
 }
 
