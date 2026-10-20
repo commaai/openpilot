@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ycpe live webrtc</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { background: var(--bg); color: var(--fg); font: 13px monospace; margin: 12px; }
+    #videos { display: flex; gap: 8px; } video { width: 480px; background: #000; }
+  </style>
+</head>
+<body>
+  <div>?local=1 | ?dongle=&lt;id&gt; · &amp;services=a,b &amp;cameras=road,wideRoad &amp;wall=&lt;ms - monotonic ms of the publisher&gt;
+    · ?files=&lt;route&gt; reads the route's rlogs peer to peer</div>
+  <div><span id="state"></span> <b id="value"></b></div>
+  <div id="videos"></div>
+  <pre id="stats"></pre>
+  <script type="module">
+    import {perf} from "/perf.js";
+    import {create} from "/data/live/webrtc.js";
+
+    const q = new URLSearchParams(location.search);
+    const $ = (id) => document.getElementById(id);
+    // window.live: what the test reads. lat: publish → on screen (ms) of the newest Event in each frame that showed one,
+    // from the publisher's wall-minus-monotonic offset (wall=)
+    const live = window.live = {events: 0, bytes: 0, batches: 0, json: 0, lat: [], states: [], frames: {}, newest: null};
+    const wall = +q.get("wall") || 0;
+
+    // each Event's logMonoTime, from its framing: the root struct's first data word
+    function monoTimes(bytes, fn) {
+      const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      for (let at = 0; at < bytes.length;) {
+        const segs = dv.getUint32(at, true) + 1, head = 4 + 4 * segs + (segs % 2 ? 0 : 4);
+        let words = 0;
+        for (let s = 0; s < segs; s++) words += dv.getUint32(at + 4 + 4 * s, true);
+        const root = at + head, ptr = dv.getInt32(root, true) >> 2;
+        fn(dv.getBigUint64(root + 8 + ptr * 8, true));
+        at = root + words * 8;
+      }
+    }
+
+    let shown = 0;
+    const sink = {
+      events(bytes) {
+        live.batches++;
+        live.bytes += bytes.length;
+        monoTimes(bytes, (mono) => {
+          live.events++;
+          live.newest = mono;
+        });
+      },
+      json(service, mono, valid, data) {
+        live.json++;
+        live.newest = BigInt(mono);
+        if (service === "carState") $("value").textContent = `vEgo ${data.vEgo?.toFixed(2)}`;
+      },
+      video(camera, track) {
+        const v = document.createElement("video");
+        Object.assign(v, {autoplay: true, muted: true, playsInline: true, srcObject: new MediaStream([track])});
+        $("videos").append(v);
+        const f = live.frames[camera] = {n: 0, first: null};
+        const count = (now) => {
+          f.first ??= now;
+          f.n++;
+          v.requestVideoFrameCallback(count);
+        };
+        v.requestVideoFrameCallback(count);
+      },
+    };
+
+    // on screen: the frame after an Event arrived draws its time
+    perf.tick(() => {
+      if (live.newest === null || live.newest === shown) return;
+      shown = live.newest;
+      $("value").textContent = `newest ${shown}`;
+      if (wall) live.lat.push(performance.timeOrigin + performance.now() - (wall + Number(shown) / 1e6));
+    }, "live");
+
+    if (q.get("local") || q.get("dongle")) {
+      const opts = q.get("local") ? {local: true} : {dongle: q.get("dongle")};
+      if (q.get("services")) opts.services = q.get("services").split(",");
+      if (q.get("cameras")) opts.cameras = q.get("cameras").split(",").filter(Boolean);
+      const source = window.source = create(opts);
+      source.on("state", (state, detail) => {
+        live.states.push([Math.round(performance.now()), state, detail]);
+        $("state").textContent = `${state} ${detail}`;
+      });
+      source.start(sink);
+    }
+
+    if (q.get("files")) {
+      // the app's path: resolve from the device alone, then the loader's workers fetch through the service worker
+      const [{Store}, {routeRecord, routeLogs}] = await Promise.all([import("/data/store.js"), import("/data/sources.js")]);
+      const name = q.get("files"), t0 = performance.now();
+      localStorage.setItem(`ycpe_source:${name.split("/")[0]}`, "p2p");
+      const store = window.store = new Store(name, await routeLogs(name, routeRecord(name)));
+      live.files = {segments: []};
+      store.on("segment", (n) => live.files.segments.push([n, Math.round(performance.now() - t0)]));
+    }
+
+    setInterval(() => {
+      $("stats").textContent = JSON.stringify({...live, newest: String(live.newest), lat: live.lat.length, drops: perf.drops}, null, 1);
+    }, 500);
+  </script>
+</body>
+</html>
