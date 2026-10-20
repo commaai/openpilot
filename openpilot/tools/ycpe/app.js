@@ -215,6 +215,7 @@ class Workspace {
 
   setView(view) {
     if (!VIEWS[view]) view = "drive";
+    if (view !== this.view) this.persist();
     this.view = view;
     this.el.dataset.view = view;
     if (!this.layouts[view]) {
@@ -247,6 +248,11 @@ class Workspace {
   }
 
   resetLayout() { this.applyLayout(null); }
+
+  // panes change their own state (curves, filters) without an edit to the layout; saved whenever they could go away
+  persist() {
+    for (const [view, layout] of Object.entries(this.layouts)) localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(layout.save()));
+  }
 
   // a layout file, URL or text (ours, jotpluggler's or PlotJuggler's), opened as new tabs
   async openLayout(src) {
@@ -284,6 +290,7 @@ class Workspace {
     for (const off of this.offs) off();
     this.playbar.dispose();
     this.clock.pause();
+    this.persist();
     for (const l of Object.values(this.layouts)) l.dispose();
     this.store?.dispose();
   }
@@ -452,6 +459,8 @@ function errorPage(e) {
 document.querySelector("#app > .topbar").replaceWith(topBar());
 addEventListener("ycpe:route-start", (e) => { if (ws?.route === e.detail) updateTop(); });
 window.addEventListener("popstate", render);
+addEventListener("pagehide", () => ws?.persist());
+document.addEventListener("visibilitychange", () => { if (document.hidden) ws?.persist(); });
 // signing in or out re-renders the current page under the new account; /auth navigates on by itself (rendering it
 // again would spend the one-time code twice)
 auth.on(() => {
