@@ -52,8 +52,8 @@ export function bootLog(schema, bytes) {
     lastKmsg: text(boot.deprecated?.lastKmsg),
     lastPmsg: text(boot.deprecated?.lastPmsg),
     init: init && {
-      version: init.version, gitBranch: init.gitBranch, gitCommit: init.gitCommit, gitCommitDate: init.gitCommitDate, dirty: init.dirty,
-      deviceType: init.deviceType, osVersion: init.osVersion, kernelVersion: init.kernelVersion, bootlogId: init.bootlogId,
+      version: init.version, gitBranch: init.gitBranch, gitCommit: init.gitCommit, dirty: init.dirty,
+      deviceType: init.deviceType, osVersion: init.osVersion, kernelVersion: init.kernelVersion,
       kernelArgs: init.kernelArgs || [], commands: entries(init.commands), params: entries(init.params, param),
     },
   };
