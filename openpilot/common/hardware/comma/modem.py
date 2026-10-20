@@ -186,17 +186,15 @@ class PPPSession:
     return True
 
   def maybe_install_dns(self, dns_servers: list[str]) -> bool:
-    """Register DNS servers with systemd-resolved; kill the session on failure to force a retry."""
+    """Merge PPP's DNS with Wi-Fi/Ethernet through AGNOS resolvconf."""
     if not dns_servers:
       return False
-    for cmd in (["sudo", "resolvectl", "dns", "ppp0", *dns_servers],
-                ["sudo", "resolvectl", "default-route", "ppp0", "yes"]):
-      r = subprocess.run(cmd, capture_output=True, text=True)
-      if r.returncode != 0:
-        logging.warning(f"resolvectl failed ({' '.join(cmd[1:])}): {r.stderr.strip()}")
-        self.kill()
-        return False
-    logging.info(f"resolvectl: ppp0 DNS = {dns_servers}")
+    content = ''.join(f"nameserver {IPv4Address(server)}\n" for server in dns_servers)
+    result = subprocess.run(["sudo", "resolvconf", "-a", "ppp0"], input=content, capture_output=True, text=True)
+    if result.returncode:
+      logging.warning("Could not install PPP DNS")
+      self.kill()
+      return False
     return True
 
   @staticmethod
@@ -206,7 +204,7 @@ class PPPSession:
     # rules don't have a flush; delete until none remain
     while subprocess.run(["sudo", "ip", "rule", "del", "table", "1000"], capture_output=True).returncode == 0:
       pass
-    subprocess.run(["sudo", "resolvectl", "revert", "ppp0"], capture_output=True)
+    subprocess.run(["sudo", "resolvconf", "-d", "ppp0"], capture_output=True)
 
 
 class Modem:
@@ -232,10 +230,6 @@ class Modem:
       return CREG.get(int(v.split(",")[1].strip('"')), "unknown")
     except (ValueError, IndexError):
       return "unknown"
-
-  @staticmethod
-  def _has_modem_manager() -> bool:
-    return os.path.isfile("/lib/systemd/system/ModemManager.service")
 
   def _is_roaming_allowed(self) -> bool:
     if self.S["iccid"].startswith(WEBBING_ICCID_PREFIX):
@@ -575,9 +569,6 @@ class Modem:
   def run(self):
     logging.info("starting")
     self._publish_state(state=State.INITIALIZING.value)
-    if self._has_modem_manager():
-      subprocess.run(["sudo", "systemctl", "mask", "--runtime", "ModemManager"], capture_output=True)
-      subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     self._ppp.kill()
 
     state = State.INITIALIZING
@@ -611,9 +602,6 @@ class Modem:
       os.remove(STATE_PATH)
     except FileNotFoundError:
       pass
-    if self._has_modem_manager():
-      subprocess.run(["sudo", "systemctl", "unmask", "--runtime", "ModemManager"], capture_output=True)
-      subprocess.run(["sudo", "systemctl", "start", "ModemManager"], capture_output=True)
 
 
 def main():

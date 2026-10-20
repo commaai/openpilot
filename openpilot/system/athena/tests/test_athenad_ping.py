@@ -17,7 +17,7 @@ def wifi_radio(on: bool) -> None:
   if not COMMA_HARDWARE:
     return
   print(f"wifi {'on' if on else 'off'}")
-  subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
+  subprocess.run(["sudo", "/usr/comma/wifi.py", "radio", "on" if on else "off"], check=True)
 
 
 class TestAthenadPing(OpenpilotTestCase):

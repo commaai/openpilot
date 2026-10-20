@@ -46,7 +46,7 @@ class NetworkConnectivityMonitor:
     self.recheck_event = threading.Event()
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
-    self._last_timesyncd_restart = 0.0
+    self._last_ntp_restart = 0.0
     self._thread: threading.Thread | None = None
 
   def start(self):
@@ -87,9 +87,9 @@ class NetworkConnectivityMonitor:
         except urllib.error.URLError as e:
           if (isinstance(e.reason, ssl.SSLCertVerificationError) and
               not system_time_valid() and
-              time.monotonic() - self._last_timesyncd_restart > 5):
-            self._last_timesyncd_restart = time.monotonic()
-            run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd"])
+              time.monotonic() - self._last_ntp_restart > 5):
+            self._last_ntp_restart = time.monotonic()
+            run_cmd(["sudo", "sv", "restart", "/etc/service/ntpd"])
           self.reset()
         except Exception:
           self.reset()

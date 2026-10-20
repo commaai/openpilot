@@ -8,7 +8,7 @@ from openpilot.common.swaglog import cloudlog
 
 def main():
   pm = messaging.PubMaster(['operatingSystemLog'])
-  cmd = ['journalctl', '-f', '-o', 'json']
+  cmd = ['/usr/comma/logread.py', '-f', '-o', 'json']
   proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
   assert proc.stdout is not None
   try:
@@ -19,7 +19,7 @@ def main():
       try:
         kv = json.loads(line)
       except json.JSONDecodeError:
-        cloudlog.exception("failed to parse journalctl output")
+        cloudlog.exception("failed to parse system log output")
         continue
 
       msg = messaging.new_message('operatingSystemLog')

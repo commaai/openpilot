@@ -1,4 +1,3 @@
-import configparser
 import json
 import os
 import socket
@@ -125,7 +124,7 @@ class HardwareComma(HardwareBase):
       if (iface := get_default_route_iface()):
         if iface.startswith('wlan'):
           return NetworkType.wifi
-        if iface.startswith('eth'):
+        if iface.startswith(('eth', 'en', 'usb')):
           return NetworkType.ethernet
     except Exception:
       pass
@@ -214,31 +213,10 @@ class HardwareComma(HardwareBase):
       return Params().get_bool("GsmMetered")
     try:
       if network_type == NetworkType.wifi:
-        ssid = wpa_supplicant_cmd("STATUS").get("ssid", "")
-        if ssid:
-          # wpa_supplicant escapes non-printable bytes as \xNN; NM keyfile stores ASCII SSIDs as a literal and others as a byte;byte; list
-          ssid_bytes = ssid.encode().decode('unicode_escape').encode('latin-1')
-          ssid_keyfile_list = ';'.join(str(b) for b in ssid_bytes) + ';'
+        state = json.loads(Path('/dev/shm/wifi').read_text())
+        if state.get('metered') in (1, 2):
+          return state['metered'] == 1
 
-          nm_dirs = ("/run/NetworkManager/system-connections", "/data/etc/NetworkManager/system-connections")
-          for fpath in (p for d in nm_dirs for p in Path(d).glob("*.nmconnection")):
-            raw = sudo_read(str(fpath))
-            if not raw:
-              continue
-            cp = configparser.ConfigParser(interpolation=None)
-            try:
-              cp.read_string(raw)
-              keyfile_ssid = cp.get("wifi", "ssid", fallback="")
-              if keyfile_ssid != ssid and keyfile_ssid != ssid_keyfile_list:
-                continue
-              metered = cp.getint("connection", "metered", fallback=0)
-            except (configparser.Error, ValueError):
-              continue
-            if metered == 1:  # NM_METERED_YES
-              return True
-            if metered == 2:  # NM_METERED_NO
-              return False
-            break
     except Exception:
       pass
 
