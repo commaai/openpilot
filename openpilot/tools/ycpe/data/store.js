@@ -3,6 +3,7 @@
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
 import {api} from "../api.js";
 import {Loader} from "./loader.js";
+import {Can} from "./can.js";
 import {service, unpack} from "./pack.js";
 
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
@@ -29,6 +30,7 @@ export class Store {
     this.budget = budget;
     this.keep = keep;
     this.handlers = {};
+    this.can = new Can(this);
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.lists = new Map();  // long lists the workers skipped: path → longest length
     this.enums = [];
@@ -44,9 +46,10 @@ export class Store {
       seg.url = url;
       seg.opts = {n: local, shift: (seg.n - local) * SEGMENT};
       this.progress.total++;
-      this.load(seg, {keep: this.keep}).then((p) => {
+      this.load(seg, {keep: this.keep, can: true}).then((p) => {
         this.count(p);
         this.ingest(seg, p);
+        if (p.can) this.can.ingest(seg.n, p.can, 0);
       }, (e) => this.failed(seg, e));
     }
   }
@@ -132,13 +135,14 @@ export class Store {
   }
 
   paths() {
-    const out = [];
+    const out = this.can.paths();
     for (const {path, type, names} of this.entries.values()) out.push(names ? {path, type, names} : {path, type});
     return out;
   }
 
   // the chunks of a path; an unknown index of a skipped long list (/modelV2/position/x/32) starts loading it
   series(path) {
+    if (path.startsWith("/dbc/")) return this.can.series(path);
     const e = this.entries.get(path);
     if (!e) return this.request(path), null;
     e.used = performance.now();
@@ -283,7 +287,7 @@ export class Store {
     }
   }
 
-  dispose() { this.loader.dispose(); }
+  dispose() { this.loader.dispose(); this.can.dispose(); }
 }
 
 // min/max per block of BLOCK samples, then per FANOUT blocks, up to one block per chunk; built on first need
