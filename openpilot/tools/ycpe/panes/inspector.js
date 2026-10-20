@@ -3,6 +3,7 @@
 // height, and playback only patches the value cells of the visible rows that changed. From the keyboard: up and down
 // move, right and left (or Enter) open and close a branch.
 import {h, css} from "/dom.js";
+import {fmtTime} from "/panes/plot/draw.js";
 
 await css(new URL("./inspector.css", import.meta.url));
 
@@ -53,7 +54,7 @@ export function create(ctx, state) {
   }));
   void ctx.store;
 
-  // the column tree of the service: {kids: Map(key → node), series?, list?: length of a long list not loaded}
+  // the column tree of the service: {kids: Map(key → node), series?, type?, list?: length of a long list not loaded}
   function build() {
     if (!store) return;
     const all = store.paths(), names = new Set(all.map((p) => p.path.split("/")[1]));
@@ -63,7 +64,9 @@ export function create(ctx, state) {
     const prefix = `/${service}`, node = () => ({kids: new Map()});
     tree = node();
     const at = (rest) => rest.split("/").filter(Boolean).reduce((n, k) => n.kids.get(k) || n.kids.set(k, node()).get(k), tree);
-    for (const p of all) if (p.path === prefix || p.path.startsWith(prefix + "/")) at(p.path.slice(prefix.length)).series = p.path;
+    for (const p of all) {
+      if (p.path === prefix || p.path.startsWith(prefix + "/")) Object.assign(at(p.path.slice(prefix.length)), {series: p.path, type: p.type});
+    }
     for (const [path, n] of store.lists) if (path.startsWith(prefix + "/")) at(path.slice(prefix.length)).list ??= n;
     flatten();
   }
@@ -105,13 +108,13 @@ export function create(ctx, state) {
       const v = field(line.path);
       if (Array.isArray(v)) return `[${v.length}]`;
       if (ArrayBuffer.isView(v)) return `${v.length} bytes ${hex(v)}`;
-      return v && typeof v === "object" ? "" : show(v);
+      return v && typeof v === "object" ? "" : show(v, node(line.path)?.type);
     }
     const n = node(line.path);
     if (n.list && !n.kids.size) return `[${n.list}] not loaded, open to load`;
     if (!n.series) return n.kids.size && /^\d+$/.test(n.kids.keys().next().value) ? `[${n.kids.size}]` : "";
     const s = store.series(n.series), v = s && exact(s, msgT);
-    return v === undefined ? "" : show(s.names && v === v ? s.names[v] ?? v : s.type === "b" ? !!v : v);
+    return v === undefined ? "" : show(s.names && v === v ? s.names[v] ?? v : s.type === "b" ? !!v : v, s.type);
   }
 
   function render() {
@@ -119,7 +122,7 @@ export function create(ctx, state) {
     const t = ctx.clock.t, times = store.series(`/${service}/_valid`) || store.series(`/${service}/valid`);
     const prev = msgT;
     msgT = times ? lastAtOrBefore(times, t) : NaN;
-    when.textContent = msgT === msgT ? `${msgT.toFixed(3)} s (${(msgT - t).toFixed(3)})` : "no message yet";
+    when.textContent = msgT === msgT ? `${fmtTime(msgT, 0.001, true)} (${(msgT - t).toFixed(3)} s)` : "no message yet";
     const missing = [...store.missing || []].filter((m) => m === service || m.startsWith(service + "/"));
     note.textContent = missing.length ? `not migrated (a long list wasn't loaded): ${missing.join(", ")}` : "";
     if (msgT !== prev) ask();
@@ -238,5 +241,12 @@ function lastAtOrBefore(s, t) {
   return best;
 }
 
-const show = (v) => typeof v === "number" && !Number.isInteger(v) ? String(+v.toPrecision(7)) : typeof v === "string" ? JSON.stringify(v) : String(v);
+// a value by its column's type: f64 in full, other fractions to the 7 digits an f32 has; ≈ marks a 64-bit integer from
+// a column (a double) past 2^53, where it has lost its low digits. The message's own are exact BigInts
+function show(v, type) {
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v !== "number") return String(v);
+  if (Number.isInteger(v)) return Math.abs(v) > Number.MAX_SAFE_INTEGER && (type === "i64" || type === "u64") ? `≈${v}` : String(v);
+  return type === "f64" ? String(v) : String(+v.toPrecision(7));
+}
 const hex = (b) => Array.from(b.subarray(0, 32), (x) => x.toString(16).padStart(2, "0")).join(" ") + (b.length > 32 ? " …" : "");

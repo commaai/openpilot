@@ -93,19 +93,22 @@ export function fmtTick(v, step) {
   return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
-// a sample for display, by its path's meta m {names?, unit?, precision?}: enum names (or DBC value descriptions),
-// text, then numbers with their unit: DBC signals to their precision as cabana, integers as is, others to 5
-// significant figures
+// a sample for display, by its path's meta m {type?, names?, unit?, precision?}: enum names (or DBC value
+// descriptions), text, then numbers with their unit: DBC signals to their precision as cabana, integers as is (≈ past
+// 2^53, where a 64-bit one has lost its low digits), f64 log fields in full, f32 ones to the 7 digits they have,
+// others to 5 significant figures
 export function fmtValue(v, m) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
   if (m?.names?.[v] !== undefined) return m.names[v];
-  const s = m?.precision !== undefined && isFinite(v) ? v.toFixed(m.precision) : fmtNumber(v);
+  const s = m?.precision !== undefined && isFinite(v) ? v.toFixed(m.precision) : fmtNumber(v, m?.type);
   return m?.unit && v === v ? `${s} ${m.unit}` : s;
 }
 
-function fmtNumber(v) {
-  if (Number.isInteger(v) || !isFinite(v)) return String(v);
+function fmtNumber(v, type) {
+  if (Number.isInteger(v)) return Math.abs(v) > Number.MAX_SAFE_INTEGER && (type === "i64" || type === "u64") ? `≈${v}` : String(v);
+  if (!isFinite(v) || type === "f64") return String(v);
+  if (type === "f32") return String(+v.toPrecision(7));
   const a = Math.abs(v);
   return a >= 1e5 ? v.toFixed(0) : a < 1e-4 ? v.toExponential(3) : v.toPrecision(5);
 }

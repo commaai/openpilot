@@ -1,6 +1,6 @@
 // whole messages as plain objects, for the inspector: the reader only keeps columns, so a message is decoded again
 // from the log when it's asked for. Fields follow schema.json; a union holds only its set member, enums are names,
-// 64-bit integers are Numbers, data is a Uint8Array, and a null struct or list is null.
+// 64-bit integers are Numbers (or exact BigInts, asked for), data is a Uint8Array, and a null struct or list is null.
 
 const READ = {
   i8: (d, p) => d.getInt8(p), u8: (d, p) => d.getUint8(p), i16: (d, p) => d.getInt16(p, true), u16: (d, p) => d.getUint16(p, true),
@@ -9,14 +9,15 @@ const READ = {
   u64: (d, p) => d.getUint32(p, true) + d.getUint32(p + 4, true) * 4294967296,
   f32: (d, p) => d.getFloat32(p, true), f64: (d, p) => d.getFloat64(p, true),
 };
+const BIG = {...READ, i64: (d, p) => d.getBigInt64(p, true), u64: (d, p) => d.getBigUint64(p, true)};
 const SIZE = {i8: 1, u8: 1, i16: 2, u16: 2, e: 2, i32: 4, u32: 4, f32: 4, i64: 8, u64: 8, f64: 8};
 const ELEM_BYTES = [0, 0, 1, 2, 4, 8, 8];  // by list element size code: void, bit, bytes..., pointer
 const ZERO = new DataView(new ArrayBuffer(8)), bits = new DataView(new ArrayBuffer(8));
 const text = new TextDecoder();
 
-// one message (segment table first) as an object of struct `root` (0: Event)
-export function decode(schema, bytes, root = 0) {
-  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+// one message (segment table first) as an object of struct `root` (0: Event); with big, 64-bit integers are BigInts
+export function decode(schema, bytes, root = 0, big = false) {
+  const read = big ? BIG : READ, dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const nseg = dv.getUint32(0, true) + 1, segs = [];
   for (let s = 0, at = (4 + 4 * nseg + 7) & ~7; s < nseg; s++) {
     segs.push(at);
@@ -47,14 +48,17 @@ export function decode(schema, bytes, root = 0) {
   function scalar(type, p, end, def) {
     let src = dv;
     if (p + SIZE[type] > end) [src, p] = [ZERO, 0];
-    if (!def) return READ[type](src, p);
+    if (!def) return read[type](src, p);
     if (type === "f32" || type === "f64") {
       bits.setUint32(0, src.getUint32(p, true) ^ def % 4294967296, true);
       if (type === "f64") bits.setUint32(4, src.getUint32(p + 4, true) ^ Math.floor(def / 4294967296), true);
       return READ[type](bits, 0);
     }
-    const v = READ[type](src, p);
-    if (type === "i64" || type === "u64") return Number(BigInt[type === "i64" ? "asIntN" : "asUintN"](64, BigInt(v) ^ BigInt(def)));
+    const v = read[type](src, p);
+    if (type === "i64" || type === "u64") {
+      const x = BigInt[type === "i64" ? "asIntN" : "asUintN"](64, BigInt(v) ^ BigInt(def));
+      return big ? x : Number(x);
+    }
     return type === "u32" ? (v ^ def) >>> 0 : v ^ def;
   }
 
@@ -97,7 +101,7 @@ export function decode(schema, bytes, root = 0) {
     if (type === "s") return each((j) => struct(ref, at + j * size, elem === 6 ? 0 : size, elem === 6 ? 1 : 0));
     if (!SIZE[type]) return elem === 6 ? each((j) => value(type, ref, at + j * 8)) : [];
     if (SIZE[type] !== size) return [];
-    return each((j) => type === "e" ? enumName(ref, READ.e(dv, at + j * 2)) : READ[type](dv, at + j * size));
+    return each((j) => type === "e" ? enumName(ref, READ.e(dv, at + j * 2)) : read[type](dv, at + j * size));
   }
 
   const ev = pointer(segs[0]);
@@ -138,7 +142,8 @@ export function index(schema, buf) {
   return out;
 }
 
-// the last message of a service at or before logMonoTime mono (ns), decoded; null when there's none
+// the last message of a service at or before logMonoTime mono (ns), decoded with exact 64-bit integers; null when
+// there's none
 export function messageAt(schema, buf, idx, service, mono) {
   const s = idx.get(service);
   if (!s) return null;
@@ -147,5 +152,5 @@ export function messageAt(schema, buf, idx, service, mono) {
     const mid = (lo + hi) >> 1;
     if (s.mono[mid] <= mono) lo = mid + 1; else hi = mid;
   }
-  return lo ? decode(schema, buf.subarray(s.at[lo - 1], s.at[lo - 1] + s.size[lo - 1])) : null;
+  return lo ? decode(schema, buf.subarray(s.at[lo - 1], s.at[lo - 1] + s.size[lo - 1]), 0, true) : null;
 }
