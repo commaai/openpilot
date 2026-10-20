@@ -1,11 +1,14 @@
-// comma API client: a JWT in localStorage, plain fetch
+// comma API client: a JWT in localStorage, plain fetch. Settings are read lazily so workers can import this.
 
-export const API_HOST = localStorage.getItem("api_host") || "https://api.commadotai.com";
 const TOKEN_KEY = "comma_jwt";
+const setting = (key) => globalThis.localStorage?.getItem(key);
+export const apiHost = () => setting("api_host") || "https://api.commadotai.com";
+// athena only answers CORS for *.comma.ai, connect previews and localhost:3000
+const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
 
 export const auth = {
-  token: () => localStorage.getItem(TOKEN_KEY),
-  isAuthenticated: () => !!localStorage.getItem(TOKEN_KEY),
+  token: () => setting(TOKEN_KEY),
+  isAuthenticated: () => !!setting(TOKEN_KEY),
   logOut() {
     localStorage.removeItem(TOKEN_KEY);
     location.href = "/";
@@ -36,7 +39,7 @@ export const auth = {
   },
 
   async exchangeCode(code, provider) {
-    const resp = await fetch(`${API_HOST}/v2/auth/`, {
+    const resp = await fetch(`${apiHost()}/v2/auth/`, {
       method: "POST",
       headers: {"Content-Type": "application/x-www-form-urlencoded"},
       body: new URLSearchParams({code, provider}),
@@ -54,8 +57,8 @@ export class ApiError extends Error {
   }
 }
 
-export async function request(method, endpoint, {params, body} = {}) {
-  const url = new URL(endpoint, API_HOST + "/");
+export async function request(method, endpoint, {params, body, host = apiHost()} = {}) {
+  const url = new URL(endpoint, host + "/");
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null) url.searchParams.set(k, v);
   }
@@ -78,16 +81,25 @@ function memo(fn, key = (...args) => JSON.stringify(args)) {
     return cache.get(k);
   };
   wrapped.prime = (value, ...args) => cache.set(key(...args), Promise.resolve(value));
+  wrapped.forget = (...args) => cache.delete(key(...args));
   return wrapped;
 }
 
 export const api = {
-  me: () => get("v1/me/"),
+  me: memo(() => get("v1/me/")),
   devices: () => get("v1/me/devices/"),
   device: memo((dongleId) => get(`v1.1/devices/${dongleId}/`)),
   deviceStats: (dongleId) => get(`v1.1/devices/${dongleId}/stats`),
   deviceLocation: memo((dongleId) => get(`v1/devices/${dongleId}/location`)),
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
+  deviceUsers: (dongleId) => get(`v1/devices/${dongleId}/users`),
+  addDeviceUser: (dongleId, email) => request("POST", `v1/devices/${dongleId}/add_user`, {body: {email}}),
+  // without an email this removes the signed-in user
+  removeDeviceUser: (dongleId, email) => request("POST", `v1/devices/${dongleId}/del_user`, {body: email ? {email} : {}}),
+  // signed blob urls, oldest first
+  bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
+  crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),
+
   // routes that overlap [start, end] in unix millis, newest first
   routes: memo((dongleId, start, end, limit = 50) => get(`v1/devices/${dongleId}/routes_segments`, {start, end, limit})),
   preservedRoutes: (dongleId) => get(`v1/devices/${dongleId}/routes/preserved`),
@@ -105,21 +117,34 @@ export const api = {
   setRoutePublic: (routeName, isPublic) => request("PATCH", `v1/route/${routeName}/`, {body: {is_public: isPublic}}),
   setRoutePreserved: (routeName, preserved) => request(preserved ? "POST" : "DELETE", `v1/route/${routeName}/preserve`),
 
+  // paths are "<route>--<segment>/<file name>" without the dongle id
+  uploadUrls: async (dongleId, paths) => (await request("POST", `v1/${dongleId}/upload_urls/`, {body: {paths, expiry_days: 7}})).map((r) => r.url),
+  athenaOfflineQueue: (dongleId) => get(`v1/devices/${dongleId}/athena_offline_queue`),
+  // JSON-RPC on the device; with an expiry, athena queues the call while the device is offline
+  async athena(dongleId, method, params, expiry) {
+    const resp = await request("POST", dongleId, {host: athenaHost(), body: {id: 0, jsonrpc: "2.0", method, params, expiry}});
+    if (resp.error) throw new Error(resp.error.data?.message || resp.error.message || String(resp.error));
+    return resp.result;
+  },
+
   // public routes need no share credentials
-  qcameraUrl: (route) => `${API_HOST}/v1/route/${route.fullname}/qcamera.m3u8` +
+  qcameraUrl: (route) => `${apiHost()}/v1/route/${route.fullname}/qcamera.m3u8` +
     (route.share_sig ? "?" + new URLSearchParams({exp: route.share_exp, sig: route.share_sig}) : ""),
   // per-segment derived assets live next to the route on the CDN
   segmentAsset: (route, segment, name) => `${route.url}/${segment}/${name}`,
 };
 
-// engaged, alert and override spans from the per-segment events, in route milliseconds
+const assets = (route, name) => Promise.all(Array.from({length: (route.maxqlog ?? -1) + 1}, async (_, n) => {
+  const resp = await fetch(api.segmentAsset(route, n, name)).catch(() => null);
+  return resp?.ok ? resp.json() : [];
+}));
+
+// GPS fixes [{t (route seconds), lat, lng, speed, dist}] from the per-segment coords.json
+export const routeCoords = memo(async (route) => (await assets(route, "coords.json")).flat(), (route) => route.fullname);
+
+// engaged, alert, override and bookmark spans from the per-segment events, in route milliseconds
 export const routeEvents = memo(async (route) => {
-  const segments = Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
-  const lists = await Promise.all(segments.map(async (n) => {
-    const resp = await fetch(api.segmentAsset(route, n, "events.json"));
-    return resp.ok ? resp.json() : [];
-  }));
-  const events = lists.flat().sort((a, b) => a.route_offset_millis - b.route_offset_millis);
+  const events = (await assets(route, "events.json")).flat().sort((a, b) => a.route_offset_millis - b.route_offset_millis);
   const spans = [];
   const open = {};
   const track = (kind, active, t) => {
@@ -132,8 +157,9 @@ export const routeEvents = memo(async (route) => {
     }
   };
   for (const ev of events) {
-    if (ev.type !== "state") continue;
     const t = ev.route_offset_millis;
+    if (ev.type === "user_flag" || ev.type === "user_bookmark") spans.push({kind: "bookmark", start: t, end: t + 1000});
+    if (ev.type !== "state") continue;
     track("engaged", ev.data.enabled, t);
     track("alert", ev.data.alertStatus === "userPrompt" || ev.data.alertStatus === 1, t);
     track("critical", ev.data.alertStatus === "critical" || ev.data.alertStatus === 2, t);
@@ -143,3 +169,8 @@ export const routeEvents = memo(async (route) => {
   for (const s of spans) if (s.end === null) s.end = duration;
   return spans;
 }, (route) => route.fullname);
+
+export function engagedFraction(spans, duration) {
+  const ms = spans.reduce((sum, s) => sum + (s.kind === "engaged" ? s.end - s.start : 0), 0);
+  return duration > 0 ? Math.min(1, ms / duration) : 0;
+}
