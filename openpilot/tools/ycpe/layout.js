@@ -57,15 +57,9 @@ export class Layout {
       }
     });
     this.render();
-    this.showRange();
   }
 
   get tab() { return this.model.tabs[this.model.active]; }
-
-  // a tab with a time range of its own (from an imported jotpluggler or PlotJuggler layout) opens on it
-  showRange() {
-    if (this.tab.range) this.ctx.clock.setRange(...this.tab.range);
-  }
 
   changed() {
     this.onChange?.(this.save());
@@ -107,7 +101,6 @@ export class Layout {
     this.maxPath = null;
     this.model.active = i;
     this.render();
-    this.showRange();
     this.changed();
   }
 

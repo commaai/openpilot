@@ -1,5 +1,6 @@
 // layout import: jotpluggler JSON and PlotJuggler XML → our layout model
-//   {active, tabs: [{name, range?, root}]}, node = {split: "row" | "col", sizes, children} | {pane, state}
+//   {active, tabs: [{name, root}]}, node = {split: "row" | "col", sizes, children} | {pane, state}
+// Their saved time ranges are dropped: they were on another route, and a layout opens where the user is looking.
 // Custom series code is translated to JS from jotpluggler's Python or PlotJuggler's Lua where that is
 // mechanical; what isn't is flagged in a comment. Imported code is marked untrusted, so it only runs once
 // the user has reviewed it in the console.
@@ -85,19 +86,16 @@ function field(path) {
 
 function fromJotpluggler(j, warnings) {
   const tabs = (j.tabs || []).map((t) => {
-    const ranges = [];
-    const root = jpNode(t.root, ranges, warnings);
-    return {name: t.name, ...(ranges.length && {range: ranges[0]}), root};
+    return {name: t.name, root: jpNode(t.root, warnings)};
   });
   return {active: j.current_tab_index || 0, tabs};
 }
 
-function jpNode(n, ranges, warnings) {
-  if (n.split) return {split: n.split === "vertical" ? "col" : "row", sizes: n.sizes, children: n.children.map((c) => jpNode(c, ranges, warnings))};
+function jpNode(n, warnings) {
+  if (n.split) return {split: n.split === "vertical" ? "col" : "row", sizes: n.sizes, children: n.children.map((c) => jpNode(c, warnings))};
   if (n.kind === "camera") return {pane: "camera", state: {camera: CAMERAS[n.camera_view] || "fcamera"}};
   if (n.kind === "thumbnail") return {pane: "camera", state: {camera: "qcamera"}};
   if (n.kind === "map") return {pane: "map", state: {}};
-  if (n.range) ranges.push([n.range.left, n.range.right]);
   const curves = (n.curves || []).map((c) => {
     const out = {path: field(c.name), color: c.color};
     if (c.transform === "derivative") out.transform = {kind: "derivative", param: c.derivative_dt || 0};
@@ -137,9 +135,7 @@ function fromPlotJuggler(text, warnings) {
     snippets.set(name, translate("lua", [linked, ...extra].map(field), text1(s, "global"), text1(s, "function"), warnings, name));
   }
   const tabs = [...doc.querySelectorAll("tabbed_widget > Tab")].map((tab) => {
-    const ranges = [];
-    const root = pjNode(tab.querySelector("Container").firstElementChild, ranges, snippets, warnings);
-    return {name: tab.getAttribute("tab_name"), ...(ranges.length && {range: ranges[0]}), root};
+    return {name: tab.getAttribute("tab_name"), root: pjNode(tab.querySelector("Container").firstElementChild, snippets, warnings)};
   });
   return {active: +(doc.querySelector("currentTabIndex")?.getAttribute("index") || 0), tabs};
 }
@@ -147,15 +143,13 @@ function fromPlotJuggler(text, warnings) {
 const text1 = (el, tag) => el.querySelector(tag)?.textContent || "";
 const num = (el, attr, fallback) => el?.hasAttribute(attr) ? +el.getAttribute(attr) : fallback;
 
-function pjNode(el, ranges, snippets, warnings) {
+function pjNode(el, snippets, warnings) {
   if (el.tagName === "DockSplitter") {
     return {split: el.getAttribute("orientation") === "-" ? "col" : "row", sizes: el.getAttribute("sizes").split(";").map(Number),
-      children: [...el.children].map((c) => pjNode(c, ranges, snippets, warnings))};
+      children: [...el.children].map((c) => pjNode(c, snippets, warnings))};
   }
   const plot = el.querySelector("plot"), title = el.getAttribute("name") || "";
   if (!plot) return {pane: "plot", state: {title, curves: []}};
-  const range = plot.querySelector("range");
-  if (range) ranges.push([num(range, "left"), num(range, "right")]);
   const style = STYLES[plot.getAttribute("style")];
   const curves = [...plot.querySelectorAll("curve")];
   if (plot.getAttribute("mode") === "XYPlot") {
