@@ -167,6 +167,10 @@ export const routeSource = {
   list: (name) => name === "auto" ? "auto" : [name],
 };
 
+// commaCarSegments' logs are filtered copies under the full log's name; a name of their own keeps the two apart in
+// the OPFS cache, which keys on it
+const cacheName = (f) => f.source === "carSegments" && !f.file.startsWith("ccs-") ? {...f, file: `ccs-${f.file}`} : f;
+
 // file_sources' walk: for each kind, each source in turn on the segments still without it. Partial results are kept,
 // not raised. "auto" is the daemon's order, or without it AUTO's sources a browser reaches.
 // → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
@@ -174,7 +178,7 @@ export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = f
   const found = new Map(), errors = {};
   if (daemon.sources()) {
     const r = await daemon.resolve(sr, segs, kinds, sources, sizes);
-    for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, f);
+    for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, cacheName(f));
     return {found, errors: r.errors || {}};
   }
   if (sources === "auto") sources = AUTO.filter((name) => !SOURCES[name].daemon);
@@ -183,7 +187,7 @@ export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = f
     for (const name of sources) {
       if (!need.length) break;
       try {
-        for (const [n, f] of await SOURCES[name].find(sr, need, kind)) found.set(`${n}/${kind}`, {...f, source: name});
+        for (const [n, f] of await SOURCES[name].find(sr, need, kind)) found.set(`${n}/${kind}`, cacheName({...f, source: name}));
       } catch (e) {
         errors[name] = e.message;
       }

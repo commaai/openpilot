@@ -24,3 +24,8 @@
 .files-pane .fp-queue { flex-shrink: 0; max-height: 40%; overflow: auto; padding: 4px 8px; border-top: 1px solid var(--line); }
 .files-pane .fp-queue summary { color: var(--muted); cursor: pointer; }
 .files-pane .fp-queue progress { width: 120px; height: 6px; vertical-align: middle; accent-color: var(--accent); }
+@media (pointer: coarse) {
+  .files-pane .fp-body > .fp-row { height: 36px; }
+  .files-pane .fp-source { height: 32px; }
+  .files-pane .icon-btn, .files-pane a.fp-cell { min-width: 32px; min-height: 32px; }
+}
