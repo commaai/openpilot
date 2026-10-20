@@ -153,18 +153,31 @@ export function create(ctx, state) {
     ctx.perf.invalidate(pane);
   });
 
-  // the pointed-at signal's keys, whatever has the focus but a text box or a dialog, as cabana
+  // the pointed-at signal's keys, whatever has the focus but a text box or a dialog, as cabana. With the pane focused,
+  // the arrow keys pick the signal instead
   function key(e) {
-    if (!hover || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !canvas.matches(":hover")) return;
+    const focused = el.contains(document.activeElement);
+    if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !(focused || canvas.matches(":hover"))) return;
     if (e.target.closest?.("input, textarea, select, dialog")) return;
+    const sigs = visible(), i = sigs.indexOf(hover), step = {ArrowDown: 1, ArrowUp: -1}[e.key];
+    const pick = (sg) => { hover = sg; can.emit("hover", sg?.name); ctx.perf.invalidate(pane); };
+    if (focused && step && sigs.length) {
+      pick(sigs[i < 0 ? 0 : (i + step + sigs.length) % sigs.length]);
+      return e.preventDefault();
+    }
+    if (!hover) return;
     const chart = "pgc".includes(e.key);
     if (chart) can.emit("chart", `/dbc/${busOf(k())}/${msg().name}/${hover.name}`);
     else if (["x", "Delete", "Backspace"].includes(e.key)) removeSignal(can, k(), hover.name);
     else if (e.key === "e") updateSignal(can, k(), hover.name, {le: !hover.le});
     else if (e.key === "s") updateSignal(can, k(), hover.name, {signed: !hover.signed});
     else return;
-    // an edit may move the signal from under the pointer; charting leaves it there
-    if (!chart) hover = null;
+    // an edit may move the signal from under the pointer; charting leaves it there. From the keyboard, the same
+    // signal stays picked, or a removed one's neighbour
+    if (focused) {
+      const now = visible();
+      pick(chart ? hover : now.find((sg) => sg.name === hover.name) || now[Math.min(i, now.length - 1)] || null);
+    } else if (!chart) hover = null;
     e.preventDefault();
   }
 
