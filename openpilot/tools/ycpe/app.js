@@ -24,6 +24,7 @@ import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts
 import {uniqueCustoms} from "/layouts/import.js";
 
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
+const LOG_RE = /^[0-9a-f]{8}--[0-9a-f]{10}$/i;
 
 export function go(path, replace = false) {
   history[replace ? "replaceState" : "pushState"](null, "", path);
@@ -568,10 +569,9 @@ async function renderPage() {
   const parts = location.pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(location.search);
   closePopover();
-  // the API names devices in lowercase: a typed /5BEB… is the same device
-  if (DONGLE_RE.test(parts[0] || "") && parts[0] !== parts[0].toLowerCase()) {
-    return go(location.pathname.replace(parts[0], parts[0].toLowerCase()) + location.search, true);
-  }
+  // the API names devices and routes in lowercase: a typed /5BEB…/0000010A--… is the same route
+  const lower = parts.map((p, i) => i === 0 && DONGLE_RE.test(p) || i === 1 && LOG_RE.test(p) ? p.toLowerCase() : p);
+  if (DONGLE_RE.test(parts[0] || "") && lower.join("/") !== parts.join("/")) return go(`/${lower.join("/")}${location.search}`, true);
   // leaving the route with unsaved DBC edits asks first, as closing the browser tab does; staying puts its URL back
   if (ws?.store?.can.dbcs?.dirty && !showsWorkspace(parts) && !confirm("The DBC files have unsaved changes. Leave and discard them?")) {
     return history.pushState(null, "", ws.href);
