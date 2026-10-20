@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# rebuilds hevc.wasm (FFmpeg's HEVC decoder alone) from a pinned upstream release; needs emsdk on PATH
+# usage: tools/ycpe/data/video/build.sh  (with emsdk on PATH) builds hevc.wasm next to it, FFmpeg's HEVC decoder alone,
+# the software decoder full-res video falls back to without hardware HEVC or the local daemon's transcode
 set -euo pipefail
 cd "$(dirname "$0")"
+command -v emcc >/dev/null || { echo "usage: $0 (needs emcc: source ~/emsdk/emsdk_env.sh)" >&2; exit 1; }
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
@@ -12,7 +14,7 @@ F="$TMP/ffmpeg-8.1.3"
 
 # --arch=wasm picks up FFmpeg's simd128 HEVC idct and SAO kernels
 (cd "$F" && ./configure --cc=emcc --cxx=em++ --ar=emar --ranlib=emranlib --nm=emnm \
-  --target-os=none --arch=wasm --enable-cross-compile --extra-cflags="-msimd128 -flto" ${FFFLAGS:-} \
+  --target-os=none --arch=wasm --enable-cross-compile --extra-cflags="-msimd128 -flto" \
   --disable-everything --disable-autodetect --disable-programs --disable-doc --disable-network \
   --disable-avformat --disable-avdevice --disable-avfilter --disable-swscale --disable-swresample \
   --disable-pthreads --disable-inline-asm --disable-x86asm --disable-debug \
