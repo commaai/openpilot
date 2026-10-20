@@ -11,7 +11,8 @@
 .plot-pane .legend .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; align-items: center; gap: 6px; padding: 0 4px 0 6px; line-height: 17px; }
 .plot-pane .legend .row:hover { background: var(--hover); }
 .plot-pane .legend .row.off { opacity: .45; }
-.plot-pane .legend i { width: 10px; height: 3px; border-radius: 2px; cursor: pointer; }
+.plot-pane .legend i { width: 10px; height: 3px; border-radius: 2px; background: currentColor; cursor: pointer; }
+.plot-pane .legend i.dash { border-radius: 0; background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 6px); }
 .plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .plot-pane .legend .val { min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
 .plot-pane .legend .x { visibility: hidden; color: var(--muted); font-weight: 400; text-align: center; cursor: pointer; }
