@@ -1,14 +1,22 @@
 import {api, auth} from "/api.js";
-import {h, clear} from "/dom.js";
-import {icon, logo} from "/icons.js";
+import {h} from "/dom.js";
+import {logo} from "/icons.js";
+import {perf, hud} from "/perf.js";
+import {theme} from "/theme.js";
+import {createClock, RATES} from "/clock.js";
+import {Layout} from "/layout.js";
+import {PANES} from "/panes.js";
+import {VIEWS} from "/views.js";
+import {playbar} from "/playbar.js";
+import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
-import {routePage} from "/pages/route.js";
+import {create as routesPane} from "/panes/routes.js";
 
-const ROUTE_RE = /^([0-9a-f]{16})[|/_]([0-9a-f]+--[0-9a-f]+)$/i;
+const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
-export function go(path) {
-  history.pushState(null, "", path);
+export function go(path, replace = false) {
+  history[replace ? "replaceState" : "pushState"](null, "", path);
   render();
 }
 
@@ -20,148 +28,293 @@ export function link(path) {
   };
 }
 
-// a route name or dongle id typed anywhere lands on its page
-function onebox(text) {
-  const s = text.trim();
-  const m = s.match(ROUTE_RE);
-  if (m) return go(`/${m[1]}/${m[2]}`);
-  if (DONGLE_RE.test(s)) return go(`/${s}`);
-  alert("Enter a route name (dongle|time) or a dongle id");
-}
-
 export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
 
+// a route name, dongle id, connect or useradmin URL, typed or pasted anywhere
+function onebox(text) {
+  const s = decodeURIComponent(text.trim());
+  const m = s.match(ROUTE_RE);
+  if (m) return go(`/${m[1]}/${m[2]}${ws ? `/${ws.view}` : ""}`);
+  const d = s.match(/[0-9a-f]{16}/i);
+  if (d) return go(`/${d[0]}`);
+  toast("Enter a route name (dongle|time) or a dongle id");
+}
+
+function toast(text) {
+  const el = h("div", {class: "toast"}, text);
+  document.body.append(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
 const state = {me: null, devices: null};
+let ws = null;  // the open route workspace
 
-function setDrawer(open) {
-  document.body.classList.toggle("drawer-open", open);
+// ---- top bar ----
+
+function menu(anchor, build) {
+  document.querySelector(".popover")?.remove();
+  const el = h("div", {class: "popover"}, build(() => el.remove()));
+  const r = anchor.getBoundingClientRect();
+  el.style.left = `${Math.min(r.left, innerWidth - 340)}px`;
+  el.style.top = `${r.bottom + 4}px`;
+  document.body.append(el);
+  setTimeout(() => document.addEventListener("pointerdown", function off(e) {
+    if (!el.contains(e.target)) { el.remove(); document.removeEventListener("pointerdown", off); }
+  }));
+  return el;
 }
 
-// the header is built once; the account menu is built on open so it always reflects auth state
-function header() {
-  const search = h("input", {type: "search", class: "onebox", placeholder: "route name or dongle id",
-    onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; } }});
-  const account = h("div", {class: "account"});
-  const closeMenu = () => account.querySelector(".menu")?.remove();
-  const openMenu = () => account.append(h("div", {class: "menu"},
-    state.me ? h("div", {class: "menu-item muted"}, state.me.username) : null,
-    state.me ? h("div", {class: "menu-item", onclick: () => auth.logOut()}, "Sign out") : h("div", {class: "menu-item", onclick: () => go("/")}, "Sign in")));
-  account.append(h("button", {class: "icon-button", "aria-label": "Account",
-    onclick: (e) => { e.stopPropagation(); account.querySelector(".menu") ? closeMenu() : openMenu(); }}, icon("account", 28)));
-  document.addEventListener("click", closeMenu);
-  return [
-    h("button", {class: "icon-button hamburger", "aria-label": "Menu", onclick: () => setDrawer(!document.body.classList.contains("drawer-open"))}, icon("menu")),
-    h("a", {class: "brand", href: "/", onclick: link("/")}, logo(34), h("span", {}, "connect")),
-    search,
-    account,
-  ];
+const bar = {
+  device: h("button", {class: "crumb", title: "Devices"}),
+  route: h("button", {class: "crumb", title: "Routes on this device"}),
+  views: h("nav", {class: "views"}),
+  tabs: h("nav", {class: "tabs"}),
+  pill: h("span", {class: "load-pill", hidden: true}),
+};
+
+function topBar() {
+  const search = h("input", {type: "search", class: "omnibox", placeholder: "route or dongle id  ( / )", spellcheck: false,
+    onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; e.target.blur(); } else if (e.key === "Escape") e.target.blur(); }});
+  bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
+    (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
+      onpointerenter: () => prefetchDevice(d.dongle_id)},
+      h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}), h("span", {}, d.alias || d.dongle_id), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
+    !state.devices?.length && h("div", {class: "menu-row muted"}, auth.isAuthenticated() ? "No devices" : "Sign in to see your devices"))));
+  bar.route.addEventListener("click", () => {
+    if (!ws) return;
+    const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
+    pop.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
+  });
+  const account = h("button", {class: "tbtn", title: "Account"}, "●");
+  account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
+    state.me && h("div", {class: "menu-row muted"}, state.me.username || state.me.email || "signed in"),
+    auth.isAuthenticated()
+      ? h("button", {class: "menu-row", onclick: () => auth.logOut()}, "Sign out")
+      : ["google", "github", "apple"].map((p) => h("a", {class: "menu-row", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`)),
+    h("button", {class: "menu-row", onclick: () => { close(); pasteToken(); }}, "Use a JWT…"))));
+  const themeBtn = h("button", {class: "tbtn", title: "Light/dark (T)", onclick: () => theme.toggle()}, "◐");
+  return h("header", {class: "topbar"},
+    h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
+    bar.device, h("span", {class: "sep"}, "›"), bar.route, search, bar.views, bar.tabs,
+    h("span", {class: "grow"}), bar.pill, hud(), themeBtn, account);
 }
 
-let sidebarFor = null;
-function sidebar(selected) {
-  const nav = document.getElementById("sidebar");
-  if (sidebarFor !== state.devices) {
-    sidebarFor = state.devices;
-    clear(nav).append(...(state.devices || []).map((d) => h("a", {class: "device-item", href: `/${d.dongle_id}`, "data-dongle": d.dongle_id,
-      onclick: (e) => { setDrawer(false); link(`/${d.dongle_id}`)(e); }, onpointerenter: () => prefetchDevice(d.dongle_id)},
-      h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}),
-      h("span", {}, h("div", {class: "name"}, d.alias || d.dongle_id), h("div", {class: "muted small"}, d.dongle_id)))));
+function pasteToken() {
+  const jwt = prompt("Paste a comma JWT (from useradmin's developer page)");
+  if (jwt) { localStorage.setItem("comma_jwt", jwt.trim()); location.reload(); }
+}
+
+function updateTop() {
+  const dongle = ws?.dongle || location.pathname.split("/")[1];
+  const device = state.devices?.find((d) => d.dongle_id === dongle);
+  bar.device.textContent = device ? device.alias || dongle : DONGLE_RE.test(dongle || "") ? dongle : "devices";
+  bar.route.hidden = bar.route.previousSibling.hidden = !ws;
+  bar.views.hidden = bar.tabs.hidden = !ws;
+  if (!ws) return;
+  const start = new Date(ws.route.start_time_utc_millis);
+  bar.route.textContent = `${start.toLocaleDateString(undefined, {month: "short", day: "numeric"})} ${start.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false})} · ${ws.route.fullname.split("|")[1]}`;
+  bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
+  const layout = ws.layout;
+  bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
+    onclick: () => { layout.selectTab(i); updateTop(); },
+    ondblclick: () => { const n = prompt("Tab name", t.name); if (n) { layout.renameTab(i, n); updateTop(); } },
+    onauxclick: (e) => { if (e.button === 1) { layout.closeTab(i); updateTop(); } }}, t.name,
+    layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, "×"))),
+  h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"));
+}
+
+// ---- route workspace: one clock, one store, one layout per view ----
+
+class Workspace {
+  constructor(route, files, view, {t = 0, repeat = 1}) {
+    this.route = route;
+    this.dongle = route.fullname.split("|")[0];
+    this.files = files;
+    this.repeat = repeat;
+    this.store = null;
+    this.storeSubs = new Set();
+    this.layouts = {};
+    this.clock = createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
+    this.clock.seek(t);
+    this.main = h("div", {class: "workspace"});
+    this.el = h("div", {class: "ws"}, this.main, playbar(this.ctx()));
+    this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
+    this.setView(view);
   }
-  for (const a of nav.children) a.classList.toggle("selected", a.dataset.dongle === selected);
-  document.body.classList.toggle("has-sidebar", !!state.devices && state.devices.length > 0);
-}
 
-function loginPage() {
-  return h("div", {class: "login"},
-    h("div", {class: "login-logo"}, logo(60)),
-    h("h1", {}, "connect"),
-    ["google", "github", "apple"].map((p) => h("a", {class: "button wide", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase() + p.slice(1)}`)),
-    h("p", {class: "muted"}, "Or open a public route by name in the search box."));
-}
-
-async function authCallback() {
-  const q = new URLSearchParams(location.search);
-  try {
-    await auth.exchangeCode(q.get("code"), q.get("provider"));
-    history.replaceState(null, "", "/");
-  } catch (e) {
-    return h("p", {class: "error"}, String(e));
+  ctx() {
+    const self = this;
+    return {
+      route: this.route, clock: this.clock, perf, theme,
+      get store() { return self.ensureStore(); },
+      peekStore: () => this.store,
+      onStore: (fn) => { this.storeSubs.add(fn); if (this.store) fn(this.store); },
+      openRoute: (name) => this.openRoute(name),
+    };
   }
-  return render();
+
+  // logs load only once something needs them (the drive view doesn't)
+  ensureStore() {
+    if (this.store) return this.store;
+    const urls = [];
+    for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
+    this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
+    let focusTimer = 0;
+    this.offs.push(this.clock.on("t", () => {
+      clearTimeout(focusTimer);
+      focusTimer = setTimeout(() => this.store.focus(this.clock.t), 150);
+    }));
+    this.store.on("progress", (p) => {
+      if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
+      const mb = p.bytes / 1e6 / ((performance.now() - p.start) / 1000);
+      bar.pill.hidden = p.done + p.failed >= p.total;
+      bar.pill.textContent = `${p.done}/${p.total} segments · ${mb.toFixed(0)} MB/s`;
+      perf.mark("segments", `${p.done}/${p.total}`);
+      perf.mark("downloaded", `${(p.bytes / 1e6).toFixed(0)} MB`);
+    });
+    for (const fn of this.storeSubs) fn(this.store);
+    return this.store;
+  }
+
+  get layout() { return this.layouts[this.view]; }
+
+  setView(view) {
+    if (!VIEWS[view]) view = "drive";
+    this.view = view;
+    if (!this.layouts[view]) {
+      const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
+      const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
+      if (usesData(model)) this.ensureStore();
+      this.layouts[view] = new Layout(this.ctx(), model, (m) => {
+        localStorage.setItem(`ycpe_layout_${view}`, JSON.stringify(m));
+        if (usesData(m)) this.ensureStore();
+      });
+    }
+    this.main.replaceChildren(this.layout.el);
+    this.layout.invalidateAll();
+    this.syncUrl(true);
+    updateTop();
+  }
+
+  openRoute(name) {
+    go(`/${name.replace("|", "/")}/${this.view}`);
+  }
+
+  syncUrl(now = false) {
+    clearTimeout(this.urlTimer);
+    const write = () => {
+      const q = new URLSearchParams(location.search);
+      q.set("t", this.clock.t.toFixed(1));
+      if (this.clock.t === 0) q.delete("t");
+      const path = `/${this.route.fullname.replace("|", "/")}/${this.view}`;
+      history.replaceState(null, "", `${path}${q.size ? `?${q}` : ""}`);
+    };
+    if (now) write(); else this.urlTimer = setTimeout(write, 400);
+  }
+
+  dispose() {
+    for (const off of this.offs) off();
+    this.clock.pause();
+    for (const l of Object.values(this.layouts)) l.dispose();
+    this.store?.dispose();
+  }
 }
 
-// built pages are kept (with their scroll position) so back/forward and revisits swap in instantly;
-// the old page stays up while a new one loads, and the progress bar only appears if that takes a moment
-const PAGE_CACHE = 8;
-const PAGE_TTL = 5 * 60000;
-const pages = new Map();
-let current = null;
+const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g)?.some((m) => PANES[m.slice(8, -1)]?.data);
+
+// ---- keyboard ----
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "/") { e.preventDefault(); document.querySelector(".omnibox").focus(); return; }
+  if (e.key === "t") return theme.toggle();
+  if (!ws) return;
+  const c = ws.clock, step = e.shiftKey ? 10 : 1;
+  const keys = {
+    " ": () => c.toggle(),
+    ArrowLeft: () => c.seek(c.t - step),
+    ArrowRight: () => c.seek(c.t + step),
+    ",": () => c.seek(c.t - 0.05),
+    ".": () => c.seek(c.t + 0.05),
+    "[": () => c.setRate(RATES[Math.max(0, RATES.indexOf(c.rate) - 1)]),
+    "]": () => c.setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(c.rate) + 1)]),
+    l: () => c.setLoop(c.loop ? null : [...c.range]),
+    f: () => c.setRange(0, c.duration),
+    Home: () => c.seek(0),
+    End: () => c.seek(c.duration),
+  };
+  Object.keys(VIEWS).forEach((v, i) => { keys[String(i + 1)] = () => ws.setView(v); });
+  if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
+});
+
+// ---- routing ----
+
 let navId = 0;
-
-function cachePage(path, el) {
-  pages.delete(path);
-  pages.set(path, {el, scrollY: 0, time: Date.now()});
-  for (const [k, v] of pages) {
-    if (pages.size <= PAGE_CACHE) break;
-    pages.delete(k);
-    v.el.cleanup?.();
-  }
-  return pages.get(path);
-}
-
-function show(entry, fresh) {
-  if (current && current !== entry) {
-    current.scrollY = window.scrollY;
-    for (const v of current.el.querySelectorAll("video")) v.pause();
-  }
-  current = entry;
-  entry.el.classList.toggle("enter", fresh);
-  document.getElementById("main").replaceChildren(entry.el);
-  window.scrollTo(0, entry.scrollY);
-  for (const m of entry.el.querySelectorAll(".device-map, .drive-map")) m._map?.resize();
-}
-
 async function render() {
   const id = ++navId;
   const main = document.getElementById("main");
-  const path = location.pathname.replace(/\/+$/, "") || "/";
-  setDrawer(false);
-  const parts = path.split("/").filter(Boolean);
-  const dongleId = DONGLE_RE.test(parts[0] || "") ? parts[0] : null;
+  const parts = location.pathname.split("/").filter(Boolean);
+  const q = new URLSearchParams(location.search);
+  document.querySelector(".popover")?.remove();
 
-  const cached = pages.get(path);
-  if (cached && Date.now() - cached.time < PAGE_TTL) {
-    sidebar(dongleId);
-    return show(cached, false);
+  if (parts[0] === "auth") {
+    await auth.exchangeCode(q.get("code"), q.get("provider")).catch((e) => toast(String(e)));
+    return go("/", true);
+  }
+  if (auth.isAuthenticated() && !state.devices) {
+    [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
   }
 
-  const slow = setTimeout(() => document.body.classList.add("loading"), 150);
-  let page, cacheable = false;
-  try {
-    if (path === "/auth") return main.replaceChildren(await authCallback());
-    if (auth.isAuthenticated() && !state.me) {
-      [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
+  const routeName = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? `${parts[0]}|${parts[1]}` : null;
+  if (routeName) {
+    if (ws?.route.fullname === routeName) {
+      if (parts[2] && parts[2] !== ws.view) ws.setView(parts[2]);
+      return;
     }
-    sidebar(dongleId);
-    if (dongleId && parts.length === 2) page = await routePage(`${dongleId}|${parts[1]}`, dongleId, state.devices);
-    else if (dongleId) page = await devicePage(dongleId, state.devices);
-    else if (!auth.isAuthenticated()) page = loginPage();
-    else if (state.devices.length) { history.replaceState(null, "", `/${state.devices[0].dongle_id}`); return render(); }
-    else page = h("div", {class: "page"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen."));
-    cacheable = !!dongleId;
-  } catch (e) {
-    console.error(e);
-    page = h("p", {class: "error center"}, e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e));
-  } finally {
-    clearTimeout(slow);
-    if (id === navId) document.body.classList.remove("loading");
+    document.body.classList.add("loading");
+    try {
+      const [route, files] = await Promise.all([api.route(routeName), api.routeFiles(routeName)]);
+      if (id !== navId) return;
+      ws?.dispose();
+      ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      document.body.classList.add("in-ws");
+      main.replaceChildren(ws.el);
+    } catch (e) {
+      main.replaceChildren(errorPage(e));
+    } finally {
+      document.body.classList.remove("loading");
+    }
+    return updateTop();
   }
-  if (id !== navId) { page.cleanup?.(); return; }  // superseded by a newer navigation
-  show(cacheable ? cachePage(path, page) : {el: page, scrollY: 0}, true);
+
+  ws?.dispose();
+  ws = null;
+  document.body.classList.remove("in-ws");
+  updateTop();
+  if (DONGLE_RE.test(parts[0] || "")) {
+    const page = await devicePage(parts[0], state.devices).catch(errorPage);
+    if (id === navId) main.replaceChildren(page);
+  } else if (state.devices?.length) {
+    go(`/${state.devices[0].dongle_id}`, true);
+  } else {
+    main.replaceChildren(homePage());
+  }
 }
 
-history.scrollRestoration = "manual";
-document.getElementById("header").append(...header().filter(Boolean));
-document.getElementById("backdrop").addEventListener("click", () => setDrawer(false));
+function errorPage(e) {
+  console.error(e);
+  const msg = e.status === 403 ? "You don't have access to this." : e.status === 404 ? "Not found." : String(e.message || e);
+  return h("div", {class: "page-msg"}, h("h2", {}, msg), h("p", {class: "muted"}, "Try a route name or dongle id in the box above."));
+}
+
+function homePage() {
+  return h("div", {class: "page-msg"},
+    h("h2", {}, "ycpe"),
+    h("p", {class: "muted"}, "Routes, plots, and CAN for openpilot drives."),
+    !auth.isAuthenticated() && h("p", {}, ["google", "github", "apple"].map((p) => h("a", {class: "button", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`))),
+    h("p", {}, h("a", {href: "/5beb9b58bd12b691/0000010a--a51155e496/drive", onclick: link("/5beb9b58bd12b691/0000010a--a51155e496/drive")}, "Open the demo route")));
+}
+
+document.getElementById("app").prepend(topBar());
 window.addEventListener("popstate", render);
 render();
