@@ -21,6 +21,7 @@ const QCAMERA_BYTES_PER_S = 37e3;
 const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js";
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
 const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
+const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
 
 export function create(ctx, state) {
   let camera = CAMERAS[state.camera] ? state.camera : "qcamera";
@@ -64,7 +65,7 @@ export function create(ctx, state) {
   function use(cam) {
     camera = picker.value = cam;
     if (cam === "qcamera") show(qcamera(ctx, pane, ui));
-    else show(fullres(ctx, pane, cam, {...ui, fail: (why) => show(qcamera(ctx, pane, ui), `${why}, showing qcamera`)}));
+    else show(fullres(ctx, pane, cam, {...ui, fail: (why) => show(qcamera(ctx, pane, ui), why)}));
   }
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
@@ -183,7 +184,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
   let real = [];  // each slot's segment
   sources(ctx.route, camera).then(({urls, keys, segs, ...src}) => {
     real = segs;
-    if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files`);
+    if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files, showing qcamera`);
     lanes.count(urls.length);
     worker.postMessage({urls, keys});
     ready = true;
@@ -202,10 +203,11 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
       }
       if (waitingOn?.n === seg) buffering(waitingOn);
     });
-  }).catch(() => fail("camera files unavailable"));
+  }).catch(() => fail("camera files unavailable, showing qcamera"));
 
   worker.onmessage = ({data}) => {
-    if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}`);
+    if (data.unbuilt) return fail(UNBUILT);
+    if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}, showing qcamera`);
     if (data.backend) {
       software = (stats.backend = data.backend) !== "hardware";
       badge();
