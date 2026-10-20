@@ -1,6 +1,8 @@
-// the browser side of store.py: loads logs through the app's Store (loader, workers, migration, pack, unpack) and
-// dumps every series back to one value per event, in dump.py's shape: {service: {t, valid, cols: {path: [value]}}}
+// the browser side of store.py: finds a log the way the app does (data/sources.js), loads it through the app's Store
+// (loader, workers, migration, pack, unpack) and dumps every series back to one value per event, in dump.py's shape
+// {service: {t, valid, cols: {path: [value]}}}, plus the CAN frames
 import {Store} from "/data/store.js";
+import {localRoute, parseRange, resolveLogs} from "/data/sources.js";
 
 const json = (x) => x === null || x === undefined || x !== x ? null : x === Infinity ? "inf" : x === -Infinity ? "-inf" : x;
 
@@ -14,9 +16,21 @@ function expand(c) {
   return out;
 }
 
-// urls as the Store takes them; resolves once every segment loaded or failed
-export async function dumpStore(name, urls) {
-  const store = new Store(name, urls);
+// the store entry of a log: a dropped File (as the app's drop), a segment of a route from sources ("auto" or names;
+// through the daemon when it serves the page), or a URL as is
+export async function find({drop, route, n, sources, url, file}) {
+  if (drop) return localRoute([drop]).urls.find(Boolean);
+  if (route) {
+    const {logs, errors} = await resolveLogs(parseRange(route), [n], {sources, mode: "r"});
+    if (!logs.has(n)) throw new Error(`not found: ${JSON.stringify(errors)}`);
+    return logs.get(n);
+  }
+  return {url, file};
+}
+
+// loads one log as segment 0 of a route; resolves once it loaded or failed
+export async function dumpStore(name, entry) {
+  const store = new Store(name, [entry]);
   await new Promise((resolve) => {
     const check = () => store.progress.done + store.progress.failed >= store.progress.total && resolve();
     store.on("progress", check);
