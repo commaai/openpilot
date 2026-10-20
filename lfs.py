@@ -148,21 +148,16 @@ def parallel(function, arguments, workers=TRANSFERS):
     return [future.result() for future in futures]
 
 
-def hf_token():
-  if os.environ.get("HF_HUB_DISABLE_IMPLICIT_TOKEN", "").upper() in TRUE_VALUES:
-    return None
-  if token := os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN"):
-    return token.strip()
-  cache_home = Path(os.environ.get("XDG_CACHE_HOME", "~/.cache")).expanduser()
-  hf_home = Path(os.environ.get("HF_HOME", cache_home / "huggingface")).expanduser()
-  token_path = Path(os.environ.get("HF_TOKEN_PATH", hf_home / "token")).expanduser()
-  return token_path.read_text().strip() if token_path.is_file() else None
-
-
 def download_http(oid, size, path):
   request = urllib.request.Request(f"https://huggingface.co/buckets/{BUCKET}/resolve/sha256/{oid}")
-  if token := hf_token():
-    request.add_unredirected_header("Authorization", f"Bearer {token}")
+  if os.environ.get("HF_HUB_DISABLE_IMPLICIT_TOKEN", "").upper() not in TRUE_VALUES:
+    hf_home = Path(os.environ.get("HF_HOME", Path(os.environ.get("XDG_CACHE_HOME", "~/.cache")) / "huggingface")).expanduser()
+    token_path = Path(os.environ.get("HF_TOKEN_PATH", hf_home / "token")).expanduser()
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    if not token and token_path.is_file():
+      token = token_path.read_text().strip()
+    if token:
+      request.add_unredirected_header("Authorization", f"Bearer {token.strip()}")
   for attempt in range(4):
     try:
       with urllib.request.urlopen(request, timeout=30) as response, path.open("wb") as out:
@@ -171,9 +166,8 @@ def download_http(oid, size, path):
         raise http.client.HTTPException(f"incomplete download for {oid}")
       return
     except (urllib.error.URLError, http.client.HTTPException, TimeoutError, ConnectionError) as error:
-      if isinstance(error, urllib.error.HTTPError) and error.code not in (408, 429) and not 500 <= error.code < 600:
-        raise
-      if attempt == 3:
+      retryable = not isinstance(error, urllib.error.HTTPError) or error.code in (408, 429) or 500 <= error.code < 600
+      if not retryable or attempt == 3:
         raise
       time.sleep(2 ** attempt)
 
