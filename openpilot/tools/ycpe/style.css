@@ -119,8 +119,8 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .perf-chart { width: 100%; height: 90px; display: block; margin-bottom: 6px; }
 .perf-row { display: grid; grid-template-columns: 1fr 70px 70px; padding: 1px 0; font: 11px var(--mono); font-variant-numeric: tabular-nums; }
 .perf-row.head { color: var(--muted); border-bottom: 1px solid var(--line); }
+.perf-row > :not(:first-child) { text-align: right; }
 .perf-row.mark { grid-template-columns: auto 1fr; gap: 12px; }  /* counters, not ms: the value takes the rest */
-.perf-row.mark > :last-child { text-align: right; }
 .perf-row .bad { color: var(--critical-fg); }
 .perf-longs { margin-top: 6px; max-height: 120px; overflow: auto; }
 

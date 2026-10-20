@@ -31,6 +31,10 @@ export const perf = {
 window.__perf = perf;
 
 let current = null;
+const keys = new WeakMap();      // pane → its name and number: each pane's time is its own ("plot#3")
+let nextId = 0;
+const key = (pane) => keys.get(pane) ?? keys.set(pane, `${pane.name || "?"}#${++nextId}`).get(pane);
+
 function add(f, name, ms) {
   if (f) f.panes[name] = (f.panes[name] || 0) + ms;
 }
@@ -55,7 +59,7 @@ function loop(now) {
     if (pane.el && !pane.el.isConnected) continue;  // a hidden view's: it redraws when shown again (Layout.invalidateAll)
     const t = performance.now();
     try { pane.render(frame); } catch (e) { console.error(pane.name, e); }
-    add(frame, pane.name || "?", performance.now() - t);
+    add(frame, key(pane), performance.now() - t);
   }
   frame.work = performance.now() - start;
   frames.push(frame);
@@ -137,30 +141,42 @@ function perfPanel(onClose) {
     ctx.clearRect(0, 0, w, hgt);
     const scale = hgt / 33;
     const bw = w / HISTORY;
+    const gap = document.documentElement.dataset.theme === "light" ? "rgba(128,128,128,.12)" : "rgba(128,128,128,.25)";
     frames.forEach((f, i) => {
       const x = w - (frames.length - i) * bw;
-      ctx.fillStyle = f.interval > refresh * 1.5 ? "rgba(229,72,77,.35)" : "rgba(128,128,128,.25)";
+      ctx.fillStyle = f.interval > refresh * 1.5 ? "rgba(229,72,77,.35)" : gap;
       ctx.fillRect(x, hgt - Math.min(hgt, f.interval * scale), bw, Math.min(hgt, f.interval * scale));
       ctx.fillStyle = f.work > BUDGET_MS ? "#e5484d" : "#3fb950";
       ctx.fillRect(x, hgt - Math.min(hgt, f.work * scale), bw, Math.max(1, f.work * scale));
     });
     ctx.fillStyle = "rgba(128,128,128,.8)";
     ctx.font = "10px ui-monospace, monospace";
+    ctx.textAlign = "right";  // clear of the newest frames' bars, mostly
     for (const ms of [BUDGET_MS, 16.7]) {
       ctx.fillRect(0, hgt - ms * scale, w, 1);
-      ctx.fillText(`${ms} ms`, 4, hgt - ms * scale - 3);
+      ctx.fillText(`${ms} ms`, w - 4, hgt - ms * scale - 3);
     }
   }};
   const update = () => {
     perf.invalidate(pane);
-    const totals = {};
+    // by pane type: each frame's time for all the panes of it, and how many there are
+    const totals = {}, panes = {};
     const recent = frames.slice(-120);
-    for (const f of recent) for (const [k, v] of Object.entries(f.panes)) (totals[k] ||= []).push(v);
-    const rows = Object.entries(totals).map(([k, v]) => [k, v.reduce((a, b) => a + b, 0) / recent.length, Math.max(...v)]).sort((a, b) => b[1] - a[1]);
+    for (const f of recent) {
+      const byType = {};
+      for (const [k, v] of Object.entries(f.panes)) {
+        const type = k.split("#")[0];
+        byType[type] = (byType[type] || 0) + v;
+        (panes[type] ||= new Set()).add(k);
+      }
+      for (const [type, v] of Object.entries(byType)) (totals[type] ||= []).push(v);
+    }
+    const rows = Object.entries(totals).map(([k, v]) => [panes[k].size > 1 ? `${k} ×${panes[k].size}` : k, v.reduce((a, b) => a + b, 0) / recent.length, Math.max(...v)])
+      .sort((a, b) => b[1] - a[1]);
     table.replaceChildren(h("div", {class: "perf-row head"}, h("span", {}, "pane"), h("span", {}, "avg ms"), h("span", {}, "max ms")),
       ...rows.map(([k, avg, max]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, avg.toFixed(2)), h("span", {class: max > BUDGET_MS ? "bad" : ""}, max.toFixed(2)))),
       ...Object.entries(marks).map(([k, v]) => h("div", {class: "perf-row mark"}, h("span", {}, k), h("span", {}, String(v)))));
-    longs.replaceChildren(h("div", {class: "muted"}, `${longFrames.length} long frames`),
+    longs.replaceChildren(h("div", {class: "muted"}, `${longFrames.length} long frame${longFrames.length === 1 ? "" : "s"}`),
       ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms (layout ${l.layout.toFixed(0)})  ${l.scripts.slice(0, 2).join(" · ")}`)));
   };
   const timer = setInterval(update, 500);
