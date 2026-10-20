@@ -297,7 +297,7 @@ class Workspace {
     this.main = h("div", {class: "workspace"});
     this.playbar = playbar(this.ctx());
     this.el = h("div", {class: "ws"}, this.main, this.playbar.el);
-    this.offs = [this.clock.on("t", () => this.syncUrl()), this.clock.on("play", () => this.syncUrl())];
+    this.offs = ["t", "play", "range"].map((ev) => this.clock.on(ev, () => this.syncUrl()));
     // another browser tab saved a layout: this one's copy only replaces it once it changes
     const stored = (e) => {
       const view = e.key?.match(/^ycpe_layout_(.+)/)?.[1];
@@ -402,9 +402,9 @@ class Workspace {
     }
   }
 
-  // a connect time range: the playhead at its start, and only it in view
-  showRange([t0, t1]) {
-    this.clock.seek(t0);
+  // a connect time range: only it in view, the playhead at its start (or where the URL's t put it)
+  showRange([t0, t1], seek = true) {
+    if (seek) this.clock.seek(t0);
     this.clock.setRange(t0, t1);
   }
 
@@ -421,7 +421,11 @@ class Workspace {
       q.delete("layout");  // opened once, then it's part of the saved layout
       if (this.clock.t === 0) q.delete("t");
       if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
-      const path = `/${routeKey(this.route).replace("|", "/")}/${this.view}`;
+      // a window narrower than the route stays in the path as connect's "/<start>/<end>" (whole seconds; not on a slice,
+      // which that form can't follow)
+      const [r0, r1] = this.clock.range;
+      const span = !this.route.range && (r0 > 0 || r1 < this.clock.duration) ? `/${Math.floor(r0)}/${Math.ceil(r1)}` : "";
+      const path = `/${routeKey(this.route).replace("|", "/")}${span}/${this.view}`;
       this.href = `${path}${q.size ? `?${q}` : ""}`;
       history.replaceState(null, "", this.href);
     };
@@ -587,7 +591,7 @@ async function renderPage() {
       // ?repeat=n (a load test): the logs n times over, at most 50
       const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
       ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat});
-      if (target.range) ws.showRange(target.range);
+      if (target.range) ws.showRange(target.range, !q.has("t"));
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
       document.body.classList.add("in-ws");
