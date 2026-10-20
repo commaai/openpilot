@@ -1,20 +1,20 @@
 /* ycpe shell: themes, top bar, layout, panes, playback bar */
 :root {
-  --engaged: #178645; --override: #919b95; --alert: #da6f25; --critical: #c92231; --bookmark: #e3b341;
+  --engaged: #178645; --alert: #da6f25; --critical: #c92231; --bookmark: #e3b341;
   --font: "Inter", system-ui, sans-serif; --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
   --top: 36px; --head: 22px;
 }
 [data-theme="light"] {
   --bg: #eef0f2; --panel: #fff; --raised: #fff; --fg: #1c2024; --fg-rgb: 28,32,36; --muted: #5f666e; --line: #dde1e5;
   --hover: rgba(0,0,0,.05); --active: rgba(0,0,0,.09); --accent: #2f6fde; --accent-fg: #fff;
-  --driving: #9fb4c8; --range: rgba(47,111,222,.55); --loop: rgba(47,111,222,.12); --shadow: 0 6px 24px rgba(0,0,0,.14);
+  --driving: #c3d1de; --override: #6c7570; --range: rgba(47,111,222,.55); --loop: rgba(47,111,222,.12); --shadow: 0 6px 24px rgba(0,0,0,.14);
   --alert-fg: #b35614; --critical-fg: var(--critical);  /* the state colors as small text */
   color-scheme: light;
 }
 [data-theme="dark"] {
   --bg: #0d1013; --panel: #15191d; --raised: #1c2126; --fg: #e3e7eb; --fg-rgb: 227,231,235; --muted: #8a939c; --line: #2a3138;
-  --hover: rgba(255,255,255,.06); --active: rgba(255,255,255,.11); --accent: #4c8dff; --accent-fg: #fff;
-  --driving: #1d4f74; --range: rgba(76,141,255,.6); --loop: rgba(76,141,255,.14); --shadow: 0 8px 28px rgba(0,0,0,.5);
+  --hover: rgba(255,255,255,.06); --active: rgba(255,255,255,.11); --accent: #4c8dff; --accent-fg: #0d1013;
+  --driving: #0b1d2e; --override: #919b95; --range: rgba(76,141,255,.6); --loop: rgba(76,141,255,.14); --shadow: 0 8px 28px rgba(0,0,0,.5);
   --alert-fg: var(--alert); --critical-fg: #ff6b78;
   color-scheme: dark;
 }
@@ -92,7 +92,7 @@ body.in-ws #main { overflow: hidden; }
 .status-title { font-size: 11px; margin-bottom: 3px; }
 .status-lane { display: block; width: 100%; height: 10px; }
 .status-tip { height: 14px; font: 10px var(--mono); }
-.status-errors { height: auto; color: var(--critical); white-space: pre-wrap; }
+.status-errors { height: auto; color: var(--critical-fg); white-space: pre-wrap; }
 .hud-mem { color: var(--muted); }
 .tbtn { min-width: 24px; height: 24px; padding: 0 5px; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
 .tbtn:hover { background: var(--hover); color: var(--fg); }

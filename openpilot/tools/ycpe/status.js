@@ -133,7 +133,9 @@ export function loadPill() {
     el.classList.toggle("buffering", !!waiting);
     el.classList.toggle("done", !waiting && !active.length);
     const each = all.map((k) => { const n = counts(k); return {n, text: `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}`}; });
-    el.style.color = el.style.borderColor = each.some((e) => e.n.error) && !waiting ? "var(--critical)" : "";
+    const bad = each.some((e) => e.n.error) && !waiting;
+    el.style.color = bad ? "var(--critical-fg)" : "";
+    el.style.borderColor = bad ? "var(--critical)" : "";
     el.title = `${[...each.map((e) => e.text), ...extra].join(" · ")} (click for details)`;
     if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
     else if (active.length) {
