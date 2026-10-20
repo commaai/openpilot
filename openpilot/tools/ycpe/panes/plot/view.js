@@ -9,9 +9,16 @@ let tracker = null;
 let touched = null;  // the plot pane the user last pressed in
 
 export function join(p) { panes.add(p); }
-export function leave(p) {
+// p is gone from clock's workspace: so are its undo entries, which would undo nothing and keep it alive
+export function leave(p, clock) {
   panes.delete(p);
   if (touched === p) touched = null;
+  const hist = histories.get(clock);
+  if (!hist) return;
+  for (const list of [hist.past, hist.future]) {
+    for (const s of list) s.views?.delete(p);
+    list.splice(0, Infinity, ...list.filter((s) => s.pane !== p));
+  }
 }
 export function touch(p) { touched = p; }
 export function each(fn) { for (const p of panes) fn(p); }

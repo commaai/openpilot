@@ -679,7 +679,7 @@ export function create(ctx, state = {}) {
 
   function dispose() {
     for (const off of offs) off?.();
-    view.leave(pane);
+    view.leave(pane, clock);
     clearTimeout(statsTimer);
     clearTimeout(recomputeTimer);
     decimator.dispose();
