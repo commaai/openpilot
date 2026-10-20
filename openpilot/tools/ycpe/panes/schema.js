@@ -11,7 +11,7 @@ const took = (ms) => ms < 10 ? "cached" : ms < 1000 ? `${Math.round(ms)} ms` : `
 
 // el, filled in once the route's logs start loading (the info pane doesn't load them itself); returns a dispose()
 export function schemaRow(ctx) {
-  const el = h("span", {class: "schema-row muted"}, "loads with the logs");
+  const el = h("span", {class: "schema-row muted"}, "chosen when the logs load (open Plot or CAN)");
   let off = null;
   const unsub = ctx.onStore((store) => {
     const ls = logSchema(store, ctx.route);
