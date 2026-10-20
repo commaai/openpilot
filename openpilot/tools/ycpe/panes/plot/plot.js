@@ -157,7 +157,10 @@ export function create(ctx, state = {}) {
     empty.hidden = !failure && !!rows.length;
   }
 
-  const label = (c) => (c.label || c.path.replace(/^\//, "")) + (c.transform ? ` [${TRANSFORMS[c.transform.kind].label.toLowerCase()}]` : "");
+  // a curve's name, with its transform, scale, offset and time shift where it has them
+  const signed = (x) => `${x < 0 ? "−" : "+"}${Math.abs(x)}`;
+  const label = (c) => (c.label || c.path.replace(/^\//, "")) + (c.transform ? ` [${TRANSFORMS[c.transform.kind].label.toLowerCase()}]` : "") +
+    ((c.scale ?? 1) !== 1 ? ` ×${c.scale}` : "") + (c.offset ? ` ${signed(c.offset)}` : "") + (c.shift ? ` (${signed(c.shift)} s)` : "");
 
   // ---- drawing
 
@@ -402,7 +405,7 @@ export function create(ctx, state = {}) {
 
   // creates (c undefined) or edits a custom series; the curve changes only once the code has run. A name is one
   // piece of code across the layout, since other custom series read it by name
-  const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.label, ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
+  const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.path.slice("/custom/".length), ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
     const path = `/custom/${spec.name}`, custom = {inputs: spec.inputs, globals: spec.globals, code: spec.code};
     const other = path !== c?.path && ctx.layout && customsOf(ctx.layout.save()).get(path);
     if (other && other !== specKey(custom)) throw new Error(`another custom series is named ${spec.name}: pick another name`);

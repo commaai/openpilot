@@ -53,6 +53,7 @@ export function curveEditor(x, y, curve, {change, remove, code, actions = []}) {
   showParam();
   return popup(x, y,
     h("div", {class: "title"}, curve.label || curve.path),
+    h("label", {}, "label", h("input", {value: curve.label || "", placeholder: curve.path.slice(1), spellcheck: false, oninput: (e) => set("label")(e.target.value.trim() || undefined)})),
     h("label", {}, "color", h("input", {type: "color", value: curve.color, oninput: (e) => set("color")(e.target.value)})),
     h("label", {}, "style", h("select", {onchange: (e) => set("style")(e.target.value || undefined)},
       h("option", {value: ""}, "auto"), STYLES.map((s) => h("option", {value: s, selected: curve.style === s}, s)))),
