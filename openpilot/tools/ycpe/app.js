@@ -355,6 +355,12 @@ function help() {
 
 // ---- routing ----
 
+function closeWorkspace() {
+  ws?.dispose();
+  ws = null;
+  document.body.classList.remove("in-ws");
+}
+
 let navId = 0;
 async function render() {
   const id = ++navId;
@@ -364,9 +370,7 @@ async function render() {
   document.querySelector(".popover")?.remove();
 
   if (parts[0] === "auth" || parts[0] === "login") {
-    ws?.dispose();
-    ws = null;
-    document.body.classList.remove("in-ws");
+    closeWorkspace();
     updateTop();
     return main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
@@ -397,16 +401,17 @@ async function render() {
       main.replaceChildren(ws.el);
     } catch (e) {
       const card = [403, 404].includes(e.status) && await pullCard(routeName, render).catch(() => null);  // only on the LAN device
-      if (id === navId) main.replaceChildren(card || errorPage(e));
+      if (id === navId) {
+        closeWorkspace();
+        main.replaceChildren(card || errorPage(e));
+      }
     } finally {
       document.body.classList.remove("loading");
     }
     return updateTop();
   }
 
-  ws?.dispose();
-  ws = null;
-  document.body.classList.remove("in-ws");
+  closeWorkspace();
   updateTop();
   if (DONGLE_RE.test(parts[0] || "")) {
     const page = await devicePage(parts[0], state.devices).catch(errorPage);
