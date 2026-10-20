@@ -286,7 +286,7 @@ export function create(ctx, state = {}) {
     g.beginPath();
     g.rect(px, T, pw, ph0);
     g.clip();
-    p.rows.forEach((it, k) => drawBlocks(g, it.blocks, (t) => X(t + it.shift), T + k * stripH, T + (k + 1) * stripH - 1, it.s.names, col));
+    p.rows.forEach((it, k) => drawBlocks(g, it.blocks, (t) => X(t + it.shift), T + k * stripH, T + (k + 1) * stripH - 1, it.s, col));
     // curves
     for (const it of p.lines) {
       if (!it.d) continue;
@@ -487,14 +487,14 @@ export function create(ctx, state = {}) {
       const row = rows[k];
       if (!row) return;
       const path = c.transform ? derivedPath(c.path, c.transform) : c.path, m = store.meta(path);
-      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined, names = m?.names;
+      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined, fm = m;
       // names stand for the sample as it is; other numbers are scaled, and keep their unit only when they aren't
       const plain = (c.scale ?? 1) === 1 && !c.offset;
-      if (typeof v === "number" && m.type !== "e" && names?.[v] === undefined && !plain) {
+      if (typeof v === "number" && m.type !== "e" && m.names?.[v] === undefined && !plain) {
         v = v * (c.scale ?? 1) + (c.offset ?? 0);
-        names = undefined;
+        fm = null;
       }
-      const text = fmtValue(v, names, plain ? m?.unit : undefined).slice(0, 100);
+      const text = fmtValue(v, fm).slice(0, 100);
       if (row.val.textContent !== text) row.val.textContent = text;
     });
     if (st.stats) updateStats();
@@ -531,7 +531,7 @@ export function create(ctx, state = {}) {
     const t = timeAt(p.x) - it.shift, b = it.blocks.find((b) => b.a <= t && t < b.b);
     if (!b) return "";
     const name = b.mixed ? undefined : it.s.names?.[b.v];
-    const what = b.mixed ? "several states (zoom in)" : name !== undefined ? `${name} (${b.v})` : fmtValue(b.v, null, it.s.unit);
+    const what = b.mixed ? "several states (zoom in)" : name !== undefined ? `${name} (${b.v})` : fmtValue(b.v, it.s);
     return `${label(it.c)}: ${what}\n${b.a.toFixed(2)} s → ${b.b.toFixed(2)} s, ${(b.b - b.a).toFixed(2)} s`;
   }
   const valueAt = (y) => frame.hi - (y - frame.py) / frame.ph * (frame.hi - frame.lo);

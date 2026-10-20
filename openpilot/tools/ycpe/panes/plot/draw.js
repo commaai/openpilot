@@ -87,14 +87,15 @@ export function fmtTick(v, step) {
   return a >= 1e7 || (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(1) : v.toFixed(decimals(a));
 }
 
-// a sample for display: enum names (or DBC value descriptions), text, integers as is, other numbers to 5 significant
-// figures; numbers with their unit
-export function fmtValue(v, names, unit) {
+// a sample for display, by its path's meta m {names?, unit?, precision?}: enum names (or DBC value descriptions),
+// text, then numbers with their unit: DBC signals to their precision as cabana, integers as is, others to 5
+// significant figures
+export function fmtValue(v, m) {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v || "(empty)";
-  if (names?.[v] !== undefined) return names[v];
-  const s = fmtNumber(v);
-  return unit && v === v ? `${s} ${unit}` : s;
+  if (m?.names?.[v] !== undefined) return m.names[v];
+  const s = m?.precision !== undefined && isFinite(v) ? v.toFixed(m.precision) : fmtNumber(v);
+  return m?.unit && v === v ? `${s} ${m.unit}` : s;
 }
 
 function fmtNumber(v) {
@@ -175,7 +176,7 @@ export function drawUnloaded(g, spans, X, r, c) {
 }
 
 // labeled state blocks in a row; mixed spans (several states inside a pixel) are gray
-export function drawBlocks(g, blocks, X, y0, y1, names, c) {
+export function drawBlocks(g, blocks, X, y0, y1, m, c) {
   g.textAlign = "left";
   g.textBaseline = "middle";
   for (const b of blocks) {
@@ -185,7 +186,7 @@ export function drawBlocks(g, blocks, X, y0, y1, names, c) {
       g.fillRect(x0, y0, x1 - x0, y1 - y0);
       continue;
     }
-    const label = fmtValue(b.v, names), [color, alpha] = stateStyle(b.v, label, c);
+    const label = fmtValue(b.v, m), [color, alpha] = stateStyle(b.v, label, c);
     g.globalAlpha = alpha;
     g.fillStyle = color;
     g.fillRect(x0, y0, x1 - x0, y1 - y0);

@@ -231,7 +231,7 @@ export function create(ctx, state = {}) {
       flag(r, "cur", node.path === cursor);
       flag(r, "branch", !!node.kids);
       flag(r, "open", !!node.kids && !!(st.filter || st.expanded.has(node.path)));
-      const text = m ? fmtValue(store.valueAt(m.path, clock.t), m.names, m.unit).slice(0, 200) : "";  // long text only needs what shows
+      const text = m ? fmtValue(store.valueAt(m.path, clock.t), m).slice(0, 200) : "";  // long text only needs what shows
       if (val.textContent !== text) val.textContent = text;
     }
   }

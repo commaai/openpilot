@@ -159,7 +159,7 @@ export function create(ctx, state = {}) {
     });
   }
 
-  const sample = (path) => { const m = store.meta(path); return fmtValue(store.valueAt(path, clock.t), m?.names, m?.unit); };
+  const sample = (path) => fmtValue(store.valueAt(path, clock.t), store.meta(path));
 
   // ---- gestures: a local view (pan, wheel zoom); double-click returns to auto-fit
 

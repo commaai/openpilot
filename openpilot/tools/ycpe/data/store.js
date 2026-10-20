@@ -370,9 +370,9 @@ export class Store {
     perf.mark("ingest", `${ms.toFixed(1)} ms (max ${this.progress.ingestMax.toFixed(1)})`);
   }
 
-  // every path as {path, type, names?, unit?, states?, internal?, lazy?}: the same array from call to call while
-  // paths are only added, with the new ones appended; a new one once any goes or changes (the browser keeps its
-  // place in it)
+  // every path as {path, type, names?, precision?, unit?, states?, internal?, lazy?}: the same array from call to
+  // call while paths are only added, with the new ones appended; a new one once any goes or changes (the browser
+  // keeps its place in it)
   paths() {
     if (this.listed?.dbc !== this.can.dbcVersion) this.listed = null;
     const l = this.listed ||= {out: [], dbc: this.can.dbcVersion, can: 0, entries: 0, lists: new Map(), overlays: new Map()};
@@ -423,8 +423,8 @@ export class Store {
     return e.series;
   }
 
-  // a path's {type, names?, unit?, states?} (the last two for DBC signals) without unpacking or decoding it; null
-  // when unknown
+  // a path's {type, names?, precision?, unit?, states?} (the last three for DBC signals) without unpacking or decoding
+  // it; null when unknown
   meta(path) {
     const o = this.overlays.length ? this.overlayOf(path) : null;
     if (o) return o.store.meta(path.slice(o.prefix.length));
