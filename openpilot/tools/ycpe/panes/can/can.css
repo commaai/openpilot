@@ -58,6 +58,7 @@
 .can-binary-scroll { flex: 1; min-height: 0; overflow: auto; }
 .can-binary-canvas { display: block; width: 100%; cursor: crosshair; touch-action: none; }
 .can-binary-info { flex-shrink: 0; padding: 2px 6px; border-top: 1px solid var(--line); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.can-binary-info:empty { display: none; }
 
 /* signals */
 .can-sig-list { flex: 1; min-height: 0; overflow-y: auto; }
