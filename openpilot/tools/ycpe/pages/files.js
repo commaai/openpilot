@@ -19,6 +19,12 @@ function parseUploadUrl(url) {
   return {route, n: Number(n), kind: KIND_OF[file]};
 }
 
+// the "<route>--<segment>/<file>"s athena holds for an offline device, with when each request expires: [[fn, expiry]]
+async function offlineFiles(dongleId) {
+  return (await api.athenaOfflineQueue(dongleId)).filter((q) => q.expiry > Date.now() / 1000).flatMap((q) =>
+    q.method === "uploadFilesToUrls" ? q.params.files_data.map((f) => [f.fn, q.expiry]) : q.method === "uploadFileToUrl" ? [[q.params[0], q.expiry]] : []);
+}
+
 // has(key): the file is already uploaded. changed({uploaded}) is called on every state change; uploaded is true
 // when an upload finished, so the caller refreshes its file list.
 export function uploads(route, device, has, changed) {
@@ -90,14 +96,10 @@ export function uploads(route, device, has, changed) {
 
   // uploads requested while the device was offline wait in athena's queue
   async function offlineQueue() {
-    for (const q of await api.athenaOfflineQueue(dongleId).catch(() => [])) {
-      if (q.expiry < Date.now() / 1000) continue;
-      const fns = q.method === "uploadFilesToUrls" ? q.params.files_data.map((f) => f.fn) : q.method === "uploadFileToUrl" ? [q.params[0]] : [];
-      for (const fn of fns) {
-        const [seg, name] = fn.split("/");
-        const [r, n] = [seg.slice(0, seg.lastIndexOf("--")), seg.slice(seg.lastIndexOf("--") + 2)];
-        if (r === routeId && KIND_OF[name]) states.set(`${n}/${KIND_OF[name]}`, {queued: true, paused: true});
-      }
+    for (const [fn] of await offlineFiles(dongleId).catch(() => [])) {
+      const [seg, name] = fn.split("/");
+      const [r, n] = [seg.slice(0, seg.lastIndexOf("--")), seg.slice(seg.lastIndexOf("--") + 2)];
+      if (r === routeId && KIND_OF[name]) states.set(`${n}/${KIND_OF[name]}`, {queued: true, paused: true});
     }
     emit();
   }
@@ -161,8 +163,7 @@ export function deviceUploads(device) {
 
   async function load() {
     if (up.offline()) {
-      const waiting = (await api.athenaOfflineQueue(dongleId)).filter((q) => q.expiry > Date.now() / 1000)
-        .flatMap((q) => q.method === "uploadFilesToUrls" ? q.params.files_data.map((f) => [f.fn, q.expiry]) : q.method === "uploadFileToUrl" ? [[q.params[0], q.expiry]] : []);
+      const waiting = await offlineFiles(dongleId);
       el.replaceChildren(h("p", {class: "muted"}, waiting.length ? "Device offline. These uploads start when it's back:" : "Device offline."));
       if (waiting.length) {
         el.append(h("table", {class: "list"},
