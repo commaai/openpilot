@@ -277,9 +277,9 @@ class Wifi:
         self.reload()
     elif command == 'radio':
       self.radio = bool(args['enabled'])
-      if not self.radio:
-        self.stop_hotspot()
-      self.ctrl.call('ENABLE_NETWORK all' if self.radio else 'DISABLE_NETWORK all')
+      self.pending = None
+      self.stop_hotspot()
+      self.reload()
     else:
       raise ValueError('unsupported Wi-Fi command')
     return {'ok': True}
@@ -365,6 +365,7 @@ def main():
   events = Supplicant()
   events.call('ATTACH')
   wifi = Wifi(ctrl)
+  wifi.stop_hotspot()  # Clear leases/NAT left by a previous unclean daemon exit.
   server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
   Path(SOCKET).unlink(missing_ok=True)
   server.bind(SOCKET)
