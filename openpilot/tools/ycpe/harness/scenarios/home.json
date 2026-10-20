@@ -1,5 +1,5 @@
 {"name": "home", "url": "/", "reference": ["connect-home"],
  "steps": [
-  {"waitFor": ".page-msg"},
+  {"waitFor": ".login-card"},
   {"shot": "signed-out"}
  ]}

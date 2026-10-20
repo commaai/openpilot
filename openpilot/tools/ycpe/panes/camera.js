@@ -2,8 +2,10 @@
 // else wasm). It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
 // Each open camera publishes its segments to status.js; while the playhead waits on one, the pane says so.
 import {api} from "/api.js";
+import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
 import {status} from "/status.js";
+import {HEVC} from "/data/video/annexb.js";
 import {FPS, frameAt} from "/data/video/frames.js";
 import {frameRenderer} from "/data/video/gl.js";
 
@@ -17,6 +19,7 @@ const MIN_RATE = 0.0625;  // the slowest <video> playbackRate; slower playback s
 const QCAMERA_BYTES_PER_S = 37e3;
 const HLS = "https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js";
 const SOFTWARE = "This browser has no hardware HEVC decoder (Chrome on Linux needs VA-API), so video decodes in software.";
+const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daemon transcodes the video to H.264.";
 
 export function create(ctx, state) {
   let camera = CAMERAS[state.camera] ? state.camera : "qcamera";
@@ -156,34 +159,56 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
   const lanes = lane(camera);
   const frames = new Map();  // n → VideoFrame, or I420 planes from the software decoder
   const stats = {shown: -1, drawn: 0, lag: 0, fps: 0, held: 0, seekMs: null};
-  let ready = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, decoded = 0;
+  let ready = false, transcoded = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, decoded = 0;
 
-  api.routeFiles(ctx.route.fullname).then((files) => {
-    const urls = [], keys = [];
-    for (const u of files[FILES[camera]] || []) {
-      const path = new URL(u).pathname.split("/"), n = +path.at(-2);
-      urls[n] = u;
-      keys[n] = `${ctx.route.fullname.replace("|", "/")}/${n}/${path.at(-1)}`;  // the logs' OPFS key scheme
-    }
+  const jobs = new Map();  // segment → {done, total} frames of the daemon's transcode
+  const segState = [];     // the worker's last word on each segment
+  const badge = () => say([transcoded && "daemon H.264", software && "software decode", software && stats.fps && `${stats.fps} fps`].filter(Boolean).join(" · "),
+    transcoded ? TRANSCODED : SOFTWARE);
+  let stopJobs = null, waitingOn = null;
+  const waitText = (b) => {
+    const job = jobs.get(b.n), f = job ? job.done / job.total : b.total ? b.loaded / b.total : 0;
+    return {n: b.n, text: `segment ${b.n}${job ? " · transcoding" : ""}${f ? ` · ${Math.round(100 * f)}%` : ""}`, f};
+  };
+  const buffering = (b) => {
+    waitingOn = b;
+    const w = b && waitText(b);
+    lanes.buffering(w);
+    wait(w);
+  };
+
+  sources(ctx.route.fullname, camera).then(({urls, keys, ...src}) => {
     if (!urls.length) return fail(`no ${CAMERAS[camera]} camera files`);
     lanes.count(urls.length);
     worker.postMessage({urls, keys});
     ready = true;
     ctx.perf.invalidate(pane);
+    if (!(transcoded = src.transcoded)) return;
+    badge();
+    stopJobs = daemon.events("/local/jobs/events", (ev, job) => {
+      const {route, seg, camera: cam} = job.meta || {};
+      if (ev !== "job" || job.kind !== "transcode" || route !== ctx.route.fullname || cam !== camera) return;
+      if (job.state === "running") {
+        jobs.set(seg, job);
+        lanes.seg(seg, "loading", {loaded: job.done, total: job.total});
+      } else {
+        jobs.delete(seg);  // the daemon holds the finished file
+        lanes.seg(seg, job.state === "done" && segState[seg] !== "ready" ? "disk" : segState[seg] || "error");
+      }
+      if (waitingOn?.n === seg) buffering(waitingOn);
+    });
   }).catch(() => fail("camera files unavailable"));
 
   worker.onmessage = ({data}) => {
     if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}`);
     if (data.backend) {
       software = (stats.backend = data.backend) !== "hardware";
-      if (software) say("software decode", SOFTWARE);
+      badge();
     } else if (data.seg !== undefined) {
-      lanes.seg(data.seg, data.state, data);
+      segState[data.seg] = data.state;
+      if (!(data.state === "loading" && jobs.has(data.seg))) lanes.seg(data.seg, data.state, data);  // transcode progress wins
     } else if (data.buffering !== undefined) {
-      const b = data.buffering, f = b?.total ? b.loaded / b.total : 0;
-      const w = b && {n: b.n, text: `segment ${b.n}${f ? ` · ${Math.round(100 * f)}%` : ""}`, f};
-      lanes.buffering(w);
-      wait(w);
+      buffering(data.buffering);
     } else if (data.memory !== undefined) {
       let held = 0;
       for (const f of frames.values()) held += f.data?.byteLength ?? f.allocationSize();
@@ -192,7 +217,7 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
       stats.fps = (data.decoded - decoded) * 2;
       decoded = data.decoded;
       ctx.perf.mark(`${camera} decode`, `${stats.fps} fps · ${frames.size} held`);
-      if (software) say(`software decode${stats.fps ? ` · ${stats.fps} fps` : ""}`, SOFTWARE);
+      badge();
     } else {
       frames.set(data.n, data.frame);
       ctx.perf.invalidate(pane);
@@ -240,10 +265,27 @@ function fullres(ctx, pane, camera, {say, wait, fail}) {
       asked = key;
     },
     dispose() {
+      stopJobs?.();
       lanes.remove();
       worker.terminate();
       for (const f of frames.values()) f.close?.();
       frames.clear();
     },
   };
+}
+
+// the camera's per-segment files: the device's HEVC (cached in OPFS under the logs' key scheme), or, when this
+// browser can't decode HEVC in hardware, the local daemon's H.264 transcode, which the daemon caches itself
+async function sources(fullname, camera) {
+  const files = await api.routeFiles(fullname);
+  const urls = [], keys = [];
+  for (const u of files[FILES[camera]] || []) {
+    const path = new URL(u).pathname.split("/"), n = +path.at(-2);
+    urls[n] = u;
+    keys[n] = `${fullname.replace("|", "/")}/${n}/${path.at(-1)}`;
+  }
+  const hardware = (await VideoDecoder.isConfigSupported({codec: HEVC, hardwareAcceleration: "prefer-hardware"})).supported;
+  if (hardware || !daemon.has("transcode")) return {urls, keys, transcoded: false};
+  const [dongle, log] = fullname.split("|");
+  return {urls: urls.map((u, n) => u && daemon.url(`/local/video/${dongle}/${log}/${n}/${camera}.h264?preset=medium&ahead=2`)), keys: [], transcoded: true};
 }

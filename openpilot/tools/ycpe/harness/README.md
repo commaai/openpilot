@@ -2,7 +2,8 @@
 
 ```bash
 ./run.py                 # every scenario except slow ones, ~40 s; out/latest/report.{html,md}, previous run in out/prev
-./run.py -k plot         # scenarios whose name contains "plot" (slow ones included)
+./run.py -k plot -k can  # scenarios whose name contains "plot" or "can" (slow ones included)
+./run.py --loop 5        # run 5 times (--loop 0: until ^C), each diffed against the one before
 ./run.py --slow          # include scenarios marked "slow" (e.g. plot-repeat10)
 ./run.py --bless         # also store this run's shots as goldens (harness/golden/); later runs diff against them
 ./report.py              # rebuild the report from out/latest/results.json
@@ -24,7 +25,11 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
 
 Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by: [dx, dy], steps}}`,
 `{wheel: {at?, dx?, dy}}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,
-`{waitFor: sel | {fn: js}}`, `{goto: path}`, `{eval: js}`, `{assert: js}`, `{shot: name}`. Any step takes `timeout`.
+`{waitFor: sel | {fn: js}}`, `{goto: path}`, `{eval: js}`, `{assert: js}`, `{shot: name}`,
+`{network: {down_kbps, up_kbps?, latency_ms?} | "online"}` (throttles the page and its workers),
+`{filmstrip: {name, every: ms, until: js, crop?: [sel]}}` (a screenshot every `every` ms until `until` holds, composed
+into `shots/<scenario>/<name>.strip.png` from the `crop` boxes). Any step takes `timeout`. An assert may return a
+promise; returning a string fails it with that string as the reason.
 
 ## What fails a scenario
 
@@ -35,6 +40,14 @@ Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by:
 Time spent taking screenshots and linting is excluded from the frame stats (shaded in the charts). When an empty page
 drops frames or the load average exceeds the cpu count, the perf budgets only warn. A scenario that hits a network flake
 (ERR_NETWORK_CHANGED: USB ethernet devices on this box come and go) is retried once.
+
+## Findings and owners
+
+The report groups failures, events and lint issues across scenarios into findings, each with an owner: the file it
+points at (a local script in a long frame or error stack, else the module that creates the innermost class in its
+selector) and that file's track from SPEC.md's track table. `out/latest/findings.json` keeps them, and every run lists
+what is new, fixed and still open since the previous one, grouped by track and file. Only scenarios that ran can fix a
+finding. Long frames say which step they happened during.
 
 Layout lint findings (overflow, sideways scroll, clipped text, overlap, obscured controls, small targets, layout shift,
 broken images) are reported but don't fail the scenario.

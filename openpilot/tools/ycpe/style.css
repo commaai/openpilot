@@ -53,7 +53,9 @@ body.in-ws #main { overflow: hidden; }
 .omnibox:focus { border-color: var(--accent); }
 .views, .tabs { display: flex; flex-shrink: 0; align-items: center; gap: 1px; margin-left: 8px; }
 .views { padding: 2px; border-radius: 6px; background: var(--bg); }
-.tabs { flex-shrink: 1; min-width: 40px; overflow-x: auto; scrollbar-width: none; }
+.tabs { flex-shrink: 0; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
+.topbar { container-type: inline-size; }
+@container (max-width: 1180px) { .hud-spark, .hud-ms { display: none; } }
 .view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
@@ -81,12 +83,12 @@ body.in-ws #main { overflow: hidden; }
 .tbtn { min-width: 24px; height: 24px; padding: 0 5px; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
 .tbtn:hover { background: var(--hover); color: var(--fg); }
 .tbtn.on { color: var(--accent); }
-.hud { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); font: 11px var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
+.hud { display: flex; flex-shrink: 0; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); font: 11px var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
 .hud.bad { border-color: var(--critical); }
-.hud-fps { min-width: 4.5em; }
-.hud-ms { min-width: 7.5em; color: var(--muted); }
+.hud-fps { min-width: 3.6em; }
+.hud-ms { min-width: 4.2em; color: var(--muted); }
 .hud-drops { color: var(--muted); }
-.hud-spark { width: 60px; height: 18px; }
+.hud-spark { width: 40px; height: 18px; }
 .popover { position: fixed; z-index: 50; min-width: 220px; max-width: 340px; max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
 .menu-list { display: flex; flex-direction: column; }
 .menu-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 0; border-radius: 4px; background: none; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }

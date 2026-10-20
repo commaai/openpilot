@@ -7,11 +7,21 @@
 const CAMERAS = {road: "fcamera", wide_road: "ecamera", driver: "dcamera"};
 const STYLES = {Dots: "dots", LinesAndDots: "line+dots", Sticks: "sticks", Steps: "steps", StepsInv: "steps"};
 
-// text of a .json or .xml layout → {layout, warnings}
+// text of a .json or .xml layout (ours, as exported, jotpluggler's or PlotJuggler's) → {layout, warnings}
 export function importLayout(text) {
   const warnings = [];
-  const layout = text.trimStart().startsWith("<") ? fromPlotJuggler(text, warnings) : fromJotpluggler(JSON.parse(text), warnings);
-  return {layout, warnings};
+  if (text.trimStart().startsWith("<")) return {layout: fromPlotJuggler(text, warnings), warnings};
+  const j = JSON.parse(text);
+  return {layout: j.ycpe ? untrusted(j) : fromJotpluggler(j, warnings), warnings};
+}
+
+// our own layouts as exported: {ycpe: 1, active, tabs}; whatever custom code they carry waits for review
+export const exportLayout = (layout) => JSON.stringify({ycpe: 1, ...layout}, null, 2);
+
+function untrusted({active = 0, tabs = []}) {
+  const walk = (n) => n.children ? {...n, children: n.children.map(walk)}
+    : {...n, state: n.state?.curves ? {...n.state, curves: n.state.curves.map((c) => c.custom ? {...c, custom: {...c.custom, untrusted: true}} : c)} : n.state};
+  return {active, tabs: tabs.map((t) => ({...t, root: walk(t.root)}))};
 }
 
 // ---- jotpluggler

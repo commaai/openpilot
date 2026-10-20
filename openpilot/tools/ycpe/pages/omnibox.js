@@ -30,6 +30,9 @@ export const routePath = (name, t) => `/${name.replace("|", "/")}${t >= 1 ? `?t=
 // to the drive it starts in, so this may ask the API.
 export async function resolve(text) {
   let s = text.trim();
+  if (/^https?:\/\/\S+\/(?:rlog|qlog)\.(?:zst|bz2)(?:\?|$)|^https?:\/\/\S+\/[dfeq]camera\.(?:hevc|ts)(?:\?|$)/.test(s)) {
+    return `/local/url/plot?url=${encodeURIComponent(s)}`;  // a direct link to a file opens it on its own
+  }
   try { s = decodeURIComponent(s); } catch { /* keep it as typed */ }
   const t = Number(s.match(/[?&#]t=([\d.]+)/)?.[1]);
   const m = s.match(ROUTE);
