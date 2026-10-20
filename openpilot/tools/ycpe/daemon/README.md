@@ -40,6 +40,8 @@ Without the daemon these features are disabled, with a short note saying they ne
 
 **Is it safe?**
 1. The daemon only listens on 127.0.0.1, and it refuses requests addressed to any other host name, which blocks DNS rebinding.
+   On Linux it also refuses connections from other users on the machine. Elsewhere, treat it as single-user: any local
+   user could load the page and use your sign-in.
 2. Every API call needs a random token that only the page `serve.py` served carries. Other websites can't get it, because
    cross-origin requests get no CORS headers and are rejected, and no other site may frame the app.
 3. It reads files only from the cache, your data dirs and your checkouts, and it writes only to the cache and to opendbc's DBC folder.
@@ -57,7 +59,8 @@ The page finds the daemon through `<meta name="ycpe-daemon">` in index.html, plu
 
 ## Security
 
-- It binds 127.0.0.1 only.
+- It binds 127.0.0.1 only. On Linux, a connection whose client socket belongs to another uid (looked up once per
+  connection with sock_diag) gets 403 on everything, static files included, since index.html carries the token.
 - Every request, static files included, must carry `Host: localhost:<port>` or `127.0.0.1:<port>`. This
   stops DNS rebinding.
 - `/local/*` rejects any `Origin` other than the daemon's own, and any `Sec-Fetch-Site` other than

@@ -4,6 +4,8 @@ import mimetypes
 import os
 import re
 import secrets
+import socket
+import struct
 import time
 from dataclasses import dataclass, field
 from http import HTTPStatus
@@ -178,6 +180,30 @@ def match(method: str, path: str):
 
 
 # security
+
+NETLINK_SOCK_DIAG, SOCK_DIAG_BY_FAMILY = 4, 20
+
+
+def peer_uid(client: tuple[str, int], server: tuple[str, int]) -> int | None:
+  """The uid owning the client end of a loopback TCP connection; None off Linux, -1 if the connection is gone."""
+  if not hasattr(socket, "AF_NETLINK"):
+    return None
+  # a sock_diag lookup of one socket (inet_diag_req_v2 with an exact id), not a walk of every socket like /proc/net/tcp
+  sockid = struct.pack("!HH16s16s", client[1], server[1], socket.inet_aton(client[0]), socket.inet_aton(server[0]))
+  req = struct.pack("=BBBBI", socket.AF_INET, socket.IPPROTO_TCP, 0, 0, 0xffffffff) + sockid + struct.pack("=III", 0, 0xffffffff, 0xffffffff)
+  with socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, NETLINK_SOCK_DIAG) as s:
+    s.send(struct.pack("=IHHII", 16 + len(req), SOCK_DIAG_BY_FAMILY, 1, 0, 0) + req)  # nlmsghdr, NLM_F_REQUEST
+    data = s.recv(4096)
+  if struct.unpack_from("=H", data, 4)[0] != SOCK_DIAG_BY_FAMILY:
+    return -1  # NLMSG_ERROR: no such socket
+  return struct.unpack_from("=I", data, 16 + 64)[0]  # inet_diag_msg.idiag_uid
+
+
+def check_peer(client: tuple[str, int], server: tuple[str, int]) -> None:
+  # any local user can connect to 127.0.0.1, and index.html carries the token: only our own user's processes get in
+  if (uid := peer_uid(client, server)) is not None and uid != os.getuid():
+    raise HTTPError(403, "another user")
+
 
 def check_host(headers: dict[str, str]) -> None:
   # DNS rebinding: a page on evil.example resolved to 127.0.0.1 still sends its own name as Host

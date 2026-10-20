@@ -2,9 +2,11 @@
 import http.client
 import json
 import os
+import socket
 import tempfile
 import threading
 import unittest
+from unittest import mock
 
 from openpilot.tools.ycpe.daemon import core, jobs, server
 from openpilot.tools.ycpe.daemon.core import File, config, confine, route
@@ -64,6 +66,16 @@ class TestSecurity(DaemonCase):
       for host in (f"evil.example:{config.port}", "localhost:1", "localhost", f"127.0.0.1.nip.io:{config.port}"):
         r, _ = self.req(path, host=host)
         self.assertEqual(r.status, 403, (path, host))
+
+  @unittest.skipUnless(hasattr(socket, "AF_NETLINK"), "linux only")
+  def test_other_user(self):
+    r, _ = self.req("/")
+    self.assertEqual(r.status, 200)
+    with mock.patch("os.getuid", return_value=os.getuid() + 1):
+      for path in ("/", "/index.html", "/local/caps", "/local/auth"):
+        r, data = self.req(path)
+        self.assertEqual(r.status, 403, path)
+        self.assertNotIn(config.token.encode(), data)
 
   def test_127_host_ok(self):
     r, _ = self.req("/local/caps", host=f"127.0.0.1:{config.port}")

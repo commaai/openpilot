@@ -37,6 +37,7 @@ def caps(req):
 class Handler(SimpleHTTPRequestHandler):
   protocol_version = "HTTP/1.1"
   disable_nagle_algorithm = True  # headers and a sendfile body are separate writes: without this, 40 ms delayed ACKs
+  peer_checked = False  # one handler per connection: its owner is looked up once
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, directory=str(APP), **kwargs)
@@ -75,6 +76,9 @@ class Handler(SimpleHTTPRequestHandler):
     path, _, qs = self.path.partition("?")
     headers = self._headers()
     try:
+      if not self.peer_checked:
+        core.check_peer(self.client_address, self.server.server_address)
+        self.peer_checked = True
       core.check_host(headers)  # every request, static too: index.html carries the token
       if path.startswith("/local/"):
         try:
