@@ -654,6 +654,7 @@ export class Can {
     this.dbcVersion++;
     this.dataVersion++;
     for (const c of this.cache.values()) c.stale = true;
+    this.metas.clear();
     if (this.suppressDefined) this.sendMasks();
     this.emit("dbc");
     this.store.emit?.("paths");
