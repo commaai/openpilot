@@ -23,11 +23,13 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
 {name, url, viewport?: {width, height, mobile?}, auth?: true /* ~/.comma/auth.json JWT as comma_jwt */,
  cpu_throttle?: 4, timeout?: ms, slow?: true, allow?: [regex for expected errors],
  lint_ignore?: [css selectors], budgets?: {loaf_ms: 50, work_p99_ms: 8, drops: null},
- reference?: [reference names], routes?: [{url: regex, json | file | body, status?}], steps: [...]}
+ reference?: [reference names], routes?: [{url: regex, method?, rpc?, json | file | body, status?}], steps: [...]}
 ```
 
 `routes` answer matching requests (the page's and its workers') with canned JSON, a file under `harness/`
-(`fixtures/`), or text, so a scenario needn't depend on what a real device has.
+(`fixtures/`), or text, so a scenario needn't depend on what a real device has. `method` limits one to that HTTP
+method and `rpc` to that athena method, so a mutating call can be faked while reads stay real. The page's mutating
+fetches, answered or blocked, are in `window.__sent` as `{method, url, body}` for asserts on exactly what was sent.
 
 Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by: [dx, dy], steps}}`,
 `{dragTo: [sel, sel]}` (HTML drag and drop), `{wheel: {at?, dx?, dy, every?: ms}, repeat?}`, `{fill: [sel, text]}`, `{viewport: [w, h]}`, `{key: "Shift+ArrowRight", repeat?}`, `{select: [sel, value]}`, `{wait: ms}`,
