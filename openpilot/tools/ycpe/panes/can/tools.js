@@ -69,7 +69,7 @@ export function dbcDialog(can) {
         h("div", {class: "can-row"},
           h("button", {class: "can-btn", onclick: open(() => openFile(can, buses()))}, "Open file…"),
           h("button", {class: "can-btn", onclick: open(() => can.dbcs.open(buses(), new DBC("untitled", "")))}, "New")),
-        paste, h("button", {class: "can-btn", onclick: open(() => can.dbcs.open(buses(), new DBC("pasted", paste.value)))}, "Open pasted"))),
+        paste, h("button", {class: "can-btn", onclick: open(async () => can.dbcs.open(buses(), await can.parseDbc("pasted", paste.value)))}, "Open pasted"))),
     error, note);
   d.classList.add("can-dbc-dialog");
 }
@@ -85,7 +85,7 @@ async function openFile(can, buses) {
     const file = await new Promise((resolve) => { input.onchange = () => resolve(input.files[0]); input.click(); });
     [text, name] = [await file.text(), file.name];
   }
-  const dbc = new DBC(name.replace(/\.dbc$/, ""), text);
+  const dbc = await can.parseDbc(name.replace(/\.dbc$/, ""), text);
   dbc.handle = handle;
   can.dbcs.open(buses, dbc);
   if (handle) {
@@ -109,7 +109,7 @@ async function reopen(can, {name, from}, buses) {
   if (from === "opendbc") return can.loadOpendbc(name, buses);
   const handle = await handles("readonly", (store) => store.get(name));
   if (!handle || await handle.requestPermission({mode: "readwrite"}) === "denied") throw new Error(`${name}.dbc can't be reopened; open it again`);
-  const dbc = new DBC(name, await (await handle.getFile()).text());
+  const dbc = await can.parseDbc(name, await (await handle.getFile()).text());
   dbc.handle = handle;
   can.dbcs.open(buses, dbc);
   remember(name, from);
