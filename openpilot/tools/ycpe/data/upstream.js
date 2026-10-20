@@ -48,6 +48,21 @@ export async function schemaAt(repo, commit) {
 
 // ---- opendbc
 
+// a log's opendbc: pinned to its openpilot commit when that resolves, else master. {opendbc, pinned, why}
+export async function opendbcFor(repo, commit) {
+  let why = "no openpilot commit";
+  if (repo && commit) {
+    try {
+      const co = await opendbcAt(repo, commit), o = co && await Opendbc.open(co);
+      if (o) return {opendbc: o, pinned: true};
+      why = `no opendbc in ${repo}@${commit.slice(0, 7)}`;
+    } catch (e) {
+      why = e.message;
+    }
+  }
+  return {opendbc: await Opendbc.open(new Checkout("commaai/opendbc", "master")), pinned: false, why};
+}
+
 // opendbc at the commit a log's openpilot used: its submodule, or the tree itself in flattened release branches
 export async function opendbcAt(repo, commit) {
   const co = new Checkout(repo, commit);

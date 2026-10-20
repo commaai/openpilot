@@ -14,6 +14,7 @@ import {theme} from "/theme.js";
 export const STATES = ["missing", "idle", "queued", "loading", "disk", "ready", "error"];
 
 const kinds = new Map();  // name → source
+const notes = new Map();  // key → text: standing facts about what's loaded (the log's schema), shown in the pill
 const subs = new Set();
 
 // listeners run at most once a frame, however many segments change
@@ -64,6 +65,12 @@ export const status = {
     };
   },
   kinds: () => [...kinds.values()].sort((a, b) => a.order - b.order),
+  // a standing note under key; empty text removes it
+  note(key, text) {
+    if ((notes.get(key) || "") === (text || "")) return;
+    if (text) notes.set(key, text); else notes.delete(key);
+    changed();
+  },
   on(fn) { subs.add(fn); return () => subs.delete(fn); },
 };
 
@@ -116,19 +123,20 @@ export function loadPill() {
   let panel = null;
   const update = () => {
     const all = status.kinds();
-    el.hidden = !all.length;
+    const extra = [...notes.values()];
+    el.hidden = !all.length && !extra.length;
     const waiting = all.find((k) => k.buffering);
     const active = all.filter((k) => k.segs.some((s) => s.state === "loading" || s.state === "queued"));
     el.classList.toggle("buffering", !!waiting);
     el.classList.toggle("done", !waiting && !active.length);
     const each = all.map((k) => { const n = counts(k); return {n, text: `${k.label} ${n.ready + n.disk}/${n.total}`}; });
-    el.title = `${each.map((e) => e.text).join(" · ")} (click for details)`;
+    el.title = `${[...each.map((e) => e.text), ...extra].join(" · ")} (click for details)`;
     if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
     else if (active.length) {
       const k = active[0], n = counts(k);
       text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
-      text.textContent = each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text).join(" · ") || "✓ loaded";
+      text.textContent = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ") || "✓ loaded";
     }
     const segs = active.flatMap((k) => k.segs.filter((s) => s.state !== "missing" && s.state !== "idle"));
     const f = segs.length ? segs.reduce((a, s) => a + fill(s), 0) / segs.length : 1;

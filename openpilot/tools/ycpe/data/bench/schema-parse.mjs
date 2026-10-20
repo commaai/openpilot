@@ -33,13 +33,14 @@ function columns(reader) {
       if (c.names) names.set(`/${s.name}${p}`, c.names);
     }
   }
-  return {cols: out, names, ms: performance.now() - t0};
+  return {cols: out, names, ms: performance.now() - t0, unknown: reader.unknown};
 }
 
 const a = columns(stock);
 const remote = a.cols.get("/initData/gitRemote")?.[0], commit = a.cols.get("/initData/gitCommit")?.[0];
 const repo = parseRemote(remote);
-console.log(`log: ${remote} @ ${commit} (${a.cols.get("/initData/gitBranch")?.[0]}), stock read ${a.ms.toFixed(0)} ms, ${a.cols.size} columns`);
+console.log(`log: ${remote} @ ${commit} (${a.cols.get("/initData/gitBranch")?.[0]}), stock read ${a.ms.toFixed(0)} ms, ${a.cols.size} columns, ` +
+  `unknown to it: ${a.unknown.events} events, fields in [${[...a.unknown.services]}]`);
 
 const {text, fetchMs, ms} = await schemaAt(repo, commit);
 console.log(`log schema ${repo}@${commit.slice(0, 7)}: ${(text.length / 1024).toFixed(0)} KB, fetch ${fetchMs.toFixed(0)} ms, fetch+compile ${ms.toFixed(0)} ms, ${text === bundled ? "identical to" : "differs from"} the bundled schema`);
