@@ -11,30 +11,18 @@ export const SERVICES = ["carState", "carControl", "carOutput", "carParams", "co
   "managerState", "gpsLocationExternal", "lateralTorqueParameters", "vehicleParameters", "logMessage", "errorLogMessage"];
 export const CAMERAS = ["road"];
 const FILE = {road: "fcamera", wideRoad: "ecamera", driver: "dcamera"};  // a camera by the name of its log file
-const BATCH_MS = 20;  // Events reach the sink at most this often
 const RETRY_MS = [1000, 2000, 5000, 10000, 30000];
 
 export function create({dongle, local = false, services = SERVICES, cameras = CAMERAS} = {}) {
   const target = local ? "local" : dongle, conn = peer(target), subs = listeners();
   const user = {};  // this source's place among the connection's users
-  let sink = null, offs = [], batch = [], timer = 0, cereal = false, retries = 0, retry = 0, attempt = 0, wasLive = false;
+  let sink = null, offs = [], cereal = false, retries = 0, retry = 0, attempt = 0, wasLive = false;
   const shown = new Map();  // camera → the track the sink has
 
   const set = (state, detail = "") => {
     if (source.state === state && source.detail === detail) return;
     [source.state, source.detail] = [state, detail];
     subs.emit(state, detail);
-  };
-
-  const flush = () => {
-    timer = 0;
-    if (batch.length === 1) sink?.events(batch[0]);
-    else if (batch.length) {
-      const out = new Uint8Array(batch.reduce((a, b) => a + b.length, 0));
-      for (let k = 0, at = 0; k < batch.length; at += batch[k++].length) out.set(batch[k], at);
-      sink?.events(out);
-    }
-    batch = [];
   };
 
   const video = (camera, track) => {
@@ -82,10 +70,10 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
       sink = s;
       cereal = wasLive = false;
       offs = [
+        // each message is one Event or more, as logged; the sink batches them for its worker
         conn.on("cereal", (bytes) => {
           cereal = true;
-          batch.push(bytes);
-          timer ||= setTimeout(flush, BATCH_MS);
+          sink.events(bytes);
         }),
         // a device without "cereal" sends JSON; one with it may still send the stock carState and deviceState
         conn.on("json", (m) => cereal || sink.json(m.type, m.logMonoTime, m.valid, m.data)),
@@ -103,7 +91,6 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
       attempt++;
       for (const off of offs) off();
       offs = [];
-      flush();
       sink = null;
       shown.clear();
       conn.release(user);
