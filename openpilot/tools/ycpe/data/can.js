@@ -22,14 +22,15 @@ export class CanFrames {
     this.addrPos = f.address * 4;
     this.srcPos = f.src;
     this.datIdx = f.dat;
-    this.n = this.nbytes = 0;
-    this.ids = new Map();  // key -> message id in order of appearance
+    this.n = this.nwords = 0;
+    this.ids = [];  // by bus: message ids in order of appearance, a table for 11-bit addresses and a map for the rest
+    this.keys = [];  // by message id
     this.count = [];
     this.stride = [];
     this.time = new Float64Array(1 << 16);
     this.mid = new Uint16Array(1 << 16);
     this.len = new Uint8Array(1 << 16);
-    this.bytes = new Uint8Array(1 << 20);
+    this.words = new Uint32Array(1 << 18);  // frame data, each frame word-aligned
     this.hook = (name, t, ptr) => { if (name === "can") this.add(t, ptr); };
   }
 
@@ -43,30 +44,46 @@ export class CanFrames {
       this.mid = grow(this.mid, this.n + count);
       this.len = grow(this.len, this.n + count);
     }
-    if (this.nbytes + count * 64 > this.bytes.length) this.bytes = grow(this.bytes, this.nbytes + count * 64);
+    if (this.nwords + count * 16 > this.words.length) this.words = grow(this.words, this.nwords + count * 16);
     for (let j = 0; j < count; j++) {
-      const e = off + j * step, d = this.datIdx < ptrs ? list(e + data + this.datIdx * 8) : null;
-      const k = key(this.srcPos < data ? U8[e + this.srcPos] : 0, U32[(e + this.addrPos) >> 2]);
-      let id = this.ids.get(k);
-      if (id === undefined) {
-        this.ids.set(k, id = this.count.length);
+      const e = off + j * step, bus = this.srcPos < data ? U8[e + this.srcPos] : 0, address = U32[(e + this.addrPos) >> 2];
+      const ids = this.ids[bus] ||= {std: new Int32Array(2048).fill(-1), ext: new Map()};
+      let id = address < 2048 ? ids.std[address] : ids.ext.get(address) ?? -1;
+      if (id < 0) {
+        id = this.keys.length;
+        if (address < 2048) ids.std[address] = id; else ids.ext.set(address, id);
+        this.keys.push(key(bus, address));
         this.count.push(0);
         this.stride.push(0);
       }
-      const n = this.n++, len = d ? Math.min(d[1], 64) : 0;
+      // dat: a near byte-list pointer, read inline (the hot path); anything else through list()
+      let src = 0, len = 0;
+      if (this.datIdx < ptrs) {
+        const p = e + data + this.datIdx * 8, w0 = U32[p >> 2], w1 = U32[(p >> 2) + 1];
+        if ((w0 & 3) === 1 && (w1 & 7) === 2) {
+          src = p + 8 + (w0 >> 2) * 8;
+          len = w1 >>> 3;
+        } else if (w0) {
+          const l = list(p);
+          if (l) [src, len] = l;
+        }
+      }
+      len = Math.min(len, 64);
+      const n = this.n++;
       this.time[n] = t;
       this.mid[n] = id;
       this.len[n] = len;
       this.count[id]++;
       if (len > this.stride[id]) this.stride[id] = len;
-      for (let b = 0; b < len; b++) this.bytes[this.nbytes + b] = U8[d[0] + b];
-      this.nbytes += len;
+      // capnp data is word-aligned, so it copies four bytes at a time
+      for (let w = 0, end = (len + 3) >> 2; w < end; w++) this.words[this.nwords + w] = U32[(src >> 2) + w];
+      this.nwords += (len + 3) >> 2;
     }
   }
 
   // messages in key order, each a run of frames in time order with a fixed data stride (its longest frame)
   finish() {
-    const {n} = this, order = [...this.ids].sort((a, b) => a[0] - b[0]), M = order.length;
+    const {n} = this, order = this.keys.map((k, id) => [k, id]).sort((a, b) => a[0] - b[0]), M = order.length;
     const keys = new Float64Array(M), start = new Uint32Array(M + 1), stride = new Uint8Array(M), dstart = new Uint32Array(M + 1);
     const at = new Uint32Array(M), m = new Uint16Array(M);  // by message id: next frame slot, sorted index
     order.forEach(([k, id], j) => {
@@ -78,12 +95,13 @@ export class CanFrames {
       dstart[j + 1] = dstart[j] + this.count[id] * stride[j];
     });
     const t0 = n ? this.time[0] : 0, t = new Float32Array(n), len = new Uint8Array(n), data = new Uint8Array(dstart[M]);
+    const bytes = new Uint8Array(this.words.buffer);
     for (let i = 0, src = 0; i < n; i++) {
       const id = this.mid[i], j = m[id], f = at[id]++, l = this.len[i];
       t[f] = this.time[i] - t0;
       len[f] = l;
-      for (let b = 0, dst = dstart[j] + (f - start[j]) * stride[j]; b < l; b++) data[dst + b] = this.bytes[src + b];
-      src += l;
+      for (let b = 0, dst = dstart[j] + (f - start[j]) * stride[j]; b < l; b++) data[dst + b] = bytes[src + b];
+      src += (l + 3) & ~3;
     }
     const can = {t0, keys, start, stride, dstart, t, len, data};
     return {can, transfer: [keys, start, stride, dstart, t, len, data].map((a) => a.buffer)};
