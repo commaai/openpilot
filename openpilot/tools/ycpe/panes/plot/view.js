@@ -13,10 +13,11 @@ export function join(p) { panes.add(p); }
 export function leave(p) { panes.delete(p); }
 export function touch(p) { touched = p; }
 
-// the time plot a series is sent to without a drag: the one last used, else any mounted one
+// the time plot a series is sent to without a drag: the one last used, else the first on the page
 function target() {
   const live = [...panes].filter((p) => p.compare && p.el.isConnected);
-  return live.includes(touched) ? touched : live[0];
+  if (live.includes(touched)) return touched;
+  return live.sort((a, b) => a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)[0];
 }
 
 // adds paths to that plot; false when no plot is mounted

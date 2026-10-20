@@ -4,7 +4,7 @@
 .plot-pane canvas { position: absolute; left: 0; top: 0; }
 .plot-pane canvas.over { cursor: crosshair; touch-action: none; }
 .plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
-.plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
+.plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: none; }
 
 .plot-pane .legend { position: absolute; top: 8px; right: 12px; max-width: min(70%, 440px); max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
   border: 1px solid var(--line); border-radius: 4px; background: color-mix(in srgb, var(--raised) 88%, transparent); font: 11px var(--mono); }

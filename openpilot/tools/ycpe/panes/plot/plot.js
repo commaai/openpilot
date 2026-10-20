@@ -53,7 +53,7 @@ export function create(ctx, state = {}) {
   const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats, range: state.range || null};
   const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
-  const empty = h("div", {class: "empty"}, "drag series here");
+  const empty = h("div", {class: "empty"});
   const el = h("div", {class: "plot-pane"}, base, over, legend, empty);
   let W = 0, H = 0, gBase = null, gOver = null, dirty = true;
   let frame = null;    // geometry and prepared curves of the last base draw
@@ -144,7 +144,7 @@ export function create(ctx, state = {}) {
   // the empty state: where to drop series, or why there's nothing to plot
   function hint() {
     failure = store.failure;
-    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "drag series here";
+    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "Drag series here, or double-click one in Series · right-click for options";
     empty.hidden = !failure && !!rows.length;
   }
 
