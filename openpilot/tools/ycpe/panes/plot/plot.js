@@ -192,7 +192,7 @@ export function create(ctx, state = {}) {
     const py = T + (p.blockMode ? ph0 : p.rows.length * stripH), ph = T + ph0 - py;
     const [lo, hi] = p.blockMode ? [0, 1] : yRange(p.lines, t0, t1);
     const X = (t) => px + (t - t0) / (t1 - t0) * pw, Y = (v) => py + (hi - v) / (hi - lo) * ph;
-    frame = {t0, t1, lo, hi, px, py, pw, ph, X, Y, ...p};
+    frame = {t0, t1, lo, hi, px, py, pw, ph, X, Y, stripH, ...p};
 
     g.clearRect(0, 0, W, H);
     g.fillStyle = col.bg;
@@ -388,6 +388,16 @@ export function create(ctx, state = {}) {
   const local = (e) => { const r = over.getBoundingClientRect(); return {x: e.clientX - r.left, y: e.clientY - r.top}; };
   const zone = ({x, y}) => x < L ? "y" : y > H - B ? "x" : "plot";
   const timeAt = (x) => frame.t0 + (x - frame.px) / frame.pw * (frame.t1 - frame.t0);
+
+  // the state block under p, as tooltip text: its value, span and duration
+  function blockAt(p) {
+    const k = Math.floor((p.y - T) / frame.stripH), it = frame.rows[k];
+    if (!it || p.x < frame.px) return "";
+    const t = timeAt(p.x) - it.shift, b = it.blocks.find((b) => b.a <= t && t < b.b);
+    if (!b) return "";
+    const what = b.mixed ? "several states (zoom in)" : fmtValue(b.v, it.s.names) + (it.s.names ? ` (${b.v})` : "");
+    return `${label(it.c)}: ${what}\n${b.a.toFixed(2)} s → ${b.b.toFixed(2)} s, ${(b.b - b.a).toFixed(2)} s`;
+  }
   const valueAt = (y) => frame.hi - (y - frame.py) / frame.ph * (frame.hi - frame.lo);
   const xRange = () => st.range || clock.range;
   function setRange(a, b) {
@@ -410,6 +420,8 @@ export function create(ctx, state = {}) {
     if (!frame) return;
     const p = local(e);
     view.track(zone(p) === "plot" && !(gesture?.moved && gesture.box === undefined) ? Math.max(frame.t0, timeAt(p.x)) : null);
+    const tip = gesture ? "" : blockAt(p);
+    if (over.title !== tip) over.title = tip;
     if (!gesture) return;
     const dx = p.x - gesture.start.x, dy = p.y - gesture.start.y;
     if (!gesture.moved && Math.hypot(dx, dy) < DRAG) return;
@@ -429,8 +441,8 @@ export function create(ctx, state = {}) {
     if (z === "plot" && button === 0) {
       const x0 = Math.max(frame.px, Math.min(p.x, gesture.start.x)), x1 = Math.min(frame.px + frame.pw, Math.max(p.x, gesture.start.x));
       const y0 = Math.max(frame.py, Math.min(p.y, gesture.start.y)), y1 = Math.min(frame.py + frame.ph, Math.max(p.y, gesture.start.y));
-      // a flat box zooms time only, a narrow one zooms values only
-      const xOnly = y1 - y0 < 12 || frame.blockMode, yOnly = !xOnly && x1 - x0 < 12;
+      // a flat box (or alt) zooms time only, a narrow one (or shift) zooms values only
+      const xOnly = e.altKey || y1 - y0 < 12 || frame.blockMode, yOnly = !xOnly && (e.shiftKey || x1 - x0 < 12);
       gesture.box = xOnly ? {x: x0, w: x1 - x0, y: frame.py, h: frame.ph, xOnly} : yOnly ? {x: frame.px, w: frame.pw, y: y0, h: y1 - y0, yOnly} : {x: x0, w: x1 - x0, y: y0, h: y1 - y0};
       pane.overlay();
     }
