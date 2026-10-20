@@ -26,7 +26,7 @@ export function create(ctx, state) {
   const k = () => can.selected;
   const msg = () => can.dbcMsg(k());
   const path = (sg) => `/dbc/${busOf(k())}/${msg().name}/${sg.name}`;
-  let rows = new Map();  // signal name -> {row, value, spark}
+  let rows = new Map(), mux;  // signal name -> {row, v, spark, swatch, name, ed, sg}; the multiplexor they were built with
   let sparks = null, sparkBusy = false;
 
   // the sparklines' buckets for the window before the playhead, one request in flight
@@ -62,22 +62,46 @@ export function create(ctx, state) {
       list.replaceChildren(h("div", {class: "can-empty"}, key === null ? "Select a message to edit its signals" : "Drag across bits in the binary view to create a signal."));
       return;
     }
-    list.replaceChildren(...m.sigs.filter((sg) => sg.name.toLowerCase().includes(filter.toLowerCase())).map((sg) => {
+    list.replaceChildren(...shown(m).map((sg) => {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
+      const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
         h("div", {class: "can-sig-row", onclick: () => { open = open === sg.name ? null : sg.name; build(); }},
-          h("span", {class: "can-swatch", style: `background:${sg.color}`}),
-          h("span", {class: "can-sig-name", title: sg.comment || sg.name}, sg.name, sg.type === MUX ? " (M)" : sg.type === MUXED ? ` (m${sg.muxValue})` : ""),
-          spark, v,
+          swatch, name, spark, v,
           h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈"),
           h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, "✕")),
-        sg.name === open && editor(can, k(), m, sg));
+        ed);
       row.draggable = true;
       row.addEventListener("dragstart", (e) => e.dataTransfer.setData("application/x-ycpe-paths", JSON.stringify([path(sg)])));
-      rows.set(sg.name, {row, v, spark, sg});
+      rows.set(sg.name, label({row, v, spark, swatch, name, ed}, sg));
       return row;
     }));
+    mux = m.mux?.name;
     ctx.perf.invalidate(pane);
+  }
+
+  const shown = (m) => m.sigs.filter((sg) => sg.name.toLowerCase().includes(filter.toLowerCase()));
+
+  function label(r, sg) {
+    r.sg = sg;
+    r.swatch.style.background = sg.color;
+    r.name.title = sg.comment || sg.name;
+    r.name.textContent = sg.name + (sg.type === MUX ? " (M)" : sg.type === MUXED ? ` (m${sg.muxValue})` : "");
+    return r;
+  }
+
+  // an edit that leaves the same signals listed updates them in place, so the editor keeps focus as Tab or a click
+  // moves to its next field
+  function patch() {
+    const m = msg(), sigs = m ? shown(m) : [], names = [...rows.keys()], ed = rows.get(open)?.ed;
+    if (!m || sigs.length !== names.length || sigs.some((sg, i) => sg.name !== names[i])) return false;
+    const sg = sigs.find((x) => x.name === open);
+    if (ed && (sg.type !== rows.get(open).sg.type || m.mux?.name !== mux)) return false;
+    header();
+    for (const x of sigs) label(rows.get(x.name), x);
+    if (ed) ed.update(sg);
+    ctx.perf.invalidate(pane);
+    return true;
   }
 
   const pane = {
@@ -96,7 +120,7 @@ export function create(ctx, state) {
     save: () => ({open, spark}),
   };
   s.add(can.on("select", () => { open = null; sparks = null; build(); requestSparks(); }));
-  s.add(can.on("dbc", () => { build(); requestSparks(); }));
+  s.add(can.on("dbc", () => { if (!patch()) build(); requestSparks(); }));
   s.add(can.on("edit", (name) => { open = name; build(); rows.get(name)?.row.scrollIntoView({block: "nearest"}); }));
   s.add(can.on("live", () => { requestSparks(); ctx.perf.invalidate(pane); }));
   s.add(can.on("hover", (name) => { for (const [n, r] of rows) r.row.classList.toggle("hover", n === name); }));
@@ -129,21 +153,23 @@ function sparkline(canvas, d, color) {
   g.stroke();
 }
 
-// every signal property; changes commit on change/enter through the undo stack
+// every signal property; changes commit on change/enter through the undo stack. update(sg) shows a new version of
+// the signal in place, but for the field being edited.
 function editor(can, k, m, sg) {
   const commit = (props) => updateSignal(can, k, sg.name, props);
-  const num = (prop, attrs = {}) => h("input", {type: "number", value: sg[prop], step: "any", ...attrs, onchange: (e) => {
+  const num = (prop, attrs = {}) => h("input", {type: "number", "data-prop": prop, value: sg[prop], step: "any", ...attrs, onchange: (e) => {
     const v = parseFloat(e.target.value);
     if (Number.isFinite(v)) commit({[prop]: v});
   }});
-  const text = (prop) => h("input", {value: sg[prop], spellcheck: false, onchange: (e) => commit({[prop]: e.target.value.trim()})});
-  const check = (prop) => h("input", {type: "checkbox", checked: sg[prop], onchange: (e) => commit({[prop]: e.target.checked})});
-  const type = h("select", {onchange: (e) => commit({type: +e.target.value})},
+  const text = (prop) => h("input", {"data-prop": prop, value: sg[prop], spellcheck: false, onchange: (e) => commit({[prop]: e.target.value.trim()})});
+  const check = (prop) => h("input", {type: "checkbox", "data-prop": prop, checked: sg[prop], onchange: (e) => commit({[prop]: e.target.checked})});
+  const type = h("select", {"data-prop": "type", onchange: (e) => commit({type: +e.target.value})},
     [[NORMAL, "normal"], [MUX, "multiplexor"], [MUXED, "multiplexed"]].map(([v, n]) =>
       h("option", {value: v, selected: sg.type === v, disabled: (v === MUXED && !m.mux) || (v === MUX && m.mux && m.mux !== sg)}, n)));
-  const vals = h("input", {value: sg.vals.map(([v, d]) => `${v} "${d}"`).join(" "), spellcheck: false, placeholder: '0 "off" 1 "on"',
+  const valsText = (x) => x.vals.map(([v, d]) => `${v} "${d}"`).join(" ");
+  const vals = h("input", {value: valsText(sg), spellcheck: false, placeholder: '0 "off" 1 "on"',
     onchange: (e) => commit({vals: [...e.target.value.matchAll(/(-?[\d.]+)\s+"([^"]*)"/g)].map(([, v, d]) => [+v, d])})});
-  return h("div", {class: "can-sig-editor"},
+  const el = h("div", {class: "can-sig-editor"},
     field("Name", h("input", {value: sg.name, spellcheck: false, onchange: (e) => {
       const name = e.target.value.trim();
       if (/^\w+$/.test(name)) { commit({name}); can.emit("edit", name); } else e.target.value = sg.name;
@@ -156,8 +182,17 @@ function editor(can, k, m, sg) {
     field("Unit", text("unit")), field("Receiver", text("receiver")),
     field("Type", type),
     sg.type === MUXED && field("Mux value", num("muxValue", {min: 0, step: 1})),
-    field("Comment", h("textarea", {rows: 2, onchange: (e) => commit({comment: e.target.value.trim()})}, sg.comment)),
+    field("Comment", h("textarea", {"data-prop": "comment", rows: 2, onchange: (e) => commit({comment: e.target.value.trim()})}, sg.comment)),
     field("Values", vals, 'value descriptions: 0 "off" 1 "on"'));
+  el.update = (next) => {
+    sg = next;
+    for (const x of el.querySelectorAll("[data-prop]")) {
+      if (x === document.activeElement) continue;
+      if (x.type === "checkbox") x.checked = sg[x.dataset.prop]; else x.value = sg[x.dataset.prop];
+    }
+    if (vals !== document.activeElement) vals.value = valsText(sg);
+  };
+  return el;
 }
 
 function messageDialog(can, k) {
