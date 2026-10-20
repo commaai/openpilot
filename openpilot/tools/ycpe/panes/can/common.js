@@ -11,7 +11,10 @@ export function canOf(ctx) {
   if (!can.clock) {
     can.clock = ctx.clock;
     ctx.clock.on("t", () => can.requestState(ctx.clock.t));
-    can.on("messages", () => can.requestState(ctx.clock.t));
+    can.on("messages", () => {
+      can.requestState(ctx.clock.t);
+      ctx.perf.mark("can frames", `${(can.bytes / 1e6).toFixed(0)} MB`);
+    });
     can.requestState(ctx.clock.t);
   }
   return can;

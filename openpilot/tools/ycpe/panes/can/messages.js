@@ -16,7 +16,7 @@ const COLS = [
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
-  let sort = state.sort || {col: "id", dir: 1}, rows = [], scrollTop = 0;
+  let sort = state.sort || {col: "id", dir: 1}, rows = [], scrollTop = 0, height = 400;
   const filters = {...state.filters};
 
   const head = h("div", {class: "can-msg-head"}, COLS.map((c) => h("div", {class: `can-col can-col-${c.id}`, onclick: () => {
@@ -105,28 +105,29 @@ export function create(ctx, state) {
   const pane = {
     name: "can-messages", el,
     render() {
-      const first = Math.floor(scrollTop / ROW), n = Math.ceil((body.clientHeight || 400) / ROW) + 1;
+      const first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
       const live = can.live, t = ctx.clock.t;
       for (let i = 0; i < n; i++) {
         const m = rows[first + i], r = pool[i] || (pool[i] = row());
-        r.hidden = !m;
+        if (r.hidden !== !m) r.hidden = !m;
         if (!m) continue;
         r.key = m.key;
-        r.style.top = `${(first + i) * ROW}px`;
-        r.classList.toggle("selected", m.key === can.selected);
+        if (r.top !== first + i) r.style.top = `${(r.top = first + i) * ROW}px`;
+        if (r.sel !== (m.key === can.selected)) r.classList.toggle("selected", r.sel = m.key === can.selected);
         const j = live?.index.get(m.key), active = j !== undefined && t - live.last[j] < 2;
-        r.classList.toggle("inactive", !active);
+        if (r.active !== active) r.classList.toggle("inactive", !(r.active = active));
         COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], String(c.text ? c.text(m) : c.get(m, can) ?? "")); });
         // live bytes with change highlighting: up, down or periodic, fading over 2 s as in cabana
         const cell = r.cells.at(-1), len = j === undefined ? 0 : live.off[j + 1] - live.off[j];
         while (r.bytes.length < len) cell.append(r.bytes[r.bytes.push(h("span")) - 1]);
         r.bytes.forEach((b, x) => {
-          b.hidden = x >= len;
+          if (b.hidden !== x >= len) b.hidden = x >= len;
           if (x >= len) return;
           const o = live.off[j] + x, a = Math.max(0, 1 - live.age[o] / 2);
           set(b, hex2(live.data[o]));
-          b.className = a > 0 ? `can-chg${live.kind[o]}` : "";
-          b.style.setProperty("--a", a.toFixed(2));
+          const cls = a > 0 ? `can-chg${live.kind[o]}` : "", av = a.toFixed(2);
+          if (b.className !== cls) b.className = cls;
+          if (a > 0 && b.av !== av) b.style.setProperty("--a", b.av = av);
         });
       }
     },
@@ -139,6 +140,9 @@ export function create(ctx, state) {
   s.add(can.on("live", () => { if (filters.bytes || sort.col === "count") refresh(); else ctx.perf.invalidate(pane); }));
   s.add(can.on("select", () => ctx.perf.invalidate(pane)));
   s.add(can.dbcs.on(toolbar));
+  const sizer = new ResizeObserver(([e]) => { height = e.contentRect.height; ctx.perf.invalidate(pane); });
+  sizer.observe(body);
+  s.add(() => sizer.disconnect());
   refresh();
   return pane;
 }

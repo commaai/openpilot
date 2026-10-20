@@ -53,7 +53,7 @@
 .can-sig-row { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 4px; cursor: pointer; }
 .can-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .can-sig-name { flex: 1 1 40%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.can-spark { flex: 1 1 30%; min-width: 30px; height: 18px; }
+.can-spark { flex: 0 0 80px; width: 80px; height: 18px; }
 .can-sig-value { flex: 0 0 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); text-align: right; }
 .can-sig-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding: 6px 8px 8px 20px; background: var(--bg); }
 .can-field { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -62,8 +62,14 @@
 .can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
 .can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1) { grid-column: 1 / -1; }
 
-/* history and dialog tables */
-.can-history-scroll { flex: 1; min-height: 0; overflow: auto; }
+/* history */
+.can-hist-row { display: grid; gap: 6px; height: 20px; align-items: center; padding: 0 6px; white-space: nowrap; }
+.can-hist-row > span { overflow: hidden; text-overflow: ellipsis; }
+.can-hist-head { flex-shrink: 0; border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 600; }
+.can-msg-spacer > .can-hist-row { position: absolute; left: 0; right: 0; cursor: pointer; }
+.can-msg-spacer > .can-hist-row:hover { background: var(--hover); }
+
+/* dialog tables */
 .can-table { display: table; width: 100%; border-collapse: collapse; }
 .can-table-head, .can-table-row { display: table-row; }
 .can-table-head > span { display: table-cell; position: sticky; top: 0; padding: 2px 6px; background: var(--panel); color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); white-space: nowrap; }

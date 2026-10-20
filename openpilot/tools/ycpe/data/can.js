@@ -255,6 +255,24 @@ function decode(k, msg, only) {
   return [out, transfer];
 }
 
+// signals of msg over [t0, t1] in n buckets: first, min, max and last value of each (NaN where empty)
+function decimate(k, msg, names, t0, t1, n) {
+  const sigs = names.map((x) => msg.sigs.find((sg) => sg.name === x));
+  const out = sigs.map(() => ({first: new Float64Array(n).fill(NaN), min: new Float64Array(n).fill(NaN), max: new Float64Array(n).fill(NaN), last: new Float64Array(n).fill(NaN)}));
+  each(k, t0, t1, (s, m, i) => {
+    const b = Math.min(n - 1, Math.floor((time(s, i) - t0) / (t1 - t0) * n)), o = dataAt(s, m, i);
+    sigs.forEach((sg, j) => {
+      const v = sg ? value(msg, sg, s.data, o, s.len[i]) : NaN, d = out[j];
+      if (v !== v) return;
+      if (d.first[b] !== d.first[b]) d.first[b] = d.min[b] = d.max[b] = v;
+      else if (v < d.min[b]) d.min[b] = v;
+      else if (v > d.max[b]) d.max[b] = v;
+      d.last[b] = v;
+    });
+  });
+  return out;
+}
+
 // cabana's find similar bits: how often each bit on `bus` disagrees with (or matches) one bit of message k
 function similarBits(k, byte, bit, bus, equal, minCount) {
   const rows = [];
@@ -339,6 +357,7 @@ if (import.meta.url.endsWith("?worker")) {
     heatmap: ({k, t0, t1}) => heatmap(k, t0, t1),
     frames: ({k, t, n, msg, filters}) => frames(k, t, n, msg, filters),
     decode: ({k, msg, only}) => decode(k, msg, only),
+    decimate: ({k, msg, names, t0, t1, n}) => decimate(k, msg, names, t0, t1, n),
     similar: ({k, byte, bit, bus, equal, min}) => similarBits(k, byte, bit, bus, equal, min),
     findInit: (q) => { findInit(q); return find.history[0].length; },
     findNext: ({cmp, v1, v2}) => findNext(cmp, v1, v2).slice(0, 300),
@@ -376,6 +395,7 @@ export class Can {
     this.dbcs = new Dbcs();
     this.dbcs.on(() => this.dbcChanged());
     this.dbcVersion = 0;
+    this.dataVersion = 0;  // bumps on new frames or DBC edits
     this.cache = new Map();  // series path -> {series, msgVersion, have: Set(n), pending}
     this.selected = null;
     this.live = null;
@@ -415,6 +435,7 @@ export class Can {
     });
     this.bytes += t.byteLength + len.byteLength + can.data.byteLength + keys.byteLength * 4;
     this.call("add", {n, can, off}, [keys, can.start, stride, can.dstart, t, len, can.data].map((a) => a.buffer));
+    this.dataVersion++;
     this.emit("messages");
     for (const c of this.cache.values()) c.stale = true;
   }
@@ -447,6 +468,7 @@ export class Can {
 
   frames(k, t, n = 200, filters = null) { return this.call("frames", {k, t, n, msg: filters?.length ? plain(this.dbcMsg(k)) : null, filters}); }
   heatmap(k, t0, t1) { return this.call("heatmap", {k, t0, t1}); }
+  decimate(k, names, t0, t1, n) { return this.call("decimate", {k, msg: plain(this.dbcMsg(k)), names, t0, t1, n}); }
   similarBits(q) { return this.call("similar", q); }
   findInit(q) { return this.call("findInit", q); }
   findNext(cmp, v1, v2) { return this.call("findNext", {cmp, v1, v2}); }
@@ -491,6 +513,7 @@ export class Can {
 
   dbcChanged() {
     this.dbcVersion++;
+    this.dataVersion++;
     for (const c of this.cache.values()) c.stale = true;
     if (this.suppressDefined) this.sendMasks();
     this.emit("dbc");
@@ -564,7 +587,7 @@ export class Can {
     for (const [name, chunks] of Object.entries(r)) {
       const sp = path.slice(0, path.lastIndexOf("/") + 1) + name, sc = sp === path ? c : this.cache.get(sp);
       if (!sc || sc.dbcVersion !== version) continue;
-      for (const ch of chunks) sc.chunks.set(ch.n, {t: ch.t, v: ch.v});
+      for (const ch of chunks) sc.chunks.set(ch.n, {t: ch.t, v: ch.v, tt: ch.t});
       sc.chunks = new Map([...sc.chunks].sort((a, b) => a[0] - b[0]));
       sc.version++;
       this.emit("series", sp);

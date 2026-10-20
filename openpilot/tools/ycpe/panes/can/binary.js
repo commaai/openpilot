@@ -13,7 +13,7 @@ const withAlpha = (hsl, a) => hsl.replace(")", ` / ${a})`);
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
-  let mode = state.mode || "live", heat = null, heatKey = null, hover = null, drag = null, dpr = 1;
+  let mode = state.mode || "live", heat = null, heatKey = null, hover = null, drag = null, dpr = 1, width = 300;
   const canvas = h("canvas", {class: "can-binary-canvas"});
   const info = h("div", {class: "can-binary-info"});
   const title = h("span", {class: "can-binary-title"});
@@ -66,7 +66,7 @@ export function create(ctx, state) {
   }
 
   function geometry() {
-    const w = scroller.clientWidth, col = Math.max(24, Math.floor(w / 10));
+    const w = width, col = Math.max(24, Math.floor(w / 10));
     return {col, x0: Math.floor((w - col * 10) / 2) + col};
   }
 
@@ -78,9 +78,9 @@ export function create(ctx, state) {
   }
 
   // cabana's getSelection: dragging toward lower bit positions makes a little endian signal
-  function selection(anchor, cur) {
+  function selection({anchor, cur, resize}) {
     const a = posOf(anchor.row, anchor.col), b = posOf(cur.row, cur.col);
-    const le = drag.resize ? drag.resize.le : (cur.row * 8 + cur.col) < (anchor.row * 8 + anchor.col);
+    const le = resize ? resize.le : (cur.row * 8 + cur.col) < (anchor.row * 8 + anchor.col);
     const start = le ? Math.min(a, b) : (cur.row * 8 + cur.col < anchor.row * 8 + anchor.col ? b : a);
     const size = le ? Math.abs(a - b) + 1 : Math.abs(flip(a) - flip(b)) + 1;
     return {start, size, le};
@@ -117,7 +117,7 @@ export function create(ctx, state) {
     drag = null;
     if (!d) return;
     if (d.moved || d.resize) {
-      const sel = selection(d.anchor, d.cur);
+      const sel = selection(d);
       if (d.resize) updateSignal(can, k(), d.resize.name, {start: sel.start, size: sel.size, max: d.resize.max});
       else can.emit("edit", createSignal(can, k(), sel));
     } else {
@@ -144,7 +144,7 @@ export function create(ctx, state) {
       const key = k(), n = key === null ? 0 : rows(), {col, x0} = geometry();
       title.textContent = key === null ? "Select a message" : `${hexId(key)} ${msg()?.name || ""}`;
       dpr = devicePixelRatio;
-      const w = scroller.clientWidth, H = Math.max(n * ROW, 1);
+      const w = width, H = Math.max(n * ROW, 1);
       if (canvas.width !== w * dpr || canvas.height !== H * dpr) {
         canvas.width = w * dpr;
         canvas.height = H * dpr;
@@ -154,15 +154,14 @@ export function create(ctx, state) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, H);
       if (!n) return;
-      const css = getComputedStyle(el), fg = css.getPropertyValue("--fg"), muted = css.getPropertyValue("--muted");
-      const line = css.getPropertyValue("--line"), accent = css.getPropertyValue("--accent");
+      const color = (x) => ctx.theme.color(x), fg = color("--fg"), muted = color("--muted"), line = color("--line"), accent = color("--accent"), mono = color("--mono");
       const d = bytes(), sigs = visible(), cells = coverage(sigs, n);
       const flips = heatKey === key && heat ? heat : new Uint32Array(0);
       const max = Math.max(1, ...flips);
-      const sel = drag && (drag.moved || drag.resize) ? selection(drag.anchor, drag.cur) : null;
+      const sel = drag && (drag.moved || drag.resize) ? selection(drag) : null;
       const selected = new Set();
       if (sel) for (let j = 0; j < sel.size; j++) selected.add(sel.le ? sel.start + j : flip(flip(sel.start) + j));
-      g.font = `12px ${css.getPropertyValue("--mono")}`;
+      g.font = `12px ${mono}`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       const live = can.live, j = live?.index.get(key);
@@ -197,7 +196,7 @@ export function create(ctx, state) {
           for (const sg of cover) {
             if (pos === sg.msb || pos === sg.lsb) {
               g.save();
-              g.font = `9px ${css.getPropertyValue("--font")}`;
+              g.font = `9px ${color("--font")}`;
               g.fillStyle = fg;
               g.fillText(pos === sg.msb ? "M" : "L", x + col - 6, y + ROW - 6);
               g.restore();
@@ -210,14 +209,14 @@ export function create(ctx, state) {
           const o = live.off[j] + r, a = mode === "live" ? Math.max(0, 1 - live.age[o] / 2) : Math.max(...flips.slice(r * 8, r * 8 + 8), 0) / max;
           if (a > 0) {
             g.globalAlpha = a * 0.8;
-            g.fillStyle = mode === "live" ? css.getPropertyValue(["", "--accent", "--critical", "--muted"][live.kind[o]] || "--muted") : accent;
+            g.fillStyle = mode === "live" ? color(["", "--accent", "--critical", "--muted"][live.kind[o]] || "--muted") : accent;
             g.fillRect(x, y, col, ROW);
             g.globalAlpha = 1;
           }
           g.fillStyle = fg;
-          g.font = `bold 12px ${css.getPropertyValue("--mono")}`;
+          g.font = `bold 12px ${mono}`;
           g.fillText(hex2(d[r]), x + col / 2, y + ROW / 2);
-          g.font = `12px ${css.getPropertyValue("--mono")}`;
+          g.font = `12px ${mono}`;
         }
       }
       // grid, then signal outlines on top
@@ -245,6 +244,9 @@ export function create(ctx, state) {
   s.add(can.on("dbc", () => ctx.perf.invalidate(pane)));
   s.add(ctx.clock.on("range", () => { if (mode === "range") requestHeat(); }));
   s.add(ctx.theme.on(() => ctx.perf.invalidate(pane)));
+  const sizer = new ResizeObserver(([e]) => { width = e.contentRect.width; ctx.perf.invalidate(pane); });
+  sizer.observe(scroller);
+  s.add(() => sizer.disconnect());
   requestHeat();
   return pane;
 }

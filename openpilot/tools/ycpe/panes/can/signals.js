@@ -4,7 +4,7 @@ import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
 import {canOf, dialog, editMsg, field, removeSignal, subs, updateSignal} from "./common.js";
 
-const SPARK = 15;  // seconds of history in a sparkline, as cabana's default
+const SPARK = 15, SPARK_W = 80;  // seconds of history in a sparkline (cabana's default), and its width
 
 export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
@@ -16,6 +16,20 @@ export function create(ctx, state) {
   const msg = () => can.dbcMsg(k());
   const path = (sg) => `/dbc/${busOf(k())}/${msg().name}/${sg.name}`;
   let rows = new Map();  // signal name -> {row, value, spark}
+  let sparks = null, sparkBusy = false;
+
+  // the sparklines' buckets for the window before the playhead, one request in flight
+  async function requestSparks() {
+    const key = k(), m = msg();
+    if (sparkBusy || !m) return;
+    sparkBusy = true;
+    const t = ctx.clock.t, names = m.sigs.map((sg) => sg.name);
+    const r = await can.decimate(key, names, t - SPARK, t, SPARK_W);
+    sparkBusy = false;
+    if (key !== k()) return;
+    sparks = Object.fromEntries(names.map((n, i) => [n, r[i]]));
+    ctx.perf.invalidate(pane);
+  }
 
   function build() {
     rows = new Map();
@@ -55,68 +69,48 @@ export function create(ctx, state) {
     render() {
       const m = msg(), live = can.live, j = live?.index.get(k());
       const d = j === undefined ? null : live.data.subarray(live.off[j], live.off[j + 1]);
-      const t = ctx.clock.t, css = getComputedStyle(el);
-      for (const {v, spark, sg} of rows.values()) {
-        const x = d ? value(m, sg, d) : NaN;
-        v.textContent = Number.isNaN(x) ? "–" : format(sg, x);
-        sparkline(spark, can.series(path(sg)), t - SPARK, t, sg.color, css.getPropertyValue("--line"));
+      for (const [name, {v, spark, sg}] of rows) {
+        const x = d ? value(m, sg, d) : NaN, text = Number.isNaN(x) ? "–" : format(sg, x);
+        if (v.textContent !== text) v.textContent = text;
+        sparkline(spark, sparks?.[name], sg.color);
       }
     },
     resize() { ctx.perf.invalidate(pane); },
     dispose() { s.dispose(); },
     save: () => ({open}),
   };
-  s.add(can.on("select", () => { open = null; build(); }));
-  s.add(can.on("dbc", build));
+  s.add(can.on("select", () => { open = null; sparks = null; build(); requestSparks(); }));
+  s.add(can.on("dbc", () => { build(); requestSparks(); }));
   s.add(can.on("edit", (name) => { open = name; build(); rows.get(name)?.row.scrollIntoView({block: "nearest"}); }));
-  s.add(can.on("live", () => ctx.perf.invalidate(pane)));
-  s.add(can.on("series", () => ctx.perf.invalidate(pane)));
+  s.add(can.on("live", () => { requestSparks(); ctx.perf.invalidate(pane); }));
   s.add(can.on("hover", (name) => { for (const [n, r] of rows) r.row.classList.toggle("hover", n === name); }));
   build();
   return pane;
 }
 
-// min/max per pixel column over [t0, t1]
-function sparkline(canvas, series, t0, t1, color, line) {
-  const w = canvas.clientWidth, hgt = canvas.clientHeight, dpr = devicePixelRatio;
-  if (!w) return;
+// the last few seconds of a signal, from worker buckets: a fixed-size canvas, so no layout reads
+function sparkline(canvas, d, color) {
+  const dpr = devicePixelRatio, w = SPARK_W, hgt = 18;
   if (canvas.width !== w * dpr) { canvas.width = w * dpr; canvas.height = hgt * dpr; }
   const g = canvas.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, w, hgt);
-  const lo = new Float64Array(w).fill(Infinity), hi = new Float64Array(w).fill(-Infinity);
+  if (!d) return;
   let min = Infinity, max = -Infinity;
-  for (const c of series?.chunks || []) {
-    if (!c.t.length || c.t[0] > t1 || c.t[c.t.length - 1] < t0) continue;
-    let i = bisect(c.t, t0);
-    for (; i < c.t.length && c.t[i] <= t1; i++) {
-      const v = c.v[i];
-      if (v !== v) continue;
-      const x = Math.min(w - 1, Math.floor((c.t[i] - t0) / (t1 - t0) * w));
-      if (v < lo[x]) lo[x] = v;
-      if (v > hi[x]) hi[x] = v;
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
-  }
+  for (let x = 0; x < w; x++) { if (d.min[x] < min) min = d.min[x]; if (d.max[x] > max) max = d.max[x]; }
   if (min === Infinity) return;
   const y = (v) => max === min ? hgt / 2 : hgt - 2 - (v - min) / (max - min) * (hgt - 4);
   g.strokeStyle = color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
   g.beginPath();
-  let first = true;
+  let started = false;
   for (let x = 0; x < w; x++) {
-    if (lo[x] === Infinity) continue;
-    if (first) { g.moveTo(x, y(lo[x])); first = false; } else g.lineTo(x, y(lo[x]));
-    if (hi[x] !== lo[x]) g.lineTo(x, y(hi[x]));
+    if (d.first[x] !== d.first[x]) continue;
+    if (started) g.lineTo(x, y(d.first[x])); else { g.moveTo(x, y(d.first[x])); started = true; }
+    g.lineTo(x, y(d.min[x]));
+    g.lineTo(x, y(d.max[x]));
+    g.lineTo(x, y(d.last[x]));
   }
   g.stroke();
-  void line;
-}
-
-function bisect(a, x) {
-  let lo = 0, hi = a.length;
-  while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < x) lo = m + 1; else hi = m; }
-  return lo;
 }
 
 // every signal property; changes commit on change/enter through the undo stack
