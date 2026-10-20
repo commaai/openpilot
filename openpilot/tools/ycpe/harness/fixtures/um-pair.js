@@ -6,7 +6,7 @@ const called = (what) => (window.__mounts ??= []).push(what);
 
 export const pairButton = () => (called("pairButton"), h("button", {class: "button fake-pair"}, "add new device"));
 export const noDevices = () => (called("noDevices"), h("div", {class: "page-msg fake-no-devices"}, h("h2", {}, "Pair your device")));
-export const handlePairLink = (q) => called(`handlePairLink:${q.get("pair")}`);
+export const handlePairLink = (q) => (called(`handlePairLink:${q.get("pair")}`), false);
 export const primeBanner = (devices) => (called(`primeBanner:${devices[0]?.dongle_id}`), h("div", {class: "fake-prime-banner"}, "comma prime"));
 export const primePage = (device) => (called(`primePage:${device.dongle_id}`), h("div", {class: "page fake-prime"}, h("h2", {}, "comma prime")));
 export const clipButton = (ctx) => (called(`clipButton:${ctx.route.fullname}`), h("button", {class: "cn-option fake-clip"}, "Clip"));
