@@ -13,6 +13,7 @@ import {TRANSFORMS, derivedPath, derive, compute, transformInputs} from "/data/t
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
 import {openConsole} from "./console.js";
+import {customsOf, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const SEGMENT_WAIT = 200;  // ms that inputs changing together wait to recompute as one
@@ -399,9 +400,12 @@ export function create(ctx, state = {}) {
     invalidate();
   }
 
-  // creates (c undefined) or edits a custom series; the curve changes only once the code has run
+  // creates (c undefined) or edits a custom series; the curve changes only once the code has run. A name is one
+  // piece of code across the layout, since other custom series read it by name
   const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.label, ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
     const path = `/custom/${spec.name}`, custom = {inputs: spec.inputs, globals: spec.globals, code: spec.code};
+    const other = path !== c?.path && ctx.layout && customsOf(ctx.layout.save()).get(path);
+    if (other && other !== specKey(custom)) throw new Error(`another custom series is named ${spec.name}: pick another name`);
     await evaluate(store, path, custom);
     made.set(path, inputsVersion(custom.inputs));
     view.rememberCurves(clock, pane);
