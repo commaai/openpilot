@@ -7,8 +7,8 @@
 .replay-seg { width: 56px; }
 .replay-procs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0; }
 .replay-proc { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-family: var(--mono); }
-.replay-proc.lacking { color: var(--critical); }
-.replay-missing { color: var(--critical); overflow-wrap: anywhere; }
+.replay-proc.lacking { color: var(--critical-fg); }
+.replay-missing { color: var(--critical-fg); overflow-wrap: anywhere; }
 .replay-missing:empty { display: none; }
 .replay-start:disabled { opacity: .5; cursor: default; }
 .replay-bar { height: 3px; margin: 6px 0 2px; background: var(--line); }
@@ -24,5 +24,5 @@
 .replay-signal { cursor: pointer; }
 .replay-signal:hover { background: var(--hover); }
 .replay-past { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
-.replay-past.error .muted { color: var(--critical); }
+.replay-past.error .muted { color: var(--critical-fg); }
 .replay-note { padding: 12px; }

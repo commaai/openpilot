@@ -17,6 +17,6 @@
 .logs-pane .logs-src { flex: none; width: 16ch; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
 .logs-pane .logs-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .logs-pane .lv0 .logs-msg { color: var(--muted); }
-.logs-pane .lv2 .logs-lv { color: var(--alert); }
-.logs-pane .lv3 .logs-lv, .logs-pane .lv4 .logs-lv, .logs-pane .lv4 .logs-msg { color: var(--critical); }
+.logs-pane .lv2 .logs-lv { color: var(--alert-fg); }
+.logs-pane .lv3 .logs-lv, .logs-pane .lv4 .logs-lv, .logs-pane .lv4 .logs-msg { color: var(--critical-fg); }
 .logs-pane .logs-note { position: absolute; left: 0; right: 0; top: 40%; color: var(--muted); text-align: center; pointer-events: none; }
