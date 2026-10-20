@@ -71,7 +71,7 @@ body.in-ws #main { overflow: hidden; }
 .view:hover { color: var(--fg); }
 .view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
 .tab { display: flex; flex-shrink: 0; align-items: center; height: 24px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
-.tab:not(.add) { padding: 0; }
+.topbar .tab:not(.add) { padding: 0; }  /* the name and close buttons pad themselves */
 .tab:has(.x) { min-width: 64px; }
 .tab:hover { color: var(--fg); }
 .tab.on { color: var(--fg); border-bottom-color: var(--accent); }

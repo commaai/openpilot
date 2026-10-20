@@ -78,8 +78,7 @@
 .kv { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); }
 .device-map { width: 360px; height: 120px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--bg); }
 .page-tabs { display: flex; gap: 2px; margin: 4px 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
-.page-tabs .tab { flex-shrink: 0; }
-.page-tabs .tab { height: 28px; margin-bottom: -1px; }
+.page-tabs .tab { flex-shrink: 0; height: 28px; margin-bottom: -1px; }
 .drive-row { display: grid; grid-template-columns: 190px 64px 72px 64px minmax(120px, 1fr) minmax(160px, 38%) 64px; gap: 0 12px; align-items: center;
   height: 31px; padding: 0 8px; border-bottom: 1px solid var(--line); text-decoration: none; white-space: nowrap;
   content-visibility: auto; contain-intrinsic-size: auto 31px; }
