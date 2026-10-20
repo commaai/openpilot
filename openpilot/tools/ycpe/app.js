@@ -59,16 +59,28 @@ let ws = null;  // the open route workspace
 
 // ---- top bar ----
 
+// a popover under anchor; clicking the anchor again, clicking elsewhere or Escape closes it. Null when it was open.
 function menu(anchor, build) {
-  document.querySelector(".popover")?.remove();
-  const el = h("div", {class: "popover"}, build(() => el.remove()));
+  const open = document.querySelector(".popover");
+  open?.remove();
+  if (open?._anchor === anchor) return null;
+  const close = () => {
+    el.remove();
+    document.removeEventListener("pointerdown", outside);
+    document.removeEventListener("keydown", escape);
+  };
+  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
+  const escape = (e) => { if (e.key === "Escape") close(); };
+  const el = h("div", {class: "popover"}, build(close));
+  el._anchor = anchor;
   const r = anchor.getBoundingClientRect();
   el.style.left = `${Math.min(r.left, innerWidth - 340)}px`;
   el.style.top = `${r.bottom + 4}px`;
   document.body.append(el);
-  setTimeout(() => document.addEventListener("pointerdown", function off(e) {
-    if (!el.contains(e.target)) { el.remove(); document.removeEventListener("pointerdown", off); }
-  }));
+  setTimeout(() => {
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+  });
   return el;
 }
 
@@ -95,7 +107,7 @@ function topBar() {
   bar.route.addEventListener("click", () => {
     if (!ws) return;
     const pop = menu(bar.route, () => h("div", {class: "route-pop"}));
-    pop.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
+    pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop.remove(); ws.openRoute(name); }}).el);
   });
   const account = h("button", {class: "tbtn", title: "Account"}, "●");
   account.addEventListener("click", () => menu(account, (close) => h("div", {class: "menu-list"},
