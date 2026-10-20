@@ -17,12 +17,11 @@
       /^\/(([0-9a-f]{16})(\/[^/]+)?|account|referrals)?\/?$/i.test(location.pathname) && !location.search.includes("url=") ? "user" : "dev";
     root.dataset.theme = root.dataset.mode === "user" ? "dark" : localStorage.getItem("ycpe_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   }</script>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://api.commadotai.com" crossorigin>
   <link rel="preconnect" href="https://commadata2.blob.core.windows.net" crossorigin>
   <link rel="preconnect" href="https://chffrprivate.blob.core.windows.net" crossorigin>
   <link rel="preconnect" href="https://api.mapbox.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/pages/pages.css">
 </head>
