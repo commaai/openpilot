@@ -1,10 +1,10 @@
 /* route browser pages: home, device page, logs; the small controls here are shared with the info pane */
-/* connect's palette, for the connect view (panes/connect.css) and the pages on a phone; light is its daytime twin */
+/* connect's palette, for the pages on a phone; light is its daytime twin */
 [data-theme="dark"] { --cn-bg: #1d2225; --cn-card: #30373b; --cn-card-end: #1d2225; --cn-raised: #394044; --cn-fg: #fff; --cn-muted: rgba(255,255,255,.6);
-  --cn-line: rgba(255,255,255,.1); --cn-driving: #175886; --cn-ruler: #25333d; --cn-left: rgba(29,34,37,.9); --cn-head: #d8dddf;
+  --cn-line: rgba(255,255,255,.1); --cn-driving: #175886;
   --cn-pill: #0c0e0f; --cn-pill-line: #1e2224; --cn-dim: #6e7d84; --cn-shade: linear-gradient(transparent 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
 [data-theme="light"] { --cn-bg: #eef0f2; --cn-card: #fff; --cn-card-end: #f4f6f8; --cn-raised: #e3e6e8; --cn-fg: #1c2024; --cn-muted: #5f666e;
-  --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de; --cn-ruler: #d3dde5; --cn-left: rgba(244,246,248,.85); --cn-head: #1c2024;
+  --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de;
   --cn-pill: #fff; --cn-pill-line: #dde1e5; --cn-dim: #77878f; --cn-shade: linear-gradient(transparent 60%, rgba(0,0,0,.08)); }
 .page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
 .page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }

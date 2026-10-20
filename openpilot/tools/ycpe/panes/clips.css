@@ -81,9 +81,8 @@
 @media (prefers-reduced-motion: reduce) { .clips-bar.busy::after { animation: none; right: 0; opacity: .5; } }
 .clips-transfer { margin-top: 8px; color: var(--cn-muted); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
 
-/* the drive view's button, dimmed while the device is offline */
-.cn-options .clips-button[aria-disabled="true"] { opacity: .7; cursor: default; }
-/* and on a phone, with it, Video | Map and Clip | Files | More info still on one row */
+/* the drive view's button (connect.css dims it while the device is offline): on a phone, with it, Video | Map and
+   Clip | Files | More info still on one row */
 @container (max-width: 420px) { .cn-bar:has(.clips-button:not([hidden])) .cn-option { padding: 0 .7em; } }
 
 /* a clip playing */
