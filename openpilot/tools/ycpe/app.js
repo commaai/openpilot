@@ -12,7 +12,6 @@ import {VIEWS, LIVE_VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {status, loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
-import {openLive} from "/data/live.js";
 import {logSchema} from "/data/schemas.js";
 import {routeRecord, routeKey, routeFromPath, routeLogs, localRoute, urlRoute, droppedFiles, watchRouteStart} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
@@ -20,7 +19,6 @@ import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
-import {livePage} from "/pages/live.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 import {uniqueCustoms} from "/layouts/import.js";
@@ -721,8 +719,10 @@ async function renderPage() {
 
 // a live session (data/live.js): /live lists the sources; /live/local (this computer's webrtcd), /live/panda,
 // /live/replay?route=&rate= (a log played back as if live) and /<dongle>/live (a device through athena), each with an
-// optional view after it
+// optional view after it. Loaded once one's opened, not before the first paint
 async function openLiveSession(parts, q, main, id) {
+  const [{openLive}, {livePage}] = await Promise.all([import("/data/live.js"), import("/pages/live.js")]);
+  if (id !== navId) return;
   const dongle = parts[0] === "live" ? null : parts[0], kind = dongle ? "device" : parts[1];
   const path = dongle ? `/${dongle}/live` : `/live/${kind}`, view = parts[2];
   if (!kind) {
