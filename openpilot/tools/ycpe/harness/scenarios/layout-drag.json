@@ -1,0 +1,15 @@
+{"name": "layout-drag", "url": "/5beb9b58bd12b691/0000010a--a51155e496/drive",
+ "steps": [
+  {"waitFor": ".camera-pane video, .camera-pane canvas"},
+  {"wait": 2000},
+  {"drag": {"from": ".split.row > .divider", "by": [150, 0], "steps": 20}},
+  {"drag": {"from": ".split.row > .divider", "by": [-150, 0], "steps": 20}},
+  {"drag": {"from": ".split.row > .divider", "by": [150, 0], "steps": 20}},
+  {"drag": {"from": ".split.row > .divider", "by": [-150, 0], "steps": 20}},
+  {"drag": {"from": ".split.col > .divider", "by": [0, 120], "steps": 20}},
+  {"drag": {"from": ".split.col > .divider", "by": [0, -120], "steps": 20}},
+  {"drag": {"from": ".split.col > .divider", "by": [0, 120], "steps": 20}},
+  {"drag": {"from": ".split.col > .divider", "by": [0, -120], "steps": 20}},
+  {"wait": 500},
+  {"shot": "dragged"}
+ ]}
