@@ -154,3 +154,10 @@ a.drive-row:hover { background: var(--hover); }
   .topbar :is(.brand > span, .sep, .views, .tabs, .hud, .local-badge) { display: none; }
   .topbar > .crumb:first-of-type { display: none; }  /* the device: the route crumb's menu reaches the rest */
 }
+
+/* fingers: every control in the bars at least 32 px tall */
+@media (pointer: coarse) {
+  :root { --top: 44px; --head: 34px; }
+  .topbar :is(.brand, .crumb, .omnibox, .tbtn, .load-pill), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
+  .pane-type { height: 32px; }
+}
