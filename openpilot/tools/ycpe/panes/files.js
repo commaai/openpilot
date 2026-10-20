@@ -22,6 +22,7 @@ export function create(ctx) {
   let source = routeSource.get(route.fullname);
   let found = new Map(), errors = {}, asked = new Set(), gen = 0;  // gen drops answers for a source no longer picked
   let up = null, apiFiles = new Set(), height = 0, alive = true;
+  const stop = new AbortController();  // download-alls end with the pane
   let dirty = true, stale = new Set();  // every row and the header redraw, or just these segments' rows
   const rows = new Map();  // row index → element on screen
   const saving = {};  // kind → "done/total" while a download-all runs
@@ -103,10 +104,11 @@ export function create(ctx) {
     if (missing.length) await resolve(missing, [kind]);
     const files = segs.map((n) => [n, found.get(`${n}/${kind}`)]).filter(([, f]) => f);
     for (const [i, [n, f]] of files.entries()) {
+      if (!alive) return;
       saving[kind] = `${i + 1}/${files.length}`;
       changed();
       const sameOrigin = f.url.startsWith("blob:") || new URL(f.url, location.href).origin === location.origin;
-      const href = sameOrigin ? f.url : await fetch(f.url).then((r) => r.ok ? r.blob() : null).then((b) => b && URL.createObjectURL(b), () => null);
+      const href = sameOrigin ? f.url : await fetch(f.url, {signal: stop.signal}).then((r) => r.ok ? r.blob() : null).then((b) => b && URL.createObjectURL(b), () => null);
       if (!href) continue;
       h("a", {href, download: `${route.fullname.replace("|", "_")}--${n}--${f.file}`}).click();
       if (!sameOrigin) setTimeout(() => URL.revokeObjectURL(href), 10000);
@@ -188,6 +190,6 @@ export function create(ctx) {
   }
 
   const pane = {name: "files", el, render, resize() {}, save: () => ({}),
-    dispose() { alive = false; gen++; sized.disconnect(); up?.dispose(); }};
+    dispose() { alive = false; gen++; stop.abort(); sized.disconnect(); up?.dispose(); }};
   return pane;
 }
