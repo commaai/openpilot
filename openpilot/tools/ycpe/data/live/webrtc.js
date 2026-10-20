@@ -17,6 +17,7 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
   const target = local ? "local" : dongle, conn = peer(target), subs = listeners();
   const user = {};  // this source's place among the connection's users
   let sink = null, offs = [], cereal = false, retries = 0, retry = 0, attempt = 0, wasLive = false;
+  let watched = null;  // the camera picked to watch, which a one-track stream switches to on each connection
   const shown = new Map();  // camera → the track the sink has
 
   const set = (state, detail = "") => {
@@ -45,6 +46,8 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
     retries = 0;
     wasLive = true;
     for (const [camera, track] of conn.tracks) video(camera, track);
+    if (watched) conn.switchCamera(watched);
+    if (source.quality !== "auto") conn.send("livestreamSettings", {quality: source.quality});
     set("live", local ? "this PC" : "peer to peer");
   };
 
@@ -64,6 +67,7 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
     detail: "",
     services,
     cameras,
+    quality: "auto",  // the device's encoder bitrate: auto, or high, med or low (webrtcd's livestreamSettings)
     on: (event, fn) => event === "state" ? subs.on(fn) : () => {},
 
     start(s) {
@@ -96,6 +100,17 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
       conn.release(user);
       set("closed");
     },
+
+    // connect's stream controls: the camera to watch (road, wideRoad or driver), the quality, and the connection's stats
+    setCamera(camera) {
+      watched = camera;
+      if (source.state === "live") conn.switchCamera(camera);
+    },
+    setQuality(quality) {
+      source.quality = quality;
+      if (source.state === "live") conn.send("livestreamSettings", {quality});
+    },
+    stats: () => conn.pc?.getStats() ?? Promise.resolve(null),
 
     // the services and cameras to stream; a live source reconnects with them
     configure(opts) {

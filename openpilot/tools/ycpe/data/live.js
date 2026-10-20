@@ -38,7 +38,9 @@ export async function openLive(kind, opts, {key = kind, path, window} = {}) {
   source.start({
     events: (bytes) => store.events(bytes),
     json: (service, logMonoTime, valid, data) => store.json(service, logMonoTime, valid, data),
+    // null: the camera's track went to another one (a one-track stream switched cameras)
     video(camera, track) {
+      if (!track) return tracks.delete(camera) && videos.emit(camera, null);
       tracks.set(camera, track);
       track.addEventListener("ended", () => {
         if (tracks.get(camera) !== track) return;
