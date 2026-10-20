@@ -98,7 +98,8 @@ export class Store {
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
       return {...seg.opts, keep: this.keep, skip, only, context: this.context, schema: this.schema, gen: this.gen, ...extra};
     };
-    return this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this).then((p) => Object.assign(p, {full: !only}));
+    const loaded = this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this);
+    return loaded.then((p) => Object.assign(p, {full: !only}));  // every column, not just the ones asked for again
   }
 
   // reads every loaded segment again with another schema; the columns in memory stay until each segment's new ones

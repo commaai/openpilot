@@ -10,10 +10,11 @@ import {CanFrames} from "./can.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const ready = initCodec().then(() => new Reader(schema));
-// readers of the logs' own schemas (data/schemas.js), by key
-const readers = new Map();
+const readers = new Map();  // key → reader of a log's own schema (data/schemas.js)
+
+// the reader of a log's own schema, or the bundled one for null; either way once the codec is ready
 async function readerFor(log) {
-  const stock = await ready;  // the codec too
+  const stock = await ready;
   if (!log) return stock;
   if (!readers.has(log.key)) readers.set(log.key, new Reader(JSON.parse(log.text)));
   return readers.get(log.key);
