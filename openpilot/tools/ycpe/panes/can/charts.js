@@ -13,7 +13,7 @@ export function create(ctx, state) {
   let cols = state.cols || 1, style = state.style || "", span = state.span || 0, charts = [], dragging = null, shown = null;
   const tabs = state.tabs || [{charts: state.charts || []}];  // the open tab's charts live in `charts`
   let active = Math.min(state.active || 0, tabs.length - 1);
-  const tabBar = h("div", {class: "can-tabs"});
+  const tabBar = h("div", {class: "can-tabs", role: "tablist"});
   const empty = h("div", {class: "can-empty"}, "Plot a signal from the signal list, or drop signals here");
   const grid = h("div", {class: "can-charts-grid", ondragover: (e) => e.preventDefault(), ondrop: (e) => {
     const data = e.dataTransfer.getData(PATHS_MIME);
@@ -26,7 +26,7 @@ export function create(ctx, state) {
     options.map(([v, n]) => h("option", {value: v, selected: v === value}, n)));
   const el = h("div", {class: "can-pane can-charts"},
     h("div", {class: "can-toolbar"},
-      h("button", {class: "can-btn", title: "New chart from a list of signals", onclick: () => picker((paths) => add({curves: paths.map(curve)}))}, "+ Chart"),
+      h("button", {class: "can-btn", title: "New chart from a list of signals", onclick: () => picker((paths) => add({curves: paths.map(curve)}))}, icon("add", 14), h("span", {}, "Chart")),
       h("span", {class: "can-spacer"}),
       select("Time range: the view's, or a window following the playhead", [["0", "view"], ...[1, 5, 15, 30].map((x) => [String(x), `${x} s`])], String(span),
         (v) => { span = +v; shown = null; follow(); }),
@@ -58,7 +58,7 @@ export function create(ctx, state) {
         ondragend: (e) => { if (dragging === c && e.dataTransfer.dropEffect !== "none") remove(c); dragging = null; }},
       icon("drag_indicator", 14), h("span", {class: "can-spacer"}),
       h("button", {class: "can-icon", title: "Add or remove signals", onclick: () => picker((p) => replace(c, {...c.pane.save(), curves: p.map(curve)}), paths())}, icon("edit", 12)),
-      h("button", {class: "can-icon", title: "Split into one chart per signal", onclick: () => split(c)}, "⫼"),
+      h("button", {class: "can-icon", title: "Split into one chart per signal", onclick: () => split(c)}, icon("splitRight", 12)),
       h("button", {class: "can-icon", title: "Remove chart", onclick: () => remove(c)}, icon("close", 12))), c.box);
     // dropped back onto itself: nothing to merge
     c.el.addEventListener("drop", (e) => { if (dragging === c) { e.stopPropagation(); dragging = null; } }, true);
@@ -117,6 +117,7 @@ export function create(ctx, state) {
     for (const c of [...charts]) remove(c);
     fn();
     for (const st of tabs[active].charts) add(st);
+    layout();  // for an empty tab too
   }
 
   const open = (i) => rebuild(() => { active = i; });
@@ -128,9 +129,10 @@ export function create(ctx, state) {
 
   function tabsChanged() {
     const count = (t, i) => (i === active ? charts : t.charts).length;
-    tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`, onclick: () => i !== active && open(i)},
-      `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, `· ${count(t, i)}`),
-      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: (e) => { e.stopPropagation(); closeTab(i); }}, icon("close", 12)))),
+    tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`},
+      h("button", {class: "can-tab-name", role: "tab", "aria-selected": String(i === active), onclick: () => i !== active && open(i)},
+        `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, ` · ${count(t, i)}`)),
+      tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: () => closeTab(i)}, icon("close", 12)))),
       h("button", {class: "can-icon", title: "New tab", onclick: () => { tabs.push({charts: []}); open(tabs.length - 1); }}, icon("add", 14)));
   }
 
