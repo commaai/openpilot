@@ -2,8 +2,9 @@
 // of panes/strip.js over a ruler: tap to seek, drag to zoom into a range), Video | Map and
 // Files | More info toggles, the camera or map pane, and connect's control pill. The camera, map, files and info panes
 // are mounted here as the layout mounts them. Everything that moves while scrubbing or playing is a transform or a
-// changed text, set in one render through the frame scheduler.
-import {SEGMENT, segmentAt} from "/api.js";
+// changed text, set in one render through the frame scheduler. In user mode (ctx.user) it is connect's DriveView as
+// connect draws it: its icons, thumbnails, speed steps, and Files and More info as menus (connect-menus.js)
+import {SEGMENT, api, segmentAt} from "/api.js";
 import {h, css} from "/dom.js";
 import {icon} from "/icons.js";
 import {RATES} from "/clock.js";
@@ -18,6 +19,8 @@ const MOVE_PX = 6;  // a press that moves this far selects a range to zoom into
 const started = new WeakSet();  // the clocks of routes this view opened playing, as connect does, the first time only
 const zooms = new WeakMap();  // each clock's ranges zoomed in from, which back steps out to one at a time as on connect
 const WIDE = matchMedia("(min-width: 1536px)");  // as connect, the map beside the video from here on
+const STEPS = [0.1, 0.25, 0.5, 1, 2, 4, 8];  // connect's play speeds, a step at a time
+const THUMB = 32;  // px per timeline thumbnail on connect: its 20 px row at the sprites' 128:80
 // built once: a formatter per call costs ~7 ms of ICU setup the first time
 const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
 const HMS = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false});
@@ -25,9 +28,33 @@ const DAY = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric"})
 const YEAR_DAY = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric"});
 const WEEKDAY = new Intl.DateTimeFormat(undefined, {weekday: "long"});
 
-// connect's segmented buttons; set(key) shows which is on (null: none)
+// connect's own icons (its src/icons, MIT), drawn in user mode where they differ from ours: [viewBox, path, rotation]
+const CHEVRON = "M16.8625817,0.35528597 C16.3546389,-0.125475313 15.550396,-0.125475313 15.0847818,0.398991541 L5.3492107,11.1068565 C4.88359643,11.6313233 4.88359643,12.4180236 5.3492107,12.8987849 L15.0847818,23.6066499 C15.3387532,23.8688833 15.6773817,24 16.0160103,24 C16.3123103,24 16.6509389,23.8688833 16.9049103,23.6503554 C17.4128531,23.1695941 17.4551817,22.3391883 16.9472388,21.8147214 L7.97358203,12.0246735 L16.9049103,2.19091996 C17.3705245,1.66645311 17.3705245,0.836047253 16.8625817,0.35528597 Z";
+const TEN = "M360-310v-212h-54v-49h104v261h-50Zm147 0q-18.7 0-31.35-12.65Q463-335.3 463-354v-173q0-18.7 12.65-31.35Q488.3-571 507-571h83q18.7 0 31.35 12.65Q634-545.7 634-527v173q0 18.7-12.65 31.35Q608.7-310 590-310h-83Zm6-50h71v-162h-71v162Z";
+const CN = {
+  back: ["0 -960 960 960", "M480-149 149-480l331-331 67 66-217 218h481v94H330l217 217-67 67Z"],
+  close: ["0 0 24 24", "m6.225 19.425-1.65-1.65L10.35 12 4.575 6.225l1.65-1.65L12 10.35l5.775-5.775 1.65 1.65L13.65 12l5.775 5.775-1.65 1.65L12 13.65l-5.775 5.775Z"],
+  play: ["0 -960 960 960", "M320-203v-560l440 280-440 280Z"],
+  pause: ["0 -960 960 960", "M555-200v-560h175v560H555Zm-325 0v-560h175v560H230Z"],
+  replay10: ["0 -960 960 960", `M480-80q-75 0-140.5-28T225-185q-49-49-77-114.5T120-440h60q0 125 87.32 212.5T480-140t212.68-87.32Q780-314.64 780-440t-85-212.68Q610-740 485-740h-22l73 73-42 42-147-147 147-147 41 41-78 78h23q75 0 140.5 28T735-695q49 49 77 114.5T840-440q0 75-28 140.5T735-185q-49 49-114.5 77T480-80Z${TEN}`],
+  forward10: ["0 -960 960 960", `${TEN}M480-80q-75 0-140.5-28T225-185q-49-49-77-114.5T120-440q0-75 28-140.5T225-695q49-49 114.5-77T480-800h21l-78-78 41-41 147 147-147 147-41-41 74-74h-17q-125.36 0-212.68 87.32Q180-565.36 180-440t87.32 212.68Q354.64-140 480-140t212.68-87.32Q780-314.64 780-440h60q0 75-28 140.5T735-185q-49 49-114.5 77T480-80Z`],
+  up: ["0 0 24 24", CHEVRON, 90],
+  down: ["0 0 24 24", CHEVRON, 270],
+};
+export function cnIcon(name, size) {
+  const [box, d, turn] = CN[name], svg = icon("play", size);
+  svg.setAttribute("viewBox", box);
+  const path = svg.firstChild;
+  path.setAttribute("d", d);
+  if (turn) path.setAttribute("transform", `rotate(${turn}, 12.3, 12)`);
+  return svg;
+}
+
+// connect's segmented buttons; set(key) shows which is on (null: none). The label's span is what connect's menus
+// open from
 function segmented(options, pick) {
-  const buttons = Object.entries(options).map(([key, label]) => h("button", {class: "cn-option", "data-key": key, "aria-pressed": "false", onclick: () => pick(key)}, label));
+  const buttons = Object.entries(options).map(([key, label]) => h("button", {class: "cn-option", "data-key": key, "aria-pressed": "false",
+    onclick: (e) => pick(key, e.currentTarget.firstChild)}, h("span", {}, label)));
   return {el: h("div", {class: "cn-options"}, buttons), set(on) { for (const b of buttons) b.ariaPressed = String(b.dataset.key === on); }};
 }
 
@@ -37,23 +64,26 @@ export function create(ctx, state) {
   const offs = [];
   if (!zooms.has(clock)) zooms.set(clock, []);
   const levels = zooms.get(clock);
+  let user = null;  // the mode drawn; a switch of mode keeps this pane, so render redraws what differs
 
   // the card's head: back out of a zoom, the times shown, close to the device
   const back = h("button", {class: "cn-icon", title: "Zoom out", "aria-label": "Zoom out",
-    onclick: () => zoom(...(levels.pop() ?? [0, clock.duration]), false)}, icon("back", 24));
+    onclick: () => zoom(...(levels.pop() ?? [0, clock.duration]), false)});
   const weekday = h("span", {class: "cn-weekday"}), times = h("span");
-  const close = h("a", {class: "cn-icon", href: `/${dongle}`, onclick: link(`/${dongle}`), title: "Back to the device", "aria-label": "Close"}, icon("close", 24));
+  const close = h("a", {class: "cn-icon", onclick: (e) => link(close.getAttribute("href"))(e), title: "Back to the device", "aria-label": "Close"});
 
   // the timeline: the strip, then the ruler with what's left of the shown range dimmed after the playhead
   const s = strip(route, clock.duration);
   s.fill().catch(() => {});
   const left = h("div", {class: "cn-left"});
+  const ruler = h("div", {class: "cn-ruler"}, left);
   const head = h("div", {class: "cn-head"});
   const selection = h("div", {class: "cn-selection", hidden: true});
   const bead = h("div", {class: "cn-bead", hidden: true});
+  const thumbs = h("div", {class: "cn-thumbs"});  // user mode's: connect's tiles, a 5 s frame of the sprite each
   const timeline = h("div", {class: "cn-timeline", role: "slider", tabindex: 0, "aria-label": "Drive timeline", "aria-valuemin": 0,
     "aria-valuemax": Math.floor(clock.duration), oncontextmenu: (e) => e.preventDefault()},
-    s.el, h("div", {class: "cn-ruler"}, left), head, selection, bead);
+    s.el, thumbs, ruler, head, selection, bead);
 
   // the media and the sheets under it: panes, each mounted the first time it's shown
   const boxes = {video: h("div", {class: "cn-box cn-video"}), map: h("div", {class: "cn-box cn-map"}),
@@ -85,7 +115,9 @@ export function create(ctx, state) {
 
   let media = state.media === "map" ? "map" : "video", sheet = null;
   const mediaOptions = segmented({video: "Video", map: "Map"}, (key) => { media = key; showMedia(); });
-  const sheetOptions = segmented({files: "Files", info: "More info"}, (key) => {
+  // developer mode opens our files and info panes under the pill; user mode connect's menus over the button
+  const sheetOptions = segmented({files: "Files", info: "More info"}, (key, label) => {
+    if (ctx.user) return void import("./connect-menus.js").then((m) => !disposed && m[key === "files" ? "filesMenu" : "infoMenu"](label, ctx));
     sheet = sheet === key ? null : key;
     sheetOptions.set(sheet);
     for (const k of ["files", "info"]) boxes[k].hidden = k !== sheet;
@@ -106,16 +138,25 @@ export function create(ctx, state) {
   offs.push(() => WIDE.removeEventListener("change", showMedia));
   showMedia();
 
-  // connect's control pill
+  // connect's control pill. Developer mode picks the rate from ours, user mode steps through connect's
   const playBtn = h("button", {class: "cn-play", title: "Play/pause (space)", onclick: () => clock.toggle()});
   const rate = h("select", {class: "cn-rate", title: "Playback rate ([ and ])", onchange: (e) => clock.setRate(+e.target.value)},
     RATES.map((r) => h("option", {value: r}, `${r}×`)));
+  const rateBox = h("label", {class: "cn-rate-box"}, icon("up", 16), rate, icon("down", 16));
+  const step = (by) => {
+    const i = STEPS.indexOf(clock.rate);
+    clock.setRate(STEPS[Math.max(0, Math.min(STEPS.length - 1, (i < 0 ? STEPS.indexOf(1) : i) + by))]);
+    clock.play();  // as connect: a step plays
+  };
+  const faster = h("button", {class: "cn-step", "aria-label": "Increase play speed by 1 step", onclick: () => step(1)}, cnIcon("up", 12));
+  const slower = h("button", {class: "cn-step", "aria-label": "Decrease play speed by 1 step", onclick: () => step(-1)}, cnIcon("down", 12));
+  const speedText = h("span", {class: "cn-speed-text"});
+  const speed = h("div", {class: "cn-speed"}, faster, speedText, slower);
   const now = h("span", {class: "cn-now"});
   const mute = muteButton("cn-mute", 24);  // the camera pane's sound (its own button is hidden here)
-  const pill = h("div", {class: "cn-pill"},
-    h("button", {class: "cn-jump", title: "Back 10 s", "aria-label": "Back 10 seconds", onclick: () => clock.seek(clock.t - 10)}, icon("replay10", 30)),
-    h("button", {class: "cn-jump", title: "Forward 10 s", "aria-label": "Forward 10 seconds", onclick: () => clock.seek(clock.t + 10)}, icon("forward10", 30)),
-    now, h("label", {class: "cn-rate-box"}, icon("up", 16), rate, icon("down", 16)), mute.el, playBtn);
+  const jumpBack = h("button", {class: "cn-jump", title: "Back 10 s", "aria-label": "Jump back 10 seconds", onclick: () => clock.seek(clock.t - 10)});
+  const jumpOn = h("button", {class: "cn-jump", title: "Forward 10 s", "aria-label": "Jump forward 10 seconds", onclick: () => clock.seek(clock.t + 10)});
+  const pill = h("div", {class: "cn-pill"}, jumpBack, jumpOn, now, rateBox, speed, mute.el, playBtn);
 
   const el = h("div", {class: "connect-pane"},
     h("div", {class: "cn-card"},
@@ -125,6 +166,27 @@ export function create(ctx, state) {
         h("div", {class: "cn-bar"}, mediaOptions.el, sheetOptions.el),
         h("div", {class: "cn-media"}, boxes.video, boxes.map),
         pill, boxes.files, boxes.info)));
+
+  // the icons and titles of the mode shown: connect's in user mode (its buttons have no tooltips), ours in developer
+  function drawMode() {
+    user = ctx.user;
+    el.classList.toggle("cn-user", user);
+    const glyph = (name, size) => user ? cnIcon(name, size) : icon(name, size);
+    close.href = user ? `/connect/${dongle}` : `/${dongle}`;
+    back.replaceChildren(glyph("back", 24));
+    close.replaceChildren(glyph("close", 24));
+    jumpBack.replaceChildren(glyph("replay10", user ? 32 : 30));
+    jumpOn.replaceChildren(glyph("forward10", user ? 32 : 30));
+    for (const [b, title] of [[back, "Zoom out"], [close, "Back to the device"], [jumpBack, "Back 10 s"], [jumpOn, "Forward 10 s"], [playBtn, "Play/pause (space)"]]) {
+      if (user) b.removeAttribute("title");
+      else b.title = title;
+    }
+    back.ariaLabel = user ? "Go Back" : "Zoom out";
+    playing = null;
+    shown = "";
+    // its menus, and what More info shows of the drive, once the view is up (connect asks as the drive opens)
+    if (user) requestIdleCallback(() => import("./connect-menus.js").then((m) => disposed || m.prefetch(ctx)), {timeout: 2000});
+  }
 
   // zooming in shows and loops just that range, as connect does; the whole drive undoes it. A selected range is a new
   // level to step back out of; the wheel and back move within the one shown
@@ -138,14 +200,15 @@ export function create(ctx, state) {
     if (clock.t < t0 || clock.t > t1) clock.seek(t0);
   }
 
-  // a press: a tap seeks, a drag selects a range to zoom into, as on connect
+  // a press: a tap seeks, a drag selects a range to zoom into, as on connect (whose ruler alone takes them)
   // the timeline's left edge is read as the pointer arrives, not on every move (a read after a render forces a layout)
   let width = 0, edge = 0, hover = null, press = null;
   const xOf = (e) => Math.max(0, Math.min(width, e.clientX - edge));
   const tOf = (x) => clock.range[0] + x / (width || 1) * (clock.range[1] - clock.range[0]);
+  const off = (e) => ctx.user && !ruler.contains(e.target);
   timeline.addEventListener("pointerenter", () => { edge = timeline.getBoundingClientRect().left; });
   timeline.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || off(e)) return;
     edge = timeline.getBoundingClientRect().left;
     timeline.setPointerCapture(e.pointerId);
     const x = xOf(e);
@@ -154,7 +217,7 @@ export function create(ctx, state) {
   });
   timeline.addEventListener("pointermove", (e) => {
     const x = xOf(e);
-    if (e.pointerType === "mouse") hover = x;
+    if (e.pointerType === "mouse") hover = press?.id !== e.pointerId && off(e) ? null : x;
     if (press?.id === e.pointerId) {
       press.x = x;
       if (press.mode === "press" && Math.abs(x - press.x0) > MOVE_PX) press.mode = "select";
@@ -172,8 +235,9 @@ export function create(ctx, state) {
   timeline.addEventListener("pointerup", release);
   timeline.addEventListener("pointercancel", release);
   timeline.addEventListener("pointerleave", () => { hover = null; perf.invalidate(pane); });
-  // wheel zooms the shown range around the cursor
+  // wheel zooms the shown range around the cursor (developer mode's; on connect it scrolls the page)
   timeline.addEventListener("wheel", (e) => {
+    if (ctx.user) return;
     e.preventDefault();
     const [r0, r1] = clock.range, t = tOf(xOf(e)), k = Math.exp(e.deltaY * 0.002);
     zoom(Math.max(0, t - (t - r0) * k), Math.min(clock.duration, t + (r1 - t) * k));
@@ -188,14 +252,32 @@ export function create(ctx, state) {
   const timelineSize = new ResizeObserver(([e]) => { width = e.contentRect.width; perf.invalidate(pane); });
   timelineSize.observe(timeline);
 
+  // connect's thumbnails for [r0, r1]: a 32 px tile per slot, each the 5 s frame of its segment's sprite at the
+  // slot's middle (connect counts the frame from the drive's start, so past the first minute it's the last one),
+  // runs of following frames of one segment in one element
+  function drawThumbs(r0, r1) {
+    const count = Math.ceil(width / THUMB), runs = [];
+    if (!route.url || !Number.isFinite(count)) return thumbs.replaceChildren();
+    const slots = Math.max(1, Math.ceil(clock.duration / SEGMENT));
+    for (let i = 0; i < count; i++) {
+      const t = r0 + (i + 0.5) / count * (r1 - r0), image = Math.max(0, Math.min(Math.floor(Math.floor(t) / 5), 11));
+      const n = segmentAt(route, Math.max(0, Math.min(slots - 1, Math.floor(t / SEGMENT))));
+      const run = runs.at(-1);
+      if (run && run.n === n && image === run.end + 1) { run.end = image; run.length++; } else runs.push({n, start: image, end: image, length: 1});
+    }
+    thumbs.replaceChildren(...runs.map((r) => h("div", {style: `width:${THUMB * r.length}px;background-image:url(${api.segmentAsset(route, r.n, "sprite.jpg")});background-position-x:-${r.start * THUMB}px`})));
+  }
+
   const segmentOf = (t) => segmentAt(route, Math.min(Math.floor(t / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
-  let shown = "", second = null, playing = null;  // the range the strip and title show, the second the clock shows
+  let shown = "", second = null, playing = null, rated = null;  // the range the strip and title show, the second the clock shows
   const pane = {name: "connect", el, resize() {}, save: () => ({media}), dispose,
     render() {
+      if (user !== ctx.user) drawMode();
       const [r0, r1] = clock.range, span = r1 - r0;
-      if (shown !== `${r0} ${r1}`) {
-        shown = `${r0} ${r1}`;
+      if (shown !== `${r0} ${r1} ${width}`) {
+        shown = `${r0} ${r1} ${width}`;
         s.show(r0, r1);
+        if (user) drawThumbs(r0, r1);
         const a = new Date(start + r0 * 1000);
         weekday.textContent = `${WEEKDAY.format(a)} `;
         times.textContent = `${(a.getFullYear() === new Date().getFullYear() ? DAY : YEAR_DAY).format(a)} @ ${HM.format(a)} - ${HM.format(start + r1 * 1000)}`;
@@ -214,19 +296,31 @@ export function create(ctx, state) {
       if (at !== null) {
         const t = tOf(at);
         bead.textContent = `${segmentOf(t)}, ${HMS.format(start + t * 1000)}`;
-        bead.style.transform = `translateX(${Math.max(0, Math.min(width - 80, at - 40))}px)`;
+        bead.style.transform = `translateX(${user ? Math.max(-10, Math.min(width - 70, at - 40)) : Math.max(0, Math.min(width - 80, at - 40))}px)`;
       }
       if (second !== Math.trunc(clock.t)) {
         second = Math.trunc(clock.t);
         now.textContent = `${HMS.format(start + second * 1000)} – ${segmentOf(clock.t)}`;
         timeline.setAttribute("aria-valuenow", second);
       }
-      if (playing !== clock.playing) playBtn.replaceChildren(icon((playing = clock.playing) ? "pause" : "play", 40));
+      if (playing !== clock.playing) {
+        playing = clock.playing;
+        playBtn.replaceChildren(user ? cnIcon(playing ? "pause" : "play", 47) : icon(playing ? "pause" : "play", 40));
+        playBtn.ariaLabel = playing ? "Pause" : "Unpause";
+      }
       mute.show(!!panes.video?.audio);
       if (rate.value !== String(clock.rate)) rate.value = clock.rate;
+      if (rated !== clock.rate) {
+        rated = clock.rate;
+        const i = STEPS.indexOf(rated) < 0 ? STEPS.indexOf(1) : STEPS.indexOf(rated);
+        speedText.textContent = `${rated}×`;
+        faster.disabled = i >= STEPS.length - 1;
+        slower.disabled = i <= 0;
+      }
     }};
 
   offs.push(...["t", "range", "play"].map((ev) => clock.on(ev, () => perf.invalidate(pane))), sound.on(() => perf.invalidate(pane)));
+  drawMode();
   if (!started.has(clock)) {
     started.add(clock);
     clock.play();

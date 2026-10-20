@@ -31,6 +31,8 @@ const TRANSCODED = "This browser has no hardware HEVC decoder, so the local daem
 const UNBUILT = "full-res needs hardware HEVC, the local daemon's transcode, or a built hevc.wasm (tools/ycpe/data/video/build.sh)";
 const NO_AUDIO = "Enable audio recording through the \"Record and Upload Microphone Audio\" toggle on your device";
 const MUTED = "ycpe_muted";
+// connect's words for a video that isn't there (user mode)
+const NOT_UPLOADED = "This video segment has not uploaded yet or has been deleted.", UNABLE = "Unable to load video";
 
 // the qcamera's sound (the device's microphone, when it records it): muted until unmuted, as connect starts, and the
 // choice is kept. Chrome won't start sound before the page's first click or key, so until then it plays muted
@@ -93,12 +95,14 @@ export function create(ctx, state) {
     alertEl.dataset.status = alertStatus;
   }
 
-  // the overlay over the last frame, dimmed: text with a progress bar at f (0..1), text alone (f null), or nothing
-  const cover = (text, f) => {
+  // the overlay over the last frame, dimmed: text with a progress bar at f (0..1), text alone (f null), or nothing.
+  // kind ("wait" or "absent") lets user mode draw connect's spinner or its error instead
+  const cover = (text, f, kind) => {
     const key = text === null ? "" : `${text} ${f}`;
     if (key === overlaid) return;  // renders run every frame while playing
     overlaid = key;
     overlay.hidden = text === null;
+    overlay.dataset.kind = kind;
     el.classList.toggle("buffering", text !== null);
     if (text === null) return;
     waitText.textContent = text;
@@ -112,9 +116,9 @@ export function create(ctx, state) {
       note.hidden = !text;
     },
     // the playhead waits on a segment: {text, f} with f the fraction loaded, or null
-    wait: (b) => cover(b ? `buffering ${b.text}` : null, b?.f || 0),
-    // the playhead is where the camera has no file: why, or null
-    absent: (why) => cover(why, null),
+    wait: (b) => cover(b ? `buffering ${b.text}` : null, b?.f || 0, "wait"),
+    // the playhead is where the camera has no file: why, or null; said: what connect says instead, in user mode
+    absent: (why, said) => cover(ctx.user && said || why, null, "absent"),
   };
 
   function show(src, why) {
@@ -191,7 +195,7 @@ const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
 // nothing to wait for: the pane says so, and with none at all it doesn't load a player. A segment that fails to
 // load stops the player until the next seek, play or reconnect.
 function qcamera(ctx, pane, {wait, absent}) {
-  const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
+  const poster = ctx.route.loose || ctx.user ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {playsinline: true, preload: "auto", poster});
   video.muted = sound.silent();  // the property: the attribute set after creation doesn't mute it, and only a muted video plays unasked
   const lanes = lane("qcamera");
@@ -216,7 +220,8 @@ function qcamera(ctx, pane, {wait, absent}) {
   };
   const retry = () => {
     if (!failed || gone) return;
-    failed = null;
+    // connect keeps saying a segment is missing through a seek, until a fragment plays
+    failed = ctx.user && failed.missing ? {...failed, t: ctx.clock.t} : null;
     hls.loadSource(src);  // hls.js skips a failed fragment as a gap for good: start over, and render() seeks back
     update();
   };
@@ -234,20 +239,25 @@ function qcamera(ctx, pane, {wait, absent}) {
       sound.emit();
     });
     hls.on(Hls.Events.FRAG_LOADING, (e, {frag}) => { loading.add(frag.sn); update(); });
-    hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => { loading.delete(frag.sn); update(); });
+    hls.on(Hls.Events.FRAG_BUFFERED, (e, {frag}) => {
+      loading.delete(frag.sn);
+      if (failed?.missing && ctx.user) failed = null;
+      update();
+    });
     hls.on(Hls.Events.ERROR, (e, data) => {
-      // a fragment out of retries isn't fatal when there's no other level to switch to, but it never loads
-      const {retryCount, retryConfig} = data.errorAction || {};
-      if (!data.fatal && !(data.frag && retryConfig && retryCount >= retryConfig.maxNumRetry)) return;  // hls.js retries
+      // a fragment out of retries isn't fatal when there's no other level to switch to, but it never loads. User mode
+      // says a missing one is missing at once, as connect does
+      const {retryCount, retryConfig} = data.errorAction || {}, missing = data.response?.code === 404;
+      if (!data.fatal && !(data.frag && retryConfig && retryCount >= retryConfig.maxNumRetry) && !(ctx.user && missing)) return;  // hls.js retries
       if (data.type === Hls.ErrorTypes.MEDIA_ERROR) return hls.recoverMediaError();
-      failed = {n: data.frag?.sn ?? Math.floor(video.currentTime / SEGMENT), t: ctx.clock.t};
+      failed = {n: data.frag?.sn ?? Math.floor(video.currentTime / SEGMENT), t: ctx.clock.t, missing};
       loading.clear();
       update();
       ctx.perf.invalidate(pane);
     });
     hls.loadSource(src);
     hls.attachMedia(video);
-  }, () => absent("hls.js failed to load"));
+  }, () => absent("hls.js failed to load", UNABLE));
   for (const ev of ["loadedmetadata", "seeked", "canplay", "waiting"]) video.addEventListener(ev, () => ctx.perf.invalidate(pane));
   // a paused <video> keeps its poster up over the decoded frame until a seek or play
   video.addEventListener("loadeddata", () => video.removeAttribute("poster"), {once: true});
@@ -265,14 +275,14 @@ function qcamera(ctx, pane, {wait, absent}) {
       lastT = ctx.clock.t;
       if (files && !files[n]) {
         lanes.buffering(null);
-        absent(files.some(Boolean) ? `no qcamera for segment ${segmentAt(ctx.route, n)}` : "no qcamera for this route");
+        absent(files.some(Boolean) ? `no qcamera for segment ${segmentAt(ctx.route, n)}` : "no qcamera for this route", NOT_UPLOADED);
         if (!video.paused) video.pause();
         return;
       }
       const stalled = video.readyState < 3 && (playing || video.seeking || video.readyState < 2);
       if (failed && stalled) {
         lanes.buffering(null);
-        return absent(`segment ${segmentAt(ctx.route, failed.n)} failed to load · seek or play to retry`);
+        return absent(`segment ${segmentAt(ctx.route, failed.n)} failed to load · seek or play to retry`, failed.missing ? NOT_UPLOADED : UNABLE);
       }
       const b = stalled && {n, text: `segment ${segmentAt(ctx.route, n)}`};
       lanes.buffering(b || null);

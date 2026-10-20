@@ -81,6 +81,8 @@ class TileMap {
     this.cx = this.cy = 0.5;
     this.z = 3;
     this.overlay = null;      // fn(ctx) drawing on top, in css px
+    this.dark = false;        // connect's dark style whatever the theme (user mode)
+    this.touched = 0;         // when the user last panned or zoomed it
     this.interact();
     el.append(h("div", {class: "tilemap-credit"},
       h("a", {href: "https://www.mapbox.com/about/maps/", target: "_blank"}, "© Mapbox"), " ",
@@ -121,6 +123,7 @@ class TileMap {
     const [nx, ny] = this.toUnit(px, py);
     this.cx += ux - nx;
     this.cy += uy - ny;
+    this.touched = performance.now();
     this.invalidate();
   }
 
@@ -164,6 +167,7 @@ class TileMap {
       this.cx = from.u[0] - (x - this.w / 2) / this.scale;
       this.cy = from.u[1] - (y - this.h / 2) / this.scale;
       c.classList.add("panning");
+      this.touched = performance.now();
       this.invalidate();
     });
     const up = (e) => {
@@ -179,7 +183,7 @@ class TileMap {
 
   // fn(style, z, x, y, tx, ty) for each tile a w × h view shows, x wrapped around the world
   eachTile(w, h, fn) {
-    const style = STYLES[theme.name] || STYLES.dark;
+    const style = this.dark ? STYLES.dark : STYLES[theme.name] || STYLES.dark;
     const tz = Math.max(0, Math.min(MAX_Z, Math.round(this.z))), n = 2 ** tz;
     const [ux0, uy0] = this.toUnit(0, 0, w, h), [ux1, uy1] = this.toUnit(w, h, w, h);
     for (let ty = Math.max(0, Math.floor(uy0 * n)); ty <= Math.min(n - 1, Math.floor(uy1 * n)); ty++) {
@@ -201,7 +205,7 @@ class TileMap {
     const {w, h} = this;
     if (!w || !h) return;
     const ctx = fitCanvas(this.canvas, w, h);
-    ctx.fillStyle = theme.color("--bg");
+    ctx.fillStyle = this.dark ? "#1d2225" : theme.color("--bg");
     ctx.fillRect(0, 0, w, h);
 
     const onLoad = () => this.invalidate(), left = {fetches: FETCHES, more: false, stamp: ++renders};
@@ -403,11 +407,44 @@ export function create(ctx) {
   const empty = h("p", {class: "map-empty muted", hidden: true}, "No GPS for this route");
   const el = h("div", {class: "map-pane"}, empty);
   const map = new TileMap(el);
-  map.view(route.start_lng || -117.16, route.start_lat || 32.72, 12);
+  map.view(route.start_lng || -117.16, route.start_lat || 32.72, ctx.user ? 14 : 12);
   let tr = null, spans = [], fromStore = false, fitted = false, pending = null, disposed = false;
+
+  // the playhead between the trace's points, in unit coordinates
+  const playhead = () => {
+    const i = nearest(tr, clock.t), a = Math.max(0, i - 1);
+    const f = i > a ? Math.max(0, Math.min(1, (clock.t - tr.t[a]) / (tr.t[i] - tr.t[a]))) : 0;
+    return [tr.x[a] + f * (tr.x[i] - tr.x[a]), tr.y[a] + f * (tr.y[i] - tr.y[a]), i];
+  };
+  // user mode's is connect's DriveMap: its dark style, a grey line, a blue dot at the playhead, and the view at zoom 14
+  // on the dot unless the map was moved in the last 5 s
+  const connectMap = (g) => {
+    const sx = map.scale, ox = map.w / 2 - map.cx * sx, oy = map.h / 2 - map.cy * sx;
+    g.lineWidth = 8;
+    g.lineCap = g.lineJoin = "round";
+    g.beginPath();
+    for (let i = 0; i < tr.n; i++) g[i ? "lineTo" : "moveTo"](tr.x[i] * sx + ox, tr.y[i] * sx + oy);
+    g.strokeStyle = "#888";
+    g.stroke();
+    const [px, py] = map.toScreen(...playhead());
+    g.beginPath();
+    g.arc(px, py, 10, 0, 2 * Math.PI);
+    g.fillStyle = "#007cbf";
+    g.fill();
+  };
+  let followed = "";  // as connect, it moves only when the dot does
+  const follow = () => {
+    map.dark = !!ctx.user;
+    if (!ctx.user || !tr?.n) return;
+    const [ux, uy] = playhead();
+    if (followed === `${ux} ${uy}`) return;
+    followed = `${ux} ${uy}`;
+    if (performance.now() - map.touched > 5000) [map.cx, map.cy] = [ux, uy];
+  };
 
   map.overlay = (g) => {
     if (!tr?.n) return;
+    if (ctx.user) return connectMap(g);
     const sx = map.scale, ox = map.w / 2 - map.cx * sx, oy = map.h / 2 - map.cy * sx;
     g.lineWidth = 4;
     g.lineCap = g.lineJoin = "round";
@@ -422,9 +459,7 @@ export function create(ctx) {
       g.stroke();
     }
     // the playhead between the trace's points, pointing along the GPS bearing once logs are loading, else the trace
-    const i = nearest(tr, clock.t), a = Math.max(0, i - 1);
-    const f = i > a ? Math.max(0, Math.min(1, (clock.t - tr.t[a]) / (tr.t[i] - tr.t[a]))) : 0;
-    const ux = tr.x[a] + f * (tr.x[i] - tr.x[a]), uy = tr.y[a] + f * (tr.y[i] - tr.y[a]);
+    const [ux, uy, i] = playhead();
     const [px, py] = map.toScreen(ux, uy);
     // follow the playhead off the edge while playing
     if (clock.playing && (px < 0 || py < 0 || px > map.w || py > map.h)) {
@@ -439,7 +474,7 @@ export function create(ctx) {
   };
 
   map.onClick = (px, py) => {
-    if (!tr?.n) return;
+    if (!tr?.n || ctx.user) return;  // connect's map doesn't seek
     let best = -1, bestD = PICK_PX ** 2;
     for (let i = 0; i < tr.n; i++) {
       const [x, y] = map.toScreen(tr.x[i], tr.y[i]);
@@ -450,7 +485,7 @@ export function create(ctx) {
   };
 
   function fit() {
-    if (fitted || !tr?.n || !map.w) return;
+    if (fitted || !tr?.n || !map.w || ctx.user) return;
     fitted = true;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let i = 0; i < tr.n; i++) {
@@ -483,7 +518,7 @@ export function create(ctx) {
 
   return {
     name: "map", el,
-    render: () => map.render(),
+    render: () => { follow(); map.render(); },
     resize: (w, h) => { map.resize(w, h); fit(); },
     dispose() {
       disposed = true;
