@@ -1,5 +1,5 @@
 // the device page: header with location map, then tabs for drives, preserved drives, users and logs
-import {api, engagedFraction, routeEvents} from "../api.js";
+import {api, auth, engagedFraction, routeEvents} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {isOnline, link} from "../app.js";
 import {perf} from "../perf.js";
@@ -162,7 +162,31 @@ function stats(dongleId) {
   return el;
 }
 
+// a device page left for a drive comes back as it was (the drives loaded, the open tab, the scroll) for a few minutes
+// after leaving it; signing in or out forgets them. Pages leave on a navigation, which says where they were scrolled.
+const KEEP = 5 * 60e3;
+const kept = new Map();  // dongle id → {el, tab, select, scroll, until}
+auth.on(() => kept.clear());
+globalThis.navigation?.addEventListener("navigate", () => {
+  for (const k of kept.values()) {
+    if (!k.el.isConnected) continue;
+    k.scroll = k.el.parentElement.scrollTop;
+    k.until = Date.now() + KEEP;
+  }
+});
+
+function restore(k) {
+  const tab = new URLSearchParams(location.search).get("tab") || "drives";
+  const scroll = tab === k.tab ? k.scroll : 0;
+  k.select(tab);
+  // before the first frame that shows it
+  requestAnimationFrame(() => { if (k.el.isConnected) k.el.parentElement.scrollTop = scroll; });
+  return k.el;
+}
+
 export async function devicePage(dongleId, devices) {
+  for (const [id, k] of kept) if (k.until < Date.now()) kept.delete(id);
+  if (kept.has(dongleId)) return restore(kept.get(dongleId));
   const device = (devices || []).find((d) => d.dongle_id === dongleId) || await api.device(dongleId);
   const tabs = {
     drives: ["Drives", () => drivesSection(dongleId)],
@@ -172,9 +196,12 @@ export async function devicePage(dongleId, devices) {
     crashlogs: ["Crash logs", () => logsSection(dongleId, "crash")],
   };
   const built = {};
+  const keep = {tab: null, scroll: 0};
   const body = h("div", {class: "tab-body", role: "tabpanel"});
   const bar = h("nav", {class: "page-tabs", role: "tablist"});
   const select = (key) => {
+    if (!tabs[key]) key = "drives";
+    keep.tab = key;
     built[key] ||= tabs[key][1]();
     body.replaceChildren(built[key]);
     for (const b of bar.children) {
@@ -186,11 +213,10 @@ export async function devicePage(dongleId, devices) {
     history.replaceState(history.state, "", url);
   };
   bar.append(...Object.entries(tabs).map(([key, [label]]) => h("button", {class: "tab", role: "tab", "data-tab": key, onclick: () => select(key)}, label)));
-  const initial = new URLSearchParams(location.search).get("tab");
-  select(tabs[initial] ? initial : "drives");
+  select(new URLSearchParams(location.search).get("tab"));
 
   const online = isOnline(device);
-  return h("div", {class: "page device-page"},
+  const el = h("div", {class: "page device-page"},
     h("div", {class: "device-head"},
       h("div", {class: "device-info"},
         h("h2", {}, h("span", {class: `dot ${online ? "online" : ""}`}), deviceName(device)),
@@ -202,4 +228,6 @@ export async function devicePage(dongleId, devices) {
         stats(dongleId)),
       deviceMap(api.deviceLocation(dongleId).catch(() => null))),
     bar, body);
+  kept.set(dongleId, Object.assign(keep, {el, select, until: Date.now() + KEEP}));
+  return el;
 }
