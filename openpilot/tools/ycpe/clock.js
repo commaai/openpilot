@@ -1,17 +1,18 @@
 // the shared clock: playhead t and visible x-range, in route seconds. Playback advances on the frame tick.
+import {listeners} from "/dom.js";
 import {perf} from "/perf.js";
 
 export const RATES = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 3, 5];
 
 export function createClock(duration) {
-  const subs = {t: new Set(), range: new Set(), play: new Set()};
-  const emit = (ev) => { for (const fn of subs[ev]) fn(clock); };
+  const subs = {t: listeners(), range: listeners(), play: listeners()};
+  const emit = (ev) => subs[ev].emit(clock);
   const clamp = (t) => Math.max(0, Math.min(clock.duration, t));
   let stopTick = null;
 
   const clock = {
     t: 0, playing: false, rate: 1, loop: null, duration, range: [0, duration],
-    on(ev, fn) { subs[ev].add(fn); return () => subs[ev].delete(fn); },
+    on: (ev, fn) => subs[ev].on(fn),
     seek(t) {
       t = clamp(t);
       if (t === clock.t) return;

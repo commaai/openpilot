@@ -1,7 +1,7 @@
 // the route's series store: per-segment columns from the workers behind one path namespace and one clock.
 // Columns stay packed as the workers sent them and become views on first use. Over the memory budget, the least
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
-import {api} from "../api.js";
+import {SEGMENT, api} from "../api.js";
 import {perf} from "../perf.js";
 import {status} from "../status.js";
 import {Loader, POOL} from "./loader.js";
@@ -9,7 +9,6 @@ import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
 import {BLOCK, constant, enumRef, service, times, unpack} from "./pack.js";
 
-const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
 const IN_USE = 5000;  // ms since last use that a column counts as in use (never evicted)
 // what a store without CAN (an overlay) has in place of its Can

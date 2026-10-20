@@ -1,5 +1,6 @@
 // comma API client: a JWT in localStorage (or the local daemon's), plain fetch. Settings are read lazily so workers can import this.
 import {daemon} from "./daemon.js";
+import {listeners} from "./dom.js";
 
 const TOKEN_KEY = "comma_jwt";
 const setting = (key) => globalThis.localStorage?.getItem(key);
@@ -10,7 +11,7 @@ const ATHENA_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/localhost:3000
 const athenaRelay = () => !setting("athena_host") && daemon.has("athena") && !ATHENA_ORIGINS.test(location.origin);
 
 // sign-in state: the token, the signed-in user (v1/me, cached), and subscribers to changes
-const authSubs = new Set();
+const authSubs = listeners();
 let user = null;
 let refused = null;  // a token the API turned down (expired, revoked): not sent again until signing in
 
@@ -19,7 +20,7 @@ function authChanged(reason) {
   user = null;
   for (const cache of apiCaches) cache.clear();  // what one account could read isn't the next one's
   for (const k of Object.keys(sessionStorage)) if (k.startsWith("ycpe_")) sessionStorage.removeItem(k);
-  for (const fn of authSubs) fn(reason);
+  authSubs.emit(reason);
 }
 
 export const auth = {
@@ -30,7 +31,7 @@ export const auth = {
   isAuthenticated: () => !!auth.token(),
   viaDaemon: () => !setting(TOKEN_KEY) && auth.isAuthenticated(),  // ~/.comma/auth.json through serve.py
   user: () => (user ??= auth.isAuthenticated() ? get("v1/me/").catch(() => null) : Promise.resolve(null)),
-  on(fn) { authSubs.add(fn); return () => authSubs.delete(fn); },
+  on: authSubs.on,
   setToken(token, viaDaemon = false) {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else {
@@ -214,6 +215,8 @@ export const api = {
   segmentAsset: (route, segment, name) => route.url ? `${route.url}/${segment}/${name}` : null,
 };
 
+export const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
+
 // the segment a timeline slot plays: a route opened with a range (data/sources.js routeRecord) plays its segments
 // back to back, so slot k is segment_numbers[k]; otherwise the slot is the segment
 export const segmentAt = (route, slot) => route.range ? route.segment_numbers[slot] : slot;
@@ -233,7 +236,7 @@ async function assets(route, name) {
       const url = api.segmentAsset(route, n, name);
       const resp = url && await fetch(url).catch(() => null);
       if (workers.length < 8 && next < out.length) workers.push(worker());
-      out[slot] = {shift: (slot - n) * 60, data: resp?.ok ? await resp.json() : []};
+      out[slot] = {shift: (slot - n) * SEGMENT, data: resp?.ok ? await resp.json() : []};
     }
   };
   workers.push(worker());

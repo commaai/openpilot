@@ -15,6 +15,15 @@ export function h(tag, attrs = {}, ...children) {
   return el;
 }
 
+// subscribers: on(fn) adds one and returns what removes it, emit(...args) calls each
+export function listeners() {
+  const fns = new Set();
+  return {
+    on(fn) { fns.add(fn); return () => fns.delete(fn); },
+    emit(...args) { for (const fn of fns) fn(...args); },
+  };
+}
+
 export function clear(el) {
   el.replaceChildren();
   return el;

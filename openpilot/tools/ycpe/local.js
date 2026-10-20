@@ -1,6 +1,6 @@
 // the local daemon's top-bar badge and its panel: modules, the shared disk cache (with prefetch and evict for the open
 // route) and jobs. Prefetch jobs also show as a "disk cache" lane in the load status.
-import {h, css} from "/dom.js";
+import {h, css, listeners} from "/dom.js";
 import {daemon} from "/daemon.js";
 import {status, fmtBytes} from "/status.js";
 import {link} from "/app.js";
@@ -9,8 +9,8 @@ const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2
 const openRoute = () => { const m = ROUTE_RE.exec(decodeURIComponent(location.pathname)); return m && `${m[1]}|${m[2]}`; };
 
 const jobs = new Map();  // id → job, from /local/jobs/events
-const subs = new Set();
-export const onJobs = (fn) => { subs.add(fn); return () => subs.delete(fn); };
+const subs = listeners();
+export const onJobs = subs.on;
 export const allJobs = () => [...jobs.values()];
 
 const lanes = new Map();  // job id → status source
@@ -31,7 +31,7 @@ if (daemon.present) {
     if (ev !== "job") return;
     jobs.set(job.id, job);
     lane(job);
-    for (const fn of subs) fn(job);
+    subs.emit(job);
   });
 }
 

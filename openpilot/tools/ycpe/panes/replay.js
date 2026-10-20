@@ -1,13 +1,12 @@
 // the "Re-run openpilot" pane: replay processes from a local checkout over a segment range (a daemon job), follow
 // its progress, load the replayed log as a store overlay under /replay/<id>, and list the signals that diverged.
+import {SEGMENT} from "/api.js";
 import {h, css, fmt} from "/dom.js";
 import {daemon, needsDaemon} from "/daemon.js";
 import {onJobs, allJobs} from "/local.js";
 import {compare as plotCompare} from "/panes/plot/view.js";
 
 await css(new URL("./replay.css", import.meta.url));
-
-const SEGMENT = 60;
 
 export function create(ctx, state) {
   const el = h("div", {class: "replay-pane"});

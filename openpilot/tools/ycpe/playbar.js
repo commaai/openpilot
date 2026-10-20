@@ -1,7 +1,7 @@
 // the global playback bar: transport, rate, time, and the route timeline (engagement, a lane per loader showing
 // what's loaded, visible range, loop, playhead, hover preview). Everything on the timeline is one canvas; time with
 // nothing loaded at all is faded.
-import {api, routeEvents, segmentAt} from "/api.js";
+import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
 import {h, fmt} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
@@ -10,7 +10,6 @@ import {RATES} from "/clock.js";
 import {status, drawLane, describe} from "/status.js";
 
 const RANGE_H = 7, SPAN_H = 14, LANE_H = 3, PAD = 3;
-const SEGMENT = 60;  // nominal segment length; lanes index segments
 const SPAN_COLORS = {engaged: "--engaged", override: "--override", alert: "--alert", critical: "--critical"};
 const SPAN_LABELS = {engaged: "engaged", override: "override", alert: "alert", critical: "critical alert"};
 // built once: toLocaleTimeString with options builds a formatter each call, and the first costs ~7 ms of ICU setup

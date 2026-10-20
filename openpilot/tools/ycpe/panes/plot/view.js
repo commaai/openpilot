@@ -1,5 +1,7 @@
 // shared by every plot pane: the hover tracker, undo/redo of the view and the curves, the series drop target, and
 // the time whose logs aren't loaded
+import {SEGMENT} from "/api.js";
+import {listeners} from "/dom.js";
 import {status} from "/status.js";
 
 export const PATHS_MIME = "application/x-ycpe-paths";
@@ -58,7 +60,7 @@ export function track(t) {
 // when nothing publishes log status. A segment that was ready and is being parsed again (a newly requested
 // list) keeps its data meanwhile, so it still counts as loaded. onUnloaded(fn) runs fn when the spans change.
 let unloadedSpans = [], unloadedKey = "", logs = null, held = [];
-const unloadedSubs = new Set();
+const unloadedSubs = listeners();
 status.on(() => {
   const src = status.kinds().find((k) => k.name === "logs"), segs = src?.segs || [];
   if (src !== logs) [logs, held] = [src, []];
@@ -70,13 +72,13 @@ status.on(() => {
   segs.forEach((s, n) => {
     if (held[n]) return;
     const last = unloadedSpans.at(-1);
-    if (last?.[1] === n * 60) last[1] += 60;
-    else unloadedSpans.push([n * 60, n * 60 + 60]);
+    if (last?.[1] === n * SEGMENT) last[1] += SEGMENT;
+    else unloadedSpans.push([n * SEGMENT, (n + 1) * SEGMENT]);
   });
-  for (const fn of unloadedSubs) fn();
+  unloadedSubs.emit();
 });
 export const unloaded = () => unloadedSpans;
-export function onUnloaded(fn) { unloadedSubs.add(fn); return () => unloadedSubs.delete(fn); }
+export const onUnloaded = unloadedSubs.on;
 export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b);
 
 // base redraws share BUDGET_MS a frame, so opening a layout or a segment landing spreads over a few frames

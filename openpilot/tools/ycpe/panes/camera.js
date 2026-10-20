@@ -2,7 +2,7 @@
 // else wasm). It follows the clock: each render shows the frame at clock.t, or the newest one decoded so far.
 // Each open camera publishes its segments to status.js; while the playhead waits on one, the pane says so.
 // Once logs are loading, the onroad alert at the playhead shows over the picture, as in cabana.
-import {api, segmentAt} from "/api.js";
+import {SEGMENT, api, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {h, css} from "/dom.js";
 import {status} from "/status.js";
@@ -16,7 +16,6 @@ await css(new URL("./camera.css", import.meta.url));
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
 const ALERT_STATUS = ["normal", "prompt", "critical"];  // selfdriveState.alertStatus
 const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
-const SEGMENT = 60;       // seconds
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
 const BACK = 19;          // frames kept behind the playhead for stepping backwards while paused (one GOP)
 const SCRUB_MS = 100;     // seeks closer together than this are a scrub: keyframes only until it settles

@@ -1,6 +1,8 @@
 // light and dark themes: CSS variables on <html>, read once per switch for canvas panes
+import {listeners} from "/dom.js";
+
 const KEY = "ycpe_theme";
-const subs = new Set();
+const subs = listeners();
 const cache = new Map();  // name → value for the current theme: a computed style read forces a style recalc
 
 export const theme = {
@@ -11,12 +13,12 @@ export const theme = {
     if (v === undefined) cache.set(name, v = getComputedStyle(document.documentElement).getPropertyValue(name).trim());
     return v;
   },
-  on(fn) { subs.add(fn); return () => subs.delete(fn); },
+  on: subs.on,
   set(name) {
     document.documentElement.dataset.theme = name;
     localStorage.setItem(KEY, name);
     readAll();
-    for (const fn of subs) fn(name);
+    subs.emit(name);
   },
   toggle() { theme.set(theme.name === "dark" ? "light" : "dark"); },
 };

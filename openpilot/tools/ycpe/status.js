@@ -6,7 +6,7 @@
 //              disk     cached on disk only   ready    in memory
 //              error    failed
 // A segment may also say which source its bytes came from (api, internal, openpilotci, car segments, local, …).
-import {h} from "/dom.js";
+import {h, listeners} from "/dom.js";
 import {icon} from "/icons.js";
 import {daemon} from "/daemon.js";
 import {perf} from "/perf.js";
@@ -14,10 +14,10 @@ import {theme} from "/theme.js";
 
 const kinds = new Map();  // name → source
 const notes = new Map();  // key → text: standing facts about what's loaded (the log's schema), shown in the pill
-const subs = new Set();
+const subs = listeners();
 
 // listeners run at most once a frame, however many segments change
-const notify = {name: "status", render() { for (const fn of subs) fn(); }};
+const notify = {name: "status", render() { subs.emit(); }};
 const changed = () => perf.invalidate(notify);
 
 export const status = {
@@ -70,7 +70,7 @@ export const status = {
     if (text) notes.set(key, text); else notes.delete(key);
     changed();
   },
-  on(fn) { subs.add(fn); return () => subs.delete(fn); },
+  on: subs.on,
 };
 
 // fraction of a segment that's usable or on its way, for drawing
