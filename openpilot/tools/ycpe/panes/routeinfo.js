@@ -1,6 +1,6 @@
 // route info pane: what the route is, its public/preserved toggles, link sharing, bookmarks, and the files table
 import {api, routeEvents} from "../api.js";
-import {h, fmt} from "../dom.js";
+import {h, fmt, css} from "../dom.js";
 import {canManage} from "../pages/home.js";
 import {filesSection} from "../pages/files.js";
 
@@ -22,6 +22,7 @@ function toggle(label, value, enabled, set) {
 }
 
 export function create(ctx) {
+  css(new URL("./routeinfo.css", import.meta.url));
   const {route, clock} = ctx;
   const [dongleId, routeId] = route.fullname.split("|");
   const start = new Date(route.start_time_utc_millis);

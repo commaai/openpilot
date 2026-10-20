@@ -4,6 +4,7 @@ import {initCodec, withDecompressed} from "../codec/codec.js";
 import {Reader, compact, pattern} from "./capnp.js";
 import {migrate, withKeep} from "./migrate.js";
 import {pack} from "./pack.js";
+import {CanFrames} from "./can.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const ready = initCodec().then(() => new Reader(schema));
@@ -50,16 +51,19 @@ async function load(key, url) {
   return {buf, cached: false};
 }
 
-// opts: {n, shift, keep, only, context}; keep and only are {service: [path globs]}
+const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
+
+// opts: {n, shift, keep, only, skip, context}; keep, only and skip are {service: [path globs]}
 async function parse(buf, opts) {
   const reader = await ready;
   const t0 = performance.now();
   let t1, raw, migrated;
+  const frames = opts.can ? new CanFrames(reader.schema) : null;  // CAN frames once, on a segment's first parse
   // the reader walks the decompressed bytes in place, so they never leave wasm memory
   const services = withDecompressed(new Uint8Array(buf), (bytes) => {
     t1 = performance.now();
     raw = bytes.byteLength;
-    const read = reader.read(bytes, {keep: withKeep(opts.keep)});
+    const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
     migrated = migrate(read, opts.context, {keep: opts.keep});
     return compact(read).services;
   });
@@ -76,9 +80,12 @@ async function parse(buf, opts) {
   const off = opts.shift - start;
   for (const s of Object.values(services)) for (let k = 0; k < s.t.length; k++) s.t[k] += off;
 
-  const only = opts.only && Object.fromEntries(Object.entries(opts.only).map(([name, globs]) => [name, pattern(globs)]));
-  const out = pack(services, reader.schema.enums, only);
-  return {...out, ...migrated, start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
+  const only = patterns(opts.only), skip = patterns(opts.skip);
+  const want = (only || skip) && ((name, sub) => (!only || !!only[name]?.test(sub)) && !skip?.[name]?.test(sub));
+  const out = pack(services, reader.schema.enums, want);
+  const can = frames?.finish();
+  if (can) can.can.t0 += off;
+  return {...out, ...migrated, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
@@ -88,7 +95,7 @@ onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
       postMessage({id, ...r}, [r.buf]);
     } else {
       const r = await parse(buf, opts);
-      postMessage({id, ...r}, [...r.bufs, r.recs.buffer]);
+      postMessage({id, ...r}, [...r.bufs, r.recs.buffer, ...r.canBufs]);
     }
   } catch (e) {
     postMessage({id, error: String(e)});

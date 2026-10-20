@@ -84,12 +84,13 @@ function stats(n) {
 }
 
 // the top-bar readout; text updates 4x a second so the HUD itself costs nothing
-export function hud() {
+// extra: more readouts inside the HUD (memory and disk come from status.js)
+export function hud(...extra) {
   const fps = h("span", {class: "hud-fps"});
   const ms = h("span", {class: "hud-ms"});
   const dropEl = h("span", {class: "hud-drops"});
   const spark = h("canvas", {class: "hud-spark", width: 60, height: 18});
-  const el = h("button", {class: "hud", title: "frame rate · render time p50/max · dropped frames (click for details)"}, spark, fps, ms, dropEl);
+  const el = h("button", {class: "hud", title: "frame rate · render time p50/max · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
   let panel = null;
   el.addEventListener("click", () => {
     if (panel) { panel.close(); panel = null; } else panel = perfPanel(() => { panel = null; });

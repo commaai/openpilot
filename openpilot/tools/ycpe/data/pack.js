@@ -10,14 +10,15 @@ const REC = 9;
 const encoder = new TextEncoder(), decoder = new TextDecoder();
 const align = (x) => (x + 7) & ~7;
 
-// services from compact(); only: {service: RegExp} keeps just those columns. The enum names a pack uses go with it:
+// services from compact(); want(service, path), if given, picks the columns. The enum names a pack uses go with it:
 // they're small, and a worker may serve several stores
-export function pack(services, enums, only) {
+export function pack(services, enums, want) {
   const out = {services: [], counts: [], bufs: [], paths: [], types: [], consts: [], enums: {}, lists: {}};
   const recs = [];
   for (const [name, s] of Object.entries(services)) {
-    if (only && !only[name]) continue;
     for (const [path, n] of s.lists) out.lists[`/${name}${path}`] = n;
+    const cols = Object.entries(s.cols).filter(([sub]) => !want || want(name, sub));
+    if (!cols.length) continue;
     const svc = out.services.length, parts = [s.t];
     let size = align(s.t.byteLength);
     const put = (a) => {
@@ -26,8 +27,7 @@ export function pack(services, enums, only) {
       size = align(size + a.byteLength);
       return at;
     };
-    for (const [sub, c] of Object.entries(s.cols)) {
-      if (only && !only[name].test(sub)) continue;
+    for (const [sub, c] of cols) {
       const ref = c.names ? enums.indexOf(c.names) : -1;
       if (ref >= 0) out.enums[ref] = c.names;
       out.paths.push(`/${name}${sub}`);
@@ -69,8 +69,9 @@ export function pack(services, enums, only) {
   return out;
 }
 
-// the service of column k, its times as a view, and the column's resident bytes
+// the service and enum ref of column k, and the times of service s as a view
 export const service = (p, k) => p.recs[k * REC];
+export const enumRef = (p, k) => p.recs[k * REC + 7];
 export const times = (p, s) => (p.t ||= [])[s] ||= new Float64Array(p.bufs[s], 0, p.counts[s]);
 
 // column k of a pack as a contract chunk {t, v, i?} plus tt, the time of each value

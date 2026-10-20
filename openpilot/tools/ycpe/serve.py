@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dev server: static files, with every unknown path falling back to index.html for the client router."""
+"""Dev server: static files, with unknown routes (paths without a file extension) falling back to index.html."""
 import sys
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent
 class Handler(SimpleHTTPRequestHandler):
   def do_GET(self):
     path = self.path.split("?")[0]
-    if not (ROOT / path.lstrip("/")).is_file():
+    if not Path(path).suffix and not (ROOT / path.lstrip("/")).is_file():
       self.path = "/index.html"
     super().do_GET()
 

@@ -67,8 +67,8 @@ export class Loader {
     });
   }
 
-  // parses the log cached at key (or downloaded from url) with worker options opts; resolves with the worker's pack
-  // plus {bytes, cached, ms}. tag identifies the load to reprioritize()
+  // parses the log cached at key (or downloaded from url) with worker options opts (or opts() when it starts);
+  // resolves with the worker's pack plus {bytes, cached, ms}. tag identifies the load to reprioritize()
   load(key, url, opts, prio = 0, tag = key) {
     return new Promise((resolve, reject) => {
       this.queue.push({key, url, opts, prio, tag, resolve, reject});
@@ -89,7 +89,8 @@ export class Loader {
     while (this.ready.length && (w = this.take())) {
       const job = this.ready.shift(), worker = w;
       this.parsing++;
-      this.call(worker, {op: "parse", buf: job.buf, opts: job.opts}, [job.buf])
+      const opts = typeof job.opts === "function" ? job.opts() : job.opts;
+      this.call(worker, {op: "parse", buf: job.buf, opts}, [job.buf])
         .then((r) => job.resolve({...r, bytes: job.bytes, cached: job.cached, ms: {...job.ms, ...r.ms}}), job.reject)
         .finally(() => {
           this.parsing--;

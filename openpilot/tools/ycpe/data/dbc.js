@@ -40,6 +40,13 @@ export function newSignal(props) {
           min: 0, max: 1, unit: "", receiver: NODE, comment: "", vals: [], ...props};
 }
 
+// a signal's most and least significant bit positions
+export function bits(s) {
+  s.lsb = s.le ? s.start : flip(flip(s.start) + s.size - 1);
+  s.msb = s.le ? s.start + s.size - 1 : s.start;
+  return s;
+}
+
 // derived fields: msb/lsb, color, display precision, the byte mask, and the multiplexor link
 export function updateMsg(m) {
   m.transmitter ||= NODE;
@@ -48,8 +55,7 @@ export function updateMsg(m) {
   m.mux = m.sigs.find((s) => s.type === MUX) || null;
   for (const s of m.sigs) {
     s.receiver ||= NODE;
-    s.lsb = s.le ? s.start : flip(flip(s.start) + s.size - 1);
-    s.msb = s.le ? s.start + s.size - 1 : s.start;
+    bits(s);
     s.precision = Math.max(decimals(s.factor), decimals(s.offset));
     s.color = color(s);
     for (let i = s.msb >> 3, bits = s.size; i >= 0 && i < m.size && bits > 0; i += s.le ? -1 : 1) {
