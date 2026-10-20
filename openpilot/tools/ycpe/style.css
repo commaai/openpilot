@@ -159,7 +159,7 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .divider { position: relative; flex: 0 0 4px; background: transparent; transition: background .1s; touch-action: none; }
 .split.row > .divider { cursor: col-resize; }
 .split.col > .divider { cursor: row-resize; }
-.divider:hover, .divider:active { background: var(--accent); }
+.divider:hover, .divider:active, .divider:focus-visible { background: var(--accent); outline: none; }
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 /* dragged to dock the pane; a finger on it drags the pane, not the page */
 .pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; cursor: grab; touch-action: none; }

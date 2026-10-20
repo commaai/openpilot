@@ -165,38 +165,61 @@ export class Layout {
     return box;
   }
 
+  // a divider between children i - 1 and i: dragged, or focused and moved with the arrows (shift: further), Home and
+  // End; a double-click or Enter evens out the split. All in place: rendering again would rebuild the panes
   divider(n, i, box) {
-    const el = h("div", {class: "divider"});
+    const row = n.split === "row";
+    const el = h("div", {class: "divider", tabindex: 0, role: "separator", "aria-orientation": row ? "vertical" : "horizontal",
+      "aria-label": "Resize the panes beside it", "aria-valuemin": 0, "aria-valuemax": 100});
+    // where it sits in the split, in percent
+    el._value = () => el.setAttribute("aria-valuenow", Math.round(100 * n.sizes.slice(0, i).reduce((x, y) => x + y)));
+    el._value();
+    const kids = () => [...box.children].filter((c) => !c.classList.contains("divider"));
+    // the pair's sizes now and the least each can take, over the split's length in px
+    const pair = () => {
+      const rect = box.getBoundingClientRect(), total = row ? rect.width : rect.height;
+      const [a, b] = [n.sizes[i - 1], n.sizes[i]];
+      const [minA, minB] = [n.children[i - 1], n.children[i]].map((c, j) => Math.min([a, b][j], Math.max(MIN, minPx(c, n.split) / total)));
+      return {total, a, b, minA, minB, kids: kids()};
+    };
+    const move = ({a, b, minA, minB, kids}, d) => {
+      const da = Math.max(minA - a, Math.min(b - minB, d));
+      n.sizes[i - 1] = a + da;
+      n.sizes[i] = b - da;
+      kids[i - 1].style.flex = `${n.sizes[i - 1]} 1 0`;
+      kids[i].style.flex = `${n.sizes[i]} 1 0`;
+      el._value();
+    };
     el.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
-      const rect = box.getBoundingClientRect();
-      const total = n.split === "row" ? rect.width : rect.height;
-      const start = n.split === "row" ? e.clientX : e.clientY;
-      const [a, b] = [n.sizes[i - 1], n.sizes[i]];
-      const [minA, minB] = [n.children[i - 1], n.children[i]].map((c, j) => Math.min([a, b][j], Math.max(MIN, minPx(c, n.split) / total)));
-      const kids = [...box.children].filter((c) => !c.classList.contains("divider"));
+      const at = pair(), start = row ? e.clientX : e.clientY;
       const before = structuredClone(this.save());
-      el.onpointermove = (ev) => {
-        const d = ((n.split === "row" ? ev.clientX : ev.clientY) - start) / total;
-        const da = Math.max(minA - a, Math.min(b - minB, d));
-        n.sizes[i - 1] = a + da;
-        n.sizes[i] = b - da;
-        kids[i - 1].style.flex = `${n.sizes[i - 1]} 1 0`;
-        kids[i].style.flex = `${n.sizes[i]} 1 0`;
-      };
+      el.onpointermove = (ev) => move(at, ((row ? ev.clientX : ev.clientY) - start) / at.total);
       el.onpointerup = el.onpointercancel = () => {
         el.onpointermove = el.onpointerup = el.onpointercancel = null;
-        if (n.sizes[i - 1] === a) return;
+        if (n.sizes[i - 1] === at.a) return;
         this.checkpoint(before);
         this.changed();
       };
     });
-    // in place, like the drag: rendering again would rebuild the panes from the model
-    el.addEventListener("dblclick", () => {
+    const even = () => {
       this.checkpoint();
       n.sizes = n.sizes.map(() => 1 / n.sizes.length);
-      for (const c of box.children) if (!c.classList.contains("divider")) c.style.flex = `${1 / n.sizes.length} 1 0`;
+      for (const c of kids()) c.style.flex = `${1 / n.sizes.length} 1 0`;
+      for (const c of box.children) c._value?.();
+      this.changed();
+    };
+    el.addEventListener("dblclick", even);
+    el.addEventListener("keydown", (e) => {
+      const back = row ? "ArrowLeft" : "ArrowUp", forward = row ? "ArrowRight" : "ArrowDown";
+      if (e.key === "Enter") { e.preventDefault(); return even(); }
+      if (![back, forward, "Home", "End"].includes(e.key)) return;
+      e.preventDefault();  // not the playhead's arrows
+      const at = pair(), step = (e.shiftKey ? 50 : 10) / at.total, before = structuredClone(this.save());
+      move(at, {[back]: -step, [forward]: step, Home: -Infinity, End: Infinity}[e.key]);
+      if (n.sizes[i - 1] === at.a) return;
+      this.checkpoint(before);
       this.changed();
     });
     return el;
