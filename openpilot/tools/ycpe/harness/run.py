@@ -22,9 +22,12 @@ import report
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
+REPO = HERE.parents[3]
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
+# athena calls are JSON-RPC POSTs; these only read the device's state, so they pass
+ATHENA_READS = {"getNetworkMetered", "getNetworkType", "getNetworks", "getVersion", "getSimInfo", "listUploadQueue", "listDataDirectory"}
 # USB ethernet links (devices on this box) come and go, and Chrome fails in-flight requests whenever they do
 NETWORK_FLAKE = re.compile(r"ERR_NETWORK_CHANGED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED")
 FATAL = ("blocked", "page-error", "console-error")  # events that fail a scenario
@@ -58,10 +61,19 @@ def free_port():
   raise RuntimeError(f"no free port in {PORTS}")
 
 
-def start_server():
-  port = free_port()
-  proc = subprocess.Popen([sys.executable, str(HERE.parent / "serve.py"), str(port)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-  for _ in range(100):
+def openpilot_venv(root=REPO):
+  """<root>/.venv, else the main checkout's (worktrees share it)"""
+  common = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute", "--git-common-dir"], capture_output=True, text=True)
+  return next((v for v in (root / ".venv", Path(common.stdout.strip()).parent / ".venv") if v.exists()), None)
+
+
+def start_server(static=False):
+  """serve.py on a free port; with the openpilot venv it also runs the local daemon (/local/*)"""
+  venv = None if static else openpilot_venv()
+  python = str(venv / "bin" / "python") if venv else sys.executable
+  args = [python, str(HERE.parent / "serve.py"), str(port := free_port())] + (["--static"] if static else [])
+  proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  for _ in range(300):
     with socket.socket() as s:
       if s.connect_ex(("127.0.0.1", port)) == 0:
         return proc, f"http://localhost:{port}"
@@ -75,6 +87,17 @@ def start_xvfb():
   proc = subprocess.Popen(["Xvfb", display, "-screen", "0", "1920x1080x24", "-nolisten", "tcp"], stderr=subprocess.DEVNULL)
   time.sleep(0.5)
   return proc, display
+
+
+def athena_rpc(req):
+  """the method of a single JSON-RPC call to athena, else None"""
+  if not req.url.startswith("https://athena.comma.ai/"):
+    return None
+  try:
+    body = json.loads(req.post_data or "")
+  except ValueError:
+    return None
+  return body.get("method") if isinstance(body, dict) else None
 
 
 def top_frame(stack):
@@ -103,6 +126,8 @@ class Scenario:
       if not token:
         self.fail("auth", "no access_token in ~/.comma/auth.json")
       self.ctx.add_init_script(f"localStorage.setItem('comma_jwt', {json.dumps(token or '')})")
+    else:  # signed out, even though the daemon offers ~/.comma/auth.json's JWT
+      self.ctx.add_init_script("localStorage.setItem('ycpe_daemon_auth_off', '1')")
     page = self.page = self.ctx.new_page()
     page.on("console", lambda m: m.type in ("error", "warning") and self.event(f"console-{m.type}", m.text))
     page.on("pageerror", lambda e: self.event("page-error", f"{e.name}: {e.message}{top_frame(e.stack)}"))
@@ -116,14 +141,16 @@ class Scenario:
     self.res["failures"].append({"rule": rule, "detail": detail, "key": key or detail})
 
   def event(self, kind, text):
-    if not IGNORED_EVENTS.search(text) and not any(p.search(text) for p in self.allow):
+    # a blocked call always counts: "allow" can't hide one
+    if kind == "blocked" or not IGNORED_EVENTS.search(text) and not any(p.search(text) for p in self.allow):
       self.res["events"].append({"kind": "network-flake" if NETWORK_FLAKE.search(text) else kind, "text": text[:400], "shot": len(self.res["shots"])})
 
   def guard(self, route):
     req = route.request
-    if req.method in READ_METHODS:
+    rpc = athena_rpc(req)
+    if req.method in READ_METHODS or rpc in ATHENA_READS:
       return route.continue_()
-    self.event("blocked", f"{req.method} {req.url}")
+    self.event("blocked", f"{req.method} {req.url}" + (f" {rpc}" if rpc else ""))
     route.abort("blockedbyclient")
 
   def run(self, base):
@@ -171,6 +198,8 @@ class Scenario:
       page.mouse.down()
       page.mouse.move(tx, ty, steps=arg.get("steps", 10))
       page.mouse.up()
+    elif op == "dragTo":  # HTML drag and drop, element onto element
+      page.locator(arg[0]).first.drag_to(page.locator(arg[1]).first, timeout=timeout)
     elif op == "wheel":
       vp = page.viewport_size
       page.mouse.move(*self.point(arg.get("at", [vp["width"] / 2, vp["height"] / 2]), timeout))
@@ -186,11 +215,17 @@ class Scenario:
       page.wait_for_function(arg["fn"], timeout=timeout)
     elif op == "select":
       page.locator(arg[0]).first.select_option(arg[1], timeout=timeout)
+    elif op == "fill":
+      page.locator(arg[0]).first.fill(arg[1], timeout=timeout)
+    elif op == "viewport":
+      page.set_viewport_size({"width": arg[0], "height": arg[1]})
     elif op == "goto":
       page.goto(urljoin(page.url, arg), wait_until="load")
       self.steps = [(0, f"goto {arg}")]
     elif op == "eval":
       page.evaluate(arg)
+    elif op == "note":  # a value worth keeping in the report
+      self.res.setdefault("notes", []).append(str(page.evaluate(arg)))
     elif op == "assert":
       # a string result fails and says why
       if not (v := page.evaluate(arg)) or isinstance(v, str):
@@ -345,6 +380,7 @@ def main():
   ap.add_argument("--slow", action="store_true", help="include scenarios marked slow")
   ap.add_argument("--bless", action="store_true", help="store this run's shots as the goldens")
   ap.add_argument("--loop", type=int, metavar="N", help="run N times (0: until interrupted), each diffed against the one before")
+  ap.add_argument("--static", action="store_true", help="serve static files only, without the local daemon")
   args = ap.parse_args()
 
   scenarios = [json.loads(p.read_text()) for p in sorted((HERE / "scenarios").glob("*.json"))]
@@ -352,7 +388,7 @@ def main():
   auth_file = Path.home() / ".comma" / "auth.json"
   token = json.loads(auth_file.read_text()).get("access_token") if auth_file.exists() else None
 
-  server, base = start_server()
+  server, base = start_server(args.static)
   xvfb, env = None, None
   if args.mode == "xvfb":
     xvfb, display = start_xvfb()

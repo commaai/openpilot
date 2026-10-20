@@ -250,6 +250,7 @@ def write_md(out, title, head, rows, found, scenarios, changes):
     for s in sc["shots"]:
       d = f" · diff {s['diff']:.2%} {out / s['path'].replace('.png', '.diff.png')}" if "diff" in s else ""
       md.append(f"  - {s['name']}: {out / s['annotated']}{d}")
+    md += [f"  - note: {n}" for n in sc.get("notes", [])]
     md += [f"  - filmstrip {film['name']} ({len(film['frames'])} frames): {out / film['strip']}" for film in sc.get("films", [])]
     md += [f"  - reference {r}: {REFERENCE / r}.png" for r in sc["reference"] if (REFERENCE / f"{r}.png").exists()]
   (out / "report.md").write_text("\n".join(md) + "\n")
