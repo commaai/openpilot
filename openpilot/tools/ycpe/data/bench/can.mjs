@@ -1,11 +1,11 @@
-// node data/bench/can.mjs [rlog.raw]: CAN extraction throughput, memory per segment and worker scan timings
+// node data/bench/can.mjs [rlog]: CAN extraction throughput, memory per segment and worker scan timings
 import {readFileSync} from "node:fs";
+import {logArg, schema} from "./node.mjs";
+import {decompress} from "../../codec/codec.js";
 import {Reader} from "../capnp.js";
 import {CanFrames} from "../can.js";
 
-const here = new URL("..", import.meta.url).pathname;
-const raw = new Uint8Array(readFileSync(process.argv[2] || "/tmp/aio-probe/rlog.raw"));
-const schema = JSON.parse(readFileSync(`${here}schema.json`, "utf8"));
+const raw = decompress(new Uint8Array(readFileSync(logArg())));
 const reader = new Reader(schema);
 const ms = (f) => { const t = performance.now(); const r = f(); return [r, performance.now() - t]; };
 

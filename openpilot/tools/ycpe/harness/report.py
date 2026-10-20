@@ -157,7 +157,7 @@ def build(out, prev_dir=None):
   for f in found:
     f["scenarios"] = sorted({w["scenario"] for w in f["where"]})
   changes = triage.diff(found, before, {sc["name"] for sc in scenarios})
-  keep = ("id", "n", "rule", "severity", "detail", "selector", "file", "track", "scenarios")
+  keep = ("id", "n", "rule", "severity", "detail", "selector", "file", "scenarios")
   (out / "findings.json").write_text(json.dumps([{**{k: f[k] for k in keep}, "count": len(f["where"])} for f in found], indent=1))
   for sc in scenarios:
     for film in sc.get("films", []):
@@ -217,14 +217,12 @@ def filmstrip(out, scenario, film):
   return path
 
 
-def by_owner(items):
-  """markdown lines for findings grouped by track, then file"""
+def by_file(items):
+  """markdown lines for findings grouped by file"""
   lines = []
-  for t in sorted({f["track"] for f in items}):
-    lines.append(f"- track {t}")
-    for file in sorted({f["file"] or "?" for f in items if f["track"] == t}):
-      lines.append(f"  - {file}")
-      lines += [f"    - #{f['n']} [{f['severity']}] {f['rule']}: {f['detail'][:160]}" for f in items if f["track"] == t and (f["file"] or "?") == file]
+  for file in sorted({f["file"] or "?" for f in items}):
+    lines.append(f"- {file}")
+    lines += [f"  - #{f['n']} [{f['severity']}] {f['rule']}: {f['detail'][:160]}" for f in items if (f["file"] or "?") == file]
   return lines
 
 
@@ -240,11 +238,10 @@ def write_md(out, title, head, rows, found, scenarios, changes):
     sel = f" `{f['selector']}`" if f["selector"] else ""
     where = ", ".join(where_text(w, len(f["where"]) > 1) + (f" {w['box']}" if w.get("box") else "") for w in f["where"][:MAX_WHERE])
     more = f" and {len(f['where']) - MAX_WHERE} more" if len(f["where"]) > MAX_WHERE else ""
-    owner = f"track {f['track']}" + (f" · {f['file']}" if f["file"] else "")
-    md.append(f"{f['n']}. [{f['severity']}] {f['rule']} ×{len(f['where'])}: {f['detail']}{sel}\n   - in {where}{more}\n   - owner: {owner}")
+    md.append(f"{f['n']}. [{f['severity']}] {f['rule']} ×{len(f['where'])}: {f['detail']}{sel}\n   - in {where}{more}\n   - file: {f['file'] or '?'}")
   md += ["", f"## Since the previous run: {len(changes['new'])} new, {len(changes['fixed'])} fixed, {len(changes['still'])} still open", "",
-         "### New", "", *by_owner(changes["new"]), "", "### Fixed (numbers from the previous run)", "", *by_owner(changes["fixed"]), "",
-         "### Still open", "", *by_owner(changes["still"])]
+         "### New", "", *by_file(changes["new"]), "", "### Fixed (numbers from the previous run)", "", *by_file(changes["fixed"]), "",
+         "### Still open", "", *by_file(changes["still"])]
   md += ["", "## Screenshots", ""]
   for sc in scenarios:
     md.append(f"- {sc['name']} ({sc['url']}) findings {sc['findings']}")
@@ -265,8 +262,8 @@ def write_html(out, title, head, rows, found, scenarios, prev, changes):
     f'<li value="{f["n"]}" class="{f["severity"]}">{"<i>new</i> " if f["id"] in new else ""}<b>{e(f["rule"])}</b> ×{len(f["where"])} {e(f["detail"])}'
     + (f' <code>{e(f["selector"])}</code>' if f["selector"] else "")
     + f'<div class="where">{e(", ".join(dict.fromkeys(where_text(w) for w in f["where"])))}'
-    + f' · <span class="owner">track {e(f["track"])}{" · " + e(f["file"]) if f["file"] else ""}</span></div></li>' for f in found)
-  fixed = "".join(f'<li>{e(f["rule"])}: {e(f["detail"][:160])} <span class="owner">track {e(f["track"])} · {e(f["file"] or "?")}</span></li>'
+    + f' · <span class="owner">{e(f["file"] or "?")}</span></div></li>' for f in found)
+  fixed = "".join(f'<li>{e(f["rule"])}: {e(f["detail"][:160])} <span class="owner">{e(f["file"] or "?")}</span></li>'
                   for f in changes["fixed"])
   fig = lambda href, cap: f'<figure><a href="{href}"><img src="{href}" loading="lazy"></a><figcaption>{cap}</figcaption></figure>'  # noqa: E731
   sections = []

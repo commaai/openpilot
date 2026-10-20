@@ -10,7 +10,6 @@ import json
 import os
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import time
@@ -20,10 +19,10 @@ from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
 
 import report
+from procs import free_port, openpilot_venv, wait_port
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
-REPO = HERE.parents[3]
 PORTS = range(8170, 8180)
 COMMA_API = re.compile(r"^https://(api\.commadotai\.com|api\.comma\.ai|athena\.comma\.ai)/")
 # athena, directly or through the daemon's relay (daemon/athena.py)
@@ -57,37 +56,21 @@ PROBE_JS = (HERE / "probe.js").read_text()
 LINT_JS = (HERE / "lint.js").read_text()
 SETTLE_JS = "document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))"
 # noise that never points at a bug: cancelled loads, and Chrome's echo of an HTTP error we already record with its URL
-# (temporary) panes that aren't built yet: serve.py answers their module URL with index.html
-IGNORED_EVENTS = re.compile(r"net::ERR_ABORTED|^Failed to load resource|^Failed to load module script")
-
-
-def free_port():
-  for port in PORTS:
-    with socket.socket() as s:
-      if s.connect_ex(("127.0.0.1", port)) != 0:
-        return port
-  raise RuntimeError(f"no free port in {PORTS}")
-
-
-def openpilot_venv(root=REPO):
-  """<root>/.venv, else the main checkout's (worktrees share it)"""
-  common = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute", "--git-common-dir"], capture_output=True, text=True)
-  return next((v for v in (root / ".venv", Path(common.stdout.strip()).parent / ".venv") if v.exists()), None)
+IGNORED_EVENTS = re.compile(r"net::ERR_ABORTED|^Failed to load resource")
 
 
 def start_server(static=False):
   """serve.py on a free port; with the openpilot venv it also runs the local daemon (/local/*)"""
   venv = None if static else openpilot_venv()
   python = str(venv / "bin" / "python") if venv else sys.executable
-  args = [python, str(HERE.parent / "serve.py"), str(port := free_port())] + (["--static"] if static else [])
+  args = [python, str(HERE.parent / "serve.py"), str(port := free_port(PORTS))] + (["--static"] if static else [])
   proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-  for _ in range(300):
-    with socket.socket() as s:
-      if s.connect_ex(("127.0.0.1", port)) == 0:
-        return proc, f"http://localhost:{port}"
-    time.sleep(0.05)
-  proc.kill()
-  raise RuntimeError("serve.py did not start")
+  try:
+    wait_port(port, proc, "serve.py")
+  except RuntimeError:
+    proc.kill()
+    raise
+  return proc, f"http://localhost:{port}"
 
 
 def start_xvfb():

@@ -19,7 +19,8 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from run import COMMA_API, READ_METHODS, REPO, openpilot_venv, start_xvfb
+from procs import REPO, openpilot_venv
+from run import COMMA_API, READ_METHODS, start_xvfb
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out" / "reference"

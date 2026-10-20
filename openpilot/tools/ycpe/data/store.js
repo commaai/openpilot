@@ -1,7 +1,7 @@
 // the route's series store: per-segment columns from the workers behind one path namespace and one clock.
 // Columns stay packed as the workers sent them and become views on first use. Over the memory budget, the least
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
-import {SEGMENT, api} from "../api.js";
+import {SEGMENT} from "../api.js";
 import {perf} from "../perf.js";
 import {status} from "../status.js";
 import {Loader, POOL} from "./loader.js";
@@ -16,14 +16,6 @@ const NO_CAN = {bytes: 0, paths: () => [], series: () => null, ingest() {}, disp
 const FANOUT = 8;  // min/max pyramid: blocks of BLOCK samples, then 8 blocks per level up
 const NEAR = 3;  // segments from the focus on that, once in, let the worker pool shrink
 const MONO = "__logMonoTime";  // the message times as a series, as jotpluggler and PlotJuggler name it
-
-// opens a route and starts loading its logs outward from t; repeat tiles the route for long-route tests
-export async function openRoute(name, opts) {
-  const files = await api.routeFiles(name);
-  const urls = [];
-  for (const u of [...files.qlogs, ...files.logs]) urls[+new URL(u).pathname.split("/").at(-2)] = u;  // rlogs win
-  return new Store(name, urls, opts);
-}
 
 export class Store {
   // urls[k]: the log shown in slot k, a URL or {url, file, source, seg} (file names the cache entry when the URL doesn't;
