@@ -62,7 +62,6 @@ export function create(ctx, state = {}) {
   let gesture = null;  // the pointer gesture in progress
   let rows = [];       // legend rows, parallel to st.curves
   let statsTimer = 0, statsKey = "", recomputeTimer = 0;
-  let failure = null;  // store.failure as the empty state shows it
   const made = new Map();  // derived or custom path → input version it was computed from
   const busy = new Set();
   const decimator = new Decimator(store, () => invalidate());
@@ -83,7 +82,7 @@ export function create(ctx, state = {}) {
     clock.on("t", pane.overlay),
     store.on("segment", invalidate),
     store.on("paths", invalidate),
-    store.on("progress", () => { if (!!store.failure !== !!failure) hint(); }),
+    store.on("progress", hint),
     view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     // decoded DBC signals arrive after they're asked for
@@ -151,10 +150,11 @@ export function create(ctx, state = {}) {
     }
   }
 
-  // the empty state: where to drop series, or why there's nothing to plot
+  // the empty state: where to drop series, or why there's nothing to plot yet
   function hint() {
-    failure = store.failure;
-    empty.textContent = failure ? `Couldn't load the logs: ${failure}` : "Drag series here, or double-click one in Series · right-click for options";
+    const failure = store.failure;
+    const text = failure ? `Couldn't load the logs: ${failure}` : store.loading ? "Loading logs…" : "Drag series here, or double-click one in Series · right-click for options";
+    if (empty.textContent !== text) empty.textContent = text;
     empty.hidden = !failure && !!rows.length;
   }
 

@@ -203,8 +203,13 @@ export function create(ctx, state = {}) {
 
   function render() {
     if (stale) build();
-    const failure = !total && store.failure, text = failure ? `Couldn't load the logs: ${failure}` : "";
-    if (note.textContent !== text) [note.textContent, note.hidden] = [text, !failure];
+    // why the list is empty
+    const failure = !total && store.failure, f = st.filter.trim();
+    const text = rows.length ? "" : failure ? `Couldn't load the logs: ${failure}` : f ? `No series match "${f}"` : store.loading ? "Loading logs…" : "";
+    if (note.textContent !== text) {
+      [note.textContent, note.hidden] = [text, !text];
+      note.classList.toggle("error", !!failure);
+    }
     const first = Math.floor(top / ROW), n = Math.min(rows.length - first, Math.ceil(H / ROW) + 1);
     const shift = `translateY(${first * ROW}px)`;
     if (win.style.transform !== shift) win.style.transform = shift;

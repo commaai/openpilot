@@ -250,6 +250,12 @@ export class Store {
     for (const k in p.ms) pr.ms[k] += p.ms[k];
   }
 
+  // segments are still to load
+  get loading() {
+    const p = this.progress;
+    return p.done + p.failed < p.total;
+  }
+
   // why no segment loaded, once every one has failed; null while any is loaded or loading
   get failure() {
     const segs = this.route.segments.filter((s) => s.status !== "missing");
