@@ -1,6 +1,6 @@
 // the frame scheduler and the perf HUD. Every pane renders through invalidate(), so each frame's work is
 // timed per pane; the HUD in the top bar is always on, and its panel shows where the time went.
-import {h} from "/dom.js";
+import {h, fitCanvas} from "/dom.js";
 
 const HISTORY = 600;             // frames kept for the panel and the harness (~10 s at 60 Hz)
 const BUDGET_MS = 4;             // main-thread budget per frame, shared by ticks and panes (perf.left)
@@ -146,10 +146,7 @@ function perfPanel(anchor, onClose) {
   document.addEventListener("keydown", escape);
   closeBtn.focus();
   const pane = {name: "perf-panel", render() {
-    const dpr = devicePixelRatio, w = chart.clientWidth, hgt = chart.clientHeight;
-    if (chart.width !== w * dpr) { chart.width = w * dpr; chart.height = hgt * dpr; }
-    const ctx = chart.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = chart.clientWidth, hgt = chart.clientHeight, ctx = fitCanvas(chart, w, hgt);
     ctx.clearRect(0, 0, w, hgt);
     const scale = hgt / 33;
     const bw = w / HISTORY;

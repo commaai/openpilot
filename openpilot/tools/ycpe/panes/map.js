@@ -4,7 +4,7 @@
 // store's GPS once logs are loading.
 import {MAPBOX_TOKEN} from "/geocode.js";
 import {routeCoords, routeEvents} from "/api.js";
-import {h, css} from "/dom.js";
+import {h, css, fitCanvas} from "/dom.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 
@@ -76,7 +76,6 @@ class TileMap {
     this.name = "map";
     this.el = el;
     this.canvas = el.appendChild(h("canvas", {class: "tilemap"}));
-    this.ctx = this.canvas.getContext("2d");
     this.w = this.h = 0;
     this.cx = this.cy = 0.5;
     this.z = 3;
@@ -90,11 +89,8 @@ class TileMap {
   invalidate() { perf.invalidate(this); }
 
   resize(w, h) {
-    const dpr = devicePixelRatio;
     this.w = w;
     this.h = h;
-    this.canvas.width = Math.round(w * dpr);
-    this.canvas.height = Math.round(h * dpr);
     this.invalidate();
   }
 
@@ -179,9 +175,9 @@ class TileMap {
   }
 
   render() {
-    const {ctx, w, h} = this;
+    const {w, h} = this;
     if (!w || !h) return;
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    const ctx = fitCanvas(this.canvas, w, h);
     ctx.fillStyle = theme.color("--bg");
     ctx.fillRect(0, 0, w, h);
 

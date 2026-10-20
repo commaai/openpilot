@@ -1,5 +1,5 @@
 // the selected message's signals: values at the playhead, sparklines, and the signal and message editors
-import {h} from "/dom.js";
+import {h, fitCanvas} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
@@ -169,10 +169,7 @@ export function create(ctx, state) {
 
 // the last few seconds of a signal, from worker buckets: a fixed-size canvas, so no layout reads
 function sparkline(canvas, d, color) {
-  const dpr = devicePixelRatio, w = SPARK_W, hgt = 18;
-  if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(hgt * dpr); }
-  const g = canvas.getContext("2d");
-  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = SPARK_W, hgt = 18, g = fitCanvas(canvas, w, hgt);
   g.clearRect(0, 0, w, hgt);
   if (!d) return;
   let min = Infinity, max = -Infinity;
