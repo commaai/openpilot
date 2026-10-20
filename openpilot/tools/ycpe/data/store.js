@@ -344,6 +344,15 @@ export class Store {
     return e.series;
   }
 
+  // one segment's chunk of a path, unpacking only that segment's (series() unpacks them all, and text decodes)
+  chunk(path, n) {
+    const e = this.entries.get(path);
+    if (!e?.at.length) return this.series(path)?.chunks.find((c) => c.n === n);
+    e.used = performance.now();
+    const a = e.at[n];
+    return a ? e.views[n] ||= unpack(a.pack, a.k, n) : undefined;
+  }
+
   // /<service>/__logMonoTime: each message's logMonoTime in ns, from the service's times (they sit next to its valid column)
   monoSeries(path) {
     const svc = path.slice(0, -MONO.length - 1), src = this.entries.has(`${svc}/valid`) ? `${svc}/valid` : `${svc}/_valid`;

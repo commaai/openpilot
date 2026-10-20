@@ -87,8 +87,10 @@ export function create(ctx, state) {
   function* index(n) {
     const block = [];
     for (const row of segmentRows(store, n)) {
-      block.push(row);
-      sources.add(row.source);
+      if (row) {
+        block.push(row);
+        sources.add(row.source);
+      }
       yield;
     }
     if (!block.length) return;
@@ -179,41 +181,45 @@ export function create(ctx, state) {
   return pane;
 }
 
-// one segment's rows, unsorted
+// one segment's rows, unsorted, and nulls between messages without one so that indexing can pause there
 function* segmentRows(store, n) {
-  const chunk = (path) => store.series(path)?.chunks.find((c) => c.n === n);
+  // a step of its own each: decoding a segment's text takes a few ms
+  function* chunk(path) {
+    yield null;
+    return store.chunk(path, n);
+  }
   for (const path of ["/logMessage", "/errorLogMessage"]) {
-    const c = chunk(path);
+    const c = yield* chunk(path);
     if (c) for (const [t, s] of pairs(c)) yield swaglog(t, s);
   }
 
-  const os = chunk("/operatingSystemLog/message");
+  const os = yield* chunk("/operatingSystemLog/message");
   if (os) {
-    const tag = values(chunk("/operatingSystemLog/tag")), priority = values(chunk("/operatingSystemLog/priority"));
+    const tag = values(yield* chunk("/operatingSystemLog/tag")), priority = values(yield* chunk("/operatingSystemLog/priority"));
     for (let [t, text] of pairs(os)) {
       try { text = String(JSON.parse(text).MESSAGE ?? text); } catch {}  // journal entries are JSON, android logs text
       yield {t, level: SYSLOG[priority(t)] ?? 1, source: tag(t) || "os", text};
     }
   }
 
-  const alert = chunk("/selfdriveState/alertType");
+  const alert = yield* chunk("/selfdriveState/alertType");
   if (alert) {
-    const text1 = values(chunk("/selfdriveState/alertText1")), text2 = values(chunk("/selfdriveState/alertText2"));
-    const status = values(chunk("/selfdriveState/alertStatus"));
+    const text1 = values(yield* chunk("/selfdriveState/alertText1")), text2 = values(yield* chunk("/selfdriveState/alertText2"));
+    const status = values(yield* chunk("/selfdriveState/alertStatus"));
     let prev = "";
     for (const [t, type] of pairs(alert)) {
-      if (type && type !== prev) yield {t, level: ALERT[status(t)] ?? 1, source: "alert", text: `${text1(t) || ""} ${text2(t) || ""}`.trim() || type};
+      yield type && type !== prev ? {t, level: ALERT[status(t)] ?? 1, source: "alert", text: `${text1(t) || ""} ${text2(t) || ""}`.trim() || type} : null;
       prev = type;
     }
   }
 
   // onroad events where they start
-  const events = chunk("/onroadEvents/valid");
+  const events = yield* chunk("/onroadEvents/valid");
   if (events) {
     const items = [];
     for (let k = 0; store.series(`/onroadEvents/${k}/name`); k++) {
-      const flag = (f) => [f, values(chunk(`/onroadEvents/${k}/${f}`))];
-      items.push({name: values(chunk(`/onroadEvents/${k}/name`)), names: store.series(`/onroadEvents/${k}/name`).names,
+      const flag = (f) => [f, values(store.chunk(`/onroadEvents/${k}/${f}`, n))];
+      items.push({name: values(yield* chunk(`/onroadEvents/${k}/name`)), names: store.series(`/onroadEvents/${k}/name`).names,
         flags: ["immediateDisable", "softDisable", "noEntry", "userDisable", "warning"].map(flag)});
     }
     let prev = new Set();
@@ -229,6 +235,7 @@ function* segmentRows(store, n) {
         yield {t, level, source: "event", text: flags.length ? `${name} (${flags.join(", ")})` : name};
       }
       prev = now;
+      yield null;
     }
   }
 }
