@@ -3,7 +3,7 @@
 .page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .button.small { margin: 0; padding: 3px 8px; }
 .button.tiny { margin: 0; padding: 0 6px; font-size: 11px; }
-.button.danger { border-color: var(--critical); color: var(--critical); }
+.button.danger { border-color: var(--critical); color: var(--critical-fg); }
 .button:disabled { opacity: .5; cursor: default; }
 .field { height: 26px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
 .field:focus { border-color: var(--accent); }
