@@ -29,6 +29,7 @@ button, input, select { font: inherit; color: inherit; }
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .muted { color: var(--muted); }
+::placeholder { color: var(--muted); opacity: 1; }  /* the browser's grey is under 4.5:1, and some fields have no other label */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mono { font-family: var(--mono); }
 .small { font-size: 11px; }
@@ -185,6 +186,7 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .route-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-bottom: 1px solid var(--line); text-decoration: none; }
 .route-row:hover { background: var(--hover); }
 .route-row.current { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
+.route-row.current .muted { color: color-mix(in srgb, var(--muted), var(--fg) 35%); }  /* still 4.5:1 on the darker row */
 .route-thumb { width: 64px; height: 36px; border-radius: 3px; object-fit: cover; object-position: top; background: var(--bg); flex-shrink: 0; }  /* the sprite's 16:9 frame, not its black band */
 .route-when { display: flex; flex-direction: column; min-width: 0; white-space: nowrap; }
 .routes-pane .more { display: block; margin: 8px auto; }
