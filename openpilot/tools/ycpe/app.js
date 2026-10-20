@@ -472,6 +472,17 @@ addEventListener("keydown", (e) => {
   updateTop();
 });
 
+// ctrl+f finds a series, as in jotpluggler: the Series filter, when the open tab shows one (the browser's find can't
+// see into the tree or the plots)
+addEventListener("keydown", (e) => {
+  if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "f" || e.shiftKey || e.altKey || e.defaultPrevented) return;
+  const filter = ws?.layout?.el.querySelector(".browser .filter");
+  if (!filter) return;
+  e.preventDefault();
+  filter.focus();
+  filter.select();
+});
+
 // the global keys, for whatever a pane didn't handle itself
 document.addEventListener("keydown", (e) => {
   if (e.defaultPrevented || e.target.closest?.("input, textarea, select, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -501,7 +512,7 @@ document.addEventListener("keydown", (e) => {
 const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
   ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end"], ["1 2 3 4", "Drive / Plot / CAN / Files"],
-  ["/", "search routes and devices"], ["t", "light / dark"], ["?", "this help"],
+  ["/", "search routes and devices"], ["ctrl+f", "filter the series"], ["t", "light / dark"], ["?", "this help"],
   ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
 ];
 const GESTURES = [
