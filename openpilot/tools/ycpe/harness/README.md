@@ -33,7 +33,8 @@ Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by:
 - a long animation frame over `loaf_ms`, perf.js work p99 over `work_p99_ms`, dropped frames over `drops`
 
 Time spent taking screenshots and linting is excluded from the frame stats (shaded in the charts).
-Layout lint findings (overflow, clipped text, overlap, obscured controls, small targets, layout shift, broken images)
+Layout lint findings (overflow, sideways scroll, clipped text, overlap, obscured controls, small targets, layout shift,
+broken images)
 are reported but don't fail the scenario.
 
 ## Modes (`--mode`)

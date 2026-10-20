@@ -69,11 +69,17 @@
     add("overflow-viewport", el, r, `"${snippet(el)}" extends ${Math.round(Math.max(r.right - W, -r.left))}px past the viewport edge`);
   }
 
+  // sideways overflow in an overflow:auto box (overflow-x: scroll is taken as intended)
+  for (const {el, vis, cs} of els) {
+    const dx = el.scrollWidth - el.clientWidth;
+    if (cs.overflowX === "auto" && dx > 4 && el !== document.scrollingElement) add("hscroll", el, vis, `content is ${dx}px wider than this scroll box`);
+  }
+
   // text cut off by its own box (ellipsis or hard clip), or partly hidden by a clipping ancestor
   for (const {el, r, vis, clip, cs} of els) {
-    if (!ownText(el) || cs.display === "inline") continue;
+    if (!ownText(el)) continue;
     const dx = el.scrollWidth - el.clientWidth, dy = el.scrollHeight - el.clientHeight;
-    if (cs.overflowX !== "visible" && (dx > 1 || dy > 1)) {
+    if (cs.display !== "inline" && cs.overflowX !== "visible" && (dx > 1 || dy > 1)) {
       const [need, has] = dx > 1 ? [el.scrollWidth, el.clientWidth] : [el.scrollHeight, el.clientHeight];
       const rule = cs.textOverflow !== "ellipsis" || dx <= 1 ? "text-clipped" : has < need / 2 ? "text-squeezed" : "text-ellipsis";
       add(rule, el, vis, `"${snippet(el)}" needs ${need}px ${dx > 1 ? "width" : "height"}, has ${has}`);
@@ -81,7 +87,7 @@
       // cut by a hidden/clip ancestor; content scrolled partly out of a scroller, or below the fold, is fine
       const shown = meet(r, clip), a = clipper(el, r);
       if ((shown.width >= r.width - 1 && shown.height >= r.height - 1) || !a || /auto|scroll/.test(style(a).overflowX + style(a).overflowY)) continue;
-      add("text-clipped", el, vis, `"${snippet(el)}" shows ${Math.round(shown.width)}x${Math.round(shown.height)} of ${Math.round(r.width)}x${Math.round(r.height)}px, clipped by ${selector(a)}`);
+      add(style(a).textOverflow === "ellipsis" ? "text-ellipsis" : "text-clipped", el, vis, `"${snippet(el)}" shows ${Math.round(shown.width)}x${Math.round(shown.height)} of ${Math.round(r.width)}x${Math.round(r.height)}px, clipped by ${selector(a)}`);
     }
   }
 
