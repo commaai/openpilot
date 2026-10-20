@@ -206,10 +206,11 @@ body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
 .tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }
 .help { padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
 .help::backdrop { background: rgba(0,0,0,.35); }
-.help-card { min-width: 380px; padding: 14px 18px; }
+.help-card { min-width: min(380px, calc(100vw - 32px)); padding: 14px 18px; }
 .help-head { display: flex; justify-content: space-between; align-items: baseline; }
 .help h2 { margin: 0; font-size: 13px; }
 .help dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 10px 0 0; }
 .help dt { text-align: right; white-space: nowrap; }
 .help dd { margin: 0; color: var(--muted); }
+@media (max-width: 480px) { .help dl { grid-template-columns: 1fr; row-gap: 2px; } .help dt { margin-top: 6px; text-align: left; white-space: normal; } }  /* a phone: each key over what it does */
 kbd { display: inline-block; min-width: 18px; margin-left: 3px; padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg); font: 11px var(--mono); text-align: center; }
