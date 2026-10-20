@@ -15,6 +15,11 @@ export function popup(x, y, ...content) {
   close();
   const el = open = h("div", {class: "popover plot-popup", onpointerdown: (e) => e.stopPropagation()}, ...content);
   document.body.append(el);
+  return place(el, x, y);
+}
+
+// el at (x, y), moved on screen; again after a change of its size
+export function place(el, x, y) {
   const r = el.getBoundingClientRect();
   el.style.left = `${Math.max(4, Math.min(x, innerWidth - r.width - 4))}px`;
   el.style.top = `${Math.max(4, Math.min(y, innerHeight - r.height - 4))}px`;

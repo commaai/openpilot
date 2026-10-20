@@ -1,6 +1,7 @@
-// custom series: user JavaScript evaluated per sample in a throwaway worker. Inputs are store paths; every
-// input after the first is resampled (sample-and-hold) onto the first one's times. The globals block runs
-// once, so its variables persist across samples. The function body sees time, value, v1 … vN.
+// custom series: user JavaScript evaluated per sample in a worker of its own. That worker is same-origin, not a
+// sandbox: the code can do what this page can, so code from an imported layout runs only once reviewed. Inputs are
+// store paths; every input after the first is resampled (sample-and-hold) onto the first one's times. The globals
+// block runs once, so its variables persist across samples. The function body sees time, value, v1 … vN.
 import {concat, copy, resample} from "./transforms.js";
 
 export const TEMPLATES = {
