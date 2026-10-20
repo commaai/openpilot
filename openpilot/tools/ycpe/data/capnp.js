@@ -119,7 +119,7 @@ export class Reader {
     this.ev = Object.fromEntries(this.event.fields.map((f) => [f[0], f]));
   }
 
-  // indexes and extracts one decompressed log; returns {services: {name: {t, valid, cols: {path: Column}}}}
+  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, cols: Map(path → Column)})
   read(buf, {can = null} = {}) {
     views(buf);
     const {event} = this;
@@ -282,33 +282,76 @@ export class Reader {
   }
 }
 
-// columns that never vary collapse to a constant; columns that never appeared are dropped
+// columns shrink before transfer: never-set ones are dropped, constant ones collapse to c, ones set in under
+// half the events keep an index into the service times (i), and values move to the narrowest exact array
 export function compact(services) {
   const out = {};
   const transfer = [];
   for (const svc of services.values()) {
     const cols = {};
+    // the event's valid flag, unless the struct has its own (lateralTorqueParameters, vehicleParameters)
+    svc.cols.set(svc.cols.has("/valid") ? "/_valid" : "/valid", {type: "b", v: svc.valid});
     for (const [path, c] of svc.cols) {
-      const v = c.v;
-      let first = null, constant = true, any = false;
-      for (let i = 0; i < v.length; i++) {
-        const x = v[i];
-        if (x === null || x !== x) constant = false;
-        else if (!any) { first = x; any = true; } else if (x !== first) constant = false;
-        if (!constant && any) break;
-      }
-      if (!any) continue;
-      const col = {type: c.type};
+      const col = c.type === "t" ? compactText(c.v) : compactNumbers(c.v);
+      if (!col) continue;
+      col.type = c.type;
       if (c.names) col.names = c.names;
-      if (constant && v.length > 1) col.c = first;
-      else {
-        col.v = v;
-        if (ArrayBuffer.isView(v)) transfer.push(v.buffer);
-      }
+      if (ArrayBuffer.isView(col.v)) transfer.push(col.v.buffer);
+      if (col.i) transfer.push(col.i.buffer);
       cols[path] = col;
     }
-    out[svc.name] = {t: svc.t, valid: svc.valid, cols};
-    transfer.push(svc.t.buffer, svc.valid.buffer);
+    out[svc.name] = {t: svc.t, cols};
+    transfer.push(svc.t.buffer);
   }
   return {services: out, transfer};
+}
+
+const indexArray = (n, count) => n < 65536 ? new Uint16Array(count) : new Uint32Array(count);
+
+function intArray(lo, hi) {
+  if (lo >= 0) return hi < 256 ? Uint8Array : hi < 65536 ? Uint16Array : hi < 4294967296 ? Uint32Array : Float64Array;
+  if (lo >= -128 && hi < 128) return Int8Array;
+  return lo >= -32768 && hi < 32768 ? Int16Array : lo >= -2147483648 && hi < 2147483648 ? Int32Array : Float64Array;
+}
+
+function compactNumbers(v) {
+  const n = v.length;
+  const wide = v instanceof Float64Array;
+  let count = 0, lo = Infinity, hi = -Infinity, ints = true, f32 = true;
+  for (let k = 0; k < n; k++) {
+    const x = v[k];
+    if (x !== x) continue;
+    count++;
+    if (x < lo) lo = x;
+    if (x > hi) hi = x;
+    if (ints && !Number.isInteger(x)) ints = false;
+    if (wide && f32 && Math.fround(x) !== x) f32 = false;
+  }
+  if (!count) return null;
+  if (count === n && lo === hi && n > 1) return {c: lo};
+  if (count * 2 >= n) {
+    if (count < n) return {v: wide && f32 ? new Float32Array(v) : v};  // gaps stay NaN, so floats
+    const Arr = ints ? intArray(lo, hi) : f32 ? Float32Array : Float64Array;
+    return {v: v instanceof Arr ? v : new Arr(v)};
+  }
+  const Arr = ints ? intArray(lo, hi) : f32 ? Float32Array : Float64Array;
+  const i = indexArray(n, count), out = new Arr(count);
+  for (let k = 0, j = 0; k < n; k++) if (v[k] === v[k]) { i[j] = k; out[j++] = v[k]; }
+  return {v: out, i};
+}
+
+function compactText(v) {
+  const n = v.length;
+  let count = 0, first = null, constant = true;
+  for (let k = 0; k < n; k++) {
+    if (v[k] === null) continue;
+    if (count++ === 0) first = v[k];
+    else if (v[k] !== first) constant = false;
+  }
+  if (!count) return null;
+  if (count === n && constant && n > 1) return {c: first};
+  if (count * 2 >= n) return {v};
+  const i = indexArray(n, count), out = new Array(count);
+  for (let k = 0, j = 0; k < n; k++) if (v[k] !== null) { i[j] = k; out[j++] = v[k]; }
+  return {v: out, i};
 }

@@ -90,7 +90,6 @@ export class Store {
     for (const [svc, s] of Object.entries(services)) {
       const t = s.t, n = t.length;
       for (let k = 0; k < n; k++) t[k] += off;
-      s.cols["/valid"] = {type: "b", v: s.valid};
       for (const [sub, c] of Object.entries(s.cols)) {
         const path = `/${svc}${sub}`;
         if (!this.meta.has(path)) {
