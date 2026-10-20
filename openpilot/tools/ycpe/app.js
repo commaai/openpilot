@@ -56,6 +56,8 @@ function toast(text) {
 }
 
 const state = {me: null, devices: null, devicesError: null};
+// a device left the account (unpaired): the next page asks for the list again
+export const devicesChanged = () => { state.devices = null; };
 let ws = null;  // the open route workspace
 
 // ---- top bar ----

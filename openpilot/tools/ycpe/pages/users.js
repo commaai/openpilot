@@ -20,7 +20,8 @@ function armed(label, fn) {
   return b;
 }
 
-export function usersSection(device) {
+// left(): the signed-in user removed their own access
+export function usersSection(device, left) {
   const dongleId = device.dongle_id;
   const el = h("div", {}, h("p", {class: "muted"}, "Loading…"));
   const status = h("p", {class: "small"});
@@ -31,7 +32,7 @@ export function usersSection(device) {
     const users = await canManage(device) ? await api.deviceUsers(dongleId).catch(() => null) : null;
     if (!users) {
       el.replaceChildren(h("p", {class: "muted"}, "You have read access to this device."),
-        armed("Remove my access", () => api.leaveDevice(dongleId).then(() => el.replaceChildren(h("p", {class: "muted"}, "Your access was removed.")), fail)),
+        armed("Remove my access", () => api.leaveDevice(dongleId).then(() => { left(); el.replaceChildren(h("p", {class: "muted"}, "Your access was removed.")); }, fail)),
         status);
       return;
     }

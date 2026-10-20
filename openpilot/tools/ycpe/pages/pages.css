@@ -96,6 +96,8 @@ a.drive-row:hover { background: var(--hover); }
 .strip-spans .bookmark { background: var(--bookmark); }
 .inline-form { display: flex; gap: 6px; align-items: center; }
 .inline-form .field { width: 260px; }
+.list.settings { max-width: 640px; }
+.list.settings td:first-child { width: 140px; }
 
 /* log viewer */
 .log-dialog { width: min(1100px, 92vw); height: 82vh; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); box-shadow: var(--shadow); }

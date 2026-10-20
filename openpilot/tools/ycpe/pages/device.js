@@ -1,7 +1,7 @@
-// the device page: header with location map, then tabs for drives, preserved drives, uploads, users and logs
+// the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings
 import {api, auth, engagedFraction, routeEvents} from "../api.js";
 import {h, fmt} from "../dom.js";
-import {isOnline, link} from "../app.js";
+import {devicesChanged, go, isOnline, link} from "../app.js";
 import {perf} from "../perf.js";
 import {reverseLookup} from "../geocode.js";
 import {deviceMap} from "../panes/map.js";
@@ -9,6 +9,7 @@ import {deviceName} from "./home.js";
 import {usersSection} from "./users.js";
 import {logsSection} from "./logs.js";
 import {deviceUploads} from "./files.js";
+import {settingsSection} from "./settings.js";
 
 const DAY = 86400000, HOUR = 3600000;
 const WINDOW = 14 * DAY, LIMIT = 50;
@@ -189,13 +190,20 @@ export async function devicePage(dongleId, devices) {
   for (const [id, k] of kept) if (k.until < Date.now()) kept.delete(id);
   if (kept.has(dongleId)) return restore(kept.get(dongleId));
   const device = (devices || []).find((d) => d.dongle_id === dongleId) || await api.device(dongleId);
+  // the account lost the device (unpaired, or access removed)
+  const forget = () => {
+    kept.delete(dongleId);
+    api.device.forget(dongleId);
+    devicesChanged();
+  };
   const tabs = {
     drives: ["Drives", () => drivesSection(dongleId)],
     preserved: ["Preserved", () => preservedSection(dongleId)],
     uploads: ["Uploads", () => deviceUploads(device)],
-    users: ["Users", () => usersSection(device)],
+    users: ["Users", () => usersSection(device, forget)],
     bootlogs: ["Boot logs", () => logsSection(dongleId, "boot")],
     crashlogs: ["Crash logs", () => logsSection(dongleId, "crash")],
+    settings: ["Settings", () => settingsSection(device, () => { forget(); go("/"); })],
   };
   const built = {};
   const keep = {tab: null, scroll: 0};

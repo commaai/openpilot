@@ -169,6 +169,10 @@ export const api = {
     return request("POST", `v1/devices/${dongleId}/del_user`, {body: {email}});
   },
   leaveDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/del_user`, {body: {}}),
+  unpairDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/unpair`),
+  // the owner's comma prime billing; 403 and 404 mean there's none this account can see
+  primeSubscription: (dongleId) => get("v1/prime/subscription", {dongle_id: dongleId})
+    .catch((e) => { if (e.status === 403 || e.status === 404) return null; throw e; }),
   // signed blob urls, oldest first
   bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
   crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),
