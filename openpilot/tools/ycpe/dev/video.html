@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ycpe video</title>
+  <style>
+    body { background: #111; color: #ddd; font: 13px monospace; margin: 12px; }
+    #bar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    #scrub { flex: 1; }
+    #panes { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 8px; }
+    #panes > div { aspect-ratio: 1344 / 760; }
+  </style>
+</head>
+<body>
+  <div>route <b id="route"></b> · ?route=&amp;cams=qcamera,fcamera&amp;t=&amp;local=&lt;base url of seg/camera.h264 stand-ins&gt;&amp;store=1</div>
+  <div id="bar">
+    <button id="play">play</button>
+    <button id="prev">&lt; frame</button>
+    <button id="next">frame &gt;</button>
+    <select id="rate"></select>
+    <input id="scrub" type="range" step="0.01">
+    <span id="time"></span>
+  </div>
+  <div id="panes"></div>
+  <pre id="stats"></pre>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.7/dist/hls.min.js"></script>
+  <script type="module">
+    import {api} from "/api.js";
+    import {createClock, RATES} from "/clock.js";
+    import {perf} from "/perf.js";
+    import {Store} from "/data/store.js";
+    import {create} from "/panes/camera.js";
+
+    const q = new URLSearchParams(location.search);
+    const name = q.get("route") || "5beb9b58bd12b691|0000010a--a51155e496";
+    const $ = (id) => document.getElementById(id);
+    $("route").textContent = name;
+
+    const [route, files] = await Promise.all([api.route(name), api.routeFiles(name)]);
+    // local H.264 stand-ins for the HEVC files, for browsers without an HEVC decoder
+    if (q.get("local")) {
+      const local = (kind, n) => Array.from({length: n}, (_, i) => `${q.get("local")}/${i}/${kind}.h264`);
+      api.routeFiles.prime({...files, cameras: local("camera", 4), ecameras: local("ecamera", 2), dcameras: local("dcamera", 2)}, name);
+    }
+    let store = null;
+    if (q.get("store")) {
+      const urls = [];
+      for (const u of [...files.qlogs, ...files.logs]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
+      store = new Store(name, urls, {t: +(q.get("t") || 0)});
+    }
+
+    const clock = createClock((route.end_time_utc_millis - route.start_time_utc_millis) / 1000);
+    clock.seek(+(q.get("t") || 0));
+    const ctx = {route, clock, perf, peekStore: () => store, onStore: (fn) => store && fn(store)};
+    const panes = (q.get("cams") || "qcamera,fcamera").split(",").map((camera) => create(ctx, {camera}));
+    $("panes").append(...panes.map((p) => p.el));
+
+    const scrub = $("scrub");
+    scrub.max = clock.duration;
+    scrub.oninput = () => clock.seek(+scrub.value);
+    $("play").onclick = () => clock.toggle();
+    $("prev").onclick = () => clock.seek(clock.t - 0.05);
+    $("next").onclick = () => clock.seek(clock.t + 0.05);
+    $("rate").append(...RATES.map((r) => new Option(`${r}×`, r, false, r === 1)));
+    $("rate").onchange = (e) => clock.setRate(+e.target.value);
+    const bar = {name: "bar", render() {
+      scrub.value = clock.t;
+      $("time").textContent = `${clock.t.toFixed(2)} s · frame ${Math.floor(clock.t * 20 + 1e-6)}`;
+      $("play").textContent = clock.playing ? "pause" : "play";
+    }};
+    clock.on("t", () => perf.invalidate(bar));
+    clock.on("play", () => perf.invalidate(bar));
+    perf.invalidate(bar);
+    setInterval(() => {
+      $("stats").textContent = Object.entries(perf.marks).map(([k, v]) => `${k}: ${v}`).join("\n") + `\ndrops ${perf.drops} · heap ${(performance.memory.usedJSHeapSize / 1e6).toFixed(0)} MB`;
+    }, 500);
+    window.dev = {clock, panes, perf, store};
+  </script>
+</body>
+</html>
