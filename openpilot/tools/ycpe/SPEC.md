@@ -206,6 +206,8 @@ ctx = {route,                  // the API route object (fullname, start_time_utc
        openRoute(name)}        // switch route, keeping the view
 pane = {name, el, title?, render(frame), resize(w, h), dispose(), save() /* JSON state for layouts */}
 // el is absolutely positioned to fill the pane body; panes must not scroll the page
+// styles: each track keeps its own stylesheet next to its modules and loads it with css(url) from dom.js;
+// selectors are prefixed by the pane's root class, and only theme variables are used for colors
 
 // store.js: main thread; never O(samples) per frame
 store.route                    // {name, t0 (mono s), duration, segments: [{n, t0, t1, status}]}
