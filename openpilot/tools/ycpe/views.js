@@ -13,7 +13,7 @@ export const VIEWS = {
     split("col", [0.5, 0.5], pane("camera", {camera: "qcamera"}), pane("map")))),
   can: view("CAN", split("row", [0.32, 0.36, 0.32],
     pane("can-messages"),
-    split("col", [0.5, 0.5], pane("can-binary"), pane("can-signals")),
+    split("col", [0.38, 0.37, 0.25], pane("can-binary"), pane("can-signals"), pane("can-history")),  // as cabana's detail view
     split("col", [0.6, 0.4], pane("can-charts"), pane("camera", {camera: "qcamera"})))),
   files: view("Files", split("row", [0.2, 0.8], pane("routes"), pane("files"))),
 };
