@@ -157,7 +157,7 @@ body.loading .topbar { background-image: linear-gradient(90deg, transparent, var
 .route-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-bottom: 1px solid var(--line); text-decoration: none; }
 .route-row:hover { background: var(--hover); }
 .route-row.current { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
-.route-thumb { width: 48px; height: 36px; border-radius: 3px; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+.route-thumb { width: 64px; height: 36px; border-radius: 3px; object-fit: cover; object-position: top; background: var(--bg); flex-shrink: 0; }  /* the sprite's 16:9 frame, not its black band */
 .route-when { display: flex; flex-direction: column; min-width: 0; white-space: nowrap; }
 .routes-pane .more { display: block; margin: 8px auto; }
 .route-pop .routes-pane { position: static; height: 100%; }
