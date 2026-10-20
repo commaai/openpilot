@@ -360,17 +360,27 @@ function place(path) {
 }
 
 // dropped or picked files (a folder of segments, or single logs) as a route; files of other routes than the one
-// with the most are left out. null when none of them is a log or camera file.
+// with the most are left out. null when none of them is a log or camera file. The route replaces the last one, whose
+// blob URLs go.
+let localUrls = [];
 export function localRoute(files) {
   const byRoute = new Map();
   for (const f of files) {
     const p = place(f.relativePath || f.webkitRelativePath || f.name);
     if (!p) continue;
     if (!byRoute.has(p.route)) byRoute.set(p.route, new Map());
-    byRoute.get(p.route).set(`${p.n}/${p.kind}`, {url: URL.createObjectURL(f), file: p.file, size: f.size, source: "local"});
+    byRoute.get(p.route).set(`${p.n}/${p.kind}`, {file: p.file, size: f.size, source: "local", blob: f});
   }
   const [name, found] = [...byRoute].sort((a, b) => b[1].size - a[1].size)[0] || [];
-  return name ? looseRoute(name, found) : null;
+  if (!name) return null;
+  for (const url of localUrls) URL.revokeObjectURL(url);
+  localUrls = [];
+  for (const [key, {blob, ...f}] of found) {
+    const url = URL.createObjectURL(blob);
+    localUrls.push(url);
+    found.set(key, {...f, url});
+  }
+  return looseRoute(name, found);
 }
 
 // a direct link to one log or camera file, as a one-segment route
