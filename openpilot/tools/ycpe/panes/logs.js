@@ -295,7 +295,8 @@ function lastAtOrBefore(rows, t) {
   return lo - 1;
 }
 
+// rounded before the sign, so a time that rounds to zero isn't "-0:00.000"
 function clock(t) {
-  const ms = Math.round(Math.abs(t) * 1000), m = Math.floor(ms / 60000);
-  return `${t < 0 ? "-" : ""}${m}:${((ms - m * 60000) / 1000).toFixed(3).padStart(6, "0")}`;
+  const signed = Math.round(t * 1000), ms = Math.abs(signed), m = Math.floor(ms / 60000);
+  return `${signed < 0 ? "-" : ""}${m}:${((ms - m * 60000) / 1000).toFixed(3).padStart(6, "0")}`;
 }

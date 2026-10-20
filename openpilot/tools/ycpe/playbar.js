@@ -15,8 +15,9 @@ const SPAN_COLORS = {engaged: "--engaged", override: "--override", alert: "--ale
 const SPAN_LABELS = {engaged: "engaged", override: "override", alert: "alert", critical: "critical alert"};
 
 export const clockText = (s, withMs = true) => {
+  s = withMs ? Math.round(s * 100) / 100 : Math.trunc(s);  // to what's shown first: no "1:60.00" or "-0:00.00"
   const sign = s < 0 ? "-" : "";
-  s = withMs ? Math.round(Math.abs(s) * 100) / 100 : Math.floor(Math.abs(s));  // to what's shown first: no "1:60.00"
+  s = Math.abs(s);
   const hr = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60;
   const ss = withMs ? sec.toFixed(2).padStart(5, "0") : String(sec).padStart(2, "0");
   return `${sign}${hr ? `${hr}:${String(m).padStart(2, "0")}` : m}:${ss}`;
