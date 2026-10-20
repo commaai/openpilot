@@ -18,8 +18,6 @@ import {customsOf, plots, specKey} from "/layouts/import.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
-// enums, and DBC signals whose value descriptions make them states
-const isStates = (s) => s.type === "e" || !!s.states;
 
 // the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
 const spacing = new Map();  // path → {version, dt}
@@ -199,7 +197,7 @@ export function create(ctx, state = {}) {
       else numeric.push(item);
     }
     // states alone become rows of state blocks, like text; mixed with numbers they plot as steps
-    const blockMode = numeric.length > 0 && numeric.every((it) => isStates(it.s));
+    const blockMode = numeric.length > 0 && numeric.every((it) => it.s.type === "e" || it.s.states);
     const rows = blockMode ? [...numeric, ...text] : text;
     const lines = blockMode ? [] : numeric;
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
@@ -210,7 +208,7 @@ export function create(ctx, state = {}) {
       // buckets may be empty here and there, so a gap is also wider than a couple of them
       it.gap = gapTest(Math.max(5 * medianInterval(it.src, it.s), 1, 2.5 * (d?.w || 0)), view.unloaded());
       it.d = withEdges(d, it.src, a, b);
-      it.style = it.c.style || (STEPPED.has(it.s.type) || it.s.states ? "steps" : "line");
+      it.style = it.c.style || (STEPPED.has(it.s.type) || it.s.names ? "steps" : "line");  // described values step like enums
     }
     // valid=false spans of the services behind the plain curves; none where valid is always true
     const invalid = [];
