@@ -72,9 +72,13 @@ function recentSection(devices) {
       }))));
 }
 
+// files from this machine (pages/local.js); dropping them anywhere works too, but nothing else says so
+const localEntry = () => h("p", {class: "small muted local-entry"},
+  h("a", {href: "/local", onclick: link("/local")}, "Open local logs…"), " (or drop rlog/qlog files anywhere)");
+
 export function homePage(devices) {
-  if (!auth.isAuthenticated()) return h("div", {}, loginPage(new URLSearchParams()), recentSection(devices));
-  if (!devices?.length) return h("div", {}, h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name.")), recentSection(devices));
+  if (!auth.isAuthenticated()) return h("div", {}, loginPage(new URLSearchParams()), localEntry(), recentSection(devices));
+  if (!devices?.length) return h("div", {}, h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name."), localEntry()), recentSection(devices));
   return h("div", {}, recentSection(devices), h("div", {class: "page"},
     h("table", {class: "list devices"},
       h("thead", {}, h("tr", {}, h("th"), h("th", {}, "device"), h("th", {}, "dongle id"), h("th", {}, "type"), h("th", {}, "version"), h("th", {}, "last seen"))),
@@ -84,5 +88,6 @@ export function homePage(devices) {
         h("td", {class: "mono muted"}, d.dongle_id),
         h("td", {class: "muted"}, d.device_type),
         h("td", {class: "muted"}, d.openpilot_version || ""),
-        h("td", {class: "muted"}, isOnline(d) ? "online" : fmt.ago(d.last_athena_ping))))))));
+        h("td", {class: "muted"}, isOnline(d) ? "online" : fmt.ago(d.last_athena_ping)))))),
+    localEntry()));
 }

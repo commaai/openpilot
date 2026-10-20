@@ -171,17 +171,20 @@ export async function devicePage(dongleId, devices) {
     crashlogs: ["Crash logs", () => logsSection(dongleId, "crash")],
   };
   const built = {};
-  const body = h("div", {class: "tab-body"});
-  const bar = h("nav", {class: "page-tabs"});
+  const body = h("div", {class: "tab-body", role: "tabpanel"});
+  const bar = h("nav", {class: "page-tabs", role: "tablist"});
   const select = (key) => {
     built[key] ||= tabs[key][1]();
     body.replaceChildren(built[key]);
-    for (const b of bar.children) b.classList.toggle("on", b.dataset.tab === key);
+    for (const b of bar.children) {
+      b.classList.toggle("on", b.dataset.tab === key);
+      b.setAttribute("aria-selected", b.dataset.tab === key);
+    }
     const url = new URL(location.href);
     if (key === "drives") url.searchParams.delete("tab"); else url.searchParams.set("tab", key);
     history.replaceState(history.state, "", url);
   };
-  bar.append(...Object.entries(tabs).map(([key, [label]]) => h("button", {class: "tab", "data-tab": key, onclick: () => select(key)}, label)));
+  bar.append(...Object.entries(tabs).map(([key, [label]]) => h("button", {class: "tab", role: "tab", "data-tab": key, onclick: () => select(key)}, label)));
   const initial = new URLSearchParams(location.search).get("tab");
   select(tabs[initial] ? initial : "drives");
 

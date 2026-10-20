@@ -1,6 +1,7 @@
 // signing in: the /login page, the /auth OAuth callback, and the inline card shown when a page needs an account.
 // Where to land afterwards rides in ?next= and, across the OAuth round trip, in sessionStorage.
 import {auth} from "../api.js";
+import {daemon} from "../daemon.js";
 import {h} from "../dom.js";
 import {logo} from "../icons.js";
 import {go, link} from "../app.js";
@@ -20,6 +21,10 @@ function safe(path) {
   }
 }
 export const loginPath = (next = here()) => `/login?${new URLSearchParams({next})}`;
+
+// serve.py has ~/.comma/auth.json, turned off from the account menu: one click turns it back on
+const daemonButton = (onclick) => daemon.hasJwt && !auth.isAuthenticated() &&
+  h("button", {class: "button primary", onclick: () => { auth.useDaemon(); onclick?.(); }}, "Sign in with ~/.comma/auth.json");
 
 function card(...children) {
   return h("div", {class: "login"}, h("div", {class: "login-card"},
@@ -53,7 +58,7 @@ export function loginPage(params) {
   if (auth.isAuthenticated()) return card(h("p", {}, "You're signed in."), h("a", {class: "button primary", href: next, onclick: link(next)}, "Continue"));
   return card(
     h("p", {class: "muted"}, "Sign in to see your devices and drives."),
-    h("div", {class: "providers"}, Object.entries(PROVIDERS).map(([p, name]) =>
+    h("div", {class: "providers"}, daemonButton(() => go(next, true)), Object.entries(PROVIDERS).map(([p, name]) =>
       h("a", {class: "button provider", href: auth.loginUrl(p), onclick: () => sessionStorage.setItem(RETURN_KEY, next)}, `Continue with ${name}`))),
     tokenForm(next),
     h("p", {class: "small muted login-foot"}, "Public routes open without an account. ",
@@ -79,13 +84,16 @@ export function authPage(params) {
   return el;
 }
 
-// in place of a page the API refused: signed out, offer sign-in; signed in, say so and offer another account
+// in place of a page the API refused: signed out, offer sign-in; signed in, say so and offer another account.
+// A device page is just /<dongle id>; anything deeper is a route.
 export function signInCard() {
   const signedIn = auth.isAuthenticated();
+  const device = /^\/[0-9a-f]{16}\/?$/i.test(location.pathname);
   return card(
-    h("p", {}, signedIn ? "This account doesn't have access to this." : "Sign in to view this."),
-    h("p", {class: "small muted"}, signedIn ? "Ask the device owner to share it with you, or sign in with another account." : "It isn't public, so it needs an account with access."),
-    h("div", {class: "providers"},
-      h("a", {class: "button primary", href: loginPath(), onclick: (e) => { if (signedIn) auth.signOut(); link(loginPath())(e); }},
+    h("p", {}, signedIn ? "This account doesn't have access to this." : device ? "Sign in to see this device's drives." : "Sign in to view this."),
+    h("p", {class: "small muted"}, signedIn ? "Ask the device owner to share it with you, or sign in with another account."
+      : device ? "Devices are only visible to their owner and people they've shared with." : "It isn't public, so it needs an account with access."),
+    h("div", {class: "providers"}, daemonButton(),
+      h("a", {class: daemon.hasJwt && !signedIn ? "button" : "button primary", href: loginPath(), onclick: (e) => { if (signedIn) auth.signOut(); link(loginPath())(e); }},
         signedIn ? "Use another account" : "Sign in")));
 }

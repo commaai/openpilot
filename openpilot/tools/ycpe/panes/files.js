@@ -179,7 +179,7 @@ export function create(ctx) {
     });
     summary.textContent = `${segs.length} segments · ${Math.round(100 * uploaded / (segs.length * COLS.length || 1))}% uploaded`;
     const failed = Object.entries(errors);
-    notes.replaceChildren(...[up && uploadNotice(up),
+    notes.replaceChildren(...[up && uploadNotice(up, segs.flatMap((n) => COLS.map((kind) => `${n}/${kind}`))),
       failed.length && h("div", {class: "small muted"}, failed.map(([s, m]) => `${label(s)}: ${m}`).join(" · ")),
       ctx.peekStore() && source !== "api" && h("div", {class: "small muted"}, "Loaded logs keep their source until the route is reopened.")].filter(Boolean));
     if (up) {
