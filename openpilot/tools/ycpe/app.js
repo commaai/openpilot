@@ -420,6 +420,7 @@ class Workspace {
       q.set("t", this.clock.t.toFixed(1));
       q.delete("layout");  // opened once, then it's part of the saved layout
       if (this.clock.t === 0) q.delete("t");
+      if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
       const path = `/${routeKey(this.route).replace("|", "/")}/${this.view}`;
       this.href = `${path}${q.size ? `?${q}` : ""}`;
       history.replaceState(null, "", this.href);
@@ -575,7 +576,9 @@ async function render() {
       const route = await record;
       if (id !== navId) return;
       ws?.dispose();
-      ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      // ?repeat=n (a load test): the logs n times over, at most 50
+      const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
+      ws = new Workspace(route, files, target.view || "drive", {t: +q.get("t") || 0, repeat});
       if (target.range) ws.showRange(target.range);
       rememberRoute(route);
       if (q.has("layout")) ws.openLayout(q.get("layout"));
