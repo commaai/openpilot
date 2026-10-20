@@ -139,6 +139,8 @@ function qcamera(ctx, pane, {wait, absent}) {
     hls.attachMedia(video);
   }, () => absent("hls.js failed to load"));
   for (const ev of ["loadedmetadata", "seeked", "canplay", "waiting"]) video.addEventListener(ev, () => ctx.perf.invalidate(pane));
+  // a paused <video> keeps its poster up over the decoded frame until a seek or play
+  video.addEventListener("loadeddata", () => video.removeAttribute("poster"), {once: true});
   video.addEventListener("progress", update);
 
   return {
