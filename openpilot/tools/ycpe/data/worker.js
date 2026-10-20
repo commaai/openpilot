@@ -3,52 +3,52 @@
 import {initCodec, withDecompressed} from "../codec/codec.js";
 import {Reader, compact, pattern} from "./capnp.js";
 import {migrate, withKeep} from "./migrate.js";
+import * as opfs from "./opfs.js";
 import {pack} from "./pack.js";
 import {CanFrames} from "./can.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const ready = initCodec().then(() => new Reader(schema));
 
-// compressed logs in OPFS keyed route/segment/file (the signed URLs change), so a revisit makes no requests
-async function file(key, create) {
-  let dir = await navigator.storage.getDirectory();
-  const parts = key.split("/");
-  for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p, {create});
-  return dir.getFileHandle(parts.at(-1), {create});
-}
+const RETRIES = 6;  // 0.5 s, then doubling: about 30 s of trying before a segment fails
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function cached(key) {
-  try {
-    const f = await (await file(key, false)).getFile();
-    return f.size ? await f.arrayBuffer() : null;
-  } catch {
-    return null;
+// the download, streamed so progress({loaded, total}) can follow it (at most 10 a second); network errors and
+// 5xx/429 responses retry with backoff, telling progress({retry, of, error}) first
+async function download(url, progress) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw Object.assign(new Error(`HTTP ${resp.status}`), {transient: resp.status >= 500 || resp.status === 429});
+      const total = +resp.headers.get("content-length") || 0, chunks = [], reader = resp.body.getReader();
+      let loaded = 0, last = 0;
+      for (let r; !(r = await reader.read()).done;) {
+        chunks.push(r.value);
+        loaded += r.value.length;
+        if (performance.now() - last > 100) {
+          last = performance.now();
+          progress({loaded, total});
+        }
+      }
+      const buf = new Uint8Array(loaded);
+      for (let k = 0, at = 0; k < chunks.length; at += chunks[k++].length) buf.set(chunks[k], at);
+      return buf.buffer;
+    } catch (e) {
+      // fetch() rejects with a TypeError on network failures (ERR_NETWORK_CHANGED, resets, ...)
+      if (!(e.transient ?? e instanceof TypeError) || attempt > RETRIES) throw e;
+      progress({retry: attempt, of: RETRIES, error: e.message});
+      await sleep(500 * 2 ** (attempt - 1));
+    }
   }
 }
 
-// written beside the final name and moved into place, so a partial file is never read back
-async function store(key, buf) {
-  try {
-    const part = await file(key + ".part", true), h = await part.createSyncAccessHandle();
-    try {
-      h.truncate(0);
-      h.write(new Uint8Array(buf), {at: 0});
-      h.flush();
-    } finally {
-      h.close();
-    }
-    await part.move(key.split("/").at(-1));
-  } catch {}  // no OPFS, over quota, or another worker is writing it
-}
-
-async function load(key, url) {
-  let buf = await cached(key);
-  if (buf) return {buf, cached: true};
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`fetch ${resp.status}`);
-  buf = await resp.arrayBuffer();
-  await store(key, buf);
-  return {buf, cached: false};
+// the log from the OPFS cache, else downloaded and cached; key is logs/dongle/route/segment/file
+async function load(key, url, progress) {
+  const f = await opfs.read(key);
+  if (f) return {buf: await f.arrayBuffer(), cached: true};
+  const buf = await download(url, progress), stored = await opfs.write(key, new Uint8Array(buf), "logs");
+  if (stored) opfs.evict("logs", key.split("/").slice(1, 3).join("/"));
+  return {buf, cached: false, stored};
 }
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
@@ -91,7 +91,7 @@ async function parse(buf, opts) {
 onmessage = async ({data: {id, op, key, url, buf, opts}}) => {
   try {
     if (op === "fetch") {
-      const r = await load(key, url);
+      const r = await load(key, url, (progress) => postMessage({id, progress}));
       postMessage({id, ...r}, [r.buf]);
     } else {
       const r = await parse(buf, opts);

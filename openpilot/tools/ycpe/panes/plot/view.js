@@ -1,6 +1,9 @@
-// view state shared by every plot pane: the hover tracker and undo/redo of the view
+// shared by every plot pane: the hover tracker, undo/redo of the view, the series drop target, and the time
+// whose logs aren't loaded
+import {status} from "/status.js";
 
-const panes = new Set();  // {overlay(), y, setY(y)}
+export const PATHS_MIME = "application/x-ycpe-paths";
+const panes = new Set();  // {overlay(), view, setView(view)}: view is a pane's own part ({y, range})
 const past = [], future = [];
 let tracker = null, lastKey = null, lastAt = 0;
 
@@ -14,6 +17,28 @@ export function track(t) {
   tracker = t;
   for (const p of panes) p.overlay();
 }
+
+// route time whose logs aren't in memory, as sorted [t0, t1] spans (segment n is [60n, 60n + 60)); none
+// when nothing publishes log status. onUnloaded(fn) runs fn when the spans change.
+let unloadedSpans = [], unloadedKey = "";
+const unloadedSubs = new Set();
+status.on(() => {
+  const segs = status.kinds().find((k) => k.name === "logs")?.segs || [];
+  const key = segs.map((s) => +(s.state === "ready")).join("");
+  if (key === unloadedKey) return;
+  unloadedKey = key;
+  unloadedSpans = [];
+  segs.forEach((s, n) => {
+    if (s.state === "ready") return;
+    const last = unloadedSpans.at(-1);
+    if (last?.[1] === n * 60) last[1] += 60;
+    else unloadedSpans.push([n * 60, n * 60 + 60]);
+  });
+  for (const fn of unloadedSubs) fn();
+});
+export const unloaded = () => unloadedSpans;
+export function onUnloaded(fn) { unloadedSubs.add(fn); return () => unloadedSubs.delete(fn); }
+export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b);
 
 // call before a view change; changes with the same key within 400 ms (a wheel burst, one drag) are one entry
 export function remember(clock, key = null) {
@@ -29,11 +54,11 @@ export function remember(clock, key = null) {
   future.length = 0;
 }
 
-const snapshot = (clock) => ({range: [...clock.range], ys: new Map([...panes].map((p) => [p, {...p.y}]))});
+const snapshot = (clock) => ({range: [...clock.range], views: new Map([...panes].map((p) => [p, p.view]))});
 
 function restore(clock, s) {
   clock.setRange(...s.range);
-  for (const [p, y] of s.ys) if (panes.has(p)) p.setY(y);
+  for (const [p, v] of s.views) if (panes.has(p)) p.setView(v);
 }
 
 export function undo(clock) {
@@ -50,4 +75,22 @@ export function redo(clock) {
   past.push(snapshot(clock));
   restore(clock, s);
   lastKey = null;
+}
+
+// el accepts series dragged from the browser; fn(paths)
+export function acceptPaths(el, fn) {
+  el.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes(PATHS_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    el.classList.add("drop");
+  });
+  el.addEventListener("dragleave", () => el.classList.remove("drop"));
+  el.addEventListener("drop", (e) => {
+    el.classList.remove("drop");
+    const data = e.dataTransfer.getData(PATHS_MIME);
+    if (!data) return;
+    e.preventDefault();
+    fn(JSON.parse(data));
+  });
 }

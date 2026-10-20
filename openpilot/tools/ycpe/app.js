@@ -10,14 +10,14 @@ import {Layout} from "/layout.js";
 import {PANES} from "/panes.js";
 import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
-import {status, loadPill, footprint} from "/status.js";
+import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
+import {omnibox, rememberRoute} from "/pages/omnibox.js";
 import {create as routesPane} from "/panes/routes.js";
 
-const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
 const DONGLE_RE = /^[0-9a-f]{16}$/i;
 
 export function go(path, replace = false) {
@@ -35,14 +35,13 @@ export function link(path) {
 
 export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
 
-// a route name, dongle id, connect or useradmin URL, typed or pasted anywhere
-function onebox(text) {
-  const s = decodeURIComponent(text.trim());
-  const m = s.match(ROUTE_RE);
-  if (m) return go(`/${m[1]}/${m[2]}${ws ? `/${ws.view}` : ""}`);
-  const d = s.match(/[0-9a-f]{16}/i);
-  if (d) return go(`/${d[0]}`);
-  toast("Enter a route name (dongle|time) or a dongle id");
+// the omnibox (pages/omnibox.js); switching routes keeps the open view
+function searchBox() {
+  return omnibox({
+    go: (path) => go(ws ? path.replace(/^(\/[0-9a-f]{16}\/[^/?]+)(?=\?|$)/, `$1/${ws.view}`) : path),
+    devices: () => state.devices,
+    onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
+  });
 }
 
 function toast(text) {
@@ -77,8 +76,7 @@ const bar = {
 };
 
 function topBar() {
-  const search = h("input", {type: "search", class: "omnibox", placeholder: "route or dongle id  ( / )", spellcheck: false,
-    onkeydown: (e) => { if (e.key === "Enter") { onebox(e.target.value); e.target.value = ""; e.target.blur(); } else if (e.key === "Escape") e.target.blur(); }});
+  const search = searchBox();
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
@@ -116,6 +114,7 @@ function updateTop() {
   bar.route.title = `${ws.route.fullname} · ${[ws.route.platform, ws.route.version].filter(Boolean).join(" · ")}`;
   bar.views.replaceChildren(...Object.entries(VIEWS).map(([k, v], i) => h("button", {class: `view ${k === ws.view ? "on" : ""}`, title: `${v.title} (${i + 1})`, onclick: () => ws.setView(k)}, v.title)));
   const layout = ws.layout;
+  if (!layout) return bar.tabs.replaceChildren();  // the view is still waiting on its files
   bar.tabs.replaceChildren(...layout.model.tabs.map((t, i) => h("button", {class: `tab ${i === layout.model.active ? "on" : ""}`,
     onclick: () => { layout.selectTab(i); updateTop(); },
     ondblclick: (e) => renameTab(e.currentTarget, i, t.name),
@@ -185,33 +184,11 @@ class Workspace {
     const urls = [];
     for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
     this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
-    let focusTimer = 0;
-    this.offs.push(this.clock.on("t", () => {
-      clearTimeout(focusTimer);
-      focusTimer = setTimeout(() => this.store.focus(this.clock.t), 150);
-    }));
-    // TODO(track 1): the store publishes to status itself, with download bytes per segment
-    const logs = status.source("logs", {order: 0});
-    const STATES = {queued: "queued", missing: "missing", done: "ready", error: "error"};
-    const publish = () => {
-      const segs = this.store.route.segments, p = this.store.progress;
-      logs.count(segs.length);
-      segs.forEach((s, n) => logs.seg(n, STATES[s.status] || "loading"));
-      logs.rate(p.bytes / ((performance.now() - p.start) / 1000));
-      logs.bytes({memory: this.store.bytes});
-      waiting();
-    };
-    // the playhead waits on its segment's logs
-    const waiting = () => {
-      const at = this.store.route.segments.find((s) => this.clock.t >= s.t0 && this.clock.t < s.t1);
-      logs.buffering(at && at.status !== "done" && at.status !== "missing" ? {n: at.n, text: `segment ${at.n}`} : null);
-    };
-    this.offs.push(logs.remove, this.clock.on("t", waiting));
+    // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
+    this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
       if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
-      publish();
     });
-    publish();
     for (const fn of this.storeSubs) fn(this.store);
     return this.store;
   }
@@ -221,6 +198,7 @@ class Workspace {
   setView(view) {
     if (!VIEWS[view]) view = "drive";
     this.view = view;
+    this.el.dataset.view = view;
     if (!this.layouts[view]) {
       const saved = JSON.parse(localStorage.getItem(`ycpe_layout_${view}`) || "null");
       const model = saved?.tabs?.length ? saved : VIEWS[view].layout;
@@ -353,6 +331,7 @@ async function render() {
       if (id !== navId) return;
       ws?.dispose();
       ws = new Workspace(route, files, parts[2] || "drive", {t: +q.get("t") || 0, repeat: Math.max(1, +q.get("repeat") || 1)});
+      rememberRoute(route);
       document.body.classList.add("in-ws");
       main.replaceChildren(ws.el);
     } catch (e) {

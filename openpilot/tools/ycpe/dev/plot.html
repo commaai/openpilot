@@ -157,6 +157,9 @@
       route ? col(plot("/carState/vEgo", "/carState/aEgo"), plot("/carState/gasPressed", "/carState/brakePressed"), plot("/selfdriveState/state", "/selfdriveState/alertText1"), plot("/carState/steeringAngleDeg"))
         : col(plot("/carState/vEgo", "/carState/steeringAngleDeg"), plot("/carState/gasPressed", "/deviceState/freeSpacePercent", "/carParams/steerRatio"),
           plot("/selfdriveState/state", "/selfdriveState/alertText1"), plot("/gpsLocationExternal/latitude")),
+    ]}}, {name: "xy", root: {split: "row", sizes: [0.5, 0.5], children: [
+      {pane: "xy", state: {curves: [{x: "/carState/vEgo", y: "/carState/steeringAngleDeg", color: "#3987e5"}]}},
+      {pane: "xy", state: {mode: "fft", curves: [{path: "/carState/steeringAngleDeg", color: "#d95926"}]}},
     ]}}]};
     const ctx = {route: {fullname: store.route.name}, clock, perf, theme, store, peekStore: () => store, onStore: (fn) => fn(store), openRoute() {}};
     const layout = window.layout = new Layout(ctx, JSON.parse(q.get("layout") || "null") || model, null);
