@@ -24,7 +24,8 @@ export async function openRoute(name, opts) {
 }
 
 export class Store {
-  // urls[n]: the log of segment n, a URL or {url, file, source} (file names the cache entry when the URL doesn't); keep: {service: [list path globs]} to split long lists from the start
+  // urls[k]: the log shown in slot k, a URL or {url, file, source, seg} (file names the cache entry when the URL doesn't;
+  // seg is the route's segment when only a range of it loads); keep: {service: [list path globs]} to split long lists from the start
   constructor(name, urls, {t = 0, repeat = 1, keep = {}, loader, budget = BUDGET} = {}) {
     const count = urls.length * repeat;
     this.route = {name, t0: null, duration: 0, segments: Array.from({length: count}, (_, n) => ({
@@ -62,10 +63,11 @@ export class Store {
         this.publish(seg);
         continue;
       }
-      seg.key = `${this.cacheDir}${local}/${e.file ?? new URL(e.url).pathname.split("/").at(-1)}`;
+      seg.real = e.seg ?? local;  // the route's segment, for a range of it (urls[k] then names its seg)
+      seg.key = `${this.cacheDir}${seg.real}/${e.file ?? new URL(e.url).pathname.split("/").at(-1)}`;
       seg.url = e.url;
       seg.source = e.source;
-      seg.opts = {n: local, shift: (seg.n - local) * SEGMENT};
+      seg.opts = {n: seg.real, shift: (seg.n - seg.real) * SEGMENT};
       this.publish(seg);
       this.progress.total++;
       this.load(seg, undefined, {can: true}).then((p) => {  // CAN frames come out of the first parse only
@@ -108,7 +110,7 @@ export class Store {
     this.loader.resize(near.every((s) => s.status !== "queued") ? Math.max(2, POOL >> 1) : POOL);
   }
 
-  // a load's progress: {loaded, total} downloading, {retry, of, error} before a retry, {parsing}
+  // a load's progress: {loaded, total} downloading, {retry, of, error} before a retry, {paused}, {parsing}
   report(seg, ev) {
     if (ev.retry) Object.assign(seg, {retry: `${ev.retry}/${ev.of}`, error: ev.error});
     else seg.retry = 0;
@@ -116,6 +118,7 @@ export class Store {
       this.received.push([performance.now(), ev.loaded - (seg.loading?.loaded || 0)]);
       seg.loading = {loaded: ev.loaded, total: ev.total};
     }
+    if (ev.paused && seg.loading) seg.loading.paused = true;
     if (ev.parsing) seg.loading = {loaded: 1, total: 1};
     this.publish(seg);
   }
@@ -124,7 +127,7 @@ export class Store {
   publish(seg) {
     const cached = seg.key in this.disk;
     const state = seg.status === "missing" || seg.status === "error" ? seg.status
-      : seg.loading ? "loading"
+      : seg.loading && !seg.loading.paused ? "loading"
       : seg.status === "done" && seg.bytes ? "ready"
       : cached ? "disk" : seg.status === "done" ? "idle" : "queued";
     this.status.seg(seg.n, state, {...seg.loading, source: seg.source, text: seg.retry ? `retrying (${seg.retry})` : null});
@@ -151,7 +154,7 @@ export class Store {
   buffering() {
     const seg = this.segmentAt(this.t), n = seg?.n;
     const waiting = seg && seg.status === "queued";
-    this.status.buffering(waiting ? {n, text: `segment ${n}${seg.retry ? ` · retrying (${seg.retry})` : ""}`} : null);
+    this.status.buffering(waiting ? {n, text: `segment ${seg.real ?? n}${seg.retry ? ` · retrying (${seg.retry})` : ""}`} : null);
   }
 
   on(event, fn) {
@@ -272,11 +275,12 @@ export class Store {
   decimate(path, t0, t1, n) {
     const s = this.series(path);
     if (!s || s.type === "t") return null;
+    const chunks = overlapping(s.chunks, t0, t1);
     let total = 0;
-    for (const c of s.chunks) total += Math.max(0, upperBound(c.tt, t1) - lowerBound(c.tt, t0));
+    for (const c of chunks) total += Math.max(0, upperBound(c.tt, t1) - lowerBound(c.tt, t0));
     if (total <= n) {
       const t = [], v = [];
-      for (const c of s.chunks) {
+      for (const c of chunks) {
         for (let k = lowerBound(c.tt, t0), end = upperBound(c.tt, t1); k < end; k++) {
           if (c.v[k] === c.v[k]) { t.push(c.tt[k]); v.push(c.v[k]); }
         }
@@ -292,7 +296,7 @@ export class Store {
       if (lo < min[b]) min[b] = lo;
       if (hi > max[b]) max[b] = hi;
     };
-    for (const c of s.chunks) {
+    for (const c of chunks) {
       const {tt, v} = c, k0 = lowerBound(tt, t0), k1 = upperBound(tt, t1);
       if (k1 <= k0) continue;
       // the coarsest level whose blocks still fit four to a bucket
@@ -446,6 +450,18 @@ function pyramid(c) {
     size = FANOUT;
   }
   return (c.pyramid = levels);
+}
+
+// the chunks overlapping [t0, t1], found by binary search: chunks follow each other in time
+function overlapping(chunks, t0, t1) {
+  let lo = 0, hi = chunks.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (chunks[mid].tt.at(-1) < t0) lo = mid + 1; else hi = mid;
+  }
+  let end = lo;
+  while (end < chunks.length && !(chunks[end].tt[0] > t1)) end++;
+  return chunks.slice(lo, end);
 }
 
 // first k with a[k] >= x
