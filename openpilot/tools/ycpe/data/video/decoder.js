@@ -1,14 +1,19 @@
-// one camera's decoder worker: streams the per-segment Annex B files, decodes from the keyframe before each
-// request and transfers the frames the page asked for. Frame n = segment * SEGMENT_FRAMES + index in the file.
+// one camera's decoder worker: loads the per-segment Annex B files (from the OPFS cache, else streamed from the
+// network and cached), decodes from the keyframe before each request and transfers the frames the page asked for.
+// Frame n = segment * SEGMENT_FRAMES + index in the file. It reports every segment's state to the page.
 import {AnnexB} from "./annexb.js";
 import {openBackend} from "./backends.js";
 import {SEGMENT_FRAMES} from "./frames.js";
+import * as opfs from "./opfs.js";
 
 const GAP = 40;   // decode forward through at most this many unwanted frames instead of restarting at a keyframe
 const KEEP = 3;   // segment files held in memory
+const AHEAD = 2;  // segments downloaded to disk ahead of the playhead while playing
 
-let urls = [];
-const segs = new Map();  // n → {n, data, length, au: AnnexB, done, failed, abort}
+let urls = [], keys = [];
+const segs = new Map();  // n → {n, data, length, au: AnnexB, done, failed, abort}: the files in memory
+const disk = new Map();  // n → bytes of the files cached on disk
+const fetching = new Set();
 let backend = null;      // null until the first segment's codec is known
 let want = null;         // {at, to, back, playing}: send frames [at - back, to], decoding toward at first
 let next = -1;           // the next frame to feed, -1 to restart at the keyframe before want.at
@@ -17,12 +22,19 @@ let key = -1;            // the keyframe of the current run, always sent so scru
 let fresh = true;        // the next chunk is the first of a run and needs the parameter sets
 const sent = new Set();  // frames the page holds (or has in flight)
 const pool = [];         // plane buffers the page is done with
-let decoded = 0, bytes = 0;
+let waitingOn = null, decoded = 0, received = 0;
 
-onmessage = ({data}) => {
-  if (data.urls) urls = data.urls;
+onmessage = async ({data}) => {
   for (const n of data.closed || []) sent.delete(n);
   pool.push(...data.buffers || []);
+  if (data.urls) {
+    ({urls, keys} = data);
+    await Promise.all(urls.map(async (u, n) => {
+      const f = u && await opfs.read(keys[n]);
+      if (f) disk.set(n, f.size);
+      state(n, !u ? "missing" : f ? "disk" : "idle");
+    }));
+  }
   if (data.want) {
     want = data.want;
     // restart unless the decoder is already headed to at, or the page has it
@@ -31,12 +43,36 @@ onmessage = ({data}) => {
   }
 };
 
+// a segment's state for the page, at most once per percent of a download
+const states = [];
+function state(n, s, loaded = 0, total = 0) {
+  const tag = `${s} ${total && Math.floor(100 * loaded / total)}`;
+  if (states[n] !== tag) postMessage({seg: n, state: s, loaded, total});
+  states[n] = tag;
+}
+
+// memory, disk and download rate, twice a second
+let lastReceived = 0;
+setInterval(() => {
+  let memory = 0;
+  for (const s of segs.values()) memory += s.data?.byteLength || 0;
+  postMessage({memory, disk: [...disk.values()].reduce((a, b) => a + b, 0), rate: (received - lastReceived) * 2, decoded});
+  lastReceived = received;
+}, 500);
+
+// the playhead's segment isn't here yet: s, or null once it is
+function waiting(s) {
+  const b = s && {n: s.n, loaded: s.length, total: s.data?.length || 0};
+  if (JSON.stringify(b) !== JSON.stringify(waitingOn)) postMessage({buffering: b});
+  waitingOn = b;
+}
+
 function emit(n, frame) {
   out = n + 1;
   decoded++;
   if (want && (n === key || (n >= want.at - want.back && n <= want.to)) && !sent.has(n)) {
     sent.add(n);
-    postMessage({n, frame, decoded, bytes}, frame.data ? [frame.data.buffer] : [frame]);
+    postMessage({n, frame}, frame.data ? [frame.data.buffer] : [frame]);
   } else {
     frame.close?.();
   }
@@ -54,35 +90,93 @@ function segment(n) {
     segs.set(n, s);
     if (!s.failed) load(s);
     const far = [...segs.values()].sort((a, b) => Math.abs(b.n - n) - Math.abs(a.n - n));
-    for (const f of far.slice(0, Math.max(0, segs.size - KEEP))) { f.abort.abort(); segs.delete(f.n); }
+    for (const f of far.slice(0, Math.max(0, segs.size - KEEP))) {
+      f.abort.abort();
+      segs.delete(f.n);
+      if (urls[f.n]) state(f.n, disk.has(f.n) ? "disk" : "idle");
+    }
   }
   return s;
 }
 
 async function load(s) {
   try {
-    const resp = await fetch(urls[s.n], {signal: s.abort.signal});
-    if (!resp.ok) throw new Error(`${resp.status}`);
-    s.data = new Uint8Array(+resp.headers.get("content-length") || 64 << 20);
-    for await (const chunk of resp.body) {
-      if (s.length + chunk.length > s.data.length) {
-        const grown = new Uint8Array(2 * (s.length + chunk.length));
-        grown.set(s.data.subarray(0, s.length));
-        s.data = grown;
+    const cached = await opfs.read(keys[s.n]);
+    if (cached) {
+      s.data = new Uint8Array(await cached.arrayBuffer());
+      s.length = s.data.length;
+      await scanned(s);
+    } else {
+      fetching.add(s.n);
+      const resp = await fetch(urls[s.n], {signal: s.abort.signal});
+      if (!resp.ok) throw new Error(`${resp.status}`);
+      s.data = new Uint8Array(+resp.headers.get("content-length") || 64 << 20);
+      for await (const chunk of resp.body) {
+        if (s.length + chunk.length > s.data.length) {
+          const grown = new Uint8Array(2 * (s.length + chunk.length));
+          grown.set(s.data.subarray(0, s.length));
+          s.data = grown;
+        }
+        s.data.set(chunk, s.length);
+        s.length += chunk.length;
+        received += chunk.length;
+        state(s.n, "loading", s.length, s.data.length);
+        await scanned(s);
       }
-      s.data.set(chunk, s.length);
-      s.length += chunk.length;
-      bytes += chunk.length;
-      s.au.scan(s.data, s.length, false);
-      if (backend === null && s.au.codec) await start(s.au.codec);
-      pump();
+      fetching.delete(s.n);
+      save(s.n, s.data.subarray(0, s.length));
     }
     s.au.scan(s.data, s.length, true);
     s.done = true;
+    if (segs.get(s.n) === s) state(s.n, "ready");
   } catch (e) {
+    fetching.delete(s.n);
     if (s.abort.signal.aborted) return;
     s.failed = true;
+    state(s.n, "error");
   }
+  pump();
+}
+
+async function scanned(s) {
+  s.au.scan(s.data, s.length, false);
+  if (backend === null && s.au.codec) await start(s.au.codec);
+  pump();
+}
+
+async function save(n, bytes) {
+  if (!await opfs.write(keys[n], bytes)) return;
+  disk.set(n, bytes.length);
+  const route = keys[n].split("/").slice(0, 2).join("/") + "/";
+  for (const k of await opfs.evict(route)) {
+    const i = keys.indexOf(k);
+    if (i >= 0) { disk.delete(i); if (!segs.has(i)) state(i, "idle"); }
+  }
+}
+
+// download to disk only, one at a time behind every other download, to ride out the network during playback
+async function prefetch(n) {
+  if (!urls[n] || segs.has(n) || disk.has(n) || fetching.size) return;
+  fetching.add(n);
+  state(n, "queued");
+  try {
+    const resp = await fetch(urls[n]);
+    if (!resp.ok) throw new Error(`${resp.status}`);
+    const total = +resp.headers.get("content-length");
+    const parts = [];
+    let loaded = 0;
+    for await (const chunk of resp.body) {
+      parts.push(chunk);
+      loaded += chunk.length;
+      received += chunk.length;
+      state(n, "loading", loaded, total);
+    }
+    await save(n, await new Blob(parts).bytes());
+    if (!segs.has(n)) state(n, disk.has(n) ? "disk" : "idle");
+  } catch {
+    state(n, "error");
+  }
+  fetching.delete(n);
   pump();
 }
 
@@ -94,8 +188,13 @@ async function start(codec) {
 
 function pump() {
   if (!want) return;
-  segment(Math.floor(want.at / SEGMENT_FRAMES));  // starts the download, which opens the backend
-  if (!backend || (next < 0 && !restart())) return;
+  const s = segment(Math.floor(want.at / SEGMENT_FRAMES));  // starts the download, which opens the backend
+  if (want.playing) {
+    segment(s.n + 1);
+    for (let i = 2; i <= AHEAD + 1; i++) prefetch(s.n + i);
+  }
+  if (!backend) return waiting(s.done || s.failed ? null : s);
+  if (next < 0 && !restart()) return;
   while (next <= want.to && backend.ready()) {
     const s = segment(Math.floor(next / SEGMENT_FRAMES)), i = next % SEGMENT_FRAMES;
     if (s.failed || (s.done && i >= s.au.aus.length)) {  // missing or short segment: the next one starts with a keyframe
@@ -104,7 +203,7 @@ function pump() {
       continue;
     }
     const au = s.au.aus[i];
-    if (!au) return;  // still downloading; load() pumps again
+    if (!au) return waiting(next <= want.at ? s : null);  // still downloading; load() pumps again
     if (fresh && !au.key) { next = -1; return; }
     let data = s.data.subarray(au.off, au.off + au.len);
     if (fresh && au.off) data = concat(s.data.subarray(0, s.au.header), data);
@@ -112,13 +211,14 @@ function pump() {
     fresh = false;
     next++;
   }
-  if (want.playing) segment(Math.floor(want.to / SEGMENT_FRAMES) + 1);  // stream the next segment ahead
+  waiting(null);
 }
 
 // start over at the keyframe at or before want.at, once its segment has that far
 function restart() {
   const s = segment(Math.floor(want.at / SEGMENT_FRAMES)), aus = s.au.aus;
-  if (s.failed || !aus.length || (!s.done && aus.length <= want.at % SEGMENT_FRAMES)) return false;
+  if (s.failed) return false;
+  if (!aus.length || (!s.done && aus.length <= want.at % SEGMENT_FRAMES)) return waiting(s), false;
   let k = Math.min(want.at % SEGMENT_FRAMES, aus.length - 1);
   while (k > 0 && !aus[k].key) k--;
   backend.reset();

@@ -20,11 +20,14 @@ const notify = {name: "status", render() { for (const fn of subs) fn(); }};
 const changed = () => perf.invalidate(notify);
 
 export const status = {
-  // a loader's handle; order sorts the playbar lanes
+  // a loader's handle; order sorts the playbar lanes. Loaders of the same data (two panes on one camera) share a
+  // source, which goes away when the last of them removes it
   source(name, {label = name, order = 10} = {}) {
-    const src = {name, label, order, segs: [], buffering: null, memory: 0, disk: 0, rate: 0};
-    kinds.set(name, src);
+    let src = kinds.get(name);
+    if (!src) kinds.set(name, src = {name, label, order, segs: [], buffering: null, memory: 0, disk: 0, rate: 0, refs: 0});
+    src.refs++;
     changed();
+    let removed = false;
     return {
       seg(n, state, {loaded = 0, total = 0, source = null} = {}) {
         const s = src.segs[n] ||= {state: "idle", loaded: 0, total: 0, source: null};
@@ -49,7 +52,12 @@ export const status = {
       },
       bytes({memory = src.memory, disk = src.disk}) { src.memory = memory; src.disk = disk; changed(); },
       rate(bytesPerSec) { src.rate = bytesPerSec; changed(); },
-      remove() { kinds.delete(name); changed(); },
+      remove() {
+        if (removed) return;
+        removed = true;
+        if (--src.refs === 0) kinds.delete(name);
+        changed();
+      },
     };
   },
   kinds: () => [...kinds.values()].sort((a, b) => a.order - b.order),
