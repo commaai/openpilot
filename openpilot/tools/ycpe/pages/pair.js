@@ -1,12 +1,14 @@
 // pairing, as connect does it: the add-device dialog scans the QR code on the device's screen (the camera and the
 // platform's BarcodeDetector; where there's neither, the link that QR code holds can be pasted), a pair link
 // (?pair=<token>, that QR code opened with any phone camera) pairs in a dialog over the page it opens, and noDevices()
-// is connect's empty state. Loaded when needed: app.js imports it for a pair link or an account without devices
+// is connect's empty state. Loaded when needed: app.js imports it for a pair link or an account without devices.
+// In user mode all of it is connect's to the pixel (cnui.js); developer mode keeps the theme's
 import {api, auth} from "../api.js";
 import {h, css} from "../dom.js";
 import {icon} from "../icons.js";
 import {go, devicesChanged} from "../app.js";
 import {loginPath} from "./login.js";
+import {userMode, cnIcon, cnModal, progress, fill} from "./cnui.js";
 
 await css(new URL("./pair.css", import.meta.url));
 
@@ -50,13 +52,22 @@ async function pair({token, fromUrl}) {
 }
 
 // the device's page, in the mode the pairing started from
-const devicePath = (dongleId) => `${location.pathname.startsWith("/connect") ? "/connect" : ""}/${dongleId}`;
-const paired = (dongleId) => h("p", {}, "Successfully paired device ", h("b", {class: "mono"}, dongleId));
+const devicePath = (dongleId) => `${userMode() ? "/connect" : ""}/${dongleId}`;
+const paired = (dongleId) => h("p", {}, "Successfully paired device ", h("b", {class: userMode() ? null : "mono"}, dongleId));
+// a button over the camera (connect's white pill) or closing the pair link's dialog (its grey one)
+const button = (text, onclick, grey = false) =>
+  h("button", {class: userMode() ? `cnui-btn ${grey ? "grey" : "white"}` : `button${grey ? " primary" : ""}`, onclick}, text);
+const spinner = (size) => userMode() ? progress(size, size > 32 ? "#525E66" : "") : h("span", {class: "spinner big"});
 
 // a modal in the theme; Escape, the x or a click outside closes it, and onclose runs once it has. It takes the focus
-// itself, so the x isn't drawn focused
+// itself, so the x isn't drawn focused. In user mode connect's: its paper, title and rule, no x
 function modal(title, caption, onclose) {
   const body = h("div", {class: "pair-body"});
+  if (userMode()) {
+    const {el, paper} = cnModal(title, caption ? "pair-paper" : "pair-paper link", onclose);
+    paper.append(h("div", {class: "pair-title"}, h("h2", {}, title), caption && h("span", {}, caption)), h("hr"), body);
+    return {el, body};
+  }
   const el = h("dialog", {class: "pair-dialog", "aria-label": title, autofocus: true, onclose: () => { el.remove(); onclose(); },
     onclick: (e) => { if (e.target === el) el.close(); }},  // the dialog has no padding: only the backdrop is itself
   h("div", {class: "pair-card"},
@@ -105,22 +116,23 @@ export async function openPair() {
     if (busy || dongleId) return;
     busy = true;
     video.pause();
-    say(h("span", {class: "spinner big"}));
+    say(spinner(48));
     try {
       dongleId = await pair(readQr(text));
-      say(paired(dongleId), h("button", {class: "button", onclick: () => el.close()}, "close"));
+      say(paired(dongleId), button("close", () => el.close()));
     } catch (e) {
-      say(h("p", {}, `Error: ${e.message}`), h("button", {class: "button", onclick: again}, "try again"));
+      say(h("p", {}, `Error: ${e.message}`), button("try again", again));
     }
     busy = false;
   }
 
-  // without a camera or a reader: say why, and take the link pasted instead
+  // without a camera or a reader: say why, and take the link pasted instead (user mode, as connect: without a camera
+  // only why; the paste is for a browser that can't read the code)
   const input = h("input", {class: "field mono", placeholder: "https://connect.comma.ai/?pair=…", "aria-label": "Pair link", autocomplete: "off", spellcheck: false, required: true});
-  const fallback = (why) => {
-    body.replaceChildren(h("p", {}, why), h("p", {}, "You can also scan the QR code using any other QR code reader application."),
-      h("form", {class: "pair-paste", onsubmit: (e) => { e.preventDefault(); read(input.value.trim()); }},
-        h("label", {class: "small muted"}, "Or paste the link it opens:", input), h("button", {class: "button primary"}, "Pair")),
+  const fallback = (why, paste = true) => {
+    fill(body, h("p", {}, why), userMode() && h("br"), h("p", {}, "You can also scan the QR code using any other QR code reader application."),
+      (paste || !userMode()) && h("form", {class: "pair-paste", onsubmit: (e) => { e.preventDefault(); read(input.value.trim()); }},
+        h("label", {class: "small muted"}, "Or paste the link it opens:", input), h("button", {class: userMode() ? "cnui-btn white" : "button primary"}, "Pair")),
       status);
     status.classList.add("inline");
   };
@@ -129,11 +141,11 @@ export async function openPair() {
   const camera = await navigator.mediaDevices?.enumerateDevices().then((list) => list.some((d) => d.kind === "videoinput"), () => false);
   if (!el.open) return;
   if (!detector) return fallback("This browser can't read QR codes. Scan the one on your device with your phone's camera: it opens a link that pairs it.");
-  if (!camera) return fallback("Camera not found, please enable camera access.");
+  if (!camera) return fallback("Camera not found, please enable camera access.", false);
   try {
     stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment", width: {ideal: 1280}, height: {ideal: 720}}});
   } catch (e) {
-    return el.open && fallback(CAMERA[e.name] ?? "Unable to access camera.");
+    return el.open && fallback(CAMERA[e.name] ?? "Unable to access camera.", false);
   }
   if (!el.open) return stream.getTracks().forEach((track) => track.stop());
   video.srcObject = stream;
@@ -141,22 +153,31 @@ export async function openPair() {
   scan();
 }
 
-// the add-device entry point: connect's "add new device", optionally with its icon (the sidebar's row)
-export const pairButton = (text = "add new device", withIcon = false) =>
-  h("button", {class: `button pair-add${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, withIcon && icon("add_circle_outline", 20));
+// the add-device entry point: connect's "add new device", optionally with its icon (the sidebar's row). In user mode
+// connect's white pill, a row (its icon shown) in the device list
+export const pairButton = (text = "add new device", withIcon = false) => userMode()
+  ? h("button", {class: `cnui-btn white pair-cn${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, cnIcon("add", 24))
+  : h("button", {class: `button pair-add${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, withIcon && icon("add_circle_outline", 20));
 
-// signed in, without a device: connect's NoDeviceUpsell
-export const noDevices = () => h("div", {class: "pair-empty"},
-  h("div", {class: "pair-copy"},
-    h("h2", {}, "Pair your device"),
-    h("p", {}, "Scan the QR code on your device. If you cannot see a QR code, check the following:"),
-    h("ul", {},
-      h("li", {}, "Your device is connected to the internet"),
-      h("li", {}, "You have installed the latest version of openpilot"),
-      h("li", {}, "You may need to look for \"Pair Device\" in Settings")),
-    h("p", {}, "If you still cannot see a QR code, your device may already be paired to another account. Make sure you have signed in with the same account you may have used previously."),
-    pairButton()),
-  h("img", {class: "pair-device", src: new URL("../icons/comma-device.webp", import.meta.url), alt: "comma four", width: 960, height: 741, decoding: "async"}));
+const STEPS = ["Your device is connected to the internet", "You have installed the latest version of openpilot", "You may need to look for \"Pair Device\" in Settings"];
+const ELSEWHERE = "If you still cannot see a QR code, your device may already be paired to another account. Make sure you have signed in with the same account you may have used previously.";
+
+// signed in, without a device: connect's NoDeviceUpsell (in user mode its type and its picture of the device)
+export const noDevices = () => userMode()
+  ? h("div", {class: "pair-empty um"},
+    h("div", {class: "pair-copy"}, h("h2", {}, "Pair your device"),
+      h("p", {}, "Scan the QR code on your device. If you cannot see a QR code, check the following:"),
+      h("ul", {}, STEPS.map((s) => h("li", {}, s))), h("p", {}, ELSEWHERE), h("div", {class: "pair-add-wrap"}, pairButton())),
+    h("div", {class: "pair-picture"},
+      h("img", {src: new URL("../icons/comma-device-connect.webp", import.meta.url), alt: "comma four", width: 1472, height: 981, decoding: "async"})))
+  : h("div", {class: "pair-empty"},
+    h("div", {class: "pair-copy"},
+      h("h2", {}, "Pair your device"),
+      h("p", {}, "Scan the QR code on your device. If you cannot see a QR code, check the following:"),
+      h("ul", {}, STEPS.map((s) => h("li", {}, s))),
+      h("p", {}, ELSEWHERE),
+      pairButton()),
+    h("img", {class: "pair-device", src: new URL("../icons/comma-device.webp", import.meta.url), alt: "comma four", width: 960, height: 741, decoding: "async"}));
 
 // a device's pair link (?pair=<token>): signed out, sign in first (the token rides along in next=); signed in, it
 // pairs in connect's "Pairing device" dialog over the page. The token leaves the URL, so neither a reload nor going
@@ -171,9 +192,9 @@ export function handlePairLink(q) {
   q.delete("pair");
   history.replaceState(null, "", location.pathname + (q.size ? `?${q}` : "") + location.hash);
   let dongleId = null;
-  const status = h("div", {class: "pair-status inline"}, h("span", {class: "spinner big"}));
+  const status = h("div", {class: "pair-status inline"}, spinner(32));
   const {el, body} = modal("Pairing device", null, () => { if (dongleId) go(devicePath(dongleId)); });
-  const close = h("button", {class: "button primary", onclick: () => el.close()}, "Close");
+  const close = button("Close", () => el.close(), true);
   body.append(status, h("div", {class: "pair-actions"}, close));
   close.focus();
   pair({token, fromUrl: true}).then((id) => {
