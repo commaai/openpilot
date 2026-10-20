@@ -40,7 +40,7 @@ Without the daemon these features are disabled, with a short note saying they ne
 **Is it safe?**
 1. The daemon only listens on 127.0.0.1, and it refuses requests addressed to any other host name, which blocks DNS rebinding.
 2. Every API call needs a random token that only the page `serve.py` served carries. Other websites can't get it, because
-   cross-origin requests get no CORS headers and are rejected.
+   cross-origin requests get no CORS headers and are rejected, and no other site may frame the app.
 3. It reads files only from the cache, your data dirs and your checkouts, and it writes only to the cache and to opendbc's DBC folder.
 4. It never modifies anything on a comma device or in your comma account. The only commands it runs on a device are `cat` and `find`.
 5. Your JWT and the session token are never logged.

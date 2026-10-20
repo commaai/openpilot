@@ -49,6 +49,8 @@ class Handler(SimpleHTTPRequestHandler):
     self.send_header("Cache-Control", "no-store")
     self.send_header("Referrer-Policy", "no-referrer")
     self.send_header("X-Content-Type-Options", "nosniff")
+    self.send_header("X-Frame-Options", "DENY")  # the page runs signed in: no other site may frame it
+    self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
     super().end_headers()
 
   def _headers(self) -> dict[str, str]:

@@ -128,6 +128,12 @@ class TestSecurity(DaemonCase):
     r, _ = self.req("/local/test/file/link/secret.txt")
     self.assertEqual(r.status, 403)
 
+  def test_no_framing(self):
+    for path in ("/", "/local/caps"):
+      r, _ = self.req(path, token=False)
+      self.assertEqual(r.getheader("X-Frame-Options"), "DENY", path)
+      self.assertEqual(r.getheader("Content-Security-Policy"), "frame-ancestors 'none'", path)
+
   def test_confine(self):
     self.assertEqual(str(confine(os.path.join(_root, "data.bin"), [_root])), os.path.realpath(os.path.join(_root, "data.bin")))
     with self.assertRaises(core.HTTPError):
