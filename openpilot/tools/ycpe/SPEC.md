@@ -268,6 +268,20 @@ browser→panes/browser.js, logs→panes/logs.js, inspector→panes/inspector.js
 
    It stops when a round turns up nothing new.
 
+## Final polish loop (after every track has merged)
+A large review team, each reviewer with a deliberately different prior, reviews all of YCPE; a separate fix team
+fixes what survives; repeat until reviewers come back nearly empty.
+- Lenses: logic and state bugs; interaction (every control, keyboard, drag/drop, undo); visual (pixels, alignment,
+  both themes, typography); layouts and responsiveness (every view, pane mix, size from phone to 4K, DPR 1/2);
+  lag adversaries (hours-long routes, many panes, fast scrubbing, throttled CPU and network, trying to drop frames);
+  data correctness (parity with Python, migrations, CAN/DBC, video frame alignment); failure handling (offline,
+  401/403/404, partial uploads, daemon down); security (daemon, tokens, untrusted layouts); code quality and size.
+- Priors differ on purpose (a new user, a cabana power user, a plotjuggler user, a controls engineer on a fork,
+  a pixel-perfect designer, a hostile tester, a perf engineer, a maintainer reading the code cold).
+- Every finding needs evidence (a repro, screenshot or trace) and is adversarially verified before it's fixed.
+- Fixes are partitioned by file ownership so fixers never collide; root line-reviews every fix before merge.
+- Exit: two consecutive rounds with no verified finding above "nit", and the harness green with zero drops.
+
 ## Spike status
 
 - codec.wasm is built: zstd decodes at 550 MB/s, byte-exact for zstd and bz2.

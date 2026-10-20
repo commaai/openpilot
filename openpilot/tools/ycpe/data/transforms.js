@@ -203,8 +203,8 @@ const ops = {
   // single-sided amplitude spectrum of the range, resampled to a uniform grid and Hann windowed
   fft({path, t0, t1}) {
     const s = series.get(path), [a, b] = range(s, t0, t1), count = b - a;
-    if (count < 4) return {f: new Float64Array(0), mag: new Float64Array(0)};
-    const n = 2 ** Math.min(16, Math.floor(Math.log2(count)));
+    if (count < 4) return {f: new Float64Array(0), mag: new Float64Array(0), bounds: [0, 1, 0, 1]};
+    const n = 2 ** Math.min(16, Math.ceil(Math.log2(count)));
     const dt = (s.t[b - 1] - s.t[a]) / (n - 1);
     const grid = Float64Array.from({length: n}, (_, i) => s.t[a] + i * dt);
     const re = resample(grid, s.t.subarray(a, b), s.v.subarray(a, b)), im = new Float64Array(n);
@@ -217,7 +217,9 @@ const ops = {
       f[k] = k / (n * dt);
       mag[k] = 4 * Math.hypot(re[k], im[k]) / n;  // ×2 single-sided, ×2 Hann gain
     }
-    return {f, mag};
+    let top = 0;
+    for (let k = 1; k < half; k++) top = Math.max(top, mag[k]);
+    return {f, mag, bounds: [f[1], f[half - 1], 0, top]};
   },
 };
 
@@ -249,7 +251,7 @@ function fftInPlace(re, im) {
   }
 }
 
-if (typeof window === "undefined" && self.location.href === import.meta.url) {
+if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
   onmessage = ({data: {id, op, args, data}}) => {
     for (const [path, {version, chunks}] of Object.entries(data)) series.set(path, {version, ...concat(chunks)});
     try {

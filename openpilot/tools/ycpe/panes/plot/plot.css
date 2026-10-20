@@ -45,3 +45,9 @@
 .browser .twisty { flex-shrink: 0; width: 12px; color: var(--muted); }
 .browser .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .browser .val { flex-shrink: 0; max-width: 45%; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* custom series console */
+.plot-popup.plot-console { width: 460px; max-width: calc(100vw - 8px); max-height: calc(100vh - 8px); }
+.plot-console textarea { height: auto; padding: 4px; font: 11px/1.4 var(--mono); resize: vertical; tab-size: 2; }
+.plot-console .hint { padding: 0 4px; color: var(--muted); font: 11px var(--mono); }
+.plot-console .error { min-height: 1.4em; padding: 0 4px; white-space: pre-wrap; }
