@@ -9,12 +9,13 @@ const dirty = new Set();
 const ticks = new Set();
 const frames = [];               // {t, interval, work, panes: {name: ms}}
 const longFrames = [];           // long-animation-frame entries, newest last
+const dropped = [];              // the frames that came late, newest last
 const marks = {};
 let last = 0, drops = 0, frameNo = 0;
 let refresh = 1000 / 60;         // learned display interval
 
 export const perf = {
-  frames, longFrames, marks,
+  frames, longFrames, dropped, marks,
   get drops() { return drops; },
 
   // pane.render(frame) runs once on the next frame
@@ -40,7 +41,11 @@ function loop(now) {
   last = now;
   if (interval < refresh * 1.2) refresh += (interval - refresh) * 0.05;
   const frame = current = {t: now, n: frameNo++, interval, work: 0, panes: {}};
-  if (interval > refresh * 1.5 && !document.hidden) drops += Math.round(interval / refresh) - 1;
+  if (interval > refresh * 1.5 && !document.hidden) {
+    drops += Math.round(interval / refresh) - 1;
+    dropped.push(frame);
+    if (dropped.length > 50) dropped.shift();
+  }
 
   const start = performance.now();
   for (const fn of ticks) fn(frame);
@@ -117,7 +122,7 @@ function perfPanel(onClose) {
   const longs = h("div", {class: "perf-longs"});
   const el = h("div", {class: "perf-panel"},
     h("div", {class: "perf-head"}, h("b", {}, "Performance"),
-      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = 0; }}, "reset"),
+      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = dropped.length = 0; }}, "reset"),
       h("button", {class: "link", onclick: () => close()}, "close")),
     chart, table, longs);
   document.body.append(el);

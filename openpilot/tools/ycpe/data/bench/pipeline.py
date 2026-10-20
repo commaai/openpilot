@@ -33,8 +33,8 @@ def run(ctx, url, profile, timeout):
   page.add_init_script(LOAF)
   page.on("pageerror", lambda e: print("pageerror:", e))
   page.goto(url)
-  peak, start = 0, time.time()
-  while time.time() - start < timeout:
+  peak, start = 0, time.monotonic()
+  while time.monotonic() - start < timeout:
     peak = max(peak, rss(profile))
     if page.evaluate("window.bench?.done != null"):
       break

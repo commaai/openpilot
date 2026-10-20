@@ -21,6 +21,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-  port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+  port = int(sys.argv[1]) if len(sys.argv) > 1 else 3000  # athena only allows localhost:3000
   print(f"http://localhost:{port}/")
   ThreadingHTTPServer(("", port), partial(Handler, directory=str(ROOT))).serve_forever()
