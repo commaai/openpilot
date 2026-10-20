@@ -94,7 +94,7 @@
           const [type, make, names] = defs[path];
           const {t, v, i} = make();
           const s = {path, type, names, t, v, i, version: 1, levels: type === "t" || i ? [] : pyramid(v)};
-          s.chunks = [i ? {t, v, i} : {t, v}];
+          s.chunks = [i ? {t, v, i, tt: Float64Array.from(i, (k) => t[k])} : {t, v, tt: t}];
           data.set(path, s);
         }
         return data.get(path);
@@ -108,7 +108,7 @@
         put(path, {type, t, v, names}) {
           const old = data.get(path);
           const s = {path, type, names, t, v, version: (old?.version || 0) + 1, levels: type === "t" ? [] : pyramid(v)};
-          s.chunks = [{t, v}];
+          s.chunks = [{t, v, tt: t}];
           defs[path] ||= [type, null, names];
           data.set(path, s);
           if (!old) store.emit("paths");
@@ -143,21 +143,8 @@
       return store;
     }
 
-    // until the real store has put(): one sorted chunk per derived path
-    function polyfillPut(store) {
-      store.put ??= function (path, {type, t, v, names}) {
-        const isNew = !this.meta.has(path);
-        this.meta.set(path, {path, type, ...(names && {names})});
-        this.cols.set(path, [{n: 0, t, v}]);
-        this.cache.delete(path);
-        if (isNew) this.emit("paths");
-        this.emit("segment", 0);
-      };
-      return store;
-    }
-
     const route = q.get("route");
-    const store = route ? polyfillPut(await openRoute(route, {repeat: +(q.get("repeat") || 1)})) : fakeStore(+(q.get("hours") || 10));
+    const store = route ? await openRoute(route, {repeat: +(q.get("repeat") || 1)}) : fakeStore(+(q.get("hours") || 10));
     const clock = createClock(store.route.duration);
     store.on("progress", () => clock.setDuration(store.route.duration));
     window.store = store;

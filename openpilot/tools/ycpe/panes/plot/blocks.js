@@ -6,14 +6,13 @@ const cache = new WeakMap();  // chunk values → {t: run starts, v: run values,
 function runs(c) {
   let r = cache.get(c.v);
   if (r) return r;
-  const len = c.i ? c.i.length : c.t.length, at = (k) => c.t[c.i ? c.i[k] : k];
-  const t = [], v = [];
-  for (let k = 0; k < len; k++) {
+  const {tt} = c, t = [], v = [];
+  for (let k = 0; k < tt.length; k++) {
     const x = c.v[k];
     if (x === null || x !== x) continue;
-    if (!v.length || x !== v[v.length - 1]) { t.push(at(k)); v.push(x); }
+    if (!v.length || x !== v[v.length - 1]) { t.push(tt[k]); v.push(x); }
   }
-  r = {t: Float64Array.from(t), v, end: len ? at(len - 1) : -Infinity};
+  r = {t: Float64Array.from(t), v, end: tt.length ? tt[tt.length - 1] : -Infinity};
   cache.set(c.v, r);
   return r;
 }

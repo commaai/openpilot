@@ -83,20 +83,20 @@ function rpy(_, [w, x, y, z], axis) {
 
 const series = new Map();  // path → {version, t, v}
 
+// one {t, v} from store chunks ({tt, v}), without missing values
 export function concat(chunks) {
   let n = 0, text = false;
   for (const c of chunks) {
-    n += c.i ? c.i.length : c.t.length;
+    n += c.tt.length;
     text ||= !ArrayBuffer.isView(c.v) && c.v.some((x) => typeof x === "string");
   }
   const t = new Float64Array(n), v = text ? new Array(n) : new Float64Array(n);
   let k = 0;
-  for (const c of chunks) {
-    const len = c.i ? c.i.length : c.t.length;
-    for (let j = 0; j < len; j++) {
-      const x = c.v[j];
+  for (const {tt, v: cv} of chunks) {
+    for (let j = 0; j < tt.length; j++) {
+      const x = cv[j];
       if (x === null || x !== x) continue;
-      t[k] = c.t[c.i ? c.i[j] : j];
+      t[k] = tt[j];
       v[k++] = x;
     }
   }
@@ -284,7 +284,7 @@ export function compute(store, op, args, paths) {
     if (!s) return Promise.reject(new Error(`no series ${path}`));
     if (have.get(path) === s.version) continue;
     have.set(path, s.version);
-    data[path] = {version: s.version, chunks: s.chunks};
+    data[path] = {version: s.version, chunks: s.chunks.map(({tt, v}) => ({tt, v}))};
   }
   const id = nextId++;
   worker.postMessage({id, op, args, data});

@@ -43,7 +43,7 @@ export function evaluate(store, path, {inputs, globals = "", code}) {
     for (const p of inputs) {
       const s = store.series(p);
       if (!s) return reject(new Error(`no series ${p}`));
-      data[p] = s.chunks;
+      data[p] = s.chunks.map(({tt, v}) => ({tt, v}));
     }
     const w = new Worker(import.meta.url, {type: "module"});
     const timer = setTimeout(() => { w.terminate(); reject(new Error(`timed out after ${TIMEOUT_MS / 1000} s`)); }, TIMEOUT_MS);
