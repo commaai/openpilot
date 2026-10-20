@@ -41,8 +41,9 @@
   };
 
   const els = [];
+  const modal = document.querySelector("dialog:modal");  // the page under a modal dialog is inert, nothing there to lint
   for (const el of document.body.querySelectorAll("*")) {
-    if (el.ownerSVGElement || (cfg.ignore && el.closest(cfg.ignore))) continue;
+    if (el.ownerSVGElement || (cfg.ignore && el.closest(cfg.ignore)) || (modal && !modal.contains(el))) continue;
     const r = el.getBoundingClientRect();
     const clip = style(el).position === "fixed" ? ALL : clipOf(el.parentElement);
     const vis = meet(meet(r, clip), VIEW);
