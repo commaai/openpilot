@@ -87,7 +87,7 @@ class Handler(SimpleHTTPRequestHandler):
     headers = self._headers()
     try:
       if not self.peer_checked:
-        core.check_peer(self.client_address, self.server.server_address)
+        core.check_peer(self.client_address, self.connection.getsockname())
         self.peer_checked = True
       core.check_host(headers)  # every request, static too: index.html carries the token
       if path.startswith("/local/"):
