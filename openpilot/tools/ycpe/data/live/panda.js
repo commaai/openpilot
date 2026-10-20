@@ -106,7 +106,8 @@ export function create(opts = {}) {
     label: "panda",
     state: "closed",
     detail: "",
-    stats: {frames: 0, bytes: 0, events: 0, checksumErrors: 0, overflows: 0, health: null},
+    // busyMs: main-thread time spent unpacking and encoding CAN; health: the latest PandaState
+    stats: {frames: 0, bytes: 0, events: 0, checksumErrors: 0, overflows: 0, busyMs: 0, health: null},
     on(name, fn) { return name === "state" ? changed.on(fn) : () => {}; },
 
     async start(s) {
@@ -193,11 +194,11 @@ export function create(opts = {}) {
     return r.data;
   }
 
-  // one can Event per PERIOD: reads back to back while the panda has a full transfer waiting, else waits out the period
+  // one can Event per PERIOD tick: reads back to back while the panda has a full transfer waiting, else sleeps to the next tick
   // (except in a hidden tab, whose timers would starve the panda's queue)
   async function receive(d) {
     const unpacker = new Unpacker(), {stats} = source;
-    let frames = [], flushed = performance.now();
+    let frames = [], next = performance.now() + PERIOD;
     while (device === d) {
       let r;
       try {
@@ -221,20 +222,21 @@ export function create(opts = {}) {
       const now = performance.now(), got = unpacker.push(data);
       for (const f of got.frames) frames.push(f);
       stats.bytes += data.length;
-      if (!got.ok) {
-        stats.checksumErrors++;
-        await d.controlTransferOut(vendor(0xc0)).catch(() => {});
-      }
-      if (!got.ok || now - flushed >= PERIOD) {
+      if (!got.ok || now >= next) {
         if (frames.length || !got.ok) {
           sink?.events(event(monoNanos(now), got.ok, "can", frames));
           stats.frames += frames.length;
           stats.events++;
         }
         frames = [];
-        flushed = now;
+        next = next + PERIOD < now ? now + PERIOD : next + PERIOD;  // a late tick starts a new schedule, as pandad's RateKeeper
       }
-      if (data.length < RECV_SIZE && !globalThis.document?.hidden) await sleep(flushed + PERIOD - performance.now());
+      stats.busyMs += performance.now() - now;
+      if (!got.ok) {
+        stats.checksumErrors++;
+        await d.controlTransferOut(vendor(0xc0)).catch(() => {});
+      }
+      if (data.length < RECV_SIZE && !globalThis.document?.hidden) await sleep(next - performance.now());
     }
   }
 

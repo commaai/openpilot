@@ -103,7 +103,8 @@ test("streams CAN and health from a granted panda", async () => {
   const t = services.get("can").t;
   assert.ok(t.length > 30, `${t.length} can events`);
   const gaps = Array.from(t.subarray(1), (x, i) => (x - t[i]) * 1000);
-  assert.ok(Math.min(...gaps) >= 9, `events ${Math.min(...gaps)} ms apart`);
+  const mean = gaps.reduce((a, b) => a + b) / gaps.length;
+  assert.ok(mean > 9 && mean < 13, `events ${mean} ms apart`);
   assert.ok(can.t.length === source.stats.frames && can.t.length > 1000, `${can.t.length} frames`);
   assert.equal(services.get("pandaStates").t.length, 2);
   assert.equal(source.stats.checksumErrors, 0);
