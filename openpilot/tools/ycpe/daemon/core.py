@@ -25,6 +25,7 @@ class Config:
   repo_roots: list[str] = field(default_factory=list)  # openpilot checkouts
   device: str | None = None  # [user@]host of a comma device for /local/device
   device_key: str | None = None
+  device_root: str | None = None  # the device's realdata directory if not the usual one (tests use a stand-in)
 
   @property
   def origins(self) -> set[str]:
@@ -42,6 +43,10 @@ class HTTPError(Exception):
   def __init__(self, status: int, message: str = ""):
     super().__init__(message or HTTPStatus(status).phrase)
     self.status = status
+
+
+class NoRoute(HTTPError):
+  """No /local/ route matches the path (as opposed to a handler's own 404)."""
 
 
 @dataclass
@@ -149,7 +154,7 @@ def match(method: str, path: str):
       if m == method:
         return fn, {k: unquote(v) for k, v in g.groupdict().items()}, public
       allowed = True
-  raise HTTPError(405 if allowed else 404)
+  raise HTTPError(405) if allowed else NoRoute(404)
 
 
 # security
