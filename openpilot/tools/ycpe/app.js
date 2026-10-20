@@ -10,6 +10,7 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
+import {routeLogs} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
@@ -148,7 +149,7 @@ function renameTab(tabEl, i, name) {
 class Workspace {
   constructor(route, files, view, {t = 0, repeat = 1}) {
     this.route = route;
-    this.dongle = route.fullname.split("|")[0];
+    this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
     this.files = null;  // the file list only matters once logs load; the drive view mounts without it
     this.filesReady = files.then((f) => { this.files = f; });
     this.repeat = repeat;
@@ -177,9 +178,7 @@ class Workspace {
   // logs load only once something needs them (the drive view doesn't); null until the file list is in
   ensureStore() {
     if (this.store || !this.files) return this.store;
-    const urls = [];
-    for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
-    this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
+    this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
     // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
     this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
@@ -321,7 +320,7 @@ async function render() {
     }
     document.body.classList.add("loading");
     try {
-      const files = api.routeFiles(routeName);
+      const files = routeLogs(routeName);
       files.catch(() => {});
       const route = await api.route(routeName);
       if (id !== navId) return;

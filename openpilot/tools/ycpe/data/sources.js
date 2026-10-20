@@ -204,6 +204,18 @@ export async function resolveLogs(sr, segs, {sources = "auto", mode = sr.selecto
   return {logs, missing: need, errors};
 }
 
+// what the store loads for a route (a name, optionally with a range and selector), from the route's chosen source:
+// urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
+export async function routeLogs(name) {
+  const sr = parseRange(name);
+  const route = await api.route(sr.route).catch(() => null);
+  const {logs, errors} = await resolveLogs(sr, segIdxs(sr, route?.maxqlog), {sources: routeSource.list(routeSource.get(sr.route))});
+  if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
+  const urls = [];
+  for (const [n, f] of logs) urls[n] = f;
+  return urls;
+}
+
 // ---- local files ----
 
 // the segment and route each dropped or picked file belongs to, from its path: "<route>--<seg>--<file>" (explorer),
