@@ -213,19 +213,23 @@ const slots = (route) => route.range ? route.segment_numbers.length : (route.max
 const memoKey = (route) => `${route.fullname}/${route.range ?? ""}`;
 
 // a per-segment asset for each slot, with the seconds its times move by to land there. A few requests at a time:
-// issuing one per segment at once is a long task on long routes
+// issuing one per segment at once is a long task on long routes. One starts now, and each answer adds another
+// worker up to 8, so no single task issues them all
 async function assets(route, name) {
   const out = new Array(slots(route));
+  const workers = [];
   let next = 0;
   const worker = async () => {
     while (next < out.length) {
       const slot = next++, n = segmentAt(route, slot);
       const url = api.segmentAsset(route, n, name);
       const resp = url && await fetch(url).catch(() => null);
+      if (workers.length < 8 && next < out.length) workers.push(worker());
       out[slot] = {shift: (slot - n) * 60, data: resp?.ok ? await resp.json() : []};
     }
   };
-  await Promise.all(Array.from({length: Math.min(8, out.length)}, worker));
+  workers.push(worker());
+  for (let i = 0; i < workers.length; i++) await workers[i];
   return out;
 }
 

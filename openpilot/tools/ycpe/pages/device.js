@@ -43,11 +43,12 @@ const nearby = new IntersectionObserver((entries) => {
     nearby.unobserve(e.target);
     queue.push(fillers.get(e.target));
   }
-  // a few strips per frame, so a fast scroll through hundreds of drives stays smooth
+  // ~2 ms of strips per frame, so a fast scroll through hundreds of drives stays smooth
   draining ??= perf.tick(() => {
-    for (const fill of queue.splice(0, 3)) fill();
+    const end = performance.now() + 2;
+    while (queue.length && performance.now() < end) queue.shift()();
     if (!queue.length) { draining(); draining = null; }
-  });
+  }, "drives");
 }, {rootMargin: "400px"});
 
 function strip(r, onSpans, onVisible) {
