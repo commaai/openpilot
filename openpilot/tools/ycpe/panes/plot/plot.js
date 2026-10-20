@@ -54,7 +54,7 @@ export function create(ctx, state = {}) {
   let col = colors(ctx.theme);
   // range: the pane's own x-range when its x-axis is unlinked from the shared clock.range
   const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats, range: state.range || null};
-  const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
+  const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0, role: "img"});
   const legend = h("div", {class: "legend"});
   const empty = h("div", {class: "empty"});
   // the y-axis, where a drag pans the values, on a phone whose plots let the page scroll (plot.css): it hands its
@@ -411,6 +411,7 @@ export function create(ctx, state = {}) {
       return row;
     });
     legend.replaceChildren(...rows);
+    over.ariaLabel = st.curves.length ? `Plot of ${st.curves.map(label).join(", ")}` : "Empty plot";
     if (at) (rows[at[0]] || rows.at(-1))?.children[at[1]]?.focus();
     legend.hidden = !rows.length;
     hint();
@@ -671,6 +672,39 @@ export function create(ctx, state = {}) {
     }
   }, {passive: false});
 
+  // from the keyboard: = and - zoom time around the playhead (shift: the values), ctrl+arrows pan, 0 fits
+  over.addEventListener("keydown", (e) => {
+    if (!frame || e.altKey) return;
+    const [a, b] = xRange(), mod = e.ctrlKey || e.metaKey, span = frame.hi - frame.lo;
+    const zoom = !mod && {Equal: 1 / 1.5, NumpadAdd: 1 / 1.5, Minus: 1.5, NumpadSubtract: 1.5}[e.code];
+    const pan = mod && {ArrowLeft: [-0.1, 0], ArrowRight: [0.1, 0], ArrowUp: [0, 0.1], ArrowDown: [0, -0.1]}[e.key];
+    if (zoom && e.shiftKey) {
+      view.remember(clock);
+      const v = frame.lo + span / 2;
+      st.y = {min: v - span / 2 * zoom, max: v + span / 2 * zoom};
+      invalidate();
+    } else if (zoom) {
+      view.remember(clock);
+      const t = clock.t >= a && clock.t <= b ? clock.t : (a + b) / 2;
+      setRange(t - (t - a) * zoom, t + (b - t) * zoom);
+    } else if (pan) {
+      view.remember(clock);
+      const [dx, dy] = pan;
+      if (dx) setRange(a + dx * (b - a), b + dx * (b - a));
+      if (dy) st.y = {min: frame.lo + dy * span, max: frame.hi + dy * span};
+      invalidate();
+    } else if (e.key === "0" && !mod) fit();
+    else return;
+    e.preventDefault();
+  });
+
+  function fit() {
+    view.remember(clock);
+    st.y = {};
+    setRange(0, clock.duration);
+    invalidate();
+  }
+
   over.addEventListener("dblclick", (e) => {
     view.remember(clock);
     st.y = {};
@@ -689,7 +723,7 @@ export function create(ctx, state = {}) {
   function paneMenu(e) {
     const locked = st.y.min !== undefined || st.y.max !== undefined;
     menu(e.clientX, e.clientY, [
-      {label: "Fit view", fn: () => { view.remember(clock); st.y = {}; setRange(0, clock.duration); invalidate(); }},
+      {label: "Fit view", fn: fit},
       {label: "Y auto-fit", checked: !locked, disabled: !frame && !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
       {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
