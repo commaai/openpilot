@@ -1,5 +1,5 @@
 // CAN dialogs: DBC files, find similar bits, find signal, CSV export, route segments
-import {h} from "/dom.js";
+import {h, ask} from "/dom.js";
 import {DBC} from "/data/dbc.js";
 import {addrOf, carDbc, hexId} from "/data/can.js";
 import {createSignal, dialog, download, field, menuItem, popup} from "./common.js";
@@ -14,10 +14,10 @@ export function dbcDialog(can, message = "") {
   // a file that opening or closing a DBC unloads drops its edits, so unsaved ones are confirmed first, as cabana
   const discard = (files) => {
     const dirty = files.filter((f) => can.dbcs.isDirty(f)).map((f) => f.name);
-    return !dirty.length || confirm(`${dirty.join(", ")} has unsaved changes. Discard them?`);
+    return !dirty.length || ask(`${dirty.join(", ")} has unsaved changes. Discard them?`, "Discard");
   };
   const open = (fn) => async () => {
-    if (!discard(can.dbcs.replaced(buses()))) return;
+    if (!await discard(can.dbcs.replaced(buses()))) return;
     try {
       await fn();
       d.close();
@@ -64,7 +64,7 @@ export function dbcDialog(can, message = "") {
       h("button", {class: "can-btn", onclick: () => save(can, f, true).catch(fail)}, "Save as"),
       localSave(f),
       h("button", {class: "can-btn", onclick: (e) => can.serialize(f).then((text) => navigator.clipboard.writeText(text)).then(() => { e.target.textContent = "Copied"; }, fail)}, "Copy"),
-      h("button", {class: "can-btn", title: "Stop decoding with this DBC", onclick: () => { if (discard([f])) { can.dbcs.close(f); d.close(); } }}, "Unload")))));
+      h("button", {class: "can-btn", title: "Stop decoding with this DBC", onclick: async () => { if (await discard([f])) { can.dbcs.close(f); d.close(); } }}, "Unload")))));
 
   const d = dialog("DBC files", files,
     h("div", {class: "can-row"}, "Open for ", target),

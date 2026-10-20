@@ -1,7 +1,7 @@
 import {SEGMENT, api, auth, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h, fmt, parseClock} from "/dom.js";
+import {h, fmt, ask, parseClock} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -728,7 +728,7 @@ function render() {
   });
 }
 
-let navId = 0;
+let navId = 0, leaving = false;  // leaving: the unsaved DBC edits were let go
 async function renderPage() {
   const id = ++navId;
   const main = document.getElementById("main");
@@ -738,10 +738,16 @@ async function renderPage() {
   // the API names devices and routes in lowercase: a typed /5BEB…/0000010A--… is the same route
   const lower = parts.map((p, i) => i === 0 && DONGLE_RE.test(p) || i === 1 && LOG_RE.test(p) ? p.toLowerCase() : p);
   if (DONGLE_RE.test(parts[0] || "") && lower.join("/") !== parts.join("/")) return go(`/${lower.join("/")}${location.search}`, true);
-  // leaving the route with unsaved DBC edits asks first, as closing the browser tab does; staying puts its URL back
-  if (ws?.store?.can.dbcs?.dirty && !showsWorkspace(parts) && !confirm("The DBC files have unsaved changes. Leave and discard them?")) {
-    return history.pushState(null, "", ws.href);
+  // leaving the route with unsaved DBC edits asks first, as closing the browser tab does: its URL is back while it
+  // asks, and leaving goes on to where it was going
+  if (ws?.store?.can.dbcs?.dirty && !leaving && !showsWorkspace(parts)) {
+    const to = location.pathname + location.search;
+    history.pushState(null, "", ws.href);
+    if (!await ask("The DBC files have unsaved changes. Leave and discard them?", "Leave") || id !== navId) return;
+    leaving = true;
+    return go(to);
   }
+  leaving = false;
 
   if (parts[0] === "auth" || parts[0] === "login") {
     closeWorkspace();

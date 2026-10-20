@@ -21,7 +21,7 @@ ERROR, WARN, INFO = "error", "warn", "info"
 PERF_RULES = ("long-frame", "frame-work", "drops", "first-paint")  # budgets that only warn when the machine is too busy to measure
 SEVERITY = {
   "blocked": ERROR, "page-error": ERROR, "console-error": ERROR, "long-frame": ERROR, "frame-work": ERROR, "drops": ERROR, "first-paint": ERROR,
-  "step": ERROR, "assert": ERROR, "auth": ERROR, "native-select": ERROR,
+  "step": ERROR, "assert": ERROR, "auth": ERROR, "native-select": ERROR, "native-dialog": ERROR,
   "text-ellipsis": INFO, "small-target": INFO, "network-flake": INFO, "load-frame": INFO,
 }
 ORDER = [ERROR, WARN, INFO]

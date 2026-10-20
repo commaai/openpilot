@@ -64,7 +64,7 @@ previous one, grouped by file. Only scenarios that ran can fix a finding. Long f
 
 Layout lint findings (overflow, sideways scroll, clipped text, overlap, obscured controls, small targets, layout shift,
 broken images) are reported but don't fail the scenario. A native-select finding (a `<select>` some rule took off the in-page, themed picker, see
-style.css) is an error.
+style.css) is an error, as is a native confirm, alert or prompt (dom.js `ask()` is the themed one).
 
 ## Modes (`--mode`)
 

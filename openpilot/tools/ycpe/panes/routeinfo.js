@@ -1,7 +1,7 @@
 // route info pane: what the route is (every field of its API record useradmin shows, grouped as it does), its
 // public/preserved toggles, link sharing and bookmarks (files have their own pane)
 import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
-import {h, fmt, css} from "/dom.js";
+import {h, fmt, css, ask} from "/dom.js";
 import {parseRemote} from "/data/github.js";
 import {canManage} from "/pages/home.js";
 import {schemaRow} from "./schema.js";
@@ -17,7 +17,7 @@ function toggle(label, value, enabled, set, {about, ask = () => true, refused = 
   box.addEventListener("change", async () => {
     const v = box.checked;
     status.textContent = "";
-    if (!ask(v)) return void (box.checked = !v);
+    if (!await ask(v)) return void (box.checked = !v);
     box.disabled = true;
     try {
       await set(v);
@@ -91,7 +91,7 @@ export function create(ctx) {
     // useradmin's confirmation, connect's explanations, and useradmin's word for the preserve limit
     toggles.replaceChildren(toggle("public", route.is_public, owner, async (v) => { await api.setRoutePublic(route.fullname, v); route.is_public = v; }, {
       about: "anyone with the route name or link can read all its files",
-      ask: (v) => !v || confirm(`Make ${route.fullname} public? This will allow any comma user with the route name to access all route files.`)}));
+      ask: (v) => !v || ask(`Make ${route.fullname} public? This will allow any comma user with the route name to access all route files.`, "Make public")}));
     // a public route's record, as seen signed out, doesn't say whether it's preserved
     if (route.is_preserved !== undefined) {
       toggles.append(toggle("preserved", route.is_preserved, owner, async (v) => { await api.setRoutePreserved(route.fullname, v); route.is_preserved = v; }, {

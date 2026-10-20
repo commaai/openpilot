@@ -24,6 +24,17 @@ export function listeners() {
   };
 }
 
+// confirm(), in the theme (the browser's own dialog ignores it, see style.css): resolves with whether ok was chosen
+export function ask(text, ok = "OK") {
+  return new Promise((done) => {
+    const el = h("dialog", {class: "ask", onclose: () => { el.remove(); done(el.returnValue === "ok"); }},
+      h("form", {method: "dialog"}, h("p", {}, text),
+        h("div", {class: "ask-buttons"}, h("button", {class: "button", value: ""}, "Cancel"), h("button", {class: "button primary", value: "ok", autofocus: true}, ok))));
+    document.body.append(el);
+    el.showModal();
+  });
+}
+
 export function clear(el) {
   el.replaceChildren();
   return el;

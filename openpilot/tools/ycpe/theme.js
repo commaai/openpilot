@@ -18,6 +18,7 @@ export const theme = {
   set(name) {
     document.documentElement.dataset.theme = name;
     localStorage.setItem(KEY, name);
+    paintBar();
     subs.emit(name);
   },
   toggle() { theme.set(theme.name === "dark" ? "light" : "dark"); },
@@ -33,3 +34,9 @@ for (const name of ["light", "dark"]) {
   for (const v of style) if (v.startsWith("--")) vars[name].set(v, style.getPropertyValue(v).trim());
   probe.remove();
 }
+
+// the browser's own bar (a phone's status bar, an installed app's title bar) as the top bar, by the app's theme rather
+// than the system's
+const bar = document.head.appendChild(h("meta", {name: "theme-color"}));
+function paintBar() { bar.content = theme.color("--panel"); }
+paintBar();

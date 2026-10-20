@@ -125,11 +125,19 @@ class Scenario:
     page = self.page = self.ctx.new_page()
     page.on("console", lambda m: m.type in ("error", "warning") and self.event(f"console-{m.type}", m.text))
     page.on("pageerror", lambda e: self.event("page-error", f"{e.name}: {e.message}{top_frame(e.stack)}"))
+    # the browser's own confirm/alert/prompt ignore the theme: the app asks with dom.js ask() (beforeunload can't)
+    page.on("dialog", self.dialog)
     page.on("requestfailed", lambda r: "BLOCKED_BY_CLIENT" not in r.failure and self.event("request-failed", f"{r.failure} {r.method} {r.url}"))
     page.on("response", lambda r: r.status >= 400 and self.event("http-error", f"{r.status} {r.request.method} {r.url}"))
     self.cdp = self.ctx.new_cdp_session(page)
     if sc.get("cpu_throttle"):
       self.cdp.send("Emulation.setCPUThrottlingRate", {"rate": sc["cpu_throttle"]})
+
+  def dialog(self, d):
+    """the browser's own confirm/alert/prompt ignore the theme: the app asks with dom.js ask() (beforeunload can't)"""
+    if d.type != "beforeunload":
+      self.fail("native-dialog", f"{d.type}: {d.message}")
+    d.dismiss()
 
   def fail(self, rule, detail, key=None):
     self.res["failures"].append({"rule": rule, "detail": detail, "key": key or detail})
