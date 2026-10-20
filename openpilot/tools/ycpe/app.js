@@ -352,7 +352,8 @@ class Workspace {
     if (!this.layouts[view]) {
       const model = savedLayout(view);
       if (usesData(model) && !this.files) {
-        this.filesReady.then(() => { if (this.view === view) this.setView(view); }, (e) => this.main.replaceChildren(errorPage(e)));
+        this.filesReady.then(() => { if (!this.disposed && this.view === view) this.setView(view); },
+          (e) => { if (!this.disposed) this.main.replaceChildren(errorPage(e)); });
         this.main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Fetching the route's file list…"));
         return updateTop();
       }
