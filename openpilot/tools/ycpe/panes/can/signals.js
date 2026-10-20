@@ -3,7 +3,7 @@ import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
-import {canOf, dialog, editMsg, field, removeSignal, subs, updateSignal} from "./common.js";
+import {canOf, dialog, editMsg, field, ink, newMsg, removeSignal, subs, updateSignal} from "./common.js";
 
 const SPARK_W = 80;  // sparkline width
 
@@ -66,7 +66,7 @@ export function create(ctx, state) {
     list.replaceChildren(...shown(m).map((sg) => {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
-      const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, icon("show_chart", 14));
+      const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg), {merge: e.shiftKey}); }}, icon("show_chart", 14));
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
         h("div", {class: "can-sig-row", role: "button", tabindex: 0, "aria-expanded": String(sg.name === open), onclick: () => toggle(sg.name),
           onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
@@ -104,7 +104,7 @@ export function create(ctx, state) {
 
   function label(r, sg) {
     r.sg = sg;
-    r.swatch.style.background = sg.color;
+    r.swatch.style.background = ctx.theme.name === "light" ? ink(sg.color) : sg.color;  // as the charts draw it
     r.name.title = sg.comment || sg.name;
     r.name.textContent = sg.name + (sg.type === MUX ? " (M)" : sg.type === MUXED ? ` (m${sg.muxValue})` : "");
     return r;
@@ -146,6 +146,7 @@ export function create(ctx, state) {
   s.add(can.on("charted", charted));
   s.add(can.on("live", () => { requestSparks(); ctx.perf.invalidate(pane); }));
   s.add(can.on("hover", (name) => { for (const [n, r] of rows) r.row.classList.toggle("hover", n === name); }));
+  s.add(ctx.theme.on(() => { for (const r of rows.values()) label(r, r.sg); }));
   build();
   return pane;
 }
@@ -153,7 +154,7 @@ export function create(ctx, state) {
 // the last few seconds of a signal, from worker buckets: a fixed-size canvas, so no layout reads
 function sparkline(canvas, d, color) {
   const dpr = devicePixelRatio, w = SPARK_W, hgt = 18;
-  if (canvas.width !== w * dpr) { canvas.width = w * dpr; canvas.height = hgt * dpr; }
+  if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(hgt * dpr); }
   const g = canvas.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, w, hgt);
@@ -226,11 +227,11 @@ function editor(can, k, m, sg) {
 }
 
 function messageDialog(can, k) {
-  const m = can.dbcMsg(k);
-  const name = h("input", {value: m?.name || `NEW_MSG_${(k % 2 ** 32).toString(16).toUpperCase()}`, spellcheck: false});
-  const size = h("input", {type: "number", min: 1, max: 64, value: m?.size || can.msg(k)?.size || 8});
-  const node = h("input", {value: m?.transmitter || "XXX", spellcheck: false});
-  const comment = h("textarea", {rows: 3}, m?.comment || "");
+  const m = can.dbcMsg(k), x = m || newMsg(can, k);
+  const name = h("input", {value: x.name, spellcheck: false});
+  const size = h("input", {type: "number", min: 1, max: 64, value: x.size});
+  const node = h("input", {value: x.transmitter, spellcheck: false});
+  const comment = h("textarea", {rows: 3}, x.comment);
   const error = h("div", {class: "can-error"});
   const d = dialog(m ? `Edit ${m.name}` : "New message", h("div", {class: "can-form"},
     field("Name", name), field("Size", size), field("Node", node), field("Comment", comment), error,

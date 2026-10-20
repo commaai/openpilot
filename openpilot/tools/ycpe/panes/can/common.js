@@ -2,7 +2,7 @@
 import {css, h} from "/dom.js";
 import {icon} from "/icons.js";
 import {addrOf, busOf} from "/data/can.js";
-import {MUX, MUXED, NODE, cloneMsg, flip, newSignal} from "/data/dbc.js";
+import {MUX, MUXED, NODE, cloneMsg, flip, newSignal, newSignalName} from "/data/dbc.js";
 
 await css(new URL("./can.css", import.meta.url));
 
@@ -81,20 +81,22 @@ export function alpha(color, a) {
 // edits message k through the undo stack: fn(m) changes a copy (a new message if k has none), or returns false to
 // change nothing. Returns whether it changed
 export function editMsg(can, k, text, fn) {
-  const address = addrOf(k);
-  const m = cloneMsg(can.dbcMsg(k)) || {address, name: `NEW_MSG_${address.toString(16).toUpperCase()}`, size: can.msg(k)?.size || 8,
-                                         transmitter: NODE, comment: "", sigs: []};
+  const m = cloneMsg(can.dbcMsg(k)) || newMsg(can, k);
   if (fn(m) === false) return false;
-  can.dbcs.edit(busOf(k), address, m, text);
+  can.dbcs.edit(busOf(k), m.address, m, text);
   return true;
+}
+
+// the DBC message a received one starts as
+export function newMsg(can, k) {
+  const address = addrOf(k);
+  return {address, name: `NEW_MSG_${address.toString(16).toUpperCase()}`, size: can.msg(k)?.size || 8, transmitter: NODE, comment: "", sigs: []};
 }
 
 export function createSignal(can, k, props) {
   let name;
   editMsg(can, k, "add signal", (m) => {
-    let i = 1;
-    while (m.sigs.some((s) => s.name === `NEW_SIGNAL_${i}`)) i++;
-    name = `NEW_SIGNAL_${i}`;
+    name = newSignalName(m);
     m.sigs.push(newSignal({...props, name, max: 2 ** props.size - 1}));
   });
   return name;
