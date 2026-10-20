@@ -1,4 +1,4 @@
-.logs-pane { display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--panel); contain: strict; }
+.logs-pane { display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--panel); contain: strict; container-type: inline-size; }
 .logs-pane .logs-bar { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-bottom: 1px solid var(--line); }
 .logs-pane .logs-bar select, .logs-pane .logs-bar input { height: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: var(--fg); }
 .logs-pane .logs-bar input { flex: 1; min-width: 60px; padding: 0 6px; }
@@ -20,3 +20,14 @@
 .logs-pane .lv2 .logs-lv { color: var(--alert-fg); }
 .logs-pane .lv3 .logs-lv, .logs-pane .lv4 .logs-lv, .logs-pane .lv4 .logs-msg { color: var(--critical-fg); }
 .logs-pane .logs-note { position: absolute; left: 0; right: 0; top: 40%; color: var(--muted); text-align: center; pointer-events: none; }
+/* narrow panes leave the message the room: the metadata narrows, then the level becomes a coloured edge */
+@container (max-width: 480px) {
+  .logs-pane .logs-lv { width: 5ch; overflow: hidden; text-overflow: ellipsis; }
+  .logs-pane .logs-src { width: 10ch; }
+}
+@container (max-width: 360px) {
+  .logs-pane .logs-lv, .logs-pane .logs-src { display: none; }
+  .logs-pane .logs-row { padding-left: 4px; border-left: 2px solid transparent; }
+  .logs-pane .logs-row.lv2 { border-left-color: var(--alert); }
+  .logs-pane .logs-row.lv3, .logs-pane .logs-row.lv4 { border-left-color: var(--critical); }
+}
