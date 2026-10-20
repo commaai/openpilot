@@ -60,9 +60,11 @@ export function create(ctx) {
   const device = api.device(dongleId).catch(() => null);
   device.then(async (d) => {
     const owner = !!d && await canManage(d);
-    toggles.replaceChildren(
-      toggle("public", route.is_public, owner, async (v) => { await api.setRoutePublic(route.fullname, v); route.is_public = v; }),
-      toggle("preserved", route.is_preserved, owner, async (v) => { await api.setRoutePreserved(route.fullname, v); route.is_preserved = v; }));
+    toggles.replaceChildren(toggle("public", route.is_public, owner, async (v) => { await api.setRoutePublic(route.fullname, v); route.is_public = v; }));
+    // a public route's record, as seen signed out, doesn't say whether it's preserved
+    if (route.is_preserved !== undefined) {
+      toggles.append(toggle("preserved", route.is_preserved, owner, async (v) => { await api.setRoutePreserved(route.fullname, v); route.is_preserved = v; }));
+    }
   });
   routeEvents(route).then((spans) => bookmarks.replaceChildren(...spans.filter((s) => s.kind === "bookmark").map((s) =>
     h("button", {class: "chip", title: "Seek to bookmark", onclick: () => clock.seek(s.start / 1000)}, `bookmark ${fmt.clock(s.start / 1000)}`)))).catch(() => {});
