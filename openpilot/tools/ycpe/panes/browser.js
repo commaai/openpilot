@@ -5,7 +5,7 @@ import {h} from "/dom.js";
 import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
-const ROW = 18;
+const ROW = 18, BUILD_MS = 3;
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 const order = (a, b) => {
@@ -18,7 +18,7 @@ export function create(ctx, state = {}) {
   const st = {filter: state.filter || "", deprecated: !!state.deprecated, expanded: new Set(state.expanded || [])};
   const selected = new Set();
   let tree = null, stale = true, rows = [], anchor = -1, H = 0, total = 0;
-  let leaves = new Map();  // path → tree node, for the paths already in the tree
+  let nodes = new Map();  // path → tree node, for every node in the tree
 
   const filter = h("input", {type: "search", class: "filter", placeholder: "filter, or /regex/", value: st.filter, spellcheck: false,
     oninput: () => { st.filter = filter.value; refresh(); },
@@ -32,42 +32,50 @@ export function create(ctx, state = {}) {
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
   const pane = {name: "browser", el, render, resize, dispose, save};
 
-  // new paths arrive with segments and are added at most once a frame; a new DBC replaces its signals
+  // new paths arrive with segments and are added at most once a frame; a new DBC replaces the /dbc branch
   const changed = () => { stale = true; perf.invalidate(pane); };
   const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)),
-    store.can?.on("dbc", () => { tree = null; changed(); })].filter(Boolean);
+    store.can?.on("dbc", () => { drop("/dbc"); changed(); })].filter(Boolean);
 
-  // the path tree; a node is {name, path, depth, children?, kids? (sorted), meta?}. New paths are added to the
-  // tree as they arrive, and only the branches they land in are re-sorted; fewer paths than before rebuilds it.
+  // the path tree; a node is {name, path, depth, kids? (sorted), meta?}. New paths are added to the tree as they
+  // arrive, a few ms worth a frame (a DBC brings thousands), and only the branches they land in are re-sorted;
+  // fewer paths than before rebuilds it.
   function build(reset = false) {
-    const all = store.paths();
+    const end = performance.now() + BUILD_MS, all = store.paths();
     if (reset || !tree || all.length < total) {
-      tree = {children: new Map(), depth: -1};
-      leaves = new Map();
+      tree = {depth: -1};
+      nodes = new Map();
     }
     const touched = new Set();
-    for (const meta of all) {
-      const leaf = leaves.get(meta.path);
-      if (leaf) { leaf.meta = meta; continue; }
-      if (!st.deprecated && (meta.internal || deprecated(meta.path))) continue;
-      let node = tree, prefix = "";
-      for (const part of meta.path.slice(1).split("/")) {
-        prefix += `/${part}`;
-        node.children ||= new Map();
-        let next = node.children.get(part);
-        if (!next) {
-          node.children.set(part, next = {name: part, path: prefix, depth: node.depth + 1});
-          touched.add(node);
-        }
-        node = next;
-      }
-      node.meta = meta;
-      leaves.set(meta.path, node);
+    let i = 0;
+    for (; i < all.length && (i % 256 || performance.now() < end); i++) {
+      const meta = all[i], known = nodes.get(meta.path);
+      if (known) known.meta = meta;
+      else if (st.deprecated || !(meta.internal || deprecated(meta.path))) node(meta.path, touched).meta = meta;
     }
-    for (const n of touched) n.kids = [...n.children.values()].sort((a, b) => order(a.name, b.name));
+    for (const n of touched) n.kids.sort((a, b) => order(a.name, b.name));
     total = all.length;
-    stale = false;
+    stale = i < all.length;
     refresh();
+  }
+
+  // removes a top level branch
+  function drop(path) {
+    if (!tree?.kids) return;
+    tree.kids = tree.kids.filter((k) => k.path !== path);
+    for (const p of nodes.keys()) if (p === path || p.startsWith(`${path}/`)) nodes.delete(p);
+  }
+
+  // the node at path, added with its missing parents; the parents that got kids go in touched
+  function node(path, touched) {
+    let n = nodes.get(path);
+    if (n) return n;
+    const i = path.lastIndexOf("/"), parent = i ? node(path.slice(0, i), touched) : tree;
+    n = {name: path.slice(i + 1), path, depth: parent.depth + 1};
+    (parent.kids ||= []).push(n);
+    touched.add(parent);
+    nodes.set(path, n);
+    return n;
   }
 
   function matcher() {
