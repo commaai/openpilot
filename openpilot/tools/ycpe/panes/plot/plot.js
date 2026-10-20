@@ -70,6 +70,8 @@ export function create(ctx, state = {}) {
     has: (path) => st.curves.some((c) => c.path === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
     setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
+    get curves() { return structuredClone(st.curves); },
+    setCurves(curves) { st.curves = curves; rebuildLegend(); invalidate(); },
     overlay: () => perf.invalidate(pane),
   };
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
@@ -90,7 +92,10 @@ export function create(ctx, state = {}) {
   // ---- curves
 
   function addCurves(paths) {
-    for (const path of paths) if (!st.curves.some((c) => c.path === path && !c.transform && !c.custom)) st.curves.push(normalize({path}));
+    const added = paths.filter((path, k) => paths.indexOf(path) === k && !st.curves.some((c) => c.path === path && !c.transform && !c.custom));
+    if (!added.length) return;
+    view.rememberCurves(clock, pane);
+    for (const path of added) st.curves.push(normalize({path}));
     rebuildLegend();
     invalidate();
   }
@@ -100,10 +105,13 @@ export function create(ctx, state = {}) {
       ...(c.custom?.untrusted && {error: "custom code from an imported layout: click to review and run it"})};
   }
 
-  function removeCurve(c) {
-    st.curves.splice(st.curves.indexOf(c), 1);
+  // removals can be undone in the plot, so it takes the focus
+  function removeCurves(cs) {
+    view.rememberCurves(clock, pane);
+    st.curves = st.curves.filter((c) => !cs.includes(c));
     rebuildLegend();
     invalidate();
+    over.focus({preventScroll: true});
   }
 
   // the store path a curve draws. Custom series and transforms are recomputed in workers when their inputs
@@ -337,10 +345,10 @@ export function create(ctx, state = {}) {
         onpointerenter: () => { st.hl = k; invalidate(); },
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
-      h("i", {class: c.dash ? "dash" : "", style: `color:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
+      h("i", {class: c.dash ? "dash" : "", style: `color:${c.color}`, title: "show/hide", onclick: () => { view.rememberCurves(clock, pane); c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
       h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, h("bdi", {}, label(c))),
       val,
-      h("b", {class: "x", title: "remove", onclick: () => removeCurve(c)}, "×"));
+      h("b", {class: "x", title: "remove", onclick: () => removeCurves([c])}, "×"));
       row.val = val;
       return row;
     });
@@ -350,19 +358,29 @@ export function create(ctx, state = {}) {
     statsKey = "";
   }
 
-  const editCurve = (c, e) => curveEditor(e.clientX, e.clientY, c, {
-    change: () => { rebuildLegend(); invalidate(); },
-    remove: () => removeCurve(c),
-    code: c.custom && (() => editCode(c, e)),
-    actions: c.custom || c.transform ? [] : (store.overlays || [])
-      .filter((o) => !c.path.startsWith(o.prefix) && store.series(o.prefix + c.path))
-      .map((o) => ({label: `Compare with ${o.name}`, fn: () => compare(c.path, o.prefix)})),
-  });
+  // the edits of one opening are one undo entry
+  function editCurve(c, e) {
+    let before = pane.curves;
+    curveEditor(e.clientX, e.clientY, c, {
+      change: () => {
+        if (before) view.rememberCurves(clock, pane, before);
+        before = null;
+        rebuildLegend();
+        invalidate();
+      },
+      remove: () => removeCurves([c]),
+      code: c.custom && (() => editCode(c, e)),
+      actions: c.custom || c.transform ? [] : (store.overlays || [])
+        .filter((o) => !c.path.startsWith(o.prefix) && store.series(o.prefix + c.path))
+        .map((o) => ({label: `Compare with ${o.name}`, fn: () => compare(c.path, o.prefix)})),
+    });
+  }
 
   // an overlay's run of path (a replay) next to the original: dashed in the original's color, plus their
   // difference in a color of its own (hidden until toggled on); t, if given, is seeked to and brought into view
   function compare(path, prefix, t) {
     const name = (store.overlays || []).find((o) => o.prefix === prefix)?.name || prefix.split("/").pop();
+    view.rememberCurves(clock, pane);
     let orig = st.curves.find((c) => c.path === path && !c.transform && !c.custom);
     if (!orig) st.curves.push(orig = normalize({path}));
     const replay = prefix + path, tail = path.slice(1);
@@ -386,6 +404,7 @@ export function create(ctx, state = {}) {
     const path = `/custom/${spec.name}`, custom = {inputs: spec.inputs, globals: spec.globals, code: spec.code};
     await evaluate(store, path, custom);
     made.set(path, inputsVersion(custom.inputs));
+    view.rememberCurves(clock, pane);
     if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
     else st.curves.push(normalize({path, label: spec.name, custom}));
     rebuildLegend();
@@ -539,7 +558,8 @@ export function create(ctx, state = {}) {
     invalidate();
   });
 
-  over.addEventListener("keydown", (e) => {
+  // the view's and the curves' undo, from the plot or its legend
+  el.addEventListener("keydown", (e) => {
     const k = e.key.toLowerCase();
     if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y")) return;
     e.preventDefault();
@@ -553,8 +573,8 @@ export function create(ctx, state = {}) {
       {label: "Y auto-fit", checked: !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
       {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
-      {label: "Undo view", fn: () => view.undo(clock)},
-      {label: "Redo view", fn: () => view.redo(clock)},
+      {label: "Undo", fn: () => view.undo(clock)},
+      {label: "Redo", fn: () => view.redo(clock)},
       null,
       {label: "Statistics", checked: st.stats, fn: () => { st.stats = !st.stats; rebuildLegend(); perf.invalidate(pane); }},
       {label: "Export CSV", disabled: !frame.lines.length, fn: exportCsv},
@@ -562,7 +582,7 @@ export function create(ctx, state = {}) {
         col.bg, col.fg, col.font, st.title || "plot")},
       null,
       {label: "Custom series…", fn: () => editCode(undefined, e)},
-      {label: "Remove all curves", disabled: !st.curves.length, fn: () => { st.curves = []; rebuildLegend(); invalidate(); }},
+      {label: "Remove all curves", disabled: !st.curves.length, fn: () => removeCurves(st.curves)},
     ]);
   }
 
