@@ -97,8 +97,13 @@ function topBar() {
     if (e.deltaX || !e.deltaY) return;
     e.preventDefault();
     bar.tabs.scrollLeft += e.deltaY;
+    tabsScrolled = true;
   }, {passive: false});
-  new ResizeObserver(showActiveTab).observe(bar.tabs);  // the bar's other items settle after the tabs
+  // the bar's other items settle after the tabs: keep the active tab in view, unless the user scrolled the strip
+  new ResizeObserver(() => {
+    const on = bar.tabs.querySelector(".tab.on")?.getBoundingClientRect(), r = bar.tabs.getBoundingClientRect();
+    if (on && !tabsScrolled && (on.left < r.left || on.right > r.right)) showActiveTab();
+  }).observe(bar.tabs);
   bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
     (state.devices || []).map((d) => h("a", {class: "menu-row", href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
@@ -151,11 +156,21 @@ function updateTop() {
     layout.model.tabs.length > 1 && h("span", {class: "x", title: "Close tab", onclick: (e) => { e.stopPropagation(); layout.closeTab(i); updateTop(); }}, icon("close", 12)))),
   h("button", {class: "tab add", title: "New tab", onclick: () => { layout.addTab(); updateTop(); }}, "+"),
   h("button", {class: "tab add", title: "Open, import or export layouts", onclick: (e) => layoutMenu(e.currentTarget)}, "⋯"));
-  showActiveTab();
+  // scrolled to on the next frame, when it lays out anyway, and only when the active tab or the tab set changed
+  const shown = `${ws.view} ${layout.model.active} ${layout.model.tabs.map((t) => t.name).join("|")}`;
+  if (shown !== tabsShown) {
+    tabsShown = shown;
+    tabsScrolled = false;
+    requestAnimationFrame(showActiveTab);
+  }
 }
+
+let tabsShown = "";        // the tabs and active tab the strip last scrolled to
+let tabsScrolled = false;  // the user scrolled the strip since
 
 // too many tabs scroll: show the buttons at the end if the active tab still fits, else the active tab
 function showActiveTab() {
+  if (bar.tabs.scrollWidth <= bar.tabs.clientWidth) return;
   bar.tabs.lastChild?.scrollIntoView({block: "nearest", inline: "nearest"});
   bar.tabs.querySelector(".tab.on")?.scrollIntoView({block: "nearest", inline: "nearest"});
 }
