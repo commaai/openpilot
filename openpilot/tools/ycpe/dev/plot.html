@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <div id="bar"><b>plot dev</b><span id="info" class="muted"></span></div>
+  <div id="bar"><b>plot dev</b><span id="info" class="muted"></span><button id="layouts">layouts</button></div>
   <div id="root"></div>
   <script type="module">
     // the plot panes against either a synthetic 10-hour store (default) or a real route (?route=…&repeat=N).
@@ -22,6 +22,8 @@
     import {Layout} from "/layout.js";
     import {openRoute} from "/data/store.js";
     import * as view from "/panes/plot/view.js";
+    import {h} from "/dom.js";
+    import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 
     const q = new URLSearchParams(location.search);
     const FANOUT = 8;
@@ -157,10 +159,27 @@
       route ? col(plot("/carState/vEgo", "/carState/aEgo"), plot("/carState/gasPressed", "/carState/brakePressed"), plot("/selfdriveState/state", "/selfdriveState/alertText1"), plot("/carState/steeringAngleDeg"))
         : col(plot("/carState/vEgo", "/carState/steeringAngleDeg"), plot("/carState/gasPressed", "/deviceState/freeSpacePercent", "/carParams/steerRatio"),
           plot("/selfdriveState/state", "/selfdriveState/alertText1"), plot("/gpsLocationExternal/latitude")),
+    ]}}, {name: "xy", root: {split: "row", sizes: [0.5, 0.5], children: [
+      {pane: "xy", state: {curves: [{x: "/carState/vEgo", y: "/carState/steeringAngleDeg", color: "#3987e5"}]}},
+      {pane: "xy", state: {mode: "fft", curves: [{path: "/carState/steeringAngleDeg", color: "#d95926"}]}},
     ]}}]};
     const ctx = {route: {fullname: store.route.name}, clock, perf, theme, store, peekStore: () => store, onStore: (fn) => fn(store), openRoute() {}};
-    const layout = window.layout = new Layout(ctx, JSON.parse(q.get("layout") || "null") || model, null);
-    document.getElementById("root").append(layout.el);
+    // ?layout= holds a layout or its URL; it opens untrusted like any import
+    const root = document.getElementById("root");
+    let layout;
+    const apply = (m) => {
+      layout?.dispose();
+      layout = window.layout = new Layout(ctx, m, null);
+      root.replaceChildren(layout.el);
+    };
+    apply(q.get("layout") ? (await loadLayout(q.get("layout"))).layout : model);
+    acceptLayoutFiles(root, async (f) => apply(mergeLayout(layout.save(), (await loadLayout(f)).layout, "tab")));
+    document.getElementById("layouts").addEventListener("click", (e) => {
+      document.querySelector(".popover")?.remove();
+      const el = h("div", {class: "popover"}, layoutPicker({current: () => layout.save(), apply, close: () => el.remove(), name: "dev"}));
+      Object.assign(el.style, {right: "8px", top: `${e.target.getBoundingClientRect().bottom + 4}px`});
+      document.body.append(el);
+    });
     document.addEventListener("keydown", (e) => {
       if (e.target.closest("input, textarea, select")) return;
       if (e.key === "t") theme.toggle();

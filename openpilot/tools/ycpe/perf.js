@@ -78,18 +78,18 @@ if (PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame")) {
 
 function stats(n) {
   const recent = frames.slice(-n);
-  const work = recent.map((f) => f.work).sort((a, b) => a - b);
   const span = recent.reduce((s, f) => s + f.interval, 0);
-  return {fps: span ? recent.length * 1000 / span : 0, p50: work[work.length >> 1] || 0, max: work.at(-1) || 0};
+  return {fps: span ? recent.length * 1000 / span : 0, max: recent.reduce((m, f) => Math.max(m, f.work), 0)};
 }
 
 // the top-bar readout; text updates 4x a second so the HUD itself costs nothing
-export function hud() {
+// extra: more readouts inside the HUD (memory and disk come from status.js)
+export function hud(...extra) {
   const fps = h("span", {class: "hud-fps"});
   const ms = h("span", {class: "hud-ms"});
   const dropEl = h("span", {class: "hud-drops"});
-  const spark = h("canvas", {class: "hud-spark", width: 60, height: 18});
-  const el = h("button", {class: "hud", title: "frame rate · render time p50/max · dropped frames (click for details)"}, spark, fps, ms, dropEl);
+  const spark = h("canvas", {class: "hud-spark", width: 40, height: 18});
+  const el = h("button", {class: "hud", title: "frame rate · worst render time this second · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
   let panel = null;
   el.addEventListener("click", () => {
     if (panel) { panel.close(); panel = null; } else panel = perfPanel(() => { panel = null; });
@@ -109,7 +109,7 @@ export function hud() {
   setInterval(() => {
     const s = stats(60);
     fps.textContent = `${Math.round(s.fps)} fps`;
-    ms.textContent = `${s.p50.toFixed(1)}/${s.max.toFixed(1)} ms`;
+    ms.textContent = `${s.max.toFixed(1)} ms`;
     dropEl.textContent = `${drops} drop${drops === 1 ? "" : "s"}`;
     el.classList.toggle("bad", s.max > BUDGET_MS * 2 || s.fps < 55 && !document.hidden);
     perf.invalidate(sparkPane);

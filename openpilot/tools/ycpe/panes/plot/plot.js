@@ -3,23 +3,51 @@
 // data changes; the overlay (playhead, tracker, zoom box) redraws on every cursor move. Per-frame work is
 // O(pixels): curves come from store.decimate and state blocks from cached runs.
 import {h} from "/dom.js";
-import {colors, fitCanvas, ticks, fmtTime, fmtTick, fmtValue, strokeSeries, drawBlocks, nextColor, ellipsize} from "./draw.js";
+import {colors, fitCanvas, ticks, axes, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
 import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
 import {TRANSFORMS, derivedPath, derive, compute} from "/data/transforms.js";
 import {evaluate} from "/data/custom.js";
 import {download, exportPng} from "./export.js";
+import {openConsole} from "./console.js";
 
 const L = 58, R = 8, T = 6, B = 20, STRIP = 18, DRAG = 4;
 const STEPPED = new Set(["b", "e", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"]);
-export const PATHS_MIME = "application/x-ycpe-paths";
+
+// the median spacing of a series' samples, from up to 16 gaps per chunk; cached per version
+const spacing = new Map();  // path → {version, dt}
+function medianInterval(path, s) {
+  const hit = spacing.get(path);
+  if (hit?.version === s.version) return hit.dt;
+  const gaps = [];
+  for (const {tt} of s.chunks) {
+    const step = Math.max(1, (tt.length - 1) / 16);
+    for (let k = 0; k < tt.length - 1; k += step) gaps.push(tt[Math.floor(k) + 1] - tt[Math.floor(k)]);
+  }
+  gaps.sort((a, b) => a - b);
+  const dt = gaps.length ? gaps[gaps.length >> 1] : Infinity;
+  spacing.set(path, {version: s.version, dt});
+  return dt;
+}
+
+// lines break between points further apart than maxDt, or with unloaded time between them; called with
+// increasing times, so the span pointer only moves forward
+function gapTest(maxDt, spans) {
+  let j = 0;
+  return (a, b) => {
+    if (b - a > maxDt) return true;
+    while (j < spans.length && spans[j][1] <= a) j++;
+    return j < spans.length && spans[j][0] < b;
+  };
+}
 
 
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   let col = colors(ctx.theme);
-  const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats};
+  // range: the pane's own x-range when its x-axis is unlinked from the shared clock.range
+  const st = {title: state.title || "", curves: [], y: {...state.y}, stats: !!state.stats, range: state.range || null};
   const base = h("canvas"), over = h("canvas", {class: "over", tabindex: 0});
   const legend = h("div", {class: "legend"});
   const empty = h("div", {class: "empty"}, "drag series here");
@@ -34,8 +62,8 @@ export function create(ctx, state = {}) {
 
   const pane = {
     name: "plot", el, render, resize, dispose, save, addCurves,
-    get y() { return st.y; },
-    setY(y) { st.y = {...y}; invalidate(); },
+    get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
+    setView({y, range}) { st.y = {...y}; st.range = range; invalidate(); },
     overlay: () => perf.invalidate(pane),
   };
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
@@ -45,6 +73,7 @@ export function create(ctx, state = {}) {
     clock.on("t", pane.overlay),
     store.on("segment", invalidate),
     store.on("paths", invalidate),
+    view.onUnloaded(invalidate),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
   ];
   view.join(pane);
@@ -58,7 +87,8 @@ export function create(ctx, state = {}) {
   }
 
   function normalize(c) {
-    return {...c, color: c.color || nextColor(st.curves.map((x) => x.color))};
+    return {...c, color: c.color || nextColor(st.curves.map((x) => x.color)),
+      ...(c.custom?.untrusted && {error: "custom code from an imported layout: click to review and run it"})};
   }
 
   function removeCurve(c) {
@@ -68,12 +98,14 @@ export function create(ctx, state = {}) {
   }
 
   // the store path a curve draws; transforms and custom series are (re)computed when their inputs change
+  // custom code from an untrusted layout waits until the user has reviewed it in the console
+  const inputsVersion = (inputs) => inputs.map((p) => store.series(p)?.version).join();
   function source(c) {
     if (!c.transform && !c.custom) return c.path;
     const src = c.custom ? c.path : derivedPath(c.path, c.transform);
     const inputs = c.custom ? c.custom.inputs : [c.path];
-    const version = inputs.map((p) => store.series(p)?.version).join();
-    if (inputs.every((p) => store.series(p)) && made.get(src) !== version && !busy.has(src)) {
+    const version = inputsVersion(inputs);
+    if (!c.custom?.untrusted && inputs.every((p) => store.series(p)) && made.get(src) !== version && !busy.has(src)) {
       busy.add(src);
       const job = c.custom ? evaluate(store, c.path, c.custom) : derive(store, c.path, c.transform);
       job.then(() => { made.set(src, version); c.error = null; }, (e) => { made.set(src, version); c.error = e.message; })
@@ -103,16 +135,23 @@ export function create(ctx, state = {}) {
     for (const it of rows) it.blocks = blocks(it.s, t0 - it.shift, t1 - it.shift, px);
     for (const it of lines) {
       const span = t1 - t0, a = t0 - it.shift - span * 0.05, b = t1 - it.shift + span * 0.05;
-      it.d = withEdges(store.decimate(it.src, a, b, Math.round(px * 1.1)), a, b, store.valueAt(it.src, a), store.valueAt(it.src, b));
+      const n = Math.round(px * 1.1), d = store.decimate(it.src, a, b, n);
+      // buckets are uniform and may be empty here and there, so a gap is also wider than a couple of them
+      const bucket = d && d.min !== d.max ? (b - a) / n : 0;
+      it.gap = gapTest(Math.max(5 * medianInterval(it.src, it.s), 1, 2.5 * bucket), view.unloaded());
+      it.d = withEdges(d, a, b, store.valueAt(it.src, a), store.valueAt(it.src, b));
       it.style = it.c.style || (STEPPED.has(it.s.type) ? "steps" : "line");
     }
     return {rows, lines, blockMode};
   }
 
-  // held values at the query edges, so series sparser than the view still reach both sides
+  // held values at the query edges, so series sparser than the view still reach both sides; only where the
+  // edge's logs are loaded, since an unknown span must not show the last value
   function withEdges(d, a, b, va, vb) {
     if (!d) return d;
-    const n = d.t.length, pre = typeof va === "number" && !(d.t[0] <= a), post = typeof vb === "number" && !(d.t[n - 1] >= b);
+    const n = d.t.length;
+    const pre = typeof va === "number" && !(d.t[0] <= a) && !view.isUnloaded(a);
+    const post = typeof vb === "number" && !(d.t[n - 1] >= b) && !view.isUnloaded(b);
     if (!pre && !post) return d;
     const m = n + pre + post, t = new Float64Array(m), min = new Float64Array(m), max = new Float64Array(m);
     t.set(d.t, +pre);
@@ -144,7 +183,7 @@ export function create(ctx, state = {}) {
   }
 
   function drawBase() {
-    const g = gBase, [t0, t1] = clock.range;
+    const g = gBase, [t0, t1] = xRange();
     const px = L, pw = W - L - R, ph0 = H - T - B;
     if (pw < 4 || ph0 < 4) return;
     const p = prepare(t0, t1, pw);
@@ -157,34 +196,10 @@ export function create(ctx, state = {}) {
     g.clearRect(0, 0, W, H);
     g.fillStyle = col.bg;
     g.fillRect(px, T, pw, ph0);
-    g.font = col.font;
-    g.lineWidth = 1;
 
-    // grid and tick labels
-    const xt = ticks(t0, t1, pw / 90);
-    g.strokeStyle = col.grid;
-    g.beginPath();
-    for (const t of xt.values) { const x = Math.round(X(t)) + 0.5; g.moveTo(x, T); g.lineTo(x, T + ph0); }
-    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34);
-    for (const v of yt.values) { const y = Math.round(Y(v)) + 0.5; g.moveTo(px, y); g.lineTo(px + pw, y); }
-    g.stroke();
-    if (!p.blockMode && lo < 0 && hi > 0) {
-      g.strokeStyle = col.zero;
-      g.beginPath();
-      g.moveTo(px, Math.round(Y(0)) + 0.5);
-      g.lineTo(px + pw, Math.round(Y(0)) + 0.5);
-      g.stroke();
-    }
-    g.fillStyle = col.text;
-    g.textAlign = "center";
-    g.textBaseline = "top";
-    for (const t of xt.values) {
-      const s = fmtTime(t, xt.step, t1 >= 120), w = g.measureText(s).width / 2;
-      g.fillText(s, Math.min(X(t), W - w - 1), T + ph0 + 5);
-    }
-    g.textAlign = "right";
-    g.textBaseline = "middle";
-    for (const v of yt.values) g.fillText(fmtTick(v, yt.step), px - 6, Y(v));
+    const yt = p.blockMode ? {values: []} : ticks(lo, hi, ph / 34), xt = ticks(t0, t1, pw / 90);
+    axes(g, col, {x: px, y: T, w: pw, h: ph0}, xt, X, (t) => fmtTime(t, xt.step, t1 >= 120), yt, Y);
+    drawUnloaded(g, view.unloaded(), X, {x: px, y: T, w: pw, h: ph0}, col);
 
     // state block rows, labeled in the gutter
     g.save();
@@ -198,7 +213,7 @@ export function create(ctx, state = {}) {
       const {shift, scale, offset} = it;
       g.strokeStyle = g.fillStyle = it.c.color;
       g.globalAlpha = st.hl === undefined || st.curves[st.hl] === it.c ? 1 : 0.35;
-      strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5);
+      strokeSeries(g, it.d, (t) => X(t + shift), (v) => Y(v * scale + offset), it.style, st.curves[st.hl] === it.c ? 2.5 : 1.5, it.gap);
     }
     g.globalAlpha = 1;
     drawInvalid(g, p.lines, X, py + ph);
@@ -214,7 +229,7 @@ export function create(ctx, state = {}) {
   function drawInvalid(g, lines, X, bottom) {
     const services = new Set(lines.filter((it) => it.src === it.c.path).map((it) => it.c.path.split("/")[1]));
     g.fillStyle = col.invalid;
-    const [t0, t1] = clock.range;
+    const [t0, t1] = xRange();
     for (const svc of services) {
       const d = store.decimate(`/${svc}/valid`, t0, t1, Math.round(W / 2));
       if (!d) continue;
@@ -278,7 +293,7 @@ export function create(ctx, state = {}) {
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
       h("i", {style: `background:${c.color}`, title: "show/hide", onclick: () => { c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
-      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => editCurve(c, e)}, label(c)),
+      h("span", {class: `name ${c.error ? "error" : ""}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, e)}, label(c)),
       val,
       h("b", {class: "x", title: "remove", onclick: () => removeCurve(c)}, "×"));
       row.val = val;
@@ -293,6 +308,18 @@ export function create(ctx, state = {}) {
   const editCurve = (c, e) => curveEditor(e.clientX, e.clientY, c, {
     change: () => { rebuildLegend(); invalidate(); },
     remove: () => removeCurve(c),
+    code: c.custom && (() => editCode(c, e)),
+  });
+
+  // creates (c undefined) or edits a custom series; the curve changes only once the code has run
+  const editCode = (c, e) => openConsole(e.clientX, e.clientY, c ? {name: c.label, ...c.custom} : {inputs: st.curves.slice(0, 1).map((x) => x.path)}, async (spec) => {
+    const path = `/custom/${spec.name}`, custom = {inputs: spec.inputs, globals: spec.globals, code: spec.code};
+    await evaluate(store, path, custom);
+    made.set(path, inputsVersion(custom.inputs));
+    if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
+    else st.curves.push(normalize({path, label: spec.name, custom}));
+    rebuildLegend();
+    invalidate();
   });
 
   function updateLegend() {
@@ -311,7 +338,7 @@ export function create(ctx, state = {}) {
 
   // statistics over the visible range, computed in the worker shortly after the view settles
   function updateStats() {
-    const [t0, t1] = clock.range, curves = frame?.lines.map((it) => ({path: it.src, shift: it.shift, scale: it.scale, offset: it.offset})) || [];
+    const [t0, t1] = xRange(), curves = frame?.lines.map((it) => ({path: it.src, shift: it.shift, scale: it.scale, offset: it.offset})) || [];
     const key = JSON.stringify([t0, t1, curves, curves.map((c) => store.series(c.path)?.version)]);
     if (key === statsKey) return;
     statsKey = key;
@@ -321,7 +348,7 @@ export function create(ctx, state = {}) {
       res.forEach((r, k) => {
         const row = rows[st.curves.indexOf(frame.lines[k]?.c)];
         if (!r || !row) return;
-        const f = (x) => fmtValue(+x.toPrecision(4));
+        const f = fmtValue;
         row.append(h("div", {class: "stats"}, `min ${f(r.min)}  max ${f(r.max)}  mean ${f(r.mean)}  std ${f(r.std)}  n ${r.count}  ${f(r.rate)} Hz`));
       });
     }, console.error), 120);
@@ -333,14 +360,20 @@ export function create(ctx, state = {}) {
   const zone = ({x, y}) => x < L ? "y" : y > H - B ? "x" : "plot";
   const timeAt = (x) => frame.t0 + (x - frame.px) / frame.pw * (frame.t1 - frame.t0);
   const valueAt = (y) => frame.hi - (y - frame.py) / frame.ph * (frame.hi - frame.lo);
-  const setRange = (a, b) => clock.setRange(a, b);
+  const xRange = () => st.range || clock.range;
+  function setRange(a, b) {
+    if (!st.range) return clock.setRange(a, b);
+    const span = Math.max(0.01, Math.min(clock.duration, b - a)), t0 = Math.max(0, Math.min(clock.duration - span, a));
+    st.range = [t0, t0 + span];
+    invalidate();
+  }
 
   over.addEventListener("pointerdown", (e) => {
     if (!frame) return;
     over.focus();
     over.setPointerCapture(e.pointerId);
     const p = local(e);
-    gesture = {button: e.button, zone: zone(p), start: p, range: [...clock.range], lo: frame.lo, hi: frame.hi, moved: false};
+    gesture = {button: e.button, zone: zone(p), start: p, range: [...xRange()], lo: frame.lo, hi: frame.hi, moved: false};
   });
 
   over.addEventListener("pointermove", (e) => {
@@ -391,13 +424,15 @@ export function create(ctx, state = {}) {
   });
 
   over.addEventListener("pointerleave", () => gesture || view.track(null));
+  // a legend highlight can outlive its pointerleave when a popup opens over the row
+  over.addEventListener("pointerenter", () => { if (st.hl !== undefined) { st.hl = undefined; invalidate(); } });
   over.addEventListener("contextmenu", (e) => e.preventDefault());
 
   over.addEventListener("wheel", (e) => {
     if (!frame) return;
     e.preventDefault();
     const p = local(e), scale = e.deltaMode ? 33 : 1;
-    const [a, b] = clock.range;
+    const [a, b] = xRange();
     if (zone(p) === "y" || e.shiftKey) {
       view.remember(clock, "wheel-y");
       const f = Math.exp((e.deltaY || e.deltaX) * scale * 0.002), v = valueAt(p.y);
@@ -434,6 +469,7 @@ export function create(ctx, state = {}) {
       {label: "Fit view", fn: () => { view.remember(clock); st.y = {}; setRange(0, clock.duration); invalidate(); }},
       {label: "Y auto-fit", checked: !locked, fn: () => { view.remember(clock); st.y = locked ? {} : {min: frame.lo, max: frame.hi}; invalidate(); }},
       {label: "Y limits…", fn: () => yLimits(e)},
+      {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
       {label: "Undo view", fn: () => view.undo(clock)},
       {label: "Redo view", fn: () => view.redo(clock)},
       null,
@@ -442,6 +478,7 @@ export function create(ctx, state = {}) {
       {label: "Export PNG", fn: () => exportPng([base, over], st.curves.filter((c) => !c.hidden).map((c) => ({color: c.color, name: label(c), value: rows[st.curves.indexOf(c)].val.textContent})),
         col.bg, col.fg, col.font, st.title || "plot")},
       null,
+      {label: "Custom series…", fn: () => editCode(undefined, e)},
       {label: "Remove all curves", disabled: !st.curves.length, fn: () => { st.curves = []; rebuildLegend(); invalidate(); }},
     ]);
   }
@@ -453,28 +490,13 @@ export function create(ctx, state = {}) {
   }
 
   async function exportCsv() {
-    const [t0, t1] = clock.range;
+    const [t0, t1] = xRange();
     const curves = frame.lines.map((it) => ({path: it.src, label: label(it.c), shift: it.shift, scale: it.scale, offset: it.offset}));
     const text = await compute(store, "csv", {curves, t0, t1}, curves.map((c) => c.path));
     download(new Blob([text], {type: "text/csv"}), `${st.title || "plot"}.csv`);
   }
 
-  // ---- drop target for series dragged from the browser
-
-  el.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PATHS_MIME)) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    el.classList.add("drop");
-  });
-  el.addEventListener("dragleave", () => el.classList.remove("drop"));
-  el.addEventListener("drop", (e) => {
-    el.classList.remove("drop");
-    const data = e.dataTransfer.getData(PATHS_MIME);
-    if (!data) return;
-    e.preventDefault();
-    addCurves(JSON.parse(data));
-  });
+  view.acceptPaths(el, addCurves);
 
   // ---- pane contract
 
@@ -498,7 +520,7 @@ export function create(ctx, state = {}) {
 
   function save() {
     const curves = st.curves.map(({error, ...c}) => c);
-    return {title: st.title, curves, y: st.y, ...(st.stats && {stats: true})};
+    return {title: st.title, curves, y: st.y, ...(st.stats && {stats: true}), ...(st.range && {range: st.range})};
   }
 
   function dispose() {

@@ -1,0 +1,5 @@
+{"name": "home", "url": "/", "reference": ["connect-home"],
+ "steps": [
+  {"waitFor": ".login-card"},
+  {"shot": "signed-out"}
+ ]}

@@ -1,0 +1,12 @@
+{"name": "device", "url": "/", "auth": true,
+ "steps": [
+  {"waitFor": ".device-name"},
+  {"shot": "devices"},
+  {"goto": "/5beb9b58bd12b691"},
+  {"waitFor": ".device-page"},
+  {"waitFor": "a.drive-row"},
+  {"shot": "loaded"},
+  {"wheel": {"dy": 1200}},
+  {"wait": 300},
+  {"shot": "scrolled"}
+ ]}

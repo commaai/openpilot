@@ -1,0 +1,5 @@
+{"name": "bad-route", "url": "/5beb9b58bd12b691/00000000--0000000000", "allow": ["^404 GET https://api.commadotai.com/", "API 404"],
+ "steps": [
+  {"waitFor": ".page-msg"},
+  {"shot": "not-found"}
+ ]}

@@ -11,7 +11,7 @@ globalThis.fetch = async (u, o) => String(u).startsWith("file:") ? new Response(
 const {initCodec, decompress} = await import(new URL("codec/codec.js", base));
 const {Reader} = await import(new URL("data/capnp.js", base));
 const {setCache, parseRemote} = await import(new URL("data/github.js", base));
-const {schemaAt} = await import(new URL("data/sources.js", base));
+const {schemaAt} = await import(new URL("data/upstream.js", base));
 
 const CACHE = path.join(os.tmpdir(), "ycpe-github");
 setCache({

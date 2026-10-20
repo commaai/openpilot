@@ -1,12 +1,12 @@
 // parity of capnpc.js with pycapnp: for commits across cereal's history and forks, fetches the schema files the way
-// the app does (sources.js), compiles them in JS and with gen_schema.py (capnpc_ref.py), and diffs the text.
+// the app does (upstream.js), compiles them in JS and with gen_schema.py (capnpc_ref.py), and diffs the text.
 // usage: PYTHONPATH=<repo root> node capnpc.mjs [--fresh] [repo@sha ...]
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {execFileSync} from "node:child_process";
 import {setCache, stats} from "../github.js";
-import {schemaFiles} from "../sources.js";
+import {schemaFiles} from "../upstream.js";
 import {compile} from "../capnpc.js";
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
