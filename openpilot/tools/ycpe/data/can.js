@@ -2,7 +2,7 @@
 // (CanFrames) and hands them over by transfer; a dedicated CAN worker (this file loaded as "can.js?worker")
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
-import {DBC, Dbcs, bits, raw, value} from "./dbc.js";
+import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
 import {parseRemote} from "./github.js";
 import {upstream as github} from "./remote.js";
 
@@ -343,7 +343,8 @@ function findInit({buses, addresses, t0, t1, minSize, maxSize, le, signed, facto
     if (!f || f[0].base + f[0].t[f[2]] < t0) continue;
     const total = f[0].len[f[2]] * 8;
     for (let size = minSize; size <= maxSize; size++) {
-      for (let start = 0; start <= total - size; start++) cands.push({key: k, sig: bits({start, size, le, signed, factor, offset}), t: t0, values: []});
+      // every in-frame placement; a big endian one's start is its MSB, counted from the frame's first bit in flipped order
+      for (let i = 0; i <= total - size; i++) cands.push({key: k, sig: bits({start: le ? i : flip(i), size, le, signed, factor, offset}), t: t0, values: []});
     }
   }
   find.t1 = t1;
