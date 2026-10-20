@@ -5,6 +5,8 @@ import {needsDaemon} from "../daemon.js";
 
 const MODES = [["auto", "auto"], ["stock", "stock (bundled, migrated)"], ["log", "log (its own commit)"]];
 
+const took = (ms) => ms < 10 ? "cached" : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
+
 // el, filled in once the route's logs start loading (the info pane doesn't load them itself); returns a dispose()
 export function schemaRow(ctx) {
   css(new URL("./schema.css", import.meta.url));
@@ -26,7 +28,7 @@ export function schemaRow(ctx) {
       note.className = `small ${s.status === "error" ? "error" : "muted"}`;
       note.textContent = s.status === "fetching" ? `fetching ${s.key}…`
         : s.status === "error" ? `${s.error || s.reason}; reading with the bundled schema`
-        : [s.mode === "auto" && s.reason, s.ms !== undefined && `${s.ms < 10 ? "cached" : `${(s.ms / 1000).toFixed(1)} s`}`].filter(Boolean).join(" · ");
+        : [s.mode === "auto" && s.reason, s.ms !== undefined && took(s.ms)].filter(Boolean).join(" · ");
     });
     el.className = "schema-row";
     el.replaceChildren(what, select, note);

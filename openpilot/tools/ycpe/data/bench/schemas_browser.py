@@ -14,6 +14,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
+RAW = "https://raw.githubusercontent.com/"
 FLAGS = ["--use-angle=vulkan", "--enable-features=Vulkan", "--ignore-gpu-blocklist", "--enable-gpu"]
 
 
@@ -31,12 +32,12 @@ def wait(page, what, cond, timeout=60):
 
 
 def paths(page, text):
-  """rows the series browser lists for a filter"""
+  """paths the series browser matches with a filter"""
   page.keyboard.press("2")
   f = page.locator(".browser .filter").first
   f.fill(text)
   page.wait_for_timeout(400)
-  n = page.locator(".browser .row").count()
+  n = int(page.locator(".browser .count").inner_text())
   f.fill("")
   f.blur()  # view keys don't work in inputs
   page.keyboard.press("1")
@@ -46,7 +47,9 @@ def paths(page, text):
 def open_route(ctx, base):
   page = ctx.new_page()
   errors, api = [], []
-  page.on("console", lambda m: m.type == "error" and errors.append(m.text))
+  # a 404 is how GitHub says a path doesn't exist at a commit: schema lookups probe for them
+  page.on("console", lambda m: m.type == "error" and not m.text.startswith("Failed to load resource") and errors.append(m.text))
+  ctx.on("response", lambda r: r.status >= 400 and not r.url.startswith(RAW) and errors.append(f"{r.status} {r.url}"))
   page.on("pageerror", lambda e: errors.append(str(e)))
   ctx.on("request", lambda r: r.url.startswith("https://api.github.com/") and api.append(r.url))
   page.goto(f"{base}/{ROUTE}/drive")
@@ -75,6 +78,12 @@ if __name__ == "__main__":
     print(f"demo, auto: {schema_row(page)}")
     ok &= "stock" in schema_row(page).split(" auto")[0]
     stock_only, log_only = paths(page, "narrowRoadCameraState/frameId"), paths(page, "roadCameraState/integLines")
+    local = page.locator(".schema-row option[value^='local:']")
+    if local.count():  # the daemon's checkout of this branch
+      page.select_option(".schema-row select", local.first.get_attribute("value"))
+      took = wait(page, "local schema", lambda: not schema_row(page).startswith(("stock", "commaai")) and "fetching" not in schema_row(page))
+      print(f"demo, local: {schema_row(page)} (switched in {took:.1f} s)")
+      ok &= "error" not in schema_row(page)
     d0 = drops(page)
     page.select_option(".schema-row select", "log")
     took = wait(page, "log schema", lambda: "commaai/openpilot@" in schema_row(page) and "fetching" not in schema_row(page))
