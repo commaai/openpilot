@@ -68,20 +68,35 @@ function modal(title, caption, onclose) {
   return {el, body};
 }
 
-// QR codes are read by the platform where it can (Chrome on Android, macOS, ChromeOS); null elsewhere (Windows, Linux)
+// QR codes are read by the platform where it can (Chrome on Android, macOS, ChromeOS), else by zxing in a worker
+// (qr-worker.js), handed each frame as a bitmap; null when it can't load
 async function qrDetector() {
   const formats = await globalThis.BarcodeDetector?.getSupportedFormats().catch(() => []);
-  return formats?.includes("qr_code") ? new BarcodeDetector({formats: ["qr_code"]}) : null;
+  if (formats?.includes("qr_code")) return new BarcodeDetector({formats: ["qr_code"]});
+  const worker = new Worker(new URL("./qr-worker.js", import.meta.url));
+  const reply = () => new Promise((resolve) => worker.addEventListener("message", ({data}) => resolve(data), {once: true}));
+  if ((await reply()).error) return worker.terminate(), null;
+  return {
+    async detect(video) {
+      const frame = await createImageBitmap(video);
+      worker.postMessage(frame, [frame]);
+      const {codes, error} = await reply();
+      if (error) throw new Error(error);
+      return codes.map((rawValue) => ({rawValue}));
+    },
+    close: () => worker.terminate(),
+  };
 }
 
 // connect's add-device dialog: the camera with a frame to hold the code in, and over it pairing, its error with
 // "try again", or the paired device. Closing it after pairing opens the device
 export async function openPair() {
-  let stream = null, timer = 0, busy = false, dongleId = null;
+  let stream = null, timer = 0, busy = false, dongleId = null, detector = null;
   const video = h("video", {muted: true, playsinline: true});
   const status = h("div", {class: "pair-status", hidden: true});
   const {el, body} = modal("Pair device", "scan QR code", () => {
     clearTimeout(timer);
+    detector?.close?.();
     for (const track of stream?.getTracks() ?? []) track.stop();
     if (dongleId) go(devicePath(dongleId));
   });
@@ -125,10 +140,11 @@ export async function openPair() {
     status.classList.add("inline");
   };
 
-  const detector = await qrDetector();
-  const camera = await navigator.mediaDevices?.enumerateDevices().then((list) => list.some((d) => d.kind === "videoinput"), () => false);
-  if (!el.open) return;
-  if (!detector) return fallback("This browser can't read QR codes. Scan the one on your device with your phone's camera: it opens a link that pairs it.");
+  let camera;
+  [detector, camera] = await Promise.all([qrDetector(),
+    navigator.mediaDevices?.enumerateDevices().then((list) => list.some((d) => d.kind === "videoinput"), () => false)]);
+  if (!el.open) return detector?.close?.();
+  if (!detector) return fallback("Couldn't load the QR code reader. Scan the one on your device with your phone's camera: it opens a link that pairs it.");
   if (!camera) return fallback("Camera not found, please enable camera access.");
   try {
     stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment", width: {ideal: 1280}, height: {ideal: 720}}});
