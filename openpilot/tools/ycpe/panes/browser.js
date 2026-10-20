@@ -5,7 +5,7 @@ import {h} from "/dom.js";
 import {fmtValue} from "/panes/plot/draw.js";
 import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 
-const ROW = 18, BUILD_MS = 3;
+const ROW = 18, BUILD_MS = 2;
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
 // list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 const order = (a, b) => {
@@ -33,7 +33,8 @@ export function create(ctx, state = {}) {
   const pane = {name: "browser", el, render, resize, dispose, save};
 
   // new paths arrive with segments and are added at most once a frame; a new DBC replaces the /dbc branch
-  const changed = () => { stale = true; perf.invalidate(pane); };
+  let all = null, done = 0;  // store.paths(), and how many of them the tree has been through
+  const changed = () => { all = null; stale = true; perf.invalidate(pane); };
   const offs = [store.on("paths", changed), clock.on("t", () => perf.invalidate(pane)),
     store.can?.on("dbc", () => { drop("/dbc"); changed(); })].filter(Boolean);
 
@@ -41,21 +42,18 @@ export function create(ctx, state = {}) {
   // arrive, a few ms worth a frame (a DBC brings thousands), and only the branches they land in are re-sorted;
   // fewer paths than before rebuilds it.
   function build(reset = false) {
-    const end = performance.now() + BUILD_MS, all = store.paths();
-    if (reset || !tree || all.length < total) {
-      tree = {depth: -1};
-      nodes = new Map();
-    }
+    const end = performance.now() + BUILD_MS;
+    if (!all || reset) [all, done] = [store.paths(), 0];
+    if (reset || !tree || all.length < total) [tree, nodes, done] = [{depth: -1}, new Map(), 0];
     const touched = new Set();
-    let i = 0;
-    for (; i < all.length && (i % 256 || performance.now() < end); i++) {
-      const meta = all[i], known = nodes.get(meta.path);
+    for (; done < all.length && (done % 256 || performance.now() < end); done++) {
+      const meta = all[done], known = nodes.get(meta.path);
       if (known) known.meta = meta;
       else if (st.deprecated || !(meta.internal || deprecated(meta.path))) node(meta.path, touched).meta = meta;
     }
     for (const n of touched) n.kids.sort((a, b) => order(a.name, b.name));
     total = all.length;
-    stale = i < all.length;
+    stale = done < all.length;
     refresh();
   }
 
