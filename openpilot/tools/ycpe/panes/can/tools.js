@@ -261,8 +261,8 @@ function csvDialog(can, ctx) {
     h("button", {class: "can-btn primary", onclick: async () => {
       const [a, b] = range.value === "all" ? [-Infinity, Infinity] : [t0, t1];
       const keys = what.value === "all" ? can.messages().map((m) => m.key) : [sel];
-      const text = await can.csv(keys, a, b, what.value === "decoded");
-      download(`${ctx.route.fullname.replace("|", "_")}_${what.value === "all" ? "can" : hexId(sel).replace(":", "_")}.csv`, text);
+      const blob = await can.csv(keys, a, b, what.value === "decoded");
+      download(`${ctx.route.fullname.replace("|", "_")}_${what.value === "all" ? "can" : hexId(sel).replace(":", "_")}.csv`, blob);
       d.close();
     }}, "Export")));
 }

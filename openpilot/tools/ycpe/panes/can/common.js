@@ -56,8 +56,9 @@ export const menuCheck = (label, checked, fn) => h("label", {class: "menu-row"},
 // a labelled input row for forms
 export const field = (label, input, hint) => h("label", {class: "can-field", title: hint || ""}, h("span", {}, label), input);
 
-export function download(name, text) {
-  const a = h("a", {href: URL.createObjectURL(new Blob([text], {type: "text/plain"})), download: name});
+// text or a Blob as a file
+export function download(name, data) {
+  const a = h("a", {href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type: "text/plain"})), download: name});
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }

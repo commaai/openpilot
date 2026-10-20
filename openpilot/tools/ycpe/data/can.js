@@ -367,17 +367,30 @@ function findNext(op, v1, v2) {
   return next;
 }
 
-// raw frames of the given messages as CSV, in time order
+const HEX = Array.from({length: 256}, (_, i) => i.toString(16).toUpperCase().padStart(2, "0"));
+
+// the given messages' frames in time order as cabana's CSV: raw bytes, or the signals of msg. A Blob, built in parts,
+// as a whole route runs to hundreds of MB
 function csv(keys, t0, t1, msg) {
   const rows = [];
-  for (const k of keys) each(k, t0, t1, (s, m, i) => rows.push([time(s, i), k, s.data.subarray(dataAt(s, m, i), dataAt(s, m, i) + s.len[i]), s.len[i]]));
+  for (const k of keys) each(k, t0, t1, (s, m, i) => rows.push([time(s, i), k, s.data, dataAt(s, m, i), s.len[i]]));
   rows.sort((a, b) => a[0] - b[0]);
-  const hex = (d) => [...d].map((x) => x.toString(16).padStart(2, "0")).join("");
-  if (msg) {
-    return [["time", ...msg.sigs.map((s) => s.name)].join(","),
-            ...rows.map(([t, , d, len]) => [t.toFixed(6), ...msg.sigs.map((s) => value(msg, s, d, 0, len))].join(","))].join("\n") + "\n";
+  const cell = (sg, v) => (Number.isNaN(v) ? "" : v.toFixed(sg.precision));
+  const line = ([t, k, d, o, len]) => {
+    let x = `${t.toFixed(6)},0x${addrOf(k).toString(16)},${busOf(k)},`;
+    if (msg) return x + msg.sigs.map((sg) => cell(sg, value(msg, sg, d, o, len))).join(",") + "\n";
+    x += "0x";
+    for (let b = o; b < o + len; b++) x += HEX[d[b]];
+    return x + "\n";
+  };
+  const parts = [["time,addr,bus", ...(msg ? msg.sigs.map((sg) => sg.name) : ["data"])].join(",") + "\n"];
+  let part = "";
+  for (const r of rows) {
+    part += line(r);
+    if (part.length > 1 << 20) { parts.push(part); part = ""; }
   }
-  return ["time,addr,bus,data", ...rows.map(([t, k, d]) => `${t.toFixed(6)},0x${addrOf(k).toString(16)},${busOf(k)},${hex(d)}`)].join("\n") + "\n";
+  parts.push(part);
+  return new Blob(parts, {type: "text/csv"});
 }
 
 if (import.meta.url.endsWith("?worker")) {
