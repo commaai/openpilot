@@ -26,7 +26,8 @@ export function create(ctx, state = {}) {
     clock.on("t", () => perf.invalidate(pane)),
     store.on("segment", refresh),
     ctx.theme.on(() => { col = colors(ctx.theme); perf.invalidate(pane); }),
-  ];
+    store.can?.on("series", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
+  ].filter(Boolean);
 
   const inputs = (c) => st.mode === "fft" ? [c.path] : [c.x, c.y];
   const name = (c) => st.mode === "fft" ? c.path : `${c.y} vs ${c.x}`;

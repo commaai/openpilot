@@ -71,9 +71,9 @@ export const daemon = {
   // the sources it resolves, or null without it
   sources: () => local?.present && local.has("sources") ? local.caps.modules.sources.sources : null,
   // {segments: {n: {kind: {url, file, size, source, cached}}}, missing, errors: {source: message}}; the page's sign-in
-  // stands in for the daemon's own
-  resolve: (sr, segs, kinds, sources) => local.json("/local/sources/resolve", {method: "POST",
-    headers: auth.token() ? {Authorization: `JWT ${auth.token()}`} : {}, body: {route: sr.route, segs, kinds, sources}}),
+  // stands in for the daemon's own. sizes: HEAD the API's files too (other sources always know theirs).
+  resolve: (sr, segs, kinds, sources, sizes = false) => local.json("/local/sources/resolve", {method: "POST",
+    headers: auth.token() ? {Authorization: `JWT ${auth.token()}`} : {}, body: {route: sr.route, segs, kinds, sources, sizes}}),
 };
 
 // a source only the daemon reaches (no CORS, or not this machine's network); with it, resolveFiles asks it instead
@@ -92,17 +92,21 @@ const ccsLfs = () => setting("ycpe_ccs_lfs") || ccsRepo();
 // "<n>/<file>" → {size, lfs: {oid, size} | undefined}; empty when the route isn't in the dataset
 const ccsTrees = new Map();
 function ccsTree(sr) {
-  if (!ccsTrees.has(sr.route)) {
-    const url = `${ccsRepo().replace("huggingface.co/", "huggingface.co/api/")}/tree/${ccsBranch()}/segments/${sr.dongle}/${sr.logId}?recursive=true`;
-    ccsTrees.set(sr.route, fetch(url).then(async (r) => {
-      if (r.status === 404) return new Map();
-      if (!r.ok) throw new Error(`huggingface.co ${r.status}`);
-      return new Map((await r.json()).filter((e) => e.type === "file").map((e) => [e.path.split("/").slice(-2).join("/"), e]));
-    }, () => {
-      throw new Error("huggingface.co isn't reachable");
-    }));  // a refusal is kept too: asking again won't change it
-  }
+  if (!ccsTrees.has(sr.route)) ccsTrees.set(sr.route, listCcs(sr));  // a failure is kept too: asking again won't change it
   return ccsTrees.get(sr.route);
+}
+async function listCcs(sr) {
+  const api = `${ccsRepo().replace("huggingface.co/", "huggingface.co/api/")}`, dir = `segments/${sr.dongle}/${sr.logId}`;
+  const get = (url, opts) => fetch(url, opts).then((r) => {
+    if (!r.ok) throw new Error(`huggingface.co ${r.status}`);
+    return r.json();
+  }, () => {
+    throw new Error("huggingface.co isn't reachable");
+  });
+  // whether the route is there at all (an empty answer, where the tree would 404 into the console)
+  if (!(await get(`${api}/paths-info/${ccsBranch()}`, {method: "POST", body: new URLSearchParams({paths: dir})})).length) return new Map();
+  const tree = await get(`${api}/tree/${ccsBranch()}/${dir}?recursive=true`);
+  return new Map(tree.filter((e) => e.type === "file").map((e) => [e.path.split("/").slice(-2).join("/"), e]));
 }
 
 async function lfsUrls(objects) {
@@ -166,10 +170,10 @@ export const routeSource = {
 // file_sources' walk: for each kind, each source in turn on the segments still without it. Partial results are kept,
 // not raised. "auto" is the daemon's order, or without it AUTO's sources a browser reaches.
 // → {found: Map "<n>/<kind>" → {url, file, size, source}, errors: {source: message}}
-export async function resolveFiles(sr, segs, kinds, sources = "auto") {
+export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = false} = {}) {
   const found = new Map(), errors = {};
   if (daemon.sources()) {
-    const r = await daemon.resolve(sr, segs, kinds, sources);
+    const r = await daemon.resolve(sr, segs, kinds, sources, sizes);
     for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, f);
     return {found, errors: r.errors || {}};
   }
@@ -204,16 +208,85 @@ export async function resolveLogs(sr, segs, {sources = "auto", mode = sr.selecto
   return {logs, missing: need, errors};
 }
 
-// what the store loads for a route (a name, optionally with a range and selector), from the route's chosen source:
-// urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
-export async function routeLogs(name) {
+// the record a workspace opens a route with: the API's, or when the API doesn't have the route or won't show it, one
+// built from what the other sources have (openpilotci, commaCarSegments, ...), so those open without signing in
+// With a range ("<route>/2:5/q"), the record is of those segments played back to back: range is "2:5/q",
+// segment_numbers the segments in timeline order (slot k plays segment_numbers[k]), and the start and end times span
+// just them.
+export async function routeRecord(name) {
   const sr = parseRange(name);
-  const route = await api.route(sr.route).catch(() => null);
-  const {logs, errors} = await resolveLogs(sr, segIdxs(sr, route?.maxqlog), {sources: routeSource.list(routeSource.get(sr.route))});
+  let record;
+  try {
+    record = await api.route(sr.route);
+  } catch (e) {
+    if (![401, 403, 404].includes(e.status)) throw e;
+    const files = await elsewhere(sr).catch(() => new Map());
+    if (!files.size) throw e;
+    record = looseRoute(sr.route, files).route;
+  }
+  if (!sr.slice && !sr.selector) return record;
+  const have = new Set(record.segment_numbers ?? segIdxs({slice: ":"}, record.maxqlog));
+  const segs = segIdxs(sr, record.maxqlog).filter((n) => have.has(n));
+  if (!segs.length) throw new Error(`no segments in ${sr.slice}`);
+  const t0 = record.start_time_utc_millis + segs[0] * 60000;
+  return {...record, range: [sr.slice, sr.selector].filter(Boolean).join("/"), segment_numbers: segs,
+    start_time_utc_millis: t0, end_time_utc_millis: t0 + segs.length * 60000};
+}
+
+// the route a record opens, with its range: what a path or the workspace names it by
+export const routeKey = (route) => route.range ? `${route.fullname}/${route.range}` : route.fullname;
+
+// "/<dongle>/<log id>[/<slice>][/<q|r|a>][/<view>]" path parts → {name: "<dongle>|<log id>[/<slice>][/<selector>]",
+// view}, or null when they don't name a route
+export function routeFromPath(parts) {
+  const [dongle, log, ...rest] = parts;
+  const range = [];
+  if (/^-?\d*(?::-?\d*){0,2}$/.test(rest[0] ?? "") && rest[0]) range.push(rest.shift());
+  if (/^[qra]$/.test(rest[0] ?? "")) range.push(rest.shift());
+  const name = [`${dongle}|${log}`, ...range].join("/");
+  return parseRange(name) && {name, view: rest[0]};
+}
+
+// a range's files in timeline slots, each with its real segment number; all of them as they are without one
+const slotted = (route, urls) => route.range ? route.segment_numbers.map((n) => urls[n] && {...urls[n], seg: n}) : urls;
+
+// every file of a route the sources other than the API have: "<n>/<kind>" → {url, file, size, source}
+async function elsewhere(sr) {
+  const served = daemon.sources();
+  if (served) {
+    const r = await daemon.resolve(sr, undefined, Object.keys(KINDS), served.filter((s) => s !== "api"));
+    return new Map(Object.entries(r.segments).flatMap(([n, byKind]) => Object.entries(byKind).map(([kind, f]) => [`${n}/${kind}`, f])));
+  }
+  const segs = [...new Set([...(await ccsTree(sr)).keys()].map((k) => +k.split("/")[0]))];
+  return (await resolveFiles(sr, segs, Object.keys(KINDS), ["carSegments"])).found;
+}
+
+// what the store loads for a route (a name, optionally with a range and selector) given its record (or the promise
+// of it), from the route's chosen source: urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
+export async function routeLogs(name, record) {
+  const route = await record, sr = parseRange(name);
+  if (route.loose) return slotted(route, looseLogs(route.files, sr?.selector));
+  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+  const {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(routeSource.get(sr.route))});
   if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
   const urls = [];
   for (const [n, f] of logs) urls[n] = f;
-  return urls;
+  return slotted(route, urls);
+}
+
+// a camera's file for each segment (camera: qcamera, fcamera, ecamera or dcamera), from the route's chosen source or
+// the files a loose route came with: urls[n] = {url, file, size, source}
+export async function routeCameraFiles(route, camera) {
+  const urls = [];
+  if (route.loose) {
+    for (const [key, f] of route.files) if (key.endsWith(`/${camera}`)) urls[parseInt(key)] = f;
+    return slotted(route, urls);
+  }
+  const sr = parseRange(route.fullname);
+  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+  const {found} = await resolveFiles(sr, segs, [camera], routeSource.list(routeSource.get(sr.route)));
+  for (const [key, f] of found) urls[parseInt(key)] = f;
+  return slotted(route, urls);
 }
 
 // ---- routes outside the API: local files and direct URLs ----
@@ -223,18 +296,24 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
 // an API-shaped route record for files found outside the API, so a workspace can open them. files: Map "<n>/<kind>"
 // → {url, file, size, source}; the record carries them (route.files) and the store gets each segment's log.
 function looseRoute(name, files) {
-  const urls = [];
-  for (const [key, f] of files) {
-    const [n, kind] = key.split("/");
-    if (kind === "rlog" || kind === "qlog" && urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
-  }
   const ns = [...new Set([...files.keys()].map((k) => +k.split("/")[0]))].sort((a, b) => a - b);
   const t0 = Date.parse(name.split("|")[1].replace(/^(\d{4}-\d\d-\d\d)--(\d\d)-(\d\d)-(\d\d)$/, "$1T$2:$3:$4")) || 0;  // timestamp log ids only
   return {
     route: {fullname: name, dongle_id: name.split("|")[0], maxqlog: ns.at(-1), segment_numbers: ns, files, loose: true,
       start_time_utc_millis: t0, end_time_utc_millis: t0 + 60000 * (ns.at(-1) + 1)},
-    urls,
+    urls: looseLogs(files),
   };
+}
+
+// each segment's rlog, or its qlog when that's all there is (/r and /q take only that kind)
+function looseLogs(files, selector) {
+  const urls = [];
+  for (const [key, f] of files) {
+    const [n, kind] = key.split("/");
+    if (kind !== "rlog" && kind !== "qlog" || selector === "r" && kind !== "rlog" || selector === "q" && kind !== "qlog") continue;
+    if (kind === "rlog" || urls[+n]?.kind !== "rlog") urls[+n] = {...f, kind};
+  }
+  return urls;
 }
 
 // where a file belongs, from its path or URL: "<route>--<seg>--<file>" (explorer), "<dongle>/<log id>/<seg>/<file>",
