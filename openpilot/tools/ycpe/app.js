@@ -373,7 +373,7 @@ class Workspace {
 
   // install a whole new model for the view (null: back to the default)
   applyLayout(model) {
-    if (model) localStorage.setItem(`ycpe_layout_${this.view}`, JSON.stringify(model));
+    if (model) localStorage.setItem(`ycpe_layout_${this.view}`, JSON.stringify(checkLayout(model)));
     else localStorage.removeItem(`ycpe_layout_${this.view}`);
     this.layout?.dispose();
     delete this.layouts[this.view];

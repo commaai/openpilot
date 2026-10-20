@@ -14,12 +14,25 @@ const DIVIDER = 4;  // px, as in style.css
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
 const UNDO = 50;    // layout edits remembered
 
-// a saved model that isn't one (hand edited, an older format) throws
+// a saved model that isn't one (hand edited, an older format) throws. Sizes that aren't positive numbers take an even
+// share, and pane types this version doesn't have are empty.
 export function checkLayout(model) {
   const node = (n) => n && typeof n === "object" && (n.children
     ? Array.isArray(n.children) && n.children.length && Array.isArray(n.sizes) && n.sizes.length === n.children.length && n.children.every(node)
     : typeof n.pane === "string");
   if (!Array.isArray(model?.tabs) || !model.tabs.length || !model.tabs.every((t) => node(t?.root))) throw new Error("not a layout");
+  const fix = (n) => {
+    if (!n.children) {
+      if (!PANES[n.pane]) Object.assign(n, {pane: "empty", state: {}});
+      return;
+    }
+    if (!n.sizes.every((s) => Number.isFinite(s) && s > 0)) {
+      const sizes = n.sizes.map((s) => Number.isFinite(s) && s > 0 ? s : 1 / n.sizes.length), sum = sizes.reduce((a, b) => a + b);
+      n.sizes = sizes.map((s) => s / sum);
+    }
+    n.children.forEach(fix);
+  };
+  for (const t of model.tabs) fix(t.root);
   return model;
 }
 
