@@ -1,6 +1,7 @@
 // cabana's charts: tabs of plot-pane grids, one plot per chart. The plot button or the signal picker opens a chart,
-// dropping signals on a chart adds them, and dragging a chart's handle onto another merges the two. Only the open
-// tab has live plots. Charts show the shared view range, or, as cabana, a window that pages along with the playhead.
+// dropping signals on a chart adds them, and dragging a chart's handle onto another merges the two (or between charts,
+// moves it). Only the open tab has live plots. Charts show the shared view range, or, as cabana, a window that pages
+// along with the playhead.
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
 import {create as plot} from "/panes/plot/plot.js";
@@ -16,8 +17,10 @@ export function create(ctx, state) {
   const empty = h("div", {class: "can-empty"}, "Plot a signal from the signal list, or drop signals here");
   const grid = h("div", {class: "can-charts-grid", ondragover: (e) => e.preventDefault(), ondrop: (e) => {
     const data = e.dataTransfer.getData(PATHS_MIME);
-    // drops on a chart are the plot's
-    if (data && !e.defaultPrevented) { e.preventDefault(); add({curves: JSON.parse(data).map(curve)}); }
+    // drops on a chart are the plot's; a chart's handle dropped anywhere else moves the chart there
+    if (!data || e.defaultPrevented) return;
+    e.preventDefault();
+    if (dragging) move(dragging, e); else add({curves: JSON.parse(data).map(curve)});
   }}, empty);
   const select = (title, options, value, fn) => h("select", {class: "can-select", title, onchange: (e) => fn(e.target.value)},
     options.map(([v, n]) => h("option", {value: v, selected: v === value}, n)));
@@ -49,7 +52,7 @@ export function create(ctx, state) {
     c.box = h("div", {class: "can-chart-plot"}, c.pane.el);
     const paths = () => c.pane.save().curves.map((x) => x.path);
     c.el = h("div", {class: "can-chart"},
-      h("div", {class: "can-chart-bar", draggable: true, title: "Drag onto another chart to merge",
+      h("div", {class: "can-chart-bar", draggable: true, title: "Drag onto another chart to merge, or between charts to move",
         ondragstart: (e) => { dragging = c; e.dataTransfer.setData(PATHS_MIME, JSON.stringify(paths())); },
         // the curves landed on another chart: this one is merged away
         ondragend: (e) => { if (dragging === c && e.dataTransfer.dropEffect !== "none") remove(c); dragging = null; }},
@@ -85,6 +88,20 @@ export function create(ctx, state) {
     charts.splice(charts.indexOf(n), 1);
     charts.splice(at, 0, n);
     grid.insertBefore(n.el, next);
+  }
+
+  // before the first chart whose middle is past the drop, in reading order; the chart stays as it is, so dragend
+  // doesn't remove it
+  function move(c, e) {
+    const before = charts.find((x) => {
+      const r = x.el.getBoundingClientRect();
+      return x !== c && (e.clientY < r.top || (e.clientY < r.bottom && (cols > 1 ? e.clientX < r.left + r.width / 2 : e.clientY < r.top + r.height / 2)));
+    });
+    charts.splice(charts.indexOf(c), 1);
+    charts.splice(before ? charts.indexOf(before) : charts.length, 0, c);
+    grid.insertBefore(c.el, before?.el || null);
+    dragging = null;
+    layout();
   }
 
   function split(c) {
