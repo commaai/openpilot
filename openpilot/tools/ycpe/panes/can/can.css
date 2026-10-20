@@ -82,12 +82,10 @@
 .can-table-row:hover { background: var(--hover); }
 
 /* charts */
-.can-charts-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-auto-rows: minmax(150px, 1fr); gap: 4px; padding: 4px; }
+.can-charts-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-auto-rows: 200px; gap: 4px; padding: 4px; }
 .can-chart { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 4px; }
-.can-chart-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 2px 4px; cursor: grab; }
-.can-chart-key { display: inline-flex; align-items: center; gap: 4px; }
-.can-chart-key i { width: 10px; height: 3px; border-radius: 1px; }
-.can-chart-canvas { flex: 1; min-height: 0; width: 100%; cursor: crosshair; }
+.can-chart-bar { display: flex; align-items: center; height: 16px; padding: 0 2px 0 6px; color: var(--muted); cursor: grab; }
+.can-chart-plot { position: relative; flex: 1; min-height: 0; }
 
 /* dialogs and menus */
 .can-dialog { min-width: 420px; max-width: min(900px, 92vw); max-height: 86vh; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
