@@ -48,7 +48,7 @@ export function create(ctx, state) {
     procs, lacking,
     h("div", {class: "replay-row"}, "segments ", first, " to ", last,
       h("button", {class: "link", title: "The segments of the visible x-range", onclick: visible}, "visible range"), h("span", {class: "grow"}), start),
-    h("div", {class: "muted"}, "Processes start fresh at the first segment, with the log's calibration and learned params; engagement isn't carried in."),
+    h("div", {class: "muted"}, "Processes start on the segment before the range, when there is one, so engagement, calibration and learners are warm when it begins; only the range is written and compared."),
     progress, status, errors,
     h("h3", {}, "Diverged signals"), diff,
     h("h3", {}, "Replays of this route"), history);
@@ -75,9 +75,10 @@ export function create(ctx, state) {
     if (!repoSel.options.length) repoSel.append(h("option", {value: info.repo}, info.repo.split("/").at(-1)));  // no repos module: the daemon's checkout
     commit.textContent = info.commit ? info.commit.slice(0, 8) : "";
     known = Object.fromEntries(info.procs.map((p) => [p.name, p.missing]));
-    procs.replaceChildren(...info.procs.map(({name, missing}) => {
+    procs.replaceChildren(...info.procs.map(({name, missing, videos = []}) => {
       const box = h("input", {type: "checkbox", checked: picked.has(name), onchange: (e) => { e.target.checked ? picked.add(name) : picked.delete(name); check(); }});
-      return h("label", {class: `replay-proc${missing.length ? " lacking" : ""}`, title: missing.length ? `missing: ${missing.join(", ")}` : ""}, box, name);
+      const title = missing.length ? `missing: ${missing.join(", ")}` : videos.length ? `fed frames from ${videos.join(" and ")}, downloaded per segment` : "";
+      return h("label", {class: `replay-proc${missing.length ? " lacking" : ""}`, title}, box, name);
     }));
     lacking.dataset.all = info.missing.join(", ");
     check();
@@ -153,8 +154,17 @@ export function create(ctx, state) {
       h("td", {}, `${(100 * s.differ).toFixed(s.differ < 0.01 ? 2 : 0)}%`),
       h("td", {}, num(s.meanAbs)), h("td", {}, num(s.maxAbs)),
       h("td", {}, s.first == null ? "" : fmt.clock(s.first))));
+    const copy = h("button", {class: "link", title: "A markdown table of the diverged signals, for a PR", onclick: async () => {
+      try {
+        await navigator.clipboard.writeText(markdown(m));
+        copy.textContent = "copied";
+      } catch {
+        copy.textContent = "copy failed";
+      }
+      setTimeout(() => { copy.textContent = "copy as markdown"; }, 1500);
+    }}, "copy as markdown");
     diff.replaceChildren(
-      h("div", {class: "muted"}, `${d.diverged} of ${d.compared} signals differ · ${svc}`),
+      h("div", {class: "replay-row"}, h("span", {class: "muted grow", title: svc}, `${d.diverged} of ${d.compared} signals differ · ${svc}`), copy),
       rows.length ? h("table", {}, h("thead", {}, h("tr", {}, ["signal", "differs", "mean |Δ|", "max |Δ|", "first"].map((c) => h("th", {}, c)))),
         h("tbody", {}, rows)) : h("div", {}, "identical to the original log"));
   }
@@ -177,6 +187,24 @@ export function create(ctx, state) {
   loadRepos();
   loadHistory();
   return pane;
+}
+
+// the diff summary as markdown for a PR: what ran where, then the diverged signals
+export function markdown(m) {
+  const d = m.diff, segs = m.segs[0] === m.segs.at(-1) ? `segment ${m.segs[0]}` : `segments ${m.segs[0]}–${m.segs.at(-1)}`;
+  const lines = [
+    `Replay of ${m.procs.join(", ")} at \`${m.commit?.slice(0, 8) || "?"}\` on \`${m.route}\` ${segs}` +
+      `${m.warm != null ? ` (warmed up on segment ${m.warm})` : ""}: ${d.diverged} of ${d.compared} signals differ.`,
+    "",
+  ];
+  if (d.signals.length) {
+    lines.push("| signal | differs | mean \\|Δ\\| | max \\|Δ\\| | first |", "| --- | ---: | ---: | ---: | ---: |");
+    for (const s of d.signals) {
+      lines.push(`| \`${s.path}\` | ${(100 * s.differ).toFixed(s.differ < 0.01 ? 2 : 0)}% | ${num(s.meanAbs)} | ${num(s.maxAbs)} | ${s.first == null ? "" : fmt.clock(s.first)} |`);
+    }
+    if (d.diverged > d.signals.length) lines.push("", `${d.diverged - d.signals.length} more not shown.`);
+  }
+  return lines.join("\n") + "\n";
 }
 
 const num = (x) => (x === 0 ? "0" : Math.abs(x) >= 1e4 || Math.abs(x) < 1e-3 ? x.toExponential(2) : x.toPrecision(3));

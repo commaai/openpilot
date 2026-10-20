@@ -2,7 +2,8 @@
 
 A replay is a daemon job running replay_runner.py in the checkout's environment. It writes one rlog per segment,
 holding the segment's original initData plus everything the processes published, so the page loads it like any
-route log on the same clock, plus a diff summary against the original log.
+route log on the same clock, plus a diff summary against the original log. A replay starting mid-route runs over
+the segment before too, without writing it, so engagement, calibration and learners are warm when the range starts.
 
 GET  /local/replay/procs?repo=<path>     the replayable processes and what each is missing in that checkout
 POST /local/replay                       {route, segs: [first, last], procs, repo} → the replay's manifest
@@ -10,6 +11,7 @@ GET  /local/replay?route=<dongle|log_id> replays of a route, newest first
 GET  /local/replay/<id>                  manifest: state, segments written, diff summary when done
 GET  /local/replay/<id>/<seg>/rlog.zst   a replayed segment
 """
+import ctypes.util
 import glob
 import hashlib
 import json
@@ -22,6 +24,7 @@ import sys
 import threading
 import time
 from collections import deque
+from functools import cache as memo
 from pathlib import Path
 
 RUNNER = Path(__file__).with_name("replay_runner.py")
@@ -40,11 +43,27 @@ NATIVE = {
                 ("rednose", ["rednose_repo/rednose/helpers/ekf_sym_pyx*.so"])],
   "paramsd": [("car EKF", ["{pkg}/selfdrive/locationd/models/generated/libcar.so"]),
               ("rednose", ["rednose_repo/rednose/helpers/ekf_sym_pyx*.so"])],
-  "modeld": [("driving model", ["{pkg}/selfdrive/modeld/models/driving*_tinygrad.pkl"])],
-  "dmonitoringmodeld": [("driver monitoring model", ["{pkg}/selfdrive/modeld/models/dmonitoring_model_tinygrad.pkl"])],
+  "modeld": [("tinygrad", ["tinygrad_repo/tinygrad/__init__.py"]),
+             ("driving model", ["{pkg}/selfdrive/modeld/models/driving_tinygrad.pkl"]),
+             ("driving model's warp", ["{pkg}/selfdrive/modeld/models/driving_warp_*_tinygrad.pkl"])],
+  "dmonitoringmodeld": [("tinygrad", ["tinygrad_repo/tinygrad/__init__.py"]),
+                        ("driver monitoring model", ["{pkg}/selfdrive/modeld/models/dmonitoring_model_tinygrad.pkl"]),
+                        ("driver monitoring model's warp", ["{pkg}/selfdrive/modeld/models/dm_warp_*_tinygrad.pkl"])],
 }
-# processes whose inputs include camera frames: not supported here yet
-VISION = {"modeld", "dmonitoringmodeld"}
+# processes fed camera frames, each camera's state service and video file: frames are read from the route's videos
+VISION = {"modeld": {"narrowRoadCameraState": "fcamera.hevc", "wideRoadCameraState": "ecamera.hevc"},
+          "dmonitoringmodeld": {"cabinCameraState": "dcamera.hevc"}}
+MODELS = {"modeld": "{pkg}/selfdrive/modeld/models/driving_tinygrad.pkl", "dmonitoringmodeld": "{pkg}/selfdrive/modeld/models/dmonitoring_model_tinygrad.pkl"}
+# what running a model compiled for a tinygrad device takes on this machine
+DEVICES = {
+  "LLVM": ("libLLVM for tinygrad's CPU:LLVM backend", lambda: any(ctypes.util.find_library(n) for n in ("LLVM", *(f"LLVM-{v}" for v in range(21, 13, -1))))),
+  "CUDA": ("an NVIDIA GPU with libcuda", lambda: os.path.exists("/dev/nvidiactl") and ctypes.util.find_library("cuda") is not None),
+  "NV": ("an NVIDIA GPU", lambda: os.path.exists("/dev/nvidiactl")),
+  "AMD": ("an AMD GPU (/dev/kfd)", lambda: os.path.exists("/dev/kfd")),
+  "QCOM": ("a comma device's GPU (/dev/kgsl-3d0)", lambda: os.path.exists("/dev/kgsl-3d0")),
+  "METAL": ("Metal (macOS)", lambda: sys.platform == "darwin"),
+  "GPU": ("OpenCL", lambda: ctypes.util.find_library("OpenCL") is not None),
+}
 PROCS = ["selfdrived", "controlsd", "card", "radard", "plannerd", "calibrationd", "dmonitoringd", "locationd", "paramsd", "lagd",
          "torqued", "ubloxd"]
 
@@ -62,12 +81,26 @@ def missing(root: Path, procs: list[str]) -> dict[str, list[str]]:
     for what, globs in reqs:
       pats = [g.format(pkg=pkg) for g in globs]
       if not any(glob.glob(str(root / p)) for p in pats):
-        out.append(f"{what} ({pats[0].replace('*', '')})")
+        out.append(f"{what} ({pats[0].replace('_*_', '_<size>_').replace('*', '')})")
     return out
   found = {"all": check(COMMON)}
   for p in procs:
-    found[p] = check(NATIVE.get(p, [])) + (["camera frames aren't supported by the daemon yet"] if p in VISION else [])
+    found[p] = check(NATIVE.get(p, []))
+    if p in MODELS and not found[p]:  # built: can this machine run what it was compiled for?
+      model = root / MODELS[p].format(pkg=pkg)
+      for dev in model_devices(str(model), model.stat().st_mtime):
+        if dev in DEVICES and not DEVICES[dev][1]():
+          found[p].append(f"{DEVICES[dev][0]} ({model.name} is compiled for {dev})")
   return {k: v for k, v in found.items() if v}
+
+
+@memo
+def model_devices(path: str, mtime: float) -> tuple[str, ...]:
+  """The tinygrad devices a compiled model's pickle names, such as ("CPU", "LLVM") or ("CUDA",): the device strings
+  are pickled as short strings, an opcode and their length before them."""
+  names = "|".join(["CPU", *DEVICES]).encode()
+  return tuple(sorted({m.group(2).decode() for m in re.finditer(rb"\x8c([\x02-\x05])(" + names + rb")", Path(path).read_bytes())
+                       if m.group(1)[0] == len(m.group(2))}))
 
 
 def environment(root: Path, shims: Path) -> tuple[str, dict]:
@@ -117,12 +150,13 @@ class Replay:
     self.dir = root / self.id
     self.route, self.segs, self.procs, self.repo = route, segs, procs, repo
     self.written: list[int] = []
+    self.warm: int | None = None  # the segment replayed only to warm up
     self.state, self.error, self.diff = "running", "", None
     self.started, self.seconds = time.time(), None  # noqa: TID251  a wall-clock date for the list of replays
     self.t0 = time.monotonic()
 
   def manifest(self) -> dict:
-    return {"id": self.id, "route": self.route, "segs": self.segs, "procs": self.procs, "repo": str(self.repo), "commit": commit(self.repo),
+    return {"id": self.id, "route": self.route, "segs": self.segs, "warm": self.warm, "procs": self.procs, "repo": str(self.repo), "commit": commit(self.repo),
             "state": self.state, "error": self.error, "written": self.written, "started": self.started, "seconds": self.seconds,
             "diff": self.diff}
 
@@ -133,7 +167,7 @@ class Replay:
     os.replace(tmp, self.dir / "manifest.json")
 
   def run(self, fetch, report, cancelled=lambda: False, shims: Path | None = None) -> dict:
-    """fetch(route, seg) → local rlog path. Raises with the exact cause on failure."""
+    """fetch(route, seg, file) → local path of the segment's file ("rlog": its log). Raises with the exact cause on failure."""
     self.save()
     try:
       gaps = missing(self.repo, self.procs)
@@ -141,18 +175,25 @@ class Replay:
         raise RuntimeError(f"{self.repo} is missing native parts; build them with scons there first: " +
                            "; ".join(f"{k}: {', '.join(v)}" for k, v in gaps.items()))
       rlogs = []
+      if self.segs[0] > 0:
+        report(0, len(self.segs), f"downloading segment {self.segs[0] - 1} to warm up on", phase="download")
+        try:
+          rlogs.append([self.segs[0] - 1, str(fetch(self.route, self.segs[0] - 1, "rlog"))])
+          self.warm = self.segs[0] - 1
+        except FileNotFoundError:  # never uploaded: start cold
+          pass
       for i, seg in enumerate(self.segs):
         report(i, len(self.segs), f"downloading segment {seg}", phase="download")
         try:
-          rlogs.append([seg, str(fetch(self.route, seg))])
+          rlogs.append([seg, str(fetch(self.route, seg, "rlog"))])
         except FileNotFoundError:  # past the end of the route, or never uploaded
-          if not rlogs:
+          if len(rlogs) == (self.warm is not None):
             raise
           break
         if cancelled():
           raise InterruptedError("cancelled")
-      self.segs = [seg for seg, _ in rlogs]
-      self._spawn(rlogs, report, cancelled, shims or self.dir.parent / "shims")
+      self.segs = [seg for seg, _ in rlogs if seg != self.warm]
+      self._spawn(rlogs, self._videos(rlogs, fetch, report, cancelled), report, cancelled, shims or self.dir.parent / "shims")
       self.diff = json.loads((self.dir / "diff.json").read_text())
       self.state, self.seconds = "done", time.monotonic() - self.t0
       return self.manifest()
@@ -166,9 +207,25 @@ class Replay:
       self.seconds = time.monotonic() - self.t0
       self.save()
 
-  def _spawn(self, rlogs, report, cancelled, shims: Path) -> None:
+  def _videos(self, rlogs, fetch, report, cancelled) -> dict[int, dict[str, str]]:
+    """The camera videos the vision processes are fed from, per segment: {seg: {camera state service: path}}."""
+    streams = {state: f for p in self.procs for state, f in VISION.get(p, {}).items()}
+    videos: dict[int, dict[str, str]] = {}
+    for i, (seg, _) in enumerate(rlogs):
+      for state, f in streams.items():
+        report(i, len(rlogs), f"downloading {f} of segment {seg}", phase="download")
+        try:
+          videos.setdefault(seg, {})[state] = str(fetch(self.route, seg, f))
+        except FileNotFoundError as e:
+          need = [p for p in self.procs if f in VISION.get(p, {}).values()]
+          raise RuntimeError(f"segment {seg} has no {f} uploaded, and {', '.join(need)} needs its frames") from e
+        if cancelled():
+          raise InterruptedError("cancelled")
+    return videos
+
+  def _spawn(self, rlogs, videos, report, cancelled, shims: Path) -> None:
     python, env = environment(self.repo, shims)
-    args = json.dumps({"procs": self.procs, "segs": rlogs, "out": str(self.dir)})
+    args = json.dumps({"procs": self.procs, "segs": rlogs, "out": str(self.dir), "warm": self.warm is not None, "videos": videos})
     cmd = ["nice", "-n", "10", python, str(RUNNER), args]
     p = subprocess.Popen(cmd, cwd=self.dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
     tail: deque[str] = deque(maxlen=ERROR_LINES)
@@ -191,13 +248,15 @@ class Replay:
           continue
         kind, segs = ev.pop("event"), len(self.segs)
         if kind == "load":
-          report(ev["i"], segs, f"reading segment {ev['seg']}", phase="load")
+          report(ev["i"], len(rlogs), f"reading segment {ev['seg']}", phase="load")
         elif kind == "replay":
+          start = time.monotonic()
           report(0, ev["messages"], f"replaying {', '.join(ev['procs'])}", phase="replay")
         elif kind == "progress":
           done, total = ev["done"], ev["total"]
-          eta = (time.monotonic() - start) * (total - done) / max(done, 1)
-          report(done, total, f"segment {ev['seg']} · {len(self.written)}/{segs} written · {eta:.0f} s left", phase="replay", eta=eta, seg=ev["seg"])
+          eta = (time.monotonic() - start) * (total - done) / done if done * 50 >= total else None  # too early to tell
+          where = f"warming up on segment {ev['seg']}" if ev.get("warm") else f"segment {ev['seg']} · {len(self.written)}/{segs} written"
+          report(done, total, where + ("" if eta is None else f" · {eta:.0f} s left"), phase="replay", eta=eta, seg=ev["seg"])
         elif kind == "segment":
           self.written.append(ev["seg"])
           self.save()
@@ -263,7 +322,7 @@ if route is not None:
     repo = repo_arg(req.query.get("repo"))
     gaps = missing(repo, PROCS + sorted(VISION))
     return {"repo": str(repo), "commit": commit(repo), "default": DEFAULT_PROCS, "missing": gaps.get("all", []),
-            "procs": [{"name": p, "missing": gaps.get(p, [])} for p in PROCS + sorted(VISION)]}
+            "procs": [{"name": p, "missing": gaps.get(p, []), "videos": sorted(VISION.get(p, {}).values())} for p in PROCS + sorted(VISION)]}
 
   @route("POST", "/local/replay")
   def replay_start(req):
@@ -275,7 +334,7 @@ if route is not None:
       raise HTTPError(400, "segs must be [first, last]")
     if segs[1] - segs[0] >= MAX_SEGS:
       raise HTTPError(400, f"at most {MAX_SEGS} segments at once")
-    if not set(procs) <= set(PROCS) | VISION:
+    if not set(procs) <= set(PROCS) | set(VISION):
       raise HTTPError(400, f"unknown process in {procs}")
     replay = Replay(root(), name, list(range(segs[0], segs[1] + 1)), procs, repo_arg(body.get("repo")))
     _running[replay.id] = replay
@@ -283,7 +342,9 @@ if route is not None:
     def body_fn(job):
       def report(done, total, text, **meta):
         job.progress(done, total, text=text, unit="segments" if meta.get("phase") in ("download", "load") else "messages", **meta)
-      def fetch(name, seg):
+      def fetch(name, seg, file):
+        if file != "rlog":
+          return cache.fetch(*name.split("|"), seg, file, job=job)
         try:
           return cache.fetch(*name.split("|"), seg, "rlog.zst", job=job)
         except FileNotFoundError:

@@ -12,6 +12,8 @@ import {enumRef, service, unpack} from "./pack.js";
 const SEGMENT = 60;  // nominal seconds per segment, until a segment's real span is known
 const BUDGET = 1.5e9;  // resident column bytes
 const IN_USE = 5000;  // ms since last use that a column counts as in use (never evicted)
+// what a store without CAN (an overlay) has in place of its Can
+const NO_CAN = {bytes: 0, paths: () => [], series: () => null, ingest() {}, dispose() {}};
 const BLOCK = 16, FANOUT = 8;  // min/max pyramid: blocks of 16 samples, then 8 blocks per level up
 const NEAR = 3;  // segments from the focus on that, once in, let the worker pool shrink
 
@@ -40,7 +42,7 @@ export class Store {
     this.budget = budget;
     this.keep = keep;
     this.handlers = {};
-    this.can = new Can(this);
+    this.can = can ? new Can(this) : NO_CAN;  // an overlay's Can would share and resize the route's CAN lane
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.lists = new Map();  // long lists the workers skipped: path → longest length
     this.missing = new Set();  // migrated paths that couldn't be computed
