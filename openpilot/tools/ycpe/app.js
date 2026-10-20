@@ -12,10 +12,12 @@ import {VIEWS} from "/views.js";
 import {playbar} from "/playbar.js";
 import {loadPill, footprint} from "/status.js";
 import {Store} from "/data/store.js";
+import {routeLogs, localRoute, urlRoute, droppedFiles} from "/data/sources.js";
 import {devicePage, prefetchDevice} from "/pages/device.js";
 import {homePage} from "/pages/home.js";
 import {loginPage, authPage, signInCard, loginPath} from "/pages/login.js";
 import {omnibox, rememberRoute} from "/pages/omnibox.js";
+import {localPage} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 
@@ -159,7 +161,7 @@ function renameTab(tabEl, i, name) {
 class Workspace {
   constructor(route, files, view, {t = 0, repeat = 1}) {
     this.route = route;
-    this.dongle = route.fullname.split("|")[0];
+    this.files = null;  // each segment's log from the route's source (data/sources.js); the drive view mounts without it
     this.files = null;  // the file list only matters once logs load; the drive view mounts without it
     this.filesReady = files.then((f) => { this.files = f; });
     this.repeat = repeat;
@@ -190,9 +192,7 @@ class Workspace {
   // logs load only once something needs them (the drive view doesn't); null until the file list is in
   ensureStore() {
     if (this.store || !this.files) return this.store;
-    const urls = [];
-    for (const u of [...(this.files.qlogs || []), ...(this.files.logs || [])]) urls[+new URL(u).pathname.split("/").at(-2)] = u;
-    this.store = new Store(this.route.fullname, urls, {t: this.clock.t, repeat: this.repeat});
+    this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
     // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
     this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
     this.store.on("progress", () => {
@@ -343,6 +343,7 @@ async function render() {
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null), api.devices().catch(() => [])]);
   }
 
+  if (openLoose(parts, q, main)) return;
   const routeName = parts.length >= 2 && DONGLE_RE.test(parts[0]) ? `${parts[0]}|${parts[1]}` : null;
   if (routeName) {
     if (ws?.route.fullname === routeName) {
@@ -351,7 +352,7 @@ async function render() {
     }
     document.body.classList.add("loading");
     try {
-      const files = api.routeFiles(routeName);
+      const files = routeLogs(routeName);
       files.catch(() => {});
       const route = await api.route(routeName);
       if (id !== navId) return;
@@ -382,6 +383,34 @@ async function render() {
     main.replaceChildren(homePage(state.devices));
   }
 }
+
+// logs outside the API (data/sources.js): files dropped anywhere on the page, or a direct link (?url=). False when the
+// path is neither.
+let dropped = null;
+function openLoose(parts, q, main) {
+  const loose = q.has("url") ? urlRoute(q.get("url")) : dropped?.route.fullname === `${parts[0]}|${parts[1]}` ? dropped : null;
+  if (!loose && parts[0] !== "local") return false;
+  if (loose && ws?.route.fullname === loose.route.fullname) {
+    if (parts[2] && parts[2] !== ws.view) ws.setView(parts[2]);
+    return true;
+  }
+  ws?.dispose();
+  ws = loose && new Workspace(loose.route, Promise.resolve(loose.urls), parts[2] || "plot", {t: +q.get("t") || 0});
+  document.body.classList.toggle("in-ws", !!ws);
+  main.replaceChildren(ws ? ws.el : localPage(openFiles));
+  updateTop();
+  return true;
+}
+function openFiles(files) {
+  dropped = localRoute(files);
+  if (dropped) go(`/${dropped.route.fullname.replace("|", "/")}/plot`);
+  else toast("No rlog, qlog or camera files there");
+}
+document.addEventListener("dragover", (e) => e.preventDefault());
+document.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  openFiles(await droppedFiles(e.dataTransfer));
+});
 
 function errorPage(e) {
   console.error(e);
