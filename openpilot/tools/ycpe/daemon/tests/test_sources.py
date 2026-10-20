@@ -180,6 +180,22 @@ class TestSources(DaemonCase):
     p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)
     self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
 
+  def test_usage_running_total(self):
+    cache._usage["at"] = -cache.RESCAN
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qcamera.ts"))
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
+    walk = lambda: (sum(s for _, s, _ in cache.scan()), len(cache.scan()))  # noqa: E731
+    self.assertEqual(cache.totals(), walk())
+    cache.fetch(DONGLE, LOG, 2, "qcamera.ts", sources=ONLY)
+    cache.fetch(DONGLE, LOG, 2, "qlog.zst", sources=ONLY)  # a log: also mirrored as url_file chunks
+    self.assertEqual(cache.totals(), walk())
+    cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
+    self.assertEqual(cache.totals(), walk())
+    t = time.monotonic()
+    for _ in range(1000):
+      cache.usage()
+    self.assertLess((time.monotonic() - t) / 1000, 1e-4)  # polling never walks the directory
+
   def test_prune_lru(self):
     d = Path(tempfile.mkdtemp())
     old = config.cache_root
@@ -195,6 +211,7 @@ class TestSources(DaemonCase):
       self.assertEqual(out["bytes"], 3000)
     finally:
       config.cache_root = old
+      cache._usage["at"] = -cache.RESCAN
 
   def test_proxy(self):
     r, _ = self.req("/local/proxy?url=https://evil.example/")
