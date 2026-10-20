@@ -2,7 +2,8 @@
 // driven by schema.json (offsets from the capnp compiler). No per-event allocation: the walk follows
 // a lazily built tree of field plans whose leaves point straight at their output column.
 
-let U8, I8, U16, I16, U32, I32, F32, F64;
+// views of the log being read; exported as live bindings for the can() hook
+export let U8, I8, U16, I16, U32, I32, F32, F64;
 const segBase = new Int32Array(64);
 const f32 = new Float32Array(1), f32u = new Uint32Array(f32.buffer);
 const f64 = new Float64Array(1), f64u = new Uint32Array(f64.buffer);
@@ -66,6 +67,11 @@ function follow(p) {
   return false;
 }
 
+// the struct list at pointer p as [byte offset, count, data bytes, pointers] per element (far pointers followed), or null
+export function list(p) {
+  return follow(p) ? [rOff, rCount, rData, rPtrs] : null;
+}
+
 const decoder = new TextDecoder();
 function readText(p) {
   if (!follow(p) || rElem !== 2 || rCount === 0) return "";
@@ -99,9 +105,13 @@ function xorDefault(type, raw, def) {
     f64u[1] ^= Math.floor(def / 4294967296);
     return f64[0];
   }
-  return Number(BigInt.asUintN(64, BigInt(raw)) ^ BigInt(def));
+  if (type === "i64" || type === "u64") return Number(BigInt[type === "i64" ? "asIntN" : "asUintN"](64, BigInt(raw) ^ BigInt(def)));
+  return type === "u32" ? (raw ^ def) >>> 0 : raw ^ def;
 }
-const MAX_LIST = 16;  // longer lists are not split into per-index columns
+const MAX_LIST = 16;  // longer lists are not split into per-index columns unless asked for
+
+// path globs: * matches one path component
+export const pattern = (globs) => new RegExp(`^(${globs.map((g) => g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]+")).join("|")})$`);
 
 // a column fills as events arrive; missing values stay NaN
 class Column {
@@ -119,8 +129,10 @@ export class Reader {
     this.ev = Object.fromEntries(this.event.fields.map((f) => [f[0], f]));
   }
 
-  // indexes and extracts one decompressed log; returns {services: {name: {t, valid, cols: {path: Column}}}}
-  read(buf, {can = null} = {}) {
+  // indexes and extracts one decompressed log; returns Map(which → {name, t, valid, cols: Map(path → Column), lists})
+  // keep: {service: ["/speeds", "/laneLines/*/y"]} splits those long lists per index too; every other long list
+  // is skipped and reported in lists (path → longest length) so it can be asked for later
+  read(buf, {can = null, keep = {}} = {}) {
     views(buf);
     const {event} = this;
     const services = new Map();
@@ -156,7 +168,8 @@ export class Reader {
     for (let w = 0; w < counts.length; w++) {
       if (!counts[w]) continue;
       const f = byDisc[w];
-      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), plan: null, cols: new Map()});
+      services.set(w, {name: f[0], field: f, n: 0, t: new Float64Array(counts[w]), valid: new Uint8Array(counts[w]), plan: null,
+        cols: new Map(), keep: keep[f[0]] && pattern(keep[f[0]]), listPlans: [], lists: new Map()});
     }
 
     // pass 2: extraction
@@ -187,7 +200,11 @@ export class Reader {
         }
       }
     }
-    for (const svc of services.values()) delete svc.plan;
+    for (const svc of services.values()) {
+      for (const lp of svc.listPlans) if (lp.longest) svc.lists.set(lp.path, lp.longest);
+      delete svc.plan;
+      delete svc.listPlans;
+    }
     return services;
   }
 
@@ -218,7 +235,9 @@ export class Reader {
   }
 
   listPlan(elem, path, svc, n) {
-    return {elem, path, svc, n, items: []};
+    const lp = {elem, path, svc, n, items: [], keep: !!svc.keep?.test(path), longest: 0};
+    svc.listPlans.push(lp);
+    return lp;
   }
 
   walk(p, off, dataBytes, ptrs, i) {
@@ -242,8 +261,8 @@ export class Reader {
       this.walk(f.plan, rOff, rData, rPtrs, i);
     }
     for (const f of p.texts) {
-      if (f.disc >= 0 && f.disc !== which || f.idx >= ptrs) continue;
-      f.col.v[i] = readText(pbase + f.idx * 8);
+      if (f.disc >= 0 && f.disc !== which) continue;
+      f.col.v[i] = f.idx < ptrs ? readText(pbase + f.idx * 8) : "";
     }
     for (const f of p.lists) {
       if (f.disc >= 0 && f.disc !== which || f.idx >= ptrs) continue;
@@ -253,7 +272,11 @@ export class Reader {
 
   // small lists become one column (or sub-struct) per index: /path/0, /path/1, ...
   walkList(lp, ptr, i) {
-    if (!follow(ptr) || rCount > MAX_LIST) return;
+    if (!follow(ptr)) return;
+    if (rCount > MAX_LIST && !lp.keep) {
+      if (rCount > lp.longest) lp.longest = rCount;
+      return;
+    }
     const [type, ref] = lp.elem;
     const count = rCount, base = rOff, elem = rElem, data = rData, ptrs = rPtrs;
     for (let j = 0; j < count; j++) {
@@ -282,33 +305,76 @@ export class Reader {
   }
 }
 
-// columns that never vary collapse to a constant; columns that never appeared are dropped
+// columns shrink before transfer: never-set ones are dropped, constant ones collapse to c, ones set in under
+// half the events keep an index into the service times (i), and values move to the narrowest exact array
 export function compact(services) {
   const out = {};
   const transfer = [];
   for (const svc of services.values()) {
     const cols = {};
+    // the event's valid flag, unless the struct has its own (lateralTorqueParameters, vehicleParameters)
+    svc.cols.set(svc.cols.has("/valid") ? "/_valid" : "/valid", {type: "b", v: svc.valid});
     for (const [path, c] of svc.cols) {
-      const v = c.v;
-      let first = null, constant = true, any = false;
-      for (let i = 0; i < v.length; i++) {
-        const x = v[i];
-        if (x === null || x !== x) constant = false;
-        else if (!any) { first = x; any = true; } else if (x !== first) constant = false;
-        if (!constant && any) break;
-      }
-      if (!any) continue;
-      const col = {type: c.type};
+      const col = c.type === "t" ? compactText(c.v) : compactNumbers(c.v);
+      if (!col) continue;
+      col.type = c.type;
       if (c.names) col.names = c.names;
-      if (constant && v.length > 1) col.c = first;
-      else {
-        col.v = v;
-        if (ArrayBuffer.isView(v)) transfer.push(v.buffer);
-      }
+      if (ArrayBuffer.isView(col.v)) transfer.push(col.v.buffer);
+      if (col.i) transfer.push(col.i.buffer);
       cols[path] = col;
     }
-    out[svc.name] = {t: svc.t, valid: svc.valid, cols};
-    transfer.push(svc.t.buffer, svc.valid.buffer);
+    out[svc.name] = {t: svc.t, cols, lists: svc.lists};
+    transfer.push(svc.t.buffer);
   }
   return {services: out, transfer};
+}
+
+const indexArray = (n, count) => n < 65536 ? new Uint16Array(count) : new Uint32Array(count);
+
+function intArray(lo, hi) {
+  if (lo >= 0) return hi < 256 ? Uint8Array : hi < 65536 ? Uint16Array : hi < 4294967296 ? Uint32Array : Float64Array;
+  if (lo >= -128 && hi < 128) return Int8Array;
+  return lo >= -32768 && hi < 32768 ? Int16Array : lo >= -2147483648 && hi < 2147483648 ? Int32Array : Float64Array;
+}
+
+function compactNumbers(v) {
+  const n = v.length;
+  const wide = v instanceof Float64Array;
+  let count = 0, lo = Infinity, hi = -Infinity, ints = true, f32 = true;
+  for (let k = 0; k < n; k++) {
+    const x = v[k];
+    if (x !== x) continue;
+    count++;
+    if (x < lo) lo = x;
+    if (x > hi) hi = x;
+    if (ints && !Number.isInteger(x)) ints = false;
+    if (wide && f32 && Math.fround(x) !== x) f32 = false;
+  }
+  if (!count) return null;
+  if (count === n && lo === hi && n > 1) return {c: lo};
+  if (count * 2 >= n) {
+    if (count < n) return {v: wide && f32 ? new Float32Array(v) : v};  // gaps stay NaN, so floats
+    const Arr = ints ? intArray(lo, hi) : f32 ? Float32Array : Float64Array;
+    return {v: v instanceof Arr ? v : new Arr(v)};
+  }
+  const Arr = ints ? intArray(lo, hi) : f32 ? Float32Array : Float64Array;
+  const i = indexArray(n, count), out = new Arr(count);
+  for (let k = 0, j = 0; k < n; k++) if (v[k] === v[k]) { i[j] = k; out[j++] = v[k]; }
+  return {v: out, i};
+}
+
+function compactText(v) {
+  const n = v.length;
+  let count = 0, first = null, constant = true;
+  for (let k = 0; k < n; k++) {
+    if (v[k] === null) continue;
+    if (count++ === 0) first = v[k];
+    else if (v[k] !== first) constant = false;
+  }
+  if (!count) return null;
+  if (count === n && constant && n > 1) return {c: first};
+  if (count === n) return {v};  // any gap makes it sparse, so text never holds nulls
+  const i = indexArray(n, count), out = new Array(count);
+  for (let k = 0, j = 0; k < n; k++) if (v[k] !== null) { i[j] = k; out[j++] = v[k]; }
+  return {v: out, i};
 }
