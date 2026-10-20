@@ -430,6 +430,8 @@ export class Store {
   attach(prefix, urls, {name = prefix} = {}) {
     let o = this.overlays.find((x) => x.prefix === prefix);
     if (o) return o.store.add(urls), o;
+    // the loader is shared: reprioritize() ranks the overlay's jobs with this store's fn, which is right because both
+    // tag jobs with the route's segment slot. detach() leaves its queued jobs to finish into the disposed store
     const store = new Store(name, urls, {loader: this.loader, t: this.t, lane: {name, label: name, order: 1}, can: false, migrate: false});
     o = {prefix, name, store, cache: new Map(), offs: ["paths", "progress"].map((ev) => store.on(ev, (a) => this.emit(ev, a)))};
     this.overlays.push(o);
