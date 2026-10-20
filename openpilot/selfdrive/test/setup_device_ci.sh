@@ -37,17 +37,15 @@ sudo abctl --set_success
 # patch sshd config
 sudo mount -o rw,remount /
 sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
-sudo systemctl daemon-reload
-sudo systemctl restart ssh
-sudo systemctl restart NetworkManager
-sudo systemctl disable ssh-param-watcher.path
-sudo systemctl disable ssh-param-watcher.service
+sudo sv down /etc/service/ssh-param-watcher
+sudo sv restart /etc/service/sshd
+sudo sv restart /etc/service/wifi
 sudo mount -o ro,remount /
-sudo systemctl stop power_monitor
+sudo sv down /etc/service/power_monitor
 
 while true; do
-  if ! sudo systemctl is-active -q ssh; then
-    sudo systemctl start ssh
+  if ! sudo sv check /etc/service/sshd; then
+    sudo sv up /etc/service/sshd
   fi
   sleep 5s
 done
