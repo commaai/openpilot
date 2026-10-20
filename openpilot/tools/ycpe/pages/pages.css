@@ -105,6 +105,18 @@ a.drive-row:hover { background: var(--hover); }
 .log-head .mono { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .log-dialog > :last-child:not(.log-head) { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 8px 12px; }
 .log-text { font: 11px/1.45 var(--mono); white-space: pre; }
+.log-text mark { background: color-mix(in srgb, var(--accent) 40%, transparent); color: inherit; border-radius: 2px; }
+.boot-filter { width: 220px; }
+.boot-summary { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; }
+.boot-section { border-top: 1px solid var(--line); }
+.boot-section summary { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+.boot-section summary::before { content: "▸"; color: var(--muted); }
+.boot-section[open] summary::before { content: "▾"; }
+.boot-section summary .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boot-section summary .icon-btn { margin-left: auto; }
+.boot-section .log-text { margin: 0 0 8px; overflow-x: auto; }
+/* blocks of 100 lines; as wide as their longest, since the containment clips */
+.boot-section .log-text > div { content-visibility: auto; contain-intrinsic-size: auto 1px auto 1595px; width: max-content; min-width: 100%; }
 
 /* narrower: no version column; phones: no places, the timeline under each drive, the device and log tables down to
    what identifies a row, and tap targets of at least 32px */
