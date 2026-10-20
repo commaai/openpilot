@@ -36,6 +36,8 @@ RAF_SAMPLE_JS = """(n) => new Promise((r) => {
   requestAnimationFrame(f);
 })"""
 DEFAULT_BUDGETS = {"loaf_ms": 50, "work_p99_ms": 8, "drops": None, "first_paint_ms": 150}
+TRACE_CATEGORIES = ["devtools.timeline", "disabled-by-default-devtools.timeline.frame", "blink", "cc", "gpu", "v8.gc",
+                    "disabled-by-default-v8.gc", "viz"]
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
 # gpu: headless Chrome on the NVIDIA GPU through ANGLE/EGL; hardware raster and compositing, 60 Hz begin-frames
 # soft: headless SwiftShader; main-thread numbers are fine, raster/composite cost is inflated
@@ -45,6 +47,9 @@ MODES = {
   "soft": [],
   "xvfb": [],
 }
+# every run has a fresh profile, so the GPU process writes each new shader to its disk cache; on this busy disk a write
+# held a frame for 680 ms in a trace. Real users have that cache warm.
+CHROME_ARGS = ["--disable-gpu-shader-disk-cache"]
 PROBE_JS = (HERE / "probe.js").read_text()
 LINT_JS = (HERE / "lint.js").read_text()
 SETTLE_JS = "document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))"
@@ -109,8 +114,8 @@ def top_frame(stack):
 class Scenario:
   """one scenario in a fresh browser context (so storage, OPFS included, starts empty)"""
 
-  def __init__(self, browser, base, sc, out, token):
-    self.sc, self.out = sc, out
+  def __init__(self, browser, base, sc, out, token, trace=False):
+    self.sc, self.out, self.browser, self.trace = sc, out, browser, trace
     self.timeout = sc.get("timeout", 10000)
     self.res = {"name": sc["name"], "url": sc["url"], "failures": [], "events": [], "shots": [], "films": [], "reference": sc.get("reference", [])}
     self.paused = []  # [start, end] page times spent screenshotting and linting, excluded from frame stats
@@ -157,6 +162,8 @@ class Scenario:
     t0 = time.monotonic()
     step = {"goto": self.sc["url"]}
     try:
+      if self.trace:
+        self.browser.start_tracing(page=self.page, categories=TRACE_CATEGORIES)
       self.page.goto(base + self.sc["url"], wait_until="load")
       for step in self.sc.get("steps", []):
         self.steps.append((self.page.evaluate("performance.now()"), json.dumps(step)[:80]))
@@ -169,9 +176,19 @@ class Scenario:
         pass
     self.res["perf"] = self.collect_perf()
     self.res["duration"] = time.monotonic() - t0
+    if self.trace:
+      self.save_trace()
     self.ctx.close()
     check(self.res, {**DEFAULT_BUDGETS, **self.sc.get("budgets", {})})
     return self.res
+
+  def save_trace(self):
+    """the Chrome trace, plus the DOM so trace.py can name the nodes that Layout and Paint events point at"""
+    folder = self.out / "traces"
+    folder.mkdir(exist_ok=True)
+    (folder / f"{self.sc['name']}.dom.json").write_text(json.dumps(self.cdp.send("DOM.getDocument", {"depth": -1, "pierce": True})))
+    (folder / f"{self.sc['name']}.json").write_bytes(self.browser.stop_tracing())
+    self.res["trace"] = f"traces/{self.sc['name']}.json"
 
   def point(self, target, timeout):
     if isinstance(target, list):
@@ -347,7 +364,7 @@ def baseline_jank(browser):
   return sum(b - a > 25 for a, b in itertools.pairwise(t))
 
 
-def run_all(browser, base, scenarios, mode, token):
+def run_all(browser, base, scenarios, mode, token, trace=False):
   latest, prev = OUT / "latest", OUT / "prev"
   shutil.rmtree(prev, ignore_errors=True)
   if latest.exists():
@@ -357,11 +374,11 @@ def run_all(browser, base, scenarios, mode, token):
   t0 = time.monotonic()
   jank, load, results = baseline_jank(browser), [os.getloadavg()[0]], []
   for sc in scenarios:
-    r = Scenario(browser, base, sc, latest, token).run(base)
+    r = Scenario(browser, base, sc, latest, token, trace).run(base)
     # this machine's network drops out now and then; one retry keeps that from reading as an app bug
     if not r["pass"] and any(e["kind"] == "network-flake" for e in r["events"]):
       print(f"RETRY {r['name']} (network flake)")
-      r = Scenario(browser, base, sc, latest, token).run(base)
+      r = Scenario(browser, base, sc, latest, token, trace).run(base)
       r["retried"] = True
     errors = [f"{f['rule']}: {f['detail'][:70]}" for f in r["failures"]] + [f"{e['kind']}: {e['text'][:70]}" for e in r["events"] if e["kind"] in FATAL]
     more = f" (+{len(errors) - 2})" if len(errors) > 2 else ""
@@ -392,6 +409,7 @@ def main():
   ap.add_argument("--slow", action="store_true", help="include scenarios marked slow")
   ap.add_argument("--bless", action="store_true", help="store this run's shots as the goldens")
   ap.add_argument("--loop", type=int, metavar="N", help="run N times (0: until interrupted), each diffed against the one before")
+  ap.add_argument("--trace", action="store_true", help="record a Chrome trace per scenario in out/latest/traces (see trace.py)")
   ap.add_argument("--static", action="store_true", help="serve static files only, without the local daemon")
   args = ap.parse_args()
 
@@ -408,11 +426,11 @@ def main():
   ok = True
   try:
     with sync_playwright() as p:
-      browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode], env=env)
+      browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode] + CHROME_ARGS, env=env)
       runs = itertools.count(1) if args.loop == 0 else range(1, (args.loop or 1) + 1)
       for n in runs:
         t0 = time.monotonic()
-        latest, prev, results = run_all(browser, base, scenarios, args.mode, token)
+        latest, prev, results = run_all(browser, base, scenarios, args.mode, token, args.trace)
         if args.bless:
           report.bless(latest)
         diff = report.build(latest, prev)
