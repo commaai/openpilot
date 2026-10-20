@@ -30,8 +30,25 @@
 /* home */
 .home { max-width: 420px; margin: 14vh auto; padding: 0 16px; text-align: center; }
 .home h2 { margin: 0 0 6px; font-size: 20px; }
-.sign-in { display: flex; flex-direction: column; gap: 6px; margin: 20px 0; }
-.sign-in .button { margin: 0; padding: 8px 14px; font-weight: 600; }
+
+/* login, auth callback, sign-in card */
+.login { display: flex; justify-content: center; padding: 12vh 16px 32px; }
+.login-card { width: 340px; padding: 22px 24px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); text-align: center; }
+.login-card > p { margin: 8px 0; }
+.login-mark { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; font-size: 20px; font-weight: 800; letter-spacing: .02em; }
+.login-mark svg { color: var(--fg); }
+.providers { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 12px; }
+.providers .button { margin: 0; padding: 8px 14px; font-weight: 600; }
+.button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
+.button.primary:hover { background: var(--accent); filter: brightness(1.1); }
+.token { margin: 6px 0; text-align: left; }
+.token summary { color: var(--muted); cursor: pointer; text-align: center; }
+.token summary:hover { color: var(--fg); }
+.token-form { display: flex; gap: 6px; }
+.token-form .field { flex: 1; min-width: 0; }
+.token-form .button { margin: 0; }
+.login-foot { margin-top: 14px !important; padding-top: 10px; border-top: 1px solid var(--line); }
+.login-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 10px; color: var(--muted); }
 .device-name { display: inline-flex; align-items: center; gap: 4px; }
 .device-name .field { width: 180px; height: 22px; font-weight: 400; }
 

@@ -3,10 +3,9 @@ import {api, auth} from "../api.js";
 import {h, fmt} from "../dom.js";
 import {icon} from "../icons.js";
 import {isOnline, link} from "../app.js";
+import {loginPage} from "./login.js";
 
-const DEMO = "/5beb9b58bd12b691/0000010a--a51155e496/drive";
-
-export const canManage = async (device) => device.is_owner || !!(await api.me().catch(() => null))?.superuser;
+export const canManage = async (device) => device.is_owner || !!(await auth.user())?.superuser;
 
 // the name, plus a pencil for those who may rename; Enter or blur saves, Escape cancels
 export function deviceName(device) {
@@ -50,17 +49,8 @@ export function deviceName(device) {
   return el;
 }
 
-function signIn() {
-  return h("div", {class: "home"},
-    h("h2", {}, "ycpe"),
-    h("p", {class: "muted"}, "Routes, plots and CAN for openpilot drives."),
-    h("div", {class: "sign-in"}, ["google", "github", "apple"].map((p) =>
-      h("a", {class: "button", href: auth.loginUrl(p)}, `Sign in with ${p[0].toUpperCase()}${p.slice(1)}`))),
-    h("p", {}, h("a", {href: DEMO, onclick: link(DEMO)}, "Open the demo route"), h("span", {class: "muted"}, " or paste a route name above.")));
-}
-
 export function homePage(devices) {
-  if (!auth.isAuthenticated()) return signIn();
+  if (!auth.isAuthenticated()) return loginPage(new URLSearchParams());
   if (!devices?.length) return h("div", {class: "home"}, h("h2", {}, "No devices"), h("p", {class: "muted"}, "Pair a device from its setup screen, or open a public route by name."));
   return h("div", {class: "page"},
     h("table", {class: "list devices"},
