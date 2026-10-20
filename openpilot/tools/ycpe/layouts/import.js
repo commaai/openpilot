@@ -44,14 +44,13 @@ export function customsOf(layout) {
 }
 
 // renames, in place, the custom series of layout whose name another one (earlier in it, or in taken: path → specKey)
-// has with different code: x becomes x_2. The inputs of the custom series after it in its plot follow
+// has with different code: x becomes x_2. Every curve and input that reads it follows, in any plot
 export function uniqueCustoms(layout, taken = new Map()) {
+  const renamed = new Map(), follow = (p) => renamed.get(p) ?? p;
   plots(layout, (curves) => {
-    const renamed = new Map();
     for (const c of curves) {
       if (!c.custom) continue;
-      c.custom.inputs = c.custom.inputs.map((p) => renamed.get(p) ?? p);
-      const key = specKey(c.custom);
+      const key = specKey({...c.custom, inputs: c.custom.inputs.map(follow)});
       let path = c.path;
       for (let n = 2; taken.has(path) && taken.get(path) !== key; n++) path = `${c.path}_${n}`;
       if (path !== c.path) {
@@ -60,6 +59,13 @@ export function uniqueCustoms(layout, taken = new Map()) {
         c.path = path;
       }
       taken.set(path, key);
+    }
+  });
+  // then whatever reads them, before or after
+  plots(layout, (curves) => {
+    for (const c of curves) {
+      if (c.custom) c.custom.inputs = c.custom.inputs.map(follow);
+      else c.path = follow(c.path);
     }
   });
   return layout;
