@@ -251,7 +251,7 @@ export function create(ctx, state = {}) {
   function withEdges(d, path, a, b) {
     const n = d?.t.length, pre = n && d.min[0] !== d.min[0], post = n && d.min[n - 1] !== d.min[n - 1];
     if (!pre && !post) return d;
-    const min = d.min.slice(), max = d.max.slice();
+    const min = decimator.copy(d.min), max = decimator.copy(d.max);
     for (const [i, t, held] of [[0, a, pre], [n - 1, b, post]]) {
       const v = held && !view.isUnloaded(t) ? store.valueAt(path, t) : undefined;
       if (typeof v === "number") min[i] = max[i] = v;
