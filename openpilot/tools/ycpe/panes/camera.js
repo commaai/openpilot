@@ -98,10 +98,10 @@ export function create(ctx, state) {
 
   const offs = ["t", "play"].map((ev) => ctx.clock.on(ev, () => ctx.perf.invalidate(pane)));
   let disposed = false;
-  ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane))));  // its alerts
+  offs.push(ctx.onStore((store) => !disposed && offs.push(store.on("segment", () => ctx.perf.invalidate(pane)))));  // its alerts
   function dispose() {
     disposed = true;
-    for (const off of offs) off();
+    for (const off of offs) off?.();
     source.dispose();
   }
 
@@ -115,10 +115,13 @@ function lane(camera) {
 }
 
 // hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, not with the page.
-// It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash.
+// It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash. It downloads right
+// away but runs in idle time: its ~20 ms evaluation would otherwise pile onto the busy frames of a cold load.
 let hlsReady = null;
 const loadHls = () => hlsReady ||= new Promise((resolve, reject) => {
-  document.head.append(h("script", {src: HLS, integrity: HLS_SRI, crossorigin: "anonymous", onload: () => resolve(window.Hls), onerror: reject}));
+  const attrs = {integrity: HLS_SRI, crossorigin: "anonymous"};
+  document.head.append(h("link", {rel: "preload", as: "script", href: HLS, ...attrs}));
+  requestIdleCallback(() => document.head.append(h("script", {src: HLS, ...attrs, onload: () => resolve(window.Hls), onerror: reject})), {timeout: 1000});
 });
 
 // the HLS player plays along with the clock and corrects drift by nudging its rate; paused, it seeks to each t.

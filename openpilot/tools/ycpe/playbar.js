@@ -12,10 +12,12 @@ import {status, drawLane, describe} from "/status.js";
 const RANGE_H = 7, SPAN_H = 14, LANE_H = 3, PAD = 3;
 const SEGMENT = 60;  // nominal segment length; lanes index segments
 const SPAN_COLORS = {engaged: "--engaged", override: "--override", alert: "--alert", critical: "--critical"};
+const SPAN_LABELS = {engaged: "engaged", override: "override", alert: "alert", critical: "critical alert"};
 
 export const clockText = (s, withMs = true) => {
+  s = withMs ? Math.round(s * 100) / 100 : Math.trunc(s);  // to what's shown first: no "1:60.00" or "-0:00.00"
   const sign = s < 0 ? "-" : "";
-  s = withMs ? Math.round(Math.abs(s) * 100) / 100 : Math.floor(Math.abs(s));  // to what's shown first: no "1:60.00"
+  s = Math.abs(s);
   const hr = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60;
   const ss = withMs ? sec.toFixed(2).padStart(5, "0") : String(sec).padStart(2, "0");
   return `${sign}${hr ? `${hr}:${String(m).padStart(2, "0")}` : m}:${ss}`;
@@ -31,9 +33,17 @@ export function playbar(ctx) {
     RATES.map((r) => h("option", {value: r, selected: r === clock.rate}, `${r}×`)));
   const time = h("span", {class: "pb-time"});
   const wall = h("span", {class: "pb-wall muted"});
-  const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, icon("loop", 16));
+  const loopBtn = h("button", {class: "tbtn", title: "Loop the visible range (L)", "aria-pressed": "false", onclick: () => clock.setLoop(clock.loop ? null : [...clock.range])}, icon("loop", 16));
   const fitBtn = h("button", {class: "tbtn", title: "Show the whole route (F)", onclick: () => clock.setRange(0, clock.duration)}, icon("fit", 16));
-  const canvas = h("canvas", {class: "pb-canvas"});
+  // the timeline is the playhead's slider for keyboards and screen readers
+  const canvas = h("canvas", {class: "pb-canvas", role: "slider", tabindex: 0, "aria-label": "Playhead", "aria-valuemin": 0,
+    "aria-valuemax": Math.floor(clock.duration), onkeydown: (e) => {
+      const step = e.shiftKey || e.key.startsWith("Page") ? 10 : 1;
+      const to = {ArrowLeft: -step, ArrowDown: -step, PageDown: -step, ArrowRight: step, ArrowUp: step, PageUp: step}[e.key];
+      if (to === undefined && e.key !== "Home" && e.key !== "End") return;
+      e.preventDefault();
+      clock.seek(e.key === "Home" ? 0 : e.key === "End" ? clock.duration : clock.t + to);
+    }});
   const tip = h("div", {class: "pb-tip", hidden: true}, h("div", {class: "pb-thumb"}), h("span"));
   const track = h("div", {class: "pb-track"}, canvas, tip);
   const el = h("footer", {class: "playbar"},
@@ -48,11 +58,17 @@ export function playbar(ctx) {
   const yOf = (e) => e.clientY - canvas.getBoundingClientRect().top;
   const t2x = (t) => t / clock.duration * width;
 
-  let playing = null;  // what the play button shows
+  let playing = null, second = null;  // what the play button and the slider show
   const pane = {name: "playbar", render() {
     if (playing !== clock.playing) playBtn.replaceChildren(icon((playing = clock.playing) ? "pause" : "play", 16));
     rate.value = clock.rate;
     loopBtn.classList.toggle("on", !!clock.loop);
+    if (loopBtn.ariaPressed !== String(!!clock.loop)) loopBtn.ariaPressed = String(!!clock.loop);
+    if (second !== Math.trunc(clock.t)) {
+      second = Math.trunc(clock.t);
+      canvas.setAttribute("aria-valuenow", second);
+      canvas.setAttribute("aria-valuetext", clockText(second, false));
+    }
     time.textContent = `${clockText(clock.t)} / ${clockText(clock.duration, false)}`;
     wall.textContent = route.start_time_utc_millis ? new Date(route.start_time_utc_millis + clock.t * 1000).toLocaleTimeString(undefined, {hour12: false}) : "";
 
@@ -153,7 +169,11 @@ export function playbar(ctx) {
     const sprite = route.url && api.segmentAsset(route, n, "sprite.jpg");  // local files have none
     tip.firstChild.hidden = !sprite;
     if (sprite) tip.firstChild.style.backgroundImage = `url(${sprite})`;
-    tip.lastChild.replaceChildren(`${clockText(hover, false)} · segment ${n}`,
+    // the spans under the cursor, with the alert's text once logs are loaded
+    const ms = hover * 1000, alert = ctx.peekStore()?.valueAt("/selfdriveState/alertText1", hover);
+    const under = spans.filter((s) => SPAN_LABELS[s.kind] && s.start <= ms && ms < s.end)
+      .map((s) => h("div", {}, SPAN_LABELS[s.kind] + ((s.kind === "alert" || s.kind === "critical") && alert ? `: ${alert}` : "")));
+    tip.lastChild.replaceChildren(...under, `${clockText(hover, false)} · segment ${n}`,
       ...status.kinds().filter((k) => k.segs[slot]).map((k) => h("div", {class: "muted"}, `${k.label}: ${describe(k.segs[slot])}`)));
   });
   canvas.addEventListener("pointerleave", () => { hover = null; tip.hidden = true; perf.invalidate(pane); });

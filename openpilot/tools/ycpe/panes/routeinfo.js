@@ -4,6 +4,7 @@ import {h, fmt, css} from "../dom.js";
 import {routeKey} from "../data/sources.js";
 import {canManage} from "../pages/home.js";
 import {schemaRow} from "./schema.js";
+import {VIEWS} from "../views.js";
 
 await css(new URL("./routeinfo.css", import.meta.url));
 
@@ -44,7 +45,11 @@ export function create(ctx) {
   ];
 
   const copied = h("span", {class: "small muted"});
-  const shareUrl = () => `${location.origin}/${routeKey(route).replace("|", "/")}/drive${clock.t ? `?t=${clock.t.toFixed(1)}` : ""}`;
+  // the view this pane is in, at the playhead
+  const shareUrl = () => {
+    const view = location.pathname.split("/").pop();
+    return `${location.origin}/${routeKey(route).replace("|", "/")}/${VIEWS[view] ? view : "drive"}${clock.t ? `?t=${clock.t.toFixed(1)}` : ""}`;
+  };
   const copy = async (text, what) => {
     await navigator.clipboard.writeText(text);
     copied.textContent = `copied ${what}`;
@@ -65,7 +70,7 @@ export function create(ctx) {
   const el = h("div", {class: "info-pane"},
     h("table", {class: "kv-table"}, rows.filter(([, v]) => v).map(([k, v]) => h("tr", {}, h("th", {}, k), h("td", {}, v)))),
     h("div", {class: "actions"},
-      h("button", {class: "button small", title: "Link to this route at the playhead", onclick: () => copy(shareUrl(), "link")}, "Copy link"),
+      h("button", {class: "button small", title: "Link to this view of the route at the playhead", onclick: () => copy(shareUrl(), "link")}, "Copy link to this moment"),
       h("button", {class: "button small", onclick: () => copy(route.fullname, "route name")}, "Copy name"),
       navigator.share && h("button", {class: "button small", onclick: () => navigator.share({title: route.fullname, url: shareUrl()}).catch(() => {})}, "Share"),
       toggles, copied),

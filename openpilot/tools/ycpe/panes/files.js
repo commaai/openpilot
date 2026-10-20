@@ -24,7 +24,7 @@ export function create(ctx) {
   let up = null, apiFiles = new Set(), height = 0, alive = true;
   const stop = new AbortController();  // download-alls end with the pane
   let dirty = true, stale = new Set();  // every row and the header redraw, or just these segments' rows
-  const rows = new Map();  // row index → element on screen
+  const rows = new Map();  // row index → {el, src, cells, shown} on screen
   const saving = {};  // kind → "done/total" while a download-all runs
 
   const picker = h("select", {class: "fp-source", title: "Where this route's files come from", onchange: (e) => pick(e.target.value)});
@@ -117,45 +117,66 @@ export function create(ctx) {
     changed();
   }
 
-  function cell(n, kind) {
+  // what a cell shows: the file, its upload state (objects, replaced on change), "up" when it can be requested, or text
+  function shown(n, kind) {
+    const key = `${n}/${kind}`;
+    return found.get(key) || up?.state(key) || (up?.canUpload && up.missing([key]).length ? "up" : asked.has(n) ? "–" : "");
+  }
+
+  function cell(n, kind, what) {
     const key = `${n}/${kind}`, f = found.get(key);
     if (f) {
       return h("a", {class: "fp-cell dl", href: f.url, download: `${route.fullname.replace("|", "_")}--${n}--${f.file}`, title: `${f.file} from ${label(f.source)}${f.cached ? " (on disk)" : ""}`},
         icon("download", 14), f.size ? fmtBytes(f.size) : "");
     }
-    const state = up && uploadState(up, key);
-    if (state) return h("span", {class: "fp-cell"}, state);
-    if (up?.canUpload && up.missing([key]).length) {
+    if (typeof what === "object") return h("span", {class: "fp-cell"}, uploadState(up, key));
+    if (what === "up") {
       return h("span", {class: "fp-cell"}, h("button", {class: "icon-btn", title: `Request ${LABELS[kind]} ${n} from the device`, onclick: () => up.request([key])}, icon("upload", 14)));
     }
-    return h("span", {class: "fp-cell muted"}, asked.has(n) ? "–" : "");
+    return h("span", {class: "fp-cell muted"}, what);
   }
 
+  // a row keeps its elements; only the cells whose content changed are rebuilt
   function fill(row, n) {
     const sources = new Set(COLS.map((k) => found.get(`${n}/${k}`)?.source).filter(Boolean));
-    row.replaceChildren(h("span", {class: "fp-seg"}, n),
-      h("span", {class: "fp-src muted"}, asked.has(n) ? [...sources].map(label).join(", ") || "–" : "…"),
-      ...COLS.map((k) => cell(n, k)));
+    const src = asked.has(n) ? [...sources].map(label).join(", ") || "–" : "…";
+    if (row.src.textContent !== src) row.src.textContent = src;
+    COLS.forEach((kind, j) => {
+      const what = shown(n, kind);
+      if (what === row.shown[j]) return;
+      row.shown[j] = what;
+      const c = cell(n, kind, what);
+      row.cells[j].replaceWith(c);
+      row.cells[j] = c;
+    });
   }
+
+  // the header is built once; each change patches its totals and buttons
+  const heads = COLS.map((kind) => {
+    const all = h("button", {class: "icon-btn", title: `Download every ${LABELS[kind]} file`, onclick: () => downloadAll(kind)}, icon("download", 14));
+    const ask = h("button", {class: "icon-btn", hidden: true, onclick: () => up.request(segs.map((n) => `${n}/${kind}`))}, icon("upload", 14));
+    const total = h("span", {class: "fp-total muted"});
+    return {all, ask, total, el: h("span", {class: "fp-cell"}, h("span", {class: "fp-kind"}, LABELS[kind], all, ask), total)};
+  });
+  head.append(h("span", {class: "fp-seg"}, "seg"), h("span", {class: "fp-src"}, "source"), ...heads.map((c) => c.el));
 
   function updateHead() {
     let uploaded = 0;
-    head.replaceChildren(h("span", {class: "fp-seg"}, "seg"), h("span", {class: "fp-src"}, "source"), ...COLS.map((kind) => {
+    COLS.forEach((kind, j) => {
       let count = 0, bytes = 0;
       for (const n of segs) {
         const f = found.get(`${n}/${kind}`);
         if (f) { count++; bytes += f.size || 0; }
         if (apiFiles.has(`${n}/${kind}`)) uploaded++;
       }
-      const requestable = up?.canUpload ? up.missing(segs.map((n) => `${n}/${kind}`)) : [];
+      const requestable = up?.canUpload && UPLOADABLE.includes(kind) ? up.missing(segs.map((n) => `${n}/${kind}`)).length : 0;
       const total = saving[kind] ? `saving ${saving[kind]}` : `${count}/${segs.length}${asked.size < segs.length ? "+" : ""}${bytes ? ` · ${fmtBytes(bytes)}` : ""}`;
-      return h("span", {class: "fp-cell"},
-        h("span", {class: "fp-kind"}, LABELS[kind],
-          h("button", {class: "icon-btn", title: `Download every ${LABELS[kind]} file`, disabled: !!saving[kind], onclick: () => downloadAll(kind)}, icon("download", 14)),
-          up?.canUpload && UPLOADABLE.includes(kind) && h("button", {class: "icon-btn", title: `Request every missing ${LABELS[kind]} file (${requestable.length})`,
-            disabled: !requestable.length, onclick: () => up.request(requestable)}, icon("upload", 14))),
-        h("span", {class: "fp-total muted", title: total}, total));
-    }));
+      const c = heads[j];
+      if (c.total.textContent !== total) c.total.textContent = c.total.title = total;
+      c.all.disabled = !!saving[kind];
+      c.ask.hidden = !requestable;  // nothing to ask for, no button
+      c.ask.title = `Request every missing ${LABELS[kind]} file (${requestable})`;
+    });
     summary.textContent = `${segs.length} segments · ${Math.round(100 * uploaded / (segs.length * COLS.length || 1))}% uploaded`;
     const failed = Object.entries(errors);
     notes.replaceChildren(...[up && uploadNotice(up),
@@ -170,12 +191,14 @@ export function create(ctx) {
   function render() {
     const top = scroller.scrollTop;
     const first = Math.max(0, Math.floor(top / ROW) - OVERSCAN), last = Math.min(segs.length, Math.ceil((top + height) / ROW) + OVERSCAN);
-    for (const [i, row] of rows) if (i < first || i >= last) { row.remove(); rows.delete(i); }
+    for (const [i, row] of rows) if (i < first || i >= last) { row.el.remove(); rows.delete(i); }
     const want = [];
     for (let i = first; i < last; i++) {
       let row = rows.get(i);
       if (!row) {
-        row = body.appendChild(h("div", {class: "fp-row", style: `transform: translateY(${i * ROW}px)`}));
+        const cells = COLS.map(() => h("span"));
+        row = {src: h("span", {class: "fp-src muted"}), cells, shown: []};
+        row.el = body.appendChild(h("div", {class: "fp-row", style: `transform: translateY(${i * ROW}px)`}, h("span", {class: "fp-seg"}, segs[i]), row.src, ...cells));
         rows.set(i, row);
         fill(row, segs[i]);
       } else if (dirty || stale.has(segs[i])) {

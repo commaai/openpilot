@@ -2,7 +2,7 @@
 .inspector-pane .inspector-bar { display: flex; gap: 8px; align-items: center; padding: 4px 6px; border-bottom: 1px solid var(--line); }
 .inspector-pane .inspector-bar select { height: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: var(--fg); }
 .inspector-pane .inspector-when { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.inspector-pane .inspector-note { padding: 0 6px; color: var(--alert); }
+.inspector-pane .inspector-note { padding: 0 6px; color: var(--alert-fg); }
 .inspector-pane .inspector-note:empty { display: none; }
 .inspector-pane .inspector-list { position: relative; flex: 1; overflow: auto; contain: strict; font: 12px/18px var(--mono); }
 .inspector-pane .inspector-spacer { position: relative; }
