@@ -162,8 +162,12 @@ export const api = {
   setDeviceAlias: (dongleId, alias) => request("PATCH", `v1/devices/${dongleId}/`, {body: {alias}}),
   deviceUsers: (dongleId) => get(`v1/devices/${dongleId}/users`),
   addDeviceUser: (dongleId, email) => request("POST", `v1/devices/${dongleId}/add_user`, {body: {email}}),
-  // without an email this removes the signed-in user
-  removeDeviceUser: (dongleId, email) => request("POST", `v1/devices/${dongleId}/del_user`, {body: email ? {email} : {}}),
+  // an empty body removes the signed-in user, so that's its own call and never a missing email
+  removeDeviceUser: async (dongleId, email) => {
+    if (!email) throw new Error("removing a user needs their email");
+    return request("POST", `v1/devices/${dongleId}/del_user`, {body: {email}});
+  },
+  leaveDevice: (dongleId) => request("POST", `v1/devices/${dongleId}/del_user`, {body: {}}),
   // signed blob urls, oldest first
   bootlogs: memo((dongleId) => get(`v1/devices/${dongleId}/bootlogs`)),
   crashlogs: memo((dongleId) => get(`v1/devices/${dongleId}/crashlogs`)),
