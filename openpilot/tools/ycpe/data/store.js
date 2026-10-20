@@ -42,6 +42,7 @@ export class Store {
     this.overlays = [];  // [{prefix, name, store}]: other logs on this clock (replays), their paths under prefix
     this.budget = budget;
     this.keep = keep;
+    this.kept = [];  // the lists asked for since, in order ({service: [globs]}); a parse notes how many it read with
     this.handlers = {};
     this.can = can ? new Can(this) : NO_CAN;  // an overlay's Can would share and resize the route's CAN lane
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
@@ -99,13 +100,15 @@ export class Store {
 
   // the options are taken when the parse starts, so it skips whatever was evicted by then
   load(seg, only, extra = {}) {
+    let kept;
     const opts = () => {
+      kept = this.kept.length;
       const skip = {};
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
       return {...seg.opts, keep: this.keep, skip, only, context: this.context, schema: this.schema, gen: this.gen, ...extra};
     };
     const loaded = this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this);
-    return loaded.then((p) => Object.assign(p, {full: !only}));  // every column, not just the ones asked for again
+    return loaded.then((p) => Object.assign(p, {full: !only, kept}));  // every column, not just the ones asked for again
   }
 
   // reads every loaded segment again with another schema; the columns in memory stay until each segment's new ones
@@ -321,6 +324,7 @@ export class Store {
     p.n = seg.n;
     if (fresh) this.prune(seg, new Set(paths));
     if (p.gen !== this.gen) this.reread(seg);  // read with a schema that's since been replaced
+    else if (p.full && p.kept < this.kept.length) this.readOnly(seg, this.kept.slice(p.kept).reduce(merge, {}));  // lists asked for mid-parse
     p.live.forEach((n, s) => {
       if (!n) return drop(p, s);
       this.bytes += p.bufs[s].byteLength;
@@ -488,7 +492,8 @@ export class Store {
     const glob = m[2], list = this.keep[m[1]] ||= [];
     if (list.includes(glob)) return;
     list.push(glob);
-    this.reparse({[m[1]]: [`${glob}/*`, `${glob}/*/*`]});
+    this.kept.push({[m[1]]: [`${glob}/*`, `${glob}/*/*`]});
+    this.reparse(this.kept.at(-1));
   }
 
   reload(e) {
@@ -505,16 +510,18 @@ export class Store {
       queueMicrotask(() => {
         const only = this.wanted;
         this.wanted = null;
-        for (const seg of this.route.segments) {
-          if (seg.status !== "done") continue;
-          this.load(seg, only).then((p) => this.ingest(seg, p), () => {
-            seg.loading = null;
-            this.publish(seg);
-          });
-        }
+        for (const seg of this.route.segments) if (seg.status === "done") this.readOnly(seg, only);
       });
     }
-    for (const svc in only) (this.wanted[svc] ||= []).push(...only[svc]);
+    merge(this.wanted, only);
+  }
+
+  // reads just the columns only picks from a loaded segment again
+  readOnly(seg, only) {
+    this.load(seg, only).then((p) => this.ingest(seg, p), () => {
+      seg.loading = null;
+      this.publish(seg);
+    });
   }
 
   // drops the least recently used columns not in use until under 90% of the budget
@@ -603,6 +610,12 @@ export class Store {
     this.status.remove();
   }
 }
+
+// adds {service: [globs]} b to a
+const merge = (a, b) => {
+  for (const svc in b) (a[svc] ||= []).push(...b[svc]);
+  return a;
+};
 
 const split = (path) => path.match(/^\/([^/]+)(.*)$/).slice(1);
 
