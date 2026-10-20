@@ -11,7 +11,6 @@ const ready = Promise.all([
   initCodec(),
   fetch(new URL("./schema.json", import.meta.url)).then((r) => r.json()).then((s) => new Reader(s)),
 ]).then(([, reader]) => reader);
-const sentEnums = new Set();
 
 // compressed logs in OPFS keyed route/segment/file (the signed URLs change), so a revisit makes no requests
 async function file(key, create) {
@@ -80,7 +79,7 @@ async function parse(buf, opts) {
   for (const s of Object.values(services)) for (let k = 0; k < s.t.length; k++) s.t[k] += off;
 
   const only = opts.only && Object.fromEntries(Object.entries(opts.only).map(([name, globs]) => [name, pattern(globs)]));
-  const out = pack(services, reader.schema.enums, only, sentEnums);
+  const out = pack(services, reader.schema.enums, only);
   return {...out, start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
 }
 
