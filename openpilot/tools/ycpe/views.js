@@ -15,4 +15,5 @@ export const VIEWS = {
     pane("can-messages"),
     split("col", [0.5, 0.5], pane("can-binary"), pane("can-signals")),
     split("col", [0.6, 0.4], pane("can-charts"), pane("camera", {camera: "qcamera"})))),
+  files: view("Files", split("row", [0.2, 0.8], pane("routes"), pane("files"))),
 };
