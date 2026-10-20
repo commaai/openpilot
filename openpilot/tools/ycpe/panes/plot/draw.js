@@ -121,23 +121,36 @@ export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
     const steps = style === "steps";
     g.lineWidth = width;
     g.beginPath();
-    let py = NaN, pi = -1;
+    let py = NaN, pi = -1, lone = -1;  // lone: a run's first point while it's a single point, which strokes nothing
+    const lones = [];
     for (let i = 0; i < n; i++) {
       const lo = min[i];
       if (lo !== lo) continue;
       const x = X(t[i]), a = Y(lo), b = Y(max[i]);
       // a bucket is a vertical span: enter it at the end nearer the previous point
       const near = Math.abs(a - py) <= Math.abs(b - py), p = near ? a : b, q = near ? b : a;
-      if (py !== py || gap(t[pi], t[i])) g.moveTo(x, p);
-      else {
+      if (py !== py || gap(t[pi], t[i])) {
+        if (lone >= 0) lones.push(lone);
+        g.moveTo(x, p);
+        lone = q === p ? i : -1;
+      } else {
         if (steps) g.lineTo(x, py);
         g.lineTo(x, p);
+        lone = -1;
       }
       if (q !== p) g.lineTo(x, q);
       py = q;
       pi = i;
     }
+    if (lone >= 0) lones.push(lone);
     g.stroke();
+    // a sample with no neighbour to draw to (a message sent once, or only between gaps) is a dot
+    if (lones.length && style !== "line+dots") {
+      const r = width + 0.75;
+      g.beginPath();
+      for (const i of lones) g.rect(X(t[i]) - r, Y(min[i]) - r, 2 * r, 2 * r);
+      g.fill();
+    }
   }
   if (style === "dots" || style === "line+dots") {
     const r = width + 0.75;
