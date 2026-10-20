@@ -27,34 +27,46 @@ const unitY = (lat) => { const s = Math.sin(lat * Math.PI / 180); return 0.5 - M
 const tilePx = () => Math.round(TILE * Math.min(2, devicePixelRatio));
 
 // decoded tiles shared by every map, least recently used first. A frame starts at most left.fetches requests.
+// Each render stamps the tiles it draws (left.stamp), and eviction after it keeps those: a big map needs more than
+// CACHE, and evicting what's on screen would refetch it forever.
 const tiles = new Map();
+let renders = 0;
 function tile(style, z, x, y, onLoad, left) {
   const key = `${style}/${z}/${x}/${y}`;
   let t = tiles.get(key);
-  if (t) { tiles.delete(key); tiles.set(key, t); return t.bitmap; }
+  if (t) { tiles.delete(key); tiles.set(key, t); t.used = left.stamp; return t.bitmap; }
   if (!left.fetches) return left.more = true, null;
   left.fetches--;
-  tiles.set(key, t = {bitmap: null});
+  tiles.set(key, t = {bitmap: null, used: left.stamp});
   fetch(`https://api.mapbox.com/styles/v1/${style}/tiles/${TILE}/${z}/${x}/${y}@2x?access_token=${MAPBOX_TOKEN}`)
     .then((r) => r.ok ? r.blob() : Promise.reject(r.status))
     .then((b) => { const px = tilePx(); return createImageBitmap(b, px < 2 * TILE ? {resizeWidth: px, resizeHeight: px, resizeQuality: "high"} : {}); })
-    .then((bitmap) => { t.bitmap = bitmap; onLoad(); })
-    .catch(() => tiles.delete(key));
-  for (const [k, old] of tiles) {
-    if (tiles.size <= CACHE) break;
-    old.bitmap?.close();
-    tiles.delete(k);
-  }
+    .then((bitmap) => {
+      if (tiles.get(key) !== t) return bitmap.close();  // evicted while loading
+      t.bitmap = bitmap;
+      onLoad();
+    })
+    .catch(() => tiles.get(key) === t && tiles.delete(key));
   return null;
 }
 
+function evict(keep, stamp) {
+  for (const [k, t] of tiles) {
+    if (tiles.size <= keep) break;
+    if (t.used === stamp) continue;
+    t.bitmap?.close();
+    tiles.delete(k);
+  }
+}
+
 // a loaded tile or the nearest loaded ancestor, as [bitmap, sx, sy, size] in image pixels
-function covering(style, z, x, y) {
+function covering(style, z, x, y, stamp) {
   for (let up = 0; up <= Math.min(z, 5); up++) {
-    const t = tiles.get(`${style}/${z - up}/${x >> up}/${y >> up}`)?.bitmap;
-    if (!t) continue;
-    const size = t.width >> up, mask = (1 << up) - 1;
-    return [t, (x & mask) * size, (y & mask) * size, size];
+    const t = tiles.get(`${style}/${z - up}/${x >> up}/${y >> up}`);
+    if (!t?.bitmap) continue;
+    t.used = stamp;
+    const size = t.bitmap.width >> up, mask = (1 << up) - 1;
+    return [t.bitmap, (x & mask) * size, (y & mask) * size, size];
   }
   return null;
 }
@@ -156,12 +168,14 @@ class TileMap {
     const tz = Math.max(0, Math.min(MAX_Z, Math.round(this.z))), n = 2 ** tz;
     const size = this.scale / n;  // css px per tile at this zoom
     const [ux0, uy0] = this.toUnit(0, 0), [ux1, uy1] = this.toUnit(w, h);
-    const onLoad = () => this.invalidate(), left = {fetches: FETCHES, more: false};
+    const onLoad = () => this.invalidate(), left = {fetches: FETCHES, more: false, stamp: ++renders};
+    let drawn = 0;
     for (let ty = Math.max(0, Math.floor(uy0 * n)); ty <= Math.min(n - 1, Math.floor(uy1 * n)); ty++) {
       for (let tx = Math.floor(ux0 * n); tx <= Math.floor(ux1 * n); tx++) {
         const wx = ((tx % n) + n) % n;
         tile(style, tz, wx, ty, onLoad, left);
-        const src = covering(style, tz, wx, ty);
+        drawn++;
+        const src = covering(style, tz, wx, ty, left.stamp);
         if (!src) continue;
         const [x, y] = this.toScreen(tx / n, ty / n);
         // whole pixels on both edges, so neighbors meet without seams
@@ -169,6 +183,7 @@ class TileMap {
         ctx.drawImage(src[0], src[1], src[2], src[3], src[3], dx, dy, Math.round(x + size) - dx, Math.round(y + size) - dy);
       }
     }
+    evict(Math.max(CACHE, 2 * drawn), left.stamp);  // room for this view and the one after a pan or zoom
     if (left.more) this.invalidate();  // the other requests next frame
     this.overlay?.(ctx);
   }
