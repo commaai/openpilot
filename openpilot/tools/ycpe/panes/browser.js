@@ -23,7 +23,7 @@ export function create(ctx, state = {}) {
     oninput: () => { st.filter = filter.value; refresh(); },
     onkeydown: (e) => { if (e.key === "Escape") { filter.value = st.filter = ""; refresh(); } }});
   const count = h("span", {class: "muted count"});
-  const depr = h("label", {class: "muted", title: "show deprecated fields"},
+  const depr = h("label", {class: "muted", title: "show deprecated fields and internal ones (__logMonoTime)"},
     h("input", {type: "checkbox", checked: st.deprecated, onchange: (e) => { st.deprecated = e.target.checked; build(); }}), "deprecated");
   const spacer = h("div", {class: "spacer"});
   const win = h("div", {class: "window"});
@@ -38,7 +38,7 @@ export function create(ctx, state = {}) {
   function build() {
     const root = {children: new Map()};
     for (const meta of store.paths()) {
-      if (!st.deprecated && deprecated(meta.path)) continue;
+      if (!st.deprecated && (meta.internal || deprecated(meta.path))) continue;
       let node = root, prefix = "";
       for (const part of meta.path.slice(1).split("/")) {
         prefix += `/${part}`;

@@ -24,12 +24,10 @@ function untrusted({active = 0, tabs = []}) {
   return {active, tabs: tabs.map((t) => ({...t, root: walk(t.root)}))};
 }
 
-// PlotJuggler's per-message fields: /<service>/__valid is our /<service>/valid; __logMonoTime has no series yet
-function field(path, warnings) {
-  const m = path?.match(/^(\/[^/]+)\/__(\w+)$/);
-  if (m?.[2] === "valid") return `${m[1]}/valid`;
-  if (m) warnings.push(`${path}: no equivalent series`);
-  return path;
+// PlotJuggler's per-message fields: /<service>/__valid is our /<service>/valid (__logMonoTime is the same path)
+function field(path) {
+  const m = path?.match(/^(\/[^/]+)\/__valid$/);
+  return m ? `${m[1]}/valid` : path;
 }
 
 // ---- jotpluggler
@@ -50,13 +48,13 @@ function jpNode(n, ranges, warnings) {
   if (n.kind === "map") return {pane: "map", state: {}};
   if (n.range) ranges.push([n.range.left, n.range.right]);
   const curves = (n.curves || []).map((c) => {
-    const out = {path: field(c.name, warnings), color: c.color};
+    const out = {path: field(c.name), color: c.color};
     if (c.transform === "derivative") out.transform = {kind: "derivative", param: c.derivative_dt || 0};
     if (c.transform === "scale") Object.assign(out, {scale: c.scale ?? 1, offset: c.offset ?? 0});
     if (c.custom_python) {
       const p = c.custom_python, name = c.name.replaceAll("/", "_");
       Object.assign(out, {path: `/custom/${name}`, label: name,
-        custom: translate("python", [p.linked_source, ...p.additional_sources].map((s) => field(s, warnings)), p.globals_code, pyBody(p.function_code), warnings, name)});
+        custom: translate("python", [p.linked_source, ...p.additional_sources].map(field), p.globals_code, pyBody(p.function_code), warnings, name)});
     }
     return out;
   });
@@ -85,7 +83,7 @@ function fromPlotJuggler(text, warnings) {
   for (const s of doc.querySelectorAll("customMathEquations > snippet")) {
     const name = s.getAttribute("name"), linked = s.querySelector("linked_source")?.textContent;
     const extra = [...(s.querySelector("additional_sources")?.children || [])].map((e) => e.textContent);
-    snippets.set(name, translate("lua", [linked, ...extra].map((s) => field(s, warnings)), text1(s, "global"), text1(s, "function"), warnings, name));
+    snippets.set(name, translate("lua", [linked, ...extra].map(field), text1(s, "global"), text1(s, "function"), warnings, name));
   }
   const tabs = [...doc.querySelectorAll("tabbed_widget > Tab")].map((tab) => {
     const ranges = [];
@@ -110,7 +108,7 @@ function pjNode(el, ranges, snippets, warnings) {
   const style = STYLES[plot.getAttribute("style")];
   const curves = [...plot.querySelectorAll("curve")];
   if (plot.getAttribute("mode") === "XYPlot") {
-    return {pane: "xy", state: {curves: curves.map((c) => ({x: field(c.getAttribute("curve_x"), warnings), y: field(c.getAttribute("curve_y"), warnings), color: c.getAttribute("color")}))}};
+    return {pane: "xy", state: {curves: curves.map((c) => ({x: field(c.getAttribute("curve_x")), y: field(c.getAttribute("curve_y")), color: c.getAttribute("color")}))}};
   }
   const lim = plot.querySelector("limitY");
   const y = lim && (lim.hasAttribute("min") || lim.hasAttribute("max")) ? {min: num(lim, "min"), max: num(lim, "max")} : undefined;
@@ -118,7 +116,7 @@ function pjNode(el, ranges, snippets, warnings) {
 }
 
 function pjCurve(el, style, snippets, warnings) {
-  const name = el.getAttribute("name"), out = {path: field(name, warnings), color: el.getAttribute("color")};
+  const name = el.getAttribute("name"), out = {path: field(name), color: el.getAttribute("color")};
   if (style) out.style = style;
   if (snippets.has(name)) Object.assign(out, {path: `/custom/${name.replaceAll("/", "_")}`, label: name, custom: snippets.get(name)});
   const t = el.querySelector("transform"), o = t?.querySelector("options");
