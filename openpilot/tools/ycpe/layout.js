@@ -2,8 +2,10 @@
 //   layout = {tabs: [{name, root}], active}
 //   node   = {split: "row" | "col", sizes: [fractions], children: [node]} | {pane: type, state}
 // Panes are rearranged by dragging their header onto another pane's edge (dock beside) or center (swap).
-// Structural edits (tabs, splits, docking, divider sizes) can be undone; a pane's own state is the pane's business.
+// Structural edits (tabs, splits, docking, divider sizes) go in the workspace's undo history (history.js); a pane's
+// own state is the pane's business.
 import {h} from "/dom.js";
+import {undoHistory} from "/history.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {PANES, loadPane} from "/panes.js";
@@ -12,7 +14,6 @@ const MIN = 0.05;   // smallest split fraction
 const MIN_PX = {row: 120, col: 60};  // smallest pane, across and down, so a layout saved on a big screen stays usable
 const DIVIDER = 4;  // px, as in style.css
 const EDGE = 0.25;  // fraction of a pane that docks beside it rather than swapping
-const UNDO = 50;    // layout edits remembered
 
 // a saved model that isn't one (hand edited, an older format) throws. Sizes that aren't positive numbers take an even
 // share, and pane types this version doesn't have are empty.
@@ -46,8 +47,6 @@ export class Layout {
     this.el = h("div", {class: "layout"});
     this.live = new Map();  // rendered node -> {pane, box}
     this.maxPath = null;    // path of the maximized node, if any
-    this.undos = [];        // saved models before each edit, newest last
-    this.redos = [];
     this.resizer = new ResizeObserver((entries) => {
       for (const e of entries) {
         const live = e.target._live;
@@ -65,23 +64,22 @@ export class Layout {
     this.onChange?.(this.save());
   }
 
-  // call before an edit: remembers the layout as it is (or as it was, for edits already made live, like a drag)
-  checkpoint(before = structuredClone(this.save())) {
-    this.undos.push(before);
-    if (this.undos.length > UNDO) this.undos.shift();
-    this.redos.length = 0;
+  // call before an edit (label: what it does): remembers the layout as it is, or as it was for edits already made live
+  // (a drag)
+  checkpoint(label, before = structuredClone(this.save())) {
+    undoHistory(this.ctx.clock).push(this.entry(label, before));
   }
 
-  undo() { this.step(this.undos, this.redos); }
-  redo() { this.step(this.redos, this.undos); }
-
-  step(from, to) {
-    if (!from.length) return;
-    to.push(structuredClone(this.save()));
-    this.model = from.pop();
-    this.maxPath = null;
-    this.render();
-    this.changed();
+  // the history entry that puts model back
+  entry(label, model) {
+    return {label, layout: this, restore: () => {
+      const now = this.entry(label, structuredClone(this.save()));
+      this.model = model;
+      this.maxPath = null;
+      this.render();
+      this.changed();
+      return now;
+    }};
   }
 
   // the current layout with each pane's own state folded in; map (if given) collects rendered -> saved nodes
@@ -105,7 +103,7 @@ export class Layout {
   }
 
   addTab(name = `tab ${this.model.tabs.length + 1}`, root = {pane: "empty", state: {}}) {
-    this.checkpoint();
+    this.checkpoint("new tab");
     this.model = this.save();
     this.model.tabs.push({name, root});
     this.model.active = this.model.tabs.length - 1;
@@ -116,7 +114,7 @@ export class Layout {
 
   closeTab(i) {
     if (this.model.tabs.length === 1) return;
-    this.checkpoint();
+    this.checkpoint("close tab");
     this.model = this.save();
     this.model.tabs.splice(i, 1);
     if (i <= this.model.active) this.model.active = Math.max(0, this.model.active - 1);
@@ -127,7 +125,7 @@ export class Layout {
 
   renameTab(i, name) {
     if (name === this.model.tabs[i].name) return;
-    this.checkpoint();
+    this.checkpoint("rename tab");
     this.model.tabs[i].name = name;
     this.changed();
   }
@@ -199,12 +197,12 @@ export class Layout {
       el.onpointerup = el.onpointercancel = () => {
         el.onpointermove = el.onpointerup = el.onpointercancel = null;
         if (n.sizes[i - 1] === at.a) return;
-        this.checkpoint(before);
+        this.checkpoint("resize", before);
         this.changed();
       };
     });
     const even = () => {
-      this.checkpoint();
+      this.checkpoint("resize");
       n.sizes = n.sizes.map(() => 1 / n.sizes.length);
       for (const c of kids()) c.style.flex = `${1 / n.sizes.length} 1 0`;
       for (const c of box.children) c._value?.();
@@ -219,7 +217,7 @@ export class Layout {
       const at = pair(), step = (e.shiftKey ? 50 : 10) / at.total, before = structuredClone(this.save());
       move(at, {[back]: -step, [forward]: step, Home: -Infinity, End: Infinity}[e.key]);
       if (n.sizes[i - 1] === at.a) return;
-      this.checkpoint(before);
+      this.checkpoint("resize", before);
       this.changed();
     });
     return el;
@@ -232,7 +230,7 @@ export class Layout {
     const types = h("select", {class: "pane-type", title: "Pane type", "aria-label": `Pane type: ${info.title}`, "data-key": "type", onchange: (e) => this.replace(n, {pane: e.target.value, state: {}}),
       onkeydown: (e) => {
         if (e.key === "Escape") e.target.blur();
-        else if (!e.altKey && !["Enter", " ", "Tab", "F4"].includes(e.key)) e.preventDefault();
+        else if (!e.altKey && !e.ctrlKey && !e.metaKey && !["Enter", " ", "Tab", "F4"].includes(e.key)) e.preventDefault();
       }},
       n.pane === "empty" && h("option", {value: "empty", selected: true, disabled: true}, "Choose…"),
       Object.entries(PANES).filter(([, p]) => !p.hidden).map(([k, p]) => h("option", {value: k, selected: k === n.pane}, p.title)));
@@ -307,10 +305,10 @@ export class Layout {
     addEventListener("keydown", cancel);
   }
 
-  // structural edits run on a freshly saved model; get(n) maps a rendered node to its saved copy
+  // structural edits (label: what it does) run on a freshly saved model; get(n) maps a rendered node to its saved copy
   // fn may return a node to focus instead (its pane type)
-  edit(fn) {
-    this.checkpoint();
+  edit(label, fn) {
+    this.checkpoint(label);
     const map = new Map();
     const maxed = this.maxPath && at(this.tab.root, this.maxPath);
     const focus = this.focused();
@@ -340,7 +338,7 @@ export class Layout {
   split(n, dir) {
     // the maximized pane splits on its own, rather than into a parent that isn't shown
     const wrap = this.maxPath && at(this.tab.root, this.maxPath) === n;
-    this.edit((tab, get) => {
+    this.edit("split pane", (tab, get) => {
       const fresh = {pane: "empty", state: {}};
       if (wrap) replaceNode(tab, get(n), {split: dir, sizes: [0.5, 0.5], children: [get(n), fresh]});
       else insertBeside(tab, get(n), fresh, dir, false);
@@ -348,7 +346,7 @@ export class Layout {
   }
 
   close(n) {
-    this.edit((tab, get) => {
+    this.edit(`close ${(PANES[n.pane]?.title || n.pane).toLowerCase()}`, (tab, get) => {
       if (tab.root === get(n)) {
         tab.root = {pane: "empty", state: {}};
         return tab.root;
@@ -361,7 +359,7 @@ export class Layout {
   }
 
   replace(n, fresh) {
-    this.edit((tab, get) => { Object.assign(get(n), fresh); });  // in place: a maximized pane stays so
+    this.edit("change pane", (tab, get) => { Object.assign(get(n), fresh); });  // in place: a maximized pane stays so
   }
 
   // a pane swapping itself for another (the empty pane's picker)
@@ -370,7 +368,7 @@ export class Layout {
   }
 
   dock(src, target, zone) {
-    this.edit((tab, get) => {
+    this.edit("move pane", (tab, get) => {
       const a = get(src), b = get(target);
       if (zone === "center") return swapNodes(tab, a, b);
       detach(tab, a);

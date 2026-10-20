@@ -1,7 +1,7 @@
 import {SEGMENT, api, auth, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h, parseClock} from "/dom.js";
+import {h, fmt, parseClock} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -21,6 +21,7 @@ import {omnibox, rememberRoute, resolve} from "/pages/omnibox.js";
 import {localPage, pullCard} from "/pages/local.js";
 import {create as routesPane} from "/panes/routes.js";
 import {routeId, routeAnatomy} from "/routeid.js";
+import {undoHistory} from "/history.js";
 import {layoutPicker, loadLayout, mergeLayout, acceptLayoutFiles} from "/layouts/picker.js";
 import {uniqueCustoms} from "/layouts/import.js";
 
@@ -40,7 +41,37 @@ export function link(path) {
   };
 }
 
-export const isOnline = (d) => d.last_athena_ping && Date.now() / 1000 - d.last_athena_ping < 120;
+// whether the device reached athena (about once a minute) shortly before its record was fetched, as connect has it
+export const isOnline = (d) => !!d.last_athena_ping && d.last_athena_ping > (d.fetched_at ?? Date.now() / 1000) - 120;
+
+// a device's online state as a dot, a pill, or text ("ago": online or how long ago it was seen, "seen": the same said
+// in full), kept current: the device list is fetched again every minute while the tab is shown (watchDevices)
+export function onlineMark(device, kind = "dot") {
+  const el = h("span", {"data-online": device.dongle_id, "data-kind": kind});
+  markOnline(el, device);
+  return el;
+}
+
+function markOnline(el, d) {
+  const on = isOnline(d), kind = el.dataset.kind, seen = `last seen ${fmt.ago(d.last_athena_ping)}`;
+  el.className = kind === "dot" ? `dot ${on ? "online" : ""}` : kind === "pill" ? `online-pill ${on ? "online" : ""}` : "";
+  if (kind !== "dot") el.textContent = on ? "online" : kind === "pill" ? "offline" : kind === "seen" ? seen : fmt.ago(d.last_athena_ping);
+  el.title = on || kind === "seen" ? "" : seen;
+}
+
+const DEVICES_MS = 60e3;
+let devicesAt = 0;  // when the list was last asked for
+async function watchDevices() {
+  if (document.hidden || !state.devices || !auth.isAuthenticated() || performance.now() - devicesAt < DEVICES_MS - 1000) return;
+  devicesAt = performance.now();
+  const list = await api.devices().catch(() => null);
+  if (!list || !state.devices) return;
+  state.devices = list;
+  const byId = new Map(list.map((d) => [d.dongle_id, d]));
+  for (const el of document.querySelectorAll("[data-online]")) if (byId.has(el.dataset.online)) markOnline(el, byId.get(el.dataset.online));
+}
+setInterval(watchDevices, DEVICES_MS);
+document.addEventListener("visibilitychange", watchDevices);
 
 // the omnibox (pages/omnibox.js); switching routes keeps the open view
 function searchBox() {
@@ -156,7 +187,7 @@ function topBar() {
     (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
       href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
       onpointerenter: () => prefetchDevice(d.dongle_id)},
-      h("span", {class: `dot ${isOnline(d) ? "online" : ""}`}), h("span", {}, d.alias || d.dongle_id), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
+      onlineMark(d), h("span", {}, d.alias || d.dongle_id), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
     !state.devices?.length && h("div", {class: "menu-row muted"},
       !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"))));
   bar.route.addEventListener("click", () => {
@@ -464,6 +495,8 @@ class Workspace {
     if (model) localStorage.setItem(`ycpe_layout_${this.layoutKey(this.view)}`, JSON.stringify(checkLayout(model)));
     else localStorage.removeItem(`ycpe_layout_${this.layoutKey(this.view)}`);
     this.layout?.dispose();
+    const old = this.layout;
+    undoHistory(this.clock).prune((entry) => entry.layout !== old);  // its edits would undo into a layout that's gone
     delete this.layouts[this.view];
     this.setView(this.view);
   }
@@ -557,14 +590,16 @@ const usesData = (model) => JSON.stringify(model.tabs).match(/"pane":"([^"]+)"/g
 
 // ---- keyboard ----
 
-// undo/redo of the layout, on window so it runs last: panes take the keys first for their own undo (a plot's view, the
-// CAN view's DBC edits) and mark them handled
+// undo/redo of the workspace's history (history.js), on window so it runs last: the CAN view takes the keys first for
+// its DBC edits and marks them handled
 addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
-  if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y") || e.defaultPrevented || !ws?.layout) return;
-  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y") || e.defaultPrevented || !ws) return;
+  // text being typed has its own undo; a focused select or button (where closing a pane leaves the focus) doesn't
+  if (e.target.closest?.("textarea, [contenteditable], input:not([type=checkbox], [type=radio], [type=range], [type=color])")) return;
   e.preventDefault();
-  if (k === "y" || e.shiftKey) ws.layout.redo(); else ws.layout.undo();
+  const redo = k === "y" || e.shiftKey, label = redo ? undoHistory(ws.clock).redo() : undoHistory(ws.clock).undo();
+  toast(label ? `${redo ? "Redid" : "Undid"} ${label}` : `Nothing to ${redo ? "redo" : "undo"}`);
   updateTop();
 });
 
@@ -609,7 +644,7 @@ const SHORTCUTS = [
   ["space", "play / pause"], ["← →", "seek 1 s (shift: 10 s)"], [", .", "step 50 ms"], ["[ ]", "slower / faster"],
   ["l", "loop the visible range"], ["f", "show the whole route"], ["Home End", "start / end (live: follow)"], ["1 2 3 4 5", "Drive / Plot / CAN / Files / Connect"],
   ["/", "search routes and devices"], ["ctrl+f", "filter the series"], ["t", "light / dark"], ["?", "this help"],
-  ["ctrl+z", "undo (shift: redo): in a plot its view, in CAN the DBC edits, else the layout"],
+  ["ctrl+z", "undo (shift: redo) the last change: panes and tabs, a plot's series and zoom; in CAN the DBC edits"],
 ];
 const GESTURES = [
   ["click in a plot or the timeline", "seek there"], ["double-click a series", "add it to a plot"],
@@ -687,7 +722,7 @@ async function renderPage() {
     main.replaceChildren(h("div", {class: "ws-wait"}, h("span", {class: "spinner"}), "Loading devices…"));
     // a failed list stays null, so the next page asks again
     [state.me, state.devices] = await Promise.all([api.me().catch(() => null),
-      api.devices().then((d) => { state.devicesError = null; return d; }, (e) => { state.devicesError = e; return null; })]);
+      api.devices().then((d) => { state.devicesError = null; devicesAt = performance.now(); return d; }, (e) => { state.devicesError = e; return null; })]);
     document.body.classList.remove("loading");
   }
 

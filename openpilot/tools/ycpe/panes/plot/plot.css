@@ -2,6 +2,7 @@
 .plot-pane { position: absolute; inset: 0; overflow: hidden; user-select: none; }
 .plot-pane canvas { position: absolute; left: 0; top: 0; }
 .plot-pane canvas.over { cursor: crosshair; touch-action: none; }
+.plot-pane canvas.over:focus-visible { outline: none; }  /* keys still work in a focused plot; the ring only covered the curves */
 /* the phone's stacked views scroll: a finger moving up or down scrolls them, sideways it pans, two pinch time; on
    the y-axis it pans the values */
 .plot-pane .ygrip { display: none; position: absolute; left: 0; top: 0; bottom: 0; touch-action: none; }

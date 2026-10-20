@@ -1,7 +1,8 @@
-// shared by every plot pane: the hover tracker, undo/redo of the view and the curves, the series drop target, and
-// the time whose logs aren't loaded
+// shared by every plot pane: the hover tracker, the view's and the curves' entries in the workspace's undo history,
+// the series drop target, and the time whose logs aren't loaded
 import {SEGMENT} from "/api.js";
 import {listeners} from "/dom.js";
+import {undoHistory} from "/history.js";
 import {status} from "/status.js";
 
 export const PATHS_MIME = "application/x-ycpe-paths";
@@ -10,18 +11,17 @@ let tracker = null;
 
 let touched = null;  // the plot pane the user last pressed in
 
-export function join(p) { panes.add(p); }
-// p is gone from clock's workspace: so are its undo entries, which would undo nothing and keep it alive
-export function leave(p, clock) {
+// a copy of a plot (a duplicated tab) takes an id of its own
+export function join(p) {
+  if (byId(p.id)) p.id = crypto.randomUUID().slice(0, 8);
+  panes.add(p);
+}
+export function leave(p) {
   panes.delete(p);
   if (touched === p) touched = null;
-  const hist = histories.get(clock);
-  if (!hist) return;
-  for (const list of [hist.past, hist.future]) {
-    for (const s of list) s.views?.delete(p);
-    list.splice(0, Infinity, ...list.filter((s) => s.pane !== p));
-  }
 }
+// history entries name plots by id: every layout edit makes the panes anew, and undoing a close makes the plot again
+const byId = (id) => [...panes].find((p) => p.id === id);
 export function touch(p) { touched = p; }
 export function each(fn) { for (const p of panes) fn(p); }
 
@@ -94,66 +94,46 @@ export function left(f) {
   return budget.end - performance.now();
 }
 
-// undo history, one per workspace (its clock), so it goes with it. An entry is the x-range and every plot's
-// view, or one plot's curves
-const histories = new WeakMap();  // clock → {past, future, key, at}
-function history(clock) {
-  if (!histories.has(clock)) histories.set(clock, {past: [], future: [], key: null, at: 0});
-  return histories.get(clock);
-}
+// changes with the same key within 400 ms (a wheel burst, one drag) are one entry, while it's still the newest
+const bursts = new WeakMap();  // clock → {key, at, entry} of the last view change
 
-function push(hist, entry) {
-  hist.past.push(entry);
-  if (hist.past.length > 100) hist.past.shift();
-  hist.future.length = 0;
-}
-
-// call before a view change; changes with the same key within 400 ms (a wheel burst, one drag) are one entry
+// call before a view change: the x-range and every plot's view go in the history
 export function remember(clock, key = null) {
-  const hist = history(clock), now = performance.now();
-  if (key !== null && key === hist.key && now - hist.at < 400) {
-    hist.at = now;
+  const now = performance.now(), last = bursts.get(clock), hist = undoHistory(clock);
+  if (key !== null && key === last?.key && now - last.at < 400 && hist.past.at(-1) === last.entry) {
+    last.at = now;
     return;
   }
-  [hist.key, hist.at] = [key, now];
-  push(hist, snapshot(clock));
+  const entry = viewEntry(clock);
+  bursts.set(clock, {key, at: now, entry});
+  hist.push(entry);
 }
 
 // call before a change to p's curves (curves: as they were, if they've changed already)
-export function rememberCurves(clock, p, curves = p.curves) {
-  const hist = history(clock);
-  hist.key = null;
-  push(hist, {pane: p, curves});
+export function rememberCurves(clock, p, label, curves = p.curves) {
+  undoHistory(clock).push(curvesEntry(p.id, label, curves));
 }
 
-const snapshot = (clock) => ({range: [...clock.range], views: new Map([...panes].map((p) => [p, p.view]))});
-
-// restores entry s; → the entry that undoes that
-function restore(clock, s) {
-  if (s.pane) {
-    const now = {pane: s.pane, curves: s.pane.curves};
-    if (panes.has(s.pane)) s.pane.setCurves(s.curves);
+function viewEntry(clock) {
+  const range = [...clock.range], views = new Map([...panes].map((p) => [p.id, p.view]));
+  return {label: "zoom", restore() {
+    const now = viewEntry(clock);
+    clock.setRange(...range);
+    for (const [id, v] of views) byId(id)?.setView(v);
     return now;
-  }
-  const now = snapshot(clock);
-  clock.setRange(...s.range);
-  for (const [p, v] of s.views) if (panes.has(p)) p.setView(v);
-  return now;
+  }};
 }
 
-export function undo(clock) {
-  const hist = history(clock), s = hist.past.pop();
-  if (!s) return;
-  hist.future.push(restore(clock, s));
-  hist.key = null;
+function curvesEntry(id, label, curves) {
+  return {label, restore() {
+    const p = byId(id), now = curvesEntry(id, label, p ? p.curves : curves);
+    p?.setCurves(curves);
+    return now;
+  }};
 }
 
-export function redo(clock) {
-  const hist = history(clock), s = hist.future.pop();
-  if (!s) return;
-  hist.past.push(restore(clock, s));
-  hist.key = null;
-}
+export const undo = (clock) => undoHistory(clock).undo();
+export const redo = (clock) => undoHistory(clock).redo();
 
 // el accepts series dragged from the browser; fn(paths)
 export function acceptPaths(el, fn) {

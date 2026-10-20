@@ -83,6 +83,7 @@ export function create(ctx, state = {}) {
 
   const pane = {
     name: "plot", el, store, render, resize, dispose, save, addCurves, compare, setCustom,
+    id: state.id || crypto.randomUUID().slice(0, 8),  // kept in its state: undo finds it by this when it's made anew
     has: (path) => st.curves.some((c) => c.path === path),
     draws: (path) => st.curves.some((c) => c.transform && derivedPath(c.path, c.transform) === path),
     get view() { return {y: {...st.y}, range: st.range && [...st.range]}; },
@@ -118,7 +119,7 @@ export function create(ctx, state = {}) {
   function addCurves(paths) {
     const added = paths.filter((path, k) => paths.indexOf(path) === k && !st.curves.some((c) => c.path === path && !c.transform && !c.custom));
     if (!added.length) return;
-    view.rememberCurves(clock, pane);
+    view.rememberCurves(clock, pane, "add series");
     for (const path of added) st.curves.push(normalize({path}));
     rebuildLegend();
     invalidate();
@@ -135,15 +136,15 @@ export function create(ctx, state = {}) {
     const follow = (c) => c.custom ? {...c, custom: {...c.custom, inputs: c.custom.inputs.map(to)}} : {...c, path: to(c.path)};
     const curves = st.curves.map(follow).filter((c) => c.path && !c.custom?.inputs.includes(null));
     if (JSON.stringify(curves) === JSON.stringify(st.curves)) return;
-    view.rememberCurves(clock, pane);
+    view.rememberCurves(clock, pane, "follow renamed series");
     st.curves = curves;
     rebuildLegend();
     invalidate();
   }
 
-  // removals can be undone in the plot, so it takes the focus
+  // the plot takes the focus from the legend row that went
   function removeCurves(cs) {
-    view.rememberCurves(clock, pane);
+    view.rememberCurves(clock, pane, "remove series");
     st.curves = st.curves.filter((c) => !cs.includes(c));
     rebuildLegend();
     invalidate();
@@ -308,6 +309,7 @@ export function create(ctx, state = {}) {
       stretch(base, size || {w: W, h: H});
     }
     frame = fr;
+    sizeValues(new Map(fr.lines.map((it) => [it.c, it])));
     decimator.sweep();
     const done = job.changes === changes;
     job = null;
@@ -455,7 +457,7 @@ export function create(ctx, state = {}) {
         onpointerleave: () => { st.hl = undefined; invalidate(); },
         oncontextmenu: (e) => { e.preventDefault(); editCurve(c, e); }},
       h("button", {class: `swatch ${c.dash ? "dash" : ""}`, style: `color:${c.color}`, title: "show/hide", "aria-label": `${c.hidden ? "Show" : "Hide"} ${name}`,
-        onclick: () => { view.rememberCurves(clock, pane); c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
+        onclick: () => { view.rememberCurves(clock, pane, c.hidden ? "show series" : "hide series"); c.hidden = !c.hidden; rebuildLegend(); invalidate(); }}),
       h("button", {class: `name ${c.error ? "error" : ""}`, "aria-label": `Edit ${name}`, onclick: (e) => (c.custom ? editCode : editCurve)(c, from(e))}, h("bdi", {}, name)),
       val,
       h("button", {class: "x", title: "remove", "aria-label": `Remove ${name}`, onclick: () => removeCurves([c])}, icon("close", 12)));
@@ -490,7 +492,7 @@ export function create(ctx, state = {}) {
     let before = pane.curves;
     curveEditor(e.clientX, e.clientY, c, {
       change: () => {
-        if (before) view.rememberCurves(clock, pane, before);
+        if (before) view.rememberCurves(clock, pane, "edit series", before);
         before = null;
         rebuildLegend();
         invalidate();
@@ -507,7 +509,7 @@ export function create(ctx, state = {}) {
   // difference in a color of its own (hidden until toggled on); t, if given, is seeked to and brought into view
   function compare(path, prefix, t) {
     const name = (store.overlays || []).find((o) => o.prefix === prefix)?.name || prefix.split("/").pop();
-    view.rememberCurves(clock, pane);
+    view.rememberCurves(clock, pane, "compare");
     let orig = st.curves.find((c) => c.path === path && !c.transform && !c.custom);
     if (!orig) st.curves.push(orig = normalize({path}));
     const replay = prefix + path, tail = path.slice(1);
@@ -534,7 +536,7 @@ export function create(ctx, state = {}) {
     if (other && other !== specKey(custom)) throw new Error(`another custom series is named ${spec.name}: pick another name`);
     await evaluate(store, path, custom);
     made.set(path, recipe({path, custom}, path, custom.inputs));
-    view.rememberCurves(clock, pane);
+    view.rememberCurves(clock, pane, "custom series");
     if (c) Object.assign(c, {path, label: spec.name, custom, error: null});
     else st.curves.push(normalize({path, label: spec.name, custom}));
     share({path, custom});
@@ -558,23 +560,57 @@ export function create(ctx, state = {}) {
     invalidate();
   }
 
+  const legendPath = (c) => c.transform ? derivedPath(c.path, c.transform) : c.path;
+
+  // curve c's sample v as its legend shows it, by its path's meta m: names stand for the sample as it is; other
+  // numbers are scaled and offset, and keep their unit unless scaled
+  function legendText(c, m, v) {
+    const scale = c.scale ?? 1, offset = c.offset ?? 0;
+    let fm = m;
+    if (typeof v === "number" && m.type !== "e" && m.names?.[v] === undefined && (scale !== 1 || offset)) {
+      v = v * scale + offset;
+      fm = scale === 1 ? {unit: m.unit} : null;
+    }
+    return fmtValue(v, fm).slice(0, 100);
+  }
+
   function updateLegend() {
     const tt = view.getTracker() ?? clock.t;
     st.curves.forEach((c, k) => {
       const row = rows[k];
       if (!row) return;
-      const path = c.transform ? derivedPath(c.path, c.transform) : c.path, m = store.meta(path);
-      const scale = c.scale ?? 1, offset = c.offset ?? 0;
-      let v = m ? store.valueAt(path, tt - (c.shift || 0)) : undefined, fm = m;
-      // names stand for the sample as it is; other numbers are scaled and offset, and keep their unit unless scaled
-      if (typeof v === "number" && m.type !== "e" && m.names?.[v] === undefined && (scale !== 1 || offset)) {
-        v = v * scale + offset;
-        fm = scale === 1 ? {unit: m.unit} : null;
-      }
-      const text = fmtValue(v, fm).slice(0, 100);
+      const path = legendPath(c), m = store.meta(path);
+      const text = m ? legendText(c, m, store.valueAt(path, tt - (c.shift || 0))) : "";
       if (row.val.textContent !== text) row.val.textContent = text;
     });
     if (st.stats) updateStats();
+  }
+
+  // each value as wide as the widest its curve shows over the visible range, so the legend holds still while the
+  // values change; once per base draw, from what it drew (lines: by curve)
+  function sizeValues(lines) {
+    st.curves.forEach((c, k) => {
+      const row = rows[k], w = row ? valueWidth(c, lines.get(c)?.d) : 0;
+      if (!row || row.width === w) return;
+      row.width = w;
+      row.val.style.minWidth = w ? `${Math.min(w, 24)}ch` : "";  // no wider than .val may be
+    });
+  }
+
+  // in ch: the longest of its value names, both extremes of the drawn buckets d, and a sample of the rest
+  function valueWidth(c, d) {
+    const m = store.meta(legendPath(c));
+    if (!m) return 0;
+    let w = m.names ? Math.max(0, ...Object.values(m.names).map((name) => name.length)) : 0;
+    const n = d?.t.length || 0, step = Math.max(1, Math.floor(n / 16)), size = (v) => legendText(c, m, v).length;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < n; i++) {
+      if (d.min[i] !== d.min[i]) continue;
+      lo = Math.min(lo, d.min[i]);
+      hi = Math.max(hi, d.max[i]);
+      if (i % step === 0) w = Math.max(w, size(d.min[i]), size(d.max[i]));
+    }
+    return lo <= hi ? Math.max(w, size(lo), size(hi)) : w;
   }
 
   // statistics over the visible range, computed in the worker shortly after the view settles
@@ -779,14 +815,6 @@ export function create(ctx, state = {}) {
     invalidate();
   });
 
-  // the view's and the curves' undo, from the plot or its legend
-  el.addEventListener("keydown", (e) => {
-    const k = e.key.toLowerCase();
-    if (!(e.ctrlKey || e.metaKey) || (k !== "z" && k !== "y")) return;
-    e.preventDefault();
-    (k === "y" || e.shiftKey ? view.redo : view.undo)(clock);
-  });
-
   function paneMenu(e) {
     const locked = st.y.min !== undefined || st.y.max !== undefined;
     menu(e.clientX, e.clientY, [
@@ -858,12 +886,12 @@ export function create(ctx, state = {}) {
 
   function save() {
     const curves = st.curves.map(({error, ...c}) => c);
-    return {title: st.title, curves, y: st.y, ...(st.stats && {stats: true}), ...(st.range && {range: st.range})};
+    return {id: pane.id, title: st.title, curves, y: st.y, ...(st.stats && {stats: true}), ...(st.range && {range: st.range})};
   }
 
   function dispose() {
     for (const off of offs) off();
-    view.leave(pane, clock);
+    view.leave(pane);
     clearTimeout(statsTimer);
     clearTimeout(recomputeTimer);
     clearTimeout(settle);
