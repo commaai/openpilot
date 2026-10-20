@@ -94,10 +94,12 @@ export function hud(...extra) {
   const ms = h("span", {class: "hud-ms"});
   const dropEl = h("span", {class: "hud-drops"});
   const spark = h("canvas", {class: "hud-spark", width: 40, height: 18});
-  const el = h("button", {class: "hud", title: "frame rate · worst render time this second · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
+  const el = h("button", {class: "hud", "aria-expanded": "false", title: "frame rate · worst render time this second · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
   let panel = null;
   el.addEventListener("click", () => {
-    if (panel) { panel.close(); panel = null; } else panel = perfPanel(() => { panel = null; });
+    if (panel) return panel.close();
+    panel = perfPanel(el, () => { panel = null; el.setAttribute("aria-expanded", "false"); });
+    el.setAttribute("aria-expanded", "true");
   });
   const sparkPane = {name: "hud", render() {
     const ctx = spark.getContext("2d");
@@ -123,16 +125,19 @@ export function hud(...extra) {
 }
 
 // the detail panel: frame-time chart, per-pane cost, long frames, counters
-function perfPanel(onClose) {
+function perfPanel(anchor, onClose) {
   const chart = h("canvas", {class: "perf-chart"});
   const table = h("div", {class: "perf-table"});
   const longs = h("div", {class: "perf-longs"});
-  const el = h("div", {class: "perf-panel"},
+  const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
+  const el = h("div", {class: "perf-panel", role: "dialog", "aria-label": "Performance"},
     h("div", {class: "perf-head"}, h("b", {}, "Performance"),
-      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = dropped.length = 0; }}, "reset"),
-      h("button", {class: "link", onclick: () => close()}, "close")),
+      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = dropped.length = 0; }}, "reset"), closeBtn),
     chart, table, longs);
   document.body.append(el);
+  const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
+  document.addEventListener("keydown", escape);
+  closeBtn.focus();
   const pane = {name: "perf-panel", render() {
     const dpr = devicePixelRatio, w = chart.clientWidth, hgt = chart.clientHeight;
     if (chart.width !== w * dpr) { chart.width = w * dpr; chart.height = hgt * dpr; }
@@ -181,6 +186,11 @@ function perfPanel(onClose) {
   };
   const timer = setInterval(update, 500);
   update();
-  function close() { clearInterval(timer); el.remove(); onClose(); }
+  function close() {
+    clearInterval(timer);
+    el.remove();
+    document.removeEventListener("keydown", escape);
+    onClose();
+  }
   return {close};
 }

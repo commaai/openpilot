@@ -49,7 +49,7 @@ function searchBox() {
 }
 
 function toast(text) {
-  const el = h("div", {class: "toast"}, text);
+  const el = h("div", {class: "toast", role: "status"}, text);
   document.body.append(el);
   setTimeout(() => el.remove(), 3000);
 }

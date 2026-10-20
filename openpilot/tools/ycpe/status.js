@@ -121,8 +121,9 @@ export const describe = (s) => (s.state === "loading" && s.total ? `${STATE_TEXT
 export function loadPill() {
   const text = h("span");
   const bar = h("span", {class: "pill-bar"}, h("i"));
-  const el = h("button", {class: "load-pill", hidden: true}, text, bar);
-  let panel = null;
+  const el = h("button", {class: "load-pill", hidden: true, "aria-expanded": "false"}, text, bar);
+  const live = document.body.appendChild(h("span", {class: "sr-only", role: "status"}));
+  let panel = null, spoken = "";
   const update = () => {
     const all = status.kinds();
     const extra = [...notes.values()];
@@ -141,6 +142,11 @@ export function loadPill() {
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
       text.textContent = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ") || "✓ loaded";
     }
+    // read out: the playhead waiting, failures, and "ready" once neither is the case anymore
+    const failed = each.reduce((a, e) => a + e.n.error, 0);
+    const say = waiting ? `buffering ${waiting.label}, ${waiting.buffering.text}` : failed ? `${failed} segment${failed > 1 ? "s" : ""} failed to load`
+      : spoken && "ready";
+    if (say !== spoken) live.textContent = spoken = say;
     const segs = active.flatMap((k) => k.segs.filter((s) => s.state !== "missing" && s.state !== "idle"));
     const f = segs.length ? segs.reduce((a, s) => a + fill(s), 0) / segs.length : 1;
     bar.hidden = !active.length && !waiting;
@@ -149,14 +155,17 @@ export function loadPill() {
   };
   status.on(update);
   el.addEventListener("click", () => {
-    if (panel) { panel.close(); panel = null; } else panel = statusPanel(el, () => { panel = null; });
+    if (panel) return panel.close();
+    panel = statusPanel(el, () => { panel = null; el.setAttribute("aria-expanded", "false"); });
+    el.setAttribute("aria-expanded", "true");
   });
   return el;
 }
 
 function statusPanel(anchor, onClose) {
   const body = h("div", {class: "status-rows"});
-  const el = h("div", {class: "status-panel"}, h("div", {class: "status-head"}, h("b", {}, "Loading"), h("button", {class: "link", onclick: () => close()}, "close")), body);
+  const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
+  const el = h("div", {class: "status-panel", role: "dialog", "aria-label": "Loading"}, h("div", {class: "status-head"}, h("b", {}, "Loading"), closeBtn), body);
   const r = anchor.getBoundingClientRect();
   el.style.top = `${r.bottom + 6}px`;
   el.style.width = "min(420px, calc(100vw - 16px))";  // under the anchor, but on screen
@@ -201,10 +210,17 @@ function statusPanel(anchor, onClose) {
       drawLane(c, k, 0, 0, w, hgt);
     }
   }
-  const close = () => { el.remove(); onClose(); };
+  const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
+  const close = () => {
+    el.remove();
+    document.removeEventListener("keydown", escape);
+    onClose();
+  };
   setTimeout(() => document.addEventListener("pointerdown", function off(e) {
     if (!el.contains(e.target) && !anchor.contains(e.target)) { document.removeEventListener("pointerdown", off); if (el.isConnected) close(); }
   }));
+  document.addEventListener("keydown", escape);
+  closeBtn.focus();
   update();
   return {update, close};
 }
