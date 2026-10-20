@@ -13,6 +13,8 @@ const RANGE_H = 7, SPAN_H = 14, LANE_H = 3, PAD = 3;
 const SEGMENT = 60;  // nominal segment length; lanes index segments
 const SPAN_COLORS = {engaged: "--engaged", override: "--override", alert: "--alert", critical: "--critical"};
 const SPAN_LABELS = {engaged: "engaged", override: "override", alert: "alert", critical: "critical alert"};
+// built once: toLocaleTimeString with options builds a formatter each call, and the first costs ~7 ms of ICU setup
+const WALL = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false});
 
 export function playbar(ctx) {
   const {clock, route} = ctx;
@@ -49,7 +51,7 @@ export function playbar(ctx) {
   const yOf = (e) => e.clientY - canvas.getBoundingClientRect().top;
   const t2x = (t) => t / clock.duration * width;
 
-  let playing = null, second = null;  // what the play button and the slider show
+  let playing = null, second = null, wallSecond = null;  // what the play button, the slider and the wall clock show
   const pane = {name: "playbar", render() {
     if (playing !== clock.playing) playBtn.replaceChildren(icon((playing = clock.playing) ? "pause" : "play", 16));
     rate.value = clock.rate;
@@ -61,7 +63,8 @@ export function playbar(ctx) {
       canvas.setAttribute("aria-valuetext", fmt.clock(second));
     }
     time.textContent = `${fmt.clock(clock.t, true)} / ${fmt.clock(clock.duration)}`;
-    wall.textContent = route.start_time_utc_millis ? new Date(route.start_time_utc_millis + clock.t * 1000).toLocaleTimeString(undefined, {hour12: false}) : "";
+    const w = route.start_time_utc_millis ? Math.floor(route.start_time_utc_millis / 1000 + clock.t) : null;
+    if (wallSecond !== w) wall.textContent = (wallSecond = w) === null ? "" : WALL.format(w * 1000);
 
     const kinds = status.kinds();
     const HEIGHT = PAD + RANGE_H + 2 + SPAN_H + 2 + kinds.length * (LANE_H + 1) + PAD;
