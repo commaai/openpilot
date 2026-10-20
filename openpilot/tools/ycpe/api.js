@@ -197,10 +197,11 @@ export const api = {
   // paths are "<route>--<segment>/<file name>" without the dongle id
   uploadUrls: async (dongleId, paths) => (await request("POST", `v1/${dongleId}/upload_urls/`, {body: {paths, expiry_days: 7}})).map((r) => r.url),
   athenaOfflineQueue: (dongleId) => get(`v1/devices/${dongleId}/athena_offline_queue`),
-  // JSON-RPC on the device; with an expiry, athena queues the call while the device is offline
+  // JSON-RPC on the device; with an expiry, athena queues the call while the device is offline. The relay takes dongle ids
+  // lowercase only, as the API gives them (a typed /5BEB… url isn't)
   async athena(dongleId, method, params, expiry) {
     const body = {id: 0, jsonrpc: "2.0", method, params, expiry};
-    const resp = await (athenaRelay() ? request("POST", `local/athena/${dongleId}`, {host: location.origin, body, headers: {...daemon.headers}})
+    const resp = await (athenaRelay() ? request("POST", `local/athena/${dongleId.toLowerCase()}`, {host: location.origin, body, headers: {...daemon.headers}})
       : request("POST", dongleId, {host: athenaHost(), body}));
     if (resp.error) throw new Error(resp.error.data?.message || resp.error.message || String(resp.error));
     return resp.result;
