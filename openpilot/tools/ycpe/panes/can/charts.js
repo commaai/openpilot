@@ -139,6 +139,9 @@ export function create(ctx, state) {
     grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     empty.hidden = charts.length > 0;
     tabsChanged();
+    // the plot buttons show what the open tab charts
+    can.charted = new Set(charts.flatMap((c) => c.pane.save().curves.map((x) => x.path)));
+    can.emit("charted");
   }
 
   // cabana's signal selector: every decoded signal, filtered, picked by checkbox
@@ -164,13 +167,25 @@ export function create(ctx, state) {
   const pane = {
     name: "can-charts", el,
     render() {},
-    dispose() { s.dispose(); resizer.disconnect(); for (const c of charts) c.pane.dispose(); },
+    dispose() {
+      s.dispose();
+      resizer.disconnect();
+      for (const c of charts) c.pane.dispose();
+      can.charted = new Set();
+      can.emit("charted");
+    },
     save: () => {
       tabs[active].charts = charts.map((c) => c.pane.save());
       return {cols, style, span, tabs, active};
     },
   };
-  s.add(can.on("chart", (path) => { if (!charts.some((c) => c.pane.save().curves.some((x) => x.path === path))) add({curves: [curve(path)]}); }));
+  // a signal's plot button charts it, or takes it off its chart
+  s.add(can.on("chart", (path) => {
+    const c = charts.find((x) => x.pane.save().curves.some((y) => y.path === path));
+    if (!c) return add({curves: [curve(path)]});
+    const st = c.pane.save();
+    replace(c, {...st, curves: st.curves.filter((x) => x.path !== path)});
+  }));
   // curves follow a renamed signal or message, and go with a removed one
   s.add(can.on("moved", (move) => {
     tabs[active].charts = charts.map((c) => c.pane.save());

@@ -66,19 +66,21 @@ export function create(ctx, state) {
     list.replaceChildren(...shown(m).map((sg) => {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
+      const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈");
       const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
         h("div", {class: "can-sig-row", role: "button", tabindex: 0, "aria-expanded": String(sg.name === open), onclick: () => toggle(sg.name),
           onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
           swatch, name, spark, v,
-          h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg)); }}, "📈"),
+          plot,
           h("button", {class: "can-icon", title: "Remove signal", onclick: (e) => { e.stopPropagation(); removeSignal(can, k(), sg.name); }}, icon("close", 12))),
         ed);
       row.draggable = true;
       row.addEventListener("dragstart", (e) => e.dataTransfer.setData("application/x-ycpe-paths", JSON.stringify([path(sg)])));
-      rows.set(sg.name, label({row, v, spark, swatch, name, ed}, sg));
+      rows.set(sg.name, label({row, v, spark, swatch, name, ed, plot}, sg));
       return row;
     }));
     mux = m.mux?.name;
+    charted();
     ctx.perf.invalidate(pane);
   }
 
@@ -87,6 +89,15 @@ export function create(ctx, state) {
     open = open === name ? null : name;
     build();
     if (focus) rows.get(name)?.row.firstChild.focus();
+  }
+
+  function charted() {
+    for (const r of rows.values()) {
+      const on = !!can.charted?.has(path(r.sg));
+      r.plot.classList.toggle("on", on);
+      r.plot.setAttribute("aria-pressed", on);
+      r.plot.title = on ? "Remove from the charts" : "Plot";
+    }
   }
 
   const shown = (m) => m.sigs.filter((sg) => sg.name.toLowerCase().includes(filter.toLowerCase()));
@@ -108,6 +119,7 @@ export function create(ctx, state) {
     if (ed && (sg.type !== rows.get(open).sg.type || m.mux?.name !== mux)) return false;
     header();
     for (const x of sigs) label(rows.get(x.name), x);
+    charted();
     if (ed) ed.update(sg);
     ctx.perf.invalidate(pane);
     return true;
@@ -131,6 +143,7 @@ export function create(ctx, state) {
   s.add(can.on("select", () => { open = null; sparks = null; build(); requestSparks(); }));
   s.add(can.on("dbc", () => { if (!patch()) build(); requestSparks(); }));
   s.add(can.on("edit", (name) => { open = name; build(); rows.get(name)?.row.scrollIntoView({block: "nearest"}); }));
+  s.add(can.on("charted", charted));
   s.add(can.on("live", () => { requestSparks(); ctx.perf.invalidate(pane); }));
   s.add(can.on("hover", (name) => { for (const [n, r] of rows) r.row.classList.toggle("hover", n === name); }));
   build();
