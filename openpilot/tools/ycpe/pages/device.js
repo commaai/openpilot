@@ -27,11 +27,10 @@ const firstPageEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
 // each: those are filled before it's shown
 const firstScreen = (user) => Math.ceil((innerHeight - 200) / (user ? 160 : 60));
 
-// on a pointer over the device's link: the page's data, and once the pointer stays a moment, its first drives' strips
-// and places (not those of every device a sweep down the list passes)
+// on a pointer over the device's link (or over the switch to the other mode: user false): the page's data, and once the
+// pointer stays a moment, its first drives' strips and places (not those of every device a sweep down the list passes)
 let pointed = null;
-export function prefetchDevice(dongleId) {
-  const user = mode() === "user";
+export function prefetchDevice(dongleId, user = mode() === "user") {
   const routes = api.routes(dongleId, user ? firstPageEnd() - 365 * DAY : undefined, firstPageEnd(), LIMIT);
   routes.catch(() => {});
   api.deviceLocation(dongleId).catch(() => {});
@@ -307,11 +306,12 @@ function drivesSection(device, user) {
       // connect says there are no more past five drives, once there aren't
       status.textContent = !n ? "No routes found in selected time range." : !done ? "Loading..." : n > 5 ? "There are no more routes found in selected time range." : "";
       status.parentElement.className = !n ? "cn-empty" : "cn-end";
+      // ready once the first screen's thumbnails and places are in; developer mode's rows don't wait on theirs, hundreds
+      // a screen from a host serving six at a time (they come in together after)
       return Promise.all(shown);
     }
     const span = !range ? "" : range[0] ? ` from ${DATE.format(range[0])} to ${DATE.format(range[1])}` : ` up to ${DATE.format(range[1])}`;
     status.textContent = !n ? `No drives${span}` : done ? `${nDrives(n)}${span}` : `${nDrives(n)} since ${DATE.format(end)}`;
-    return Promise.all(shown);  // the first screen's thumbnails and places in
   }
   const ready = loadMore();
   if (user) {

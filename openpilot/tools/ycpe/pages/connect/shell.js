@@ -49,7 +49,8 @@ const accountWrap = h("div", {class: "cn-account-wrap"}, account);
 export const header = h("header", {class: "cn-header"},
   h("div", {class: "cn-title"}, menu, logoLink, brand),
   h("div", {class: "cn-actions"},
-    h("button", {class: "cn-devmode", title: "Developer mode: this place with plots, CAN, files and logs", "aria-label": "Developer mode", onclick: switchMode},
+    h("button", {class: "cn-devmode", title: "Developer mode: this place with plots, CAN, files and logs", "aria-label": "Developer mode", onclick: switchMode,
+      onpointerenter: () => shown?.dongle && prefetchDevice(shown.dongle, false)},
       icon("code", 18), h("span", {}, "Developer mode")),
     gift, accountWrap));
 
