@@ -31,8 +31,8 @@ export function dbcDialog(can, message = "") {
   const search = h("input", {placeholder: "Search opendbc", spellcheck: false, oninput: () => list()});
   const results = h("div", {class: "can-list"});
   async function list() {
-    const {files, fingerprints, label, local} = await index;
-    const fp = [carDbc(fingerprints[can.fingerprinted])].filter(Boolean);
+    const {files, dbcsOf, label, local} = await index;
+    const fp = [carDbc(dbcsOf(can.fingerprinted))].filter(Boolean);
     const q = search.value.toLowerCase();
     search.title = [local && `opendbc in ${local}`, label && `opendbc at ${label}`].filter(Boolean).join(", else ");
     results.replaceChildren(...(label || local ? [] : [h("div", {class: "can-muted"}, "Can't reach opendbc on GitHub")]),

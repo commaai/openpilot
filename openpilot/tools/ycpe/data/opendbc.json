@@ -1,1841 +1,255 @@
 {
- "ACURA ILX 2016": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "ACURA ILX 2016 ACURAWATCH PLUS": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "ACURA RDX 2018": {
-  "pt": "acura_rdx_2018_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "ACURA RDX 2018 ACURAWATCH PLUS": {
-  "pt": "acura_rdx_2018_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "ACURA RDX 2020": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "ACURA RDX 2020 TECH": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "ACURA_ADX": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "ACURA_ILX": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "ACURA_MDX_4G": {
-  "pt": "honda_common_canfd_generated"
- },
- "ACURA_MDX_4G_MMR": {
-  "pt": "honda_common_canfd_generated"
- },
- "ACURA_RDX": {
-  "pt": "acura_rdx_2018_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "ACURA_RDX_3G": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "ACURA_RDX_3G_MMR": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "ACURA_TLX_2G": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "ACURA_TLX_2G_MMR": {
-  "pt": "honda_common_canfd_generated"
- },
- "AUDI A3": {
-  "pt": "vw_mqb"
- },
- "AUDI A3 3RD GEN": {
-  "pt": "vw_mqb"
- },
- "AUDI Q2 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "AUDI Q3 2ND GEN": {
-  "pt": "vw_mqb"
- },
- "AUDI_A3_MK3": {
-  "pt": "vw_mqb"
- },
- "AUDI_Q2_MK1": {
-  "pt": "vw_mqb"
- },
- "AUDI_Q3_MK2": {
-  "pt": "vw_mqb"
- },
- "AUDI_Q5_MK1": {
-  "pt": "vw_mlb"
- },
- "BUICK LACROSSE 2017": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "BUICK REGAL ESSENCE 2018": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "BUICK_LACROSSE": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "BUICK_REGAL": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "BYD_ATTO_3": {
-  "pt": "byd_atto3"
- },
- "CADILLAC ATS Premium Performance 2018": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC ESCALADE 2017": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC ESCALADE ESV 2016": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC ESCALADE ESV 2019": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC ESCALADE ESV PLATINUM 2019": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC_ATS": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC_ESCALADE": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC_ESCALADE_ESV": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC_ESCALADE_ESV_2019": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CADILLAC_XT4": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET BOLT EUV 2022": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET EQUINOX 2019": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET MALIBU PREMIER 2017": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET SILVERADO 1500 2020": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET TRAILBLAZER 2021": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET VOLT PREMIER 2017": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_BOLT_EUV": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_EQUINOX": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_MALIBU": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_SILVERADO": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_TRAILBLAZER": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_TRAVERSE": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_VOLT": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHEVROLET_VOLT_2019": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "CHRYSLER PACIFICA 2018": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER PACIFICA 2020": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER PACIFICA HYBRID 2017": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER PACIFICA HYBRID 2018": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER PACIFICA HYBRID 2019": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER_PACIFICA_2017_HYBRID": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER_PACIFICA_2018": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER_PACIFICA_2018_HYBRID": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER_PACIFICA_2019_HYBRID": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "CHRYSLER_PACIFICA_2020": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "COMMA BODY": {
-  "main": "comma_body"
- },
- "COMMA_BODY": {
-  "main": "comma_body"
- },
- "CUPRA_BORN_MK1": {
-  "pt": "vw_meb_generated",
-  "radar": "vw_meb_generated"
- },
- "DODGE DURANGO 2021": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "DODGE_DURANGO": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "FORD BRONCO SPORT 1ST GEN": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD ESCAPE 4TH GEN": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD EXPLORER 6TH GEN": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD F-150 14TH GEN": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD F-150 LIGHTNING 1ST GEN": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD FOCUS 4TH GEN": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD MAVERICK 1ST GEN": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD MUSTANG MACH-E 1ST GEN": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD_BRONCO_SPORT_MK1": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD_ESCAPE_MK4": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD_ESCAPE_MK4_5": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD_EXPEDITION_MK4": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD_EXPLORER_MK6": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD_FOCUS_MK4": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD_F_150_LIGHTNING_MK1": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD_F_150_MK14": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD_MAVERICK_MK1": {
-  "pt": "ford_lincoln_base_pt",
-  "radar": "FORD_CADS"
- },
- "FORD_MUSTANG_MACH_E_MK1": {
-  "pt": "ford_lincoln_base_pt"
- },
- "FORD_RANGER_MK2": {
-  "pt": "ford_lincoln_base_pt"
- },
- "GENESIS G70 2018": {
-  "pt": "hyundai_can_generated"
- },
- "GENESIS G70 2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "GENESIS G80 2017": {
-  "pt": "hyundai_can_generated"
- },
- "GENESIS G90 2017": {
-  "pt": "hyundai_can_generated"
- },
- "GENESIS GV60 ELECTRIC 1ST GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS GV70 1ST GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS GV80 2023": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS_G70": {
-  "pt": "hyundai_can_generated"
- },
- "GENESIS_G70_2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "GENESIS_G80": {
-  "pt": "hyundai_can_generated"
- },
- "GENESIS_G80_2ND_GEN_FL": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS_G90": {
-  "pt": "hyundai_can_generated"
- },
- "GENESIS_GV60_EV_1ST_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS_GV70_1ST_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS_GV70_ELECTRIFIED_1ST_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "GENESIS_GV80": {
-  "pt": "hyundai_canfd_generated"
- },
- "GMC ACADIA DENALI 2018": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "GMC_ACADIA": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "GMC_YUKON": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "HOLDEN ASTRA RS-V BK 2017": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "HOLDEN_ASTRA": {
-  "chassis": "gm_global_a_chassis",
-  "pt": "gm_global_a_powertrain_generated",
-  "radar": "gm_global_a_object"
- },
- "HONDA ACCORD 1.5T 2018": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA ACCORD 2018": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA ACCORD 2018 HYBRID TOURING": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA ACCORD 2018 LX 1.5T": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA ACCORD 2018 SPORT 2T": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA ACCORD 2T 2018": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA ACCORD HYBRID 2018": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CIVIC (BOSCH) 2019": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CIVIC 2016": {
-  "pt": "honda_civic_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA CIVIC 2016 TOURING": {
-  "pt": "honda_civic_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA CIVIC 2022": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "HONDA CIVIC HATCHBACK 2017 SEDAN/COUPE 2019": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CIVIC SEDAN 1.6 DIESEL": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CIVIC SEDAN 1.6 DIESEL 2019": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CR-V 2016": {
-  "pt": "honda_crv_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA CR-V 2016 EXECUTIVE": {
-  "pt": "honda_crv_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA CR-V 2016 TOURING": {
-  "pt": "honda_crv_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA CR-V 2017": {
-  "body": "honda_crv_ex_2017_body_generated",
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CR-V 2017 EX": {
-  "body": "honda_crv_ex_2017_body_generated",
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CR-V 2019 HYBRID": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA CR-V EU 2016": {
-  "pt": "honda_crv_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA CR-V HYBRID 2019": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA E 2020": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "HONDA FIT 2018": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA FIT 2018 EX": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA FREED 2020": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA HR-V 2023": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "HONDA HRV 2019": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA HRV 2019 TOURING": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA INSIGHT 2019": {
-  "pt": "honda_insight_ex_2019_can_generated"
- },
- "HONDA INSIGHT 2019 TOURING": {
-  "pt": "honda_insight_ex_2019_can_generated"
- },
- "HONDA ODYSSEY 2018": {
-  "pt": "honda_odyssey_exl_2018_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA ODYSSEY 2018 EX-L": {
-  "pt": "honda_odyssey_exl_2018_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA PASSPORT 2021": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA PILOT 2017": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA PILOT 2017 TOURING": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA PILOT 2019": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA PILOT 2019 ELITE": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA RIDGELINE 2017": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA RIDGELINE 2017 BLACK EDITION": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_ACCORD": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA_ACCORD_11G": {
-  "pt": "honda_common_canfd_generated"
- },
- "HONDA_CITY_7G": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "HONDA_CIVIC": {
-  "pt": "honda_civic_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_CIVIC_2022": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "HONDA_CIVIC_BOSCH": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA_CIVIC_BOSCH_DIESEL": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA_CRV": {
-  "pt": "honda_crv_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_CRV_5G": {
-  "body": "honda_crv_ex_2017_body_generated",
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA_CRV_6G": {
-  "pt": "honda_common_canfd_generated"
- },
- "HONDA_CRV_EU": {
-  "pt": "honda_crv_touring_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_CRV_HYBRID": {
-  "pt": "honda_civic_hatchback_ex_2017_can_generated"
- },
- "HONDA_E": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "HONDA_E_ADVANCE": {
-  "pt": "honda_e_advance_2020_can_generated"
- },
- "HONDA_FIT": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_FREED": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_HRV": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_HRV_3G": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "HONDA_INSIGHT": {
-  "pt": "honda_insight_ex_2019_can_generated"
- },
- "HONDA_NBOX_2G": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "HONDA_ODYSSEY": {
-  "pt": "honda_odyssey_exl_2018_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_ODYSSEY_5G_MMR": {
-  "pt": "acura_rdx_2020_can_generated"
- },
- "HONDA_ODYSSEY_TWN": {
-  "pt": "honda_odyssey_twn_2018_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_PASSPORT_4G": {
-  "pt": "honda_common_canfd_generated"
- },
- "HONDA_PILOT": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HONDA_PILOT_4G": {
-  "pt": "honda_common_canfd_generated"
- },
- "HONDA_PILOT_4G_MMR": {
-  "pt": "honda_common_canfd_generated"
- },
- "HONDA_PRELUDE_6G": {
-  "pt": "honda_bosch_radarless_generated"
- },
- "HONDA_RIDGELINE": {
-  "pt": "acura_ilx_2016_can_generated",
-  "radar": "acura_ilx_2016_nidec"
- },
- "HYUNDAI AZERA 6TH GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI AZERA HYBRID 6TH GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI CUSTIN 1ST GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI ELANTRA 2017": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI ELANTRA 2021": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI ELANTRA HYBRID 2021": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI ELANTRA LIMITED ULTIMATE 2017": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI GENESIS 2015-2016": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI I30 N LINE 2019 & GT 2018 DCT": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI IONIQ 5 2022": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI IONIQ 6 2023": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI IONIQ ELECTRIC 2020": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI IONIQ ELECTRIC LIMITED 2019": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI IONIQ HYBRID 2017-2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI IONIQ HYBRID 2020-2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI IONIQ PHEV 2020": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI IONIQ PLUG-IN HYBRID 2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI KONA 2020": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI KONA ELECTRIC 2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI KONA ELECTRIC 2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI KONA ELECTRIC 2ND GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI KONA HYBRID 2020": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI PALISADE 2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI SANTA CRUZ 1ST GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI SANTA FE 2019": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI SANTA FE 2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI SANTA FE HYBRID 2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI SANTA FE LIMITED 2019": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI SANTA FE PlUG-IN HYBRID 2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI SONATA 2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI SONATA 2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI SONATA HYBRID 2021": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI STARIA 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI TUCSON 2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI TUCSON 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI TUCSON DIESEL 2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI TUCSON HYBRID 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI VELOSTER 2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_AZERA_6TH_GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_AZERA_HEV_6TH_GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_CUSTIN_1ST_GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_ELANTRA": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_ELANTRA_2021": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_ELANTRA_GT_I30": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_ELANTRA_HEV_2021": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_GENESIS": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_IONIQ": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_IONIQ_5": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI_IONIQ_6": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI_IONIQ_EV_2020": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_IONIQ_EV_LTD": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI_IONIQ_HEV_2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_IONIQ_PHEV": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_IONIQ_PHEV_2019": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_KONA": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_KONA_2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_KONA_EV": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_KONA_EV_2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_KONA_EV_2ND_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI_KONA_HEV": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_NEXO_1ST_GEN": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_PALISADE": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI_SANTA_CRUZ_1ST_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI_SANTA_FE": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI_SANTA_FE_2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_SANTA_FE_HEV_2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_SANTA_FE_PHEV_2022": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_SONATA": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI_SONATA_HYBRID": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "HYUNDAI_SONATA_LF": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_STARIA_4TH_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI_TUCSON": {
-  "pt": "hyundai_can_generated"
- },
- "HYUNDAI_TUCSON_4TH_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "HYUNDAI_VELOSTER": {
-  "pt": "hyundai_can_generated"
- },
- "JEEP GRAND CHEROKEE 2019": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "JEEP GRAND CHEROKEE V6 2018": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "JEEP_CHEROKEE_5TH_GEN": {
-  "pt": "chrysler_cusw"
- },
- "JEEP_GRAND_CHEROKEE": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "JEEP_GRAND_CHEROKEE_2019": {
-  "pt": "chrysler_pacifica_2017_hybrid_generated",
-  "radar": "chrysler_pacifica_2017_hybrid_private_fusion"
- },
- "KIA CARNIVAL 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA CEED INTRO ED 2019": {
-  "pt": "hyundai_can_generated"
- },
- "KIA EV6 2022": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA FORTE E 2018 & GT 2021": {
-  "pt": "hyundai_can_generated"
- },
- "KIA K5 2021": {
-  "pt": "hyundai_can_generated"
- },
- "KIA K5 HYBRID 2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA K8 HYBRID 1ST GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA NIRO EV 2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA NIRO EV 2ND GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA NIRO HYBRID 2019": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA NIRO HYBRID 2021": {
-  "pt": "hyundai_can_generated"
- },
- "KIA NIRO HYBRID 2ND GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA NIRO PLUG-IN HYBRID 2022": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA OPTIMA 2016": {
-  "pt": "hyundai_can_generated"
- },
- "KIA OPTIMA 2019": {
-  "pt": "hyundai_can_generated"
- },
- "KIA OPTIMA 4TH GEN": {
-  "pt": "hyundai_can_generated"
- },
- "KIA OPTIMA 4TH GEN FACELIFT": {
-  "pt": "hyundai_can_generated"
- },
- "KIA OPTIMA HYBRID 2017 & SPORTS 2019": {
-  "pt": "hyundai_can_generated"
- },
- "KIA OPTIMA HYBRID 4TH GEN FACELIFT": {
-  "pt": "hyundai_can_generated"
- },
- "KIA OPTIMA SX 2019 & 2016": {
-  "pt": "hyundai_can_generated"
- },
- "KIA SELTOS 2021": {
-  "pt": "hyundai_can_generated"
- },
- "KIA SORENTO 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA SORENTO GT LINE 2018": {
-  "pt": "hyundai_can_generated"
- },
- "KIA SORENTO HYBRID 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA SORENTO PLUG-IN HYBRID 4TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA SPORTAGE 5TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA SPORTAGE HYBRID 5TH GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA STINGER 2022": {
-  "pt": "hyundai_can_generated"
- },
- "KIA STINGER GT2 2018": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_CARNIVAL_4TH_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_CEED": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_CEED_PHEV": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_EV6": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_FORTE": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_K5_2021": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_K5_HEV_2020": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA_K7_2017": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_K8_HEV_1ST_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_NIRO_EV": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA_NIRO_EV_2ND_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_NIRO_HEV_2021": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_NIRO_HEV_2ND_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_NIRO_PHEV": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA_NIRO_PHEV_2022": {
-  "pt": "hyundai_can_generated",
-  "radar": "hyundai_kia_mando_front_radar_generated"
- },
- "KIA_OPTIMA_G4": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_OPTIMA_G4_FL": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_OPTIMA_H": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_OPTIMA_H_G4_FL": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_SELTOS": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_SORENTO": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_SORENTO_4TH_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_SORENTO_HEV_4TH_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_SPORTAGE_5TH_GEN": {
-  "pt": "hyundai_canfd_generated"
- },
- "KIA_STINGER": {
-  "pt": "hyundai_can_generated"
- },
- "KIA_STINGER_2022": {
-  "pt": "hyundai_can_generated"
- },
- "LEXUS CT 200H 2018": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS CT HYBRID 2018": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS ES 2018": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS ES 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS ES 300H 2018": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS ES 300H 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS ES HYBRID 2018": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS ES HYBRID 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS GS F 2016": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS IS 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS IS 2023": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS IS300 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS LC 2024": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS NX 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS NX 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS NX HYBRID 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS NX HYBRID 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS NX300 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS NX300H 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS RC 2020": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS RX 2016": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS RX 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS RX 350 2016": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS RX HYBRID 2017": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS RX HYBRID 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS RX350 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS RX450 HYBRID 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS_CTH": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_ES": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_ES_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS_GS_F": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_IS": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_IS_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS_LC_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS_LS": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_NX": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_NX_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS_RC": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_RC_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "LEXUS_RX": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "LEXUS_RX_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "MAZDA 3": {
-  "pt": "mazda_2017"
- },
- "MAZDA 6": {
-  "pt": "mazda_2017"
- },
- "MAZDA CX-5": {
-  "pt": "mazda_2017"
- },
- "MAZDA CX-5 2022": {
-  "pt": "mazda_2017"
- },
- "MAZDA CX-9": {
-  "pt": "mazda_2017"
- },
- "MAZDA CX-9 2021": {
-  "pt": "mazda_2017"
- },
- "MAZDA_3": {
-  "pt": "mazda_2017"
- },
- "MAZDA_6": {
-  "pt": "mazda_2017"
- },
- "MAZDA_CX5": {
-  "pt": "mazda_2017"
- },
- "MAZDA_CX5_2022": {
-  "pt": "mazda_2017"
- },
- "MAZDA_CX9": {
-  "pt": "mazda_2017"
- },
- "MAZDA_CX9_2021": {
-  "pt": "mazda_2017"
- },
- "MG_5_EV": {
-  "pt": "mg"
- },
- "NISSAN ALTIMA 2020": {
-  "pt": "nissan_x_trail_2017_generated"
- },
- "NISSAN LEAF 2018": {
-  "pt": "nissan_leaf_2018_generated"
- },
- "NISSAN LEAF 2018 Instrument Cluster": {
-  "pt": "nissan_leaf_2018_generated"
- },
- "NISSAN ROGUE 2019": {
-  "pt": "nissan_x_trail_2017_generated"
- },
- "NISSAN X-TRAIL 2017": {
-  "pt": "nissan_x_trail_2017_generated"
- },
- "NISSAN_ALTIMA": {
-  "pt": "nissan_x_trail_2017_generated"
- },
- "NISSAN_LEAF": {
-  "pt": "nissan_leaf_2018_generated"
- },
- "NISSAN_LEAF_IC": {
-  "pt": "nissan_leaf_2018_generated"
- },
- "NISSAN_ROGUE": {
-  "pt": "nissan_x_trail_2017_generated"
- },
- "NISSAN_XTRAIL": {
-  "pt": "nissan_x_trail_2017_generated"
- },
- "PORSCHE_MACAN_MK1": {
-  "pt": "vw_mlb"
- },
- "PSA_PEUGEOT_208": {
-  "pt": "psa_aee2010_r3"
- },
- "RAM 1500 5TH GEN": {
-  "pt": "chrysler_ram_dt_generated"
- },
- "RAM HD 5TH GEN": {
-  "pt": "chrysler_ram_hd_generated"
- },
- "RAM_1500_5TH_GEN": {
-  "pt": "chrysler_ram_dt_generated"
- },
- "RAM_HD_5TH_GEN": {
-  "pt": "chrysler_ram_hd_generated"
- },
- "RIVIAN_R1": {
-  "pt": "rivian_primary_actuator",
-  "radar": "rivian_mando_front_radar_generated"
- },
- "RIVIAN_R1_GEN1": {
-  "pt": "rivian_primary_actuator",
-  "radar": "rivian_mando_front_radar_generated"
- },
- "RIVIAN_R1_GEN2": {
-  "pt": "rivian_primary_actuator",
-  "radar": "rivian_mando_front_radar_generated"
- },
- "SEAT ATECA 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "SEAT LEON 3RD GEN": {
-  "pt": "vw_mqb"
- },
- "SEAT_ATECA_MK1": {
-  "pt": "vw_mqb"
- },
- "SEAT_LEON_MK3": {
-  "pt": "vw_mqb"
- },
- "SKODA FABIA 4TH GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA KAMIQ 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA KAROQ 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA KODIAQ 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA OCTAVIA 3RD GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA SCALA 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA SUPERB 3RD GEN": {
-  "pt": "vw_mqb"
- },
- "SKODA_FABIA_MK4": {
-  "pt": "vw_mqb"
- },
- "SKODA_KAMIQ_MK1": {
-  "pt": "vw_mqb"
- },
- "SKODA_KAROQ_MK1": {
-  "pt": "vw_mqb"
- },
- "SKODA_KODIAQ_MK1": {
-  "pt": "vw_mqb"
- },
- "SKODA_OCTAVIA_MK3": {
-  "pt": "vw_mqb"
- },
- "SKODA_SCALA_MK1": {
-  "pt": "vw_mqb"
- },
- "SKODA_SUPERB_MK3": {
-  "pt": "vw_mqb"
- },
- "SUBARU ASCENT 2023": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU ASCENT LIMITED 2019": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU CROSSTREK HYBRID 2020": {
-  "pt": "subaru_global_2020_hybrid_generated"
- },
- "SUBARU FORESTER 2017 - 2018": {
-  "pt": "subaru_forester_2017_generated"
- },
- "SUBARU FORESTER 2019": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU FORESTER 2022": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU FORESTER HYBRID 2020": {
-  "pt": "subaru_global_2020_hybrid_generated"
- },
- "SUBARU IMPREZA LIMITED 2019": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU IMPREZA SPORT 2020": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU LEGACY 2015 - 2018": {
-  "pt": "subaru_outback_2015_generated"
- },
- "SUBARU LEGACY 7TH GEN": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU OUTBACK 2015 - 2017": {
-  "pt": "subaru_outback_2015_generated"
- },
- "SUBARU OUTBACK 2018 - 2019": {
-  "pt": "subaru_outback_2019_generated"
- },
- "SUBARU OUTBACK 6TH GEN": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU OUTBACK 7TH GEN": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_ASCENT": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_ASCENT_2023": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_CROSSTREK_HYBRID": {
-  "pt": "subaru_global_2020_hybrid_generated"
- },
- "SUBARU_FORESTER": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_FORESTER_2022": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_FORESTER_HYBRID": {
-  "pt": "subaru_global_2020_hybrid_generated"
- },
- "SUBARU_FORESTER_PREGLOBAL": {
-  "pt": "subaru_forester_2017_generated"
- },
- "SUBARU_IMPREZA": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_IMPREZA_2020": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_LEGACY": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_LEGACY_PREGLOBAL": {
-  "pt": "subaru_outback_2015_generated"
- },
- "SUBARU_OUTBACK": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_OUTBACK_2023": {
-  "pt": "subaru_global_2017_generated"
- },
- "SUBARU_OUTBACK_PREGLOBAL": {
-  "pt": "subaru_outback_2015_generated"
- },
- "SUBARU_OUTBACK_PREGLOBAL_2018": {
-  "pt": "subaru_outback_2019_generated"
- },
- "TESLA_MODEL_3": {
-  "party": "tesla_model3_party",
-  "radar": "tesla_radar_continental_generated"
- },
- "TESLA_MODEL_X": {
-  "party": "tesla_model3_party"
- },
- "TESLA_MODEL_Y": {
-  "party": "tesla_model3_party",
-  "radar": "tesla_radar_continental_generated"
- },
- "TOYOTA ALPHARD 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA ALPHARD HYBRID 2021": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA AVALON 2016": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA AVALON 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA AVALON 2022": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA AVALON HYBRID 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA AVALON HYBRID 2022": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA C-HR 2018": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA C-HR 2021": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA C-HR HYBRID 2018": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA C-HR HYBRID 2022": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA CAMRY 2018": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA CAMRY 2021": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA CAMRY HYBRID 2018": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA CAMRY HYBRID 2021": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA COROLLA 2017": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA COROLLA HYBRID TSS2 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA COROLLA TSS2 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA HIGHLANDER 2017": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA HIGHLANDER 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA HIGHLANDER HYBRID 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA HIGHLANDER HYBRID 2020": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA MIRAI 2021": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA PRIUS 2017": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA PRIUS TSS2 2021": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA PRIUS v 2017": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA RAV4 2017": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA RAV4 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA RAV4 2022": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA RAV4 2023": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA RAV4 HYBRID 2017": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA RAV4 HYBRID 2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA RAV4 HYBRID 2022": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA RAV4 HYBRID 2023": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA SIENNA 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA SIENNA XLE 2018": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_ALPHARD_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_AVALON": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_AVALON_2019": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_AVALON_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_CAMRY": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA_CAMRY_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_CHR": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA_CHR_TSS2": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA_COROLLA": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_COROLLA_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_HIGHLANDER": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_HIGHLANDER_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_MIRAI": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_PRIUS": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_PRIUS_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_PRIUS_V": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_RAV4": {
-  "pt": "toyota_new_mc_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_RAV4H": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_RAV4_PRIME": {
-  "pt": "toyota_secoc_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_RAV4_TSS2": {
-  "pt": "toyota_nodsu_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_RAV4_TSS2_2022": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA_RAV4_TSS2_2023": {
-  "pt": "toyota_nodsu_pt_generated"
- },
- "TOYOTA_SIENNA": {
-  "pt": "toyota_tnga_k_pt_generated",
-  "radar": "toyota_adas"
- },
- "TOYOTA_SIENNA_4TH_GEN": {
-  "pt": "toyota_secoc_pt_generated",
-  "radar": "toyota_tss2_adas"
- },
- "TOYOTA_YARIS": {
-  "pt": "toyota_secoc_pt_generated"
- },
- "VOLKSWAGEN ARTEON 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN ATLAS 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN CADDY 3RD GEN": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN CRAFTER 2ND GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN GOLF 7TH GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN JETTA 6TH GEN": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN JETTA 7TH GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN PASSAT 8TH GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN PASSAT NMS": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN POLO 6TH GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN SHARAN 2ND GEN": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN T-CROSS 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN T-ROC 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN TAOS 1ST GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN TIGUAN 2ND GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN TOURAN 2ND GEN": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN TRANSPORTER T6.1": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_ARTEON_MK1": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_ATLAS_MK1": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_CADDY_MK3": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN_CRAFTER_MK2": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_GOLF_MK7": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_ID4_MK1": {
-  "pt": "vw_meb_generated",
-  "radar": "vw_meb_generated"
- },
- "VOLKSWAGEN_ID4_MK2": {
-  "pt": "vw_meb_2024_generated",
-  "radar": "vw_meb_2024_generated"
- },
- "VOLKSWAGEN_JETTA_MK6": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN_JETTA_MK7": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_PASSAT_MK8": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_PASSAT_NMS": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN_POLO_MK6": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_SHARAN_MK2": {
-  "pt": "vw_pq"
- },
- "VOLKSWAGEN_TAOS_MK1": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_TCROSS_MK1": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_TIGUAN_MK2": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_TOURAN_MK2": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_TRANSPORTER_T61": {
-  "pt": "vw_mqb"
- },
- "VOLKSWAGEN_TROC_MK1": {
-  "pt": "vw_mqb"
- }
+"ACURA_ADX": {"pt": "honda_bosch_radarless_generated"},
+"ACURA_ILX": {"pt": "acura_ilx_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"ACURA_MDX_4G": {"pt": "honda_common_canfd_generated"},
+"ACURA_MDX_4G_MMR": {"pt": "honda_common_canfd_generated"},
+"ACURA_RDX": {"pt": "acura_rdx_2018_can_generated", "radar": "acura_ilx_2016_nidec"},
+"ACURA_RDX_3G": {"pt": "acura_rdx_2020_can_generated"},
+"ACURA_RDX_3G_MMR": {"pt": "acura_rdx_2020_can_generated"},
+"ACURA_TLX_2G": {"pt": "honda_civic_hatchback_ex_2017_can_generated"},
+"ACURA_TLX_2G_MMR": {"pt": "honda_common_canfd_generated"},
+"AUDI_A3_MK3": {"pt": "vw_mqb"},
+"AUDI_Q2_MK1": {"pt": "vw_mqb"},
+"AUDI_Q3_MK2": {"pt": "vw_mqb"},
+"AUDI_Q5_MK1": {"pt": "vw_mlb"},
+"BUICK_LACROSSE": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"BUICK_REGAL": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"BYD_ATTO_3": {"pt": "byd_atto3"},
+"CADILLAC_ATS": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CADILLAC_ESCALADE": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CADILLAC_ESCALADE_ESV": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CADILLAC_ESCALADE_ESV_2019": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CADILLAC_XT4": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_BOLT_EUV": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_EQUINOX": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_MALIBU": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_SILVERADO": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_TRAILBLAZER": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_TRAVERSE": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_VOLT": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHEVROLET_VOLT_2019": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"CHRYSLER_PACIFICA_2018": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"CHRYSLER_PACIFICA_2018_HYBRID": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"CHRYSLER_PACIFICA_2019_HYBRID": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"CHRYSLER_PACIFICA_2020": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"COMMA_BODY": {"main": "comma_body"},
+"CUPRA_BORN_MK1": {"pt": "vw_meb_generated", "radar": "vw_meb_generated"},
+"DODGE_DURANGO": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"FORD_BRONCO_SPORT_MK1": {"pt": "ford_lincoln_base_pt", "radar": "FORD_CADS"},
+"FORD_ESCAPE_MK4": {"pt": "ford_lincoln_base_pt", "radar": "FORD_CADS"},
+"FORD_ESCAPE_MK4_5": {"pt": "ford_lincoln_base_pt"},
+"FORD_EXPEDITION_MK4": {"pt": "ford_lincoln_base_pt"},
+"FORD_EXPLORER_MK6": {"pt": "ford_lincoln_base_pt", "radar": "FORD_CADS"},
+"FORD_FOCUS_MK4": {"pt": "ford_lincoln_base_pt", "radar": "FORD_CADS"},
+"FORD_F_150_LIGHTNING_MK1": {"pt": "ford_lincoln_base_pt"},
+"FORD_F_150_MK14": {"pt": "ford_lincoln_base_pt"},
+"FORD_MAVERICK_MK1": {"pt": "ford_lincoln_base_pt", "radar": "FORD_CADS"},
+"FORD_MUSTANG_MACH_E_MK1": {"pt": "ford_lincoln_base_pt"},
+"FORD_RANGER_MK2": {"pt": "ford_lincoln_base_pt"},
+"GENESIS_G70": {"pt": "hyundai_can_generated"},
+"GENESIS_G70_2020": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"GENESIS_G80": {"pt": "hyundai_can_generated"},
+"GENESIS_G80_2ND_GEN_FL": {"pt": "hyundai_canfd_generated"},
+"GENESIS_G90": {"pt": "hyundai_can_generated"},
+"GENESIS_GV60_EV_1ST_GEN": {"pt": "hyundai_canfd_generated"},
+"GENESIS_GV70_1ST_GEN": {"pt": "hyundai_canfd_generated"},
+"GENESIS_GV70_ELECTRIFIED_1ST_GEN": {"pt": "hyundai_canfd_generated"},
+"GENESIS_GV80": {"pt": "hyundai_canfd_generated"},
+"GMC_ACADIA": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"GMC_YUKON": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"HOLDEN_ASTRA": {"chassis": "gm_global_a_chassis", "pt": "gm_global_a_powertrain_generated", "radar": "gm_global_a_object"},
+"HONDA_ACCORD": {"pt": "honda_civic_hatchback_ex_2017_can_generated"},
+"HONDA_ACCORD_11G": {"pt": "honda_common_canfd_generated"},
+"HONDA_CITY_7G": {"pt": "honda_bosch_radarless_generated"},
+"HONDA_CIVIC": {"pt": "honda_civic_touring_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_CIVIC_2022": {"pt": "honda_bosch_radarless_generated"},
+"HONDA_CIVIC_BOSCH": {"pt": "honda_civic_hatchback_ex_2017_can_generated"},
+"HONDA_CIVIC_BOSCH_DIESEL": {"pt": "honda_civic_hatchback_ex_2017_can_generated"},
+"HONDA_CRV": {"pt": "honda_crv_touring_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_CRV_5G": {"body": "honda_crv_ex_2017_body_generated", "pt": "honda_civic_hatchback_ex_2017_can_generated"},
+"HONDA_CRV_6G": {"pt": "honda_common_canfd_generated"},
+"HONDA_CRV_EU": {"pt": "honda_crv_touring_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_CRV_HYBRID": {"pt": "honda_civic_hatchback_ex_2017_can_generated"},
+"HONDA_E": {"pt": "acura_rdx_2020_can_generated"},
+"HONDA_E_ADVANCE": {"pt": "honda_e_advance_2020_can_generated"},
+"HONDA_FIT": {"pt": "acura_ilx_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_FREED": {"pt": "acura_ilx_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_HRV": {"pt": "acura_ilx_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_HRV_3G": {"pt": "honda_bosch_radarless_generated"},
+"HONDA_INSIGHT": {"pt": "honda_insight_ex_2019_can_generated"},
+"HONDA_NBOX_2G": {"pt": "acura_rdx_2020_can_generated"},
+"HONDA_ODYSSEY": {"pt": "honda_odyssey_exl_2018_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_ODYSSEY_5G_MMR": {"pt": "acura_rdx_2020_can_generated"},
+"HONDA_ODYSSEY_TWN": {"pt": "honda_odyssey_twn_2018_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_PASSPORT_4G": {"pt": "honda_common_canfd_generated"},
+"HONDA_PILOT": {"pt": "acura_ilx_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HONDA_PILOT_4G": {"pt": "honda_common_canfd_generated"},
+"HONDA_PILOT_4G_MMR": {"pt": "honda_common_canfd_generated"},
+"HONDA_PRELUDE_6G": {"pt": "honda_bosch_radarless_generated"},
+"HONDA_RIDGELINE": {"pt": "acura_ilx_2016_can_generated", "radar": "acura_ilx_2016_nidec"},
+"HYUNDAI_AZERA_6TH_GEN": {"pt": "hyundai_can_generated"},
+"HYUNDAI_AZERA_HEV_6TH_GEN": {"pt": "hyundai_can_generated"},
+"HYUNDAI_CUSTIN_1ST_GEN": {"pt": "hyundai_can_generated"},
+"HYUNDAI_ELANTRA": {"pt": "hyundai_can_generated"},
+"HYUNDAI_ELANTRA_2021": {"pt": "hyundai_can_generated"},
+"HYUNDAI_ELANTRA_GT_I30": {"pt": "hyundai_can_generated"},
+"HYUNDAI_ELANTRA_HEV_2021": {"pt": "hyundai_can_generated"},
+"HYUNDAI_GENESIS": {"pt": "hyundai_can_generated"},
+"HYUNDAI_IONIQ": {"pt": "hyundai_can_generated"},
+"HYUNDAI_IONIQ_5": {"pt": "hyundai_canfd_generated"},
+"HYUNDAI_IONIQ_6": {"pt": "hyundai_canfd_generated"},
+"HYUNDAI_IONIQ_EV_2020": {"pt": "hyundai_can_generated"},
+"HYUNDAI_IONIQ_EV_LTD": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"HYUNDAI_IONIQ_HEV_2022": {"pt": "hyundai_can_generated"},
+"HYUNDAI_IONIQ_PHEV": {"pt": "hyundai_can_generated"},
+"HYUNDAI_IONIQ_PHEV_2019": {"pt": "hyundai_can_generated"},
+"HYUNDAI_KONA": {"pt": "hyundai_can_generated"},
+"HYUNDAI_KONA_2022": {"pt": "hyundai_can_generated"},
+"HYUNDAI_KONA_EV": {"pt": "hyundai_can_generated"},
+"HYUNDAI_KONA_EV_2022": {"pt": "hyundai_can_generated"},
+"HYUNDAI_KONA_EV_2ND_GEN": {"pt": "hyundai_canfd_generated"},
+"HYUNDAI_KONA_HEV": {"pt": "hyundai_can_generated"},
+"HYUNDAI_NEXO_1ST_GEN": {"pt": "hyundai_can_generated"},
+"HYUNDAI_PALISADE": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"HYUNDAI_SANTA_CRUZ_1ST_GEN": {"pt": "hyundai_canfd_generated"},
+"HYUNDAI_SANTA_FE": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"HYUNDAI_SANTA_FE_2022": {"pt": "hyundai_can_generated"},
+"HYUNDAI_SANTA_FE_HEV_2022": {"pt": "hyundai_can_generated"},
+"HYUNDAI_SANTA_FE_PHEV_2022": {"pt": "hyundai_can_generated"},
+"HYUNDAI_SONATA": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"HYUNDAI_SONATA_HYBRID": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"HYUNDAI_SONATA_LF": {"pt": "hyundai_can_generated"},
+"HYUNDAI_STARIA_4TH_GEN": {"pt": "hyundai_canfd_generated"},
+"HYUNDAI_TUCSON": {"pt": "hyundai_can_generated"},
+"HYUNDAI_TUCSON_4TH_GEN": {"pt": "hyundai_canfd_generated"},
+"HYUNDAI_VELOSTER": {"pt": "hyundai_can_generated"},
+"JEEP_CHEROKEE_5TH_GEN": {"pt": "chrysler_cusw"},
+"JEEP_GRAND_CHEROKEE": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"JEEP_GRAND_CHEROKEE_2019": {"pt": "chrysler_pacifica_2017_hybrid_generated", "radar": "chrysler_pacifica_2017_hybrid_private_fusion"},
+"KIA_CARNIVAL_4TH_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_CEED": {"pt": "hyundai_can_generated"},
+"KIA_CEED_PHEV": {"pt": "hyundai_can_generated"},
+"KIA_EV6": {"pt": "hyundai_canfd_generated"},
+"KIA_FORTE": {"pt": "hyundai_can_generated"},
+"KIA_K5_2021": {"pt": "hyundai_can_generated"},
+"KIA_K5_HEV_2020": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"KIA_K7_2017": {"pt": "hyundai_can_generated"},
+"KIA_K8_HEV_1ST_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_NIRO_EV": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"KIA_NIRO_EV_2ND_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_NIRO_HEV_2021": {"pt": "hyundai_can_generated"},
+"KIA_NIRO_HEV_2ND_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_NIRO_PHEV": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"KIA_NIRO_PHEV_2022": {"pt": "hyundai_can_generated", "radar": "hyundai_kia_mando_front_radar_generated"},
+"KIA_OPTIMA_G4": {"pt": "hyundai_can_generated"},
+"KIA_OPTIMA_G4_FL": {"pt": "hyundai_can_generated"},
+"KIA_OPTIMA_H": {"pt": "hyundai_can_generated"},
+"KIA_OPTIMA_H_G4_FL": {"pt": "hyundai_can_generated"},
+"KIA_SELTOS": {"pt": "hyundai_can_generated"},
+"KIA_SORENTO": {"pt": "hyundai_can_generated"},
+"KIA_SORENTO_4TH_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_SORENTO_HEV_4TH_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_SPORTAGE_5TH_GEN": {"pt": "hyundai_canfd_generated"},
+"KIA_STINGER": {"pt": "hyundai_can_generated"},
+"KIA_STINGER_2022": {"pt": "hyundai_can_generated"},
+"LEXUS_CTH": {"pt": "toyota_new_mc_pt_generated", "radar": "toyota_adas"},
+"LEXUS_ES": {"pt": "toyota_new_mc_pt_generated", "radar": "toyota_adas"},
+"LEXUS_ES_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"LEXUS_GS_F": {"pt": "toyota_new_mc_pt_generated", "radar": "toyota_adas"},
+"LEXUS_IS": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"LEXUS_IS_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"LEXUS_LC_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"LEXUS_LS": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_adas"},
+"LEXUS_NX": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"LEXUS_NX_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"LEXUS_RC": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"LEXUS_RC_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"LEXUS_RX": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"LEXUS_RX_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"MAZDA_3": {"pt": "mazda_2017"},
+"MAZDA_6": {"pt": "mazda_2017"},
+"MAZDA_CX5": {"pt": "mazda_2017"},
+"MAZDA_CX5_2022": {"pt": "mazda_2017"},
+"MAZDA_CX9": {"pt": "mazda_2017"},
+"MAZDA_CX9_2021": {"pt": "mazda_2017"},
+"MG_5_EV": {"pt": "mg"},
+"NISSAN_ALTIMA": {"pt": "nissan_x_trail_2017_generated"},
+"NISSAN_LEAF": {"pt": "nissan_leaf_2018_generated"},
+"NISSAN_LEAF_IC": {"pt": "nissan_leaf_2018_generated"},
+"NISSAN_ROGUE": {"pt": "nissan_x_trail_2017_generated"},
+"NISSAN_XTRAIL": {"pt": "nissan_x_trail_2017_generated"},
+"PORSCHE_MACAN_MK1": {"pt": "vw_mlb"},
+"PSA_PEUGEOT_208": {"pt": "psa_aee2010_r3"},
+"RAM_1500_5TH_GEN": {"pt": "chrysler_ram_dt_generated"},
+"RAM_HD_5TH_GEN": {"pt": "chrysler_ram_hd_generated"},
+"RIVIAN_R1": {"pt": "rivian_primary_actuator", "radar": "rivian_mando_front_radar_generated"},
+"SEAT_ATECA_MK1": {"pt": "vw_mqb"},
+"SKODA_FABIA_MK4": {"pt": "vw_mqb"},
+"SKODA_KAMIQ_MK1": {"pt": "vw_mqb"},
+"SKODA_KAROQ_MK1": {"pt": "vw_mqb"},
+"SKODA_KODIAQ_MK1": {"pt": "vw_mqb"},
+"SKODA_OCTAVIA_MK3": {"pt": "vw_mqb"},
+"SKODA_SUPERB_MK3": {"pt": "vw_mqb"},
+"SUBARU_ASCENT": {"pt": "subaru_global_2017_generated"},
+"SUBARU_ASCENT_2023": {"pt": "subaru_global_2017_generated"},
+"SUBARU_CROSSTREK_HYBRID": {"pt": "subaru_global_2020_hybrid_generated"},
+"SUBARU_FORESTER": {"pt": "subaru_global_2017_generated"},
+"SUBARU_FORESTER_2022": {"pt": "subaru_global_2017_generated"},
+"SUBARU_FORESTER_HYBRID": {"pt": "subaru_global_2020_hybrid_generated"},
+"SUBARU_FORESTER_PREGLOBAL": {"pt": "subaru_forester_2017_generated"},
+"SUBARU_IMPREZA": {"pt": "subaru_global_2017_generated"},
+"SUBARU_IMPREZA_2020": {"pt": "subaru_global_2017_generated"},
+"SUBARU_LEGACY": {"pt": "subaru_global_2017_generated"},
+"SUBARU_LEGACY_PREGLOBAL": {"pt": "subaru_outback_2015_generated"},
+"SUBARU_OUTBACK": {"pt": "subaru_global_2017_generated"},
+"SUBARU_OUTBACK_2023": {"pt": "subaru_global_2017_generated"},
+"SUBARU_OUTBACK_PREGLOBAL": {"pt": "subaru_outback_2015_generated"},
+"SUBARU_OUTBACK_PREGLOBAL_2018": {"pt": "subaru_outback_2019_generated"},
+"TESLA_MODEL_3": {"party": "tesla_model3_party", "radar": "tesla_radar_continental_generated"},
+"TESLA_MODEL_X": {"party": "tesla_model3_party"},
+"TESLA_MODEL_Y": {"party": "tesla_model3_party", "radar": "tesla_radar_continental_generated"},
+"TOYOTA_ALPHARD_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_AVALON": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_AVALON_2019": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_AVALON_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_CAMRY": {"pt": "toyota_nodsu_pt_generated"},
+"TOYOTA_CAMRY_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_CHR": {"pt": "toyota_nodsu_pt_generated"},
+"TOYOTA_CHR_TSS2": {"pt": "toyota_nodsu_pt_generated"},
+"TOYOTA_COROLLA": {"pt": "toyota_new_mc_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_COROLLA_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_HIGHLANDER": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_HIGHLANDER_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_MIRAI": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_PRIUS": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_PRIUS_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_PRIUS_V": {"pt": "toyota_new_mc_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_RAV4": {"pt": "toyota_new_mc_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_RAV4H": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_RAV4_PRIME": {"pt": "toyota_secoc_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_RAV4_TSS2": {"pt": "toyota_nodsu_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_RAV4_TSS2_2022": {"pt": "toyota_nodsu_pt_generated"},
+"TOYOTA_RAV4_TSS2_2023": {"pt": "toyota_nodsu_pt_generated"},
+"TOYOTA_SIENNA": {"pt": "toyota_tnga_k_pt_generated", "radar": "toyota_adas"},
+"TOYOTA_SIENNA_4TH_GEN": {"pt": "toyota_secoc_pt_generated", "radar": "toyota_tss2_adas"},
+"TOYOTA_YARIS": {"pt": "toyota_secoc_pt_generated"},
+"VOLKSWAGEN_ARTEON_MK1": {"pt": "vw_mqb"},
+"VOLKSWAGEN_ATLAS_MK1": {"pt": "vw_mqb"},
+"VOLKSWAGEN_CADDY_MK3": {"pt": "vw_pq"},
+"VOLKSWAGEN_CRAFTER_MK2": {"pt": "vw_mqb"},
+"VOLKSWAGEN_GOLF_MK7": {"pt": "vw_mqb"},
+"VOLKSWAGEN_ID4_MK1": {"pt": "vw_meb_generated", "radar": "vw_meb_generated"},
+"VOLKSWAGEN_ID4_MK2": {"pt": "vw_meb_2024_generated", "radar": "vw_meb_2024_generated"},
+"VOLKSWAGEN_JETTA_MK6": {"pt": "vw_pq"},
+"VOLKSWAGEN_JETTA_MK7": {"pt": "vw_mqb"},
+"VOLKSWAGEN_PASSAT_MK8": {"pt": "vw_mqb"},
+"VOLKSWAGEN_PASSAT_NMS": {"pt": "vw_pq"},
+"VOLKSWAGEN_POLO_MK6": {"pt": "vw_mqb"},
+"VOLKSWAGEN_SHARAN_MK2": {"pt": "vw_pq"},
+"VOLKSWAGEN_TAOS_MK1": {"pt": "vw_mqb"},
+"VOLKSWAGEN_TCROSS_MK1": {"pt": "vw_mqb"},
+"VOLKSWAGEN_TIGUAN_MK2": {"pt": "vw_mqb"},
+"VOLKSWAGEN_TOURAN_MK2": {"pt": "vw_mqb"},
+"VOLKSWAGEN_TRANSPORTER_T61": {"pt": "vw_mqb"},
+"VOLKSWAGEN_TROC_MK1": {"pt": "vw_mqb"}
 }

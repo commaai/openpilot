@@ -702,11 +702,13 @@ export class Can {
     };
   }
 
-  // opendbc's DBC names and the fingerprint → DBC map
+  // opendbc's DBC names and a fingerprint's DBCs. opendbc.json knows each car by its current name; a log read with its
+  // own schema can have an older one, which migrate.json renames
   async opendbc() {
-    this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
-    const [fingerprints, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
-    return {fingerprints, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
+    this.index ||= Promise.all([fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json()), import("./migrate.json", {with: {type: "json"}})])
+      .then(([cars, {default: {fingerprints: renamed}}]) => (fp) => cars[renamed[fp] ?? fp]);
+    const [dbcsOf, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
+    return {dbcsOf, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
   }
 
   // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master. The
@@ -775,7 +777,7 @@ export class Can {
     const fp = this.store.valueAt?.("/carParams/carFingerprint", Infinity);
     if (!fp) return;
     this.fingerprinted = fp;
-    const dbcs = (await this.opendbc()).fingerprints[fp];
+    const dbcs = (await this.opendbc()).dbcsOf(fp);
     const name = carDbc(dbcs), radar = dbcs?.radar !== name && dbcs?.radar;
     if (!name || this.dbcs.all().length) return;
     const fail = (name) => (e) => {
