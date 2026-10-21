@@ -68,7 +68,7 @@ class TestWebrtc(DaemonCase):
     config.webrtcd_port = 1  # nothing listens there
     r, data = self.call(OFFER)
     self.assertEqual(r.status, 502)
-    self.assertIn("no webrtcd", json.loads(data)["error"])
+    self.assertIn("webrtcd on 127.0.0.1:1", json.loads(data)["error"])
 
   def test_local_only(self):
     r, _ = self.call(OFFER, token=False)
