@@ -1,0 +1,22 @@
+Import('env', 'common', 'msgq')
+
+cereal_dir = Dir('.')
+gen_dir = Dir('gen')
+
+# Build cereal
+schema_files = ['log.capnp', 'deprecated.capnp', 'custom.capnp']
+car_capnp = '#opendbc_repo/opendbc/car/car.capnp'
+all_output = schema_files + ['car.capnp']
+env.Command([f'gen/cpp/{s}.c++' for s in all_output] + [f'gen/cpp/{s}.h' for s in all_output],
+            schema_files + [car_capnp],
+            f"capnpc --src-prefix={cereal_dir.path} --src-prefix=opendbc_repo/opendbc/car --import-path=opendbc_repo/opendbc/car $SOURCES -o c++:{gen_dir.path}/cpp/")
+
+cereal = env.Library('cereal', [f'gen/cpp/{s}.c++' for s in all_output])
+
+# Build messaging
+services_h = env.Command(['services.h'], ['services.py'], 'python3 ' + cereal_dir.path + '/services.py > $TARGET')
+env.Program('messaging/bridge', ['messaging/bridge.cc', 'messaging/msgq_to_zmq.cc', 'messaging/bridge_zmq.cc'], LIBS=[msgq, common, 'pthread'])
+
+socketmaster = env.Library('socketmaster', ['messaging/socketmaster.cc'])
+
+Export('cereal', 'socketmaster')

@@ -1,0 +1,118 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: AWD ECU TCU ESP SAS ABS
+
+
+BO_ 339 ESP_Flags: 8 ESP
+ SG_ ABD_Active : 3|1@1+ (1,0) [0|1] "yes/no"  AWD,ECU,TCU
+ SG_ TCS_Active : 9|1@1+ (1,0) [0|1] "yes/no"  AWD,ECU,TCU
+ SG_ ABS_Active : 10|1@1+ (1,0) [0|1] "yes/no"  AWD,ECU,TCU
+ SG_ ESP_Off : 12|1@1+ (1,0) [0|1] "yes/no"  AWD,ECU,TCU
+ SG_ ESP_Active : 14|1@1+ (1,0) [0|1] "yes/no"  AWD,ECU,TCU
+ SG_ VehicleSpeed : 16|8@1+ (1,0) [0|254] "km/h"  AWD,ECU,TCU
+ SG_ TorqueRequestFast : 24|8@1+ (0.390625,0) [0|99.609375] "%"  ECU,TCU
+ SG_ TorqueRequestSlow : 40|8@1+ (0.390625,0) [0|99.609375] "%"  ECU,TCU
+
+BO_ 497 ESP_WheelSpeed: 8 ESP
+ SG_ FrontRightWheelSpeed : 16|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+ SG_ FrontLeftWheelSpeed : 28|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+ SG_ RearRightWheelSpeed : 40|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+ SG_ RearLeftWheelSpeed : 52|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+
+BO_ 608 ECU_Data1: 8 ECU
+ SG_ TorqueMin : 0|8@1+ (0.390625,0) [0|99.609375] "%"  ESP,TCU
+ SG_ Torque : 8|8@1+ (0.390625,0) [0|99.609375] "%"  ESP,TCU
+ SG_ TorqueTarget : 16|8@1+ (0.390625,0) [0|99.609375] "%"  ESP,TCU
+ SG_ CruiseEnabled : 25|1@1+ (1,0) [0|1] "yes/no"  TCU
+ SG_ CruiseActive : 26|1@1+ (1,0) [0|1] "yes/no"  TCU
+ SG_ TorqueMax : 40|8@1+ (0.390625,0) [0|99.609375] "%"  ESP,TCU
+
+BO_ 640 ECU_Data2: 8 ECU
+ SG_ RPM : 32|8@1+ (32,0) [0|8160] "rpm"  TCU
+ SG_ MAF : 40|8@1+ (5.447,0) [0|1388.985] "mg/TDC"  TCU
+ SG_ IAT : 48|8@1- (0.75,-48) [-48|143.25] "C"  TCU
+ SG_ MAP : 56|8@1+ (0.47058,0) [0|119.9979] "KPa"  TCU
+
+BO_ 688 SAS_Data: 5 SAS
+ SG_ SAS_Angle : 0|16@1- (0.1,0) [-3276.8|3276.7] "deg"  AWD,ECU,ESP,TCU
+ SG_ SAS_Speed : 16|8@1+ (4,0) [0|1016] "deg/s"  ESP,TCU
+ SG_ SAS_Status : 24|8@1+ (1,0) [0|255] ""  ESP,TCU
+ SG_ Msg_Count : 32|4@1+ (1,0) [0|15] ""  ESP
+ SG_ Check_Sum : 36|4@1+ (1,0) [0|15] ""  ECU,ESP
+
+BO_ 809 ECU_Data5: 8 ECU
+ SG_ ECT : 8|8@1- (0.75,-48) [-48|143.25] "C"  AWD,ABS,ESP,TCU
+ SG_ BrakeActive : 32|2@1+ (1,0) [0|3] "yes/no"  AWD,ABS,ESP,TCU
+ SG_ TPS : 40|8@1+ (0.47265625,-15) [-15|105.52734375] "%"  AWD,ABS,ESP,TCU
+
+BO_ 1064 AWD_Data1: 8 AWD
+ SG_ ClutchDuty : 16|8@1+ (1,0) [0|100] "%"  ABS,ESP
+ SG_ ClutchLocked : 44|1@1+ (1,0) [0|1] "yes/no"  ABS,ESP
+
+BO_ 1065 AWD_Data2: 8 AWD
+ SG_ SteeringWheelPosition : 0|16@1+ (1,-600) [-600|600] "deg"  ABS
+ SG_ FrontRightWheelSpeed : 16|8@1+ (1,0) [0|254] "km/h"  ABS
+ SG_ FrontLeftWheelSpeed : 24|8@1+ (1,0) [0|254] "km/h"  ABS
+ SG_ RearRightWheelSpeed : 32|8@1+ (1,0) [0|254] "km/h"  ABS
+ SG_ RearLeftWheelSpeed : 40|8@1+ (1,0) [0|254] "km/h"  ABS
+
+BO_ 1087 TCU_Data: 8 TCU
+ SG_ CurrentGear : 0|3@1+ (1,0) [0|7] ""  ECU
+ SG_ GearSwitch : 3|1@1+ (1,0) [0|1] "yes/no"  ECU
+ SG_ SelectorPosition : 8|4@1+ (1,0) [0|15] ""  ECU
+ SG_ InputShaftSpeed : 40|16@1+ (0.25,0) [0|16383.5] "rpm"  ECU
+
+BO_ 1349 ECU_Data6: 8 ECU
+ SG_ BatteryVoltage : 24|8@1+ (0.1015625,0) [0|25.8984375] "V"  ABS,ESP
+
+BO_ 1408 ABS_WheelSpeed: 8 ABS
+ SG_ FrontRightWheelSpeed : 16|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+ SG_ FrontLeftWheelSpeed : 28|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+ SG_ RearRightWheelSpeed : 40|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+ SG_ RearLeftWheelSpeed : 52|12@1+ (0.125,0) [0|511.875] "km/h"  AWD
+
+BO_ 1695 ECU_Data7: 8 ECU
+ SG_ ECU_Temperature : 8|8@1- (1,-28) [-28|227] "C"  TCU
+
+BO_ 1984 SAS_Calibration: 2 ESP
+ SG_ CCW : 0|4@1+ (1,0) [0|15] ""  SAS
+ SG_ CID : 4|11@1+ (1,0) [0|2047] ""  SAS
+
+
+
+VAL_ 1087 CurrentGear 7 "R" 0 "N" 1 "1" 2 "2" 3 "3" 4 "4" ;
+VAL_ 1087 SelectorPosition 7 "R" 6 "N" 5 "D" 8 "M" 15 "P" ;
+
