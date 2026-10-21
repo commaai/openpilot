@@ -19,10 +19,9 @@ const MONO = "__logMonoTime";  // the message times as a series, as jotpluggler 
 export class Store {
   // urls[k]: the log shown in slot k, a URL or {url, file, source, seg} (file names the cache entry when the URL doesn't;
   // seg is the route's segment when only a range of it loads); keep: {service: [list path globs]} to split long lists from the start
-  constructor(name, urls, {t = 0, repeat = 1, keep = {}, budget = BUDGET} = {}) {
-    const count = urls.length * repeat;
-    this.route = {name, t0: null, duration: 0, segments: Array.from({length: count}, (_, n) => ({
-      n, t0: n * SEGMENT, t1: (n + 1) * SEGMENT, status: urls[n % urls.length] ? "queued" : "missing",
+  constructor(name, urls, {t = 0, keep = {}, budget = BUDGET} = {}) {
+    this.route = {name, t0: null, duration: 0, segments: Array.from(urls, (e, n) => ({
+      n, t0: n * SEGMENT, t1: (n + 1) * SEGMENT, status: e ? "queued" : "missing",
     }))};
     this.loader = new Loader();
     this.budget = budget;
@@ -53,23 +52,23 @@ export class Store {
       for (const seg of this.route.segments) this.publish(seg);
     }, () => {});
     this.status = status.source("logs", {order: 0});
-    this.status.count(count);
+    this.status.count(urls.length);
     this.status.retry(() => this.retry());
     this.online = () => this.retry();
     addEventListener("online", this.online);
 
     for (const seg of this.route.segments) {
-      const local = seg.n % urls.length, e = typeof urls[local] === "string" ? {url: urls[local]} : urls[local];
+      const e = typeof urls[seg.n] === "string" ? {url: urls[seg.n]} : urls[seg.n];
       seg.bytes = 0;  // resident
-      if (e) this.start(seg, e, local);
+      if (e) this.start(seg, e);
       else this.publish(seg);
     }
   }
 
   // starts loading a segment's log; e = {url, file?, source?, seg?}
-  start(seg, e, local = seg.n) {
+  start(seg, e) {
     seg.entry = e;
-    seg.real = e.seg ?? local;  // the route's segment, for a range of it (urls[k] then names its seg)
+    seg.real = e.seg ?? seg.n;  // the route's segment, for a range of it (urls[k] then names its seg)
     seg.key = `${this.cacheDir}${seg.real}/${e.file ?? new URL(e.url, location.origin).pathname.split("/").at(-1)}`;
     seg.url = e.url;
     seg.source = e.source;
@@ -214,7 +213,7 @@ export class Store {
       seg.error = null;
       this.progress.failed--;
       this.progress.total--;
-      this.start(seg, seg.entry, seg.real);
+      this.start(seg, seg.entry);
     }
   }
 

@@ -414,7 +414,7 @@ function anatomy() {
 
 class Workspace {
   // session: a live one (data/live.js), whose route record this is
-  constructor(route, files, view, {t = 0, repeat = 1, session = null, user = false}) {
+  constructor(route, files, view, {t = 0, session = null, user = false}) {
     this.route = route;
     this.session = session;
     this.user = user;  // shown in user mode: its URL is connect's, under /connect
@@ -425,13 +425,12 @@ class Workspace {
     this.files = session ? [] : null;
     this.filesReady = files.then((f) => { this.files = f; });
     this.filesReady.catch(() => {});  // a view that needs the logs shows the failure; until then it's not an error
-    this.repeat = repeat;
     this.href = location.pathname + location.search;  // the URL it shows, as syncUrl last wrote it
     this.store = null;
     this.storeSubs = new Set();
     this.layouts = {};
     this.written = {};  // view → its layout as this tab last saved it, or had it when another tab saved one
-    this.clock = session ? createClock(0, {live: true}) : createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000 * repeat));
+    this.clock = session ? createClock(0, {live: true}) : createClock(Math.max(1, (route.end_time_utc_millis - route.start_time_utc_millis) / 1000));
     if (!session) this.clock.seek(t);
     this.main = h("div", {class: "workspace"});
     this.playbar = playbar(this.ctx());
@@ -481,7 +480,7 @@ class Workspace {
       this.storeSubs.clear();
     }
     if (this.store || !this.files) return this.store;
-    this.store = new Store(this.route.fullname, this.files, {t: this.clock.t, repeat: this.repeat});
+    this.store = new Store(this.route.fullname, this.files, {t: this.clock.t});
     this.offs.push(watchRouteStart(this.route, this.store));
     // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
     this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
@@ -587,7 +586,6 @@ class Workspace {
     q.set("t", this.clock.t.toFixed(1));
     q.delete("layout");  // opened once, then it's part of the saved layout
     if (this.clock.t === 0) q.delete("t");
-    if (this.repeat > 1) q.set("repeat", this.repeat); else q.delete("repeat");  // as clamped
     // a window narrower than the route stays in the path as connect's "/<start>/<end>" (whole seconds; not on a slice,
     // which that form can't follow)
     const [r0, r1] = this.clock.range;
@@ -857,10 +855,8 @@ async function renderPage() {
       const route = await record;
       if (id !== navId) return;
       ws?.dispose();
-      // ?repeat=n (a load test): the logs n times over, at most 50
-      const repeat = Math.min(50, Math.max(1, Math.floor(+q.get("repeat")) || 1));
       const t = urlTime(q);
-      ws = new Workspace(route, files, view || "drive", {t: t ?? 0, repeat, user});  // connect's urls name no view
+      ws = new Workspace(route, files, view || "drive", {t: t ?? 0, user});  // connect's urls name no view
       if (target.range) ws.showRange(target.range, t === null);
       ws.syncUrl(true);  // with the range (a playing clock holds off its later writes)
       rememberRoute(route);
