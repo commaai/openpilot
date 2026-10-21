@@ -69,8 +69,10 @@ class GuiScrollPanel2:
     bounds_size = bounds.width if self._horizontal else bounds.height
 
     for mouse_event in gui_app.mouse_events:
-      self._handle_mouse_event(mouse_event, bounds, bounds_size, content_size)
-      self._previous_mouse_event = mouse_event
+      # ignore additional fingers to avoid jumping
+      if mouse_event.slot == 0:
+        self._handle_mouse_event(mouse_event, bounds, bounds_size, content_size)
+        self._previous_mouse_event = mouse_event
 
     self._update_state(bounds_size, content_size, snap_target)
 
