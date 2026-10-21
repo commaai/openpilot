@@ -1,7 +1,7 @@
 // live source: a panda over WebUSB, receive only (panda/python's USB protocol). CAN comes from the bulk IN endpoint
 // and health from control reads. It never sends CAN, changes the safety mode or bus speeds, flashes or resets the
 // panda; its one write is the comms reset (0xc0) every host sends on connect, which clears only the firmware's
-// half-sent packet. ?fake-panda swaps in a fake device that replays the demo route (fake-panda.js).
+// half-sent packet. ?fake-panda swaps in the harness's fake device.
 import {stateful} from "../../dom.js";
 import {event, monoNanos} from "./encode.js";
 

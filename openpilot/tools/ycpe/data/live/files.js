@@ -1,4 +1,4 @@
-// the "files" data channel of a device's webrtcd (SPEC.md Live): a read-only view of its log root. Requests and answers
+// the "files" data channel of a device's webrtcd (README.md): a read-only view of its log root. Requests and answers
 // are JSON with an id; a read answers {id, size} (the file's size), then binary chunks each led by an 8-byte header
 // (u32 id, u32 offset into the file, little-endian), then {id, done} or {id, error}. The device streams one read at a
 // time, so reads queue here.

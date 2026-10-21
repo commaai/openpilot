@@ -1,4 +1,4 @@
-// live data over WebRTC from a device's webrtcd, or one on this PC (SPEC.md Live): cereal services as capnp Events on
+// live data over WebRTC from a device's webrtcd, or one on this PC (README.md): cereal services as capnp Events on
 // the "cereal" channel, camera tracks, and, from devices that predate "cereal", carState and deviceState as JSON on
 // "data". The peer connection is shared with file reads (peer.js).
 import {stateful} from "../../dom.js";

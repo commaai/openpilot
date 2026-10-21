@@ -1,6 +1,6 @@
 // one WebRTC peer connection per device (or per webrtcd on this PC), shared by the live source and file reads, and
 // closed once nobody uses it. The cloud only signals (athena startStream, or the daemon's forward to this PC's
-// webrtcd); data flows peer to peer. SPEC.md Live has the protocol.
+// webrtcd); data flows peer to peer. README.md has the protocol.
 import {api} from "../../api.js";
 import {listeners} from "../../dom.js";
 import {FilesChannel} from "./files.js";
@@ -12,7 +12,7 @@ const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 50
 const BUSY_MS = 30000, BUSY_RETRY_MS = 2000;  // a closed viewer's session lingers on the device until ICE gives up
 export const CAMERAS = ["road", "wideRoad", "driver"];
 
-const FAKE = new URLSearchParams(globalThis.location?.search).has("fake-webrtcd");  // a stand-in for this PC's webrtcd (fake-webrtcd.js)
+const FAKE = new URLSearchParams(globalThis.location?.search).has("fake-webrtcd");  // the harness's stand-in for this PC's webrtcd
 const text = new TextDecoder();
 const peers = new Map();  // "local" or a dongle id → Peer
 
@@ -203,7 +203,7 @@ function connected(pc) {
   });
 }
 
-// devices and webrtcds from before SPEC.md Live take no services, cameras or files (an unexpected keyword); asked
+// devices and webrtcds from before README.md's protocol take no services, cameras or files (an unexpected keyword); asked
 // again as they were, they send carState and deviceState as JSON on "data", and no files
 const OLD = /unexpected keyword|invalid params/i;
 const old = (enabled) => {

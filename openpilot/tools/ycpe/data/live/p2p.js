@@ -1,4 +1,4 @@
-// a route's files from its device, peer to peer over the "files" channel (SPEC.md Live): the "p2p" source in
+// a route's files from its device, peer to peer over the "files" channel (README.md): the "p2p" source in
 // data/sources.js. Its URLs are served by /p2p-sw.js, which asks this page for the bytes, so the segment workers fetch,
 // resume and cache them in OPFS like any download. The connection is the device's shared one (peer.js), let go a
 // while after the last read.
