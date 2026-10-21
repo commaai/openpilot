@@ -56,6 +56,13 @@ export function ask(text, ok = "OK", cancel = "Cancel") {
   });
 }
 
+// a note over the page: gone after 3 s, or, with an action ([label, fn]), up until the page goes
+export function toast(text, action = null) {
+  const el = h("div", {class: "toast", role: action ? "alert" : "status"}, text, action && h("button", {class: "button small", onclick: action[1]}, action[0]));
+  document.body.append(el);
+  if (!action) setTimeout(() => el.remove(), 3000);
+}
+
 // a modal <dialog> of attrs and children, shown. Escape or a click beside its content closes it, unless busy() says not
 // now; once closed it's removed, then onclose runs
 export function openModal({onclose, busy, ...attrs}, ...children) {

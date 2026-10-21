@@ -1,9 +1,9 @@
 // the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings.
 // In user mode it's connect's dashboard: the map, the device's name and buttons, its totals and the drives as cards
 import {api, auth, engagedFraction, versionAtLeast} from "../api.js";
-import {h, fmt, isMetric, openModal} from "../dom.js";
+import {h, fmt, isMetric, openModal, toast} from "../dom.js";
 import {icon} from "../icons.js";
-import {devicesChanged, go, isOnline, link, onlineMark, toast} from "../app.js";
+import {devicesChanged, go, isOnline, link, onlineMark} from "../app.js";
 import {perf} from "../perf.js";
 import {reverseLookup} from "../geocode.js";
 import {parseRemote} from "../data/github.js";

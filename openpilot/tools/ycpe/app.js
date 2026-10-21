@@ -1,7 +1,7 @@
 import {SEGMENT, api, auth, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h, fmt, ask, parseClock, openModal} from "/dom.js";
+import {h, fmt, ask, parseClock, openModal, toast} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -85,12 +85,6 @@ function searchBox() {
     me: () => state.me,
     onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
   });
-}
-
-export function toast(text) {
-  const el = h("div", {class: "toast", role: "status"}, text);
-  document.body.append(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 const state = {me: null, devices: null, devicesError: null};
