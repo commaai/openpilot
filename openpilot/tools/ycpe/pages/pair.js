@@ -3,7 +3,7 @@
 // (?pair=<token>, that QR code opened with any phone camera) pairs in a dialog over the page it opens, and noDevices()
 // is connect's empty state. Loaded when needed: app.js imports it for a pair link or an account without devices.
 // In user mode all of it is connect's to the pixel (cnui.js); developer mode keeps the theme's
-import {api, auth} from "../api.js";
+import {api, auth, jwtClaims} from "../api.js";
 import {h, css, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 import {go, devicesChanged} from "../app.js";
@@ -38,13 +38,9 @@ function readQr(text) {
 
 // the dongle id the token pairs to this account. A token that doesn't name a device is caught here, as connect does
 async function pair({token, fromUrl}) {
-  let claims;
-  try {
-    claims = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-  } catch {
-    throw failure("invalid QR code, could not decode pair token");
-  }
-  if (!claims?.identity) throw failure("could not get identity from payload" + (fromUrl ? "" : ", make sure you are using openpilot 0.8.3 or newer"));
+  const claims = jwtClaims(token);
+  if (!claims) throw failure("invalid QR code, could not decode pair token");
+  if (!claims.identity) throw failure("could not get identity from payload" + (fromUrl ? "" : ", make sure you are using openpilot 0.8.3 or newer"));
   const resp = await api.pilotPair(token).catch((e) => { throw failure(REFUSED[e.status] ?? "unable to pair", true); });
   if (!resp.dongle_id) throw failure("could not pair", true);
   devicesChanged();  // the next page asks for the list, with the new device in it

@@ -1,6 +1,6 @@
 // the account: who's signed in (the account menu's head and /account, useradmin's profile page), the developer token
 // with its expiry and a fresh one minted by signing in again (useradmin's "Get JWT"), and the version of ycpe running
-import {auth} from "../api.js";
+import {auth, jwtClaims} from "../api.js";
 import {daemon} from "../daemon.js";
 import {h, css, fmt, copyButton} from "../dom.js";
 import {icon} from "../icons.js";
@@ -26,15 +26,6 @@ export const accountHead = (me) => h("div", {class: "account-head"},
   h("b", {}, me.email || me.username || "signed in"),
   me.username && me.email && h("span", {class: "muted"}, me.username),
   h("span", {class: "account-id muted"}, h("span", {class: "mono"}, me.user_id), copyButton(() => me.user_id, "Copy user id")));
-
-// a JWT's claims, without checking it: the API does that
-const claims = (token) => {
-  try {
-    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-  } catch {
-    return {};
-  }
-};
 
 // how long it has left, as useradmin says it
 function validity(exp) {
@@ -70,10 +61,10 @@ function developerSection(me) {
     h("p", {class: "small muted"}, "The JWT this browser signs in with, for scripts and tools: send it as ", h("span", {class: "mono"}, "Authorization: JWT <token>"),
       " or keep it in ", h("span", {class: "mono"}, "~/.comma/auth.json"), ". Anyone who has it can act as you."),
     fresh && [h("p", {class: "fresh"}, "New token"), tokenField(fresh, "New token"),
-      h("p", {class: "small muted"}, validity(claims(fresh).exp), " It isn't saved anywhere: copy it now. This browser stays signed in as it was.")],
+      h("p", {class: "small muted"}, validity(jwtClaims(fresh)?.exp), " It isn't saved anywhere: copy it now. This browser stays signed in as it was.")],
     fresh && h("p", {class: "fresh"}, "This browser's token"),
     tokenField(token, "Your token"),
-    h("p", {class: "small muted"}, validity(claims(token).exp), auth.viaDaemon() ? " It's ~/.comma/auth.json's, through the local daemon." : ""),
+    h("p", {class: "small muted"}, validity(jwtClaims(token)?.exp), auth.viaDaemon() ? " It's ~/.comma/auth.json's, through the local daemon." : ""),
     again && h("div", {class: "again"}, again, h("span", {class: "small muted"},
       `Signs in with ${PROVIDERS[provider]} again for a fresh 90-day token; this one keeps working.`)));
 }

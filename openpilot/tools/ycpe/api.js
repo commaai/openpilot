@@ -104,6 +104,15 @@ export const auth = {
   },
 };
 
+// a JWT's claims, without checking it (the API does that), or null if it isn't one
+export function jwtClaims(token) {
+  try {
+    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
+
 class ApiError extends Error {
   constructor(status, body) {
     super(`API ${status}: ${body}`);
