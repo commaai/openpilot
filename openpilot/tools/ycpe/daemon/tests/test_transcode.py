@@ -6,12 +6,13 @@ import time
 import unittest
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import transcode
+from openpilot.tools.ycpe.daemon import config, transcode
 from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.ycpe.daemon.transcode import Encode, Pictures, Transcoder, backends, encode
 
 FRAMES = 50  # 2.5 s at 20 fps: a few GOPs and a short last one
-VIDEO = "/local/video/0123456789abcdef/0000002a--0123456789"
+DONGLE, LOG = "0123456789abcdef", "0000002a--0123456789"
+VIDEO = f"/local/video/{DONGLE}/{LOG}"
 
 
 def hevc_clip(path: Path, frames: int = FRAMES) -> Path:
@@ -117,6 +118,13 @@ class TestTranscoder(unittest.TestCase):
       self.assertEqual(self.resolved, [0, 1, 2, 5])
     finally:
       t.close()
+
+  def test_resolves_local_logs(self):
+    d = Path(tempfile.mkdtemp())
+    (d / f"{LOG}--3").mkdir()
+    (d / f"{LOG}--3" / "ecamera.hevc").write_bytes(b"hevc")
+    config.log_roots = [str(d)]
+    self.assertEqual(transcode.resolve_source(DONGLE, LOG, 3, "ecamera"), str((d / f"{LOG}--3" / "ecamera.hevc").resolve()))
 
 
 class TestRoute(DaemonCase):

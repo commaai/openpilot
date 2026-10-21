@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from openpilot.tools.lib.helpers import RE
-from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route, sources
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, module, route, sources
 
 FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
@@ -281,12 +281,15 @@ _transcoder_lock = threading.Lock()
 module("transcode", "1")
 
 def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
-  """A copy in the shared cache, else the comma API's signed URL (with the ~/.comma sign-in for private routes), which
-  ffmpeg streams."""
-  if (hit := cache.lookup(cache.Key(dongle, log_id, seg, f"{cam}.hevc"))):
+  """The .hevc from the first source that has it: a copy in the shared cache or a local log directory, else a URL
+  ffmpeg streams (the API's signed with the ~/.comma sign-in, for private routes)."""
+  key = cache.Key(dongle, log_id, seg, f"{cam}.hevc")
+  if (hit := cache.lookup(key)):
     return str(hit[1])
-  if (f := sources.api_files(dongle, log_id, None).get(seg, {}).get(f"{cam}.hevc")):
-    return f[0]
+  r = sources.Resolver(dongle, log_id, sources.SOURCES, None, False)
+  for source in r.sources:
+    if (found := r.find(source, key)):
+      return str(confine(found[0], config.log_roots)) if source == "local" else found[0]
   raise FileNotFoundError(f"no {cam} for segment {seg}")
 
 
