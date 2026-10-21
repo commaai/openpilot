@@ -202,7 +202,7 @@ class MiciKeyboard(Widget):
 
     self._load_images()
 
-    # Each finger is a different touch slot. Only the last finger that touched the keyboard selects a key.
+    # last finger to touch the keyboard selects the key
     self._multi_touch = True
     self._active_slot: int | None = None
 
@@ -248,11 +248,11 @@ class MiciKeyboard(Widget):
     keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height
     if mouse_event.left_pressed:
       if mouse_event.pos.y > keyboard_pos_y:
-        # Same as phone keyboards: a new finger types the key of the finger that is already down
+        # like phone keyboards, a new finger types the previous finger's key
         if self._active_slot is not None:
           self._commit_key()
 
-        # Clear the last key, also during its unselect animation. If not, the hysteresis can select it again.
+        # reset last key so hysteresis doesn't select it again
         self._closest_key = (None, float('inf'))
         self._selected_key_t = None
         self._unselect_key_t = None
