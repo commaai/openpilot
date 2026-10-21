@@ -123,7 +123,6 @@
 .clips-menu.um .clips-input::placeholder { color: rgb(from var(--cnui-fg) r g b / .4); }
 .clips-menu.um .clips-create { min-height: 36px; padding: 8px 16px; color: var(--cnui-on); background: var(--cnui-fg); font-size: 14px; line-height: 1.4; transition: background-color 250ms; }
 .clips-menu.um .clips-create:hover { background: #eee; filter: none; }
-[data-theme="light"] .clips-menu.um .clips-create:hover { background: rgb(from var(--cnui-fg) r g b / .8); }
 .clips-menu.um .clips-create:disabled { background: rgb(from var(--cnui-fg) r g b / .05); color: rgb(from var(--cnui-fg) r g b / .6); }
 .clips-menu.um .clips-section-head { gap: 0; color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.4; }
 .clips-menu.um .clips-info { margin-left: 8px; padding: 0; border-radius: 0; cursor: pointer; }

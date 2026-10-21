@@ -169,11 +169,11 @@ export async function openPair() {
   scan();
 }
 
-// the add-device entry point: connect's "add new device", optionally with its icon (the sidebar's row). In user mode
-// connect's white pill, a row (its icon shown) in the device list
-export const pairButton = (text = "add new device", withIcon = false) => userMode()
-  ? h("button", {class: `cnui-btn white pair-cn${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, cnIcon("add", 24))
-  : h("button", {class: `button pair-add${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, withIcon && icon("add_circle_outline", 20));
+// the add-device entry point: connect's "add new device". In user mode connect's white pill, or a row (its icon
+// shown) in the device list
+export const pairButton = (text = "add new device", row = false) => userMode()
+  ? h("button", {class: `cnui-btn white pair-cn${row ? " row" : ""}`, onclick: () => openPair()}, text, cnIcon("add", 24))
+  : h("button", {class: "button pair-add", onclick: () => openPair()}, text);
 
 const STEPS = ["Your device is connected to the internet", "You have installed the latest version of openpilot", "You may need to look for \"Pair Device\" in Settings"];
 const ELSEWHERE = "If you still cannot see a QR code, your device may already be paired to another account. Make sure you have signed in with the same account you may have used previously.";

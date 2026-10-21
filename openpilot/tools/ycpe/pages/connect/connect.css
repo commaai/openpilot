@@ -66,11 +66,6 @@
 .cn-gear:hover { color: #fff; }
 /* "add new device", a row as the devices are */
 .cn-add:hover { background: rgba(0,0,0,.25); }
-.cn-add > .button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 36px; margin: 0; padding: 16px 44px 16px 54px;
-  border: 0; border-radius: 0; background: transparent; color: #fff; font: 600 14px/1.4 var(--font); opacity: 1; }
-.cn-add > .button:hover { background: transparent; opacity: 1; }
-.cn-add > .button > svg { color: var(--cn-white30); opacity: 1; }
-.cn-add > .button > svg:not(:last-child) { display: none; }
 
 /* up to 1080px the list is a drawer over the page, from the menu button, with its own logo and name */
 @media (max-width: 1080px) {
@@ -95,9 +90,6 @@
   .cn-devmode > svg { width: 24px; height: 24px; }
   .cn-devmode > span { display: none; }
 }
-
-/* what's developer mode's alone: the route browser's local files and live links, the device's boot and crash logs */
-.cn-content :is(.local-entry, .page-tabs [data-tab=bootlogs], .page-tabs [data-tab=crashlogs]) { display: none; }
 
 /* connect's promotions over the map's top right (a phone's across it), the referral one as its Notification */
 .cn-content > :is(.ref-promo-slot, .prime-promo-slot) { position: relative; z-index: 4; max-width: none; height: 0; margin: 0; }

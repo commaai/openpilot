@@ -1,7 +1,6 @@
-/* connect's material pieces (cnui.js): progress, and the modal's full-window layer with its paper. Dark is connect's
-   palette; light (connect has none) the same pieces inverted, as the user mode shell does */
+/* connect's material pieces (cnui.js): progress, and the modal's full-window layer with its paper, in connect's
+   palette (user mode is dark only) */
 [data-theme="dark"] { --cnui-fg: #fff; --cnui-paper: #30373b; --cnui-deep: #1e2224; --cnui-on: #1e2224; }
-[data-theme="light"] { --cnui-fg: #1c2024; --cnui-paper: #fff; --cnui-deep: #fff; --cnui-on: #fff; }
 .cnui-icon { flex: none; }
 
 /* Material UI's circular progress: the svg turns, its arc grows and shrinks */

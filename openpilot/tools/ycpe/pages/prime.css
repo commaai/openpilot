@@ -174,8 +174,6 @@
 .prime-paper .prime-modal-busy p { margin-top: 8px; color: rgb(from var(--cnui-fg) r g b / .8); }
 .prime-paper .prime-modal-error { margin-top: 16px; padding: 12px; border-radius: 8px; background: color-mix(in oklab, oklch(.637 .237 25.331) 20%, transparent); color: oklch(.936 .032 17.717); }
 .prime-paper .prime-modal-ok { margin-top: 16px; padding: 12px; border-radius: 8px; background: color-mix(in oklab, oklch(.723 .219 149.579) 20%, transparent); color: oklch(.962 .044 156.743); }
-[data-theme="light"] .prime-paper .prime-modal-error { color: oklch(.444 .177 26.899); }
-[data-theme="light"] .prime-paper .prime-modal-ok { color: oklch(.448 .119 151.328); }
 .prime-paper .prime-modal-buttons { margin-top: 16px; overflow: hidden; }
 .prime-paper .prime-modal-confirm { width: 170px; }
 .prime-paper .prime-modal-close { float: right; }

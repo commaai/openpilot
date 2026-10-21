@@ -1,7 +1,7 @@
 // user mode's frame, as connect's explorer: its AppHeader (menu or logo, "connect", then the referral gift and the
 // account menu, with Developer mode before them) and, beside the page, its DeviceList (a drawer from the menu button up
-// to 1080px wide, as connect's). The pages inside are the route browser's own; the other tracks' pairing, prime and clips
-// mount where connect shows them, once their modules are there.
+// to 1080px wide, as connect's). The pages inside are the route browser's own; pairing, prime and clips mount where
+// connect shows them.
 import {h, css, fmt} from "../../dom.js";
 import {auth} from "../../api.js";
 import {daemon} from "../../daemon.js";
@@ -12,9 +12,6 @@ import {prefetchDevice} from "../device.js";
 import {cnIcon} from "./icons.js";
 
 await css(new URL("./connect.css", import.meta.url));
-
-// another track's export called with args, or null while its module isn't merged
-export const optional = (path, name, ...args) => import(path).then((m) => m[name]?.(...args) ?? null, () => null);
 
 // connect's own mark, as it draws it
 const commaLogo = () => h("img", {src: new URL("../../icons/comma-white.png", import.meta.url), alt: "comma", width: 18.9, height: 34});
@@ -113,9 +110,8 @@ export function mount(main, {devices, dongle, signedIn}) {
     const drawn = shown = {devices, dongle};
     list.replaceChildren(...[...devices || []].sort(order).map((d) => deviceRow(d, d.dongle_id === dongle)));
     // connect's "add new device", from pages/pair.js
-    if (signedIn) optional("/pages/pair.js", "pairButton", "add new device", true).then((b) => {
-      if (!b || shown !== drawn) return;
-      list.append(h("div", {class: "cn-add"}, b));
+    if (signedIn) import("/pages/pair.js").then(({pairButton}) => {
+      if (shown === drawn) list.append(h("div", {class: "cn-add"}, pairButton("add new device", true)));
     });
   }
   return content;
@@ -131,7 +127,7 @@ function deviceRow(d, on) {
   const gear = (ok) => ok && row.append(h("a", {class: "cn-hbtn cn-gear", href: settings, "aria-label": "device settings", onclick: (e) => {
     if (e.metaKey || e.ctrlKey || e.button !== 0) return;
     e.preventDefault();
-    optional("/pages/settings.js", "settingsModal", d);
+    import("/pages/settings.js").then((m) => m.settingsModal(d));
   }}, cnIcon("settings", 24)));
   if (d.is_owner) gear(true); else auth.user().then((me) => gear(!!me?.superuser));
   return row;
