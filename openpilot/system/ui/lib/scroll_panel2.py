@@ -17,13 +17,13 @@ BOUNCE_RETURN_RATE = 10.0
 SNAP_RATE = 6.3  # matches previous Scroller snapping. exp rate of approach to snap target, 1/s
 REJECT_DECELERATION_FACTOR = 3
 MAX_SPEED = 10000.0  # px/s
-FLING_VELOCITY_SAMPLES = 6  # approx. 50 ms on the mici touch panel (~103Hz)
+FLING_VELOCITY_SAMPLES = 6  # ~50ms of touch on mici
 
 DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 
 
-# Slope of a line fit to the last samples. The time of one sample can have an error of some ms.
-# A fit over some samples is less sensitive to this error than the velocity between 2 samples.
+# Fling velocity is the slope of a best fit line through the last few touch positions.
+# Touch timestamps are a bit noisy, and a fit smooths that out much better than the last few velocities.
 def fit_velocity(samples: deque[tuple[float, float]]) -> float:
   if len(samples) < 2:
     return 0.0
