@@ -45,9 +45,9 @@
   {"assert": "location.pathname === '/connect/5beb9b58bd12b691' || `closing goes to the drive's device: ${location.pathname}`"},
   {"click": ".cn-filter"},
   {"waitFor": "dialog.cn-ts[open]"},
-  {"assert": "document.activeElement === document.querySelector('dialog.cn-ts > .cn-paper') || 'the filter opens with nothing focused, as connect'"},
+  {"assert": "document.activeElement === document.querySelector('dialog.cn-ts > .cn-ts-paper') || 'the filter opens with nothing focused, as connect'"},
   {"shot": "filter"},
-  {"click": ".cn-btn-cancel"},
+  {"click": ".cn-ts-btn.cancel"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set('light'))"},
   {"wait": 300},
   {"assert": "document.documentElement.dataset.theme === 'dark' || 'user mode stays dark, as connect'"}

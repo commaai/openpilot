@@ -341,12 +341,12 @@ function timeSelect(range, onSave) {
   }});
   const field = (label, input) => h("label", {class: "cn-ts-field"}, h("span", {}, label), input);
   const el = openModal({class: "cn-dialog cn-ts"},
-    h("div", {class: "cn-paper", tabindex: -1},
+    h("div", {class: "cn-ts-paper", tabindex: -1},
       h("div", {class: "cn-ts-fields"}, field("Start date:", start), field("End date:", end)),
       h("hr"),
       h("div", {class: "cn-ts-buttons"},
-        h("button", {class: "cn-btn cn-btn-cancel", onclick: () => el.close()}, "Cancel"),
-        h("button", {class: "cn-btn cn-btn-save", onclick: () => {
+        h("button", {class: "cn-ts-btn cancel", onclick: () => el.close()}, "Cancel"),
+        h("button", {class: "cn-ts-btn save", onclick: () => {
           el.close();
           onSave([new Date(`${start.value}T00:00`).getTime(), new Date(`${end.value}T23:59:59.999`).getTime()]);
         }}, "Save"))));
