@@ -31,7 +31,7 @@ ROUTE_RE = re.compile(RE.SEGMENT_RANGE)
 HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
 
-module("sources", "1")
+module("sources", "1", sources=SOURCES)
 _pool = ThreadPoolExecutor(16, thread_name_prefix="probe")
 
 
