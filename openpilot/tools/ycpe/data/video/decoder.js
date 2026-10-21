@@ -11,6 +11,7 @@ const MEMORY = 120e6;  // bytes of segment files held in memory, nearest the pla
 const AHEAD = 2;  // segments downloaded to disk ahead of the playhead while playing
 
 let urls = [], keys = [];  // keys[n] names a segment in the OPFS cache; none for files that shouldn't be cached
+const daemonFile = (n) => urls[n]?.startsWith("/local/file/");  // on the daemon's disk already, kept out of OPFS
 const segs = new Map();  // n → {n, data, length, au: AnnexB, done, failed, abort}: the files in memory
 const disk = new Map();  // n → bytes of the files cached on disk
 const fetching = new Set();
@@ -157,6 +158,7 @@ async function scanned(s) {
 }
 
 async function save(n, bytes) {
+  if (daemonFile(n)) return void disk.set(n, bytes.length);
   if (!keys[n] || !await opfs.write(keys[n], bytes, "video")) return;
   disk.set(n, bytes.length);
   for (const k of await opfs.evict("video", keys[n].split("/").slice(0, 2).join("/"))) {
