@@ -1,6 +1,6 @@
 // the frame scheduler and the perf HUD. Every pane renders through invalidate(), so each frame's work is
 // timed per pane; the HUD in the top bar is always on, and its panel shows where the time went.
-import {h, fitCanvas} from "/dom.js";
+import {h, fitCanvas, anchoredPanel} from "/dom.js";
 
 const HISTORY = 600;             // frames kept for the panel and the harness (~10 s at 60 Hz)
 const BUDGET_MS = 4;             // main-thread budget per frame, shared by ticks and panes (perf.left)
@@ -102,13 +102,8 @@ export function hud(...extra) {
   const ms = h("span", {class: "hud-ms"});
   const dropEl = h("span", {class: "hud-drops"});
   const spark = h("canvas", {class: "hud-spark", width: 40, height: 18});
-  const el = h("button", {class: "hud", "aria-expanded": "false", title: "frame rate · worst render time this second · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
-  let panel = null;
-  el.addEventListener("click", () => {
-    if (panel) return panel.close();
-    panel = perfPanel(el, () => { panel = null; el.setAttribute("aria-expanded", "false"); });
-    el.setAttribute("aria-expanded", "true");
-  });
+  const el = h("button", {class: "hud", title: "frame rate · worst render time this second · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
+  anchoredPanel(el, perfPanel, {light: false, placed: false});  // it stays open while the app is used
   const sparkPane = {name: "hud", render() {
     const ctx = spark.getContext("2d");
     const w = spark.width, hgt = spark.height;
@@ -133,7 +128,7 @@ export function hud(...extra) {
 }
 
 // the detail panel: frame-time chart, per-pane cost, long frames, counters
-function perfPanel(anchor, onClose) {
+function perfPanel(close) {
   const chart = h("canvas", {class: "perf-chart"});
   const table = h("div", {class: "perf-table"});
   const longs = h("div", {class: "perf-longs"});
@@ -142,10 +137,6 @@ function perfPanel(anchor, onClose) {
     h("div", {class: "perf-head"}, h("b", {}, "Performance"),
       h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = dropped.length = 0; }}, "reset"), closeBtn),
     chart, table, longs);
-  document.body.append(el);
-  const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
-  document.addEventListener("keydown", escape);
-  closeBtn.focus();
   const pane = {name: "perf-panel", render() {
     const w = chart.clientWidth, hgt = chart.clientHeight, ctx = fitCanvas(chart, w, hgt);
     ctx.clearRect(0, 0, w, hgt);
@@ -190,12 +181,5 @@ function perfPanel(anchor, onClose) {
       ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms (layout ${l.layout.toFixed(0)})  ${l.scripts.slice(0, 2).join(" · ")}`)));
   };
   const timer = setInterval(update, 500);
-  update();
-  function close() {
-    clearInterval(timer);
-    el.remove();
-    document.removeEventListener("keydown", escape);
-    onClose();
-  }
-  return {close};
+  return {el, focus: closeBtn, update, closed: () => clearInterval(timer)};
 }

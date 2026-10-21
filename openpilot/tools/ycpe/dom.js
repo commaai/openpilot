@@ -56,6 +56,38 @@ export function ask(text, ok = "OK", cancel = "Cancel") {
   });
 }
 
+// a top-bar button's panel. A click opens one, make(close) → {el, focus, update, closed}: its element, what takes the
+// focus, what refreshes it, what it lets go of once closed. Another click closes it, as do close(), Escape (the focus
+// back on the button) and, if light, a press outside. placed: under the button, but on screen
+export function anchoredPanel(button, make, {light = true, placed = true} = {}) {
+  let open = null;
+  const escape = (e) => { if (e.key === "Escape") { close(); button.focus(); } };
+  const outside = (e) => { if (!open.el.contains(e.target) && !button.contains(e.target)) close(); };
+  function close() {
+    if (!open) return;
+    open.el.remove();
+    open.closed?.();
+    open = null;
+    document.removeEventListener("keydown", escape);
+    document.removeEventListener("pointerdown", outside);
+    button.setAttribute("aria-expanded", "false");
+  }
+  button.setAttribute("aria-expanded", "false");
+  button.addEventListener("click", () => {
+    if (open) return close();
+    const p = open = make(close), r = placed && button.getBoundingClientRect();
+    if (r) Object.assign(p.el.style, {top: `${r.bottom + 6}px`, width: "min(420px, calc(100vw - 16px))"});
+    document.body.append(p.el);
+    if (r) p.el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - p.el.offsetWidth - 8))}px`;
+    if (light) setTimeout(() => { if (open === p) document.addEventListener("pointerdown", outside); });  // not the press that opened it
+    document.addEventListener("keydown", escape);
+    button.setAttribute("aria-expanded", "true");
+    p.focus.focus();
+    p.update?.();
+  });
+  return {update: () => open?.update?.()};
+}
+
 // data (a Blob, or text) saved as file name; its URL is let go after keep ms
 export function download(data, name, keep = 1000) {
   const a = h("a", {href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type: "text/plain"})), download: name});

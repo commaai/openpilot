@@ -6,7 +6,7 @@
 //              disk     cached on disk only   ready    in memory
 //              error    failed
 // A segment may also say which source its bytes came from (api, internal, openpilotci, car segments, local, …).
-import {h, listeners, fitCanvas} from "/dom.js";
+import {h, listeners, fitCanvas, anchoredPanel} from "/dom.js";
 import {icon} from "/icons.js";
 import {daemon} from "/daemon.js";
 import {perf} from "/perf.js";
@@ -118,9 +118,9 @@ export const describe = (s) => (s.state === "loading" && s.total ? `${STATE_TEXT
 export function loadPill() {
   const text = h("span");
   const bar = h("span", {class: "pill-bar"}, h("i"));
-  const el = h("button", {class: "load-pill", hidden: true, "aria-expanded": "false"}, text, bar);
+  const el = h("button", {class: "load-pill", hidden: true}, text, bar), panel = anchoredPanel(el, statusPanel);
   const live = document.body.appendChild(h("span", {class: "sr-only", role: "status"}));
-  let panel = null, spoken = "";
+  let spoken = "";
   const update = () => {
     const all = status.kinds();
     const extra = [...notes.values()];
@@ -154,26 +154,16 @@ export function loadPill() {
     const f = segs.length ? segs.reduce((a, s) => a + fill(s), 0) / segs.length : 1;
     bar.hidden = !active.length && !waiting;
     bar.firstChild.style.width = `${(100 * f).toFixed(1)}%`;
-    panel?.update();
+    panel.update();
   };
   status.on(update);
-  el.addEventListener("click", () => {
-    if (panel) return panel.close();
-    panel = statusPanel(el, () => { panel = null; el.setAttribute("aria-expanded", "false"); });
-    el.setAttribute("aria-expanded", "true");
-  });
   return el;
 }
 
-function statusPanel(anchor, onClose) {
+function statusPanel(close) {
   const body = h("div", {class: "status-rows"});
   const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
   const el = h("div", {class: "status-panel", role: "dialog", "aria-label": "Loading"}, h("div", {class: "status-head"}, h("b", {}, "Loading"), closeBtn), body);
-  const r = anchor.getBoundingClientRect();
-  el.style.top = `${r.bottom + 6}px`;
-  el.style.width = "min(420px, calc(100vw - 16px))";  // under the anchor, but on screen
-  document.body.append(el);
-  el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - el.offsetWidth - 8))}px`;
   const rows = new Map();
   // the lanes' width (the body's), kept from its observer: read in update, it forced a layout on every status change
   let width = 0;
@@ -214,22 +204,7 @@ function statusPanel(anchor, onClose) {
       drawLane(c, k, 0, 0, width, 10);
     }
   }
-  const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
-  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
-  // however it closes, the document lets go of it
-  const close = () => {
-    if (!el.isConnected) return;
-    el.remove();
-    sized.disconnect();
-    document.removeEventListener("keydown", escape);
-    document.removeEventListener("pointerdown", outside);
-    onClose();
-  };
-  setTimeout(() => { if (el.isConnected) document.addEventListener("pointerdown", outside); });  // not the press that opened it
-  document.addEventListener("keydown", escape);
-  closeBtn.focus();
-  update();
-  return {update, close};
+  return {el, focus: closeBtn, update, closed: () => sized.disconnect()};
 }
 
 // memory and disk in the HUD: what the loaders hold plus the JS heap, and the origin's storage (OPFS caches)

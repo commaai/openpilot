@@ -1,6 +1,6 @@
 // the local daemon's top-bar badge and its panel: modules, the shared disk cache (with prefetch and evict for the open
 // route) and jobs. Prefetch jobs also show as a "disk cache" lane in the load status.
-import {h, css, listeners} from "/dom.js";
+import {h, css, listeners, anchoredPanel} from "/dom.js";
 import {daemon} from "/daemon.js";
 import {status, fmtBytes} from "/status.js";
 import {link} from "/app.js";
@@ -38,14 +38,8 @@ if (daemon.present) {
 export function localBadge() {
   if (!daemon.present) return null;
   css("/local.css");
-  const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs", "aria-expanded": "false"}, "local");
-  let panel = null;
-  onJobs(() => { el.classList.toggle("busy", allJobs().some((j) => j.state === "running")); panel?.update(); });
-  el.addEventListener("click", () => {
-    if (panel) return panel.close();
-    panel = localPanel(el, () => { panel = null; el.setAttribute("aria-expanded", "false"); });
-    el.setAttribute("aria-expanded", "true");
-  });
+  const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs"}, "local"), panel = anchoredPanel(el, localPanel);
+  onJobs(() => { el.classList.toggle("busy", allJobs().some((j) => j.state === "running")); panel.update(); });
   return el;
 }
 
@@ -75,7 +69,7 @@ function devicePart() {
     h("div", {class: "local-acts"}, h("span", {title: "Comma device on your network (ssh)"}, "device"), host, h("button", {class: "link", onclick: list}, "list routes")), out);
 }
 
-function localPanel(anchor, onClose) {
+function localPanel(close) {
   const intro = h("div", {class: "local-intro muted", title: Object.entries(daemon.caps.modules).map(([k, v]) => `${k} ${v.version}`).join(" · ")},
     "serve.py on this machine keeps downloaded logs and videos in a disk cache shared by every tab. ",
     h("a", {href: "/local", onclick: (e) => { close(); link("/local")(e); }}, "Open local logs…"));
@@ -87,11 +81,6 @@ function localPanel(anchor, onClose) {
   const el = h("div", {class: "local-panel", role: "dialog", "aria-label": "Local daemon"},
     h("div", {class: "local-head"}, h("b", {}, "Local daemon"), closeBtn),
     intro, cache, here, dev, list);
-  const r = anchor.getBoundingClientRect();
-  el.style.top = `${r.bottom + 6}px`;
-  el.style.width = "min(420px, calc(100vw - 16px))";  // under the anchor, but on screen
-  document.body.append(el);
-  el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - el.offsetWidth - 8))}px`;
   const route = openRoute();
 
   const act = (label, title, fn, disabled = false) => h("button", {class: "link", title, disabled, onclick: async (e) => {
@@ -133,21 +122,6 @@ function localPanel(anchor, onClose) {
       j.state === "running" && h("button", {class: "link", onclick: () => daemon.fetch(`/local/jobs/${j.id}/cancel`, {method: "POST"})}, "cancel"))));
   }
 
-  // as the load panel: focus moves in, Escape takes it back to the badge, and however it closes the document lets go
-  const escape = (e) => { if (e.key === "Escape") { close(); anchor.focus(); } };
-  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };
-  const close = () => {
-    if (!el.isConnected) return;
-    el.remove();
-    document.removeEventListener("keydown", escape);
-    document.removeEventListener("pointerdown", outside);
-    onClose();
-  };
-  setTimeout(() => { if (el.isConnected) document.addEventListener("pointerdown", outside); });  // not the press that opened it
-  document.addEventListener("keydown", escape);
-  closeBtn.focus();
-  stats();
-  update();
-  let last = 0;
-  return {update() { update(); if (performance.now() - last > 1000) { last = performance.now(); stats(); } }, close};
+  let last = 0;  // the cache's stats, asked again at most once a second
+  return {el, focus: closeBtn, update() { update(); if (performance.now() - last > 1000) { last = performance.now(); stats(); } }};
 }
