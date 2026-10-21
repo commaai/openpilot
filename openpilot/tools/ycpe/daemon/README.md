@@ -122,9 +122,9 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 |---|---|
 | `GET /local/caps` | `{daemon, version, modules: {name: {version, ...}}, failed: {name: error}}`. This is the only route that needs no token. |
 | `GET /local/auth` | `{token}`: the JWT from `~/.comma/auth.json`, or null. |
-| `POST /local/sources/resolve` | Body `{route, segs?, kinds?, sources?, mode?, sizes?}`. Returns `{route, segments: {n: {kind: {url, file, size, source, cached}}}, missing: {n: [kind]}, errors: {source: msg}}`. Details below. |
+| `POST /local/sources/resolve` | Body `{route, segs?, kinds?, sources?, sizes?}`. Returns `{route, segments: {n: {kind: {url, file, size, source, cached}}}, missing: {n: [kind]}, errors: {source: msg}}`. Details below. |
 | `GET /local/file/{source}/{dongle}/{log_id}/{seg}/{file}` | The bytes, with Range support. It serves from the shared cache. On a miss it streams while the download fills the cache. A Range request on a miss is proxied, and the full download starts in the background. |
-| `GET /local/cache[?route=&segs=]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
+| `GET /local/cache[?route=&segs=<count>]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
 | `GET /local/repos` | `[{id, name, git: {branch, commit, dirty}, cereal, opendbc: {dbc}}]`. These are the `--repo` checkouts (the running one by default). |
@@ -141,8 +141,9 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 The daemon never runs anything on a device except `cat` and `find`.
 
 Resolve parameters:
-- `route` uses LogReader's syntax: `dongle|log_id[/slice][/q|r|a]`.
-- `kinds` is a list of `rlog qlog qcamera fcamera ecamera dcamera log`. `log` means rlog, qlog, or rlog falling back to qlog for each segment, according to `mode`.
+- `route` is `dongle|log_id`, and `segs` a list of segment numbers. The page names them from the route's record; without
+  `segs` (here and in the cache endpoints) they're the segments on this machine's disk: local log directories and device pulls.
+- `kinds` is a list of `rlog qlog qcamera fcamera ecamera dcamera log`. `log` means the rlog, else the qlog, for each segment.
 - `sources` is `"auto"` or a list. The auto order is device → local → internal → api → openpilotci. A copy already in the shared cache wins over any download.
 - The page's `Authorization: JWT` header, if sent, is used for the API source; otherwise `~/.comma/auth.json` is used.
 - Each `url` already carries the token, so it can be fetched as-is.

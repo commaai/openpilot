@@ -370,13 +370,13 @@ def usage() -> dict:
 @route("GET", "/local/cache")
 def cache_stats(req):
   """Usage of the whole shared cache. With ?route=dongle|log_id[&segs=N], also which of its files are cached."""
-  from openpilot.tools.ycpe.daemon.sources import KINDS, Resolver, parse_route
+  from openpilot.tools.ycpe.daemon.sources import KINDS, parse_route, segments
   out = usage()
   if (r := req.query.get("route")):
-    dongle, log_id, _, _ = parse_route(r)
-    count = req.arg("segs", None, int) or Resolver(dongle, log_id, ["device", "local", "api"], None, False).known_segments()
+    dongle, log_id = parse_route(r)
+    count = req.arg("segs", None, int)
     segs = {}
-    for seg in range(min(count, 10000)):
+    for seg in segments(None, dongle, log_id) if count is None else range(min(count, 10000)):
       have = {}
       for kind, names in KINDS.items():
         for name in names:
@@ -450,14 +450,10 @@ def cache_prefetch(req):
 @route("POST", "/local/cache/evict")
 def cache_evict(req):
   """Body {route, segs?, kinds?}: deletes those files' copies in the shared cache (never anything remote)."""
-  from openpilot.tools.ycpe.daemon.sources import KINDS, Resolver, parse_route
+  from openpilot.tools.ycpe.daemon.sources import KINDS, parse_route, segments
   body = req.json() or {}
-  dongle, log_id, _, _ = parse_route(str(body.get("route", "")))
+  dongle, log_id = parse_route(body.get("route", ""))
   kinds = [k for k in (body.get("kinds") or KINDS) if k in KINDS]
-  segs = body.get("segs")
-  if segs is None:
-    segs = range(Resolver(dongle, log_id, ["device", "local", "api"], None, False).known_segments() or 1000)
-  elif not (isinstance(segs, list) and all(isinstance(n, int) and 0 <= n < 10000 for n in segs)):
-    raise HTTPError(400, "bad segs")
+  segs = segments(body.get("segs"), dongle, log_id)
   freed = sum(evict(Key(dongle, log_id, n, name)) for n in segs for kind in kinds for name in KINDS[kind])
   return {"freed": freed, **usage()}

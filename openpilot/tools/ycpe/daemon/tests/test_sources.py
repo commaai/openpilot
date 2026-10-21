@@ -92,13 +92,16 @@ class TestSources(DaemonCase):
     self.assertEqual(res["segments"]["0"]["log"]["size"], len(blob(0, "rlog.zst")))
     self.assertEqual(res["segments"]["2"]["log"]["file"], "qlog.zst")  # mode a falls back per segment
     self.assertEqual(res["missing"]["9"], ["log", "qcamera"])
-    res = self.json("/local/sources/resolve", {"route": f"{ROUTE}/0:3/r", "kinds": ["log"], "sources": ONLY, "segs": [0, 2]})
-    self.assertEqual(res["missing"], {"2": ["log"]})  # /r: no qlog fallback
     self.assertTrue(res["segments"]["0"]["log"]["url"].startswith(f"/local/file/internal/{DONGLE}/{LOG}/0/rlog.zst?tok="))
+    res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|00000009--abcdef0123", "kinds": ["rlog"], "sources": ONLY})
+    self.assertEqual(res["segments"], {})  # no segments named: the ones on this machine's disk, none for this route
 
   def test_bad_route(self):
-    r, _ = self.req("/local/sources/resolve", method="POST", body=json.dumps({"route": "../../etc"}))
-    self.assertEqual(r.status, 400)
+    for route in ("../../etc", f"{ROUTE}/0:3/r", f"{ROUTE}--2"):  # bare routes only: the page names the segments
+      r, _ = self.req("/local/sources/resolve", method="POST", body=json.dumps({"route": route}))
+      self.assertEqual(r.status, 400, route)
+    for segs in (["x"], "01", [-1], 3):
+      self.json("/local/sources/resolve", {"route": ROUTE, "segs": segs}, status=400)
 
   def test_file_miss_then_hit(self):
     url = f"/local/file/internal/{DONGLE}/{LOG}/1/rlog.zst"

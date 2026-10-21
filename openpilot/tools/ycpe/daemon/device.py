@@ -136,23 +136,20 @@ def pull_one(key: Key, size: int, job, progress) -> int:
 
 @route("POST", "/local/device/pull")
 def device_pull(req):
-  """Body {route ("dongle|log_id" or a bare log_id, with an optional slice), segs?, kinds? (default ["rlog", "qlog"])}.
-  Copies those files into the shared cache as a job; segments still being recorded are skipped."""
+  """Body {route ("dongle|log_id" or a bare log_id), segs? (default: all), kinds? (default ["rlog", "qlog"])}. Copies
+  those files into the shared cache as a job; segments still being recorded are skipped."""
   body = req.json() or {}
   text = str(body.get("route", ""))
   info = listing()
   if "|" not in text and "/" not in text and info["dongle"]:
     text = f"{info['dongle']}|{text}"
-  dongle, log_id, sl, _ = parse_route(text)
+  dongle, log_id = parse_route(text)
   r = next((r for r in info["routes"] if r["log_id"] == log_id), None)
   if r is None:
     raise HTTPError(404, "route not on the device")
   kinds = body.get("kinds") or ["rlog", "qlog"]
   names = {n for k in kinds if k in KINDS for n in KINDS[k]}
-  segs = body.get("segs")
-  if segs is None:
-    from openpilot.tools.ycpe.daemon.sources import pick
-    segs = pick(max(r["segments"], default=-1) + 1, sl)
+  segs = r["segments"] if body.get("segs") is None else body["segs"]
   todo = [(Key(dongle, log_id, n, name), size) for n in segs if n not in r["active"]
           for name, size in r["segments"].get(n, {}).items() if name in names]
   total = sum(size for _, size in todo)

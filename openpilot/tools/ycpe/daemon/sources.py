@@ -26,7 +26,6 @@ SOURCES = ["device", "local", "internal", "api", "openpilotci"]
 KINDS = {"rlog": FileName.RLOG, "qlog": FileName.QLOG, "qcamera": FileName.QCAMERA, "fcamera": FileName.FCAMERA,
          "ecamera": FileName.ECAMERA, "dcamera": FileName.DCAMERA}
 FILES = {f: k for k, fs in KINDS.items() for f in fs}
-ROUTE_RE = re.compile(RE.SEGMENT_RANGE)
 HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
 
@@ -34,21 +33,22 @@ module("sources", "1", sources=SOURCES)
 _pool = ThreadPoolExecutor(16, thread_name_prefix="probe")
 
 
-def parse_route(text: str) -> tuple[str, str, str, str | None]:
-  """(dongle, log_id, slice, selector) of "dongle|log_id[/slice][/selector]" (LogReader's syntax; | / _ separators)."""
-  m = ROUTE_RE.fullmatch(text.strip())
-  if not m:
+def parse_route(text) -> tuple[str, str]:
+  """(dongle, log_id) of "dongle|log_id" (or with / or _, as route.py names routes)"""
+  if not (m := re.fullmatch(RE.ROUTE_NAME, str(text).strip())):
     raise HTTPError(400, "bad route")
-  return m.group("dongle_id"), m.group("log_id"), m.group("slice") or "", m.group("selector")
+  return m["dongle_id"], m["log_id"]
 
 
-def pick(seg_count: int, sl: str) -> list[int]:
-  m = re.fullmatch(RE.SLICE, sl)
-  start, end, step = (None if s is None else int(s) for s in m.groups())
-  segs = list(range(seg_count))
-  if start is not None and end is None and ":" not in sl:
-    return [segs[start]] if -seg_count <= start < seg_count else []
-  return segs[slice(start, end, step)]
+def segments(segs, dongle: str, log_id: str):
+  """The segments a request names, else the ones on this machine's disk (local log dirs, device pulls): the page
+  names the rest, from the route's record"""
+  if segs is None:
+    have = set(local_dirs(log_id)) | set(device_segs(dongle, log_id))
+    return range(max(have) + 1 if have else 0)
+  if not (isinstance(segs, list) and all(isinstance(n, int) and 0 <= n < 10000 for n in segs)):
+    raise HTTPError(400, "bad segs")
+  return segs
 
 
 # per-source lookups: each gives {seg: {file: (url or path, size)}} for what it has
@@ -121,12 +121,6 @@ class Resolver:
         self.errors["api"] = f"{type(e).__name__}: {e}"
     return self._api
 
-  def known_segments(self) -> int:
-    segs = set(self._local) | set(self._device)
-    if "api" in self.sources:
-      segs |= set(self.api())
-    return max(segs) + 1 if segs else 0
-
   def find(self, source: str, key: Key) -> tuple[str, int | None] | None:
     """(url or local path, size or None) where source has key."""
     if source == "device":
@@ -175,31 +169,20 @@ def jwt_of(req) -> str | None:
 
 
 def resolve(spec: dict, jwt: str | None = None) -> dict:
-  """spec: {route, segs?, kinds?, sources?, mode?, sizes?} → {route, segments: {n: {kind: entry}}, missing, errors}"""
-  dongle, log_id, sl, selector = parse_route(str(spec.get("route", "")))
-  mode = spec.get("mode") or selector or "a"
-  if mode not in ("a", "r", "q"):
-    raise HTTPError(400, "bad mode")
+  """spec: {route, segs?, kinds?, sources?, sizes?} → {route, segments: {n: {kind: entry}}, missing, errors}"""
+  dongle, log_id = parse_route(spec.get("route", ""))
   sources = spec.get("sources") or "auto"
   sources = SOURCES if sources == "auto" else [s for s in sources if s in SOURCES]
   kinds = spec.get("kinds") or ["log"]
   if any(k not in KINDS and k != "log" for k in kinds):
     raise HTTPError(400, "bad kind")
+  segs = segments(spec.get("segs"), dongle, log_id)
   r = Resolver(dongle, log_id, sources, jwt, bool(spec.get("sizes")))
-  segs = spec.get("segs")
-  if segs is None:
-    segs = pick(r.known_segments(), sl)
-  elif not all(isinstance(n, int) and 0 <= n < 10000 for n in segs):
-    raise HTTPError(400, "bad segs")
 
   def one(seg, kind):
-    if kind != "log":
-      return r.resolve(seg, KINDS[kind])
-    order = {"r": ["rlog"], "q": ["qlog"], "a": ["rlog", "qlog"]}[mode]
-    for k in order:
-      if (e := r.resolve(seg, KINDS[k])):
-        return e
-    return None
+    if kind == "log":  # the rlog, else the qlog
+      return r.resolve(seg, KINDS["rlog"]) or r.resolve(seg, KINDS["qlog"])
+    return r.resolve(seg, KINDS[kind])
 
   jobs = {(seg, kind): _pool.submit(one, seg, kind) for seg in segs for kind in kinds}
   out: dict = {"route": f"{dongle}|{log_id}", "segments": {}, "missing": {}, "errors": r.errors}
