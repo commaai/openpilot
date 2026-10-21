@@ -18,21 +18,20 @@ BOUNCE_RETURN_RATE = 10.0
 SNAP_RATE = 6.3  # matches previous Scroller snapping. exp rate of approach to snap target, 1/s
 REJECT_DECELERATION_FACTOR = 3
 MAX_SPEED = 10000.0  # px/s
-FLING_VELOCITY_WINDOW = 0.054  # s, approx. 5 touch samples. Not a multiple of the 140Hz poll period, so a sample is not on the edge
+FLING_VELOCITY_SAMPLES = 6  # approx. 50 ms on the mici touch panel (~103Hz)
 
 DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 
 
-# Slope of a line fit to the samples in the last FLING_VELOCITY_WINDOW. The time of one sample can have an error
-# of some ms. A fit over approx. 5 samples is less sensitive to this error than the velocity between 2 samples.
+# Slope of a line fit to the last samples. The time of one sample can have an error of some ms.
+# A fit over some samples is less sensitive to this error than the velocity between 2 samples.
 def fit_velocity(samples: deque[tuple[float, float]]) -> float:
   if len(samples) < 2:
     return 0.0
   t, pos = np.array(samples).T
-  recent = t >= t[-1] - FLING_VELOCITY_WINDOW
-  if np.ptp(t[recent]) == 0:
+  if np.ptp(t) == 0:
     return 0.0
-  return float(np.polyfit(t[recent] - t[-1], pos[recent], 1)[0])
+  return float(np.polyfit(t - t[-1], pos, 1)[0])
 
 
 # from https://ariya.io/2011/10/flick-list-with-its-momentum-scrolling-and-deceleration
@@ -52,7 +51,7 @@ class GuiScrollPanel2:
     self._previous_mouse_event: MouseEvent | None = None
     self._velocity = 0.0  # pixels per second
     self._velocity_buffer: deque[float] = deque(maxlen=12 if COMMA_HARDWARE else 6)
-    self._position_buffer: deque[tuple[float, float]] = deque(maxlen=12 if COMMA_HARDWARE else 6)  # (t, pos)
+    self._position_buffer: deque[tuple[float, float]] = deque(maxlen=FLING_VELOCITY_SAMPLES)  # (t, pos)
     self._enabled: bool | Callable[[], bool] = True
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
