@@ -77,7 +77,7 @@ def sha(url: str) -> str:
 
 
 def ycpe_dir(name: str) -> Path:
-  """The directory under ycpe/ for one kind of file the daemon makes (device, transcode, replay); counted in the budget."""
+  """The directory under ycpe/ for one kind of file the daemon makes (device pulls, transcodes); counted in the budget."""
   return root() / "ycpe" / name
 
 
@@ -369,12 +369,6 @@ def remove(paths: list[Path]) -> int:
     removed += 1
   account(-freed, -removed)
   return freed
-
-
-def fetch(dongle: str, log_id: str, seg: int, file: str, sources=None, job=None) -> Path:
-  """For other modules: a local path holding the file, downloaded into the shared cache if needed (blocking)."""
-  from openpilot.tools.ycpe.daemon.sources import fetch as fetch_key
-  return fetch_key(Key(dongle, log_id, seg, file), sources, None, job)
 
 
 # endpoints (sources.py resolves; it imports this module, so it's imported lazily here)

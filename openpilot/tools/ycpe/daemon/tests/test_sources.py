@@ -52,7 +52,8 @@ threading.Thread(target=up.serve_forever, daemon=True).start()
 os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 
 from openpilot.tools.lib.url_file import URLFile, hash_url
-from openpilot.tools.ycpe.daemon import cache, jobs
+from openpilot.tools.ycpe.daemon import cache, jobs, sources
+from openpilot.tools.ycpe.daemon.cache import Key
 from openpilot.tools.ycpe.daemon.core import HTTPError, config
 from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.lib import filereader
@@ -153,7 +154,7 @@ class TestSources(DaemonCase):
     self.assertEqual(res["segments"]["0"]["qlog"]["source"], "local")
     r, data = self.req(f"/local/file/local/{DONGLE}/{LOG}/0/qlog.zst")
     self.assertEqual(data, b"local qlog")
-    self.assertEqual(cache.fetch(DONGLE, LOG, 0, "qlog.zst", sources=["local"]).read_bytes(), b"local qlog")
+    self.assertEqual(sources.fetch(Key(DONGLE, LOG, 0, "qlog.zst"), ["local"]).read_bytes(), b"local qlog")
 
   def test_local_symlink_confined(self):
     outside = Path(tempfile.mkdtemp())
@@ -164,7 +165,7 @@ class TestSources(DaemonCase):
     r, _ = self.req(f"/local/file/local/{DONGLE}/{LOG}/5/qlog.zst")
     self.assertEqual(r.status, 403)
     with self.assertRaises(HTTPError):
-      cache.fetch(DONGLE, LOG, 5, "qlog.zst", sources=["local"])
+      sources.fetch(Key(DONGLE, LOG, 5, "qlog.zst"), ["local"])
 
   def test_prefetch_and_evict(self):
     for seg in (0, 1):
@@ -183,7 +184,7 @@ class TestSources(DaemonCase):
       self.json("/local/cache/evict", {"route": ROUTE, "segs": segs}, status=400)
 
   def test_fetch_for_modules(self):
-    p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)
+    p = sources.fetch(Key(DONGLE, LOG, 0, "qcamera.ts"), ONLY)
     self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
 
   def test_car_segments_are_their_own_namespace(self):
@@ -217,10 +218,10 @@ class TestSources(DaemonCase):
       res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|{log}", "segs": [1], "kinds": ["rlog"],
                                                  "sources": ["internal", "carSegments"]})
       self.assertEqual((res["segments"]["1"]["rlog"]["source"], res["segments"]["1"]["rlog"]["cached"]), ("internal", False))
-      self.assertEqual(cache.fetch(DONGLE, log, 1, "rlog.zst", sources=["internal"]).read_bytes(), blob(1, "full"))
+      self.assertEqual(sources.fetch(Key(DONGLE, log, 1, "rlog.zst"), ["internal"]).read_bytes(), blob(1, "full"))
       res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|{log}", "segs": [1], "kinds": ["rlog"], "sources": ["carSegments"]})
       self.assertEqual((res["segments"]["1"]["rlog"]["source"], res["segments"]["1"]["rlog"]["cached"]), ("carSegments", True))
-      self.assertEqual(cache.fetch(DONGLE, log, 1, "rlog.zst", sources=["carSegments"]).read_bytes(), blob(1, "filtered")[:1000])
+      self.assertEqual(sources.fetch(Key(DONGLE, log, 1, "rlog.zst"), ["carSegments"]).read_bytes(), blob(1, "filtered")[:1000])
     finally:
       ccs.COMMA_CAR_SEGMENTS_REPO = repo
 
@@ -259,8 +260,8 @@ class TestSources(DaemonCase):
     cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
     walk = lambda: (sum(s for _, s, _ in cache.scan()), len(cache.scan()))  # noqa: E731
     self.assertEqual(cache.totals(), walk())
-    cache.fetch(DONGLE, LOG, 2, "qcamera.ts", sources=ONLY)
-    cache.fetch(DONGLE, LOG, 2, "qlog.zst", sources=ONLY)  # a log: also mirrored as url_file chunks
+    sources.fetch(Key(DONGLE, LOG, 2, "qcamera.ts"), ONLY)
+    sources.fetch(Key(DONGLE, LOG, 2, "qlog.zst"), ONLY)  # a log: also mirrored as url_file chunks
     self.assertEqual(cache.totals(), walk())
     cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
     self.assertEqual(cache.totals(), walk())

@@ -37,7 +37,7 @@ What the daemon unlocks in the UI:
 | `billing` | Relays the page's referrals read to billing, which allows the same few origins as athena. |
 | `webrtc` | Live data from a webrtcd on this PC (openpilot, a sim, replay) at `/live/local`: it passes the page's offer on. |
 | `jobs` | Progress and cancel for anything long, shown in the badge panel. |
-| `transcode`, `replay` | Video transcoding and openpilot re-runs, when installed (see their modules). |
+| `transcode` | H.264 copies of the HEVC cameras for browsers that can't decode HEVC, encoded on the GPU when there is one. |
 
 Without the daemon these features are disabled, with a short note saying they need it.
 
@@ -127,7 +127,7 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `GET /local/cache[?route=&segs=]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
-| `GET /local/repos` | `[{id, name, path, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default), plus a worktree's main checkout. |
+| `GET /local/repos` | `[{id, name, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default). |
 | `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
 | `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
 | `GET /local/repos/{id}/dbc/{name}` | `{name, text, mtime}` |
@@ -169,7 +169,4 @@ without its query, so signed URLs of one file share an entry.
   xattr, or in memory where xattrs aren't supported. On a size mismatch, the copy and its chunks are refetched and atomically
   replaced. The hit is still served at once, and carries `X-Ycpe-Cache: stale-refetch` instead of `hit` until the new copy is
   in place. Plain hits are `X-Ycpe-Cache: hit`, and misses are `miss`.
-- **Daemon-made files.** Device pulls and other modules' outputs go under `ycpe/`:
-  - `cache.ycpe_dir(name)` is the directory for one module's output
-  - `cache.fetch(dongle, log_id, seg, file, sources=None, job=None)` returns a local path, downloading into the cache if
-    needed
+- **Daemon-made files.** Device pulls and transcodes go under `ycpe/`, one directory per module (`cache.ycpe_dir(name)`).

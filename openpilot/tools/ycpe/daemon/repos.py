@@ -1,7 +1,7 @@
 """Local openpilot checkouts: cereal schemas and opendbc DBCs to read, DBCs to save back in place, and a change feed.
 
-Checkouts come from --repo (default: the one serve.py runs from) plus, for a git worktree, its main checkout. Each
-one's opendbc is <checkout>/opendbc_repo/opendbc/dbc, or the importable opendbc package when that's empty.
+Checkouts come from --repo (default: the one serve.py runs from). Each one's opendbc is
+<checkout>/opendbc_repo/opendbc/dbc, or the importable opendbc package when that's empty.
 """
 import importlib.util
 import os
@@ -53,22 +53,8 @@ def package_opendbc() -> Path | None:
   return None
 
 
-@cache  # asked once per checkout: the watcher lists roots every second
-def main_checkout(p: Path) -> Path | None:
-  common = git(p, "rev-parse", "--path-format=absolute", "--git-common-dir")
-  if common and Path(common).name == ".git" and Path(common).parent.resolve() != p:
-    return Path(common).parent.resolve()
-  return None
-
-
 def roots() -> list[Path]:
-  out = []
-  for r in config.repo_roots:
-    p = Path(r).resolve()
-    out.append(p)
-    if (main := main_checkout(p)):
-      out.append(main)  # a worktree's main checkout
-  return list(dict.fromkeys(out))
+  return list(dict.fromkeys(Path(r).resolve() for r in config.repo_roots))
 
 
 def cereal_dir(p: Path) -> Path | None:
@@ -80,7 +66,7 @@ def checkout(p: Path, i: int) -> dict:
   dbc = p / "opendbc_repo" / "opendbc" / "dbc"
   if not any(dbc.glob("*.dbc")):
     dbc = package_opendbc()
-  return {"id": str(i), "name": p.name, "path": str(p), "git": git_info(p), "cereal": str(cereal) if cereal else None,
+  return {"id": str(i), "name": p.name, "git": git_info(p), "cereal": str(cereal) if cereal else None,
           "opendbc": {"dbc": str(dbc), "git": git_info(dbc.parent.parent)} if dbc else None}
 
 

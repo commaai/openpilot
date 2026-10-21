@@ -1,4 +1,4 @@
-"""Long tasks (prefetch, device pull, transcode, replay) as jobs in threads, with progress, cancel and an SSE feed."""
+"""Long tasks (prefetch, device pull, transcode) as jobs in threads, with progress, cancel and an SSE feed."""
 import itertools
 import threading
 import time

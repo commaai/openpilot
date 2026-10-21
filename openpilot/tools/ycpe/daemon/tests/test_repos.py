@@ -29,7 +29,7 @@ class TestRepos(DaemonCase):
 
   def test_list(self):
     [c] = self.json("/local/repos")
-    self.assertEqual(c["path"], str(REPO.resolve()))
+    self.assertEqual(c["name"], REPO.name)
     self.assertEqual(c["git"]["subject"], "init")
     self.assertEqual(c["opendbc"]["dbc"], str(DBC.resolve()))
 
