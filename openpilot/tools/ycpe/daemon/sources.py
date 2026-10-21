@@ -1,8 +1,8 @@
 """Where a route's files come from, in LogReader's auto order, and a URL that serves them through the shared cache.
 
 Order: device (pulled over ssh) → local (log dirs on this machine) → internal (DATA_ENDPOINT) → comma API →
-openpilotci → commaCarSegments, the same as logreader.auto_source after the local ones. A copy already in the
-shared cache wins over any download.
+openpilotci, the same as logreader.auto_source after the local ones. A copy already in the shared cache wins over any
+download. commaCarSegments answers CORS, so the page reads it directly.
 """
 import re
 import threading
@@ -20,7 +20,7 @@ from openpilot.tools.ycpe.daemon import cache
 from openpilot.tools.ycpe.daemon.cache import Key
 from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, module, route
 
-SOURCES = ["device", "local", "internal", "api", "openpilotci", "carSegments"]
+SOURCES = ["device", "local", "internal", "api", "openpilotci"]
 KINDS = {
   "rlog": ("rlog.zst", "rlog.bz2"), "qlog": ("qlog.zst", "qlog.bz2"), "qcamera": ("qcamera.ts",),
   "fcamera": ("fcamera.hevc",), "ecamera": ("ecamera.hevc",), "dcamera": ("dcamera.hevc",),
@@ -102,11 +102,6 @@ def head(url: str) -> int | None:
   return n if n >= 0 else None
 
 
-def car_segments_url(key: Key) -> str | None:
-  from openpilot.tools.lib.comma_car_segments import get_url
-  return get_url(key.route, key.seg, key.file)
-
-
 class Resolver:
   def __init__(self, dongle: str, log_id: str, sources: list[str], jwt: str | None, sizes: bool):
     self.dongle, self.log_id, self.sources, self.jwt, self.sizes = dongle, log_id, sources, jwt, sizes
@@ -149,12 +144,6 @@ class Resolver:
     if source in ("internal", "openpilotci"):
       url = cache.canonical_url(source, key)
       return (url, n) if (n := head(url)) is not None else None
-    if source == "carSegments" and key.file == "rlog.zst":
-      try:
-        url = car_segments_url(key)
-      except Exception:
-        return None
-      return (url, head(url)) if url else None
     return None
 
   def resolve(self, seg: int, names: tuple[str, ...]) -> dict | None:
@@ -166,8 +155,6 @@ class Resolver:
     for source in self.sources:
       for name in names:
         key = Key(self.dongle, self.log_id, seg, name)
-        if source == "carSegments" and (hit := cache.lookup(key, ["carSegments"])):  # filtered copies only in their turn
-          return entry(hit[0], key, hit[1].stat().st_size, True)
         try:
           found = self.find(source, key)
         except Exception as e:
@@ -308,7 +295,7 @@ def serve_file(req):
     if not found:
       raise HTTPError(404)
     return File(str(confine(found[0], config.log_roots)), headers=HIT)
-  if (hit := cache.lookup(key, cache.peers(source))):
+  if (hit := cache.lookup(key)):
     cache.stats["hits"] += 1
     cache.touch(hit[1])
     revalidate(key, *hit, jwt_of(req))
@@ -317,7 +304,7 @@ def serve_file(req):
   if source == "device":
     raise HTTPError(404)
   cache.stats["misses"] += 1
-  if (fill := cache.filling(key, source)) is None:
+  if (fill := cache.filling(key)) is None:
     if (url := upstream(source, key, jwt_of(req))) is None:
       raise HTTPError(404)
     fill = cache.fill(key, source, url)
@@ -358,21 +345,17 @@ def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
   """A local path holding key, downloading it into the shared cache first if needed (blocking). With a job, the wait
   stops when it's cancelled, and so does a download this call started."""
   srcs = [s for s in (sources or SOURCES) if s in SOURCES]
-  # full copies stand in for each other; commaCarSegments' filtered ones are only used when it's the source picked
-  space = "carSegments" if srcs == ["carSegments"] else "api"
-  if (hit := cache.lookup(key, [s for s in srcs if s in cache.peers(space)])):
+  if (hit := cache.lookup(key, [s for s in srcs if s in cache.SHARED])):
     cache.touch(hit[1])
     revalidate(key, *hit, jwt)
     return hit[1]
   if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):
     return confine(found[0], config.log_roots)
-  if (fill := cache.filling(key, space)) is None:
+  if (fill := cache.filling(key)) is None:
     r = Resolver(key.dongle, key.log_id, [s for s in srcs if s not in ("device", "local")], jwt, False)
     found = next(((s, f) for s in r.sources if (f := r.find(s, key))), None)
     if found is None:
       raise FileNotFoundError(f"{key} isn't in {', '.join(srcs)}" + "".join(f"; {k}: {v}" for k, v in r.errors.items()))
-    if found[0] == "carSegments" and (hit := cache.lookup(key, ["carSegments"])):
-      return hit[1]
     fill = cache.fill(key, found[0], found[1][0], cancelled=(lambda: job.cancelled) if job is not None else None)
   while not fill.finished.wait(0.1):
     if job is not None:

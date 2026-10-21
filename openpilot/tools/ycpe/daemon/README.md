@@ -29,7 +29,7 @@ What the daemon unlocks in the UI:
 | Module | What you get |
 |---|---|
 | `auth` | Your `~/.comma/auth.json` sign-in (from `tools/lib/auth.py`). The app opens signed in, and the account menu says so. |
-| `sources` | Logs from every source openpilot's LogReader uses: your disk, a pulled device, comma's internal storage, the comma API, openpilotci and commaCarSegments. That includes routes the browser can't reach. In the Files pane, the source picker enables these. |
+| `sources` | Logs from every source openpilot's LogReader uses: your disk, a pulled device, comma's internal storage, the comma API and openpilotci. That includes routes the browser can't reach. In the Files pane, the source picker enables these. |
 | `cache` | One disk cache shared with cabana, jotpluggler, replay and LogReader, so a route downloaded by any of them loads instantly in all of them. The badge panel can cache a whole route ahead of time (logs or video) and evict it. Progress shows in the loading pill. |
 | `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
@@ -143,7 +143,7 @@ The daemon never runs anything on a device except `cat` and `find`.
 Resolve parameters:
 - `route` uses LogReader's syntax: `dongle|log_id[/slice][/q|r|a]`.
 - `kinds` is a list of `rlog qlog qcamera fcamera ecamera dcamera log`. `log` means rlog, qlog, or rlog falling back to qlog for each segment, according to `mode`.
-- `sources` is `"auto"` or a list. The auto order is device → local → internal → api → openpilotci → carSegments. A copy already in the shared cache wins over any download.
+- `sources` is `"auto"` or a list. The auto order is device → local → internal → api → openpilotci. A copy already in the shared cache wins over any download.
 - The page's `Authorization: JWT` header, if sent, is used for the API source; otherwise `~/.comma/auth.json` is used.
 - Each `url` already carries the token, so it can be fetched as-is.
 
@@ -157,9 +157,8 @@ without its query, so signed URLs of one file share an entry.
   - `sha256(url)`, the whole file
   - `sha256("decompressed-zst:" + url)`
   - complete `md5(url)_<n>.0` chunks, which are joined into the whole file
-- **Namespaces.** device, internal, api and openpilotci copies of a file have the same bytes, so a copy from any one of them
-  serves the others. commaCarSegments rlogs are filtered copies with the full rlog's name, so they're keyed by their HF URL
-  only. They're served only for `carSegments` requests, and in `auto` only when every other source missed.
+- **Sources.** device, internal, api and openpilotci copies of a file have the same bytes, so a copy from any one of them
+  serves the others.
 - **Writes.** Downloads land as `sha256(url)`. Logs are also mirrored as url_file chunks plus the manifest, so `LogReader`
   then reads them with no network.
 - **Budget.** The whole directory is LRU-pruned on mtime down to `--cache-budget` (20 GB by default). Temporary files and

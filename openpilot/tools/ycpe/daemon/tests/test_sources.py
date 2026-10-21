@@ -187,44 +187,6 @@ class TestSources(DaemonCase):
     p = sources.fetch(Key(DONGLE, LOG, 0, "qcamera.ts"), ONLY)
     self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
 
-  def test_car_segments_are_their_own_namespace(self):
-    # commaCarSegments keeps a filtered rlog under the full rlog's name: neither may stand in for the other
-    from openpilot.tools.lib import comma_car_segments as ccs
-    log = "00000002--abcdef0123"
-    for seg in (0, 1):
-      full = Path(UPSTREAM) / DONGLE / log / str(seg) / "rlog.zst"
-      car = Path(UPSTREAM) / "huggingface" / "raw" / "main" / "segments" / DONGLE / log / str(seg) / "rlog.zst"
-      for p, data in ((full, blob(seg, "full")), (car, blob(seg, "filtered")[:1000])):
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(data)
-    repo, ccs.COMMA_CAR_SEGMENTS_REPO = ccs.COMMA_CAR_SEGMENTS_REPO, f"http://127.0.0.1:{up.server_address[1]}/huggingface"
-    try:
-      def get(source, seg):
-        r, data = self.req(f"/local/file/{source}/{DONGLE}/{log}/{seg}/rlog.zst")
-        self.assertEqual(r.status, 200)
-        if (fill := cache.filling(cache.Key(DONGLE, log, seg, "rlog.zst"), source)):
-          fill.finished.wait(5)
-        return data, r.getheader("X-Ycpe-Cache")
-
-      # seg 0: full copy cached first, then each source asked explicitly, twice
-      self.assertEqual(get("internal", 0), (blob(0, "full"), "miss"))
-      self.assertEqual(get("carSegments", 0), (blob(0, "filtered")[:1000], "miss"))
-      self.assertEqual(get("carSegments", 0), (blob(0, "filtered")[:1000], "hit"))
-      self.assertEqual(get("internal", 0), (blob(0, "full"), "hit"))
-      self.assertEqual(get("api", 0)[0], blob(0, "full"))  # identical sources still share one copy
-
-      # seg 1: only the filtered copy is cached; auto order must still pick the full rlog, uncached
-      self.assertEqual(get("carSegments", 1)[0], blob(1, "filtered")[:1000])
-      res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|{log}", "segs": [1], "kinds": ["rlog"],
-                                                 "sources": ["internal", "carSegments"]})
-      self.assertEqual((res["segments"]["1"]["rlog"]["source"], res["segments"]["1"]["rlog"]["cached"]), ("internal", False))
-      self.assertEqual(sources.fetch(Key(DONGLE, log, 1, "rlog.zst"), ["internal"]).read_bytes(), blob(1, "full"))
-      res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|{log}", "segs": [1], "kinds": ["rlog"], "sources": ["carSegments"]})
-      self.assertEqual((res["segments"]["1"]["rlog"]["source"], res["segments"]["1"]["rlog"]["cached"]), ("carSegments", True))
-      self.assertEqual(sources.fetch(Key(DONGLE, log, 1, "rlog.zst"), ["carSegments"]).read_bytes(), blob(1, "filtered")[:1000])
-    finally:
-      ccs.COMMA_CAR_SEGMENTS_REPO = repo
-
   def test_stale_refetch(self):
     rel = f"/{DONGLE}/{LOG}/5/fcamera.hevc"
     up = Path(UPSTREAM) / rel.lstrip("/")

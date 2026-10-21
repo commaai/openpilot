@@ -5,7 +5,7 @@ Two formats already live there, both keyed by the URL without its query, so sign
   sha256("decompressed-<zst|bz2>:" + url) a decompressed log.
 - url_file.py (LogReader, FrameReader, process_replay): md5(url)_<n>.0 in 1 MB chunks, plus md5(url)_length.
 A file is looked up under the canonical URL of every source that could hold it (internal, comma API blob,
-openpilotci, commaCarSegments). Downloads land as sha256(url), and logs are also mirrored into url_file chunks,
+openpilotci). Downloads land as sha256(url), and logs are also mirrored into url_file chunks,
 so one fetch serves all of them. Files the daemon makes itself (device pulls, transcodes) live under ycpe/.
 The whole directory is held under a budget by LRU on mtime; reads bump mtime.
 """
@@ -23,8 +23,7 @@ from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
 
 API_BLOB = "https://commadata2.blob.core.windows.net"
 # device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
-# (and local directories hold them too). commaCarSegments keeps filtered rlogs under the full rlog's name, so its copies
-# are a namespace of their own: never served for another source, and never stood in for by one.
+# (and local directories hold them too)
 SHARED = ("device", "internal", "api", "openpilotci")
 LOGS = ("rlog.zst", "rlog.bz2", "qlog.zst", "qlog.bz2")
 TMP = "ycpe-tmp-"
@@ -61,15 +60,7 @@ def canonical_url(source: str, key: Key) -> str | None:
     return f"{API_BLOB}/{container}/{path}"
   if source == "openpilotci":
     return openpilotci_url(key.route, key.seg, key.file)
-  if source == "carSegments":
-    from openpilot.tools.lib import comma_car_segments as ccs
-    return f"{ccs.COMMA_CAR_SEGMENTS_REPO}/resolve/{ccs.COMMA_CAR_SEGMENTS_BRANCH}/segments/{path}"
   return None
-
-
-def peers(source: str) -> tuple[str, ...]:
-  """The sources whose cached copies of a file have the bytes source would serve."""
-  return ("carSegments",) if source == "carSegments" else SHARED
 
 
 def sha(url: str) -> str:
@@ -236,12 +227,12 @@ class Fill:
         pass
     finally:
       with _fills_lock:
-        _fills.pop(fill_id(self.source, self.key), None)
+        _fills.pop(self.key, None)
       self.finished.set()
       prune_soon()
 
 
-_fills: dict[tuple[bool, Key], Fill] = {}
+_fills: dict[Key, Fill] = {}
 _fills_lock = threading.Lock()
 stats = {"hits": 0, "misses": 0, "fetched": 0, "stale": 0}
 
@@ -271,20 +262,16 @@ def mark_checked(path: Path, when: float | None = None) -> None:
 def fill(key: Key, source: str, url: str, cancelled=None) -> Fill:
   """The download of key in flight, starting one in a thread if there's none. cancelled() can abort a new one."""
   with _fills_lock:
-    if (f := _fills.get(fill_id(source, key))) is not None:
+    if (f := _fills.get(key)) is not None:
       return f
-    f = _fills[fill_id(source, key)] = Fill(key, source, url, canonical_url(source, key) or url)
+    f = _fills[key] = Fill(key, source, url, canonical_url(source, key) or url)
   threading.Thread(target=f.run, args=(cancelled or (lambda: False),), daemon=True, name=f"fill {key}").start()
   return f
 
 
-def filling(key: Key, source: str) -> Fill | None:
-  """The download in flight of key's bytes as source has them (from source or one of its peers)."""
-  return _fills.get(fill_id(source, key))
-
-
-def fill_id(source: str, key: Key) -> tuple[bool, Key]:
-  return source == "carSegments", key
+def filling(key: Key) -> Fill | None:
+  """The download of key in flight, from whichever source."""
+  return _fills.get(key)
 
 
 # budget
@@ -351,7 +338,7 @@ def derived_copies(url: str) -> list[Path]:
 def evict(key: Key) -> int:
   """Removes every cached copy of key; returns bytes freed."""
   paths = [device_path(key)]
-  for source in ("internal", "api", "openpilotci", "carSegments"):
+  for source in ("internal", "api", "openpilotci"):
     url = canonical_url(source, key)
     paths += [root() / sha(url), *derived_copies(url)]
   return remove(paths)
@@ -396,7 +383,7 @@ def cache_stats(req):
       for kind, names in KINDS.items():
         for name in names:
           key = Key(dongle, log_id, seg, name)
-          if (hit := lookup(key) or lookup(key, ["carSegments"])):
+          if (hit := lookup(key)):
             have[kind] = {"file": name, "source": hit[0], "size": hit[1].stat().st_size}
             break
       segs[str(seg)] = have
