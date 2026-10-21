@@ -253,9 +253,7 @@ class MiciKeyboard(Widget):
           self._commit_key()
 
         # reset last key so hysteresis doesn't select it again
-        self._closest_key = (None, float('inf'))
-        self._selected_key_t = None
-        self._unselect_key_t = None
+        self._unselect_key()
         self._active_slot = mouse_event.slot
 
     elif mouse_event.left_released and mouse_event.slot == self._active_slot:
@@ -301,6 +299,11 @@ class MiciKeyboard(Widget):
       else:
         self._set_uppercase(False)
 
+  def _unselect_key(self):
+    self._closest_key = (None, float('inf'))
+    self._selected_key_t = None
+    self._unselect_key_t = None
+
   def _commit_key(self):
     if self._closest_key[0] is not None:
       if self._closest_key[0] == self._caps_key:
@@ -340,9 +343,7 @@ class MiciKeyboard(Widget):
 
     # unselect key after animation plays
     if (self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t) or not self.enabled:
-      self._closest_key = (None, float('inf'))
-      self._unselect_key_t = None
-      self._selected_key_t = None
+      self._unselect_key()
 
   def _lay_out_keys(self, bg_x, bg_y, keys: list[list[Key]]):
     key_rect = rl.Rectangle(bg_x, bg_y, self._txt_bg.width, self._txt_bg.height)
