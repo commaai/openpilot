@@ -83,13 +83,6 @@ export function menuCheck(label, checked, fn) {
 // a labelled input row for forms
 export const field = (label, input, hint) => h("label", {class: "can-field", title: hint || ""}, h("span", {}, label), input);
 
-// text or a Blob as a file
-export function download(name, data) {
-  const a = h("a", {href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type: "text/plain"})), download: name});
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-
 // edits message k through the undo stack: fn(m) changes a copy (a new message if k has none), or returns false to
 // change nothing. Returns whether it changed
 export function editMsg(can, k, text, fn) {

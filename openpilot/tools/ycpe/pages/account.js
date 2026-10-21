@@ -2,7 +2,7 @@
 // with its expiry and a fresh one minted by signing in again (useradmin's "Get JWT"), and the version of ycpe running
 import {auth} from "../api.js";
 import {daemon} from "../daemon.js";
-import {h, css, fmt} from "../dom.js";
+import {h, css, fmt, copyButton} from "../dom.js";
 import {icon} from "../icons.js";
 import {PROVIDERS, startSignIn, takeNewToken, signInCard} from "./login.js";
 
@@ -11,20 +11,6 @@ export const styled = css(new URL("./account.css", import.meta.url));
 
 export const USERADMIN = "https://useradmin.comma.ai/";
 const DATE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
-
-// an icon button that copies text() and says whether it could
-export function copyButton(text, label = "Copy") {
-  const btn = h("button", {class: "icon-btn", title: label, "aria-label": label, onclick: async () => {
-    const ok = await navigator.clipboard.writeText(text()).then(() => true, () => false);
-    btn.title = ok ? "Copied" : "Couldn't copy: the clipboard was denied";
-    btn.replaceChildren(icon(ok ? "check" : "warning", 16));
-    setTimeout(() => {
-      btn.title = label;
-      btn.replaceChildren(icon("copy", 16));
-    }, 1500);
-  }}, icon("copy", 16));
-  return btn;
-}
 
 // the commit serve.py runs from (its daemon says), linked as connect links its own; a static server can't tell
 export function version() {

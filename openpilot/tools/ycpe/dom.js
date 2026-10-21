@@ -1,3 +1,5 @@
+import {icon} from "./icons.js";
+
 // attributes that take "true"/"false" rather than being present or absent
 const ENUMERATED = new Set(["draggable", "contenteditable", "spellcheck"]);
 
@@ -52,6 +54,28 @@ export function ask(text, ok = "OK", cancel = "Cancel") {
     document.body.append(el);
     el.showModal();
   });
+}
+
+// data (a Blob, or text) saved as file name; its URL is let go after keep ms
+export function download(data, name, keep = 1000) {
+  const a = h("a", {href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type: "text/plain"})), download: name});
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), keep);
+}
+
+// an icon button that copies text() and says whether it could; in a summary, it doesn't toggle it
+export function copyButton(text, label = "Copy", size = 16) {
+  const btn = h("button", {class: "icon-btn", title: label, "aria-label": label, onclick: async (e) => {
+    e.preventDefault();
+    const ok = await navigator.clipboard.writeText(text()).then(() => true, () => false);
+    btn.title = ok ? "Copied" : "Couldn't copy: the clipboard was denied";
+    btn.replaceChildren(icon(ok ? "check" : "warning", size));
+    setTimeout(() => {
+      btn.title = label;
+      btn.replaceChildren(icon("copy", size));
+    }, 1500);
+  }}, icon("copy", size));
+  return btn;
 }
 
 export const fmt = {

@@ -1,10 +1,9 @@
 // referrals, as connect has them: the share link, what's been earned, claiming by email; the top bar's gift and the
 // device page's "refer a friend" card for owners
 import {api, auth} from "../api.js";
-import {h, css} from "../dom.js";
+import {h, css, copyButton} from "../dom.js";
 import {icon} from "../icons.js";
 import {REFERRALS_SEEN, link} from "../app.js";
-import {copyButton} from "./account.js";
 import {signInCard} from "./login.js";
 import {mode} from "./connect/mode.js";
 import {promo} from "./cnui.js";

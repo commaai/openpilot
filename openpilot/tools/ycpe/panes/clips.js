@@ -4,7 +4,7 @@
 // (getClipChunk). Downloaded clips stay in the Cache API, so they play again without asking the device.
 // clipButton(ctx) is the drive view's Clip button, deviceClips(device) a device's clips
 import {api, versionAtLeast} from "/api.js";
-import {h, css, ask, fmt} from "/dom.js";
+import {h, css, ask, fmt, download} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {isOnline, link} from "/app.js";
@@ -81,7 +81,7 @@ async function chunk(dongle, filename, offset, attempt = 0) {
 const bytes = async (b64) => new Uint8Array(await (await fetch(`data:application/octet-stream;base64,${b64}`)).arrayBuffer());
 
 // the first chunk says the size and the chunk length, then CHUNKS at a time
-async function download(dongle, filename, progress, cancelled) {
+async function fetchClip(dongle, filename, progress, cancelled) {
   const parts = [];
   let size, step = 0, next = 0;
   while (size === undefined || next < size) {
@@ -110,7 +110,7 @@ async function clipBlob(dongle, clip, onProgress) {
   let d = downloads.get(key);
   if (!d) {
     d = {cancelled: false, listeners: new Set(), loaded: 0, total: 0};
-    d.promise = download(dongle, clip.filename, (loaded, total) => {
+    d.promise = fetchClip(dongle, clip.filename, (loaded, total) => {
       Object.assign(d, {loaded, total});
       for (const fn of d.listeners) fn(loaded, total);
     }, () => d.cancelled).then(async (blob) => {
@@ -148,9 +148,7 @@ async function save(blob, clip) {
       if (e.name === "AbortError") return;
     }
   }
-  const url = URL.createObjectURL(blob);
-  h("a", {href: url, download: filename}).click();
-  setTimeout(() => URL.revokeObjectURL(url), 60e3);
+  download(blob, filename, 60e3);
 }
 
 // a downloaded clip, playing. Shown once its first frame is decoded: a video that comes up empty holds the compositor

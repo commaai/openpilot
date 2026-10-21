@@ -1,8 +1,8 @@
 // CAN dialogs: DBC files, find similar bits, find signal, CSV export, route segments
-import {h, ask} from "/dom.js";
+import {h, ask, download} from "/dom.js";
 import {DBC} from "/data/dbc.js";
 import {addrOf, carDbc, hexId} from "/data/can.js";
-import {createSignal, dialog, download, field, menuItem, popup} from "./common.js";
+import {createSignal, dialog, field, menuItem, popup} from "./common.js";
 
 const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a, b) => a - b);
 
@@ -139,10 +139,10 @@ export async function save(can, dbc, as = false) {
   const text = await can.serialize(dbc);
   try {
     if (as || !dbc.handle) {
-      if (!window.showSaveFilePicker) return download(`${dbc.name}.dbc`, text);
+      if (!window.showSaveFilePicker) return download(text, `${dbc.name}.dbc`);
       dbc.handle = await showSaveFilePicker({suggestedName: `${dbc.name}.dbc`});
     }
-    if (await dbc.handle.requestPermission?.({mode: "readwrite"}) === "denied") return download(`${dbc.name}.dbc`, text);
+    if (await dbc.handle.requestPermission?.({mode: "readwrite"}) === "denied") return download(text, `${dbc.name}.dbc`);
     const w = await dbc.handle.createWritable();
     await w.write(text);
     await w.close();
@@ -267,7 +267,7 @@ function csvDialog(can, ctx) {
       const [a, b] = range.value === "all" ? [-Infinity, Infinity] : [t0, t1];
       const keys = what.value === "all" ? can.messages().map((m) => m.key) : [sel];
       const blob = await can.csv(keys, a, b, what.value === "decoded");
-      download(`${ctx.route.fullname.replace("|", "_")}_${what.value === "all" ? "can" : hexId(sel).replace(":", "_")}.csv`, blob);
+      download(blob, `${ctx.route.fullname.replace("|", "_")}_${what.value === "all" ? "can" : hexId(sel).replace(":", "_")}.csv`);
       d.close();
     }}, "Export")));
 }

@@ -1,9 +1,8 @@
 // the layout picker: open a reference layout, import a file (ours, jotpluggler's or PlotJuggler's), open one
 // from a URL, or export the view's layout. Custom code in an opened layout stays untrusted until the user
 // reviews it in the code console, except in the bundled references (commaai/openpilot's own layouts).
-import {h, css} from "/dom.js";
+import {h, css, download} from "/dom.js";
 import {importLayout, exportLayout, uniqueCustoms, customsOf} from "./import.js";
-import {download} from "/panes/plot/export.js";
 
 css(new URL("./picker.css", import.meta.url));
 

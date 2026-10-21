@@ -2,7 +2,7 @@
 // playhead, with the controls of connect's stream view (BodyTeleop, minus the joystick): the connection's state and
 // stats, the stream's quality (bitrate) and a screenshot. 1 and 2 switch road and cabin while the pane has the focus
 // (elsewhere they switch views).
-import {h, css} from "/dom.js";
+import {h, css, download} from "/dom.js";
 import {icon} from "/icons.js";
 import {format, sample} from "/data/live/rtcstats.js";
 
@@ -104,7 +104,5 @@ async function screenshot(track, video, label) {
       if (e.name === "AbortError") return;
     }
   }
-  const a = h("a", {href: URL.createObjectURL(blob), download: name});
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  download(blob, name);
 }

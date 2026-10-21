@@ -1,7 +1,7 @@
 // device settings, as in connect: what the device is, its comma prime status, and (for the owner) unpairing. User mode
 // has connect's own: its modal over the dashboard, from the device list's gear
 import {api, auth, billingReachable} from "../api.js";
-import {h, fmt, css} from "../dom.js";
+import {h, fmt, css, copyButton} from "../dom.js";
 import {icon} from "../icons.js";
 import {onlineMark, link, go, isOnline, devicesChanged} from "../app.js";
 
@@ -35,14 +35,7 @@ function primeSection(device) {
 
 // the key the device signs its requests with: the PEM's body on one line, the whole PEM copied
 function publicKey(pem) {
-  const label = "Copy the public key";
-  const copy = h("button", {class: "icon-btn", title: label, "aria-label": label, onclick: async () => {
-    const ok = await navigator.clipboard.writeText(pem).then(() => true, () => false);
-    copy.title = ok ? "Copied" : "Couldn't copy: the clipboard was denied";
-    copy.replaceChildren(icon(ok ? "check" : "warning", 14));
-    setTimeout(() => { copy.title = label; copy.replaceChildren(icon("copy", 14)); }, 1500);
-  }}, icon("copy", 14));
-  return h("span", {class: "pubkey"}, h("span", {class: "mono"}, pem.replace(/-----[^-]+-----|\s/g, "")), copy);
+  return h("span", {class: "pubkey"}, h("span", {class: "mono"}, pem.replace(/-----[^-]+-----|\s/g, "")), copyButton(() => pem, "Copy the public key", 14));
 }
 
 // unpairing is for good, so it takes the dongle id typed out
