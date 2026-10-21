@@ -26,7 +26,7 @@ _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(),
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
-MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
+MOUSE_THREAD_RATE = 140  # faster than the touch panel (mici: approx. 103Hz)
 MAX_TOUCH_SLOTS = 2
 TOUCH_HISTORY_TIMEOUT = 3.0  # Seconds before touch points fade out
 
@@ -159,6 +159,10 @@ class MouseState:
     self._scale = scale
     self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
+    # On device, use the kernel time of the touch event, not the poll time.
+    # The poll rate is different from the panel rate, thus poll times make scroll velocity jitter.
+    # Older AGNOS raylib does not have get_touch_time. For example, the AGNOS updater runs on the AGNOS that it replaces.
+    self._get_touch_time = getattr(rl, 'get_touch_time', None) if not PC else None
 
     self._rk = Ratekeeper(MOUSE_THREAD_RATE, print_delay_threshold=None)
     self._lock = threading.Lock()
@@ -189,10 +193,6 @@ class MouseState:
       self._rk.keep_time()
 
   def _handle_mouse_event(self):
-    # TODO: read touch events from evdev directly to get real kernel timestamps.
-    #  Polling at 140Hz with time.monotonic() causes timing jitter that makes scroll
-    #  velocity oscillate (alternating high/low). Real timestamps would also let us
-    #  detect swipe-stop-lift via event gaps instead of the fragile decel heuristic.
     for slot in range(MAX_TOUCH_SLOTS):
       mouse_pos = rl.get_touch_position(slot)
       x = mouse_pos.x / self._scale if self._scale != 1.0 else mouse_pos.x
@@ -203,7 +203,7 @@ class MouseState:
         rl.is_mouse_button_pressed(slot),  # noqa: TID251
         rl.is_mouse_button_released(slot),  # noqa: TID251
         rl.is_mouse_button_down(slot),
-        time.monotonic(),
+        self._get_touch_time(slot) if self._get_touch_time is not None else time.monotonic(),
       )
       # Only add changes
       prev = self._prev_mouse_event[slot]
