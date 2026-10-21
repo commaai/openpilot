@@ -224,7 +224,7 @@ class GuiScrollPanel2:
         self._velocity = delta_x / delta_t
         self._velocity = max(-MAX_SPEED, min(MAX_SPEED, self._velocity))
         self._velocity_buffer.append(self._velocity)
-        if not self._position_buffer:
+        if len(self._position_buffer) == 0:
           self._position_buffer.append((cast(MouseEvent, self._previous_mouse_event).t, previous_mouse_pos))
         self._position_buffer.append((mouse_event.t, mouse_pos))
 
