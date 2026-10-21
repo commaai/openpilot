@@ -186,10 +186,7 @@ class GuiScrollPanel2:
         # If velocity decelerates very quickly, assume user doesn't intend to auto scroll.
         # Catches two cases: 1) swipe, stop finger, then lift (stale high velocity in buffer)
         # 2) dirty finger lift where finger rotates/slides producing spurious velocity spike.
-        # TODO: this heuristic false-positives on fast swipes because 140Hz touch polling
-        #  jitter causes velocity to oscillate (not real deceleration). Better approaches:
-        #  - Use evdev kernel timestamps to eliminate velocity oscillation at the source
-        #  - Replace with a time-since-last-event check (40ms timeout) for swipe-stop-lift
+        # Uses px moved per touch sample, not velocity, since noisy timestamps make steady swipes look like a sudden stop.
         high_decel = False
         if len(self._velocity_buffer) > 2:
           # We limit max to first half since final few velocities can surpass first few
@@ -225,7 +222,7 @@ class GuiScrollPanel2:
         delta_t = max((mouse_event.t - cast(MouseEvent, self._previous_mouse_event).t), 1e-6)
         self._velocity = delta_x / delta_t
         self._velocity = max(-MAX_SPEED, min(MAX_SPEED, self._velocity))
-        self._velocity_buffer.append(self._velocity)
+        self._velocity_buffer.append(delta_x)
 
         # start from the touch before the first drag sample, like the velocity buffer
         if len(self._position_buffer) == 0:
