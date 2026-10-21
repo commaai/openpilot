@@ -203,7 +203,6 @@ class MiciKeyboard(Widget):
     self._load_images()
 
     # Each finger is a different touch slot. Only the last finger that touched the keyboard selects a key.
-    self._multi_touch = True
     self._active_slot: int | None = None
 
     self._closest_key: tuple[Key | None, float] = None, float('inf')
@@ -243,6 +242,11 @@ class MiciKeyboard(Widget):
 
   def text(self) -> str:
     return self._text
+
+  def _process_mouse_events(self) -> None:
+    # Widget uses only the first finger. The keyboard uses all fingers.
+    for mouse_event in gui_app.mouse_events:
+      self._handle_mouse_event(mouse_event)
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height

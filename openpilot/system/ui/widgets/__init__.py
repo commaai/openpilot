@@ -6,7 +6,7 @@ import pyray as rl
 from enum import IntEnum
 from typing import Protocol, TypeVar
 from collections.abc import Callable
-from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS, MouseEvent
+from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
 
 class DeviceLike(Protocol):
   @property
@@ -45,16 +45,15 @@ class Widget(abc.ABC):
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
 
-    self.__is_pressed = [False] * MAX_TOUCH_SLOTS
+    self.__is_pressed = False
     # if current mouse/touch down started within the widget's rectangle
-    self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
+    self.__tracking_is_pressed = False
     self._touch_valid_callback: Callable[[], bool] | None = None
     self._click_delay: float | None = None  # seconds to hold is_pressed after release
     self._click_release_time: float | None = None
     self._click_callback: Callable[[], None] | None = None
     self._long_press_callback: Callable[[], None] | None = None
-    self._press_started: list[float | None] = [None] * MAX_TOUCH_SLOTS
-    self._multi_touch = False
+    self._press_started: float | None = None
     self.__was_awake = True
 
   @property
@@ -75,7 +74,7 @@ class Widget(abc.ABC):
   @property
   def is_pressed(self) -> bool:
     # if actually pressed or holding after release
-    return any(self.__is_pressed) or self._click_release_time is not None
+    return self.__is_pressed or self._click_release_time is not None
 
   @property
   def enabled(self) -> bool:
@@ -142,9 +141,9 @@ class Widget(abc.ABC):
       self._process_mouse_events()
     else:
       # TODO: ideally we emit release events when going disabled
-      self._press_started = [None] * MAX_TOUCH_SLOTS
-      self.__is_pressed = [False] * MAX_TOUCH_SLOTS
-      self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
+      self._press_started = None
+      self.__is_pressed = False
+      self.__tracking_is_pressed = False
 
     self.__was_awake = device.awake
 
@@ -159,7 +158,8 @@ class Widget(abc.ABC):
     touch_valid = self._touch_valid()
 
     for mouse_event in gui_app.mouse_events:
-      if not self._multi_touch and mouse_event.slot != 0:
+      # Only the first finger. Only MiciKeyboard uses more fingers
+      if mouse_event.slot != 0:
         continue
 
       mouse_in_rect = rl.check_collision_point_rec(mouse_event.pos, hit_rect)
@@ -167,45 +167,43 @@ class Widget(abc.ABC):
       # Allows touch to leave the rect and come back in focus if mouse did not release
       if mouse_event.left_pressed and touch_valid:
         if mouse_in_rect:
-          self._press_started[mouse_event.slot] = mouse_event.t
+          self._press_started = mouse_event.t
           self._handle_mouse_press(mouse_event.pos)
-          self.__is_pressed[mouse_event.slot] = True
-          self.__tracking_is_pressed[mouse_event.slot] = True
+          self.__is_pressed = True
+          self.__tracking_is_pressed = True
           self._handle_mouse_event(mouse_event)
 
       # Callback such as scroll panel signifies user is scrolling
       elif not touch_valid:
-        self.__is_pressed[mouse_event.slot] = False
-        self.__tracking_is_pressed[mouse_event.slot] = False
+        self.__is_pressed = False
+        self.__tracking_is_pressed = False
 
       elif mouse_event.left_released:
         self._handle_mouse_event(mouse_event)
-        if self.__is_pressed[mouse_event.slot] and mouse_in_rect:
+        if self.__is_pressed and mouse_in_rect:
           self._handle_mouse_release(mouse_event.pos)
-        self.__is_pressed[mouse_event.slot] = False
-        self.__tracking_is_pressed[mouse_event.slot] = False
+        self.__is_pressed = False
+        self.__tracking_is_pressed = False
 
       # Mouse/touch is still within our rect
       elif mouse_in_rect:
-        if self.__tracking_is_pressed[mouse_event.slot]:
-          self.__is_pressed[mouse_event.slot] = True
+        if self.__tracking_is_pressed:
+          self.__is_pressed = True
           self._handle_mouse_event(mouse_event)
 
       # Mouse/touch left our rect but may come back into focus later
       elif not mouse_in_rect:
-        self._press_started[mouse_event.slot] = None
-        self.__is_pressed[mouse_event.slot] = False
+        self._press_started = None
+        self.__is_pressed = False
         self._handle_mouse_event(mouse_event)
 
     if self._long_press_callback is not None and touch_valid:
-      for slot, started in enumerate(self._press_started):
-        if started is not None and self.__is_pressed[slot] and time.monotonic() - started >= 0.45:
-          # Clear tracking before opening help so release cannot activate a toggle or action.
-          self._press_started[slot] = None
-          self.__is_pressed[slot] = False
-          self.__tracking_is_pressed[slot] = False
-          self._long_press_callback()
-          break
+      if self._press_started is not None and self.__is_pressed and time.monotonic() - self._press_started >= 0.45:
+        # Clear tracking before opening help so release cannot activate a toggle or action.
+        self._press_started = None
+        self.__is_pressed = False
+        self.__tracking_is_pressed = False
+        self._long_press_callback()
 
   def _layout(self) -> None:
     """Optionally lay out child widgets separately. This is called before rendering."""

@@ -4,7 +4,7 @@ import pyray as rl
 from collections.abc import Callable
 from enum import Enum
 from typing import cast
-from openpilot.system.ui.lib.application import gui_app, MouseEvent, MAX_TOUCH_SLOTS
+from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.common.hardware import COMMA_HARDWARE
 from collections import deque
 
@@ -51,9 +51,6 @@ class GuiScrollPanel2:
     self._offset: rl.Vector2 = rl.Vector2(0, 0)
     self._initial_click_event: MouseEvent | None = None
     self._previous_mouse_event: MouseEvent | None = None
-    # Only one finger (touch slot) moves the content, same as Android scroll views
-    self._active_slot: int | None = None
-    self._last_slot_events: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
     self._velocity = 0.0  # pixels per second
     self._velocity_buffer: deque[float] = deque(maxlen=12 if COMMA_HARDWARE else 6)
     self._enabled: bool | Callable[[], bool] = True
@@ -72,7 +69,8 @@ class GuiScrollPanel2:
     bounds_size = bounds.width if self._horizontal else bounds.height
 
     for mouse_event in gui_app.mouse_events:
-      if self._use_slot_event(mouse_event):
+      # Only the first finger. Events from more fingers make the content jump.
+      if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, bounds_size, content_size)
         self._previous_mouse_event = mouse_event
 
@@ -84,39 +82,6 @@ class GuiScrollPanel2:
       print('New state:', self._state)
       print()
     return self.get_offset()
-
-  def _use_slot_event(self, mouse_event: MouseEvent) -> bool:
-    """Returns True if the event is from the finger that controls the scroll."""
-    self._last_slot_events[mouse_event.slot] = mouse_event
-    dragging = self._state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL)
-
-    if mouse_event.slot != self._active_slot:
-      if not mouse_event.left_pressed:
-        return self._active_slot is None
-
-      if dragging:
-        # The new finger controls the scroll. Start from its position, thus the content does not move.
-        self._active_slot = mouse_event.slot
-        self._previous_mouse_event = mouse_event
-        if self._state == ScrollState.PRESSED:
-          self._initial_click_event = mouse_event
-        self._velocity_buffer.clear()
-        return False
-
-      self._active_slot = mouse_event.slot
-      return True
-
-    if mouse_event.left_released:
-      other_events = [ev for ev in self._last_slot_events if ev is not None and ev.slot != mouse_event.slot and ev.left_down]
-      if self._state == ScrollState.MANUAL_SCROLL and len(other_events) > 0:
-        # A finger is still down. It controls the scroll from its last position.
-        self._active_slot = other_events[0].slot
-        self._previous_mouse_event = other_events[0]
-        self._velocity_buffer.clear()
-        return False
-
-      self._active_slot = None
-    return True
 
   def _get_offset_bounds(self, bounds_size: float, content_size: float) -> tuple[float, float]:
     """Returns (max_offset, min_offset) for the given bounds and content size."""

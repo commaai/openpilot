@@ -96,7 +96,6 @@ class Button(Widget):
                text_padding: int = 20,
                icon=None,
                elide_right: bool = False,
-               multi_touch: bool = False,
                ):
 
     super().__init__()
@@ -108,7 +107,6 @@ class Button(Widget):
                         text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon, elide_right=elide_right)
 
     self._click_callback = click_callback
-    self._multi_touch = multi_touch
 
   def set_text(self, text):
     self._label.set_text(text)
