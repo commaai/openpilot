@@ -1,12 +1,12 @@
 // user mode's Files and More info menus, as connect's Media.jsx draws them over the button: the playhead segment's
 // files to download or ask the device for, all logs or files of the range, the upload queue (Files/UploadQueue.jsx),
 // the segment name to copy, sharing, useradmin, and the public and preserved switches. Loaded with the first click.
-import {SEGMENT, api, segmentAtTime} from "/api.js";
+import {api, segmentAtTime} from "/api.js";
 import {h, css, openModal} from "/dom.js";
 import {isOnline} from "/app.js";
 import {canManage} from "/pages/home.js";
 import {API_KIND} from "/data/sources.js";
-import {uploads} from "/pages/files.js";
+import {uploads, keysIn, urlKey} from "/pages/files.js";
 import {cnIcon} from "/pages/connect/icons.js";
 
 await css(new URL("./connect-menus.css", import.meta.url));
@@ -55,7 +55,6 @@ const fake = (...children) => h("div", {class: "cm-fake"}, children);
 export function filesMenu(anchor, ctx) {
   const {route, clock} = ctx;
   const [dongle] = route.fullname.split("|");
-  const segs = route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
   let files = null, device = null, up = null, alive = true, kept = false;  // files: "<n>/<kind>" → url, once fetched
   const watchers = new Set([() => draw()]);  // what the uploads' changes redraw: this menu, then the queue it opened
   const n = segmentAtTime(route, clock.t, clock.duration);
@@ -71,11 +70,7 @@ export function filesMenu(anchor, ctx) {
     (a, r) => [a.right - r.width, a.top + a.height / 2 - (r.height / 2 + 21), r.width, r.height / 2 + 21], () => { alive = false; if (!kept) up?.dispose(); });
 
   // what's in the zoomed range: connect counts the segments the loop overlaps
-  const inRange = (kinds) => {
-    const [r0, r1] = clock.loop || [0, clock.duration];
-    return segs.filter((s, i) => { const slot = route.range ? i : s; return slot * SEGMENT < r1 && (slot + 1) * SEGMENT > r0; })
-      .flatMap((s) => kinds.map((kind) => `${s}/${kind}`));
-  };
+  const inRange = (kinds) => keysIn(route, clock.loop || [0, clock.duration], kinds);
   const stats = (keys) => {
     let uploaded = 0, uploading = 0, paused = 0, requested = 0;
     for (const k of keys) {
@@ -141,7 +136,7 @@ export function filesMenu(anchor, ctx) {
   api.routeFiles.forget?.(route.fullname);
   Promise.all([api.routeFiles(route.fullname).catch(() => ({})), api.device(dongle).catch(() => null)]).then(([list, d]) => {
     if (!alive) return;
-    files = new Map(Object.entries(API_KIND).flatMap(([kind, apiKind]) => (list[apiKind] || []).map((u) => [`${new URL(u).pathname.split("/").at(-2)}/${kind}`, u])));
+    files = new Map(Object.entries(API_KIND).flatMap(([kind, apiKind]) => (list[apiKind] || []).map((u) => [urlKey(u, kind), u])));
     device = d;
     up = uploads(route, d, (k) => files.has(k), () => { for (const fn of watchers) fn(); });
     draw();
