@@ -20,7 +20,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route, sources
+from openpilot.common.utils import atomic_write
+from openpilot.tools.lib.helpers import RE
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, route, sources
 
 FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
@@ -148,9 +150,8 @@ def encode(job: Encode, backend: Backend, cancelled=lambda: False, progress=lamb
       raise
   job.frames = pics.count
   info = {"frames": pics.count, "keyframes": pics.keys, "backend": backend.name}
-  tmp = job.base.with_suffix(".json.tmp")
-  tmp.write_text(json.dumps(info))
-  os.replace(tmp, job.base.with_suffix(".json"))
+  with atomic_write(str(job.base.with_suffix(".json")), overwrite=True) as f:
+    json.dump(info, f)
   return info
 
 
@@ -274,25 +275,25 @@ class Transcoder:
 
 # the daemon side
 
-NAME = re.compile(r"^[0-9a-zA-Z_-]+\Z")  # dongle ids and log ids
 _transcoder: Transcoder | None = None
 _transcoder_lock = threading.Lock()
 
-module("transcode", "1")
 
 def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
-  """A copy in the shared cache, else the comma API's signed URL (with the ~/.comma sign-in for private routes), which
-  ffmpeg streams."""
-  if (hit := cache.lookup(cache.Key(dongle, log_id, seg, f"{cam}.hevc"))):
+  """The .hevc from the first source that has it: a copy in the shared cache or a local log directory, else a URL
+  ffmpeg streams (the API's signed with the ~/.comma sign-in, for private routes)."""
+  key = cache.Key(dongle, log_id, seg, f"{cam}.hevc")
+  if (hit := cache.lookup(key)):
     return str(hit[1])
-  if (f := sources.api_files(dongle, log_id, None).get(seg, {}).get(f"{cam}.hevc")):
-    return f[0]
+  r = sources.Resolver(dongle, log_id, sources.SOURCES, None, False)
+  for source in r.sources:
+    if (found := r.find(source, key)):
+      return str(confine(found[0], config.log_roots)) if source == "local" else found[0]
   raise FileNotFoundError(f"no {cam} for segment {seg}")
 
 
 def run_as_job(enc: Encode, fn) -> None:
   """Runs the encode as a daemon job, so the page sees its progress and can cancel it."""
-  ended = threading.Event()
   def body(job):
     job.progress(0, enc.total, text="starting", unit="frames")  # the total is known before the first frame
     try:
@@ -300,11 +301,8 @@ def run_as_job(enc: Encode, fn) -> None:
     except InterruptedError as e:
       enc.error = "cancelled"
       raise jobs.Cancelled from e
-    finally:
-      ended.set()
   dongle, log_id, seg, camera = enc.key.split("/")
-  jobs.start("transcode", body, title=f"{camera} {seg} → h264", route=f"{dongle}|{log_id}", seg=int(seg), camera=camera)
-  ended.wait()
+  jobs.start("transcode", body, title=f"{camera} {seg} → h264", route=f"{dongle}|{log_id}", seg=int(seg), camera=camera).finished.wait()
   if enc.state != "done":
     enc.state = "error"
 
@@ -322,7 +320,7 @@ def video(req):
   """The transcoded segment, followed as it's written while the encode runs."""
   p = req.params
   cam, _, ext = p["file"].rpartition(".")
-  if not (NAME.match(p["dongle"]) and NAME.match(p["log_id"]) and p["seg"].isdigit() and ext == "h264"):
+  if not (re.fullmatch(RE.DONGLE_ID, p["dongle"]) and re.fullmatch(RE.LOG_ID, p["log_id"]) and p["seg"].isdigit() and ext == "h264"):
     raise HTTPError(404)
   seg = int(p["seg"])
   try:

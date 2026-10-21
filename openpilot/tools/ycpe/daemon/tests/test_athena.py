@@ -36,8 +36,7 @@ class RelayCase(DaemonCase):
 class TestAthena(RelayCase):
 
   def call(self, body, dongle=DONGLE, headers=AUTH, **kw):
-    return self.req(f"/local/athena/{dongle}", method="POST", body=json.dumps(body) if not isinstance(body, bytes) else body,
-                    headers={"Content-Type": "application/json", **headers}, **kw)
+    return self.post(f"/local/athena/{dongle}", body, headers, **kw)
 
   def test_relays(self):
     r, data = self.call({"id": 0, "jsonrpc": "2.0", "method": "cancelUpload", "params": {"upload_id": ["x"]}, "extra": 1}, headers={
@@ -95,19 +94,6 @@ class TestAthena(RelayCase):
     for headers in ({}, {"Authorization": "Bearer x"}, {"Authorization": "JWT a\tb"}):
       r, _ = self.call({"method": "listUploadQueue"}, headers=headers)
       self.assertEqual(r.status, 401, headers)
-    self.pool.request.assert_not_called()
-
-  def test_no_token(self):
-    r, _ = self.call({"method": "listUploadQueue"}, token=False)
-    self.assertEqual(r.status, 403)
-    self.pool.request.assert_not_called()
-
-  def test_wrong_origin(self):
-    for headers in ({"Origin": "https://connect.comma.ai"}, {"Origin": "http://evil.example"}, {"Sec-Fetch-Site": "cross-site"}):
-      r, _ = self.call({"method": "listUploadQueue"}, headers={**AUTH, **headers})
-      self.assertEqual(r.status, 403, headers)
-    r, _ = self.call({"method": "listUploadQueue"}, host=f"evil.example:{config.port}")
-    self.assertEqual(r.status, 403)
     self.pool.request.assert_not_called()
 
   def test_post_only(self):

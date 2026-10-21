@@ -4,9 +4,7 @@ import {h, css, listeners, anchoredPanel} from "/dom.js";
 import {daemon} from "/daemon.js";
 import {status, fmtBytes} from "/status.js";
 import {link} from "/app.js";
-
-const ROUTE_RE = /([0-9a-f]{16})[|/_]([0-9a-f]{8}--[0-9a-f]{10}|\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})/i;
-const openRoute = () => { const m = ROUTE_RE.exec(decodeURIComponent(location.pathname)); return m && `${m[1]}|${m[2]}`; };
+import {parseRange} from "/data/sources.js";
 
 const jobs = new Map();  // id → job, from /local/jobs/events
 const subs = listeners();
@@ -35,10 +33,12 @@ if (daemon.present) {
   });
 }
 
-export function localBadge() {
+// openRoute() gives the open route's record, if any
+export function localBadge(openRoute) {
   if (!daemon.present) return null;
   css("/local.css");
-  const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs"}, "local"), panel = anchoredPanel(el, localPanel);
+  const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs"}, "local");
+  const panel = anchoredPanel(el, (close) => localPanel(close, openRoute()));
   onJobs(() => { el.classList.toggle("busy", allJobs().some((j) => j.state === "running")); panel.update(); });
   return el;
 }
@@ -69,8 +69,10 @@ function devicePart() {
     h("div", {class: "local-acts"}, h("span", {title: "Comma device on your network (ssh)"}, "device"), host, h("button", {class: "link", onclick: list}, "list routes")), out);
 }
 
-function localPanel(close) {
-  const intro = h("div", {class: "local-intro muted", title: Object.entries(daemon.caps.modules).map(([k, v]) => `${k} ${v.version}`).join(" · ")},
+// the open route's line names its segments from the record: the daemon knows only those on this machine's disk.
+// Live data and dropped files (local|...) have none in the cache
+function localPanel(close, record) {
+  const intro = h("div", {class: "local-intro muted", title: daemon.caps.modules.join(" · ")},
     "serve.py on this machine keeps downloaded logs and videos in a disk cache shared by every tab. ",
     h("a", {href: "/local", onclick: (e) => { close(); link("/local")(e); }}, "Open local logs…"));
   const cache = h("div", {class: "local-cache"});
@@ -81,7 +83,8 @@ function localPanel(close) {
   const el = h("div", {class: "local-panel", role: "dialog", "aria-label": "Local daemon"},
     h("div", {class: "local-head"}, h("b", {}, "Local daemon"), closeBtn),
     intro, cache, here, dev, list);
-  const route = openRoute();
+  const route = record && !record.live && parseRange(record.fullname) ? record.fullname : null;
+  const segs = route && [...Array(record.maxqlog + 1).keys()];
 
   const act = (label, title, fn, disabled = false) => h("button", {class: "link", title, disabled, onclick: async (e) => {
     e.target.disabled = true;
@@ -93,7 +96,7 @@ function localPanel(close) {
 
   async function stats() {
     if (!daemon.has("cache")) return;
-    const s = await daemon.json(`/local/cache${route ? `?route=${encodeURIComponent(route)}` : ""}`).catch(() => null);
+    const s = await daemon.json(`/local/cache${route ? `?route=${encodeURIComponent(route)}&segs=${segs.length}` : ""}`).catch(() => null);
     if (!s || !el.isConnected) return;
     cache.replaceChildren(
       h("div", {}, `shared cache ${fmtBytes(s.bytes)} of ${fmtBytes(s.budget)} · ${s.files} files`),
@@ -107,9 +110,9 @@ function localPanel(close) {
     here.replaceChildren(
       h("div", {}, `this route: logs ${logs}/${n} · video ${count(KINDS.video)}/${n} segments · ${fmtBytes(bytes)}`),
       h("div", {class: "local-acts"},
-        act("cache logs", "Download this route's logs to disk", () => daemon.json("/local/cache/prefetch", {method: "POST", body: {route, kinds: KINDS.logs}}), logs === n),
-        act("cache video", "Download its videos", () => daemon.json("/local/cache/prefetch", {method: "POST", body: {route, kinds: KINDS.video}})),
-        act("evict", "Remove this route from the disk cache", () => daemon.json("/local/cache/evict", {method: "POST", body: {route}}))));
+        act("cache logs", "Download this route's logs to disk", () => daemon.json("/local/cache/prefetch", {method: "POST", body: {route, segs, kinds: KINDS.logs}}), logs === n),
+        act("cache video", "Download its videos", () => daemon.json("/local/cache/prefetch", {method: "POST", body: {route, segs, kinds: KINDS.video}})),
+        act("evict", "Remove this route from the disk cache", () => daemon.json("/local/cache/evict", {method: "POST", body: {route, segs}}))));
   }
 
   function update() {

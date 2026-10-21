@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
 import socket
 import tempfile
 import threading
@@ -9,7 +10,7 @@ from unittest import mock
 
 from openpilot.tools.ycpe.daemon import core, jobs
 from openpilot.tools.ycpe.daemon.core import File, config, confine, route
-from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 
 @route("GET", "/local/test/file/{path:path}")
@@ -61,26 +62,29 @@ class TestSecurity(DaemonCase):
     r, _ = self.req("/local/caps", host=f"127.0.0.1:{config.port}")
     self.assertEqual(r.status, 200)
 
-  def test_wrong_origin(self):
+  def test_every_route(self):
+    # every route refuses before it runs: no or a wrong token, another page, a cross-site fetch, a rebound host
+    bad = [({"token": False}, "missing or wrong token"),
+           ({"token": False, "headers": {core.TOKEN_HEADER: "x" * len(config.token)}}, "missing or wrong token"),
+           ({"headers": {"Origin": "http://evil.example"}}, "bad origin"),
+           ({"headers": {"Sec-Fetch-Site": "cross-site"}}, "cross-site"),
+           ({"headers": {"Sec-Fetch-Site": "same-site"}}, "cross-site"),
+           ({"host": f"evil.example:{config.port}"}, "bad host")]
+    self.assertGreater(len(core._routes), 20)
+    for method, rx, _, public, _ in core._routes:
+      path = re.sub(r"\(\?P<\w+>[^)]*\)", "x", rx.pattern)[1:-2]
+      for kw, error in bad:
+        if public and error.endswith("token"):
+          continue
+        r, data = self.req(path, method=method, body=None if method == "GET" else b"{}", **kw)
+        self.assertEqual((r.status, json.loads(data)["error"]), (403, error), (method, path, kw))
+
+  def test_origins(self):
     for origin in ("http://evil.example", f"http://localhost:{config.port + 1}", "null", f"https://localhost:{config.port}"):
-      for path in ("/local/caps", "/local/auth", "/local/repos"):
-        r, _ = self.req(path, headers={"Origin": origin})
-        self.assertEqual(r.status, 403, (path, origin))
+      r, _ = self.req("/local/repos", headers={"Origin": origin})
+      self.assertEqual(r.status, 403, origin)
     r, _ = self.req("/local/repos", headers={"Origin": f"http://localhost:{config.port}"})
     self.assertEqual(r.status, 200)
-
-  def test_cross_site_fetch(self):
-    r, _ = self.req("/local/repos", headers={"Sec-Fetch-Site": "cross-site"})
-    self.assertEqual(r.status, 403)
-    r, _ = self.req("/local/repos", headers={"Sec-Fetch-Site": "same-site"})
-    self.assertEqual(r.status, 403)
-
-  def test_missing_token(self):
-    for path in ("/local/auth", "/local/repos", "/local/test/file/data.bin"):
-      r, _ = self.req(path, token=False)
-      self.assertEqual(r.status, 403, path)
-      r, _ = self.req(path, token=False, headers={core.TOKEN_HEADER: "x" * len(config.token)})
-      self.assertEqual(r.status, 403, path)
 
   def test_token_param(self):
     r, _ = self.req(f"/local/repos?{core.TOKEN_PARAM}={config.token}", token=False)
@@ -180,10 +184,10 @@ class TestStreaming(DaemonCase):
     self.assertEqual(j.state, "running")
     r, data = self.req(f"/local/jobs/{j.id}/cancel", method="POST")
     gate.set()
-    until(lambda: j.state != "running", 1)
+    self.assertTrue(j.finished.wait(1))
     self.assertEqual(j.state, "cancelled")
     j2 = jobs.start("test", lambda job: {"n": 1})
-    until(lambda: j2.state != "running", 1)
+    self.assertTrue(j2.finished.wait(1))
     self.assertEqual(j2.result, {"n": 1})
 
   def test_job_events(self):

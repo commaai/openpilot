@@ -29,15 +29,15 @@ What the daemon unlocks in the UI:
 | Module | What you get |
 |---|---|
 | `auth` | Your `~/.comma/auth.json` sign-in (from `tools/lib/auth.py`). The app opens signed in, and the account menu says so. |
-| `sources` | Logs from every source openpilot's LogReader uses: your disk, a pulled device, comma's internal storage, the comma API, openpilotci and commaCarSegments. That includes routes the browser can't reach. In the Files pane, the source picker enables these. |
+| `sources` | Logs from every source openpilot's LogReader uses: your disk, a pulled device, comma's internal storage, the comma API and openpilotci. That includes routes the browser can't reach. In the Files pane, the source picker enables these. |
 | `cache` | One disk cache shared with cabana, jotpluggler, replay and LogReader, so a route downloaded by any of them loads instantly in all of them. The badge panel can cache a whole route ahead of time (logs or video) and evict it. Progress shows in the loading pill. |
-| `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
+| `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into the checkout's opendbc_repo. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
 | `athena` | Relays the page's device calls (upload queue, upload requests, live streams) to athena on ports athena doesn't allow. |
 | `billing` | Relays the page's referrals read to billing, which allows the same few origins as athena. |
 | `webrtc` | Live data from a webrtcd on this PC (openpilot, a sim, replay) at `/live/local`: it passes the page's offer on. |
 | `jobs` | Progress and cancel for anything long, shown in the badge panel. |
-| `transcode`, `replay` | Video transcoding and openpilot re-runs, when installed (see their modules). |
+| `transcode` | H.264 copies of the HEVC cameras for browsers that can't decode HEVC, encoded on the GPU when there is one. |
 
 Without the daemon these features are disabled, with a short note saying they need it.
 
@@ -79,14 +79,12 @@ The page finds the daemon through `<meta name="ycpe-daemon">` in index.html, plu
 
 ## Writing a module
 
-Add `daemon/<name>.py` and list it in `server.MODULES`. A module that fails to import is reported under
-`failed` in `/local/caps`, and everything else keeps working.
+Add `daemon/<name>.py` and list it in `server.MODULES`, which `/local/caps` lists for the page's `daemon.has(name)`. A
+module that fails to import stops the daemon.
 
 ```python
-from openpilot.tools.ycpe.daemon import File, HTTPError, Stream, config, confine, module, route, sse
+from openpilot.tools.ycpe.daemon import File, HTTPError, Stream, config, confine, route, sse
 from openpilot.tools.ycpe.daemon import jobs
-
-module("transcode", "1", presets=["720p"])   # listed in /local/caps → {"modules": {"transcode": {"version": "1", "presets": [...]}}}
 
 @route("GET", "/local/transcode/{route}/{seg}/{cam}")   # {x} = one path segment, {x:path} = the rest
 def get(req):
@@ -120,16 +118,16 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 
 | endpoint | |
 |---|---|
-| `GET /local/caps` | `{daemon, version, modules: {name: {version, ...}}, failed: {name: error}}`. This is the only route that needs no token. |
+| `GET /local/caps` | `{daemon, version, modules: [name], sources: [name], commit: {sha, time}}`. This is the only route that needs no token. |
 | `GET /local/auth` | `{token}`: the JWT from `~/.comma/auth.json`, or null. |
-| `POST /local/sources/resolve` | Body `{route, segs?, kinds?, sources?, mode?, sizes?}`. Returns `{route, segments: {n: {kind: {url, file, size, source, cached}}}, missing: {n: [kind]}, errors: {source: msg}}`. Details below. |
+| `POST /local/sources/resolve` | Body `{route, segs?, kinds?, sources?, sizes?}`. Returns `{route, segments: {n: {kind: {url, file, size, source, cached}}}, missing: {n: [kind]}, errors: {source: msg}}`. Details below. |
 | `GET /local/file/{source}/{dongle}/{log_id}/{seg}/{file}` | The bytes, with Range support. It serves from the shared cache. On a miss it streams while the download fills the cache. A Range request on a miss is proxied, and the full download starts in the background. |
-| `GET /local/cache[?route=&segs=]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
+| `GET /local/cache[?route=&segs=<count>]` | `{dir, budget, bytes, files}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
-| `GET /local/repos` | `[{id, name, path, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default), plus a worktree's main checkout. |
+| `GET /local/repos` | `[{id, name, git: {branch, commit, dirty}, cereal, opendbc: {dbc}}]`. These are the `--repo` checkouts (the running one by default). |
 | `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
-| `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
+| `GET /local/repos/{id}/dbc` | `[{name}]` |
 | `GET /local/repos/{id}/dbc/{name}` | `{name, text, mtime}` |
 | `PUT /local/repos/{id}/dbc/{name}[?mtime=]` | Body is the DBC text. Saves it atomically into opendbc's dbc directory, and only there: the name must match `[A-Za-z0-9_.-]+\.dbc`, and the path is confined. With the `mtime` from the read, it answers 409 if the file changed on disk since. |
 | `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp, file, path, deleted}` when cereal's `.capnp` files change, from polling their mtimes once a second. |
@@ -141,9 +139,10 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 The daemon never runs anything on a device except `cat` and `find`.
 
 Resolve parameters:
-- `route` uses LogReader's syntax: `dongle|log_id[/slice][/q|r|a]`.
-- `kinds` is a list of `rlog qlog qcamera fcamera ecamera dcamera log`. `log` means rlog, qlog, or rlog falling back to qlog for each segment, according to `mode`.
-- `sources` is `"auto"` or a list. The auto order is device → local → internal → api → openpilotci → carSegments. A copy already in the shared cache wins over any download.
+- `route` is `dongle|log_id`, and `segs` a list of segment numbers. The page names them from the route's record; without
+  `segs` (here and in the cache endpoints) they're the segments on this machine's disk: local log directories and device pulls.
+- `kinds` is a list of `rlog qlog qcamera fcamera ecamera dcamera log`. `log` means the rlog, else the qlog, for each segment.
+- `sources` is `"auto"` or a list. The auto order is device → local → internal → api → openpilotci. A copy already in the shared cache wins over any download.
 - The page's `Authorization: JWT` header, if sent, is used for the API source; otherwise `~/.comma/auth.json` is used.
 - Each `url` already carries the token, so it can be fetched as-is.
 
@@ -157,9 +156,8 @@ without its query, so signed URLs of one file share an entry.
   - `sha256(url)`, the whole file
   - `sha256("decompressed-zst:" + url)`
   - complete `md5(url)_<n>.0` chunks, which are joined into the whole file
-- **Namespaces.** device, internal, api and openpilotci copies of a file have the same bytes, so a copy from any one of them
-  serves the others. commaCarSegments rlogs are filtered copies with the full rlog's name, so they're keyed by their HF URL
-  only. They're served only for `carSegments` requests, and in `auto` only when every other source missed.
+- **Sources.** device, internal, api and openpilotci copies of a file have the same bytes, so a copy from any one of them
+  serves the others.
 - **Writes.** Downloads land as `sha256(url)`. Logs are also mirrored as url_file chunks plus the manifest, so `LogReader`
   then reads them with no network.
 - **Budget.** The whole directory is LRU-pruned on mtime down to `--cache-budget` (20 GB by default). Temporary files and
@@ -167,9 +165,6 @@ without its query, so signed URLs of one file share an entry.
 - **Staleness.** comma's servers sometimes recompress a file in place under the same URL. At most once a day per file, a hit
   is checked in the background with a HEAD to its canonical URL. The checked-at time is kept in the `user.ycpe.checked`
   xattr, or in memory where xattrs aren't supported. On a size mismatch, the copy and its chunks are refetched and atomically
-  replaced. The hit is still served at once, and carries `X-Ycpe-Cache: stale-refetch` instead of `hit` until the new copy is
-  in place. Plain hits are `X-Ycpe-Cache: hit`, and misses are `miss`.
-- **Daemon-made files.** Device pulls and other modules' outputs go under `ycpe/`:
-  - `cache.ycpe_dir(name)` is the directory for one module's output
-  - `cache.fetch(dongle, log_id, seg, file, sources=None, job=None)` returns a local path, downloading into the cache if
-    needed
+  replaced; the old copy is still served until the new one is in place. Hits carry `X-Ycpe-Cache: hit`, and misses
+  `miss`.
+- **Daemon-made files.** Device pulls and transcodes go under `ycpe/`, one directory per module (`cache.ycpe_dir(name)`).

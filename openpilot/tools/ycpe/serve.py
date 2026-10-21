@@ -51,7 +51,6 @@ def main():
     server = ThreadingHTTPServer((args.host, args.port), partial(StaticHandler, directory=str(ROOT)))
   else:
     config.token = session_token()
-    config.cache_root = Paths.download_cache_root()
     config.cache_budget = int(args.cache_budget * 1000 ** 3)
     config.log_roots = [Paths.log_root(), *args.data_dir]
     config.repo_roots = args.repo or [str(ROOT.parents[2])]

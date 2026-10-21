@@ -8,26 +8,19 @@ import sys
 import traceback
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qsl
 
 from openpilot.tools.ycpe.daemon import core
 from openpilot.tools.ycpe.daemon.core import HTTPError, Response, Stream, File, config
 
 APP = Path(__file__).resolve().parent.parent
-# feature modules, imported in order; one that fails to import is left out of /local/caps with its error
-MODULES = ["auth", "jobs", "athena", "billing", "webrtc", "sources", "cache", "repos", "device", "transcode", "replay"]
-failed: dict[str, str] = {}
+# feature modules, imported in order; one that fails to import stops the daemon
+MODULES = ["auth", "jobs", "athena", "billing", "webrtc", "sources", "cache", "repos", "device", "transcode"]
 
 
 def load_modules() -> None:
   for name in MODULES:
-    try:
-      importlib.import_module(f"openpilot.tools.ycpe.daemon.{name}")
-    except ModuleNotFoundError as e:
-      if e.name != f"openpilot.tools.ycpe.daemon.{name}":
-        failed[name] = f"{type(e).__name__}: {e}"
-    except Exception as e:
-      failed[name] = f"{type(e).__name__}: {e}"
-      traceback.print_exc()
+    importlib.import_module(f"openpilot.tools.ycpe.daemon.{name}")
 
 
 def app_commit() -> dict | None:
@@ -41,7 +34,8 @@ def app_commit() -> dict | None:
 
 @core.route("GET", "/local/caps", public=True)
 def caps(req):
-  return {"daemon": "ycpe", "version": 1, "modules": core.modules, "failed": failed, "commit": app_commit()}
+  from openpilot.tools.ycpe.daemon.sources import SOURCES
+  return {"daemon": "ycpe", "version": 1, "modules": MODULES, "sources": SOURCES, "commit": app_commit()}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -64,24 +58,10 @@ class Handler(SimpleHTTPRequestHandler):
     self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
     super().end_headers()
 
-  def _headers(self) -> dict[str, str]:
-    return {k.lower(): v for k, v in self.headers.items()}
-
-  def do_GET(self):
-    self.dispatch("GET")
-
-  def do_HEAD(self):
-    self.dispatch("HEAD")
-
-  def do_POST(self):
-    self.dispatch("POST")
-
-  def do_PUT(self):
-    self.dispatch("PUT")
-
-  def dispatch(self, method: str):
+  def dispatch(self):
+    method = self.command
     path, _, qs = self.path.partition("?")
-    headers = self._headers()
+    headers = {k.lower(): v for k, v in self.headers.items()}
     try:
       if not self.peer_checked:
         core.check_peer(self.client_address, self.connection.getsockname())
@@ -89,7 +69,7 @@ class Handler(SimpleHTTPRequestHandler):
       core.check_host(headers)  # every request, static too: index.html carries the token
       if path.startswith("/local/"):
         try:
-          return self.api(method, path, core.parse_query(qs), headers)
+          return self.api(method, path, dict(parse_qsl(qs, keep_blank_values=True)), headers)
         except core.NoRoute:
           # the app has page routes under /local/ too (loose files): a reload of one gets the app, not an API 404
           navigating = headers.get("sec-fetch-mode") == "navigate" or "text/html" in headers.get("accept", "")
@@ -108,6 +88,8 @@ class Handler(SimpleHTTPRequestHandler):
     except (BrokenPipeError, ConnectionResetError):
       pass
 
+  do_GET = do_HEAD = do_POST = do_PUT = dispatch
+
   def index(self, method: str):
     page = (APP / "index.html").read_text()
     meta = f'<meta name="ycpe-daemon" content="{html.escape(config.token)}">'
@@ -121,36 +103,29 @@ class Handler(SimpleHTTPRequestHandler):
     if n > max_body:
       raise HTTPError(413)
     body = self.rfile.read(n) if n else b""
-    req = core.Request(method, path, params, query, headers, body)
     try:
-      out = fn(req)
+      out = fn(core.Request(method, path, params, query, headers, body))
     except HTTPError:
       raise
     except Exception as e:
       traceback.print_exc()
       raise HTTPError(500, f"{type(e).__name__}: {e}") from e
+    head = method == "HEAD"
     if out is None:
       out = Response(status=204)
     elif isinstance(out, (dict, list)):
       out = Response(json.dumps(out).encode(), type="application/json")
     if isinstance(out, Response):
-      self.reply(out, head=method == "HEAD")
+      self.reply(out, head)
     elif isinstance(out, Stream):
-      self.stream(out.chunks, out.status, out.type, out.headers, head=method == "HEAD", length=out.length)
+      self.stream(out, head)
     elif isinstance(out, File):
-      self.file(out, headers.get("range"), head=method == "HEAD")
+      self.file(out, headers.get("range"), head)
     else:
       raise HTTPError(500, f"bad handler result {type(out).__name__}")
 
   def reply(self, r: Response, head=False):
-    self.send_response(r.status)
-    self.send_header("Content-Type", r.type)
-    for k, v in r.headers.items():
-      self.send_header(k, v)
-    self.send_header("Content-Length", str(len(r.body)))
-    self.end_headers()
-    if not head and r.status != 204:
-      self.wfile.write(r.body)
+    self.stream(Stream([r.body], r.type, r.headers, r.status, len(r.body)), head)
 
   def error(self, status: int, message: str):
     self.close_connection = True
@@ -159,21 +134,21 @@ class Handler(SimpleHTTPRequestHandler):
     except (BrokenPipeError, ConnectionResetError):
       pass
 
-  def stream(self, chunks, status, ctype, extra, head=False, length=None):
-    self.send_response(status)
-    self.send_header("Content-Type", ctype)
-    for k, v in extra.items():
+  def stream(self, s: Stream, head=False):
+    self.send_response(s.status)
+    self.send_header("Content-Type", s.type)
+    for k, v in s.headers.items():
       self.send_header(k, v)
-    self.send_header(*(("Content-Length", str(length)) if length is not None else ("Transfer-Encoding", "chunked")))
+    self.send_header(*(("Content-Length", str(s.length)) if s.length is not None else ("Transfer-Encoding", "chunked")))
     self.end_headers()
     try:
       if head:
         return
-      for data in chunks:
+      for data in s.chunks:
         if data:
-          self.wfile.write(data if length is not None else b"%x\r\n%b\r\n" % (len(data), data))
+          self.wfile.write(data if s.length is not None else b"%x\r\n%b\r\n" % (len(data), data))
           self.wfile.flush()
-      if length is None:
+      if s.length is None:
         self.wfile.write(b"0\r\n\r\n")
     except (BrokenPipeError, ConnectionResetError):
       self.close_connection = True
@@ -181,20 +156,19 @@ class Handler(SimpleHTTPRequestHandler):
       sys.stderr.write(f"stream aborted: {type(e).__name__}: {e}\n")
       self.close_connection = True  # no terminating chunk: the client sees a failed body
     finally:
-      if hasattr(chunks, "close"):
-        chunks.close()
+      if hasattr(s.chunks, "close"):
+        s.chunks.close()
 
   def file(self, f: File, range_header: str | None, head=False):
     if not os.path.isfile(f.path):
       raise HTTPError(404)
-    ctype = f.type or core.guess_type(f.path)
     if f.growing is not None and f.growing():
-      return self.stream(core.file_chunks(f.path, 0, f.size, f.growing), 200, ctype, f.headers, head, f.size)
+      return self.stream(Stream(core.file_chunks(f.path, 0, None, f.growing), f.type, f.headers), head)
     size = os.path.getsize(f.path)
     rng = core.parse_range(range_header, size)
     start, end = rng or (0, size)
     self.send_response(206 if rng else 200)
-    self.send_header("Content-Type", ctype)
+    self.send_header("Content-Type", f.type)
     self.send_header("Accept-Ranges", "bytes")
     if rng:
       self.send_header("Content-Range", f"bytes {start}-{end - 1}/{size}")

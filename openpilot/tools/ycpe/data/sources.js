@@ -70,7 +70,7 @@ const local = await import("/daemon.js").then((m) => m.daemon, () => null);
 
 export const daemon = {
   // the sources it resolves, or null without it
-  sources: () => local?.present && local.has("sources") ? local.caps.modules.sources.sources : null,
+  sources: () => local?.present ? local.caps.sources : null,
   // {segments: {n: {kind: {url, file, size, source, cached}}}, missing, errors: {source: message}}; the page's sign-in
   // stands in for the daemon's own. sizes: HEAD the API's files too (other sources always know theirs).
   resolve: (sr, segs, kinds, sources, sizes = false) => local.json("/local/sources/resolve", {method: "POST",
@@ -186,7 +186,7 @@ export async function resolveFiles(sr, segs, kinds, sources = "auto", {sizes = f
     sources = (sources === "auto" ? AUTO : sources).filter((name) => !served.includes(name) && !SOURCES[name].daemon);
     if (theirs.length) {
       const r = await daemon.resolve(sr, segs, kinds, theirs, sizes);
-      for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, cacheName(f));
+      for (const [n, byKind] of Object.entries(r.segments)) for (const [kind, f] of Object.entries(byKind)) found.set(`${n}/${kind}`, f);
       Object.assign(errors, r.errors);
     }
   }
@@ -222,7 +222,8 @@ export async function resolveLogs(sr, segs, {sources = "auto", mode = sr.selecto
 }
 
 // the record a workspace opens a route with: the API's, or when the API doesn't have the route or won't show it, one
-// built from what the other sources have (openpilotci, commaCarSegments, ...), so those open without signing in
+// built from what the other sources have (this machine's disk and a pulled device through the daemon, else
+// commaCarSegments), so those open without signing in
 // With a range ("<route>/2:5/q"), the record is of those segments played back to back: range is "2:5/q",
 // segment_numbers the segments in timeline order (slot k plays segment_numbers[k]), and the start and end times span
 // just them.
@@ -272,12 +273,14 @@ export function routeFromPath(parts) {
 // a range's files in timeline slots, each with its real segment number; all of them as they are without one
 const slotted = (route, urls) => route.range ? route.segment_numbers.map((n) => urls[n] && {...urls[n], seg: n}) : urls;
 
-// every file of a route the sources other than the API have: "<n>/<kind>" → {url, file, size, source}
+// every file of a route outside the API: what the daemon has on this machine's disk (with no segments named, it lists
+// only those), else commaCarSegments'. "<n>/<kind>" → {url, file, size, source}
 async function elsewhere(sr) {
   const served = daemon.sources();
   if (served) {
     const r = await daemon.resolve(sr, undefined, Object.keys(KINDS), served.filter((s) => s !== "api"));
-    return new Map(Object.entries(r.segments).flatMap(([n, byKind]) => Object.entries(byKind).map(([kind, f]) => [`${n}/${kind}`, f])));
+    const files = new Map(Object.entries(r.segments).flatMap(([n, byKind]) => Object.entries(byKind).map(([kind, f]) => [`${n}/${kind}`, f])));
+    if (files.size) return files;
   }
   const segs = [...new Set([...(await ccsTree(sr)).keys()].map((k) => +k.split("/")[0]))];
   return (await resolveFiles(sr, segs, Object.keys(KINDS), ["carSegments"])).found;

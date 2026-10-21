@@ -28,7 +28,7 @@ export function each(fn) { for (const p of panes) fn(p); }
 
 // the time plot a series is sent to without a drag: the one last used, else the first on the page
 function target() {
-  const live = [...panes].filter((p) => p.compare && p.el.isConnected);
+  const live = [...panes].filter((p) => p.el.isConnected);
   if (live.includes(touched)) return touched;
   return live.sort((a, b) => a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)[0];
 }
@@ -37,15 +37,6 @@ function target() {
 export function addToPlot(paths) {
   const p = target();
   p?.addCurves(paths);
-  return !!p;
-}
-
-// shows an overlay's run of path (prefix + path, e.g. a replay) against the original in a mounted time plot:
-// the one already showing path, else the one last used, else any; seeks to t if given. False when no plot is
-// mounted.
-export function compare(path, prefix, {t} = {}) {
-  const p = [...panes].find((p) => p.compare && p.el.isConnected && p.has(path)) || target();
-  p?.compare(path, prefix, t);
   return !!p;
 }
 

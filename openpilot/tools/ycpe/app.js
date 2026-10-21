@@ -217,7 +217,7 @@ function topBar() {
   return h("header", {class: "topbar"},
     h("a", {class: "brand", href: "/", onclick: link("/"), title: "YCPE"}, logo(20), h("span", {}, "ycpe")),
     bar.device, h("span", {class: "sep", hidden: true}, "›"), bar.route, search, bar.views, bar.tabs,
-    h("span", {class: "grow"}), loadPill(), localBadge(), hud(footprint()), simple, helpBtn, themeBtn, bar.gift, accountButton());
+    h("span", {class: "grow"}), loadPill(), localBadge(() => ws?.route), hud(footprint()), simple, helpBtn, themeBtn, bar.gift, accountButton());
 }
 
 // who's signed in, then where to from there, as connect's account menu; its version at the foot. Its module loads with

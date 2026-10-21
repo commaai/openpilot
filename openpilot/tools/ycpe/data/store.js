@@ -12,8 +12,6 @@ import {BLOCK, constant, enumRef, service, times, unpack} from "./pack.js";
 
 const BUDGET = 1.5e9;  // resident column bytes
 const IN_USE = 5000;  // ms since last use that a column counts as in use (never evicted)
-// what a store without CAN (an overlay) has in place of its Can
-const NO_CAN = {bytes: 0, paths: () => [], series: () => null, ingest() {}, dispose() {}};
 const FANOUT = 8;  // min/max pyramid: blocks of BLOCK samples, then 8 blocks per level up
 const NEAR = 3;  // segments from the focus on that, once in, let the worker pool shrink
 const MONO = "__logMonoTime";  // the message times as a series, as jotpluggler and PlotJuggler name it
@@ -21,22 +19,17 @@ const MONO = "__logMonoTime";  // the message times as a series, as jotpluggler 
 export class Store {
   // urls[k]: the log shown in slot k, a URL or {url, file, source, seg} (file names the cache entry when the URL doesn't;
   // seg is the route's segment when only a range of it loads); keep: {service: [list path globs]} to split long lists from the start
-  // overlays pass the main store's loader (shared, not disposed here), their own status lane, can: false and migrate: false
-  constructor(name, urls, {t = 0, repeat = 1, keep = {}, loader, budget = BUDGET, lane = {name: "logs", order: 0}, can = true, migrate = true} = {}) {
+  constructor(name, urls, {t = 0, repeat = 1, keep = {}, budget = BUDGET} = {}) {
     const count = urls.length * repeat;
     this.route = {name, t0: null, duration: 0, segments: Array.from({length: count}, (_, n) => ({
       n, t0: n * SEGMENT, t1: (n + 1) * SEGMENT, status: urls[n % urls.length] ? "queued" : "missing",
     }))};
-    this.loader = loader || new Loader();
-    this.shared = !!loader;
-    this.withCan = can;
-    this.migrate = migrate;
-    this.overlays = [];  // [{prefix, name, store}]: other logs on this clock (replays), their paths under prefix
+    this.loader = new Loader();
     this.budget = budget;
     this.keep = keep;
     this.kept = [];  // the lists asked for since, in order ({service: [globs]}); a parse notes how many it read with
     this.handlers = {};
-    this.can = can ? new Can(this) : NO_CAN;  // an overlay's Can would share and resize the route's CAN lane
+    this.can = new Can(this);
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.monos = new Map();  // /<service>/__logMonoTime → its series
     this.lists = new Map();  // long lists the workers skipped: path → longest length
@@ -59,7 +52,7 @@ export class Store {
       Object.assign(this.disk, d);
       for (const seg of this.route.segments) this.publish(seg);
     }, () => {});
-    this.status = status.source(lane.name, lane);
+    this.status = status.source("logs", {order: 0});
     this.status.count(count);
     this.status.retry(() => this.retry());
     this.online = () => this.retry();
@@ -80,10 +73,10 @@ export class Store {
     seg.key = `${this.cacheDir}${seg.real}/${e.file ?? new URL(e.url, location.origin).pathname.split("/").at(-1)}`;
     seg.url = e.url;
     seg.source = e.source;
-    seg.opts = {n: seg.real, shift: (seg.n - seg.real) * SEGMENT, ...(!this.migrate && {migrate: false})};
+    seg.opts = {n: seg.real, shift: (seg.n - seg.real) * SEGMENT};
     this.publish(seg);
     this.progress.total++;
-    this.load(seg, undefined, {can: this.withCan}).then((p) => {  // CAN frames come out of the first parse only
+    this.load(seg, undefined, {can: true}).then((p) => {  // CAN frames come out of the first parse only
       if (p.cached || p.stored) this.disk[seg.key] = p.bytes;
       this.progress.done++;
       this.ingest(seg, p);
@@ -110,7 +103,6 @@ export class Store {
   // the playhead: loading ranks outward from it, and it buffers while its segment isn't in. Cheap to call every frame
   focus(t) {
     this.t = t;
-    for (const o of this.overlays) o.store.focus(t);
     const n = Math.max(0, Math.floor(t / SEGMENT));
     if (n !== this.focusSeg) {
       this.focusSeg = n;
@@ -123,7 +115,6 @@ export class Store {
 
   // the whole pool while the focus area loads, half of it after
   pool() {
-    if (this.shared) return;  // the owner sizes it
     const near = this.route.segments.slice(this.focusSeg, this.focusSeg + NEAR);
     this.loader.resize(near.every((s) => s.status !== "queued") ? Math.max(2, POOL >> 1) : POOL);
   }
@@ -297,7 +288,7 @@ export class Store {
   paths() {
     const can = this.can.paths();  // a new array when the DBCs change, or a live session's messages go
     if (this.listed?.signals !== can) this.listed = null;
-    const l = this.listed ||= {out: [], signals: can, can: 0, entries: 0, lists: new Map(), overlays: new Map()};
+    const l = this.listed ||= {out: [], signals: can, can: 0, entries: 0, lists: new Map()};
     const {out} = l;
     for (; l.can < can.length; l.can++) out.push(can[l.can]);
     let k = 0;
@@ -315,23 +306,12 @@ export class Store {
       for (let i = l.lists.get(list) || 0; i < n; i++) if (!this.entries.has(`${list}/${i}`)) out.push({path: `${list}/${i}`, type, lazy: true});
       l.lists.set(list, n);
     }
-    for (const o of this.overlays) {
-      const theirs = o.store.paths(), [seen, from] = l.overlays.get(o.prefix) || [theirs, 0];
-      if (seen !== theirs) {  // its paths went or changed
-        this.listed = null;
-        return this.paths();
-      }
-      for (let i = from; i < theirs.length; i++) out.push({...theirs[i], path: o.prefix + theirs[i].path});
-      l.overlays.set(o.prefix, [theirs, theirs.length]);
-    }
     return out;
   }
 
   // the chunks of a path; an unknown index of a skipped long list (/modelV2/position/x/32) starts loading it
   series(path) {
     if (path.startsWith("/dbc/") && !this.entries.has(path)) return this.can.series(path);  // transforms of signals are put here
-    const o = this.overlays.length ? this.overlayOf(path) : null;
-    if (o) return this.overlaySeries(o, path);
     if (path.endsWith(`/${MONO}`)) return this.monoSeries(path);
     const e = this.entries.get(path);
     if (!e) return this.request(path), null;
@@ -349,8 +329,6 @@ export class Store {
   // a path's {type, names?, precision?, unit?, states?} (the last three for DBC signals) without unpacking or decoding
   // it; null when unknown
   meta(path) {
-    const o = this.overlays.length ? this.overlayOf(path) : null;
-    if (o) return o.store.meta(path.slice(o.prefix.length));
     if (path.startsWith("/dbc/") && !this.entries.has(path)) {
       const p = this.can.parse(path);
       return p && this.can.meta(path, p.sig);
@@ -621,60 +599,11 @@ export class Store {
     }
   }
 
-  // another log on the same clock, such as a replay of this route (its segments carry this route's initData, so
-  // times line up), with its paths under prefix. Attaching the same prefix again loads segments added to urls.
-  attach(prefix, urls, {name = prefix} = {}) {
-    let o = this.overlays.find((x) => x.prefix === prefix);
-    if (o) return o.store.add(urls), o;
-    const store = new Store(name, urls, {loader: this.loader, t: this.t, lane: {name, label: name, order: 1}, can: false, migrate: false});
-    o = {prefix, name, store, cache: new Map(), offs: ["paths", "progress"].map((ev) => store.on(ev, (a) => this.emit(ev, a)))};
-    this.overlays.push(o);
-    return o;
-  }
-
-  detach(prefix) {
-    const o = this.overlays.find((x) => x.prefix === prefix);
-    if (!o) return;
-    this.overlays.splice(this.overlays.indexOf(o), 1);
-    for (const off of o.offs) off();
-    o.store.dispose();
-    this.listed = null;
-    this.emit("paths");
-  }
-
-  // loads the slots of urls that weren't there before
-  add(urls) {
-    const segs = this.route.segments, slot = (k) => ({n: k, t0: k * SEGMENT, t1: (k + 1) * SEGMENT, status: "missing", bytes: 0});
-    urls.forEach((u, k) => {
-      if (!u || segs[k]?.url) return;
-      const seg = segs[k] ||= slot(k);
-      seg.status = "queued";
-      this.start(seg, typeof u === "string" ? {url: u} : u);
-    });
-    for (let k = 0; k < segs.length; k++) segs[k] ||= slot(k);
-    this.status.count(segs.length);
-  }
-
-  overlayOf(path) {
-    return this.overlays.find((o) => path.startsWith(o.prefix) && path[o.prefix.length] === "/");
-  }
-
-  // the overlay's series under the prefixed path, the same object while it's unchanged
-  overlaySeries(o, path) {
-    const s = o.store.series(path.slice(o.prefix.length));
-    if (!s) return null;
-    let c = o.cache.get(path);
-    if (c?.version !== s.version || c.chunks !== s.chunks) o.cache.set(path, c = {...s, path});
-    return c;
-  }
-
   dispose() {
-    for (const o of this.overlays) o.store.dispose();
     this.disposed = true;
     clearInterval(this.ticker);
     removeEventListener("online", this.online);
-    if (this.shared) this.loader.cancel(this);
-    else this.loader.dispose();
+    this.loader.dispose();
     this.can.dispose();
     this.status.remove();
   }

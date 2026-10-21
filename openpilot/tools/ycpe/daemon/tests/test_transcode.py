@@ -6,11 +6,13 @@ import time
 import unittest
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import transcode
+from openpilot.tools.ycpe.daemon import config, transcode
 from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.ycpe.daemon.transcode import Encode, Pictures, Transcoder, backends, encode
 
 FRAMES = 50  # 2.5 s at 20 fps: a few GOPs and a short last one
+DONGLE, LOG = "0123456789abcdef", "0000002a--0123456789"
+VIDEO = f"/local/video/{DONGLE}/{LOG}"
 
 
 def hevc_clip(path: Path, frames: int = FRAMES) -> Path:
@@ -117,6 +119,13 @@ class TestTranscoder(unittest.TestCase):
     finally:
       t.close()
 
+  def test_resolves_local_logs(self):
+    d = Path(tempfile.mkdtemp())
+    (d / f"{LOG}--3").mkdir()
+    (d / f"{LOG}--3" / "ecamera.hevc").write_bytes(b"hevc")
+    config.log_roots = [str(d)]
+    self.assertEqual(transcode.resolve_source(DONGLE, LOG, 3, "ecamera"), str((d / f"{LOG}--3" / "ecamera.hevc").resolve()))
+
 
 class TestRoute(DaemonCase):
   @classmethod
@@ -138,17 +147,18 @@ class TestRoute(DaemonCase):
 
   def test_streams_then_serves_ranges(self):
     start = time.monotonic()
-    r, data = self.req("/local/video/d/r/0/fcamera.h264")
+    r, data = self.req(f"{VIDEO}/0/fcamera.h264")
     self.assertEqual(r.status, 200)
     self.assertEqual(len([t for t in nal_types(data) if t in (1, 5)]), 200)
     self.assertLess(time.monotonic() - start, 60)
-    r, head = self.req("/local/video/d/r/0/fcamera.h264", headers={"Range": "bytes=0-99"})
+    r, head = self.req(f"{VIDEO}/0/fcamera.h264", headers={"Range": "bytes=0-99"})
     self.assertEqual((r.status, head), (206, data[:100]))
 
   def test_errors(self):
-    self.assertEqual(self.req("/local/video/d/r/7/fcamera.h264")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/qcamera.h264")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/fcamera.mp4")[0].status, 404)
+    self.assertEqual(self.req(f"{VIDEO}/7/fcamera.h264")[0].status, 404)
+    self.assertEqual(self.req(f"{VIDEO}/0/qcamera.h264")[0].status, 404)
+    self.assertEqual(self.req(f"{VIDEO}/0/fcamera.mp4")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/0/fcamera.h264")[0].status, 404)  # not route ids
 
 
 if __name__ == "__main__":

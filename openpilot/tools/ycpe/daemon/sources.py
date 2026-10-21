@@ -1,8 +1,8 @@
 """Where a route's files come from, in LogReader's auto order, and a URL that serves them through the shared cache.
 
 Order: device (pulled over ssh) → local (log dirs on this machine) → internal (DATA_ENDPOINT) → comma API →
-openpilotci → commaCarSegments, the same as logreader.auto_source after the local ones. A copy already in the
-shared cache wins over any download.
+openpilotci, the same as logreader.auto_source after the local ones. A copy already in the shared cache wins over any
+download. commaCarSegments answers CORS, so the page reads it directly.
 """
 import re
 import threading
@@ -14,42 +14,41 @@ from urllib.parse import urlparse
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib import filereader
+from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.helpers import RE
+from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import URLFile
-from openpilot.tools.ycpe.daemon import cache
+from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.cache import Key
-from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, module, route
+from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, route
 
-SOURCES = ["device", "local", "internal", "api", "openpilotci", "carSegments"]
-KINDS = {
-  "rlog": ("rlog.zst", "rlog.bz2"), "qlog": ("qlog.zst", "qlog.bz2"), "qcamera": ("qcamera.ts",),
-  "fcamera": ("fcamera.hevc",), "ecamera": ("ecamera.hevc",), "dcamera": ("dcamera.hevc",),
-}
+SOURCES = ["device", "local", "internal", "api", "openpilotci"]
+KINDS = {"rlog": FileName.RLOG, "qlog": FileName.QLOG, "qcamera": FileName.QCAMERA, "fcamera": FileName.FCAMERA,
+         "ecamera": FileName.ECAMERA, "dcamera": FileName.DCAMERA}
 FILES = {f: k for k, fs in KINDS.items() for f in fs}
-API_KINDS = {"logs": "rlog", "qlogs": "qlog", "cameras": "fcamera", "ecameras": "ecamera", "dcameras": "dcamera", "qcameras": "qcamera"}
-ROUTE_RE = re.compile(RE.SEGMENT_RANGE)
 HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
+PREFETCH = 8  # downloads at once: one Azure blob stream gives ~5 MB/s here
 
-module("sources", "1", sources=SOURCES)
 _pool = ThreadPoolExecutor(16, thread_name_prefix="probe")
 
 
-def parse_route(text: str) -> tuple[str, str, str, str | None]:
-  """(dongle, log_id, slice, selector) of "dongle|log_id[/slice][/selector]" (LogReader's syntax; | / _ separators)."""
-  m = ROUTE_RE.fullmatch(text.strip())
-  if not m:
+def parse_route(text) -> tuple[str, str]:
+  """(dongle, log_id) of "dongle|log_id" (or with / or _, as route.py names routes)"""
+  if not (m := re.fullmatch(RE.ROUTE_NAME, str(text).strip())):
     raise HTTPError(400, "bad route")
-  return m.group("dongle_id"), m.group("log_id"), m.group("slice") or "", m.group("selector")
+  return m["dongle_id"], m["log_id"]
 
 
-def pick(seg_count: int, sl: str) -> list[int]:
-  m = re.fullmatch(RE.SLICE, sl)
-  start, end, step = (None if s is None else int(s) for s in m.groups())
-  segs = list(range(seg_count))
-  if start is not None and end is None and ":" not in sl:
-    return [segs[start]] if -seg_count <= start < seg_count else []
-  return segs[slice(start, end, step)]
+def segments(segs, dongle: str, log_id: str):
+  """The segments a request names, else the ones on this machine's disk (local log dirs, device pulls): the page
+  names the rest, from the route's record"""
+  if segs is None:
+    have = set(local_dirs(log_id)) | set(device_segs(dongle, log_id))
+    return range(max(have) + 1 if have else 0)
+  if not (isinstance(segs, list) and all(isinstance(n, int) and 0 <= n < 10000 for n in segs)):
+    raise HTTPError(400, "bad segs")
+  return segs
 
 
 # per-source lookups: each gives {seg: {file: (url or path, size)}} for what it has
@@ -102,11 +101,6 @@ def head(url: str) -> int | None:
   return n if n >= 0 else None
 
 
-def car_segments_url(key: Key) -> str | None:
-  from openpilot.tools.lib.comma_car_segments import get_url
-  return get_url(key.route, key.seg, key.file)
-
-
 class Resolver:
   def __init__(self, dongle: str, log_id: str, sources: list[str], jwt: str | None, sizes: bool):
     self.dongle, self.log_id, self.sources, self.jwt, self.sizes = dongle, log_id, sources, jwt, sizes
@@ -127,12 +121,6 @@ class Resolver:
         self.errors["api"] = f"{type(e).__name__}: {e}"
     return self._api
 
-  def known_segments(self) -> int:
-    segs = set(self._local) | set(self._device)
-    if "api" in self.sources:
-      segs |= set(self.api())
-    return max(segs) + 1 if segs else 0
-
   def find(self, source: str, key: Key) -> tuple[str, int | None] | None:
     """(url or local path, size or None) where source has key."""
     if source == "device":
@@ -149,12 +137,6 @@ class Resolver:
     if source in ("internal", "openpilotci"):
       url = cache.canonical_url(source, key)
       return (url, n) if (n := head(url)) is not None else None
-    if source == "carSegments" and key.file == "rlog.zst":
-      try:
-        url = car_segments_url(key)
-      except Exception:
-        return None
-      return (url, head(url)) if url else None
     return None
 
   def resolve(self, seg: int, names: tuple[str, ...]) -> dict | None:
@@ -166,25 +148,14 @@ class Resolver:
     for source in self.sources:
       for name in names:
         key = Key(self.dongle, self.log_id, seg, name)
-        if source == "carSegments" and (hit := cache.lookup(key, ["carSegments"])):  # filtered copies only in their turn
-          return entry(hit[0], key, hit[1].stat().st_size, True)
         try:
           found = self.find(source, key)
         except Exception as e:
           self.errors[source] = f"{type(e).__name__}: {e}"
           found = None
         if found:
-          remember(source, key, found[0])
           return entry(source, key, found[1], source in ("device", "local"))
     return None
-
-
-_upstream: dict[tuple[str, Key], str] = {}
-
-
-def remember(source: str, key: Key, url: str) -> None:
-  if source not in ("device", "local"):
-    _upstream[(source, key)] = url
 
 
 def entry(source: str, key: Key, size: int | None, cached: bool) -> dict:
@@ -198,35 +169,24 @@ def jwt_of(req) -> str | None:
 
 
 def resolve(spec: dict, jwt: str | None = None) -> dict:
-  """spec: {route, segs?, kinds?, sources?, mode?, sizes?} → {route, segments: {n: {kind: entry}}, missing, errors}"""
-  dongle, log_id, sl, selector = parse_route(str(spec.get("route", "")))
-  mode = spec.get("mode") or selector or "a"
-  if mode not in ("a", "r", "q"):
-    raise HTTPError(400, "bad mode")
+  """spec: {route, segs?, kinds?, sources?, sizes?} → {route, segments: {n: {kind: entry}}, missing, errors}"""
+  dongle, log_id = parse_route(spec.get("route", ""))
   sources = spec.get("sources") or "auto"
   sources = SOURCES if sources == "auto" else [s for s in sources if s in SOURCES]
   kinds = spec.get("kinds") or ["log"]
   if any(k not in KINDS and k != "log" for k in kinds):
     raise HTTPError(400, "bad kind")
+  segs = segments(spec.get("segs"), dongle, log_id)
   r = Resolver(dongle, log_id, sources, jwt, bool(spec.get("sizes")))
-  segs = spec.get("segs")
-  if segs is None:
-    segs = pick(r.known_segments(), sl)
-  elif not all(isinstance(n, int) and 0 <= n < 10000 for n in segs):
-    raise HTTPError(400, "bad segs")
 
   def one(seg, kind):
-    if kind != "log":
-      return r.resolve(seg, KINDS[kind])
-    order = {"r": ["rlog"], "q": ["qlog"], "a": ["rlog", "qlog"]}[mode]
-    for k in order:
-      if (e := r.resolve(seg, KINDS[k])):
-        return e
-    return None
+    if kind == "log":  # the rlog, else the qlog
+      return r.resolve(seg, KINDS["rlog"]) or r.resolve(seg, KINDS["qlog"])
+    return r.resolve(seg, KINDS[kind])
 
-  jobs = {(seg, kind): _pool.submit(one, seg, kind) for seg in segs for kind in kinds}
+  futs = {(seg, kind): _pool.submit(one, seg, kind) for seg in segs for kind in kinds}
   out: dict = {"route": f"{dongle}|{log_id}", "segments": {}, "missing": {}, "errors": r.errors}
-  for (seg, kind), fut in jobs.items():
+  for (seg, kind), fut in futs.items():
     if (e := fut.result()):
       out["segments"].setdefault(str(seg), {})[kind] = e
     else:
@@ -247,13 +207,14 @@ def parse_key(req) -> tuple[str, Key]:
   return p["source"], Key(p["dongle"], p["log_id"], int(p["seg"]), p["file"])
 
 
-def upstream(source: str, key: Key, jwt: str | None) -> str | None:
-  if (url := _upstream.get((source, key))):
-    return url
-  found = Resolver(key.dongle, key.log_id, [source], jwt, False).find(source, key)
-  if found:
-    remember(source, key, found[0])
-  return found[0] if found else None
+def download(key: Key, source: str, jwt: str | None, cancelled=None) -> cache.Fill:
+  """key's download into the shared cache: the one in flight, else one from source started now (the API's signed URLs
+  expire, so they're asked for, API_TTL cached, at this point). 404 if source doesn't have key."""
+  if (fill := cache.filling(key)) is None:
+    if not (found := Resolver(key.dongle, key.log_id, [source], jwt, False).find(source, key)):
+      raise HTTPError(404, f"no {key} in {source}")
+    fill = cache.fill(key, source, found[0], cancelled)
+  return fill
 
 
 # staleness: a blob can change under the same URL (logs get recompressed server side), and every cache keyed by URL would
@@ -261,15 +222,13 @@ def upstream(source: str, key: Key, jwt: str | None) -> str | None:
 # background (the hit never waits), and refetched in place on a mismatch along with the other tools' forms of it.
 
 CHECK_EVERY = 24 * 3600
-STALE = {"X-Ycpe-Cache": "stale-refetch"}  # served from the old copy while the new one downloads
 _checking: set[str] = set()  # canonical URLs
-_refetching: dict[str, int] = {}  # canonical URL → inode of the stale copy, which is what gets the stale header
 _check_lock = threading.Lock()
 
 
 def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
   url = cache.canonical_url(source, key)
-  if url is None or path.name != cache.sha(url) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
+  if url is None or path != Path(cache_file_path(url)) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
     return  # device pulls, decompressed-only copies, or checked lately
   with _check_lock:
     if url in _checking:
@@ -284,15 +243,12 @@ def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
       if found[1] == path.stat().st_size:
         cache.mark_checked(path)
         return
-      cache.stats["stale"] += 1
-      _refetching[url] = path.stat().st_ino
       cache.remove(cache.derived_copies(url))
       fill = cache.fill(key, source, found[0])
       fill.finished.wait()
     except Exception as e:
       print(f"revalidating {key}: {type(e).__name__}: {e}")
     finally:
-      _refetching.pop(url, None)
       with _check_lock:
         _checking.discard(url)
   threading.Thread(target=check, daemon=True, name=f"check {key}").start()
@@ -308,19 +264,13 @@ def serve_file(req):
     if not found:
       raise HTTPError(404)
     return File(str(confine(found[0], config.log_roots)), headers=HIT)
-  if (hit := cache.lookup(key, cache.peers(source))):
-    cache.stats["hits"] += 1
+  if (hit := cache.lookup(key)):
     cache.touch(hit[1])
     revalidate(key, *hit, jwt_of(req))
-    stale = _refetching.get(cache.canonical_url(hit[0], key) or "") == hit[1].stat().st_ino
-    return File(str(hit[1]), headers=STALE if stale else HIT)
+    return File(str(hit[1]), headers=HIT)  # the old copy while a stale one is refetched
   if source == "device":
     raise HTTPError(404)
-  cache.stats["misses"] += 1
-  if (fill := cache.filling(key, source)) is None:
-    if (url := upstream(source, key, jwt_of(req))) is None:
-      raise HTTPError(404)
-    fill = cache.fill(key, source, url)
+  fill = download(key, source, jwt_of(req))
   rng = req.headers.get("range")
   if rng:
     return proxy_range(fill.url, rng)
@@ -354,29 +304,63 @@ def proxy_range(url: str, rng: str) -> Stream:
   return Stream(gen(), "application/octet-stream", headers, status=r.status, length=int(n) if n else None)
 
 
-def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
-  """A local path holding key, downloading it into the shared cache first if needed (blocking). With a job, the wait
-  stops when it's cancelled, and so does a download this call started."""
-  srcs = [s for s in (sources or SOURCES) if s in SOURCES]
-  # full copies stand in for each other; commaCarSegments' filtered ones are only used when it's the source picked
-  space = "carSegments" if srcs == ["carSegments"] else "api"
-  if (hit := cache.lookup(key, [s for s in srcs if s in cache.peers(space)])):
-    cache.touch(hit[1])
-    revalidate(key, *hit, jwt)
-    return hit[1]
-  if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):
-    return confine(found[0], config.log_roots)
-  if (fill := cache.filling(key, space)) is None:
-    r = Resolver(key.dongle, key.log_id, [s for s in srcs if s not in ("device", "local")], jwt, False)
-    found = next(((s, f) for s in r.sources if (f := r.find(s, key))), None)
-    if found is None:
-      raise FileNotFoundError(f"{key} isn't in {', '.join(srcs)}" + "".join(f"; {k}: {v}" for k, v in r.errors.items()))
-    if found[0] == "carSegments" and (hit := cache.lookup(key, ["carSegments"])):
-      return hit[1]
-    fill = cache.fill(key, found[0], found[1][0], cancelled=(lambda: job.cancelled) if job is not None else None)
-  while not fill.finished.wait(0.1):
-    if job is not None:
-      job.check()
+# the shared cache, by route
+
+@route("GET", "/local/cache")
+def cache_stats(req):
+  """Usage of the whole shared cache. With ?route=dongle|log_id[&segs=N], also which of its files are cached."""
+  out = cache.usage()
+  if (r := req.query.get("route")):
+    dongle, log_id = parse_route(r)
+    count = req.arg("segs", None, int)
+    segs = {}
+    for seg in segments(None, dongle, log_id) if count is None else range(min(count, 10000)):
+      have = segs[str(seg)] = {}
+      for kind, names in KINDS.items():
+        for name in names:
+          if (hit := cache.lookup(Key(dongle, log_id, seg, name))):
+            have[kind] = {"file": name, "source": hit[0], "size": hit[1].stat().st_size}
+            break
+    out["route"] = {"name": f"{dongle}|{log_id}", "segments": segs}
+  return out
+
+
+def fetch(key: Key, source: str, jwt: str | None, job, moved) -> None:
+  """Downloads key from source into the shared cache unless a copy is there, telling moved(bytes in so far), until
+  it's in or job is cancelled (which stops a download this call started too)."""
+  if cache.lookup(key):
+    return
+  fill = download(key, source, jwt, lambda: job.cancelled)
+  while not fill.finished.wait(0.2):
+    moved(fill.done)
+    job.check()
   if fill.error:
     raise OSError(fill.error)
-  return fill.final
+
+
+@route("POST", "/local/cache/prefetch")
+def cache_prefetch(req):
+  """Body as /local/sources/resolve. Downloads every resolved file that isn't cached yet, PREFETCH at a time, as a job whose
+  meta carries the route and each segment's state (queued, loading, disk, error) for the page's load lanes."""
+  jwt = jwt_of(req)
+  res = resolve({**(req.json() or {}), "sizes": True}, jwt)
+  dongle, log_id = res["route"].split("|")
+  found = {Key(dongle, log_id, int(n), e["file"]): e for n, kinds in res["segments"].items() for e in kinds.values()}
+  todo = [(key, e["size"] or 0) for key, e in found.items() if not e["cached"]]
+
+  def run(job):
+    def one(key, moved):
+      fetch(key, found[key]["source"], jwt, job, moved)
+    return jobs.run_files(job, todo, one, PREFETCH, have=[key for key, e in found.items() if e["cached"]])
+  return jobs.start("prefetch", run, title=f"cache {res['route']}", route=res["route"]).json()
+
+
+@route("POST", "/local/cache/evict")
+def cache_evict(req):
+  """Body {route, segs?, kinds?}: deletes those files' copies in the shared cache (never anything remote)."""
+  body = req.json() or {}
+  dongle, log_id = parse_route(body.get("route", ""))
+  kinds = [k for k in (body.get("kinds") or KINDS) if k in KINDS]
+  segs = segments(body.get("segs"), dongle, log_id)
+  freed = sum(cache.evict(Key(dongle, log_id, n, name)) for n in segs for kind in kinds for name in KINDS[kind])
+  return {"freed": freed, **cache.usage()}

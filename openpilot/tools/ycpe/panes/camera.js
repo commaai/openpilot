@@ -469,7 +469,7 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
 }
 
 // the camera's per-segment files from the route's source: the device's HEVC (cached in OPFS under the logs' key
-// scheme), or, when this browser can't decode HEVC in hardware, the local daemon's H.264 transcode, which the daemon
+// scheme, unless the daemon has it on its disk), or, when this browser can't decode HEVC in hardware, the local daemon's H.264 transcode, which the daemon
 // caches itself. Loose routes (dropped files, direct links) have just the files they came with. All of it is by timeline
 // slot (a range plays its segments back to back); segs[k] is slot k's segment.
 async function sources(route, camera) {

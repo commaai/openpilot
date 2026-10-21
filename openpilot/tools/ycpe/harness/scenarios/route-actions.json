@@ -14,7 +14,7 @@
  ],
  "steps": [
   {"waitFor": ".connect-pane .camera-pane"},
-  {"eval": "window.__body = (method) => __sent.map((r) => r.body && JSON.parse(r.body)).find((b) => b?.method === method)"},
+  {"eval": "window.__body = (method) => __sent.map((r) => r.body?.startsWith('{') && JSON.parse(r.body)).find((b) => b?.method === method)"},
   {"waitFor": {"fn": "__body('setRouteViewed')"}},
   {"assert": "(() => { const r = __sent.find((r) => r.body?.includes('setRouteViewed')); return /\\/cd6dab3f3a4ab8d8$/.test(r.url) && r.body === JSON.stringify({id: 0, jsonrpc: '2.0', method: 'setRouteViewed', params: {route: 'cd6dab3f3a4ab8d8|0000005c--2f7b58b689'}}) || `setRouteViewed sent ${JSON.stringify(r)}`; })()"},
 

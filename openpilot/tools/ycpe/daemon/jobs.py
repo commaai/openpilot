@@ -1,12 +1,14 @@
-"""Long tasks (prefetch, device pull, transcode, replay) as jobs in threads, with progress, cancel and an SSE feed."""
+"""Long tasks (prefetch, device pull, transcode) as jobs in threads, with progress, cancel and an SSE feed."""
 import itertools
 import threading
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor, wait
 
-from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, module, route
+from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, route
 
 KEEP = 200  # finished jobs remembered
+STATES = ["error", "loading", "queued", "disk"]  # a segment's state is its files' first in this order
 
 
 class Cancelled(Exception):
@@ -22,6 +24,7 @@ class Job:
     self.result = self.error = None
     self.started, self.ended = time.time(), None  # noqa: TID251  wall clock, for display
     self.cancel_event = threading.Event()
+    self.finished = threading.Event()  # set once it's done, failed or cancelled
     self._sent = 0.0
 
   @property
@@ -85,19 +88,67 @@ def start(kind: str, fn, title: str = "", **meta) -> Job:
       traceback.print_exc()
     job.ended = time.time()  # noqa: TID251
     _publish(job)
+    job.finished.set()
 
   _publish(job)
   threading.Thread(target=run, name=job.id, daemon=True).start()
   return job
 
 
+def run_files(job: Job, todo: list, one, workers: int = 1, have=()) -> dict:
+  """Runs one(key, moved) for each (key, size) in todo, workers at a time, as job's work. job.meta["segs"] has each
+  segment's state (queued, loading, disk or error; the keys in have are on disk already) and the progress counts
+  bytes, moved(n) saying n of key's are in so far. → {files, bytes, seconds}; if any failed, raises once the rest are
+  through."""
+  total, t0 = sum(size for _, size in todo), time.monotonic()
+  state = dict.fromkeys(have, "disk") | {key: "queued" for key, _ in todo}
+  moving: dict = {}  # key → bytes in, while it loads
+
+  def segs() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for key, s in state.items():
+      out[str(key.seg)] = min(out.get(str(key.seg), "disk"), s, key=STATES.index)
+    return out
+
+  def report() -> None:
+    done = sum(size for key, size in todo if state[key] == "disk") + sum(moving.values())
+    dt = time.monotonic() - t0
+    job.progress(done, total, text=f"{done / dt / 1e6:.0f} MB/s" if dt > 0.5 else "", segs=segs())
+
+  def run(key) -> None:
+    def moved(n: int) -> None:
+      moving[key] = n
+    state[key] = "loading"
+    try:
+      one(key, moved)
+      state[key] = "disk"
+    except Cancelled:
+      state[key] = "queued"
+      raise
+    except Exception:
+      state[key] = "error"
+      raise
+    finally:
+      moving.pop(key, None)
+
+  job.progress(0, total, unit="bytes", segs=segs())
+  with ThreadPoolExecutor(workers) as ex:
+    futs = [ex.submit(run, key) for key, _ in todo]
+    while wait(futs, timeout=0.2).not_done:
+      if job.cancelled:
+        ex.shutdown(cancel_futures=True)
+        job.check()
+      report()
+  report()
+  if (errors := [e for f in futs if (e := f.exception())]):
+    raise OSError(f"{len(errors)} of {len(todo)} files failed, first: {errors[0]}")
+  return {"files": len(todo), "bytes": total, "seconds": round(time.monotonic() - t0, 2)}
+
+
 def get(job_id: str) -> Job:
   if (job := _jobs.get(job_id)) is None:
     raise HTTPError(404, "no such job")
   return job
-
-
-module("jobs")
 
 
 @route("GET", "/local/jobs/events")

@@ -51,9 +51,10 @@ up = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
 threading.Thread(target=up.serve_forever, daemon=True).start()
 os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 
+from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
-from openpilot.tools.ycpe.daemon.core import HTTPError, config
+from openpilot.tools.ycpe.daemon.core import config
 from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.lib import filereader
 
@@ -81,7 +82,7 @@ class TestSources(DaemonCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    config.cache_root = CACHE + "/"
+    os.environ["COMMA_CACHE"] = CACHE  # test_device's is another
     config.log_roots = [LOGS]
 
   def test_resolve(self):
@@ -90,13 +91,16 @@ class TestSources(DaemonCase):
     self.assertEqual(res["segments"]["0"]["log"]["size"], len(blob(0, "rlog.zst")))
     self.assertEqual(res["segments"]["2"]["log"]["file"], "qlog.zst")  # mode a falls back per segment
     self.assertEqual(res["missing"]["9"], ["log", "qcamera"])
-    res = self.json("/local/sources/resolve", {"route": f"{ROUTE}/0:3/r", "kinds": ["log"], "sources": ONLY, "segs": [0, 2]})
-    self.assertEqual(res["missing"], {"2": ["log"]})  # /r: no qlog fallback
     self.assertTrue(res["segments"]["0"]["log"]["url"].startswith(f"/local/file/internal/{DONGLE}/{LOG}/0/rlog.zst?tok="))
+    res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|00000009--abcdef0123", "kinds": ["rlog"], "sources": ONLY})
+    self.assertEqual(res["segments"], {})  # no segments named: the ones on this machine's disk, none for this route
 
   def test_bad_route(self):
-    r, _ = self.req("/local/sources/resolve", method="POST", body=json.dumps({"route": "../../etc"}))
-    self.assertEqual(r.status, 400)
+    for route in ("../../etc", f"{ROUTE}/0:3/r", f"{ROUTE}--2"):  # bare routes only: the page names the segments
+      r, _ = self.req("/local/sources/resolve", method="POST", body=json.dumps({"route": route}))
+      self.assertEqual(r.status, 400, route)
+    for segs in (["x"], "01", [-1], 3):
+      self.json("/local/sources/resolve", {"route": ROUTE, "segs": segs}, status=400)
 
   def test_file_miss_then_hit(self):
     url = f"/local/file/internal/{DONGLE}/{LOG}/1/rlog.zst"
@@ -104,11 +108,9 @@ class TestSources(DaemonCase):
     self.assertEqual((r.status, data), (200, blob(1, "rlog.zst")))
     canonical = cache.canonical_url("internal", cache.Key(DONGLE, LOG, 1, "rlog.zst"))
     until(lambda: (Path(CACHE) / f"{hash_url(canonical)}_length").exists(), 1)
-    self.assertTrue((Path(CACHE) / cache.sha(canonical)).is_file())
-    hits = cache.stats["hits"]
+    self.assertTrue(Path(cache_file_path(canonical)).is_file())
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
     self.assertEqual((r.status, data, r.getheader("X-Ycpe-Cache")), (206, blob(1, "rlog.zst")[5:10], "hit"))
-    self.assertEqual(cache.stats["hits"], hits + 1)
     # the python tools read the same download from their chunk cache, without the network
     self.assertEqual(URLFile(canonical + "?sig=x").read(), blob(1, "rlog.zst"))
 
@@ -134,7 +136,7 @@ class TestSources(DaemonCase):
       with self.assertRaises(http.client.IncompleteRead):
         self.req(f"/local/file/internal/{DONGLE}/{LOG}/3/rlog.zst")
       self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 3, "rlog.zst")))
-      self.assertFalse([p for p in os.listdir(CACHE) if p.startswith(cache.TMP) and "manifest" not in p])
+      self.assertFalse([p for p in os.listdir(CACHE) if p.startswith(cache.TMP)])
     finally:
       Upstream.fail = False
 
@@ -153,7 +155,6 @@ class TestSources(DaemonCase):
     self.assertEqual(res["segments"]["0"]["qlog"]["source"], "local")
     r, data = self.req(f"/local/file/local/{DONGLE}/{LOG}/0/qlog.zst")
     self.assertEqual(data, b"local qlog")
-    self.assertEqual(cache.fetch(DONGLE, LOG, 0, "qlog.zst", sources=["local"]).read_bytes(), b"local qlog")
 
   def test_local_symlink_confined(self):
     outside = Path(tempfile.mkdtemp())
@@ -163,15 +164,13 @@ class TestSources(DaemonCase):
       link.symlink_to(outside)
     r, _ = self.req(f"/local/file/local/{DONGLE}/{LOG}/5/qlog.zst")
     self.assertEqual(r.status, 403)
-    with self.assertRaises(HTTPError):
-      cache.fetch(DONGLE, LOG, 5, "qlog.zst", sources=["local"])
 
   def test_prefetch_and_evict(self):
     for seg in (0, 1):
       cache.evict(cache.Key(DONGLE, LOG, seg, "qcamera.ts"))
     job = self.json("/local/cache/prefetch", {"route": ROUTE, "segs": [0, 1], "kinds": ["qcamera"], "sources": ONLY})
     j = jobs.get(job["id"])
-    until(lambda: j.state != "running", 4)
+    self.assertTrue(j.finished.wait(4))
     self.assertEqual(j.state, "done", j.error)
     self.assertEqual(j.meta["segs"], {"0": "disk", "1": "disk"})
     stats = self.json(f"/local/cache?route={ROUTE}&segs=2")
@@ -181,48 +180,6 @@ class TestSources(DaemonCase):
     self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 0, "qcamera.ts")))
     for segs in (["x"], "01", [-1], 3):
       self.json("/local/cache/evict", {"route": ROUTE, "segs": segs}, status=400)
-
-  def test_fetch_for_modules(self):
-    p = cache.fetch(DONGLE, LOG, 0, "qcamera.ts", sources=ONLY)
-    self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
-
-  def test_car_segments_are_their_own_namespace(self):
-    # commaCarSegments keeps a filtered rlog under the full rlog's name: neither may stand in for the other
-    from openpilot.tools.lib import comma_car_segments as ccs
-    log = "00000002--abcdef0123"
-    for seg in (0, 1):
-      full = Path(UPSTREAM) / DONGLE / log / str(seg) / "rlog.zst"
-      car = Path(UPSTREAM) / "huggingface" / "raw" / "main" / "segments" / DONGLE / log / str(seg) / "rlog.zst"
-      for p, data in ((full, blob(seg, "full")), (car, blob(seg, "filtered")[:1000])):
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(data)
-    repo, ccs.COMMA_CAR_SEGMENTS_REPO = ccs.COMMA_CAR_SEGMENTS_REPO, f"http://127.0.0.1:{up.server_address[1]}/huggingface"
-    try:
-      def get(source, seg):
-        r, data = self.req(f"/local/file/{source}/{DONGLE}/{log}/{seg}/rlog.zst")
-        self.assertEqual(r.status, 200)
-        if (fill := cache.filling(cache.Key(DONGLE, log, seg, "rlog.zst"), source)):
-          fill.finished.wait(5)
-        return data, r.getheader("X-Ycpe-Cache")
-
-      # seg 0: full copy cached first, then each source asked explicitly, twice
-      self.assertEqual(get("internal", 0), (blob(0, "full"), "miss"))
-      self.assertEqual(get("carSegments", 0), (blob(0, "filtered")[:1000], "miss"))
-      self.assertEqual(get("carSegments", 0), (blob(0, "filtered")[:1000], "hit"))
-      self.assertEqual(get("internal", 0), (blob(0, "full"), "hit"))
-      self.assertEqual(get("api", 0)[0], blob(0, "full"))  # identical sources still share one copy
-
-      # seg 1: only the filtered copy is cached; auto order must still pick the full rlog, uncached
-      self.assertEqual(get("carSegments", 1)[0], blob(1, "filtered")[:1000])
-      res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|{log}", "segs": [1], "kinds": ["rlog"],
-                                                 "sources": ["internal", "carSegments"]})
-      self.assertEqual((res["segments"]["1"]["rlog"]["source"], res["segments"]["1"]["rlog"]["cached"]), ("internal", False))
-      self.assertEqual(cache.fetch(DONGLE, log, 1, "rlog.zst", sources=["internal"]).read_bytes(), blob(1, "full"))
-      res = self.json("/local/sources/resolve", {"route": f"{DONGLE}|{log}", "segs": [1], "kinds": ["rlog"], "sources": ["carSegments"]})
-      self.assertEqual((res["segments"]["1"]["rlog"]["source"], res["segments"]["1"]["rlog"]["cached"]), ("carSegments", True))
-      self.assertEqual(cache.fetch(DONGLE, log, 1, "rlog.zst", sources=["carSegments"]).read_bytes(), blob(1, "filtered")[:1000])
-    finally:
-      ccs.COMMA_CAR_SEGMENTS_REPO = repo
 
   def test_stale_refetch(self):
     rel = f"/{DONGLE}/{LOG}/5/fcamera.hevc"
@@ -242,13 +199,12 @@ class TestSources(DaemonCase):
     up.write_bytes(new)  # the source changed under the same URL
     path = cache.lookup(key)[1]
     cache.mark_checked(path, 0.0)
-    stale = cache.stats["stale"]
     r, data = self.req(url)
     self.assertEqual(data, old)  # a hit never waits on the check
     until(lambda: self.req(url)[1] == new, 2)
     r, data = self.req(url)
     self.assertEqual((data, r.getheader("X-Ycpe-Cache")), (new, "hit"))
-    self.assertEqual((cache.stats["stale"], Upstream.heads.get(rel, 0)), (stale + 1, heads + 1))
+    self.assertEqual(Upstream.heads.get(rel, 0), heads + 1)
     self.req(url)
     time.sleep(0.1)
     self.assertEqual(Upstream.heads.get(rel, 0), heads + 1)  # the new copy counts as checked
@@ -259,8 +215,8 @@ class TestSources(DaemonCase):
     cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
     walk = lambda: (sum(s for _, s, _ in cache.scan()), len(cache.scan()))  # noqa: E731
     self.assertEqual(cache.totals(), walk())
-    cache.fetch(DONGLE, LOG, 2, "qcamera.ts", sources=ONLY)
-    cache.fetch(DONGLE, LOG, 2, "qlog.zst", sources=ONLY)  # a log: also mirrored as url_file chunks
+    for name in ("qcamera.ts", "qlog.zst"):  # a log is also mirrored as url_file chunks
+      self.req(f"/local/file/internal/{DONGLE}/{LOG}/2/{name}")  # read in full: the download is done
     self.assertEqual(cache.totals(), walk())
     cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
     self.assertEqual(cache.totals(), walk())
@@ -271,8 +227,7 @@ class TestSources(DaemonCase):
 
   def test_prune_lru(self):
     d = Path(tempfile.mkdtemp())
-    old = config.cache_root
-    config.cache_root = str(d) + "/"
+    os.environ["COMMA_CACHE"] = str(d)
     try:
       now = time.time()  # noqa: TID251  compared with file mtimes
       for i in range(5):
@@ -283,7 +238,7 @@ class TestSources(DaemonCase):
       self.assertEqual(sorted(p.name for p in d.iterdir()), ["f3", "f4", "recent"])
       self.assertEqual(out["bytes"], 3000)
     finally:
-      config.cache_root = old
+      os.environ["COMMA_CACHE"] = CACHE
       cache._usage["at"] = -cache.RESCAN
 
 

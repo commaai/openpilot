@@ -42,6 +42,11 @@ class DaemonCase(unittest.TestCase):
     r = self.connect(path, **kw)
     return r, r.read()
 
+  def post(self, path, body, headers=None, **kw):
+    """POST of body as JSON (bytes are sent as is)"""
+    return self.req(path, method="POST", body=body if isinstance(body, bytes) else json.dumps(body),
+                    headers={"Content-Type": "application/json", **(headers or {})}, **kw)
+
   def json(self, path, body=None, method=None, status=200):
     """GET, or POST of body as JSON (bytes are sent as is), expecting status."""
     r, data = self.req(path, method=method or ("GET" if body is None else "POST"),
