@@ -193,13 +193,12 @@ export class Loader {
     return true;
   }
 
-  // a whole message, decoded (with the log's own schema when one is in use) by a worker of its own that keeps the last
-  // logs it opened (see worker.js)
-  message(key, url, service, mono, schema) {
+  // a whole message, decoded by a worker of its own that keeps the last logs it opened (see worker.js)
+  message(key, url, service, mono) {
     const w = this.inspector ??= this.worker();
     clearTimeout(w.reap);
     // it exits a while after its last call settles; a call still in flight arms it when it does
-    return this.call(w, {op: "message", key, url, opts: {service, mono, schema}}).finally(() => {
+    return this.call(w, {op: "message", key, url, opts: {service, mono}}).finally(() => {
       if (w.calls || this.inspector !== w) return;
       w.reap = setTimeout(() => {
         w.terminate();

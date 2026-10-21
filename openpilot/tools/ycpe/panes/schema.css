@@ -1,3 +1,0 @@
-/* route info: the schema row */
-.schema-row { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.schema-select { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }

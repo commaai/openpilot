@@ -4,7 +4,6 @@ import {api, routeEvents, segmentAtTime} from "/api.js";
 import {h, fmt, css, ask} from "/dom.js";
 import {parseRemote} from "/data/github.js";
 import {canManage} from "/pages/home.js";
-import {schemaRow} from "./schema.js";
 import {shareUrl} from "/layouts/picker.js";
 
 await css(new URL("./routeinfo.css", import.meta.url));
@@ -28,6 +27,23 @@ function toggle(label, value, enabled, set, {about, ask = () => true, refused = 
     box.disabled = false;
   });
   return h("label", {class: "check"}, box, label, h("span", {class: "small muted"}, about), status);
+}
+
+// the logs are read with the bundled schema, migrated; once they load (the info pane doesn't load them itself), also
+// what it doesn't know of them (capnp.js counts it: services and fields newer than it, or a fork's)
+function schemaRow(ctx) {
+  const el = h("span", {}, "bundled, migrated");
+  let off = null;
+  const unsub = ctx.onStore((store) => {
+    const update = () => {
+      const {events, services} = store.unknown;
+      el.textContent = ["bundled, migrated", events && `${events} events of unknown services`,
+        services.size && `unknown fields in ${[...services].slice(0, 3).join(", ")}`].filter(Boolean).join(" · ");
+    };
+    off = store.on("segment", update);
+    update();
+  });
+  return {el, dispose: () => { off?.(); unsub(); }};
 }
 
 // the API's times: unix seconds, or UTC without its "Z"

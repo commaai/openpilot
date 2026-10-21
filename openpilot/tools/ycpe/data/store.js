@@ -45,8 +45,6 @@ export class Store {
     this.evicted = new Map();  // service → evicted paths in it, which loads from now on skip
     this.enums = [];
     this.listed = null;  // what paths() has listed (see there)
-    this.schema = null;  // the log's own schema ({key, text}, see schemas.js) or null for the bundled one
-    this.gen = 0;  // bumped with every schema change; packs carry the generation they were parsed with
     this.unknown = {events: 0, services: new Set()};  // what the reads so far didn't know (capnp.js)
     this.bytes = 0;
     this.puts = 0;  // put() versions: a path's never repeat, even once dropped
@@ -100,57 +98,10 @@ export class Store {
       kept = this.kept.length;
       const skip = {};
       for (const [svc, subs] of this.evicted) if (subs.size) skip[svc] = [...subs];
-      return {...seg.opts, keep: this.keep, skip, only, context: this.context, schema: this.schema, gen: this.gen, ...extra};
+      return {...seg.opts, keep: this.keep, skip, only, context: this.context, ...extra};
     };
     const loaded = this.loader.load(seg.key, seg.url, opts, this.prio(seg.n), seg.n, (ev) => this.report(seg, ev), this);
     return loaded.then((p) => Object.assign(p, {full: !only, kept}));  // every column, not just the ones asked for again
-  }
-
-  // reads every loaded segment again with another schema; the columns in memory stay until each segment's new ones
-  // replace them. Evicted columns are forgotten: their paths may not exist in the new schema
-  setSchema(schema) {
-    if (schema?.key === this.schema?.key) return;
-    this.schema = schema;
-    this.gen++;
-    this.enums = [];
-    this.listed = null;
-    for (const e of this.entries.values()) if (e.evicted) this.entries.delete(e.path);
-    this.evicted.clear();
-    this.emit("schema", schema);
-    for (const seg of this.route.segments) if (seg.status === "done") this.reread(seg);
-  }
-
-  // one re-read per segment at a time: a queued one parses with whatever schema is current when it starts, and one
-  // that was already parsing with a replaced schema is dropped on arrival and read again (see ingest)
-  reread(seg) {
-    if (seg.rereading) return;
-    seg.rereading = true;
-    this.load(seg).then((p) => {
-      seg.rereading = false;
-      this.ingest(seg, p);
-    }, () => {
-      seg.rereading = false;
-      seg.loading = null;
-      this.publish(seg);
-    });
-  }
-
-  // after a segment's first full parse with the schema in use, its columns of paths that parse didn't have go
-  prune(seg, paths) {
-    let removed = false;
-    for (const e of this.entries.values()) {
-      const a = e.at[seg.n];
-      if (!a || paths.has(e.path)) continue;
-      this.release(a);
-      delete e.at[seg.n];
-      e.views[seg.n] = null;
-      e.version++;
-      if (!e.at.some(Boolean)) removed = this.entries.delete(e.path);
-    }
-    if (removed) {
-      this.listed = null;
-      this.emit("paths");
-    }
   }
 
   // outward from the focus segment
@@ -278,18 +229,12 @@ export class Store {
 
   // registers a pack's columns: O(columns), no views and no copies
   ingest(seg, p) {
-    if (p.gen !== this.gen && seg.status === "done") {  // superseded: what's in memory stays until the new schema's read
-      seg.loading = null;
-      return this.reread(seg);
-    }
     const start = performance.now(), route = this.route;
     route.t0 ??= p.start;
     this.context ||= p.context;  // migrations fall back to it when a segment lacks initData or carParams
     for (const m of p.missing || []) this.missing.add(m);
     this.unknown.events += p.unknown?.events || 0;
     for (const s of p.unknown?.services || []) this.unknown.services.add(s);
-    const fresh = p.full && p.gen === this.gen && seg.gen !== this.gen;  // the first full read with this schema
-    if (fresh) seg.gen = this.gen;
     seg.start = p.start;  // logMonoTime of the route start, as this segment saw it
     if (seg.status !== "done") {
       seg.t0 = p.t0;
@@ -319,10 +264,6 @@ export class Store {
         this.entries.set(paths[k], e);
         added = true;
         if (this.listOf(e.path)) this.listed = null;  // listed as an index of a long list until now
-      } else if (fresh && (e.type !== p.types[k] || String(e.names) !== String(names))) {
-        e.type = p.types[k];  // another schema can type or name a path differently
-        e.names = names;
-        this.listed = null;
       }
       if (e.evicted) continue;  // not resident until asked for again
       if (e.at[seg.n]) this.release(e.at[seg.n]);
@@ -332,9 +273,7 @@ export class Store {
       p.live[service(p, k)]++;
     }
     p.n = seg.n;
-    if (fresh) this.prune(seg, new Set(paths));
-    if (p.gen !== this.gen) this.reread(seg);  // read with a schema that's since been replaced
-    else if (p.full && p.kept < this.kept.length) this.readOnly(seg, this.kept.slice(p.kept).reduce(merge, {}));  // lists asked for mid-parse
+    if (p.full && p.kept < this.kept.length) this.readOnly(seg, this.kept.slice(p.kept).reduce(merge, {}));  // lists asked for mid-parse
     p.live.forEach((n, s) => {
       if (!n) return drop(p, s);
       this.bytes += p.bufs[s].byteLength;
@@ -573,7 +512,7 @@ export class Store {
     const seg = this.segmentAt(t);
     if (seg?.start === undefined) return null;
     const mono = (t - seg.opts.shift + seg.start) * 1e9 + 1000;  // 1 µs over, for the round trip through route seconds
-    const ev = await this.loader.message(seg.key, seg.url, service, mono, this.schema);
+    const ev = await this.loader.message(seg.key, seg.url, service, mono);
     return ev?.[service] ?? null;
   }
 

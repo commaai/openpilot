@@ -1,18 +1,10 @@
-// the worker behind github.js's upstream(): GitHub fetching, schema compiling and DBC generating, off the main thread
-import {schemaAt, opendbcFor} from "./upstream.js";
-import {compile} from "./capnpc.js";
+// the worker behind github.js's upstream(): GitHub fetching and DBC generating, off the main thread
+import {opendbcFor} from "./upstream.js";
 import {serve} from "./rpc.js";
 
 const opendbcs = new Map();  // "repo@commit" → opendbcFor()
 
 const OPS = {
-  // a commit's compiled schema: {text, fetchMs, ms}
-  schema: ({repo, commit}) => schemaAt(repo, commit),
-  // files ({key: text}, keys as capnpc.resolveImport gives them) compiled: {text, ms}
-  compile({files}) {
-    const t0 = performance.now(), text = compile(files);
-    return {text, ms: performance.now() - t0};
-  },
   // the DBCs of a log's opendbc: {label, names, pinned, why}
   async dbcs({repo, commit}) {
     const key = `${repo}@${commit}`;

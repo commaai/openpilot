@@ -128,7 +128,7 @@ export class LiveStore extends Store {
     if (p.error) return this.status.buffering({n: p.n, text: p.error});
     const seg = this.slot(p.n);
     if (seg.status === "missing") return;  // dropped meanwhile
-    Object.assign(p, {gen: this.gen, full: true, kept: this.kept.length});
+    Object.assign(p, {full: true, kept: this.kept.length});
     this.held = p.held;
     seg.held = p.size;
     this.ingest(seg, p);
@@ -153,7 +153,7 @@ export class LiveStore extends Store {
 
   // re-reads (lists asked for later) come from the event bytes the worker keeps
   load(seg, only, {can = !only} = {}) {
-    return this.call("live-read", {n: seg.n, opts: {only, can}}).then((p) => Object.assign(p, {gen: this.gen, full: !only, kept: this.kept.length}));
+    return this.call("live-read", {n: seg.n, opts: {only, can}}).then((p) => Object.assign(p, {full: !only, kept: this.kept.length}));
   }
 
   request(path) {

@@ -13,7 +13,6 @@ import {perf} from "/perf.js";
 import {theme} from "/theme.js";
 
 const kinds = new Map();  // name → source
-const notes = new Map();  // key → text: standing facts about what's loaded (the log's schema), shown in the pill
 const subs = listeners();
 
 // listeners run at most once a frame, however many segments change
@@ -64,12 +63,6 @@ export const status = {
     };
   },
   kinds: () => [...kinds.values()].sort((a, b) => a.order - b.order),
-  // a standing note under key; empty text removes it
-  note(key, text) {
-    if ((notes.get(key) || "") === (text || "")) return;
-    if (text) notes.set(key, text); else notes.delete(key);
-    changed();
-  },
   on: subs.on,
 };
 
@@ -123,8 +116,7 @@ export function loadPill() {
   let spoken = "";
   const update = () => {
     const all = status.kinds();
-    const extra = [...notes.values()];
-    el.hidden = !all.length && !extra.length;
+    el.hidden = !all.length;
     const waiting = all.find((k) => k.buffering);
     const active = all.filter((k) => k.segs.some((s) => s.state === "loading" || s.state === "queued"));
     el.classList.toggle("buffering", !!waiting);
@@ -133,13 +125,13 @@ export function loadPill() {
     const bad = each.some((e) => e.n.error) && !waiting;
     el.style.color = bad ? "var(--critical-fg)" : "";
     el.style.borderColor = bad ? "var(--critical)" : "";
-    el.title = `${[...each.map((e) => e.text), ...extra].join(" · ")} (click for details)`;
+    el.title = `${each.map((e) => e.text).join(" · ")} (click for details)`;
     if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
     else if (active.length) {
       const k = active[0], n = counts(k);
       text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
-      const missing = [...each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text), ...extra].join(" · ");
+      const missing = each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text).join(" · ");
       if (missing) text.textContent = missing;
       else if (!text.querySelector("svg")) text.replaceChildren(icon("check", 14));
     }
