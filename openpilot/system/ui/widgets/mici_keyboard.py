@@ -344,10 +344,6 @@ class MiciKeyboard(Widget):
       self._unselect_key_t = None
       self._selected_key_t = None
 
-    # Widget does not send the release event when it is disabled
-    if not self.enabled:
-      self._active_slot = None
-
   def _lay_out_keys(self, bg_x, bg_y, keys: list[list[Key]]):
     key_rect = rl.Rectangle(bg_x, bg_y, self._txt_bg.width, self._txt_bg.height)
     for row_idx, row in enumerate(keys):
