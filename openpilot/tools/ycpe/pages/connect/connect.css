@@ -47,7 +47,10 @@
 .cn-side { display: flex; flex: 0 0 max(280px, 20vw); flex-direction: column; min-height: 0; background: #30373b; }
 .cn-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; background: linear-gradient(180deg, #1b2023, #111516); scrollbar-color: rgba(255,255,255,.2) transparent; }
 .cn-shell.bare .cn-side, .cn-scrim, .cn-side-head { display: none; }
-.cn-content { position: relative; flex: 1; min-width: 0; overflow-y: auto; background: #1d2225; scrollbar-color: rgba(255,255,255,.2) transparent; }
+.cn-content { position: relative; flex: 1; min-width: 0; overflow-y: auto; background: #1d2225; scrollbar-color: rgba(255,255,255,.2) transparent;
+  scrollbar-gutter: stable; }
+/* a drive scrolls in its view (panes/connect.css), which keeps the same gutter: opening one doesn't move the page */
+.cn-content:has(> .ws) { scrollbar-gutter: auto; }
 
 /* DeviceList: a row per device, its dot, name and dongle id, and for its owner the settings gear */
 .cn-dev { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px 16px 0; }

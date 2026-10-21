@@ -1,7 +1,7 @@
 /* the connect view: connect's DriveView as connect draws it (DriveView, Timeline, Media, DriveVideo, TimeDisplay), in
    its palette whatever our theme, and at its breakpoints (window widths: Tailwind's sm, md and 2xl) */
 .connect-pane { --cn-bg: #1d2225; --cn-fg: #fff; --cn-line: rgba(255,255,255,.1); --driving: #175886; --engaged: #178645; --override: #919b95;
-  --alert: #da6f25; --critical: #c92231; --bookmark: #e3d756; color-scheme: dark; overflow-y: auto; background: var(--cn-bg); color: var(--cn-fg);
+  --alert: #da6f25; --critical: #c92231; --bookmark: #e3d756; color-scheme: dark; overflow-y: auto; scrollbar-gutter: stable; background: var(--cn-bg); color: var(--cn-fg);
   font: 16px/1.5 "Inter", sans-serif; container-type: inline-size; overscroll-behavior: contain; }
 .cn-card { display: flex; flex-direction: column; gap: 16px; margin: 16px; border-radius: 8px; background: linear-gradient(#30373b 0%, #272d30 10%, #1d2225 100%); }
 .cn-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: -16px; padding: 12px; }

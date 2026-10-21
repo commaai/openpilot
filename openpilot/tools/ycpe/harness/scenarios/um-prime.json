@@ -20,7 +20,7 @@
   {"goto": "/connect/1111111111111111"},
   {"waitFor": ".prime-promo-slot.um .prime-signup"},
   {"assert": "document.querySelector('.prime-promo-slot.um .prime-signup').getAttribute('href') === '/connect/1111111111111111/prime' || document.querySelector('.prime-signup').getAttribute('href')"},
-  {"assert": "(() => { const r = document.querySelector('.prime-promo-slot.um .prime-promo').getBoundingClientRect(); return innerWidth - r.right === 10 || `connect's corner: ${JSON.stringify(r)}`; })()"},
+  {"assert": "(() => { const r = document.querySelector('.prime-promo-slot.um .prime-promo').getBoundingClientRect(); const c = document.querySelector('.cn-content'); return c.getBoundingClientRect().left + c.clientWidth - r.right === 10 || `connect's corner: ${JSON.stringify(r)}`; })()"},
   {"wait": 300},
   {"shot": "promo"},
   {"click": ".prime-promo-slot.um .prime-signup"},

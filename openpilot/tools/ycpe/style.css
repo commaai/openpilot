@@ -66,7 +66,7 @@ input[type=color]::-webkit-color-swatch { border: 0; border-radius: 2px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .muted { color: var(--muted); }
 ::placeholder { color: var(--muted); opacity: 1; }  /* the browser's grey is under 4.5:1, and some fields have no other label */
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sr-only { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mono { font-family: var(--mono); }
 .small { font-size: 11px; }
 .center { text-align: center; }
