@@ -1,5 +1,6 @@
 import os
 import math
+import numpy as np
 import pyray as rl
 from collections.abc import Callable
 from enum import Enum
@@ -17,29 +18,21 @@ BOUNCE_RETURN_RATE = 10.0
 SNAP_RATE = 6.3  # matches previous Scroller snapping. exp rate of approach to snap target, 1/s
 REJECT_DECELERATION_FACTOR = 3
 MAX_SPEED = 10000.0  # px/s
-FLING_VELOCITY_WINDOW = 0.05  # s, approx. 5 samples of the mici touch panel (~103Hz)
+FLING_VELOCITY_WINDOW = 0.054  # s, approx. 5 touch samples. Not a multiple of the 140Hz poll period, so a sample is not on the edge
 
 DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 
 
-# Least-squares slope of position over time for the samples in the last FLING_VELOCITY_WINDOW.
-# The timestamp of one sample can have an error of some ms. A fit over approx. 5 samples is less sensitive
-# to this error than the velocity between 2 samples.
+# Slope of a line fit to the samples in the last FLING_VELOCITY_WINDOW. The time of one sample can have an error
+# of some ms. A fit over approx. 5 samples is less sensitive to this error than the velocity between 2 samples.
 def fit_velocity(samples: deque[tuple[float, float]]) -> float:
   if len(samples) < 2:
     return 0.0
-
-  t_last = samples[-1][0]
-  window = [(t - t_last, pos) for t, pos in samples if t_last - t <= FLING_VELOCITY_WINDOW]
-  if len(window) < 2:
+  t, pos = np.array(samples).T
+  recent = t >= t[-1] - FLING_VELOCITY_WINDOW
+  if np.ptp(t[recent]) == 0:
     return 0.0
-
-  mean_t = sum(t for t, _ in window) / len(window)
-  mean_pos = sum(pos for _, pos in window) / len(window)
-  var_t = sum((t - mean_t) ** 2 for t, _ in window)
-  if var_t == 0.0:
-    return 0.0
-  return sum((t - mean_t) * (pos - mean_pos) for t, pos in window) / var_t
+  return float(np.polyfit(t[recent] - t[-1], pos[recent], 1)[0])
 
 
 # from https://ariya.io/2011/10/flick-list-with-its-momentum-scrolling-and-deceleration
