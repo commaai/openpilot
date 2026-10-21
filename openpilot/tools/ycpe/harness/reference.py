@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# dependencies = ["playwright", "pillow", "numpy"]
+# dependencies = ["playwright", "pillow"]
 # ///
 """Reference screenshots shown next to the matching scenario shots: connect.comma.ai (read-only), and native jotpluggler and
 cabana on a private Xvfb. Writes out/reference/<name>.png; a scenario lists the names it compares against in "reference".

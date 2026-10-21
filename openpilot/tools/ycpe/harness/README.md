@@ -8,12 +8,11 @@
 ./trace.py out/latest/traces/layout-drag.json  # the longest frame's events by self time, and the panes it laid out and painted
 ./run.py --static        # serve.py without the local daemon (default: with it, through the openpilot venv)
 ./run.py --slow          # include scenarios marked "slow" (e.g. plot-repeat10)
-./run.py --bless         # also store this run's shots as goldens (harness/golden/); later runs diff against them
 ./report.py              # rebuild the report from out/latest/results.json
 ./reference.py [names]   # out/reference/*.png: connect.comma.ai, native jotpluggler and cabana (see --help)
 ```
 
-The scripts run through `uv run --script`, which provides playwright, pillow and numpy; Chrome is `/usr/bin/google-chrome`.
+The scripts run through `uv run --script`, which provides playwright and pillow; Chrome is `/usr/bin/google-chrome`.
 
 ## Scenarios
 

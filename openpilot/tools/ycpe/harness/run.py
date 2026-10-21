@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# dependencies = ["playwright", "pillow", "numpy"]
+# dependencies = ["playwright", "pillow"]
 # ///
 """YCPE QA harness: drives scenarios/*.json in Chrome, records frame timing and UI lint, writes out/latest/report.{html,md}."""
 import argparse
@@ -435,7 +435,6 @@ def main():
   ap.add_argument("-k", action="append", help="only scenarios whose name contains this (repeatable)")
   ap.add_argument("--mode", choices=MODES, default="gpu")
   ap.add_argument("--slow", action="store_true", help="include scenarios marked slow")
-  ap.add_argument("--bless", action="store_true", help="store this run's shots as the goldens")
   ap.add_argument("--loop", type=int, metavar="N", help="run N times (0: until interrupted), each diffed against the one before")
   ap.add_argument("--trace", action="store_true", help="record a Chrome trace per scenario in out/latest/traces (see trace.py)")
   ap.add_argument("--static", action="store_true", help="serve static files only, without the local daemon")
@@ -459,8 +458,6 @@ def main():
       for n in runs:
         t0 = time.monotonic()
         latest, prev, results = run_all(browser, base, scenarios, args.mode, token, args.trace)
-        if args.bless:
-          report.bless(latest)
         diff = report.build(latest, prev)
         ok = all(r["pass"] for r in results)
         found = len(diff["new"]) + len(diff["still"])
