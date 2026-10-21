@@ -40,6 +40,7 @@ function schemaRow(ctx) {
       el.textContent = ["bundled, migrated", events && `${events} events of unknown services`,
         services.size && `unknown fields in ${[...services].slice(0, 3).join(", ")}`].filter(Boolean).join(" · ");
     };
+    off?.();
     off = store.on("segment", update);
     update();
   });
