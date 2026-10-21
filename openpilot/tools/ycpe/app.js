@@ -40,7 +40,7 @@ export function link(path) {
   return (e) => {
     if (e.metaKey || e.ctrlKey || e.button !== 0) return;
     e.preventDefault();
-    go(path);
+    if (path !== location.pathname + location.search) go(path);  // the page already shown stays as it is
   };
 }
 
@@ -904,14 +904,13 @@ async function renderPage() {
   closeWorkspace();
   updateTop();
   if (dongle) {
-    const page = await devicePage(dongle, state.devices).catch((e) => errorPage(e, {device: dongle}));
-    if (id !== navId) return;
-    root.replaceChildren(page);
-    // connect shows the referral card, else the prime sign-up one
+    // connect shows the referral card, else the prime sign-up one: above the page, in with it
     const device = state.devices?.find((d) => d.dongle_id === dongle);
-    const promo = await import("/pages/referrals.js").then((m) => m.referralPromo(device)) ??
-      (device?.is_owner && !device.prime ? await import("/pages/prime.js").then((m) => m.primeBanner([device])) : null);
-    if (promo && id === navId) root.prepend(promo);
+    const [page, promo] = await Promise.all([devicePage(dongle, state.devices).catch((e) => errorPage(e, {device: dongle})),
+      import("/pages/referrals.js").then((m) => m.referralPromo(device)).then((card) => card ??
+        (device?.is_owner && !device.prime ? import("/pages/prime.js").then((m) => m.primeBanner([device])) : null))]);
+    if (id !== navId) return;
+    root.replaceChildren(...[promo, page].filter(Boolean));
   } else if (parts.length) {
     if (user) return go("/connect", true);  // connect has no "not found": it opens on a device
     root.replaceChildren(h("div", {class: "page-msg"}, h("h2", {}, `Nothing at ${location.pathname}`),
