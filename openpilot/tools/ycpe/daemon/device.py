@@ -18,16 +18,13 @@ REALDATA = "/data/media/0/realdata"
 DONGLE_FILE = "../../../params/d/DongleId"  # from realdata: /data/params/d/DongleId
 SEG_DIR = re.compile(rf"^{RE.LOG_ID}--(?P<seg>\d+)\Z")  # LOG_ID is the log_id group
 
-settings = {"host": None}  # a host set from the page wins over serve.py's
-
 
 def realdata() -> str:
   return config.device_root or REALDATA
 
 
 def host() -> str:
-  h = settings["host"] or config.device
-  if not h:
+  if not (h := config.device):
     raise HTTPError(409, "no device configured: serve.py --device <host>, or POST /local/device {host}")
   if not HOST.match(h):
     raise HTTPError(400, "bad device host")
@@ -83,16 +80,16 @@ def listing() -> dict:
 
 @route("GET", "/local/device")
 def device_info(req):
-  return {"host": settings["host"] or config.device, "root": realdata()}
+  return {"host": config.device, "root": realdata()}
 
 
 @route("POST", "/local/device")
 def device_config(req):
-  """Body {host}: the device to use until the daemon restarts."""
+  """Body {host}: the device to use until the daemon restarts, over serve.py's."""
   h = str((req.json() or {}).get("host") or "")
   if not HOST.match(h):
     raise HTTPError(400, "bad device host")
-  settings["host"] = h
+  config.device = h
   return device_info(req)
 
 
