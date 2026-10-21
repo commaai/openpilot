@@ -33,7 +33,8 @@ class TestRepos(DaemonCase):
     c, bare = self.json("/local/repos")
     self.assertIsNone(bare["opendbc"])
     self.assertEqual(c["name"], REPO.name)
-    self.assertEqual(c["git"]["subject"], "init")
+    commit = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True).stdout
+    self.assertEqual((c["git"]["commit"], c["git"]["dirty"]), (commit[:10], False))
     self.assertEqual(c["opendbc"]["dbc"], str(DBC.resolve()))
 
   def test_capnp(self):

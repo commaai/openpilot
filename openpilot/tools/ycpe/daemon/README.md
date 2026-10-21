@@ -127,9 +127,9 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `GET /local/cache[?route=&segs=]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
-| `GET /local/repos` | `[{id, name, git: {branch, commit, subject, dirty}, cereal, opendbc: {dbc, git}}]`. These are the `--repo` checkouts (the running one by default). |
+| `GET /local/repos` | `[{id, name, git: {branch, commit, dirty}, cereal, opendbc: {dbc}}]`. These are the `--repo` checkouts (the running one by default). |
 | `GET /local/repos/{id}/capnp` | `{files: {import path: text}}`: cereal's `*.capnp` (including `include/c++.capnp`) and opendbc's `car.capnp`. |
-| `GET /local/repos/{id}/dbc` | `[{name, size, mtime}]` |
+| `GET /local/repos/{id}/dbc` | `[{name}]` |
 | `GET /local/repos/{id}/dbc/{name}` | `{name, text, mtime}` |
 | `PUT /local/repos/{id}/dbc/{name}[?mtime=]` | Body is the DBC text. Saves it atomically into opendbc's dbc directory, and only there: the name must match `[A-Za-z0-9_.-]+\.dbc`, and the path is confined. With the `mtime` from the read, it answers 409 if the file changed on disk since. |
 | `GET /local/repos/watch` | SSE `change` events `{repo, kind: capnp, file, path, deleted}` when cereal's `.capnp` files change, from polling their mtimes once a second. |
