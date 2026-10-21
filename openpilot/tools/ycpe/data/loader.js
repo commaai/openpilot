@@ -19,7 +19,6 @@ export class Loader {
     this.ready = [];  // fetched, waiting for a worker
     this.fetching = new Set();  // jobs downloading (or reading the cache)
     this.cancelled = new WeakSet();  // owners whose jobs are dropped
-    this.parsing = 0;
     this.downloads = new Map();  // key → fetch in flight, so a repeated segment waits and then reads the cache
     this.next = 0;
   }
@@ -140,14 +139,12 @@ export class Loader {
     let w;
     while (this.ready.length && (w = this.take())) {
       const job = this.ready.shift(), worker = w;
-      this.parsing++;
       job.report({parsing: true});
       const opts = typeof job.opts === "function" ? job.opts() : job.opts;
       this.call(worker, {op: "parse", key: job.key, buf: job.buf, opts}, [job.buf])
         .then((r) => this.cancelled.has(job.owner) ? job.reject(new Error("cancelled"))
           : job.resolve({...r, bytes: job.bytes, cached: job.cached, stored: job.stored, ms: {...job.ms, ...r.ms}}), job.reject)
         .finally(() => {
-          this.parsing--;
           this.release(worker);
           this.pump();
         });
@@ -212,8 +209,6 @@ export class Loader {
       }, 30000);
     }).then((r) => r.message);
   }
-
-  get pending() { return this.queue.length + this.fetching.size + this.ready.length + this.parsing; }
 
   dispose() {
     const warm = this.idle.find((w) => !w.calls);

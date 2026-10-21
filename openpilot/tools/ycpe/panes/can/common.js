@@ -90,18 +90,6 @@ export function download(name, data) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// rgba() of a theme color with alpha, for canvases
-export function alpha(color, a) {
-  const c = document.createElement("canvas").getContext("2d");
-  c.fillStyle = color;
-  const v = c.fillStyle;
-  if (v.startsWith("#")) {
-    const n = parseInt(v.slice(1), 16);
-    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
-  }
-  return v.replace(/rgba?\(([^)]+?)(,\s*[\d.]+)?\)/, `rgba($1,${a})`);
-}
-
 // edits message k through the undo stack: fn(m) changes a copy (a new message if k has none), or returns false to
 // change nothing. Returns whether it changed
 export function editMsg(can, k, text, fn) {

@@ -427,7 +427,6 @@ if (import.meta.url.endsWith("?worker")) {
     findUndo: () => { if (find.history.length > 1) find.history.pop(); return find.history.at(-1).slice(0, 300); },
     findCount: () => find.history.at(-1)?.length || 0,
     csv: ({keys, t0, t1, msg}) => csv(keys, t0, t1, msg),
-    memory: () => segs.reduce((b, s) => b + s.t.byteLength + s.len.byteLength + s.data.byteLength + s.keys.byteLength * 4, 0),
   };
   serve(ops);
 }
@@ -459,7 +458,6 @@ export class Can {
     this.live = null;
     this.failed = null;  // why the CAN worker failed, if it did
     this.bytes = 0;
-    this.budget = BUDGET;
     this.resident = new Map();  // segment -> its bytes in the worker
     this.counted = new Map();  // segment -> what it added to msgs: key -> [frames, t0, t1]
     this.evicted = new Set();
@@ -541,7 +539,7 @@ export class Can {
   evict() {
     const far = (n) => Math.abs(n - this.at);
     for (const n of [...this.resident.keys()].filter((n) => far(n) > 1).sort((a, b) => far(b) - far(a))) {
-      if (this.bytes <= this.budget * 0.9) break;
+      if (this.bytes <= BUDGET * 0.9) break;
       this.bytes -= this.resident.get(n);
       this.resident.delete(n);
       this.evicted.add(n);

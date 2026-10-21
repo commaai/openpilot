@@ -79,9 +79,6 @@ class Handler(SimpleHTTPRequestHandler):
   def do_PUT(self):
     self.dispatch("PUT")
 
-  def do_DELETE(self):
-    self.dispatch("DELETE")
-
   def dispatch(self, method: str):
     path, _, qs = self.path.partition("?")
     headers = self._headers()
@@ -124,7 +121,7 @@ class Handler(SimpleHTTPRequestHandler):
     if n > max_body:
       raise HTTPError(413)
     body = self.rfile.read(n) if n else b""
-    req = core.Request(method, path, params, query, headers, body, self)
+    req = core.Request(method, path, params, query, headers, body)
     try:
       out = fn(req)
     except HTTPError:

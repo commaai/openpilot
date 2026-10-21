@@ -113,7 +113,7 @@ async function parse(buf, opts, more = []) {
     for (const svc of more) if (![...read.values()].some((s) => s.name === svc.name)) read.set(svc.name, svc);
     if (!read.size) throw new Error(reader.unknown.events ? "none of its messages are in the schema" : "not an openpilot log: no messages in it");
     migrated = opts.schema || opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
-    return compact(read).services;
+    return compact(read);
   });
 
   // times leave in route seconds: every segment repeats the route's initData, whose time is the route start

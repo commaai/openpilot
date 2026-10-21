@@ -328,7 +328,6 @@ export class Reader {
 // half the events keep an index into the service times (i), and values move to the narrowest exact array
 export function compact(services) {
   const out = {};
-  const transfer = [];
   for (const svc of services.values()) {
     const cols = {};
     // the event's valid flag, unless the struct has its own (lateralTorqueParameters, vehicleParameters)
@@ -338,14 +337,11 @@ export function compact(services) {
       if (!col) continue;
       col.type = c.type;
       if (c.names) col.names = c.names;
-      if (ArrayBuffer.isView(col.v)) transfer.push(col.v.buffer);
-      if (col.i) transfer.push(col.i.buffer);
       cols[path] = col;
     }
     out[svc.name] = {t: svc.t, cols, lists: svc.lists};
-    transfer.push(svc.t.buffer);
   }
-  return {services: out, transfer};
+  return out;
 }
 
 const indexArray = (n, count) => n < 65536 ? new Uint16Array(count) : new Uint32Array(count);

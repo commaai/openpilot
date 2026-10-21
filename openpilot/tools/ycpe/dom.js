@@ -35,11 +35,6 @@ export function ask(text, ok = "OK", cancel = "Cancel") {
   });
 }
 
-export function clear(el) {
-  el.replaceChildren();
-  return el;
-}
-
 export const fmt = {
   ago(unixSeconds) {
     if (!unixSeconds) return "never";

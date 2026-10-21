@@ -111,12 +111,6 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
       if (source.state === "live") conn.send("livestreamSettings", {quality});
     },
     stats: () => conn.pc?.getStats() ?? Promise.resolve(null),
-
-    // the services and cameras to stream; a live source reconnects with them
-    configure(opts) {
-      Object.assign(source, opts);
-      if (sink) connect();
-    },
   };
   return source;
 }

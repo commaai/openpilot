@@ -17,7 +17,7 @@ MAX_BODY = 1 << 20  # a few hundred files_data entries
 MAX_RESPONSE = 4 << 20
 TIMEOUT = Timeout(connect=5.0, read=30.0)
 
-module("athena", "1", methods=sorted(METHODS))
+module("athena", "1")
 
 
 def rpc_body(body: bytes) -> bytes:

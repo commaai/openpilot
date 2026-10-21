@@ -81,7 +81,6 @@ class Request:
   query: dict[str, str]
   headers: dict[str, str]  # lower-case names
   body: bytes
-  handler: object = None  # the BaseHTTPRequestHandler, for raw access
 
   def json(self):
     try:

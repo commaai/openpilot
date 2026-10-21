@@ -74,7 +74,7 @@ export const status = {
 };
 
 // fraction of a segment that's usable or on its way, for drawing
-export const fill = (s) => s.state === "ready" ? 1 : s.state === "loading" ? (s.total ? s.loaded / s.total : 0.05) : s.state === "disk" ? 1 : 0;
+const fill = (s) => s.state === "ready" ? 1 : s.state === "loading" ? (s.total ? s.loaded / s.total : 0.05) : s.state === "disk" ? 1 : 0;
 
 export const fmtBytes = (b) => b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(0)} MB` : `${Math.round(b / 1e3)} kB`;
 

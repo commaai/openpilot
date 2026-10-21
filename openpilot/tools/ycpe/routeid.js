@@ -10,7 +10,7 @@ css(new URL("./routeid.css", import.meta.url));
 const COUNTED = /^([0-9a-f]{8})--([0-9a-f]{10})$/, TIMED = /^(\d{4}-\d\d-\d\d)--(\d\d-\d\d-\d\d)$/;
 
 // the log id's parts: [{kind, text, label, detail}], kind being counter, random, time or other
-export function logIdParts(logId) {
+function logIdParts(logId) {
   const counted = COUNTED.exec(logId), timed = TIMED.exec(logId);
   if (counted) {
     const n = parseInt(counted[1], 16);

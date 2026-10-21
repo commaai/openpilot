@@ -36,4 +36,4 @@ if (migrating) {
   const {missing} = migrate(services);
   if (missing.length) console.error(`unavailable: ${missing.join(", ")}`);
 }
-fs.writeFileSync(dest, JSON.stringify(dump(compact(services).services)));
+fs.writeFileSync(dest, JSON.stringify(dump(compact(services))));

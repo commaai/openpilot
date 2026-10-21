@@ -17,7 +17,6 @@ export function create({route, rate = 1, segment = 0}) {
   };
   const source = {
     kind: "replay", label: `replay of ${route.replace("|", "/")}--${segment}`, state: "connecting", detail: "fetching the log",
-    sent: [],  // [newest logMonoTime (ns), performance.now()] of recent batches, for measuring latency
     on: (event, fn) => event === "state" ? states.on(fn) : () => {},
     async start(sink) {
       try {
@@ -28,18 +27,11 @@ export function create({route, rate = 1, segment = 0}) {
           if (data.error) return set("error", data.error);
           if (source.state !== "live") set("live", `${rate}×`);
           sink.events(new Uint8Array(data.events));
-          source.sent.push([data.mono, performance.now()]);
-          if (source.sent.length > 100) source.sent.shift();
         };
-        worker.postMessage({op: "start", buf, rate}, [buf]);
+        worker.postMessage({buf, rate}, [buf]);
       } catch (e) {
         set("error", e.message);
       }
-    },
-    setRate(r) {
-      rate = r;
-      worker?.postMessage({op: "rate", rate});
-      if (source.state === "live") set("live", `${rate}×`);
     },
     stop() {
       stopped = true;
@@ -93,7 +85,7 @@ if (import.meta.url.endsWith("?worker")) {
 
   // messages [k0, k1) as one copy, their logMonoTimes moved on by the laps so far
   const send = (k0, k1) => {
-    const {bytes, at, size, mono, pace, span} = log, shift = Math.round(play.lap * span * 1e9);
+    const {bytes, at, size, mono, span} = log, shift = Math.round(play.lap * span * 1e9);
     const out = bytes.slice(at[k0], at[k1 - 1] + size[k1 - 1]), dv = new DataView(out.buffer);
     for (let k = k0; k < k1; k++) {
       const m = at[k] - at[k0], root = m + ((4 + 4 * (dv.getUint32(m, true) + 1) + 7) & ~7);
@@ -101,20 +93,16 @@ if (import.meta.url.endsWith("?worker")) {
       dv.setUint32(ev, t % 4294967296, true);
       dv.setUint32(ev + 4, Math.floor(t / 4294967296), true);
     }
-    postMessage({events: out.buffer, mono: pace[k1 - 1] + shift}, [out.buffer]);
+    postMessage({events: out.buffer}, [out.buffer]);
   };
 
   onmessage = async ({data}) => {
     try {
-      if (data.op === "rate") {
-        rate = data.rate;
-      } else if (data.op === "start") {
-        await initCodec();
-        log = index(decompress(new Uint8Array(data.buf)));
-        rate = data.rate;
-        play.at = performance.now();
-        timer = setInterval(tick, TICK);
-      }
+      await initCodec();
+      log = index(decompress(new Uint8Array(data.buf)));
+      rate = data.rate;
+      play.at = performance.now();
+      timer = setInterval(tick, TICK);
     } catch (e) {
       clearInterval(timer);
       postMessage({error: e.message});
