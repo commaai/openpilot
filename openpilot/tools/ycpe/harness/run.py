@@ -453,7 +453,8 @@ def main():
   ok = True
   try:
     with sync_playwright() as p:
-      browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb", args=MODES[args.mode] + CHROME_ARGS, ignore_default_args=CHROME_IGNORED, env=env)
+      browser = p.chromium.launch(executable_path="/usr/bin/google-chrome", headless=args.mode != "xvfb",
+                                  args=MODES[args.mode] + CHROME_ARGS, ignore_default_args=CHROME_IGNORED, env=env)
       runs = itertools.count(1) if args.loop == 0 else range(1, (args.loop or 1) + 1)
       for n in runs:
         t0 = time.monotonic()
