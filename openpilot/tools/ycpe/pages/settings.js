@@ -38,6 +38,12 @@ function publicKey(pem) {
   return h("span", {class: "pubkey"}, h("span", {class: "mono"}, pem.replace(/-----[^-]+-----|\s/g, "")), copyButton(() => pem, "Copy the public key", 14));
 }
 
+// what unpairing a prime device ends too
+const unpairEnds = (device) => device.commacare
+  ? ["Unpairing will also cancel comma prime and ", h("b", {}, "permanently end your commacare extended warranty."),
+    " Your standard 1-year warranty still applies for any remaining time. ", h("a", {href: COMMACARE, target: "_blank", rel: "noreferrer"}, "What is commacare?")]
+  : "Unpairing will also cancel the comma prime subscription for this device.";
+
 // unpairing is for good, so it takes the dongle id typed out
 function unpairSection(device, onUnpaired) {
   const dongleId = device.dongle_id;
@@ -63,11 +69,7 @@ function unpairSection(device, onUnpaired) {
   return h("div", {},
     h("p", {class: "muted"}, "Unpairing removes this device from your account, and from everyone it's shared with. Its drives stay ",
       "uploaded, and it can be paired again from its setup screen. Type the dongle id to confirm."),
-    device.prime && h("p", {class: "warn"}, icon("warning", 16), device.commacare
-      ? h("span", {}, "Unpairing will also cancel comma prime and ", h("b", {}, "permanently end your commacare extended warranty."),
-        " Your standard 1-year warranty still applies for any remaining time. ",
-        h("a", {href: "https://comma.ai/connect#what-is-commacare", target: "_blank", rel: "noopener"}, "What is commacare?"))
-      : h("span", {}, "Unpairing will also cancel the comma prime subscription for this device.")),
+    device.prime && h("p", {class: "warn"}, icon("warning", 16), h("span", {}, unpairEnds(device))),
     form, status);
 }
 
@@ -261,10 +263,7 @@ function unpairModal(device) {
   },
   title("Unpair device", device.dongle_id),
   error,
-  device.prime && h("div", {class: "cn-unpair-warning"}, icon("warning", 24), device.commacare
-    ? h("p", {}, "Unpairing will also cancel comma prime and ", h("strong", {}, "permanently end your commacare extended warranty."),
-      " Your standard 1-year warranty still applies for any remaining time. ", h("a", {href: COMMACARE, target: "_blank", rel: "noreferrer"}, "What is commacare?"))
-    : h("p", {}, "Unpairing will also cancel the comma prime subscription for this device.")),
+  device.prime && h("div", {class: "cn-unpair-warning"}, icon("warning", 24), h("p", {}, unpairEnds(device))),
   h("div", {class: "cn-unpair-buttons"}, cancel, confirm));
 }
 
