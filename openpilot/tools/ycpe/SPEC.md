@@ -39,7 +39,6 @@ data/
 panes/           one file per pane, each with the same small interface (below)
 views.js         layouts: drive (connect), plot (jotpluggler/plotjuggler), can (cabana), custom layouts
 pages/           home/devices, device (routes, users, logs), route shell
-harness/         QA: scenarios, perf gate, screenshot contact sheet, reference comparisons
 ```
 
 **Pane contract.** `pane = create(ctx, state)` returns `{el, render(frame), resize(), dispose(), save()}`.
@@ -296,7 +295,7 @@ drive view, not offered in developer mode, where a route URL naming no view open
 
 ## Quality harness (track 7)
 
-`harness/run.py` uses Playwright with real Chrome and records everything into `harness/out/<run>/report.html`:
+The harness lives outside the repo (`~/ycpe-scratch/harness`, pointed at a checkout by `$YCPE`). `run.py` uses Playwright with real Chrome and records everything into `out/<run>/report.html`:
 
 1. **Scenarios as data.** Each is `{url, viewport, steps: [click/drag/wheel/key/wait], shots}`: cold and
    warm load, a ×10 route, rapid zoom/pan, scrubbing, 5× playback, switching views, dragging 20 series in,

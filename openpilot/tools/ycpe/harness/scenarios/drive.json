@@ -1,8 +1,0 @@
-{"name": "drive", "url": "/5beb9b58bd12b691/0000010a--a51155e496/drive", "reference": ["connect-route-demo"],
- "steps": [
-  {"waitFor": ".pane"},
-  {"wait": 1500},
-  {"shot": "light"},
-  {"key": "t"},
-  {"shot": "dark"}
- ]}

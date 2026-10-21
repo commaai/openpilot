@@ -14,6 +14,6 @@ polyfit = np.polynomial.polynomial.polyfit(t, np.eye(len(t)), deg=ModelConstants
 
 if __name__ == "__main__":
   out = {"fingerprints": MIGRATION, "polyfit": polyfit.tolist()}
-  path = Path(__file__).parents[2] / "data" / "migrate.json"
+  path = Path(__file__).with_name("migrate.json")
   path.write_text(json.dumps(out, separators=(",", ":")))
   print(f"{path}: {path.stat().st_size // 1024} KB")

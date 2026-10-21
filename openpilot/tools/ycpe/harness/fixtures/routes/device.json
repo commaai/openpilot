@@ -1,7 +1,0 @@
-[
- {"url": "/v1\\.1/devices/0123456789abcdef/$", "file": "fixtures/fake-device.json"},
- {"url": "/v1\\.1/devices/0123456789abcdef/stats$", "json": {"all": {"routes": 3, "distance": 30.6, "minutes": 46}, "week": {"routes": 2, "distance": 20.4, "minutes": 31}}},
- {"url": "/v1/devices/0123456789abcdef/location$", "json": {"dongle_id": "0123456789abcdef", "lat": 32.8751, "lng": -117.21, "time": 1792430925000}},
- {"url": "/v1/devices/0123456789abcdef/routes_segments", "file": "fixtures/fake-routes.json"},
- {"url": "/v1/prime/subscription", "status": 404, "body": ""}
-]

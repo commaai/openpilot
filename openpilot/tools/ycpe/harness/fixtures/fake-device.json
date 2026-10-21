@@ -1,4 +1,0 @@
-{"dongle_id": "0123456789abcdef", "alias": "", "device_type": "threex", "openpilot_version": "0.10.0", "serial": "fake0001", "sim_id": null,
- "is_owner": true, "is_paired": true, "prime": true, "prime_type": 1, "commacare": true, "ignore_uploads": true, "imei": "350000000000000",
- "last_athena_ping": 4102444800,
- "public_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZmFrZSBwdWJsaWMga2V5IGZvciB0aGUgeWNwZSBoYXJuZXNz\nQmVhcmQgZmFrZSBrZXkgZm9yIHRoZSB5Y3BlIGhhcm5lc3M=\n-----END PUBLIC KEY-----\n"}
