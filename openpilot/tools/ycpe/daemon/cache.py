@@ -97,14 +97,14 @@ def touch(path: Path) -> None:
     pass
 
 
-def _chunks_complete(url: str) -> int | None:
+def chunk_paths(url: str) -> tuple[int, list[Path]] | None:
+  """url_file's chunk set of url, as its _length file says: (length, the chunks' paths), or None without one."""
   h = hash_url(url)
   try:
     length = int((root() / f"{h}_length").read_text())
   except (OSError, ValueError):
     return None
-  n = -(-length // CHUNK_SIZE)
-  return length if length > 0 and all((root() / f"{h}_{float(i)}").is_file() for i in range(n)) else None
+  return length, [root() / f"{h}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))]
 
 
 def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
@@ -117,12 +117,12 @@ def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
       continue
     if (p := root() / sha(url)).is_file():
       return source, p
-    if key.file in LOGS and (length := _chunks_complete(url)):
+    if key.file in LOGS and (c := chunk_paths(url)) and c[0] > 0 and all(chunk.is_file() for chunk in c[1]):
+      length, chunks = c
       tmp = root() / f"{TMP}{sha(url)}"
       with open(tmp, "wb") as out:
-        h = hash_url(url)
-        for i in range(-(-length // CHUNK_SIZE)):
-          out.write((root() / f"{h}_{float(i)}").read_bytes())
+        for chunk in chunks:
+          out.write(chunk.read_bytes())
       os.replace(tmp, p)
       account(length, 1)
       return source, p
@@ -342,13 +342,10 @@ def prune_soon() -> None:
 
 def derived_copies(url: str) -> list[Path]:
   """The other tools' forms of url's file: decompressed logs and url_file chunks (not the whole-file copy)."""
-  h = hash_url(url)
   paths = [root() / sha(f"decompressed-zst:{url}"), root() / sha(f"decompressed-bz2:{url}")]
-  try:
-    length = int((root() / f"{h}_length").read_text())
-  except (OSError, ValueError):
+  if not (c := chunk_paths(url)):
     return paths
-  return paths + [root() / f"{h}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))] + [root() / f"{h}_length"]
+  return paths + c[1] + [root() / f"{hash_url(url)}_length"]
 
 
 def evict(key: Key) -> int:
