@@ -24,6 +24,25 @@ export function listeners() {
   };
 }
 
+// async fn, one call in flight: calls meanwhile make one more once it's done, with the newest arguments
+export function latest(fn) {
+  let busy = false, next = null;
+  return async (...args) => {
+    next = args;
+    if (busy) return;
+    busy = true;
+    try {
+      while (next) {
+        const now = next;
+        next = null;
+        await fn(...now);
+      }
+    } finally {
+      busy = false;
+    }
+  };
+}
+
 // confirm(), in the theme (the browser's own dialog ignores it, see style.css): resolves with whether ok was chosen
 export function ask(text, ok = "OK", cancel = "Cancel") {
   return new Promise((done) => {

@@ -1,5 +1,5 @@
 // the selected message's signals: values at the playhead, sparklines, and the signal and message editors
-import {h, fitCanvas} from "/dom.js";
+import {fitCanvas, h, latest} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, NORMAL, format, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
@@ -38,20 +38,18 @@ export function create(ctx, state) {
   const msg = () => can.dbcMsg(k());
   const path = (sg) => `/dbc/${busOf(k())}/${msg().name}/${sg.name}`;
   let rows = new Map(), mux;  // signal name -> {row, v, spark, swatch, name, ed, sg}; the multiplexor they were built with
-  let sparks = null, sparkBusy = false;
+  let sparks = null;
 
   // the sparklines' buckets for the window before the playhead, one request in flight
-  async function requestSparks() {
+  const requestSparks = latest(async () => {
     const key = k(), m = msg();
-    if (sparkBusy || !m) return;
-    sparkBusy = true;
+    if (!m) return;
     const t = ctx.clock.t, names = m.sigs.map((sg) => sg.name);
     const r = await can.decimate(key, names, t - spark, t, SPARK_W);
-    sparkBusy = false;
     if (key !== k()) return;
     sparks = Object.fromEntries(names.map((n, i) => [n, r[i]]));
     ctx.perf.invalidate(pane);
-  }
+  });
 
   function header() {
     const key = k(), m = msg();

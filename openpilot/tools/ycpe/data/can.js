@@ -5,6 +5,7 @@ import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
 import {parseRemote, upstream as github} from "./github.js";
 import {client, serve} from "./rpc.js";
+import {latest} from "../dom.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -617,17 +618,15 @@ export class Can {
   requestState(t) {
     this.at = this.store.route?.segments.find((s) => t >= s.t0 && t < s.t1)?.n ?? this.at;
     for (const n of [this.at - 1, this.at, this.at + 1]) this.reload(n);
-    if (this.stateBusy) { this.stateNext = t; return; }
-    this.stateBusy = true;
-    this.call("state", {t}).then((r) => {
-      this.live = r;
-      r.index = new Map(Array.from(r.keys, (k, j) => [k, j]));
-      r.t = t;
-      this.stateBusy = false;
-      this.emit("live", r);
-      if (this.stateNext !== undefined) { const n = this.stateNext; this.stateNext = undefined; this.requestState(n); }
-    });
+    this.fetchState(t);
   }
+  fetchState = latest(async (t) => {
+    const r = await this.call("state", {t});
+    r.index = new Map(Array.from(r.keys, (k, j) => [k, j]));
+    r.t = t;
+    this.live = r;
+    this.emit("live", r);
+  });
 
   frames(k, t, n = 200, filters = null) { return this.call("frames", {k, t, n, msg: filters?.length ? plain(this.dbcMsg(k)) : null, filters}); }
   heatmap(k, t0, t1) { return this.call("heatmap", {k, t0, t1}); }
