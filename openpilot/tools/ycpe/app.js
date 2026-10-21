@@ -1,4 +1,4 @@
-import {SEGMENT, api, auth, segmentAt} from "/api.js";
+import {SEGMENT, api, auth, segmentAt, versionAtLeast} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
 import {h, fmt, ask, parseClock, openModal, toast} from "/dom.js";
@@ -730,10 +730,7 @@ function closeWorkspace() {
 async function markViewed(route) {
   const dongle = route.fullname.split("|")[0];
   const device = await api.device(dongle).catch(() => null);
-  const [major = 0, minor = 0, patch = 0] = (device?.openpilot_version || "").split(".").map((p) => parseInt(p) || 0);
-  if (device && major * 1e6 + minor * 1e3 + patch >= 9006) {
-    api.athena(dongle, "setRouteViewed", {route: route.fullname}).catch(() => {});
-  }
+  if (device && versionAtLeast(device, "0.9.6")) api.athena(dongle, "setRouteViewed", {route: route.fullname}).catch(() => {});
 }
 
 // the path still names the open workspace's route (or loose logs), whatever the view
