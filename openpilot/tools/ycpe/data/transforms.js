@@ -1,4 +1,4 @@
-// series math off the main thread: transforms, statistics, CSV, XY pairs and spectra. This module is both
+// series math off the main thread: transforms, statistics, CSV and XY pairs. This module is both
 // the main-side API and, loaded as a module worker, the worker itself. The worker keeps the chunks of each
 // series it has seen and their concatenation, so a chunk crosses threads once.
 import {upperBound} from "./bounds.js";
@@ -138,8 +138,6 @@ export function resample(ref, t, v) {
   return out;
 }
 
-const MAX_FFT = 65536;  // samples a spectrum is computed from at most
-
 // sample index range [a, b) of s over [t0, t1]
 function range(s, t0, t1) {
   let a = upperBound(s.t, t0);
@@ -215,63 +213,7 @@ const ops = {
     }
     return {x: Float64Array.from(ox), y: Float64Array.from(oy), bounds: [x0, x1, y0, y1], count: tx.length};
   },
-
-  // single-sided amplitude spectrum of the range: interpolated onto a uniform grid at the median sample interval
-  // (so it ends at the series' own Nyquist frequency), Hann windowed and zero-padded to a power of two
-  fft({path, t0, t1}) {
-    const s = series.get(path), [a, b] = range(s, t0, t1), count = b - a;
-    if (count < 4) return {f: new Float64Array(0), mag: new Float64Array(0), bounds: [0, 1, 0, 1]};
-    const gaps = s.t.subarray(a + 1, b).map((x, i) => x - s.t[a + i]).sort(), span = s.t[b - 1] - s.t[a];
-    const dt = Math.max(gaps[gaps.length >> 1], span / (MAX_FFT - 1)), m = Math.floor(span / dt) + 1;
-    const n = 2 ** Math.ceil(Math.log2(m)), re = new Float64Array(n), im = new Float64Array(n);
-    let mean = 0;
-    for (let i = 0, k = a; i < m; i++) {
-      const t = s.t[a] + i * dt;
-      while (k < b - 2 && s.t[k + 1] <= t) k++;
-      const w = Math.min(1, (t - s.t[k]) / (s.t[k + 1] - s.t[k]) || 0);
-      re[i] = s.v[k] + (s.v[k + 1] - s.v[k]) * w;
-      mean += re[i] / m;
-    }
-    for (let i = 0; i < m; i++) re[i] = (re[i] - mean) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (m - 1)));
-    fftInPlace(re, im);
-    const half = n / 2 + 1, f = new Float64Array(half), mag = new Float64Array(half);
-    for (let k = 0; k < half; k++) {
-      f[k] = k / (n * dt);
-      mag[k] = 4 * Math.hypot(re[k], im[k]) / m;  // ×2 single-sided, ×2 Hann gain
-    }
-    let top = 0;
-    for (let k = 1; k < half; k++) top = Math.max(top, mag[k]);
-    return {f, mag, bounds: [f[1], f[half - 1], 0, top]};
-  },
 };
-
-function fftInPlace(re, im) {
-  const n = re.length;
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1;
-    for (; j & bit; bit >>= 1) j ^= bit;
-    j ^= bit;
-    if (i < j) {
-      [re[i], re[j]] = [re[j], re[i]];
-      [im[i], im[j]] = [im[j], im[i]];
-    }
-  }
-  for (let len = 2; len <= n; len <<= 1) {
-    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
-    for (let i = 0; i < n; i += len) {
-      let cr = 1, ci = 0;
-      for (let j = 0; j < len / 2; j++) {
-        const a = i + j, b = a + len / 2;
-        const xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
-        re[b] = re[a] - xr;
-        im[b] = im[a] - xi;
-        re[a] += xr;
-        im[a] += xi;
-        [cr, ci] = [cr * wr - ci * wi, cr * wi + ci * wr];
-      }
-    }
-  }
-}
 
 if (globalThis.WorkerGlobalScope && self.location.href === import.meta.url) {
   onmessage = ({data: msg}) => {

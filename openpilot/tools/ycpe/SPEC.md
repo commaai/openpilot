@@ -106,7 +106,7 @@ timestamps.
       `valid=false` spans marked.
 - [ ] XY plots, with the playhead shown as a moving point.
 - [ ] Transforms: derivative, integral, moving average, moving RMS/variance, abs, first difference,
-      outlier removal and FFT; also quaternion → RPY.
+      outlier removal; also quaternion → RPY.
 - [ ] Statistics over the visible range: min, max, mean, std, count, rate.
 - [ ] Custom series in a **JavaScript** code console that runs in a worker. It takes any number of
       inputs, resamples them to the first one, keeps a persistent globals block, ships the jotpluggler

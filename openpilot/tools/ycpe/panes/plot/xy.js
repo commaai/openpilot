@@ -1,6 +1,5 @@
-// XY plot: y against x over the visible time range, with the playhead as a moving point; or, in FFT mode,
-// the amplitude spectrum of each series over the visible range. The pairing and the spectra are computed in
-// the transforms worker; the main thread draws at most a few thousand points per curve, on a base canvas that
+// XY plot: y against x over the visible time range, with the playhead as a moving point. The pairing is computed
+// in the transforms worker; the main thread draws at most a few thousand points per curve, on a base canvas that
 // redraws only when the results or the view change. The playhead points go on an overlay.
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
@@ -15,7 +14,9 @@ const L = 58, R = 10, T = 8, B = 20;
 export function create(ctx, state = {}) {
   const {store, clock, perf} = ctx;
   let col = colors(ctx.theme);
-  const st = {mode: state.mode === "fft" ? "fft" : "xy", curves: state.curves || [], equal: !!state.equal, view: state.view || null};
+  // a layout saved in the FFT mode there was: its curves (of one series each) and view go
+  const fft = state.mode === "fft";
+  const st = {curves: fft ? [] : state.curves || [], equal: !!state.equal, view: fft ? null : state.view || null};
   let pendingX = null, results = [], busy = false, stale = true, W = 0, H = 0, g = null, gOver = null, frame = null, drag = null;
   let dirty = true, timer = 0;
 
@@ -27,7 +28,7 @@ export function create(ctx, state = {}) {
   const invalidate = () => { dirty = true; perf.invalidate(pane); };
   const offs = [
     clock.on("range", refresh),
-    clock.on("t", () => st.mode === "xy" && perf.invalidate(pane)),  // spectra don't follow the playhead
+    clock.on("t", () => perf.invalidate(pane)),
     store.on("segment", () => { timer ||= setTimeout(() => { timer = 0; refresh(); }, view.RECOMPUTE_DEBOUNCE_MS); }),
     ctx.theme.on(() => { col = colors(ctx.theme); invalidate(); }),
     store.can?.on("series", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
@@ -35,8 +36,8 @@ export function create(ctx, state = {}) {
     store.on("put", (path) => { if (st.curves.some((c) => inputs(c).includes(path))) refresh(); }),
   ].filter(Boolean);
 
-  const inputs = (c) => st.mode === "fft" ? [c.path] : [c.x, c.y];
-  const name = (c) => st.mode === "fft" ? c.path.slice(1) : `${c.y.slice(1)} vs ${c.x.slice(1)}`;
+  const inputs = (c) => [c.x, c.y];
+  const name = (c) => `${c.y.slice(1)} vs ${c.x.slice(1)}`;
 
   // one request in flight; a change while busy asks again when it lands
   function refresh() {
@@ -49,20 +50,15 @@ export function create(ctx, state = {}) {
     busy = true;
     stale = false;
     const [t0, t1] = clock.range;
-    Promise.all(curves.map((c) => st.mode === "fft" ? compute(store, "fft", {path: c.path, t0, t1}, [c.path])
-      : compute(store, "xy", {x: c.x, y: c.y, t0, t1}, [c.x, c.y])))
+    Promise.all(curves.map((c) => compute(store, "xy", {x: c.x, y: c.y, t0, t1}, [c.x, c.y])))
       .then((rs) => { results = rs.map((r, k) => ({c: curves[k], ...r})); }, console.error)
       .finally(() => { busy = false; if (stale) refresh(); invalidate(); });
   }
 
   function addPaths(paths) {
-    if (st.mode === "fft") {
-      for (const path of paths) st.curves.push({path, color: nextColor(st.curves.map((c) => c.color))});
-    } else {
-      const q = pendingX ? [pendingX, ...paths] : [...paths];
-      while (q.length >= 2) st.curves.push({x: q.shift(), y: q.shift(), color: nextColor(st.curves.map((c) => c.color))});
-      pendingX = q[0] ?? null;
-    }
+    const q = pendingX ? [pendingX, ...paths] : [...paths];
+    while (q.length >= 2) st.curves.push({x: q.shift(), y: q.shift(), color: nextColor(st.curves.map((c) => c.color))});
+    pendingX = q[0] ?? null;
     rebuild();
     refresh();
   }
@@ -79,8 +75,7 @@ export function create(ctx, state = {}) {
   function showHint(uncomputed) {
     hint.hidden = st.curves.length && !pendingX && !uncomputed;
     hint.textContent = uncomputed ? "custom series not computed: add it to a time plot"
-      : st.mode === "fft" ? "drop series for their spectrum over the visible range"
-        : pendingX ? `x = ${pendingX}, now drop the y series` : "drop an x series, then a y series (or two at once)";
+      : pendingX ? `x = ${pendingX}, now drop the y series` : "drop an x series, then a y series (or two at once)";
   }
 
   // data bounds with 5% padding, widened to equal units per pixel when asked
@@ -93,7 +88,7 @@ export function create(ctx, state = {}) {
     if (!(x1 >= x0)) [x0, x1, y0, y1] = [0, 1, 0, 1];
     const px = Math.max((x1 - x0) * 0.05, 1e-9), py = Math.max((y1 - y0) * 0.05, 1e-9);
     [x0, x1, y0, y1] = [x0 - px, x1 + px, y0 - py, y1 + py];
-    if (st.equal && st.mode === "xy") {
+    if (st.equal) {
       const pw = W - L - R, ph = H - T - B, u = Math.max((x1 - x0) / pw, (y1 - y0) / ph);
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
       [x0, x1, y0, y1] = [cx - u * pw / 2, cx + u * pw / 2, cy - u * ph / 2, cy + u * ph / 2];
@@ -116,17 +111,16 @@ export function create(ctx, state = {}) {
     g.fillStyle = col.bg;
     g.fillRect(r.x, r.y, r.w, r.h);
     const xt = ticks(x0, x1, r.w / 90), yt = ticks(y0, y1, r.h / 34);
-    axes(g, col, r, xt, X, (v) => fmtTick(v, xt.step) + (st.mode === "fft" && v === xt.values.at(-1) ? " Hz" : ""), yt, Y);
+    axes(g, col, r, xt, X, (v) => fmtTick(v, xt.step), yt, Y);
     g.save();
     g.beginPath();
     g.rect(r.x, r.y, r.w, r.h);
     g.clip();
     g.lineWidth = 1.25;
-    for (const res of results) {
-      const xs = st.mode === "fft" ? res.f : res.x, ys = st.mode === "fft" ? res.mag : res.y;
-      g.strokeStyle = res.c.color;
+    for (const {c, x, y} of results) {
+      g.strokeStyle = c.color;
       g.beginPath();
-      for (let i = st.mode === "fft" ? 1 : 0; i < xs.length; i++) g.lineTo(X(xs[i]), Y(ys[i]));
+      for (let i = 0; i < x.length; i++) g.lineTo(X(x[i]), Y(y[i]));
       g.stroke();
     }
     g.restore();
@@ -135,7 +129,6 @@ export function create(ctx, state = {}) {
   // the playhead's point on each XY curve, and the legend's values there
   function drawOverlay() {
     gOver.clearRect(0, 0, W, H);
-    if (st.mode !== "xy") return;
     const {r, X, Y} = frame, g = gOver;
     g.save();
     g.beginPath();
@@ -155,7 +148,7 @@ export function create(ctx, state = {}) {
     }
     g.restore();
     legend.querySelectorAll(".row").forEach((row, k) => {
-      const c = st.curves[k], v = st.mode === "xy" ? `${sample(c.x)}, ${sample(c.y)}` : "";
+      const c = st.curves[k], v = `${sample(c.x)}, ${sample(c.y)}`;
       if (row.children[2].textContent !== v) row.children[2].textContent = v;
     });
   }
@@ -191,26 +184,13 @@ export function create(ctx, state = {}) {
   cv.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     menu(e.clientX, e.clientY, [
-      {label: "XY", checked: st.mode === "xy", fn: () => setMode("xy")},
-      {label: "FFT of the visible range", checked: st.mode === "fft", fn: () => setMode("fft")},
-      null,
-      {label: "Equal axes", checked: st.equal, disabled: st.mode !== "xy", fn: () => { st.equal = !st.equal; st.view = null; invalidate(); }},
-      {label: "Swap X and Y", disabled: st.mode !== "xy", fn: () => { for (const c of st.curves) [c.x, c.y] = [c.y, c.x]; st.view = null; rebuild(); refresh(); }},
+      {label: "Equal axes", checked: st.equal, fn: () => { st.equal = !st.equal; st.view = null; invalidate(); }},
+      {label: "Swap X and Y", fn: () => { for (const c of st.curves) [c.x, c.y] = [c.y, c.x]; st.view = null; rebuild(); refresh(); }},
       {label: "Fit", fn: () => { st.view = null; invalidate(); }},
-      {label: "Export PNG", fn: () => exportPng([base, cv], st.curves.map((c) => ({color: c.color, name: name(c), value: ""})), col.bg, col.fg, col.font, st.mode)},
+      {label: "Export PNG", fn: () => exportPng([base, cv], st.curves.map((c) => ({color: c.color, name: name(c), value: ""})), col.bg, col.fg, col.font, "xy")},
       {label: "Remove all", disabled: !st.curves.length, fn: () => { st.curves = []; pendingX = null; rebuild(); refresh(); }},
     ]);
   });
-
-  function setMode(mode) {
-    if (mode === st.mode) return;
-    st.curves = mode === "fft" ? st.curves.map((c) => ({path: c.y, color: c.color})) : [];
-    st.mode = mode;
-    st.view = null;
-    pendingX = null;
-    rebuild();
-    refresh();
-  }
 
   view.acceptPaths(el, addPaths);
 
@@ -223,7 +203,7 @@ export function create(ctx, state = {}) {
   }
 
   function save() {
-    return {mode: st.mode, curves: st.curves, ...(st.equal && {equal: true}), ...(st.view && {view: st.view})};
+    return {curves: st.curves, ...(st.equal && {equal: true}), ...(st.view && {view: st.view})};
   }
 
   function dispose() {
