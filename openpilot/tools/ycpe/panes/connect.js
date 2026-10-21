@@ -3,7 +3,7 @@
 // zoom into a range), Video | Map toggles, Files and More info menus (connect-menus.js), the camera or map pane, and
 // connect's control pill. The camera and map panes are mounted here as the layout mounts them. Everything that moves
 // while scrubbing or playing is a transform or a changed text, set in one render through the frame scheduler
-import {SEGMENT, api, segmentAt} from "/api.js";
+import {SEGMENT, api, segmentAt, segmentAtTime} from "/api.js";
 import {h, css} from "/dom.js";
 import {icon} from "/icons.js";
 import {loadPane} from "/panes.js";
@@ -227,7 +227,7 @@ export function create(ctx, state) {
     thumbs.replaceChildren(...runs.map((r) => h("div", {style: `width:${THUMB * r.length}px;background-image:url(${api.segmentAsset(route, r.n, "sprite.jpg")});background-position-x:-${r.start * THUMB}px`})));
   }
 
-  const segmentOf = (t) => segmentAt(route, Math.min(Math.floor(t / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
+  const segmentOf = (t) => segmentAtTime(route, t, clock.duration);
   let shown = "", second = null, playing = null, rated = null;  // the range the strip and title show, the second the clock shows
   const pane = {name: "connect", el, resize() {}, save: () => ({media}), dispose,
     render() {

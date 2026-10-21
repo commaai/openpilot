@@ -1,7 +1,7 @@
 // user mode's Files and More info menus, as connect's Media.jsx draws them over the button: the playhead segment's
 // files to download or ask the device for, all logs or files of the range, the upload queue (Files/UploadQueue.jsx),
 // the segment name to copy, sharing, useradmin, and the public and preserved switches. Loaded with the first click.
-import {SEGMENT, api, segmentAt} from "/api.js";
+import {SEGMENT, api, segmentAtTime} from "/api.js";
 import {h, css} from "/dom.js";
 import {isOnline} from "/app.js";
 import {canManage} from "/pages/home.js";
@@ -73,7 +73,7 @@ export function filesMenu(anchor, ctx) {
   const segs = route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
   let files = null, device = null, up = null, alive = true, kept = false;  // files: "<n>/<kind>" → url, once fetched
   const watchers = new Set([() => draw()]);  // what the uploads' changes redraw: this menu, then the queue it opened
-  const n = segmentAt(route, Math.min(Math.floor(clock.t / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
+  const n = segmentAtTime(route, clock.t, clock.duration);
   const rows = FILES.map(([name]) => item({"aria-disabled": "true"}, h("span", {}, name)));
   const allLogs = item({"aria-disabled": "true"}, h("span", {}, "All logs"));
   const allFiles = item({"aria-disabled": "true"}, h("span", {}, "All files"));
@@ -179,7 +179,7 @@ export const prefetch = (ctx) => api.device(ctx.route.fullname.split("|")[0]).th
 export function infoMenu(anchor, ctx) {
   const {route, clock} = ctx;
   const [dongle] = route.fullname.split("|");
-  const name = `${route.fullname.replace("|", "/")}/${Math.floor(clock.t / SEGMENT)}`;
+  const name = `${route.fullname.replace("|", "/")}/${segmentAtTime(route, clock.t, clock.duration)}`;
   const toggles = h("div", {class: "cm-toggles"});
   const m = menu(anchor, [
     item({class: "cm-item cm-copy", tabindex: 0, style: `font-size: ${innerWidth > 400 ? 12.8 : 11.2}px`,

@@ -267,6 +267,8 @@ export const SEGMENT = 60;  // nominal seconds per segment, until a segment's re
 // the segment a timeline slot plays: a route opened with a range (data/sources.js routeRecord) plays its segments
 // back to back, so slot k is segment_numbers[k]; otherwise the slot is the segment
 export const segmentAt = (route, slot) => route.range ? route.segment_numbers[slot] : slot;
+// the segment playing at timeline time t of duration (the last slot runs to the end)
+export const segmentAtTime = (route, t, duration) => segmentAt(route, Math.min(Math.floor(t / SEGMENT), Math.ceil(duration / SEGMENT) - 1));
 const slots = (route) => route.range ? route.segment_numbers.length : (route.maxqlog ?? -1) + 1;
 const memoKey = (route) => `${route.fullname}/${route.range ?? ""}`;
 
