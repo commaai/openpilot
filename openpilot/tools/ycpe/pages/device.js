@@ -574,5 +574,6 @@ async function keepPage(dongleId, keep, select, map, el) {
   kept.set(dongleId, Object.assign(keep, {el, select, user: mode() === "user", until: Date.now() + KEEP, dispose: map.dispose}));
   const ready = [map.ready, el.querySelector(".stats, .cn-stats")?.ready, el.querySelector(".tab-body")?.firstChild?.ready];
   await Promise.race([Promise.allSettled(ready), sleep(READY_MS)]);
+  await new Promise(requestAnimationFrame);  // in the frame after the one its drives were built in, not sharing it
   return el;
 }
