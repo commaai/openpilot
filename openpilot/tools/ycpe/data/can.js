@@ -3,7 +3,7 @@
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
-import {parseRemote, upstream as github} from "./github.js";
+import {upstream as github} from "./github.js";
 import {client, serve} from "./rpc.js";
 import {latest} from "../dom.js";
 
@@ -699,26 +699,16 @@ export class Can {
     };
   }
 
-  // opendbc's DBC names and a fingerprint's DBCs. opendbc.json knows each car by its current name; a log read with its
-  // own schema can have an older one, which migrate.json renames
+  // opendbc's DBC names and a fingerprint's DBCs (opendbc.json knows each car by its current name, as migrated logs have it)
   async opendbc() {
-    this.index ||= Promise.all([fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json()), import("./migrate.json", {with: {type: "json"}})])
-      .then(([cars, {default: {fingerprints: renamed}}]) => (fp) => cars[renamed[fp] ?? fp]);
+    this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json()).then((cars) => (fp) => cars[fp]);
     const [dbcsOf, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
-    return {dbcsOf, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
+    return {dbcsOf, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.label, local: local?.dir};
   }
 
-  // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master. The
-  // fetching and generating happen in upstream-worker.js: {names, co: {label}, text(name)}, or null offline
+  // opendbc master from GitHub, fetched and generated in upstream-worker.js: {label, names, text(name)}, or null offline
   upstream() {
-    const remote = parseRemote(this.store.valueAt?.("/initData/gitRemote", Infinity)), commit = this.store.valueAt?.("/initData/gitCommit", Infinity);
-    const at = remote && commit ? `${remote}@${commit}` : "master";
-    if (this.src?.at !== at) {
-      const args = remote && commit ? {repo: remote, commit} : {};
-      this.src = {at, opendbc: github("dbcs", args).then(({label, names}) => ({names, co: {label},
-        text: (name) => github("dbc", {...args, name}).then((r) => r.text)}), () => null)};
-    }
-    return this.src.opendbc;
+    return this.src ||= github("dbcs").then(({label, names}) => ({label, names, text: (name) => github("dbc", {name}).then((r) => r.text)}), () => null);
   }
 
   // the opendbc checkout on this machine through the local daemon, when there is one: {daemon, id, dir, names}
