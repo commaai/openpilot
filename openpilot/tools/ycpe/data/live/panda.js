@@ -2,7 +2,7 @@
 // and health from control reads. It never sends CAN, changes the safety mode or bus speeds, flashes or resets the
 // panda; its one write is the comms reset (0xc0) every host sends on connect, which clears only the firmware's
 // half-sent packet. ?fake-panda swaps in a fake device that replays the demo route (fake-panda.js).
-import {listeners} from "../../dom.js";
+import {stateful} from "../../dom.js";
 import {event, monoNanos} from "./encode.js";
 
 export const FILTERS = [0xbbaa, 0x3801].flatMap((vendorId) => [0xddcc, 0xddee].map((productId) => ({vendorId, productId})));
@@ -98,7 +98,6 @@ export function create(opts = {}) {
   const fake = opts.usb ? null : fakeRequested();
   const usbReady = opts.usb ? Promise.resolve(opts.usb)
     : fake !== null ? import("./fake-panda.js").then((m) => m.fakeUsb({granted: fake !== "click"})) : Promise.resolve(globalThis.navigator?.usb);
-  const changed = listeners();
   let usb = null, sink = null, device = null, opening = null;
 
   const source = {
@@ -107,7 +106,6 @@ export function create(opts = {}) {
     state: "closed",
     detail: "",
     stats: {frames: 0, checksumErrors: 0, overflows: 0},
-    on(name, fn) { return name === "state" ? changed.on(fn) : () => {}; },
 
     async start(s) {
       sink = s;
@@ -143,12 +141,7 @@ export function create(opts = {}) {
       set("closed", "");
     },
   };
-
-  function set(state, detail) {
-    if (state === source.state && detail === source.detail) return;
-    Object.assign(source, {state, detail});
-    changed.emit(state);
-  }
+  const set = stateful(source);
 
   async function open(d) {
     if (opening || !sink) return;

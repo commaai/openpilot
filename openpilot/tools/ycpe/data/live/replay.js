@@ -3,21 +3,15 @@
 // logMonoTimes on by the segment's length, so time only goes forward. The pacing runs in a worker (this file loaded as
 // "replay.js?worker"), which sends the events due every TICK ms as one piece.
 import {initCodec, decompress} from "../../codec/codec.js";
-import {listeners} from "../../dom.js";
+import {stateful} from "../../dom.js";
 import {messages} from "../message.js";
 
 const TICK = 50;  // ms
 
 export function create({route, rate = 1, segment = 0}) {
-  const states = listeners();
   let worker = null, stopped = false;
-  const set = (state, detail = "") => {
-    Object.assign(source, {state, detail});
-    states.emit(state, detail);
-  };
   const source = {
     kind: "replay", label: `replay of ${route.replace("|", "/")}--${segment}`, state: "connecting", detail: "fetching the log",
-    on: (event, fn) => event === "state" ? states.on(fn) : () => {},
     async start(sink) {
       try {
         const buf = await fetchLog(route, segment);
@@ -39,6 +33,7 @@ export function create({route, rate = 1, segment = 0}) {
       set("closed");
     },
   };
+  const set = stateful(source);
   return source;
 }
 

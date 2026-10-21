@@ -1,7 +1,7 @@
 // live data over WebRTC from a device's webrtcd, or one on this PC (SPEC.md Live): cereal services as capnp Events on
 // the "cereal" channel, camera tracks, and, from devices that predate "cereal", carState and deviceState as JSON on
 // "data". The peer connection is shared with file reads (peer.js).
-import {listeners} from "../../dom.js";
+import {stateful} from "../../dom.js";
 import {peer} from "./peer.js";
 
 // what the drive, plot, CAN and logs views read: about 300 kB/s on the demo route. modelV2 alone is another 150 kB/s,
@@ -14,17 +14,11 @@ const FILE = {road: "fcamera", wideRoad: "ecamera", driver: "dcamera"};  // a ca
 const RETRY_MS = [1000, 2000, 5000, 10000, 30000];
 
 export function create({dongle, local = false, services = SERVICES, cameras = CAMERAS} = {}) {
-  const target = local ? "local" : dongle, conn = peer(target), subs = listeners();
+  const target = local ? "local" : dongle, conn = peer(target);
   const user = {};  // this source's place among the connection's users
   let sink = null, offs = [], cereal = false, retries = 0, retry = 0, attempt = 0, wasLive = false;
   let watched = null;  // the camera picked to watch, which a one-track stream switches to on each connection
   const shown = new Map();  // camera → the track the sink has
-
-  const set = (state, detail = "") => {
-    if (source.state === state && source.detail === detail) return;
-    [source.state, source.detail] = [state, detail];
-    subs.emit(state, detail);
-  };
 
   const video = (camera, track) => {
     if (shown.get(camera) === track) return;
@@ -68,7 +62,6 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
     services,
     cameras,
     quality: "auto",  // the device's encoder bitrate: auto, or high, med or low (webrtcd's livestreamSettings)
-    on: (event, fn) => event === "state" ? subs.on(fn) : () => {},
 
     start(s) {
       sink = s;
@@ -112,5 +105,6 @@ export function create({dongle, local = false, services = SERVICES, cameras = CA
     },
     stats: () => conn.pc?.getStats() ?? Promise.resolve(null),
   };
+  const set = stateful(source);
   return source;
 }
