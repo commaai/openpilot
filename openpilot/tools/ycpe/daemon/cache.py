@@ -23,7 +23,7 @@ from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.openpilotcontainers import DataProdContainer
 from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
-from openpilot.tools.ycpe.daemon.core import config, module, route
+from openpilot.tools.ycpe.daemon.core import config
 
 QLOGS = AzureContainer("commadata2", "qlog")  # where the API keeps qlogs and qcameras; the rest is in DataProdContainer
 # device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
@@ -31,7 +31,6 @@ QLOGS = AzureContainer("commadata2", "qlog")  # where the API keeps qlogs and qc
 SHARED = ("device", "internal", "api", "openpilotci")
 LOGS = FileName.RLOG + FileName.QLOG
 TMP = "ycpe-tmp-"
-PREFETCH = 8  # downloads at once: one Azure blob stream gives ~5 MB/s here
 RECENT = 120  # seconds: files written or read this recently are never pruned (they may be in use)
 
 
@@ -184,7 +183,6 @@ class Fill:
     self.done, self.total = 0, None
     self.error: str | None = None
     self.finished = threading.Event()
-    self.started = time.monotonic()
 
   def running(self) -> bool:
     if self.error:
@@ -213,7 +211,6 @@ class Fill:
       old = self.final.stat().st_size if self.final.exists() else None  # a stale copy being replaced
       os.replace(self.tmp, self.final)
       mark_checked(self.final)
-      stats["fetched"] += self.done
       account(self.done - (old or 0), 0 if old is not None else 1)
       if self.key.file in LOGS:
         mirror_chunks(self.cache_url, self.final)
@@ -232,7 +229,6 @@ class Fill:
 
 _fills: dict[Key, Fill] = {}
 _fills_lock = threading.Lock()
-stats = {"hits": 0, "misses": 0, "fetched": 0, "stale": 0}
 
 
 # when a whole-file copy was last checked against its source, in an xattr on the file (a replaced file starts over);
@@ -356,65 +352,6 @@ def remove(paths: list[Path]) -> int:
   return freed
 
 
-# endpoints (sources.py resolves; it imports this module, so it's imported lazily here)
-
-module("cache", "1")
-
-
 def usage() -> dict:
   b, n = totals()
-  return {"dir": str(root()), "budget": config.cache_budget, "bytes": b, "files": n,
-          "fills": [{"key": str(f.key), "source": f.source, "done": f.done, "total": f.total} for f in list(_fills.values())], **stats}
-
-
-@route("GET", "/local/cache")
-def cache_stats(req):
-  """Usage of the whole shared cache. With ?route=dongle|log_id[&segs=N], also which of its files are cached."""
-  from openpilot.tools.ycpe.daemon.sources import KINDS, parse_route, segments
-  out = usage()
-  if (r := req.query.get("route")):
-    dongle, log_id = parse_route(r)
-    count = req.arg("segs", None, int)
-    segs = {}
-    for seg in segments(None, dongle, log_id) if count is None else range(min(count, 10000)):
-      have = {}
-      for kind, names in KINDS.items():
-        for name in names:
-          key = Key(dongle, log_id, seg, name)
-          if (hit := lookup(key)):
-            have[kind] = {"file": name, "source": hit[0], "size": hit[1].stat().st_size}
-            break
-      segs[str(seg)] = have
-    out["route"] = {"name": f"{dongle}|{log_id}", "segments": segs}
-  return out
-
-
-@route("POST", "/local/cache/prefetch")
-def cache_prefetch(req):
-  """Body as /local/sources/resolve. Downloads every resolved file that isn't cached yet, PREFETCH at a time, as a job whose
-  meta carries the route and each segment's state (queued, loading, disk, error) for the page's load lanes."""
-  from openpilot.tools.ycpe.daemon import jobs
-  from openpilot.tools.ycpe.daemon.sources import fetch, jwt_of, resolve
-  jwt = jwt_of(req)
-  res = resolve({**(req.json() or {}), "sizes": True}, jwt)
-  dongle, log_id = res["route"].split("|")
-  found = {Key(dongle, log_id, int(n), e["file"]): e for n, kinds in res["segments"].items() for e in kinds.values()}
-  todo = [(key, e["size"] or 0) for key, e in found.items() if not e["cached"]]
-
-  def run(job):
-    def one(key, moved):
-      fetch(key, found[key]["source"], jwt, job, moved)
-    return jobs.run_files(job, todo, one, PREFETCH, have=[key for key, e in found.items() if e["cached"]])
-  return jobs.start("prefetch", run, title=f"cache {res['route']}", route=res["route"]).json()
-
-
-@route("POST", "/local/cache/evict")
-def cache_evict(req):
-  """Body {route, segs?, kinds?}: deletes those files' copies in the shared cache (never anything remote)."""
-  from openpilot.tools.ycpe.daemon.sources import KINDS, parse_route, segments
-  body = req.json() or {}
-  dongle, log_id = parse_route(body.get("route", ""))
-  kinds = [k for k in (body.get("kinds") or KINDS) if k in KINDS]
-  segs = segments(body.get("segs"), dongle, log_id)
-  freed = sum(evict(Key(dongle, log_id, n, name)) for n in segs for kind in kinds for name in KINDS[kind])
-  return {"freed": freed, **usage()}
+  return {"dir": str(root()), "budget": config.cache_budget, "bytes": b, "files": n}

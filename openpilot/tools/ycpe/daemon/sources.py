@@ -18,7 +18,7 @@ from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import URLFile
-from openpilot.tools.ycpe.daemon import cache
+from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.cache import Key
 from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, module, route
 
@@ -28,6 +28,7 @@ KINDS = {"rlog": FileName.RLOG, "qlog": FileName.QLOG, "qcamera": FileName.QCAME
 FILES = {f: k for k, fs in KINDS.items() for f in fs}
 HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
+PREFETCH = 8  # downloads at once: one Azure blob stream gives ~5 MB/s here
 
 module("sources", "1", sources=SOURCES)
 _pool = ThreadPoolExecutor(16, thread_name_prefix="probe")
@@ -184,9 +185,9 @@ def resolve(spec: dict, jwt: str | None = None) -> dict:
       return r.resolve(seg, KINDS["rlog"]) or r.resolve(seg, KINDS["qlog"])
     return r.resolve(seg, KINDS[kind])
 
-  jobs = {(seg, kind): _pool.submit(one, seg, kind) for seg in segs for kind in kinds}
+  futs = {(seg, kind): _pool.submit(one, seg, kind) for seg in segs for kind in kinds}
   out: dict = {"route": f"{dongle}|{log_id}", "segments": {}, "missing": {}, "errors": r.errors}
-  for (seg, kind), fut in jobs.items():
+  for (seg, kind), fut in futs.items():
     if (e := fut.result()):
       out["segments"].setdefault(str(seg), {})[kind] = e
     else:
@@ -222,9 +223,7 @@ def download(key: Key, source: str, jwt: str | None, cancelled=None) -> cache.Fi
 # background (the hit never waits), and refetched in place on a mismatch along with the other tools' forms of it.
 
 CHECK_EVERY = 24 * 3600
-STALE = {"X-Ycpe-Cache": "stale-refetch"}  # served from the old copy while the new one downloads
 _checking: set[str] = set()  # canonical URLs
-_refetching: dict[str, int] = {}  # canonical URL → inode of the stale copy, which is what gets the stale header
 _check_lock = threading.Lock()
 
 
@@ -245,15 +244,12 @@ def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
       if found[1] == path.stat().st_size:
         cache.mark_checked(path)
         return
-      cache.stats["stale"] += 1
-      _refetching[url] = path.stat().st_ino
       cache.remove(cache.derived_copies(url))
       fill = cache.fill(key, source, found[0])
       fill.finished.wait()
     except Exception as e:
       print(f"revalidating {key}: {type(e).__name__}: {e}")
     finally:
-      _refetching.pop(url, None)
       with _check_lock:
         _checking.discard(url)
   threading.Thread(target=check, daemon=True, name=f"check {key}").start()
@@ -270,14 +266,11 @@ def serve_file(req):
       raise HTTPError(404)
     return File(str(confine(found[0], config.log_roots)), headers=HIT)
   if (hit := cache.lookup(key)):
-    cache.stats["hits"] += 1
     cache.touch(hit[1])
     revalidate(key, *hit, jwt_of(req))
-    stale = _refetching.get(cache.canonical_url(hit[0], key) or "") == hit[1].stat().st_ino
-    return File(str(hit[1]), headers=STALE if stale else HIT)
+    return File(str(hit[1]), headers=HIT)  # the old copy while a stale one is refetched
   if source == "device":
     raise HTTPError(404)
-  cache.stats["misses"] += 1
   fill = download(key, source, jwt_of(req))
   rng = req.headers.get("range")
   if rng:
@@ -312,6 +305,30 @@ def proxy_range(url: str, rng: str) -> Stream:
   return Stream(gen(), "application/octet-stream", headers, status=r.status, length=int(n) if n else None)
 
 
+# the shared cache, by route
+
+module("cache", "1")
+
+
+@route("GET", "/local/cache")
+def cache_stats(req):
+  """Usage of the whole shared cache. With ?route=dongle|log_id[&segs=N], also which of its files are cached."""
+  out = cache.usage()
+  if (r := req.query.get("route")):
+    dongle, log_id = parse_route(r)
+    count = req.arg("segs", None, int)
+    segs = {}
+    for seg in segments(None, dongle, log_id) if count is None else range(min(count, 10000)):
+      have = segs[str(seg)] = {}
+      for kind, names in KINDS.items():
+        for name in names:
+          if (hit := cache.lookup(Key(dongle, log_id, seg, name))):
+            have[kind] = {"file": name, "source": hit[0], "size": hit[1].stat().st_size}
+            break
+    out["route"] = {"name": f"{dongle}|{log_id}", "segments": segs}
+  return out
+
+
 def fetch(key: Key, source: str, jwt: str | None, job, moved) -> None:
   """Downloads key from source into the shared cache unless a copy is there, telling moved(bytes in so far), until
   it's in or job is cancelled (which stops a download this call started too)."""
@@ -323,3 +340,31 @@ def fetch(key: Key, source: str, jwt: str | None, job, moved) -> None:
     job.check()
   if fill.error:
     raise OSError(fill.error)
+
+
+@route("POST", "/local/cache/prefetch")
+def cache_prefetch(req):
+  """Body as /local/sources/resolve. Downloads every resolved file that isn't cached yet, PREFETCH at a time, as a job whose
+  meta carries the route and each segment's state (queued, loading, disk, error) for the page's load lanes."""
+  jwt = jwt_of(req)
+  res = resolve({**(req.json() or {}), "sizes": True}, jwt)
+  dongle, log_id = res["route"].split("|")
+  found = {Key(dongle, log_id, int(n), e["file"]): e for n, kinds in res["segments"].items() for e in kinds.values()}
+  todo = [(key, e["size"] or 0) for key, e in found.items() if not e["cached"]]
+
+  def run(job):
+    def one(key, moved):
+      fetch(key, found[key]["source"], jwt, job, moved)
+    return jobs.run_files(job, todo, one, PREFETCH, have=[key for key, e in found.items() if e["cached"]])
+  return jobs.start("prefetch", run, title=f"cache {res['route']}", route=res["route"]).json()
+
+
+@route("POST", "/local/cache/evict")
+def cache_evict(req):
+  """Body {route, segs?, kinds?}: deletes those files' copies in the shared cache (never anything remote)."""
+  body = req.json() or {}
+  dongle, log_id = parse_route(body.get("route", ""))
+  kinds = [k for k in (body.get("kinds") or KINDS) if k in KINDS]
+  segs = segments(body.get("segs"), dongle, log_id)
+  freed = sum(cache.evict(Key(dongle, log_id, n, name)) for n in segs for kind in kinds for name in KINDS[kind])
+  return {"freed": freed, **cache.usage()}

@@ -109,10 +109,8 @@ class TestSources(DaemonCase):
     canonical = cache.canonical_url("internal", cache.Key(DONGLE, LOG, 1, "rlog.zst"))
     until(lambda: (Path(CACHE) / f"{hash_url(canonical)}_length").exists(), 1)
     self.assertTrue(Path(cache_file_path(canonical)).is_file())
-    hits = cache.stats["hits"]
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
     self.assertEqual((r.status, data, r.getheader("X-Ycpe-Cache")), (206, blob(1, "rlog.zst")[5:10], "hit"))
-    self.assertEqual(cache.stats["hits"], hits + 1)
     # the python tools read the same download from their chunk cache, without the network
     self.assertEqual(URLFile(canonical + "?sig=x").read(), blob(1, "rlog.zst"))
 
@@ -201,13 +199,12 @@ class TestSources(DaemonCase):
     up.write_bytes(new)  # the source changed under the same URL
     path = cache.lookup(key)[1]
     cache.mark_checked(path, 0.0)
-    stale = cache.stats["stale"]
     r, data = self.req(url)
     self.assertEqual(data, old)  # a hit never waits on the check
     until(lambda: self.req(url)[1] == new, 2)
     r, data = self.req(url)
     self.assertEqual((data, r.getheader("X-Ycpe-Cache")), (new, "hit"))
-    self.assertEqual((cache.stats["stale"], Upstream.heads.get(rel, 0)), (stale + 1, heads + 1))
+    self.assertEqual(Upstream.heads.get(rel, 0), heads + 1)
     self.req(url)
     time.sleep(0.1)
     self.assertEqual(Upstream.heads.get(rel, 0), heads + 1)  # the new copy counts as checked

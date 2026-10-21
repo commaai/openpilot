@@ -124,7 +124,7 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 | `GET /local/auth` | `{token}`: the JWT from `~/.comma/auth.json`, or null. |
 | `POST /local/sources/resolve` | Body `{route, segs?, kinds?, sources?, sizes?}`. Returns `{route, segments: {n: {kind: {url, file, size, source, cached}}}, missing: {n: [kind]}, errors: {source: msg}}`. Details below. |
 | `GET /local/file/{source}/{dongle}/{log_id}/{seg}/{file}` | The bytes, with Range support. It serves from the shared cache. On a miss it streams while the download fills the cache. A Range request on a miss is proxied, and the full download starts in the background. |
-| `GET /local/cache[?route=&segs=<count>]` | `{dir, budget, bytes, files, fills, hits, misses, fetched}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
+| `GET /local/cache[?route=&segs=<count>]` | `{dir, budget, bytes, files}`. With `route`, it adds per-segment `{kind: {file, source, size}}` of what's cached. |
 | `POST /local/cache/prefetch` | Body as resolve. Starts a `prefetch` job (8 downloads at once). `meta.segs` gives each segment's state: queued, loading, disk or error. |
 | `POST /local/cache/evict` | Body `{route, segs?, kinds?}`. Deletes the local cached copies. |
 | `GET /local/repos` | `[{id, name, git: {branch, commit, dirty}, cereal, opendbc: {dbc}}]`. These are the `--repo` checkouts (the running one by default). |
@@ -167,6 +167,6 @@ without its query, so signed URLs of one file share an entry.
 - **Staleness.** comma's servers sometimes recompress a file in place under the same URL. At most once a day per file, a hit
   is checked in the background with a HEAD to its canonical URL. The checked-at time is kept in the `user.ycpe.checked`
   xattr, or in memory where xattrs aren't supported. On a size mismatch, the copy and its chunks are refetched and atomically
-  replaced. The hit is still served at once, and carries `X-Ycpe-Cache: stale-refetch` instead of `hit` until the new copy is
-  in place. Plain hits are `X-Ycpe-Cache: hit`, and misses are `miss`.
+  replaced; the old copy is still served until the new one is in place. Hits carry `X-Ycpe-Cache: hit`, and misses
+  `miss`.
 - **Daemon-made files.** Device pulls and transcodes go under `ycpe/`, one directory per module (`cache.ycpe_dir(name)`).
