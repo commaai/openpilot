@@ -161,17 +161,8 @@ class Resolver:
           self.errors[source] = f"{type(e).__name__}: {e}"
           found = None
         if found:
-          remember(source, key, found[0])
           return entry(source, key, found[1], source in ("device", "local"))
     return None
-
-
-_upstream: dict[tuple[str, Key], str] = {}
-
-
-def remember(source: str, key: Key, url: str) -> None:
-  if source not in ("device", "local"):
-    _upstream[(source, key)] = url
 
 
 def entry(source: str, key: Key, size: int | None, cached: bool) -> dict:
@@ -235,11 +226,8 @@ def parse_key(req) -> tuple[str, Key]:
 
 
 def upstream(source: str, key: Key, jwt: str | None) -> str | None:
-  if (url := _upstream.get((source, key))):
-    return url
+  """key's URL at source now: the API's signed URLs expire, so they're asked for (API_TTL cached) when a download starts"""
   found = Resolver(key.dongle, key.log_id, [source], jwt, False).find(source, key)
-  if found:
-    remember(source, key, found[0])
   return found[0] if found else None
 
 
