@@ -15,8 +15,8 @@
 
 /* the timeline: 12 px of spans on the drive's blue, 20 px of thumbnails, the 44 px ruler with what's after the
    playhead dimmed behind a faint line, and the hover bead under it. Only the ruler takes presses; a finger scrolls the
-   page vertically. The selection grows on a layer of its own: painted into the page's, it re-rastered the page's tiles
-   mid-drag, and the GPU programs that raster first needed held a frame for 70-160 ms (the bead keeps its LCD text) */
+   page vertically. The selection grows on its own layer: in the page's, a drag re-rastered it, and that raster's first
+   GPU programs held a frame 70-160 ms */
 .cn-timeline { position: relative; cursor: default; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .cn-timeline .strip { --spans: 12px; height: 32px; border-radius: 0; background: none; }
 .cn-timeline .strip-thumbs { display: none; }
