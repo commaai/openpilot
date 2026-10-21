@@ -153,8 +153,8 @@ timestamps.
 - [ ] Local data: drop a route folder or log files onto the page, or open them with the File System
       Access API.
 
-Out of scope for v1: prime/billing, pairing, clips, body teleop, and anything internal (god mode). Live data is
-v1.1, below.
+Also in scope: comma prime and billing, pairing, clips, referrals and re-running openpilot on a route (the daemon's
+replay). Out of scope: body teleop and anything internal (god mode). Live data is v1.1, below.
 
 ## Live (v1.1)
 
