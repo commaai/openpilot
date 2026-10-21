@@ -24,12 +24,14 @@ The scripts run through `uv run --script`, which provides playwright, pillow and
  mode?: "dev" | "user" | "new" /* the remembered mode, default dev; new: a first visit */,
  cpu_throttle?: 4, timeout?: ms, slow?: true, allow?: [regex for expected errors],
  lint_ignore?: [css selectors], budgets?: {loaf_ms: 50, work_p99_ms: 8, drops: null},
- reference?: [reference names], routes?: [{url: regex, method?, rpc?, json | file | body, status?}], steps: [...]}
+ reference?: [reference names], routes?: [{url: regex, method?, rpc?, json | file | body, status?} | {preset}], steps: [...]}
 ```
 
 `routes` answer matching requests (the page's and its workers') with canned JSON, a file under `harness/`
 (`fixtures/`), or text, so a scenario needn't depend on what a real device has. `method` limits one to that HTTP
-method and `rpc` to that athena method, so a mutating call can be faked while reads stay real. The page's mutating
+method and `rpc` to that athena method, so a mutating call can be faked while reads stay real. A later route wins, and
+`{preset: name}` stands for the routes in `fixtures/routes/<name>.json` (`device`: the fake device, its stats, location,
+drives and no prime), so a scenario's own routes after it override them. The page's mutating
 fetches, answered or blocked, are in `window.__sent` as `{method, url, body}` for asserts on exactly what was sent.
 
 Steps: `{click: sel | [x, y]}`, `{hover: sel | [x, y]}`, `{drag: {from, to | by: [dx, dy], steps}}`,

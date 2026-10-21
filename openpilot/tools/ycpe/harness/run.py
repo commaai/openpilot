@@ -121,8 +121,10 @@ class Scenario:
     self.ctx.route(COMMA_API, self.guard)
     self.ctx.route(ATHENA, self.guard)
     self.ctx.route(STRIPE, lambda route: (self.event("blocked", f"{route.request.method} {route.request.url}"), route.abort("blockedbyclient")))
-    for r in sc.get("routes", []):  # registered later, so these answer before the guard
-      self.ctx.route(re.compile(r["url"]), functools.partial(self.fulfill, r))
+    for entry in sc.get("routes", []):  # registered later, so these answer before the guard
+      # {"preset": name}: fixtures/routes/<name>.json's routes, in its place
+      for r in json.loads((HERE / "fixtures/routes" / f"{entry['preset']}.json").read_text()) if "preset" in entry else [entry]:
+        self.ctx.route(re.compile(r["url"]), functools.partial(self.fulfill, r))
     self.ctx.add_init_script(PROBE_JS)
     # the mode a link that names none opens in: developer unless the scenario says ("new": a first visit, user mode);
     # set once, so the mode switch holds over reloads
