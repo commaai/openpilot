@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from openpilot.tools.ycpe.daemon import transcode
-from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.ycpe.daemon.transcode import Encode, Pictures, Transcoder, backends, encode
 
 FRAMES = 50  # 2.5 s at 20 fps: a few GOPs and a short last one
@@ -88,10 +88,7 @@ class TestTranscoder(unittest.TestCase):
     t = Transcoder(self.dir / "cache", self.resolve, workers=1)
     try:
       t.prefetch("d", "r", [1, 2], "fcamera")  # nothing asked for this route's camera recently
-      for _ in range(100):
-        if not t.jobs:
-          break
-        time.sleep(0.01)
+      until(lambda: not t.jobs, 1)
       self.assertEqual((t.jobs, self.resolved), ({}, []))
     finally:
       t.close()
