@@ -295,7 +295,6 @@ def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
 
 def run_as_job(enc: Encode, fn) -> None:
   """Runs the encode as a daemon job, so the page sees its progress and can cancel it."""
-  ended = threading.Event()
   def body(job):
     job.progress(0, enc.total, text="starting", unit="frames")  # the total is known before the first frame
     try:
@@ -303,11 +302,8 @@ def run_as_job(enc: Encode, fn) -> None:
     except InterruptedError as e:
       enc.error = "cancelled"
       raise jobs.Cancelled from e
-    finally:
-      ended.set()
   dongle, log_id, seg, camera = enc.key.split("/")
-  jobs.start("transcode", body, title=f"{camera} {seg} → h264", route=f"{dongle}|{log_id}", seg=int(seg), camera=camera)
-  ended.wait()
+  jobs.start("transcode", body, title=f"{camera} {seg} → h264", route=f"{dongle}|{log_id}", seg=int(seg), camera=camera).finished.wait()
   if enc.state != "done":
     enc.state = "error"
 

@@ -207,10 +207,14 @@ def parse_key(req) -> tuple[str, Key]:
   return p["source"], Key(p["dongle"], p["log_id"], int(p["seg"]), p["file"])
 
 
-def upstream(source: str, key: Key, jwt: str | None) -> str | None:
-  """key's URL at source now: the API's signed URLs expire, so they're asked for (API_TTL cached) when a download starts"""
-  found = Resolver(key.dongle, key.log_id, [source], jwt, False).find(source, key)
-  return found[0] if found else None
+def download(key: Key, source: str, jwt: str | None, cancelled=None) -> cache.Fill:
+  """key's download into the shared cache: the one in flight, else one from source started now (the API's signed URLs
+  expire, so they're asked for, API_TTL cached, at this point). 404 if source doesn't have key."""
+  if (fill := cache.filling(key)) is None:
+    if not (found := Resolver(key.dongle, key.log_id, [source], jwt, False).find(source, key)):
+      raise HTTPError(404, f"no {key} in {source}")
+    fill = cache.fill(key, source, found[0], cancelled)
+  return fill
 
 
 # staleness: a blob can change under the same URL (logs get recompressed server side), and every cache keyed by URL would
@@ -274,10 +278,7 @@ def serve_file(req):
   if source == "device":
     raise HTTPError(404)
   cache.stats["misses"] += 1
-  if (fill := cache.filling(key)) is None:
-    if (url := upstream(source, key, jwt_of(req))) is None:
-      raise HTTPError(404)
-    fill = cache.fill(key, source, url)
+  fill = download(key, source, jwt_of(req))
   rng = req.headers.get("range")
   if rng:
     return proxy_range(fill.url, rng)
@@ -311,25 +312,14 @@ def proxy_range(url: str, rng: str) -> Stream:
   return Stream(gen(), "application/octet-stream", headers, status=r.status, length=int(n) if n else None)
 
 
-def fetch(key: Key, sources=None, jwt: str | None = None, job=None) -> Path:
-  """A local path holding key, downloading it into the shared cache first if needed (blocking). With a job, the wait
-  stops when it's cancelled, and so does a download this call started."""
-  srcs = [s for s in (sources or SOURCES) if s in SOURCES]
-  if (hit := cache.lookup(key, [s for s in srcs if s in cache.SHARED])):
-    cache.touch(hit[1])
-    revalidate(key, *hit, jwt)
-    return hit[1]
-  if "local" in srcs and (found := Resolver(key.dongle, key.log_id, ["local"], None, False).find("local", key)):
-    return confine(found[0], config.log_roots)
-  if (fill := cache.filling(key)) is None:
-    r = Resolver(key.dongle, key.log_id, [s for s in srcs if s not in ("device", "local")], jwt, False)
-    found = next(((s, f) for s in r.sources if (f := r.find(s, key))), None)
-    if found is None:
-      raise FileNotFoundError(f"{key} isn't in {', '.join(srcs)}" + "".join(f"; {k}: {v}" for k, v in r.errors.items()))
-    fill = cache.fill(key, found[0], found[1][0], cancelled=(lambda: job.cancelled) if job is not None else None)
-  while not fill.finished.wait(0.1):
-    if job is not None:
-      job.check()
+def fetch(key: Key, source: str, jwt: str | None, job, moved) -> None:
+  """Downloads key from source into the shared cache unless a copy is there, telling moved(bytes in so far), until
+  it's in or job is cancelled (which stops a download this call started too)."""
+  if cache.lookup(key):
+    return
+  fill = download(key, source, jwt, lambda: job.cancelled)
+  while not fill.finished.wait(0.2):
+    moved(fill.done)
+    job.check()
   if fill.error:
     raise OSError(fill.error)
-  return fill.final

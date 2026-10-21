@@ -23,7 +23,7 @@ from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
 from openpilot.tools.lib.openpilotcontainers import DataProdContainer
 from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
-from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
+from openpilot.tools.ycpe.daemon.core import config, module, route
 
 QLOGS = AzureContainer("commadata2", "qlog")  # where the API keeps qlogs and qcameras; the rest is in DataProdContainer
 # device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
@@ -393,58 +393,19 @@ def cache_stats(req):
 def cache_prefetch(req):
   """Body as /local/sources/resolve. Downloads every resolved file that isn't cached yet, PREFETCH at a time, as a job whose
   meta carries the route and each segment's state (queued, loading, disk, error) for the page's load lanes."""
-  from concurrent.futures import ThreadPoolExecutor
   from openpilot.tools.ycpe.daemon import jobs
-  from openpilot.tools.ycpe.daemon.sources import fetch as fetch_key, jwt_of, resolve
+  from openpilot.tools.ycpe.daemon.sources import fetch, jwt_of, resolve
   jwt = jwt_of(req)
   res = resolve({**(req.json() or {}), "sizes": True}, jwt)
   dongle, log_id = res["route"].split("|")
-  items = [(Key(dongle, log_id, int(n), e["file"]), e) for n, kinds in res["segments"].items() for e in kinds.values()]
-  state = {key: "disk" if e["cached"] else "queued" for key, e in items}
-  todo = [(key, e) for key, e in items if not e["cached"]]
-  total = sum(e["size"] or 0 for _, e in todo)
-
-  def segs() -> dict:
-    out: dict[str, str] = {}
-    for key, s in state.items():
-      cur = out.get(str(key.seg), "disk")
-      out[str(key.seg)] = min(cur, s, key=["error", "loading", "queued", "disk"].index)
-    return out
-
-  def one(key, e, job):
-    state[key] = "loading"
-    try:
-      fetch_key(key, [e["source"]], jwt, job)
-      state[key] = "disk"
-    except jobs.Cancelled:
-      state[key] = "queued"
-      raise
-    except Exception:
-      state[key] = "error"
-      raise
+  found = {Key(dongle, log_id, int(n), e["file"]): e for n, kinds in res["segments"].items() for e in kinds.values()}
+  todo = [(key, e["size"] or 0) for key, e in found.items() if not e["cached"]]
 
   def run(job):
-    t0 = time.monotonic()
-    job.progress(0, total, unit="bytes")
-    with ThreadPoolExecutor(PREFETCH) as ex:
-      futs = [ex.submit(one, key, e, job) for key, e in todo]
-      while not all(f.done() for f in futs):
-        time.sleep(0.2)
-        if job.cancelled:
-          ex.shutdown(cancel_futures=True)
-          job.check()
-        done = sum(e["size"] or 0 for key, e in todo if state[key] == "disk")
-        done += sum(f.done for f in list(_fills.values()) if f.key.route == res["route"])
-        dt = time.monotonic() - t0
-        job.progress(done, total, text=f"{done / dt / 1e6:.0f} MB/s", segs=segs())
-    dt = time.monotonic() - t0
-    errors = [f.exception() for f in futs if f.exception()]
-    job.progress(total, total, text=f"{total / dt / 1e6:.0f} MB/s" if dt > 0 else "", segs=segs())
-    if errors:
-      raise OSError(f"{len(errors)} of {len(todo)} files failed, first: {errors[0]}")
-    return {"files": len(todo), "bytes": total, "seconds": round(dt, 2)}
-
-  return jobs.start("prefetch", run, title=f"cache {res['route']}", route=res["route"], segs=segs()).json()
+    def one(key, moved):
+      fetch(key, found[key]["source"], jwt, job, moved)
+    return jobs.run_files(job, todo, one, PREFETCH, have=[key for key, e in found.items() if e["cached"]])
+  return jobs.start("prefetch", run, title=f"cache {res['route']}", route=res["route"]).json()
 
 
 @route("POST", "/local/cache/evict")

@@ -53,9 +53,8 @@ os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 
 from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.url_file import URLFile, hash_url
-from openpilot.tools.ycpe.daemon import cache, jobs, sources
-from openpilot.tools.ycpe.daemon.cache import Key
-from openpilot.tools.ycpe.daemon.core import HTTPError, config
+from openpilot.tools.ycpe.daemon import cache, jobs
+from openpilot.tools.ycpe.daemon.core import config
 from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.lib import filereader
 
@@ -158,7 +157,6 @@ class TestSources(DaemonCase):
     self.assertEqual(res["segments"]["0"]["qlog"]["source"], "local")
     r, data = self.req(f"/local/file/local/{DONGLE}/{LOG}/0/qlog.zst")
     self.assertEqual(data, b"local qlog")
-    self.assertEqual(sources.fetch(Key(DONGLE, LOG, 0, "qlog.zst"), ["local"]).read_bytes(), b"local qlog")
 
   def test_local_symlink_confined(self):
     outside = Path(tempfile.mkdtemp())
@@ -168,15 +166,13 @@ class TestSources(DaemonCase):
       link.symlink_to(outside)
     r, _ = self.req(f"/local/file/local/{DONGLE}/{LOG}/5/qlog.zst")
     self.assertEqual(r.status, 403)
-    with self.assertRaises(HTTPError):
-      sources.fetch(Key(DONGLE, LOG, 5, "qlog.zst"), ["local"])
 
   def test_prefetch_and_evict(self):
     for seg in (0, 1):
       cache.evict(cache.Key(DONGLE, LOG, seg, "qcamera.ts"))
     job = self.json("/local/cache/prefetch", {"route": ROUTE, "segs": [0, 1], "kinds": ["qcamera"], "sources": ONLY})
     j = jobs.get(job["id"])
-    until(lambda: j.state != "running", 4)
+    self.assertTrue(j.finished.wait(4))
     self.assertEqual(j.state, "done", j.error)
     self.assertEqual(j.meta["segs"], {"0": "disk", "1": "disk"})
     stats = self.json(f"/local/cache?route={ROUTE}&segs=2")
@@ -186,10 +182,6 @@ class TestSources(DaemonCase):
     self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 0, "qcamera.ts")))
     for segs in (["x"], "01", [-1], 3):
       self.json("/local/cache/evict", {"route": ROUTE, "segs": segs}, status=400)
-
-  def test_fetch_for_modules(self):
-    p = sources.fetch(Key(DONGLE, LOG, 0, "qcamera.ts"), ONLY)
-    self.assertEqual(p.read_bytes(), blob(0, "qcamera.ts"))
 
   def test_stale_refetch(self):
     rel = f"/{DONGLE}/{LOG}/5/fcamera.hevc"
@@ -226,8 +218,8 @@ class TestSources(DaemonCase):
     cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
     walk = lambda: (sum(s for _, s, _ in cache.scan()), len(cache.scan()))  # noqa: E731
     self.assertEqual(cache.totals(), walk())
-    sources.fetch(Key(DONGLE, LOG, 2, "qcamera.ts"), ONLY)
-    sources.fetch(Key(DONGLE, LOG, 2, "qlog.zst"), ONLY)  # a log: also mirrored as url_file chunks
+    for name in ("qcamera.ts", "qlog.zst"):  # a log is also mirrored as url_file chunks
+      self.req(f"/local/file/internal/{DONGLE}/{LOG}/2/{name}")  # read in full: the download is done
     self.assertEqual(cache.totals(), walk())
     cache.evict(cache.Key(DONGLE, LOG, 2, "qlog.zst"))
     self.assertEqual(cache.totals(), walk())

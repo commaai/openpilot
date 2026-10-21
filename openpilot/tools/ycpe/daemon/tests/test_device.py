@@ -10,7 +10,7 @@ from pathlib import Path
 
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import config
-from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
 
 DONGLE, LOG = "fedcba9876543210", "0000002a--0123456789"
 FAKE = Path(tempfile.mkdtemp())
@@ -56,7 +56,7 @@ class TestDevice(DaemonCase):
 
     t = time.monotonic()
     job = jobs.get(self.json("/local/device/pull", {"route": LOG})["id"])
-    until(lambda: job.state != "running")
+    self.assertTrue(job.finished.wait(10))
     self.assertEqual(job.state, "done", job.error)
     self.assertEqual(job.result["files"], 4)  # rlog + qlog of segments 0 and 1; 2 is still recording
     self.assertEqual(job.result["skipped"], [2])
@@ -73,7 +73,7 @@ class TestDevice(DaemonCase):
     self.assertEqual(data, (REALDATA / f"{LOG}--1" / "rlog.zst").read_bytes())
     # pulling again copies nothing
     job = jobs.get(self.json("/local/device/pull", {"route": f"{DONGLE}|{LOG}", "segs": [0], "kinds": ["qcamera"]})["id"])
-    until(lambda: job.state != "running")
+    self.assertTrue(job.finished.wait(10))
     self.assertEqual((job.state, job.result["files"]), ("done", 1))
     self.assertEqual(tree(), self.before)  # read-only: nothing on the "device" changed
 

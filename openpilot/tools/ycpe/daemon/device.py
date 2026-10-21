@@ -5,9 +5,8 @@ import posixpath
 import re
 import shlex
 import subprocess
-import threading
-import time
 
+from openpilot.common.utils import atomic_write
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.cache import Key
@@ -103,35 +102,30 @@ def device_routes(req):
   return listing()
 
 
-def pull_one(key: Key, size: int, job, progress) -> int:
-  """Copies one file off the device into the shared cache with `ssh cat`; returns bytes."""
+def pull_one(key: Key, size: int, job, moved) -> None:
+  """Copies one file off the device into the shared cache with `ssh cat`, unless it's there already."""
   dest = cache.device_path(key)
-  dest.parent.mkdir(parents=True, exist_ok=True)
   if dest.is_file() and dest.stat().st_size == size:
-    return 0
-  tmp = dest.with_name(f"{cache.TMP}{dest.name}.{threading.get_ident()}")
+    return
+  dest.parent.mkdir(parents=True, exist_ok=True)
   remote = f"{realdata()}/{key.log_id}--{key.seg}/{key.file}"
   p = subprocess.Popen(ssh(f"cat {shlex.quote(remote)}"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   n = 0
   try:
-    with open(tmp, "wb") as f:
+    with atomic_write(str(dest), "wb", overwrite=True) as f:
       while (data := p.stdout.read(1 << 20)):
         f.write(data)
         n += len(data)
-        progress(len(data))
+        moved(n)
         job.check()
-    if p.wait(timeout=30) != 0 or n != size:
-      raise OSError(f"{key.file} of segment {key.seg}: got {n} of {size} bytes ({p.stderr.read().decode().strip()[-200:]})")
-    os.replace(tmp, dest)
-    cache.account(n, 1)
-    return n
+      if p.wait(timeout=30) != 0 or n != size:
+        raise OSError(f"{key.file} of segment {key.seg}: got {n} of {size} bytes ({p.stderr.read().decode().strip()[-200:]})")
   finally:
     if p.poll() is None:
       p.kill()
     p.stdout.close()
     p.stderr.close()
-    if tmp.exists():
-      tmp.unlink()
+  cache.account(n, 1)
 
 
 @route("POST", "/local/device/pull")
@@ -150,34 +144,11 @@ def device_pull(req):
   kinds = body.get("kinds") or ["rlog", "qlog"]
   names = {n for k in kinds if k in KINDS for n in KINDS[k]}
   segs = r["segments"] if body.get("segs") is None else body["segs"]
-  todo = [(Key(dongle, log_id, n, name), size) for n in segs if n not in r["active"]
-          for name, size in r["segments"].get(n, {}).items() if name in names]
-  total = sum(size for _, size in todo)
-  states = {str(n): "queued" for n in {k.seg for k, _ in todo}}
+  sizes = {Key(dongle, log_id, n, name): size for n in segs if n not in r["active"]
+           for name, size in r["segments"].get(n, {}).items() if name in names}
 
   def work(job):
-    done, t0 = 0, time.monotonic()
-    job.progress(0, total, unit="bytes", segs=dict(states))
-
-    def progress(nbytes):
-      nonlocal done
-      done += nbytes
-      dt = time.monotonic() - t0
-      job.progress(done, text=f"{done / dt / 1e6:.0f} MB/s" if dt > 0.5 else "", segs=dict(states))
-    for key, size in todo:
-      states[str(key.seg)] = "loading"
-      try:
-        if not pull_one(key, size, job, progress):
-          progress(size)  # already here
-      except jobs.Cancelled:
-        states[str(key.seg)] = "queued"
-        raise
-      except Exception:
-        states[str(key.seg)] = "error"
-        raise
-      if all(k.seg != key.seg or k == key or cache.device_path(k).is_file() for k, _ in todo):
-        states[str(key.seg)] = "disk"
-    job.progress(total, total, segs=dict(states))
-    return {"files": len(todo), "bytes": total, "seconds": round(time.monotonic() - t0, 2), "skipped": r["active"]}
-
-  return jobs.start("pull", work, title=f"pull {log_id} from {host().split('@')[-1]}", route=f"{dongle}|{log_id}", segs=dict(states)).json()
+    def one(key, moved):
+      pull_one(key, sizes[key], job, moved)
+    return {**jobs.run_files(job, list(sizes.items()), one), "skipped": r["active"]}
+  return jobs.start("pull", work, title=f"pull {log_id} from {host().split('@')[-1]}", route=f"{dongle}|{log_id}").json()
