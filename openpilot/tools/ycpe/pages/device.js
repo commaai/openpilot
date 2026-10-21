@@ -8,7 +8,7 @@ import {perf} from "../perf.js";
 import {reverseLookup} from "../geocode.js";
 import {parseRemote} from "../data/github.js";
 import {deviceMap} from "../panes/map.js";
-import {strip} from "../panes/strip.js";
+import {strip, warm} from "../panes/strip.js";
 import {canManage, deviceName} from "./home.js";
 import {usersSection} from "./users.js";
 import {logsSection} from "./logs.js";
@@ -23,10 +23,27 @@ const READY_MS = 600;  // the longest a device page waits for its map, stats and
 // the first page ends at the next hour boundary so prefetch and page share a cache key
 const firstPageEnd = () => Math.ceil(Date.now() / HOUR) * HOUR;
 
+// about how many drives the page opens with in view, under the map and the device's head, a card's or a row's height
+// each: those are filled before it's shown
+const firstScreen = (user) => Math.ceil((innerHeight - 200) / (user ? 160 : 60));
+
+// on a pointer over the device's link: the page's data, and once the pointer stays a moment, its first drives' strips
+// and places (not those of every device a sweep down the list passes)
+let pointed = null;
 export function prefetchDevice(dongleId) {
-  api.routes(dongleId, mode() === "user" ? firstPageEnd() - 365 * DAY : undefined, firstPageEnd(), LIMIT).catch(() => {});
+  const user = mode() === "user";
+  const routes = api.routes(dongleId, user ? firstPageEnd() - 365 * DAY : undefined, firstPageEnd(), LIMIT);
+  routes.catch(() => {});
   api.deviceLocation(dongleId).catch(() => {});
   api.deviceStats(dongleId).catch(() => {});
+  pointed = dongleId;
+  setTimeout(() => pointed === dongleId && routes.then((list) => {
+    for (const r of list.slice(0, firstScreen(user))) {
+      warm(r, duration(r) / 1000);
+      reverseLookup(r.start_lng, r.start_lat);
+      reverseLookup(r.end_lng, r.end_lat);
+    }
+  }, () => {}), 100);
 }
 
 const duration = (r) => r.end_time_utc_millis - r.start_time_utc_millis;
@@ -37,11 +54,14 @@ function timed(r) {
   return r;
 }
 
-// a drive's strip (panes/strip.js), filled in when its row nears the viewport. One observer for every strip, so
-// filling one never reads layout.
+// a drive's strip (panes/strip.js) and places, filled in when its row nears the viewport. One observer for every
+// strip, so filling one never reads layout. The sprites and events come from a host that serves six at a time, so the
+// rows further down wait for the first screen's (up to OPENING_MS) rather than share it
+const OPENING_MS = 2000;
 const fillers = new WeakMap();
 const queue = [];
-let draining = null;
+let draining = null, opening = Promise.resolve();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const nearby = new IntersectionObserver((entries) => {
   for (const e of entries) {
     if (!e.isIntersecting) continue;
@@ -49,32 +69,39 @@ const nearby = new IntersectionObserver((entries) => {
     queue.push(fillers.get(e.target));
   }
   // strips until 2 ms of the frame's budget are left, so a fast scroll through hundreds of drives stays smooth
-  draining ??= perf.tick(() => {
+  opening.then(() => draining ??= perf.tick(() => {
     while (queue.length) {
       queue.shift()();
       if (perf.left() <= 2) break;
     }
     if (!queue.length) { draining(); draining = null; }
-  }, "drives");
+  }, "drives"));
 }, {rootMargin: "400px"});
 
-function driveStrip(r, onSpans, onVisible) {
+// onPlaces(from, to) puts the places in, onSpans(spans) whatever the row shows of the spans. A drive in the first
+// screen fills at once, holding what it loaded until `hold`: the rest of the screen's thumbnails and places are in too,
+// so they come in together (not the spans, whose events on a long drive take much longer). Its strip's loaded says
+// when it has those, shown when they're in the row.
+function driveStrip(r, onSpans, onPlaces, hold) {
   const s = strip(r, duration(r) / 1000);
-  fillers.set(s.el, () => {
-    onVisible();
-    s.fill().then(onSpans, () => {});
-  });
+  const fill = () => {
+    const places = Promise.all([reverseLookup(r.start_lng, r.start_lat), reverseLookup(r.end_lng, r.end_lat)]);
+    const loaded = Promise.all([s.decoded(), places]);
+    s.fill(hold).then(onSpans, () => {});
+    const shown = Promise.all([places, hold && loaded.then(() => hold)]).then(([[from, to]]) => onPlaces(from, to)).catch(() => {});
+    return {loaded, shown};
+  };
+  if (hold) return Object.assign(s.el, fill());
+  fillers.set(s.el, fill);
   nearby.observe(s.el);
   return s.el;
 }
 
 // the neighborhood, and under it (on a phone's card) the city; none, the card gives up the lines it kept for them
-function place(el, lng, lat) {
-  reverseLookup(lng, lat).then((loc) => {
-    if (!loc) return el.classList.add("none");
-    el.replaceChildren(h("span", {}, loc.place || loc.details), loc.place && h("span", {class: "dr-detail"}, loc.details));
-    el.title = [loc.place, loc.details].filter(Boolean).join(", ");
-  });
+function place(el, loc) {
+  if (!loc) return el.classList.add("none");
+  el.replaceChildren(h("span", {}, loc.place || loc.details), loc.place && h("span", {class: "dr-detail"}, loc.details));
+  el.title = [loc.place, loc.details].filter(Boolean).join(", ");
 }
 
 const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
@@ -98,47 +125,48 @@ function prefetchDrive() {
 }
 
 // connect's DriveListItem: when, how long and how far, from and to, an arrow (wider than a phone), and the drive's strip
-// along the bottom
-function driveCard(r) {
+// along the bottom. A first screen's card says when its strip's loaded and shown (driveStrip)
+function driveCard(r, hold) {
   const path = `/connect/${r.fullname.replace("|", "/")}`;
   const from = lines("cn-c-from", "", ""), to = lines("cn-c-to", "", "");
   const day = h("p", {class: "cn-b"}, h("span", {class: "cn-wide"}, cnDay("long", r.start_time_utc_millis)),
     h("span", {class: "cn-narrow"}, cnDay("short", r.start_time_utc_millis)));
-  return h("a", {class: "cn-drive", href: path, onclick: link(path), onpointerenter: prefetchDrive},
+  const s = driveStrip(r, () => {}, (a, b) => { cnPlace(from, a); cnPlace(to, b); }, hold);
+  return Object.assign(h("a", {class: "cn-drive", href: path, onclick: link(path), onpointerenter: prefetchDrive},
     h("div", {class: "cn-drive-head"},
       h("div", {class: "cn-drive-grid"},
         h("div", {class: "cn-c-date"}, day, h("p", {}, `${cnTime(r.start_time_utc_millis)} to ${cnTime(r.end_time_utc_millis)}`)),
         lines("cn-c-dur", cnDuration(duration(r)), cnDistance(r.distance ?? 0)),
         from, to,
         h("div", {class: "cn-c-arrow"}, cnIcon("arrow", 32, "100%")))),
-    driveStrip(r, () => {}, () => { cnPlace(from, r.start_lng, r.start_lat); cnPlace(to, r.end_lng, r.end_lat); }));
+    s), {loaded: s.loaded, shown: s.shown});
 }
-function cnPlace(el, lng, lat) {
-  reverseLookup(lng, lat).then((loc) => {
-    if (!loc) return;
-    el.firstChild.textContent = loc.place || "";
-    el.lastChild.textContent = loc.details || "";
-  });
+function cnPlace(el, loc) {
+  if (!loc) return;
+  el.firstChild.textContent = loc.place || "";
+  el.lastChild.textContent = loc.details || "";
 }
 
 // a row of the drives table, or on a phone (pages.css) a card as connect's: when and how long over where from and to,
-// the strip along the bottom. Under it, in developer mode, what useradmin lists of it
-function driveRow(r, owner) {
+// the strip along the bottom. Under it, in developer mode, what useradmin lists of it. A first screen's row says when
+// its strip's loaded and shown (driveStrip)
+function driveRow(r, owner, hold) {
   const path = `/${r.fullname.replace("|", "/")}`;
   const start = new Date(r.start_time_utc_millis);
   const engaged = h("span", {class: "num dr-engaged"});
   const from = h("span", {class: "dr-place dr-from"}), to = h("span", {class: "dr-place dr-to"});
-  return h("a", {class: "drive-row", href: path, onclick: link(path)},
+  const s = driveStrip(r, (spans) => { engaged.textContent = `${Math.round(100 * engagedFraction(spans, duration(r)))}%`; },
+    (a, b) => { place(from, a); place(to, b); }, hold);
+  return Object.assign(h("a", {class: "drive-row", href: path, onclick: link(path)},
     h("span", {class: "dr-when"}, h("b", {}, (start.getFullYear() === new Date().getFullYear() ? DAY_FMT : OLD_DAY_FMT).format(start)), " ",
       h("span", {class: "dr-hours muted"}, HM.format(start), h("span", {class: "dr-dash"}), HM.format(r.end_time_utc_millis))),
     h("span", {class: "num dr-dur"}, fmt.minutes(duration(r))),
     h("span", {class: "num dr-dist"}, fmt.distance(r.distance ?? 0)),
     engaged,
     h("span", {class: "dr-places"}, from, h("span", {class: "dr-arrow muted"}, " → "), to),
-    driveStrip(r, (spans) => { engaged.textContent = `${Math.round(100 * engagedFraction(spans, duration(r)))}%`; },
-      () => { place(from, r.start_lng, r.start_lat); place(to, r.end_lng, r.end_lat); }),
+    s,
     h("span", {class: "muted dr-version"}, r.version || ""),
-    driveDetails(r, owner));
+    driveDetails(r, owner)), {loaded: s.loaded, shown: s.shown});
 }
 
 const UPLOADED = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false});
@@ -254,11 +282,18 @@ function drivesSection(device, user) {
     }
     if (g !== gen) return;
     const fresh = routes.filter((r) => !seen.has(r.fullname));
+    // the drives in the first screen come in together, once they're all loaded (or after OPENING_MS)
+    const first = firstScreen(user), loaded = [], shown = [];
+    let release;
+    const hold = body.children.length < first && new Promise((r) => release = r);
     for (const r of fresh) {
       seen.add(r.fullname);
       api.route.prime(r, r.fullname);
-      body.append(user ? driveCard(r) : driveRow(r, owner));
+      const now = body.children.length < first && hold;
+      body.append(user ? driveCard(r, now) : driveRow(r, owner, now));
+      if (now) loaded.push(body.lastChild.loaded), shown.push(body.lastChild.shown);
     }
+    if (hold) opening = Promise.race([Promise.allSettled(loaded), sleep(OPENING_MS)]).then(release);
     done = routes.length < LIMIT || !fresh.length;
     if (fresh.length) end = Math.min(...fresh.map((r) => r.start_time_utc_millis));
     more.disabled = false;
@@ -272,10 +307,11 @@ function drivesSection(device, user) {
       // connect says there are no more past five drives, once there aren't
       status.textContent = !n ? "No routes found in selected time range." : !done ? "Loading..." : n > 5 ? "There are no more routes found in selected time range." : "";
       status.parentElement.className = !n ? "cn-empty" : "cn-end";
-      return;
+      return Promise.all(shown);
     }
     const span = !range ? "" : range[0] ? ` from ${DATE.format(range[0])} to ${DATE.format(range[1])}` : ` up to ${DATE.format(range[1])}`;
     status.textContent = !n ? `No drives${span}` : done ? `${nDrives(n)}${span}` : `${nDrives(n)} since ${DATE.format(end)}`;
+    return Promise.all(shown);  // the first screen's thumbnails and places in
   }
   const ready = loadMore();
   if (user) {
@@ -537,6 +573,6 @@ async function keepPage(dongleId, keep, select, map, el) {
   drop(dongleId);
   kept.set(dongleId, Object.assign(keep, {el, select, user: mode() === "user", until: Date.now() + KEEP, dispose: map.dispose}));
   const ready = [map.ready, el.querySelector(".stats, .cn-stats")?.ready, el.querySelector(".tab-body")?.firstChild?.ready];
-  await Promise.race([Promise.allSettled(ready), new Promise((r) => setTimeout(r, READY_MS))]);
+  await Promise.race([Promise.allSettled(ready), sleep(READY_MS)]);
   return el;
 }

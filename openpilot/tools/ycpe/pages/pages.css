@@ -166,6 +166,8 @@ a.drive-row:hover { background: var(--hover); }
 .strip-spans .alert { background: var(--alert); }
 .strip-spans .critical { background: var(--critical); }
 .strip-spans .bookmark { background: var(--bookmark); }
+.strip .fade > span { animation: strip-in .2s ease-out; }  /* a band that came in after the strip was shown */
+@keyframes strip-in { from { opacity: 0; } }
 .inline-form { display: flex; gap: 6px; align-items: center; }
 .inline-form .field { width: 260px; }
 .list.settings { max-width: 640px; table-layout: fixed; }  /* a public key ellipsizes rather than widening it */
