@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import re
 import subprocess
 import tempfile
@@ -55,17 +54,11 @@ class TestEncode(unittest.TestCase):
     for i in idr:
       self.assertIn(7, types[max(0, i - 4):i])
       self.assertIn(8, types[max(0, i - 4):i])
-    probe = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v", "-show_entries", "frame=pts_time,key_frame", "-of", "json",
-                            str(base.with_suffix(".mp4"))], capture_output=True, check=True, text=True)
-    mp4 = json.loads(probe.stdout)["frames"]
-    self.assertEqual(len(mp4), frames)
-    self.assertEqual([round(float(f["pts_time"]) * 20) for f in mp4], list(range(frames)))  # frame i at i / 20 s
-    self.assertEqual([i for i, f in enumerate(mp4) if f["key_frame"]], list(range(0, frames, transcode.GOP)))
 
-  def test_every_backend_keeps_frames_and_timing(self):
+  def test_every_backend_keeps_frames(self):
     for b in backends():
       with self.subTest(backend=b.name):
-        job = Encode("k", self.dir / b.name / "fcamera-medium", "medium", 0, src=str(self.src))
+        job = Encode("k", self.dir / b.name / "fcamera", 0, src=str(self.src))
         info = encode(job, b)
         self.assertEqual(info["frames"], FRAMES)
         self.assertEqual(info["keyframes"], 3)
@@ -73,7 +66,7 @@ class TestEncode(unittest.TestCase):
         self.check_output(job.base, FRAMES)
 
   def test_failure_leaves_nothing(self):
-    job = Encode("k", self.dir / "bad" / "fcamera-medium", "medium", 0, src=str(self.dir / "nope.hevc"))
+    job = Encode("k", self.dir / "bad" / "fcamera", 0, src=str(self.dir / "nope.hevc"))
     with self.assertRaises(RuntimeError):
       encode(job, transcode.BACKENDS[-1])
     self.assertEqual(list((self.dir / "bad").iterdir()), [])
@@ -148,22 +141,17 @@ class TestRoute(DaemonCase):
 
   def test_streams_then_serves_ranges(self):
     start = time.monotonic()
-    r, data = self.req("/local/video/d/r/0/fcamera.h264?ahead=1")
+    r, data = self.req("/local/video/d/r/0/fcamera.h264")
     self.assertEqual(r.status, 200)
     self.assertEqual(len([t for t in nal_types(data) if t in (1, 5)]), 200)
     self.assertLess(time.monotonic() - start, 60)
-    r, info = self.req("/local/video/d/r/0/fcamera.json")
-    self.assertEqual(json.loads(info)["state"], "done")
-    r, part = self.req("/local/video/d/r/0/fcamera.mp4")
-    self.assertEqual(r.status, 200)
-    r, head = self.req("/local/video/d/r/0/fcamera.mp4", headers={"Range": "bytes=0-99"})
-    self.assertEqual((r.status, head), (206, part[:100]))
+    r, head = self.req("/local/video/d/r/0/fcamera.h264", headers={"Range": "bytes=0-99"})
+    self.assertEqual((r.status, head), (206, data[:100]))
 
   def test_errors(self):
     self.assertEqual(self.req("/local/video/d/r/7/fcamera.h264")[0].status, 404)
     self.assertEqual(self.req("/local/video/d/r/0/qcamera.h264")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/fcamera.exe")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/fcamera.h264?preset=ultra")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/0/fcamera.mp4")[0].status, 404)
 
 
 if __name__ == "__main__":
