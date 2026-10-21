@@ -11,7 +11,7 @@ export function create(ctx, state) {
   const can = canOf(ctx), s = subs();
   let open = state.open || null, filter = "", spark = state.spark || 15;  // seconds of history, cabana's default
   // the toolbar is built once and updated, so the filter box keeps focus while the list rebuilds
-  const title = h("span", {class: "can-binary-title"}), meta = h("span", {class: "can-muted"}), count = h("span", {class: "can-muted"});
+  const title = h("span", {class: "can-binary-title"}), meta = h("span", {class: "muted"}), count = h("span", {class: "muted"});
   const sparkSel = h("select", {class: "can-select", title: "Sparkline range", "aria-label": "Sparkline range", onchange: (e) => { spark = +e.target.value; requestSparks(); }},
     [1, 5, 15, 30].map((x) => h("option", {value: x, selected: x === spark}, `${x} s`)));
   const filterBox = h("input", {class: "can-filter", placeholder: "Filter signals", oninput: (e) => { filter = e.target.value; build(); }});
@@ -31,7 +31,7 @@ export function create(ctx, state) {
     rows.get(name)?.ed.querySelector("input").focus();
   }}, "Add signal");
   const comment = h("div", {class: "can-comment"});
-  const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "can-spacer"}), count, sparkSel, filterBox, addBtn, editBtn, removeBtn, comment);
+  const head = h("div", {class: "can-toolbar"}, title, meta, h("span", {class: "grow"}), count, sparkSel, filterBox, addBtn, editBtn, removeBtn, comment);
   const list = h("div", {class: "can-sig-list"});
   const el = h("div", {class: "can-pane can-signals"}, head, list);
   const k = () => can.selected;
@@ -206,7 +206,7 @@ function editor(can, k, m, sg) {
   const valsText = (x) => x.vals.map(([v, d]) => `${v} "${d}"`).join(" ");
   const vals = h("input", {value: valsText(sg), spellcheck: false, placeholder: '0 "off" 1 "on"',
     onchange: (e) => commit({vals: [...e.target.value.matchAll(/(-?[\d.]+)\s+"([^"]*)"/g)].map(([, v, d]) => [+v, d])})});
-  const error = h("div", {class: "can-error"});
+  const error = h("div", {class: "error"});
   const el = h("div", {class: "can-sig-editor"},
     field("Name", h("input", {value: sg.name, spellcheck: false, onchange: (e) => {
       const name = e.target.value.trim();
@@ -243,7 +243,7 @@ function messageDialog(can, k) {
   const size = h("input", {type: "number", min: 1, max: 64, value: x.size});
   const node = h("input", {value: x.transmitter, spellcheck: false});
   const comment = h("textarea", {rows: 3}, x.comment);
-  const error = h("div", {class: "can-error"});
+  const error = h("div", {class: "error"});
   const d = dialog(m ? `Edit ${m.name}` : "New message", h("div", {class: "can-form"},
     field("Name", name), field("Size", size), field("Node", node), field("Comment", comment), error,
     h("button", {class: "can-btn primary", onclick: () => {

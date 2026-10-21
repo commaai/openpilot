@@ -22,7 +22,7 @@ export function create(ctx, state) {
   const empty = h("div", {class: "can-empty"});
   const body = h("div", {class: "can-msg-body", onscroll: () => { scrollTop = body.scrollTop; need(); }}, spacer, empty);
   const el = h("div", {class: "can-pane can-history"},
-    h("div", {class: "can-toolbar"}, h("label", {class: "can-check"}, hexBox, "Hex"), h("span", {class: "can-spacer"}), "filter ", filter.sig, filter.op, filter.v), head, body);
+    h("div", {class: "can-toolbar"}, h("label", {class: "can-check"}, hexBox, "Hex"), h("span", {class: "grow"}), "filter ", filter.sig, filter.op, filter.v), head, body);
 
   const filters = () => filter.sig.value && filter.v.value !== "" ? [{sig: filter.sig.value, op: filter.op.value, v: +filter.v.value}] : [];
 
@@ -77,7 +77,7 @@ export function create(ctx, state) {
   }
 
   function row() {
-    const cells = Array.from({length: 1 + Math.max(1, cols.length)}, (_, i) => h("span", {class: i === 0 || !cols.length ? "can-mono" : ""}));
+    const cells = Array.from({length: 1 + Math.max(1, cols.length)}, (_, i) => h("span", {class: i === 0 || !cols.length ? "mono" : ""}));
     const r = h("div", {class: "can-hist-row", onclick: () => ctx.clock.seek(frames.t[r.i])}, cells);
     r.style.gridTemplateColumns = head.style.gridTemplateColumns;
     r.cells = cells;

@@ -33,7 +33,7 @@ export function create(ctx, state) {
   // back to the list, where a phone stacks the panes (can.css shows it there)
   const backBtn = h("button", {class: "can-icon can-back", title: "Back to the messages", onclick: () => reveal(el, "can-messages")}, icon("back", 14));
   // no toolbar until a message is selected: the empty hint says it
-  const bar = h("div", {class: "can-toolbar", hidden: true}, backBtn, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
+  const bar = h("div", {class: "can-toolbar", hidden: true}, backBtn, title, h("span", {class: "grow"}), "heatmap", modeBtn, dirBtn);
   const el = h("div", {class: "can-pane can-binary", tabindex: 0}, bar, scroller, info);
 
   const k = () => can.selected;
