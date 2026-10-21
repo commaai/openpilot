@@ -3,6 +3,7 @@ import math
 import pyray as rl
 from collections.abc import Callable
 from enum import Enum
+from itertools import pairwise
 from typing import cast
 from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.common.hardware import COMMA_HARDWARE
@@ -24,7 +25,7 @@ DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 
 # Fling velocity is the slope of a best fit line through the last few touch positions.
 # Touch timestamps are a bit noisy, and a fit smooths that out much better than the last few velocities.
-def fit_velocity(samples: deque[tuple[float, float]]) -> float:
+def fit_velocity(samples: list[tuple[float, float]]) -> float:
   if len(samples) < 2:
     return 0.0
   mean_t = sum(t for t, _ in samples) / len(samples)
@@ -51,8 +52,8 @@ class GuiScrollPanel2:
     self._initial_click_event: MouseEvent | None = None
     self._previous_mouse_event: MouseEvent | None = None
     self._velocity = 0.0  # pixels per second
-    self._velocity_buffer: deque[float] = deque(maxlen=12 if COMMA_HARDWARE else 6)
-    self._position_buffer: deque[tuple[float, float]] = deque(maxlen=FLING_VELOCITY_SAMPLES)  # (t, pos)
+    # (t, pos) of the touch samples while dragging, gives the last 12 (6 on PC) velocities for the deceleration check
+    self._position_buffer: deque[tuple[float, float]] = deque(maxlen=(12 if COMMA_HARDWARE else 6) + 1)
     self._enabled: bool | Callable[[], bool] = True
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
@@ -152,7 +153,6 @@ class GuiScrollPanel2:
       # Reset state if not enabled
       self._state = ScrollState.STEADY
       self._velocity = 0.0
-      self._velocity_buffer.clear()
       self._position_buffer.clear()
 
     elif self._state == ScrollState.STEADY:
@@ -188,21 +188,23 @@ class GuiScrollPanel2:
         #  jitter causes velocity to oscillate (not real deceleration). Better approaches:
         #  - Use evdev kernel timestamps to eliminate velocity oscillation at the source
         #  - Replace with a time-since-last-event check (40ms timeout) for swipe-stop-lift
+        positions = list(self._position_buffer)
+        velocities = [max(-MAX_SPEED, min(MAX_SPEED, (p1 - p0) / max(t1 - t0, 1e-6))) for (t0, p0), (t1, p1) in pairwise(positions)]
+
         high_decel = False
-        if len(self._velocity_buffer) > 2:
+        if len(velocities) > 2:
           # We limit max to first half since final few velocities can surpass first few
-          abs_velocity_buffer = [(abs(v), i) for i, v in enumerate(self._velocity_buffer)]
-          max_idx = max(abs_velocity_buffer[:len(abs_velocity_buffer) // 2])[1]
-          min_idx = min(abs_velocity_buffer)[1]
+          abs_velocities = [(abs(v), i) for i, v in enumerate(velocities)]
+          max_idx = max(abs_velocities[:len(abs_velocities) // 2])[1]
+          min_idx = min(abs_velocities)[1]
           if DEBUG:
-            print('min_idx:', min_idx, 'max_idx:', max_idx, 'velocity buffer:', self._velocity_buffer)
-          if (abs(self._velocity_buffer[min_idx]) * REJECT_DECELERATION_FACTOR < abs(self._velocity_buffer[max_idx]) and
-              max_idx < min_idx):
+            print('min_idx:', min_idx, 'max_idx:', max_idx, 'velocities:', velocities)
+          if abs(velocities[min_idx]) * REJECT_DECELERATION_FACTOR < abs(velocities[max_idx]) and max_idx < min_idx:
             if DEBUG:
               print('deceleration too high, going to STEADY')
             high_decel = True
 
-        self._velocity = max(-MAX_SPEED, min(MAX_SPEED, fit_velocity(self._position_buffer)))
+        self._velocity = max(-MAX_SPEED, min(MAX_SPEED, fit_velocity(positions[-FLING_VELOCITY_SAMPLES:])))
 
         # If final velocity is below some threshold, switch to steady state too
         low_speed = abs(self._velocity) <= MIN_VELOCITY_FOR_CLICKING * 1.5  # plus some margin
@@ -213,17 +215,11 @@ class GuiScrollPanel2:
           # TODO: we should just set velocity and let autoscroll go back to steady. delays one frame but who cares
           self._velocity = 0.0
           self._state = ScrollState.STEADY
-        self._velocity_buffer.clear()
         self._position_buffer.clear()
       else:
-        # Update velocity for when we release the mouse button.
-        # Do not update velocity on the same frame the mouse was released
+        # Save positions for the fling velocity when we release the mouse button
         previous_mouse_pos = self._get_mouse_pos(cast(MouseEvent, self._previous_mouse_event))
         delta_x = mouse_pos - previous_mouse_pos
-        delta_t = max((mouse_event.t - cast(MouseEvent, self._previous_mouse_event).t), 1e-6)
-        self._velocity = delta_x / delta_t
-        self._velocity = max(-MAX_SPEED, min(MAX_SPEED, self._velocity))
-        self._velocity_buffer.append(self._velocity)
         if not self._position_buffer:
           self._position_buffer.append((cast(MouseEvent, self._previous_mouse_event).t, previous_mouse_pos))
         self._position_buffer.append((mouse_event.t, mouse_pos))
