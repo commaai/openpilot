@@ -20,7 +20,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route, sources
 
 FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
@@ -280,25 +280,13 @@ _transcoder_lock = threading.Lock()
 
 module("transcode", "1")
 
-_files: dict[str, tuple[float, dict]] = {}
-
-
 def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
-  """A copy in the shared cache, else the comma API's URL (with the ~/.comma sign-in for private routes), which
-  ffmpeg streams. The signed URLs last an hour; the listing is reused for ten minutes."""
+  """A copy in the shared cache, else the comma API's signed URL (with the ~/.comma sign-in for private routes), which
+  ffmpeg streams."""
   if (hit := cache.lookup(cache.Key(dongle, log_id, seg, f"{cam}.hevc"))):
     return str(hit[1])
-  from openpilot.tools.lib.api import CommaApi
-  from openpilot.tools.lib.auth_config import get_token
-  name = f"{dongle}|{log_id}"
-  when, files = _files.get(name, (0.0, {}))
-  if time.monotonic() - when > 600:
-    files = CommaApi(get_token()).get(f"v1/route/{name}/files")
-    _files[name] = (time.monotonic(), files)
-  kind = {"fcamera": "cameras", "ecamera": "ecameras", "dcamera": "dcameras"}[cam]
-  for url in files.get(kind, []):
-    if url.split("?")[0].split("/")[-2] == str(seg):
-      return url
+  if (f := sources.api_files(dongle, log_id, None).get(seg, {}).get(f"{cam}.hevc")):
+    return f[0]
   raise FileNotFoundError(f"no {cam} for segment {seg}")
 
 
