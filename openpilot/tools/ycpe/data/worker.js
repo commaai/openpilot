@@ -43,7 +43,7 @@ async function download(url, progress, signal, head = null) {
           progress({loaded, total});
         }
       }
-      return {buf: concat(chunks).buffer, hit: /^(hit|stale-refetch)$/.test(resp.headers.get("x-ycpe-cache"))};  // the daemon's disk
+      return {buf: concat(chunks).buffer, hit: resp.headers.get("x-ycpe-cache") === "hit"};  // the daemon's disk
     } catch (e) {
       if (signal?.aborted) throw {partial: concat(chunks).buffer};
       // fetch() rejects with a TypeError on network failures (ERR_NETWORK_CHANGED, resets, ...)
@@ -87,9 +87,8 @@ function elemType(schema, path) {
 
 const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, globs]) => [name, pattern(globs)]));
 
-// opts: {n, shift, base, keep, only, skip, context, migrate}; keep, only and skip are {service: [path globs]}; migrate:
-// false for logs written by current code (replays), where a migration would only invent services from the ones present;
-// base: the logMonoTime (s) of route time 0, where a live session started. more: services read elsewhere (JSON)
+// opts: {n, shift, base, keep, only, skip, context}; keep, only and skip are {service: [path globs]}; base: the
+// logMonoTime (s) of route time 0, where a live session started. more: services read elsewhere (JSON)
 async function parse(buf, opts, more = []) {
   const reader = await ready;
   let migrated;
@@ -99,7 +98,7 @@ async function parse(buf, opts, more = []) {
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
     for (const svc of more) if (![...read.values()].some((s) => s.name === svc.name)) read.set(svc.name, svc);
     if (!read.size) throw new Error(reader.unknown.events ? "none of its messages are in the schema" : "not an openpilot log: no messages in it");
-    migrated = opts.migrate === false ? {} : migrate(read, opts.context, {keep: opts.keep});
+    migrated = migrate(read, opts.context, {keep: opts.keep});
     return compact(read);
   });
 

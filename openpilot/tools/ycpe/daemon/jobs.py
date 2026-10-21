@@ -111,7 +111,7 @@ def run_files(job: Job, todo: list, one, workers: int = 1, have=()) -> dict:
     return out
 
   def report() -> None:
-    done = sum(size for key, size in todo if state[key] == "disk") + sum(moving.values())
+    done = sum(size for key, size in todo if state[key] == "disk") + sum(list(moving.values()))  # list(): workers add and drop keys meanwhile
     dt = time.monotonic() - t0
     job.progress(done, total, text=f"{done / dt / 1e6:.0f} MB/s" if dt > 0.5 else "", segs=segs())
 
