@@ -445,7 +445,7 @@ class Workspace {
     };
     addEventListener("storage", stored);
     this.offs.push(() => removeEventListener("storage", stored));
-    // .json/.xml layouts dropped on the workspace open as new tabs
+    // .json layouts dropped on the workspace open as new tabs
     acceptLayoutFiles(this.main, (f) => this.openLayout(f));
     if (session) this.ensureStore();
     this.setView(view);
@@ -546,7 +546,7 @@ class Workspace {
     }
   }
 
-  // a layout file, URL or text (ours, jotpluggler's or PlotJuggler's), opened as new tabs
+  // a layout file, URL or text (ours or jotpluggler's), opened as new tabs
   async openLayout(src) {
     try {
       const {layout, warnings} = await loadLayout(src);

@@ -1,17 +1,15 @@
-// layout import: jotpluggler JSON and PlotJuggler XML → our layout model
+// layout import: jotpluggler JSON → our layout model
 //   {active, tabs: [{name, root}]}, node = {split: "row" | "col", sizes, children} | {pane, state}
 // Their saved time ranges are dropped: they were on another route, and a layout opens where the user is looking.
-// Custom series code is translated to JS from jotpluggler's Python or PlotJuggler's Lua where that is
+// Custom series code is translated to JS from jotpluggler's Python where that is
 // mechanical; what isn't is flagged in a comment. Imported code is marked untrusted, so it only runs once
 // the user has reviewed it in the console.
 
 const CAMERAS = {road: "fcamera", wide_road: "ecamera", driver: "dcamera"};
-const STYLES = {Dots: "dots", LinesAndDots: "line+dots", Sticks: "sticks", Steps: "steps", StepsInv: "steps"};
 
-// text of a .json or .xml layout (ours, as exported, jotpluggler's or PlotJuggler's) → {layout, warnings}
+// text of a .json layout (ours, as exported, or jotpluggler's) → {layout, warnings}
 export function importLayout(text) {
   const warnings = [];
-  if (text.trimStart().startsWith("<")) return {layout: fromPlotJuggler(text, warnings), warnings};
   const j = JSON.parse(text);
   return {layout: j.ycpe ? untrusted(j) : fromJotpluggler(j, warnings), warnings};
 }
@@ -76,7 +74,7 @@ export function uniqueCustoms(layout, taken = new Map()) {
   return layout;
 }
 
-// PlotJuggler's per-message fields: /<service>/__valid is our /<service>/valid (__logMonoTime is the same path)
+// jotpluggler's per-message fields, named as PlotJuggler's: /<service>/__valid is our /<service>/valid (__logMonoTime is the same path)
 function field(path) {
   const m = path?.match(/^(\/[^/]+)\/__valid$/);
   return m ? `${m[1]}/valid` : path;
@@ -103,7 +101,7 @@ function jpNode(n, warnings) {
     if (c.custom_python) {
       const p = c.custom_python, name = c.name.replaceAll("/", "_");
       Object.assign(out, {path: `/custom/${name}`, label: name,
-        custom: translate("python", [p.linked_source, ...p.additional_sources].map(field), p.globals_code, pyBody(p.function_code), warnings, name)});
+        custom: translate([p.linked_source, ...p.additional_sources].map(field), p.globals_code, pyBody(p.function_code), warnings, name)});
     }
     return out;
   });
@@ -123,82 +121,16 @@ function pyBody(code) {
   return body.join("\n").trim();
 }
 
-// ---- PlotJuggler
-
-function fromPlotJuggler(text, warnings) {
-  const doc = new DOMParser().parseFromString(text, "application/xml");
-  if (doc.querySelector("parsererror")) throw new Error("not a PlotJuggler layout");
-  const snippets = new Map();
-  for (const s of doc.querySelectorAll("customMathEquations > snippet")) {
-    const name = s.getAttribute("name"), linked = s.querySelector("linked_source")?.textContent;
-    const extra = [...(s.querySelector("additional_sources")?.children || [])].map((e) => e.textContent);
-    snippets.set(name, translate("lua", [linked, ...extra].map(field), text1(s, "global"), text1(s, "function"), warnings, name));
-  }
-  const tabs = [...doc.querySelectorAll("tabbed_widget > Tab")].map((tab) => {
-    return {name: tab.getAttribute("tab_name"), root: pjNode(tab.querySelector("Container").firstElementChild, snippets, warnings)};
-  });
-  return {active: +(doc.querySelector("currentTabIndex")?.getAttribute("index") || 0), tabs};
-}
-
-const text1 = (el, tag) => el.querySelector(tag)?.textContent || "";
-const num = (el, attr, fallback) => el?.hasAttribute(attr) ? +el.getAttribute(attr) : fallback;
-
-function pjNode(el, snippets, warnings) {
-  if (el.tagName === "DockSplitter") {
-    return {split: el.getAttribute("orientation") === "-" ? "col" : "row", sizes: el.getAttribute("sizes").split(";").map(Number),
-      children: [...el.children].map((c) => pjNode(c, snippets, warnings))};
-  }
-  const plot = el.querySelector("plot"), title = el.getAttribute("name") || "";
-  if (!plot) return {pane: "plot", state: {title, curves: []}};
-  const style = STYLES[plot.getAttribute("style")];
-  const curves = [...plot.querySelectorAll("curve")];
-  if (plot.getAttribute("mode") === "XYPlot") {
-    return {pane: "xy", state: {curves: curves.map((c) => ({x: field(c.getAttribute("curve_x")), y: field(c.getAttribute("curve_y")), color: c.getAttribute("color")}))}};
-  }
-  const lim = plot.querySelector("limitY");
-  const y = lim && (lim.hasAttribute("min") || lim.hasAttribute("max")) ? {min: num(lim, "min"), max: num(lim, "max")} : undefined;
-  return {pane: "plot", state: {title, curves: curves.map((c) => pjCurve(c, style, snippets, warnings)), ...(y && {y})}};
-}
-
-function pjCurve(el, style, snippets, warnings) {
-  const name = el.getAttribute("name"), out = {path: field(name), color: el.getAttribute("color")};
-  if (style) out.style = style;
-  if (snippets.has(name)) Object.assign(out, {path: `/custom/${name.replaceAll("/", "_")}`, label: name, custom: snippets.get(name)});
-  const t = el.querySelector("transform"), o = t?.querySelector("options"), kind = t?.getAttribute("name");
-  if (kind === "Scale/Offset") {
-    Object.assign(out, {scale: num(o, "value_scale", 1), offset: num(o, "value_offset", 0), shift: num(o, "time_offset", 0)});
-  } else if (PJ_TRANSFORMS[kind]) {
-    const [transform, warning] = PJ_TRANSFORMS[kind](o);
-    out.transform = transform;
-    if (warning) warnings.push(`${name}: ${warning}`);
-  } else if (t && kind !== "noTransform") {
-    warnings.push(`${name}: transform "${kind}" is not supported`);
-  }
-  return out;
-}
-
-// PlotJuggler's transforms (by name, from their <options>) → [ours, a warning where it differs]
-const PJ_TRANSFORMS = {
-  "Derivative": (o) => [{kind: "derivative", param: o?.getAttribute("radioChecked") === "radioCustom" ? num(o, "lineEdit", 0) : 0}],
-  "Integral": (o) => [{kind: "integral"}, o?.getAttribute("radioChecked") === "radioCustom" && "integral over the sample times, not a fixed dt"],
-  "Absolute": () => [{kind: "abs"}],
-  "Moving Average": (o) => [{kind: "mean", param: num(o, "value", 10)}],
-  "Moving Root Mean Squared": (o) => [{kind: "rms", param: num(o, "value", 10)}],
-  "Moving Variance / Stdev": (o) => [{kind: "variance", param: num(o, "value", 10)}, o?.getAttribute("apply_sqrt") === "true" && "moving variance, not standard deviation"],
-  "Outlier Removal": () => [{kind: "outliers", param: 4}, "outliers removed beyond 4σ, not by PlotJuggler's spike factor"],
-};
-
-// ---- Python / Lua → JS for per-sample custom series
+// ---- Python → JS for per-sample custom series
 
 // {inputs, globals, code, untrusted}; untranslatable lines stay as comments and are listed in warnings
-function translate(lang, inputs, globals, body, warnings, name) {
+function translate(inputs, globals, body, warnings, name) {
   const params = new Set(["time", "value", ...inputs.slice(1).map((_, i) => `v${i + 1}`)]);
   const problems = [];
-  const toJs = lang === "lua" ? lua : py;
-  const g = toJs(globals || "", problems), f = body === null ? (problems.push("not a per-sample function"), "") : toJs(body, problems);
+  const g = py(globals || "", problems), f = body === null ? (problems.push("not a per-sample function"), "") : py(body, problems);
   const gNames = assigned(g);
   const fNames = assigned(f).filter((n) => !gNames.includes(n) && !params.has(n));
-  const head = [`// translated from ${lang === "lua" ? "PlotJuggler Lua" : "jotpluggler Python"}`, ...problems.map((p) => `// could not translate: ${p}`)];
+  const head = ["// translated from jotpluggler Python", ...problems.map((p) => `// could not translate: ${p}`)];
   if (problems.length) warnings.push(`${name}: ${problems.join("; ")}`);
   return {
     inputs, untrusted: true,
@@ -283,32 +215,5 @@ function py(src, problems) {
     cont = depth > 0 || /[-+*/%,=&|<>\\]$/.test(t);
   }
   while (blocks.length) out.push({pad: " ".repeat(blocks.pop()), js: "}"});
-  return emit(out);
-}
-
-function luaExpr(s, problems) {
-  s = s.replace(/\bmath\.atan\(([^()]*(?:\([^()]*\)[^()]*)*),/g, "Math.atan2($1,");
-  s = mathCall("math")(s)
-    .replace(/~=/g, "!=").replace(/\band\b/g, "&&").replace(/\bor\b/g, "||").replace(/\bnot\b/g, "!")
-    .replace(/\bnil\b/g, "null").replace(/\^/g, "**");
-  if (/\.\.|#|\bfunction\b/.test(s)) problems.push(s.trim());
-  return s;
-}
-
-function lua(src, problems) {
-  const out = [];
-  for (const raw of src.split("\n")) {
-    const dash = raw.indexOf("--"), comment = dash >= 0 ? ` //${raw.slice(dash + 2)}` : "";
-    const line = (dash >= 0 ? raw.slice(0, dash) : raw).trimEnd(), t = line.trim(), pad = line.slice(0, line.length - line.trimStart().length);
-    if (!t) { out.push({comment: comment.trim()}); continue; }
-    let m;
-    if ((m = t.match(/^if\s+(.+)\s+then\s+(.+)\s+end$/))) out.push({pad, js: `if ${cond(luaExpr(m[1], problems))} { ${luaExpr(m[2], problems)}; }`, comment});
-    else if ((m = t.match(/^if\s+(.+)\s+then$/))) out.push({pad, js: `if ${cond(luaExpr(m[1], problems))} {`, comment});
-    else if ((m = t.match(/^elseif\s+(.+)\s+then$/))) out.push({pad, js: `} else if ${cond(luaExpr(m[1], problems))} {`, comment});
-    else if (t === "else") out.push({pad, js: "} else {", comment});
-    else if (t === "end") out.push({pad, js: "}", comment});
-    else if (/^(for|while|repeat|until|function)\b/.test(t)) { problems.push(t); out.push({pad, js: `// ${t}`}); }
-    else out.push({pad, js: tuple(luaExpr(t.replace(/^local\s+/, ""), problems)), comment, stmt: true});
-  }
   return emit(out);
 }

@@ -111,8 +111,7 @@ timestamps.
 - [ ] Custom series in a **JavaScript** code console that runs in a worker. It takes any number of
       inputs, resamples them to the first one, keeps a persistent globals block, ships the jotpluggler
       templates, and is saved in the layout.
-- [ ] Layouts: our own JSON (with autosave and a URL share), importing all 17 jotpluggler layout JSONs
-      and all 14 PlotJuggler XMLs (Lua snippets translated to JS where it's mechanical, otherwise flagged),
+- [ ] Layouts: our own JSON (with autosave and a URL share), importing all 17 jotpluggler layout JSONs,
       and a layout picker.
 - [ ] Export: CSV of the selected series over a range, and PNG of a plot.
 - [ ] Panes: camera (road, wide, driver, qcam), map (GPS trace colored by engagement), logs (logMessage,
@@ -230,7 +229,7 @@ polish loop, and keep everyone moving.
 | 1 | Log pipeline perf | data/capnp.js, codec/, worker.js, loader.js, store.js | store v0 behind the contract, delivered as soon as possible (it unblocks 4 and 6). Then make it fast: sparse/narrow columns, worker pool, OPFS cache, playhead-out priority, memory budget + column eviction, pyramids, `?repeat=N` benchmark with numbers. |
 | 2 | Correctness + migrations + logs/inspector | data/migrate.js, harness/parity/, panes/logs.js, panes/inspector.js | A parity dump comparing pycapnp and capnp.js on every field of reference segments from several eras. Reader bugs go to track 1 as failing tests. |
 | 3 | Cabana | data/can.js (the worker-side CAN extraction hook), data/dbc.js, panes/can/* | DBC parse/serialize round-trip against cabana's test suite. Then the messages table, binary view, signal editing, history, find tools and charts. |
-| 4 | Plotting | panes/plot/*, data/transforms.js, data/custom.js, layouts/import.js | The time-plot pane with decimation, tracker, state blocks and styles. Then XY, transforms, stats, the JS console, jotpluggler/PlotJuggler layout import and export. |
+| 4 | Plotting | panes/plot/*, data/transforms.js, data/custom.js, layouts/import.js | The time-plot pane with decimation, tracker, state blocks and styles. Then XY, transforms, stats, the JS console, jotpluggler layout import and export. |
 | 5 | Video | panes/camera.js, data/video/* | qcamera HLS synced to the clock, then frame-accurate HEVC through WebCodecs for f/e/d cameras, plus thumbnails. |
 | 6 | Route browser + athena + map | pages/*, panes/map.js, panes/timeline.js, api.js | Devices, routes, files, uploads, users, boot/crash logs, and the drive-view panes. |
 | 7 | QA harness | harness/ (except parity/) | The scenario runner, perf gate, UI lint, report.html with contact sheet, and reference screenshots of native cabana/jotpluggler and connect.comma.ai. |

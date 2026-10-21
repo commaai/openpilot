@@ -1,4 +1,4 @@
-// the layout picker: open a reference layout, import a file (ours, jotpluggler's or PlotJuggler's), open one
+// the layout picker: open a reference layout, import a file (ours or jotpluggler's), open one
 // from a URL, or export the view's layout. Custom code in an opened layout stays untrusted until the user
 // reviews it in the code console, except in the bundled references (commaai/openpilot's own layouts).
 import {h, css, download} from "/dom.js";
@@ -6,24 +6,19 @@ import {importLayout, exportLayout, uniqueCustoms, customsOf} from "./import.js"
 
 css(new URL("./picker.css", import.meta.url));
 
-const REFS = "https://raw.githubusercontent.com/commaai/openpilot/master/openpilot/tools";
-export const REFERENCES = {
-  jotpluggler: ["cameras-and-map", "camera-timings", "CAN-bus-debug", "can-states", "controls_mismatch_debug", "driver-monitoring-debug",
-    "gps", "gps_vs_llk", "locationd_debug", "longitudinal", "max-torque-debug", "new-layout", "system_lag_debug", "thermal_debug",
-    "torque-controller", "tuning", "ublox-debug"],
-  plotjuggler: ["camera-timings", "CAN-bus-debug", "can-states", "controls_mismatch_debug", "gps_vs_llk", "gps", "locationd_debug",
-    "longitudinal", "max-torque-debug", "system_lag_debug", "thermal_debug", "torque-controller", "tuning", "ublox-debug"],
-};
-const refUrl = (tool, name) => `${REFS}/${tool}/layouts/${name}.${tool === "jotpluggler" ? "json" : "xml"}`;
-const TRUSTED = new Set(Object.entries(REFERENCES).flatMap(([tool, names]) => names.map((n) => refUrl(tool, n))));
+// jotpluggler's own layouts
+const REFERENCES = ["cameras-and-map", "camera-timings", "CAN-bus-debug", "can-states", "controls_mismatch_debug", "driver-monitoring-debug",
+  "gps", "gps_vs_llk", "locationd_debug", "longitudinal", "max-torque-debug", "new-layout", "system_lag_debug", "thermal_debug",
+  "torque-controller", "tuning", "ublox-debug"];
+const refUrl = (name) => `https://raw.githubusercontent.com/commaai/openpilot/master/openpilot/tools/jotpluggler/layouts/${name}.json`;
+const TRUSTED = new Set(REFERENCES.map(refUrl));
 
 // src: a File, a URL, the layout text itself or a reference's name (as ?layout= may hold any of those, like
 // jotpluggler --layout takes a name) → {layout, warnings}
 export async function loadLayout(src) {
   if (src instanceof Blob) return named(importLayout(await src.text()), src.name);
-  if (/^\s*[{<]/.test(src)) return importLayout(src);
-  const tool = Object.keys(REFERENCES).find((t) => REFERENCES[t].includes(src));
-  if (tool) src = refUrl(tool, src);
+  if (/^\s*\{/.test(src)) return importLayout(src);
+  if (REFERENCES.includes(src)) src = refUrl(src);
   const r = await fetch(src);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   const opened = named(importLayout(await r.text()), new URL(src, location.href).pathname.split("/").pop());
@@ -38,7 +33,7 @@ function trust(layout) {
 
 // tabs with generic names ("tab1") are named after the layout's file instead
 function named(opened, file) {
-  const base = file?.replace(/\.(json|xml)$/i, "");
+  const base = file?.replace(/\.json$/i, "");
   const generic = opened.layout.tabs.filter((t) => !t.name || /^tab\s*\d*$/i.test(t.name));
   if (base) generic.forEach((t, i) => { t.name = generic.length > 1 ? `${base} ${i + 1}` : base; });
   return opened;
@@ -65,7 +60,7 @@ export function acceptLayoutFiles(el, open) {
   const isFile = (e) => e.dataTransfer?.types.includes("Files");
   el.addEventListener("dragover", (e) => { if (isFile(e)) e.preventDefault(); });
   el.addEventListener("drop", (e) => {
-    const files = [...(e.dataTransfer?.files || [])].filter((f) => /\.(json|xml)$/i.test(f.name));
+    const files = [...(e.dataTransfer?.files || [])].filter((f) => /\.json$/i.test(f.name));
     if (!files.length) return;
     e.preventDefault();
     for (const f of files) open(f);
@@ -91,12 +86,10 @@ export function layoutPicker({current, apply, close, name = "layout"}) {
 
   const mode = (value, label) => h("label", {}, h("input", {type: "radio", name: "picker-how", value, checked: value === how,
     onchange: () => { how = value; }}), label);
-  const file = h("input", {type: "file", accept: ".json,.xml", hidden: true,
+  const file = h("input", {type: "file", accept: ".json", hidden: true,
     onchange: () => { if (file.files[0]) open(file.files[0].name, file.files[0]); }});
   const url = h("input", {type: "url", placeholder: "layout URL", onkeydown: (e) => { if (e.key === "Enter") go(); }});
   const go = () => url.value.trim() && open(url.value.trim(), url.value.trim());
-  const group = (tool, title) => [h("div", {class: "picker-group"}, title),
-    REFERENCES[tool].map((n) => h("button", {class: "menu-row", onclick: () => open(n, refUrl(tool, n))}, n))];
 
   return h("div", {class: "layout-picker"},
     h("div", {class: "picker-how"}, "open as", mode("tab", "new tabs"), mode("replace", "this view")),
@@ -110,5 +103,6 @@ export function layoutPicker({current, apply, close, name = "layout"}) {
       file),
     h("div", {class: "picker-row"}, url, h("button", {onclick: go}, "Open")),
     status,
-    h("div", {class: "picker-refs"}, group("jotpluggler", "jotpluggler layouts"), group("plotjuggler", "PlotJuggler layouts")));
+    h("div", {class: "picker-refs"}, h("div", {class: "picker-group"}, "jotpluggler layouts"),
+      REFERENCES.map((n) => h("button", {class: "menu-row", onclick: () => open(n, refUrl(n))}, n))));
 }
