@@ -12,6 +12,7 @@
   {"waitFor": ".cn-content .connect-pane .camera-pane"},
   {"waitFor": {"fn": "location.pathname === '/connect/5beb9b58bd12b691/0000010a--a51155e496/60/240'"}, "timeout": 2000},
   {"assert": "!document.querySelector(':is(.views, .tabs, .hud, .load-pill, .omnibox, .playbar)')?.checkVisibility() || 'no developer chrome in user mode'"},
+  {"waitFor": ".fake-clip", "timeout": 5000},
   {"assert": "document.querySelector('.ws').dataset.view === 'connect' && !!document.querySelector('.fake-clip') || 'connect\\'s view, with the clips track\\'s Clip'"},
   {"wait": 1200},
   {"shot": "drive"},
