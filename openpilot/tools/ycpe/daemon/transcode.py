@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from openpilot.common.utils import atomic_write
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, route, sources
 
@@ -149,9 +150,8 @@ def encode(job: Encode, backend: Backend, cancelled=lambda: False, progress=lamb
       raise
   job.frames = pics.count
   info = {"frames": pics.count, "keyframes": pics.keys, "backend": backend.name}
-  tmp = job.base.with_suffix(".json.tmp")
-  tmp.write_text(json.dumps(info))
-  os.replace(tmp, job.base.with_suffix(".json"))
+  with atomic_write(str(job.base.with_suffix(".json")), overwrite=True) as f:
+    json.dump(info, f)
   return info
 
 

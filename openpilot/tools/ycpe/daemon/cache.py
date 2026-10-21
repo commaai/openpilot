@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from openpilot.common.hardware.hw import Paths
+from openpilot.common.utils import atomic_write
 from openpilot.tools.lib import filereader
 from openpilot.tools.lib.azure_container import AzureContainer
 from openpilot.tools.lib.file_downloader import cache_file_path
@@ -85,14 +86,18 @@ def touch(path: Path) -> None:
     pass
 
 
+def chunks_of(url: str, length: int) -> list[Path]:
+  """url_file's chunk files of url, a file of length bytes"""
+  return [root() / f"{hash_url(url)}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))]
+
+
 def chunk_paths(url: str) -> tuple[int, list[Path]] | None:
   """url_file's chunk set of url, as its _length file says: (length, the chunks' paths), or None without one."""
-  h = hash_url(url)
   try:
-    length = int((root() / f"{h}_length").read_text())
+    length = int((root() / f"{hash_url(url)}_length").read_text())
   except (OSError, ValueError):
     return None
-  return length, [root() / f"{h}_{float(i)}" for i in range(-(-length // CHUNK_SIZE))]
+  return length, chunks_of(url, length)
 
 
 def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
@@ -106,13 +111,10 @@ def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
     if (p := Path(cache_file_path(url))).is_file():
       return source, p
     if key.file in LOGS and (c := chunk_paths(url)) and c[0] > 0 and all(chunk.is_file() for chunk in c[1]):
-      length, chunks = c
-      tmp = root() / f"{TMP}{p.name}"
-      with open(tmp, "wb") as out:
-        for chunk in chunks:
+      with atomic_write(str(p), "wb", overwrite=True) as out:
+        for chunk in c[1]:
           out.write(chunk.read_bytes())
-      os.replace(tmp, p)
-      account(length, 1)
+      account(c[0], 1)
       return source, p
     for comp in ("zst", "bz2"):
       if (p := Path(cache_file_path(url, comp))).is_file():
@@ -122,28 +124,22 @@ def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
 
 def mirror_chunks(url: str, path: Path) -> None:
   """Writes a downloaded log as url_file chunks too, so LogReader and process_replay find it."""
-  h, size = hash_url(url), path.stat().st_size
-  names = []
+  size, chunks = path.stat().st_size, chunks_of(url, path.stat().st_size)
   with open(path, "rb") as f:
-    for i in range(-(-size // CHUNK_SIZE)):
-      name = f"{h}_{float(i)}"
-      tmp = root() / f"{TMP}{name}"
-      tmp.write_bytes(f.read(CHUNK_SIZE))
-      os.replace(tmp, root() / name)
-      names.append(name)
-  tmp = root() / f"{TMP}{h}_length"
-  tmp.write_text(str(size))
-  os.replace(tmp, root() / f"{h}_length")
+    for chunk in chunks:
+      with atomic_write(str(chunk), "wb", overwrite=True) as out:
+        out.write(f.read(CHUNK_SIZE))
+  with atomic_write(str(root() / f"{hash_url(url)}_length"), overwrite=True) as out:
+    out.write(str(size))
   # url_file prunes by its own manifest; list the chunks there so its accounting sees them
   manifest = root() / "manifest.txt"
   with _manifest_lock:
     old = manifest.stat().st_size if manifest.exists() else None
     lines = manifest.read_text().splitlines() if old is not None else []
     now = int(time.time())  # noqa: TID251  url_file's manifest uses wall clock
-    tmp = root() / f"{TMP}manifest"
-    tmp.write_text("\n".join(lines + [f"{n} {now}" for n in names]))
-    os.replace(tmp, manifest)
-    account(size + len(str(size)) + manifest.stat().st_size - (old or 0), len(names) + 1 + (old is None))
+    with atomic_write(str(manifest), overwrite=True) as out:
+      out.write("\n".join(lines + [f"{c.name} {now}" for c in chunks]))
+    account(size + len(str(size)) + manifest.stat().st_size - (old or 0), len(chunks) + 1 + (old is None))
 
 
 _manifest_lock = threading.Lock()

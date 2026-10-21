@@ -13,6 +13,8 @@ from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import unquote
 
+from openpilot.common.utils import atomic_write
+
 TOKEN_HEADER = "X-Ycpe-Token"
 TOKEN_PARAM = "tok"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
 CHUNK = 1 << 20
@@ -54,10 +56,8 @@ def session_token(path: Path = TOKEN_FILE) -> str:
     pass
   token = secrets.token_urlsafe(32)
   path.parent.mkdir(parents=True, exist_ok=True)
-  tmp = path.with_name(f".token.{os.getpid()}")
-  with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+  with atomic_write(str(path), overwrite=True) as f:  # 0600, as tempfile makes it
     f.write(token)
-  os.replace(tmp, path)
   return token
 
 

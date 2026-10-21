@@ -136,7 +136,7 @@ class TestSources(DaemonCase):
       with self.assertRaises(http.client.IncompleteRead):
         self.req(f"/local/file/internal/{DONGLE}/{LOG}/3/rlog.zst")
       self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 3, "rlog.zst")))
-      self.assertFalse([p for p in os.listdir(CACHE) if p.startswith(cache.TMP) and "manifest" not in p])
+      self.assertFalse([p for p in os.listdir(CACHE) if p.startswith(cache.TMP)])
     finally:
       Upstream.fail = False
 
