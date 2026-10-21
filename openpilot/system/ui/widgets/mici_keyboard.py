@@ -328,6 +328,11 @@ class MiciKeyboard(Widget):
     self._unselect_key_t = cur_t + KEY_MIN_ANIMATION_TIME if (key_selected_dt < KEY_MIN_ANIMATION_TIME) else cur_t
 
   def backspace(self):
+    # like phone keyboards, type the held key first
+    if self._active_slot is not None:
+      self._active_slot = None
+      self._commit_key()
+
     if self._text:
       self._text = self._text[:-1]
 

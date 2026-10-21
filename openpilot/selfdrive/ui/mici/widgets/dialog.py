@@ -244,6 +244,15 @@ class BigInputDialog(BigDialogBase):
       # handle enter icon click
       self._confirm_callback()
 
+  def _process_mouse_events(self):
+    super()._process_mouse_events()
+
+    # backspace with a second finger, like while the first finger holds a key
+    for mouse_event in gui_app.mouse_events:
+      if mouse_event.slot != 0 and mouse_event.left_pressed and not self.is_dismissing:
+        if rl.check_collision_point_rec(mouse_event.pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
+          self._keyboard.backspace()
+
 
 class BigConfirmationCircleButton(BigCircleButton):
   def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
