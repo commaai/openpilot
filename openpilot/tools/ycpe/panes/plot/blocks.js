@@ -1,5 +1,6 @@
 // state blocks for enum and text series: runs of equal values per chunk (built once per chunk, then cached),
 // cut to the visible range so that runs narrower than a pixel merge into one mixed block: O(pixels · log n)
+import {upperBound} from "/data/bounds.js";
 
 const cache = new WeakMap();  // chunk values → {t: run starts, v: run values, end}
 
@@ -19,16 +20,6 @@ function runs(c) {
   return r;
 }
 
-// first k with t[k] > x
-function upper(t, x) {
-  let lo = 0, hi = t.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (t[mid] <= x) lo = mid + 1; else hi = mid;
-  }
-  return lo;
-}
-
 // [{a, b, v} | {a, b, mixed: true}] over [t0, t1] at px pixels
 export function blocks(series, t0, t1, px) {
   const out = [], dt = (t1 - t0) / Math.max(1, px);
@@ -43,14 +34,14 @@ export function blocks(series, t0, t1, px) {
   for (const c of series.chunks) {
     const r = runs(c), n = r.t.length;
     if (!n || r.end < t0 || r.t[0] > t1) continue;
-    let k = Math.max(0, upper(r.t, t0) - 1);
+    let k = Math.max(0, upperBound(r.t, t0) - 1);
     while (k < n && r.t[k] <= t1) {
       const a = r.t[k], b = k + 1 < n ? r.t[k + 1] : r.end;
       if (b - a >= dt || k + 1 === n) {
         push(a, b, r.v[k], false);
         k++;
       } else {
-        const next = upper(r.t, a + dt) - 1;  // > k, since run k is narrower than a pixel
+        const next = upperBound(r.t, a + dt) - 1;  // > k, since run k is narrower than a pixel
         push(a, r.t[next], null, true);
         k = next;
       }

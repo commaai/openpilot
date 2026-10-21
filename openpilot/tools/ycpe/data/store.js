@@ -4,6 +4,7 @@
 import {SEGMENT} from "../api.js";
 import {perf} from "../perf.js";
 import {status} from "../status.js";
+import {lowerBound, upperBound} from "./bounds.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
@@ -824,23 +825,4 @@ function overlapping(chunks, t0, t1) {
   let end = lo;
   while (end < chunks.length && !(chunks[end].tt[0] > t1)) end++;
   return chunks.slice(lo, end);
-}
-
-// first k in [lo, hi) with a[k] >= x
-function lowerBound(a, x, lo = 0, hi = a.length) {
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (a[mid] < x) lo = mid + 1; else hi = mid;
-  }
-  return lo;
-}
-
-// first k with a[k] > x
-function upperBound(a, x) {
-  let lo = 0, hi = a.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (a[mid] <= x) lo = mid + 1; else hi = mid;
-  }
-  return lo;
 }

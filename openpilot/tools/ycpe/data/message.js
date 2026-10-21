@@ -1,6 +1,7 @@
 // whole messages as plain objects, for the inspector: the reader only keeps columns, so a message is decoded again
 // from the log when it's asked for. Fields follow schema.json; a union holds only its set member, enums are names,
 // 64-bit integers are Numbers (or exact BigInts, asked for), data is a Uint8Array, and a null struct or list is null.
+import {upperBound} from "./bounds.js";
 
 const READ = {
   i8: (d, p) => d.getInt8(p), u8: (d, p) => d.getUint8(p), i16: (d, p) => d.getInt16(p, true), u16: (d, p) => d.getUint16(p, true),
@@ -147,10 +148,6 @@ export function index(schema, buf) {
 export function messageAt(schema, buf, idx, service, mono) {
   const s = idx.get(service);
   if (!s) return null;
-  let lo = 0, hi = s.mono.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (s.mono[mid] <= mono) lo = mid + 1; else hi = mid;
-  }
+  const lo = upperBound(s.mono, mono);
   return lo ? decode(schema, buf.subarray(s.at[lo - 1], s.at[lo - 1] + s.size[lo - 1]), 0, true) : null;
 }
