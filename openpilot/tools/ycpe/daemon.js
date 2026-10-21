@@ -1,5 +1,5 @@
 // the optional local daemon (serve.py): present when index.html carries its session token. Everything works
-// without it; with it, features light up per module listed by /local/caps.
+// without it; with it, features light up per module /local/caps lists.
 import {toast} from "./dom.js";
 
 const AUTH_OFF = "ycpe_daemon_auth_off";  // set by signing out, so the daemon's JWT isn't picked up again
@@ -23,7 +23,7 @@ const [caps, jwt] = token ? await Promise.all([
 export const daemon = {
   present: !!caps,
   caps,
-  has: (name) => !!caps?.modules?.[name],
+  has: (name) => !!caps?.modules.includes(name),
   hasJwt: !!jwt,
   headers,  // the session token, for requests made elsewhere (api.js's athena relay)
   // the comma JWT from ~/.comma/auth.json, unless the user signed out here

@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from openpilot.tools.lib.helpers import RE
-from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, module, route, sources
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, route, sources
 
 FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
@@ -278,7 +278,6 @@ class Transcoder:
 _transcoder: Transcoder | None = None
 _transcoder_lock = threading.Lock()
 
-module("transcode", "1")
 
 def resolve_source(dongle: str, log_id: str, seg: int, cam: str) -> str:
   """The .hevc from the first source that has it: a copy in the shared cache or a local log directory, else a URL

@@ -20,7 +20,7 @@ from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import URLFile
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.cache import Key
-from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, module, route
+from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, route
 
 SOURCES = ["device", "local", "internal", "api", "openpilotci"]
 KINDS = {"rlog": FileName.RLOG, "qlog": FileName.QLOG, "qcamera": FileName.QCAMERA, "fcamera": FileName.FCAMERA,
@@ -30,7 +30,6 @@ HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes c
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
 PREFETCH = 8  # downloads at once: one Azure blob stream gives ~5 MB/s here
 
-module("sources", "1", sources=SOURCES)
 _pool = ThreadPoolExecutor(16, thread_name_prefix="probe")
 
 
@@ -306,9 +305,6 @@ def proxy_range(url: str, rng: str) -> Stream:
 
 
 # the shared cache, by route
-
-module("cache", "1")
-
 
 @route("GET", "/local/cache")
 def cache_stats(req):

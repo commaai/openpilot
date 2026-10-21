@@ -1,6 +1,5 @@
 """The daemon's HTTP core: config, route registry, request/response types, security checks and streaming."""
 import json
-import mimetypes
 import os
 import queue
 import re
@@ -12,7 +11,7 @@ import time
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from pathlib import Path
-from urllib.parse import parse_qsl, unquote
+from urllib.parse import unquote
 
 TOKEN_HEADER = "X-Ycpe-Token"
 TOKEN_PARAM = "tok"  # for URLs the page can't set headers on (<video src>, a worker's fetch of a resolved url)
@@ -118,16 +117,15 @@ class Stream:
 @dataclass
 class File:
   """A file on disk with Range support. While growing() is true the file is still being written: the response is
-  chunked (or sized, if the final size is known) and follows the file's tail until growing() turns false. growing()
-  may raise to abort the response, e.g. when the download feeding the file fails."""
+  chunked and follows the file's tail until growing() turns false. growing() may raise to abort the response, e.g.
+  when the download feeding the file fails."""
   path: str
-  type: str | None = None
+  type: str = "application/octet-stream"
   headers: dict[str, str] = field(default_factory=dict)
   growing: object = None  # callable -> bool
-  size: int | None = None  # the final size of a growing file, when known
 
 
-def sse(events, keepalive: float = 15.0):
+def sse(events):
   """Server-sent events from an iterator of (event, data) pairs; data is JSON-encoded. Yield None to send a
   keepalive comment. The iterator should block between events (e.g. on a queue with a timeout)."""
   def gen():
@@ -177,7 +175,6 @@ class Feed:
 
 _routes: list[tuple[str, re.Pattern, object, bool, int]] = []
 MAX_BODY = 64 << 20
-modules: dict[str, dict] = {}  # name -> {version, ...info}, listed by /local/caps
 
 
 def _compile(pattern: str) -> re.Pattern:
@@ -196,11 +193,6 @@ def route(method: str, pattern: str, public: bool = False, max_body: int = MAX_B
     _routes.append((method, _compile(pattern), fn, public, max_body))
     return fn
   return deco
-
-
-def module(name: str, version: str = "1", **info):
-  """Declares an enabled feature module; the page lights features up from /local/caps."""
-  modules[name] = {"version": version, **info}
 
 
 def match(method: str, path: str):
@@ -294,13 +286,7 @@ def parse_range(header: str | None, size: int) -> tuple[int, int] | None:
   return start, end
 
 
-def guess_type(path: str) -> str:
-  if path.endswith((".zst", ".bz2", ".hevc", ".ts")):
-    return "application/octet-stream"
-  return mimetypes.guess_type(path)[0] or "application/octet-stream"
-
-
-def file_chunks(src, start: int, end: int | None, growing=None, poll: float = 0.05):
+def file_chunks(src, start: int, end: int | None, growing=None):
   """Bytes [start, end) of src (a path, or a file opened in binary mode, which is closed at the end). With growing,
   waits for a file being written until growing() turns false."""
   path = getattr(src, "name", src)
@@ -313,14 +299,10 @@ def file_chunks(src, start: int, end: int | None, growing=None, poll: float = 0.
         pos += len(data)
         yield data
       elif growing is not None and growing():
-        time.sleep(poll)
+        time.sleep(0.05)
       elif growing is not None:
         growing = None  # finished: one more pass picks up what was written since the last read
       elif end is not None:
         raise OSError(f"{path} ended at {pos} of {end}")
       else:
         return
-
-
-def parse_query(qs: str) -> dict[str, str]:
-  return dict(parse_qsl(qs, keep_blank_values=True))

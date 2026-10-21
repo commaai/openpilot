@@ -5,7 +5,7 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, module, route
+from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, route
 
 KEEP = 200  # finished jobs remembered
 STATES = ["error", "loading", "queued", "disk"]  # a segment's state is its files' first in this order
@@ -149,9 +149,6 @@ def get(job_id: str) -> Job:
   if (job := _jobs.get(job_id)) is None:
     raise HTTPError(404, "no such job")
   return job
-
-
-module("jobs")
 
 
 @route("GET", "/local/jobs/events")

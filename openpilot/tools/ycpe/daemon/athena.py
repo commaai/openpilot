@@ -8,7 +8,7 @@ from urllib3.exceptions import HTTPError as UpstreamError
 
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.url_file import URLFile
-from openpilot.tools.ycpe.daemon.core import HTTPError, Response, module, route
+from openpilot.tools.ycpe.daemon.core import HTTPError, Response, route
 
 ATHENA = "https://athena.comma.ai"
 METHODS = {"listUploadQueue", "cancelUpload", "uploadFilesToUrls", "getNetworkMetered", "startStream", "getMessage", "takeSnapshot",
@@ -16,8 +16,6 @@ METHODS = {"listUploadQueue", "cancelUpload", "uploadFilesToUrls", "getNetworkMe
 MAX_BODY = 1 << 20  # a few hundred files_data entries
 MAX_RESPONSE = 4 << 20
 TIMEOUT = Timeout(connect=5.0, read=30.0)
-
-module("athena", "1")
 
 
 def rpc_body(body: bytes) -> bytes:

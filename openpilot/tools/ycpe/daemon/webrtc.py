@@ -3,13 +3,11 @@ which listens on 127.0.0.1 only. One fixed upstream and one endpoint: never an o
 import http.client
 import json
 
-from openpilot.tools.ycpe.daemon.core import HTTPError, Response, config, module, route
+from openpilot.tools.ycpe.daemon.core import HTTPError, Response, config, route
 
 MAX_BODY = 256 << 10  # an offer is a few KB
 MAX_RESPONSE = 256 << 10
 TIMEOUT = 40  # webrtcd gives up building an answer after 30 s
-
-module("webrtc", "1")
 
 
 @route("POST", "/local/webrtc/stream", max_body=MAX_BODY)

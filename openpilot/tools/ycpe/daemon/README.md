@@ -79,14 +79,12 @@ The page finds the daemon through `<meta name="ycpe-daemon">` in index.html, plu
 
 ## Writing a module
 
-Add `daemon/<name>.py` and list it in `server.MODULES`. A module that fails to import is reported under
-`failed` in `/local/caps`, and everything else keeps working.
+Add `daemon/<name>.py` and list it in `server.MODULES`, which `/local/caps` lists for the page's `daemon.has(name)`. A
+module that fails to import stops the daemon.
 
 ```python
-from openpilot.tools.ycpe.daemon import File, HTTPError, Stream, config, confine, module, route, sse
+from openpilot.tools.ycpe.daemon import File, HTTPError, Stream, config, confine, route, sse
 from openpilot.tools.ycpe.daemon import jobs
-
-module("transcode", "1", presets=["720p"])   # listed in /local/caps → {"modules": {"transcode": {"version": "1", "presets": [...]}}}
 
 @route("GET", "/local/transcode/{route}/{seg}/{cam}")   # {x} = one path segment, {x:path} = the rest
 def get(req):
@@ -120,7 +118,7 @@ url(path), events(path, fn)}` and `needsDaemon(what)`.
 
 | endpoint | |
 |---|---|
-| `GET /local/caps` | `{daemon, version, modules: {name: {version, ...}}, failed: {name: error}}`. This is the only route that needs no token. |
+| `GET /local/caps` | `{daemon, version, modules: [name], sources: [name], commit: {sha, time}}`. This is the only route that needs no token. |
 | `GET /local/auth` | `{token}`: the JWT from `~/.comma/auth.json`, or null. |
 | `POST /local/sources/resolve` | Body `{route, segs?, kinds?, sources?, sizes?}`. Returns `{route, segments: {n: {kind: {url, file, size, source, cached}}}, missing: {n: [kind]}, errors: {source: msg}}`. Details below. |
 | `GET /local/file/{source}/{dongle}/{log_id}/{seg}/{file}` | The bytes, with Range support. It serves from the shared cache. On a miss it streams while the download fills the cache. A Range request on a miss is proxied, and the full download starts in the background. |

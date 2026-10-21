@@ -72,7 +72,7 @@ function devicePart() {
 // the open route's line names its segments from the record: the daemon knows only those on this machine's disk.
 // Live data and dropped files (local|...) have none in the cache
 function localPanel(close, record) {
-  const intro = h("div", {class: "local-intro muted", title: Object.entries(daemon.caps.modules).map(([k, v]) => `${k} ${v.version}`).join(" · ")},
+  const intro = h("div", {class: "local-intro muted", title: daemon.caps.modules.join(" · ")},
     "serve.py on this machine keeps downloaded logs and videos in a disk cache shared by every tab. ",
     h("a", {href: "/local", onclick: (e) => { close(); link("/local")(e); }}, "Open local logs…"));
   const cache = h("div", {class: "local-cache"});

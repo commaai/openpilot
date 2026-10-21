@@ -10,13 +10,11 @@ import threading
 import time
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, config, confine, module, route
+from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, config, confine, route
 
 DBC_NAME = re.compile(r"^[A-Za-z0-9_.-]+\.dbc\Z")
 MAX_DBC = 8 << 20
 OPENDBC = Path("opendbc_repo") / "opendbc"
-
-module("repos", "1")
 
 
 def roots() -> list[Path]:

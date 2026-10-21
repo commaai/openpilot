@@ -70,7 +70,7 @@ const local = await import("/daemon.js").then((m) => m.daemon, () => null);
 
 export const daemon = {
   // the sources it resolves, or null without it
-  sources: () => local?.present && local.has("sources") ? local.caps.modules.sources.sources : null,
+  sources: () => local?.present ? local.caps.sources : null,
   // {segments: {n: {kind: {url, file, size, source, cached}}}, missing, errors: {source: message}}; the page's sign-in
   // stands in for the daemon's own. sizes: HEAD the API's files too (other sources always know theirs).
   resolve: (sr, segs, kinds, sources, sizes = false) => local.json("/local/sources/resolve", {method: "POST",
