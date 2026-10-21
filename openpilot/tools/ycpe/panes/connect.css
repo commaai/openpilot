@@ -15,7 +15,8 @@
 
 /* the timeline: 12 px of spans on the drive's blue, 20 px of thumbnails, the 44 px ruler with what's after the
    playhead dimmed behind a faint line, and the hover bead under it. Only the ruler takes presses; a finger scrolls the
-   page vertically */
+   page vertically. The selection grows on a layer of its own: painted into the page's, it re-rastered the page's tiles
+   mid-drag, and the GPU programs that raster first needed held a frame for 70-160 ms (the bead keeps its LCD text) */
 .cn-timeline { position: relative; cursor: default; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .cn-timeline .strip { --spans: 12px; height: 32px; border-radius: 0; background: none; }
 .cn-timeline .strip-thumbs { display: none; }
@@ -26,7 +27,7 @@
 .cn-ruler { position: relative; height: 44px; overflow: hidden; background: #25333d; cursor: pointer; touch-action: none; contain: strict; }
 .cn-left { position: absolute; inset: 0; border-left: 1px solid #d8dddf; background: rgba(29,34,37,.9); opacity: .45; }
 .cn-selection { position: absolute; top: 32px; bottom: 0; left: 0; z-index: 2; pointer-events: none;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.3); border-width: 0 1px; }
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.3); border-width: 0 1px; will-change: transform; }
 .cn-bead { position: absolute; top: 83px; left: 0; z-index: 4; width: 80px; padding: 3px 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
   background: #272c2f; color: #fff; font-size: 11.2px; text-align: center; pointer-events: none; }
 .cn-timeline:focus-visible { outline: none; }
