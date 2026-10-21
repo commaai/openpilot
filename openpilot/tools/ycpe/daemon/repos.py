@@ -1,15 +1,13 @@
 """Local openpilot checkouts: cereal schemas and opendbc DBCs to read, DBCs to save back in place, and a change feed.
 
-Checkouts come from --repo (default: the one serve.py runs from). Each one's opendbc is
-<checkout>/opendbc_repo/opendbc/dbc, or the importable opendbc package when that's empty.
+Checkouts come from --repo (default: the one serve.py runs from). Each one's DBCs are its own
+opendbc_repo/opendbc/dbc and nothing else, so a save never lands outside the checkout picked.
 """
-import importlib.util
 import os
 import re
 import subprocess
 import threading
 import time
-from functools import cache
 from pathlib import Path
 
 from openpilot.tools.ycpe.daemon.core import Feed, HTTPError, config, confine, module, route
@@ -44,15 +42,6 @@ def git_info(path: Path) -> dict | None:
   return info
 
 
-@cache
-def package_opendbc() -> Path | None:
-  spec = importlib.util.find_spec("opendbc")
-  if spec and spec.submodule_search_locations:
-    d = Path(list(spec.submodule_search_locations)[0]) / "dbc"
-    return d if d.is_dir() else None
-  return None
-
-
 def roots() -> list[Path]:
   return list(dict.fromkeys(Path(r).resolve() for r in config.repo_roots))
 
@@ -64,8 +53,7 @@ def cereal_dir(p: Path) -> Path | None:
 def checkout(p: Path, i: int) -> dict:
   cereal = cereal_dir(p)
   dbc = p / "opendbc_repo" / "opendbc" / "dbc"
-  if not any(dbc.glob("*.dbc")):
-    dbc = package_opendbc()
+  dbc = dbc if any(dbc.glob("*.dbc")) else None  # an empty submodule
   return {"id": str(i), "name": p.name, "git": git_info(p), "cereal": str(cereal) if cereal else None,
           "opendbc": {"dbc": str(dbc), "git": git_info(dbc.parent.parent)} if dbc else None}
 

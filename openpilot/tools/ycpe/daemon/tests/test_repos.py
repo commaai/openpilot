@@ -19,16 +19,19 @@ DBC.mkdir(parents=True)
 (REPO / "secret.dbc").write_text("outside")
 subprocess.run(["git", "init", "-q", str(REPO)], check=True)
 subprocess.run(["git", "-C", str(REPO), "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+BARE = Path(tempfile.mkdtemp())  # a checkout without the opendbc submodule
+(BARE / "opendbc_repo" / "opendbc" / "dbc").mkdir(parents=True)
 
 
 class TestRepos(DaemonCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    config.repo_roots = [str(REPO)]
+    config.repo_roots = [str(REPO), str(BARE)]
 
   def test_list(self):
-    [c] = self.json("/local/repos")
+    c, bare = self.json("/local/repos")
+    self.assertIsNone(bare["opendbc"])
     self.assertEqual(c["name"], REPO.name)
     self.assertEqual(c["git"]["subject"], "init")
     self.assertEqual(c["opendbc"]["dbc"], str(DBC.resolve()))
@@ -60,6 +63,8 @@ class TestRepos(DaemonCase):
     self.assertEqual(r.status, 403)
     r, _ = self.req("/local/repos/9/dbc/toyota_test.dbc", method="PUT", body=b"x")
     self.assertEqual(r.status, 404)
+    r, _ = self.req("/local/repos/1/dbc/toyota_test.dbc", method="PUT", body=b"x")
+    self.assertEqual(r.status, 404)  # never the installed opendbc package, which may be another checkout's
 
   def test_watch(self):
     r = self.connect("/local/repos/watch")

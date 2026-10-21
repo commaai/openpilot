@@ -31,7 +31,7 @@ What the daemon unlocks in the UI:
 | `auth` | Your `~/.comma/auth.json` sign-in (from `tools/lib/auth.py`). The app opens signed in, and the account menu says so. |
 | `sources` | Logs from every source openpilot's LogReader uses: your disk, a pulled device, comma's internal storage, the comma API and openpilotci. That includes routes the browser can't reach. In the Files pane, the source picker enables these. |
 | `cache` | One disk cache shared with cabana, jotpluggler, replay and LogReader, so a route downloaded by any of them loads instantly in all of them. The badge panel can cache a whole route ahead of time (logs or video) and evict it. Progress shows in the loading pill. |
-| `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into your opendbc checkout. |
+| `repos` | The local cereal schema (for a "local checkout" schema), and opendbc DBCs. The CAN view can save DBCs straight back into the checkout's opendbc_repo. |
 | `device` | Lists the routes on your comma device and copies them over ssh into the cache. Nothing on the device is ever changed. |
 | `athena` | Relays the page's device calls (upload queue, upload requests, live streams) to athena on ports athena doesn't allow. |
 | `billing` | Relays the page's referrals read to billing, which allows the same few origins as athena. |
