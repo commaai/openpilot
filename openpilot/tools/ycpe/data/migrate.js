@@ -85,15 +85,7 @@ export function context(services) {
   const init = services.initData?.cols;
   if (init) ctx.deviceType = at(init["/deviceType"], 0) ?? 0;
   const cp = services.carParams?.cols;
-  if (cp) {
-    const fp = at(cp["/carFingerprint"], 0) ?? "";
-    ctx.carFingerprint = fp;
-    ctx.safetyParam = tables.safetyParam[tables.fingerprints[fp] ?? fp];
-    if (ctx.safetyParam === undefined && has(cp["/safetyConfigs/0/safetyModel"], 0)) {
-      ctx.safetyParam = at(cp["/safetyConfigs/0/deprecated/safetyParam"], 0) || at(cp["/safetyConfigs/0/safetyParam"], 0);
-    }
-    ctx.safetyParam ??= at(cp["/deprecated/safetyParam"], 0);
-  }
+  if (cp) ctx.carFingerprint = at(cp["/carFingerprint"], 0) ?? "";
   return ctx;
 }
 
@@ -378,69 +370,8 @@ function longitudinalPlan(s, ctx, missing) {
   lp.cols["/shouldStop"] = column("b", n, (i) => (full(i) ? at(speed(0), i) : 0) < 0.3 && aTarget[i] < 0.1 ? 1 : 0);
 }
 
-function managerState(s) {
-  const ms = s.managerState, n = ns(ms);
-  for (const p of Object.keys(ms.cols)) if (p.startsWith("/processes/")) delete ms.cols[p];
-  if (tables.processes.length > MAX_LIST) return;  // too long for per-index columns
-  tables.processes.forEach((name, j) => struct(STRUCTS["ManagerState.ProcessState"], `/processes/${j}`, n, {"/name": name, "/running": 1}, null, "", ms.cols));
-}
-
-function pandaStates(s, ctx) {
-  const sp = ctx.safetyParam;
-  if (sp === undefined) return;  // python asserts carParams exists
-  const old = s.pandaStateDEPRECATED;
-  if (old) {
-    const cols = Object.fromEntries(Object.entries(old.cols).map(([p, c]) => [`/0${p}`, c]));
-    cols["/0/safetyParam"] = value(sp, "u16", ns(old));
-    s.pandaStates = {t: old.t, valid: old.valid, cols};
-    delete s.pandaStateDEPRECATED;
-    return;
-  }
-  const ps = s.pandaStates, n = ns(ps), {cols} = ps;
-  const last = new Int8Array(n).fill(-1);
-  for (let j = 0; cols[`/${j}/safetyParam`]; j++) present(cols, `/${j}`, n).forEach((x, i) => { if (x) last[i] = j; });
-  for (let j = 0; cols[`/${j}/safetyParam`]; j++) {
-    const param = cols[`/${j}/safetyParam`], alt = cols[`/${j}/alternativeExperience`];
-    cols[`/${j}/safetyParam`] = column("u16", n, (i) => last[i] === j ? sp : at(param, i));
-    cols[`/${j}/alternativeExperience`] = column("i16", n, (i) => last[i] === j ? at(alt, i) & ~1 : at(alt, i));
-  }
-}
-
-function peripheralState(s) {
-  const src = s.pandaStates ?? s.pandaStateDEPRECATED;
-  s.peripheralState = {t: src.t, valid: src.valid, cols: struct(STRUCTS.PeripheralState, "", ns(src))};
-}
-
-function cameraStates(s) {
-  for (const [state, index] of [["narrowRoadCameraState", "narrowRoadEncodeIdx"], ["wideRoadCameraState", "wideRoadEncodeIdx"], ["cabinCameraState", "cabinEncodeIdx"]]) {
-    const cs = s[state], enc = s[index];
-    if (!cs) continue;
-    const segmentId = new Map();
-    if (enc) for (let i = 0; i < ns(enc); i++) segmentId.set(at(enc.cols["/frameId"], i), at(enc.cols["/segmentId"], i));
-    const keep = [], ids = [];
-    let min = Infinity;
-    for (let i = 0; i < ns(cs); i++) {
-      const frameId = at(cs.cols["/frameId"], i);
-      min = Math.min(min, frameId);
-      let id = segmentId.get(frameId);
-      if (id === undefined) {
-        if (segmentId.size) continue;  // frames that were never encoded are dropped
-        id = frameId - min;  // logs without encodeIdx
-      }
-      keep.push(i);
-      ids.push(id);
-    }
-    const get = (f) => (k) => at(cs.cols[`/${f}`], keep[k]);
-    const sof = get("timestampSof"), eof = get("timestampEof");
-    s[state] = {t: pick(cs.t, keep), valid: pick(cs.valid, keep), cols: struct(STRUCTS.FrameData, "", keep.length, {
-      "/sensor": get("sensor"), "/frameId": (k) => ids[k], "/encodeId": (k) => ids[k], "/timestampEof": eof,
-      "/timestampSof": (k) => sof(k) === 0 && eof(k) > 25000000 ? eof(k) - 18000000 : sof(k),
-    })};
-  }
-}
-
 // [inputs, product, fn] in migrate_all order. As in python, each sees the segment's original services and is skipped
-// when its product already exists. OPTIONAL holds the opt-in ones, as in migrate_all(manager_states=...).
+// when its product already exists. migrate_all's opt-in ones (manager_states=...) are left out, as by its defaults.
 const MIGRATIONS = [
   [["sensorEventsDEPRECATED"], "sensorEvents", sensorEvents],
   [["carParams"], null, carParams],
@@ -458,11 +389,6 @@ const MIGRATIONS = [
   [["driverMonitoringStateDEPRECATED"], null, driverMonitoringState],
   [["longitudinalPlan"], null, longitudinalPlan],
 ];
-const OPTIONAL = {
-  managerStates: [[["managerState"], null, managerState]],
-  pandaStates: [[["pandaStates", "pandaStateDEPRECATED"], null, pandaStates], [["pandaStates", "pandaStateDEPRECATED"], "peripheralState", peripheralState]],
-  cameraStates: [[["narrowRoadCameraState", "wideRoadCameraState", "cabinCameraState"], null, cameraStates]],
-};
 
 // fields the schema moved with no python migration, fixed in logs from before the move. An old log is told by its
 // data in the old field, which new code never writes.
@@ -512,8 +438,7 @@ export function migrate(services, routeContext = {}, options = {}) {
   const s = {};
   for (const svc of services.values()) s[svc.name] = {...svc, cols: Object.fromEntries(svc.cols)};
   const own = context(s), ctx = {...routeContext, ...own}, missing = [], original = new Set(Object.keys(s));
-  const migrations = [...MIGRATIONS, ...Object.keys(OPTIONAL).filter((k) => options[k]).flatMap((k) => OPTIONAL[k])];
-  for (const [inputs, product, fn] of migrations) {
+  for (const [inputs, product, fn] of MIGRATIONS) {
     if (!original.has(product) && inputs.some((name) => original.has(name))) fn(s, ctx, missing);
   }
   for (const fix of FIXES) fix(s);

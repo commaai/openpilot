@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // dumps a log through data/capnp.js in the same shape as dump.py: {service: {t, valid, cols: {path: [value|null]}}}
-// usage: dump.mjs <log> <out.json> [--migrate] [--all]
+// usage: dump.mjs <log> <out.json> [--migrate]
 import fs from "node:fs";
 import {schema} from "../../data/bench/node.mjs";
 import {decompress} from "../../codec/codec.js";
@@ -30,10 +30,10 @@ export function dump(services) {
 }
 
 const [file, dest] = process.argv.slice(2);
-const migrating = process.argv.includes("--migrate"), all = process.argv.includes("--all");
+const migrating = process.argv.includes("--migrate");
 const services = new Reader(schema).read(decompress(new Uint8Array(fs.readFileSync(file))), migrating ? {keep: withKeep()} : {});
 if (migrating) {
-  const {missing} = migrate(services, {}, {managerStates: all, pandaStates: all, cameraStates: all});
+  const {missing} = migrate(services);
   if (missing.length) console.error(`unavailable: ${missing.join(", ")}`);
 }
 fs.writeFileSync(dest, JSON.stringify(dump(compact(services).services)));
