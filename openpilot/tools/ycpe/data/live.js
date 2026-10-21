@@ -199,8 +199,6 @@ export class LiveStore extends Store {
   // columns aren't evicted: the window's slots go instead (trim)
   evict() {}
 
-  setSchema() {}
-
   async message(service, t) {
     const seg = this.segmentAt(t);
     if (seg?.start === undefined) return null;
