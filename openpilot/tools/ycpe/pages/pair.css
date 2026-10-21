@@ -38,9 +38,6 @@
 .pair-copy ul { margin: 0 0 12px; padding-left: 22px; }
 .pair-add { display: block; width: 100%; margin: 8px 0 0; padding: 8px 16px; border-color: var(--fg); border-radius: 18px; background: var(--fg); color: var(--bg); font-weight: 600; }  /* connect's white pill, dark by day */
 .pair-add:hover { background: var(--fg); opacity: .8; }
-.pair-add.row { display: flex; align-items: center; justify-content: space-between; margin: 0; border: 0; border-radius: 0; background: none; color: inherit; }
-.pair-add.row:hover { background: var(--hover); opacity: 1; }
-.pair-add.row svg { opacity: .3; }
 .pair-device { width: 100%; max-width: 768px; height: auto; margin-top: 16px; padding: 16px; }
 @media (max-width: 640px) { .pair-empty { padding-top: 16px; } }
 
@@ -87,9 +84,6 @@
 .pair-empty.um .pair-copy ul { width: 100%; box-sizing: border-box; margin: 20px 0; padding-left: 26px; }
 .pair-empty.um .pair-copy li { margin: 8px 0; padding-left: 6px; }
 .pair-empty.um .pair-copy li::marker { color: oklch(.446 .03 256.802); }
-/* light: Tailwind's prose as it is, not inverted */
-[data-theme="light"] .pair-empty.um .pair-copy { color: oklch(.373 .034 259.733); }
-[data-theme="light"] .pair-empty.um .pair-copy li::marker { color: oklch(.872 .01 258.338); }
 .pair-add-wrap { width: 100%; margin-top: 8px; }
 .pair-cn { display: flex; width: 100%; margin: 0; }
 .pair-cn .cnui-icon { display: none; }

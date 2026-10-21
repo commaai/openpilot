@@ -8,7 +8,7 @@ import {h, css, fmt, ask} from "../dom.js";
 import {icon} from "../icons.js";
 import {link} from "../app.js";
 import {signInCard} from "./login.js";
-import {userMode, cnIcon, cnModal, progress, fill} from "./cnui.js";
+import {userMode, cnIcon, cnModal, progress, promo, fill} from "./cnui.js";
 
 const COMMACARE = "https://comma.ai/connect#what-is-commacare";
 const FAQ = "https://comma.ai/connect#faq";
@@ -399,13 +399,13 @@ export async function primeBanner(devices) {
   const to = `${userMode() ? "/connect" : ""}/${device.dongle_id}/prime`;
   const um = userMode();
   const dismiss = () => { dismissed.add(device.dongle_id); el.remove(); };
-  const el = h("div", {class: `prime-promo-slot${um ? " um" : ""}`}, h("aside", {class: "prime-promo", "aria-label": "comma prime promotion"},
-    um ? h("button", {class: "prime-dismiss", "aria-label": "Dismiss prime promotion", onclick: dismiss}, cnIcon("clear", 12))
-      : h("button", {class: "icon-btn prime-dismiss", title: "Dismiss", "aria-label": "Dismiss prime promotion", onclick: dismiss}, icon("close", 14)),
-    h("div", {class: "prime-promo-head"}, h("b", {}, "comma prime"),
-      h("a", {class: um ? "cnui-btn prime-signup" : "button small primary", href: to, onclick: link(to)}, "sign up")),
-    h("p", {}, device.eligible_features?.commacare
-      ? "Put your car on the internet with comma prime and extend your 1-year limited warranty with commacare"
-      : "Put your car on the internet with comma prime")));
+  const signup = h("a", {class: um ? "" : "button small primary", href: to, onclick: link(to)}, "sign up");
+  const text = device.eligible_features?.commacare
+    ? "Put your car on the internet with comma prime and extend your 1-year limited warranty with commacare"
+    : "Put your car on the internet with comma prime";
+  const el = um ? promo("comma prime promotion", "comma prime", signup, text, dismiss)
+    : h("div", {class: "prime-promo-slot"}, h("aside", {class: "prime-promo", "aria-label": "comma prime promotion"},
+      h("button", {class: "icon-btn prime-dismiss", title: "Dismiss", "aria-label": "Dismiss prime promotion", onclick: dismiss}, icon("close", 14)),
+      h("div", {class: "prime-promo-head"}, h("b", {}, "comma prime"), signup), h("p", {}, text)));
   return el;
 }

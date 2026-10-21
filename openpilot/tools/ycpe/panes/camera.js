@@ -483,7 +483,7 @@ async function sources(route, camera) {
   const hardware = (await VideoDecoder.isConfigSupported({codec: HEVC, hardwareAcceleration: "prefer-hardware"})).supported;
   if (hardware || route.loose || !daemon.has("transcode")) return {urls, keys, segs, transcoded: false};
   const [dongle, log] = route.fullname.split("|");
-  const transcode = (k) => daemon.url(`/local/video/${dongle}/${log}/${segs[k]}/${camera}.h264?preset=medium&ahead=2`);
+  const transcode = (k) => daemon.url(`/local/video/${dongle}/${log}/${segs[k]}/${camera}.h264`);
   return {urls: urls.map((u, k) => u && transcode(k)), keys: [], segs, transcoded: true};
 }
 

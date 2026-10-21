@@ -18,12 +18,11 @@
  "steps": [
   {"eval": "localStorage.setItem('comma_jwt', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGl0eSI6IjAxMjM0NTY3ODlhYmNkZWYiLCJleHAiOjE5MjQ5OTIwMDAsImlhdCI6MTc2MDAwMDAwMH0.ZmFrZS1zaWduYXR1cmU'); localStorage.setItem('billing_host', 'https://billing.comma.ai'); localStorage.setItem('ycpe_referrals_promo_2026-09-02', '1')"},
   {"goto": "/connect/1111111111111111"},
-  {"waitFor": ".prime-promo-slot.um .prime-signup"},
-  {"assert": "document.querySelector('.prime-promo-slot.um .prime-signup').getAttribute('href') === '/connect/1111111111111111/prime' || document.querySelector('.prime-signup').getAttribute('href')"},
-  {"assert": "(() => { const r = document.querySelector('.prime-promo-slot.um .prime-promo').getBoundingClientRect(); const c = document.querySelector('.cn-content'); return c.getBoundingClientRect().left + c.clientWidth - r.right === 10 || `connect's corner: ${JSON.stringify(r)}`; })()"},
-  {"wait": 300},
+  {"waitFor": ".cnui-promo a"},
+  {"assert": "document.querySelector('.cnui-promo a').getAttribute('href') === '/connect/1111111111111111/prime' || document.querySelector('.cnui-promo a').getAttribute('href')"},
+  {"assert": "(() => { const r = document.querySelector('.cnui-promo').getBoundingClientRect(); const c = document.querySelector('.cn-content'); return c.getBoundingClientRect().left + c.clientWidth - r.right === 10 || `connect's corner: ${JSON.stringify(r)}`; })()"},
   {"shot": "promo"},
-  {"click": ".prime-promo-slot.um .prime-signup"},
+  {"click": ".cnui-promo a"},
   {"waitFor": ".prime-page.um .prime-plan[aria-pressed=true]"},
   {"assert": "location.pathname === '/connect/1111111111111111/prime' || location.pathname"},
   {"assert": "[...document.querySelectorAll('.prime-page.um .prime-checks p')].map((p) => p.textContent).join() === '24/7 connectivity,Take pictures remotely,1 year storage of drive videos,Simple SSH for developers' || 'checklist'"},
@@ -31,7 +30,6 @@
   {"assert": "(() => { const s = getComputedStyle(document.querySelector('.prime-page.um .prime-title')); return s.fontSize === '16px' && s.fontWeight === '400' || s.fontSize; })()"},
   {"shot": "checkout"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "checkout-other-theme"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
   {"assert": "!__sent.length || 'looking sends nothing: ' + JSON.stringify(__sent)"},
@@ -72,6 +70,5 @@
   {"key": "Escape"},
   {"waitFor": {"fn": "!document.querySelector('.cnui-modal')"}},
   {"viewport": [390, 844]},
-  {"wait": 300},
   {"shot": "manage-phone"}
  ]}

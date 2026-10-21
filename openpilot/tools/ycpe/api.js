@@ -4,7 +4,7 @@ import {listeners} from "./dom.js";
 
 const TOKEN_KEY = "comma_jwt";
 const setting = (key) => globalThis.localStorage?.getItem(key);
-export const apiHost = () => setting("api_host") || "https://api.commadotai.com";
+const apiHost = () => setting("api_host") || "https://api.commadotai.com";
 // athena only answers CORS for *.comma.ai, connect previews and localhost:3000; elsewhere the daemon relays the calls
 const athenaHost = () => setting("athena_host") || "https://athena.comma.ai";
 // billing only answers CORS for *.comma.ai, localhost:3000 and connect's LAN and preview hosts. Elsewhere the daemon
@@ -104,14 +104,23 @@ export const auth = {
   },
 };
 
-export class ApiError extends Error {
+// a JWT's claims, without checking it (the API does that), or null if it isn't one
+export function jwtClaims(token) {
+  try {
+    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
+
+class ApiError extends Error {
   constructor(status, body) {
     super(`API ${status}: ${body}`);
     this.status = status;
   }
 }
 
-export async function request(method, endpoint, {params, body, host = apiHost(), headers = {}} = {}) {
+async function request(method, endpoint, {params, body, host = apiHost(), headers = {}} = {}) {
   const url = new URL(endpoint, host + "/");
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null) url.searchParams.set(k, v);
@@ -267,6 +276,8 @@ export const SEGMENT = 60;  // nominal seconds per segment, until a segment's re
 // the segment a timeline slot plays: a route opened with a range (data/sources.js routeRecord) plays its segments
 // back to back, so slot k is segment_numbers[k]; otherwise the slot is the segment
 export const segmentAt = (route, slot) => route.range ? route.segment_numbers[slot] : slot;
+// the segment playing at timeline time t of duration (the last slot runs to the end)
+export const segmentAtTime = (route, t, duration) => segmentAt(route, Math.min(Math.floor(t / SEGMENT), Math.ceil(duration / SEGMENT) - 1));
 const slots = (route) => route.range ? route.segment_numbers.length : (route.maxqlog ?? -1) + 1;
 const memoKey = (route) => `${route.fullname}/${route.range ?? ""}`;
 

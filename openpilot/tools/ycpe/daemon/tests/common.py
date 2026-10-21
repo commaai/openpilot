@@ -1,10 +1,18 @@
 import http.client
 import json
 import threading
+import time
 import unittest
 
 from openpilot.tools.ycpe.daemon import core, server
 from openpilot.tools.ycpe.daemon.core import config
+
+
+def until(cond, timeout=10.0):
+  """Waits for cond() to hold, up to timeout s."""
+  end = time.monotonic() + timeout
+  while not cond() and time.monotonic() < end:
+    time.sleep(0.01)
 
 
 class DaemonCase(unittest.TestCase):

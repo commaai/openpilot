@@ -9,7 +9,7 @@ from unittest import mock
 
 from openpilot.tools.ycpe.daemon import core, jobs
 from openpilot.tools.ycpe.daemon.core import File, config, confine, route
-from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 
 
 @route("GET", "/local/test/file/{path:path}")
@@ -180,16 +180,10 @@ class TestStreaming(DaemonCase):
     self.assertEqual(j.state, "running")
     r, data = self.req(f"/local/jobs/{j.id}/cancel", method="POST")
     gate.set()
-    for _ in range(100):
-      if j.state != "running":
-        break
-      threading.Event().wait(0.01)
+    until(lambda: j.state != "running", 1)
     self.assertEqual(j.state, "cancelled")
     j2 = jobs.start("test", lambda job: {"n": 1})
-    for _ in range(100):
-      if j2.state != "running":
-        break
-      threading.Event().wait(0.01)
+    until(lambda: j2.state != "running", 1)
     self.assertEqual(j2.result, {"n": 1})
 
   def test_job_events(self):

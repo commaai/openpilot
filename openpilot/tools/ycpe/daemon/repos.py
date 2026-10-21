@@ -18,7 +18,7 @@ DBC_NAME = re.compile(r"^[A-Za-z0-9_.-]+\.dbc\Z")
 MAX_DBC = 8 << 20
 GIT_TTL = 5.0
 
-module("repos", "1", write=["dbc"])
+module("repos", "1")
 
 
 def git(path: Path, *args: str) -> str:

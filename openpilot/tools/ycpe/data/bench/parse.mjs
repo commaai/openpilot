@@ -26,7 +26,7 @@ for (let k = 0; k < (+process.argv[3] || 10); k++) {
     lap();
     migrate(read, {}, {keep: {}});
     lap();
-    const {services} = compact(read);
+    const services = compact(read);
     lap();
     pack(services, schema.enums);
     lap();

@@ -1,21 +1,18 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# dependencies = ["pillow", "numpy"]
+# dependencies = ["pillow"]
 # ///
 """Builds report.html (for people) and report.md (for LLM critics) from out/latest/results.json; run alone to rebuild."""
 import html
 import json
 import re
-import shutil
 from pathlib import Path
 
-import numpy as np
 from PIL import Image, ImageDraw
 
 import triage
 
 HERE = Path(__file__).resolve().parent
-GOLDEN = HERE / "golden"
 REFERENCE = HERE / "out" / "reference"
 ERROR, WARN, INFO = "error", "warn", "info"
 PERF_RULES = ("long-frame", "frame-work", "drops", "first-paint")  # budgets that only warn when the machine is too busy to measure
@@ -25,44 +22,7 @@ SEVERITY = {
   "text-ellipsis": INFO, "small-target": INFO, "network-flake": INFO, "load-frame": INFO,
 }
 ORDER = [ERROR, WARN, INFO]
-DIFF_THRESHOLD = 0.1  # pixelmatch's default: fraction of the max YIQ distance
-DIFF_REPORT = 0.001   # changed-pixel fraction worth a finding
-MAX_WHERE = 8         # occurrences listed per finding in report.md
-
-
-def bless(out):
-  for shot in (out / "shots").glob("*/*.png"):
-    if "." not in shot.stem:
-      dst = GOLDEN / shot.parent.name / shot.name
-      dst.parent.mkdir(parents=True, exist_ok=True)
-      shutil.copy(shot, dst)
-
-
-def yiq(a):
-  r, g, b = a[..., 0], a[..., 1], a[..., 2]
-  return np.stack([r * 0.29889531 + g * 0.58662247 + b * 0.11448223,
-                   r * 0.59597799 - g * 0.27417610 - b * 0.32180189,
-                   r * 0.21147017 - g * 0.52261711 + b * 0.31114694], -1)
-
-
-def diff(shot, golden, dst):
-  """pixelmatch-style YIQ distance; a pixel only counts if nothing within 1px in the golden matches it (absorbs antialiasing)"""
-  a, b = Image.open(shot).convert("RGB"), Image.open(golden).convert("RGB")
-  if a.size != b.size:
-    return 1.0
-  ya, yb = yiq(np.asarray(a, np.float32)), yiq(np.pad(np.asarray(b, np.float32), ((1, 1), (1, 1), (0, 0)), mode="edge"))
-  h, w = ya.shape[:2]
-  best = np.full((h, w), np.inf, np.float32)
-  for dy in range(3):
-    for dx in range(3):
-      d = ya - yb[dy:dy + h, dx:dx + w]
-      best = np.minimum(best, 0.5053 * d[..., 0] ** 2 + 0.299 * d[..., 1] ** 2 + 0.1957 * d[..., 2] ** 2)
-  changed = best > 35215 * DIFF_THRESHOLD ** 2
-  gray = (np.asarray(a.convert("L"), np.float32) * 0.25 + 191).astype(np.uint8)
-  img = np.stack([gray] * 3, -1)
-  img[changed] = (230, 30, 30)
-  Image.fromarray(img).save(dst)
-  return float(changed.mean())
+MAX_WHERE = 8  # occurrences listed per finding in report.md
 
 
 def annotate(src, dst, marks):
@@ -77,7 +37,7 @@ def annotate(src, dst, marks):
 
 
 def collect(out, scenarios, noisy):
-  """every failure, event, lint issue and golden diff, grouped across scenarios and shots by what it is rather than where"""
+  """every failure, event and lint issue, grouped across scenarios and shots by what it is rather than where"""
   groups = {}
 
   def add(key, rule, detail, where, selector=None):
@@ -95,11 +55,6 @@ def collect(out, scenarios, noisy):
     for shot in sc["shots"]:
       for i in shot["issues"]:
         add(re.sub(r":nth-of-type\(\d+\)", "", i["selector"]), i["rule"], i["detail"], {"scenario": name, "shot": shot["name"], "box": i["box"]}, i["selector"])
-      golden = GOLDEN / name / f"{shot['name']}.png"
-      if golden.exists():
-        shot["diff"] = diff(out / shot["path"], golden, out / shot["path"].replace(".png", ".diff.png"))
-        if shot["diff"] > DIFF_REPORT:
-          add(f"{name}/{shot['name']}", "golden-diff", f"{shot['diff']:.2%} of pixels differ from the golden", {"scenario": name, "shot": shot["name"]})
   severity = lambda f: WARN if noisy and f["rule"] in PERF_RULES else SEVERITY.get(f["rule"], WARN)  # noqa: E731
   found = sorted(groups.values(), key=lambda f: (ORDER.index(severity(f)), -len(f["where"])))
   for n, f in enumerate(found, 1):
@@ -245,9 +200,7 @@ def write_md(out, title, head, rows, found, scenarios, changes):
   md += ["", "## Screenshots", ""]
   for sc in scenarios:
     md.append(f"- {sc['name']} ({sc['url']}) findings {sc['findings']}")
-    for s in sc["shots"]:
-      d = f" · diff {s['diff']:.2%} {out / s['path'].replace('.png', '.diff.png')}" if "diff" in s else ""
-      md.append(f"  - {s['name']}: {out / s['annotated']}{d}")
+    md += [f"  - {s['name']}: {out / s['annotated']}" for s in sc["shots"]]
     md += [f"  - note: {n}" for n in sc.get("notes", [])]
     md += [f"  - filmstrip {film['name']} ({len(film['frames'])} frames): {out / film['strip']}" for film in sc.get("films", [])]
     md += [f"  - reference {r}: {REFERENCE / r}.png" for r in sc["reference"] if (REFERENCE / f"{r}.png").exists()]
@@ -269,8 +222,7 @@ def write_html(out, title, head, rows, found, scenarios, prev, changes):
   sections = []
   for sc in scenarios:
     status = "pass" if sc["pass"] else "fail"
-    diff = lambda s: f' · <a href="{s["path"].replace(".png", ".diff.png")}">diff {s["diff"]:.2%}</a>' if "diff" in s else ""  # noqa: E731
-    shots = "".join(fig(s["annotated"], e(s["name"]) + diff(s)) for s in sc["shots"])
+    shots = "".join(fig(s["annotated"], e(s["name"])) for s in sc["shots"])
     refs = "".join(fig(f"../reference/{r}.png", f"reference: {e(r)}") for r in sc["reference"] if (REFERENCE / f"{r}.png").exists())
     films = "".join(fig(f["strip"], f"filmstrip {e(f['name'])}, {len(f['frames'])} frames") for f in sc.get("films", []))
     findings = ", ".join(map(str, sc["findings"])) or "none"

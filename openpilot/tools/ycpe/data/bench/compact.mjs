@@ -10,7 +10,7 @@ const buf = decompress(new Uint8Array(fs.readFileSync(logArg())));
 const raw = reader.read(buf);
 const dense = new Map();
 for (const s of raw.values()) { for (const [p, c] of s.cols) dense.set(s.name + p, Array.from(c.v)); dense.set(s.name + (s.cols.has("/valid") ? "/_valid" : "/valid"), Array.from(s.valid)); }
-const {services} = compact(reader.read(buf));
+const services = compact(reader.read(buf));
 let bad = 0, n = 0;
 for (const [name, s] of Object.entries(services)) for (const [p, c] of Object.entries(s.cols)) {
   n++;

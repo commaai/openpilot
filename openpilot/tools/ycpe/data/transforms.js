@@ -1,6 +1,7 @@
 // series math off the main thread: transforms, statistics, CSV, XY pairs and spectra. This module is both
 // the main-side API and, loaded as a module worker, the worker itself. The worker keeps the chunks of each
 // series it has seen and their concatenation, so a chunk crosses threads once.
+import {upperBound} from "./bounds.js";
 import {client} from "./rpc.js";
 
 // transform kinds: fn(t, v, param, inputs) → {t, v}; `inputs` are extra series resampled to t
@@ -126,16 +127,6 @@ export function concat(chunks) {
   return {t: t.subarray(0, k), v: text ? v.slice(0, k) : v.subarray(0, k)};
 }
 
-// first k with t[k] > x
-function upper(t, x) {
-  let lo = 0, hi = t.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (t[mid] <= x) lo = mid + 1; else hi = mid;
-  }
-  return lo;
-}
-
 // v resampled onto ref with sample-and-hold (the first value before the series starts)
 export function resample(ref, t, v) {
   const out = new Float64Array(ref.length);
@@ -151,9 +142,9 @@ const MAX_FFT = 65536;  // samples a spectrum is computed from at most
 
 // sample index range [a, b) of s over [t0, t1]
 function range(s, t0, t1) {
-  let a = upper(s.t, t0);
+  let a = upperBound(s.t, t0);
   while (a > 0 && s.t[a - 1] === t0) a--;
-  return [a, upper(s.t, t1)];
+  return [a, upperBound(s.t, t1)];
 }
 
 const ops = {

@@ -20,8 +20,7 @@ DONGLE_FILE = "../../../params/d/DongleId"  # from realdata: /data/params/d/Dong
 SEG_DIR = re.compile(rf"^{RE.LOG_ID}--(?P<seg>\d+)\Z")  # LOG_ID is the log_id group
 
 module("device", "1")
-_lock = threading.Lock()
-settings = {"host": None, "key": None}  # host and key set from the page win over serve.py's
+settings = {"host": None}  # a host set from the page wins over serve.py's
 
 
 def realdata() -> str:
@@ -39,10 +38,9 @@ def host() -> str:
 
 def ssh(remote: str) -> list[str]:
   """argv running remote on the device. One master connection per host is reused for 60 s."""
-  key = settings["key"] or config.device_key
   return ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=accept-new",
           "-o", "ControlMaster=auto", "-o", f"ControlPath=/tmp/ycpe-ssh-{os.getuid()}-%C", "-o", "ControlPersist=60",
-          *(["-i", key] if key else []), "-p", "22", host(), remote]
+          *(["-i", config.device_key] if config.device_key else []), "-p", "22", host(), remote]
 
 
 def run(remote: str, timeout: float = 20) -> str:
@@ -92,16 +90,11 @@ def device_info(req):
 
 @route("POST", "/local/device")
 def device_config(req):
-  """Body {host, key?}: the device to use until the daemon restarts."""
-  body = req.json() or {}
-  h = str(body.get("host") or "")
+  """Body {host}: the device to use until the daemon restarts."""
+  h = str((req.json() or {}).get("host") or "")
   if not HOST.match(h):
     raise HTTPError(400, "bad device host")
-  key = body.get("key")
-  if key is not None and (not isinstance(key, str) or not os.path.isfile(os.path.expanduser(key))):
-    raise HTTPError(400, "no such key file")
-  with _lock:
-    settings["host"], settings["key"] = h, key and os.path.expanduser(key)
+  settings["host"] = h
   return device_info(req)
 
 

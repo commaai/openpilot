@@ -86,9 +86,7 @@ const daemonOnly = async () => {
 
 // commaCarSegments (comma_car_segments.py): a route's directory listing in one request, then one LFS batch call for
 // the download URLs of the files asked for. Both answer CORS for any origin (raw/ only for some).
-const ccsRepo = () => setting("ycpe_ccs_repo") || "https://huggingface.co/datasets/commaai/commaCarSegments";
-const ccsBranch = () => setting("ycpe_ccs_branch") || "main";
-const ccsLfs = () => setting("ycpe_ccs_lfs") || ccsRepo();
+const CCS = "https://huggingface.co/datasets/commaai/commaCarSegments";
 
 // "<n>/<file>" → {size, lfs: {oid, size} | undefined}; empty when the route isn't in the dataset
 const ccsTrees = new Map();
@@ -97,7 +95,7 @@ function ccsTree(sr) {
   return ccsTrees.get(sr.route);
 }
 async function listCcs(sr) {
-  const api = `${ccsRepo().replace("huggingface.co/", "huggingface.co/api/")}`, dir = `segments/${sr.dongle}/${sr.logId}`;
+  const api = CCS.replace("huggingface.co/", "huggingface.co/api/"), dir = `segments/${sr.dongle}/${sr.logId}`;
   const get = (url, opts) => fetch(url, opts).then((r) => {
     if (!r.ok) throw new Error(`huggingface.co ${r.status}`);
     return r.json();
@@ -105,13 +103,13 @@ async function listCcs(sr) {
     throw new Error("huggingface.co isn't reachable");
   });
   // whether the route is there at all (an empty answer, where the tree would 404 into the console)
-  if (!(await get(`${api}/paths-info/${ccsBranch()}`, {method: "POST", body: new URLSearchParams({paths: dir})})).length) return new Map();
-  const tree = await get(`${api}/tree/${ccsBranch()}/${dir}?recursive=true`);
+  if (!(await get(`${api}/paths-info/main`, {method: "POST", body: new URLSearchParams({paths: dir})})).length) return new Map();
+  const tree = await get(`${api}/tree/main/${dir}?recursive=true`);
   return new Map(tree.filter((e) => e.type === "file").map((e) => [e.path.split("/").slice(-2).join("/"), e]));
 }
 
 async function lfsUrls(objects) {
-  const r = await fetch(`${ccsLfs()}.git/info/lfs/objects/batch`, {
+  const r = await fetch(`${CCS}.git/info/lfs/objects/batch`, {
     method: "POST",
     headers: {"Accept": "application/vnd.git-lfs+json", "Content-Type": "application/vnd.git-lfs+json"},
     body: JSON.stringify({operation: "download", transfers: ["basic"], hash_algo: "sha256", objects}),
@@ -151,7 +149,7 @@ export const SOURCES = {
         if (!file) continue;
         const {size, lfs} = tree.get(`${n}/${file}`);
         // a file not in LFS yet is served raw
-        found.set(n, {url: lfs ? null : `${ccsRepo()}/raw/${ccsBranch()}/segments/${sr.dongle}/${sr.logId}/${n}/${file}`, file, size: lfs?.size ?? size, lfs});
+        found.set(n, {url: lfs ? null : `${CCS}/raw/main/segments/${sr.dongle}/${sr.logId}/${n}/${file}`, file, size: lfs?.size ?? size, lfs});
       }
       const pointers = [...found.values()].filter((f) => f.lfs);
       const hrefs = pointers.length ? await lfsUrls(pointers.map(({lfs}) => ({oid: lfs.oid, size: lfs.size}))) : new Map();

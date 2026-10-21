@@ -1,3 +1,5 @@
+import {icon} from "./icons.js";
+
 // attributes that take "true"/"false" rather than being present or absent
 const ENUMERATED = new Set(["draggable", "contenteditable", "spellcheck"]);
 
@@ -24,6 +26,37 @@ export function listeners() {
   };
 }
 
+// obj's state and detail, as a live source has them: the returned set(state, detail) changes them and calls
+// obj.on("state", fn)'s fns with them; obj has no other events
+export function stateful(obj) {
+  const subs = listeners();
+  obj.on = (event, fn) => event === "state" ? subs.on(fn) : () => {};
+  return (state, detail = "") => {
+    if (obj.state === state && obj.detail === detail) return;
+    Object.assign(obj, {state, detail});
+    subs.emit(state, detail);
+  };
+}
+
+// async fn, one call in flight: calls meanwhile make one more once it's done, with the newest arguments
+export function latest(fn) {
+  let busy = false, next = null;
+  return async (...args) => {
+    next = args;
+    if (busy) return;
+    busy = true;
+    try {
+      while (next) {
+        const now = next;
+        next = null;
+        await fn(...now);
+      }
+    } finally {
+      busy = false;
+    }
+  };
+}
+
 // confirm(), in the theme (the browser's own dialog ignores it, see style.css): resolves with whether ok was chosen
 export function ask(text, ok = "OK", cancel = "Cancel") {
   return new Promise((done) => {
@@ -35,9 +68,75 @@ export function ask(text, ok = "OK", cancel = "Cancel") {
   });
 }
 
-export function clear(el) {
-  el.replaceChildren();
+// a note over the page: gone after 3 s, or, with an action ([label, fn]), up until the page goes
+export function toast(text, action = null) {
+  const el = h("div", {class: "toast", role: action ? "alert" : "status"}, text, action && h("button", {class: "button small", onclick: action[1]}, action[0]));
+  document.body.append(el);
+  if (!action) setTimeout(() => el.remove(), 3000);
+}
+
+// a modal <dialog> of attrs and children, shown. Escape or a click beside its content closes it, unless busy() says not
+// now; once closed it's removed, then onclose runs
+export function openModal({onclose, busy, ...attrs}, ...children) {
+  const el = h("dialog", {...attrs, oncancel: (e) => busy?.() && e.preventDefault(), onclose: () => { el.remove(); onclose?.(); },
+    onclick: (e) => { if (e.target === el && !busy?.()) el.close(); }}, ...children);
+  document.body.append(el);
+  el.showModal();
   return el;
+}
+
+// a top-bar button's panel. A click opens one, make(close) → {el, focus, update, closed}: its element, what takes the
+// focus, what refreshes it, what it lets go of once closed. Another click closes it, as do close(), Escape (the focus
+// back on the button) and, if light, a press outside. placed: under the button, but on screen
+export function anchoredPanel(button, make, {light = true, placed = true} = {}) {
+  let open = null;
+  const escape = (e) => { if (e.key === "Escape") { close(); button.focus(); } };
+  const outside = (e) => { if (!open.el.contains(e.target) && !button.contains(e.target)) close(); };
+  function close() {
+    if (!open) return;
+    open.el.remove();
+    open.closed?.();
+    open = null;
+    document.removeEventListener("keydown", escape);
+    document.removeEventListener("pointerdown", outside);
+    button.setAttribute("aria-expanded", "false");
+  }
+  button.setAttribute("aria-expanded", "false");
+  button.addEventListener("click", () => {
+    if (open) return close();
+    const p = open = make(close), r = placed && button.getBoundingClientRect();
+    if (r) Object.assign(p.el.style, {top: `${r.bottom + 6}px`, width: "min(420px, calc(100vw - 16px))"});
+    document.body.append(p.el);
+    if (r) p.el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - p.el.offsetWidth - 8))}px`;
+    if (light) setTimeout(() => { if (open === p) document.addEventListener("pointerdown", outside); });  // not the press that opened it
+    document.addEventListener("keydown", escape);
+    button.setAttribute("aria-expanded", "true");
+    p.focus.focus();
+    p.update?.();
+  });
+  return {update: () => open?.update?.()};
+}
+
+// data (a Blob, or text) saved as file name; its URL is let go after keep ms
+export function download(data, name, keep = 1000) {
+  const a = h("a", {href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type: "text/plain"})), download: name});
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), keep);
+}
+
+// an icon button that copies text() and says whether it could; in a summary, it doesn't toggle it
+export function copyButton(text, label = "Copy", size = 16) {
+  const btn = h("button", {class: "icon-btn", title: label, "aria-label": label, onclick: async (e) => {
+    e.preventDefault();
+    const ok = await navigator.clipboard.writeText(text()).then(() => true, () => false);
+    btn.title = ok ? "Copied" : "Couldn't copy: the clipboard was denied";
+    btn.replaceChildren(icon(ok ? "check" : "warning", size));
+    setTimeout(() => {
+      btn.title = label;
+      btn.replaceChildren(icon("copy", size));
+    }, 1500);
+  }}, icon("copy", size));
+  return btn;
 }
 
 export const fmt = {

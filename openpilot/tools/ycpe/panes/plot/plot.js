@@ -4,7 +4,7 @@
 // O(pixels): curves come from store.decimate (cached on a bucket grid, so a pan only decimates the newly
 // exposed edge) and state blocks from cached runs. A redraw that doesn't fit the frame's budget is stroked over a
 // few frames on a back canvas, which then takes the base's place.
-import {h} from "/dom.js";
+import {h, download} from "/dom.js";
 import {icon} from "/icons.js";
 import {colors, fitCanvas, ticks, axes, fmtTick, fmtTime, fmtValue, strokeSeries, drawBlocks, drawUnloaded, nextColor, ellipsize} from "./draw.js";
 import {blocks} from "./blocks.js";
@@ -13,7 +13,7 @@ import * as view from "./view.js";
 import {menu, popup, curveEditor, close as closeMenu} from "./menu.js";
 import {TRANSFORMS, derivedPath, derive, compute, transformInputs, lease} from "/data/transforms.js";
 import {evaluate, lease as leaseCustom} from "/data/custom.js";
-import {download, exportPng} from "./export.js";
+import {exportPng} from "./export.js";
 import {openConsole} from "./console.js";
 import {customsOf, plots, specKey} from "/layouts/import.js";
 

@@ -54,7 +54,7 @@ os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs
 from openpilot.tools.ycpe.daemon.core import HTTPError, config
-from openpilot.tools.ycpe.daemon.tests.common import DaemonCase
+from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.lib import filereader
 
 filereader.DATA_ENDPOINT = os.environ["DATA_ENDPOINT"]  # in case filereader was imported before the env was set
@@ -103,10 +103,7 @@ class TestSources(DaemonCase):
     r, data = self.req(url)
     self.assertEqual((r.status, data), (200, blob(1, "rlog.zst")))
     canonical = cache.canonical_url("internal", cache.Key(DONGLE, LOG, 1, "rlog.zst"))
-    for _ in range(50):
-      if (Path(CACHE) / f"{hash_url(canonical)}_length").exists():
-        break
-      time.sleep(0.02)
+    until(lambda: (Path(CACHE) / f"{hash_url(canonical)}_length").exists(), 1)
     self.assertTrue((Path(CACHE) / cache.sha(canonical)).is_file())
     hits = cache.stats["hits"]
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
@@ -174,10 +171,7 @@ class TestSources(DaemonCase):
       cache.evict(cache.Key(DONGLE, LOG, seg, "qcamera.ts"))
     job = self.json("/local/cache/prefetch", {"route": ROUTE, "segs": [0, 1], "kinds": ["qcamera"], "sources": ONLY})
     j = jobs.get(job["id"])
-    for _ in range(200):
-      if j.state != "running":
-        break
-      time.sleep(0.02)
+    until(lambda: j.state != "running", 4)
     self.assertEqual(j.state, "done", j.error)
     self.assertEqual(j.meta["segs"], {"0": "disk", "1": "disk"})
     stats = self.json(f"/local/cache?route={ROUTE}&segs=2")
@@ -239,10 +233,7 @@ class TestSources(DaemonCase):
     url = f"/local/file/internal{rel}"
     self.assertEqual(self.req(url)[1], old)  # miss: downloaded, and counts as just checked
     key = cache.Key(DONGLE, LOG, 5, "fcamera.hevc")
-    for _ in range(100):
-      if cache.lookup(key):
-        break
-      time.sleep(0.01)
+    until(lambda: cache.lookup(key), 1)
     heads = Upstream.heads.get(rel, 0)
     self.assertEqual(self.req(url)[1], old)
     time.sleep(0.1)
@@ -254,11 +245,8 @@ class TestSources(DaemonCase):
     stale = cache.stats["stale"]
     r, data = self.req(url)
     self.assertEqual(data, old)  # a hit never waits on the check
-    for _ in range(200):
-      r, data = self.req(url)
-      if data == new:
-        break
-      time.sleep(0.01)
+    until(lambda: self.req(url)[1] == new, 2)
+    r, data = self.req(url)
     self.assertEqual((data, r.getheader("X-Ycpe-Cache")), (new, "hit"))
     self.assertEqual((cache.stats["stale"], Upstream.heads.get(rel, 0)), (stale + 1, heads + 1))
     self.req(url)

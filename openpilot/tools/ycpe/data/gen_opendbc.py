@@ -5,7 +5,6 @@ import json
 import sys
 from pathlib import Path
 
-from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.values import PLATFORMS
 from opendbc.dbc.generator.generator import generate_all
 
@@ -14,13 +13,12 @@ SRC = Path(generate_all.__code__.co_filename).parents[1]
 
 
 def fingerprints() -> dict[str, dict[str, str]]:
-  out = {p.name: dict(sorted(p.config.dbc_dict.items())) for p in PLATFORMS.values() if p.config.dbc_dict}
-  out.update({old: out[new] for old, new in MIGRATION.items() if new in out})
-  return dict(sorted(out.items()))
+  return dict(sorted((p.name, dict(sorted(p.config.dbc_dict.items()))) for p in PLATFORMS.values() if p.config.dbc_dict))
 
 
 if __name__ == "__main__":
-  (HERE / "opendbc.json").write_text(json.dumps(fingerprints(), indent=1) + "\n")
+  # one car per line
+  (HERE / "opendbc.json").write_text("{\n" + ",\n".join(f"{json.dumps(k)}: {json.dumps(v)}" for k, v in fingerprints().items()) + "\n}\n")
   if len(sys.argv) > 1:
     out = Path(sys.argv[1])
     out.mkdir(exist_ok=True)

@@ -117,21 +117,6 @@
 @media (min-width: 521px) { .cn-referrals { width: calc(100% - 48px); } }
 @media (min-width: 1081px) { .cn-referrals { margin-inline: 24px; } }
 
-/* user mode's: connect's Notification over the map's top right */
-.cn-promo-slot { position: relative; z-index: 4; height: 0; }
-.cn-promo { position: absolute; top: 8px; right: 10px; box-sizing: border-box; width: 360px; padding: 12px 16px; border: 1px solid #303639; border-radius: 22px;
-  background: #424a4f; color: #fff; font: 400 16px/24px "Inter", sans-serif; }
-.cn-promo p { margin: 0; color: rgba(255,255,255,.9); font-size: 14px; line-height: 1.46429; }
-.cn-promo-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
-.cn-promo-head p { color: #fff; font-size: 20px; font-weight: 600; line-height: 31px; }
-.cn-promo-head a { box-sizing: border-box; min-width: 90px; margin-left: 8px; padding: 6px 24px; border-radius: 15px; background: #5e8bff; color: #fff;
-  font-size: 14px; font-weight: 500; line-height: 1.4; text-align: center; text-decoration: none; }
-.cn-promo-head a:hover { background: #547de6; }
-.cn-promo-x { position: absolute; top: -8px; left: -6px; display: grid; place-items: center; box-sizing: border-box; width: 24px; height: 24px; padding: 5px;
-  border: 1px solid #394044; border-radius: 12px; background: #1e2224; color: #fff; cursor: pointer; }
-.cn-promo-x:hover { background: #303639; }
-@media (max-width: 599px) { .cn-promo { left: 8px; width: auto; } }
-
 /* a card over the device page's top right, as connect's promotions sit over its map; scrolls away with the page */
 .ref-promo-slot { position: relative; z-index: 5; max-width: 1280px; height: 0; margin: 0 auto; }
 .ref-promo { position: absolute; top: 10px; right: 16px; display: flex; align-items: center; gap: 10px; width: 340px; padding: 10px 8px 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); box-shadow: var(--shadow); }

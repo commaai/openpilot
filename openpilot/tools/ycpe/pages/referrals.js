@@ -1,12 +1,13 @@
 // referrals, as connect has them: the share link, what's been earned, claiming by email; the top bar's gift and the
 // device page's "refer a friend" card for owners
 import {api, auth} from "../api.js";
-import {h, css} from "../dom.js";
+import {h, css, copyButton} from "../dom.js";
 import {icon} from "../icons.js";
+import {cnIcon} from "./connect/icons.js";
 import {REFERRALS_SEEN, link} from "../app.js";
-import {copyButton} from "./account.js";
 import {signInCard} from "./login.js";
 import {mode} from "./connect/mode.js";
+import {promo} from "./cnui.js";
 
 const REFER = "https://refer.comma.ai";
 const TERMS = "https://comma.ai/terms#referral-terms";
@@ -68,7 +69,6 @@ function rewardsSection(summary, me) {
 
 // ---- user mode: connect's page, its markup and copy ----
 
-const COPY = "M180-81q-24 0-42-18t-18-42v-603h60v603h474v60H180Zm120-120q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h440q24 0 42 18t18 42v560q0 24-18 42t-42 18H300Zm0-60h440v-560H300v560Zm0 0v-560 560Z";
 const ring = (size, label) => h("span", {class: "cn-ref-ring", style: `--size: ${size}px`, role: "progressbar", "aria-label": label});
 const terms = (text) => h("a", {href: TERMS, target: "_blank", rel: "noopener noreferrer"}, text);
 
@@ -102,7 +102,7 @@ function connectReferrals(me) {
         : !error && hide(h("div", {},
           h("button", {type: "button", class: "cn-ref-white", disabled: !summary, onclick: shareLink}, h("span", {}, status || "share your link")),
           h("div", {class: "cn-ref-link"}, h("span", {}, summary ? url() : ""),
-            h("button", {type: "button", "aria-label": "Copy referral link", onclick: copy}, glyph(COPY))))),
+            h("button", {type: "button", "aria-label": "Copy referral link", onclick: copy}, cnIcon("copy", 14))))),
       !summary && !error && h("div", {class: "cn-ref-loading"}, ring(28, "Loading referral link")),
       error && h("p", {class: "cn-ref-unavailable"}, "Your share link is unavailable.")].filter(Boolean));
     const available = (summary?.referrals || []).filter((r) => r.status === "available");
@@ -154,13 +154,6 @@ function claimLink(href, label) {
   return a;
 }
 
-function glyph(d) {
-  const svg = icon("copy", 14);
-  svg.setAttribute("viewBox", "0 -960 960 960");
-  svg.firstChild.setAttribute("d", d);
-  return svg;
-}
-
 export async function referralsPage(me) {
   await css(new URL("./account.css", import.meta.url));
   localStorage.setItem(REFERRALS_SEEN, "1");
@@ -193,14 +186,11 @@ export async function referralPromo(device) {
     localStorage.setItem(PROMO_KEY, "1");
     el.remove();
   };
-  // user mode: connect's Notification, over the map's top right
+  // user mode: connect's Notification
   if (mode() === "user") {
-    el = h("div", {class: "cn-promo-slot"}, h("aside", {class: "cn-promo", "aria-label": "Referral promotion"},
-      h("button", {class: "cn-promo-x", "aria-label": "Dismiss referral promotion", onclick: dismiss}, icon("close", 12)),
-      h("div", {class: "cn-promo-head"}, h("p", {}, "Refer a friend. Get $50."),
-        h("a", {href: "/connect/referrals", onclick: (e) => { dismiss(); link("/connect/referrals")(e); }}, "refer")),
-      h("p", {}, "Earn $50 for each comma four purchased with your referral link.")));
-    return el;
+    return el = promo("Referral promotion", "Refer a friend. Get $50.",
+      h("a", {href: "/connect/referrals", onclick: (e) => { dismiss(); link("/connect/referrals")(e); }}, "refer"),
+      "Earn $50 for each comma four purchased with your referral link.", dismiss);
   }
   el = h("div", {class: "ref-promo-slot"}, h("aside", {class: "ref-promo", "aria-label": "Referral promotion"},
     h("div", {}, h("b", {}, "Refer a friend. Get $50."), h("p", {class: "small muted"}, "Earn $50 for each comma four bought with your referral link.")),

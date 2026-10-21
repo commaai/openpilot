@@ -5,6 +5,7 @@ import {U8, U32, list} from "./capnp.js";
 import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
 import {parseRemote, upstream as github} from "./github.js";
 import {client, serve} from "./rpc.js";
+import {latest} from "../dom.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -427,7 +428,6 @@ if (import.meta.url.endsWith("?worker")) {
     findUndo: () => { if (find.history.length > 1) find.history.pop(); return find.history.at(-1).slice(0, 300); },
     findCount: () => find.history.at(-1)?.length || 0,
     csv: ({keys, t0, t1, msg}) => csv(keys, t0, t1, msg),
-    memory: () => segs.reduce((b, s) => b + s.t.byteLength + s.len.byteLength + s.data.byteLength + s.keys.byteLength * 4, 0),
   };
   serve(ops);
 }
@@ -459,7 +459,6 @@ export class Can {
     this.live = null;
     this.failed = null;  // why the CAN worker failed, if it did
     this.bytes = 0;
-    this.budget = BUDGET;
     this.resident = new Map();  // segment -> its bytes in the worker
     this.counted = new Map();  // segment -> what it added to msgs: key -> [frames, t0, t1]
     this.evicted = new Set();
@@ -541,7 +540,7 @@ export class Can {
   evict() {
     const far = (n) => Math.abs(n - this.at);
     for (const n of [...this.resident.keys()].filter((n) => far(n) > 1).sort((a, b) => far(b) - far(a))) {
-      if (this.bytes <= this.budget * 0.9) break;
+      if (this.bytes <= BUDGET * 0.9) break;
       this.bytes -= this.resident.get(n);
       this.resident.delete(n);
       this.evicted.add(n);
@@ -619,17 +618,15 @@ export class Can {
   requestState(t) {
     this.at = this.store.route?.segments.find((s) => t >= s.t0 && t < s.t1)?.n ?? this.at;
     for (const n of [this.at - 1, this.at, this.at + 1]) this.reload(n);
-    if (this.stateBusy) { this.stateNext = t; return; }
-    this.stateBusy = true;
-    this.call("state", {t}).then((r) => {
-      this.live = r;
-      r.index = new Map(Array.from(r.keys, (k, j) => [k, j]));
-      r.t = t;
-      this.stateBusy = false;
-      this.emit("live", r);
-      if (this.stateNext !== undefined) { const n = this.stateNext; this.stateNext = undefined; this.requestState(n); }
-    });
+    this.fetchState(t);
   }
+  fetchState = latest(async (t) => {
+    const r = await this.call("state", {t});
+    r.index = new Map(Array.from(r.keys, (k, j) => [k, j]));
+    r.t = t;
+    this.live = r;
+    this.emit("live", r);
+  });
 
   frames(k, t, n = 200, filters = null) { return this.call("frames", {k, t, n, msg: filters?.length ? plain(this.dbcMsg(k)) : null, filters}); }
   heatmap(k, t0, t1) { return this.call("heatmap", {k, t0, t1}); }
@@ -702,11 +699,13 @@ export class Can {
     };
   }
 
-  // opendbc's DBC names and the fingerprint → DBC map
+  // opendbc's DBC names and a fingerprint's DBCs. opendbc.json knows each car by its current name; a log read with its
+  // own schema can have an older one, which migrate.json renames
   async opendbc() {
-    this.index ||= fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json());
-    const [fingerprints, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
-    return {fingerprints, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
+    this.index ||= Promise.all([fetch(new URL("./opendbc.json", import.meta.url)).then((r) => r.json()), import("./migrate.json", {with: {type: "json"}})])
+      .then(([cars, {default: {fingerprints: renamed}}]) => (fp) => cars[renamed[fp] ?? fp]);
+    const [dbcsOf, src, local] = await Promise.all([this.index, this.upstream(), this.local()]);
+    return {dbcsOf, files: [...new Set([...src?.names || [], ...local?.names || []])].sort(), label: src?.co.label, local: local?.dir};
   }
 
   // opendbc from GitHub at the log's openpilot commit, so DBCs match the car code that ran; else opendbc master. The
@@ -775,7 +774,7 @@ export class Can {
     const fp = this.store.valueAt?.("/carParams/carFingerprint", Infinity);
     if (!fp) return;
     this.fingerprinted = fp;
-    const dbcs = (await this.opendbc()).fingerprints[fp];
+    const dbcs = (await this.opendbc()).dbcsOf(fp);
     const name = carDbc(dbcs), radar = dbcs?.radar !== name && dbcs?.radar;
     if (!name || this.dbcs.all().length) return;
     const fail = (name) => (e) => {

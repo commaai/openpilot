@@ -2,11 +2,7 @@
 .can-pane { display: flex; flex-direction: column; min-height: 0; font-size: 12px; outline: none; }
 .can-pane:focus-visible, .can-sig-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .can-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
-.can-spacer { flex: 1; }
-.can-muted { color: var(--muted); }
 .can-notice { padding: 2px 6px; border-bottom: 1px solid var(--line); }
-.can-mono { font-family: var(--mono); }
-.can-error { color: var(--critical-fg); }
 .can-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .can-btn { height: 20px; padding: 0 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); cursor: pointer; white-space: nowrap; }
 .can-btn:hover:not(:disabled) { border-color: var(--accent); }
@@ -29,7 +25,6 @@
 .can-select, .can-filter { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-filter { width: 110px; }
 .can-empty { padding: 16px; color: var(--muted); text-align: center; }
-/* hidden wins over the flex and grid rows */
 .can-comment { width: 100%; color: var(--muted); white-space: pre-wrap; }
 
 /* messages */
@@ -66,8 +61,7 @@
 .can-msg-row.selected { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
 .can-msg-row.inactive { color: var(--muted); }
 .can-msg-row .can-col-id, .can-msg-row .can-col-bytes { font-family: var(--mono); }
-.can-col-bytes span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
-.can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
+.can-col-bytes span, .can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
 /* byte changes: up, down, periodic; --a fades from 1 to 0 over two seconds */
 .can-chg1, .can-chg2, .can-chg3 { background: color-mix(in srgb, var(--c) calc(var(--a) * 55%), transparent); }
 .can-chg1 { --c: var(--accent); } .can-chg2 { --c: var(--critical); } .can-chg3 { --c: var(--muted); }
@@ -94,8 +88,8 @@
 .can-field > span:first-child { flex: 0 0 64px; color: var(--muted); }
 .can-field input:not([type=checkbox]), .can-field select, .can-field textarea { flex: 1; min-width: 0; height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
 .can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
-.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1), .can-sig-editor .can-error { grid-column: 1 / -1; }
-.can-sig-editor .can-error:empty { display: none; }
+.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1), .can-sig-editor .error { grid-column: 1 / -1; }
+.can-sig-editor .error:empty { display: none; }
 /* narrow panes: no sparklines (as cabana's compact layout), and the editor in one column */
 .can-signals { container-type: inline-size; }
 @container (max-width: 360px) {
@@ -154,7 +148,7 @@
 .can-col-flex { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .can-list { height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 4px; }
 .can-recent { height: auto; max-height: 110px; flex-shrink: 0; }
-.can-recent > .can-muted { padding: 2px 6px; }
+.can-recent > .muted { padding: 2px 6px; }
 .can-list-row { display: block; width: 100%; padding: 3px 6px; border: 0; background: none; text-align: left; cursor: pointer; }
 .can-list-row:hover { background: var(--hover); }
 .can-paste { flex: 1; min-height: 200px; padding: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 11px var(--mono); resize: none; }

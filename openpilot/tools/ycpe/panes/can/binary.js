@@ -1,5 +1,5 @@
 // cabana's binary view: the selected message's bits with a flip heatmap, signal overlays, and drag to create or resize
-import {h, fitCanvas} from "/dom.js";
+import {fitCanvas, h, latest} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, flip, format, raw, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
@@ -33,7 +33,7 @@ export function create(ctx, state) {
   // back to the list, where a phone stacks the panes (can.css shows it there)
   const backBtn = h("button", {class: "can-icon can-back", title: "Back to the messages", onclick: () => reveal(el, "can-messages")}, icon("back", 14));
   // no toolbar until a message is selected: the empty hint says it
-  const bar = h("div", {class: "can-toolbar", hidden: true}, backBtn, title, h("span", {class: "can-spacer"}), "heatmap", modeBtn, dirBtn);
+  const bar = h("div", {class: "can-toolbar", hidden: true}, backBtn, title, h("span", {class: "grow"}), "heatmap", modeBtn, dirBtn);
   const el = h("div", {class: "can-pane can-binary", tabindex: 0}, bar, scroller, info);
 
   const k = () => can.selected;
@@ -64,18 +64,13 @@ export function create(ctx, state) {
     return cells;
   }
 
-  let heatBusy = false, heatAgain = false;
-  async function requestHeat() {
+  const requestHeat = latest(async () => {
     if (k() === null || mode === "off") return ctx.perf.invalidate(pane);
-    if (heatBusy) { heatAgain = true; return; }
-    heatBusy = true;
     const want = k(), [t0, t1] = mode === "live" ? [-Infinity, ctx.clock.t] : ctx.clock.range;
     heat = await can.heatmap(want, t0, t1);
     heatKey = want;
-    heatBusy = false;
     ctx.perf.invalidate(pane);
-    if (heatAgain) { heatAgain = false; requestHeat(); }
-  }
+  });
 
   function geometry() {
     const w = width, col = Math.max(24, Math.floor(w / 10));

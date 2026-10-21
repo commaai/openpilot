@@ -5,6 +5,5 @@
   {"waitFor": {"fn": "!!document.querySelector('.load-pill.done')"}},
   {"shot": "light"},
   {"key": "t"},
-  {"wait": 300},
   {"shot": "dark"}
  ]}

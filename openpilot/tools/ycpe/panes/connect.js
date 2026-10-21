@@ -3,9 +3,9 @@
 // zoom into a range), Video | Map toggles, Files and More info menus (connect-menus.js), the camera or map pane, and
 // connect's control pill. The camera and map panes are mounted here as the layout mounts them. Everything that moves
 // while scrubbing or playing is a transform or a changed text, set in one render through the frame scheduler
-import {SEGMENT, api, segmentAt} from "/api.js";
+import {SEGMENT, api, segmentAt, segmentAtTime} from "/api.js";
 import {h, css} from "/dom.js";
-import {icon} from "/icons.js";
+import {cnIcon} from "/pages/connect/icons.js";
 import {loadPane} from "/panes.js";
 import {link} from "/app.js";
 import {strip} from "./strip.js";
@@ -26,28 +26,6 @@ const DAY = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric"})
 const YEAR_DAY = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric"});
 const WEEKDAY = new Intl.DateTimeFormat(undefined, {weekday: "long"});
 
-// connect's own icons (its src/icons, MIT), where they differ from ours: [viewBox, path, rotation]
-const CHEVRON = "M16.8625817,0.35528597 C16.3546389,-0.125475313 15.550396,-0.125475313 15.0847818,0.398991541 L5.3492107,11.1068565 C4.88359643,11.6313233 4.88359643,12.4180236 5.3492107,12.8987849 L15.0847818,23.6066499 C15.3387532,23.8688833 15.6773817,24 16.0160103,24 C16.3123103,24 16.6509389,23.8688833 16.9049103,23.6503554 C17.4128531,23.1695941 17.4551817,22.3391883 16.9472388,21.8147214 L7.97358203,12.0246735 L16.9049103,2.19091996 C17.3705245,1.66645311 17.3705245,0.836047253 16.8625817,0.35528597 Z";
-const TEN = "M360-310v-212h-54v-49h104v261h-50Zm147 0q-18.7 0-31.35-12.65Q463-335.3 463-354v-173q0-18.7 12.65-31.35Q488.3-571 507-571h83q18.7 0 31.35 12.65Q634-545.7 634-527v173q0 18.7-12.65 31.35Q608.7-310 590-310h-83Zm6-50h71v-162h-71v162Z";
-const CN = {
-  back: ["0 -960 960 960", "M480-149 149-480l331-331 67 66-217 218h481v94H330l217 217-67 67Z"],
-  close: ["0 0 24 24", "m6.225 19.425-1.65-1.65L10.35 12 4.575 6.225l1.65-1.65L12 10.35l5.775-5.775 1.65 1.65L13.65 12l5.775 5.775-1.65 1.65L12 13.65l-5.775 5.775Z"],
-  play: ["0 -960 960 960", "M320-203v-560l440 280-440 280Z"],
-  pause: ["0 -960 960 960", "M555-200v-560h175v560H555Zm-325 0v-560h175v560H230Z"],
-  replay10: ["0 -960 960 960", `M480-80q-75 0-140.5-28T225-185q-49-49-77-114.5T120-440h60q0 125 87.32 212.5T480-140t212.68-87.32Q780-314.64 780-440t-85-212.68Q610-740 485-740h-22l73 73-42 42-147-147 147-147 41 41-78 78h23q75 0 140.5 28T735-695q49 49 77 114.5T840-440q0 75-28 140.5T735-185q-49 49-114.5 77T480-80Z${TEN}`],
-  forward10: ["0 -960 960 960", `${TEN}M480-80q-75 0-140.5-28T225-185q-49-49-77-114.5T120-440q0-75 28-140.5T225-695q49-49 114.5-77T480-800h21l-78-78 41-41 147 147-147 147-41-41 74-74h-17q-125.36 0-212.68 87.32Q180-565.36 180-440t87.32 212.68Q354.64-140 480-140t212.68-87.32Q780-314.64 780-440h60q0 75-28 140.5T735-185q-49 49-114.5 77T480-80Z`],
-  up: ["0 0 24 24", CHEVRON, 90],
-  down: ["0 0 24 24", CHEVRON, 270],
-};
-export function cnIcon(name, size) {
-  const [box, d, turn] = CN[name], svg = icon("play", size);
-  svg.setAttribute("viewBox", box);
-  const path = svg.firstChild;
-  path.setAttribute("d", d);
-  if (turn) path.setAttribute("transform", `rotate(${turn}, 12.3, 12)`);
-  return svg;
-}
-
 // connect's segmented buttons; set(key) shows which is on (null: none). The label's span is what connect's menus
 // open from
 function segmented(options, pick) {
@@ -65,7 +43,7 @@ export function create(ctx, state) {
 
   // the card's head: back out of a zoom, the times shown, close to the device (connect's buttons have no tooltips)
   const back = h("button", {class: "cn-icon", "aria-label": "Go Back", onclick: () => zoom(...(levels.pop() ?? [0, clock.duration]), false)},
-    cnIcon("back", 24));
+    cnIcon("backBold", 24));
   const weekday = h("span", {class: "cn-weekday"}), times = h("span");
   const close = h("a", {class: "cn-icon", href: `/connect/${dongle}`, onclick: (e) => link(close.getAttribute("href"))(e), "aria-label": "Close"},
     cnIcon("close", 24));
@@ -227,7 +205,7 @@ export function create(ctx, state) {
     thumbs.replaceChildren(...runs.map((r) => h("div", {style: `width:${THUMB * r.length}px;background-image:url(${api.segmentAsset(route, r.n, "sprite.jpg")});background-position-x:-${r.start * THUMB}px`})));
   }
 
-  const segmentOf = (t) => segmentAt(route, Math.min(Math.floor(t / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1));
+  const segmentOf = (t) => segmentAtTime(route, t, clock.duration);
   let shown = "", second = null, playing = null, rated = null;  // the range the strip and title show, the second the clock shows
   const pane = {name: "connect", el, resize() {}, save: () => ({media}), dispose,
     render() {

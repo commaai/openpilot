@@ -3,8 +3,8 @@
 // (?pair=<token>, that QR code opened with any phone camera) pairs in a dialog over the page it opens, and noDevices()
 // is connect's empty state. Loaded when needed: app.js imports it for a pair link or an account without devices.
 // In user mode all of it is connect's to the pixel (cnui.js); developer mode keeps the theme's
-import {api, auth} from "../api.js";
-import {h, css} from "../dom.js";
+import {api, auth, jwtClaims} from "../api.js";
+import {h, css, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 import {go, devicesChanged} from "../app.js";
 import {loginPath} from "./login.js";
@@ -38,13 +38,9 @@ function readQr(text) {
 
 // the dongle id the token pairs to this account. A token that doesn't name a device is caught here, as connect does
 async function pair({token, fromUrl}) {
-  let claims;
-  try {
-    claims = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-  } catch {
-    throw failure("invalid QR code, could not decode pair token");
-  }
-  if (!claims?.identity) throw failure("could not get identity from payload" + (fromUrl ? "" : ", make sure you are using openpilot 0.8.3 or newer"));
+  const claims = jwtClaims(token);
+  if (!claims) throw failure("invalid QR code, could not decode pair token");
+  if (!claims.identity) throw failure("could not get identity from payload" + (fromUrl ? "" : ", make sure you are using openpilot 0.8.3 or newer"));
   const resp = await api.pilotPair(token).catch((e) => { throw failure(REFUSED[e.status] ?? "unable to pair", true); });
   if (!resp.dongle_id) throw failure("could not pair", true);
   devicesChanged();  // the next page asks for the list, with the new device in it
@@ -68,14 +64,11 @@ function modal(title, caption, onclose) {
     paper.append(h("div", {class: "pair-title"}, h("h2", {}, title), caption && h("span", {}, caption)), h("hr"), body);
     return {el, body};
   }
-  const el = h("dialog", {class: "pair-dialog", "aria-label": title, autofocus: true, onclose: () => { el.remove(); onclose(); },
-    onclick: (e) => { if (e.target === el) el.close(); }},  // the dialog has no padding: only the backdrop is itself
-  h("div", {class: "pair-card"},
-    h("div", {class: "pair-head"}, h("h2", {}, title), caption && h("span", {class: "small muted"}, caption),
-      h("button", {class: "icon-btn", title: "Close", "aria-label": "Close", onclick: () => el.close()}, icon("close", 18))),
-    body));
-  document.body.append(el);
-  el.showModal();
+  const el = openModal({class: "pair-dialog", "aria-label": title, autofocus: true, onclose},  // no padding: only the backdrop is the dialog itself
+    h("div", {class: "pair-card"},
+      h("div", {class: "pair-head"}, h("h2", {}, title), caption && h("span", {class: "small muted"}, caption),
+        h("button", {class: "icon-btn", title: "Close", "aria-label": "Close", onclick: () => el.close()}, icon("close", 18))),
+      body));
   return {el, body};
 }
 
@@ -169,11 +162,11 @@ export async function openPair() {
   scan();
 }
 
-// the add-device entry point: connect's "add new device", optionally with its icon (the sidebar's row). In user mode
-// connect's white pill, a row (its icon shown) in the device list
-export const pairButton = (text = "add new device", withIcon = false) => userMode()
-  ? h("button", {class: `cnui-btn white pair-cn${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, cnIcon("add", 24))
-  : h("button", {class: `button pair-add${withIcon ? " row" : ""}`, onclick: () => openPair()}, text, withIcon && icon("add_circle_outline", 20));
+// the add-device entry point: connect's "add new device". In user mode connect's white pill, or a row (its icon
+// shown) in the device list
+export const pairButton = (text = "add new device", row = false) => userMode()
+  ? h("button", {class: `cnui-btn white pair-cn${row ? " row" : ""}`, onclick: () => openPair()}, text, cnIcon("add", 24))
+  : h("button", {class: "button pair-add", onclick: () => openPair()}, text);
 
 const STEPS = ["Your device is connected to the internet", "You have installed the latest version of openpilot", "You may need to look for \"Pair Device\" in Settings"];
 const ELSEWHERE = "If you still cannot see a QR code, your device may already be paired to another account. Make sure you have signed in with the same account you may have used previously.";

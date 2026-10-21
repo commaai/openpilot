@@ -1,11 +1,7 @@
 {"name": "device-owner", "url": "/", "auth": true, "timeout": 15000,
  "routes": [
-  {"url": "/v1\\.1/devices/0123456789abcdef/$", "file": "fixtures/fake-device.json"},
-  {"url": "/v1\\.1/devices/0123456789abcdef/stats$", "json": {"all": {"routes": 3, "distance": 30.6, "minutes": 46}, "week": {"routes": 2, "distance": 20.4, "minutes": 31}}},
-  {"url": "/v1/devices/0123456789abcdef/location$", "json": {"dongle_id": "0123456789abcdef", "lat": 32.8751, "lng": -117.21, "time": 1792430925000}},
-  {"url": "/v1/devices/0123456789abcdef/routes_segments", "file": "fixtures/fake-routes.json"},
+  {"preset": "device"},
   {"url": "/v1/devices/0123456789abcdef/routes/preserved$", "json": []},
-  {"url": "/v1/prime/subscription", "status": 404, "body": ""},
   {"url": "/v1/route/0123456789abcdef(\\||%7C)0000000[23]--[bc]{10}/preserve$", "json": {"success": 1}},
   {"url": "/v1/route/0123456789abcdef(\\||%7C)00000001--a{10}/preserve$", "status": 403, "body": "{\"error\": \"forbidden\"}"},
   {"url": "/local/athena/0123456789abcdef$", "file": "fixtures/fake-athena.json"}
@@ -70,9 +66,7 @@
   {"assert": "document.querySelector('.pubkey .mono').textContent.startsWith('MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE') || 'the public key shows its body'"},
   {"shot": "settings"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "settings-other-theme"},
   {"click": "button[data-tab=drives]"},
-  {"wait": 300},
   {"shot": "drives-other-theme"}
  ]}

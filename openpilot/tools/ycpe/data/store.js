@@ -4,6 +4,7 @@
 import {SEGMENT} from "../api.js";
 import {perf} from "../perf.js";
 import {status} from "../status.js";
+import {lowerBound, upperBound} from "./bounds.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
@@ -49,7 +50,7 @@ export class Store {
     this.unknown = {events: 0, services: new Set()};  // what the reads so far didn't know (capnp.js)
     this.bytes = 0;
     this.puts = 0;  // put() versions: a path's never repeat, even once dropped
-    this.progress = {done: 0, failed: 0, total: 0, bytes: 0, raw: 0, cached: 0, ms: {fetch: 0, decompress: 0, read: 0, ingest: 0}, ingestMax: 0, start: performance.now()};
+    this.progress = {done: 0, failed: 0, total: 0, ingestMax: 0};
     this.t = t;
     this.focusSeg = Math.floor(t / SEGMENT);
     this.received = [];  // [time, bytes] of recent downloads, for the rate
@@ -86,7 +87,7 @@ export class Store {
     this.progress.total++;
     this.load(seg, undefined, {can: this.withCan}).then((p) => {  // CAN frames come out of the first parse only
       if (p.cached || p.stored) this.disk[seg.key] = p.bytes;
-      this.count(p);
+      this.progress.done++;
       this.ingest(seg, p);
       if (p.can) this.can.ingest(seg.n, p.can, 0);
     }, (e) => this.failed(seg, e));
@@ -240,15 +241,6 @@ export class Store {
     for (const fn of this.handlers[event] || []) fn(arg);
   }
 
-  count(p) {
-    const pr = this.progress;
-    pr.done++;
-    pr.bytes += p.bytes;
-    pr.raw += p.raw;
-    pr.cached += p.cached;
-    for (const k in p.ms) pr.ms[k] += p.ms[k];
-  }
-
   // segments are still to load
   get loading() {
     const p = this.progress;
@@ -352,7 +344,6 @@ export class Store {
     this.publish(seg);
     this.pool();
     const ms = performance.now() - start;
-    this.progress.ms.ingest += ms;
     this.progress.ingestMax = Math.max(this.progress.ingestMax, ms);
     if (added) this.emit("paths");
     this.emit("segment", seg.n);
@@ -834,23 +825,4 @@ function overlapping(chunks, t0, t1) {
   let end = lo;
   while (end < chunks.length && !(chunks[end].tt[0] > t1)) end++;
   return chunks.slice(lo, end);
-}
-
-// first k in [lo, hi) with a[k] >= x
-function lowerBound(a, x, lo = 0, hi = a.length) {
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (a[mid] < x) lo = mid + 1; else hi = mid;
-  }
-  return lo;
-}
-
-// first k with a[k] > x
-function upperBound(a, x) {
-  let lo = 0, hi = a.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (a[mid] <= x) lo = mid + 1; else hi = mid;
-  }
-  return lo;
 }

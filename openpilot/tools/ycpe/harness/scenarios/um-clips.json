@@ -1,12 +1,9 @@
 {"name": "um-clips", "url": "/connect/0123456789abcdef", "mode": "user", "auth": true, "timeout": 15000,
  "routes": [
   {"url": "/v1/me/devices/$", "json": [{"dongle_id": "0123456789abcdef", "alias": "", "device_type": "threex", "openpilot_version": "0.11.2", "is_owner": true, "prime": true, "last_athena_ping": 4102444800}]},
+  {"preset": "device"},
   {"url": "/v1\\.1/devices/0123456789abcdef/$", "json": {"dongle_id": "0123456789abcdef", "alias": "", "device_type": "threex", "openpilot_version": "0.11.2",
    "is_owner": true, "is_paired": true, "prime": true, "last_athena_ping": 4102444800}},
-  {"url": "/v1\\.1/devices/0123456789abcdef/stats$", "json": {"all": {"routes": 3, "distance": 30.6, "minutes": 46}, "week": {"routes": 2, "distance": 20.4, "minutes": 31}}},
-  {"url": "/v1/devices/0123456789abcdef/location$", "json": {"dongle_id": "0123456789abcdef", "lat": 32.8751, "lng": -117.21, "time": 1792430925000}},
-  {"url": "/v1/devices/0123456789abcdef/routes_segments", "file": "fixtures/fake-routes.json"},
-  {"url": "/v1/prime/subscription", "status": 404, "body": ""},
   {"url": "ycpe-fixture\\.invalid/clip\\.mp4$", "file": "fixtures/clip.mp4"},
   {"url": "(/local/athena/|athena\\.comma\\.ai/)", "rpc": "getVersion", "json": {"id": 0, "jsonrpc": "2.0", "result": {"version": "0.11.2", "commit_date": "1760000000"}}},
   {"url": "(/local/athena/|athena\\.comma\\.ai/)", "rpc": "getMessage", "json": {"id": 0, "jsonrpc": "2.0", "result": {"peripheralState": {"voltage": 12412}}}},
@@ -23,10 +20,8 @@
   {"assert": "!document.querySelector('.clips-menu.um .clips-meta a') || 'user mode names the drive by its start, as connect, without a link'"},
   {"assert": "!!document.querySelector('.clips-menu.um .cnui-linear.busy') || 'the encoding clip shows connect\\'s indeterminate bar'"},
   {"assert": "(() => { const s = getComputedStyle(document.querySelector('.clips-menu.um')); return s.borderRadius === '4px' || s.borderRadius; })()"},
-  {"wait": 300},
   {"shot": "menu"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "menu-other-theme"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
 
@@ -45,7 +40,6 @@
   {"click": ".clips-clip[data-clip='commute_10x.mp4'] [aria-label='Download clip']"},
   {"waitFor": "dialog.clips-viewer.um[open] video"},
   {"assert": "(() => { const r = document.querySelector('.clips-viewer.um').getBoundingClientRect(); return r.width === 800 || r.width; })()"},
-  {"wait": 300},
   {"shot": "viewer"},
   {"click": ".clips-viewer [aria-label='Close video']"},
   {"waitFor": {"fn": "!document.querySelector('.clips-viewer')"}},
@@ -56,6 +50,5 @@
   {"click": ".clips-device"},
   {"waitFor": ".clips-menu.um[open] .clips-clip"},
   {"assert": "(() => { const r = document.querySelector('.clips-menu.um').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + .5 || JSON.stringify(r); })()"},
-  {"wait": 300},
   {"shot": "menu-phone"}
  ]}

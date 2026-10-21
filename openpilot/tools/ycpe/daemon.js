@@ -1,5 +1,7 @@
 // the optional local daemon (serve.py): present when index.html carries its session token. Everything works
 // without it; with it, features light up per module listed by /local/caps.
+import {toast} from "./dom.js";
+
 const AUTH_OFF = "ycpe_daemon_auth_off";  // set by signing out, so the daemon's JWT isn't picked up again
 const TOKEN_REFUSED = "missing or wrong token";  // daemon/core.py check_local's 403
 
@@ -81,15 +83,7 @@ export const daemon = {
 let stale = false;
 function staleToken() {
   stale = true;
-  const reload = document.createElement("button");
-  reload.className = "button small";
-  reload.textContent = "Reload";
-  reload.onclick = () => location.reload();
-  const el = document.createElement("div");
-  el.className = "toast";
-  el.role = "alert";
-  el.append("The local daemon restarted. Reload to reconnect. ", reload);
-  document.body.append(el);
+  toast("The local daemon restarted. Reload to reconnect. ", ["Reload", () => location.reload()]);
 }
 
 // the short note features show when they need the daemon

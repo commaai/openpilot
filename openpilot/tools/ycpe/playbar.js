@@ -3,7 +3,7 @@
 // nothing loaded at all is faded. A live session's timeline is its window, ending at the head of the data, with the
 // source's state, "Go live" (or that it's following) and saving the session as an rlog.
 import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
-import {h, fmt, css, parseClock, fitCanvas} from "/dom.js";
+import {h, fmt, css, parseClock, fitCanvas, download} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {theme} from "/theme.js";
@@ -88,10 +88,7 @@ export function playbar(ctx) {
   async function save() {
     saveBtn.disabled = true;
     try {
-      const blob = new Blob([await live.save()], {type: "application/octet-stream"});
-      const a = h("a", {href: URL.createObjectURL(blob), download: `${live.name.replace(/\W+/g, "_")}--rlog`});
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      download(new Blob([await live.save()], {type: "application/octet-stream"}), `${live.name.replace(/\W+/g, "_")}--rlog`);
     } finally {
       saveBtn.disabled = false;
     }

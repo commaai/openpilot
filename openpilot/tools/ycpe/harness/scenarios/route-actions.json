@@ -76,12 +76,10 @@
   {"waitFor": {"fn": "!document.querySelector('.cm-modal')"}},
   {"click": ".cn-option[data-key=info]"},
   {"waitFor": {"fn": "__toggle('Preserved')"}},
-  {"wait": 300},
   {"shot": "info-phone"},
   {"key": "Escape"},
   {"waitFor": {"fn": "!document.querySelector('.cm-modal')"}},
   {"click": ".cn-option[data-key=files]"},
   {"waitFor": {"fn": "__all('All logs')"}},
-  {"wait": 300},
   {"shot": "files-phone"}
  ]}

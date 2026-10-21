@@ -44,7 +44,7 @@ export function create(ctx, state) {
   const tools = h("div", {class: "can-toolbar"}, dbcBtn, undo, redo,
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
     clearBtn, h("button", {class: "can-btn", title: "Tools", "aria-haspopup": "menu", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, h("span", {}, "Tools"), icon("down", 14)),
-    h("span", {class: "can-spacer"}),
+    h("span", {class: "grow"}),
     h("button", {class: "can-btn", title: "Options", "aria-haspopup": "menu", onclick: (e) => popup(e.currentTarget, [
       menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
       menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
@@ -54,7 +54,7 @@ export function create(ctx, state) {
         (on ? shown : hidden).add(c.id);
         columns();
       }))])}, icon("more_horiz", 14)));
-  const notice = h("div", {class: "can-notice can-muted", hidden: true});
+  const notice = h("div", {class: "can-notice muted", hidden: true});
   // the arrow keys move the selection from anywhere in the pane; the selected row is its active descendant
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, role: "group", "aria-label": "CAN messages", onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));
 
@@ -202,7 +202,7 @@ export function create(ctx, state) {
         Object.assign(r, {key: m.key, live, version});
         COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], text(c, m, can)); });
         const dm = can.dbcMsg(m.key), named = !!dm;
-        if (r.named !== named) r.cells[0].classList.toggle("can-muted", !(r.named = named));
+        if (r.named !== named) r.cells[0].classList.toggle("muted", !(r.named = named));
         const tip = dm ? (dm.comment ? `${dm.name}\n${dm.comment}` : dm.name) : "";
         if (r.cells[0].title !== tip) r.cells[0].title = tip;
         // live bytes with change highlighting: up, down or periodic, fading over 2 s as in cabana

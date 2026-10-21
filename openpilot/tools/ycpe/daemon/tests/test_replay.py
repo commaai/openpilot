@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from openpilot.tools.ycpe.daemon import replay, replay_runner
-from openpilot.tools.ycpe.daemon.replay import Replay, commit, environment, missing
+from openpilot.tools.ycpe.daemon.replay import Replay, environment, missing
 
 # stands in for replay_runner.py: the same events, then whatever argv's "fail" asks for
 FAKE_RUNNER = textwrap.dedent("""
@@ -97,20 +97,6 @@ class TestCheckout(unittest.TestCase):
     python, env = environment(nested, self.dir / "shims")
     self.assertEqual(env["PYTHONPATH"], str(nested))
     self.assertEqual(python, sys.executable)
-
-  def test_commit_without_git(self):
-    root = checkout(self.dir / "repo")
-    git = root / ".git"
-    (git / "refs/heads").mkdir(parents=True)
-    (git / "HEAD").write_text("ref: refs/heads/master\n")
-    (git / "refs/heads/master").write_text("a" * 40 + "\n")
-    self.assertEqual(commit(root), "a" * 40)
-    (git / "refs/heads/master").unlink()
-    (git / "packed-refs").write_text(f"# pack-refs\n{'b' * 40} refs/heads/master\n")
-    self.assertEqual(commit(root), "b" * 40)
-    (git / "HEAD").write_text("c" * 40)
-    self.assertEqual(commit(root), "c" * 40)
-    self.assertIsNone(commit(self.dir / "nothing"))
 
 
 class TestReplay(unittest.TestCase):

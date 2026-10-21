@@ -1,10 +1,5 @@
 // file exports for the plot panes
-
-export function download(blob, name) {
-  const a = Object.assign(document.createElement("a"), {href: URL.createObjectURL(blob), download: name});
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
+import {download} from "/dom.js";
 
 // the plot's canvases flattened onto its background, with the legend drawn in (curve swatch, name, value)
 export function exportPng(canvases, legendRows, bg, fg, font, name) {

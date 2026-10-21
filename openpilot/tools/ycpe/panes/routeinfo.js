@@ -1,6 +1,6 @@
 // route info pane: what the route is (every field of its API record useradmin shows, grouped as it does), its
 // public/preserved toggles, link sharing and bookmarks (files have their own pane)
-import {SEGMENT, api, routeEvents, segmentAt} from "/api.js";
+import {api, routeEvents, segmentAtTime} from "/api.js";
 import {h, fmt, css, ask} from "/dom.js";
 import {parseRemote} from "/data/github.js";
 import {canManage} from "/pages/home.js";
@@ -77,7 +77,7 @@ export function create(ctx) {
   const link = () => location.origin + ctx.url();
   const plotsLink = () => shareUrl(ctx.layoutOf("plot"), ctx.url("plot"));
   // "<dongle id>/<log id>/<segment>" at the playhead, as connect copies it
-  const segmentName = () => `${route.fullname.replace("|", "/")}/${segmentAt(route, Math.min(Math.floor(clock.t / SEGMENT), Math.ceil(clock.duration / SEGMENT) - 1))}`;
+  const segmentName = () => `${route.fullname.replace("|", "/")}/${segmentAtTime(route, clock.t, clock.duration)}`;
   const copy = async (text, what) => {
     await navigator.clipboard.writeText(text);
     copied.textContent = `copied ${what}`;

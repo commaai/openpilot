@@ -146,7 +146,6 @@ export class DBC {
 
   msg(address) { return this.msgs.get(address); }
   msgByName(name) { for (const m of this.msgs.values()) if (m.name === name) return m; }
-  get empty() { return this.msgs.size === 0; }
 
   parse(text) {
     const lines = text.match(/[^\n]*\n|[^\n]+$/g) || [];

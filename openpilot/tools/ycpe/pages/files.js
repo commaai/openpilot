@@ -1,6 +1,6 @@
 // a route's uploads: request files from the device over athena (upload_urls → uploadFilesToUrls, as connect does),
 // and follow or cancel the device's upload queue. Keys are "<segment>/<kind>" with data/sources.js kind names.
-import {api} from "../api.js";
+import {SEGMENT, api} from "../api.js";
 import {h} from "../dom.js";
 import {icon} from "../icons.js";
 import {isOnline} from "../app.js";
@@ -24,6 +24,17 @@ async function offlineFiles(dongleId) {
   return (await api.athenaOfflineQueue(dongleId)).filter((q) => q.expiry > Date.now() / 1000).flatMap((q) =>
     q.method === "uploadFilesToUrls" ? q.params.files_data.map((f) => [f.fn, q.expiry]) : q.method === "uploadFileToUrl" ? [[q.params[0], q.expiry]] : []);
 }
+
+// a route's segment numbers
+export const segmentsOf = (route) => route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
+
+// the keys of kinds in the segments that overlap [r0, r1] s of the route (where they play on the timeline)
+export const keysIn = (route, [r0, r1], kinds) => segmentsOf(route)
+  .filter((n, i) => { const slot = route.range ? i : n; return slot * SEGMENT < r1 && (slot + 1) * SEGMENT > r0; })
+  .flatMap((n) => kinds.map((kind) => `${n}/${kind}`));
+
+// the key of an uploaded file's url (".../<segment>/<file>?sig") as kind
+export const urlKey = (url, kind) => `${new URL(url).pathname.split("/").at(-2)}/${kind}`;
 
 // has(key): the file is already uploaded. changed({uploaded}) is called on every state change; uploaded is true
 // when an upload finished, so the caller refreshes its file list.

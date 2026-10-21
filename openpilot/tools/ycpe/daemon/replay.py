@@ -26,7 +26,7 @@ from collections import deque
 from functools import cache as memo
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, module, route
+from openpilot.tools.ycpe.daemon import File, HTTPError, cache, confine, jobs, module, repos, route
 
 RUNNER = Path(__file__).with_name("replay_runner.py")
 DEFAULT_PROCS = ["controlsd", "plannerd", "radard"]
@@ -123,31 +123,13 @@ def environment(root: Path, shims: Path) -> tuple[str, dict]:
 
 
 def commit(root: Path) -> str | None:
-  """HEAD of the checkout without running git: worktrees and submodules have a .git file pointing at the git dir."""
-  try:
-    git = root / ".git"
-    if git.is_file():
-      git = (root / git.read_text().split("gitdir:")[1].strip()).resolve()
-    head = (git / "HEAD").read_text().strip()
-    if not head.startswith("ref: "):
-      return head
-    ref = head[5:]
-    for d in (git, (git / "commondir").exists() and (git / (git / "commondir").read_text().strip()).resolve()):
-      if d and (d / ref).exists():
-        return (d / ref).read_text().strip()
-      if d and (d / "packed-refs").exists():
-        for line in (d / "packed-refs").read_text().splitlines():
-          if line.endswith(" " + ref):
-            return line.split()[0]
-  except (OSError, IndexError):
-    pass
-  return None
+  return repos.git(root, "rev-parse", "--verify", "-q", "HEAD") or None
 
 
 class Replay:
   """One replay's directory and manifest; run() does the work and reports through report(done, total, text, **meta)."""
-  def __init__(self, root: Path, route: str, segs: list[int], procs: list[str], repo: Path, rid: str | None = None):
-    self.id = rid or time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(2)
+  def __init__(self, root: Path, route: str, segs: list[int], procs: list[str], repo: Path):
+    self.id = time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(2)
     self.dir = root / self.id
     self.route, self.segs, self.procs, self.repo = route, segs, procs, repo
     self.written: list[int] = []
@@ -167,7 +149,7 @@ class Replay:
     tmp.write_text(json.dumps(self.manifest()))
     os.replace(tmp, self.dir / "manifest.json")
 
-  def run(self, fetch, report, cancelled=lambda: False, shims: Path | None = None) -> dict:
+  def run(self, fetch, report, cancelled=lambda: False) -> dict:
     """fetch(route, seg, file) → local path of the segment's file ("rlog": its log). Raises with the exact cause on failure."""
     self.save()
     try:
@@ -194,7 +176,7 @@ class Replay:
         if cancelled():
           raise InterruptedError("cancelled")
       self.segs = [seg for seg, _ in rlogs if seg != self.warm]
-      self._spawn(rlogs, self._videos(rlogs, fetch, report, cancelled), report, cancelled, shims or self.dir.parent / "shims")
+      self._spawn(rlogs, self._videos(rlogs, fetch, report, cancelled), report, cancelled, self.dir.parent / "shims")
       self.diff = json.loads((self.dir / "diff.json").read_text())
       self.state, self.seconds = "done", time.monotonic() - self.t0
       return self.manifest()
@@ -290,23 +272,15 @@ ID = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}\Z")
 ROUTE = re.compile(r"^[0-9a-f]{16}\|[0-9a-zA-Z_-]+\Z")
 _running: dict[str, Replay] = {}
 
-module("replay", "1", procs=PROCS, default=DEFAULT_PROCS)
+module("replay", "1", default=DEFAULT_PROCS)
 
 
 def root() -> Path:
   return cache.ycpe_dir("replay")
 
 
-def checkouts() -> list[str]:
-  try:
-    from openpilot.tools.ycpe.daemon import repos
-    return [c["path"] for c in repos.checkouts()]
-  except ImportError:
-    return list(config.repo_roots)
-
-
 def repo_arg(path: str | None) -> Path:
-  roots = checkouts()
+  roots = [c["path"] for c in repos.checkouts()]
   if not path:
     if not roots:
       raise HTTPError(400, "no checkouts configured")

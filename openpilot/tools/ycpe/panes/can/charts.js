@@ -29,7 +29,7 @@ export function create(ctx, state) {
   const el = h("div", {class: "can-pane can-charts"},
     h("div", {class: "can-toolbar"},
       h("button", {class: "can-btn", title: "New chart from a list of signals", onclick: () => picker((paths) => add({curves: paths.map(curve)}))}, icon("add", 14), h("span", {}, "Chart")),
-      h("span", {class: "can-spacer"}),
+      h("span", {class: "grow"}),
       select("Time range: the view's, or a window following the playhead", [["0", "view"], ...[1, 5, 15, 30].map((x) => [String(x), `${x} s`])], String(span),
         (v) => { span = +v; shown = null; follow(); }),
       select("Series type of every chart", [["", "auto"], ["line", "line"], ["steps", "step"], ["dots", "scatter"]], style, restyle),
@@ -58,7 +58,7 @@ export function create(ctx, state) {
         ondragstart: (e) => { dragging = c; e.dataTransfer.setData(PATHS_MIME, JSON.stringify(paths())); },
         // the curves landed on another chart: this one is merged away
         ondragend: (e) => { if (dragging === c && e.dataTransfer.dropEffect !== "none") remove(c); dragging = null; }},
-      icon("drag_indicator", 14), h("span", {class: "can-spacer"}),
+      icon("drag_indicator", 14), h("span", {class: "grow"}),
       h("button", {class: "can-icon", title: "Add or remove signals", onclick: () => picker((p) => replace(c, {...c.pane.save(), curves: p.map(curve)}), paths())}, icon("edit", 12)),
       h("button", {class: "can-icon", title: "Split into one chart per signal", onclick: () => split(c)}, icon("splitRight", 12)),
       h("button", {class: "can-icon", title: "Remove chart", onclick: () => remove(c)}, icon("close", 12))), c.box);
@@ -133,7 +133,7 @@ export function create(ctx, state) {
     const count = (t, i) => (i === active ? charts : t.charts).length;
     tabBar.replaceChildren(...tabs.map((t, i) => h("span", {class: `can-tab${i === active ? " active" : ""}`},
       h("button", {class: "can-tab-name", role: "tab", "aria-selected": String(i === active), onclick: () => i !== active && open(i)},
-        `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "can-muted"}, ` · ${count(t, i)}`)),
+        `Tab ${i + 1}`, count(t, i) > 0 && h("span", {class: "muted"}, ` · ${count(t, i)}`)),
       tabs.length > 1 && h("button", {class: "can-icon", title: "Close tab", onclick: () => closeTab(i)}, icon("close", 12)))));
   }
 
@@ -176,16 +176,16 @@ export function create(ctx, state) {
     const picked = new Set(chosen), all = can.paths().map((p) => p.path);
     const filter = h("input", {class: "can-filter", placeholder: "Filter signals", spellcheck: false, oninput: () => list()});
     const out = h("div", {class: "can-list can-picker"});
-    const count = h("span", {class: "can-muted"});
+    const count = h("span", {class: "muted"});
     function list() {
       const q = filter.value.toLowerCase(), hits = all.filter((p) => p.toLowerCase().includes(q));
       out.replaceChildren(...hits.slice(0, 500).map((p) => h("label", {class: "can-list-row"},
         h("input", {type: "checkbox", checked: picked.has(p), onchange: (e) => { if (e.target.checked) picked.add(p); else picked.delete(p); count.textContent = `${picked.size} selected`; }}),
-        ` ${p.slice(5)}`)), hits.length > 500 ? h("div", {class: "can-muted"}, `${hits.length - 500} more, filter to see them`) : "");
+        ` ${p.slice(5)}`)), hits.length > 500 ? h("div", {class: "muted"}, `${hits.length - 500} more, filter to see them`) : "");
       count.textContent = `${picked.size} selected`;
     }
     const d = dialog(chosen.length ? "Chart signals" : "New chart", filter, out,
-      h("div", {class: "can-row"}, count, h("span", {class: "can-spacer"}),
+      h("div", {class: "can-row"}, count, h("span", {class: "grow"}),
         h("button", {class: "can-btn primary", onclick: () => { d.close(); if (picked.size || chosen.length) done([...picked]); }}, chosen.length ? "Update" : "Add chart")));
     list();
     filter.focus();

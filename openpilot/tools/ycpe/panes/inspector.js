@@ -2,6 +2,7 @@
 // log), shown from the loaded columns until it arrives. The tree expands lazily, the rows are virtualized at a fixed
 // height, and playback only patches the value cells of the visible rows that changed. From the keyboard: up and down
 // move, right and left (or Enter) open and close a branch.
+import {lowerBound, upperBound} from "/data/bounds.js";
 import {h, css} from "/dom.js";
 import {fmtTime} from "/panes/plot/draw.js";
 
@@ -218,11 +219,7 @@ function exact(s, t) {
   const c = s.chunks.find((c) => c.t[0] <= t && t <= c.t[c.t.length - 1]);
   if (!c) return undefined;
   if (c.i?.length === 2 && c.v.length === 2 && c.i[1] === c.t.length - 1 && c.v[0] === c.v[1]) return c.v[0];  // constant
-  let lo = 0, hi = c.tt.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (c.tt[mid] < t) lo = mid + 1; else hi = mid;
-  }
+  const lo = lowerBound(c.tt, t);
   return c.tt[lo] === t ? c.v[lo] : undefined;
 }
 
@@ -231,11 +228,7 @@ function lastAtOrBefore(s, t) {
   let best = NaN;
   for (const c of s.chunks) {
     if (c.t[0] > t) break;
-    let lo = 0, hi = c.t.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (c.t[mid] <= t) lo = mid + 1; else hi = mid;
-    }
+    const lo = upperBound(c.t, t);
     if (lo) best = c.t[lo - 1];
   }
   return best;

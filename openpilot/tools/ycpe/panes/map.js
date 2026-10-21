@@ -4,6 +4,7 @@
 // store's GPS once logs are loading.
 import {MAPBOX_TOKEN, reverseLookup} from "/geocode.js";
 import {routeCoords, routeEvents} from "/api.js";
+import {lowerBound} from "/data/bounds.js";
 import {h, css, fitCanvas, fmt} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
@@ -396,12 +397,6 @@ function trace(points, spans) {
   return {n, t, x, y, on};
 }
 
-function nearest(tr, t) {
-  let lo = 0, hi = tr.n - 1;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (tr.t[mid] < t) lo = mid + 1; else hi = mid; }
-  return lo;
-}
-
 export function create(ctx) {
   const {clock, route} = ctx;
   const empty = h("p", {class: "map-empty muted", hidden: true}, "No GPS for this route");
@@ -412,7 +407,7 @@ export function create(ctx) {
 
   // the playhead between the trace's points, in unit coordinates
   const playhead = () => {
-    const i = nearest(tr, clock.t), a = Math.max(0, i - 1);
+    const i = lowerBound(tr.t, clock.t, 0, tr.n - 1), a = Math.max(0, i - 1);
     const f = i > a ? Math.max(0, Math.min(1, (clock.t - tr.t[a]) / (tr.t[i] - tr.t[a]))) : 0;
     return [tr.x[a] + f * (tr.x[i] - tr.x[a]), tr.y[a] + f * (tr.y[i] - tr.y[a]), i];
   };

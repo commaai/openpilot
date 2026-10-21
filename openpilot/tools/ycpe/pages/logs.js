@@ -1,7 +1,7 @@
 // boot and crash logs: the signed file list, newest first. Crash logs open in a text dialog, boot logs (capnp) in a
 // viewer of their sections.
 import {api} from "../api.js";
-import {h, fmt} from "../dom.js";
+import {h, fmt, copyButton, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 
 const PAGE = 50;
@@ -15,15 +15,12 @@ function crashName(file) {
 // closing returns the focus to what opened it
 function logDialog(name, head, body) {
   const opener = document.activeElement;
-  const dialog = h("dialog", {class: "log-dialog", onclose: () => { dialog.remove(); opener?.focus(); }},
+  const dialog = openModal({class: "log-dialog", onclose: () => opener?.focus()},
     h("div", {class: "log-head"},
       h("span", {class: "mono"}, name),
       head,
       h("button", {class: "icon-btn", "aria-label": "Close", onclick: () => dialog.close()}, icon("close", 20))),
     body);
-  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
-  document.body.append(dialog);
-  dialog.showModal();
   return dialog;
 }
 
@@ -113,24 +110,7 @@ function openBoot(url, name) {
   const ctl = new AbortController();
   const filter = h("input", {type: "search", class: "field boot-filter", placeholder: "Filter lines  (ctrl+f)", spellcheck: false});
   const matches = h("span", {class: "muted small nowrap"});
-  const copyBtn = (text) => {
-    const btn = h("button", {class: "icon-btn", title: "Copy what's shown", "aria-label": "Copy", onclick: async (e) => {
-      e.preventDefault();  // in a section's summary, copying doesn't toggle it
-      let ok = true;
-      try {
-        await navigator.clipboard.writeText(text());
-      } catch {
-        ok = false;
-      }
-      btn.title = ok ? "Copied" : "Couldn't copy: the clipboard was denied";
-      btn.replaceChildren(icon(ok ? "check" : "warning", 18));
-      setTimeout(() => {
-        btn.title = "Copy what's shown";
-        btn.replaceChildren(icon("copy", 18));
-      }, 1500);
-    }}, icon("copy", 18));
-    return btn;
-  };
+  const copyBtn = (text) => copyButton(text, "Copy what's shown", 18);
   const save = h("a", {class: "icon-btn", "aria-label": "Download as text", title: "Download as text", download: name.replace(/\.zst$/, ".txt"), hidden: true}, icon("download", 20));
   const body = h("div", {class: "boot-body"}, h("p", {class: "muted"}, "Loading…"));
   let sections = [];

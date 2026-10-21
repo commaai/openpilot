@@ -2,12 +2,12 @@
 // requests for what's still on the device, per kind a download-all and a request-all, and connect's request of all logs
 // or all files in the zoomed range. Rows are virtualized and resolved as they scroll into view, so a 300+ segment route
 // costs what's on screen.
-import {SEGMENT, api} from "/api.js";
+import {api} from "/api.js";
 import {h, css} from "/dom.js";
 import {icon} from "/icons.js";
 import {fmtBytes} from "/status.js";
 import {KINDS, API_KIND, SOURCES, AUTO, daemon, parseRange, resolveFiles, routeSource} from "/data/sources.js";
-import {uploads, uploadState, uploadNotice, uploadQueue, LABELS, UPLOADABLE} from "/pages/files.js";
+import {uploads, uploadState, uploadNotice, uploadQueue, segmentsOf, keysIn, urlKey, LABELS, UPLOADABLE} from "/pages/files.js";
 
 await css(new URL("./files.css", import.meta.url));
 
@@ -19,7 +19,7 @@ const label = (source) => SOURCES[source]?.label ?? source;
 export function create(ctx) {
   const {route, perf, clock} = ctx;
   const sr = parseRange(route.fullname);
-  const segs = route.segment_numbers || Array.from({length: (route.maxqlog ?? -1) + 1}, (_, i) => i);
+  const segs = segmentsOf(route);
   let source = routeSource.get(route.fullname);
   let found = new Map(), errors = {}, asked = new Set(), gen = 0;  // gen drops answers for a source no longer picked
   let up = null, apiFiles = new Set(), height = 0, top = 0, alive = true;
@@ -31,13 +31,7 @@ export function create(ctx) {
   const picker = h("select", {class: "fp-source", title: "Where this route's files come from", onchange: (e) => pick(e.target.value)});
   const summary = h("span", {class: "fp-summary"});
   // connect's "All logs" and "All files": what's missing of those kinds in the segments of the zoomed range
-  const inRange = (kinds) => {
-    const [r0, r1] = clock.range;
-    return segs.filter((n, i) => {
-      const slot = route.range ? i : n;  // where it plays on the timeline
-      return slot * SEGMENT < r1 && (slot + 1) * SEGMENT > r0;
-    }).flatMap((n) => kinds.map((kind) => `${n}/${kind}`));
-  };
+  const inRange = (kinds) => keysIn(route, clock.range, kinds);
   const allLogs = h("button", {class: "button small", hidden: true, onclick: () => up.request(inRange(["rlog"]))});
   const allFiles = h("button", {class: "button small", hidden: true, onclick: () => up.request(inRange(UPLOADABLE))});
   let ranged = "";  // the range the buttons count
@@ -98,7 +92,7 @@ export function create(ctx) {
   async function loadApiFiles(fresh) {
     if (fresh) api.routeFiles.forget(route.fullname);
     const files = await api.routeFiles(route.fullname).catch(() => ({}));
-    apiFiles = new Set(COLS.flatMap((kind) => (files[API_KIND[kind]] || []).map((u) => `${new URL(u).pathname.split("/").at(-2)}/${kind}`)));
+    apiFiles = new Set(COLS.flatMap((kind) => (files[API_KIND[kind]] || []).map((u) => urlKey(u, kind))));
     changed();
   }
   if (!route.loose) loadApiFiles(false);

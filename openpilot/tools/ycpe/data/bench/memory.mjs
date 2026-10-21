@@ -4,7 +4,7 @@ import {logArg, schema} from "./node.mjs";
 import {decompress} from "../../codec/codec.js";
 import {Reader, compact} from "../capnp.js";
 
-const {services} = compact(new Reader(schema).read(decompress(new Uint8Array(fs.readFileSync(logArg())))));
+const services = compact(new Reader(schema).read(decompress(new Uint8Array(fs.readFileSync(logArg())))));
 
 // strings are counted as their characters plus a 16-byte header, shared strings once
 const seen = new Set();

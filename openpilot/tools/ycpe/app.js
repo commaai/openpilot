@@ -1,7 +1,7 @@
-import {SEGMENT, api, auth, segmentAt} from "/api.js";
+import {SEGMENT, api, auth, segmentAt, versionAtLeast} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h, fmt, ask, parseClock} from "/dom.js";
+import {h, fmt, ask, parseClock, openModal, toast} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -85,12 +85,6 @@ function searchBox() {
     me: () => state.me,
     onMiss: () => toast("Enter a route name, a dongle id, or a connect, useradmin or cabana URL"),
   });
-}
-
-export function toast(text) {
-  const el = h("div", {class: "toast", role: "status"}, text);
-  document.body.append(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 const state = {me: null, devices: null, devicesError: null};
@@ -715,14 +709,12 @@ function help() {
   if (open) return open.close();
   const touch = matchMedia("(pointer: coarse)").matches;
   const keys = (k) => k.split(" ").map((x) => x.split("+").map((y, i) => [i > 0 && "+", h("kbd", {}, y)]));
-  const el = h("dialog", {class: "help", "aria-labelledby": "help-title", onclose: () => el.remove(), onclick: (e) => { if (e.target === el) el.close(); }},
+  const el = openModal({class: "help", "aria-labelledby": "help-title"},
     h("div", {class: "help-card"},
       h("div", {class: "help-head"}, h("h2", {id: "help-title"}, touch ? "Touch and keyboard" : "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
       h("dl", {}, (touch ? TOUCHES : []).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]),
         SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
         (touch ? [] : GESTURES).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
-  document.body.append(el);
-  el.showModal();
 }
 
 // ---- routing ----
@@ -738,10 +730,7 @@ function closeWorkspace() {
 async function markViewed(route) {
   const dongle = route.fullname.split("|")[0];
   const device = await api.device(dongle).catch(() => null);
-  const [major = 0, minor = 0, patch = 0] = (device?.openpilot_version || "").split(".").map((p) => parseInt(p) || 0);
-  if (device && major * 1e6 + minor * 1e3 + patch >= 9006) {
-    api.athena(dongle, "setRouteViewed", {route: route.fullname}).catch(() => {});
-  }
+  if (device && versionAtLeast(device, "0.9.6")) api.athena(dongle, "setRouteViewed", {route: route.fullname}).catch(() => {});
 }
 
 // the path still names the open workspace's route (or loose logs), whatever the view

@@ -5,7 +5,6 @@
   {"drag": {"from": ".pb-canvas", "by": [150, 0], "steps": 30}},
   {"shot": "scrubbed"},
   {"wheel": {"at": ".pb-canvas", "dy": -400}},
-  {"wait": 200},
   {"shot": "zoomed"},
   {"select": [".playbar .rate", "5"]},
   {"click": ".playbar .play"},

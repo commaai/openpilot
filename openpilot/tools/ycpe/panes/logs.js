@@ -2,6 +2,7 @@
 // list, filtered by level, source and text. Segments are indexed a few ms per frame as they arrive (a live session's
 // growing slot again for what's new in it, and its window's oldest rows go); the list is virtualized with fixed rows,
 // and following the playhead only patches the visible rows.
+import {upperBound} from "/data/bounds.js";
 import {h, css} from "/dom.js";
 
 await css(new URL("./logs.css", import.meta.url));
@@ -292,17 +293,7 @@ function swaglog(t, s) {
 
 // a chunk's [time, value] pairs after time from
 function* pairs(c, from = -Infinity) {
-  for (let k = upper(c.tt, from); k < c.v.length; k++) yield [c.tt[k], c.v[k]];
-}
-
-// the first index of the rising times tt after t
-function upper(tt, t) {
-  let lo = 0, hi = tt.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (tt[mid] <= t) lo = mid + 1; else hi = mid;
-  }
-  return lo;
+  for (let k = upperBound(c.tt, from); k < c.v.length; k++) yield [c.tt[k], c.v[k]];
 }
 
 // a chunk's value at each of a rising sequence of message times; undefined where that message doesn't have it

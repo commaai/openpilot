@@ -42,7 +42,6 @@
   {"assert": "__sent.filter((r) => r.url.endsWith('/v1/prime/cancel')).map((r) => r.body).join() === JSON.stringify({dongle_id: '6666666666666666'}) || 'cancel body'"},
   {"assert": "!document.querySelector('.prime-cancel').disabled || 'a failed cancel can be tried again'"},
   {"key": "t"},
-  {"wait": 200},
   {"shot": "cancel-error-phone-other-theme"},
 
   {"goto": "/7777777777777777/prime"},
