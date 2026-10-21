@@ -1,6 +1,5 @@
 import os
 import math
-import numpy as np
 import pyray as rl
 from collections.abc import Callable
 from enum import Enum
@@ -28,10 +27,12 @@ DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 def fit_velocity(samples: deque[tuple[float, float]]) -> float:
   if len(samples) < 2:
     return 0.0
-  t, pos = np.array(samples).T
-  if np.ptp(t) == 0:
+  mean_t = sum(t for t, _ in samples) / len(samples)
+  mean_pos = sum(pos for _, pos in samples) / len(samples)
+  var_t = sum((t - mean_t) ** 2 for t, _ in samples)
+  if var_t == 0.0:
     return 0.0
-  return float(np.polyfit(t - t[-1], pos, 1)[0])
+  return sum((t - mean_t) * (pos - mean_pos) for t, pos in samples) / var_t
 
 
 # from https://ariya.io/2011/10/flick-list-with-its-momentum-scrolling-and-deceleration
