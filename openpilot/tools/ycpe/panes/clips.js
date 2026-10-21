@@ -163,7 +163,7 @@ async function viewer(clip, blob, wanted) {
       h("div", {class: "clips-viewer-title"}, h("b", {}, clipTitle(clip)),
         h("div", {class: "clips-meta"}, [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · "))),
       h("button", {class: "clips-icon", title: "Download clip", "aria-label": "Download clip", onclick: () => save(blob, clip)}, ic("download", 24)),
-      h("button", {class: "clips-icon", title: "Close", "aria-label": "Close video", onclick: () => el.close()}, ic("close", 24, "closeBold"))),
+      h("button", {class: "clips-icon", title: "Close", "aria-label": "Close video", onclick: () => el.close()}, ic("close", 24))),
     video);
   video.play().catch(() => {});
 }
@@ -199,7 +199,7 @@ function clipMenu(anchor, device, route = null, range = null) {
   const tooLong = h("p", {class: "clips-error"}, "Choose a range of 30 minutes or less.");
   const createBtn = h("button", {class: "clips-create", onclick: () => create()});
   const error = h("p", {class: "clips-error"}), list = h("div", {class: "clips-list"});
-  const close = h("button", {class: "clips-icon clips-close", title: "Close", "aria-label": "Close clip menu", onclick: () => menu.close()}, ic("close", 24, "closeBold"));
+  const close = h("button", {class: "clips-icon clips-close", title: "Close", "aria-label": "Close clip menu", onclick: () => menu.close()}, ic("close", 24));
 
   const menu = h("dialog", {class: `clips-menu${route ? " creating" : ""}${um ? " um" : ""}`, autofocus: true, "aria-label": route ? "Create a clip" : "Clips", onclose: () => {
     clearTimeout(poll);
@@ -346,7 +346,7 @@ function clipMenu(anchor, device, route = null, range = null) {
           h("button", {class: "clips-icon", "data-focus": `drop ${clip.filename}`, "aria-label": drop, title: drop, onclick: async () => {
             if (um && !active) return confirmDelete(clip);
             if (active || await ask([h("b", {}, "Delete clip?"), h("br"), `${clipTitle(clip)} will be permanently deleted from your comma device.`], "Delete")) remove(clip);
-          }}, active ? ic("close", 22, "closeBold", 24) : ic("trash", 22, "trash", 24)))),
+          }}, active ? ic("close", 22, "close", 24) : ic("trash", 22, "trash", 24)))),
       clip.status === "encoding" && (um ? linear() : h("div", {class: "clips-bar busy"})),
       previewing && [um ? linear(s.progress) : h("div", {class: "clips-bar", style: `--p: ${s.progress}`}),
         h("div", {class: "clips-transfer"}, `Downloading · ${Math.round(s.progress * 100)}%`)]);

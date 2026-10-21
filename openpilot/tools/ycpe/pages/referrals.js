@@ -3,6 +3,7 @@
 import {api, auth} from "../api.js";
 import {h, css, copyButton} from "../dom.js";
 import {icon} from "../icons.js";
+import {cnIcon} from "./connect/icons.js";
 import {REFERRALS_SEEN, link} from "../app.js";
 import {signInCard} from "./login.js";
 import {mode} from "./connect/mode.js";
@@ -68,7 +69,6 @@ function rewardsSection(summary, me) {
 
 // ---- user mode: connect's page, its markup and copy ----
 
-const COPY = "M180-81q-24 0-42-18t-18-42v-603h60v603h474v60H180Zm120-120q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h440q24 0 42 18t18 42v560q0 24-18 42t-42 18H300Zm0-60h440v-560H300v560Zm0 0v-560 560Z";
 const ring = (size, label) => h("span", {class: "cn-ref-ring", style: `--size: ${size}px`, role: "progressbar", "aria-label": label});
 const terms = (text) => h("a", {href: TERMS, target: "_blank", rel: "noopener noreferrer"}, text);
 
@@ -102,7 +102,7 @@ function connectReferrals(me) {
         : !error && hide(h("div", {},
           h("button", {type: "button", class: "cn-ref-white", disabled: !summary, onclick: shareLink}, h("span", {}, status || "share your link")),
           h("div", {class: "cn-ref-link"}, h("span", {}, summary ? url() : ""),
-            h("button", {type: "button", "aria-label": "Copy referral link", onclick: copy}, glyph(COPY))))),
+            h("button", {type: "button", "aria-label": "Copy referral link", onclick: copy}, cnIcon("copy", 14))))),
       !summary && !error && h("div", {class: "cn-ref-loading"}, ring(28, "Loading referral link")),
       error && h("p", {class: "cn-ref-unavailable"}, "Your share link is unavailable.")].filter(Boolean));
     const available = (summary?.referrals || []).filter((r) => r.status === "available");
@@ -152,13 +152,6 @@ function claimLink(href, label) {
     setTimeout(() => { a.ariaDisabled = "false"; a.replaceChildren(label); }, 1500);
   }}, label);
   return a;
-}
-
-function glyph(d) {
-  const svg = icon("copy", 14);
-  svg.setAttribute("viewBox", "0 -960 960 960");
-  svg.firstChild.setAttribute("d", d);
-  return svg;
 }
 
 export async function referralsPage(me) {

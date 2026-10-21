@@ -3,6 +3,7 @@
 import {api, auth, billingReachable} from "../api.js";
 import {h, fmt, css, copyButton, openModal} from "../dom.js";
 import {icon} from "../icons.js";
+import {cnIcon} from "./connect/icons.js";
 import {onlineMark, link, go, isOnline, devicesChanged} from "../app.js";
 
 const DATE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "short", day: "numeric"});
@@ -100,18 +101,6 @@ export function settingsSection(device, onUnpaired) {
 // ---- user mode: connect's DeviceSettingsModal ----
 
 const COMMACARE = "https://comma.ai/connect#what-is-commacare";
-const SAVE = "M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z";
-const SHARE = "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z";
-const CHECK = "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z";
-const ERROR = "M480-280q14 0 24-9 9-10 9-24t-9-23q-10-10-24-10t-23 9q-10 10-10 24t9 23q10 10 24 10Zm-27-153h60v-253h-60v253Zm27 353q-82 0-155-31t-127-86q-55-55-86-128-32-73-32-155 0-83 32-156 31-73 86-127t127-85q73-32 156-32 82 0 155 32 73 31 127 85t86 127q31 73 31 156 0 82-31 155t-86 127q-54 55-127 86-73 32-156 32Zm1-60q141 0 240-99t99-241q0-142-99-241t-241-99q-141 0-240 99-100 99-100 241 0 141 100 241t241 99Zm-1-340Z";
-const CANCEL = "M14.59 8L12 10.59 9.41 8 8 9.41 10.59 12 8 14.59 9.41 16 12 13.41 14.59 16 16 14.59 13.41 12 16 9.41 14.59 8zM12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z";
-// a connect icon our set doesn't have
-function glyph(d, size = 24, box = "0 0 24 24") {
-  const svg = icon("check", size);
-  svg.setAttribute("viewBox", box);
-  svg.firstChild.setAttribute("d", d);
-  return svg;
-}
 const styled = () => css(new URL("./settings.css", import.meta.url));
 
 // MUI's Modal: a backdrop that fades in and the paper over it; Escape or a click beside the paper closes it
@@ -134,13 +123,13 @@ function field(id, label, value, onInput, onEnter, help) {
 }
 
 // the icon button beside a field (save, share): a check once done, a ring around it while sending
-function fieldAction(path, label, run) {
+function fieldAction(name, label, run) {
   const ring = spinner(48);
   const btn = h("button", {class: "cn-iconbtn", "aria-label": label, onclick: run});
   const el = h("div", {class: "cn-fab"}, btn, ring);
   return {el, set(shown, state) {
     el.hidden = !shown;
-    btn.replaceChildren(glyph(state === "done" ? CHECK : path));
+    btn.replaceChildren(cnIcon(state === "done" ? "check" : name));
     ring.hidden = state !== "busy";
   }};
 }
@@ -153,7 +142,7 @@ export async function settingsModal(device) {
 
   // the name, saved with its button or Enter; the button shows while it differs from the device's or was just saved
   let alias = device.alias, saved = false, saving = false;
-  const save = fieldAction(SAVE, "Save the name", () => setAlias());
+  const save = fieldAction("save", "Save the name", () => setAlias());
   const showSave = () => save.set(device.alias !== alias || saved, saving ? "busy" : saved ? "done" : "");
   const [aliasRow] = field("device_alias", "Device name", alias, (v) => {
     if (v !== dongleId) saved = false;
@@ -178,7 +167,7 @@ export async function settingsModal(device) {
 
   // sharing: read access for an email or user id
   let email = "", shared = false, sharing = false;
-  const share = fieldAction(SHARE, "Share", () => shareDevice());
+  const share = fieldAction("share", "Share", () => shareDevice());
   const showShare = () => share.set(email.length > 0 || shared, sharing ? "busy" : shared ? "done" : "");
   const [shareRow, shareInput] = field("device_share", "Share by email or user id", "", (v) => {
     email = v;
@@ -241,7 +230,7 @@ function unpairModal(device) {
     }
     if (msg) {
       error.hidden = false;
-      error.replaceChildren(glyph(ERROR, 24, "0 -960 960 960"), h("p", {}, msg));
+      error.replaceChildren(cnIcon("error", 24), h("p", {}, msg));
       confirm.disabled = false;
       confirm.textContent = "Confirm";
       return;
@@ -290,7 +279,7 @@ function uploadsModal(device) {
           h("td", {}, file.split(".")[0]),
           q.current ? h("td", {}, h("div", {class: "cn-upload-progress"}, h("div", {style: `--p: ${q.progress}`})))
             : [h("td", {}, q.paused ? "paused" : "pending"), h("td", {class: "cn-cancel-cell"}, cancelling.has(q.id) ? spinner(15)
-              : h("button", {class: "cn-iconbtn small", "aria-label": "Cancel upload", onclick: () => cancel([q.id])}, glyph(CANCEL, 18)))]);
+              : h("button", {class: "cn-iconbtn small", "aria-label": "Cancel upload", onclick: () => cancel([q.id])}, cnIcon("cancel", 18)))]);
       }))));
   }
   async function poll() {

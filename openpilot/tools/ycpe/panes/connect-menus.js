@@ -7,7 +7,7 @@ import {isOnline} from "/app.js";
 import {canManage} from "/pages/home.js";
 import {API_KIND} from "/data/sources.js";
 import {uploads} from "/pages/files.js";
-import {cnIcon} from "./connect.js";
+import {cnIcon} from "/pages/connect/icons.js";
 
 await css(new URL("./connect-menus.css", import.meta.url));
 
@@ -19,21 +19,6 @@ const DCAM_TIP = "make sure to enable the “Record and Upload Driver Camera” 
 const FILES = [["Road camera", "fcamera"], ["Wide road camera", "ecamera"], ["Driver camera", "dcamera"], ["Log data", "rlog"]];
 const CAMERAS = ["fcamera", "ecamera", "dcamera"];
 
-// the material icons connect draws in these menus (its src/icons, MIT): [viewBox, path]
-const ICONS = {
-  copy: ["0 -960 960 960", "M180-81q-24 0-42-18t-18-42v-603h60v603h474v60H180Zm120-120q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h440q24 0 42 18t18 42v560q0 24-18 42t-42 18H300Zm0-60h440v-560H300v560Zm0 0v-560 560Z"],
-  share: ["0 0 24 24", "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"],
-  warning: ["0 0 24 24", "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"],
-  info: ["0 -960 960 960", "M453-280h60v-240h-60v240Zm27-314q14 0 23-9t10-23q0-14-9-24-10-10-24-10t-23 10-10 24q0 14 9 23 10 9 24 9Zm0 514q-82 0-155-31t-128-86q-54-55-86-128-31-73-31-155 0-83 32-156 31-73 86-127t127-85q73-32 156-32 82 0 155 32 73 31 127 85t86 127q31 73 31 156 0 82-31 155t-86 127q-54 55-127 86-73 32-156 32Zm0-60q142 0 241-99t99-241q0-142-99-241t-241-99q-141 0-240 99-100 99-100 241 0 141 100 241t241 99Zm0-340Z"],
-  error: ["0 -960 960 960", "M480-280q14 0 24-9 9-10 9-24t-9-23q-10-10-24-10t-23 9q-10 10-10 24t9 23q10 10 24 10Zm-27-153h60v-253h-60v253Zm27 353q-82 0-155-31t-127-86q-55-55-86-128-32-73-32-155 0-83 32-156 31-73 86-127t127-85q73-32 156-32 82 0 155 32 73 31 127 85t86 127q31 73 31 156 0 82-31 155t-86 127q-54 55-127 86-73 32-156 32Zm1-60q141 0 240-99t99-241q0-142-99-241t-241-99q-141 0-240 99-100 99-100 241 0 141 100 241t241 99Zm-1-340Z"],
-  cancel: ["0 0 24 24", "M14.59 8 12 10.59 9.41 8 8 9.41 10.59 12 8 14.59 9.41 16 12 13.41 14.59 16 16 14.59 13.41 12 16 9.41 14.59 8zM12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"],
-};
-function glyph(name, size = 24) {
-  const svg = cnIcon("play", size), [box, d] = ICONS[name];
-  svg.setAttribute("viewBox", box);
-  svg.firstChild.setAttribute("d", d);
-  return svg;
-}
 // MUI's CircularProgress, white
 const spinner = (size) => h("span", {class: "cm-spinner", style: `width:${size}px;height:${size}px`});
 
@@ -112,7 +97,7 @@ export function filesMenu(anchor, ctx) {
     else if (s?.queued) b = fake(s.current ? `${Math.floor(s.progress * 100)}%` : s.paused ? "paused" : "pending");
     else if (s?.requested) b = fake(spinner(17));
     else if (s?.notFound) {
-      b = fake("not found", kind === "dcamera" && glyph("info", 16));
+      b = fake("not found", kind === "dcamera" && cnIcon("info", 16));
       if (kind === "dcamera") tip(b, DCAM_TIP);
     } else if (s?.error) b = fake("failed");
     else if (!up?.canUpload) b = button("download", null, true);
@@ -139,7 +124,7 @@ export function filesMenu(anchor, ctx) {
     const st = files && up ? stats(inRange(["rlog", ...CAMERAS])) : null;
     foot.replaceChildren(...[
       device && !isOnline(device) && files
-        ? item({class: "cm-item cm-note", "aria-disabled": "true"}, h("div", {}, glyph("warning"), "Device offline"), h("span", {}, "uploading will resume when device is online"))
+        ? item({class: "cm-item cm-note", "aria-disabled": "true"}, h("div", {}, cnIcon("warning"), "Device offline"), h("span", {}, "uploading will resume when device is online"))
         : item({class: `cm-item${files ? "" : " cm-wait"}`, tabindex: files ? 0 : -1, "aria-disabled": String(!files), onclick: () => {
             if (!files || !up) return;
             kept = true;  // the queue's now: it ends the uploads' polling as it closes
@@ -148,7 +133,7 @@ export function filesMenu(anchor, ctx) {
             queueDialog(up, dongle, watchers);
           }}, "View upload queue"),
       st && st.paused && st.paused === st.active && up.metered
-        && item({class: "cm-item cm-note", "aria-disabled": "true"}, h("div", {}, glyph("warning"), "Connect to WiFi"), h("span", {}, "uploading paused on cellular connection")),
+        && item({class: "cm-item cm-note", "aria-disabled": "true"}, h("div", {}, cnIcon("warning"), "Connect to WiFi"), h("span", {}, "uploading paused on cellular connection")),
     ].filter(Boolean));
   }
 
@@ -183,9 +168,9 @@ export function infoMenu(anchor, ctx) {
   const toggles = h("div", {class: "cm-toggles"});
   const m = menu(anchor, [
     item({class: "cm-item cm-copy", tabindex: 0, style: `font-size: ${innerWidth > 400 ? 12.8 : 11.2}px`,
-      onclick: async () => { await navigator.clipboard?.writeText(name); m.close(); }}, h("div", {}, name), glyph("copy")),
+      onclick: async () => { await navigator.clipboard?.writeText(name); m.close(); }}, h("div", {}, name), cnIcon("copy")),
     navigator.share && item({class: "cm-item cm-share", tabindex: 0, onclick: () => navigator.share({title: "comma connect", url: location.href}).catch(() => {})},
-      "Share this route", glyph("share")),
+      "Share this route", cnIcon("share")),
     h("hr"),
     item({tabindex: 0, onclick: () => window.open(`${USERADMIN}?onebox=${encodeURIComponent(route.fullname)}`, "_blank")?.focus()}, "View in useradmin"),
     toggles,
@@ -213,10 +198,10 @@ export function infoMenu(anchor, ctx) {
 function switchRow(label, about, checked, save) {
   const input = h("input", {type: "checkbox", class: "cm-switch-input"});
   const sw = h("span", {class: "cm-switch"}, input, h("span", {class: "cm-thumb"}), h("span", {class: "cm-track"}));
-  const info = glyph("info", 18);
+  const info = cnIcon("info", 18);
   info.classList.add("cm-info");
   tip(info, about, true);
-  const errorEl = h("span", {class: "cm-error", hidden: true}, glyph("error"));
+  const errorEl = h("span", {class: "cm-error", hidden: true}, cnIcon("error"));
   const el = h("li", {class: "cm-item cm-toggle"}, h("label", {}, sw, h("span", {}, label)), info, errorEl);
   let busy = false;
   const set = (v) => {
@@ -290,7 +275,7 @@ function queueDialog(up, dongle, watchers) {
             ? h("td", {}, h("div", {class: "cm-progress"}, h("div", {style: `transform: translateX(${q.progress * 100 - 100}%)`})))
             : [!narrow && h("td", {}, up.metered && !q.allow_cellular ? "paused" : "pending"),
               h("td", {class: "cm-cancel"}, up.cancelling.has(q.id) ? spinner(15)
-                : up.cancel && h("button", {"aria-label": "Cancel upload", onclick: () => up.cancel([q.id])}, glyph("cancel", 18)))]);
+                : up.cancel && h("button", {"aria-label": "Cancel upload", onclick: () => up.cancel([q.id])}, cnIcon("cancel", 18)))]);
       }))));
   }
   watchers.add(draw);

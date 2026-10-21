@@ -1,15 +1,9 @@
 // inline SVG icons (material design paths) so controls render the same everywhere and never change width
 const LOGO = "M48.453 105.707C48.453 103.77 48.3011 102.148 48.5246 100.584C48.6198 99.9171 49.4009 99.203 50.0379 98.8003C53.1435 96.8362 56.5171 95.268 59.4085 93.0154C68.7741 85.7187 74.3255 76.1131 74.6289 63.6354C74.7149 60.0925 73.4079 59.2074 70.4217 60.5875C61.8019 64.572 52.5325 62.2358 47.5855 54.8313C42.1907 46.7555 42.9504 36.0028 49.4143 28.9481C57.6708 19.9376 71.2562 19.6679 80.6245 28.2733C86.2363 33.4281 88.9028 40.084 89.5677 47.6547C91.797 73.0176 79.0313 93.9229 55.797 103.106C53.4975 104.015 51.1395 104.761 48.453 105.707Z";
 
-export function logo(height) {
-  const svg = icon("logo", height);
-  svg.setAttribute("viewBox", "42 19 49 88");
-  svg.setAttribute("width", Math.round(height * 49 / 88));
-  return svg;
-}
+export const logo = (height) => svgIcon("42 19 49 88", LOGO, Math.round(height * 49 / 88), height);
 
 const PATHS = {
-  logo: LOGO,
   menu: "M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z",
   account: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z",
   back: "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z",
@@ -66,16 +60,14 @@ const PATHS = {
   link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
 };
 
-export function icon(name, size = 24) {
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("width", size);
-  svg.setAttribute("height", size);
-  svg.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS(ns, "path");
-  path.setAttribute("fill", "currentColor");
-  path.setAttribute("d", PATHS[name]);
-  svg.append(path);
+export const icon = (name, size = 24) => svgIcon("0 0 24 24", PATHS[name], size);
+
+// an icon in currentColor on viewBox: a path's d, or markup ("<…")
+const NS = "http://www.w3.org/2000/svg";
+export function svgIcon(viewBox, d, width = 24, height = width) {
+  const svg = document.createElementNS(NS, "svg");
+  for (const [k, v] of Object.entries({viewBox, width, height, fill: "currentColor", "aria-hidden": "true"})) svg.setAttribute(k, v);
+  if (d.startsWith("<")) svg.innerHTML = d;
+  else svg.appendChild(document.createElementNS(NS, "path")).setAttribute("d", d);
   return svg;
 }
