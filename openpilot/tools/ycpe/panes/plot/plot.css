@@ -24,7 +24,6 @@
 .plot-pane .legend .row.off { opacity: .45; }
 .plot-pane .legend button { min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; }
 .plot-pane .legend .swatch { height: 17px; background: linear-gradient(currentColor, currentColor) center / 10px 3px no-repeat; }
-.plot-pane .legend .swatch.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 6px) center / 10px 3px no-repeat; }
 /* a long path loses its head, not its field name: the text runs right to left inside an ltr isolate */
 .plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
 /* a narrow pane keeps its y labels: the legend stays right of the gutter, with names only */
