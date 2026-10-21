@@ -2,7 +2,7 @@
 // files to download or ask the device for, all logs or files of the range, the upload queue (Files/UploadQueue.jsx),
 // the segment name to copy, sharing, useradmin, and the public and preserved switches. Loaded with the first click.
 import {SEGMENT, api, segmentAtTime} from "/api.js";
-import {h, css} from "/dom.js";
+import {h, css, openModal} from "/dom.js";
 import {isOnline} from "/app.js";
 import {canManage} from "/pages/home.js";
 import {API_KIND} from "/data/sources.js";
@@ -270,8 +270,7 @@ function tip(el, text, above = false) {
 function queueDialog(up, dongle, watchers) {
   const body = h("div", {class: "cm-queue-body", style: `max-height: ${innerHeight * 0.9 - 98}px`});
   const cancelAll = h("button", {class: "cm-dbutton", onclick: () => up.cancel?.(up.queue.filter((q) => !q.current).map((q) => q.id))}, "Cancel All");
-  const dialog = h("dialog", {class: "cm-dialog", "aria-labelledby": "upload-queue-modal", onclick: (e) => e.target === dialog && dialog.close(),
-    onclose: () => { watchers.clear(); up.dispose(); dialog.remove(); }},
+  const dialog = openModal({class: "cm-dialog", "aria-labelledby": "upload-queue-modal", onclose: () => { watchers.clear(); up.dispose(); }},
     h("div", {class: "cm-dialog-title"}, h("span", {class: "cm-dialog-h", id: "upload-queue-modal"}, "Upload queue"), h("span", {class: "cm-caption"}, dongle)),
     h("hr"), body,
     h("div", {class: "cm-dialog-buttons"}, cancelAll, h("button", {class: "cm-dbutton", onclick: () => dialog.close()}, "Close")));
@@ -295,7 +294,5 @@ function queueDialog(up, dongle, watchers) {
       }))));
   }
   watchers.add(draw);
-  document.body.append(dialog);
-  dialog.showModal();
   draw();
 }

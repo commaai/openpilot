@@ -56,6 +56,16 @@ export function ask(text, ok = "OK", cancel = "Cancel") {
   });
 }
 
+// a modal <dialog> of attrs and children, shown. Escape or a click beside its content closes it, unless busy() says not
+// now; once closed it's removed, then onclose runs
+export function openModal({onclose, busy, ...attrs}, ...children) {
+  const el = h("dialog", {...attrs, oncancel: (e) => busy?.() && e.preventDefault(), onclose: () => { el.remove(); onclose?.(); },
+    onclick: (e) => { if (e.target === el && !busy?.()) el.close(); }}, ...children);
+  document.body.append(el);
+  el.showModal();
+  return el;
+}
+
 // a top-bar button's panel. A click opens one, make(close) → {el, focus, update, closed}: its element, what takes the
 // focus, what refreshes it, what it lets go of once closed. Another click closes it, as do close(), Escape (the focus
 // back on the button) and, if light, a press outside. placed: under the button, but on screen

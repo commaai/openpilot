@@ -1,7 +1,7 @@
 import {SEGMENT, api, auth, segmentAt} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h, fmt, ask, parseClock} from "/dom.js";
+import {h, fmt, ask, parseClock, openModal} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -715,14 +715,12 @@ function help() {
   if (open) return open.close();
   const touch = matchMedia("(pointer: coarse)").matches;
   const keys = (k) => k.split(" ").map((x) => x.split("+").map((y, i) => [i > 0 && "+", h("kbd", {}, y)]));
-  const el = h("dialog", {class: "help", "aria-labelledby": "help-title", onclose: () => el.remove(), onclick: (e) => { if (e.target === el) el.close(); }},
+  const el = openModal({class: "help", "aria-labelledby": "help-title"},
     h("div", {class: "help-card"},
       h("div", {class: "help-head"}, h("h2", {id: "help-title"}, touch ? "Touch and keyboard" : "Keyboard and mouse"), h("button", {class: "link", onclick: () => el.close()}, "close")),
       h("dl", {}, (touch ? TOUCHES : []).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]),
         SHORTCUTS.map(([k, v]) => [h("dt", {}, keys(k)), h("dd", {}, v)]),
         (touch ? [] : GESTURES).map(([g, v]) => [h("dt", {class: "muted"}, g), h("dd", {}, v)]))));
-  document.body.append(el);
-  el.showModal();
 }
 
 // ---- routing ----

@@ -1,6 +1,6 @@
 // connect's material pieces for user mode's pairing, prime and clips (Material UI v1 in connect's dark theme): its
 // icons (connect's own paths, some on a 960 grid), the circular and linear progress, and a modal on a paper
-import {h, css} from "../dom.js";
+import {h, css, openModal} from "../dom.js";
 
 await css(new URL("./cnui.css", import.meta.url));
 
@@ -67,9 +67,5 @@ export const promo = (label, title, a, text, dismiss) => h("div", {class: "cnui-
 // once. kind is the paper's class (its size and place); the backdrop fades in as Material UI's does
 export function cnModal(label, kind, onclose = () => {}, busy = () => false) {
   const paper = h("div", {class: `cnui-paper ${kind}`});
-  const el = h("dialog", {class: "cnui-modal", "aria-label": label, autofocus: true, oncancel: (e) => busy() && e.preventDefault(),
-    onclose: () => { el.remove(); onclose(); }, onclick: (e) => { if (e.target === el && !busy()) el.close(); }}, paper);
-  document.body.append(el);
-  el.showModal();
-  return {el, paper};
+  return {el: openModal({class: "cnui-modal", "aria-label": label, autofocus: true, onclose, busy}, paper), paper};
 }

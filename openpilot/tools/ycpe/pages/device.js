@@ -1,7 +1,7 @@
 // the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings.
 // In user mode it's connect's dashboard: the map, the device's name and buttons, its totals and the drives as cards
 import {api, auth, engagedFraction, versionAtLeast} from "../api.js";
-import {h, fmt, isMetric} from "../dom.js";
+import {h, fmt, isMetric, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 import {devicesChanged, go, isOnline, link, onlineMark, toast} from "../app.js";
 import {perf} from "../perf.js";
@@ -340,7 +340,7 @@ function timeSelect(range, onSave) {
     if (end.value && end.value < start.value) end.value = start.value;
   }});
   const field = (label, input) => h("label", {class: "cn-ts-field"}, h("span", {}, label), input);
-  const el = h("dialog", {class: "cn-dialog cn-ts", onclose: () => el.remove(), onclick: (e) => { if (e.target === el) el.close(); }},
+  const el = openModal({class: "cn-dialog cn-ts"},
     h("div", {class: "cn-paper", tabindex: -1},
       h("div", {class: "cn-ts-fields"}, field("Start date:", start), field("End date:", end)),
       h("hr"),
@@ -350,8 +350,6 @@ function timeSelect(range, onSave) {
           el.close();
           onSave([new Date(`${start.value}T00:00`).getTime(), new Date(`${end.value}T23:59:59.999`).getTime()]);
         }}, "Save"))));
-  document.body.append(el);
-  el.showModal();
   el.firstChild.focus();  // as MUI's modal: the paper, not the first field
 }
 

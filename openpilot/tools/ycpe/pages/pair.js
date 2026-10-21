@@ -4,7 +4,7 @@
 // is connect's empty state. Loaded when needed: app.js imports it for a pair link or an account without devices.
 // In user mode all of it is connect's to the pixel (cnui.js); developer mode keeps the theme's
 import {api, auth} from "../api.js";
-import {h, css} from "../dom.js";
+import {h, css, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 import {go, devicesChanged} from "../app.js";
 import {loginPath} from "./login.js";
@@ -68,14 +68,11 @@ function modal(title, caption, onclose) {
     paper.append(h("div", {class: "pair-title"}, h("h2", {}, title), caption && h("span", {}, caption)), h("hr"), body);
     return {el, body};
   }
-  const el = h("dialog", {class: "pair-dialog", "aria-label": title, autofocus: true, onclose: () => { el.remove(); onclose(); },
-    onclick: (e) => { if (e.target === el) el.close(); }},  // the dialog has no padding: only the backdrop is itself
-  h("div", {class: "pair-card"},
-    h("div", {class: "pair-head"}, h("h2", {}, title), caption && h("span", {class: "small muted"}, caption),
-      h("button", {class: "icon-btn", title: "Close", "aria-label": "Close", onclick: () => el.close()}, icon("close", 18))),
-    body));
-  document.body.append(el);
-  el.showModal();
+  const el = openModal({class: "pair-dialog", "aria-label": title, autofocus: true, onclose},  // no padding: only the backdrop is the dialog itself
+    h("div", {class: "pair-card"},
+      h("div", {class: "pair-head"}, h("h2", {}, title), caption && h("span", {class: "small muted"}, caption),
+        h("button", {class: "icon-btn", title: "Close", "aria-label": "Close", onclick: () => el.close()}, icon("close", 18))),
+      body));
   return {el, body};
 }
 

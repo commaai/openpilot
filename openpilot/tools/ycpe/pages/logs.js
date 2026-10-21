@@ -1,7 +1,7 @@
 // boot and crash logs: the signed file list, newest first. Crash logs open in a text dialog, boot logs (capnp) in a
 // viewer of their sections.
 import {api} from "../api.js";
-import {h, fmt, copyButton} from "../dom.js";
+import {h, fmt, copyButton, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 
 const PAGE = 50;
@@ -15,15 +15,12 @@ function crashName(file) {
 // closing returns the focus to what opened it
 function logDialog(name, head, body) {
   const opener = document.activeElement;
-  const dialog = h("dialog", {class: "log-dialog", onclose: () => { dialog.remove(); opener?.focus(); }},
+  const dialog = openModal({class: "log-dialog", onclose: () => opener?.focus()},
     h("div", {class: "log-head"},
       h("span", {class: "mono"}, name),
       head,
       h("button", {class: "icon-btn", "aria-label": "Close", onclick: () => dialog.close()}, icon("close", 20))),
     body);
-  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
-  document.body.append(dialog);
-  dialog.showModal();
   return dialog;
 }
 

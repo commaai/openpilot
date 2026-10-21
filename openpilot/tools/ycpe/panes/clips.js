@@ -4,7 +4,7 @@
 // (getClipChunk). Downloaded clips stay in the Cache API, so they play again without asking the device.
 // clipButton(ctx) is the drive view's Clip button, deviceClips(device) a device's clips
 import {api, versionAtLeast} from "/api.js";
-import {h, css, ask, fmt, download} from "/dom.js";
+import {h, css, ask, fmt, download, openModal} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {isOnline, link} from "/app.js";
@@ -158,16 +158,13 @@ async function viewer(clip, blob, wanted) {
   const video = h("video", {src: url, controls: true, muted: true, playsinline: true, preload: "auto"});
   await new Promise((done) => { video.onloadeddata = video.onerror = done; setTimeout(done, 2000); });
   if (!wanted()) return URL.revokeObjectURL(url);
-  const el = h("dialog", {class: `clips-viewer${userMode() ? " um" : ""}`, autofocus: true, onclose: () => { el.remove(); URL.revokeObjectURL(url); }},
+  const el = openModal({class: `clips-viewer${userMode() ? " um" : ""}`, autofocus: true, onclose: () => URL.revokeObjectURL(url)},
     h("div", {class: "clips-viewer-head"},
       h("div", {class: "clips-viewer-title"}, h("b", {}, clipTitle(clip)),
         h("div", {class: "clips-meta"}, [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · "))),
       h("button", {class: "clips-icon", title: "Download clip", "aria-label": "Download clip", onclick: () => save(blob, clip)}, ic("download", 24)),
       h("button", {class: "clips-icon", title: "Close", "aria-label": "Close video", onclick: () => el.close()}, ic("close", 24, "closeBold"))),
     video);
-  el.addEventListener("click", (e) => { if (e.target === el) el.close(); });
-  document.body.append(el);
-  el.showModal();
   video.play().catch(() => {});
 }
 

@@ -1,7 +1,7 @@
 // device settings, as in connect: what the device is, its comma prime status, and (for the owner) unpairing. User mode
 // has connect's own: its modal over the dashboard, from the device list's gear
 import {api, auth, billingReachable} from "../api.js";
-import {h, fmt, css, copyButton} from "../dom.js";
+import {h, fmt, css, copyButton, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 import {onlineMark, link, go, isOnline, devicesChanged} from "../app.js";
 
@@ -116,12 +116,7 @@ const styled = () => css(new URL("./settings.css", import.meta.url));
 
 // MUI's Modal: a backdrop that fades in and the paper over it; Escape or a click beside the paper closes it
 function modal(cls, onClose, ...children) {
-  const paper = h("div", {class: `cn-paper ${cls}`, role: "document", tabindex: "-1", autofocus: true}, ...children);
-  const el = h("dialog", {class: "cn-modal", onclose: () => { el.remove(); onClose?.(); },
-    onclick: (e) => { if (e.target === el) el.close(); }}, paper);
-  document.body.append(el);
-  el.showModal();
-  return el;
+  return openModal({class: "cn-modal", onclose: onClose}, h("div", {class: `cn-paper ${cls}`, role: "document", tabindex: "-1", autofocus: true}, ...children));
 }
 
 const title = (text, dongleId) => [h("div", {class: "cn-modal-title"}, h("h2", {}, text), h("span", {}, dongleId)), h("hr")];
