@@ -4,7 +4,7 @@ from functools import cache
 from pathlib import Path
 
 YCPE = Path(__file__).resolve().parent.parent
-SOURCES = [p for p in YCPE.rglob("*.js") if not {"harness", "dev", "bench"} & set(p.relative_to(YCPE).parts)]
+SOURCES = [p for p in YCPE.rglob("*.js") if not {"harness"} & set(p.relative_to(YCPE).parts)]
 CLASS_RE = re.compile(r"""class(?:Name)?\s*[:=]\s*[`"']([^`"']+)|classList\.(?:add|toggle)\(\s*["']([\w-]+)""")
 LOCAL_FILE = re.compile(r"(?:localhost:\d+)?/((?:[\w-]+/)*[\w.-]+\.js)\b")
 

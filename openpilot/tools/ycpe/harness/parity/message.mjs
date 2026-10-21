@@ -2,7 +2,7 @@
 // decodes every step-th message of a log through data/message.js, as JSON: [[index, message], ...]
 // usage: message.mjs <log> <out.json> [step]
 import fs from "node:fs";
-import {schema} from "../../data/bench/node.mjs";
+import {schema} from "./node.mjs";
 import {decompress} from "../../codec/codec.js";
 import {decode, messages} from "../../data/message.js";
 

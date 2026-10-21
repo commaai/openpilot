@@ -2,7 +2,7 @@
 // dumps a log through data/capnp.js in the same shape as dump.py: {service: {t, valid, cols: {path: [value|null]}}}
 // usage: dump.mjs <log> <out.json> [--migrate]
 import fs from "node:fs";
-import {schema} from "../../data/bench/node.mjs";
+import {schema} from "./node.mjs";
 import {decompress} from "../../codec/codec.js";
 import {Reader, compact} from "../../data/capnp.js";
 import {migrate, withKeep} from "../../data/migrate.js";
