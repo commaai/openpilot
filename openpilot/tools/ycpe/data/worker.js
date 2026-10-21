@@ -102,13 +102,10 @@ const patterns = (o) => o && Object.fromEntries(Object.entries(o).map(([name, gl
 // base: the logMonoTime (s) of route time 0, where a live session started. more: services read elsewhere (JSON)
 async function parse(buf, opts, more = []) {
   const reader = await readerFor(opts.schema);
-  const t0 = performance.now();
-  let t1, raw, migrated;
+  let migrated;
   const frames = opts.can ? new CanFrames(reader.schema) : null;  // CAN frames once, on a segment's first parse
   // the reader walks the decompressed bytes in place, so they never leave wasm memory
   const services = withDecompressed(new Uint8Array(buf), (bytes) => {
-    t1 = performance.now();
-    raw = bytes.byteLength;
     const read = reader.read(bytes, {keep: withKeep(opts.keep), can: frames?.hook});
     for (const svc of more) if (![...read.values()].some((s) => s.name === svc.name)) read.set(svc.name, svc);
     if (!read.size) throw new Error(reader.unknown.events ? "none of its messages are in the schema" : "not an openpilot log: no messages in it");
@@ -136,7 +133,7 @@ async function parse(buf, opts, more = []) {
   if (can) can.can.t0 += off;
   const unknown = {events: reader.unknown.events, services: [...reader.unknown.services]};
   const listTypes = Object.fromEntries(Object.keys(out.lists).map((path) => [path, elemType(reader.schema, path)]));
-  return {...out, ...migrated, unknown, listTypes, gen: opts.gen, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off, raw, ms: {decompress: t1 - t0, read: performance.now() - t1}};
+  return {...out, ...migrated, unknown, listTypes, gen: opts.gen, can: can?.can, canBufs: can?.transfer || [], start, t0: lo + off, t1: hi + off};
 }
 
 // the last logs message() opened, decompressed and indexed: scrubbing within a segment decodes without reloading

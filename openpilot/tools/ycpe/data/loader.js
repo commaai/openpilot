@@ -143,7 +143,7 @@ export class Loader {
       const opts = typeof job.opts === "function" ? job.opts() : job.opts;
       this.call(worker, {op: "parse", key: job.key, buf: job.buf, opts}, [job.buf])
         .then((r) => this.cancelled.has(job.owner) ? job.reject(new Error("cancelled"))
-          : job.resolve({...r, bytes: job.bytes, cached: job.cached, stored: job.stored, ms: {...job.ms, ...r.ms}}), job.reject)
+          : job.resolve({...r, bytes: job.bytes, cached: job.cached, stored: job.stored}), job.reject)
         .finally(() => {
           this.release(worker);
           this.pump();
@@ -170,7 +170,6 @@ export class Loader {
 
   // any worker can fetch while it parses: the download and the OPFS read or write are async there
   async fetch(job) {
-    const t0 = performance.now();
     await this.downloads.get(job.key);
     const w = this.workers.length < this.size ? this.spawn() : this.workers[this.next++ % this.workers.length];
     const got = this.call(w, {op: "fetch", key: job.key, url: job.url, buf: job.partial}, job.partial ? [job.partial] : [], job.report);
@@ -191,7 +190,6 @@ export class Loader {
       return false;
     }
     job.bytes = job.buf.byteLength;
-    job.ms = {fetch: performance.now() - t0};
     return true;
   }
 

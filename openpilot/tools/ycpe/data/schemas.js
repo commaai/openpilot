@@ -80,7 +80,7 @@ class LogSchema {
     if (!git?.repo) return this.use(null, {status: "error", reason: git ? "not a GitHub remote" : "no git commit in this log"});
     const key = `${git.repo}@${git.commit}`;
     if (!this.fetched.has(key)) {
-      this.fetched.set(key, upstream("schema", git).then(({text, fetchMs, ms}) => ({key, text, ms, fetchMs, label: `${git.repo}@${git.commit.slice(0, 7)}`})));
+      this.fetched.set(key, upstream("schema", git).then(({text, ms}) => ({key, text, ms, label: `${git.repo}@${git.commit.slice(0, 7)}`})));
     }
     this.pending(key, this.fetched.get(key), reason);
   }
