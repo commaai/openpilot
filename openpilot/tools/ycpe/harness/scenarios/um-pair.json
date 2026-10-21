@@ -16,10 +16,8 @@
   {"waitFor": ".pair-empty.um .pair-picture img"},
   {"assert": "(() => { const t = document.querySelector('.pair-empty.um').textContent; return ['Pair your device', 'Your device is connected to the internet', 'may already be paired to another account'].every((s) => t.includes(s)) && document.querySelector('.pair-empty.um .pair-cn').textContent === 'add new device' || t; })()"},
   {"assert": "(() => { const s = getComputedStyle(document.querySelector('.pair-empty.um .pair-copy p')); return s.fontSize === '16px' && s.lineHeight === '28px' || `connect's prose: ${s.fontSize}/${s.lineHeight}`; })()"},
-  {"wait": 300},
   {"shot": "no-devices"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "no-devices-other-theme"},
 
   {"eval": "delete window.BarcodeDetector; navigator.mediaDevices.enumerateDevices = async () => []; true"},
@@ -31,7 +29,6 @@
   {"waitFor": {"fn": "document.querySelector('.pair-status:not([hidden])')?.textContent.includes('Error: invalid QR code detected')"}, "timeout": 5000},
   {"shot": "no-reader"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "no-reader-other-theme"},
   {"key": "Escape"},
   {"waitFor": {"fn": "!document.querySelector('.cnui-modal')"}},
@@ -47,7 +44,6 @@
   {"eval": "window.__qr = null; window.BarcodeDetector = class { static async getSupportedFormats() { return ['qr_code']; } async detect() { return __qr ? [{rawValue: __qr}] : []; } }; navigator.mediaDevices.enumerateDevices = async () => [{kind: 'videoinput', deviceId: 'fake', label: 'fake camera'}]; navigator.mediaDevices.getUserMedia = async () => { const cv = Object.assign(document.createElement('canvas'), {width: 640, height: 480}), g = cv.getContext('2d'); g.fillStyle = '#3a4650'; g.fillRect(0, 0, 640, 480); return window.__stream = cv.captureStream(1); }; true"},
   {"click": ".pair-empty.um .pair-cn"},
   {"waitFor": {"fn": "document.querySelector('.pair-paper .pair-video video')?.readyState >= 2"}},
-  {"wait": 300},
   {"shot": "scanner"},
   {"eval": "__qr = 'https://connect.comma.ai/?pair=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGl0eSI6IjAxMjM0NTY3ODlhYmNkZWYiLCJwYWlyIjp0cnVlLCJpYXQiOjE3OTI0MDAwMDAsImV4cCI6MTc5MjQwMzYwMH0.ZmFrZS1wYWly'"},
   {"waitFor": {"fn": "document.querySelector('.pair-status:not([hidden])')?.textContent.includes('Successfully paired device 0123456789abcdef')"}, "timeout": 5000},
@@ -68,6 +64,5 @@
   {"viewport": [390, 844]},
   {"goto": "/connect"},
   {"waitFor": ".pair-empty.um .pair-picture img"},
-  {"wait": 300},
   {"shot": "no-devices-phone"}
  ]}

@@ -58,7 +58,6 @@
   {"waitFor": ".prime-items"},
   {"assert": "(() => { const r = JSON.parse(sessionStorage.getItem('__billing') || '[]'); return JSON.stringify(r) === JSON.stringify([{method: 'GET', url: 'https://billing.comma.ai/v1/prime/stripe_portal?dongle_id=3333333333333333', body: null}]) || JSON.stringify(r); })()"},
   {"key": "t"},
-  {"wait": 200},
   {"shot": "manage-other-theme"},
 
   {"goto": "/5555555555555555/prime"},

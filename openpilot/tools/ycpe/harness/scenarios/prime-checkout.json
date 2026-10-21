@@ -78,7 +78,6 @@
   {"waitFor": ".prime-plan[aria-pressed=true]"},
   {"shot": "checkout-phone"},
   {"key": "t"},
-  {"wait": 200},
   {"shot": "checkout-phone-other-theme"},
   {"goto": "/1111111111111111"},
   {"waitFor": ".prime-promo"},

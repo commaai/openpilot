@@ -10,7 +10,6 @@
   {"click": ".list-foot .more"},
   {"waitFor": {"fn": "document.querySelectorAll('.drives a.drive-row').length > 16 && !document.querySelector('.list-foot .more').disabled"}},
   {"wheel": {"dy": 1200}},
-  {"wait": 300},
   {"shot": "scrolled"},
   {"assert": "document.getElementById('main').scrollTop > 0 || 'the drive list should scroll'"},
   {"eval": "window.__left = [document.getElementById('main').scrollTop, document.querySelectorAll('.drives a.drive-row').length]"},

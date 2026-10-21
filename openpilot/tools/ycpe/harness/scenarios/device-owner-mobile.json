@@ -12,7 +12,6 @@
   {"shot": "loaded"},
   {"click": ".list-foot .filter"},
   {"assert": "document.querySelector('.drive-opts').checkVisibility() || 'Filter shows the dates'"},
-  {"wait": 300},
   {"shot": "filter-details"},
   {"eval": "document.getElementById('main').scrollTop = 0"},
   {"click": [195, 104]},
@@ -23,11 +22,9 @@
   {"waitFor": ".snapshot img"},
   {"shot": "snapshot"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "snapshot-other-theme"},
   {"click": "button[data-tab=settings]"},
   {"waitFor": ".list.settings"},
   {"eval": "document.getElementById('main').scrollTop = 1e6"},
-  {"wait": 200},
   {"shot": "settings-unpair"}
  ]}

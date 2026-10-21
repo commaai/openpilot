@@ -66,9 +66,7 @@
   {"assert": "document.querySelector('.pubkey .mono').textContent.startsWith('MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE') || 'the public key shows its body'"},
   {"shot": "settings"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "settings-other-theme"},
   {"click": "button[data-tab=drives]"},
-  {"wait": 300},
   {"shot": "drives-other-theme"}
  ]}

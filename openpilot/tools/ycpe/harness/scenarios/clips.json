@@ -99,7 +99,6 @@
   {"assert": "__sent.every((r) => !/(local\\/athena|athena\\.comma\\.ai)/.test(r.url) || ['getVersion', 'setRouteViewed', 'createClip', 'deleteClip'].includes(JSON.parse(r.body).method)) || JSON.stringify(__sent.map((r) => r.body))"},
   {"shot": "deleted"},
   {"eval": "import('/theme.js').then((m) => m.theme.toggle())"},
-  {"wait": 200},
   {"shot": "menu-theme"},
   {"key": "Escape"},
   {"waitFor": {"fn": "!document.querySelector('.clips-menu')"}},

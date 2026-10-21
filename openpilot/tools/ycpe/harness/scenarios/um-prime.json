@@ -21,7 +21,6 @@
   {"waitFor": ".cnui-promo a"},
   {"assert": "document.querySelector('.cnui-promo a').getAttribute('href') === '/connect/1111111111111111/prime' || document.querySelector('.cnui-promo a').getAttribute('href')"},
   {"assert": "(() => { const r = document.querySelector('.cnui-promo').getBoundingClientRect(); const c = document.querySelector('.cn-content'); return c.getBoundingClientRect().left + c.clientWidth - r.right === 10 || `connect's corner: ${JSON.stringify(r)}`; })()"},
-  {"wait": 300},
   {"shot": "promo"},
   {"click": ".cnui-promo a"},
   {"waitFor": ".prime-page.um .prime-plan[aria-pressed=true]"},
@@ -31,7 +30,6 @@
   {"assert": "(() => { const s = getComputedStyle(document.querySelector('.prime-page.um .prime-title')); return s.fontSize === '16px' && s.fontWeight === '400' || s.fontSize; })()"},
   {"shot": "checkout"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "checkout-other-theme"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
   {"assert": "!__sent.length || 'looking sends nothing: ' + JSON.stringify(__sent)"},
@@ -72,6 +70,5 @@
   {"key": "Escape"},
   {"waitFor": {"fn": "!document.querySelector('.cnui-modal')"}},
   {"viewport": [390, 844]},
-  {"wait": 300},
   {"shot": "manage-phone"}
  ]}

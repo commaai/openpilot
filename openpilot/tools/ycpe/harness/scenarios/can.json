@@ -4,6 +4,5 @@
   {"wait": 1500},
   {"shot": "light"},
   {"key": "t"},
-  {"wait": 300},
   {"shot": "dark"}
  ]}

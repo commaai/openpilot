@@ -20,10 +20,8 @@
   {"assert": "!document.querySelector('.clips-menu.um .clips-meta a') || 'user mode names the drive by its start, as connect, without a link'"},
   {"assert": "!!document.querySelector('.clips-menu.um .cnui-linear.busy') || 'the encoding clip shows connect\\'s indeterminate bar'"},
   {"assert": "(() => { const s = getComputedStyle(document.querySelector('.clips-menu.um')); return s.borderRadius === '4px' || s.borderRadius; })()"},
-  {"wait": 300},
   {"shot": "menu"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
-  {"wait": 300},
   {"shot": "menu-other-theme"},
   {"eval": "import('/theme.js').then(({theme}) => theme.set(theme.name === 'dark' ? 'light' : 'dark'))"},
 
@@ -42,7 +40,6 @@
   {"click": ".clips-clip[data-clip='commute_10x.mp4'] [aria-label='Download clip']"},
   {"waitFor": "dialog.clips-viewer.um[open] video"},
   {"assert": "(() => { const r = document.querySelector('.clips-viewer.um').getBoundingClientRect(); return r.width === 800 || r.width; })()"},
-  {"wait": 300},
   {"shot": "viewer"},
   {"click": ".clips-viewer [aria-label='Close video']"},
   {"waitFor": {"fn": "!document.querySelector('.clips-viewer')"}},
@@ -53,6 +50,5 @@
   {"click": ".clips-device"},
   {"waitFor": ".clips-menu.um[open] .clips-clip"},
   {"assert": "(() => { const r = document.querySelector('.clips-menu.um').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + .5 || JSON.stringify(r); })()"},
-  {"wait": 300},
   {"shot": "menu-phone"}
  ]}
