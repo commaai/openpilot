@@ -7,6 +7,7 @@ import {REFERRALS_SEEN, link} from "../app.js";
 import {copyButton} from "./account.js";
 import {signInCard} from "./login.js";
 import {mode} from "./connect/mode.js";
+import {promo} from "./cnui.js";
 
 const REFER = "https://refer.comma.ai";
 const TERMS = "https://comma.ai/terms#referral-terms";
@@ -193,14 +194,11 @@ export async function referralPromo(device) {
     localStorage.setItem(PROMO_KEY, "1");
     el.remove();
   };
-  // user mode: connect's Notification, over the map's top right
+  // user mode: connect's Notification
   if (mode() === "user") {
-    el = h("div", {class: "cn-promo-slot"}, h("aside", {class: "cn-promo", "aria-label": "Referral promotion"},
-      h("button", {class: "cn-promo-x", "aria-label": "Dismiss referral promotion", onclick: dismiss}, icon("close", 12)),
-      h("div", {class: "cn-promo-head"}, h("p", {}, "Refer a friend. Get $50."),
-        h("a", {href: "/connect/referrals", onclick: (e) => { dismiss(); link("/connect/referrals")(e); }}, "refer")),
-      h("p", {}, "Earn $50 for each comma four purchased with your referral link.")));
-    return el;
+    return el = promo("Referral promotion", "Refer a friend. Get $50.",
+      h("a", {href: "/connect/referrals", onclick: (e) => { dismiss(); link("/connect/referrals")(e); }}, "refer"),
+      "Earn $50 for each comma four purchased with your referral link.", dismiss);
   }
   el = h("div", {class: "ref-promo-slot"}, h("aside", {class: "ref-promo", "aria-label": "Referral promotion"},
     h("div", {}, h("b", {}, "Refer a friend. Get $50."), h("p", {class: "small muted"}, "Earn $50 for each comma four bought with your referral link.")),

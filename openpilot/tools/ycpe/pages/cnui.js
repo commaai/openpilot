@@ -57,6 +57,12 @@ export function linear(share = null) {
   return el;
 }
 
+// connect's Notification over the map's top right: a title and its link a, text under them, and a round x that
+// dismisses it
+export const promo = (label, title, a, text, dismiss) => h("div", {class: "cnui-promo-slot"}, h("aside", {class: "cnui-promo", "aria-label": label},
+  h("button", {class: "cnui-promo-x", "aria-label": `Dismiss ${label.toLowerCase()}`, onclick: dismiss}, cnIcon("clear", 12)),
+  h("div", {class: "cnui-promo-head"}, h("b", {}, title), a), h("p", {}, text)));
+
 // a modal on connect's paper: Escape or a click beside it closes it unless busy() says not now, then onclose runs
 // once. kind is the paper's class (its size and place); the backdrop fades in as Material UI's does
 export function cnModal(label, kind, onclose = () => {}, busy = () => false) {

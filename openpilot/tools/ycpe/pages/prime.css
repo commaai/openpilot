@@ -186,17 +186,3 @@
 .prime-paper.cancel .prime-modal-buttons .cnui-btn { margin-top: 10px; }
 .prime-paper .prime-modal-care { margin-top: 12px; padding: 10px; background: #b85e1f; }
 .prime-paper .prime-modal-care a { color: #fff; text-decoration: underline; }
-
-/* the sign-up card (Notification), over the device page's top right; full width on a phone */
-.prime-promo-slot.um { max-width: none; }
-.prime-promo-slot.um .prime-promo { top: 8px; right: 10px; z-index: 4; width: 360px; padding: 12px 16px; border: 1px solid #303639; border-radius: 22px;
-  background: #424a4f; color: var(--cnui-fg); box-shadow: none; font: 14px/1.46429 "Inter", sans-serif; }
-.prime-promo-slot.um .prime-promo-head { align-items: flex-start; margin-bottom: 10px; }
-.prime-promo-slot.um .prime-promo-head b { font-size: 20px; font-weight: 600; line-height: 31px; }
-.prime-promo-slot.um .prime-signup { min-width: 90px; min-height: 0; margin-left: 8px; padding: 6px 24px; border-radius: 15px; background: #5e8bff; color: #fff; text-decoration: none; }
-.prime-promo-slot.um .prime-signup:hover { background: #547de6; }
-.prime-promo-slot.um .prime-promo p { color: rgba(255, 255, 255, .9); opacity: 1; }
-.prime-promo-slot.um .prime-dismiss { position: absolute; top: -8px; left: -6px; box-sizing: border-box; width: 24px; height: 24px; padding: 5px; border: 1px solid #394044;
-  display: flex; border-radius: 12px; background: var(--cnui-deep); color: var(--cnui-fg); cursor: pointer; }
-.prime-promo-slot.um .prime-dismiss:hover { background: #303639; }
-@media (max-width: 599px) { .prime-promo-slot.um .prime-promo { left: 8px; width: auto; } }

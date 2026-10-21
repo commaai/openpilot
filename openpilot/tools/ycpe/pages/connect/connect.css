@@ -91,22 +91,6 @@
   .cn-devmode > span { display: none; }
 }
 
-/* connect's promotions over the map's top right (a phone's across it), the referral one as its Notification */
-.cn-content > :is(.ref-promo-slot, .prime-promo-slot) { position: relative; z-index: 4; max-width: none; height: 0; margin: 0; }
-.cn-content :is(.ref-promo, .prime-promo) { top: 8px; right: 10px; left: auto; }
-.cn-content .ref-promo { display: grid; grid-template: "head btn" auto "sub sub" auto / 1fr auto; gap: 0; align-items: start; box-sizing: border-box; width: 360px; padding: 12px 16px;
-  border: 1px solid #303639; border-radius: 22px; background: #424a4f; box-shadow: none; color: #fff; }
-.cn-content .ref-promo > div { display: contents; }
-.cn-content .ref-promo b { grid-area: head; margin-bottom: 10px; white-space: nowrap; font-size: 20px; font-weight: 600; line-height: 31px; }
-.cn-content .ref-promo p { grid-area: sub; margin: 0; color: rgba(255,255,255,.9); font-size: 14px; line-height: 1.46429em; }
-.cn-content .ref-promo .button { grid-area: btn; min-width: 90px; margin: 0 0 0 8px; padding: 6px 24px; border: 0; border-radius: 15px; background: #5e8bff; color: #fff;
-  font-size: 14px; line-height: 1.4em; text-align: center; text-transform: lowercase; }
-.cn-content .ref-promo .button:hover { background: #547de6; }
-.cn-content .ref-promo .icon-btn { position: absolute; top: -8px; left: -6px; width: 24px; height: 24px; min-width: 0; padding: 5px; border: 1px solid #394044;
-  border-radius: 12px; background: #1e2224; color: #fff; }
-.cn-content .ref-promo .icon-btn:hover { background: #303639; }
-@media (max-width: 599px) { .cn-content :is(.ref-promo, .prime-promo) { left: 8px; width: auto; } }
-
 /* the Dashboard: Navigation's map, DeviceInfo, then DriveList */
 .cn-dash { --driving: #175886; --engaged: #178645; --override: #919b95; --alert: #da6f25; --critical: #c92231; --bookmark: #e3d756; position: relative; display: flex;
   flex-direction: column; min-height: 100%; }
