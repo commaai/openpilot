@@ -106,8 +106,7 @@ export function create(opts = {}) {
     label: "panda",
     state: "closed",
     detail: "",
-    // busyMs: main-thread time spent unpacking and encoding CAN; health: the latest PandaState
-    stats: {frames: 0, bytes: 0, events: 0, checksumErrors: 0, overflows: 0, busyMs: 0, health: null},
+    stats: {frames: 0, checksumErrors: 0, overflows: 0},
     on(name, fn) { return name === "state" ? changed.on(fn) : () => {}; },
 
     async start(s) {
@@ -224,17 +223,14 @@ export function create(opts = {}) {
       const data = new Uint8Array(r.data.buffer, r.data.byteOffset, r.data.byteLength);
       const now = performance.now(), got = unpacker.push(data);
       for (const f of got.frames) frames.push(f);
-      stats.bytes += data.length;
       if (!got.ok || now >= next) {
         if (frames.length || !got.ok) {
           sink?.events(event(monoNanos(now), got.ok, "can", frames));
           stats.frames += frames.length;
-          stats.events++;
         }
         frames = [];
         next = next + PERIOD < now ? now + PERIOD : next + PERIOD;  // a late tick starts a new schedule, as pandad's RateKeeper
       }
-      stats.busyMs += performance.now() - now;
       if (!got.ok) {
         stats.checksumErrors++;
         await d.controlTransferOut(vendor(0xc0)).catch(() => {});
@@ -251,8 +247,7 @@ export function create(opts = {}) {
         const cans = [];
         for (let i = 0; i < 3; i++) cans.push(await control(d, 0xc2, size(CAN_HEALTH), i));
         if (device !== d) return;
-        source.stats.health = pandaState(health, cans, hwType);
-        sink?.events(event(monoNanos(), true, "pandaStates", [source.stats.health]));
+        sink?.events(event(monoNanos(), true, "pandaStates", [pandaState(health, cans, hwType)]));
       } catch {
         if (device !== d) return;
       }

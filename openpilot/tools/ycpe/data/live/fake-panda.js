@@ -28,7 +28,6 @@ class FakePanda {
     this.configuration = null;
     this.connected = true;
     this.requests = [];  // every control request, for tests: [direction, request, value]
-    this.arrival = 0;  // when the newest packet handed out reached the "panda", in performance.now() ms
   }
 
   async open() {
@@ -84,7 +83,6 @@ class FakePanda {
     const {chunks, duration} = this.fixture, now = performance.now() - this.start;
     while (chunks[this.next].t + this.loop * duration <= now) {
       this.queue.push(chunks[this.next].data);
-      this.arrival = this.start + chunks[this.next].t + this.loop * duration;
       if (++this.next === chunks.length) [this.next, this.loop] = [0, this.loop + 1];
     }
     const out = new Uint8Array(Math.min(length, this.max)), cap = out.length;
