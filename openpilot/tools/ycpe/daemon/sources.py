@@ -14,19 +14,18 @@ from urllib.parse import urlparse
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib import filereader
+from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.helpers import RE
+from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import URLFile
 from openpilot.tools.ycpe.daemon import cache
 from openpilot.tools.ycpe.daemon.cache import Key
 from openpilot.tools.ycpe.daemon.core import TOKEN_PARAM, File, HTTPError, Stream, config, confine, file_chunks, module, route
 
 SOURCES = ["device", "local", "internal", "api", "openpilotci"]
-KINDS = {
-  "rlog": ("rlog.zst", "rlog.bz2"), "qlog": ("qlog.zst", "qlog.bz2"), "qcamera": ("qcamera.ts",),
-  "fcamera": ("fcamera.hevc",), "ecamera": ("ecamera.hevc",), "dcamera": ("dcamera.hevc",),
-}
+KINDS = {"rlog": FileName.RLOG, "qlog": FileName.QLOG, "qcamera": FileName.QCAMERA, "fcamera": FileName.FCAMERA,
+         "ecamera": FileName.ECAMERA, "dcamera": FileName.DCAMERA}
 FILES = {f: k for k, fs in KINDS.items() for f in fs}
-API_KINDS = {"logs": "rlog", "qlogs": "qlog", "cameras": "fcamera", "ecameras": "ecamera", "dcameras": "dcamera", "qcameras": "qcamera"}
 ROUTE_RE = re.compile(RE.SEGMENT_RANGE)
 HIT, MISS = {"X-Ycpe-Cache": "hit"}, {"X-Ycpe-Cache": "miss"}  # whether bytes came off local disk, for the page's status
 API_TTL = 30 * 60  # signed URLs from the route listing are reused this long
@@ -244,7 +243,7 @@ _check_lock = threading.Lock()
 
 def revalidate(key: Key, source: str, path: Path, jwt: str | None) -> None:
   url = cache.canonical_url(source, key)
-  if url is None or path.name != cache.sha(url) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
+  if url is None or path != Path(cache_file_path(url)) or time.time() - cache.checked_at(path) < CHECK_EVERY:  # noqa: TID251
     return  # device pulls, decompressed-only copies, or checked lately
   with _check_lock:
     if url in _checking:

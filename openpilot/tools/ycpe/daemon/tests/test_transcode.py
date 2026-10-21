@@ -11,6 +11,7 @@ from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.ycpe.daemon.transcode import Encode, Pictures, Transcoder, backends, encode
 
 FRAMES = 50  # 2.5 s at 20 fps: a few GOPs and a short last one
+VIDEO = "/local/video/0123456789abcdef/0000002a--0123456789"
 
 
 def hevc_clip(path: Path, frames: int = FRAMES) -> Path:
@@ -138,17 +139,18 @@ class TestRoute(DaemonCase):
 
   def test_streams_then_serves_ranges(self):
     start = time.monotonic()
-    r, data = self.req("/local/video/d/r/0/fcamera.h264")
+    r, data = self.req(f"{VIDEO}/0/fcamera.h264")
     self.assertEqual(r.status, 200)
     self.assertEqual(len([t for t in nal_types(data) if t in (1, 5)]), 200)
     self.assertLess(time.monotonic() - start, 60)
-    r, head = self.req("/local/video/d/r/0/fcamera.h264", headers={"Range": "bytes=0-99"})
+    r, head = self.req(f"{VIDEO}/0/fcamera.h264", headers={"Range": "bytes=0-99"})
     self.assertEqual((r.status, head), (206, data[:100]))
 
   def test_errors(self):
-    self.assertEqual(self.req("/local/video/d/r/7/fcamera.h264")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/qcamera.h264")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/fcamera.mp4")[0].status, 404)
+    self.assertEqual(self.req(f"{VIDEO}/7/fcamera.h264")[0].status, 404)
+    self.assertEqual(self.req(f"{VIDEO}/0/qcamera.h264")[0].status, 404)
+    self.assertEqual(self.req(f"{VIDEO}/0/fcamera.mp4")[0].status, 404)
+    self.assertEqual(self.req("/local/video/d/r/0/fcamera.h264")[0].status, 404)  # not route ids
 
 
 if __name__ == "__main__":

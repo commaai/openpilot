@@ -24,7 +24,6 @@ TOKEN_FILE = Path.home() / ".cache" / "ycpe" / "token"
 class Config:
   port: int = 3000
   token: str = field(default_factory=lambda: secrets.token_urlsafe(32))
-  cache_root: str = ""  # the shared download cache; set from Paths.download_cache_root() by serve.py
   cache_budget: int = 20 * 1000 ** 3
   log_roots: list[str] = field(default_factory=list)  # local route directories that may be read
   repo_roots: list[str] = field(default_factory=list)  # openpilot checkouts

@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from openpilot.tools.lib.helpers import RE
 from openpilot.tools.ycpe.daemon import File, HTTPError, cache, jobs, module, route, sources
 
 FPS = 20
@@ -274,7 +275,6 @@ class Transcoder:
 
 # the daemon side
 
-NAME = re.compile(r"^[0-9a-zA-Z_-]+\Z")  # dongle ids and log ids
 _transcoder: Transcoder | None = None
 _transcoder_lock = threading.Lock()
 
@@ -322,7 +322,7 @@ def video(req):
   """The transcoded segment, followed as it's written while the encode runs."""
   p = req.params
   cam, _, ext = p["file"].rpartition(".")
-  if not (NAME.match(p["dongle"]) and NAME.match(p["log_id"]) and p["seg"].isdigit() and ext == "h264"):
+  if not (re.fullmatch(RE.DONGLE_ID, p["dongle"]) and re.fullmatch(RE.LOG_ID, p["log_id"]) and p["seg"].isdigit() and ext == "h264"):
     raise HTTPError(404)
   seg = int(p["seg"])
   try:

@@ -6,13 +6,13 @@ import re
 from urllib3 import Timeout
 from urllib3.exceptions import HTTPError as UpstreamError
 
+from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.url_file import URLFile
 from openpilot.tools.ycpe.daemon.core import HTTPError, Response, module, route
 
 ATHENA = "https://athena.comma.ai"
 METHODS = {"listUploadQueue", "cancelUpload", "uploadFilesToUrls", "getNetworkMetered", "startStream", "getMessage", "takeSnapshot",
            "setRouteViewed", "getVersion", "getClipState", "createClip", "deleteClip", "getClipChunk"}
-DONGLE_RE = re.compile(r"[0-9a-f]{16}")
 MAX_BODY = 1 << 20  # a few hundred files_data entries
 MAX_RESPONSE = 4 << 20
 TIMEOUT = Timeout(connect=5.0, read=30.0)
@@ -57,6 +57,6 @@ def forward(req, method: str, url: str, body: bytes | None = None, name: str = "
 @route("POST", "/local/athena/{dongle}", max_body=MAX_BODY)
 def athena(req):
   dongle = req.params["dongle"]
-  if not DONGLE_RE.fullmatch(dongle):
+  if not re.fullmatch(RE.DONGLE_ID, dongle):
     raise HTTPError(400, "bad dongle id")
   return forward(req, "POST", f"{ATHENA}/{dongle}", rpc_body(req.body))

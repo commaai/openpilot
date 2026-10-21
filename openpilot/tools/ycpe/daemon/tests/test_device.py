@@ -43,7 +43,7 @@ class TestDevice(DaemonCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    config.cache_root = tempfile.mkdtemp() + "/"
+    os.environ["COMMA_CACHE"] = tempfile.mkdtemp()
     config.device, config.device_root = f"{getpass.getuser()}@localhost", str(REALDATA)
     cls.before = tree()
 

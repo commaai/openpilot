@@ -51,6 +51,7 @@ up = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
 threading.Thread(target=up.serve_forever, daemon=True).start()
 os.environ["DATA_ENDPOINT"] = f"http://127.0.0.1:{up.server_address[1]}/"
 
+from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.url_file import URLFile, hash_url
 from openpilot.tools.ycpe.daemon import cache, jobs, sources
 from openpilot.tools.ycpe.daemon.cache import Key
@@ -82,7 +83,7 @@ class TestSources(DaemonCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    config.cache_root = CACHE + "/"
+    os.environ["COMMA_CACHE"] = CACHE  # test_device's is another
     config.log_roots = [LOGS]
 
   def test_resolve(self):
@@ -105,7 +106,7 @@ class TestSources(DaemonCase):
     self.assertEqual((r.status, data), (200, blob(1, "rlog.zst")))
     canonical = cache.canonical_url("internal", cache.Key(DONGLE, LOG, 1, "rlog.zst"))
     until(lambda: (Path(CACHE) / f"{hash_url(canonical)}_length").exists(), 1)
-    self.assertTrue((Path(CACHE) / cache.sha(canonical)).is_file())
+    self.assertTrue(Path(cache_file_path(canonical)).is_file())
     hits = cache.stats["hits"]
     r, data = self.req(url, headers={"Range": "bytes=5-9"})
     self.assertEqual((r.status, data, r.getheader("X-Ycpe-Cache")), (206, blob(1, "rlog.zst")[5:10], "hit"))
@@ -234,8 +235,7 @@ class TestSources(DaemonCase):
 
   def test_prune_lru(self):
     d = Path(tempfile.mkdtemp())
-    old = config.cache_root
-    config.cache_root = str(d) + "/"
+    os.environ["COMMA_CACHE"] = str(d)
     try:
       now = time.time()  # noqa: TID251  compared with file mtimes
       for i in range(5):
@@ -246,7 +246,7 @@ class TestSources(DaemonCase):
       self.assertEqual(sorted(p.name for p in d.iterdir()), ["f3", "f4", "recent"])
       self.assertEqual(out["bytes"], 3000)
     finally:
-      config.cache_root = old
+      os.environ["COMMA_CACHE"] = CACHE
       cache._usage["at"] = -cache.RESCAN
 
 

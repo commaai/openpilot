@@ -9,23 +9,27 @@ openpilotci). Downloads land as sha256(url), and logs are also mirrored into url
 so one fetch serves all of them. Files the daemon makes itself (device pulls, transcodes) live under ycpe/.
 The whole directory is held under a budget by LRU on mtime; reads bump mtime.
 """
-import hashlib
 import os
 import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from openpilot.common.hardware.hw import Paths
 from openpilot.tools.lib import filereader
+from openpilot.tools.lib.azure_container import AzureContainer
+from openpilot.tools.lib.file_downloader import cache_file_path
 from openpilot.tools.lib.openpilotci import get_url as openpilotci_url
+from openpilot.tools.lib.openpilotcontainers import DataProdContainer
+from openpilot.tools.lib.route import FileName
 from openpilot.tools.lib.url_file import CHUNK_SIZE, URLFile, hash_url
 from openpilot.tools.ycpe.daemon.core import HTTPError, config, module, route
 
-API_BLOB = "https://commadata2.blob.core.windows.net"
+QLOGS = AzureContainer("commadata2", "qlog")  # where the API keeps qlogs and qcameras; the rest is in DataProdContainer
 # device, internal, api and openpilotci hold the same bytes for a file, so a copy from any of them stands in for the others
 # (and local directories hold them too)
 SHARED = ("device", "internal", "api", "openpilotci")
-LOGS = ("rlog.zst", "rlog.bz2", "qlog.zst", "qlog.bz2")
+LOGS = FileName.RLOG + FileName.QLOG
 TMP = "ycpe-tmp-"
 PREFETCH = 8  # downloads at once: one Azure blob stream gives ~5 MB/s here
 RECENT = 120  # seconds: files written or read this recently are never pruned (they may be in use)
@@ -47,24 +51,18 @@ class Key:
 
 
 def root() -> Path:
-  return Path(config.cache_root)
+  return Path(Paths.download_cache_root())
 
 
 def canonical_url(source: str, key: Key) -> str | None:
   """The query-less URL the shared cache knows this file by when it came from source."""
-  path = f"{key.dongle}/{key.log_id}/{key.seg}/{key.file}"
   if source == "internal":
-    return f"{filereader.DATA_ENDPOINT.rstrip('/')}/{path}"
+    return f"{filereader.DATA_ENDPOINT.rstrip('/')}/{key}"
   if source == "api":
-    container = "qlog" if key.file.startswith(("qlog", "qcamera")) else "commadata2"
-    return f"{API_BLOB}/{container}/{path}"
+    return (QLOGS if key.file.startswith(("qlog", "qcamera")) else DataProdContainer).get_url(key.route, key.seg, key.file)
   if source == "openpilotci":
     return openpilotci_url(key.route, key.seg, key.file)
   return None
-
-
-def sha(url: str) -> str:
-  return hashlib.sha256(url.split("?", 1)[0].encode()).hexdigest()
 
 
 def ycpe_dir(name: str) -> Path:
@@ -106,11 +104,11 @@ def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
   for source in sources:
     if (url := canonical_url(source, key)) is None:
       continue
-    if (p := root() / sha(url)).is_file():
+    if (p := Path(cache_file_path(url))).is_file():
       return source, p
     if key.file in LOGS and (c := chunk_paths(url)) and c[0] > 0 and all(chunk.is_file() for chunk in c[1]):
       length, chunks = c
-      tmp = root() / f"{TMP}{sha(url)}"
+      tmp = root() / f"{TMP}{p.name}"
       with open(tmp, "wb") as out:
         for chunk in chunks:
           out.write(chunk.read_bytes())
@@ -118,7 +116,7 @@ def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
       account(length, 1)
       return source, p
     for comp in ("zst", "bz2"):
-      if (p := root() / sha(f"decompressed-{comp}:{url}")).is_file():
+      if (p := Path(cache_file_path(url, comp))).is_file():
         return source, p
   return None
 
@@ -181,8 +179,8 @@ class Fill:
   """Downloads url into the cache as sha256(cache_url); readers can follow tmp while it grows."""
   def __init__(self, key: Key, source: str, url: str, cache_url: str):
     self.key, self.source, self.url, self.cache_url = key, source, url, cache_url
-    self.final = root() / sha(cache_url)
-    self.tmp = root() / f"{TMP}{sha(cache_url)}.{threading.get_ident()}.{time.monotonic_ns()}"
+    self.final = Path(cache_file_path(cache_url))
+    self.tmp = root() / f"{TMP}{self.final.name}.{threading.get_ident()}.{time.monotonic_ns()}"
     self.done, self.total = 0, None
     self.error: str | None = None
     self.finished = threading.Event()
@@ -329,7 +327,7 @@ def prune_soon() -> None:
 
 def derived_copies(url: str) -> list[Path]:
   """The other tools' forms of url's file: decompressed logs and url_file chunks (not the whole-file copy)."""
-  paths = [root() / sha(f"decompressed-zst:{url}"), root() / sha(f"decompressed-bz2:{url}")]
+  paths = [Path(cache_file_path(url, comp)) for comp in ("zst", "bz2")]
   if not (c := chunk_paths(url)):
     return paths
   return paths + c[1] + [root() / f"{hash_url(url)}_length"]
@@ -340,7 +338,7 @@ def evict(key: Key) -> int:
   paths = [device_path(key)]
   for source in ("internal", "api", "openpilotci"):
     url = canonical_url(source, key)
-    paths += [root() / sha(url), *derived_copies(url)]
+    paths += [Path(cache_file_path(url)), *derived_copies(url)]
   return remove(paths)
 
 
