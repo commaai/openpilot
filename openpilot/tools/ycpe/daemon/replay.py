@@ -123,25 +123,7 @@ def environment(root: Path, shims: Path) -> tuple[str, dict]:
 
 
 def commit(root: Path) -> str | None:
-  """HEAD of the checkout without running git: worktrees and submodules have a .git file pointing at the git dir."""
-  try:
-    git = root / ".git"
-    if git.is_file():
-      git = (root / git.read_text().split("gitdir:")[1].strip()).resolve()
-    head = (git / "HEAD").read_text().strip()
-    if not head.startswith("ref: "):
-      return head
-    ref = head[5:]
-    for d in (git, (git / "commondir").exists() and (git / (git / "commondir").read_text().strip()).resolve()):
-      if d and (d / ref).exists():
-        return (d / ref).read_text().strip()
-      if d and (d / "packed-refs").exists():
-        for line in (d / "packed-refs").read_text().splitlines():
-          if line.endswith(" " + ref):
-            return line.split()[0]
-  except (OSError, IndexError):
-    pass
-  return None
+  return repos.git(root, "rev-parse", "--verify", "-q", "HEAD") or None
 
 
 class Replay:
