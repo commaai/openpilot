@@ -1,6 +1,6 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.12.3, < 3.13"
+requires-python = ">= 3.12.3, < 3.15"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
@@ -155,6 +155,9 @@ default-groups = ["standalone"]
 override-dependencies = [
   "opendbc",  # panda pins opendbc from git for standalone use; always use our submodule
 ]
+
+[tool.uv.extra-build-dependencies]
+pycapnp = ["cmake"]  # Python 3.14 needs a source build of 2.1.0
 
 [tool.uv.sources]
 # SCons owns the native build; an editable install would shadow it with a stale .so

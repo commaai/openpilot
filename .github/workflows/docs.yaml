@@ -30,9 +30,9 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: commaai/timeout@v1
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
+    - uses: commaai/timeout@v1
 
     # Build
     - name: Build docs
