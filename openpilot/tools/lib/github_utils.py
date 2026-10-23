@@ -1,7 +1,8 @@
 import base64
-import time
 import requests
 from http import HTTPMethod
+
+from openpilot.common.utils import retry
 
 class GithubUtils:
   def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
@@ -33,28 +34,22 @@ class GithubUtils:
     else:
       return r
 
+  @retry(attempts=5)
   def upload_file(self, bucket, path, file_name):
     with open(path, "rb") as f:
       encoded = base64.b64encode(f.read()).decode()
 
-      # another CI job can be uploading to the same bucket, which conflicts (409, or 422 for a stale sha) until we have its sha
-      for i in range(5):
-        # check if file already exists
-        sha = self.get_file_sha(bucket, file_name)
-        sha = f'"sha":"{sha}",' if sha else ''
+      # check if file already exists
+      sha = self.get_file_sha(bucket, file_name)
+      sha = f'"sha":"{sha}",' if sha else ''
 
-        data = f'{{"message":"uploading {file_name}", \
-                      "branch":"{bucket}", \
-                      "committer":{{"name":"Vehicle Researcher", "email": "user@comma.ai"}}, \
-                      {sha} \
-                      "content":"{encoded}"}}'
-        github_path = f"contents/{file_name}"
-        r = self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True, raise_on_failure=False)
-        if r.status_code not in (409, 422):
-          break
-        time.sleep(1 + i)
-      if not r.ok:
-        raise Exception(f"Call to {self.DATA_ROUTE}/{github_path} failed with {r.status_code}")
+      data = f'{{"message":"uploading {file_name}", \
+                    "branch":"{bucket}", \
+                    "committer":{{"name":"Vehicle Researcher", "email": "user@comma.ai"}}, \
+                    {sha} \
+                    "content":"{encoded}"}}'
+      github_path = f"contents/{file_name}"
+      self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True)
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
