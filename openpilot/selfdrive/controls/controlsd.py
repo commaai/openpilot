@@ -88,6 +88,8 @@ class Controls:
       if self.sm.all_checks(['lateralTorqueParameters']) and torque_params.useParams:
         self.LaC.update_torque_parameters(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered,
                                            torque_params.frictionCoefficientFiltered)
+      yaw_rate_valid = self.calibrated_pose is not None and self.sm.valid['deviceMotion']
+      self.LaC.update_yaw_rate(self.calibrated_pose.angular_velocity.yaw if yaw_rate_valid else None)
 
     long_plan = self.sm['longitudinalPlan']
     model_v2 = self.sm['modelV2']

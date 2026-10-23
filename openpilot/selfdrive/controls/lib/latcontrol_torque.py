@@ -32,6 +32,11 @@ JERK_GAIN = 0.3
 LAT_ACCEL_REQUEST_BUFFER_SECONDS = 1.0
 VERSION = 1
 
+# steering angle based lataccel measurement often has slow biases, yaw rate is unbiased but noisy
+YAW_BIAS_CUTOFF_HZ = 0.5
+YAW_BIAS_MEASUREMENT_LAG = 0.1  # vehicle response to steering + yaw rate latency
+YAW_BIAS_SPEED_BP = [5., 10.]  # estimated above 5 m/s, faded out below 10 m/s
+
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI, dt):
     super().__init__(CP, CI, dt)
@@ -45,12 +50,18 @@ class LatControlTorque(LatControl):
     self.lat_accel_request_buffer = deque([0.] * self.lat_accel_request_buffer_len , maxlen=self.lat_accel_request_buffer_len)
     self.lookahead_frames = int(JERK_LOOKAHEAD_SECONDS / self.dt)
     self.jerk_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * LP_FILTER_CUTOFF_HZ), self.dt)
+    self.yaw_rate = None
+    self.lagged_lateral_accel = FirstOrderFilter(0.0, YAW_BIAS_MEASUREMENT_LAG, self.dt)
+    self.lateral_accel_bias = FirstOrderFilter(0.0, 1 / (2 * np.pi * YAW_BIAS_CUTOFF_HZ), self.dt)
 
   def update_torque_parameters(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
     self.update_limits()
+
+  def update_yaw_rate(self, yaw_rate):
+    self.yaw_rate = yaw_rate
 
   def update_limits(self):
     self.pid.set_limits(self.lateral_accel_from_torque(self.steer_max, self.torque_params),
@@ -61,6 +72,10 @@ class LatControlTorque(LatControl):
     pid_log.version = VERSION
     measured_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
     measurement = measured_curvature * CS.vEgo ** 2
+    self.lagged_lateral_accel.update(measurement)
+    if self.yaw_rate is not None and CS.vEgo > YAW_BIAS_SPEED_BP[0]:
+      self.lateral_accel_bias.update(self.yaw_rate * CS.vEgo - self.lagged_lateral_accel.x)
+    measurement += self.lateral_accel_bias.x * np.interp(CS.vEgo, YAW_BIAS_SPEED_BP, [0., 1.])
     future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
     self.lat_accel_request_buffer.append(future_desired_lateral_accel)
 
