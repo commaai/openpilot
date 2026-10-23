@@ -113,17 +113,6 @@ def group_by_service(lr):
   return msgs
 
 
-class TimeSeries(dict):
-  # converts a service on first use, converting the whole log takes ~10s on device
-  def __init__(self, msgs):
-    super().__init__()
-    self.msgs = msgs
-
-  def __missing__(self, service):
-    self[service] = msgs_to_time_series(self.msgs[service])[service]
-    return self[service]
-
-
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
@@ -142,7 +131,7 @@ class TestOnroad(OpenpilotTestCase):
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.zst")))
       cls.msgs = group_by_service(cls.lr)
-      cls.ts = TimeSeries(cls.msgs)
+      cls.ts = msgs_to_time_series(cls.lr)
       return
 
     # setup env
@@ -183,7 +172,7 @@ class TestOnroad(OpenpilotTestCase):
 
     cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
     cls.msgs = group_by_service(cls.lr)
-    cls.ts = TimeSeries(cls.msgs)
+    cls.ts = msgs_to_time_series(cls.lr)
     log_path = segs[0]
 
     cls.log_sizes = {}
