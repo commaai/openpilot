@@ -1,11 +1,10 @@
 import numpy as np
 import pyray as rl
 from openpilot.cereal import log
-from opendbc.car.structs import car
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
-from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer
+from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer, AlertStatus
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.mici.onroad.long_indicator import LongIndicator
@@ -175,7 +174,7 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer = HudRenderer()
     self._long_indicator = LongIndicator()
     self._alert_renderer = AlertRenderer()
-    self._driver_state_renderer = DriverStateRenderer()
+    self._driver_state_renderer = DriverStateRenderer(background=False)
     self._confidence_ball = ConfidenceBall()
     self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
@@ -219,11 +218,12 @@ class AugmentedRoadView(CameraView):
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
     show_navigation = ui_state.navigation_enabled and ui_state.nav_destination_set and alert_to_render is None
 
-    # Create inner content area with border padding
+    # status icons on the left, camera view to the right of them
+    side_panel_rect = rl.Rectangle(self.rect.x, self.rect.y, SIDE_PANEL_WIDTH, self.rect.height)
     self._content_rect = rl.Rectangle(
-      self.rect.x,
+      self.rect.x + SIDE_PANEL_WIDTH,
       self.rect.y,
-      self.rect.width - (PANEL_WIDTH if show_navigation else SIDE_PANEL_WIDTH),
+      self.rect.width - SIDE_PANEL_WIDTH - (PANEL_WIDTH if show_navigation else 0),
       self.rect.height,
     )
 
@@ -245,18 +245,7 @@ class AugmentedRoadView(CameraView):
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
-                         (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
-    self._driver_state_renderer.set_should_draw(should_draw_dmoji)
-    self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
-    self._driver_state_renderer.render()
-    self._long_indicator.set_should_draw(not self._hud_renderer.drawing_top_icons())
-    self._long_indicator.render(self._content_rect)
-
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
-    self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
-                                               alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
@@ -266,12 +255,22 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+    # Hide DMoji when disengaged unless AlwaysOnDM is enabled
+    self._driver_state_renderer.set_should_draw(ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm)
+    self._driver_state_renderer.set_position(side_panel_rect.x + (side_panel_rect.width - self._driver_state_renderer.rect.width) / 2,
+                                             side_panel_rect.y + 5)
+    self._driver_state_renderer.render()
+    self._long_indicator.render(side_panel_rect)
+    self._hud_renderer.set_wheel_alert(alert_to_render is not None and not not_animating_out and
+                                       alert_to_render.status != AlertStatus.normal)
+    self._hud_renderer.draw_steering_wheel(side_panel_rect)
+
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
     if show_navigation:
       self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
     else:
-      self._confidence_ball.render(self.rect)
+      self._confidence_ball.render(self._content_rect)
 
     self._bookmark_icon.render(self.rect)
 

@@ -1,6 +1,6 @@
 import pyray as rl
 
-SIDE_PANEL_WIDTH = 60
+SIDE_PANEL_WIDTH = 72
 
 
 def blend_colors(a: rl.Color, b: rl.Color, f: float) -> rl.Color:

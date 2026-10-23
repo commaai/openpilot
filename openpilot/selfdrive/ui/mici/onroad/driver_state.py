@@ -8,8 +8,6 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 
-AlertSize = log.SelfdriveState.AlertSize
-
 DEBUG = False
 
 # TODO: Only left for DM preview, remove
@@ -26,11 +24,12 @@ class DriverStateRenderer(Widget):
   LINES_STALE_ANGLES = 3.0  # seconds
   AWARENESS_UNFULL_PERCENT = 95  # ~0.5s
 
-  def __init__(self, lines: bool = False, inset: bool = False):
+  def __init__(self, lines: bool = False, inset: bool = False, background: bool = True):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, self.BASE_SIZE, self.BASE_SIZE))
     self._lines = lines
     self._inset = inset
+    self._background = background
 
     # In line mode, track smoothed angles
     assert 360 % self.LINES_ANGLE_INCREMENT == 0
@@ -76,8 +75,7 @@ class DriverStateRenderer(Widget):
 
   @property
   def should_draw(self):
-    return (self._should_draw and ui_state.sm["selfdriveState"].alertSize == AlertSize.none and
-            ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame)
+    return self._should_draw and ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame
 
   def set_force_active(self, force_active: bool):
     """Force the dmoji to always appear active (green) regardless of actual state"""
@@ -96,9 +94,10 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
-    rl.draw_texture_ex(self._dm_background,
-                       rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0,
-                       rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
+    if self._background:
+      rl.draw_texture_ex(self._dm_background,
+                         rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0,
+                         rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
     rl.draw_texture_ex(self._dm_person,
                        rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,

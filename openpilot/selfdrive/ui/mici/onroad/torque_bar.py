@@ -212,7 +212,7 @@ class TorqueBar(Widget):
     # centerline radius & center (you already have these values)
     mid_r = torque_line_radius + torque_line_height / 2
 
-    cx = rect.x + rect.width / 2 + 8  # offset 8px to right of camera feed
+    cx = rect.x + rect.width / 2
     cy = rect.y + rect.height + torque_line_radius - torque_line_offset
     offset = np.array([cx, cy], dtype=np.float32)
 

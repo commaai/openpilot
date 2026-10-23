@@ -22,28 +22,22 @@ class LongIndicator(Widget):
                               for _ in range(3)]
     self._personality: int | None = None
     self._personality_changed_time = -HIGHLIGHT_TIME
-    self._should_draw = False
 
   @staticmethod
   def _texture(name: str, width: int, height: int) -> rl.Texture:
     return gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False)
 
-  def set_should_draw(self, should_draw: bool):
-    self._should_draw = should_draw
-
   def _render(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
-    if sm.recv_frame['selfdriveState'] < ui_state.started_frame or not sm['selfdriveState'].enabled or not ui_state.has_longitudinal_control:
+    if sm.recv_frame['selfdriveState'] < ui_state.started_frame or not ui_state.has_longitudinal_control:
       self._personality = None
       self._personality_changed_time = -HIGHLIGHT_TIME
       self._alpha_filter.x = 0.0
       return
 
-    # hidden under alerts and set speed
-    visible = self._should_draw and sm['selfdriveState'].alertSize == log.SelfdriveState.AlertSize.none
-    alpha = self._alpha_filter.update(visible)
+    alpha = self._alpha_filter.update(1.0)
     self._draw_lead_car(rect, alpha)
-    self._draw_distance_bars(rect, alpha, visible)
+    self._draw_distance_bars(rect, alpha)
 
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
@@ -59,16 +53,13 @@ class LongIndicator(Widget):
     self._draw_centered(white, rect, 100, white_alpha * alpha)
     self._draw_centered(green, rect, 100, green_alpha * alpha)
 
-  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
+  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
     now = rl.get_time()
     personality = sm['selfdriveState'].personality.raw
     if self._personality is not None and personality != self._personality:
       self._personality_changed_time = now
     self._personality = personality
-    # the personality alert covers the bars, hold the highlight until they show
-    if not visible and now - self._personality_changed_time < HIGHLIGHT_TIME:
-      self._personality_changed_time = now
     highlight = now - self._personality_changed_time < HIGHLIGHT_TIME
 
     # blink at double the turn signal rate (2.67 Hz) while overriding the gas
@@ -85,5 +76,5 @@ class LongIndicator(Widget):
 
   @staticmethod
   def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
-    pos = rl.Vector2(rect.x + 46 - texture.width / 2, rect.y + y - texture.height / 2)
+    pos = rl.Vector2(rect.x + (rect.width - texture.width) / 2, rect.y + y - texture.height / 2)
     rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))

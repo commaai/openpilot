@@ -20,6 +20,9 @@ CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
 
+WHEEL_SIZE = 52
+WHEEL_GLOW_SIZE = round(WHEEL_SIZE * 184 / 128)  # glow assets pad the 128px wheel to 184px
+
 
 @dataclass(frozen=True)
 class FontSizes:
@@ -110,7 +113,7 @@ class HudRenderer(Widget):
     self._chestnut_fade_time: float = 0
 
     self._can_draw_top_icons = True
-    self._show_wheel_critical = False
+    self._show_wheel_alert = False
 
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
@@ -120,30 +123,24 @@ class HudRenderer(Widget):
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
 
-    self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
-    self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
-    self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 9, 44)
+    self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', WHEEL_SIZE, WHEEL_SIZE)
+    self._txt_wheel_green: rl.Texture = gui_app.texture('icons_mici/wheel_green.png', WHEEL_GLOW_SIZE, WHEEL_GLOW_SIZE)
+    self._txt_wheel_orange: rl.Texture = gui_app.texture('icons_mici/wheel_orange.png', WHEEL_GLOW_SIZE, WHEEL_GLOW_SIZE)
     self._txt_chestnut: rl.Texture = gui_app.texture('icons_mici/chestnut.png', 60, 44)
     self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 60, 44)
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 75, 44)
     self._chestnut_icon: rl.Texture | None = None
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
-    self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-  def set_wheel_critical_icon(self, critical: bool):
-    """Set the wheel icon to critical or normal state."""
-    self._show_wheel_critical = critical
+  def set_wheel_alert(self, alert: bool):
+    self._show_wheel_alert = alert
 
   def set_can_draw_top_icons(self, can_draw_top_icons: bool):
     """Set whether to draw the top part of the HUD."""
     self._can_draw_top_icons = can_draw_top_icons
-
-  def drawing_top_icons(self) -> bool:
-    # whether we're drawing any top icons currently
-    return bool(self._set_speed_alpha_filter.x > 1e-2)
 
   def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
@@ -187,8 +184,6 @@ class HudRenderer(Widget):
 
     self._draw_model_source(rect)
 
-    self._draw_steering_wheel(rect)
-
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     loading = ui_state.chestnut_state == ChestnutState.LOADING
     if loading:
@@ -211,35 +206,32 @@ class HudRenderer(Widget):
     if alpha < 1e-2:
       return
 
-    pos = rl.Vector2(rect.x + rect.width - 10 - icon.width,
-                     rect.y + rect.height - 14 - (self._txt_wheel.height + icon.height) / 2)
+    pos = rl.Vector2(rect.x + 10, rect.y + rect.height - 10 - icon.height)
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
-  def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
-    wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
-
-    if self._show_wheel_critical:
-      self._wheel_alpha_filter.update(255)
-      self._wheel_y_filter.update(0)
+  def draw_steering_wheel(self, rect: rl.Rectangle) -> None:
+    # TODO: be more selective, e.g. DM alerts shouldn't turn the wheel orange while still engaged
+    if self._show_wheel_alert:
+      wheel_txt, alpha = self._txt_wheel_orange, 1.0
+    elif ui_state.status == UIStatus.ENGAGED:
+      wheel_txt, alpha = self._txt_wheel_green, 1.0
+    elif ui_state.status == UIStatus.OVERRIDE:
+      wheel_txt, alpha = self._txt_wheel, 0.9
     else:
-      if ui_state.status == UIStatus.DISENGAGED:
-        self._wheel_alpha_filter.update(0)
-        self._wheel_y_filter.update(wheel_txt.height / 2)
-      else:
-        self._wheel_alpha_filter.update(255 * 0.9)
-        self._wheel_y_filter.update(0)
+      wheel_txt, alpha = self._txt_wheel, 0.35
+    self._wheel_alpha_filter.update(255 * alpha)
 
-    # pos
-    pos_x = int(rect.x + 21 + wheel_txt.width / 2)
-    pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
+    # centered at the bottom of the rect
+    pos_x = int(rect.x + rect.width / 2)
+    pos_y = int(rect.y + rect.height - 10 - WHEEL_SIZE / 2)
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
     turn_intent_margin = 25
     self._turn_intent.render(rl.Rectangle(
-      pos_x - wheel_txt.width / 2 - turn_intent_margin,
-      pos_y - wheel_txt.height / 2 - turn_intent_margin,
-      wheel_txt.width + turn_intent_margin * 2,
-      wheel_txt.height + turn_intent_margin * 2,
+      pos_x - WHEEL_SIZE / 2 - turn_intent_margin,
+      pos_y - WHEEL_SIZE / 2 - turn_intent_margin,
+      WHEEL_SIZE + turn_intent_margin * 2,
+      WHEEL_SIZE + turn_intent_margin * 2,
     ))
 
     src_rect = rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height)
@@ -249,13 +241,6 @@ class HudRenderer(Widget):
     # color and draw
     color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))
     rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, color)
-
-    if self._show_wheel_critical:
-      # Draw exclamation point icon
-      EXCLAMATION_POINT_SPACING = 10
-      exclamation_pos_x = pos_x - self._txt_exclamation_point.width / 2 + wheel_txt.width / 2 + EXCLAMATION_POINT_SPACING
-      exclamation_pos_y = pos_y - self._txt_exclamation_point.height / 2
-      rl.draw_texture_ex(self._txt_exclamation_point, rl.Vector2(exclamation_pos_x, exclamation_pos_y), 0.0, 1.0, rl.WHITE)
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""

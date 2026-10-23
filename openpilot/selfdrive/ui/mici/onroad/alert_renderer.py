@@ -6,8 +6,8 @@ import random
 import string
 from dataclasses import dataclass
 from openpilot.cereal import messaging, log
-from opendbc.car.structs import car
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.mici.onroad.confidence_ball import DOT_MARGIN, DOT_RADIUS
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment
@@ -18,6 +18,7 @@ AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 
 ALERT_MARGIN = 18
+ALERT_DOT_MARGIN = 2 * DOT_RADIUS + 2 * DOT_MARGIN  # text stops 10px before the confidence dot
 
 ALERT_FONT_SMALL = 66 - 50
 ALERT_FONT_BIG = 88 - 40
@@ -60,7 +61,6 @@ class Alert:
   text2: str = ""
   size: int = 0
   status: int = 0
-  visual_alert: int = car.CarControl.HUDControl.VisualAlert.none
   alert_type: str = ""
 
 
@@ -145,7 +145,7 @@ class AlertRenderer(Widget):
 
     # Return current alert
     ret = Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw,
-                visual_alert=ss.alertHudVisual, alert_type=ss.alertType)
+                alert_type=ss.alertType)
     self._prev_alert = ret
     return ret
 
@@ -199,10 +199,10 @@ class AlertRenderer(Widget):
 
     # create text rect based on icon presence
     text_x = self._rect.x + ALERT_MARGIN
-    text_width = self._rect.width - ALERT_MARGIN
+    text_width = self._rect.width - ALERT_MARGIN - ALERT_DOT_MARGIN
     if icon_side == 'left':
       text_x = self._rect.x + self._txt_turn_signal_right.width
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width
+      text_width = self._rect.width - ALERT_DOT_MARGIN - self._txt_turn_signal_right.width
     elif icon_side == 'right':
       text_x = self._rect.x + ALERT_MARGIN
       text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width
