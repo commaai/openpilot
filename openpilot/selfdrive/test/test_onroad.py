@@ -106,13 +106,6 @@ LOGS_SIZE = {  # MB per segment
 LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
 
-def group_by_service(lr):
-  msgs = defaultdict(list)
-  for m in lr:
-    msgs[m.which()].append(m)
-  return msgs
-
-
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
@@ -130,7 +123,9 @@ class TestOnroad(OpenpilotTestCase):
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.zst")))
-      cls.msgs = group_by_service(cls.lr)
+      cls.msgs = defaultdict(list)
+      for m in cls.lr:
+        cls.msgs[m.which()].append(m)
       cls.ts = msgs_to_time_series(cls.lr)
       return
 
@@ -171,7 +166,9 @@ class TestOnroad(OpenpilotTestCase):
           proc.kill()
 
     cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
-    cls.msgs = group_by_service(cls.lr)
+    cls.msgs = defaultdict(list)
+    for m in cls.lr:
+      cls.msgs[m.which()].append(m)
     cls.ts = msgs_to_time_series(cls.lr)
     log_path = segs[0]
 
