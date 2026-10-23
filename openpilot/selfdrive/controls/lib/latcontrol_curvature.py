@@ -1,11 +1,13 @@
 import math
+import numpy as np
+from collections import deque
 
 from openpilot.cereal import log
 from openpilot.common.pid import PIDController
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.drive_helpers import MAX_CURVATURE
 
-CURVATURE_SATURATION_THRESHOLD = 1e-3  # 1/m
+LAT_ACCEL_SATURATION_THRESHOLD = 0.5  # m/s^2
 
 
 class LatControlCurvature(LatControl):
@@ -20,6 +22,8 @@ class LatControlCurvature(LatControl):
     else:
       self.pid = None
       self.kf = 1.
+    self.desired_curvature_buffer_len = int(1. / self.dt)
+    self.desired_curvature_buffer = deque([0.] * self.desired_curvature_buffer_len, maxlen=self.desired_curvature_buffer_len)
 
   def reset(self):
     super().reset()
@@ -30,6 +34,9 @@ class LatControlCurvature(LatControl):
     curvature_log = log.ControlsState.LateralCurvatureState.new_message()
     actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
     error = desired_curvature - actual_curvature
+    self.desired_curvature_buffer.append(desired_curvature)
+    delay_frames = int(np.clip(lat_delay / self.dt + 1, 1, self.desired_curvature_buffer_len))
+    expected_curvature = self.desired_curvature_buffer[-delay_frames]
 
     if not active:
       output_curvature = 0.0
@@ -53,6 +60,6 @@ class LatControlCurvature(LatControl):
     curvature_log.actualCurvature = float(actual_curvature)
     curvature_log.desiredCurvature = float(desired_curvature)
     curvature_log.output = float(output_curvature)
-    curvature_log.saturated = bool(self._check_saturation(abs(error) > CURVATURE_SATURATION_THRESHOLD, CS,
+    curvature_log.saturated = bool(self._check_saturation(abs(expected_curvature - actual_curvature) * CS.vEgo ** 2 > LAT_ACCEL_SATURATION_THRESHOLD, CS,
                                                           False, curvature_limited))
     return 0.0, float(output_curvature), curvature_log

@@ -8,13 +8,15 @@ from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
+from openpilot.selfdrive.ui.mici.onroad.long_indicator import LongIndicator
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
+from openpilot.selfdrive.ui.mici.onroad.navigation import NavigationPanel, PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
@@ -38,7 +40,7 @@ CAM_Y_OFFSET = 20
 
 
 class BookmarkIcon(Widget):
-  PEEK_THRESHOLD = 50  # If icon peeks out this much, snap it fully visible
+  PEEK_THRESHOLD = 150 # If icon peeks out this much, snap it fully visible
   FULL_VISIBLE_OFFSET = 200  # How far onscreen when fully visible
   HIDDEN_OFFSET = -50  # How far offscreen when hidden
 
@@ -46,7 +48,9 @@ class BookmarkIcon(Widget):
     super().__init__()
     self._bookmark_callback = bookmark_callback
     self._icon = gui_app.texture("icons_mici/onroad/bookmark.png", 180, 180)
+    self._filled_icon = gui_app.texture("icons_mici/onroad/bookmark_fill.png", 180, 180)
     self._offset_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._active_alpha = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # State
     self._interacting = False
@@ -56,6 +60,8 @@ class BookmarkIcon(Widget):
     self._is_swiping = False
     self._is_swiping_left: bool = False
     self._triggered_time: float = 0.0
+    self._triggered_duration = 1.5
+    self._swipe_expired = False
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
@@ -66,18 +72,25 @@ class BookmarkIcon(Widget):
     return interacting
 
   def _update_state(self):
+    if self._state == BookmarkState.TRIGGERED and rl.get_time() - self._triggered_time >= self._triggered_duration:
+      self._state = BookmarkState.HIDDEN
+      self._swipe_expired = self._is_swiping
+
+    swipe_offset = self._swipe_start_x - self._swipe_current_x
+    armed = self._state == BookmarkState.DRAGGING and swipe_offset > self.PEEK_THRESHOLD
     if self._state == BookmarkState.DRAGGING:
-      # Allow pulling past activated position with rubber band effect
-      swipe_offset = self._swipe_start_x - self._swipe_current_x
+      # Snap to the released position when armed, while allowing further dragging or cancellation.
+      if armed:
+        swipe_offset += self.FULL_VISIBLE_OFFSET - self.PEEK_THRESHOLD
       swipe_offset = min(swipe_offset, self.FULL_VISIBLE_OFFSET + 50)
       self._offset_filter.update(swipe_offset)
 
     elif self._state == BookmarkState.TRIGGERED:
-      # Continue animating to fully visible
-      self._offset_filter.update(self.FULL_VISIBLE_OFFSET)
-      # Stay in TRIGGERED state for 1 second
-      if rl.get_time() - self._triggered_time >= 1.5:
-        self._state = BookmarkState.HIDDEN
+      # Let another left swipe move the same bookmark.
+      offset = self.FULL_VISIBLE_OFFSET
+      if self._is_swiping and self._is_swiping_left:
+        offset += min(swipe_offset, 50)
+      self._offset_filter.update(offset)
 
     elif self._state == BookmarkState.HIDDEN:
       self._offset_filter.update(self.HIDDEN_OFFSET)
@@ -85,17 +98,23 @@ class BookmarkIcon(Widget):
       if self._offset_filter.x < 1e-3:
         self._interacting = False
 
+    self._active_alpha.update(float(armed or self._state == BookmarkState.TRIGGERED))
+
   def _handle_mouse_event(self, mouse_event: MouseEvent):
     if not ui_state.started:
       return
 
     if mouse_event.left_pressed:
+      if self._state == BookmarkState.TRIGGERED:
+        self._triggered_time = rl.get_time()
+        self._triggered_duration = 0.5
+
       # Store relative position within widget
       self._swipe_start_x = mouse_event.pos.x
       self._swipe_current_x = mouse_event.pos.x
       self._is_swiping = True
       self._is_swiping_left = False
-      self._state = BookmarkState.DRAGGING
+      self._swipe_expired = False
 
     elif mouse_event.left_down and self._is_swiping:
       self._swipe_current_x = mouse_event.pos.x
@@ -103,30 +122,34 @@ class BookmarkIcon(Widget):
       self._is_swiping_left = swipe_offset > 0
       if self._is_swiping_left:
         self._interacting = True
+        if self._state == BookmarkState.HIDDEN and not self._swipe_expired:
+          self._state = BookmarkState.DRAGGING
 
     elif mouse_event.left_released:
-      if self._is_swiping:
+      if self._is_swiping and self._state == BookmarkState.DRAGGING:
         swipe_distance = self._swipe_start_x - self._swipe_current_x
 
         # If peeking past threshold, transition to animating to fully visible and bookmark
         if swipe_distance > self.PEEK_THRESHOLD:
           self._state = BookmarkState.TRIGGERED
           self._triggered_time = rl.get_time()
+          self._triggered_duration = 1.5
           self._bookmark_callback()
         else:
           # Otherwise, transition back to hidden
           self._state = BookmarkState.HIDDEN
 
-        # Reset swipe state
-        self._is_swiping = False
-        self._is_swiping_left = False
+      # Reset swipe state
+      self._is_swiping = False
+      self._is_swiping_left = False
 
   def _render(self, _):
     """Render the bookmark icon."""
     if self._offset_filter.x > 0:
       icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
       icon_y = self.rect.y + (self.rect.height - self._icon.height) / 2  # Vertically centered
-      rl.draw_texture_ex(self._icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
+      for icon, alpha in ((self._icon, 1.0 - self._active_alpha.x), (self._filled_icon, self._active_alpha.x)):
+        rl.draw_texture_ex(icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))
 
 
 class AugmentedRoadView(CameraView):
@@ -147,8 +170,10 @@ class AugmentedRoadView(CameraView):
     # Bookmark icon with swipe gesture
     self._bookmark_icon = BookmarkIcon(bookmark_callback)
 
+    self._navigation = NavigationPanel()
     self._model_renderer = ModelRenderer()
     self._hud_renderer = HudRenderer()
+    self._long_indicator = LongIndicator()
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer()
     self._confidence_ball = ConfidenceBall()
@@ -191,11 +216,14 @@ class AugmentedRoadView(CameraView):
     # Update calibration before rendering
     self._update_calibration()
 
+    alert_to_render, not_animating_out = self._alert_renderer.will_render()
+    show_navigation = ui_state.navigation_enabled and ui_state.nav_destination_set and alert_to_render is None
+
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
       self.rect.x,
       self.rect.y,
-      self.rect.width - SIDE_PANEL_WIDTH,
+      self.rect.width - (PANEL_WIDTH if show_navigation else SIDE_PANEL_WIDTH),
       self.rect.height,
     )
 
@@ -217,14 +245,14 @@ class AugmentedRoadView(CameraView):
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
 
-    alert_to_render, not_animating_out = self._alert_renderer.will_render()
-
     # Hide DMoji when disengaged unless AlwaysOnDM is enabled
     should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
                          (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
     self._driver_state_renderer.render()
+    self._long_indicator.set_should_draw(not self._hud_renderer.drawing_top_icons())
+    self._long_indicator.render(self._content_rect)
 
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
@@ -240,12 +268,19 @@ class AugmentedRoadView(CameraView):
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
-    self._confidence_ball.render(self.rect)
+    if show_navigation:
+      self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
+    else:
+      self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
 
+  def close(self):
+    self._navigation.close()
+    super().close()
+
   def _switch_stream_if_needed(self, sm):
-    if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
+    if sm['carParams'].openpilotLongitudinalControl and WIDE_CAM in self.available_streams:
       v_ego = sm['carState'].vEgo
       if v_ego < WIDE_CAM_MAX_SPEED:
         target = WIDE_CAM

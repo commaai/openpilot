@@ -7,7 +7,7 @@
 
 #include "common/util.h"
 #include "common/yuv.h"
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 #include "tools/replay/util.h"
 #include "common/hardware/hw.h"
 
@@ -75,7 +75,7 @@ FrameReader::~FrameReader() {
 bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache) {
   std::string local_file_path;
   if (url.find("https://") == 0 || url.find("http://") == 0) {
-    local_file_path = PyDownloader::download(url, local_cache, abort);
+    local_file_path = PyTools::download(url, local_cache, abort);
     if (local_file_path.empty()) return false;
   } else {
     local_file_path = url;

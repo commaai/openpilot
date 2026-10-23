@@ -134,8 +134,8 @@ class FrameMeta:
 
 
 def input_view(buffer: Buffer, shape: tuple[int, ...], dtype: DType, offset: int) -> Tensor:
-  view = buffer.view(math.prod(shape), dtype, offset).ensure_allocated()
-  return Tensor(UOp.from_buffer(view)).reshape(shape)
+  view = buffer.view(math.prod(shape) * dtype.itemsize, offset).ensure_allocated()
+  return Tensor(UOp.from_buffer(view, dtype)).reshape(shape)
 
 
 class ModelState:
@@ -204,6 +204,8 @@ class ModelState:
     self.input_device.copy_from(self.input_host)
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     self.run_model(output_buffers=self.outputs, **self.input_queues)
+    if self.chestnut and (err := Device[self.outputs['outputs'].device].error_state.host.view(fmt='q')[0]):
+      raise RuntimeError(f"chestnut failed with {err}")
     if after_enqueue is not None:
       after_enqueue()
     model_output = self.outputs['outputs'].numpy()[0]
@@ -280,7 +282,13 @@ def main(demo=False):
     loader.start()
     loader.join(BIG_MODEL_TIMEOUT)
     model = big_model
-    params.put_bool("ChestnutActive", model is not None)
+    if model is None and not params.get_bool("ChestnutRetry"):
+      # a crank can cut the chestnut power during the load, retry once with an onroad cycle
+      cloudlog.error("big model load failed, cycling onroad to retry")
+      params.put_bool("ChestnutRetry", True)
+      params.put_bool("OnroadCycleRequested", True)
+    else:
+      params.put_bool("ChestnutActive", model is not None)
 
   small_model = ModelState(vipc_client_main.width, vipc_client_main.height, False) if model is None or CHESTNUT else None
   if model is None:
@@ -293,7 +301,8 @@ def main(demo=False):
   # messaging
   pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutGpuState"] if CHESTNUT else [])
   pm = PubMaster(pub_socks)
-  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState", "carControl", "lateralDelay"])
+  sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState",
+                  "carControl", "controlsState", "lateralDelay"])
 
   publish_state = PublishState()
   params = Params()
@@ -427,6 +436,8 @@ def main(demo=False):
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
+      if not sm['carControl'].latActive:
+        prev_action.desiredCurvature = sm['controlsState'].curvature
       action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
       prev_action = action
       fill_model_msg(modelv2_send, model_output, action,

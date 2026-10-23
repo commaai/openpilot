@@ -11,7 +11,6 @@ from setproctitle import setproctitle
 
 from openpilot.cereal import log
 from opendbc.car.structs import car
-import openpilot.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -24,9 +23,6 @@ def launcher(proc: str, name: str) -> None:
 
     # rename the process
     setproctitle(proc)
-
-    # create new context since we forked
-    messaging.reset_context()
 
     # add daemon name tag to logs
     cloudlog.bind(daemon=name)

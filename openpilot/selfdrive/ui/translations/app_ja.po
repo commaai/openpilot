@@ -113,10 +113,6 @@ msgstr "変更"
 msgid "CHECK"
 msgstr "確認"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "CHILL MODE ON"
-msgstr "チルモードON"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -209,10 +205,6 @@ msgstr "ドングルID"
 msgid "Download"
 msgstr "ダウンロード"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
-msgstr "走行性格"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "編集"
@@ -225,12 +217,7 @@ msgstr "エラー"
 msgid "ETH"
 msgstr "ETH"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "EXPERIMENTAL MODE ON"
-msgstr "実験モードON"
-
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable"
 msgstr "有効化"
 
@@ -262,10 +249,6 @@ msgstr "openpilotが未作動でもドライバーモニタリングを有効に
 msgid "Enable openpilot"
 msgstr "openpilotを有効化"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
-msgstr "openpilot縦制御（アルファ）のトグルを有効にすると実験モードが使用できます。"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "APNを入力"
@@ -290,14 +273,6 @@ msgstr "GitHubユーザー名を入力"
 msgid "Error"
 msgstr "エラー"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental Mode"
-msgstr "実験モード"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
-msgstr "この車では縦制御に純正ACCを使用するため、現在実験モードは利用できません。"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "削除中..."
@@ -314,6 +289,10 @@ msgstr "大量配信"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Firehoseモード"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Following Distance"
+msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
@@ -346,6 +325,10 @@ msgstr "インストール"
 #: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "IPアドレス"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Initial Max Speed"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Install Update"
@@ -721,6 +704,7 @@ msgstr "アップデートを終了しています..."
 msgid "for \"{}\""
 msgstr "「{}」向け"
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "km/h"
 msgstr "km/h"
@@ -737,6 +721,7 @@ msgstr "左"
 msgid "metered"
 msgstr "従量"
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "mph"
 msgstr "mph"
@@ -756,10 +741,6 @@ msgstr "openpilot 縦制御（アルファ）"
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
 msgid "openpilot Unavailable"
 msgstr "openpilotは利用できません"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "openpilot longitudinal control may come in a future update."
-msgstr "openpilotの縦制御は将来のアップデートで提供される可能性があります。"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."

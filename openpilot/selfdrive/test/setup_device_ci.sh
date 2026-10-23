@@ -56,6 +56,11 @@ sleep infinity
 EOF
 chmod +x "$CONTINUE_PATH"
 
+# a DUT that booted with a continue.sh that launches openpilot is still running it, which fights the tests
+if pgrep -f launch_chffrplus.sh > /dev/null; then
+  sudo systemctl stop comma
+fi
+
 export GIT_LFS_SKIP_SMUDGE=1
 pull_lfs() {
   if [ -n "${CHESTNUT:-}" ]

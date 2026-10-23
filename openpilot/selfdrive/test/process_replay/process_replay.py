@@ -27,7 +27,6 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
-from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
 from openpilot.tools.lib.logreader import LogIterable
 from openpilot.tools.lib.framereader import FrameReader
@@ -480,7 +479,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="plannerd",
-    pubs=["modelV2", "carControl", "carState", "controlsState", "vehicleParameters", "radarState", "selfdriveState"],
+    pubs=["modelV2", "carControl", "carState", "controlsState", "radarState", "selfdriveState"],
     subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
@@ -551,7 +550,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="modeld",
     pubs=["deviceState", "narrowRoadCameraState", "wideRoadCameraState", "extrinsicsCalibration", "lateralDelay",
-          "driverMonitoringState", "carState", "carControl"],
+          "driverMonitoringState", "carState", "carControl", "controlsState"],
     subs=["modelV2", "drivingModelData", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
@@ -636,6 +635,8 @@ def replay_process(
     cfgs = [cfg]
   else:
     cfgs = list(cfg)
+
+  from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
   all_msgs = migrate_all(lr,
                          manager_states=True,

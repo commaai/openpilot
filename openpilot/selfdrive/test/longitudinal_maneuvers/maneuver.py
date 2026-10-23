@@ -12,16 +12,12 @@ class Maneuver:
     self.breakpoints = kwargs.get("breakpoints", [0.0, duration])
     self.speed_lead_values = kwargs.get("speed_lead_values", [0.0 for i in range(len(self.breakpoints))])
     self.prob_lead_values = kwargs.get("prob_lead_values", [1.0 for i in range(len(self.breakpoints))])
-    self.prob_throttle_values = kwargs.get("prob_throttle_values", [1.0 for i in range(len(self.breakpoints))])
     self.cruise_values = kwargs.get("cruise_values", [50.0 for i in range(len(self.breakpoints))])
-    self.pitch_values = kwargs.get("pitch_values", [0.0 for i in range(len(self.breakpoints))])
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
     self.ensure_start = kwargs.get("ensure_start", False)
-    self.ensure_slowdown = kwargs.get("ensure_slowdown", False)
     self.enabled = kwargs.get("enabled", True)
-    self.e2e = kwargs.get("e2e", False)
     self.personality = kwargs.get("personality", 0)
     self.force_decel = kwargs.get("force_decel", False)
 
@@ -36,7 +32,6 @@ class Maneuver:
       enabled=self.enabled,
       only_lead2=self.only_lead2,
       only_radar=self.only_radar,
-      e2e=self.e2e,
       personality=self.personality,
       force_decel=self.force_decel,
     )
@@ -48,9 +43,7 @@ class Maneuver:
       speed_lead = np.interp(plant.current_time, self.breakpoints, self.speed_lead_values)
       prob_lead = np.interp(plant.current_time, self.breakpoints, self.prob_lead_values)
       cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
-      pitch = np.interp(plant.current_time, self.breakpoints, self.pitch_values)
-      prob_throttle = np.interp(plant.current_time, self.breakpoints, self.prob_throttle_values)
-      log = plant.step(speed_lead, prob_lead, cruise, pitch, prob_throttle)
+      log = plant.step(speed_lead, prob_lead, cruise)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
@@ -76,10 +69,6 @@ class Maneuver:
           valid = False
       else:
         not_starting_t = 0.0
-
-    if self.ensure_slowdown and log['speed'] > 5.5:
-      print('LongitudinalPlanner not slowing down!')
-      valid = False
 
     if self.force_decel and log['speed'] > 1e-1 and log['acceleration'] > -0.04:
       print('Not stopping with force decel')

@@ -183,7 +183,7 @@ class BigInputDialog(BigDialogBase):
     # draw gradient on left side to indicate more text
     if text_size.x > text_field_rect.width:
       rl.draw_rectangle_gradient_ex(rl.Rectangle(text_field_rect.x, text_field_rect.y, 80, text_field_rect.height),
-                                    rl.BLACK, rl.BLANK, rl.BLANK, rl.BLACK)
+                                    rl.BLACK, rl.BLACK, rl.BLANK, rl.BLANK)
 
     # draw cursor
     blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2

@@ -4,7 +4,7 @@
 #include <chrono>
 #include <utility>
 #include "tools/replay/filereader.h"
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 #include "tools/replay/util.h"
 #include "common/util.h"
 
@@ -142,7 +142,6 @@ void LogReader::migrateOldEvents() {
       new_state.setAlertType(old_dep.getAlertType());
       new_state.setEnabled(old_dep.getEnabled());
       new_state.setEngageable(old_dep.getEngageable());
-      new_state.setExperimentalMode(old_dep.getExperimentalMode());
       new_state.setPersonality(old_dep.getPersonality());
       new_state.setState(old_dep.getState());
 

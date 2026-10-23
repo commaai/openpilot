@@ -113,10 +113,6 @@ msgstr "เปลี่ยน"
 msgid "CHECK"
 msgstr "ตรวจสอบ"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "CHILL MODE ON"
-msgstr "เปิดโหมด Chill"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -209,10 +205,6 @@ msgstr "รหัสดองเกิล"
 msgid "Download"
 msgstr "ดาวน์โหลด"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
-msgstr "บุคลิกภาพในการขับขี่"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "แก้ไข"
@@ -225,12 +217,7 @@ msgstr "ข้อผิดพลาด"
 msgid "ETH"
 msgstr "ผลประโยชน์ทับซ้อน"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "EXPERIMENTAL MODE ON"
-msgstr "โหมดทดลองเปิดอยู่"
-
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable"
 msgstr "เปิดใช้งาน"
 
@@ -262,10 +249,6 @@ msgstr "เปิดใช้งานการตรวจสอบไดรเ
 msgid "Enable openpilot"
 msgstr "เปิดใช้งานโอเพ่นไพลอต"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
-msgstr "เปิดใช้งานการสลับการควบคุมตามยาวของ openpilot (อัลฟา) เพื่ออนุญาตโหมดการทดลอง"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "ป้อน APN"
@@ -290,14 +273,6 @@ msgstr "ป้อนชื่อผู้ใช้ GitHub ของคุณ"
 msgid "Error"
 msgstr "ข้อผิดพลาด"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental Mode"
-msgstr "โหมดทดลอง"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
-msgstr "ขณะนี้โหมดทดลองไม่สามารถใช้งานได้บนรถคันนี้ เนื่องจาก ACC ในสต็อกของรถใช้สำหรับการควบคุมตามยาว"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "กำลังลืม..."
@@ -314,6 +289,10 @@ msgstr "สายดับเพลิง"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "โหมดสายดับเพลิง"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Following Distance"
+msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
@@ -346,6 +325,10 @@ msgstr "ติดตั้ง"
 #: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "ที่อยู่ IP"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Initial Max Speed"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Install Update"
@@ -721,6 +704,7 @@ msgstr "กำลังสรุปการอัปเดต..."
 msgid "for \"{}\""
 msgstr "สำหรับ \"{}\""
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "km/h"
 msgstr "กม./ชม"
@@ -737,6 +721,7 @@ msgstr "ซ้าย"
 msgid "metered"
 msgstr "คิดค่าบริการตามปริมาณ"
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "mph"
 msgstr "ไมล์/ชม."
@@ -756,10 +741,6 @@ msgstr "การควบคุมตามยาวของ openpilot (อั
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
 msgid "openpilot Unavailable"
 msgstr "openpilot ไม่พร้อมใช้งาน"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "openpilot longitudinal control may come in a future update."
-msgstr "ระบบควบคุมตามยาวของ openpilot อาจมาในการอัปเดตครั้งถัดไป"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."

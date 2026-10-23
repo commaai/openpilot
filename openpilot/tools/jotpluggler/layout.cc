@@ -547,7 +547,7 @@ bool save_layout(AppSession *session, UiState *state, const std::string &layout_
 
 void rebuild_session_route_data(AppSession *session, UiState *state,
                                 const RouteLoadProgressCallback &progress) {
-  apply_route_data(session, state, load_route_data(session->route_name, session->data_dir, session->dbc_override, progress));
+  apply_route_data(session, state, load_route_data(session->route_name, session->data_dir, session->dbc_override, session->migrate, progress));
 }
 
 void stop_stream_session(AppSession *session, UiState *state, bool preserve_data) {
@@ -627,7 +627,7 @@ void start_async_route_load(AppSession *session, UiState *state) {
     return;
   }
   apply_route_data(session, state, RouteData{});
-  session->route_loader->start(session->route_name, session->data_dir, session->dbc_override);
+  session->route_loader->start(session->route_name, session->data_dir, session->dbc_override, session->migrate);
   state->status_text = session->route_name.empty() ? "Ready" : "Loading route " + session->route_name;
 }
 

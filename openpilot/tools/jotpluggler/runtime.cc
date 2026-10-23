@@ -48,7 +48,8 @@ CameraType decoder_camera_type(CameraViewKind view) {
 }
 
 bool stream_batch_has_data(const StreamExtractBatch &batch) {
-  return !batch.series.empty()
+  return batch.init_data.has_value()
+      || !batch.series.empty()
       || !batch.can_messages.empty()
       || !batch.logs.empty()
       || !batch.timeline.empty()
@@ -260,13 +261,14 @@ struct AsyncRouteLoader::Impl {
     join();
   }
 
-  void start(const std::string &route_name_value, const std::string &data_dir_value, const std::string &dbc_name_value) {
+  void start(const std::string &route_name_value, const std::string &data_dir_value, const std::string &dbc_name_value, bool migrate_value) {
     join();
     {
       std::lock_guard<std::mutex> lock(mutex);
       route_name = route_name_value;
       data_dir = data_dir_value;
       dbc_name = dbc_name_value;
+      migrate = migrate_value;
       result.reset();
       error_text.clear();
     }
@@ -282,7 +284,7 @@ struct AsyncRouteLoader::Impl {
 
     worker = std::thread([this]() {
       try {
-        RouteData route_data = load_route_data(route_name, data_dir, dbc_name, [this](const RouteLoadProgress &progress) {
+        RouteData route_data = load_route_data(route_name, data_dir, dbc_name, migrate, [this](const RouteLoadProgress &progress) {
           total_segments.store(progress.total_segments > 0 ? progress.total_segments : progress.segment_count);
           segments_downloaded.store(progress.segments_downloaded);
           segments_parsed.store(progress.segments_parsed);
@@ -346,6 +348,7 @@ struct AsyncRouteLoader::Impl {
   std::string route_name;
   std::string data_dir;
   std::string dbc_name;
+  bool migrate = true;
   std::string error_text;
   std::atomic<bool> active{false};
   std::atomic<bool> completed{false};
@@ -361,8 +364,8 @@ AsyncRouteLoader::AsyncRouteLoader(bool enable_terminal_progress)
 
 AsyncRouteLoader::~AsyncRouteLoader() = default;
 
-void AsyncRouteLoader::start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name) {
-  impl_->start(route_name, data_dir, dbc_name);
+void AsyncRouteLoader::start(const std::string &route_name, const std::string &data_dir, const std::string &dbc_name, bool migrate) {
+  impl_->start(route_name, data_dir, dbc_name, migrate);
 }
 
 RouteLoadSnapshot AsyncRouteLoader::snapshot() const {
@@ -526,6 +529,7 @@ struct StreamPoller::Impl {
       }
       merge_can_message_data(&dst->can_messages[it->second], &message);
     }
+    if (src->init_data) dst->init_data = std::move(src->init_data);
     if (!src->logs.empty()) {
       dst->logs.insert(dst->logs.end(),
                        std::make_move_iterator(src->logs.begin()),
@@ -565,14 +569,13 @@ struct StreamPoller::Impl {
       unsetenv("ZMQ");
     }
 
-    std::unique_ptr<Context> context(Context::create());
-    std::unique_ptr<Poller> poller(Poller::create());
+    auto poller = std::make_unique<Poller>();
     std::vector<std::unique_ptr<SubSocket>> sockets;
     sockets.reserve(services.size());
     for (const auto &[name, info] : services) {
       if (!should_subscribe_stream_service(name)) continue;
       std::unique_ptr<SubSocket> socket(
-        SubSocket::create(context.get(), name.c_str(), source.address.c_str(), false, true, info.queue_size));
+        SubSocket::create(name.c_str(), false, info.queue_size));
       if (socket == nullptr) continue;
       socket->setTimeout(0);
       poller->registerSocket(socket.get());
