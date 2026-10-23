@@ -49,7 +49,7 @@ std::string Panda::serial_read(int port_number) {
   char buffer[USBPACKET_MAX_SIZE] = {};
 
   while (true) {
-    int bytes_read = handle->control_read(0xe0, port_number, 0, (unsigned char *)buffer, USBPACKET_MAX_SIZE);
+    int bytes_read = handle->control_read(0xb6, port_number, 0, (unsigned char *)buffer, USBPACKET_MAX_SIZE);
     if (bytes_read <= 0) {
       break;
     }

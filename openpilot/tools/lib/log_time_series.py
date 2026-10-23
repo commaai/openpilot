@@ -1,48 +1,54 @@
+import capnp
 import numpy as np
+from capnp.lib.capnp import _DynamicEnum
 
 
-def flatten_type_dict(d, sep="/", prefix=None):
-  res = {}
-  if isinstance(d, dict):
-    for key, val in d.items():
-      if prefix is None:
-        res.update(flatten_type_dict(val, prefix=key))
+def _list_to_python(value):
+  return [x.to_dict(verbose=True) if hasattr(x, 'to_dict') else
+          _list_to_python(x) if isinstance(x, (capnp._DynamicListReader, capnp._DynamicListBuilder)) else
+          str(x) if isinstance(x, _DynamicEnum) else x for x in value]
+
+
+class _MessageConverter:
+  """Cache schema field handles and destination columns for one service.
+
+  Read directly into columns instead of building and flattening a dictionary for
+  every message. Union branches are initialized only when they are active.
+  """
+  def __init__(self, schema, group, prefix=""):
+    self.schema = schema
+    self.group = group
+    self.prefix = prefix
+    self.fields = [self._field(name) for name in schema.non_union_fields]
+    self.union_fields = {}
+
+  def _field(self, name):
+    field = self.schema.fields[name]
+    kind = 'struct' if field.proto.which() == 'group' else field.proto.slot.type.which()
+    key = self.prefix + name
+    if kind == 'struct':
+      dest = _MessageConverter(field.schema, self.group, key + '/')
+    else:
+      dest = self.group[key] = []
+    return field, kind, dest
+
+  def append(self, message):
+    fields = self.fields
+    if self.schema.union_fields:
+      name = message.which()
+      if name not in self.union_fields:
+        self.union_fields[name] = self._field(name)
+      fields = [self.union_fields[name], *fields]
+    for field, kind, dest in fields:
+      value = message._get_by_field(field)
+      if kind == 'struct':
+        dest.append(value)
       else:
-        res.update(flatten_type_dict(val, prefix=prefix + sep + key))
-    return res
-  elif isinstance(d, list):
-    return {prefix: np.array(d)}
-  else:
-    return {prefix: d}
-
-
-def get_message_dict(message, typ):
-  valid = message.valid
-  message = message._get(typ)
-  if not hasattr(message, 'to_dict') or typ in ('qcomGnss', 'ubloxGnss'):
-    # TODO: support these
-    #print("skipping", typ)
-    return
-
-  msg_dict = message.to_dict(verbose=True)
-  msg_dict = flatten_type_dict(msg_dict)
-  msg_dict['_valid'] = valid
-  return msg_dict
-
-
-def append_dict(path, t, d, values):
-  if path not in values:
-    group = {}
-    group["t"] = []
-    for k in d:
-      group[k] = []
-    values[path] = group
-  else:
-    group = values[path]
-
-  group["t"].append(t)
-  for k, v in d.items():
-    group[k].append(v)
+        if kind == 'list':
+          value = _list_to_python(value)
+        elif kind == 'enum':
+          value = str(value)
+        dest.append(value)
 
 
 def potentially_ragged_array(arr, dtype=None, **kwargs):
@@ -50,6 +56,8 @@ def potentially_ragged_array(arr, dtype=None, **kwargs):
   try:
     return np.array(arr, dtype=dtype, **kwargs)
   except ValueError:
+    # Preserve array-valued rows when a list field has varying lengths.
+    arr = [np.array(value) if isinstance(value, list) else value for value in arr]
     return np.array(arr, dtype=object, **kwargs)
 
 def msgs_to_time_series(msgs):
@@ -59,13 +67,22 @@ def msgs_to_time_series(msgs):
     in seconds.
   """
   values = {}
+  converters = {}
   for msg in msgs:
     typ = msg.which()
+    if typ in ('qcomGnss', 'ubloxGnss'):
+      continue
+    message = msg._get(typ)
+    if not hasattr(message, 'to_dict'):
+      continue
 
-    tm = msg.logMonoTime / 1.0e9
-    msg_dict = get_message_dict(msg, typ)
-    if msg_dict is not None:
-      append_dict(typ, tm, msg_dict, values)
+    if typ not in values:
+      values[typ] = {"t": [], "_valid": []}
+      converters[typ] = _MessageConverter(message.schema, values[typ])
+    group = values[typ]
+    group["t"].append(msg.logMonoTime / 1.0e9)
+    group["_valid"].append(msg.valid)
+    converters[typ].append(message)
 
   # Sort values by time.
   for group in values.values():
