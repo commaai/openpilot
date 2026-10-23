@@ -303,19 +303,23 @@ void test_route_json() {
   REQUIRE(routes::parseDevices("not json").empty());
   REQUIRE(routes::parseDevices(R"({"error": "unauthorized"})").empty());
 
-  auto list = routes::parseRoutes(
-      R"([{"fullname": "aaaa|2024-01-02--03-04-05", "start_time_utc_millis": 1704164645000, "end_time_utc_millis": 1704165245000}])", false);
-  REQUIRE(list.size() == 1);
-  REQUIRE(list[0].name == "aaaa|2024-01-02--03-04-05");
-  REQUIRE(list[0].start_ms == 1704164645000);
-  REQUIRE(list[0].end_ms == 1704165245000);
+  for (const std::string separator : {"/", "|"}) {
+    const auto route_name = "aaaa" + separator + "2024-01-02--03-04-05";
+    auto list = routes::parseRoutes(
+        std::string(R"([{"fullname": ")") + route_name + R"(", "start_time_utc_millis": 1704164645000, "end_time_utc_millis": 1704165245000}])", false);
+    REQUIRE(list.size() == 1);
+    REQUIRE(list[0].name == route_name);
+    REQUIRE(list[0].start_ms == 1704164645000);
+    REQUIRE(list[0].end_ms == 1704165245000);
 
-  // preserved routes report ISO-8601 timestamps
-  auto preserved = routes::parseRoutes(
-      R"([{"fullname": "aaaa|2024-01-02--03-04-05", "start_time": "2024-01-02T03:04:05Z", "end_time": "2024-01-02T03:14:05Z"}])", true);
-  REQUIRE(preserved.size() == 1);
-  REQUIRE(preserved[0].start_ms == 1704164645000);
-  REQUIRE(preserved[0].end_ms == 1704165245000);
+    // preserved routes report ISO-8601 timestamps
+    auto preserved = routes::parseRoutes(
+        std::string(R"([{"fullname": ")") + route_name + R"(", "start_time": "2024-01-02T03:04:05Z", "end_time": "2024-01-02T03:14:05Z"}])", true);
+    REQUIRE(preserved.size() == 1);
+    REQUIRE(preserved[0].name == route_name);
+    REQUIRE(preserved[0].start_ms == 1704164645000);
+    REQUIRE(preserved[0].end_ms == 1704165245000);
+  }
 
   REQUIRE(routes::parseRoutes("not json", false).empty());
 }

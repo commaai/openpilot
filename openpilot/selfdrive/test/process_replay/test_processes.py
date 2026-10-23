@@ -19,27 +19,27 @@ from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.url_file import URLFile
 
 source_segments = [
-  ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
-  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.HYUNDAI_KIA_EV6 (+ QCOM GPS)
-  ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.TOYOTA_PRIUS
-  ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.TOYOTA_RAV4
-  ("TOYOTA3", "8011d605be1cbb77|000000cc--8e8d8ec716--6"),     # TOYOTA.TOYOTA_COROLLA_TSS2
-  ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.HONDA_CIVIC (NIDEC)
-  ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.HONDA_ACCORD (BOSCH)
-  ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.CHRYSLER_PACIFICA_2018_HYBRID
-  ("RAM", "17fc16d840fe9d21|2023-04-26--13-28-44--5"),         # CHRYSLER.RAM_1500_5TH_GEN
-  ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.SUBARU_OUTBACK
-  ("GM", "376bf99325883932|2022-10-27--13-41-22--1"),         # GM.CHEVROLET_BOLT_EUV
-  ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.NISSAN_XTRAIL
-  ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.VOLKSWAGEN_GOLF
+  ("HYUNDAI", "02c45f73a2e5c6e9/2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
+  ("HYUNDAI2", "d545129f3ca90f28/2022-11-07--20-43-08--3"),    # HYUNDAI.HYUNDAI_KIA_EV6 (+ QCOM GPS)
+  ("TOYOTA", "0982d79ebb0de295/2021-01-04--17-13-21--13"),     # TOYOTA.TOYOTA_PRIUS
+  ("TOYOTA2", "0982d79ebb0de295/2021-01-03--20-03-36--6"),     # TOYOTA.TOYOTA_RAV4
+  ("TOYOTA3", "8011d605be1cbb77/000000cc--8e8d8ec716--6"),     # TOYOTA.TOYOTA_COROLLA_TSS2
+  ("HONDA", "eb140f119469d9ab/2021-06-12--10-46-24--27"),      # HONDA.HONDA_CIVIC (NIDEC)
+  ("HONDA2", "7d2244f34d1bbcda/2021-06-25--12-25-37--26"),     # HONDA.HONDA_ACCORD (BOSCH)
+  ("CHRYSLER", "4deb27de11bee626/2021-02-20--11-28-55--8"),    # CHRYSLER.CHRYSLER_PACIFICA_2018_HYBRID
+  ("RAM", "17fc16d840fe9d21/2023-04-26--13-28-44--5"),         # CHRYSLER.RAM_1500_5TH_GEN
+  ("SUBARU", "341dccd5359e3c97/2022-09-12--10-35-33--3"),      # SUBARU.SUBARU_OUTBACK
+  ("GM", "376bf99325883932/2022-10-27--13-41-22--1"),         # GM.CHEVROLET_BOLT_EUV
+  ("NISSAN", "35336926920f3571/2021-02-12--18-38-48--46"),     # NISSAN.NISSAN_XTRAIL
+  ("VOLKSWAGEN", "de9592456ad7d144/2021-06-29--11-00-15--6"),  # VOLKSWAGEN.VOLKSWAGEN_GOLF
   # FIXME the sensor timings are bad in mazda segment, we're not fully testing it, but it should be replaced
-  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.MAZDA_CX9_2021
-  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.FORD_BRONCO_SPORT_MK1
-  ("RIVIAN", "bc095dc92e101734|000000db--ee9fe46e57--1"),      # RIVIAN.RIVIAN_R1_GEN1
-  ("TESLA", "aebd8f1d4ea16066|000002d8--5850d3ea5c--2"),       # TESLA.TESLA_MODEL_Y
+  ("MAZDA", "bd6a637565e91581/2021-10-30--15-14-53--4"),       # MAZDA.MAZDA_CX9_2021
+  ("FORD", "54827bf84c38b14f/2023-01-26--21-59-07--4"),        # FORD.FORD_BRONCO_SPORT_MK1
+  ("RIVIAN", "bc095dc92e101734/000000db--ee9fe46e57--1"),      # RIVIAN.RIVIAN_R1_GEN1
+  ("TESLA", "aebd8f1d4ea16066/000002d8--5850d3ea5c--2"),       # TESLA.TESLA_MODEL_Y
 
   # Enable when port is tested and dashcamOnly is no longer set
-  #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS
+  #("VOLKSWAGEN2", "3cfdec54aa035f3f/2022-07-19--23-45-10--2"),  # VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS
 ]
 
 segments = [
@@ -60,7 +60,7 @@ segments = [
   ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
   ("FORD", "regen755D8CB1E1F|2025-04-08--23-13-43--0"),
   ("RIVIAN", "regen5FCAC896BBE|2025-04-08--23-13-35--0"),
-  ("TESLA", "aebd8f1d4ea16066|000002d8--5850d3ea5c--2"),
+  ("TESLA", "aebd8f1d4ea16066/000002d8--5850d3ea5c--2"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -200,12 +200,12 @@ if __name__ == "__main__":
         if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
           continue
 
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_"))
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_").replace("/", "_"))
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
           route, seg_num = segment.rsplit("--", 1)
           ref_log_path = get_url(route, seg_num, "rlog.zst")
         else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.zst".replace("|", "_"))
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.zst".replace("|", "_").replace("/", "_"))
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, log_data[segment]))

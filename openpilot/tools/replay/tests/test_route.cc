@@ -21,13 +21,17 @@ void test_route_ranges() {
   for (const std::string route : {DEMO_ROUTE, "64e16c4237493597/00000033--332a5f9d82"}) {
     const auto full = Route::parseRoute(route);
     REQUIRE(!full.str.empty());
-    for (const auto &range : ranges) {
-      const auto parsed = Route::parseRoute(route + range.suffix);
-      REQUIRE(parsed.str == full.str);
-      REQUIRE(parsed.dongle_id == full.dongle_id);
-      REQUIRE(parsed.timestamp == full.timestamp);
-      REQUIRE(parsed.begin_segment == range.begin);
-      REQUIRE(parsed.end_segment == range.end);
+    REQUIRE(full.str == full.dongle_id + "/" + full.timestamp);
+    for (const std::string separator : {"/", "|"}) {
+      const auto identifier = full.dongle_id + separator + full.timestamp;
+      for (const auto &range : ranges) {
+        const auto parsed = Route::parseRoute(identifier + range.suffix);
+        REQUIRE(parsed.str == full.str);
+        REQUIRE(parsed.dongle_id == full.dongle_id);
+        REQUIRE(parsed.timestamp == full.timestamp);
+        REQUIRE(parsed.begin_segment == range.begin);
+        REQUIRE(parsed.end_segment == range.end);
+      }
     }
   }
 }
