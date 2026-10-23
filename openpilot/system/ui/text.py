@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 import sys
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.application import BIG_UI, gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel

@@ -1,6 +1,6 @@
 import subprocess
 import threading
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from enum import IntEnum
 from collections.abc import Callable
 

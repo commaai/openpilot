@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import requests
 import threading
 from collections.abc import Callable

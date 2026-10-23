@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter

@@ -1,7 +1,7 @@
 import abc
 import math
 import re
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from typing import Union
 from collections.abc import Callable
 from openpilot.system.ui.widgets.nav_widget import NavWidget
