@@ -17,6 +17,10 @@
     "severity": 1,
     "_comment": "Set extra field to the failed reason."
   },
+  "Offroad_StorageCleanupFailed": {
+    "text": "Some recordings could not be cleaned up. Storage may fill up; check the device logs.",
+    "severity": 1
+  },
   "Offroad_ChestnutBranch": {
     "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
     "severity": -1
