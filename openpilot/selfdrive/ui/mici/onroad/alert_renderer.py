@@ -162,17 +162,12 @@ class AlertRenderer(Widget):
     # alert_type format is "EventName/eventType" (e.g., "preLaneChangeLeft/warning")
     event_name = alert.alert_type.split('/')[0] if alert.alert_type else ''
 
+    # no icon before the lane change, the steering hint shows the direction
     if event_name == 'preLaneChangeLeft':
-      icon_side = IconSide.left
-      txt_icon = self._txt_turn_signal_left
-      icon_margin_x = 2
-      icon_margin_y = 5
+      self._last_icon_side = IconSide.left
 
     elif event_name == 'preLaneChangeRight':
-      icon_side = IconSide.right
-      txt_icon = self._txt_turn_signal_right
-      icon_margin_x = 2
-      icon_margin_y = 5
+      self._last_icon_side = IconSide.right
 
     elif event_name == 'laneChange':
       icon_side = self._last_icon_side
@@ -191,11 +186,11 @@ class AlertRenderer(Widget):
       txt_icon = self._txt_blind_spot_left if icon_side == 'left' else self._txt_blind_spot_right
       icon_margin_x = 8
       icon_margin_y = 0
+      self._last_icon_side = icon_side
 
     else:
       self._turn_signal_timer = 0.0
-
-    self._last_icon_side = icon_side
+      self._last_icon_side = None
 
     # create text rect based on icon presence
     text_x = self._rect.x + ALERT_MARGIN

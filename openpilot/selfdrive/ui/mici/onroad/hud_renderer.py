@@ -44,6 +44,9 @@ COLORS = Colors()
 
 class TurnIntent(Widget):
   FADE_IN_ANGLE = 30  # degrees
+  WHEEL_SIZE = 96
+  ARROW_WIDTH, ARROW_HEIGHT = 85, 34
+  ARROW_OFFSET = 75  # arrow center above the wheel center
 
   def __init__(self):
     super().__init__()
@@ -53,19 +56,22 @@ class TurnIntent(Widget):
     self._turn_intent_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._turn_intent_rotation_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
-    self._txt_turn_intent_left: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', 50, 20)
-    self._txt_turn_intent_right: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', 50, 20, flip_x=True)
+    self._txt_turn_intent_left: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', self.ARROW_WIDTH, self.ARROW_HEIGHT)
+    self._txt_turn_intent_right: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', self.ARROW_WIDTH, self.ARROW_HEIGHT, flip_x=True)
+    self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', self.WHEEL_SIZE, self.WHEEL_SIZE)
 
   def _render(self, _):
     if self._turn_intent_alpha_filter.x > 1e-2:
-      turn_intent_texture = self._txt_turn_intent_right if self._turn_intent_direction == 1 else self._txt_turn_intent_left
-      src_rect = rl.Rectangle(0, 0, turn_intent_texture.width, turn_intent_texture.height)
-      dest_rect = rl.Rectangle(self._rect.x + self._rect.width / 2, self._rect.y + self._rect.height / 2,
-                               turn_intent_texture.width, turn_intent_texture.height)
-
-      origin = (turn_intent_texture.width / 2, self._rect.height / 2)
       color = rl.Color(255, 255, 255, int(255 * self._turn_intent_alpha_filter.x))
-      rl.draw_texture_pro(turn_intent_texture, src_rect, dest_rect, origin, self._turn_intent_rotation_filter.x, color)
+      turn_intent_texture = self._txt_turn_intent_right if self._turn_intent_direction == 1 else self._txt_turn_intent_left
+      # arrow orbits the wheel at the top of the rect
+      self._draw_rotated(turn_intent_texture, self._rect.height / 2, self._turn_intent_rotation_filter.x, color)
+      self._draw_rotated(self._txt_wheel, self._txt_wheel.height / 2, -ui_state.sm['carState'].steeringAngleDeg, color)
+
+  def _draw_rotated(self, texture: rl.Texture, origin_y: float, rotation: float, color: rl.Color) -> None:
+    src_rect = rl.Rectangle(0, 0, texture.width, texture.height)
+    dest_rect = rl.Rectangle(self._rect.x + self._rect.width / 2, self._rect.y + self._rect.height / 2, texture.width, texture.height)
+    rl.draw_texture_pro(texture, src_rect, dest_rect, (texture.width / 2, origin_y), rotation, color)
 
   def _update_state(self) -> None:
     sm = ui_state.sm
@@ -184,6 +190,12 @@ class HudRenderer(Widget):
 
     self._draw_model_source(rect)
 
+    # steering hint in the bottom left of the video
+    hint_x = rect.x + 16 + TurnIntent.WHEEL_SIZE / 2
+    hint_y = rect.y + rect.height - 7 - TurnIntent.WHEEL_SIZE / 2
+    hint_radius = TurnIntent.ARROW_OFFSET + TurnIntent.ARROW_HEIGHT / 2
+    self._turn_intent.render(rl.Rectangle(hint_x - hint_radius, hint_y - hint_radius, hint_radius * 2, hint_radius * 2))
+
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     loading = ui_state.chestnut_state == ChestnutState.LOADING
     if loading:
@@ -225,14 +237,6 @@ class HudRenderer(Widget):
     pos_x = int(rect.x + rect.width / 2)
     pos_y = int(rect.y + rect.height - 10 - WHEEL_SIZE / 2)
     rotation = -ui_state.sm['carState'].steeringAngleDeg
-
-    turn_intent_margin = 25
-    self._turn_intent.render(rl.Rectangle(
-      pos_x - WHEEL_SIZE / 2 - turn_intent_margin,
-      pos_y - WHEEL_SIZE / 2 - turn_intent_margin,
-      WHEEL_SIZE + turn_intent_margin * 2,
-      WHEEL_SIZE + turn_intent_margin * 2,
-    ))
 
     src_rect = rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height)
     dest_rect = rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height)
