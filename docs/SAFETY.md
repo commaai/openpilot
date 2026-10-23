@@ -38,8 +38,8 @@ For additional safety implementation details, refer to [panda safety model](http
 * Do not disable or nerf [driver monitoring](https://github.com/commaai/openpilot/tree/master/openpilot/selfdrive/monitoring)
 * Do not disable or nerf [excessive actuation checks](https://github.com/commaai/openpilot/tree/master/openpilot/selfdrive/selfdrived/helpers.py)
 * If your fork modifies any of the code in `opendbc/safety/`:
-   * your fork cannot use the openpilot trademark
-   * your fork must preserve the full [safety test suite](https://github.com/commaai/opendbc/tree/master/opendbc/safety/tests) and all tests must pass, including any new coverage required by the fork's changes
+    * Your fork cannot use the openpilot trademark.
+    * Your fork must preserve the full [safety test suite](https://github.com/commaai/opendbc/tree/master/opendbc/safety/tests) and all tests must pass, including any new coverage required by the fork's changes.
 
 Failure to comply with these standards will get you and your users banned from comma.ai servers.
 

@@ -1,22 +1,22 @@
-# connect to a comma 3X or comma four
+# Connect to a comma 3X or comma four
 
 A comma device is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
 
-## Serial Console
+## Serial console
 
 On the comma 3X, the serial console is accessible from the main OBD-C port, forwarded through the panda.
 Access it using `panda/scripts/som_debug.sh`.
 
-comma four also exposes a serial console, albeit through an internal debug connector. Dedicated debug hardware coming soon to the comma shop.
+comma four also exposes a serial console, albeit through an internal debug connector. Dedicated debug hardware is coming soon to the comma shop.
 
-Login to the default user with:
+Log in as the default user with:
 
   * Username: `comma`
   * Password: `comma`
 
 ## SSH
 
-In order to SSH into your device, you'll need a GitHub account with SSH keys. See this [GitHub article](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) for getting your account setup with SSH keys.
+In order to SSH into your device, you'll need a GitHub account with SSH keys. See this [GitHub article](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) for instructions on setting up your account with SSH keys.
 
 * Enable SSH in your device's settings
 * Enter your GitHub username in the device's settings
@@ -27,7 +27,7 @@ In order to SSH into your device, you'll need a GitHub account with SSH keys. Se
 Here's an example command for connecting to your device using its tethered connection:<br />
 `ssh comma@192.168.43.1 -i ~/.ssh/my_github_key`
 
-For doing development work on device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
+For development work on your device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
 
 
 ## ADB
@@ -38,10 +38,10 @@ In order to use ADB on your device, you'll need to perform the following steps u
 
 * Plug your device into constant power using port 2, letting the device boot up
 * Enable ADB in your device's settings
-* Plug in your device to your PC using port 1
+* Plug your device into your PC using port 1
 * Connect to your device
     * `adb shell` over USB
-    * `adb connect` over WiFi
+    * `adb connect` over Wi-Fi
     * Here's an example command for connecting to your device using its tethered connection: `adb connect 192.168.43.1:5555`
 
 > [!NOTE]
