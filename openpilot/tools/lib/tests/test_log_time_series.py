@@ -40,6 +40,28 @@ class TestLogTimeSeries(unittest.TestCase):
           for event in row:
             self.assertEqual(event, {'pressed': False, 'type': 'unknown'})
 
+  def test_enums_and_nested_lists(self):
+    msg = log.Event.new_message()
+    msg.init('lateralTorqueParameters')
+    msg.lateralTorqueParameters.points = [[1., 2.], [3., 4.]]
+    ts = msgs_to_time_series([msg.as_reader()])['lateralTorqueParameters']
+    np.testing.assert_array_equal(ts['points'], [[[1., 2.], [3., 4.]]])
+
+    msg = log.Event.new_message()
+    msg.init('carState')
+    msg.carState.gearShifter = 'drive'
+    ts = msgs_to_time_series([msg.as_reader()])['carState']
+    np.testing.assert_array_equal(ts['gearShifter'], ['drive'])
+
+  def test_union_group(self):
+    msg = log.Event.new_message()
+    msg.init('controlsState')
+    msg.controlsState.lateralControlState.init('torqueState')
+    msg.controlsState.lateralControlState.torqueState.output = 0.5
+    ts = msgs_to_time_series([msg.as_reader()])['controlsState']
+    np.testing.assert_array_equal(ts['lateralControlState/torqueState/output'], [0.5])
+    self.assertFalse(any('pidState' in key for key in ts))
+
   def test_skipped_services(self):
     msgs = []
     for service in ('qcomGnss', 'ubloxGnss', 'ubloxRaw'):

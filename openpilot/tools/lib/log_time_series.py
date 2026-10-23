@@ -1,15 +1,54 @@
+import capnp
 import numpy as np
+from capnp.lib.capnp import _DynamicEnum
 
 
-def _append_fields(d, group, prefix=""):
-  for key, value in d.items():
-    name = prefix + key
-    if isinstance(value, dict):
-      _append_fields(value, group, name + "/")
+def _list_to_python(value):
+  return [x.to_dict(verbose=True) if hasattr(x, 'to_dict') else
+          _list_to_python(x) if isinstance(x, (capnp._DynamicListReader, capnp._DynamicListBuilder)) else
+          str(x) if isinstance(x, _DynamicEnum) else x for x in value]
+
+
+class _MessageConverter:
+  """Cache schema field handles and destination columns for one service.
+
+  Read directly into columns instead of building and flattening a dictionary for
+  every message. Union branches are initialized only when they are active.
+  """
+  def __init__(self, schema, group, prefix=""):
+    self.schema = schema
+    self.group = group
+    self.prefix = prefix
+    self.fields = [self._field(name) for name in schema.non_union_fields]
+    self.union_fields = {}
+
+  def _field(self, name):
+    field = self.schema.fields[name]
+    kind = 'struct' if field.proto.which() == 'group' else field.proto.slot.type.which()
+    key = self.prefix + name
+    if kind == 'struct':
+      dest = _MessageConverter(field.schema, self.group, key + '/')
     else:
-      if name not in group:
-        group[name] = []
-      group[name].append(value)
+      dest = self.group[key] = []
+    return field, kind, dest
+
+  def append(self, message):
+    fields = self.fields
+    if self.schema.union_fields:
+      name = message.which()
+      if name not in self.union_fields:
+        self.union_fields[name] = self._field(name)
+      fields = [self.union_fields[name], *fields]
+    for field, kind, dest in fields:
+      value = message._get_by_field(field)
+      if kind == 'struct':
+        dest.append(value)
+      else:
+        if kind == 'list':
+          value = _list_to_python(value)
+        elif kind == 'enum':
+          value = str(value)
+        dest.append(value)
 
 
 def potentially_ragged_array(arr, dtype=None, **kwargs):
@@ -28,6 +67,7 @@ def msgs_to_time_series(msgs):
     in seconds.
   """
   values = {}
+  converters = {}
   for msg in msgs:
     typ = msg.which()
     if typ in ('qcomGnss', 'ubloxGnss'):
@@ -38,11 +78,11 @@ def msgs_to_time_series(msgs):
 
     if typ not in values:
       values[typ] = {"t": [], "_valid": []}
+      converters[typ] = _MessageConverter(message.schema, values[typ])
     group = values[typ]
     group["t"].append(msg.logMonoTime / 1.0e9)
     group["_valid"].append(msg.valid)
-    # Flatten straight into columns; convert lists to arrays once per column below.
-    _append_fields(message.to_dict(verbose=True), group)
+    converters[typ].append(message)
 
   # Sort values by time.
   for group in values.values():
