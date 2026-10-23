@@ -1,12 +1,12 @@
 #include "selfdrive/pandad/pandad.h"
 
 #include <array>
-#include <bitset>
 #include <cassert>
 #include <cerrno>
 #include <memory>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "openpilot/cereal/gen/cpp/car.capnp.h"
 #include "openpilot/cereal/messaging/messaging.h"
@@ -218,17 +218,28 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
     fill_panda_can_state(cs[j], can_health[j]);
   }
 
-  // Convert faults bitset to capnp list
-  std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
-  auto faults = ps.initFaults(fault_bits.count());
+  // panda bits were reused after their old faults were removed, so they don't match the cereal ordinals
+  using FT = cereal::PandaState::FaultType;
+  static const std::array<std::pair<uint32_t, FT>, 28> FAULT_BITS = {{
+    {0, FT::RELAY_MALFUNCTION}, {1, FT::UNUSED_INTERRUPT_HANDLED}, {2, FT::INTERRUPT_RATE_CAN1},
+    {3, FT::INTERRUPT_RATE_CAN2}, {4, FT::INTERRUPT_RATE_CAN3}, {5, FT::INTERRUPT_RATE_TACH},
+    {7, FT::INTERRUPT_RATE_INTERRUPTS}, {8, FT::INTERRUPT_RATE_SPI_DMA}, {9, FT::SELF_TEST_CPU},
+    {10, FT::SELF_TEST_RAM}, {11, FT::SELF_TEST_FLASH}, {12, FT::ECC}, {13, FT::OUTPUT_READBACK},
+    {15, FT::INTERRUPT_RATE_USB}, {16, FT::CLOCK}, {17, FT::INTERRUPT_MISSING}, {18, FT::REGISTER_DIVERGENT},
+    {19, FT::SAFETY_REDUNDANCY}, {20, FT::INTERRUPT_RATE_CLOCK_SOURCE}, {21, FT::INTERRUPT_RATE_TICK},
+    {22, FT::INTERRUPT_RATE_EXTI}, {23, FT::INTERRUPT_RATE_SPI}, {24, FT::ADC}, {25, FT::SIREN_MALFUNCTION},
+    {26, FT::HEARTBEAT_LOOP_WATCHDOG}, {27, FT::INTERRUPT_RATE_SOUND_DMA}, {28, FT::MPU}, {29, FT::TIMER},
+  }};
 
-  size_t j = 0;
-  for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-       f <= size_t(cereal::PandaState::FaultType::HEARTBEAT_LOOP_WATCHDOG); f++) {
-    if (fault_bits.test(f)) {
-      faults.set(j, cereal::PandaState::FaultType(f));
-      j++;
+  std::vector<FT> fault_list;
+  for (const auto &[bit, fault] : FAULT_BITS) {
+    if (health.faults_pkt & (1U << bit)) {
+      fault_list.push_back(fault);
     }
+  }
+  auto faults = ps.initFaults(fault_list.size());
+  for (size_t j = 0; j < fault_list.size(); j++) {
+    faults.set(j, fault_list[j]);
   }
 
   pm->send("pandaStates", msg);
