@@ -1,6 +1,7 @@
 import pyray as rl
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.selfdrive.ui.mici.onroad import IconIntro
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
@@ -9,8 +10,9 @@ HIGHLIGHT_TIME = 2.5  # seconds
 
 
 class LongIndicator(Widget):
-  def __init__(self):
+  def __init__(self, icon_intro: IconIntro):
     super().__init__()
+    self._icon_intro = icon_intro
     self._txt_lead_car = (self._texture('car', 35, 27), self._texture('car_green', 50, 42))
     self._txt_distance = [(self._texture('distance_1', 32, 7), self._texture('distance_1_green', 60, 35)),
                           (self._texture('distance_2', 40, 9), self._texture('distance_2_green', 68, 37)),
@@ -50,8 +52,8 @@ class LongIndicator(Widget):
     green_alpha = green_f.update(float(e2e))
 
     white, green = self._txt_lead_car
-    self._draw_centered(white, rect, 100, white_alpha * alpha)
-    self._draw_centered(green, rect, 100, green_alpha * alpha)
+    self._draw_centered(white, rect, 100, white_alpha * alpha, IconIntro.CAR)
+    self._draw_centered(green, rect, 100, green_alpha * alpha, IconIntro.CAR)
 
   def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
@@ -67,14 +69,16 @@ class LongIndicator(Widget):
     blink = 0.35 / 0.9 if overriding and now % 0.375 > 0.1875 else 1.0
 
     count = personality + 1
-    for i, ((white, green), y, (active_f, green_f)) in enumerate(zip(self._txt_distance, (122, 136, 152), self._distance_filters, strict=True)):
+    bars = zip(self._txt_distance, (122, 136, 152), self._distance_filters, (IconIntro.TOP_BAR, IconIntro.MIDDLE_BAR, IconIntro.BOTTOM_BAR), strict=True)
+    for i, ((white, green), y, (active_f, green_f), icon) in enumerate(bars):
       active = active_f.update(float(i < count))
       green_alpha = green_f.update(float(highlight and i == count - 1))
       # only lit bars blink on override
-      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha) * blink) * alpha)
-      self._draw_centered(green, rect, y, green_alpha * blink * alpha)
+      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha) * blink) * alpha, icon)
+      self._draw_centered(green, rect, y, green_alpha * blink * alpha, icon)
 
-  @staticmethod
-  def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
+  def _draw_centered(self, texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float, icon: int) -> None:
+    y += self._icon_intro.offset(icon)
+    alpha *= self._icon_intro.alpha(icon)
     pos = rl.Vector2(rect.x + (rect.width - texture.width) / 2, rect.y + y - texture.height / 2)
     rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))

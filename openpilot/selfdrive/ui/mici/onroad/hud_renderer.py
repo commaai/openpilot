@@ -2,6 +2,7 @@ import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
+from openpilot.selfdrive.ui.mici.onroad import IconIntro
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -106,9 +107,10 @@ class TurnIntent(Widget):
 
 
 class HudRenderer(Widget):
-  def __init__(self):
+  def __init__(self, icon_intro: IconIntro):
     super().__init__()
     """Initialize the HUD renderer."""
+    self._icon_intro = icon_intro
     self.is_cruise_set: bool = False
     self.is_cruise_available: bool = True
     self.set_speed: float = SET_SPEED_NA
@@ -235,7 +237,7 @@ class HudRenderer(Widget):
 
     # centered at the bottom of the rect
     pos_x = int(rect.x + rect.width / 2)
-    pos_y = int(rect.y + rect.height - 10 - WHEEL_SIZE / 2)
+    pos_y = int(rect.y + rect.height - 10 - WHEEL_SIZE / 2 + self._icon_intro.offset(IconIntro.WHEEL))
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
     src_rect = rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height)
@@ -243,7 +245,7 @@ class HudRenderer(Widget):
     origin = (wheel_txt.width / 2, wheel_txt.height / 2)
 
     # color and draw
-    color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))
+    color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x * self._icon_intro.alpha(IconIntro.WHEEL)))
     rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, color)
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:

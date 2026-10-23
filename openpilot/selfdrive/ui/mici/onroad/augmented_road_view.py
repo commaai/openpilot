@@ -3,7 +3,7 @@ import pyray as rl
 from openpilot.cereal import log
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
-from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
+from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH, IconIntro
 from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer, AlertStatus
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
@@ -171,8 +171,9 @@ class AugmentedRoadView(CameraView):
 
     self._navigation = NavigationPanel()
     self._model_renderer = ModelRenderer()
-    self._hud_renderer = HudRenderer()
-    self._long_indicator = LongIndicator()
+    self._icon_intro = IconIntro()
+    self._hud_renderer = HudRenderer(self._icon_intro)
+    self._long_indicator = LongIndicator(self._icon_intro)
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer(background=False)
     self._confidence_ball = ConfidenceBall()
@@ -255,10 +256,14 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    self._driver_state_renderer.set_should_draw(ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm)
+    # slid fully into view
+    self._icon_intro.update(abs(self.rect.x) < 1)
+
+    # Hide DMoji when disengaged unless AlwaysOnDM is enabled, fades in with its own filter once its intro starts
+    self._driver_state_renderer.set_should_draw((ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm) and
+                                                self._icon_intro.alpha(IconIntro.DM) > 0.01)
     self._driver_state_renderer.set_position(side_panel_rect.x + (side_panel_rect.width - self._driver_state_renderer.rect.width) / 2,
-                                             side_panel_rect.y + 5)
+                                             side_panel_rect.y + 5 + self._icon_intro.offset(IconIntro.DM))
     self._driver_state_renderer.render()
     self._long_indicator.render(side_panel_rect)
     self._hud_renderer.set_wheel_alert(alert_to_render is not None and not not_animating_out and
