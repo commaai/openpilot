@@ -1,4 +1,5 @@
 import base64
+import time
 import requests
 from http import HTTPMethod
 
@@ -36,17 +37,24 @@ class GithubUtils:
     with open(path, "rb") as f:
       encoded = base64.b64encode(f.read()).decode()
 
-      # check if file already exists
-      sha = self.get_file_sha(bucket, file_name)
-      sha = f'"sha":"{sha}",' if sha else ''
+      # another CI job can be uploading to the same bucket, which conflicts (409, or 422 for a stale sha) until we have its sha
+      for i in range(5):
+        # check if file already exists
+        sha = self.get_file_sha(bucket, file_name)
+        sha = f'"sha":"{sha}",' if sha else ''
 
-      data = f'{{"message":"uploading {file_name}", \
-                    "branch":"{bucket}", \
-                    "committer":{{"name":"Vehicle Researcher", "email": "user@comma.ai"}}, \
-                    {sha} \
-                    "content":"{encoded}"}}'
-      github_path = f"contents/{file_name}"
-      self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True)
+        data = f'{{"message":"uploading {file_name}", \
+                      "branch":"{bucket}", \
+                      "committer":{{"name":"Vehicle Researcher", "email": "user@comma.ai"}}, \
+                      {sha} \
+                      "content":"{encoded}"}}'
+        github_path = f"contents/{file_name}"
+        r = self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True, raise_on_failure=False)
+        if r.status_code not in (409, 422):
+          break
+        time.sleep(1 + i)
+      if not r.ok:
+        raise Exception(f"Call to {self.DATA_ROUTE}/{github_path} failed with {r.status_code}")
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
