@@ -32,6 +32,12 @@ source .venv/bin/activate
 scons -u
 ```
 
+## LFS uploads
+
+Run `op setup` to install the push hook. After Git LFS uploads, it adds pointers
+to the HF repository's existing `lfs-history` branch using your Git credentials.
+Keep that branch and its `objects/**` entries, including older versions.
+
 ## WSL on Windows
 
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Linux. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
