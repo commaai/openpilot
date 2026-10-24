@@ -1,0 +1,6 @@
+runtime -- shared tests that run on each backend
+null -- tests that don't require any backend
+device/<device> -- device-specific tests, run by the corresponding backend CI
+
+Device directory names are lowercase (cpu, amd, metal, cl, qcom, dsp, webgpu, python).
+NV and CUDA both run device/nv, which contains their shared PTX tests.

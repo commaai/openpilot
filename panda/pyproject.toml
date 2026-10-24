@@ -1,0 +1,55 @@
+[project]
+name = "pandacan"
+version = "0.0.10"
+description = "Code powering the comma.ai panda"
+readme = "README.md"
+requires-python = ">= 3.12.3, < 3.13" # macOS doesn't work with 3.13 due to pycapnp from opendbc
+license = {text = "MIT"}
+authors = [{name = "comma.ai"}]
+classifiers = [
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Hardware",
+]
+dependencies = [
+  "libusb1",
+  "libusb-package",
+  "opendbc @ git+https://github.com/commaai/opendbc.git@master#egg=opendbc",
+]
+
+[project.optional-dependencies]
+dev = [
+  "scons",
+  "ruff",
+  "setuptools",
+  "comma-deps-gcc-arm-none-eabi",
+  "comma-deps-cppcheck",
+]
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+  "panda",
+  "panda.python",
+  "panda.board",
+  "panda.board.body",
+]
+
+[tool.setuptools.package-data]
+"panda.board" = ["health.h"]
+
+[tool.setuptools.package-dir]
+panda = "."
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+line-length = 160
+target-version="py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A"]
+ignore = ["W292", "E741", "E402", "C408", "ISC003"]
+flake8-implicit-str-concat.allow-multiline=false
