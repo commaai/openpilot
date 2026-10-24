@@ -35,6 +35,8 @@
 
 #include "system/camerad/cameras/nv12_info.h"
 
+extern char **environ;
+
 namespace {
 
 std::atomic<bool> g_glfw_alive{false};
