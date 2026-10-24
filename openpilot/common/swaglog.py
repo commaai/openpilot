@@ -69,7 +69,6 @@ class UnixDomainSocketHandler(logging.Handler):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
     self.pid = None
-    self.path = None
     self.sock = None
 
   def __del__(self):
@@ -85,7 +84,6 @@ class UnixDomainSocketHandler(logging.Handler):
     self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_MAX_SIZE)
     self.sock.setblocking(False)
-    self.path = Paths.swaglog_ipc()
     self.pid = os.getpid()
 
   def emit(self, record):
@@ -94,7 +92,7 @@ class UnixDomainSocketHandler(logging.Handler):
 
     msg = self.format(record).rstrip('\n')
     try:
-      self.sock.sendto((chr(record.levelno)+msg).encode('utf8'), self.path)
+      self.sock.sendto((chr(record.levelno)+msg).encode('utf8'), Paths.swaglog_ipc())
     except OSError:
       # logmessaged is busy, not running, or the message is too big. drop :/
       pass
