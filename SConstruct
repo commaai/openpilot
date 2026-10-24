@@ -252,7 +252,7 @@ def prune_cache_dir(target=None, source=None, env=None):
 # Build common module
 SConscript(['openpilot/common/SConscript'])
 Import('_common')
-common = [_common, 'json11', 'zmq']
+common = [_common, 'json11']
 Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
