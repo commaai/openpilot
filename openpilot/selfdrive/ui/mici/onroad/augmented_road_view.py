@@ -256,8 +256,8 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
-    # slid fully into view
-    self._icon_intro.update(abs(self.rect.x) < 1)
+    # visually slid into view, the scroll filter takes another second to settle the last pixels
+    self._icon_intro.update(abs(self.rect.x) < 10)
 
     # DMoji always shows, inactive while disengaged unless AlwaysOnDM is enabled. fades in with its own filter once its intro starts
     self._driver_state_renderer.set_force_inactive(ui_state.status == UIStatus.DISENGAGED and not ui_state.always_on_dm)
