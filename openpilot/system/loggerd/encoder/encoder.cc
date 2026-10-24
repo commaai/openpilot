@@ -27,7 +27,12 @@ void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBuf
   edata.setSegmentId(idx);
   edata.setFlags(flags);
   edata.setLen(dat.size());
-  edat.adoptData(msg.getOrphanage().referenceExternalData(dat));
+  // Splitting joined codec headers can leave the frame payload unaligned.
+  if (reinterpret_cast<uintptr_t>(dat.begin()) % sizeof(capnp::word) == 0) {
+    edat.adoptData(msg.getOrphanage().referenceExternalData(dat));
+  } else {
+    edat.setData(dat);
+  }
   edat.setWidth(out_width);
   edat.setHeight(out_height);
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
