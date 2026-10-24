@@ -1,7 +1,11 @@
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
-#include <zmq.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #include "common/hardware/hw.h"
 #include "common/swaglog.h"
@@ -13,18 +17,20 @@ void test_swaglog() {
   setenv("DONGLE_ID", "test_dongle_id", 1);
   setenv("CLEAN", "1", 1);
 
-  void *context = zmq_ctx_new();
-  CHECK(context != nullptr);
-  void *socket = zmq_socket(context, ZMQ_PULL);
-  CHECK(socket != nullptr);
-  int timeout = 5000;
-  CHECK(zmq_setsockopt(socket, ZMQ_RCVTIMEO, &timeout, sizeof(timeout)) == 0);
-  CHECK(zmq_bind(socket, Path::swaglog_ipc().c_str()) == 0);
+  const std::string path = Path::swaglog_ipc();
+  unlink(path.c_str());
+  int sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+  CHECK(sock >= 0);
+  struct timeval timeout = {.tv_sec = 5, .tv_usec = 0};
+  CHECK(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == 0);
+  struct sockaddr_un addr = {.sun_family = AF_UNIX};
+  strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
+  CHECK(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == 0);
 
   LOGD("native-cpp-log");
 
   char buffer[4096] = {};
-  const int size = zmq_recv(socket, buffer, sizeof(buffer), 0);
+  const int size = recv(sock, buffer, sizeof(buffer), 0);
   CHECK(size > 1);
   CHECK(buffer[0] == CLOUDLOG_DEBUG);
   std::string error;
@@ -38,8 +44,8 @@ void test_swaglog() {
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
 
-  CHECK(zmq_close(socket) == 0);
-  CHECK(zmq_ctx_destroy(context) == 0);
+  CHECK(close(sock) == 0);
+  CHECK(unlink(path.c_str()) == 0);
 }
 
 int main() {
