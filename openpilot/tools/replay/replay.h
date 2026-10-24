@@ -109,7 +109,9 @@ private:
   double max_seconds_ = 0;
   SubMaster *sm_ = nullptr;
   std::vector<const char *> active_services_;
+#ifndef __EMSCRIPTEN__
   std::unique_ptr<PubMaster> pm_;
+#endif
   std::vector<const char*> sockets_;
   std::unique_ptr<CameraServer> camera_server_;
   std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;

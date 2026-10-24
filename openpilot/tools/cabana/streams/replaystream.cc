@@ -10,7 +10,9 @@ ReplayStream::ReplayStream() {
   unsetenv("ZMQ");
   setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
 
+#ifndef __EMSCRIPTEN__
   op_prefix = std::make_unique<OpenpilotPrefix>();
+#endif
 
   settings_connection_ = settings.changed.connect([this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);

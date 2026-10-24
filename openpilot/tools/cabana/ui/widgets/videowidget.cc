@@ -10,8 +10,10 @@
 #include <iterator>
 
 extern "C" {
+#ifndef __EMSCRIPTEN__
 #include <libavcodec/avcodec.h>
 #include <libavutil/pixfmt.h>
+#endif
 }
 #include <capnp/serialize.h>
 
@@ -57,6 +59,10 @@ static std::pair<double, double> displayedTimeRange() {
   return can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
 }
 
+#ifdef __EMSCRIPTEN__
+// TODO: decode through the browser
+static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) { return false; }
+#else
 // decode with libavcodec, already linked for the replay video decoder
 static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
   const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
@@ -112,6 +118,7 @@ static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
   avcodec_free_context(&context);
   return ok;
 }
+#endif
 
 VideoWidget::VideoWidget() {
   if (!can->liveStreaming())

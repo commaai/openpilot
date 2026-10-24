@@ -211,8 +211,10 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
     builder.setRoot(event.getCarParams());
     auto words = capnp::messageToFlatArray(builder);
     auto bytes = words.asBytes();
+#ifndef __EMSCRIPTEN__
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
     Params().put("CarParamsPersistent", (const char *)bytes.begin(), bytes.size());
+#endif
   } else {
     rWarning("failed to read CarParams from current segment");
   }
@@ -237,6 +239,7 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
 void Replay::publishMessage(const Event *e) {
   if (event_filter_ && event_filter_(e)) return;
 
+#ifndef __EMSCRIPTEN__  // no msgq in the browser: every consumer filters events
   if (!sm_) {
     if (!pm_) pm_ = std::make_unique<PubMaster>(active_services_);  // consumers with an event filter never need one
     auto bytes = e->data.asBytes();
@@ -250,6 +253,7 @@ void Replay::publishMessage(const Event *e) {
     auto event = reader.getRoot<cereal::Event>();
     sm_->update_msgs(nanos_since_boot(), {{sockets_[e->which], event}});
   }
+#endif
 }
 
 void Replay::publishFrame(const Event *e) {

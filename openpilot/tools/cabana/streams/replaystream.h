@@ -4,7 +4,9 @@
 #include <memory>
 #include <set>
 
+#ifndef __EMSCRIPTEN__
 #include "common/prefix.h"
+#endif
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/replay/replay.h"
 
@@ -39,5 +41,7 @@ private:
   std::unique_ptr<Replay> replay = nullptr;
   Connection settings_connection_;
   std::set<int> processed_segments;
+#ifndef __EMSCRIPTEN__
   std::unique_ptr<OpenpilotPrefix> op_prefix;
+#endif
 };

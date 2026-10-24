@@ -137,6 +137,9 @@ void load() {
 }
 
 void applyWindowGeometry(GLFWwindow *window) {
+#ifdef __EMSCRIPTEN__
+  return;  // the canvas follows the browser window
+#endif
   // Qt restoreGeometry corrects off-screen geometry, here we rely on the window manager
   if (main_window.has_geometry && main_window.size[0] > 0 && main_window.size[1] > 0) {
     glfwSetWindowPos(window, main_window.pos[0], main_window.pos[1]);
