@@ -2,6 +2,18 @@ import pyray as rl
 
 SIDE_PANEL_WIDTH = 60
 
+# [experiment] night mode: multiplied over the onroad view, indexed by NightModeTint
+NIGHT_TINTS: list[tuple[str, rl.Color]] = [
+  ("off", rl.Color(255, 255, 255, 255)),
+  ("dim", rl.Color(150, 150, 150, 255)),
+  ("warm", rl.Color(255, 180, 110, 255)),
+  ("no blue", rl.Color(255, 255, 0, 255)),
+  ("amber", rl.Color(255, 130, 0, 255)),
+  ("dim amber", rl.Color(150, 75, 0, 255)),
+  ("red", rl.Color(255, 0, 0, 255)),
+  ("dim red", rl.Color(150, 0, 0, 255)),
+]
+
 
 def blend_colors(a: rl.Color, b: rl.Color, f: float) -> rl.Color:
   h0, s0, v0 = (hsv0 := rl.color_to_hsv(a)).x, hsv0.y, hsv0.z
