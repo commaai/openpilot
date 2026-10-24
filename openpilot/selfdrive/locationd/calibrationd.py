@@ -44,11 +44,14 @@ if HARDWARE.get_device_type() == 'mici':
 else:
   PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
+# Once invalid, calibration must come back within the limits by this margin to be valid again.
+# Prevents mounts right at the edge of the limits from flickering between valid and invalid.
+VALID_HYSTERESIS = np.radians(0.5)
 DEBUG = os.getenv("DEBUG") is not None
 
 
-def is_calibration_valid(rpy: np.ndarray) -> bool:
-  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+def is_calibration_valid(rpy: np.ndarray, margin: float = 0.0) -> bool:
+  return (PITCH_LIMITS[0] + margin < rpy[1] < PITCH_LIMITS[1] - margin) and (YAW_LIMITS[0] + margin < rpy[2] < YAW_LIMITS[1] - margin)
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
@@ -83,6 +86,8 @@ class Calibrator:
           valid_blocks = msg.extrinsicsCalibration.validBlocks
           wide_from_device_euler = np.array(msg.extrinsicsCalibration.wideFromDeviceEuler)
           height = np.array(msg.extrinsicsCalibration.height)
+          if msg.extrinsicsCalibration.calStatus == log.ExtrinsicsCalibration.Status.invalid:
+            self.cal_status = log.ExtrinsicsCalibration.Status.invalid
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
 
@@ -153,10 +158,12 @@ class Calibrator:
         self.cal_status = log.ExtrinsicsCalibration.Status.recalibrating
       else:
         self.cal_status = log.ExtrinsicsCalibration.Status.uncalibrated
-    elif is_calibration_valid(self.rpy):
-      self.cal_status = log.ExtrinsicsCalibration.Status.calibrated
     else:
-      self.cal_status = log.ExtrinsicsCalibration.Status.invalid
+      margin = VALID_HYSTERESIS if self.cal_status == log.ExtrinsicsCalibration.Status.invalid else 0.0
+      if is_calibration_valid(self.rpy, margin):
+        self.cal_status = log.ExtrinsicsCalibration.Status.calibrated
+      else:
+        self.cal_status = log.ExtrinsicsCalibration.Status.invalid
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.

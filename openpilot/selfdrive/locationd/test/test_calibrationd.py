@@ -7,7 +7,8 @@ import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
-                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD
+                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD, \
+                                                         YAW_LIMITS, VALID_HYSTERESIS
 
 
 def process_messages(c, cam_odo_calib, cycles,
@@ -29,6 +30,11 @@ def process_messages(c, cam_odo_calib, cycles,
                         [cam_odo_speed_std, cam_odo_speed_std, cam_odo_speed_std],
                         [0.0, 0.0, HEIGHT_INIT.item()],
                         [cam_odo_height_std, cam_odo_height_std, cam_odo_height_std])
+
+def converge_yaw(c, yaw):
+  # cameraOdometry is relative to the current calibration, so feed the residual to converge to a target yaw
+  for _ in range(INPUTS_WANTED * 2):
+    process_messages(c, [0.0, 0.0, yaw - c.get_smooth_rpy()[2]], BLOCK_SIZE)
 
 class TestCalibrationd(OpenpilotTestCase):
 
@@ -111,3 +117,48 @@ class TestCalibrationd(OpenpilotTestCase):
     assert c.valid_blocks == 1
     assert c.cal_status == log.ExtrinsicsCalibration.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)
+
+  def test_calibration_valid_hysteresis(self):
+    c = Calibrator(param_put=False)
+    converge_yaw(c, YAW_LIMITS[1] - VALID_HYSTERESIS / 2)
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.calibrated
+
+    converge_yaw(c, YAW_LIMITS[1] + 0.002)
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.invalid
+
+    # back within the limits, but not by the hysteresis margin
+    converge_yaw(c, YAW_LIMITS[1] - VALID_HYSTERESIS / 2)
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.invalid
+
+    converge_yaw(c, YAW_LIMITS[1] - VALID_HYSTERESIS * 2)
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.calibrated
+
+  def test_read_saved_invalid_status(self):
+    for yaw, expected in [(YAW_LIMITS[1] - VALID_HYSTERESIS / 2, log.ExtrinsicsCalibration.Status.invalid),
+                          (YAW_LIMITS[1] - VALID_HYSTERESIS * 2, log.ExtrinsicsCalibration.Status.calibrated)]:
+      msg = messaging.new_message('extrinsicsCalibration')
+      msg.extrinsicsCalibration.validBlocks = INPUTS_WANTED
+      msg.extrinsicsCalibration.rpyCalib = [0.0, 0.0, float(yaw)]
+      msg.extrinsicsCalibration.calStatus = log.ExtrinsicsCalibration.Status.invalid
+      Params().put("CalibrationParams", msg.to_bytes(), block=True)
+      c = Calibrator(param_put=True)
+      assert c.cal_status == expected
+
+    # saved as calibrated near the limit stays calibrated
+    msg.extrinsicsCalibration.rpyCalib = [0.0, 0.0, float(YAW_LIMITS[1] - VALID_HYSTERESIS / 2)]
+    msg.extrinsicsCalibration.calStatus = log.ExtrinsicsCalibration.Status.calibrated
+    Params().put("CalibrationParams", msg.to_bytes(), block=True)
+    assert Calibrator(param_put=True).cal_status == log.ExtrinsicsCalibration.Status.calibrated
+
+  def test_calibration_valid_hysteresis_noisy(self):
+    # mount right at the edge with slowly wandering noise (road grade, load), status should settle instead of flickering
+    rng = np.random.default_rng(0)
+    c = Calibrator(param_put=False)
+    noise, statuses = 0.0, []
+    for _ in range(INPUTS_WANTED * 12):
+      noise = 0.9 * noise + np.sqrt(1 - 0.9 ** 2) * rng.normal(0, np.radians(0.2))
+      process_messages(c, [0.0, 0.0, YAW_LIMITS[1] + noise - c.get_smooth_rpy()[2]], BLOCK_SIZE)
+      statuses.append(c.cal_status)
+    to_invalid = sum(a == log.ExtrinsicsCalibration.Status.calibrated and b == log.ExtrinsicsCalibration.Status.invalid
+                     for a, b in zip(statuses, statuses[1:], strict=False))
+    assert to_invalid <= 1
