@@ -6,7 +6,7 @@ from typing import NoReturn
 import openpilot.cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.swaglog import SWAGLOG_MAX_SIZE, get_file_handler
+from openpilot.common.swaglog import SWAGLOG_BUF_SIZE, SWAGLOG_MAX_INLINE, get_file_handler
 
 
 def main() -> NoReturn:
@@ -18,9 +18,8 @@ def main() -> NoReturn:
   if os.path.exists(path):
     os.unlink(path)
   sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-  sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, SWAGLOG_MAX_SIZE)
+  sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, SWAGLOG_BUF_SIZE)
   sock.bind(path)
-  buf = bytearray(SWAGLOG_MAX_SIZE)
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')
@@ -28,11 +27,16 @@ def main() -> NoReturn:
 
   try:
     while True:
-      n = sock.recv_into(buf)
-      if n == 0:
+      dat, fds, _, _ = socket.recv_fds(sock, SWAGLOG_MAX_INLINE, 1)
+      if fds:
+        # big logs come as a memfd
+        dat = os.pread(fds[0], os.fstat(fds[0]).st_size, 0)
+        for fd in fds:
+          os.close(fd)
+      if len(dat) == 0:
         continue
-      level = buf[0]
-      record = buf[1:n].decode("utf-8")
+      level = dat[0]
+      record = dat[1:].decode("utf-8")
       if level >= log_level:
         log_handler.emit(record)
 

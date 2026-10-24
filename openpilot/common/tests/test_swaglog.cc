@@ -3,6 +3,7 @@
 #include <string>
 
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -43,6 +44,33 @@ void test_swaglog() {
   CHECK(message["ctx"]["daemon"].string_value() == "swaglog_test");
   CHECK(message["ctx"]["dongle_id"].string_value() == "test_dongle_id");
   CHECK(message["ctx"]["dirty"].bool_value() == false);
+
+  // big logs are passed as a memfd
+  const std::string big(1024*1024, 'a');
+  LOGD("%s", big.c_str());
+
+  char dummy;
+  struct iovec iov = {.iov_base = &dummy, .iov_len = 1};
+  char cmsg_buf[CMSG_SPACE(sizeof(int))] = {};
+  struct msghdr msg = {};
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = cmsg_buf;
+  msg.msg_controllen = sizeof(cmsg_buf);
+  CHECK(recvmsg(sock, &msg, 0) == 1);
+  struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+  CHECK(cmsg != nullptr && cmsg->cmsg_type == SCM_RIGHTS);
+  int fd;
+  memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
+  struct stat st;
+  CHECK(fstat(fd, &st) == 0);
+  std::string big_buffer(st.st_size, '\0');
+  CHECK(pread(fd, big_buffer.data(), big_buffer.size(), 0) == st.st_size);
+  CHECK(close(fd) == 0);
+  CHECK(big_buffer[0] == CLOUDLOG_DEBUG);
+  const auto big_message = json11::Json::parse(big_buffer.substr(1), error);
+  CHECK(error.empty());
+  CHECK(big_message["msg"].string_value() == big);
 
   CHECK(close(sock) == 0);
   CHECK(unlink(path.c_str()) == 0);
