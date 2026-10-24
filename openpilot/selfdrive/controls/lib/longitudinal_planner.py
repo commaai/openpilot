@@ -94,22 +94,19 @@ class LongitudinalPlanner:
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     output_a_target_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
                                               action_t=action_t)
-    output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
-    output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
-    cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
 
-    candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
-                  (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
-                  (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e)]
+    candidates = [(output_a_target_mpc, self.mpc.source),
+                  (self.a_cruise, LongitudinalPlanSource.cruise),
+                  (output_a_target_e2e, LongitudinalPlanSource.e2e)]
 
-    output_a_target, self.mpc.source, _ = min(candidates, key=lambda c: c[0])
-    self.output_should_stop = any(should_stop for _, _, should_stop in candidates)
+    output_a_target, self.mpc.source = min(candidates, key=lambda c: c[0])
     self.output_a_target = np.clip(output_a_target, ACCEL_MIN, ACCEL_MAX)
+    self.output_should_stop = should_stop(v_ego, self.output_a_target)
 
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.output_a_target + a_prev) / 2.0
 
