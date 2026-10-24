@@ -478,7 +478,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Settings - Toggles ===
   script.click(278, 600)
-  script.click(1200, 280)  # expand experimental mode description
 
   # === Settings - Software ===
   script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available

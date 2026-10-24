@@ -91,8 +91,13 @@ class Ratekeeper:
     self.avg_dt.add_value(self._last_monitor_time - prev)
 
     lagged = False
-    remaining = self._next_frame_time - time.monotonic()
-    self._next_frame_time += self._interval
+    now = time.monotonic()
+    remaining = self._next_frame_time - now
+    if remaining < -self._interval:
+      # more than a frame behind (e.g. a stall): resync instead of running catch-up frames back-to-back
+      self._next_frame_time = now + self._interval
+    else:
+      self._next_frame_time += self._interval
     if self._print_delay_threshold is not None and remaining < -self._print_delay_threshold:
       print(f"{self._process_name} lagging by {-remaining * 1000:.2f} ms")
       lagged = True

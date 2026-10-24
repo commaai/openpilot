@@ -20,8 +20,7 @@ class AccelBoost:
     v_ego = sm['carState'].vEgo
     speed_scale = np.interp(v_ego, [ACCEL_BOOST_MIN_SPEED, 2 * ACCEL_BOOST_MIN_SPEED], [0.0, 1.0])
     boost_scale = speed_scale * np.interp(output_a_target_e2e, [-1.0, -0.5, 5.0], [0.0, 1.0, 1.0], right=0.0)
-    model_limited = (sm['selfdriveState'].experimentalMode and
-                     output_a_target_e2e + self.total_boost * boost_scale < min(output_a_target_mpc, a_cruise) - 0.1)
+    model_limited = output_a_target_e2e + self.total_boost * boost_scale < min(output_a_target_mpc, a_cruise) - 0.1
 
     if not enabled or not gas_pressed:
       self.boost_this_override = 0.0

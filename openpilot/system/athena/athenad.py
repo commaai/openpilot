@@ -249,10 +249,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
 
     cur_upload_items[tid] = None
 
-    for _ in range(RETRY_DELAY):
-      time.sleep(1)
-      if end_event.is_set():
-        break
+    end_event.wait(RETRY_DELAY)
 
 
 def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:

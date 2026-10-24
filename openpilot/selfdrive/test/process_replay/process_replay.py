@@ -479,7 +479,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="plannerd",
-    pubs=["modelV2", "carControl", "carState", "controlsState", "vehicleParameters", "radarState", "selfdriveState"],
+    pubs=["modelV2", "carControl", "carState", "controlsState", "radarState", "selfdriveState"],
     subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
@@ -550,7 +550,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="modeld",
     pubs=["deviceState", "narrowRoadCameraState", "wideRoadCameraState", "extrinsicsCalibration", "lateralDelay",
-          "driverMonitoringState", "carState", "carControl"],
+          "driverMonitoringState", "carState", "carControl", "controlsState"],
     subs=["modelV2", "drivingModelData", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),

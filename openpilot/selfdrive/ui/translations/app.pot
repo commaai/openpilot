@@ -250,12 +250,12 @@ msgstr ""
 msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "EXPERIMENTAL MODE ON"
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Close"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "CHILL MODE ON"
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Snooze Update"
 msgstr ""
 
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
@@ -277,6 +277,12 @@ msgstr ""
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
 msgid "No release notes available."
 msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/home.py
+msgid "{} ALERT"
+msgid_plural "{} ALERTS"
+msgstr[0] ""
+msgstr[1] ""
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "--"
@@ -508,24 +514,24 @@ msgstr ""
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "down"
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "up"
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Decline"
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "left"
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Agree"
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "right"
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "You must accept the Terms and Conditions in order to use openpilot."
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid " Steering torque response calibration is {}% complete."
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Decline, uninstall openpilot"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py

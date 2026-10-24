@@ -1,4 +1,14 @@
-Version 0.11.2 (2026-08-12)
+Version 0.11.3 (2026-XX-XX)
+========================
+* Autospeed
+  * On supported cars, openpilot will intelligently decide what speed to drive based on the scene, including:
+    * stopping at red lights, and going at green lights
+    * slowing down for curves
+    * adjusting speed based on surrounding traffic
+  * This behavior was previously available with openpilot's "Experimental mode", but is now out of beta and always enabled
+  * With openpilot deciding which speed to drive, the car's cruise speed is treated as a maximum speed openpilot will not exceed
+
+Version 0.11.2 (2026-10-14)
 =======================
 * New driving model
   * Big model with 880M parameters

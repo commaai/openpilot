@@ -1,10 +1,11 @@
 from openpilot.cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigToggle, BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.mici.layouts.settings.initial_cruise_speed import InitialCruiseSpeedButton
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -13,19 +14,14 @@ class TogglesLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
+    self._personality_toggle = BigMultiParamToggle("following distance", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
                                                    description="Standard is recommended.\n" +
                                                                "Aggressive follows closer, with firmer gas and braking.\n" +
                                                                "Relaxed leaves more space.\n" +
                                                                "Use the steering wheel distance button on supported cars.")
-    self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode",
-                                       description_icon=gui_app.texture("icons_mici/experimental_mode.png", 64, 64),
-                                       description="Let the driving model control gas and brakes.\n" +
-                                                   "Includes stopping for red lights and stop signs.\n" +
-                                                   "Set speed is a maximum, not a target.\n" +
-                                                   "These are alpha features. Expect mistakes.\n" +
-                                                   "The path colors show acceleration and braking.")
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
+    self._initial_cruise_speed = InitialCruiseSpeedButton()
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
+    is_metric_toggle = BigToggle("use metric units", initial_state=ui_state.params.get_bool("IsMetric"), toggle_callback=self._on_metric_toggle)
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
                                  description="Warn when you drift across a detected lane line.\n" +
                                              "Only above 31 mph (50 km/h), with no turn signal.")
@@ -43,7 +39,7 @@ class TogglesLayoutMici(NavScroller):
 
     self._scroller.add_widgets([
       self._personality_toggle,
-      self._experimental_btn,
+      self._initial_cruise_speed,
       is_metric_toggle,
       ldw_toggle,
       always_on_dm_toggle,
@@ -54,7 +50,6 @@ class TogglesLayoutMici(NavScroller):
 
     # Toggle lists
     self._refresh_toggles = (
-      ("ExperimentalMode", self._experimental_btn),
       ("IsMetric", is_metric_toggle),
       ("IsLdwEnabled", ldw_toggle),
       ("AlwaysOnDM", always_on_dm_toggle),
@@ -86,20 +81,16 @@ class TogglesLayoutMici(NavScroller):
     super().show_event()
     self._update_toggles()
 
+  def _on_metric_toggle(self, state: bool):
+    ui_state.params.put_bool("IsMetric", state, block=True)
+    self._update_toggles()
+
   def _update_toggles(self):
     ui_state.update_params()
+    self._initial_cruise_speed.refresh()
 
-    # CP gating for experimental mode
     if ui_state.CP is not None:
-      if ui_state.has_longitudinal_control:
-        self._experimental_btn.set_visible(True)
-        self._personality_toggle.set_visible(True)
-      else:
-        # no long for now
-        self._experimental_btn.set_visible(False)
-        self._experimental_btn.set_checked(False)
-        self._personality_toggle.set_visible(False)
-        ui_state.params.remove("ExperimentalMode")
+      self._personality_toggle.set_visible(ui_state.has_longitudinal_control)
 
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:

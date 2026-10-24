@@ -2,6 +2,8 @@ import base64
 import requests
 from http import HTTPMethod
 
+from openpilot.common.utils import retry
+
 class GithubUtils:
   def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
     self.OWNER = owner
@@ -32,6 +34,7 @@ class GithubUtils:
     else:
       return r
 
+  @retry(attempts=5)
   def upload_file(self, bucket, path, file_name):
     with open(path, "rb") as f:
       encoded = base64.b64encode(f.read()).decode()

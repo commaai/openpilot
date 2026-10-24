@@ -1,54 +1,49 @@
 #!/usr/bin/env python3
 # simple pandad wrapper that updates the panda first
 import os
-import usb1
-import time
 import signal
 import subprocess
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, McuType, FW_PATH
+from panda import Panda, PandaDFU
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 
 
-def get_expected_signature() -> bytes:
-  fn = os.path.join(FW_PATH, McuType.H7.config.app_fn)
-  return Panda.get_signature_from_firmware(fn)
+def panda_ready() -> bool:
+  """Is the panda up and running the firmware we ship?"""
+  try:
+    # a healthy panda answers on SPI within ~200ms of reset
+    if not Panda.wait_for_panda(None, timeout=1):
+      cloudlog.warning("no panda found")
+      return False
+    with Panda(cli=False) as p:
+      if p.bootstub:
+        cloudlog.warning(f"panda stuck in bootstub, version {p.get_version()}")
+        return False
+      if not p.up_to_date():
+        cloudlog.warning(f"panda firmware out of date, version {p.get_version()}")
+        return False
+      return True
+  except Exception:
+    # e.g. SPI protocol mismatch with old firmware
+    cloudlog.exception("pandad.panda_check_failed")
+    return False
 
-def flash_panda(panda_serial: str):
-  panda = Panda(panda_serial)
-  fw_signature = get_expected_signature()
-  internal_panda = panda.is_internal()
 
-  panda_version = "bootstub" if panda.bootstub else panda.get_version()
-  panda_signature = b"" if panda.bootstub else panda.get_signature()
-  cloudlog.warning(f"Panda {panda_serial} connected, version: {panda_version}, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
+def flash_panda() -> None:
+  """Reflash bootstub + app from the ST bootloader. Works from any state the panda can be in."""
+  cloudlog.warning("flashing panda")
+  HARDWARE.recover_internal_panda()
+  assert Panda.wait_for_dfu(None, timeout=5), "panda didn't enter DFU"
+  with PandaDFU(None) as dfu:
+    dfu.recover()
 
-  if panda.bootstub or panda_signature != fw_signature:
-    cloudlog.info("Panda firmware out of date, update required")
-    panda.flash()
-    cloudlog.info("Done flashing")
-
-  if panda.bootstub:
-    bootstub_version = panda.get_version()
-    cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. {bootstub_version=}, {internal_panda=}")
-    if internal_panda:
-      HARDWARE.recover_internal_panda()
-    panda.recover(reset=(not internal_panda))
-    cloudlog.info("Done flashing bootstub")
-
-  if panda.bootstub:
-    cloudlog.info("Panda still not booting, exiting")
-    raise AssertionError
-
-  panda_signature = panda.get_signature()
-  if panda_signature != fw_signature:
-    cloudlog.info("Version mismatch after flashing, exiting")
-    raise AssertionError
-
-  panda.close()
+  assert Panda.wait_for_panda(None, timeout=5), "panda didn't boot into bootstub"
+  with Panda(cli=False) as p:
+    p.flash()
+  cloudlog.warning("done flashing panda")
 
 
 def main() -> None:
@@ -79,34 +74,17 @@ def main() -> None:
   while not do_exit:
     try:
       cloudlog.event("pandad.flash_and_connect", count=count)
-      if (count % 2) == 0:
-        HARDWARE.reset_internal_panda()
-      else:
-        HARDWARE.recover_internal_panda()
       count += 1
 
-      # Flash all Pandas in DFU mode
-      for serial in PandaDFU.list():
-        cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
-        PandaDFU(serial).recover()
-        time.sleep(1)
+      HARDWARE.reset_internal_panda()
+      if not panda_ready():
+        flash_panda()
+        assert panda_ready(), "panda not ready after flashing"
 
-      panda_serials = Panda.list()
-      if len(panda_serials):
-        assert len(panda_serials) == 1
-        cloudlog.info(f"{len(panda_serials)} panda found, connecting - {panda_serials}")
-        flash_panda(panda_serials[0])
-
-        # run real pandad
-        os.environ['MANAGER_DAEMON'] = 'pandad'
-        process = subprocess.Popen(["./pandad"], cwd=os.path.join(BASEDIR, "openpilot/selfdrive/pandad"))
-        process.wait()
-    # TODO: wrap all panda exceptions in a base panda exception
-    except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
-      # a panda was disconnected while setting everything up. let's try again
-      cloudlog.exception("Panda USB exception while setting up")
-    except PandaProtocolMismatch:
-      cloudlog.exception("pandad.protocol_mismatch")
+      # run real pandad
+      os.environ['MANAGER_DAEMON'] = 'pandad'
+      process = subprocess.Popen(["./pandad"], cwd=os.path.join(BASEDIR, "openpilot/selfdrive/pandad"))
+      process.wait()
     except Exception:
       cloudlog.exception("pandad.uncaught_exception")
 

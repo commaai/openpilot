@@ -1,10 +1,8 @@
 import time
 import pyray as rl
-from collections.abc import Callable
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
-from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -39,7 +37,6 @@ class HomeLayout(Widget):
 
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
-    self.settings_callback: Callable[[], None] | None = None
 
     self.update_available = False
     self.alert_count = 0
@@ -58,29 +55,20 @@ class HomeLayout(Widget):
     self._prime_widget = PrimeWidget()
     self._setup_widget = SetupWidget()
 
-    self._exp_mode_button = ExperimentalModeButton()
     self._setup_callbacks()
 
   def show_event(self):
     super().show_event()
-    self._exp_mode_button.show_event()
     self.last_refresh = time.monotonic()
     self._refresh()
 
   def _setup_callbacks(self):
     self.update_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
     self.offroad_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
-    self._exp_mode_button.set_click_callback(lambda: self.settings_callback() if self.settings_callback else None)
-
-  def set_settings_callback(self, callback: Callable):
-    self.settings_callback = callback
 
   def _set_state(self, state: HomeLayoutState):
     # propagate show/hide events
     if state != self.current_state:
-      if state == HomeLayoutState.HOME:
-        self._exp_mode_button.show_event()
-
       if state in self._layout_widgets:
         self._layout_widgets[state].show_event()
       if self.current_state in self._layout_widgets:
@@ -194,19 +182,7 @@ class HomeLayout(Widget):
     self._prime_widget.render(self.left_column_rect)
 
   def _render_right_column(self):
-    exp_height = 125
-    exp_rect = rl.Rectangle(
-      self.right_column_rect.x, self.right_column_rect.y, self.right_column_rect.width, exp_height
-    )
-    self._exp_mode_button.render(exp_rect)
-
-    setup_rect = rl.Rectangle(
-      self.right_column_rect.x,
-      self.right_column_rect.y + exp_height + SPACING,
-      self.right_column_rect.width,
-      self.right_column_rect.height - exp_height - SPACING,
-    )
-    self._setup_widget.render(setup_rect)
+    self._setup_widget.render(self.right_column_rect)
 
   def _refresh(self):
     self._version_text = self._get_version_text()

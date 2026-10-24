@@ -60,8 +60,7 @@ void can_send_thread(Panda *panda, bool fake_send) {
   util::set_thread_name("pandad_can_send");
 
   AlignedBuffer aligned_buf;
-  std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan", "127.0.0.1", false, true, services.at("sendcan").queue_size));
+  std::unique_ptr<SubSocket> subscriber(SubSocket::create("sendcan", false, services.at("sendcan").queue_size));
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
