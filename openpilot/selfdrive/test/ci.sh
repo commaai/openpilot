@@ -4,8 +4,7 @@ source ~/.bash_profile
 source /etc/profile
 set -euo pipefail
 
-# alfred checks the commit out in its WORKSPACE on the UP and pushes it to the same path on the DUT
-export TEST_DIR=$WORKSPACE
+# alfred checks the commit out in $WORKSPACE on the UP and pushes it to the same path on the DUT
 # the rack keeps ultimate_provisioning installed on every UP
 UP_LIB=/data/rack-up
 dut_ip=10.254.254.2
@@ -43,7 +42,7 @@ source ~/.bash_profile
 source /etc/profile
 PROFILE
     local name
-    for name in TEST_DIR GIT_BRANCH GIT_COMMIT AZURE_TOKEN CI_ARTIFACTS_TOKEN GITHUB_COMMENTS_TOKEN; do
+    for name in WORKSPACE GIT_BRANCH GIT_COMMIT AZURE_TOKEN CI_ARTIFACTS_TOKEN GITHUB_COMMENTS_TOKEN; do
       printf 'export %s=%q\n' "$name" "${!name}"
     done
     cat <<'PROFILE'
@@ -52,7 +51,7 @@ export COMMA_CACHE=/data/tmp/comma_download_cache PYTEST_ADDOPTS='-n0 -s'
 export GIT_SSH_COMMAND='ssh -i /data/gitkey'
 if [ -f /data/openpilot/launch_env.sh ]; then source /data/openpilot/launch_env.sh; fi
 export LD_LIBRARY_PATH="$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr/local/lib:${LD_LIBRARY_PATH:-}"
-ln -snf "$TEST_DIR" /data/pythonpath
+ln -snf "$WORKSPACE" /data/pythonpath
 PROFILE
     cat
   } | phone_ssh "exec setpriv --pdeathsig HUP timeout --signal=HUP --kill-after=10 $(printf %q "$seconds") flock --no-fork /tmp/alfred.lock bash -c $(printf %q "$supervisor")"
@@ -94,7 +93,7 @@ start_can() {
 
 case $1 in
   setup) setup ;;
-  run) printf 'cd %q\n%s\n' "$TEST_DIR" "$3" | phone "$2" ;;
-  can) start_can; printf 'cd %q\n%s\n' "$TEST_DIR" "$3" | phone "$2" ;;
+  run) printf 'cd %q\n%s\n' "$WORKSPACE" "$3" | phone "$2" ;;
+  can) start_can; printf 'cd %q\n%s\n' "$WORKSPACE" "$3" | phone "$2" ;;
   *) echo "Unknown CI action: $1" >&2; exit 1 ;;
 esac
