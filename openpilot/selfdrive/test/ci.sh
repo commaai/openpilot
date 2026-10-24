@@ -9,7 +9,7 @@ set -euo pipefail
 UP_LIB=/data/rack-up
 dut_ip=10.254.254.2
 up() { PYTHONPATH=$UP_LIB python3 -m ultimate_provisioning "$@"; }
-phone_ssh() {
+dut_ssh() {
   ssh -A -T -oBatchMode=yes -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null \
       -oConnectTimeout=10 -oServerAliveInterval=5 -oServerAliveCountMax=3 "comma@$dut_ip" "$@"
 }
@@ -17,7 +17,7 @@ cleanup() {
   local rc=$?
   trap - EXIT
   set +e
-  if ! phone_ssh 'timeout 60 flock /tmp/alfred.lock true'; then rc=1; up off; fi
+  if ! dut_ssh 'timeout 60 flock /tmp/alfred.lock true'; then rc=1; up off; fi
   if [[ -n ${can_pid:-} ]]; then
     kill -TERM -- "-$can_pid" 2>/dev/null
     for _ in $(seq 20); do kill -0 "$can_pid" 2>/dev/null || break; sleep 0.1; done
@@ -32,7 +32,7 @@ trap 'exit 143' HUP TERM
 trap 'cleanup >/tmp/alfred-openpilot-cleanup.log 2>&1' EXIT
 
 supervisor="trap '' PIPE; trap ':' TERM; trap 'trap - HUP; kill -TERM 0; wait \"\$child\"; exit 143' HUP; (trap '' HUP; exec bash -se) <&0 & child=\$!; wait \"\$child\""
-phone() {
+dut() {
   local seconds=$1
   {
     cat <<'PROFILE'
@@ -54,7 +54,7 @@ export LD_LIBRARY_PATH="$(python -c 'import ffmpeg; print(ffmpeg.LIB_DIR)'):/usr
 ln -snf "$WORKSPACE" /data/pythonpath
 PROFILE
     cat
-  } | phone_ssh "exec setpriv --pdeathsig HUP timeout --signal=HUP --kill-after=10 $(printf %q "$seconds") flock --no-fork /tmp/alfred.lock bash -c $(printf %q "$supervisor")"
+  } | dut_ssh "exec setpriv --pdeathsig HUP timeout --signal=HUP --kill-after=10 $(printf %q "$seconds") flock --no-fork /tmp/alfred.lock bash -c $(printf %q "$supervisor")"
 }
 
 # the rack keeps the DUT up, ready preps it for tests and copies the package to it
@@ -71,7 +71,7 @@ if [ -f /AGNOS ]; then
 fi
 DUT
     cat openpilot/selfdrive/test/setup_device_ci.sh
-  } | phone 2100
+  } | dut 2100
 }
 
 start_can() {
@@ -93,7 +93,7 @@ start_can() {
 
 case $1 in
   setup) setup ;;
-  run) printf 'cd %q\n%s\n' "$WORKSPACE" "$3" | phone "$2" ;;
-  can) start_can; printf 'cd %q\n%s\n' "$WORKSPACE" "$3" | phone "$2" ;;
+  run) printf 'cd %q\n%s\n' "$WORKSPACE" "$3" | dut "$2" ;;
+  can) start_can; printf 'cd %q\n%s\n' "$WORKSPACE" "$3" | dut "$2" ;;
   *) echo "Unknown CI action: $1" >&2; exit 1 ;;
 esac
