@@ -69,10 +69,14 @@ class AsyncTaskRunner:
 
 
 class CerealOutgoingMessageProxy(AsyncTaskRunner):
-  def __init__(self, services: list[str], enabled: bool = True):
+  def __init__(self, services: list[str], enabled: bool = True, raw: bool = False):
     super().__init__()
     self.services = list(services)
-    self.sm = messaging.SubMaster(self.services)
+    self.raw = raw
+    if raw:
+      self.socks = [messaging.sub_sock(s) for s in self.services]
+    else:
+      self.sm = messaging.SubMaster(self.services)
     self.channels = []
     self._enabled = enabled
 
@@ -94,7 +98,18 @@ class CerealOutgoingMessageProxy(AsyncTaskRunner):
 
     return msg_dict
 
+  def update_raw(self):
+    for sock in self.socks:
+      for dat in messaging.drain_sock_raw(sock):
+        for channel in self.channels:
+          if channel.is_open() and len(dat) <= channel.max_message_size():
+            channel.send(dat)
+
   def update(self):
+    if self.raw:
+      self.update_raw()
+      return
+
     # this is blocking in async context...
     self.sm.update(0)
     for service, updated in self.sm.updated.items():
@@ -244,6 +259,7 @@ class StreamSession:
     self.stream = builder.stream()
 
     self.is_body = "testJoystick" in body.bridge_services_in
+    self.raw = body.raw
 
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = body.bridge_services_in
@@ -252,7 +268,7 @@ class StreamSession:
     if len(body.bridge_services_in) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.enabled)
+      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.enabled, self.raw)
     self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.enabled)
 
     self.run_task: asyncio.Task | None = None
@@ -260,8 +276,8 @@ class StreamSession:
     self._cleanup_done = False
     self.logger = logging.getLogger("webrtcd")
     cloudlog.warning(
-      "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier, [t.id for t in self.video_tracks], body.enabled, body.bridge_services_in, body.bridge_services_out,
+      "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s, raw %s",
+      self.identifier, [t.id for t in self.video_tracks], body.enabled, body.bridge_services_in, body.bridge_services_out, body.raw,
     )
 
   def start(self):
@@ -280,6 +296,12 @@ class StreamSession:
 
   def message_handler(self, message: bytes):
     try:
+      if self.raw and isinstance(message, bytes):
+        service = messaging.log_from_bytes(message).which()
+        if service in self.incoming_bridge_services:
+          self.shared_pub_master.send(service, message)
+        return
+
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
         msg_type = payload.get("type")
@@ -352,7 +374,7 @@ class StreamSession:
 
       with cloudlog.ctx(session_id=self.identifier):
         cloudlog.warning("webrtcd.session.connected")
-      if self.is_body:
+      if self.is_body or self.raw:
         await self.run_body_session()
       else:
         await self.run_normal_session()

@@ -55,7 +55,7 @@ assert arch in [
   "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zeromq', 'zstd']
+pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
@@ -252,7 +252,7 @@ def prune_cache_dir(target=None, source=None, env=None):
 # Build common module
 SConscript(['openpilot/common/SConscript'])
 Import('_common')
-common = [_common, 'json11', 'zmq']
+common = [_common, 'json11']
 Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)

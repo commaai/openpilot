@@ -28,7 +28,7 @@ struct SubMaster::SubMessage {
 };
 
 SubMaster::SubMaster(const std::vector<const char *> &service_list, const std::vector<const char *> &poll,
-                     const char *address, const std::vector<const char *> &ignore_alive) {
+                     const std::vector<const char *> &ignore_alive) {
   poller_ = new Poller();
   for (auto name : service_list) {
     assert(services.count(std::string(name)) > 0);

@@ -31,12 +31,11 @@ if __name__ == "__main__":
   parser.add_argument('--json', action='store_true')
   parser.add_argument('--dump-json', action='store_true')
   parser.add_argument('--no-print', action='store_true')
-  parser.add_argument('--addr', default='127.0.0.1')
   parser.add_argument('--values', help='values to monitor (instead of entire event)')
   parser.add_argument("socket", type=str, nargs='*', default=list(SERVICE_LIST.keys()), help="socket names to dump. defaults to all services defined in cereal")
   args = parser.parse_args()
 
-  lr = raw_live_logreader(args.socket, args.addr)
+  lr = raw_live_logreader(args.socket)
 
   values = None
   if args.values:

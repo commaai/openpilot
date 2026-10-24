@@ -114,7 +114,7 @@ std::string normalize_stream_address(std::string address) {
 const char *stream_source_kind_label(StreamSourceKind kind) {
   static constexpr const char *kLabels[] = {
     "Local (MSGQ)",
-    "Remote (ZMQ)",
+    "Remote",
   };
   const size_t index = static_cast<size_t>(kind);
   return index < std::size(kLabels) ? kLabels[index] : kLabels[0];
