@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.24977;0.250689;0.24977;0.24977" count="4">
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range left="0.000000" right="1678.753571" bottom="-0.025000" top="1.025000"/>
+       <limitY/>
+       <curve name="/gpsLocationExternal/hasFix" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range left="0.000000" right="1678.753571" bottom="-0.425000" top="17.425000"/>
+       <limitY/>
+       <curve name="/gpsLocationExternal/satelliteCount" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range left="0.000000" right="1678.753571" bottom="0.000000" top="3.000000"/>
+       <limitY max="3" min="0"/>
+       <curve name="/gpsLocationExternal/horizontalAccuracy" color="#1ac938"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" flip_x="false" style="Lines" mode="TimeSeries">
+       <range left="0.000000" right="1678.753571" bottom="-17.262000" top="766.374004"/>
+       <limitY/>
+       <curve name="/gpsLocationExternal/horizontalAccuracy" color="#1ac938"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <default time_axis="" delimiter="0"/>
+  </plugin>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="Cereal Subscriber"/>
+  <plugin ID="UDP Server"/>
+  <plugin ID="WebSocket Server"/>
+  <plugin ID="ZMQ Subscriber"/>
+  <plugin ID="Fast Fourier Transform"/>
+  <plugin ID="Quaternion to RPY"/>
+  <plugin ID="CSV Exporter"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

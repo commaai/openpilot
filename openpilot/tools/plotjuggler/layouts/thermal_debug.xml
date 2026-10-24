@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab containers="1" tab_name="tab1">
+   <Container>
+    <DockSplitter count="6" orientation="-" sizes="0.166785;0.166785;0.166075;0.166785;0.166785;0.166785">
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="87.987497" bottom="75.912497" right="301.842654"/>
+       <limitY/>
+       <curve name="/deviceState/cpuTempC/0" color="#1f77b4"/>
+       <curve name="/deviceState/cpuTempC/1" color="#d62728"/>
+       <curve name="/deviceState/cpuTempC/2" color="#1ac938"/>
+       <curve name="/deviceState/cpuTempC/3" color="#ff7f0e"/>
+       <curve name="/deviceState/cpuTempC/4" color="#f14cc1"/>
+       <curve name="/deviceState/cpuTempC/5" color="#9467bd"/>
+       <curve name="/deviceState/cpuTempC/6" color="#17becf"/>
+       <curve name="/deviceState/cpuTempC/7" color="#bcbd22"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="85.861052" bottom="66.496950" right="301.842654"/>
+       <limitY/>
+       <curve name="/deviceState/pmicTempC/0" color="#1f77b4"/>
+       <curve name="/deviceState/gpuTempC/0" color="#d62728"/>
+       <curve name="/deviceState/gpuTempC/1" color="#1ac938"/>
+       <curve name="/deviceState/memoryTempC" color="#f14cc1"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="86.207876" bottom="70.665918" right="301.842654"/>
+       <limitY/>
+       <curve name="/deviceState/maxTempC" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="1.025000" bottom="-0.025000" right="301.842654"/>
+       <limitY/>
+       <curve name="/deviceState/thermalStatus" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockSplitter count="3" orientation="|" sizes="0.333124;0.333752;0.333124">
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="12.057358" bottom="4.843517" right="301.842654"/>
+        <limitY/>
+        <curve name="/deviceState/powerDrawW" color="#ff7f0e"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="100.000000" bottom="0.000000" right="301.842654"/>
+        <limitY min="0" max="100"/>
+        <curve name="/deviceState/fanSpeedPercentDesired" color="#9467bd"/>
+        <curve name="/pandaStates/0/fanPower" color="#1f77b4"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="5018.400000" bottom="255.600000" right="301.842654"/>
+        <limitY/>
+        <curve name="/peripheralState/fanSpeedRpm" color="#1f77b4"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter count="2" orientation="|" sizes="0.502513;0.497487">
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="100.025000" bottom="14.975000" right="301.842654"/>
+        <limitY/>
+        <curve name="/deviceState/cpuUsagePercent/0" color="#1f77b4"/>
+        <curve name="/deviceState/cpuUsagePercent/1" color="#d62728"/>
+        <curve name="/deviceState/cpuUsagePercent/2" color="#1ac938"/>
+        <curve name="/deviceState/cpuUsagePercent/3" color="#ff7f0e"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="102.500000" bottom="-2.500000" right="301.842654"/>
+        <limitY/>
+        <curve name="/deviceState/cpuUsagePercent/4" color="#f14cc1"/>
+        <curve name="/deviceState/cpuUsagePercent/5" color="#9467bd"/>
+        <curve name="/deviceState/cpuUsagePercent/6" color="#17becf"/>
+        <curve name="/deviceState/cpuUsagePercent/7" color="#bcbd22"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

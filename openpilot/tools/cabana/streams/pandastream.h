@@ -1,0 +1,34 @@
+#pragma once
+
+#include <memory>
+#include <vector>
+
+#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/panda.h"
+
+struct BusConfig {
+  int can_speed_kbps = 500;
+  int data_speed_kbps = 2000;
+  bool can_fd = false;
+};
+
+struct PandaStreamConfig {
+  std::string serial = "";
+  std::vector<BusConfig> bus_config;
+};
+
+class PandaStream : public LiveStream {
+public:
+  PandaStream(PandaStreamConfig config_ = {});
+  ~PandaStream() { stop(); }
+  inline std::string routeName() const override {
+    return "Panda: " + config.serial;
+  }
+
+protected:
+  bool connect();
+  void streamThread() override;
+
+  std::unique_ptr<Panda> panda;
+  PandaStreamConfig config = {};
+};
