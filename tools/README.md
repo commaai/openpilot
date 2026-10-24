@@ -12,7 +12,7 @@ Follow these instructions for a fully managed setup experience. If you'd like to
 
 **1. Clone openpilot**
 ``` bash
-git clone https://github.com/commaai/openpilot.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/commaai/openpilot.git
 ```
 
 **2. Run the setup script**
@@ -31,6 +31,26 @@ source .venv/bin/activate
 ``` bash
 scons -u
 ```
+
+## Large files
+
+`lfs.py` stores large files in the Hugging Face bucket `commaai/openpilot-lfs`,
+under `sha256/<object hash>`. `op setup` installs the Git filter and pre-push hook;
+normal Git add, checkout, pull, and push then use the bucket. Run `./lfs.py pull`
+to download files for the current commit. The installed client and cache live in
+Git's common directory, so older checkouts and linked worktrees keep working.
+Downloads and local Git operations work with plain Python. Downloads use Xet
+when installed, with HTTP as the dependency-free default. Run
+`uv run --script lfs.py pull` to download with Xet, or set `HF_HUB_DISABLE_XET=1`
+to use HTTP. Pushes that include large files require Xet; the hook uses uv to
+load those dependencies when needed, separately from openpilot's environment.
+
+Public downloads do not require authentication. For uploads, use `hf auth login`
+or set `HF_TOKEN` to a token with write access to the bucket. Set
+`OPENPILOT_LFS_BUCKET=owner/bucket` to use another bucket. The bucket must already
+exist and contain the objects referenced by the branches you need; the client
+does not create buckets or delete objects. Forks need write access to their
+configured bucket, and objects must be copied to the main bucket before merging.
 
 ## WSL on Windows
 

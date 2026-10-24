@@ -158,16 +158,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-git-lfs"
-version = "3.6.1.post103"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/c3/75c2406e52cb5129d8ce6b79f80a610417d8c8729422c1e80b14b6771e69/comma_deps_git_lfs-3.6.1.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:ba61d0c194725aee5644731f229ff36f56a00dfd450f8226794008ab98a93144", size = 4685121, upload-time = "2026-09-11T22:32:30.047Z" },
-    { url = "https://files.pythonhosted.org/packages/cd/4f/17fb16d2de5d858ab95fdd09fd652f25d8a698b35df3e4ce24589dfd9565/comma_deps_git_lfs-3.6.1.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2d815aab8aa153a6536f538a65872ac64aefe8c62da153f9b0e8bba23a98d5a8", size = 4485292, upload-time = "2026-09-11T22:32:33.868Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/30/ae0def1cf507492591fb2852066dda163fd28d0e1cf52ad76c20ce1fb358/comma_deps_git_lfs-3.6.1.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:a78ca419dec75a1b99229ac40c086c3236b86ff8585740c6b34c2ccea95b1389", size = 4889597, upload-time = "2026-09-11T22:32:38.084Z" },
-]
-
-[[package]]
 name = "comma-deps-imgui"
 version = "1.92.7.post103"
 source = { registry = "https://pypi.org/simple" }
@@ -586,7 +576,6 @@ dependencies = [
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
-    { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zstd" },
@@ -640,7 +629,6 @@ requires-dist = [
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
-    { name = "comma-deps-git-lfs" },
     { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },

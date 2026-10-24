@@ -31,7 +31,6 @@ dependencies = [
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
   "comma-deps-json11",
-  "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
   # athena
