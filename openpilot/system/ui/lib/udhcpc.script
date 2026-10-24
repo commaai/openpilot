@@ -1,0 +1,40 @@
+#!/bin/sh
+# Wi-Fi must lose to ethernet (metric 100) and beat cellular (metric 1000), matching NetworkManager's default Wi-Fi metric
+case "$1" in
+  bound|renew)
+    prefix=$(busybox ipcalc -p "$ip" "$subnet") || exit $?
+    prefix=${prefix#PREFIX=}
+    network=$(busybox ipcalc -n "$ip" "$subnet") || exit $?
+    network=${network#NETWORK=}
+    ip link set dev "$interface" ${mtu:+mtu "$mtu"} up || exit $?
+    for address in $(ip -4 -o addr show dev "$interface" | busybox awk '{print $4}'); do
+      [ "$address" = "$ip/$prefix" ] || ip -4 addr del "$address" dev "$interface" || exit $?
+    done
+    # Suppress the automatic metric-0 prefix before installing either route.
+    ip -4 addr replace "$ip/$prefix" broadcast "${broadcast:-+}" dev "$interface" noprefixroute || exit $?
+    if [ "$prefix" != 32 ]; then
+      ip -4 route replace "$network/$prefix" dev "$interface" proto kernel scope link src "$ip" metric 600 || exit $?
+    fi
+    ip -4 route flush exact 0.0.0.0/0 dev "$interface" || exit $?
+    if [ -n "$router" ]; then
+      [ ".$subnet" = .255.255.255.255 ] && onlink=onlink || onlink=
+      ip -4 route add default via "${router%% *}" dev "$interface" $onlink metric 600 || exit $?
+    fi
+
+    # Keep the stock hook's resolvconf integration and file fallback.
+    [ -n "$domain" ] && R="domain $domain" || R=""
+    for server in $dns; do
+      R="$R
+nameserver $server"
+    done
+    if [ -x /sbin/resolvconf ]; then
+      echo "$R" | resolvconf -a "$interface.udhcpc"
+    else
+      echo "$R" > /etc/resolv.conf
+    fi
+    logger -t "udhcpc[$PPID]" -p daemon.info "$interface: $1: IP=$ip/$subnet router=${router%% *} domain=\"$domain\" dns=\"$dns\" lease=$lease"
+    ;;
+  *)
+    exec "${UDHCPC_DEFAULT_SCRIPT:-/etc/udhcpc/default.script}" "$@"
+    ;;
+esac
