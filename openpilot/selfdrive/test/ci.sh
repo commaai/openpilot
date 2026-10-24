@@ -4,6 +4,8 @@ source ~/.bash_profile
 source /etc/profile
 set -euo pipefail
 
+# alfred checks the commit out in its WORKSPACE on the UP and pushes it to the same path on the DUT
+export TEST_DIR=$WORKSPACE
 UP_LIB='git+https://github.com/commaai/hardware@e02dc9f#subdirectory=ultimate_provisioning'
 dut_ip=10.254.254.2
 up() { uvx -q --from "$UP_LIB" ultimate_provisioning "$@"; }
