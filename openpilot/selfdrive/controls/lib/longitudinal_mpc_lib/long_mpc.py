@@ -12,10 +12,9 @@ from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 if __name__ == '__main__':  # generating code
   from acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+  from casadi import SX, vertcat
 else:
   from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
-
-from casadi import SX, vertcat
 
 MODEL_NAME = 'long'
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,16 +25,12 @@ LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 MPC_SOURCES = (LongitudinalPlanSource.lead0, LongitudinalPlanSource.lead1)
 
 X_DIM = 3
-U_DIM = 1
 PARAM_DIM = 6
-COST_E_DIM = 5
+COST_E_DIM = 2
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
 
 X_EGO_OBSTACLE_COST = 3.
-X_EGO_COST = 0.
-V_EGO_COST = 0.
-A_EGO_COST = 0.
 J_EGO_COST = 5.
 A_CHANGE_COST = 200.
 DANGER_ZONE_COST = 100.
@@ -151,13 +146,8 @@ def gen_long_ocp():
   desired_dist_comfort = get_safe_obstacle_distance(v_ego, lead_t_follow)
 
   # The main cost in normal operation is how close you are to the "desired" distance
-  # from an obstacle at every timestep. This obstacle can be a lead car
-  # or other object. In e2e mode we can use x_position targets as a cost
-  # instead.
+  # from the lead obstacle at every timestep.
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
-           x_ego,
-           v_ego,
-           a_ego,
            a_ego - a_prev,
            j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
@@ -227,11 +217,11 @@ class LongitudinalMpc:
     self.a_solution = np.zeros(N+1)
     self.j_solution = np.zeros(N)
     self.a_prev = np.array(self.a_solution)
-    self.yref = np.zeros((N+1, COST_DIM))
+    yref = np.zeros(COST_DIM)
 
     for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i])
-    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
+      self.solver.cost_set(i, "yref", yref)
+    self.solver.cost_set(N, "yref", yref[:COST_E_DIM])
 
     self.params = np.zeros((N+1, PARAM_DIM))
     for i in range(N+1):
@@ -244,29 +234,21 @@ class LongitudinalMpc:
     self.solve_time = 0.0
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
-
-  def set_cost_weights(self, cost_weights, constraint_cost_weights):
-    W = np.asfortranarray(np.diag(cost_weights))
-    for i in range(N):
-      # TODO don't hardcode A_CHANGE_COST idx
-      # reduce the cost on (a-a_prev) later in the horizon.
-      W[4,4] = cost_weights[4] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
-      self.solver.cost_set(i, 'W', W)
-    # Setting the slice without the copy make the array not contiguous,
-    # causing issues with the C interface.
-    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
-
-    # Set L2 slack cost on lower bound constraints
-    Zl = np.array(constraint_cost_weights)
+    # Constraint penalties are constant across updates.
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(personality)
-    a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
-    cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * a_change_cost, jerk_factor * J_EGO_COST]
-    constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
-    self.set_cost_weights(cost_weights, constraint_cost_weights)
+    a_change_cost = jerk_factor * A_CHANGE_COST if prev_accel_constraint else 0.
+    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, a_change_cost, jerk_factor * J_EGO_COST]))
+    for i in range(N):
+      # Reduce the cost on (a-a_prev) later in the horizon.
+      W[1,1] = a_change_cost * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      self.solver.cost_set(i, 'W', W)
+    # The C interface requires a contiguous array.
+    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
   def set_cur_state(self, v, a):
     v_prev = self.x0[1]
@@ -322,15 +304,10 @@ class LongitudinalMpc:
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle])
     self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
 
-    self.yref[:,:] = 0.0
-    for i in range(N):
-      self.solver.set(i, "yref", self.yref[i])
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
-
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = ACCEL_MAX
     self.params[:,2] = np.min(x_obstacles, axis=1)
-    self.params[:,3] = np.copy(self.a_prev)
+    self.params[:,3] = self.a_prev
     self.params[:,4] = t_follow
     self.params[:,5] = LEAD_DANGER_FACTOR
 
