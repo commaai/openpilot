@@ -125,7 +125,7 @@ void draw_stream_popup(AppSession *session, UiState *state) {
   if (ImGui::RadioButton("Local (MSGQ)", state->stream_source_kind == StreamSourceKind::CerealLocal)) {
     state->stream_source_kind = StreamSourceKind::CerealLocal;
   }
-  if (ImGui::RadioButton("Remote (ZMQ)", state->stream_source_kind == StreamSourceKind::CerealRemote)) {
+  if (ImGui::RadioButton("Remote", state->stream_source_kind == StreamSourceKind::CerealRemote)) {
     state->stream_source_kind = StreamSourceKind::CerealRemote;
   }
 

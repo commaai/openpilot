@@ -30,7 +30,6 @@ dependencies = [
   "comma-deps-acados",
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
-  "comma-deps-zeromq",
   "comma-deps-json11",
   "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",

@@ -221,16 +221,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-zeromq"
-version = "4.3.5.post103"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/a9/9013d207cca0f1d4dda65f1babf16e9e2e0b5fe86259bf994d15cc6e6024/comma_deps_zeromq-4.3.5.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:66d4cc63e45bf5864e68d6a9528ce90419f4c7210250970ff58b3919985c0929", size = 814878, upload-time = "2026-09-11T22:33:35.467Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/72/522bdc7b93d9c84b2600e9ed84588c94acf698a8aa3186e304c6d54b4371/comma_deps_zeromq-4.3.5.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:d25d7b336707f39a6c92f0b01b40ca761d067564b39c6c56a6a7f4cca7fd512d", size = 832994, upload-time = "2026-09-11T22:33:39.03Z" },
-    { url = "https://files.pythonhosted.org/packages/e4/7f/e79ec0b13146d9aea6004c06bcc37264bda973a5a71248d32dbcc7ac29b4/comma_deps_zeromq-4.3.5.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:bb05f93a91b140eb54129bf68824d00a6f93802071957062995cbbc6184f70d2", size = 798535, upload-time = "2026-09-11T22:33:42.538Z" },
-]
-
-[[package]]
 name = "comma-deps-zstd"
 version = "1.5.6.post103"
 source = { registry = "https://pypi.org/simple" }
@@ -599,7 +589,6 @@ dependencies = [
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
     { name = "comma-deps-raylib" },
-    { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
     { name = "inputs" },
     { name = "jeepney" },
@@ -657,7 +646,6 @@ requires-dist = [
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },
     { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
     { name = "comma-deps-raylib" },
-    { name = "comma-deps-zeromq" },
     { name = "comma-deps-zstd" },
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "inputs" },

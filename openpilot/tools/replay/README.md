@@ -40,14 +40,6 @@ openpilot/tools/replay/replay <route-name> --data_dir="/path_to/route"
 openpilot/tools/replay/replay "5beb9b58bd12b691/0000010a--a51155e496" --data_dir="/path_to_routes"
 ```
 
-## Send Messages via ZMQ
-By default, replay sends messages via MSGQ. To switch to ZMQ, set the ZMQ environment variable.
-
-```bash
-# Start replay and send messages via ZMQ:
-ZMQ=1 openpilot/tools/replay/replay <route-name>
-```
-
 ## Usage
 For more information on available options and arguments, use the help command:
 
