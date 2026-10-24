@@ -26,6 +26,7 @@ namespace {
 
 constexpr double SEGMENT_DURATION = 60.0;
 constexpr int CLIP_FPS = 20;
+constexpr int64_t SEGMENT_FRAMES = 60 * CLIP_FPS;
 constexpr double PARALLEL_CLIP_MIN_DURATION = 2 * SEGMENT_DURATION;
 
 const EncoderInfo clip_encoder_info = {
@@ -53,7 +54,7 @@ void remove_file(const std::string &path) {
 }
 
 int encode_clip_worker(const std::vector<std::string> &inputs, int width, int height,
-                       double start_time, double duration, int bitrate, int speedup,
+                       int64_t first_frame, int64_t end_frame, int bitrate, int speedup,
                        int64_t frame_offset, int64_t *encoded_frames,
                        V4LEncoder::PacketCallback packet_callback) try {
   EncoderInfo encoder_info = clip_encoder_info;
@@ -72,8 +73,6 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
   encoder.encoder_open();
   if (!decoder.init(V4LDecoder::DEVICE, width, height, V4L2_PIX_FMT_HEVC, true, V4L2_PIX_FMT_NV12_UBWC)) return 1;
 
-  const int64_t first_frame = std::floor(start_time * CLIP_FPS);
-  const int64_t end_frame = std::ceil((start_time + duration) * CLIP_FPS);
   int64_t input_frame = 0;
   int64_t output_frame = 0;
   int64_t received_frames = 0;
@@ -197,7 +196,11 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   if (start_time >= available_duration || duration > available_duration - start_time) return 1;
   const size_t skipped_segments = start_time / SEGMENT_DURATION;
   const std::vector<std::string> clip_inputs(inputs.begin() + skipped_segments, inputs.end());
-  const double local_start = start_time - skipped_segments * SEGMENT_DURATION;
+  // Quantize once, before subtracting whole segments. Floating-point subtraction
+  // can otherwise round a boundary such as 61.15 s down to local frame 22.
+  const int64_t skipped_frames = static_cast<int64_t>(skipped_segments) * SEGMENT_FRAMES;
+  const int64_t first_frame = static_cast<int64_t>(std::floor(start_time * CLIP_FPS)) - skipped_frames;
+  const int64_t end_frame = static_cast<int64_t>(std::ceil((start_time + duration) * CLIP_FPS)) - skipped_frames;
 
   AVFormatContext *ctx = nullptr;
   int stream = -1;
@@ -220,7 +223,7 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
 
   if (clip_inputs.size() < 2 || duration < PARALLEL_CLIP_MIN_DURATION) {
     int64_t encoded_frames = 0;
-    const bool success = encode_clip_worker(clip_inputs, width, height, local_start, duration,
+    const bool success = encode_clip_worker(clip_inputs, width, height, first_frame, end_frame,
                                             bitrate, speedup, 0, &encoded_frames, write_packet) == 0;
     if (!success) {
       writer.reset();
@@ -229,17 +232,15 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
     return success ? 0 : 1;
   }
 
-  const size_t split = std::clamp<size_t>(std::llround((local_start + duration / 2) / SEGMENT_DURATION),
+  const size_t split = std::clamp<size_t>((first_frame + end_frame + SEGMENT_FRAMES) / (2 * SEGMENT_FRAMES),
                                            1, clip_inputs.size() - 1);
-  const double split_time = split * SEGMENT_DURATION;
+  const int64_t split_frame = split * SEGMENT_FRAMES;
   const std::array<std::vector<std::string>, 2> shard_inputs = {
     std::vector<std::string>(clip_inputs.begin(), clip_inputs.begin() + split),
     std::vector<std::string>(clip_inputs.begin() + split, clip_inputs.end()),
   };
-  const std::array<double, 2> shard_starts = {local_start, 0};
-  const std::array<double, 2> shard_durations = {
-    split_time - local_start, local_start + duration - split_time,
-  };
+  const std::array<int64_t, 2> shard_starts = {first_frame, 0};
+  const std::array<int64_t, 2> shard_ends = {split_frame, end_frame - split_frame};
   const std::string spool_path = output + ".encoderd-" + std::to_string(getpid()) + ".tmp";
   FILE *spool = fopen(spool_path.c_str(), "w+b");
   if (!spool) {
@@ -258,13 +259,13 @@ int encode_clip(const std::vector<std::string> &inputs, const std::string &outpu
   std::array<int, 2> results = {1, 1};
   std::array<int64_t, 2> encoded_frames = {};
   const std::array<int64_t, 2> frame_offsets = {
-    0, (int64_t)std::llround(split_time * CLIP_FPS) - (int64_t)std::floor(local_start * CLIP_FPS),
+    0, split_frame - first_frame,
   };
   std::array<std::thread, 2> workers;
 
   for (size_t i = 0; i < workers.size(); ++i) {
     workers[i] = std::thread([&, i]() {
-      results[i] = encode_clip_worker(shard_inputs[i], width, height, shard_starts[i], shard_durations[i],
+      results[i] = encode_clip_worker(shard_inputs[i], width, height, shard_starts[i], shard_ends[i],
                                       bitrate, speedup, frame_offsets[i], &encoded_frames[i],
                                       i == 0 ? write_packet : spool_packet);
     });
