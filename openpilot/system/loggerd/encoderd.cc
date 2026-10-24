@@ -99,6 +99,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     }
 
     bool lagging = false;
+    bool subscribed = false;
+    int frames_waited = 0;
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
@@ -113,6 +115,13 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         continue;
       }
       lagging = false;
+
+      // creating our publishers kicked out any subscriber that was already connected (loggerd), and they lose
+      // everything we send until they reconnect, like the first keyframe. so wait for them, but not forever
+      if (!subscribed) {
+        subscribed = std::all_of(encoders.begin(), encoders.end(), [](auto &e) { return e->subscribed(); }) || ++frames_waited > MAIN_FPS * 2;
+        if (!subscribed) continue;
+      }
 
       if (!sync_encoders(s, cam_info.stream_type, extra.frame_id)) {
         continue;

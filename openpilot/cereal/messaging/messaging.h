@@ -77,6 +77,7 @@ public:
   PubMaster(const std::vector<const char *> &service_list);
   inline int send(const char *name, capnp::byte *data, size_t size) { return sockets_.at(name)->send((char *)data, size); }
   int send(const char *name, MessageBuilder &msg);
+  inline bool all_readers_updated(const char *name) { return sockets_.at(name)->all_readers_updated(); }
   ~PubMaster();
 
 private:
