@@ -6,9 +6,10 @@ set -euo pipefail
 
 # alfred checks the commit out in its WORKSPACE on the UP and pushes it to the same path on the DUT
 export TEST_DIR=$WORKSPACE
-UP_LIB='git+https://github.com/commaai/hardware@e02dc9f#subdirectory=ultimate_provisioning'
+# the rack keeps ultimate_provisioning installed on every UP
+UP_LIB=/data/rack-up
 dut_ip=10.254.254.2
-up() { uvx -q --from "$UP_LIB" ultimate_provisioning "$@"; }
+up() { PYTHONPATH=$UP_LIB python3 -m ultimate_provisioning "$@"; }
 phone_ssh() {
   ssh -A -T -oBatchMode=yes -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null \
       -oConnectTimeout=10 -oServerAliveInterval=5 -oServerAliveCountMax=3 "comma@$dut_ip" "$@"
@@ -57,11 +58,11 @@ PROFILE
   } | phone_ssh "exec setpriv --pdeathsig HUP timeout --signal=HUP --kill-after=10 $(printf %q "$seconds") flock --no-fork /tmp/alfred.lock bash -c $(printf %q "$supervisor")"
 }
 
+# the rack keeps the DUT up, ready preps it for tests and copies the package to it
 setup() {
-  local attempt
-  for attempt in 1 2 3; do
-    if up ready && {
-      cat <<'DUT'
+  up ready
+  {
+    cat <<'DUT'
 if [ -f /AGNOS ]; then
   rm -rf /tmp/tmp* ~/.commacache /dev/shm/* /dev/tmp/tmp*
   if ! systemctl is-active --quiet systemd-resolved; then
@@ -70,18 +71,12 @@ if [ -f /AGNOS ]; then
   fi
 fi
 DUT
-      cat openpilot/selfdrive/test/setup_device_ci.sh
-    } | phone 2100; then return; fi
-    echo "Device setup attempt $attempt failed" >&2
-  done
-  return 1
+    cat openpilot/selfdrive/test/setup_device_ci.sh
+  } | phone 2100
 }
 
 start_can() {
-  local uv
-  uv=$(type -ap uv | grep -vF /usr/comma/shims | head -n1)
-  PYTHONUNBUFFERED=1 setsid "$uv" run -q --no-project --active --python python3 --with "$UP_LIB" \
-    env PYTHONPATH="$PWD:$PWD/opendbc_repo" python3 openpilot/tools/replay/can_replay.py --up >/tmp/can_replay.log 2>&1 &
+  PYTHONUNBUFFERED=1 PYTHONPATH="$UP_LIB:$PWD:$PWD/opendbc_repo" setsid python3 openpilot/tools/replay/can_replay.py --up >/tmp/can_replay.log 2>&1 &
   can_pid=$!
   for _ in $(seq 120); do
     if ! kill -0 "$can_pid" 2>/dev/null; then cat /tmp/can_replay.log; return 1; fi

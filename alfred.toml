@@ -1,10 +1,6 @@
 # without a chestnut the big model must stay a pointer: a DUT on the UP looks cable-connected, which runs it
 lfs-exclude = ["openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl"]
 
-[env]
-UV_CACHE_DIR = "/data/uv_cache"
-UV_TOOL_DIR = "/data/uv_tools"
-
 [jobs.onroad]
 runs-on = "up-can"
 dut-checkout = true
