@@ -595,7 +595,7 @@ struct PandaState @0xa7649e2575e4591e {
     selfTestFlash @11;
     ecc @12;
     outputReadback @13;
-    interruptRateUartDma @14;
+    dma @14;
     interruptRateUsb @15;
     clock @16;
     interruptMissing @17;
