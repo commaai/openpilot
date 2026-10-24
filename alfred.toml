@@ -1,0 +1,82 @@
+[env]
+# alfred checks the commit out on the UP and pushes it to the same path on the DUT
+TEST_DIR = "/data/ci/tree/openpilot"
+UV_CACHE_DIR = "/data/uv_cache"
+UV_TOOL_DIR = "/data/uv_tools"
+
+[jobs.onroad]
+runs-on = "up-can"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Check dirty", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'tools/release/check-dirty.sh'" },
+  { name = "Onroad tests", run = "bash openpilot/selfdrive/test/ci.sh can 60 './openpilot/selfdrive/test/test_onroad.py TestOnroad'" },
+]
+
+[jobs.hardware]
+runs-on = "up-mici"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Encoder", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/system/loggerd/tests/test_encoder.py'" },
+  { name = "Manager", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/system/manager/test/test_manager.py'" },
+]
+
+[jobs.camera]
+runs-on = "up-mici"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Pandad", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/selfdrive/pandad/tests/test_pandad.py'" },
+  { name = "Camerad", run = "bash openpilot/selfdrive/test/ci.sh run 90 './openpilot/system/camerad/test/test_camerad.py'" },
+]
+
+[jobs.sensord]
+runs-on = "up-mici"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Sensord", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/system/sensord/tests/test_sensord.py'" },
+]
+
+[jobs.replay]
+runs-on = "up-mici"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Model replay", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'openpilot/selfdrive/test/process_replay/model_replay.py'" },
+]
+
+[jobs.panda]
+runs-on = "up-mici"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Pandad loopback", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/selfdrive/pandad/tests/test_pandad_loopback.py'" },
+]
+
+# the rest run on comma fours, this covers what differs on a comma 3x and what only it has
+[jobs.tres]
+runs-on = "up-tres"
+dut-checkout = true
+timeout-minutes = 35
+steps = [
+  { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
+  { name = "Build openpilot", run = "bash openpilot/selfdrive/test/ci.sh run 2100 'cd openpilot/system/manager && ./build.py'" },
+  { name = "Camerad", run = "bash openpilot/selfdrive/test/ci.sh run 90 './openpilot/system/camerad/test/test_camerad.py'" },
+  { name = "Sensord", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/system/sensord/tests/test_sensord.py'" },
+  { name = "Pandad SPI", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/selfdrive/pandad/tests/test_pandad_spi.py'" },
+  { name = "Power draw", run = "bash openpilot/selfdrive/test/ci.sh run 2100 './openpilot/selfdrive/test/test_power_draw.py'" },
+]
