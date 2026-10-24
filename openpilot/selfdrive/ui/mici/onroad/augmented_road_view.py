@@ -259,9 +259,9 @@ class AugmentedRoadView(CameraView):
     # slid fully into view
     self._icon_intro.update(abs(self.rect.x) < 1)
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled, fades in with its own filter once its intro starts
-    self._driver_state_renderer.set_should_draw((ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm) and
-                                                self._icon_intro.alpha(IconIntro.DM) > 0.01)
+    # DMoji always shows, inactive while disengaged unless AlwaysOnDM is enabled. fades in with its own filter once its intro starts
+    self._driver_state_renderer.set_force_inactive(ui_state.status == UIStatus.DISENGAGED and not ui_state.always_on_dm)
+    self._driver_state_renderer.set_should_draw(self._icon_intro.alpha(IconIntro.DM) > 0.01)
     self._driver_state_renderer.set_position(side_panel_rect.x + (side_panel_rect.width - self._driver_state_renderer.rect.width) / 2,
                                              side_panel_rect.y + 5 + self._icon_intro.offset(IconIntro.DM))
     self._driver_state_renderer.render()

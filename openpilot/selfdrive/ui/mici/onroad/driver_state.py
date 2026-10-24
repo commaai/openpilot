@@ -42,6 +42,7 @@ class DriverStateRenderer(Widget):
     self._face_yaw = 0.
     self._should_draw = False
     self._force_active = False
+    self._force_inactive = False
     self._looking_center = False
     self._awareness_unfull = False
 
@@ -81,10 +82,13 @@ class DriverStateRenderer(Widget):
     """Force the dmoji to always appear active (green) regardless of actual state"""
     self._force_active = force_active
 
+  def set_force_inactive(self, force_inactive: bool):
+    self._force_inactive = force_inactive
+
   @property
   def effective_active(self) -> bool:
     """Returns True if dmoji should appear active (either actually active or forced)"""
-    return bool(self._force_active or self._is_active)
+    return bool(self._force_active or (self._is_active and not self._force_inactive))
 
   @property
   def is_rhd(self) -> bool:
