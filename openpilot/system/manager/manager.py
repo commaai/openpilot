@@ -98,15 +98,6 @@ def manager_cleanup() -> None:
 
 
 def manager_thread() -> None:
-  # logs sent before logmessaged binds its socket are dropped, so start it first
-  if os.path.exists(Paths.swaglog_ipc()):
-    os.unlink(Paths.swaglog_ipc())
-  managed_processes['logmessaged'].start()
-  for _ in range(100):
-    if os.path.exists(Paths.swaglog_ipc()):
-      break
-    time.sleep(0.05)
-
   cloudlog.bind(daemon="manager")
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
