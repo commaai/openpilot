@@ -19,7 +19,7 @@
 
 // DeviceStream
 
-DeviceStream::DeviceStream(std::string address) : zmq_address(std::move(address)) {
+DeviceStream::DeviceStream(std::string address) : remote_address(std::move(address)) {
 }
 
 DeviceStream::~DeviceStream() {
@@ -46,10 +46,9 @@ void DeviceStream::stopBridge() {
 }
 
 void DeviceStream::start() {
-  if (!zmq_address.empty()) {
+  if (!remote_address.empty()) {
     stopBridge();
-    const std::string path = (executableDir() / "../../cereal/messaging/bridge").lexically_normal().string();
-    const char *can_filter = "/\"can/\"";
+    const std::string path = (executableDir() / "../../system/webrtc/bridge.py").lexically_normal().string();
 
     // Self-pipe: write end is CLOEXEC so it closes on successful exec. If exec
     // fails, the child writes errno and the parent aborts stream start.
@@ -63,7 +62,7 @@ void DeviceStream::start() {
     if (pid == 0) {
       ::close(err_pipe[0]);
       ::fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
-      execl(path.c_str(), path.c_str(), zmq_address.c_str(), can_filter, static_cast<char *>(nullptr));
+      execl(path.c_str(), path.c_str(), remote_address.c_str(), "can", static_cast<char *>(nullptr));
       const int err = errno;
       (void)!::write(err_pipe[1], &err, sizeof(err));
       _exit(127);
@@ -94,8 +93,6 @@ void DeviceStream::start() {
 }
 
 void DeviceStream::streamThread() {
-  zmq_address.empty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
-
   std::unique_ptr<SubSocket> sock(SubSocket::create("can", false, services.at("can").queue_size));
   assert(sock != NULL);
   // run as fast as messages come in
