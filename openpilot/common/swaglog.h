@@ -8,9 +8,7 @@
 #define CLOUDLOG_ERROR 40
 #define CLOUDLOG_CRITICAL 50
 
-#define SWAGLOG_BUF_SIZE (4*1024*1024)
-// bigger logs are passed through a memfd, since Linux caps a datagram at ~400KB without root
-#define SWAGLOG_MAX_INLINE (64*1024)
+#define SWAGLOG_MAX_SIZE (4*1024*1024)
 
 #ifdef __GNUC__
 #define SWAG_LOG_CHECK_FMT(a, b) __attribute__ ((format (printf, a, b)))

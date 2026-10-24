@@ -1,8 +1,6 @@
-import array
 import logging
 import os
 import socket
-import tempfile
 import time
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
@@ -11,9 +9,7 @@ from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFil
 from openpilot.common.hardware.hw import Paths
 
 
-SWAGLOG_BUF_SIZE = 4*1024*1024
-# bigger logs are passed through a memfd, since Linux caps a datagram at ~400KB without root
-SWAGLOG_MAX_INLINE = 64*1024
+SWAGLOG_MAX_SIZE = 4*1024*1024
 
 def get_file_handler():
   Path(Paths.swaglog_root()).mkdir(parents=True, exist_ok=True)
@@ -68,19 +64,6 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
 
-def send_fd(sock, dat):
-  if hasattr(os, "memfd_create"):
-    fd = os.memfd_create("swaglog")
-  else:
-    fd, path = tempfile.mkstemp()
-    os.unlink(path)
-  try:
-    os.write(fd, dat)
-    # not socket.send_fds, it ignores the address
-    sock.sendmsg([b'\0'], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", [fd]))], 0, Paths.swaglog_ipc())
-  finally:
-    os.close(fd)
-
 class UnixDomainSocketHandler(logging.Handler):
   def __init__(self, formatter):
     logging.Handler.__init__(self)
@@ -99,7 +82,7 @@ class UnixDomainSocketHandler(logging.Handler):
   def connect(self):
     self.close()
     self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-    self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_BUF_SIZE)
+    self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_MAX_SIZE)
     self.sock.setblocking(False)
     self.pid = os.getpid()
 
@@ -108,14 +91,10 @@ class UnixDomainSocketHandler(logging.Handler):
       self.connect()
 
     msg = self.format(record).rstrip('\n')
-    dat = (chr(record.levelno)+msg).encode('utf8')
     try:
-      if len(dat) <= SWAGLOG_MAX_INLINE:
-        self.sock.sendto(dat, Paths.swaglog_ipc())
-      else:
-        send_fd(self.sock, dat)
+      self.sock.sendto((chr(record.levelno)+msg).encode('utf8'), Paths.swaglog_ipc())
     except OSError:
-      # logmessaged is busy or not running. drop :/
+      # logmessaged is busy, not running, or the message is too big. drop :/
       pass
 
 

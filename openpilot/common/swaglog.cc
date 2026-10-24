@@ -10,8 +10,6 @@
 #include <string>
 
 #include <stdarg.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -23,7 +21,7 @@ class SwaglogState {
 public:
   SwaglogState() {
     sock = socket(AF_UNIX, SOCK_DGRAM, 0);
-    int sndbuf = SWAGLOG_BUF_SIZE;
+    int sndbuf = SWAGLOG_MAX_SIZE;
     setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, Path::swaglog_ipc().c_str(), sizeof(addr.sun_path) - 1);
@@ -72,43 +70,8 @@ public:
     if (levelnum >= print_level) {
       printf("%s: %s\n", filename, msg);
     }
-    // drop if logmessaged is busy or not running
-    if (log_s.length() <= SWAGLOG_MAX_INLINE) {
-      sendto(sock, log_s.data(), log_s.length(), MSG_DONTWAIT, (struct sockaddr*)&addr, sizeof(addr));
-    } else {
-      send_fd(log_s);
-    }
-  }
-
-  void send_fd(const std::string& log_s) {
-#ifdef __APPLE__
-    char path[] = "/tmp/swaglog.XXXXXX";
-    int fd = mkstemp(path);
-    if (fd >= 0) unlink(path);
-#else
-    int fd = memfd_create("swaglog", MFD_CLOEXEC);
-#endif
-    if (fd < 0) return;
-
-    if (write(fd, log_s.data(), log_s.length()) == (ssize_t)log_s.length()) {
-      char dummy = 0;
-      struct iovec iov = {.iov_base = &dummy, .iov_len = 1};
-      char cmsg_buf[CMSG_SPACE(sizeof(int))] = {};
-      struct msghdr msg = {};
-      msg.msg_name = &addr;
-      msg.msg_namelen = sizeof(addr);
-      msg.msg_iov = &iov;
-      msg.msg_iovlen = 1;
-      msg.msg_control = cmsg_buf;
-      msg.msg_controllen = sizeof(cmsg_buf);
-      struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-      cmsg->cmsg_level = SOL_SOCKET;
-      cmsg->cmsg_type = SCM_RIGHTS;
-      cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-      memcpy(CMSG_DATA(cmsg), &fd, sizeof(int));
-      sendmsg(sock, &msg, MSG_DONTWAIT);
-    }
-    close(fd);
+    // drop if logmessaged is busy, not running, or the message is too big
+    sendto(sock, log_s.data(), log_s.length(), MSG_DONTWAIT, (struct sockaddr*)&addr, sizeof(addr));
   }
 
   std::mutex lock;
