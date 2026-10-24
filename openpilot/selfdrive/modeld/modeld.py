@@ -161,9 +161,6 @@ class ModelState:
     self.run_model = jits['run']
     self.run_model.captured._linear = lower_and_compile(self.run_model.captured._linear)
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
-    for name, next_name in self.state_pairs.items():
-      state = self.input_queues[name]
-      self.outputs[next_name] = input_view(state._buffer(), state.shape, state.dtype, 0)
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
@@ -204,6 +201,9 @@ class ModelState:
     self.input_device.copy_from(self.input_host)
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     self.run_model(output_buffers=self.outputs, **self.input_queues)
+    # History shifts cannot read and write overlapping buffers across GPU workgroups.
+    for name, next_name in self.state_pairs.items():
+      self.input_queues[name], self.outputs[next_name] = self.outputs[next_name], self.input_queues[name]
     if self.chestnut and (err := Device[self.outputs['outputs'].device].error_state.host.view(fmt='q')[0]):
       raise RuntimeError(f"chestnut failed with {err}")
     if after_enqueue is not None:
