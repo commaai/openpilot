@@ -590,37 +590,28 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateGmlanDEPRECATED @6;
     interruptRateInterrupts @7;
     interruptRateSpiDma @8;
-    interruptRateSpiCsDEPRECATED @9;
-    interruptRateUart1DEPRECATED @10;
-    interruptRateUart2DEPRECATED @11;
-    interruptRateUart3DEPRECATED @12;
-    interruptRateUart5DEPRECATED @13;
-    interruptRateUartDmaDEPRECATED @14;
+    selfTestCpu @9;
+    selfTestRam @10;
+    selfTestFlash @11;
+    ecc @12;
+    outputReadback @13;
+    interruptRateUartDma @14;
     interruptRateUsb @15;
-    interruptRateTim1DEPRECATED @16;
-    interruptRateTim3DEPRECATED @17;
+    clock @16;
+    interruptMissing @17;
     registerDivergent @18;
-    interruptRateKlineInitDEPRECATED @19;
+    safetyRedundancy @19;
     interruptRateClockSource @20;
     interruptRateTick @21;
     interruptRateExti @22;
     interruptRateSpi @23;
-    interruptRateUart7DEPRECATED @24;
+    adc @24;
     sirenMalfunction @25;
     heartbeatLoopWatchdog @26;
     interruptRateSoundDma @27;
     mpu @28;
-    selfTestCpu @29;
-    selfTestRam @30;
-    selfTestFlash @31;
-    ecc @32;
-    outputReadback @33;
-    clock @34;
-    interruptMissing @35;
-    safetyRedundancy @36;
-    adc @37;
-    timer @38;
-    # panda fault bits map to these in pandad
+    timer @29;
+    # Update max fault type in boardd when adding faults
   }
 
   enum PandaType @0x8a58adf93e5b3751 {
