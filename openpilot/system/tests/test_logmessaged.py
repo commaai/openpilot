@@ -6,16 +6,14 @@ from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.swaglog import cloudlog, ipchandler
+from openpilot.common.swaglog import SWAGLOG_MAX_SIZE, cloudlog
 
 
 class TestLogmessaged(OpenpilotTestCase):
   def setup_method(self):
-    # clear the IPC buffer in case some other tests used cloudlog and filled it
-    ipchandler.close()
-    ipchandler.connect()
-
     managed_processes['logmessaged'].start()
+    while not os.path.exists(Paths.swaglog_ipc()):
+      time.sleep(0.01)
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
 
@@ -43,13 +41,22 @@ class TestLogmessaged(OpenpilotTestCase):
 
   def test_big_log(self):
     n = 10
-    msg = "a"*3*1024*1024
+    msg = "a"*300*1024
     for _ in range(n):
       cloudlog.info(msg)
+      time.sleep(0.05)
     time.sleep(0.5)
 
     msgs = messaging.drain_sock(self.sock)
-    assert len(msgs) == 0
+    assert len(msgs) == n
 
     logsize = sum([os.path.getsize(f) for f in self._get_log_files()])
     assert (n*len(msg)) < logsize < (n*(len(msg)+1024))
+
+  def test_too_big_log(self):
+    cloudlog.info("a"*SWAGLOG_MAX_SIZE)
+    cloudlog.info("small")
+    time.sleep(0.5)
+
+    msgs = messaging.drain_sock(self.sock)
+    assert len(msgs) == 1
