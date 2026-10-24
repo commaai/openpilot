@@ -40,7 +40,7 @@ source ~/.bash_profile
 source /etc/profile
 PROFILE
     local name
-    for name in TEST_DIR SOURCE_DIR UNSAFE GIT_BRANCH GIT_COMMIT AZURE_TOKEN CI_ARTIFACTS_TOKEN GITHUB_COMMENTS_TOKEN; do
+    for name in TEST_DIR GIT_BRANCH GIT_COMMIT AZURE_TOKEN CI_ARTIFACTS_TOKEN GITHUB_COMMENTS_TOKEN; do
       printf 'export %s=%q\n' "$name" "${!name}"
     done
     cat <<'PROFILE'
@@ -76,7 +76,6 @@ DUT
 }
 
 start_can() {
-  git submodule update --init --depth 1 opendbc_repo
   local uv
   uv=$(type -ap uv | grep -vF /usr/comma/shims | head -n1)
   PYTHONUNBUFFERED=1 setsid "$uv" run -q --no-project --active --python python3 --with "$UP_LIB" \

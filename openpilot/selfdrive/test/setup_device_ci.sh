@@ -4,16 +4,6 @@ set -e
 set -x
 
 
-if [ -z "$SOURCE_DIR" ]; then
-  echo "SOURCE_DIR must be set"
-  exit 1
-fi
-
-if [ -z "$GIT_COMMIT" ]; then
-  echo "GIT_COMMIT must be set"
-  exit 1
-fi
-
 if [ -z "$TEST_DIR" ]; then
   echo "TEST_DIR must be set"
   exit 1
@@ -61,100 +51,6 @@ if pgrep -f launch_chffrplus.sh > /dev/null; then
   sudo systemctl stop comma
 fi
 
-export GIT_LFS_SKIP_SMUDGE=1
-pull_lfs() {
-  if [ -n "${CHESTNUT:-}" ]
-  then
-    git lfs pull --exclude=''
-    return
-  fi
-
-  # Keep the precompiled big model as a pointer on devices without Chestnut.
-  LFS_EXCLUDE="openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl"
-
-  git config --local lfs.fetchexclude "$LFS_EXCLUDE"
-  git lfs pull --exclude="$LFS_EXCLUDE"
-  if git cat-file -e "HEAD:$LFS_EXCLUDE"; then
-    rm -f "$LFS_EXCLUDE"
-    git checkout -- "$LFS_EXCLUDE"
-
-    # `git lfs prune` retains objects referenced by HEAD, even when excluded.
-    # Remove this one explicitly so safe checkout doesn't rsync it either.
-    oid=$(git show "HEAD:$LFS_EXCLUDE" | sed -n 's/^oid sha256://p')
-    lfs_objects=$(git lfs env | sed -n 's/^LocalMediaDir=//p')
-    if [[ "$oid" =~ ^[0-9a-f]{64}$ && -n "$lfs_objects" ]]; then
-      rm -f "$lfs_objects/${oid:0:2}/${oid:2:2}/$oid"
-    fi
-  fi
-}
-
-safe_checkout() {
-  # completely clean TEST_DIR
-
-  cd "$SOURCE_DIR"
-
-  # cleanup orphaned locks
-  find .git -type f -name "*.lock" -exec rm {} +
-
-  git reset --hard
-  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin "$GIT_COMMIT"
-  find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-  git reset --hard "$GIT_COMMIT"
-  git checkout "$GIT_COMMIT"
-  git clean -xdff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-
-  pull_lfs
-
-  echo "git checkout done, t=$SECONDS"
-  du -hs "$SOURCE_DIR" "$SOURCE_DIR/.git"
-
-  rsync -a --delete "$SOURCE_DIR" "$TEST_DIR"
-}
-
-unsafe_checkout() {( set -e
-  # checkout directly in test dir, leave old build products
-
-  cd "$TEST_DIR"
-
-  # cleanup orphaned locks
-  find .git -type f -name "*.lock" -exec rm {} +
-
-  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin "$GIT_COMMIT"
-  git checkout --force --no-recurse-submodules "$GIT_COMMIT"
-  git reset --hard "$GIT_COMMIT"
-  git clean -dff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-
-  pull_lfs
-)}
-
-export GIT_PACK_THREADS=8
-
-# set up environment
-if [ ! -d "$SOURCE_DIR" ]; then
-  git clone https://github.com/commaai/openpilot.git "$SOURCE_DIR"
-fi
-
-if [ ! -z "$UNSAFE" ]; then
-  echo "trying unsafe checkout"
-  set +e
-  unsafe_checkout
-  if [[ "$?" -ne 0 ]]; then
-    safe_checkout
-  fi
-  set -e
-else
-  echo "doing safe checkout"
-  safe_checkout
-fi
-
 # submodule package symlinks for PYTHONPATH imports on device (same as launch_chffrplus.sh)
 cd "$TEST_DIR"
 ln -sfn msgq_repo/msgq msgq
@@ -163,4 +59,4 @@ ln -sfn rednose_repo/rednose rednose
 ln -sfn teleoprtc_repo/teleoprtc teleoprtc
 ln -sfn tinygrad_repo/tinygrad tinygrad
 
-echo "$TEST_DIR synced with $GIT_COMMIT, t=$SECONDS"
+echo "$TEST_DIR ready, t=$SECONDS"

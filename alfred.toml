@@ -1,12 +1,12 @@
 [env]
-TEST_DIR = "/data/openpilot"
-SOURCE_DIR = "/data/openpilot_source"
-UNSAFE = "1"
+# alfred checks the commit out on the UP and pushes it to the same path on the DUT
+TEST_DIR = "/data/ci/tree/openpilot"
 UV_CACHE_DIR = "/data/uv_cache"
 UV_TOOL_DIR = "/data/uv_tools"
 
 [jobs.onroad]
 runs-on = "up-can"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
@@ -17,6 +17,7 @@ steps = [
 
 [jobs.hardware]
 runs-on = "up-mici"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
@@ -27,6 +28,7 @@ steps = [
 
 [jobs.camera]
 runs-on = "up-mici"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
@@ -37,6 +39,7 @@ steps = [
 
 [jobs.sensord]
 runs-on = "up-mici"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
@@ -46,6 +49,7 @@ steps = [
 
 [jobs.replay]
 runs-on = "up-mici"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
@@ -55,6 +59,7 @@ steps = [
 
 [jobs.panda]
 runs-on = "up-mici"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
@@ -65,6 +70,7 @@ steps = [
 # the rest run on comma fours, this covers what differs on a comma 3x and what only it has
 [jobs.tres]
 runs-on = "up-tres"
+dut-checkout = true
 timeout-minutes = 35
 steps = [
   { name = "Prepare DUT and checkout", run = "bash openpilot/selfdrive/test/ci.sh setup" },
