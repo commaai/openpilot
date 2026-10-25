@@ -42,10 +42,10 @@ def cable_connected() -> bool:
 
 
 def usb_host_connected() -> bool:
-  """Whether a USB host, e.g. a PC with adb or the UP in CI, has enumerated this device on the USB-C port.
+  """Whether a USB host, e.g. a PC with adb or the UP in CI, is on the USB-C port, also while it has suspended this device.
   A chestnut is a USB device, so then it isn't on that port."""
   try:
-    return any(read(p) == "configured" for p in UDC_PATH.glob("*/state"))
+    return any(read(p) not in (None, "not attached") for p in UDC_PATH.glob("*/state"))
   except OSError:
     return False
 
