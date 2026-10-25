@@ -110,3 +110,24 @@ uses = "build"
 [[jobs.sensord.steps]]
 name = "Sensord"
 run = "./openpilot/system/sensord/tests/test_sensord.py"
+
+# a comma four with a Chestnut on its aux port, which runs the big model
+[jobs.chestnut]
+runs-on = "chestnut"
+timeout-minutes = 35
+
+[[jobs.chestnut.steps]]
+uses = "build"
+
+[[jobs.chestnut.steps]]
+name = "Flash Chestnut"
+run = "sudo python3 openpilot/system/hardware/chestnut/flash.py"
+
+[[jobs.chestnut.steps]]
+name = "Model replay"
+run = "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"
+
+[[jobs.chestnut.steps]]
+name = "Onroad tests"
+run = "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad"
+timeout-minutes = 2
