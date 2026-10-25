@@ -16,7 +16,6 @@ from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
-from ultimate_provisioning import UP
 
 SAMPLE_TIME = 2       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
@@ -49,6 +48,7 @@ class TestPowerDraw(OpenpilotTestCase):
 
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
+    from ultimate_provisioning import UP  # only on a DUT, from its UP's up run or up ssh
     self.up = UP.remote()
 
   def teardown_method(self):
