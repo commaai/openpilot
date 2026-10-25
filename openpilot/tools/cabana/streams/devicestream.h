@@ -10,7 +10,7 @@ public:
   DeviceStream(std::string address = {});
   ~DeviceStream();
   inline std::string routeName() const override {
-    return "Live Streaming From " + (zmq_address.empty() ? std::string("127.0.0.1") : zmq_address);
+    return "Live Streaming From " + (remote_address.empty() ? std::string("127.0.0.1") : remote_address);
   }
 
 protected:
@@ -18,5 +18,5 @@ protected:
   void streamThread() override;
   void stopBridge();
   pid_t bridge_pid = -1;
-  const std::string zmq_address;
+  const std::string remote_address;
 };
