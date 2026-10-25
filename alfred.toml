@@ -1,6 +1,8 @@
-profile = "openpilot/selfdrive/test/ci_profile.sh"
+# every step runs with the env openpilot runs with on a device
+profile = "launch_env.sh"
 
 [env]
+PYTHONPATH = "/data/ci/tree/openpilot"  # the tree
 TERM = "xterm-256color"
 PYTHONWARNINGS = "error"
 PYTHONFAULTHANDLER = "1"
