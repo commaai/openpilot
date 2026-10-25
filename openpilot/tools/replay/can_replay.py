@@ -33,10 +33,6 @@ def send_thread(j, flock):
   j.reset()
   j.set_can_loopback(False)
   setup(j)
-  send_loop(j)
-
-
-def send_loop(j):
   rk = Ratekeeper(1 / DT_CTRL, print_delay_threshold=None)
   while True:
     # handle cycling
@@ -98,7 +94,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
-  parser.add_argument("--up", action="store_true", help="Replay on the CAN buses of the UP this runs on, in the background once CAN is flowing.")
+  parser.add_argument("--up", action="store_true", help="On a DUT, have its UP replay until the `up run` or `up ssh` that started this ends.")
   args = parser.parse_args()
 
   if args.route_or_segment_name is None:
@@ -112,12 +108,10 @@ if __name__ == "__main__":
     print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
 
   if args.up:
-    from ultimate_provisioning import UP, daemonize
-    up = UP()
+    from ultimate_provisioning import UP
+    up = UP.remote()
     up.set_harness_orientation(UP.HARNESS_ORIENTATION_1)
-    setup(up)  # takes the UP's CAN lock
-    daemonize("/tmp/can_replay.log", up.lock)
-    config_realtime_process(3, 55)
-    send_loop(up)
+    setup(up)
+    up.can_replay([[m for m in send if m[-1] <= 2] for send in CAN_MSGS])
   else:
     connect()

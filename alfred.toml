@@ -18,9 +18,8 @@ runs-on = "up-can"
 timeout-minutes = 35
 steps = [
   { name = "Check dirty", run = "tools/release/check-dirty.sh" },
-  # goes to the background once CAN is flowing, the rack's reset after the job stops it
-  { name = "CAN replay", on = "up", run = "PYTHONPATH=/data/rack-up:$WORKSPACE:$WORKSPACE/opendbc_repo python3 openpilot/tools/replay/can_replay.py --up" },
-  { name = "Onroad tests", run = "./openpilot/selfdrive/test/test_onroad.py TestOnroad", timeout-minutes = 1 },
+  # the UP replays the CAN until the step ends
+  { name = "Onroad tests", run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad", timeout-minutes = 1.5 },
 ]
 
 [jobs.hardware]
