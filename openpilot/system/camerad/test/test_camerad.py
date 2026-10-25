@@ -5,11 +5,13 @@ import time
 import unittest
 import numpy as np
 
+from msgq.visionipc import VisionIpcClient
 from openpilot.common.parameterized import parameterized
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
-from openpilot.system.camerad.snapshot import get_snapshots
+from openpilot.system.camerad.snapshot import VISION_STREAMS
+from openpilot.selfdrive.pandad.pandad import panda_ready, flash_panda
 from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
 
 TEST_TIMESPAN = 10
@@ -20,13 +22,25 @@ EXPOSURE_TOLERANCE = 0.2
 MAX_TEST_TIME = 25
 
 
-def _numpy_rgb2gray(im):
-  return np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
+def _sample_image(client, buf, images, cam):
+  width, height, stride, uv_offset = buf.width, buf.height, buf.stride, buf.uv_offset
+  size = len(buf.data)
+  assert width > 0 and height > 0 and width % 2 == height % 2 == 0, f"{cam}: invalid NV12 dimensions"
+  assert stride >= width and stride % 2 == 0, f"{cam}: invalid NV12 stride {stride}"
+  assert stride * height <= uv_offset and uv_offset + stride * (height // 2) <= size, f"{cam}: truncated NV12 buffer"
+  layout = (width, height, stride, uv_offset, size)
+  assert images['layout'] in (None, layout), f"{cam}: image layout changed"
+  images['layout'] = layout
 
-def _image_stats(im):
-  h, w = im.shape[:2]
-  gray = _numpy_rgb2gray(im[h//10:9*h//10, w//10:9*w//10]) / 255.
-  return float(np.mean(gray)), float(np.std(gray))
+  # Ignore padding and copy before camerad reuses the shared buffer. Even a dark,
+  # static scene has sensor noise, so a live image should change between samples.
+  assert buf.frame_id == client.frame_id, f"{cam}: image buffer frame ID disagrees with packet"
+  y = np.frombuffer(buf.data, dtype=np.uint8, count=stride * height).reshape(height, stride)[:, :width].copy()
+  assert buf.frame_id == client.frame_id, f"{cam}: image buffer overwritten while sampling"
+  if images['last'] is not None:
+    images['changed'] |= not np.array_equal(images['last'], y)
+  images['last'] = y
+  images['frames'].append((client.frame_id, client.timestamp_sof, client.timestamp_eof))
 
 def _converged(ts, cam):
   measured, target = ts[cam]['measuredGreyFraction'], ts[cam]['targetGreyFraction']
@@ -43,19 +57,25 @@ def run_and_log(procs, services, duration):
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
      Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
-  with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
-    images = {cam: [] for cam in CAMERAS}
+  with log_collector(CAMERAS) as (raw_logs, lock), processes_context(["camerad"]):
+    images = {cam: {'layout': None, 'last': None, 'changed': False, 'frames': []} for cam in CAMERAS}
+    clients = {cam: VisionIpcClient("camerad", VISION_STREAMS[cam], True) for cam in CAMERAS}
     start = time.monotonic()
     while time.monotonic() - start < MAX_TEST_TIME:
-      rpic, dpic = get_snapshots(frame="narrowRoadCameraState", front_frame="cabinCameraState")
-      wpic, _ = get_snapshots(frame="wideRoadCameraState")
-      for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
-        images[cam].append(_image_stats(img))
+      for cam, client in clients.items():
+        if not client.is_connected() and not client.connect(False):
+          continue
+        buf = client.recv(100)
+        # Let exposure settle before testing image liveness.
+        if buf is not None and client.frame_id >= 4 * SERVICE_LIST[cam].frequency:
+          _sample_image(client, buf, images[cam], cam)
+
+      time.sleep(0.5)
 
       if time.monotonic() - start >= TEST_TIMESPAN:
         with lock:
           ts = msgs_to_time_series(raw_logs)
-        if all(len(ts[cam]['t']) >= EXPOSURE_STABLE_FRAMES and
+        if all(cam in ts and len(images[cam]['frames']) >= 3 and len(ts[cam]['t']) >= EXPOSURE_STABLE_FRAMES and
                _converged(ts, cam)[-EXPOSURE_STABLE_FRAMES:].all() for cam in CAMERAS):
           break
 
@@ -63,6 +83,7 @@ def _camera_session():
     ts = msgs_to_time_series(raw_logs)
 
   for cam in CAMERAS:
+    assert cam in ts and len(ts[cam]['t']) > 20, f"{cam}: missing camera state frames"
     # measured from the first frame, camerad takes a few seconds to start
     expected_frames = SERVICE_LIST[cam].frequency * (ts[cam]['t'][-1] - ts[cam]['t'][0]) + 1
     cnt = len(ts[cam]['t'])
@@ -79,6 +100,10 @@ class TestCamerad(OpenpilotTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
+    # Panda generates camera FSIN, including the cabin camera's 25ms stagger.
+    if not panda_ready():
+      flash_panda()
+    assert panda_ready(), "panda not ready for camera synchronization"
     cls.logs, cls.images = _camera_session()
 
   @parameterized.expand(CAMERAS, names=("cam",))
@@ -90,11 +115,15 @@ class TestCamerad(OpenpilotTestCase):
 
   @parameterized.expand(CAMERAS, names=("cam",))
   def test_camera_image(self, cam):
-    # the image isn't black, saturated, or flat
-    mean, std = self.images[cam][-1]
-    assert 0.02 < mean < 0.9, f"{cam}: bad image brightness {mean=:.3f}"
-    # a dead sensor or pipeline is flat to within noise, the rack scenes have little contrast, e.g. std=0.016
-    assert std > 0.005, f"{cam}: flat image {std=:.3f}"
+    images = self.images[cam]
+    frames = images['frames']
+    assert len(frames) >= 3, f"{cam}: only received {len(frames)} image samples"
+    assert images['changed'], f"{cam}: image pixels never changed"
+    assert np.all(np.diff([frame[0] for frame in frames]) > 0), f"{cam}: stale image frame IDs"
+    states = dict(zip(self.logs[cam]['frameId'], zip(self.logs[cam]['timestampSof'], self.logs[cam]['timestampEof'], strict=True), strict=True))
+    for frame_id, sof, eof in frames:
+      assert frame_id in states, f"{cam}: image frame {frame_id} missing from camera state"
+      assert states[frame_id] == (sof, eof), f"{cam}: image timestamps disagree with camera state at frame {frame_id}"
 
   def test_frame_skips(self):
     for c in CAMERAS:
