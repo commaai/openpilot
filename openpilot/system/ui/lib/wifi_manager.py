@@ -19,7 +19,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
                                                     NM_802_11_AP_SEC_GROUP_WEP104, NM_802_11_AP_SEC_KEY_MGMT_PSK,
-                                                    NM_802_11_AP_SEC_KEY_MGMT_802_1X, NM_802_11_AP_FLAGS_NONE,
+                                                    NM_802_11_AP_SEC_KEY_MGMT_802_1X, NM_802_11_AP_SEC_KEY_MGMT_SAE,
+                                                    NM_802_11_AP_FLAGS_NONE,
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
@@ -86,6 +87,9 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
     return SecurityType.OPEN
   elif (flags & NM_802_11_AP_FLAGS_PRIVACY) and (wpa_props & supports_wpa) and not (wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X):
     return SecurityType.WPA
+  elif (flags & NM_802_11_AP_FLAGS_PRIVACY) and (wpa_props & NM_802_11_AP_SEC_KEY_MGMT_SAE):
+    # WPA3 is known but not supported, so don't log it as an unknown network on every scan.
+    return SecurityType.UNSUPPORTED
   else:
     cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
     return SecurityType.UNSUPPORTED
