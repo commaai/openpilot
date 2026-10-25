@@ -16,14 +16,14 @@ from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.hardware.comma.power_monitor import get_power
-from openpilot.selfdrive.modeld.helpers import chestnut_present
+from openpilot.selfdrive.modeld.helpers import use_chestnut
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
 
 SAMPLE_TIME = 2       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
 MICI = HARDWARE.get_device_type() == "mici"
-CHESTNUT = chestnut_present()
+CHESTNUT = use_chestnut()  # what modeld runs on
 
 @dataclass
 class Proc:
@@ -38,10 +38,10 @@ class Proc:
     return '+'.join(self.procs)
 
 
-# MICI readings exclude the separately powered Chestnut GPU.
+# MICI readings exclude the separately powered Chestnut GPU, and are from the panda: the DUT must not take power from its aux port
 PROCS = [
   Proc(['camerad'], 0.85 if MICI else 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
-  Proc(['modeld'], 0.45 if MICI and CHESTNUT else 1.5, atol=0.2, msgs=['modelV2']),
+  Proc(['modeld'], (0.45 if CHESTNUT else 1.25) if MICI else 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
 ]

@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 
 from openpilot.common.hardware import AGNOS
-from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, is_chestnut_usb_id
+from openpilot.common.hardware.usb import CHESTNUT_USB_PRODUCT, USB_DEVICES_PATH, cable_connected, is_chestnut_usb_id, usb_host_connected
 
 MODELS_DIR = Path(__file__).resolve().parent / 'models'
 
@@ -43,3 +43,7 @@ def chestnut_compiled() -> bool:
   # the big model is only built for releases, in a dev checkout it's a git LFS pointer
   return path.is_file() and path.stat().st_size > 1024 and all(
     (MODELS_DIR / f'big_driving_warp_{size}_tinygrad.pkl').is_file() for size in ('1344x760', '1928x1208'))
+
+def use_chestnut() -> bool:
+  # a cable is a chestnut on its way, unless a USB host is on it
+  return chestnut_compiled() and (chestnut_present() or (cable_connected() and not usb_host_connected()))
