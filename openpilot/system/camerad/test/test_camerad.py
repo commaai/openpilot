@@ -4,6 +4,7 @@ import os
 import time
 import unittest
 import numpy as np
+from typing import TypedDict
 
 from msgq.visionipc import VisionIpcClient
 from openpilot.common.parameterized import parameterized
@@ -22,7 +23,14 @@ EXPOSURE_TOLERANCE = 0.2
 MAX_TEST_TIME = 25
 
 
-def _sample_image(client, buf, images, cam):
+class ImageSamples(TypedDict):
+  layout: tuple[int, int, int, int, int] | None
+  last: np.ndarray | None
+  changed: bool
+  frames: list[tuple[int, int, int]]
+
+
+def _sample_image(client, buf, images: ImageSamples, cam):
   width, height, stride, uv_offset = buf.width, buf.height, buf.stride, buf.uv_offset
   size = len(buf.data)
   assert width > 0 and height > 0 and width % 2 == height % 2 == 0, f"{cam}: invalid NV12 dimensions"
@@ -58,7 +66,7 @@ def _camera_session():
   """Single camerad session that collects logs and exposure data.
      Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
   with log_collector(CAMERAS) as (raw_logs, lock), processes_context(["camerad"]):
-    images = {cam: {'layout': None, 'last': None, 'changed': False, 'frames': []} for cam in CAMERAS}
+    images: dict[str, ImageSamples] = {cam: {'layout': None, 'last': None, 'changed': False, 'frames': []} for cam in CAMERAS}
     clients = {cam: VisionIpcClient("camerad", VISION_STREAMS[cam], True) for cam in CAMERAS}
     start = time.monotonic()
     while time.monotonic() - start < MAX_TEST_TIME:
