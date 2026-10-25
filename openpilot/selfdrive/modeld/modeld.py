@@ -28,6 +28,7 @@ from msgq.visionipc import VisionIpcClient, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.common.hardware.usb import cable_connected, usb_host_connected
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
@@ -38,7 +39,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.helpers import MODELS_DIR, modeld_pkl_path, load_oob, use_chestnut, wait_for_chestnut
+from openpilot.selfdrive.modeld.helpers import MODELS_DIR, chestnut_present, chestnut_compiled, modeld_pkl_path, load_oob, wait_for_chestnut
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
@@ -230,7 +231,8 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  CHESTNUT = use_chestnut()
+  # a cable is a chestnut on its way, unless a USB host is on it
+  CHESTNUT = chestnut_compiled() and (chestnut_present() or (cable_connected() and not usb_host_connected()))
   if CHESTNUT:
     from tinygrad.runtime.ops_amd import AMDDevice
     AMDDevice.wait_timeout_ms = 3000
