@@ -611,7 +611,7 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateSoundDma @27;
     mpu @28;
     timer @29;
-    # Update max fault type in boardd when adding faults
+    # Update max fault type in pandad when adding faults
   }
 
   enum PandaType @0x8a58adf93e5b3751 {
