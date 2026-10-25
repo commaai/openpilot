@@ -1,10 +1,4 @@
 profile = "openpilot/selfdrive/test/ci_profile.sh"
-# every job builds openpilot first, with the submodule package symlinks launch_chffrplus.sh makes
-before = [
-  { name = "Build openpilot", run = """
-for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
-cd openpilot/system/manager && ./build.py""" },
-]
 
 [env]
 TERM = "xterm-256color"
@@ -13,59 +7,95 @@ PYTHONFAULTHANDLER = "1"
 COMMA_CACHE = "/data/tmp/comma_download_cache"
 PYTEST_ADDOPTS = "-n0 -s"
 
+# every job builds openpilot first, with the submodule package symlinks launch_chffrplus.sh makes
+[[before]]
+name = "Build openpilot"
+run = """
+for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
+cd openpilot/system/manager && ./build.py
+"""
+
 [jobs.onroad]
 runs-on = "up-can"
 timeout-minutes = 35
-steps = [
-  { name = "Check dirty", run = "tools/release/check-dirty.sh" },
-  # the UP replays the CAN until the step ends
-  { name = "Onroad tests", run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad", timeout-minutes = 1.5 },
-]
+
+[[jobs.onroad.steps]]
+name = "Check dirty"
+run = "tools/release/check-dirty.sh"
+
+# the UP replays the CAN until the step ends
+[[jobs.onroad.steps]]
+name = "Onroad tests"
+run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
+timeout-minutes = 1.5
 
 [jobs.hardware]
 runs-on = "up-mici"
 timeout-minutes = 35
-steps = [
-  { name = "Encoder", run = "./openpilot/system/loggerd/tests/test_encoder.py" },
-  { name = "Manager", run = "./openpilot/system/manager/test/test_manager.py" },
-]
+
+[[jobs.hardware.steps]]
+name = "Encoder"
+run = "./openpilot/system/loggerd/tests/test_encoder.py"
+
+[[jobs.hardware.steps]]
+name = "Manager"
+run = "./openpilot/system/manager/test/test_manager.py"
 
 [jobs.camera]
 runs-on = "up-mici"
 timeout-minutes = 35
-steps = [
-  { name = "Pandad", run = "./openpilot/selfdrive/pandad/tests/test_pandad.py" },
-  { name = "Camerad", run = "./openpilot/system/camerad/test/test_camerad.py", timeout-minutes = 1.5 },
-]
+
+[[jobs.camera.steps]]
+name = "Pandad"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad.py"
+
+[[jobs.camera.steps]]
+name = "Camerad"
+run = "./openpilot/system/camerad/test/test_camerad.py"
+timeout-minutes = 1.5
 
 [jobs.sensord]
 runs-on = "up-mici"
 timeout-minutes = 35
-steps = [
-  { name = "Sensord", run = "./openpilot/system/sensord/tests/test_sensord.py" },
-]
+
+[[jobs.sensord.steps]]
+name = "Sensord"
+run = "./openpilot/system/sensord/tests/test_sensord.py"
 
 [jobs.replay]
 runs-on = "up-mici"
 timeout-minutes = 35
-steps = [
-  { name = "Model replay", run = "openpilot/selfdrive/test/process_replay/model_replay.py" },
-]
+
+[[jobs.replay.steps]]
+name = "Model replay"
+run = "openpilot/selfdrive/test/process_replay/model_replay.py"
 
 [jobs.panda]
 runs-on = "up-mici"
 timeout-minutes = 35
-steps = [
-  { name = "Pandad loopback", run = "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py" },
-]
+
+[[jobs.panda.steps]]
+name = "Pandad loopback"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"
 
 # the rest run on comma fours, this covers what differs on a comma 3x and what only it has
 [jobs.tres]
 runs-on = "up-tres"
 timeout-minutes = 35
-steps = [
-  { name = "Camerad", run = "./openpilot/system/camerad/test/test_camerad.py", timeout-minutes = 1.5 },
-  { name = "Sensord", run = "./openpilot/system/sensord/tests/test_sensord.py" },
-  { name = "Pandad SPI", run = "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py" },
-  { name = "Power draw", run = "./openpilot/selfdrive/test/test_power_draw.py" },
-]
+
+[[jobs.tres.steps]]
+name = "Camerad"
+run = "./openpilot/system/camerad/test/test_camerad.py"
+timeout-minutes = 1.5
+
+[[jobs.tres.steps]]
+name = "Sensord"
+run = "./openpilot/system/sensord/tests/test_sensord.py"
+
+[[jobs.tres.steps]]
+name = "Pandad SPI"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"
+
+[[jobs.tres.steps]]
+name = "Power draw"
+run = "./openpilot/selfdrive/test/test_power_draw.py"
