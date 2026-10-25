@@ -41,27 +41,6 @@ run = "./openpilot/system/loggerd/tests/test_encoder.py"
 name = "Manager"
 run = "./openpilot/system/manager/test/test_manager.py"
 
-[jobs.camera]
-runs-on = "up-mici"
-timeout-minutes = 35
-
-[[jobs.camera.steps]]
-name = "Pandad"
-run = "./openpilot/selfdrive/pandad/tests/test_pandad.py"
-
-[[jobs.camera.steps]]
-name = "Camerad"
-run = "./openpilot/system/camerad/test/test_camerad.py"
-timeout-minutes = 1.5
-
-[jobs.sensord]
-runs-on = "up-mici"
-timeout-minutes = 35
-
-[[jobs.sensord.steps]]
-name = "Sensord"
-run = "./openpilot/system/sensord/tests/test_sensord.py"
-
 [jobs.replay]
 runs-on = "up-mici"
 timeout-minutes = 35
@@ -70,27 +49,39 @@ timeout-minutes = 35
 name = "Model replay"
 run = "openpilot/selfdrive/test/process_replay/model_replay.py"
 
-[jobs.panda]
+[jobs.pandad]
 runs-on = "up-mici"
 timeout-minutes = 35
 
-[[jobs.panda.steps]]
+[[jobs.pandad.steps]]
+name = "Pandad"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad.py"
+
+[[jobs.pandad.steps]]
 name = "Pandad loopback"
 run = "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"
 
-# the rest run on comma fours, this covers what differs on a comma 3x and what only it has
-[jobs.tres]
-runs-on = "up-tres"
+[jobs.camerad]
+runs-on = ["up-mici", "up-tres"]
 timeout-minutes = 35
 
-[[jobs.tres.steps]]
+[[jobs.camerad.steps]]
 name = "Camerad"
 run = "./openpilot/system/camerad/test/test_camerad.py"
 timeout-minutes = 1.5
 
-[[jobs.tres.steps]]
+[jobs.sensord]
+runs-on = ["up-mici", "up-tres"]
+timeout-minutes = 35
+
+[[jobs.sensord.steps]]
 name = "Sensord"
 run = "./openpilot/system/sensord/tests/test_sensord.py"
+
+# only a comma 3x has these
+[jobs.tres]
+runs-on = "up-tres"
+timeout-minutes = 35
 
 [[jobs.tres.steps]]
 name = "Pandad SPI"
