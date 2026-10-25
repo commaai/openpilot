@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import hashlib
 import os
 import time
 import unittest
@@ -21,6 +20,14 @@ EXPOSURE_STABLE_FRAMES = 20
 EXPOSURE_TOLERANCE = 0.2
 MAX_TEST_TIME = 25
 
+
+def _numpy_rgb2gray(im):
+  return np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
+
+def _image_stats(im):
+  h, w = im.shape[:2]
+  gray = _numpy_rgb2gray(im[h//10:9*h//10, w//10:9*w//10]) / 255.
+  return float(np.mean(gray)), float(np.std(gray))
 
 def _converged(ts, cam):
   measured, target = ts[cam]['measuredGreyFraction'], ts[cam]['targetGreyFraction']
@@ -44,7 +51,7 @@ def _camera_session():
       rpic, dpic = get_snapshots(frame="narrowRoadCameraState", front_frame="cabinCameraState")
       wpic, _ = get_snapshots(frame="wideRoadCameraState")
       for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
-        images[cam].append(hashlib.sha256(img).digest())
+        images[cam].append(_image_stats(img))
 
       if time.monotonic() - start >= TEST_TIMESPAN:
         with lock:
@@ -88,8 +95,11 @@ class TestCamerad(OpenpilotTestCase):
 
   @parameterized.expand(CAMERAS, names=("cam",))
   def test_camera_image(self, cam):
-    # Rack scenes may be dark or low contrast, but live images still change from sensor noise.
-    assert len(set(self.images[cam])) > 1, f"{cam}: image pixels never changed"
+    # the image isn't black, saturated, or flat
+    mean, std = self.images[cam][-1]
+    assert 0.02 < mean < 0.9, f"{cam}: bad image brightness {mean=:.3f}"
+    # a dead sensor or pipeline is flat to within noise, the rack scenes have little contrast, e.g. std=0.016
+    assert std > 0.005, f"{cam}: flat image {std=:.3f}"
 
   def test_frame_skips(self):
     for c in CAMERAS:
