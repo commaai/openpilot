@@ -35,7 +35,7 @@ class Proc:
     return '+'.join(self.procs)
 
 
-# the DUT's power on its OBD-C port, from its UP. CI has no Chestnut on the aux port
+# how much each adds to the DUT's power, which the UP measures on its OBD-C port
 PROCS = [
   Proc(['camerad'], 1.0 if MICI else 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
   Proc(['modeld'], 1.15 if MICI else 1.5, atol=0.2, msgs=['modelV2']),
