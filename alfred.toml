@@ -4,7 +4,6 @@ TERM = "xterm-256color"
 PYTHONWARNINGS = "error"
 PYTHONFAULTHANDLER = "1"
 COMMA_CACHE = "/data/tmp/comma_download_cache"
-PYTEST_ADDOPTS = "-n0 -s"
 # as launch_env.sh sets for openpilot on a device
 OMP_NUM_THREADS = "1"
 MKL_NUM_THREADS = "1"
