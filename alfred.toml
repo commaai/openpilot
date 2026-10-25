@@ -20,6 +20,7 @@ for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo
 cd openpilot/system/manager && ./build.py
 """
 
+# jobs run on comma fours, and on a comma 3x only where it differs, like its camera sensor
 [jobs.onroad]
 runs-on = "up-can"
 timeout-minutes = 35
@@ -52,6 +53,10 @@ run = "./openpilot/system/loggerd/tests/test_encoder.py"
 name = "Manager"
 run = "./openpilot/system/manager/test/test_manager.py"
 
+[[jobs.hardware.steps]]
+name = "Power draw"
+run = "./openpilot/selfdrive/test/test_power_draw.py"
+
 [jobs.replay]
 runs-on = "up-mici"
 timeout-minutes = 35
@@ -78,6 +83,10 @@ run = "./openpilot/selfdrive/pandad/tests/test_pandad.py"
 name = "Pandad loopback"
 run = "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"
 
+[[jobs.pandad.steps]]
+name = "Pandad SPI"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"
+
 [jobs.camerad]
 runs-on = ["up-mici", "up-tres"]
 timeout-minutes = 35
@@ -91,7 +100,7 @@ run = "./openpilot/system/camerad/test/test_camerad.py"
 timeout-minutes = 1.5
 
 [jobs.sensord]
-runs-on = ["up-mici", "up-tres"]
+runs-on = "up-mici"
 timeout-minutes = 35
 
 [[jobs.sensord.steps]]
@@ -100,19 +109,3 @@ uses = "build"
 [[jobs.sensord.steps]]
 name = "Sensord"
 run = "./openpilot/system/sensord/tests/test_sensord.py"
-
-# only a comma 3x has these
-[jobs.tres]
-runs-on = "up-tres"
-timeout-minutes = 35
-
-[[jobs.tres.steps]]
-uses = "build"
-
-[[jobs.tres.steps]]
-name = "Pandad SPI"
-run = "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"
-
-[[jobs.tres.steps]]
-name = "Power draw"
-run = "./openpilot/selfdrive/test/test_power_draw.py"
