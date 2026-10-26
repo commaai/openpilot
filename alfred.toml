@@ -1,5 +1,5 @@
 # release branches only get the jobs that build them, the ones whose branches has it
-branches-ignore = ["__nightly", "__nightly-chestnut", "devel", "devel-staging", "release-*", "testing-closet*", "hotfix-*"]
+branches-ignore = ["alfred-release-test", "__nightly", "__nightly-chestnut", "devel", "devel-staging", "release-*", "testing-closet*", "hotfix-*"]
 
 [env]
 PYTHONPATH = "/data/ci/tree/openpilot"  # the tree
@@ -163,9 +163,9 @@ uses = "release"
 
 [jobs.nightly]
 runs-on = "up-can"
-branches = ["__nightly"]
+branches = ["alfred-release-test"]
 timeout-minutes = 120
-env = { RELEASE_BRANCH = "nightly", RELEASE_TESTS = "TestOnroad" }
+env = { RELEASE_BRANCH = "alfred-release-test-nightly", RELEASE_TESTS = "TestOnroad" }
 
 [[jobs.nightly.steps]]
 uses = "build"
@@ -187,9 +187,9 @@ uses = "release"
 
 [jobs.nightly-chestnut]
 runs-on = "chestnut"
-branches = ["__nightly-chestnut"]
+branches = ["alfred-release-test"]
 timeout-minutes = 120
-env = { RELEASE_BRANCH = "nightly-chestnut", RELEASE_TESTS = "TestChestnutOnroad", INCLUDE_BIG_MODEL = "1", SCONSFLAGS = "-j4" }
+env = { RELEASE_BRANCH = "alfred-release-test-chestnut", RELEASE_TESTS = "TestChestnutOnroad", INCLUDE_BIG_MODEL = "1", SCONSFLAGS = "-j4" }
 
 [[jobs.nightly-chestnut.steps]]
 uses = "build"
