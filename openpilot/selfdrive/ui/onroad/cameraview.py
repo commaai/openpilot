@@ -70,9 +70,9 @@ class CameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType):
     super().__init__()
     self._name = name
-    # Primary stream
-    self.client = VisionIpcClient(name, stream_type, conflate=True)
-    self._clients = {stream_type: self.client}
+    # Reuse subscribers: destroying a VisionIpcClient doesn't reclaim its msgq reader slot.
+    self._clients = {stream: VisionIpcClient(name, stream, conflate=True) for stream in VisionStreamType}
+    self.client = self._clients[stream_type]
     self._stream_type: VisionStreamType = stream_type
     self.available_streams: list[VisionStreamType] = []
 
@@ -109,17 +109,11 @@ class CameraView(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _offroad_transition(self):
-    # Reconnect if not first time going onroad
+    # Discard queued frames from the previous drive without recreating subscribers.
     if ui_state.is_onroad() and self.frame is not None:
-      # Prevent old frames from showing when going onroad. Qt has a separate thread
-      # which drains the VisionIpcClient SubSocket for us. Re-connecting is not enough
-      # and only clears internal buffers, not the message queue.
       self.frame = None
-      self.available_streams.clear()
-      if self.client:
-        del self.client
-      self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
-      self._clients = {self._stream_type: self.client}
+      for client in self._clients.values():
+        client.recv(timeout_ms=0)
       self._target_client = None
       self._target_stream_type = None
       self._switching = False
@@ -138,9 +132,6 @@ class CameraView(Widget):
     cloudlog.debug(f'Preparing switch from {self._stream_type} to {stream_type}')
 
     self._target_stream_type = stream_type
-    # Reuse subscribers: destroying a VisionIpcClient doesn't reclaim its msgq reader slot.
-    if stream_type not in self._clients:
-      self._clients[stream_type] = VisionIpcClient(self._name, stream_type, conflate=True)
     self._target_client = self._clients[stream_type]
     self._switching = True
 
