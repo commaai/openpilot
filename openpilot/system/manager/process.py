@@ -182,10 +182,7 @@ class DaemonProcess(ManagerProcess):
     self.param_name = param_name
     self.enabled = enabled
     self.params = None
-
-  @staticmethod
-  def should_run(started, params, CP):
-    return True
+    self.should_run = lambda started, params, CP: True
 
   def start(self) -> None:
     if self.params is None:
