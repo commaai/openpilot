@@ -115,17 +115,54 @@ class SwagErrorFilter(logging.Filter):
   def filter(self, record):
     return record.levelno < logging.ERROR
 
-def _tmpfunc():
-  return 0
+# frames from these files are skipped when finding a record's call site
+_srcfiles = (logging._srcfile, os.path.normcase(__file__))
 
-def _srcfile():
-  return os.path.normcase(_tmpfunc.__code__.co_filename)
+# every call site may log RATE_LIMIT_BURST records in a burst, then RATE_LIMIT_PER_S sustained; the rest are dropped and counted
+RATE_LIMIT_BURST = 10
+RATE_LIMIT_PER_S = 1.0
+RATE_LIMIT_MAX_SITES = 4096
+
+class CallSiteRateLimiter(logging.Filter):
+  """
+  Token bucket per call site (pathname, lineno), so no single line can flood the logs. A record that passes after drops
+  gets " (suppressed N repeats)" appended to its msg. Different messages from the same line share one bucket on purpose.
+  """
+  def __init__(self):
+    super().__init__()
+    self.sites: dict[tuple[str, int], list[float]] = {}  # (pathname, lineno) -> [tokens, last_t, suppressed]
+
+  def filter(self, record):
+    # unsynchronized on purpose: a race between threads can miscount a repeat or let one extra record through, which is fine for a logger
+    now = time.monotonic()
+    key = (record.pathname, record.lineno)
+    site = self.sites.get(key)
+    if site is None:
+      if len(self.sites) >= RATE_LIMIT_MAX_SITES:  # can't really happen, call sites are static
+        self.sites.clear()
+      self.sites[key] = [RATE_LIMIT_BURST - 1, now, 0]
+      return True
+    tokens = min(RATE_LIMIT_BURST, site[0] + (now - site[1]) * RATE_LIMIT_PER_S)
+    site[1] = now
+    if tokens < 1:
+      site[0] = tokens
+      site[2] += 1
+      return False
+    site[0] = tokens - 1
+    if site[2]:
+      if isinstance(record.msg, dict):
+        record.msg["suppressed"] = int(site[2])
+      else:
+        record.msg = f"{record.msg} (suppressed {int(site[2])} repeats)"
+      site[2] = 0
+    return True
 
 class SwagLogger(logging.Logger):
   def __init__(self):
     logging.Logger.__init__(self, "swaglog")
 
     self.global_ctx = {}
+    self.addFilter(CallSiteRateLimiter())
 
     self.log_local = local()
     self.log_local.ctx = {}
@@ -179,41 +216,22 @@ class SwagLogger(logging.Logger):
       self.debug(tstp)
 
   def findCaller(self, stack_info=False, stacklevel=1):
-    """
-    Find the stack frame of the caller so that we can note the source
-    file name, line number and function name.
-    """
-    f = sys._getframe(3)
-    #On some versions of IronPython, currentframe() returns None if
-    #IronPython isn't run with -X:Frames.
-    if f is not None:
+    """Find the first frame outside logging and this module (then stacklevel-1 more), so records point at the real caller."""
+    f = sys._getframe(1)
+    while f is not None and (os.path.normcase(f.f_code.co_filename) in _srcfiles or stacklevel > 1):
+      if os.path.normcase(f.f_code.co_filename) not in _srcfiles:
+        stacklevel -= 1
       f = f.f_back
-    orig_f = f
-    while f and stacklevel > 1:
-      f = f.f_back
-      stacklevel -= 1
-    if not f:
-      f = orig_f
-    rv = "(unknown file)", 0, "(unknown function)", None
-    while hasattr(f, "f_code"):
-      co = f.f_code
-      filename = os.path.normcase(co.co_filename)
-
-      if filename == _srcfile:
-        f = f.f_back
-        continue
-      sinfo = None
-      if stack_info:
-        sio = io.StringIO()
-        sio.write('Stack (most recent call last):\n')
-        traceback.print_stack(f, file=sio)
-        sinfo = sio.getvalue()
-        if sinfo[-1] == '\n':
-          sinfo = sinfo[:-1]
-        sio.close()
-      rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
-      break
-    return rv
+    if f is None:
+      return "(unknown file)", 0, "(unknown function)", None
+    sinfo = None
+    if stack_info:
+      sio = io.StringIO()
+      sio.write('Stack (most recent call last):\n')
+      traceback.print_stack(f, file=sio)
+      sinfo = sio.getvalue().rstrip('\n')
+      sio.close()
+    return f.f_code.co_filename, f.f_lineno, f.f_code.co_name, sinfo
 
 if __name__ == "__main__":
   log = SwagLogger()
