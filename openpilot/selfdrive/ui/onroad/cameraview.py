@@ -72,6 +72,7 @@ class CameraView(Widget):
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
+    self._clients = {stream_type: self.client}
     self._stream_type: VisionStreamType = stream_type
     self.available_streams: list[VisionStreamType] = []
 
@@ -118,6 +119,10 @@ class CameraView(Widget):
       if self.client:
         del self.client
       self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
+      self._clients = {self._stream_type: self.client}
+      self._target_client = None
+      self._target_stream_type = None
+      self._switching = False
 
   def _set_placeholder_color(self, color: rl.Color):
     """Set a placeholder color to be drawn when no frame is available."""
@@ -132,11 +137,11 @@ class CameraView(Widget):
 
     cloudlog.debug(f'Preparing switch from {self._stream_type} to {stream_type}')
 
-    if self._target_client:
-      del self._target_client
-
     self._target_stream_type = stream_type
-    self._target_client = VisionIpcClient(self._name, stream_type, conflate=True)
+    # Reuse subscribers: destroying a VisionIpcClient doesn't reclaim its msgq reader slot.
+    if stream_type not in self._clients:
+      self._clients[stream_type] = VisionIpcClient(self._name, stream_type, conflate=True)
+    self._target_client = self._clients[stream_type]
     self._switching = True
 
   @property
@@ -158,6 +163,8 @@ class CameraView(Widget):
     self.frame = None
     self.available_streams.clear()
     self.client = None
+    self._target_client = None
+    self._clients.clear()
 
   def __del__(self):
     self.close()
@@ -319,10 +326,6 @@ class CameraView(Widget):
   def _complete_switch(self) -> None:
     """Instantly switch to target stream."""
     cloudlog.debug(f"Switching to {self._target_stream_type}")
-    # Clean up current resources
-    if self.client:
-      del self.client
-
     # Switch to target
     assert self._target_client is not None and self._target_stream_type is not None
     self.client = self._target_client
