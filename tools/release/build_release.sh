@@ -53,7 +53,7 @@ scons
 
 if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
-  CERT=/data/pandaextra/certs/release RELEASE=1 scons panda/
+  CERT="${CERT:-/data/pandaextra/certs/release}" RELEASE=1 scons panda/
 else
   # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
   scons panda/
@@ -66,9 +66,9 @@ if [ -n "$INCLUDE_BIG_MODEL" ]; then
 fi
 
 # Ensure no submodules in release
-if test "$(git submodule--helper list | wc -l)" -gt "0"; then
+if test "$(git ls-files -s | awk '$1 == "160000"' | wc -l)" -gt "0"; then
   echo "submodules found:"
-  git submodule--helper list
+  git ls-files -s | awk '$1 == "160000"'
   exit 1
 fi
 git submodule status

@@ -1,3 +1,6 @@
+# release branches only get the jobs that build them, the ones whose branches has it
+branches-ignore = ["__nightly", "__nightly-chestnut", "devel", "devel-staging", "release-*", "testing-closet*", "hotfix-*"]
+
 [env]
 PYTHONPATH = "/data/ci/tree/openpilot"  # the tree
 TERM = "xterm-256color"
@@ -18,6 +21,20 @@ name = "Build openpilot"
 run = """
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
 cd openpilot/system/manager && ./build.py
+"""
+
+# builds the release in /data/openpilot, runs test_onroad.py on it with $RELEASE_TESTS and pushes it to $RELEASE_BRANCH.
+# alfred gives the release branches' jobs the deploy key in $RELEASE_GIT_KEY and $PANDA_RELEASE_CERT
+[steps.release]
+name = "Build release"
+run = """
+key=$(mktemp) && cert=$(mktemp) && trap 'rm -f "$key" "$cert"' EXIT
+printf '%s' "$RELEASE_GIT_KEY" > "$key" && printf '%s' "$PANDA_RELEASE_CERT" > "$cert" && unset RELEASE_GIT_KEY PANDA_RELEASE_CERT
+git config remote.origin.url git@github.com:commaai/openpilot.git
+export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+# the UP replays the CAN until the step ends, a Chestnut doesn't need it
+if [ -n "$UP_REMOTE" ]; then openpilot/tools/replay/can_replay.py --up; fi
+CERT=$cert tools/release/build_release.sh $RELEASE_TESTS
 """
 
 # jobs run on comma fours, and on a comma 3x only where it differs, like its camera sensor
@@ -131,3 +148,71 @@ run = "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"
 name = "Onroad tests"
 run = "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad"
 timeout-minutes = 2
+
+[jobs.release-staging]
+runs-on = "up-can"
+branches = ["devel-staging"]
+timeout-minutes = 120
+env = { RELEASE_BRANCH = "release-tizi-staging,release-mici-staging", RELEASE_TESTS = "TestOnroad" }
+
+[[jobs.release-staging.steps]]
+uses = "build"
+
+[[jobs.release-staging.steps]]
+uses = "release"
+
+[jobs.nightly]
+runs-on = "up-can"
+branches = ["__nightly"]
+timeout-minutes = 120
+env = { RELEASE_BRANCH = "nightly", RELEASE_TESTS = "TestOnroad" }
+
+[[jobs.nightly.steps]]
+uses = "build"
+
+[[jobs.nightly.steps]]
+uses = "release"
+
+[jobs.nightly-dev]
+runs-on = "up-can"
+branches = ["__nightly"]
+timeout-minutes = 120
+env = { RELEASE_BRANCH = "nightly-dev", RELEASE_TESTS = "TestOnroad", PANDA_DEBUG_BUILD = "1" }
+
+[[jobs.nightly-dev.steps]]
+uses = "build"
+
+[[jobs.nightly-dev.steps]]
+uses = "release"
+
+[jobs.nightly-chestnut]
+runs-on = "chestnut"
+branches = ["__nightly-chestnut"]
+timeout-minutes = 120
+env = { RELEASE_BRANCH = "nightly-chestnut", RELEASE_TESTS = "TestChestnutOnroad", INCLUDE_BIG_MODEL = "1", SCONSFLAGS = "-j4" }
+
+[[jobs.nightly-chestnut.steps]]
+uses = "build"
+
+[[jobs.nightly-chestnut.steps]]
+name = "Flash Chestnut"
+run = "sudo python3 openpilot/system/hardware/chestnut/flash.py"
+
+[[jobs.nightly-chestnut.steps]]
+uses = "release"
+
+[jobs.nightly-chestnut-dev]
+runs-on = "chestnut"
+branches = ["__nightly-chestnut"]
+timeout-minutes = 120
+env = { RELEASE_BRANCH = "nightly-chestnut-dev", RELEASE_TESTS = "TestChestnutOnroad", INCLUDE_BIG_MODEL = "1", SCONSFLAGS = "-j4", PANDA_DEBUG_BUILD = "1" }
+
+[[jobs.nightly-chestnut-dev.steps]]
+uses = "build"
+
+[[jobs.nightly-chestnut-dev.steps]]
+name = "Flash Chestnut"
+run = "sudo python3 openpilot/system/hardware/chestnut/flash.py"
+
+[[jobs.nightly-chestnut-dev.steps]]
+uses = "release"
