@@ -58,13 +58,18 @@ def trial(mode):
   if mode == "restart":
     # camerad's stress test, which also restarts streams at random
     os.environ['SPECTRA_ERROR_PROB'] = '0.01'
+  elif mode.startswith("rtest"):
+    # camerad restarts this camera's stream every 100 requests
+    os.environ['SPECTRA_RESTART_TEST'] = mode[-1]
   managed_processes['camerad'].start()
   os.environ.pop('SPECTRA_ERROR_PROB', None)
+  os.environ.pop('SPECTRA_RESTART_TEST', None)
   try:
     delay = max(0., sorted(first_frames)[len(first_frames)//2] + random.uniform(-0.5, 0.3))
     time.sleep(delay)
     disturb(mode)
-    time.sleep(4)
+    # past the restarts at request 100 and 200
+    time.sleep(10 if mode.startswith("rtest") else 4)
     for s in socks.values():
       messaging.drain_sock(s)
     time.sleep(2)

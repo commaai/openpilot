@@ -1417,7 +1417,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     return false;
   }
 
-  if (stress_test("restarting stream")) {
+  if ((getenv("SPECTRA_RESTART_TEST") && cc.camera_num == atoi(getenv("SPECTRA_RESTART_TEST")) && request_id % 100 == 0) || stress_test("restarting stream")) {
     restartStream(request_id + 1);
     return false;
   }
@@ -1445,6 +1445,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   sync_failure_count = 0;
 
   int buf_idx = request_id % ife_buf_depth;
+  if (getenv("SPECTRA_RESTART_TEST")) LOGW("camera %d frame req %lu ife %lu ts %lu", cc.camera_num, request_id, ife_frame_id, timestamp);
   bool ret = processFrame(buf_idx, request_id, ife_frame_id, timestamp);
   destroySyncObjectAt(buf_idx);
   enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
@@ -1493,27 +1494,30 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 }
 
 void SpectraCamera::restartStream(uint64_t from_request_id) {
+  // same order as startup: the ISP starts while its sensor isn't streaming
   LOGE("camera %d stuck, restarting its stream", cc.camera_num);
+  sensors_i2c(sensor->stop_reg_array.data(), sensor->stop_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
   clear_req_queue();
 
   int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
-  LOGD("stop isp: %d", ret);
+  LOGW("camera %d stop isp: %d", cc.camera_num, ret);
   if (cc.output_type == ISP_BPS_PROCESSED) {
     ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
-    LOGD("stop icp: %d", ret);
+    LOGW("camera %d stop icp: %d", cc.camera_num, ret);
   }
 
   // the ISP only starts with an initial config
   config_ife(0, 1, true);
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
-  LOGD("start isp: %d", ret);
+  LOGW("camera %d start isp: %d", cc.camera_num, ret);
   if (cc.output_type == ISP_BPS_PROCESSED) {
     ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
-    LOGD("start icp: %d", ret);
+    LOGW("camera %d start icp: %d", cc.camera_num, ret);
   }
 
   sync_failure_count = 0;
   clearAndRequeue(from_request_id);
+  sensors_start();
 }
 
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
