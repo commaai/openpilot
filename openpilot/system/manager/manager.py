@@ -36,8 +36,6 @@ def manager_init() -> None:
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True, block=True)
-    if params.get("AlwaysOnDMLock") is None:
-      params.put_bool("AlwaysOnDMLock", True, block=True)
 
   if params.get_bool("AlwaysOnDMLock"):
     params.put_bool("AlwaysOnDM", True, block=True)
