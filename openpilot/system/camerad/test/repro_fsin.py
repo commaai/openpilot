@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # does disturbing the panda's FSIN while camerad starts wedge a camera?
 import random
+import subprocess
 import sys
 import time
 from collections import Counter
@@ -20,6 +21,12 @@ def disturb(mode):
       p.reset(reconnect=False)
   elif mode == "flash":
     flash_panda()
+  elif mode == "jump":
+    # one 75ms FSIN period, a 25ms phase jump like the panda restarting its timers
+    with Panda(cli=False) as p:
+      p.set_clock_source_timer_params(75, 2, 2, 2)
+      time.sleep(0.06)
+      p.set_clock_source_timer_params(50, 2, 2, 2)
 
 
 def trial(mode):
@@ -44,7 +51,7 @@ if __name__ == "__main__":
     flash_panda()
   assert panda_ready()
   minutes = float(sys.argv[1]) if len(sys.argv) > 1 else 10
-  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["none", "reset", "flash"]
+  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["none", "jump", "jump", "flash"]
   tally = Counter()
   end = time.monotonic() + minutes*60
   i = 0
@@ -63,5 +70,7 @@ if __name__ == "__main__":
     bad = [c for c, k in n.items() if k < 30]
     tally[mode, bool(bad)] += 1
     print(f"REPRO {i} mode={mode} delay={delay:.2f} frames={n} {'WEDGED ' + ','.join(bad) if bad else 'ok'}", flush=True)
+    if bad:
+      print(subprocess.run("sudo dmesg | tail -40", shell=True, capture_output=True, text=True).stdout, flush=True)
   print("REPRO tally", dict(tally), flush=True)
   sys.exit(1 if any(bad is True for (_, bad) in tally) else 0)
