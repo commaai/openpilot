@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <stdint.h>
 #include <cassert>
+#include <cmath>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
@@ -1499,23 +1500,30 @@ void SpectraCamera::restartStream(uint64_t from_request_id) {
   sensors_i2c(sensor->stop_reg_array.data(), sensor->stop_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
   clear_req_queue();
 
-  int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
-  LOGW("camera %d stop isp: %d", cc.camera_num, ret);
-  if (cc.output_type == ISP_BPS_PROCESSED) {
-    ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
-    LOGW("camera %d stop icp: %d", cc.camera_num, ret);
-  }
+  for (int attempt = 0; attempt < 3; attempt++) {
+    // the sensor stops at the end of its frame
+    util::sleep_for(60);
 
-  // the ISP only starts with an initial config
-  config_ife(0, 1, true);
-  ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
-  LOGW("camera %d start isp: %d", cc.camera_num, ret);
-  if (cc.output_type == ISP_BPS_PROCESSED) {
-    ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
-    LOGW("camera %d start icp: %d", cc.camera_num, ret);
+    int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+    LOGW("camera %d stop isp: %d", cc.camera_num, ret);
+    if (cc.output_type == ISP_BPS_PROCESSED) {
+      ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+      LOGW("camera %d stop icp: %d", cc.camera_num, ret);
+    }
+
+    // the ISP only starts with an initial config
+    config_ife(0, 1, true);
+    ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
+    LOGW("camera %d start isp: %d", cc.camera_num, ret);
+    if (ret == 0 && cc.output_type == ISP_BPS_PROCESSED) {
+      ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
+      LOGW("camera %d start icp: %d", cc.camera_num, ret);
+    }
+    if (ret == 0) break;
   }
 
   sync_failure_count = 0;
+  restarted = true;
   clearAndRequeue(from_request_id);
   sensors_start();
 }
@@ -1556,6 +1564,14 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_
   if (!syncFirstFrame(cc.camera_num, request_id, ife_frame_id, timestamp, cc.staggered_sof)) {
     return false;
   }
+
+  // a restarted ISP counts frames from zero, so carry on from the frame ID it was at
+  if (restarted && buf.cur_frame_data.timestamp_sof > 0) {
+    const FrameMetadata &last = buf.cur_frame_data;
+    uint64_t frame_id = last.frame_id + std::llround((timestamp - last.timestamp_sof) / 50e6);
+    camera_sync_data[cc.camera_num].frame_id_offset = ife_frame_id - frame_id;
+  }
+  restarted = false;
 
   // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
   uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;

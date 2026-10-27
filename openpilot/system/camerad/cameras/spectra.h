@@ -210,6 +210,7 @@ public:
   uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
   int sync_failure_count = 0;
+  bool restarted = false;
   bool skip_expected = true;
 
   CameraBuf buf;

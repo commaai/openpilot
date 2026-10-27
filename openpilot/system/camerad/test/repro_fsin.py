@@ -70,10 +70,21 @@ def trial(mode):
     disturb(mode)
     # past the restarts at request 100 and 200
     time.sleep(10 if mode.startswith("rtest") else 4)
-    for s in socks.values():
-      messaging.drain_sock(s)
+    seen = {c: messaging.drain_sock(s) for c, s in socks.items()}
     time.sleep(2)
-    n = {c: len(messaging.drain_sock(s)) for c, s in socks.items()}
+    last = {c: messaging.drain_sock(s) for c, s in socks.items()}
+    n = {c: len(v) for c, v in last.items()}
+    # frame IDs keep counting up and stay aligned across cameras, restarts included
+    frames = {c: [(getattr(m, m.which()).frameId, getattr(m, m.which()).timestampSof) for m in seen[c] + last[c]] for c in CAMS}
+    for c, f in frames.items():
+      ids = [i for i, _ in f]
+      if any(b <= a for a, b in zip(ids, ids[1:], strict=False)):
+        print(f"FRAMEID_BAD {c} not increasing", flush=True)
+    sof = {i: t for i, t in frames['wideRoadCameraState']}
+    for c in CAMS:
+      off = [abs(t - sof[i]) / 1e6 for i, t in frames[c] if i in sof]
+      if off and max(off) > 30:
+        print(f"FRAMEID_BAD {c} misaligned with wide by up to {max(off):.0f}ms", flush=True)
     if any(k < 30 for k in n.values()):
       # the kernel's view while it's still wedged
       out = subprocess.run("sudo dmesg", shell=True, capture_output=True, text=True).stdout.splitlines()
