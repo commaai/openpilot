@@ -40,7 +40,12 @@ def trial(mode):
     for s in socks.values():
       messaging.drain_sock(s)
     time.sleep(2)
-    return delay, {c: len(messaging.drain_sock(s)) for c, s in socks.items()}
+    n = {c: len(messaging.drain_sock(s)) for c, s in socks.items()}
+    if any(k < 30 for k in n.values()):
+      # the kernel's view while it's still wedged
+      out = subprocess.run("sudo dmesg", shell=True, capture_output=True, text=True).stdout.splitlines()
+      print("DMESG\n" + "\n".join([l for l in out if "CAM" in l][-80:]), flush=True)
+    return delay, n
   finally:
     managed_processes['camerad'].stop()
     Panda.wait_for_panda(None, timeout=10)
@@ -51,7 +56,7 @@ if __name__ == "__main__":
     flash_panda()
   assert panda_ready()
   minutes = float(sys.argv[1]) if len(sys.argv) > 1 else 10
-  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["none", "jump", "jump", "flash"]
+  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["jump", "jump", "jump", "none"]
   tally = Counter()
   end = time.monotonic() + minutes*60
   i = 0
@@ -70,7 +75,5 @@ if __name__ == "__main__":
     bad = [c for c, k in n.items() if k < 30]
     tally[mode, bool(bad)] += 1
     print(f"REPRO {i} mode={mode} delay={delay:.2f} frames={n} {'WEDGED ' + ','.join(bad) if bad else 'ok'}", flush=True)
-    if bad:
-      print(subprocess.run("sudo dmesg | tail -40", shell=True, capture_output=True, text=True).stdout, flush=True)
   print("REPRO tally", dict(tally), flush=True)
   sys.exit(1 if any(bad is True for (_, bad) in tally) else 0)
