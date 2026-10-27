@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # does disturbing the panda's FSIN while camerad starts wedge a camera?
+import os
 import random
 import subprocess
 import sys
+import threading
 import time
 from collections import Counter
 
@@ -21,6 +23,14 @@ def disturb(mode):
       p.reset(reconnect=False)
   elif mode == "flash":
     flash_panda()
+  elif mode == "jumps":
+    # many phase jumps at random points in the frame cycle
+    with Panda(cli=False) as p:
+      for _ in range(40):
+        p.set_clock_source_timer_params(75, 2, 2, 2)
+        time.sleep(0.06)
+        p.set_clock_source_timer_params(50, 2, 2, 2)
+        time.sleep(random.uniform(0.1, 0.4))
   elif mode == "jump":
     # one 75ms FSIN period, a 25ms phase jump like the panda restarting its timers
     with Panda(cli=False) as p:
@@ -29,11 +39,29 @@ def disturb(mode):
       p.set_clock_source_timer_params(50, 2, 2, 2)
 
 
+# seconds from launching camerad to its first frame, the window the wedge needs
+first_frames = [2.3]
+
+
 def trial(mode):
   socks = {c: messaging.sub_sock(c, conflate=False, timeout=10) for c in CAMS}
+  start = time.monotonic()
+
+  def watch_first():
+    sock = messaging.sub_sock('wideRoadCameraState', conflate=False, timeout=100)
+    while time.monotonic() - start < 8:
+      if sock.receive() is not None:
+        if len(first_frames) < 50:
+          first_frames.append(time.monotonic() - start)
+        return
+  threading.Thread(target=watch_first, daemon=True).start()
+  if mode == "restart":
+    # camerad's stress test, which also restarts streams at random
+    os.environ['SPECTRA_ERROR_PROB'] = '0.01'
   managed_processes['camerad'].start()
+  os.environ.pop('SPECTRA_ERROR_PROB', None)
   try:
-    delay = random.uniform(0, 3)
+    delay = max(0., sorted(first_frames)[len(first_frames)//2] + random.uniform(-0.5, 0.3))
     time.sleep(delay)
     disturb(mode)
     time.sleep(4)
@@ -56,7 +84,7 @@ if __name__ == "__main__":
     flash_panda()
   assert panda_ready()
   minutes = float(sys.argv[1]) if len(sys.argv) > 1 else 10
-  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["jump", "jump", "jump", "none"]
+  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["jumps", "jump", "jumps", "none"]
   tally = Counter()
   end = time.monotonic() + minutes*60
   i = 0
@@ -74,6 +102,6 @@ if __name__ == "__main__":
     # 2s at 20Hz is 40 frames
     bad = [c for c, k in n.items() if k < 30]
     tally[mode, bool(bad)] += 1
-    print(f"REPRO {i} mode={mode} delay={delay:.2f} frames={n} {'WEDGED ' + ','.join(bad) if bad else 'ok'}", flush=True)
+    print(f"REPRO {i} mode={mode} delay={delay:.2f} first={sorted(first_frames)[len(first_frames)//2]:.2f} frames={n} {'WEDGED ' + ','.join(bad) if bad else 'ok'}", flush=True)
   print("REPRO tally", dict(tally), flush=True)
   sys.exit(1 if any(bad is True for (_, bad) in tally) else 0)

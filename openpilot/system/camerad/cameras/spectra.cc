@@ -1417,6 +1417,11 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     return false;
   }
 
+  if (stress_test("restarting stream")) {
+    restartStream(request_id + 1);
+    return false;
+  }
+
   // Update tracking variables
   if (request_id == last_valid_request_id + 1) {
     skip_expected = false;
@@ -1428,9 +1433,16 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   if (!waitForFrameReady(request_id)) {
     // Reset queue on sync failure to prevent frame tearing
     LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, ife_frame_id);
-    clearAndRequeue(request_id + 1);
+    // a glitch in the sensor's frame sync can leave the ISP never finishing a frame,
+    // which requeuing doesn't fix. restarting the stream does
+    if (++sync_failure_count >= 3) {
+      restartStream(request_id + 1);
+    } else {
+      clearAndRequeue(request_id + 1);
+    }
     return false;
   }
+  sync_failure_count = 0;
 
   int buf_idx = request_id % ife_buf_depth;
   bool ret = processFrame(buf_idx, request_id, ife_frame_id, timestamp);
@@ -1478,6 +1490,30 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
     enqueue_frame(id);
   }
   skip_expected = true;
+}
+
+void SpectraCamera::restartStream(uint64_t from_request_id) {
+  LOGE("camera %d stuck, restarting its stream", cc.camera_num);
+  clear_req_queue();
+
+  int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+  LOGD("stop isp: %d", ret);
+  if (cc.output_type == ISP_BPS_PROCESSED) {
+    ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+    LOGD("stop icp: %d", ret);
+  }
+
+  // the ISP only starts with an initial config
+  config_ife(0, 1, true);
+  ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
+  LOGD("start isp: %d", ret);
+  if (cc.output_type == ISP_BPS_PROCESSED) {
+    ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
+    LOGD("start icp: %d", ret);
+  }
+
+  sync_failure_count = 0;
+  clearAndRequeue(from_request_id);
 }
 
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
