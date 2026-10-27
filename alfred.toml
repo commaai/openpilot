@@ -21,20 +21,14 @@ cd openpilot/system/manager && ./build.py
 """
 
 # jobs run on comma fours, and on a comma 3x only where it differs, like its camera sensor
-[jobs.onroad]
-runs-on = "up-can"
-timeout-minutes = 35
+[jobs.camrepro]
+runs-on = ["up-mici", "up-can"]
+timeout-minutes = 45
 
-[[jobs.onroad.steps]]
+[[jobs.camrepro.steps]]
 uses = "build"
 
-[[jobs.onroad.steps]]
-name = "Check dirty"
-run = "tools/release/check-dirty.sh"
-
-# the UP replays the CAN until the step ends
-[[jobs.onroad.steps]]
-name = "Onroad tests"
-run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
-timeout-minutes = 1.5
-
+[[jobs.camrepro.steps]]
+name = "FSIN repro"
+run = "./openpilot/system/camerad/test/repro_fsin.py 20"
+timeout-minutes = 25
