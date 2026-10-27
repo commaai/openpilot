@@ -38,16 +38,13 @@ def trial(mode):
   start = time.monotonic()
   managed_processes['camerad'].start()
   try:
-    first = sorted(first_frames)[len(first_frames)//2]
-    delay = max(0., first + random.uniform(-0.5, 0.3))
-    while time.monotonic() - start < delay:
-      if messaging.drain_sock(socks['wideRoadCameraState']) and len(first_frames) < 50:
-        first_frames.append(time.monotonic() - start)
-        break
-      time.sleep(0.005)
-    time.sleep(max(0., delay - (time.monotonic() - start)))
+    delay = max(0., sorted(first_frames)[len(first_frames)//2] + random.uniform(-0.5, 0.3))
+    time.sleep(delay)
     disturb(mode)
     time.sleep(4)
+    wide = messaging.drain_sock(socks['wideRoadCameraState'])
+    if wide and len(first_frames) < 50:
+      first_frames.append(wide[0].logMonoTime / 1e9 - start)
     for s in socks.values():
       messaging.drain_sock(s)
     time.sleep(2)
