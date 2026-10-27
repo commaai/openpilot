@@ -3,6 +3,7 @@
 import random
 import subprocess
 import sys
+import threading
 import time
 from collections import Counter
 
@@ -36,15 +37,21 @@ first_frames = [2.3]
 def trial(mode):
   socks = {c: messaging.sub_sock(c, conflate=False, timeout=10) for c in CAMS}
   start = time.monotonic()
+
+  def watch_first():
+    sock = messaging.sub_sock('wideRoadCameraState', conflate=False, timeout=100)
+    while time.monotonic() - start < 8:
+      if sock.receive() is not None:
+        if len(first_frames) < 50:
+          first_frames.append(time.monotonic() - start)
+        return
+  threading.Thread(target=watch_first, daemon=True).start()
   managed_processes['camerad'].start()
   try:
     delay = max(0., sorted(first_frames)[len(first_frames)//2] + random.uniform(-0.5, 0.3))
     time.sleep(delay)
     disturb(mode)
     time.sleep(4)
-    wide = messaging.drain_sock(socks['wideRoadCameraState'])
-    if wide and len(first_frames) < 50:
-      first_frames.append(wide[0].logMonoTime / 1e9 - start)
     for s in socks.values():
       messaging.drain_sock(s)
     time.sleep(2)
