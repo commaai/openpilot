@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # does disturbing the panda's FSIN while camerad starts wedge a camera?
+import os
 import random
 import subprocess
 import sys
@@ -22,6 +23,14 @@ def disturb(mode):
       p.reset(reconnect=False)
   elif mode == "flash":
     flash_panda()
+  elif mode == "jumps":
+    # many phase jumps at random points in the frame cycle
+    with Panda(cli=False) as p:
+      for _ in range(40):
+        p.set_clock_source_timer_params(75, 2, 2, 2)
+        time.sleep(0.06)
+        p.set_clock_source_timer_params(50, 2, 2, 2)
+        time.sleep(random.uniform(0.1, 0.4))
   elif mode == "jump":
     # one 75ms FSIN period, a 25ms phase jump like the panda restarting its timers
     with Panda(cli=False) as p:
@@ -46,16 +55,36 @@ def trial(mode):
           first_frames.append(time.monotonic() - start)
         return
   threading.Thread(target=watch_first, daemon=True).start()
+  if mode == "restart":
+    # camerad's stress test, which also restarts streams at random
+    os.environ['SPECTRA_ERROR_PROB'] = '0.01'
+  elif mode.startswith("rtest"):
+    # camerad restarts this camera's stream every 100 requests
+    os.environ['SPECTRA_RESTART_TEST'] = mode[-1]
   managed_processes['camerad'].start()
+  os.environ.pop('SPECTRA_ERROR_PROB', None)
+  os.environ.pop('SPECTRA_RESTART_TEST', None)
   try:
     delay = max(0., sorted(first_frames)[len(first_frames)//2] + random.uniform(-0.5, 0.3))
     time.sleep(delay)
     disturb(mode)
-    time.sleep(4)
-    for s in socks.values():
-      messaging.drain_sock(s)
+    # past the restarts at request 100 and 200
+    time.sleep(10 if mode.startswith("rtest") else 4)
+    seen = {c: messaging.drain_sock(s) for c, s in socks.items()}
     time.sleep(2)
-    n = {c: len(messaging.drain_sock(s)) for c, s in socks.items()}
+    last = {c: messaging.drain_sock(s) for c, s in socks.items()}
+    n = {c: len(v) for c, v in last.items()}
+    # frame IDs keep counting up and stay aligned across cameras, restarts included
+    frames = {c: [(getattr(m, m.which()).frameId, getattr(m, m.which()).timestampSof) for m in seen[c] + last[c]] for c in CAMS}
+    for c, f in frames.items():
+      ids = [i for i, _ in f]
+      if any(b <= a for a, b in zip(ids, ids[1:], strict=False)):
+        print(f"FRAMEID_BAD {c} not increasing", flush=True)
+    sof = {i: t for i, t in frames['wideRoadCameraState']}
+    for c in CAMS:
+      off = [abs(t - sof[i]) / 1e6 for i, t in frames[c] if i in sof]
+      if off and max(off) > 30:
+        print(f"FRAMEID_BAD {c} misaligned with wide by up to {max(off):.0f}ms", flush=True)
     if any(k < 30 for k in n.values()):
       # the kernel's view while it's still wedged
       out = subprocess.run("sudo dmesg", shell=True, capture_output=True, text=True).stdout.splitlines()
@@ -71,7 +100,7 @@ if __name__ == "__main__":
     flash_panda()
   assert panda_ready()
   minutes = float(sys.argv[1]) if len(sys.argv) > 1 else 10
-  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["jump", "jump", "jump", "none"]
+  modes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["jumps", "jump", "jumps", "none"]
   tally = Counter()
   end = time.monotonic() + minutes*60
   i = 0

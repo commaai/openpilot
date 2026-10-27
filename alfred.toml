@@ -30,5 +30,5 @@ uses = "build"
 
 [[jobs.camrepro.steps]]
 name = "FSIN repro"
-run = "./openpilot/system/camerad/test/repro_fsin.py 20"
+run = "./openpilot/system/camerad/test/repro_fsin.py 20 rtest2,rtest0,rtest1"
 timeout-minutes = 25

@@ -58,6 +58,7 @@ public:
   uint32_t probe_reg_addr;
   uint32_t probe_expected_data;
   std::vector<i2c_random_wr_payload> start_reg_array;
+  std::vector<i2c_random_wr_payload> stop_reg_array;
   std::vector<i2c_random_wr_payload> init_reg_array;
 
   uint32_t bits_per_pixel;
