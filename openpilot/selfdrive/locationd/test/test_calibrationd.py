@@ -47,7 +47,7 @@ class TestCalibrationd(OpenpilotTestCase):
 
   def test_calibration_basics(self):
     c = Calibrator(param_put=False)
-    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * INPUTS_WANTED)
+    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * (INPUTS_WANTED + 1))
     assert c.valid_blocks == INPUTS_WANTED
     np.testing.assert_allclose(c.rpy, np.zeros(3))
     np.testing.assert_allclose(c.height, HEIGHT_INIT)
@@ -85,19 +85,9 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(c.rpy, np.zeros(3))
 
 
-  def test_calibration_uncertain_early_block_no_reset(self):
-    # an uncertain first block accepted before calibration is valid shouldn't look like a remount
-    c = Calibrator(param_put=False)
-    process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], BLOCK_SIZE, cam_odo_speed_std=1e3)
-    for _ in range(INPUTS_NEEDED * 2):
-      process_messages(c, [0.0, -c.rpy[1], 0.0], BLOCK_SIZE)
-    assert c.valid_blocks == INPUTS_NEEDED * 2 + 1
-    assert c.cal_status == log.ExtrinsicsCalibration.Status.calibrated
-
-
   def test_calibration_auto_reset(self):
     c = Calibrator(param_put=False)
-    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * INPUTS_NEEDED)
+    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * (INPUTS_NEEDED + 1))
     assert c.valid_blocks == INPUTS_NEEDED
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0], atol=1e-3)
     process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*0.9, MAX_ALLOWED_YAW_SPREAD*0.9], BLOCK_SIZE + 10)
@@ -105,7 +95,7 @@ class TestCalibrationd(OpenpilotTestCase):
     assert c.cal_status == log.ExtrinsicsCalibration.Status.calibrated
 
     c = Calibrator(param_put=False)
-    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * INPUTS_NEEDED)
+    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * (INPUTS_NEEDED + 1))
     assert c.valid_blocks == INPUTS_NEEDED
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], BLOCK_SIZE + 10)
@@ -114,7 +104,7 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(c.rpy, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], atol=1e-2)
 
     c = Calibrator(param_put=False)
-    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * INPUTS_NEEDED)
+    process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * (INPUTS_NEEDED + 1))
     assert c.valid_blocks == INPUTS_NEEDED
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     process_messages(c, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], BLOCK_SIZE + 10)

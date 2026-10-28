@@ -120,6 +120,7 @@ class Calibrator:
 
     self.idx = 0
     self.block_idx = 0
+    self.seeded = self.valid_blocks > 0
     self.v_ego = 0.0
 
     if smooth_from is None:
@@ -222,11 +223,12 @@ class Calibrator:
     self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
-    if self.idx == 0:
+    if self.idx == 0 and not self.seeded:
+      # the first block is seen through an uncalibrated warp, only use it to move the warp
+      self.seeded = True
+      self.rpy = self.rpys[0].copy()
+    elif self.idx == 0:
       self.block_idx += 1
-      # blocks before INPUTS_NEEDED skip the certainty check, merge them so their spread isn't seen as a remount
-      if self.valid_blocks < INPUTS_NEEDED <= self.block_idx:
-        self.rpys[:INPUTS_NEEDED] = np.mean(self.rpys[:INPUTS_NEEDED], axis=0)
       self.valid_blocks = max(self.block_idx, self.valid_blocks)
       self.block_idx = self.block_idx % INPUTS_WANTED
 
