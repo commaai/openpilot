@@ -8,7 +8,6 @@ import threading
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.tools.lib.logreader import LogReader
-from panda import PandaJungle
 
 # set both to cycle power or ignition
 PWR_ON = int(os.getenv("PWR_ON", "0"))
@@ -19,19 +18,21 @@ ENABLE_IGN = IGN_ON > 0 and IGN_OFF > 0
 ENABLE_PWR = PWR_ON > 0 and PWR_OFF > 0
 
 
-def send_thread(j: PandaJungle, flock):
-  if "FLASH" in os.environ:
-    with flock:
-      j.flash()
-
-  j.reset()
+def setup(j):
   for i in [0, 1, 2, 3, 0xFFFF]:
     j.can_clear(i)
     j.set_can_speed_kbps(i, 500)
   j.set_ignition(True)
   j.set_panda_power(True)
-  j.set_can_loopback(False)
 
+
+def send_thread(j, flock):
+  if "FLASH" in os.environ:
+    with flock:
+      j.flash()
+  j.reset()
+  j.set_can_loopback(False)
+  setup(j)
   rk = Ratekeeper(1 / DT_CTRL, print_delay_threshold=None)
   while True:
     # handle cycling
@@ -56,6 +57,7 @@ def send_thread(j: PandaJungle, flock):
 
 
 def connect():
+  from panda import PandaJungle
   config_realtime_process(3, 55)
 
   serials = {}
@@ -92,6 +94,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
+  parser.add_argument("--up", action="store_true", help="On a DUT, have its UP replay until the `up run` or `up ssh` that started this ends.")
   args = parser.parse_args()
 
   if args.route_or_segment_name is None:
@@ -104,4 +107,11 @@ if __name__ == "__main__":
   if ENABLE_IGN:
     print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
 
-  connect()
+  if args.up:
+    from ultimate_provisioning import UP
+    up = UP.remote()
+    up.set_harness_orientation(UP.HARNESS_ORIENTATION_1)
+    setup(up)
+    up.can_replay([[m for m in send if m[-1] <= 2] for send in CAN_MSGS])
+  else:
+    connect()

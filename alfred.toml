@@ -1,0 +1,132 @@
+[env]
+PYTHONPATH = "/data/ci/tree/openpilot"  # the tree
+TERM = "xterm-256color"
+PYTHONWARNINGS = "error"
+PYTHONFAULTHANDLER = "1"
+COMMA_CACHE = "/data/tmp/comma_download_cache"
+# as launch_env.sh sets for openpilot on a device
+OMP_NUM_THREADS = "1"
+MKL_NUM_THREADS = "1"
+NUMEXPR_NUM_THREADS = "1"
+OPENBLAS_NUM_THREADS = "1"
+VECLIB_MAXIMUM_THREADS = "1"
+QCOM_PRIORITY = "12"
+
+# with the submodule package symlinks launch_chffrplus.sh makes
+[steps.build]
+name = "Build openpilot"
+run = """
+for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
+cd openpilot/system/manager && ./build.py
+"""
+
+# jobs run on comma fours, and on a comma 3x only where it differs, like its camera sensor
+[jobs.onroad]
+runs-on = "up-can"
+timeout-minutes = 35
+
+[[jobs.onroad.steps]]
+uses = "build"
+
+[[jobs.onroad.steps]]
+name = "Check dirty"
+run = "tools/release/check-dirty.sh"
+
+# the UP replays the CAN until the step ends
+[[jobs.onroad.steps]]
+name = "Onroad tests"
+run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
+timeout-minutes = 1.5
+
+[jobs.hardware]
+runs-on = "up-mici"
+timeout-minutes = 35
+
+[[jobs.hardware.steps]]
+uses = "build"
+
+[[jobs.hardware.steps]]
+name = "Encoder"
+run = "./openpilot/system/loggerd/tests/test_encoder.py"
+
+[[jobs.hardware.steps]]
+name = "Manager"
+run = "./openpilot/system/manager/test/test_manager.py"
+
+[[jobs.hardware.steps]]
+name = "Power draw"
+run = "./openpilot/selfdrive/test/test_power_draw.py"
+
+[jobs.replay]
+runs-on = "up-mici"
+timeout-minutes = 35
+
+[[jobs.replay.steps]]
+uses = "build"
+
+[[jobs.replay.steps]]
+name = "Model replay"
+run = "openpilot/selfdrive/test/process_replay/model_replay.py"
+
+[jobs.pandad]
+runs-on = "up-mici"
+timeout-minutes = 35
+
+[[jobs.pandad.steps]]
+uses = "build"
+
+[[jobs.pandad.steps]]
+name = "Pandad"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad.py"
+
+[[jobs.pandad.steps]]
+name = "Pandad loopback"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad_loopback.py"
+
+[[jobs.pandad.steps]]
+name = "Pandad SPI"
+run = "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"
+
+[jobs.camerad]
+runs-on = ["up-mici", "up-tres"]
+timeout-minutes = 35
+
+[[jobs.camerad.steps]]
+uses = "build"
+
+[[jobs.camerad.steps]]
+name = "Camerad"
+run = "./openpilot/system/camerad/test/test_camerad.py"
+timeout-minutes = 1.5
+
+[jobs.sensord]
+runs-on = "up-mici"
+timeout-minutes = 35
+
+[[jobs.sensord.steps]]
+uses = "build"
+
+[[jobs.sensord.steps]]
+name = "Sensord"
+run = "./openpilot/system/sensord/tests/test_sensord.py"
+
+# a comma four with a Chestnut on its aux port, which runs the big model
+[jobs.chestnut]
+runs-on = "chestnut"
+timeout-minutes = 35
+
+[[jobs.chestnut.steps]]
+uses = "build"
+
+[[jobs.chestnut.steps]]
+name = "Flash Chestnut"
+run = "sudo python3 openpilot/system/hardware/chestnut/flash.py"
+
+[[jobs.chestnut.steps]]
+name = "Model replay"
+run = "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"
+
+[[jobs.chestnut.steps]]
+name = "Onroad tests"
+run = "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad"
+timeout-minutes = 2

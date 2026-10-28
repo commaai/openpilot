@@ -28,9 +28,14 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <signal.h>
+#include <spawn.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "system/camerad/cameras/nv12_info.h"
+
+extern char **environ;
 
 namespace {
 
@@ -563,10 +568,22 @@ struct StreamPoller::Impl {
   }
 
   void run_cereal_source(StreamAccumulator *accumulator) {
+    // remote messages are bridged into the local msgq
+    struct BridgeProcess {
+      pid_t pid = -1;
+      ~BridgeProcess() {
+        if (pid > 0) {
+          kill(pid, SIGTERM);
+          waitpid(pid, nullptr, 0);
+        }
+      }
+    } bridge;
     if (source.kind == StreamSourceKind::CerealRemote) {
-      setenv("ZMQ", "1", 1);
-    } else {
-      unsetenv("ZMQ");
+      const std::string bridge_path = (repo_root() / "openpilot" / "system" / "webrtc" / "bridge.py").string();
+      char *const argv[] = {(char *)"python3", (char *)bridge_path.c_str(), (char *)source.address.c_str(), nullptr};
+      if (posix_spawnp(&bridge.pid, "python3", nullptr, nullptr, argv, environ) != 0) {
+        throw std::runtime_error("Failed to start bridge");
+      }
     }
 
     auto poller = std::make_unique<Poller>();
