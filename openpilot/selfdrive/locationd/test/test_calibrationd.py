@@ -6,8 +6,11 @@ from openpilot.common.test import OpenpilotTestCase
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.params import Params
+from opendbc.car.structs import car
+from opendbc.car.vin import VIN_UNKNOWN
 from openpilot.selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
-                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD
+                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD, \
+                                                         car_changed
 
 
 def process_messages(c, cam_odo_calib, cycles,
@@ -43,6 +46,26 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(msg.extrinsicsCalibration.rpyCalib, c.rpy)
     np.testing.assert_allclose(msg.extrinsicsCalibration.height, c.height)
     assert msg.extrinsicsCalibration.validBlocks == c.valid_blocks
+
+
+  def test_car_changed(self):
+    def CP(fingerprint, vin):
+      return car.CarParams.new_message(carFingerprint=fingerprint, carVin=vin)
+
+    params = Params()
+    params.remove("CarParamsPrevRoute")
+    assert not car_changed(params, CP("HONDA_ACCORD", VIN_UNKNOWN))
+
+    vin_a, vin_b = "1HGCV1F30LA000001", "1HGCV1F30LA000002"
+    for prev, cur, changed in [
+      (CP("HONDA_PILOT", VIN_UNKNOWN), CP("HONDA_ACCORD", VIN_UNKNOWN), True),
+      (CP("HONDA_ACCORD", vin_a), CP("HONDA_ACCORD", vin_b), True),
+      (CP("HONDA_ACCORD", vin_a), CP("HONDA_ACCORD", vin_a), False),
+      (CP("HONDA_ACCORD", vin_a), CP("HONDA_ACCORD", VIN_UNKNOWN), False),
+      (CP("HONDA_ACCORD", VIN_UNKNOWN), CP("HONDA_ACCORD", VIN_UNKNOWN), False),
+    ]:
+      params.put("CarParamsPrevRoute", prev.to_bytes(), block=True)
+      assert car_changed(params, cur) == changed
 
 
   def test_calibration_basics(self):
