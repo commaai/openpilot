@@ -13,7 +13,6 @@ from typing import NoReturn
 
 from openpilot.cereal import log
 from opendbc.car.structs import car
-from opendbc.car.vin import VIN_UNKNOWN
 import openpilot.cereal.messaging as messaging
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.constants import CV
@@ -50,16 +49,6 @@ DEBUG = os.getenv("DEBUG") is not None
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
   return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
-
-
-def car_changed(params: Params, CP: car.CarParams) -> bool:
-  # a platform never changes on the same car, and many cars don't report a VIN
-  prev_cp = params.get("CarParamsPrevRoute")
-  if prev_cp is None:
-    return False
-  with car.CarParams.from_bytes(prev_cp) as prev_CP:
-    vins_known = VIN_UNKNOWN not in (prev_CP.carVin, CP.carVin)
-    return prev_CP.carFingerprint != CP.carFingerprint or (vins_known and prev_CP.carVin != CP.carVin)
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
@@ -279,10 +268,12 @@ def main() -> NoReturn:
   params_reader = Params()
   CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
 
-  # the saved calibration is for the previous car's mount
-  if car_changed(params_reader, CP):
-    cloudlog.warning("car changed, resetting calibration")
-    params_reader.remove("CalibrationParams")
+  # a different car means a different mount, so the saved calibration doesn't apply
+  prev_cp = params_reader.get("CarParamsPrevRoute")
+  if prev_cp is not None:
+    with car.CarParams.from_bytes(prev_cp) as prev_CP:
+      if prev_CP.carFingerprint != CP.carFingerprint:
+        params_reader.remove("CalibrationParams")
 
   calibrator = Calibrator(param_put=True)
   calibrator.not_car = CP.notCar
