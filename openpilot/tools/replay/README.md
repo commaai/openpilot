@@ -109,19 +109,14 @@ cd openpilot/selfdrive/ui && ./watch3.py
 
 ## Stream CAN messages to your device
 
-Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices. Check out the [jungle repo](https://github.com/commaai/panda_jungle) for more info.
-
-In order to run your device as if it was in a car:
-* connect a panda jungle to your PC
-* connect a comma device or panda to the jungle via OBD-C
-* run `can_replay.py`
+Replay CAN messages as they were recorded on a device plugged into a UP, so it runs as if it was in a car. Run `can_replay.py` on the device from `up run` or `up ssh`, the UP replays until that ends.
 
 ``` bash
 batman:replay$ ./can_replay.py -h
 usage: can_replay.py [-h] [route_or_segment_name]
 
-Replay CAN messages from a route to all connected pandas and jungles
-in a loop.
+On a DUT, have its UP replay CAN messages from a route until the `up
+run` or `up ssh` that started this ends.
 
 positional arguments:
   route_or_segment_name
