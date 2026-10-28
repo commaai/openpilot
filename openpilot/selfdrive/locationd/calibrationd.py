@@ -224,7 +224,7 @@ class Calibrator:
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0 and not self.seeded:
-      # the first block is seen through an uncalibrated warp, only use it to move the warp
+      # first block only moves the warp
       self.seeded = True
       self.rpy = self.rpys[0].copy()
     elif self.idx == 0:
