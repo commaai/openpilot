@@ -600,7 +600,7 @@ struct PandaState @0xa7649e2575e4591e {
     clock @16;
     interruptMissing @17;
     registerDivergent @18;
-    safetyRedundancy @19;
+    interruptRateKlineInit @19;
     interruptRateClockSource @20;
     interruptRateTick @21;
     interruptRateExti @22;
