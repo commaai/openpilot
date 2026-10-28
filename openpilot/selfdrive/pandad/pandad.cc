@@ -219,12 +219,13 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
   }
 
   // Convert faults bitset to capnp list
-  std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
+  // bits above the last fault type would leave unset entries, which read as relayMalfunction
+  std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt & ((2U << size_t(cereal::PandaState::FaultType::TIMER)) - 1U));
   auto faults = ps.initFaults(fault_bits.count());
 
   size_t j = 0;
   for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-       f <= size_t(cereal::PandaState::FaultType::HEARTBEAT_LOOP_WATCHDOG); f++) {
+       f <= size_t(cereal::PandaState::FaultType::TIMER); f++) {
     if (fault_bits.test(f)) {
       faults.set(j, cereal::PandaState::FaultType(f));
       j++;
