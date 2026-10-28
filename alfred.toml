@@ -35,7 +35,7 @@ run = "tools/release/check-dirty.sh"
 # the UP replays the CAN until the step ends
 [[jobs.onroad.steps]]
 name = "Onroad tests"
-run = "openpilot/tools/replay/can_replay.py && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
+run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
 timeout-minutes = 1.5
 
 [jobs.hardware]
