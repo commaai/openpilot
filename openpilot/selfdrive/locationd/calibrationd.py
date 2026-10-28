@@ -268,7 +268,7 @@ def main() -> NoReturn:
   params_reader = Params()
   CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
 
-  # a different car means a different mount, so the saved calibration doesn't apply
+  # different car, different mount
   prev_cp = params_reader.get("CarParamsPrevRoute")
   if prev_cp is not None:
     with car.CarParams.from_bytes(prev_cp) as prev_CP:
