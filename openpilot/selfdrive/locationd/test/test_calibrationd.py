@@ -85,6 +85,16 @@ class TestCalibrationd(OpenpilotTestCase):
     np.testing.assert_allclose(c.rpy, np.zeros(3))
 
 
+  def test_calibration_uncertain_early_block_no_reset(self):
+    # an uncertain first block accepted before calibration is valid shouldn't look like a remount
+    c = Calibrator(param_put=False)
+    process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], BLOCK_SIZE, cam_odo_speed_std=1e3)
+    for _ in range(INPUTS_NEEDED * 2):
+      process_messages(c, [0.0, -c.rpy[1], 0.0], BLOCK_SIZE)
+    assert c.valid_blocks == INPUTS_NEEDED * 2 + 1
+    assert c.cal_status == log.ExtrinsicsCalibration.Status.calibrated
+
+
   def test_calibration_auto_reset(self):
     c = Calibrator(param_put=False)
     process_messages(c, [0.0, 0.0, 0.0], BLOCK_SIZE * INPUTS_NEEDED)

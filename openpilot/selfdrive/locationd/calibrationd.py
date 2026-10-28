@@ -224,6 +224,9 @@ class Calibrator:
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0:
       self.block_idx += 1
+      # blocks before INPUTS_NEEDED skip the certainty check, merge them so their spread isn't seen as a remount
+      if self.valid_blocks < INPUTS_NEEDED <= self.block_idx:
+        self.rpys[:INPUTS_NEEDED] = np.mean(self.rpys[:INPUTS_NEEDED], axis=0)
       self.valid_blocks = max(self.block_idx, self.valid_blocks)
       self.block_idx = self.block_idx % INPUTS_WANTED
 
