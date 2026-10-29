@@ -161,9 +161,6 @@ class ModelState:
     self.run_model = jits['run']
     self.run_model.captured._linear = lower_and_compile(self.run_model.captured._linear)
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
-    for name, next_name in self.state_pairs.items():
-      state = self.input_queues[name]
-      self.outputs[next_name] = input_view(state._buffer(), state.shape, state.dtype, 0)
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
@@ -211,6 +208,8 @@ class ModelState:
     model_output = self.outputs['outputs'].numpy()[0]
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
+    for name, next_name in self.state_pairs.items():
+      self.input_queues[name], self.outputs[next_name] = self.outputs[next_name], self.input_queues[name]
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
 
     if SEND_RAW_PRED:
