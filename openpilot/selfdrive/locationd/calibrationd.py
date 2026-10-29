@@ -277,7 +277,7 @@ def main() -> NoReturn:
   last_carparams_data = params_reader.get("CarParamsPrevRoute")
   if last_carparams_data is not None:
     with car.CarParams.from_bytes(last_carparams_data) as last_CP:
-      if last_CP.carFingerprint != CP.carFingerprint:
+      if last_CP.carFingerprint != CP.carFingerprint and "mock" not in (last_CP.brand, CP.brand):
         params_reader.remove("CalibrationParams")
 
   calibrator = Calibrator(param_put=True)
