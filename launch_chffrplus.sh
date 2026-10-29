@@ -87,7 +87,7 @@ function launch {
     agnos_init
   fi
 
-  (cd "$DIR" && ./lfs.py install --skip-custom-hooks) || echo "Failed to install LFS client"
+  (cd "$DIR" && ./lfs.py install --skip-custom-hooks) || return 1
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log

@@ -28,7 +28,7 @@ import urllib.request
 os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
 
 try:
-  from huggingface_hub import CommitOperationAdd, HfApi
+  from huggingface_hub import HfApi
 except ImportError:
   API = None
 else:
@@ -37,7 +37,6 @@ else:
 POINTER_VERSION = "https://git-lfs.github.com/spec/v1"
 POINTER_RE = re.compile(rb"\Aversion " + POINTER_VERSION.encode() + rb"\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n\Z")
 BUCKET = os.environ.get("OPENPILOT_LFS_BUCKET", "commaai/openpilot-lfs")
-LEGACY_REPO = os.environ.get("OPENPILOT_LFS_LEGACY_REPO", "commaai/openpilot-lfs" if BUCKET == "commaai/openpilot-lfs" else "")
 ZERO = "0" * 40
 TRANSFERS = 4
 TRUE_VALUES = ("1", "ON", "YES", "TRUE")
@@ -311,28 +310,18 @@ def upload(objects):
     return
   existing = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (f"sha256/{oid}" for oid in objects))}
   pending = []
-  additions = []
   for oid, size in objects.items():
     key = f"sha256/{oid}"
     if key in existing:
       if existing[key] != size:
         raise RuntimeError(f"invalid bucket object {oid}: size {existing[key]}, expected {size}")
-      if not LEGACY_REPO:
-        continue
-    path = download_one(oid, size) if key in existing else object_path(oid)
+      continue
+    path = object_path(oid)
     if not valid(path, size):
       raise RuntimeError(f"missing local LFS object {oid}")
     if hash_file(path) != oid:
       raise RuntimeError(f"local sha256 mismatch for {oid}")
-    if LEGACY_REPO:
-      addition = CommitOperationAdd(path_in_repo=key, path_or_fileobj=path)
-      # These are LFS objects regardless of the legacy repository's filename rules.
-      addition._upload_mode = "lfs"
-      additions.append(addition)
-    if key not in existing:
-      pending.append((path, key))
-  if additions:
-    API.preupload_lfs_files(LEGACY_REPO, additions, free_memory=False)
+    pending.append((path, key))
   if pending:
     API.batch_bucket_files(BUCKET, add=pending)
     uploaded = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (key for _path, key in pending))}

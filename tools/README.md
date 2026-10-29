@@ -47,24 +47,11 @@ to use HTTP. Pushes that include large files require Xet; the hook uses uv to
 load those dependencies when needed, separately from openpilot's environment.
 
 Public downloads do not require authentication. For uploads, use `hf auth login`
-or set `HF_TOKEN` to a token with write access to the bucket and the legacy
-`commaai/openpilot-lfs` model repository. During the migration, new objects are
-uploaded to the legacy repository before publishing them in the bucket.
-Objects already in the bucket are also mirrored, downloading them first if they
-are missing from the local cache.
-`.lfsconfig` remains in source and Chestnut releases so older installers and
-updaters can download them; openpilot installs the bucket client at startup.
-Stock Git LFS uploads are disabled so pushes cannot publish objects only to the
-legacy repository. If a push fails with `/dev/null/run-lfs.py-install`, run
-`./lfs.py install` (or `tools/op.sh setup`) and retry the push.
-
-Set `OPENPILOT_LFS_BUCKET=owner/bucket` to use another bucket. The bucket must already
+or set `HF_TOKEN` to a token with write access to the bucket. Set
+`OPENPILOT_LFS_BUCKET=owner/bucket` to use another bucket. The bucket must already
 exist and contain the objects referenced by the branches you need; the client
 does not create buckets or delete objects. Forks need write access to their
 configured bucket, and objects must be copied to the main bucket before merging.
-Custom buckets do not mirror to the legacy repository by default. To support
-older clients, set `OPENPILOT_LFS_LEGACY_REPO=owner/repo` and point `.lfsconfig`
-`url` at that repository's LFS endpoint. Keep `pushurl` disabled.
 
 ## WSL on Windows
 
