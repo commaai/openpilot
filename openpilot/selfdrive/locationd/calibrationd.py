@@ -87,6 +87,7 @@ class Calibrator:
         cloudlog.exception("Error reading cached CalibrationParams")
 
     self.reset(rpy_init, valid_blocks, wide_from_device_euler, height)
+    self.seeded = self.valid_blocks > 0
     self.update_status()
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT,
@@ -163,7 +164,7 @@ class Calibrator:
     # TODO: add height spread check with smooth transition too
     spread_too_high = self.calib_spread[1] > MAX_ALLOWED_PITCH_SPREAD or self.calib_spread[2] > MAX_ALLOWED_YAW_SPREAD
     if spread_too_high and self.cal_status == log.ExtrinsicsCalibration.Status.calibrated:
-      self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
+      self.reset(self.rpys[self.block_idx - 1], smooth_from=self.rpy)
       self.cal_status = log.ExtrinsicsCalibration.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
@@ -222,7 +223,12 @@ class Calibrator:
     self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
-    if self.idx == 0:
+    if self.idx == 0 and not self.seeded:
+      # first block's rpy can be many degrees off on steep windshields, only change the warp
+      # without saving it which could trigger recalibration on completion
+      self.seeded = True
+      self.rpy = self.rpys[0].copy()
+    elif self.idx == 0:
       self.block_idx += 1
       self.valid_blocks = max(self.block_idx, self.valid_blocks)
       self.block_idx = self.block_idx % INPUTS_WANTED
@@ -240,7 +246,7 @@ class Calibrator:
     extrinsicsCalibration = msg.extrinsicsCalibration
     extrinsicsCalibration.validBlocks = self.valid_blocks
     extrinsicsCalibration.calStatus = self.cal_status
-    extrinsicsCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
+    extrinsicsCalibration.calPerc = min(100 * ((self.seeded + self.valid_blocks) * BLOCK_SIZE + self.idx) // ((1 + INPUTS_NEEDED) * BLOCK_SIZE), 100)
     extrinsicsCalibration.rpyCalib = smooth_rpy.tolist()
     extrinsicsCalibration.rpyCalibSpread = self.calib_spread.tolist()
     extrinsicsCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
