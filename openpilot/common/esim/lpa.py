@@ -54,6 +54,7 @@ TAG_EUICC_CHALLENGE = 0xBF2E
 TAG_NOTIFICATION_METADATA = 0xBF2F
 TAG_NOTIFICATION_SENT = 0xBF30
 TAG_ENABLE_PROFILE = 0xBF31
+TAG_DISABLE_PROFILE = 0xBF32
 TAG_DELETE_PROFILE = 0xBF33
 TAG_BPP = 0xBF36
 TAG_PROFILE_INSTALL_RESULT = 0xBF37
@@ -757,11 +758,46 @@ class LPA(LPABase):
     with self._acquire_channel():
       set_profile_nickname(self._client, iccid, nickname)
 
-  def _enable_profile(self, iccid: str) -> int:
+  def _set_profile_state(self, tag: int, iccid: str) -> int:
     inner = encode_tlv(TAG_OK, encode_tlv(TAG_ICCID, string_to_tbcd(iccid)))
     inner += b'\x01\x01\x01'  # refreshFlag=1
-    response = es10x_command(self._client, encode_tlv(TAG_ENABLE_PROFILE, inner))
-    return require_tag(require_tag(response, TAG_ENABLE_PROFILE, "EnableProfileResponse"), TAG_STATUS, "EnableProfile status")[0]
+    response = es10x_command(self._client, encode_tlv(tag, inner))
+    return require_tag(require_tag(response, tag, "ProfileStateResponse"), TAG_STATUS, "ProfileState status")[0]
+
+  def _enable_profile(self, iccid: str) -> int:
+    return self._set_profile_state(TAG_ENABLE_PROFILE, iccid)
+
+  def _enabled_iccid(self) -> str | None:
+    return next((p["iccid"] for p in list_profiles(self._client) if p.get("profileState") == "enabled"), None)
+
+  def cycle_profile(self) -> None:
+    # reset the modem, then disable and re-enable the enabled profile with refresh. this restarts SIM applets,
+    # forcing a Webbing PMC poll, and clears a stale proactive session (catBusy) that survives AT+CFUN
+    with self._acquire_lock():
+      self._client._reset_modem()
+      time.sleep(20)  # lte.sh returns once the modem enumerates, before the SIM is ready
+    with self._acquire_channel():
+      iccid = self._enabled_iccid()
+      if iccid is None:
+        raise LPAError("no enabled profile")
+      code = self._set_profile_state(TAG_DISABLE_PROFILE, iccid)
+    if code != PROFILE_OK:
+      raise LPAError(f"DisableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
+
+    last_error = ""
+    for _ in range(5):
+      # the refresh from DisableProfile tears down the ISD-R logical channel (SW=6881), so reopen each try
+      time.sleep(10)
+      try:
+        with self._acquire_channel():
+          code = self._enable_profile(iccid)
+      except Exception as e:  # anything during the refresh; giving up would leave the profile disabled
+        last_error = str(e)
+        continue
+      if code in (PROFILE_OK, PROFILE_NOT_IN_DISABLED_STATE):
+        return
+      last_error = f"{PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})"
+    raise LPAError(f"EnableProfile failed after DisableProfile: {last_error}")
 
   def switch_profile(self, iccid: str) -> None:
     with self._acquire_channel():
