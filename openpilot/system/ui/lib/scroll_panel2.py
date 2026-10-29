@@ -1,6 +1,6 @@
 import os
 import math
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from collections.abc import Callable
 from enum import Enum
 from typing import cast

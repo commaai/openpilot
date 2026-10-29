@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import numpy as np
 from dataclasses import dataclass
 from typing import Any, Optional, cast
@@ -213,13 +213,17 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   if len(points) < 3:
     return
 
-  # Initialize shader on-demand
-  state = ShaderState.get_instance()
-  state.initialize()
-
   # Ensure (N,2) float32 contiguous array
   pts = np.ascontiguousarray(points, dtype=np.float32)
   assert pts.ndim == 2 and pts.shape[1] == 2, "points must be (N,2)"
+
+  if rl.using_cpu_backend():
+    rl.draw_polygon_cpu(origin_rect, pts, color, gradient)
+    return
+
+  # Initialize shader on-demand
+  state = ShaderState.get_instance()
+  state.initialize()
 
   # Configure gradient shader
   _configure_shader_color(state, color, gradient, origin_rect)
