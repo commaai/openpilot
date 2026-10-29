@@ -120,7 +120,6 @@ class Calibrator:
 
     self.idx = 0
     self.block_idx = 0
-    self.seeded = self.valid_blocks > 0
     self.v_ego = 0.0
 
     if smooth_from is None:
@@ -223,11 +222,10 @@ class Calibrator:
     self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
-    if self.idx == 0 and not self.seeded:
+    if self.idx == 0 and self.valid_blocks == 0:
       # first block's rpy can be many degrees off on steep windshields,
       # only change the warp without saving it which could trigger recalibration on completion
-      self.seeded = True
-      self.rpy = self.rpys[0].copy()
+      self.reset(self.rpys[0], valid_blocks=1)
     elif self.idx == 0:
       self.block_idx += 1
       self.valid_blocks = max(self.block_idx, self.valid_blocks)
@@ -246,7 +244,9 @@ class Calibrator:
     extrinsicsCalibration = msg.extrinsicsCalibration
     extrinsicsCalibration.validBlocks = self.valid_blocks
     extrinsicsCalibration.calStatus = self.cal_status
-    extrinsicsCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
+    # make sure we count the extra seed block
+    blocks = self.block_idx + (self.valid_blocks > 0)
+    extrinsicsCalibration.calPerc = 100 if self.valid_blocks >= INPUTS_NEEDED else 100 * (blocks * BLOCK_SIZE + self.idx) // ((INPUTS_NEEDED + 1) * BLOCK_SIZE)
     extrinsicsCalibration.rpyCalib = smooth_rpy.tolist()
     extrinsicsCalibration.rpyCalibSpread = self.calib_spread.tolist()
     extrinsicsCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
