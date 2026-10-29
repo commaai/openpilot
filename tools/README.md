@@ -50,6 +50,8 @@ Public downloads do not require authentication. For uploads, use `hf auth login`
 or set `HF_TOKEN` to a token with write access to the bucket and the legacy
 `commaai/openpilot-lfs` model repository. During the migration, new objects are
 uploaded to the legacy repository before publishing them in the bucket.
+Objects already in the bucket are also mirrored, downloading them first if they
+are missing from the local cache.
 `.lfsconfig` remains in source and Chestnut releases so older installers and
 updaters can download them; openpilot installs the bucket client at startup.
 Stock Git LFS uploads are disabled so pushes cannot publish objects only to the

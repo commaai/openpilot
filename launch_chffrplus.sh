@@ -70,8 +70,6 @@ function launch {
     fi
   fi
 
-  (cd "$DIR" && ./lfs.py install --skip-custom-hooks) || return 1
-
   # handle pythonpath
   ln -sfn "$(pwd)" /data/pythonpath
   export PYTHONPATH="$PWD"
@@ -88,6 +86,8 @@ function launch {
   if [ -f /AGNOS ]; then
     agnos_init
   fi
+
+  (cd "$DIR" && ./lfs.py install --skip-custom-hooks) || echo "Failed to install LFS client"
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log

@@ -311,25 +311,29 @@ def upload(objects):
     return
   existing = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (f"sha256/{oid}" for oid in objects))}
   pending = []
+  additions = []
   for oid, size in objects.items():
     key = f"sha256/{oid}"
     if key in existing:
       if existing[key] != size:
         raise RuntimeError(f"invalid bucket object {oid}: size {existing[key]}, expected {size}")
-      continue
-    path = object_path(oid)
+      if not LEGACY_REPO:
+        continue
+    path = download_one(oid, size) if key in existing else object_path(oid)
     if not valid(path, size):
       raise RuntimeError(f"missing local LFS object {oid}")
     if hash_file(path) != oid:
       raise RuntimeError(f"local sha256 mismatch for {oid}")
-    pending.append((path, key))
-  if pending:
     if LEGACY_REPO:
-      additions = [CommitOperationAdd(path_in_repo=key, path_or_fileobj=path) for path, key in pending]
-      for addition in additions:
-        # These are LFS objects regardless of the legacy repository's filename rules.
-        addition._upload_mode = "lfs"
-      API.preupload_lfs_files(LEGACY_REPO, additions, free_memory=False)
+      addition = CommitOperationAdd(path_in_repo=key, path_or_fileobj=path)
+      # These are LFS objects regardless of the legacy repository's filename rules.
+      addition._upload_mode = "lfs"
+      additions.append(addition)
+    if key not in existing:
+      pending.append((path, key))
+  if additions:
+    API.preupload_lfs_files(LEGACY_REPO, additions, free_memory=False)
+  if pending:
     API.batch_bucket_files(BUCKET, add=pending)
     uploaded = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (key for _path, key in pending))}
     for path, key in pending:
