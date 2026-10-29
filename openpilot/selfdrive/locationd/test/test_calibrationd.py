@@ -99,7 +99,7 @@ class TestCalibrationd(OpenpilotTestCase):
     assert c.valid_blocks == INPUTS_NEEDED
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     process_messages(c, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], BLOCK_SIZE + 10)
-    assert c.valid_blocks == 1
+    assert c.valid_blocks == 0
     assert c.cal_status == log.ExtrinsicsCalibration.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, MAX_ALLOWED_PITCH_SPREAD*1.1, 0.0], atol=1e-2)
 
@@ -108,6 +108,6 @@ class TestCalibrationd(OpenpilotTestCase):
     assert c.valid_blocks == INPUTS_NEEDED
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     process_messages(c, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], BLOCK_SIZE + 10)
-    assert c.valid_blocks == 1
+    assert c.valid_blocks == 0
     assert c.cal_status == log.ExtrinsicsCalibration.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)
