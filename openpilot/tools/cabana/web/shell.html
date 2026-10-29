@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>cabana</title>
+  <link rel="icon" href="data:,">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #202020; }
+    #canvas { width: 100vw; height: 100vh; display: block; outline: none; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+  <script>
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      print: (...args) => console.log(...args),
+      printErr: (...args) => console.error(...args),
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

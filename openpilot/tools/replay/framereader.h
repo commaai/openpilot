@@ -3,8 +3,29 @@
 #include <string>
 #include <vector>
 
-#include "msgq/visionipc/visionbuf.h"
 #include "tools/replay/util.h"
+
+#ifdef __EMSCRIPTEN__
+#include <cstdint>
+
+// demuxes the video into Annex B access units; decoding happens in the browser (see tools/cabana/web/video.cc)
+class FrameReader {
+public:
+  struct Packet {
+    size_t offset;
+    size_t size;
+    bool key;
+  };
+  bool load(CameraType type, const std::string &url, bool no_hw_decoder = false, std::atomic<bool> *abort = nullptr, bool local_cache = false);
+  size_t getFrameCount() const { return packets.size(); }
+
+  int width = 0, height = 0;
+  const char *codec = "";  // WebCodecs codec string
+  std::vector<Packet> packets;
+  std::vector<uint8_t> data;
+};
+#else
+#include "msgq/visionipc/visionbuf.h"
 
 #ifndef __APPLE__
 #include "system/loggerd/encoder/v4l_decoder.h"
@@ -78,3 +99,4 @@ private:
   V4LDecoder v4l_decoder;
 };
 #endif
+#endif  // __EMSCRIPTEN__
