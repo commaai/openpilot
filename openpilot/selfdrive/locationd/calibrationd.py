@@ -224,7 +224,8 @@ class Calibrator:
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0 and not self.seeded:
-      # first block only moves the warp
+      # first block's rpy can be many degrees off on steep windshields,
+      # only change the warp without saving it which could trigger recalibration on completion
       self.seeded = True
       self.rpy = self.rpys[0].copy()
     elif self.idx == 0:
