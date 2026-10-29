@@ -70,6 +70,8 @@ function launch {
     fi
   fi
 
+  (cd "$DIR" && ./lfs.py install --skip-custom-hooks) || return 1
+
   # handle pythonpath
   ln -sfn "$(pwd)" /data/pythonpath
   export PYTHONPATH="$PWD"

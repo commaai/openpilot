@@ -28,7 +28,7 @@ import urllib.request
 os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
 
 try:
-  from huggingface_hub import HfApi
+  from huggingface_hub import CommitOperationAdd, HfApi
 except ImportError:
   API = None
 else:
@@ -37,6 +37,7 @@ else:
 POINTER_VERSION = "https://git-lfs.github.com/spec/v1"
 POINTER_RE = re.compile(rb"\Aversion " + POINTER_VERSION.encode() + rb"\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n\Z")
 BUCKET = os.environ.get("OPENPILOT_LFS_BUCKET", "commaai/openpilot-lfs")
+LEGACY_REPO = os.environ.get("OPENPILOT_LFS_LEGACY_REPO", "commaai/openpilot-lfs" if BUCKET == "commaai/openpilot-lfs" else "")
 ZERO = "0" * 40
 TRANSFERS = 4
 TRUE_VALUES = ("1", "ON", "YES", "TRUE")
@@ -66,7 +67,7 @@ def remove_git_lfs_hooks(directory):
       path.unlink()
 
 
-def install():
+def install(skip_custom_hooks=False):
   script = GIT_DIR / "lfs.py"
   hook = Path(git("rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-push").decode().strip())
   remove_git_lfs_hooks(hook.parent)
@@ -74,15 +75,18 @@ def install():
   installed_hook = f'#!/bin/sh\nexec {shlex.quote(str(script))} pre-push "$@"\n'
   previous_hook = '#!/bin/sh\nexec "$(git rev-parse --show-toplevel)/lfs.py" pre-push "$@"\n'
   if hook.is_file() and hook.read_text(errors="replace") not in (hook_script, installed_hook, previous_hook):
-    raise RuntimeError(f"refusing to replace custom hook {hook}")
+    if not skip_custom_hooks:
+      raise RuntimeError(f"refusing to replace custom hook {hook}")
+    hook = None
   if Path(__file__).resolve() != script:
     shutil.copyfile(__file__, script)
   script.chmod(0o755)
-  hook.parent.mkdir(parents=True, exist_ok=True)
-  hook.write_text(hook_script)
-  hook.chmod(0o755)
+  if hook is not None:
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text(hook_script)
+    hook.chmod(0o755)
   git("config", "--worktree", "--remove-section", "filter.lfs", check=False)
-  git("config", "--local", "filter.lfs.process", shlex.join((str(script), "filter-process")))
+  git("config", "--local", "filter.lfs.process", '"$(git rev-parse --git-common-dir)/lfs.py" filter-process')
   git("config", "--local", "filter.lfs.required", "true")
 
 
@@ -113,8 +117,11 @@ def valid(path, size):
 
 
 def hash_file(path):
+  digest = hashlib.sha256()
   with path.open("rb") as stream:
-    return hashlib.file_digest(stream, "sha256").hexdigest()
+    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+      digest.update(chunk)
+  return digest.hexdigest()
 
 
 def store(chunks):
@@ -190,8 +197,8 @@ def download_one(oid, size):
       return dst
 
 
-def smudge(data):
-  if os.environ.get("GIT_LFS_SKIP_SMUDGE") == "1":
+def smudge(data, name, exclude):
+  if os.environ.get("GIT_LFS_SKIP_SMUDGE") == "1" or name == exclude:
     return data
   parsed = parse_pointer(data)
   if not parsed:
@@ -228,6 +235,7 @@ def write_packets(source):
 
 
 def filter_process():
+  exclude = git("config", "--get", "lfs.fetchexclude", check=False).decode().strip()
   list(read_packets(sys.stdin.buffer))
   write_packets((b"git-filter-server\n", b"version=2\n"))
   list(read_packets(sys.stdin.buffer))
@@ -238,7 +246,7 @@ def filter_process():
     except EOFError:
       return
     content = read_packets(sys.stdin.buffer)
-    result = store(content) if fields[b"command"] == b"clean" else smudge(b"".join(content))
+    result = store(content) if fields[b"command"] == b"clean" else smudge(b"".join(content), os.fsdecode(fields[b"pathname"]), exclude)
     write_packets(b"status=success\n")
     if isinstance(result, Path):
       with result.open("rb") as source_stream:
@@ -258,12 +266,12 @@ def cat_small(oids):
     stream.read(1)
 
 
-def pointers_for_head():
+def pointers_for_index():
   paths = {}
-  for entry in filter(None, git("ls-tree", "-rlz", "HEAD").split(b"\0")):
+  for entry in filter(None, git("-C", str(ROOT), "ls-files", "--stage", "-z").split(b"\0")):
     metadata, path = entry.split(b"\t", 1)
-    _mode, kind, oid, size = metadata.split()
-    if kind == b"blob" and int(size) <= 1024:
+    mode, oid, stage = metadata.split()
+    if stage == b"0" and mode in (b"100644", b"100755"):
       paths.setdefault(oid.decode(), []).append(path.decode(errors="surrogateescape"))
   found = {}
   for oid, data in cat_small(paths):
@@ -274,16 +282,18 @@ def pointers_for_head():
 
 def pull(exclude=None):
   install()
-  found = pointers_for_head()
+  found = pointers_for_index()
   if exclude is None:
     exclude = git("config", "--get", "lfs.fetchexclude", check=False).decode().strip()
   if exclude:
     found = {obj: kept for obj, paths in found.items() if (kept := [path for path in paths if path != exclude])}
   parallel(download_one, found)
-  materialized = []
   for (oid, size), paths in found.items():
     for name in paths:
-      path = ROOT / name
+      relative = Path(name)
+      if any((ROOT / part).is_symlink() for part in (relative, *relative.parents)):
+        continue
+      path = ROOT / relative
       try:
         if path.stat().st_size > 1024 or parse_pointer(path.read_bytes()) != (oid, size):
           continue
@@ -293,9 +303,6 @@ def pull(exclude=None):
         tmp = shutil.copyfile(object_path(oid), Path(directory) / "object")
         shutil.copymode(path, tmp)
         Path(tmp).replace(path)
-      materialized.append(name)
-  if materialized:
-    git("add", "--renormalize", "--", *materialized)
 
 
 def upload(objects):
@@ -317,6 +324,12 @@ def upload(objects):
       raise RuntimeError(f"local sha256 mismatch for {oid}")
     pending.append((path, key))
   if pending:
+    if LEGACY_REPO:
+      additions = [CommitOperationAdd(path_in_repo=key, path_or_fileobj=path) for path, key in pending]
+      for addition in additions:
+        # These are LFS objects regardless of the legacy repository's filename rules.
+        addition._upload_mode = "lfs"
+      API.preupload_lfs_files(LEGACY_REPO, additions, free_memory=False)
     API.batch_bucket_files(BUCKET, add=pending)
     uploaded = {f.path: f.size for f in API.get_bucket_paths_info(BUCKET, (key for _path, key in pending))}
     for path, key in pending:
@@ -349,6 +362,7 @@ def main():
   parser.add_argument("remote", nargs="?", default="origin")
   parser.add_argument("url", nargs="?")
   parser.add_argument("--exclude", help="path to leave as a pointer when pulling; overrides lfs.fetchexclude")
+  parser.add_argument("--skip-custom-hooks", action="store_true", help="keep custom pre-push hooks when installing")
   args = parser.parse_args()
   if args.command == "filter-process":
     filter_process()
@@ -357,7 +371,7 @@ def main():
   elif args.command == "pre-push":
     pre_push(args.remote)
   elif args.command == "install":
-    install()
+    install(args.skip_custom_hooks)
 
 
 if __name__ == "__main__":

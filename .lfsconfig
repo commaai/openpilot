@@ -1,0 +1,5 @@
+[lfs]
+	url = https://huggingface.co/commaai/openpilot-lfs.git/info/lfs
+	# Uploads must use the bucket client's pre-push hook.
+	pushurl = file:///dev/null/run-lfs.py-install
+	locksverify = false
