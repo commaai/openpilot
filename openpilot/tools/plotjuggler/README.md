@@ -35,17 +35,17 @@ optional arguments:
 
 Example using route name:
 
-`./juggle.py "5beb9b58bd12b691/0000010a--a51155e496"`
+`./juggle.py 5beb9b58bd12b691/0000010a--a51155e496`
 
 Examples using segment:
 
-`./juggle.py "5beb9b58bd12b691/0000010a--a51155e496/1"`
+`./juggle.py 5beb9b58bd12b691/0000010a--a51155e496/1`
 
-`./juggle.py "5beb9b58bd12b691/0000010a--a51155e496/1/q" # use qlogs`
+`./juggle.py 5beb9b58bd12b691/0000010a--a51155e496/1/q # use qlogs`
 
 Example using segment range:
 
-`./juggle.py "5beb9b58bd12b691/0000010a--a51155e496/0:1"`
+`./juggle.py 5beb9b58bd12b691/0000010a--a51155e496/0:1`
 
 ## Streaming
 

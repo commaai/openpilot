@@ -119,7 +119,7 @@ class Uploader:
           if logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
             continue
 
-          if name == "qcamera.ts" and not any(logdir.startswith(r.split('|')[-1]) for r in requested_routes):
+          if name == "qcamera.ts" and not any(logdir.startswith(r.replace('|', '/').rsplit('/', 1)[-1]) for r in requested_routes):
             continue
 
         yield name, key, fn

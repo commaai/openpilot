@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import os
 import unittest
+from unittest.mock import patch
 import requests
 
 from openpilot.common.test import OpenpilotTestCase
@@ -20,6 +21,16 @@ NUM_SEGS = 17  # number of segments in the test route
 ALL_SEGS = list(range(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
+
+
+def route_formats(cases):
+  for identifier, *expected in cases:
+    for log_id in ("2024-01-03--09-37-12", "000000cc--8e8d8ec716"):
+      route = f"344c5c15b34f2d8a/{log_id}"
+      for separator in ("/", "|"):
+        formatted = identifier.replace(TEST_ROUTE, route.replace("/", separator), 1)
+        formatted = formatted.replace(TEST_ROUTE.replace("/", "%7C"), route.replace("/", "%7C"), 1)
+        yield (formatted, *(value.replace(TEST_ROUTE, route) if isinstance(value, str) else value for value in expected))
 
 
 def noop(segment: LogIterable):
@@ -88,9 +99,8 @@ class TestLogReader(OpenpilotTestCase):
       return {}
     return dict.fromkeys(seg_idxs, self.qlog_path)
 
-  @parameterized.expand([
+  @parameterized.expand(route_formats([
     (f"{TEST_ROUTE}", ALL_SEGS),
-    (f"{TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
     (f"{TEST_ROUTE}--0", [0]),
     (f"{TEST_ROUTE}--5", [5]),
     (f"{TEST_ROUTE}/0", [0]),
@@ -109,23 +119,21 @@ class TestLogReader(OpenpilotTestCase):
     (f"{TEST_ROUTE}/:10:2", ALL_SEGS[:10:2]),
     (f"{TEST_ROUTE}/5::2", ALL_SEGS[5::2]),
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE}", ALL_SEGS),
-    (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '%7C')}", ALL_SEGS),
-  ])
-  @unittest.skip("this got flaky. internet tests are stupid.")
+  ]))
   def test_indirect_parsing(self, identifier, expected):
     parsed = parse_indirect(identifier)
     sr = SegmentRange(parsed)
-    assert list(sr.seg_idxs) == expected, identifier
+    with patch("openpilot.tools.lib.route.get_max_seg_number_cached", return_value=NUM_SEGS - 1):
+      assert list(sr.seg_idxs) == expected, identifier
 
-  @parameterized.expand([
+  @parameterized.expand(route_formats([
     (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
-    (f"{TEST_ROUTE.replace('/', '|')}", f"{TEST_ROUTE}"),
     (f"{TEST_ROUTE}--5", f"{TEST_ROUTE}/5"),
     (f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"),
     (f"{TEST_ROUTE}/5:6/r", f"{TEST_ROUTE}/5:6/r"),
     (f"{TEST_ROUTE}/5", f"{TEST_ROUTE}/5"),
-  ])
+  ]))
   def test_canonical_name(self, identifier, expected):
     sr = SegmentRange(identifier)
     assert str(sr) == expected
@@ -153,7 +161,7 @@ class TestLogReader(OpenpilotTestCase):
     # file_exists should not be called for direct files
     assert file_exists_mock.call_count == 0
 
-  @parameterized.expand([
+  @parameterized.expand(route_formats([
     (f"{TEST_ROUTE}///",),
     (f"{TEST_ROUTE}---",),
     (f"{TEST_ROUTE}/-4:--2",),
@@ -164,18 +172,18 @@ class TestLogReader(OpenpilotTestCase):
     (f"{TEST_ROUTE}3",),
     (f"{TEST_ROUTE}-3",),
     (f"{TEST_ROUTE}--3a",),
-  ])
+  ]))
   def test_bad_ranges(self, segment_range):
     with self.assertRaises(AssertionError):
       _ = SegmentRange(segment_range).seg_idxs
 
-  @parameterized.expand([
+  @parameterized.expand(route_formats([
     (f"{TEST_ROUTE}/0", False),
     (f"{TEST_ROUTE}/:2", False),
     (f"{TEST_ROUTE}/0:", True),
     (f"{TEST_ROUTE}/-1", True),
     (f"{TEST_ROUTE}", True),
-  ], names=("segment_range", "api_call"))
+  ]), names=("segment_range", "api_call"))
   def test_slicing_api_call(self, mocker, segment_range, api_call):
     max_seg_mock = mocker.patch("openpilot.tools.lib.route.get_max_seg_number_cached")
     max_seg_mock.return_value = NUM_SEGS
