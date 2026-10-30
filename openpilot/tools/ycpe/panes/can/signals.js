@@ -75,7 +75,7 @@ export function create(ctx, state) {
       const v = h("span", {class: "can-sig-value"}), spark = h("canvas", {class: "can-spark"});
       const swatch = h("span", {class: "can-swatch"}), name = h("span", {class: "can-sig-name"}), ed = sg.name === open && editor(can, k(), m, sg);
       const plot = h("button", {class: "can-icon", title: "Plot", onclick: (e) => { e.stopPropagation(); can.emit("chart", path(sg), {merge: e.shiftKey}); }}, icon("show_chart", 14));
-      const row = h("div", {class: `can-sig ${sg.name === open ? "open" : ""}`, onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
+      const row = h("div", {class: "can-sig", onmouseenter: () => can.emit("hover", sg.name), onmouseleave: () => can.emit("hover", null)},
         h("div", {class: "can-sig-row", role: "button", tabindex: 0, "aria-expanded": String(sg.name === open), onclick: () => toggle(sg.name),
           onkeydown: (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(sg.name, true); } }},
           swatch, name, spark, v,
@@ -174,7 +174,7 @@ function sparkline(canvas, d, color) {
   for (let x = 0; x < w; x++) { if (d.min[x] < min) min = d.min[x]; if (d.max[x] > max) max = d.max[x]; }
   if (min === Infinity) return;
   const y = (v) => max === min ? hgt / 2 : hgt - 2 - (v - min) / (max - min) * (hgt - 4);
-  g.strokeStyle = color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
+  g.strokeStyle = ink(color);
   g.beginPath();
   let started = false;
   for (let x = 0; x < w; x++) {

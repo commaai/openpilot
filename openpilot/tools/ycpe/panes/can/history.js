@@ -3,7 +3,7 @@
 import {h} from "/dom.js";
 import {format, value} from "/data/dbc.js";
 import {fmtTime} from "/panes/plot/draw.js";
-import {canOf, hex2, ink, subs} from "./common.js";
+import {canOf, hex2, ink, setText, subs} from "./common.js";
 
 const PAGE = 500, ROW = 20, AHEAD = 1;  // frames a request brings; px per row; s past the playhead a request reads
 
@@ -85,8 +85,6 @@ export function create(ctx, state) {
     return r;
   }
 
-  const set = (el, text) => { if (el.textContent !== text) el.textContent = text; };
-
   // hex bytes, colored where they went up or down from the frame before (the next row down)
   function hexCells(r, d, prev) {
     const cell = r.cells[1];
@@ -95,7 +93,7 @@ export function create(ctx, state) {
     r.bytes.forEach((b, x) => {
       if (b.hidden !== x >= d.length) b.hidden = x >= d.length;
       if (x >= d.length) return;
-      set(b, hex2(d[x]));
+      setText(b, hex2(d[x]));
       const cls = prev && x < prev.length && d[x] !== prev[x] ? (d[x] > prev[x] ? "can-chg1" : "can-chg2") : "";
       if (b.className !== cls) b.className = cls;
     });
@@ -105,7 +103,7 @@ export function create(ctx, state) {
     name: "can-history", el,
     render() {
       const b = shown(), count = frames.t.length - b;
-      set(empty, can.selected === null ? "Select a message to see its history" : count || busy ? "" : filters().length ? "No frames match the filter" : "No frames before the playhead");
+      setText(empty, can.selected === null ? "Select a message to see its history" : count || busy ? "" : filters().length ? "No frames match the filter" : "No frames before the playhead");
       if (empty.hidden !== !empty.textContent) empty.hidden = !empty.textContent;
       if (shownH !== count * ROW) spacer.style.height = `${shownH = count * ROW}px`;
       const m = can.dbcMsg(can.selected), first = Math.floor(scrollTop / ROW), n = Math.ceil(height / ROW) + 1;
@@ -115,11 +113,11 @@ export function create(ctx, state) {
         if (!on) continue;
         r.i = f;
         if (r.top !== j) r.style.top = `${(r.top = j) * ROW}px`;
-        set(r.cells[0], fmtTime(frames.t[f], 0.001, true));
+        setText(r.cells[0], fmtTime(frames.t[f], 0.001, true));
         if (!cols.length) hexCells(r, frames.data[f], frames.data[f + 1]);
         else cols.forEach((sg, c) => {
           const v = value(m, sg, frames.data[f]);
-          set(r.cells[c + 1], Number.isNaN(v) ? "–" : format(sg, v, false));
+          setText(r.cells[c + 1], Number.isNaN(v) ? "–" : format(sg, v, false));
         });
       }
     },

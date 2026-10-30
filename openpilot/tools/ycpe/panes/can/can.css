@@ -38,7 +38,7 @@
 .can-msg-filters { padding-bottom: 3px; border-bottom: 1px solid var(--line); gap: 2px; }
 .can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
 .can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
-.can-col-name { flex: 1 1 140px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
+.can-col-name { flex: 1 1 140px; min-width: 70px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
 .can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { flex: 0 1 158px; }
 /* narrow panes drop node and count, then freq, then the bytes, but for columns turned on in the menu; the bus stays, as
    one ID is often on several */
@@ -50,7 +50,6 @@
 @container (max-width: 300px) { .can-col-bytes { display: none; } }
 .can-show-bus .can-col-bus, .can-show-node .can-col-node, .can-show-freq .can-col-freq,
 .can-show-count .can-col-count, .can-show-bytes .can-col-bytes { display: block; }
-.can-col-name { min-width: 70px; }
 .can-col-bus, .can-col-freq, .can-col-count { text-align: right; font-variant-numeric: tabular-nums; }
 /* contained: a row's new text lays out the row alone, not the panes around the list */
 .can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; contain: strict; }
@@ -131,8 +130,7 @@
 .can-dialog.can-wide { width: 820px; }
 .can-dialog::backdrop { background: rgba(0, 0, 0, .3); }
 .can-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--line); }
-.can-x { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; border-radius: 3px; }
-.can-x:hover { background: var(--active); color: var(--fg); }
+.can-x { width: 22px; height: 22px; }
 .can-dialog-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; max-height: calc(86vh - 40px); overflow: auto; }
 .can-form { display: flex; flex-direction: column; gap: 5px; }
 .can-form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
