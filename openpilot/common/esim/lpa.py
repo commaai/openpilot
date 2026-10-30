@@ -773,14 +773,17 @@ class LPA(LPABase):
   def cycle_profile(self) -> None:
     # reset the modem, then disable and re-enable the enabled profile with refresh. this restarts SIM applets,
     # forcing a Webbing PMC poll, and clears a stale proactive session (catBusy) that survives AT+CFUN
-    with self._acquire_lock():
-      self._client._reset_modem()
-      time.sleep(20)  # lte.sh returns once the modem enumerates, before the SIM is ready
-    with self._acquire_channel():
-      iccid = self._enabled_iccid()
-      if iccid is None:
-        raise LPAError("no enabled profile")
-      code = self._set_profile_state(TAG_DISABLE_PROFILE, iccid)
+    # the stuck proactive session comes back seconds after the SIM boots, so disable right after the reset
+    for _ in range(3):
+      with self._acquire_lock():
+        self._client._reset_modem()
+      with self._acquire_channel():
+        iccid = self._enabled_iccid()
+        if iccid is None:
+          raise LPAError("no enabled profile")
+        code = self._set_profile_state(TAG_DISABLE_PROFILE, iccid)
+      if code != PROFILE_CAT_BUSY:
+        break
     if code != PROFILE_OK:
       raise LPAError(f"DisableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
 
