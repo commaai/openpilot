@@ -121,15 +121,15 @@ export function loadPill() {
     const active = all.filter((k) => k.segs.some((s) => s.state === "loading" || s.state === "queued"));
     el.classList.toggle("buffering", !!waiting);
     el.classList.toggle("done", !waiting && !active.length);
-    const each = all.map((k) => { const n = counts(k); return {n, text: `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}`}; });
+    const each = all.map((k) => { const n = counts(k); return {k, n, text: `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}`}; });
     const bad = each.some((e) => e.n.error) && !waiting;
     el.style.color = bad ? "var(--critical-fg)" : "";
     el.style.borderColor = bad ? "var(--critical)" : "";
     el.title = `${each.map((e) => e.text).join(" · ")} (click for details)`;
     if (waiting) text.textContent = `buffering ${waiting.label} · ${waiting.buffering.text}`;
     else if (active.length) {
-      const k = active[0], n = counts(k);
-      text.textContent = `${k.label} ${n.ready + n.disk}/${n.total}${n.error ? ` · ${n.error} failed` : ""}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
+      const {k, text: counted} = each.find((e) => e.k === active[0]);
+      text.textContent = `${counted}${k.rate ? ` · ${fmtBytes(k.rate)}/s` : ""}${active.length > 1 ? ` · +${active.length - 1}` : ""}`;
     } else {  // idle: only what isn't all there (a camera loads near the playhead); the tooltip has everything
       const missing = each.filter(({n}) => n.ready + n.disk < n.total).map((e) => e.text).join(" · ");
       if (missing) text.textContent = missing;

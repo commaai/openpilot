@@ -82,9 +82,7 @@ function field(path) {
 // ---- jotpluggler
 
 function fromJotpluggler(j, warnings) {
-  const tabs = (j.tabs || []).map((t) => {
-    return {name: t.name, root: jpNode(t.root, warnings)};
-  });
+  const tabs = (j.tabs || []).map((t) => ({name: t.name, root: jpNode(t.root, warnings)}));
   return {active: j.current_tab_index || 0, tabs};
 }
 

@@ -74,12 +74,17 @@ export class Layout {
   entry(label, model) {
     return {label, layout: this, restore: () => {
       const now = this.entry(label, structuredClone(this.save()));
-      this.model = model;
-      this.maxPath = null;
-      this.render();
-      this.changed();
+      this.show(model);
       return now;
     }};
+  }
+
+  // model in place of the current one, none of its panes maximized
+  show(model) {
+    this.model = model;
+    this.maxPath = null;
+    this.render();
+    this.changed();
   }
 
   // the current layout with each pane's own state folded in; map (if given) collects rendered -> saved nodes
@@ -94,33 +99,21 @@ export class Layout {
   }
 
   selectTab(i) {
-    if (i === this.model.active) return;
-    this.model = this.save();
-    this.maxPath = null;
-    this.model.active = i;
-    this.render();
-    this.changed();
+    if (i !== this.model.active) this.show({...this.save(), active: i});
   }
 
   addTab(name = `tab ${this.model.tabs.length + 1}`, root = {pane: "empty", state: {}}) {
     this.checkpoint("new tab");
-    this.model = this.save();
-    this.model.tabs.push({name, root});
-    this.model.active = this.model.tabs.length - 1;
-    this.maxPath = null;
-    this.render();
-    this.changed();
+    const model = this.save();
+    this.show({...model, tabs: [...model.tabs, {name, root}], active: model.tabs.length});
   }
 
   closeTab(i) {
     if (this.model.tabs.length === 1) return;
     this.checkpoint("close tab");
-    this.model = this.save();
-    this.model.tabs.splice(i, 1);
-    if (i <= this.model.active) this.model.active = Math.max(0, this.model.active - 1);
-    this.maxPath = null;
-    this.render();
-    this.changed();
+    const model = this.save();
+    const active = i <= model.active ? Math.max(0, model.active - 1) : model.active;
+    this.show({...model, tabs: model.tabs.toSpliced(i, 1), active});
   }
 
   renameTab(i, name) {
@@ -173,12 +166,12 @@ export class Layout {
     el._value = () => el.setAttribute("aria-valuenow", Math.round(100 * n.sizes.slice(0, i).reduce((x, y) => x + y)));
     el._value();
     const kids = () => [...box.children].filter((c) => !c.classList.contains("divider"));
-    // the pair's sizes now and the least each can take, over the split's length in px
+    // as a move starts: the pair's sizes and the least each can take, over the split's length in px, and the layout
     const pair = () => {
       const rect = box.getBoundingClientRect(), total = row ? rect.width : rect.height;
       const [a, b] = [n.sizes[i - 1], n.sizes[i]];
       const [minA, minB] = [n.children[i - 1], n.children[i]].map((c, j) => Math.min([a, b][j], Math.max(MIN, minPx(c, n.split) / total)));
-      return {total, a, b, minA, minB, kids: kids()};
+      return {total, a, b, minA, minB, kids: kids(), before: structuredClone(this.save())};
     };
     const move = ({a, b, minA, minB, kids}, d) => {
       const da = Math.max(minA - a, Math.min(b - minB, d));
@@ -188,17 +181,20 @@ export class Layout {
       kids[i].style.flex = `${n.sizes[i]} 1 0`;
       el._value();
     };
+    // a move that changed the sizes goes in the history
+    const done = (at) => {
+      if (n.sizes[i - 1] === at.a) return;
+      this.checkpoint("resize", at.before);
+      this.changed();
+    };
     el.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       const at = pair(), start = row ? e.clientX : e.clientY;
-      const before = structuredClone(this.save());
       el.onpointermove = (ev) => move(at, ((row ? ev.clientX : ev.clientY) - start) / at.total);
       el.onpointerup = el.onpointercancel = () => {
         el.onpointermove = el.onpointerup = el.onpointercancel = null;
-        if (n.sizes[i - 1] === at.a) return;
-        this.checkpoint("resize", before);
-        this.changed();
+        done(at);
       };
     });
     const even = () => {
@@ -214,11 +210,9 @@ export class Layout {
       if (e.key === "Enter") { e.preventDefault(); return even(); }
       if (![back, forward, "Home", "End"].includes(e.key)) return;
       e.preventDefault();  // not the playhead's arrows
-      const at = pair(), step = (e.shiftKey ? 50 : 10) / at.total, before = structuredClone(this.save());
+      const at = pair(), step = (e.shiftKey ? 50 : 10) / at.total;
       move(at, {[back]: -step, [forward]: step, Home: -Infinity, End: Infinity}[e.key]);
-      if (n.sizes[i - 1] === at.a) return;
-      this.checkpoint("resize", before);
-      this.changed();
+      done(at);
     });
     return el;
   }

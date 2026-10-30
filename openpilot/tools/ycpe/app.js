@@ -374,7 +374,7 @@ function tabMenu(tabEl, i, name) {
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
     item("Open layout…", () => setTimeout(() => layoutMenu(bar.tablist.children[i]))),
-    item(`Reset ${ws.views[ws.view].title} layout`, () => ws.resetLayout())));
+    item(`Reset ${ws.views[ws.view].title} layout`, () => ws.applyLayout(null))));
 }
 
 // double-click a tab to rename it in place
@@ -439,7 +439,7 @@ class Workspace {
     this.offs.push(this.clock.on("t", () => ws === this && showSegment()));
     // another browser tab saved a layout: this one's copy only replaces it once it changes
     const stored = (e) => {
-      const view = Object.keys(this.layouts).find((v) => e.key === `ycpe_layout_${this.layoutKey(v)}`);
+      const view = Object.keys(this.layouts).find((v) => e.key === this.storageKey(v));
       if (view) this.written[view] = JSON.stringify(this.layouts[view].save());
     };
     addEventListener("storage", stored);
@@ -466,27 +466,28 @@ class Workspace {
       get user() { return self.user; },
       // for links: this route at the playhead in a view (url), and a view's layout as it is now
       url: (view) => this.url(view),
-      layoutOf: (view) => this.layouts[view]?.save() ?? savedLayout(this.layoutKey(view), this.views[view]),
+      layoutOf: (view) => this.layoutOf(view),
     };
   }
 
   // logs load only once something needs them (the drive view doesn't); null until the file list is in. A live
   // session's store is there from the start, and moves the clock's head and window
   ensureStore() {
-    if (!this.store && this.session) {
+    if (this.store) return this.store;
+    if (this.session) {
       this.store = this.session.store;
       this.offs.push(this.store.on("live", (t) => this.clock.setEdge(t)), this.store.on("window", (s) => this.clock.setStart(s)));
-      for (const fn of this.storeSubs) fn(this.store);
-      this.storeSubs.clear();
+    } else if (this.files) {
+      this.store = new Store(this.route.fullname, this.files, {t: this.clock.t});
+      this.offs.push(watchRouteStart(this.route, this.store));
+      // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
+      this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
+      this.store.on("progress", () => {
+        if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
+      });
+    } else {
+      return null;
     }
-    if (this.store || !this.files) return this.store;
-    this.store = new Store(this.route.fullname, this.files, {t: this.clock.t});
-    this.offs.push(watchRouteStart(this.route, this.store));
-    // the store reprioritizes and reports buffering as the playhead moves; it publishes its own load status
-    this.offs.push(this.clock.on("t", () => this.store.focus(this.clock.t)));
-    this.store.on("progress", () => {
-      if (this.store.route.duration) this.clock.setDuration(this.store.route.duration);
-    });
     for (const fn of this.storeSubs) fn(this.store);
     this.storeSubs.clear();  // they've had it; holding them would hold every pane tree rendered since
     return this.store;
@@ -494,8 +495,11 @@ class Workspace {
 
   get layout() { return this.layouts[this.view]; }
 
-  // the view's layout is saved under this name
-  layoutKey(view) { return this.views[view].key || view; }
+  // where the view's layout is saved
+  storageKey(view) { return `ycpe_layout_${this.views[view].key || view}`; }
+
+  // the view's layout as it is now, else as saved
+  layoutOf(view) { return this.layouts[view]?.save() ?? savedLayout(this.storageKey(view), this.views[view]); }
 
   setView(view) {
     if (!this.views[view] || this.views[view].user && !this.user) view = this.session ? "plot" : "drive";
@@ -504,7 +508,7 @@ class Workspace {
     if (!this.user && view !== "connect") this.devView = view;
     this.el.dataset.view = view;
     if (!this.layouts[view]) {
-      const model = savedLayout(this.layoutKey(view), this.views[view]);
+      const model = savedLayout(this.storageKey(view), this.views[view]);
       if (usesData(model) && !this.files) {
         this.filesReady.then(() => { if (!this.disposed && this.view === view) this.setView(view); },
           (e) => { if (!this.disposed) this.main.replaceChildren(errorPage(e)); });
@@ -513,7 +517,7 @@ class Workspace {
       }
       if (usesData(model)) this.ensureStore();
       this.layouts[view] = new Layout(this.ctx(), model, (m) => {
-        localStorage.setItem(`ycpe_layout_${this.layoutKey(view)}`, this.written[view] = JSON.stringify(m));
+        localStorage.setItem(this.storageKey(view), this.written[view] = JSON.stringify(m));
         if (usesData(m)) this.ensureStore();
       });
     }
@@ -525,8 +529,8 @@ class Workspace {
 
   // install a whole new model for the view (null: back to the default)
   applyLayout(model) {
-    if (model) localStorage.setItem(`ycpe_layout_${this.layoutKey(this.view)}`, JSON.stringify(checkLayout(model)));
-    else localStorage.removeItem(`ycpe_layout_${this.layoutKey(this.view)}`);
+    if (model) localStorage.setItem(this.storageKey(this.view), JSON.stringify(checkLayout(model)));
+    else localStorage.removeItem(this.storageKey(this.view));
     this.layout?.dispose();
     const old = this.layout;
     undoHistory(this.clock).prune((entry) => entry.layout !== old);  // its edits would undo into a layout that's gone
@@ -534,14 +538,12 @@ class Workspace {
     this.setView(this.view);
   }
 
-  resetLayout() { this.applyLayout(null); }
-
   // panes change their own state (curves, filters) without an edit to the layout; saved whenever they could go away,
   // if they changed
   persist() {
     for (const [view, layout] of Object.entries(this.layouts)) {
       const json = JSON.stringify(layout.save());
-      if (json !== this.written[view]) localStorage.setItem(`ycpe_layout_${this.layoutKey(view)}`, this.written[view] = json);
+      if (json !== this.written[view]) localStorage.setItem(this.storageKey(view), this.written[view] = json);
     }
   }
 
@@ -549,7 +551,7 @@ class Workspace {
   async openLayout(src) {
     try {
       const {layout, warnings} = await loadLayout(src);
-      this.applyLayout(mergeLayout(this.layout?.save() ?? savedLayout(this.layoutKey(this.view), this.views[this.view]), layout, "tab"));
+      this.applyLayout(mergeLayout(this.layoutOf(this.view), layout, "tab"));
       if (warnings.length) toast(`Layout opened with ${warnings.length} warning${warnings.length > 1 ? "s" : ""}: ${warnings[0]}${warnings.length > 1 ? " …" : ""}`);
     } catch (e) {
       toast(`Couldn't open the layout: ${e.message}`);
@@ -608,9 +610,8 @@ class Workspace {
   }
 }
 
-// the view's layout saved under name, else the view's default; one that doesn't read as a layout anymore is dropped
-function savedLayout(name, view) {
-  const key = `ycpe_layout_${name}`;
+// the view's layout saved under key, else the view's default; one that doesn't read as a layout anymore is dropped
+function savedLayout(key, view) {
   try {
     const saved = JSON.parse(localStorage.getItem(key) || "null");
     // custom series named alike were saved with different code before names had to be unique: they're renamed
@@ -713,10 +714,12 @@ function help() {
 
 // ---- routing ----
 
+// the open route closed, and the bar shown without it
 function closeWorkspace() {
   ws?.dispose();
   ws = null;
   document.body.classList.remove("in-ws");
+  updateTop();
 }
 
 // as connect: an opened route is named to its device, whose uploader sends the last 10 viewed first. Only for those
@@ -778,7 +781,6 @@ async function renderPage() {
   if (parts[0] === "auth" || parts[0] === "login") {
     closeWorkspace();
     await modeBar(mode() === "user");
-    updateTop();
     return id === navId && main.replaceChildren((parts[0] === "auth" ? authPage : loginPage)(q));
   }
   // connect's ?r=<path>: go there, through sign-in when signed out
@@ -812,7 +814,6 @@ async function renderPage() {
   if (!user && (parts[0] === "live" || (parts[1] === "live" && DONGLE_RE.test(parts[0])))) return openLiveSession(parts, q, main, id);
   if (parts.length === 1 && (parts[0] === "account" || parts[0] === "referrals")) {
     closeWorkspace();
-    updateTop();
     const page = await (parts[0] === "account" ? import("/pages/account.js").then((m) => m.accountPage(state.me))
       : import("/pages/referrals.js").then((m) => m.referralsPage(state.me)));
     if (id !== navId) return;
@@ -823,7 +824,6 @@ async function renderPage() {
   // comma prime at connect's /<dongle>/prime (pages/prime.js), in either mode: where billing sends Stripe back to
   if (dongle && parts[1] === "prime" && parts.length === 2) {
     closeWorkspace();
-    if (!user) updateTop();
     const page = await Promise.all([import("/pages/prime.js"), state.devices?.find((d) => d.dongle_id === dongle) ?? api.device(dongle)])
       .then(([m, device]) => m.primePage(device)).catch((e) => errorPage(e, {device: dongle}));
     if (id === navId) root.replaceChildren(page);
@@ -882,7 +882,6 @@ async function renderPage() {
     if (path && path !== location.pathname + location.search) return go(path, true);
   }
   closeWorkspace();
-  updateTop();
   if (dongle) {
     // connect shows the referral card, else the prime sign-up one: above the page, in with it
     const device = state.devices?.find((d) => d.dongle_id === dongle);
@@ -919,7 +918,6 @@ async function openLiveSession(parts, q, main, id) {
   const path = dongle ? `/${dongle}/live` : `/live/${kind}`, view = parts[2];
   if (!kind) {
     closeWorkspace();
-    updateTop();
     return main.replaceChildren(livePage(state.devices));
   }
   if (ws?.session?.path === path) {
@@ -931,7 +929,6 @@ async function openLiveSession(parts, q, main, id) {
     replay: ["replay", {route: q.get("route") || "", rate: +q.get("rate") || 1}],
   }[kind] || [];
   closeWorkspace();
-  updateTop();
   if (!module) return main.replaceChildren(errorPage({status: 404}));
   let session;
   try {

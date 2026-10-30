@@ -26,14 +26,12 @@ const retries = {};
 
 export async function loadPane(type) {
   if (type === "empty" || !PANES[type]) return emptyPane;
-  let mod;
   try {
-    mod = await import(PANES[type].src + (retries[type] || ""));
+    return (await import(PANES[type].src + (retries[type] || ""))).create;
   } catch (e) {
     console.error(e);
     return (ctx, state) => failedPane(ctx, type, state, e);
   }
-  return mod.create;
 }
 
 // an empty slot offers every pane type
