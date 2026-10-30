@@ -32,6 +32,10 @@ EXPORT int hevc_push(const uint8_t *data, int len, double pts) {
   return err;
 }
 
+EXPORT int hevc_flush(void) {
+  return avcodec_send_packet(ctx, NULL);
+}
+
 EXPORT void hevc_release(void) {
   av_frame_unref(frame);
 }
@@ -42,7 +46,8 @@ EXPORT void hevc_reset(void) {
 }
 
 EXPORT int hevc_frame(void) {
-  if (!frame->data[0]) avcodec_receive_frame(ctx, frame);
+  // once drained after a flush, the decoder takes a new stream
+  if (!frame->data[0] && avcodec_receive_frame(ctx, frame) == AVERROR_EOF) avcodec_flush_buffers(ctx);
   return frame->data[0] != NULL;
 }
 
