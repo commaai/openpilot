@@ -111,7 +111,7 @@ function fmtNumber(v, type) {
 // one decimated series ({t, min, max}) in a style; X and Y map time and value to css px, and the line
 // breaks between consecutive points ta, tb where gap(ta, tb)
 export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
-  const {t, min, max} = d, n = t.length;
+  const {t, min, max} = d, n = t.length, r = width + 0.75;  // r: a dot's half size
   if (style !== "dots" && style !== "sticks") {
     const steps = style === "steps";
     g.lineWidth = width;
@@ -141,14 +141,12 @@ export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
     g.stroke();
     // a sample with no neighbour to draw to (a message sent once, or only between gaps) is a dot
     if (lones.length && style !== "line+dots") {
-      const r = width + 0.75;
       g.beginPath();
       for (const i of lones) g.rect(X(t[i]) - r, Y(min[i]) - r, 2 * r, 2 * r);
       g.fill();
     }
   }
   if (style === "dots" || style === "line+dots") {
-    const r = width + 0.75;
     g.beginPath();
     for (let i = 0; i < n; i++) {
       if (min[i] !== min[i]) continue;
@@ -169,6 +167,24 @@ export function strokeSeries(g, d, X, Y, style, width, gap = () => false) {
     }
     g.stroke();
   }
+}
+
+// a point marked on a curve: a dot of radius r, ringed with the background so it stands out from the line
+export function marker(g, x, y, r, color, col) {
+  for (const [fill, radius] of [[col.bg, r + 1.5], [color, r]]) {
+    g.fillStyle = fill;
+    g.beginPath();
+    g.arc(x, y, radius, 0, 2 * Math.PI);
+    g.fill();
+  }
+}
+
+// saves g's state and clips it to the rect r = {x, y, w, h}, until g.restore()
+export function clip(g, r) {
+  g.save();
+  g.beginPath();
+  g.rect(r.x, r.y, r.w, r.h);
+  g.clip();
 }
 
 // time with no data loaded: a faint band with diagonal hatching, inside the box r
