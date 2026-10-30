@@ -55,9 +55,8 @@ assert arch in [
   "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
+pkg_names = ['capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
-acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 # Shared package ships .so/.dylib; older device venvs still have static .a only.
 # Keep static link deps (x264/z/va/drm) when the installed package is static so
@@ -73,11 +72,6 @@ if not ffmpeg_shared:
   ffmpeg_libs += ['x264', 'z']
   if arch != "Darwin":
     ffmpeg_libs += ['va', 'va-drm', 'drm']
-acados_include_dirs = [
-  acados.INCLUDE_DIR,
-  os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
-  os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
-]
 
 
 # ***** enforce a whitelist of system libraries *****
@@ -121,9 +115,6 @@ env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
     "PYTHONPATH": os.pathsep.join(submodule_python_paths),
-    "ACADOS_SOURCE_DIR": acados.DIR,
-    "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
-    "TERA_PATH": acados.TERA_PATH
   },
   CCFLAGS=[
     "-g",
@@ -148,7 +139,6 @@ env = Environment(
     "#rednose_repo",         # #include "rednose/..."
     "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
     "#openpilot/cereal/gen/cpp",
-    acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
     "#",
   ],
@@ -227,10 +217,9 @@ if arch == "Darwin":
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
-np_version = SCons.Script.Value(np.__version__)
-Export('envCython', 'np_version')
+Export('envCython')
 
-Export('env', 'arch', 'acados', 'ffmpeg_libs')
+Export('env', 'arch', 'ffmpeg_libs')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "comma_arm64" else '/tmp/scons_cache'
@@ -282,7 +271,6 @@ if arch == "comma_arm64":
 # Build selfdrive
 SConscript([
   'openpilot/selfdrive/pandad/SConscript',
-  'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
   'openpilot/selfdrive/locationd/SConscript',
   'openpilot/selfdrive/modeld/SConscript',
   'openpilot/selfdrive/ui/SConscript',

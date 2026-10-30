@@ -1,48 +1,22 @@
-#!/usr/bin/env python3
-import os
 import time
 import numpy as np
 from openpilot.cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
-# WARNING: imports outside of constants will not trigger a rebuild
 from openpilot.selfdrive.modeld.constants import index_function
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
-
-if __name__ == '__main__':  # generating code
-  from acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
-else:
-  from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
-
-from casadi import SX, vertcat
-
-MODEL_NAME = 'long'
-LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
-EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
-JSON_FILE = os.path.join(LONG_MPC_DIR, "acados_ocp_long.json")
 
 LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 MPC_SOURCES = (LongitudinalPlanSource.lead0, LongitudinalPlanSource.lead1)
 
-X_DIM = 3
-U_DIM = 1
-PARAM_DIM = 6
-COST_E_DIM = 5
-COST_DIM = COST_E_DIM + 1
-CONSTR_DIM = 4
-
 X_EGO_OBSTACLE_COST = 3.
-X_EGO_COST = 0.
-V_EGO_COST = 0.
-A_EGO_COST = 0.
 J_EGO_COST = 5.
 A_CHANGE_COST = 200.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
 LIMIT_COST = 1e6
-ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
 # Fewer timestamps don't hurt performance and lead to
 # much better convergence of the MPC with low iterations
@@ -54,6 +28,18 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
+
+# QP solver: acados SQP-RTI step solved with HPIPM (BALANCE mode + acados overrides)
+QP_ITER_MAX = 10
+QP_TOL = 1e-3
+QP_MU0 = 1.
+QP_ALPHA_MIN = 1e-8
+QP_REG_PRIM = 1e-15  # HPIPM regularization, matters for the zero-cost upper slacks
+QP_TAU_MIN = 1e-16
+QP_LAM_MIN = 1e-16
+QP_INIT_THR = 0.1
+QP_FAILURE = 4
+
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -82,197 +68,151 @@ def get_stopped_equivalence_factor(v_lead):
 def get_safe_obstacle_distance(v_ego, t_follow):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
 
-def gen_long_model():
-  model = AcadosModel()
-  model.name = MODEL_NAME
 
-  # states
-  x_ego, v_ego, a_ego = SX.sym('x_ego'), SX.sym('v_ego'), SX.sym('a_ego')
-  model.x = vertcat(x_ego, v_ego, a_ego)
+# triple integrator, exact discretization: x_k = TU[k] @ u + TX[k] @ x_0
+DT = np.diff(T_IDXS)
+TU = np.zeros((N+1, 3, N))
+TX = np.zeros((N+1, 3, 3))
+TX[0] = np.eye(3)
+for k in range(N):
+  A = np.array([[1., DT[k], DT[k]**2 / 2], [0., 1., DT[k]], [0., 0., 1.]])
+  TU[k+1] = A @ TU[k]
+  TU[k+1, :, k] = [DT[k]**3 / 6, DT[k]**2 / 2, DT[k]]
+  TX[k+1] = A @ TX[k]
 
-  # controls
-  j_ego = SX.sym('j_ego')
-  model.u = vertcat(j_ego)
+# acados scales stage costs, slack penalties included, by the shooting interval
+W_OBSTACLE = X_EGO_OBSTACLE_COST * np.append(DT, 1.)
+Z = np.zeros((2, 4*N))
+Z[0] = (DT[:, None] * [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]).ravel()
 
-  # xdot
-  x_ego_dot = SX.sym('x_ego_dot')
-  v_ego_dot = SX.sym('v_ego_dot')
-  a_ego_dot = SX.sym('a_ego_dot')
-  model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot)
-
-  # runtime parameters
-  a_min = SX.sym('a_min')
-  a_max = SX.sym('a_max')
-  x_obstacle = SX.sym('x_obstacle')
-  a_prev = SX.sym('a_prev')
-  lead_t_follow = SX.sym('lead_t_follow')
-  lead_danger_factor = SX.sym('lead_danger_factor')
-  model.p = vertcat(a_min, a_max, x_obstacle, a_prev, lead_t_follow, lead_danger_factor)
-
-  # dynamics model
-  f_expl = vertcat(v_ego, a_ego, j_ego)
-  model.f_impl_expr = model.xdot - f_expl
-  model.f_expl_expr = f_expl
-  return model
-
-def gen_long_ocp():
-  ocp = AcadosOcp()
-  ocp.model = gen_long_model()
-
-  Tf = T_IDXS[-1]
-
-  # set dimensions
-  ocp.dims.N = N
-
-  # set cost module
-  ocp.cost.cost_type = 'NONLINEAR_LS'
-  ocp.cost.cost_type_e = 'NONLINEAR_LS'
-
-  QR = np.zeros((COST_DIM, COST_DIM))
-  Q = np.zeros((COST_E_DIM, COST_E_DIM))
-
-  ocp.cost.W = QR
-  ocp.cost.W_e = Q
-
-  x_ego, v_ego, a_ego = ocp.model.x[0], ocp.model.x[1], ocp.model.x[2]
-  j_ego = ocp.model.u[0]
-
-  a_min, a_max = ocp.model.p[0], ocp.model.p[1]
-  x_obstacle = ocp.model.p[2]
-  a_prev = ocp.model.p[3]
-  lead_t_follow = ocp.model.p[4]
-  lead_danger_factor = ocp.model.p[5]
-
-  ocp.cost.yref = np.zeros((COST_DIM, ))
-  ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
-
-  desired_dist_comfort = get_safe_obstacle_distance(v_ego, lead_t_follow)
-
-  # The main cost in normal operation is how close you are to the "desired" distance
-  # from an obstacle at every timestep. This obstacle can be a lead car
-  # or other object. In e2e mode we can use x_position targets as a cost
-  # instead.
-  costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
-           x_ego,
-           v_ego,
-           a_ego,
-           a_ego - a_prev,
-           j_ego]
-  ocp.model.cost_y_expr = vertcat(*costs)
-  ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
-
-  # Constraints on speed, acceleration and desired distance to
-  # the obstacle, which is treated as a slack constraint so it
-  # behaves like an asymmetrical cost.
-  constraints = vertcat(v_ego,
-                        (a_ego - a_min),
-                        (a_max - a_ego),
-                        ((x_obstacle - x_ego) - lead_danger_factor * (desired_dist_comfort)) / (v_ego + 10.))
-  ocp.model.con_h_expr = constraints
-
-  x0 = np.zeros(X_DIM)
-  ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, get_T_FOLLOW(), LEAD_DANGER_FACTOR])
+# soft constraints 0 <= h(x) <= H_MAX on [v, a - a_min, a_max - a, danger distance], each with
+# slacks [sl, su]. su has zero cost, so HPIPM's centering inflates it every solve.
+# Inequalities, one row per type: t = SGN * (C @ u) + SEL @ [sl, su] - d >= 0
+H_MAX = 1e4
+SGN = np.array([[1.], [-1.], [0.], [0.]])
+SEL = np.array([[1., 0.], [0., 1.], [1., 0.], [0., 1.]])
+C_CONST = np.stack([TU[:N, 1], TU[:N, 2], -TU[:N, 2], np.zeros((N, N))], axis=1)
 
 
-  # We put all constraint cost weights to 0 and only set them at runtime
-  cost_weights = np.zeros(CONSTR_DIM)
-  ocp.cost.zl = cost_weights
-  ocp.cost.Zl = cost_weights
-  ocp.cost.Zu = cost_weights
-  ocp.cost.zu = cost_weights
+def solve_qp(H, g, Q, q, B, b, C, z, d):
+  """
+  Replica of HPIPM's IPM as run by acados on the condensed QP (delta formulation, cold start,
+  conditional Mehrotra predictor-corrector):
+    min 1/2 u'Hu + g'u + 1/2 x'Qx + q'x + 1/2 s'Zs + z's  s.t.  x = Bu + b,  t(u, s) >= 0
+  """
+  nc = d.size
+  Hr = H + QP_REG_PRIM * np.eye(N)
+  Qr = Q + QP_REG_PRIM * np.eye(3)
+  Zr = Z + QP_REG_PRIM
+  BtQB = B.T @ Qr @ B
 
-  ocp.constraints.lh = np.zeros(CONSTR_DIM)
-  ocp.constraints.uh = 1e4*np.ones(CONSTR_DIM)
-  ocp.constraints.idxsh = np.arange(CONSTR_DIM)
+  u, x, pi = np.zeros(N), np.zeros(3), np.zeros(3)
+  lam_t = np.empty((2,) + d.shape)
+  lam, t = lam_t
+  t[2:] = np.maximum(-d[2:], QP_INIT_THR)
+  s = d[2:] + t[2:]
+  t[:2] = np.maximum(s - d[:2], QP_INIT_THR)
+  lam[:] = QP_MU0 / t
+  dlam_t = np.empty_like(lam_t)
+  dlam, dt = dlam_t
 
-  # The HPIPM solver can give decent solutions even when it is stopped early
-  # Which is critical for our purpose where compute time is strictly bounded
-  # We use HPIPM in the SPEED_ABS mode, which ensures fastest runtime. This
-  # does not cause issues since the problem is well bounded.
-  ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
-  ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
-  ocp.solver_options.integrator_type = 'ERK'
-  ocp.solver_options.nlp_solver_type = ACADOS_SOLVER_TYPE
-  ocp.solver_options.qp_solver_cond_N = 1
+  def step(rm):
+    gam = t_inv * (rm - lam_rd)
+    rs = rg_s + gam[:2] + gam[2:]
+    du = H_inv @ (rhs - C.T @ (gam[0] - gam[1] - (F * rs).sum(axis=0)))
+    Cdu = C @ du
+    ds = -(rs + Gs * Cdu) * D_inv
+    np.subtract(SGN * Cdu + SEL @ ds, rd, out=dt)
+    np.multiply(-t_inv, rm + lam * dt, out=dlam)
+    return -1. / min((dlam_t / lam_t).min(), -1.), du, ds
 
-  # More iterations take too much time and less lead to inaccurate convergence in
-  # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
-  ocp.solver_options.qp_solver_iter_max = 10
-  ocp.solver_options.qp_tol = 1e-3
+  def mu_step(alpha):
+    lt = lam_t + alpha * dlam_t
+    return lt[0].ravel() @ lt[1].ravel() / nc
 
-  # set prediction horizon
-  ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = T_IDXS
+  alpha = 1.
+  for it in range(QP_ITER_MAX + 1):
+    rg_u = H @ u + g - C.T @ (lam[0] - lam[1]) + B.T @ pi
+    rg_s = Z * s + z - lam[:2] - lam[2:]
+    rg_x = Q @ x + q - pi
+    rb = B @ u + b - x
+    rd = d + t - SGN * (C @ u) - SEL @ s
+    rm = lam * t
+    if not (max(np.abs(rg_u).max(), np.abs(rg_s).max(), np.abs(rg_x).max()) > QP_TOL or np.abs(rb).max() > QP_TOL or
+            np.abs(rd).max() > QP_TOL or abs(rm.max() - QP_TAU_MIN) > QP_TOL):
+      break
+    if it == QP_ITER_MAX or alpha <= QP_ALPHA_MIN:
+      break
 
-  ocp.code_export_directory = EXPORT_DIR
-  return ocp
+    # KKT system with slacks and terminal state eliminated
+    mu = rm.sum() / nc
+    t_inv = 1. / t
+    Gam = lam * t_inv
+    lam_rd = lam * rd
+    D_inv = 1. / (Zr + Gam[:2] + Gam[2:])
+    Gs = SGN[:2] * Gam[:2]
+    F = Gs * D_inv
+    w = (Gam[:2] * (Zr + Gam[2:]) * D_inv).sum(axis=0)
+    H_inv = np.linalg.inv(Hr + (C.T * w) @ C + BtQB)
+    rhs = -(rg_u + B.T @ (Qr @ rb + rg_x))
+
+    alpha, _, _ = step(rm - QP_TAU_MIN)
+    mu_aff = mu_step(alpha)
+    sigma_mu = max((mu_aff / mu)**3 * mu, QP_TAU_MIN)
+    alpha, du, ds = step(rm + dt * dlam - sigma_mu)
+    if mu_step(alpha) > 2. * mu_aff:
+      alpha, du, ds = step(rm - sigma_mu)
+
+    a = alpha * ((1. - alpha) * 0.99 + alpha * 0.9999999) if alpha < 1. else alpha
+    dx = B @ du + rb
+    u = u + a * du
+    s = s + a * ds
+    x = x + a * dx
+    pi = pi + a * (Qr @ dx + rg_x)
+    lam_t += a * dlam_t
+    np.maximum(lam_t, QP_LAM_MIN, out=lam_t)
+
+  failed = np.isnan(rm).any() or (it < QP_ITER_MAX and alpha <= QP_ALPHA_MIN)
+  return u, x, s, it, failed
 
 
 class LongitudinalMpc:
   def __init__(self, dt=DT_MDL):
     self.dt = dt
-    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.source = LongitudinalPlanSource.cruise
 
   def reset(self):
-    self.solver.reset()
+    # SQP iterate
+    self.x_sol = np.zeros((N+1, 3))
+    self.u_sol = np.zeros(N)
+    self.slacks = np.zeros((2, 4*N))
 
-    self.x_sol = np.zeros((N+1, X_DIM))
-    self.u_sol = np.zeros((N, 1))
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.j_solution = np.zeros(N)
     self.a_prev = np.array(self.a_solution)
-    self.yref = np.zeros((N+1, COST_DIM))
-
-    for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i])
-    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
-
-    self.params = np.zeros((N+1, PARAM_DIM))
-    for i in range(N+1):
-      self.solver.set(i, 'x', np.zeros(X_DIM))
-
+    self.x0 = np.zeros(3)
     self.last_cloudlog_t = 0
     self.crash_cnt = 0.0
     self.solution_status = 0
-    # timers
+    self.qp_iter = 0
     self.solve_time = 0.0
-    self.x0 = np.zeros(X_DIM)
     self.set_weights()
-
-  def set_cost_weights(self, cost_weights, constraint_cost_weights):
-    W = np.asfortranarray(np.diag(cost_weights))
-    for i in range(N):
-      # TODO don't hardcode A_CHANGE_COST idx
-      # reduce the cost on (a-a_prev) later in the horizon.
-      W[4,4] = cost_weights[4] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
-      self.solver.cost_set(i, 'W', W)
-    # Setting the slice without the copy make the array not contiguous,
-    # causing issues with the C interface.
-    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
-
-    # Set L2 slack cost on lower bound constraints
-    Zl = np.array(constraint_cost_weights)
-    for i in range(N):
-      self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(personality)
     a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
-    cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * a_change_cost, jerk_factor * J_EGO_COST]
-    constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
-    self.set_cost_weights(cost_weights, constraint_cost_weights)
+    self.w_a_change = jerk_factor * a_change_cost * np.interp(T_IDXS[:N], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0]) * DT
+    self.w_jerk = jerk_factor * J_EGO_COST * DT
+    self.H_const = (TU[:N, 2].T * self.w_a_change) @ TU[:N, 2] + np.diag(self.w_jerk)
 
   def set_cur_state(self, v, a):
     v_prev = self.x0[1]
     self.x0[1] = v
     self.x0[2] = a
     if abs(v_prev - v) > 2.:  # probably only helps if v < v_prev
-      for i in range(N+1):
-        self.solver.set(i, 'x', self.x0)
+      self.x_sol = np.tile(self.x0, (N+1, 1))
 
   @staticmethod
   def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
@@ -316,53 +256,65 @@ class LongitudinalMpc:
     lead_1_obstacle = x_lead_1 + get_stopped_equivalence_factor(v_lead_1)
     self.source = MPC_SOURCES[int(lead_1_obstacle[0] < lead_0_obstacle[0])]
 
-    self.yref[:,:] = 0.0
-    for i in range(N):
-      self.solver.set(i, "yref", self.yref[i])
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    t0 = time.perf_counter()
+    qp, c = self.build_qp(np.minimum(lead_0_obstacle, lead_1_obstacle), t_follow)
+    du, dx_N, ds, self.qp_iter, failed = solve_qp(*qp)
+    self.solution_status = QP_FAILURE if failed else 0
+    if not failed:
+      dx = TU @ du + c
+      dx[N] = dx_N
+      self.x_sol = self.x_sol + dx
+      self.u_sol = self.u_sol + du
+      self.slacks = self.slacks + ds
+    self.solve_time = time.perf_counter() - t0
 
-    self.params[:,0] = ACCEL_MIN
-    self.params[:,1] = ACCEL_MAX
-    self.params[:,2] = np.minimum(lead_0_obstacle, lead_1_obstacle)
-    self.params[:,3] = np.copy(self.a_prev)
-    self.params[:,4] = t_follow
-    self.params[:,5] = LEAD_DANGER_FACTOR
+    self.v_solution = self.x_sol[:, 1]
+    self.a_solution = self.x_sol[:, 2]
+    self.j_solution = self.u_sol
+    self.a_prev = np.interp(T_IDXS + self.dt, T_IDXS, self.a_solution)
 
-    self.run()
+    if failed:
+      t = time.monotonic()
+      if t > self.last_cloudlog_t + 5.0:
+        self.last_cloudlog_t = t
+        cloudlog.warning(f"Long mpc reset, solution_status: {self.solution_status}")
+      self.reset()
+
     if (np.any(x_lead_0[FCW_IDXS] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
             radarstate.leadOne.modelProb > 0.9):
       self.crash_cnt += 1
     else:
       self.crash_cnt = 0
 
-  def run(self):
-    for i in range(N+1):
-      self.solver.set(i, 'p', self.params[i])
-    self.solver.constraints_set(0, "lbx", self.x0)
-    self.solver.constraints_set(0, "ubx", self.x0)
+  def build_qp(self, x_obstacle, t_follow):
+    # Gauss-Newton QP for the step from the current iterate (SQP-RTI, no shift), x_1..x_{N-1} condensed out
+    x, v, a = self.x_sol.T
+    den = v + 10.
+    dd_dv = v / COMFORT_BRAKE + t_follow
+    dist = get_safe_obstacle_distance(v, t_follow)
+    y = (x_obstacle - x - dist) / den
+    h = (x_obstacle - x - LEAD_DANGER_FACTOR * dist) / den
+    dy_dx = -1. / den
+    dy_dv = -(dd_dv + y) / den
+    dh_dv = -(LEAD_DANGER_FACTOR * dd_dv + h) / den
 
-    self.solution_status = self.solver.solve()
-    self.solve_time = float(self.solver.get_stats('time_tot')[0])
+    # states from rolling out the current inputs from x0, offset c from the iterate
+    x_roll = TU @ self.u_sol + TX @ self.x0
+    c = x_roll - self.x_sol
+    y_roll = y + dy_dx * c[:, 0] + dy_dv * c[:, 1]
+    h_roll = h + dy_dx * c[:, 0] + dh_dv * c[:, 1]
 
-    for i in range(N+1):
-      self.x_sol[i] = self.solver.get(i, 'x')
-    for i in range(N):
-      self.u_sol[i] = self.solver.get(i, 'u')
+    J = dy_dx[:N, None] * TU[:N, 0] + dy_dv[:N, None] * TU[:N, 1]
+    H = self.H_const + (J.T * W_OBSTACLE[:N]) @ J
+    g = J.T @ (W_OBSTACLE[:N] * y_roll[:N]) + TU[:N, 2].T @ (self.w_a_change * (x_roll[:N, 2] - self.a_prev[:N])) + self.w_jerk * self.u_sol
 
-    self.v_solution = self.x_sol[:,1]
-    self.a_solution = self.x_sol[:,2]
-    self.j_solution = self.u_sol[:,0]
+    # the terminal state stays a QP variable, its cost only has the obstacle term
+    J_N = np.array([dy_dx[N], dy_dv[N], 0.])
+    Q = W_OBSTACLE[N] * np.outer(J_N, J_N)
+    q = W_OBSTACLE[N] * y[N] * J_N
 
-    self.a_prev = np.interp(T_IDXS + self.dt, T_IDXS, self.a_solution)
-
-    t = time.monotonic()
-    if self.solution_status != 0:
-      if t > self.last_cloudlog_t + 5.0:
-        self.last_cloudlog_t = t
-        cloudlog.warning(f"Long mpc reset, solution_status: {self.solution_status}")
-      self.reset()
-
-
-if __name__ == "__main__":
-  ocp = gen_long_ocp()
-  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE)
+    C = C_CONST.copy()
+    C[:, 3] = dy_dx[:N, None] * TU[:N, 0] + dh_dv[:N, None] * TU[:N, 1]
+    h_lin = np.stack([x_roll[:N, 1], x_roll[:N, 2] - ACCEL_MIN, ACCEL_MAX - x_roll[:N, 2], h_roll[:N]], axis=1).ravel()
+    d = np.concatenate([np.stack([-h_lin, h_lin - H_MAX]) - self.slacks, -self.slacks])
+    return (H, g, Q, q, TU[N], c[N], C.reshape(-1, N), Z * self.slacks, d), c
