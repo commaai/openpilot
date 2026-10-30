@@ -127,15 +127,17 @@ function checkout(device, cancelled) {
   });
   update();
   const checks = ["24/7 connectivity", "Take pictures remotely", "1 year storage of drive videos", "Simple SSH for developers", commacare && "commacare extended warranty"].filter(Boolean);
+  // the warranty a subscription extends, or that a comma four past the delivery window doesn't get it
+  const care = commacare && h("p", {}, "comma four includes a standard 1-year limited warranty. Subscribe within 30 days of delivery to extend your ",
+    "coverage to 2 years for the duration of your prime subscription. ", ext(COMMACARE, "Learn more"));
+  const past = device.device_type === "four" && !commacare &&
+    ["This device is past the delivery window. commacare extended warranty won't be included with this subscription. ", ext(COMMACARE, "What is commacare?")];
   if (um) {
     // connect's column: each block 24px below the last (16px on a phone)
     return [head(device), h("h2", {class: "prime-title"}, "comma prime"),
       h("div", {class: "prime-block prime-checks"}, checks.map((t) => h("div", {}, cnIcon("check", 21), h("p", {}, t)))),
-      commacare && h("div", {class: "prime-block prime-commacare"}, h("div", {}, h("img", {src: CARE_ICON, alt: ""}), h("strong", {}, "INCLUDES COMMACARE")),
-        h("p", {}, "comma four includes a standard 1-year limited warranty. Subscribe within 30 days of delivery to extend your coverage to 2 years ",
-          "for the duration of your prime subscription. ", ext(COMMACARE, "Learn more"))),
-      device.device_type === "four" && !commacare && h("div", {class: "prime-block prime-past"}, h("p", {},
-        "This device is past the delivery window. commacare extended warranty won't be included with this subscription. ", ext(COMMACARE, "What is commacare?"))),
+      care && h("div", {class: "prime-block prime-commacare"}, h("div", {}, h("img", {src: CARE_ICON, alt: ""}), h("strong", {}, "INCLUDES COMMACARE")), care),
+      past && h("div", {class: "prime-block prime-past"}, h("p", {}, past)),
       h("div", {class: "prime-block prime-plans"}, h("div", {}, plans), fetching),
       h("div", {class: "prime-block-slot"}, disabled),
       h("div", {class: "prime-block"}, h("p", {class: "prime-body1"}, "Learn more about comma prime from our ", ext(FAQ, "FAQ"))),
@@ -143,11 +145,8 @@ function checkout(device, cancelled) {
   }
   return [head(device), h("h2", {}, "comma prime"),
     h("ul", {class: "prime-checks"}, checks.map((t) => h("li", {}, icon("check", 20), t))),
-    commacare && h("div", {class: "prime-commacare"}, h("b", {}, "INCLUDES COMMACARE"),
-      h("p", {}, "comma four includes a standard 1-year limited warranty. Subscribe within 30 days of delivery to extend your coverage to 2 years ",
-        "for the duration of your prime subscription. ", ext(COMMACARE, "Learn more"))),
-    device.device_type === "four" && !commacare && h("div", {class: "prime-note"}, h("p", {class: "small"},
-      "This device is past the delivery window. commacare extended warranty won't be included with this subscription. ", ext(COMMACARE, "What is commacare?"))),
+    care && h("div", {class: "prime-commacare"}, h("b", {}, "INCLUDES COMMACARE"), care),
+    past && h("div", {class: "prime-note"}, h("p", {class: "small"}, past)),
     h("div", {class: "prime-plans"}, plans, fetching),
     disabled,
     h("p", {}, "Learn more about comma prime from our ", ext(FAQ, "FAQ")),
@@ -339,39 +338,30 @@ function manage(device, stripeSession) {
       "device. A new SIM card can be ordered from the ", ext(SIM_SHOP, "shop"), ". Use discount code SIMSWAP at checkout to receive a free SIM card."));
     const ended = discontinued && note("info", h("p", {}, `Standard comma prime discontinued for ${fmt.deviceType(device.device_type)}`));
     const planText = sub.plan === "nodata" ? "(without data plan)" : "(with data plan)";
-    if (um) {
-      manageEl.hidden = false;
-      const item = (label, ...value) => h("div", {class: "prime-item"}, h("h3", {}, label), h("p", {}, value));
-      const pay = h("button", {class: "cnui-btn white prime-go", disabled: discontinued, onclick: () => portal(pay)}, cancelAt ? "Renew subscription" : "Update payment method");
-      body.replaceChildren(...[
-        item("Plan", PLANS[sub.plan]?.name ?? sub.plan, h("span", {}, ` ${planText}`)),
-        item("Joined", date(sub.subscribed_at)),
-        cancelAt ? item("Subscription end", date(sub.cancel_at)) : item("Next payment", date(sub.next_charge_at)),
-        item("Amount", `$${((sub.amount || 0) / 100).toFixed(2)}`),
-        device.commacare && h("a", {class: "prime-pill", href: COMMACARE, target: "_blank", rel: "noopener"}, h("img", {src: CARE_ICON, alt: ""}), "commacare"),
-        message,
-        h("div", {class: "prime-buttons"}, pay,
-          !cancelAt && h("button", {class: "cnui-btn white prime-go", onclick: switchModal}, `Switch to ${PLANS[other(sub.plan)].name} plan`),
-          !cancelAt && h("button", {class: "cnui-btn white prime-go prime-cancel", onclick: cancelModal}, "Cancel subscription")),
-        migrate, ended].filter(Boolean));
-      return;
-    }
-    const item = (label, ...value) => h("div", {class: "prime-item"}, h("dt", {}, label), h("dd", {}, value));
-    const pay = h("button", {class: "button primary prime-go", disabled: discontinued, onclick: () => portal(pay)},
+    // user mode's items are connect's headings, and switching and cancelling its dialogs; developer mode's are a list,
+    // and the theme's ask()
+    const item = (label, ...value) => h("div", {class: "prime-item"}, h(um ? "h3" : "dt", {}, label), h(um ? "p" : "dd", {}, value));
+    const items = [
+      item("Plan", PLANS[sub.plan]?.name ?? sub.plan, " ", h("span", {class: "muted"}, planText)),
+      item("Joined", date(sub.subscribed_at)),
+      cancelAt ? item("Subscription end", date(sub.cancel_at)) : item("Next payment", date(sub.next_charge_at)),
+      item("Amount", `$${((sub.amount || 0) / 100).toFixed(2)}`)];
+    const look = um ? "cnui-btn white" : "button";
+    const pay = h("button", {class: `${look} primary prime-go`, disabled: discontinued, onclick: () => portal(pay)},
       cancelAt ? "Renew subscription" : "Update payment method");
-    const sw = h("button", {class: "button prime-go", onclick: () => switchPlan(sw)}, `Switch to ${PLANS[other(sub.plan)].name} plan`);
-    const stop = h("button", {class: "button prime-go prime-cancel", onclick: () => cancel(stop)}, "Cancel subscription");
-    body.replaceChildren(h("div", {},
-      h("dl", {class: "prime-items"},
-        item("Device", deviceName(device)),
-        item("Plan", PLANS[sub.plan]?.name ?? sub.plan, " ", h("span", {class: "muted"}, planText)),
-        item("Joined", date(sub.subscribed_at)),
-        cancelAt ? item("Subscription end", date(sub.cancel_at)) : item("Next payment", date(sub.next_charge_at)),
-        item("Amount", `$${((sub.amount || 0) / 100).toFixed(2)}`)),
-      device.commacare && h("a", {class: "prime-pill", href: COMMACARE, target: "_blank", rel: "noopener"}, "commacare"),
+    const sw = h("button", {class: `${look} prime-go`, onclick: () => um ? switchModal() : switchPlan(sw)}, `Switch to ${PLANS[other(sub.plan)].name} plan`);
+    const stop = h("button", {class: `${look} prime-go prime-cancel`, onclick: () => um ? cancelModal() : cancel(stop)}, "Cancel subscription");
+    const rest = [
+      device.commacare && h("a", {class: um ? "cnui-care" : "prime-pill", href: COMMACARE, target: "_blank", rel: "noopener"},
+        um && h("img", {src: CARE_ICON, alt: ""}), "commacare"),
       message,
       h("div", {class: "prime-buttons"}, pay, !cancelAt && sw, !cancelAt && stop),
-      migrate, ended));
+      migrate, ended];
+    if (um) {
+      manageEl.hidden = false;
+      return body.replaceChildren(...items, ...rest.filter(Boolean));
+    }
+    body.replaceChildren(h("div", {}, h("dl", {class: "prime-items"}, item("Device", deviceName(device)), items), rest));
   }
 
   // connect's: a bar with the back button, then the title, checkout's status and the device above the subscription

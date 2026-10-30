@@ -20,104 +20,94 @@ const STEPS = [
 
 const dollars = (n) => `$${(n || 0).toFixed(0)}`;
 
-// the email to support that claims what's available, as connect writes it
-export function claimMailto(me, codes, referrals, available) {
-  const n = referrals.length;
-  const body = `Hi comma support,\n\nI would like to claim $${Number(available || 0).toFixed(2)} cash for ${n} referral${n === 1 ? "" : "s"}.\n\n` +
+const shareUrl = (summary) => `${REFER}/${encodeURIComponent(summary.code)}`;
+
+// the link from a phone's share sheet, else (or with sheet false) copied: "shared", "copied" or "failed", or null when
+// the sheet was closed, which isn't a failure
+async function shareLink(url, sheet = true) {
+  if (sheet && navigator.share && matchMedia("(pointer: coarse)").matches) {
+    try {
+      await navigator.share({title: "Give $50, Get $50 with comma", text: "Get $50 off comma four using this referral link.", url});
+      return "shared";
+    } catch (e) {
+      if (e.name === "AbortError") return null;
+    }
+  }
+  return navigator.clipboard.writeText(url).then(() => "copied", () => "failed");
+}
+
+// the email to support that claims what's available, as connect writes it; null when there's nothing to claim
+function claimMailto(me, summary) {
+  const available = (summary?.referrals || []).filter((r) => r.status === "available"), cash = summary?.cash?.available;
+  if (!(cash > 0) || !available.length || !me) return null;
+  const n = available.length, codes = (summary.codes || [summary.code]).join(", ");
+  const body = `Hi comma support,\n\nI would like to claim $${cash.toFixed(2)} cash for ${n} referral${n === 1 ? "" : "s"}.\n\n` +
     `Account: ${me.email} (${me.user_id})\nReferral coupon: ${codes}\n\nThanks!`;
   return `mailto:support@comma.ai?subject=${encodeURIComponent("Referral Claim")}&body=${encodeURIComponent(body)}`;
 }
+
+// what's been claimed, what's pending and what can be claimed (connect's labels end in a colon)
+const cashRows = (cash, colon = "") => [["Already claimed", cash.claimed], ["Pending rewards", cash.pending], ["Available to claim", cash.available]]
+  .map(([label, n], i) => h("div", {}, h("dt", {}, label + colon), h("dd", {class: i === 2 && n > 0 ? "earned" : ""}, dollars(n))));
 
 function shareSection(summary) {
   if (summary.limit_reached) {
     return h("p", {class: "ref-note"}, "Referral limit reached. Read the ", h("a", {href: TERMS, target: "_blank", rel: "noopener"}, "terms"), " for more.");
   }
-  const url = `${REFER}/${encodeURIComponent(summary.code)}`;
-  const label = "Share your link";
-  const button = h("button", {class: "button primary ref-share"}, label);
-  const said = (text) => {
-    button.textContent = text;
+  const url = shareUrl(summary), label = "Share your link";
+  const button = h("button", {class: "button primary ref-share", onclick: async () => {
+    const done = await shareLink(url);
+    if (!done) return;
+    button.textContent = {shared: "Shared", copied: "Copied", failed: "Couldn't copy"}[done];
     setTimeout(() => { button.textContent = label; }, 2000);
-  };
-  // a phone's share sheet, else the clipboard; closing the sheet isn't a failure
-  button.addEventListener("click", async () => {
-    if (navigator.share && matchMedia("(pointer: coarse)").matches) {
-      try {
-        await navigator.share({title: "Give $50, Get $50 with comma", text: "Get $50 off comma four using this referral link.", url});
-        return said("Shared");
-      } catch (e) {
-        if (e.name === "AbortError") return;
-      }
-    }
-    navigator.clipboard.writeText(url).then(() => said("Copied"), () => said("Couldn't copy"));
-  });
+  }}, label);
   return h("div", {}, button, h("div", {class: "ref-link"}, h("span", {class: "mono"}, url), copyButton(() => url, "Copy referral link")));
 }
 
 function rewardsSection(summary, me) {
-  const cash = summary.cash || {}, available = (summary.referrals || []).filter((r) => r.status === "available");
+  const cash = summary.cash || {}, mailto = claimMailto(me, summary);
   const claim = `Claim rewards (${dollars(cash.available)})`;
   return h("div", {},
-    h("dl", {class: "ref-cash"},
-      h("div", {}, h("dt", {}, "Already claimed"), h("dd", {}, dollars(cash.claimed))),
-      h("div", {}, h("dt", {}, "Pending rewards"), h("dd", {}, dollars(cash.pending))),
-      h("div", {}, h("dt", {}, "Available to claim"), h("dd", {class: cash.available > 0 ? "earned" : ""}, dollars(cash.available)))),
-    cash.available > 0 && available.length && me
-      ? h("a", {class: "button primary ref-claim", href: claimMailto(me, (summary.codes || [summary.code]).join(", "), available, cash.available)}, claim)
-      : h("button", {class: "button ref-claim", disabled: true}, claim));
+    h("dl", {class: "ref-cash"}, cashRows(cash)),
+    mailto ? h("a", {class: "button primary ref-claim", href: mailto}, claim) : h("button", {class: "button ref-claim", disabled: true}, claim));
 }
 
 // ---- user mode: connect's page, its markup and copy ----
 
-const ring = (size, label) => h("span", {class: "cn-ref-ring", style: `--size: ${size}px`, role: "progressbar", "aria-label": label});
+const ring = (size, label) => h("span", {class: "cnui-ring", style: `--size: ${size}px`, role: "progressbar", "aria-label": label});
 const terms = (text) => h("a", {href: TERMS, target: "_blank", rel: "noopener noreferrer"}, text);
 
 function connectReferrals(me) {
   let summary = null, error = null, status = null, statusTimer = 0;
-  const share = h("section", {class: "cn-ref-share"}), mine = h("div", {class: "cn-ref-mine"});
-  const url = () => `${REFER}/${encodeURIComponent(summary.code)}`;
-  const said = (text, ms) => {
-    status = text;
+  const shareBox = h("section", {class: "cn-ref-share"}), mine = h("div", {class: "cn-ref-mine"});
+  // what sharing did, said on the button for a moment
+  const share = async (sheet) => {
+    const done = await shareLink(shareUrl(summary), sheet);
+    if (!done) return;
+    status = {shared: "shared", copied: "copied", failed: "unable to share"}[done];
     show();
     clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => { status = null; show(); }, ms);
+    statusTimer = setTimeout(() => { status = null; show(); }, done === "shared" ? 1500 : 2000);
   };
-  const copy = () => navigator.clipboard.writeText(url()).then(() => said("copied", 2000), () => said("unable to share", 2000));
-  // a phone's share sheet, else the clipboard; closing the sheet isn't a failure
-  async function shareLink() {
-    if (!navigator.share || !matchMedia("(pointer: coarse)").matches) return copy();
-    try {
-      await navigator.share({title: "Give $50, Get $50 with comma", text: "Get $50 off comma four using this referral link.", url: url()});
-      said("shared", 1500);
-    } catch (e) {
-      if (e.name !== "AbortError") copy();
-    }
-  }
   function show() {
     // the share link: invisible (keeping its place) under a spinner until loaded
-    const cash = summary?.cash || {available: 0, claimed: 0, pending: 0};
+    const cash = summary?.cash || {};
     const hide = (el) => { if (!summary) { el.classList.add("cn-ref-hidden"); el.ariaHidden = "true"; } return el; };
-    share.replaceChildren(...[
+    shareBox.replaceChildren(...[
       summary?.limit_reached ? h("div", {class: "cn-ref-box"}, h("p", {}, "Referral limit reached. Read ", terms("terms"), " for more details."))
         : !error && hide(h("div", {},
-          h("button", {type: "button", class: "cn-ref-white", disabled: !summary, onclick: shareLink}, h("span", {}, status || "share your link")),
-          h("div", {class: "cn-ref-link"}, h("span", {}, summary ? url() : ""),
-            h("button", {type: "button", "aria-label": "Copy referral link", onclick: copy}, cnIcon("copy", 14))))),
+          h("button", {type: "button", class: "cn-ref-white", disabled: !summary, onclick: () => share(true)}, h("span", {}, status || "share your link")),
+          h("div", {class: "cn-ref-link"}, h("span", {}, summary ? shareUrl(summary) : ""),
+            h("button", {type: "button", "aria-label": "Copy referral link", onclick: () => share(false)}, cnIcon("copy", 14))))),
       !summary && !error && h("div", {class: "cn-ref-loading"}, ring(28, "Loading referral link")),
       error && h("p", {class: "cn-ref-unavailable"}, "Your share link is unavailable.")].filter(Boolean));
-    const available = (summary?.referrals || []).filter((r) => r.status === "available");
-    const claim = `claim rewards ($${cash.available.toFixed(0)})`;
+    const claim = `claim rewards (${dollars(cash.available)})`, mailto = claimMailto(me, summary);
     mine.replaceChildren(...[
       error && h("div", {class: "cn-ref-box"}, h("p", {}, error.message),
         error.retryable && h("button", {type: "button", class: "cn-ref-retry", onclick: load}, "Retry")),
       !error && hide(h("div", {},
-        h("div", {class: "cn-ref-cash"}, h("dl", {},
-          h("div", {}, h("dt", {}, "Already claimed:"), h("dd", {}, `$${cash.claimed.toFixed(0)}`)),
-          h("div", {}, h("dt", {}, "Pending rewards:"), h("dd", {}, `$${cash.pending.toFixed(0)}`)),
-          h("div", {}, h("dt", {}, "Available to claim:"), h("dd", {class: cash.available > 0 ? "earned" : ""}, `$${cash.available.toFixed(0)}`)))),
-        summary && cash.available > 0 && available.length && me
-          ? claimLink(claimMailto(me, (summary.codes || [summary.code]).join(", "), available, cash.available), claim)
-          : h("button", {type: "button", class: "cn-ref-claim off", disabled: true}, claim))),
+        h("div", {class: "cn-ref-cash"}, h("dl", {}, cashRows(cash, ":"))),
+        mailto ? claimLink(mailto, claim) : h("button", {type: "button", class: "cn-ref-claim off", disabled: true}, claim))),
       !summary && !error && h("div", {class: "cn-ref-loading"}, ring(32, "Loading your referrals"))].filter(Boolean));
   }
   function load() {

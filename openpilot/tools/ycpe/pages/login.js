@@ -74,7 +74,6 @@ function tokenForm(next) {
 
 // user mode's sign-in: connect's landing, over the whole window as connect has no header there. Its one addition is the
 // switch to developer mode, where the header has it
-const LANDING = [["google", "Google"], ["apple", "Apple"], ["github", "GitHub"]];
 function landing(next) {
   const last = localStorage.getItem(LAST_KEY);
   return h("div", {class: "cn-landing"},
@@ -85,8 +84,8 @@ function landing(next) {
       h("div", {class: "cn-landing-gap"}),
       h("p", {class: "cn-landing-title"}, "comma connect"),
       h("p", {class: "cn-landing-lead"}, "Manage your comma device, view your drives, and use comma prime features"),
-      LANDING.map(([p, name]) => h("a", {class: "cn-login", href: auth.loginUrl(p), onclick: () => startSignIn(p, next)},
-        h("img", {src: `/icons/auth-${p}.png`, alt: ""}), h("p", {}, `Sign in with ${name}`),
+      ["google", "apple", "github"].map((p) => h("a", {class: "cn-login", href: auth.loginUrl(p), onclick: () => startSignIn(p, next)},
+        h("img", {src: `/icons/auth-${p}.png`, alt: ""}), h("p", {}, `Sign in with ${PROVIDERS[p]}`),
         p === last && h("span", {class: "cn-last-used"}, "Last used"))),
       h("span", {class: "cn-landing-note"}, "Make sure to sign in with the same account if you have previously paired your comma device.")));
 }

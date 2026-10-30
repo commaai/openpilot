@@ -1,15 +1,9 @@
-/* user mode's device settings: connect's MUI modals (DeviceSettingsModal, UploadQueue) in its dark-only palette */
-.cn-modal { position: fixed; inset: 0; width: auto; max-width: none; height: auto; max-height: none; margin: 0; padding: 0; border: 0; background: none;
-  color: #fff; font: 400 16px/1.5 "Inter", sans-serif; overflow: hidden; }
-.cn-modal::backdrop { background: rgba(0,0,0,.5); transition: opacity .225s cubic-bezier(.4, 0, .2, 1); }
-@starting-style { .cn-modal[open]::backdrop { opacity: 0; } }
-.cn-paper { position: absolute; top: 40%; left: 50%; box-sizing: border-box; width: 400px; max-width: 90%; padding: 16px; border-radius: 4px; outline: none;
-  background: #30373b; transform: translate(-50%, -50%);
-  box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+/* user mode's device settings: connect's MUI modals (DeviceSettingsModal, UploadQueue) in its dark-only palette, on
+   cnui.css's modal and paper */
+.cn-paper { top: 40%; left: 50%; width: 400px; max-width: 90%; padding: 16px; outline: none; transform: translate(-50%, -50%); }
 .cn-paper.cn-unpair { width: 360px; max-width: 80%; }
 .cn-paper.cn-upload-queue { top: 50%; width: max-content; }
 .cn-paper :is(h2, p) { margin: 0; }
-.cn-paper hr { height: 1px; margin: 0; border: 0; background: rgba(255,255,255,.12); }
 .cn-modal-title { display: flex; align-items: baseline; justify-content: space-between; min-height: 25px; margin-bottom: 5px; }
 .cn-modal-title h2 { font-size: 21px; font-weight: 500; line-height: 1.16667; }
 .cn-modal-title span { color: rgba(255,255,255,.7); font-size: 12px; line-height: 1.375; }
@@ -33,11 +27,6 @@
 .cn-modal-buttons .cn-btn + .cn-btn { margin-left: 8px; }
 .cn-upload-queue .cn-modal-buttons .cn-btn { margin-left: 8px; }
 
-.cn-commacare { display: inline-flex; align-items: center; padding: 6px 14px 6px 12px; border: 1px solid #1a974e; border-radius: 12px; color: #1a974e;
-  font-weight: 600; line-height: 1; letter-spacing: .04em; text-decoration: none; cursor: pointer; transition: background-color .15s; }
-.cn-commacare:hover { background: rgba(81,191,135,.1); }
-.cn-commacare img { width: 24px; margin-right: 12px; }
-
 /* the fields: connect's TextField */
 .cn-form { padding: 8px 0; }
 .cn-form-row { min-height: 75px; }
@@ -55,7 +44,7 @@
 .cn-input input:focus::placeholder { color: transparent; }
 .cn-field p { margin: 4px 0 0 8px; color: rgba(255,255,255,.7); font-size: 12px; line-height: 1; }
 .cn-fab { position: relative; display: inline-block; margin: 8px; }
-.cn-fab .cn-progress { position: absolute; top: 0; left: 0; z-index: 1; }
+.cn-fab .cnui-ring { position: absolute; top: 0; left: 0; z-index: 1; color: #57a9e3; }
 .cn-iconbtn { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer;
   transition: background-color .15s cubic-bezier(.4, 0, .2, 1); }
 .cn-iconbtn:hover { background: rgba(255,255,255,.08); }
@@ -63,11 +52,8 @@
 .cn-iconbtn.small:hover { background: none; }
 
 /* MUI's CircularProgress */
-.cn-progress { display: inline-block; box-sizing: border-box; width: var(--size); height: var(--size); border: calc(var(--size) / 12) solid #57a9e3;
-  border-right-color: transparent; border-radius: 50%; animation: cn-spin 1.4s linear infinite; }
-.cn-uploads .cn-progress, .cn-cancel-cell .cn-progress { margin: 8px; border-color: #fff; border-right-color: transparent; }
-.cn-cancel-cell .cn-progress { margin: 1.5px; }
-@keyframes cn-spin { to { transform: rotate(360deg); } }
+.cn-uploads .cnui-ring { margin: 8px; color: #fff; }
+.cn-cancel-cell .cnui-ring { margin: 1.5px; }
 
 .cn-unpair-error, .cn-unpair-warning { display: flex; align-items: center; margin-top: 15px; padding: 10px; color: #fff; }
 .cn-unpair-error { background: rgba(255,0,0,.3); }
