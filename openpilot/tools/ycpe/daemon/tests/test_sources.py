@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import http.client
-import json
 import os
 import tempfile
 import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
 # a fake internal data endpoint stands in for every remote source
 UPSTREAM = tempfile.mkdtemp()
@@ -17,8 +18,7 @@ os.environ["COMMA_CACHE"] = CACHE
 
 
 class Upstream(SimpleHTTPRequestHandler):
-  slow = threading.Event()  # set: the next "slow" file trickles out
-  fail = False  # cut the slow file off half way
+  fail = False  # cut segment 3's rlog, which trickles out, off half way
 
   def __init__(self, *a, **kw):
     super().__init__(*a, directory=UPSTREAM, **kw)
@@ -97,8 +97,7 @@ class TestSources(DaemonCase):
 
   def test_bad_route(self):
     for route in ("../../etc", f"{ROUTE}/0:3/r", f"{ROUTE}--2"):  # bare routes only: the page names the segments
-      r, _ = self.req("/local/sources/resolve", method="POST", body=json.dumps({"route": route}))
-      self.assertEqual(r.status, 400, route)
+      self.assertEqual(self.post("/local/sources/resolve", {"route": route})[0].status, 400, route)
     for segs in (["x"], "01", [-1], 3):
       self.json("/local/sources/resolve", {"route": ROUTE, "segs": segs}, status=400)
 
@@ -115,37 +114,25 @@ class TestSources(DaemonCase):
     self.assertEqual(URLFile(canonical + "?sig=x").read(), blob(1, "rlog.zst"))
 
   def test_concurrent_readers_during_fill(self):
-    Upstream.fail = False
     url = f"/local/file/internal/{DONGLE}/{LOG}/3/rlog.zst"
-    out = [None, None]
-
-    def get(i):
-      out[i] = self.req(url)[1]
-    ts = [threading.Thread(target=get, args=(i,)) for i in range(2)]
-    for t in ts:
-      t.start()
-    for t in ts:
-      t.join()
+    with ThreadPoolExecutor(2) as ex:
+      out = list(ex.map(lambda _: self.req(url)[1], range(2)))
     self.assertEqual(out, [blob(3, "rlog.zst")] * 2)
     cache.evict(cache.Key(DONGLE, LOG, 3, "rlog.zst"))
 
+  @mock.patch.object(Upstream, "fail", True)
   def test_failed_fill_is_an_error(self):
-    Upstream.fail = True
-    try:
-      cache.evict(cache.Key(DONGLE, LOG, 3, "rlog.zst"))
-      with self.assertRaises(http.client.IncompleteRead):
-        self.req(f"/local/file/internal/{DONGLE}/{LOG}/3/rlog.zst")
-      self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 3, "rlog.zst")))
-      self.assertFalse([p for p in os.listdir(CACHE) if p.startswith(cache.TMP)])
-    finally:
-      Upstream.fail = False
+    cache.evict(cache.Key(DONGLE, LOG, 3, "rlog.zst"))
+    with self.assertRaises(http.client.IncompleteRead):
+      self.req(f"/local/file/internal/{DONGLE}/{LOG}/3/rlog.zst")
+    self.assertIsNone(cache.lookup(cache.Key(DONGLE, LOG, 3, "rlog.zst")))
+    self.assertFalse([p for p in os.listdir(CACHE) if p.startswith(cache.TMP)])
 
   def test_file_rejects(self):
     for path in (f"/local/file/internal/{DONGLE}/{LOG}/0/..%2f..%2fx", f"/local/file/internal/{DONGLE}/{LOG}/0/passwd",
                  f"/local/file/nope/{DONGLE}/{LOG}/0/rlog.zst", f"/local/file/internal/zz/{LOG}/0/rlog.zst",
                  f"/local/file/local/{DONGLE}/..%2f..%2f/0/rlog.zst"):
-      r, _ = self.req(path)
-      self.assertIn(r.status, (403, 404), path)
+      self.assertIn(self.status(path), (403, 404), path)
 
   def test_local_source(self):
     d = Path(LOGS) / f"{LOG}--0"
@@ -153,8 +140,7 @@ class TestSources(DaemonCase):
     (d / "qlog.zst").write_bytes(b"local qlog")
     res = self.json("/local/sources/resolve", {"route": ROUTE, "segs": [0], "kinds": ["qlog"], "sources": ["local"]})
     self.assertEqual(res["segments"]["0"]["qlog"]["source"], "local")
-    r, data = self.req(f"/local/file/local/{DONGLE}/{LOG}/0/qlog.zst")
-    self.assertEqual(data, b"local qlog")
+    self.assertEqual(self.req(f"/local/file/local/{DONGLE}/{LOG}/0/qlog.zst")[1], b"local qlog")
 
   def test_local_symlink_confined(self):
     outside = Path(tempfile.mkdtemp())
@@ -162,8 +148,7 @@ class TestSources(DaemonCase):
     link = Path(LOGS) / f"{LOG}--5"
     if not link.exists():
       link.symlink_to(outside)
-    r, _ = self.req(f"/local/file/local/{DONGLE}/{LOG}/5/qlog.zst")
-    self.assertEqual(r.status, 403)
+    self.assertEqual(self.status(f"/local/file/local/{DONGLE}/{LOG}/5/qlog.zst"), 403)
 
   def test_prefetch_and_evict(self):
     for seg in (0, 1):
@@ -199,8 +184,7 @@ class TestSources(DaemonCase):
     up.write_bytes(new)  # the source changed under the same URL
     path = cache.lookup(key)[1]
     cache.mark_checked(path, 0.0)
-    r, data = self.req(url)
-    self.assertEqual(data, old)  # a hit never waits on the check
+    self.assertEqual(self.req(url)[1], old)  # a hit never waits on the check
     until(lambda: self.req(url)[1] == new, 2)
     r, data = self.req(url)
     self.assertEqual((data, r.getheader("X-Ycpe-Cache")), (new, "hit"))
@@ -227,19 +211,16 @@ class TestSources(DaemonCase):
 
   def test_prune_lru(self):
     d = Path(tempfile.mkdtemp())
-    os.environ["COMMA_CACHE"] = str(d)
-    try:
-      now = time.time()  # noqa: TID251  compared with file mtimes
-      for i in range(5):
-        (d / f"f{i}").write_bytes(b"x" * 1000)
-        os.utime(d / f"f{i}", (now - 1000 + i, now - 1000 + i))
-      (d / "recent").write_bytes(b"x" * 1000)
+    self.addCleanup(cache._usage.update, at=-cache.RESCAN)  # the running total is this directory's
+    now = time.time()  # noqa: TID251  compared with file mtimes
+    for i in range(5):
+      (d / f"f{i}").write_bytes(b"x" * 1000)
+      os.utime(d / f"f{i}", (now - 1000 + i, now - 1000 + i))
+    (d / "recent").write_bytes(b"x" * 1000)
+    with mock.patch.dict(os.environ, {"COMMA_CACHE": str(d)}):
       out = cache.prune(3000)
-      self.assertEqual(sorted(p.name for p in d.iterdir()), ["f3", "f4", "recent"])
-      self.assertEqual(out["bytes"], 3000)
-    finally:
-      os.environ["COMMA_CACHE"] = CACHE
-      cache._usage["at"] = -cache.RESCAN
+    self.assertEqual(sorted(p.name for p in d.iterdir()), ["f3", "f4", "recent"])
+    self.assertEqual(out["bytes"], 3000)
 
 
 if __name__ == "__main__":

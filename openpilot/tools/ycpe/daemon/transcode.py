@@ -22,7 +22,8 @@ from pathlib import Path
 
 from openpilot.common.utils import atomic_write
 from openpilot.tools.lib.helpers import RE
-from openpilot.tools.ycpe.daemon import File, HTTPError, cache, config, confine, jobs, route, sources
+from openpilot.tools.ycpe.daemon import cache, jobs, sources
+from openpilot.tools.ycpe.daemon.core import File, HTTPError, config, confine, route
 
 FPS = 20
 CAMERAS = ("fcamera", "ecamera", "dcamera")
@@ -64,19 +65,14 @@ def niced(cmd: list[str]) -> list[str]:
   return (["ionice", "-c", "3"] if shutil.which("ionice") else []) + ["nice", "-n", "10", *cmd]
 
 
-_backends: list[Backend] | None = None
-
-
+@functools.cache
 def backends() -> list[Backend]:
   """The backends that get a test clip through on this machine, best first; libx264 comes last."""
-  global _backends
-  if _backends is None:
-    clip = subprocess.run(ffmpeg("-f", "lavfi", "-i", "testsrc2=s=256x144:r=20:d=0.2", "-c:v", "libx265", "-x265-params", "log-level=none",
-                                 "-f", "hevc", "-"), capture_output=True, timeout=30).stdout
-    ok = [b for b in BACKENDS if (r := subprocess.run(encoder_args(b, "pipe:"), input=clip, capture_output=True, timeout=30)).returncode == 0
-          and r.stdout]
-    _backends = ok or [BACKENDS[-1]]
-  return _backends
+  clip = subprocess.run(ffmpeg("-f", "lavfi", "-i", "testsrc2=s=256x144:r=20:d=0.2", "-c:v", "libx265", "-x265-params", "log-level=none",
+                               "-f", "hevc", "-"), capture_output=True, timeout=30).stdout
+  ok = [b for b in BACKENDS if (r := subprocess.run(encoder_args(b, "pipe:"), input=clip, capture_output=True, timeout=30)).returncode == 0
+        and r.stdout]
+  return ok or [BACKENDS[-1]]
 
 
 class Pictures:
@@ -311,7 +307,7 @@ def transcoder() -> Transcoder:
   global _transcoder
   with _transcoder_lock:
     if _transcoder is None:
-      _transcoder = Transcoder(cache.ycpe_dir("transcode"), resolve_source, run=run_as_job, written=cache.prune_soon)
+      _transcoder = Transcoder(cache.root() / "ycpe" / "transcode", resolve_source, run=run_as_job, written=cache.prune_soon)
     return _transcoder
 
 
@@ -334,4 +330,4 @@ def video(req):
       raise HTTPError(404 if job.state == "missing" else 502, job.error)
   if job.state == "error":
     raise HTTPError(502, job.error)
-  return File(str(job.base.with_suffix(".h264")), "video/h264", growing=lambda: job.state in ("queued", "running"))
+  return File(str(job.base.with_suffix(".h264")), "video/h264", growing=lambda: job.running)

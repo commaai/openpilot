@@ -122,20 +122,6 @@ class File:
   growing: object = None  # callable -> bool
 
 
-def sse(events):
-  """Server-sent events from an iterator of (event, data) pairs; data is JSON-encoded. Yield None to send a
-  keepalive comment. The iterator should block between events (e.g. on a queue with a timeout)."""
-  def gen():
-    yield b"retry: 2000\n\n"
-    for item in events:
-      if item is None:
-        yield b": keepalive\n\n"
-        continue
-      event, data = item
-      yield f"event: {event}\ndata: {json.dumps(data, separators=(',', ':'))}\n\n".encode()
-  return Stream(gen(), "text/event-stream", {"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
-
-
 class Feed:
   """Fans published data out to SSE listeners, one queue each."""
   def __init__(self):
@@ -148,24 +134,28 @@ class Feed:
         q.put(data)
 
   def stream(self, event: str, first=tuple) -> Stream:
-    """SSE of everything published from now on as event, after first()'s items (taken once subscribed, so nothing
-    published in between is missed)."""
-    def events():
+    """Server-sent events of everything published from now on as event (JSON-encoded), after first()'s items (taken
+    once subscribed, so nothing published in between is missed). Quiet stretches get a keepalive comment."""
+    def message(data) -> bytes:
+      return f"event: {event}\ndata: {json.dumps(data, separators=(',', ':'))}\n\n".encode()
+
+    def gen():
+      yield b"retry: 2000\n\n"
       q: queue.Queue = queue.Queue()
       with self.lock:
         self.subs.add(q)
       try:
         for data in first():
-          yield event, data
+          yield message(data)
         while True:
           try:
-            yield event, q.get(timeout=15)
+            yield message(q.get(timeout=15))
           except queue.Empty:
-            yield None
+            yield b": keepalive\n\n"
       finally:
         with self.lock:
           self.subs.discard(q)
-    return sse(events())
+    return Stream(gen(), "text/event-stream", {"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
 
 # routes

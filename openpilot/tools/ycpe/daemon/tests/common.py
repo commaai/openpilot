@@ -22,35 +22,39 @@ class DaemonCase(unittest.TestCase):
     server.Handler.log_message = lambda *a: None
     cls.srv = server.make_server(0)
     config.port = cls.srv.server_address[1]
-    threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+    cls.serve(cls.srv)
 
   @classmethod
-  def tearDownClass(cls):
-    cls.srv.shutdown()
-    cls.srv.server_close()
+  def serve(cls, srv):
+    """srv, serving from a thread until the test class is done"""
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    cls.addClassCleanup(srv.server_close)
+    cls.addClassCleanup(srv.shutdown)  # class cleanups run last first
+    return srv
 
   def connect(self, path, method="GET", host=None, headers=None, token=True, body=None):
+    """A request as the page makes it; a body that isn't bytes is sent as JSON."""
     c = http.client.HTTPConnection("127.0.0.1", config.port, timeout=60)  # transcodes stream for a while
     self.addCleanup(c.close)
     h = {"Host": host or f"localhost:{config.port}", **(headers or {})}
     if token:
       h[core.TOKEN_HEADER] = config.token
-    c.request(method, path, body=body, headers=h)
+    c.request(method, path, body=body if body is None or isinstance(body, bytes) else json.dumps(body), headers=h)
     return c.getresponse()
 
   def req(self, path, **kw):
     r = self.connect(path, **kw)
     return r, r.read()
 
-  def post(self, path, body, headers=None, **kw):
-    """POST of body as JSON (bytes are sent as is)"""
-    return self.req(path, method="POST", body=body if isinstance(body, bytes) else json.dumps(body),
-                    headers={"Content-Type": "application/json", **(headers or {})}, **kw)
+  def status(self, path, **kw) -> int:
+    return self.req(path, **kw)[0].status
+
+  def post(self, path, body, **kw):
+    return self.req(path, method="POST", body=body, **kw)
 
   def json(self, path, body=None, method=None, status=200):
-    """GET, or POST of body as JSON (bytes are sent as is), expecting status."""
-    r, data = self.req(path, method=method or ("GET" if body is None else "POST"),
-                       body=body if body is None or isinstance(body, bytes) else json.dumps(body))
+    """GET, or POST of body, expecting status."""
+    r, data = self.req(path, method=method or ("GET" if body is None else "POST"), body=body)
     self.assertEqual(r.status, status, data)
     return json.loads(data)
 
