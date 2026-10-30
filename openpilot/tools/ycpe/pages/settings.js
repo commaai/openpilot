@@ -101,17 +101,19 @@ export function settingsSection(device, onUnpaired) {
 // ---- user mode: connect's DeviceSettingsModal ----
 
 const COMMACARE = "https://comma.ai/connect#what-is-commacare";
-const styled = () => css(new URL("./settings.css", import.meta.url));
+const styled = () => Promise.all([css(new URL("./cnui.css", import.meta.url)), css(new URL("./settings.css", import.meta.url))]);
 
-// MUI's Modal: a backdrop that fades in and the paper over it; Escape or a click beside the paper closes it
+// MUI's Modal, as cnui.js draws it: a backdrop that fades in and the paper over it; Escape or a click beside the paper
+// closes it
 function modal(cls, onClose, ...children) {
-  return openModal({class: "cn-modal", onclose: onClose}, h("div", {class: `cn-paper ${cls}`, role: "document", tabindex: "-1", autofocus: true}, ...children));
+  return openModal({class: "cnui-modal", onclose: onClose},
+    h("div", {class: `cnui-paper cn-paper ${cls}`, role: "document", tabindex: "-1", autofocus: true}, ...children));
 }
 
 const title = (text, dongleId) => [h("div", {class: "cn-modal-title"}, h("h2", {}, text), h("span", {}, dongleId)), h("hr")];
 const outlined = (label, onclick) => h("button", {class: "cn-btn", onclick}, label);
 const contained = (label, onclick) => h("button", {class: "cn-btn contained", onclick}, label);
-const spinner = (size) => h("span", {class: "cn-progress", style: `--size: ${size}px`});
+const spinner = (size) => h("span", {class: "cnui-ring", style: `--size: ${size}px`});
 
 // MUI's TextField as connect themes it: a rounded box with its label inside until there's text or focus
 function field(id, label, value, onInput, onEnter, help) {
@@ -199,7 +201,7 @@ export async function settingsModal(device) {
     h("div", {}, outlined("Prime settings", () => { el.close(); go(`/connect/${dongleId}/prime`); }),
       outlined("Unpair", () => unpairModal(device))),
     h("div", {class: "cn-modal-row"}, outlined("Uploads", () => uploadsModal(device)),
-      device.commacare && h("a", {class: "cn-commacare", href: COMMACARE, target: "_blank", rel: "noreferrer"},
+      device.commacare && h("a", {class: "cnui-care", href: COMMACARE, target: "_blank", rel: "noreferrer"},
         h("img", {src: "/icons/commacare.webp", alt: ""}), "commacare")),
     h("div", {class: "cn-form"}, error, h("div", {class: "cn-form-row"}, aliasRow, save.el), h("div", {class: "cn-form-row"}, shareRow, share.el)),
     h("div", {class: "cn-modal-buttons"}, contained("Close", () => el.close())));
@@ -241,7 +243,7 @@ function unpairModal(device) {
   });
   const el = modal("cn-unpair", () => {
     if (!unpaired) return;
-    document.querySelector("dialog.cn-modal")?.close();
+    document.querySelector(".cn-settings")?.parentElement.close();
     devicesChanged();
     go("/connect");
   },

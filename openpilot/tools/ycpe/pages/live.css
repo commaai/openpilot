@@ -1,4 +1,0 @@
-/* /live (pages/live.js): the tables line up */
-.live-page .list { table-layout: fixed; }
-.live-page .list td:first-child { width: 28px; }
-.live-page .list td:nth-child(2) { width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

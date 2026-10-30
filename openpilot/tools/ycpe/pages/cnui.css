@@ -13,6 +13,16 @@
   100% { stroke-dasharray: 100px, 200px; stroke-dashoffset: -125px; }
 }
 
+/* connect's own spinner, where it isn't Material UI's: a ring with a gap, --size px, in currentColor */
+.cnui-ring { display: inline-block; box-sizing: border-box; width: var(--size); height: var(--size); border: calc(var(--size) / 12) solid currentColor;
+  border-right-color: transparent; border-radius: 50%; animation: cn-rotate 1.4s linear infinite; }
+
+/* connect's commacare pill, a link to what it is */
+.cnui-care { display: inline-flex; align-items: center; padding: 6px 14px 6px 12px; border: 1px solid #1a974e; border-radius: 12px; color: #1a974e;
+  font-weight: 600; line-height: 1; letter-spacing: .04em; text-decoration: none; cursor: pointer; transition: background-color .15s; }
+.cnui-care:hover { background: rgba(81,191,135,.1); }
+.cnui-care img { width: 24px; margin-right: 12px; }
+
 /* Material UI's linear progress, its bars moved and scaled by the compositor (Material UI moves left and right) */
 .cnui-linear { position: relative; height: 5px; overflow: hidden; background: rgb(201, 227, 245); }
 .cnui-linear i { position: absolute; inset: 0; background: #57a9e3; transform-origin: left; }

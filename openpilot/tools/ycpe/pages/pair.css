@@ -12,12 +12,12 @@
 /* the camera, a square to hold the code in, and what pairing says over it */
 .pair-video { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 6px; background: #000; }
 .pair-video video { display: block; width: 100%; height: 100%; object-fit: cover; }
-.pair-frame { position: absolute; top: 50%; left: 50%; height: 66.67%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; }
+.pair-frame { --corner: 2px; position: absolute; top: 50%; left: 50%; height: 66.67%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; }
 .pair-frame i { position: absolute; width: 25%; height: 25%; border: 0 solid #fff; }
-.pair-frame i:nth-child(1) { top: 0; left: 0; border-width: 2px 0 0 2px; }
-.pair-frame i:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; }
-.pair-frame i:nth-child(3) { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
-.pair-frame i:nth-child(4) { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.pair-frame i:nth-child(1) { top: 0; left: 0; border-width: var(--corner) 0 0 var(--corner); }
+.pair-frame i:nth-child(2) { top: 0; right: 0; border-width: var(--corner) var(--corner) 0 0; }
+.pair-frame i:nth-child(3) { bottom: 0; right: 0; border-width: 0 var(--corner) var(--corner) 0; }
+.pair-frame i:nth-child(4) { bottom: 0; left: 0; border-width: 0 0 var(--corner) var(--corner); }
 .pair-status { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: rgba(0,0,0,.8); color: #fff; text-align: center; font-size: 14px; overflow-wrap: anywhere; }
 .pair-status[hidden] { display: none; }
 .pair-status p { margin: 0; }
@@ -56,10 +56,7 @@
 /* the camera at its own shape, the frame drawn in hairlines as connect's canvas does */
 .pair-paper .pair-video { aspect-ratio: auto; border-radius: 0; background: none; }
 .pair-paper .pair-video video { height: auto; min-height: 120px; object-fit: fill; }
-.pair-paper .pair-frame i:nth-child(1) { border-width: 1px 0 0 1px; }
-.pair-paper .pair-frame i:nth-child(2) { border-width: 1px 1px 0 0; }
-.pair-paper .pair-frame i:nth-child(3) { border-width: 0 1px 1px 0; }
-.pair-paper .pair-frame i:nth-child(4) { border-width: 0 0 1px 1px; }
+.pair-paper .pair-frame { --corner: 1px; }
 .pair-paper .pair-status { inset: -1px; z-index: 4; gap: 0; padding: 0; background: rgba(0, 0, 0, .8); color: #fff; font-size: 16px; line-height: 1.46429; }
 .pair-paper .pair-status .cnui-btn { margin-top: 10px; }
 .pair-paper .pair-status .cnui-progress { width: 10vw; height: 10vw; }

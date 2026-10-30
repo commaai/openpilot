@@ -172,21 +172,17 @@ const STEPS = ["Your device is connected to the internet", "You have installed t
 const ELSEWHERE = "If you still cannot see a QR code, your device may already be paired to another account. Make sure you have signed in with the same account you may have used previously.";
 
 // signed in, without a device: connect's NoDeviceUpsell (in user mode its type and its picture of the device)
-export const noDevices = () => userMode()
-  ? h("div", {class: "pair-empty um"},
-    h("div", {class: "pair-copy"}, h("h2", {}, "Pair your device"),
-      h("p", {}, "Scan the QR code on your device. If you cannot see a QR code, check the following:"),
-      h("ul", {}, STEPS.map((s) => h("li", {}, s))), h("p", {}, ELSEWHERE), h("div", {class: "pair-add-wrap"}, pairButton())),
-    h("div", {class: "pair-picture"},
+export function noDevices() {
+  const um = userMode();
+  const copy = h("div", {class: "pair-copy"}, h("h2", {}, "Pair your device"),
+    h("p", {}, "Scan the QR code on your device. If you cannot see a QR code, check the following:"),
+    h("ul", {}, STEPS.map((s) => h("li", {}, s))), h("p", {}, ELSEWHERE), um ? h("div", {class: "pair-add-wrap"}, pairButton()) : pairButton());
+  return um
+    ? h("div", {class: "pair-empty um"}, copy, h("div", {class: "pair-picture"},
       h("img", {src: new URL("../icons/comma-device-connect.webp", import.meta.url), alt: "comma four", width: 1472, height: 981, decoding: "async"})))
-  : h("div", {class: "pair-empty"},
-    h("div", {class: "pair-copy"},
-      h("h2", {}, "Pair your device"),
-      h("p", {}, "Scan the QR code on your device. If you cannot see a QR code, check the following:"),
-      h("ul", {}, STEPS.map((s) => h("li", {}, s))),
-      h("p", {}, ELSEWHERE),
-      pairButton()),
-    h("img", {class: "pair-device", src: new URL("../icons/comma-device.webp", import.meta.url), alt: "comma four", width: 960, height: 741, decoding: "async"}));
+    : h("div", {class: "pair-empty"}, copy,
+      h("img", {class: "pair-device", src: new URL("../icons/comma-device.webp", import.meta.url), alt: "comma four", width: 960, height: 741, decoding: "async"}));
+}
 
 // a device's pair link (?pair=<token>): signed out, sign in first (the token rides along in next=); signed in, it
 // pairs in connect's "Pairing device" dialog over the page. The token leaves the URL, so neither a reload nor going

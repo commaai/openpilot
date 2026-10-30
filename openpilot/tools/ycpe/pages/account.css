@@ -67,10 +67,6 @@
 .cn-ref-link button:hover { background: rgba(255,255,255,.1); color: #fff; }
 .cn-ref-link button:active { background: rgba(255,255,255,.15); }
 .cn-ref-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.cn-ref-ring { display: inline-block; box-sizing: border-box; width: var(--size); height: var(--size); border: calc(var(--size) / 12) solid currentColor;
-  border-right-color: transparent; border-radius: 50%; color: #fff; animation: cn-ref-spin 1.4s linear infinite; }
-.cn-ref-claim .cn-ref-ring { color: #16181a; }
-@keyframes cn-ref-spin { to { transform: rotate(360deg); } }
 .cn-ref-unavailable { padding: 16px 0 !important; color: rgba(255,255,255,.55); font-size: 14px; line-height: 20px; text-align: center; }
 .cn-ref-yours { margin-top: 32px; }
 .cn-ref-yours h2 { font-size: 20px; font-weight: 600; line-height: 28px; }

@@ -82,8 +82,8 @@
 /* ---- user mode: connect's (PrimeCheckout.jsx, PrimeManage.jsx, Notification), in its palette whatever the theme ---- */
 .prime-page.um { max-width: none; margin: 0; padding: 0; color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; }
 .prime-page.um :is(h2, h3, p) { margin: 0; }
-.prime-page.um a:not(.cnui-btn, .cnui-ibtn, .prime-pill) { color: #1a974e; text-decoration: underline; }
-.prime-page.um a:not(.cnui-btn, .cnui-ibtn, .prime-pill):hover { color: #178645; }
+.prime-page.um a:not(.cnui-btn, .cnui-ibtn, .cnui-care) { color: #1a974e; text-decoration: underline; }
+.prime-page.um a:not(.cnui-btn, .cnui-ibtn, .cnui-care):hover { color: #178645; }
 .prime-page.um .prime-body1 { font-size: 14px; line-height: 1.46429; }
 .prime-page.um .cnui-btn.prime-go { width: 100%; }
 .prime-page.um .prime-note { display: flex; align-items: center; margin-top: 24px; padding: 8px 12px; border-radius: 12px; background: rgb(from var(--cnui-fg) r g b / .08); }
@@ -102,10 +102,9 @@
 .prime-page.um .prime-block-slot > :not(:empty) { margin-top: var(--block); }
 .prime-page.um .prime-block-slot .prime-note { margin-top: 0; }
 .prime-page.um .prime-checks { margin-left: 12px; padding: 0; }
-.prime-page.um .prime-checks svg { color: var(--cnui-fg); }
+.prime-page.um .prime-checks svg { align-self: flex-start; color: var(--cnui-fg); }
 .prime-page.um .cnui-ibtn { color: var(--cnui-fg); }
 .prime-page.um .prime-checks > div { display: flex; align-items: center; margin-bottom: 4px; padding: 0 var(--checks); }
-.prime-page.um .prime-checks svg { align-self: flex-start; }
 .prime-page.um .prime-checks p { margin: 0 0 0 14px; font-size: 14px; line-height: 1.5; }
 .prime-page.um .prime-commacare { padding: 10px 14px 10px 12px; border: 1px solid #1a974e; border-radius: 12px; }
 .prime-page.um .prime-commacare > div { display: flex; align-items: center; font-size: 14px; line-height: 1.46429; }
@@ -122,7 +121,6 @@
 .prime-page.um .prime-plan:first-child { margin-right: 2px; }
 .prime-page.um .prime-plan:last-child { margin-left: 2px; }
 .prime-page.um .prime-plan b { font-size: 1.2rem; font-weight: 600; }
-.prime-page.um .prime-plan .prime-price { font-size: 1.5rem; }
 .prime-page.um .prime-plan .small { font-size: .8rem; font-weight: 400; line-height: 1.5; }
 .prime-page.um .prime-plan[aria-pressed="true"] { border-color: var(--cnui-fg); }
 .prime-page.um .prime-plan:disabled { background: rgb(from var(--cnui-fg) r g b / .05); color: rgb(from var(--cnui-fg) r g b / .4); cursor: default; }
@@ -131,7 +129,6 @@
 .prime-page.um .prime-fetching p { margin-top: 10px; font-size: .9rem; line-height: 1.46429; }
 .prime-page.um .prime-block .cnui-btn.prime-go { height: 42px; margin: 0; border-radius: 21px; }
 .prime-page.um .prime-charge { font-size: 13px; line-height: 1.46429; }
-.prime-page.um .prime-charge[hidden] { display: none; }
 @media (max-height: 600px) { .prime-page.um .prime-plans > div:first-child, .prime-page.um .prime-fetching { height: 110px; } }
 @media (max-width: 520px) { .prime-page.um:not(:has(> .prime-manage)) { margin: 6px 12px; --block: 16px; --checks: 8px; } }
 
@@ -147,10 +144,7 @@
 .prime-page.um .prime-item span { color: rgb(from var(--cnui-fg) r g b / .7); font-size: .9em; line-height: 20.5px; }
 .prime-page.um .prime-item-device aside { font-size: 14px; font-weight: 500; line-height: 1.71429; }
 .prime-page.um .prime-item-device span { display: block; font-size: 14.4px; line-height: 1.375; }
-.prime-page.um .prime-pill { display: inline-flex; align-items: center; margin-top: 14px; padding: 6px 14px 6px 12px; border: 1px solid #1a974e; border-radius: 12px;
-  color: #1a974e; font-weight: 600; line-height: 1; letter-spacing: .04em; text-decoration: none; transition: background-color 150ms; }
-.prime-page.um .prime-pill:hover { background: rgba(81, 191, 135, .1); color: #1a974e; }
-.prime-page.um .prime-pill img { width: 24px; margin-right: 12px; }
+.prime-page.um .cnui-care { margin-top: 14px; color: #1a974e; }
 .prime-page.um .prime-buttons { display: flex; flex-direction: column; max-width: 450px; margin-top: 20px; }
 .prime-page.um .prime-buttons .cnui-btn.prime-go { width: 220px; margin-top: 10px; }
 .prime-page.um .prime-buttons .cnui-btn.prime-cancel { border: 1px solid #424a4f; background: transparent; color: var(--cnui-fg); }

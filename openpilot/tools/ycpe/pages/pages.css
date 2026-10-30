@@ -9,7 +9,6 @@
 .page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
 .page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .button.small { margin: 0; padding: 3px 8px; }
-.button.tiny { margin: 0; padding: 0 6px; font-size: 11px; }
 .button.danger { border-color: var(--critical); color: var(--critical-fg); }
 .button:disabled { opacity: .5; cursor: default; }
 .field { height: 26px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
@@ -38,6 +37,11 @@
 .recent h3 { margin-top: 0; }
 .local-entry { margin: 14px 0; text-align: center; }
 .add-device { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+
+/* /live (pages/live.js): the tables line up */
+.live-page .list { table-layout: fixed; }
+.live-page .list td:first-child { width: 28px; }
+.live-page .list td:nth-child(2) { width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* omnibox dropdown */
 .omni { position: relative; display: inline-flex; flex-shrink: 1; min-width: 80px; }

@@ -1,6 +1,6 @@
 // the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings.
 // In user mode it's connect's dashboard: the map, the device's name and buttons, its totals and the drives as cards
-import {api, auth, engagedFraction, versionAtLeast} from "../api.js";
+import {api, auth, engagedFraction, utcTimes, versionAtLeast} from "../api.js";
 import {h, fmt, isMetric, openModal, toast} from "../dom.js";
 import {icon} from "../icons.js";
 import {devicesChanged, go, isOnline, link, onlineMark} from "../app.js";
@@ -46,12 +46,6 @@ export function prefetchDevice(dongleId, user = mode() === "user") {
 }
 
 const duration = (r) => r.end_time_utc_millis - r.start_time_utc_millis;
-// a preserved drive's times come as strings
-function timed(r) {
-  r.start_time_utc_millis ??= Date.parse(r.start_time + "Z");
-  r.end_time_utc_millis ??= Date.parse(r.end_time + "Z");
-  return r;
-}
 
 // a drive's strip (panes/strip.js) and places, filled in when its row nears the viewport. One observer for every
 // strip, so filling one never reads layout. The sprites and events come from a host that serves six at a time, so the
@@ -368,7 +362,7 @@ function cnStats(dongleId) {
 function preservedSection(device) {
   const el = h("div", {}, h("p", {class: "muted"}, "Loading…"));
   const load = () => Promise.all([api.preservedRoutes(device.dongle_id), canManage(device)]).then(([routes, owner]) => {
-    el.replaceChildren(...routes.length ? [drivesHead(), h("div", {class: "drives details"}, routes.map((r) => driveRow(timed({...r, is_preserved: true}), owner)))]
+    el.replaceChildren(...routes.length ? [drivesHead(), h("div", {class: "drives details"}, routes.map((r) => driveRow(utcTimes({...r, is_preserved: true}), owner)))]
       : [h("p", {class: "muted"}, "No preserved drives.")]);
   }).catch((err) => el.replaceChildren(h("p", {class: "error"}, err.message)));
   el.resume = load;
@@ -387,11 +381,16 @@ function stats(dongleId) {
   return el;
 }
 
-// the car's battery, as connect reads it from an online device (peripheralState is in millivolts); red under 11 V
+// the car's battery in volts, as connect reads it from an online device (peripheralState is in millivolts); 0 when
+// it doesn't say
+const carVolts = (device) => api.athena(device.dongle_id, "getMessage", {service: "peripheralState", timeout: 5000})
+  .then((r) => r?.peripheralState?.voltage / 1000, () => 0);
+
+// red under 11 V
 function battery(device) {
   const el = h("span", {class: "battery", title: "Car battery", hidden: true});
   if (!isOnline(device)) return el;
-  api.athena(device.dongle_id, "getMessage", {service: "peripheralState", timeout: 5000}).then((r) => r?.peripheralState?.voltage / 1000, () => 0).then((v) => {
+  carVolts(device).then((v) => {
     el.replaceChildren(icon("battery", 14), v ? `${v.toFixed(1)} V` : "N/A");
     el.className = `battery ${!v ? "" : v < 11 ? "low" : "ok"}`;
     el.hidden = false;
@@ -460,7 +459,7 @@ function cnBattery(device) {
       h("p", {}, "device offline"));
   }
   const text = h("p", {class: "cn-volts"}, "N/A"), el = h("div", {class: "cn-battery"}, cnIcon("carBattery", 20), text);
-  api.athena(device.dongle_id, "getMessage", {service: "peripheralState", timeout: 5000}).then((r) => r?.peripheralState?.voltage / 1000, () => 0).then((v) => {
+  carVolts(device).then((v) => {
     if (!v) return;
     text.textContent = `${v.toFixed(1)}\u00a0V`;
     el.classList.add(v < 11 ? "low" : "ok");

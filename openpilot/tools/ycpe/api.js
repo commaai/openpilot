@@ -17,6 +17,16 @@ const billingRelay = () => !billingReachable() && daemon.has("billing");
 const ATHENA_ORIGINS = /^(https:\/\/([\w-]+\.)*comma\.ai|http:\/\/localhost:3000)$/;
 const athenaRelay = () => !setting("athena_host") && daemon.has("athena") && !ATHENA_ORIGINS.test(location.origin);
 
+// each provider's authorize page, the API's redirect for it, and what it's asked for
+const OAUTH = {
+  google: {url: "https://accounts.google.com/o/oauth2/auth", redirect: "g", params: {type: "web_server",
+    client_id: "45471411055-ornt4svd2miog6dnopve7qtmh5mnu6id.apps.googleusercontent.com", response_type: "code",
+    scope: "https://www.googleapis.com/auth/userinfo.email", prompt: "select_account"}},
+  github: {url: "https://github.com/login/oauth/authorize", redirect: "h", params: {client_id: "28c4ecb54bb7272cb5a4", scope: "read:user"}},
+  apple: {url: "https://appleid.apple.com/auth/authorize", redirect: "a",
+    params: {client_id: "ai.comma.login", response_type: "code", response_mode: "form_post", scope: "name email"}},
+};
+
 // sign-in state: the token, the signed-in user (v1/me, cached), and subscribers to changes
 const authSubs = listeners();
 let user = null;
@@ -60,26 +70,8 @@ export const auth = {
 
   // the provider sends the code to the API, which redirects it back to <host>/auth/?code=..&provider=..
   loginUrl(provider) {
-    const params = {
-      redirect_uri: `https://api.comma.ai/v2/auth/${{google: "g", apple: "a", github: "h"}[provider]}/redirect/`,
-      state: `service,${location.host}`,
-    };
-    if (provider === "google") {
-      Object.assign(params, {
-        type: "web_server",
-        client_id: "45471411055-ornt4svd2miog6dnopve7qtmh5mnu6id.apps.googleusercontent.com",
-        response_type: "code",
-        scope: "https://www.googleapis.com/auth/userinfo.email",
-        prompt: "select_account",
-      });
-      return "https://accounts.google.com/o/oauth2/auth?" + new URLSearchParams(params);
-    } else if (provider === "github") {
-      Object.assign(params, {client_id: "28c4ecb54bb7272cb5a4", scope: "read:user"});
-      return "https://github.com/login/oauth/authorize?" + new URLSearchParams(params);
-    } else {
-      Object.assign(params, {client_id: "ai.comma.login", response_type: "code", response_mode: "form_post", scope: "name email"});
-      return "https://appleid.apple.com/auth/authorize?" + new URLSearchParams(params);
-    }
+    const {url, redirect, params} = OAUTH[provider];
+    return `${url}?` + new URLSearchParams({redirect_uri: `https://api.comma.ai/v2/auth/${redirect}/redirect/`, state: `service,${location.host}`, ...params});
   },
 
   // a fresh 90-day token for the code; exchangeCode also signs in with it
@@ -172,6 +164,14 @@ function memo(fn, key = (...args) => JSON.stringify(args), ttl = Infinity) {
   return wrapped;
 }
 
+// a route record with the device listing's utc times, for those that only come with time strings (v1/route, the
+// preserved list)
+export function utcTimes(r) {
+  r.start_time_utc_millis ??= Date.parse(r.start_time + "Z");
+  r.end_time_utc_millis ??= Date.parse(r.end_time + "Z");
+  return r;
+}
+
 // a device record with when it was fetched (s): it says whether the device was online then (app.js isOnline)
 const fetched = (device) => ({...device, fetched_at: Date.now() / 1000});
 
@@ -235,10 +235,7 @@ export const api = {
     const dongleId = routeName.split("|")[0];
     const [r] = auth.isAuthenticated() ? await get(`v1/devices/${dongleId}/routes_segments`, {route_str: routeName}).catch(() => []) : [];
     if (r) return r;
-    const route = await get(`v1/route/${routeName}/`);
-    route.start_time_utc_millis ??= Date.parse(route.start_time + "Z");
-    route.end_time_utc_millis ??= Date.parse(route.end_time + "Z");
-    return route;
+    return utcTimes(await get(`v1/route/${routeName}/`));
   }),
   routeFiles,
   setRoutePublic: (routeName, isPublic) => request("PATCH", `v1/route/${routeName}/`, {body: {is_public: isPublic}}),
