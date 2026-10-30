@@ -6,7 +6,8 @@ import time
 import unittest
 from pathlib import Path
 
-from openpilot.tools.ycpe.daemon import config, transcode
+from openpilot.tools.ycpe.daemon import transcode
+from openpilot.tools.ycpe.daemon.core import config
 from openpilot.tools.ycpe.daemon.tests.common import DaemonCase, until
 from openpilot.tools.ycpe.daemon.transcode import Encode, Pictures, Transcoder, backends, encode
 
@@ -86,38 +87,34 @@ class TestTranscoder(unittest.TestCase):
       raise FileNotFoundError(f"no segment {seg}")
     return str(self.src)
 
-  def test_unwatched_prefetches_are_dropped(self):
+  def transcoder(self) -> Transcoder:
     t = Transcoder(self.dir / "cache", self.resolve, workers=1)
-    try:
-      t.prefetch("d", "r", [1, 2], "fcamera")  # nothing asked for this route's camera recently
-      until(lambda: not t.jobs, 1)
-      self.assertEqual((t.jobs, self.resolved), ({}, []))
-    finally:
-      t.close()
+    self.addCleanup(t.close)
+    return t
+
+  def test_unwatched_prefetches_are_dropped(self):
+    t = self.transcoder()
+    t.prefetch("d", "r", [1, 2], "fcamera")  # nothing asked for this route's camera recently
+    until(lambda: not t.jobs, 1)
+    self.assertEqual((t.jobs, self.resolved), ({}, []))
 
   def test_cache_prefetch_and_missing(self):
-    t = Transcoder(self.dir / "cache", self.resolve, workers=1)
-    try:
-      job = t.get("d", "r", 0, "fcamera")
-      t.prefetch("d", "r", [1, 2, 5], "fcamera")
-      self.assertTrue(job.finished.wait(60))
-      self.assertEqual(job.state, "done", job.error)
-      for seg, state in [(1, "done"), (2, "done"), (5, "missing")]:
-        j = t.get("d", "r", seg, "fcamera", priority=9)
-        self.assertTrue(j.finished.wait(60))
-        self.assertEqual(j.state, state, j.error)
-      self.assertEqual(self.resolved, [0, 1, 2, 5])
-      self.assertIs(t.get("d", "r", 0, "fcamera"), job)
-    finally:
-      t.close()
+    t = self.transcoder()
+    job = t.get("d", "r", 0, "fcamera")
+    t.prefetch("d", "r", [1, 2, 5], "fcamera")
+    self.assertTrue(job.finished.wait(60))
+    self.assertEqual(job.state, "done", job.error)
+    for seg, state in [(1, "done"), (2, "done"), (5, "missing")]:
+      j = t.get("d", "r", seg, "fcamera", priority=9)
+      self.assertTrue(j.finished.wait(60))
+      self.assertEqual(j.state, state, j.error)
+    self.assertEqual(self.resolved, [0, 1, 2, 5])
+    self.assertIs(t.get("d", "r", 0, "fcamera"), job)
+    t.close()
     # a new transcoder (a restart) serves it from the cache without encoding
-    t = Transcoder(self.dir / "cache", self.resolve, workers=1)
-    try:
-      again = t.get("d", "r", 0, "fcamera")
-      self.assertEqual((again.state, again.frames), ("done", FRAMES))
-      self.assertEqual(self.resolved, [0, 1, 2, 5])
-    finally:
-      t.close()
+    again = self.transcoder().get("d", "r", 0, "fcamera")
+    self.assertEqual((again.state, again.frames), ("done", FRAMES))
+    self.assertEqual(self.resolved, [0, 1, 2, 5])
 
   def test_resolves_local_logs(self):
     d = Path(tempfile.mkdtemp())
@@ -135,15 +132,11 @@ class TestRoute(DaemonCase):
     super().setUpClass()
     transcode._transcoder = Transcoder(cls.dir / "cache", lambda d, r, seg, cam: str(cls.src) if seg < 2 else cls.missing(seg),
                                        run=transcode.run_as_job)
+    cls.addClassCleanup(transcode._transcoder.close)
 
   @staticmethod
   def missing(seg):
     raise FileNotFoundError(f"no segment {seg}")
-
-  @classmethod
-  def tearDownClass(cls):
-    transcode._transcoder.close()
-    super().tearDownClass()
 
   def test_streams_then_serves_ranges(self):
     start = time.monotonic()
@@ -155,10 +148,10 @@ class TestRoute(DaemonCase):
     self.assertEqual((r.status, head), (206, data[:100]))
 
   def test_errors(self):
-    self.assertEqual(self.req(f"{VIDEO}/7/fcamera.h264")[0].status, 404)
-    self.assertEqual(self.req(f"{VIDEO}/0/qcamera.h264")[0].status, 404)
-    self.assertEqual(self.req(f"{VIDEO}/0/fcamera.mp4")[0].status, 404)
-    self.assertEqual(self.req("/local/video/d/r/0/fcamera.h264")[0].status, 404)  # not route ids
+    self.assertEqual(self.status(f"{VIDEO}/7/fcamera.h264"), 404)
+    self.assertEqual(self.status(f"{VIDEO}/0/qcamera.h264"), 404)
+    self.assertEqual(self.status(f"{VIDEO}/0/fcamera.mp4"), 404)
+    self.assertEqual(self.status("/local/video/d/r/0/fcamera.h264"), 404)  # not route ids
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """The /live/local signaling forward, against a stand-in webrtcd."""
 import json
-import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -33,14 +32,7 @@ class TestWebrtc(DaemonCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.webrtcd = ThreadingHTTPServer(("127.0.0.1", 0), Webrtcd)
-    threading.Thread(target=cls.webrtcd.serve_forever, daemon=True).start()
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.webrtcd.shutdown()
-    cls.webrtcd.server_close()
-    super().tearDownClass()
+    cls.webrtcd = cls.serve(ThreadingHTTPServer(("127.0.0.1", 0), Webrtcd))
 
   def setUp(self):
     config.webrtcd_port = self.webrtcd.server_address[1]
@@ -53,12 +45,9 @@ class TestWebrtc(DaemonCase):
 
   def test_needs_an_offer(self):
     for body in ([OFFER], {"sdp": 1}, {}, "x"):
-      r, _ = self.post(STREAM, body)
-      self.assertEqual(r.status, 400, body)
-    r, _ = self.post(STREAM, b"{not json")
-    self.assertEqual(r.status, 400)
-    r, _ = self.post(STREAM, {"sdp": "x" * webrtc.MAX_BODY})
-    self.assertEqual(r.status, 413)
+      self.assertEqual(self.post(STREAM, body)[0].status, 400, body)
+    self.assertEqual(self.post(STREAM, b"{not json")[0].status, 400)
+    self.assertEqual(self.post(STREAM, {"sdp": "x" * webrtc.MAX_BODY})[0].status, 413)
     self.assertEqual(Webrtcd.seen, [])
 
   def test_no_webrtcd(self):
@@ -68,8 +57,7 @@ class TestWebrtc(DaemonCase):
     self.assertIn("webrtcd on 127.0.0.1:1", json.loads(data)["error"])
 
   def test_post_only(self):
-    r, _ = self.req(STREAM)
-    self.assertEqual(r.status, 405)
+    self.assertEqual(self.status(STREAM), 405)
     self.assertEqual(Webrtcd.seen, [])
 
 

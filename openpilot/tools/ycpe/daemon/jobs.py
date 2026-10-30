@@ -50,7 +50,7 @@ class Job:
     now = time.monotonic()
     if now - self._sent >= 0.1:
       self._sent = now
-      _publish(self)
+      _feed.publish(self.json())
 
   def json(self) -> dict:
     return {"id": self.id, "kind": self.kind, "title": self.title, "state": self.state, "done": self.done, "total": self.total,
@@ -62,10 +62,6 @@ _ids = itertools.count(1)
 _jobs: dict[str, Job] = {}
 _lock = threading.Lock()
 _feed = Feed()
-
-
-def _publish(job: Job) -> None:
-  _feed.publish(job.json())
 
 
 def start(kind: str, fn, title: str = "", **meta) -> Job:
@@ -87,10 +83,10 @@ def start(kind: str, fn, title: str = "", **meta) -> Job:
       job.state, job.error = "error", f"{type(e).__name__}: {e}"
       traceback.print_exc()
     job.ended = time.time()  # noqa: TID251
-    _publish(job)
+    _feed.publish(job.json())
     job.finished.set()
 
-  _publish(job)
+  _feed.publish(job.json())
   threading.Thread(target=run, name=job.id, daemon=True).start()
   return job
 

@@ -45,13 +45,11 @@ class TestSecurity(DaemonCase):
   def test_wrong_host(self):
     for path in ("/local/caps", "/local/auth", "/", "/index.html", "/api.js"):
       for host in (f"evil.example:{config.port}", "localhost:1", "localhost", f"127.0.0.1.nip.io:{config.port}"):
-        r, _ = self.req(path, host=host)
-        self.assertEqual(r.status, 403, (path, host))
+        self.assertEqual(self.status(path, host=host), 403, (path, host))
 
   @unittest.skipUnless(hasattr(socket, "AF_NETLINK"), "linux only")
   def test_other_user(self):
-    r, _ = self.req("/")
-    self.assertEqual(r.status, 200)
+    self.assertEqual(self.status("/"), 200)
     with mock.patch("os.getuid", return_value=os.getuid() + 1):
       for path in ("/", "/index.html", "/local/caps", "/local/auth"):
         r, data = self.req(path)
@@ -59,8 +57,7 @@ class TestSecurity(DaemonCase):
         self.assertNotIn(config.token.encode(), data)
 
   def test_127_host_ok(self):
-    r, _ = self.req("/local/caps", host=f"127.0.0.1:{config.port}")
-    self.assertEqual(r.status, 200)
+    self.assertEqual(self.status("/local/caps", host=f"127.0.0.1:{config.port}"), 200)
 
   def test_every_route(self):
     # every route refuses before it runs: no or a wrong token, another page, a cross-site fetch, a rebound host
@@ -81,14 +78,11 @@ class TestSecurity(DaemonCase):
 
   def test_origins(self):
     for origin in ("http://evil.example", f"http://localhost:{config.port + 1}", "null", f"https://localhost:{config.port}"):
-      r, _ = self.req("/local/repos", headers={"Origin": origin})
-      self.assertEqual(r.status, 403, origin)
-    r, _ = self.req("/local/repos", headers={"Origin": f"http://localhost:{config.port}"})
-    self.assertEqual(r.status, 200)
+      self.assertEqual(self.status("/local/repos", headers={"Origin": origin}), 403, origin)
+    self.assertEqual(self.status("/local/repos", headers={"Origin": f"http://localhost:{config.port}"}), 200)
 
   def test_token_param(self):
-    r, _ = self.req(f"/local/repos?{core.TOKEN_PARAM}={config.token}", token=False)
-    self.assertEqual(r.status, 200)
+    self.assertEqual(self.status(f"/local/repos?{core.TOKEN_PARAM}={config.token}", token=False), 200)
 
   def test_auth_no_leak(self):
     # the response carries the token (or null); it must not be printed here
@@ -109,20 +103,17 @@ class TestSecurity(DaemonCase):
       self.assertTrue(b'name="ycpe-daemon"' in data)
     r, data = self.req("/local/demo-rlog/plot", headers={"Accept": "*/*", "Sec-Fetch-Mode": "cors"})
     self.assertEqual((r.status, json.loads(data)), (404, {"error": "Not Found"}))
-    r, _ = self.req("/local/demo-rlog/plot", headers={"Sec-Fetch-Mode": "navigate"}, host="evil.example")
-    self.assertEqual(r.status, 403)  # the host check still comes first
-    r, _ = self.req("/local/repos/nope/dbc", headers={"Sec-Fetch-Mode": "navigate"})
-    self.assertEqual(r.status, 404)  # a route's own 404 stays an API answer
+    # the host check still comes first, and a route's own 404 stays an API answer
+    self.assertEqual(self.status("/local/demo-rlog/plot", headers={"Sec-Fetch-Mode": "navigate"}, host="evil.example"), 403)
+    self.assertEqual(self.status("/local/repos/nope/dbc", headers={"Sec-Fetch-Mode": "navigate"}), 404)
 
   def test_traversal(self):
     for path in ("../secret.txt", "..%2fsecret.txt", "%2e%2e/secret.txt", "a/../../secret.txt", "/etc/passwd", "%2fetc%2fpasswd"):
-      r, _ = self.req(f"/local/test/file/{path}")
-      self.assertEqual(r.status, 403, path)
+      self.assertEqual(self.status(f"/local/test/file/{path}"), 403, path)
     link = os.path.join(_root, "link")
     if not os.path.exists(link):
       os.symlink(os.path.dirname(_root), link)
-    r, _ = self.req("/local/test/file/link/secret.txt")
-    self.assertEqual(r.status, 403)
+    self.assertEqual(self.status("/local/test/file/link/secret.txt"), 403)
 
   def test_no_framing(self):
     for path in ("/", "/local/caps"):
@@ -147,8 +138,7 @@ class TestStreaming(DaemonCase):
     self.assertEqual(data, full[-5:])
     r, data = self.req("/local/test/file/data.bin", headers={"Range": "bytes=25000-"})
     self.assertEqual(data, full[25000:])
-    r, _ = self.req("/local/test/file/data.bin", headers={"Range": "bytes=999999-"})
-    self.assertEqual(r.status, 416)
+    self.assertEqual(self.status("/local/test/file/data.bin", headers={"Range": "bytes=999999-"}), 416)
 
   def test_growing(self):
     path = os.path.join(_root, "growing.bin")
@@ -182,7 +172,7 @@ class TestStreaming(DaemonCase):
       return {"ok": True}
     j = jobs.start("test", work)
     self.assertEqual(j.state, "running")
-    r, data = self.req(f"/local/jobs/{j.id}/cancel", method="POST")
+    self.req(f"/local/jobs/{j.id}/cancel", method="POST")
     gate.set()
     self.assertTrue(j.finished.wait(1))
     self.assertEqual(j.state, "cancelled")

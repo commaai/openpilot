@@ -65,11 +65,6 @@ def canonical_url(source: str, key: Key) -> str | None:
   return None
 
 
-def ycpe_dir(name: str) -> Path:
-  """The directory under ycpe/ for one kind of file the daemon makes (transcodes); counted in the budget."""
-  return root() / "ycpe" / name
-
-
 def touch(path: Path) -> None:
   try:
     os.utime(path)

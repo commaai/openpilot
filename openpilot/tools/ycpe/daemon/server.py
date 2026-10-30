@@ -18,11 +18,6 @@ APP = Path(__file__).resolve().parent.parent
 MODULES = ["auth", "jobs", "athena", "billing", "webrtc", "sources", "cache", "repos", "transcode"]
 
 
-def load_modules() -> None:
-  for name in MODULES:
-    importlib.import_module(f"openpilot.tools.ycpe.daemon.{name}")
-
-
 def app_commit() -> dict | None:
   """the commit the app is served from, and its time: the account menu's version"""
   try:
@@ -134,13 +129,17 @@ class Handler(SimpleHTTPRequestHandler):
     except (BrokenPipeError, ConnectionResetError):
       pass
 
-  def stream(self, s: Stream, head=False):
-    self.send_response(s.status)
-    self.send_header("Content-Type", s.type)
-    for k, v in s.headers.items():
+  def start_response(self, status: int, content_type: str, headers: dict[str, str], length: int | None):
+    """The status line and headers, with Content-Length when length is known, else chunked."""
+    self.send_response(status)
+    self.send_header("Content-Type", content_type)
+    for k, v in headers.items():
       self.send_header(k, v)
-    self.send_header(*(("Content-Length", str(s.length)) if s.length is not None else ("Transfer-Encoding", "chunked")))
+    self.send_header(*(("Content-Length", str(length)) if length is not None else ("Transfer-Encoding", "chunked")))
     self.end_headers()
+
+  def stream(self, s: Stream, head=False):
+    self.start_response(s.status, s.type, s.headers, s.length)
     try:
       if head:
         return
@@ -167,15 +166,10 @@ class Handler(SimpleHTTPRequestHandler):
     size = os.path.getsize(f.path)
     rng = core.parse_range(range_header, size)
     start, end = rng or (0, size)
-    self.send_response(206 if rng else 200)
-    self.send_header("Content-Type", f.type)
-    self.send_header("Accept-Ranges", "bytes")
+    headers = {"Accept-Ranges": "bytes", **f.headers}
     if rng:
-      self.send_header("Content-Range", f"bytes {start}-{end - 1}/{size}")
-    for k, v in f.headers.items():
-      self.send_header(k, v)
-    self.send_header("Content-Length", str(end - start))
-    self.end_headers()
+      headers["Content-Range"] = f"bytes {start}-{end - 1}/{size}"
+    self.start_response(206 if rng else 200, f.type, headers, end - start)
     if head:
       return
     try:
@@ -193,5 +187,6 @@ class Server(ThreadingHTTPServer):
 
 def make_server(port: int) -> Server:
   config.port = port
-  load_modules()
+  for name in MODULES:
+    importlib.import_module(f"openpilot.tools.ycpe.daemon.{name}")
   return Server(("0.0.0.0" if config.host else "127.0.0.1", port), Handler)  # loopback only, unless shared with --host
